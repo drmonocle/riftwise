@@ -30,6 +30,7 @@ import { ScheduleView } from "./components/views/ScheduleView";
 import { StreamView } from "./components/views/StreamView";
 import { WatchlistView } from "./components/views/WatchlistView";
 import { NewsView } from "./components/views/NewsView";
+import { StatsView } from "./components/views/StatsView";
 import { SettingsView } from "./components/views/SettingsView";
 import { TeamRosterModal } from "./components/TeamRosterModal";
 
@@ -297,7 +298,7 @@ export default function App() {
     }
   }, []);
 
-  // Desktop keyboard shortcuts (F5, Ctrl+R, Ctrl+1..6, Ctrl+S, Ctrl+D). Not on the web page: there
+  // Desktop keyboard shortcuts (F5, Ctrl+R, Ctrl+1..7, Ctrl+S, Ctrl+D). Not on the web page: there
   // they would hijack the browser's own Reload, Save Page and tab-switching shortcuts.
   useEffect(() => {
     if (!IS_DESKTOP) return;
@@ -328,6 +329,9 @@ export default function App() {
       } else if (e.ctrlKey && e.key === "6") {
         e.preventDefault();
         setActiveTab("settings");
+      } else if (e.ctrlKey && e.key === "7") {
+        e.preventDefault();
+        setActiveTab("stats");
       } else if (e.ctrlKey && e.key.toLowerCase() === "s") {
         e.preventDefault();
         handleUpdateSettings({ spoilerMode: !settingsRef.current.spoilerMode });
@@ -733,6 +737,7 @@ export default function App() {
             isRefreshingCatalog={isRefreshing}
           />
         )}
+        {activeTab === "stats" && <StatsView settings={settings} />}
         {activeTab === "news" && <NewsView onOpenUrl={handleOpenUrl} />}
         {activeTab === "settings" && (
           <SettingsView

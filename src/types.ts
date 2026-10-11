@@ -137,7 +137,7 @@ export interface AppSettings {
   tickerMode: "docked" | "detached" | "hidden";
   tickerTopmost: boolean;
   tickerCycleSec: number;
-  defaultTab: "live" | "schedule" | "stream" | "watchlist" | "news" | "settings";
+  defaultTab: "live" | "schedule" | "stats" | "stream" | "watchlist" | "news" | "settings";
   notifyKickoff: boolean;
   notifyPregame: boolean;
   notifyStream: boolean;

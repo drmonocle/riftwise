@@ -69,7 +69,7 @@ Everything above, plus things a browser can't do:
 
 > **"Windows protected your PC"?** RiftWatch is not code-signed yet, so Windows SmartScreen may warn the first time. Click **More info → Run anyway**. Every release publishes the SHA-256 of `RiftWatch.exe` (`RiftWatch.exe.sha256`) so you can check your download.
 
-Keyboard (Windows app): `F5` / `Ctrl+R` refresh · `Ctrl+1…6` switch tabs · `Ctrl+S` spoiler mode · `Ctrl+D` detach / dock the ticker.
+Keyboard (Windows app): `F5` / `Ctrl+R` refresh · `Ctrl+1…6` switch tabs · `Ctrl+7` Stats · `Ctrl+S` spoiler mode · `Ctrl+D` detach / dock the ticker.
 
 <p align="center"><img src="screenshots/06_247_stream.png" alt="24/7 stream guide" width="780"></p>
 
