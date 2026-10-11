@@ -112,7 +112,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   soundAlerts: false,
   compactMode: false,
   minimizeToTrayOnClose: true,
-  startWithWindows: false,
+  startWithWindows: true,
   followedTeams: ["T1", "GEN", "G2", "FLY", "BLG"],
   followedPlayers: ["Faker", "Chovy", "Ruler", "Caps"],
   followedLeagues: [...DEFAULT_FOLLOWED_LEAGUES],
