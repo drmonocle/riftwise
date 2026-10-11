@@ -79,11 +79,17 @@ export interface Records {
   team: Record<"streaks" | "titles", TeamRecord[]>;
 }
 
+// The server rebuilds the stats every night under a new version and deletes old versions after
+// two builds. The desktop app can stay open in the tray for days, so the current version is
+// re-checked every hour, and a file that has gone missing triggers one fresh check and retry.
+const VERSION_MAX_AGE_MS = 60 * 60 * 1000;
 let versionPromise: Promise<string> | null = null;
-const cache = new Map<string, Promise<any>>();
+let versionCheckedAt = 0;
+const cache = new Map<string, Promise<any>>(); // keyed by "<version>/<path>"
 
-function getVersion(): Promise<string> {
-  if (!versionPromise) {
+function getVersion(force = false): Promise<string> {
+  if (force || !versionPromise || Date.now() - versionCheckedAt > VERSION_MAX_AGE_MS) {
+    versionCheckedAt = Date.now();
     versionPromise = fetch(`${STATS_BASE}/latest.json`, { cache: "no-store", signal: AbortSignal.timeout(15000) })
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -98,21 +104,38 @@ function getVersion(): Promise<string> {
   return versionPromise;
 }
 
-function load<T>(path: string): Promise<T> {
-  const hit = cache.get(path);
+class MissingFile extends Error {}
+
+function fetchVersioned<T>(v: string, path: string): Promise<T> {
+  const key = `${v}/${path}`;
+  const hit = cache.get(key);
   if (hit) return hit;
-  const p = getVersion()
-    .then((v) => fetch(`${STATS_BASE}/${v}/${path}`, { signal: AbortSignal.timeout(20000) }))
+  const p = fetch(`${STATS_BASE}/${key}`, { signal: AbortSignal.timeout(20000) })
     .then((r) => {
+      if (r.status === 404) throw new MissingFile(key);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       return r.json() as Promise<T>;
     })
     .catch((e) => {
-      cache.delete(path);
+      cache.delete(key);
       throw e;
     });
-  cache.set(path, p);
+  cache.set(key, p);
   return p;
+}
+
+async function load<T>(path: string): Promise<T> {
+  const v = await getVersion();
+  try {
+    return await fetchVersioned<T>(v, path);
+  } catch (e) {
+    if (!(e instanceof MissingFile)) throw e;
+    // That build was replaced since we last checked: find the current one and try once more.
+    const fresh = await getVersion(true);
+    if (fresh === v) throw e;
+    for (const k of cache.keys()) if (!k.startsWith(`${fresh}/`)) cache.delete(k);
+    return fetchVersioned<T>(fresh, path);
+  }
 }
 
 export const loadStatsMeta = () => load<StatsMeta>("meta.json");

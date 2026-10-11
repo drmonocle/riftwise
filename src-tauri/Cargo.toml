@@ -1,6 +1,6 @@
 [package]
 name = "riftwatch-tauri"
-version = "0.3.19"
+version = "0.3.20"
 description = "RiftWatch - LoL Esports companion"
 authors = ["drmonocle"]
 edition = "2021"
