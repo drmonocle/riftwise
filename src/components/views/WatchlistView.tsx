@@ -261,10 +261,10 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
 
       {/* Sub-tab Navigation & Search */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[#1e282d]">
-        <div className="flex items-center gap-1 bg-[#0a0e17] p-1 rounded-lg border border-[#1e282d]">
+        <div className="grid grid-cols-4 sm:flex items-center gap-1 bg-[#0a0e17] p-1 rounded-lg border border-[#1e282d]">
           <button
             onClick={() => setTab("teams")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 font-semibold rounded transition-all ${
+            className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold rounded transition-all ${
               tab === "teams" ? "bg-[#c8aa6e] text-[#091428]" : "text-[#7e8e9f] hover:text-[#f0e6d2]"
             }`}
           >
@@ -274,7 +274,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
 
           <button
             onClick={() => setTab("players")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 font-semibold rounded transition-all ${
+            className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold rounded transition-all ${
               tab === "players" ? "bg-[#c8aa6e] text-[#091428]" : "text-[#7e8e9f] hover:text-[#f0e6d2]"
             }`}
           >
@@ -284,7 +284,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
 
           <button
             onClick={() => setTab("regions")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 font-semibold rounded transition-all ${
+            className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold rounded transition-all ${
               tab === "regions" ? "bg-[#c8aa6e] text-[#091428]" : "text-[#7e8e9f] hover:text-[#f0e6d2]"
             }`}
           >
@@ -294,7 +294,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
 
           <button
             onClick={() => setTab("leagues")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 font-semibold rounded transition-all ${
+            className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold rounded transition-all ${
               tab === "leagues" ? "bg-[#c8aa6e] text-[#091428]" : "text-[#7e8e9f] hover:text-[#f0e6d2]"
             }`}
           >

@@ -283,7 +283,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               download comes straight from GitHub.
             </p>
             <p className="text-[11px] text-[#7e8e9f] leading-relaxed">
-              RiftWatch is not code-signed yet. Each release lists the SHA-256 of the file so you can check it.
+              Each release lists the SHA-256 checksum of the file, so you can check your download matches.
             </p>
           </div>
         </section>
@@ -411,8 +411,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 Choose which view opens automatically when starting RiftWatch.
               </div>
             </div>
-            <div className="flex items-center gap-1 bg-[#091428] p-1 rounded border border-[#1e282d]">
-              {(["live", "schedule", "stream", "watchlist"] as const).map((t) => (
+            <div className="flex flex-wrap items-center gap-1 bg-[#091428] p-1 rounded border border-[#1e282d]">
+              {(["live", "schedule", "stats", "stream", "watchlist"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => onUpdateSettings({ defaultTab: t })}

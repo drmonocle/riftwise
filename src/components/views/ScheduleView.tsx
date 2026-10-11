@@ -112,6 +112,24 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
     return true;
   });
+  // Results: newest first. Today / upcoming: soonest first.
+  filtered.sort((a, b) => {
+    const d = new Date(a.startTimeUtc).getTime() - new Date(b.startTimeUtc).getTime();
+    return filterRange === "results" ? -d : d;
+  });
+  const dayOf = (iso: string) => {
+    if (!iso) return "Date to be announced";
+    const d = new Date(iso);
+    const days = Math.round(
+      (new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() -
+        new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) /
+        86400000,
+    );
+    if (days === 0) return "Today";
+    if (days === 1) return "Tomorrow";
+    if (days === -1) return "Yesterday";
+    return d.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+  };
 
   return (
     <div className="p-4 space-y-4 max-w-4xl mx-auto overflow-y-auto h-full select-none">
@@ -211,7 +229,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             </div>
           ) : (
             <div className="space-y-2">
-              {filtered.map((m) => {
+              {filtered.map((m, idx) => {
+                const day = dayOf(m.startTimeUtc);
+                const newDay = filterRange !== "today" && (idx === 0 || dayOf(filtered[idx - 1].startTimeUtc) !== day);
                 const timeStr = m.startTimeUtc
                   ? new Date(m.startTimeUtc).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                   : "--:--";
@@ -223,17 +243,23 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 const h2h = computeHeadToHead(m.team1Code, m.team2Code, schedule, m.matchId);
 
                 return (
+                  <React.Fragment key={m.matchId}>
+                  {newDay && (
+                    <div className="flex items-center gap-2 px-1 pt-2 text-[11px] font-bold uppercase tracking-wider text-[#0ac8b9]">
+                      {day}
+                      <span className="flex-1 h-px bg-[#1e282d]" />
+                    </div>
+                  )}
                   <div
-                    key={m.matchId}
                     id={`match-${m.matchId}`}
-                    className={`flex items-center justify-between bg-[#0a1420] border px-4 py-2.5 rounded-lg transition-all ${
+                    className={`flex flex-wrap sm:flex-nowrap items-center justify-between gap-y-1.5 bg-[#0a1420] border px-3 sm:px-4 py-2.5 rounded-lg transition-all ${
                       flashMatchId === m.matchId
                         ? "border-[#0ac8b9] ring-2 ring-[#0ac8b9]/40 shadow-lg shadow-[#0ac8b9]/10"
                         : "border-[#1e282d] hover:border-[#c8aa6e]/80"
                     }`}
                   >
                     {/* Time, Calendar & League */}
-                    <div className="flex items-center gap-2 w-24 sm:w-44 shrink-0">
+                    <div className="flex items-center gap-2 min-w-0 sm:w-44 shrink sm:shrink-0 order-1">
                       <span className="font-mono text-xs text-[#0ac8b9] font-bold shrink-0">{timeStr}</span>
                       {m.state !== "completed" && (
                         <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />
@@ -242,9 +268,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     </div>
 
                     {/* Teams & Score */}
-                    <div className="flex items-center justify-center gap-3 sm:gap-4 flex-1">
+                    <div className="flex items-center justify-center gap-2 sm:gap-4 w-full sm:w-auto sm:flex-1 order-3 sm:order-2 min-w-0">
                       {/* Team 1 */}
-                      <div className="flex items-center gap-1.5 w-24 sm:w-36 justify-end text-right">
+                      <div className="flex items-center gap-1.5 flex-1 sm:flex-none sm:w-36 justify-end text-right min-w-0">
                         <button
                           type="button"
                           onClick={(e) => {
@@ -312,7 +338,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       </div>
 
                       {/* Team 2 */}
-                      <div className="flex items-center gap-1.5 w-24 sm:w-36 justify-start text-left">
+                      <div className="flex items-center gap-1.5 flex-1 sm:flex-none sm:w-36 justify-start text-left min-w-0">
                         {m.team2Image && (
                           <img
                             src={m.team2Image}
@@ -346,7 +372,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     </div>
 
                     {/* Status / Best Of */}
-                    <div className="flex items-center gap-2 w-20 sm:w-32 justify-end shrink-0">
+                    <div className="flex items-center gap-2 sm:w-32 justify-end shrink-0 ml-auto sm:ml-0 order-2 sm:order-3">
                       <ShareMatchButton match={m} />
                       <span className="text-[10px] text-[#9bb3c9] bg-[#091428] px-2 py-0.5 rounded border border-[#1e282d] font-medium">
                         Bo{m.bestOf}
@@ -358,6 +384,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       )}
                     </div>
                   </div>
+                  </React.Fragment>
                 );
               })}
             </div>

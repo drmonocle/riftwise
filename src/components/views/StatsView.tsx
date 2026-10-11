@@ -71,7 +71,7 @@ const Stat: React.FC<{ label: string; value: React.ReactNode; sub?: React.ReactN
 );
 
 const Section: React.FC<{ title: string; children: React.ReactNode; right?: React.ReactNode }> = ({ title, children, right }) => (
-  <section className={`${card} space-y-2`}>
+  <section className={`${card} space-y-2 min-w-0`}>
     <div className="flex items-center justify-between">
       <h3 className="text-xs font-bold uppercase tracking-wider text-[#c8aa6e]">{title}</h3>
       {right}
@@ -109,14 +109,14 @@ const Picker: React.FC<{
   const items = useMemo(() => {
     if (kind === "teams") {
       const list = q ? search.teams : search.teams.filter((t) => t.y >= String(+thisYear - 1));
-      return searchByName(list, q, compact ? 8 : 40).map((t) => ({
-        s: t.s,
-        n: t.n,
-        sub:
+      return searchByName(list, q, compact ? 8 : 40).map((t) => {
+        // When an old name is what matched, say so ("was SK Telecom T1")
+        const old =
           q && t.a && !t.n.toLowerCase().includes(q.toLowerCase())
-            ? `was ${t.a.split(" | ").find((o) => o.toLowerCase().includes(q.toLowerCase())) || t.a.split(" | ")[0]}`
-            : `${fmtNum(t.g)} games · last ${t.y}`,
-      }));
+            ? t.a.split(" | ").find((o) => o.toLowerCase().includes(q.toLowerCase()))
+            : undefined;
+        return { s: t.s, n: t.n, sub: old ? `was ${old}` : `${fmtNum(t.g)} games · last ${t.y}` };
+      });
     }
     const list = q ? search.players : search.players.filter((p) => p.y >= String(+thisYear - 1));
     return searchByName(list, q, compact ? 8 : 40).map((p) => ({ s: p.s, n: p.n, sub: `${p.t} · ${fmtNum(p.g)} games` }));
@@ -151,7 +151,7 @@ const Picker: React.FC<{
             className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#0a1420] border border-[#1e282d] hover:border-[#c8aa6e]/60 text-left text-xs"
           >
             <span className="font-semibold text-[#f0e6d2] truncate">{it.n}</span>
-            <span className="text-[#7e8e9f] text-[11px] truncate shrink-0 max-w-[55%]">{it.sub}</span>
+            <span className={`text-[#7e8e9f] text-[11px] truncate shrink-0 max-w-[55%] ${compact ? "hidden sm:inline" : ""}`}>{it.sub}</span>
           </button>
         ))}
         {items.length === 0 && <p className="text-xs text-[#9bb3c9] py-3">No {kind} match "{q}".</p>}
@@ -247,8 +247,8 @@ const TeamPage: React.FC<{
           ) : (
             <ul className="text-xs space-y-1">
               {t.recent.map((r, i) => (
-                <li key={i} className="flex justify-between gap-2">
-                  <span className="truncate">
+                <li key={i} className="flex justify-between gap-2 min-w-0">
+                  <span className="truncate min-w-0">
                     <span className={r.us > r.them ? "text-[#0ac8b9] font-bold" : "text-[#e84057] font-bold"}>
                       {r.us > r.them ? "W" : "L"} {r.us}-{r.them}
                     </span>{" "}
@@ -377,7 +377,7 @@ const PlayerPage: React.FC<{ slug: string; spoiler: boolean; onTeam: (slug: stri
         <h2 className="text-lg font-bold text-[#f0e6d2]">{p.name}</h2>
         <p className="text-[11px] text-[#7e8e9f]">
           {p.role}
-          {current ? ` · last played for ${current.n} (${current.to})` : ""}
+          {p.club ? ` · ${p.club} (last game ${p.clubTo || current?.to})` : current ? ` · last played for ${current.n} (${current.to})` : ""}
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
           <Stat label="Games" value={`${fmtNum(p.w)}-${fmtNum(p.g - p.w)}`} sub={`${winRate(p.w, p.g)} win rate`} />
@@ -470,8 +470,8 @@ const PlayerPage: React.FC<{ slug: string; spoiler: boolean; onTeam: (slug: stri
           ) : (
             <ul className="text-xs space-y-1">
               {p.recent.map((r, i) => (
-                <li key={i} className="flex justify-between gap-2">
-                  <span className="truncate">
+                <li key={i} className="flex justify-between gap-2 min-w-0">
+                  <span className="truncate min-w-0">
                     <span className={r.win ? "text-[#0ac8b9] font-bold" : "text-[#e84057] font-bold"}>{r.win ? "W" : "L"}</span>{" "}
                     <span className="text-[#f0e6d2]">{r.c}</span>{" "}
                     <span className="text-[#9bb3c9]">
@@ -646,16 +646,18 @@ const RecordsPanel: React.FC<{ onTeam: (s: string) => void; onPlayer: (s: string
 
   const gameList = (title: string, rows: Records["game"]["fastest"], fmt: (v: number) => string) => (
     <Section title={title}>
-      <ol className="text-xs space-y-1">
+      <ol className="text-xs space-y-1.5">
         {rows.map((g, i) => (
-          <li key={i} className="flex justify-between gap-2">
-            <span className="truncate">
+          <li key={i} className="min-w-0">
+            <div className="truncate">
               <span className="text-[#c8aa6e] font-bold mr-1">{fmt(g.v)}</span>
               <span className="text-[#f0e6d2]">
                 {g.w} over {g.w === g.a ? g.b : g.a}
               </span>
-            </span>
-            <span className="text-[#7e8e9f] shrink-0 truncate max-w-[45%]">{g.t}</span>
+            </div>
+            <div className="text-[10px] text-[#7e8e9f] truncate">
+              {g.t} · {g.date}
+            </div>
           </li>
         ))}
       </ol>
@@ -664,18 +666,20 @@ const RecordsPanel: React.FC<{ onTeam: (s: string) => void; onPlayer: (s: string
 
   const playerList = (title: string, rows: Records["player"]["kills"], fmt: (v: number) => string = fmtNum) => (
     <Section title={title}>
-      <ol className="text-xs space-y-1">
+      <ol className="text-xs space-y-1.5">
         {rows.map((p, i) => (
-          <li key={i} className="flex justify-between gap-2">
-            <span className="truncate">
+          <li key={i} className="min-w-0">
+            <div className="truncate">
               <span className="text-[#c8aa6e] font-bold mr-1">{fmt(p.v)}</span>
               <LinkBtn onClick={() => onPlayer(p.ps)}>{p.pl}</LinkBtn>
               <span className="text-[#9bb3c9]">
                 {" "}
                 {p.c} {p.kda}
               </span>
-            </span>
-            <span className="text-[#7e8e9f] shrink-0 truncate max-w-[45%]">{p.t}</span>
+            </div>
+            <div className="text-[10px] text-[#7e8e9f] truncate">
+              vs {p.opp} · {p.t} · {p.date}
+            </div>
           </li>
         ))}
       </ol>
@@ -684,9 +688,9 @@ const RecordsPanel: React.FC<{ onTeam: (s: string) => void; onPlayer: (s: string
 
   const careerList = (title: string, rows: Records["career"]["games"]) => (
     <Section title={title}>
-      <ol className="text-xs space-y-1">
+      <ol className="text-xs space-y-1.5">
         {rows.map((p, i) => (
-          <li key={i} className="flex justify-between gap-2">
+          <li key={i} className="flex justify-between gap-2 min-w-0">
             <LinkBtn onClick={() => onPlayer(p.ps)}>{p.pl}</LinkBtn>
             <span className="text-[#c8aa6e] font-bold">{fmtNum(p.v)}</span>
           </li>
@@ -712,9 +716,9 @@ const RecordsPanel: React.FC<{ onTeam: (s: string) => void; onPlayer: (s: string
         {playerList("Most damage in a game", r.player.dmg)}
         {playerList("Most CS in a game", r.player.cs)}
         <Section title="Longest win streaks">
-          <ol className="text-xs space-y-1">
+          <ol className="text-xs space-y-1.5">
             {r.team.streaks.map((t, i) => (
-              <li key={i} className="flex justify-between gap-2">
+              <li key={i} className="flex justify-between gap-2 min-w-0">
                 <LinkBtn onClick={t.s ? () => onTeam(t.s!) : undefined}>{t.team}</LinkBtn>
                 <span className="text-[#7e8e9f]">
                   <span className="text-[#c8aa6e] font-bold">{t.v} games</span> · ended {t.date}
@@ -724,9 +728,9 @@ const RecordsPanel: React.FC<{ onTeam: (s: string) => void; onPlayer: (s: string
           </ol>
         </Section>
         <Section title="Most international titles (Worlds, MSI, First Stand)">
-          <ol className="text-xs space-y-1">
+          <ol className="text-xs space-y-1.5">
             {r.team.titles.map((t, i) => (
-              <li key={i} className="flex justify-between gap-2">
+              <li key={i} className="flex justify-between gap-2 min-w-0">
                 <LinkBtn onClick={t.s ? () => onTeam(t.s!) : undefined}>{t.team}</LinkBtn>
                 <span className="text-[#7e8e9f]">
                   {t.worlds ? `${t.worlds} Worlds · ` : ""}
@@ -876,7 +880,7 @@ const ComparePanel: React.FC<{ search: StatsSearch }> = ({ search }) => {
       const h = x.opps.find((o) => o.n === y.name);
       rows = (
         <>
-          <CompareRow label="Head to head" a={h ? h.w : "–"} b={h ? h.g - h.w : "–"} />
+          <CompareRow label="Head to head (games)" a={h ? h.w : "–"} b={h ? h.g - h.w : "–"} />
           <CompareRow label="Games won" a={`${x.w}-${x.g - x.w}`} b={`${y.w}-${y.g - y.w}`} />
           <CompareRow label="Win rate" a={winRate(x.w, x.g)} b={winRate(y.w, y.g)} />
           <CompareRow label="Series won" a={winRate(x.sw, x.sg)} b={winRate(y.sw, y.sg)} />
@@ -932,7 +936,7 @@ const ComparePanel: React.FC<{ search: StatsSearch }> = ({ search }) => {
           { s: a, set: setA, d: data.a },
           { s: b, set: setB, d: data.b },
         ].map((side, i) => (
-          <div key={i} className={`${card} space-y-1`}>
+          <div key={i} className={`${card} space-y-1 min-w-0`}>
             {side.d && <div className="text-sm font-bold text-[#f0e6d2] truncate">{side.d.name}</div>}
             <CompareSide kind={kind} slug={side.s} search={search} onPick={side.set} />
           </div>
@@ -1025,6 +1029,13 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings }) => {
           </button>
         ))}
       </div>
+
+      {settings.spoilerMode && (
+        <p className="text-[11px] text-[#c8aa6e] bg-[#c8aa6e]/10 border border-[#c8aa6e]/30 rounded-lg px-3 py-2">
+          Spoiler mode is on: recent games are hidden, but stats still include results (records, titles and win rates up
+          to today).
+        </p>
+      )}
 
       {detailOpen && (
         <button

@@ -10,39 +10,43 @@ interface NavigationProps {
 }
 
 export const Navigation: React.FC<NavigationProps> = ({ activeTab, onSelectTab, liveCount }) => {
-  const tabs: { key: TabKey; label: string; icon: React.ReactNode; badge?: number }[] = [
+  // short = the label under the icon on phones, where all seven tabs must fit on one row
+  const tabs: { key: TabKey; label: string; short: string; icon: React.ReactNode; badge?: number }[] = [
     {
       key: "live",
       label: "Live Matches",
+      short: "Live",
       icon: <Flame className="w-4 h-4" />,
       badge: liveCount > 0 ? liveCount : undefined,
     },
-    { key: "schedule", label: "Schedule", icon: <Calendar className="w-4 h-4" /> },
-    { key: "stats", label: "Stats", icon: <BarChart3 className="w-4 h-4" /> },
-    { key: "stream", label: "24/7 Stream", icon: <Radio className="w-4 h-4" /> },
-    { key: "watchlist", label: "Watchlist", icon: <Star className="w-4 h-4" /> },
-    { key: "news", label: "Dispatch", icon: <Newspaper className="w-4 h-4" /> },
-    { key: "settings", label: "Settings", icon: <Settings className="w-4 h-4" /> },
+    { key: "schedule", label: "Schedule", short: "Games", icon: <Calendar className="w-4 h-4" /> },
+    { key: "stats", label: "Stats", short: "Stats", icon: <BarChart3 className="w-4 h-4" /> },
+    { key: "stream", label: "24/7 Stream", short: "24/7", icon: <Radio className="w-4 h-4" /> },
+    { key: "watchlist", label: "Watchlist", short: "Follow", icon: <Star className="w-4 h-4" /> },
+    { key: "news", label: "Dispatch", short: "News", icon: <Newspaper className="w-4 h-4" /> },
+    { key: "settings", label: "Settings", short: "Settings", icon: <Settings className="w-4 h-4" /> },
   ];
 
   return (
-    <nav className="bg-[#091428] border-b border-[#1e282d] px-2 sm:px-4 flex items-center gap-1 select-none overflow-x-auto">
+    <nav className="bg-[#091428] border-b border-[#1e282d] sm:px-4 flex items-stretch sm:items-center sm:gap-1 select-none sm:overflow-x-auto">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.key;
         return (
           <button
             key={tab.key}
             onClick={() => onSelectTab(tab.key)}
-            className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 text-xs font-semibold tracking-wide whitespace-nowrap flex-shrink-0 border-b-2 transition-all relative ${
+            aria-label={tab.label}
+            className={`flex flex-1 sm:flex-none flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 px-0.5 sm:px-4 py-1.5 sm:py-2.5 text-[10px] sm:text-xs font-semibold sm:tracking-wide whitespace-nowrap min-w-0 border-b-2 transition-all relative ${
               isActive
                 ? "border-[#c8aa6e] text-[#c8aa6e] bg-[#0c1829]"
                 : "border-transparent text-[#7e8e9f] hover:text-[#f0e6d2] hover:bg-[#0c1829]/50"
             }`}
           >
             {tab.icon}
-            <span>{tab.label}</span>
+            <span className="hidden sm:inline">{tab.label}</span>
+            <span className="sm:hidden truncate max-w-full">{tab.short}</span>
             {tab.badge !== undefined && (
-              <span className="bg-[#e84057] text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full animate-pulse">
+              <span className="absolute top-0.5 right-1 sm:static bg-[#e84057] text-white text-[9px] sm:text-[10px] font-bold px-1 sm:px-1.5 rounded-full animate-pulse">
                 {tab.badge}
               </span>
             )}

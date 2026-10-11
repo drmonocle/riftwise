@@ -183,7 +183,7 @@ export const TickerBar: React.FC<TickerBarProps> = ({
         {currentItem ? (
           <>
             <span
-              className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${currentItem.badgeBg} ${currentItem.badgeFg}`}
+              className={`px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 ${currentItem.badgeBg} ${currentItem.badgeFg}`}
             >
               {currentItem.badge}
             </span>
