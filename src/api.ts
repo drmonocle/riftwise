@@ -1,4 +1,4 @@
-import { Match, LiveStats, LiveShow, StreamEvent, AppSettings, Team, Region, League, PlayerEntry, AppUpdateInfo } from "./types";
+import { Match, LiveStats, LiveShow, StreamEvent, StreamStatus, AppSettings, Team, Region, League, PlayerEntry, AppUpdateInfo } from "./types";
 import type { H2HData } from "./helpers";
 
 // Public key used by the lolesports.com web client (not a private secret). Riot may rotate it; if the
@@ -6,6 +6,7 @@ import type { H2HData } from "./helpers";
 const RIOT_API_KEY = "0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z";
 const RIOT_BASE = "https://esports-api.lolesports.com/persisted/gw";
 const STREAM_SCHEDULE_URL = "https://lolworlds.com/api.ashx?type=schedule-json";
+const STREAM_STATUS_URL = "https://lolworlds.com/riftwatch/stream-status.json";
 
 export const MAJOR_REGIONS: Region[] = [
   { code: "INTERNATIONAL", name: "International", leagues: ["Worlds", "MSI", "First Stand"], badge: "🌐" },
@@ -714,6 +715,19 @@ export function saveStreamSchedule(events: StreamEvent[]): void {
   } catch (e) {
     console.warn("Failed to cache stream schedule:", e);
   }
+}
+
+/** The stream owner's optional break / return note. A missing file just means "no note". */
+export async function fetchStreamStatus(): Promise<StreamStatus> {
+  const res = await fetch(STREAM_STATUS_URL, { cache: "no-store", signal: AbortSignal.timeout(15000) });
+  if (res.status === 404) return {};
+  if (!res.ok) throw new Error(`HTTP ${res.status} for ${STREAM_STATUS_URL}`);
+  const j = await res.json();
+  return {
+    onBreak: typeof j?.onBreak === "boolean" ? j.onBreak : undefined,
+    headline: typeof j?.headline === "string" ? j.headline : undefined,
+    message: typeof j?.message === "string" ? j.message : undefined,
+  };
 }
 
 export async function fetchStreamSchedule(): Promise<StreamEvent[]> {

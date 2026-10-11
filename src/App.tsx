@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { AppSettings, Match, StreamEvent, CatalogData, AppUpdateInfo, LiveShow } from "./types";
+import { AppSettings, Match, StreamEvent, StreamStatus, CatalogData, AppUpdateInfo, LiveShow } from "./types";
 import {
   loadSettings,
   saveSettings,
   fetchLiveMatches,
   fetchSchedule,
   fetchStreamSchedule,
+  fetchStreamStatus,
   loadCachedStreamSchedule,
   saveStreamSchedule,
   loadCachedCatalog,
@@ -73,6 +74,7 @@ export default function App() {
   const [liveShows, setLiveShows] = useState<LiveShow[]>([]);
   const [schedule, setSchedule] = useState<Match[]>([]);
   const [streamEvents, setStreamEvents] = useState<StreamEvent[]>(loadCachedStreamSchedule);
+  const [streamStatus, setStreamStatus] = useState<StreamStatus | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastSync, setLastSync] = useState<number | null>(null);
   const [syncFailed, setSyncFailed] = useState(false);
@@ -237,6 +239,9 @@ export default function App() {
     const now = Date.now();
     const wantSchedule = force || scheduleRef.current.length === 0 || now - lastSchedule.current >= SCHEDULE_POLL_MS - 1000;
     const wantStream = force || streamEventsRef.current.length === 0 || now - lastStream.current >= STREAM_POLL_MS - 1000;
+
+    // The owner's break / return note for the 24/7 stream; a failure just keeps the last one
+    if (wantStream) fetchStreamStatus().then(setStreamStatus).catch(() => {});
 
     try {
       // allSettled: one source failing must never wipe the data we already have
@@ -634,6 +639,7 @@ export default function App() {
         onUpdateSettings={handleUpdateSettings}
         liveMatches={liveMatches}
         streamEvents={streamEvents}
+        streamStatus={streamStatus}
         onRefresh={() => refreshData(true)}
         isRefreshing={isRefreshing}
         onSelectTab={setActiveTab}
@@ -723,9 +729,11 @@ export default function App() {
         {activeTab === "stream" && (
           <StreamView
             events={streamEvents}
+            status={streamStatus}
             settings={settings}
             catalog={catalog}
             onOpenUrl={handleOpenUrl}
+            onSelectTab={setActiveTab}
           />
         )}
         {activeTab === "watchlist" && (

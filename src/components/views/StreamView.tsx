@@ -1,428 +1,383 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { StreamEvent, AppSettings, CatalogData } from "../../types";
-import { currentStreamEvent, upcomingStreamMatches } from "../../helpers";
-import {
-  Radio,
-  Play,
-  ExternalLink,
-  Flame,
-  Trophy,
-  Clock,
-  Calendar,
-  Star,
-  Tv,
-} from "lucide-react";
+import { StreamEvent, StreamStatus, AppSettings, CatalogData } from "../../types";
+import { streamPhase, streamEventTitle, upcomingStreamMatches } from "../../helpers";
+import { Radio, Play, ExternalLink, Flame, Star, Moon, Calendar, ChevronDown } from "lucide-react";
 
 interface StreamViewProps {
   events: StreamEvent[];
+  status?: StreamStatus | null;
   settings: AppSettings;
   catalog?: CatalogData;
   onOpenUrl: (url: string) => void;
+  onSelectTab?: (tab: any) => void;
 }
 
-export const StreamView: React.FC<StreamViewProps> = ({
-  events,
-  settings,
-  catalog,
-  onOpenUrl,
-}) => {
-  const [, setTick] = useState(0);
+const TWITCH_URL = "https://www.twitch.tv/LoLWorldChampionship";
+const YOUTUBE_LIVE_URL = "https://www.youtube.com/@LoLWorldChampionships/live";
+const YOUTUBE_CHANNEL_URL = "https://www.youtube.com/@LoLWorldChampionships";
+const DISCORD_URL = "https://discord.gg/UCRhtZzVhF";
+const DAYS_SHOWN = 3;
 
-  // Auto-refresh relative countdowns every 30s
+const ts = (iso?: string) => (iso ? new Date(iso).getTime() : NaN);
+
+function relTime(iso?: string, now = Date.now()): string {
+  const diff = ts(iso) - now;
+  if (isNaN(diff)) return "";
+  if (diff <= 0) return "now";
+  const mins = Math.floor(diff / 60000);
+  const h = Math.floor(mins / 60);
+  const d = Math.floor(h / 24);
+  if (d > 0) return `in ${d}d ${h % 24}h`;
+  if (h > 0) return `in ${h}h ${mins % 60}m`;
+  return `in ${Math.max(1, mins)}m`;
+}
+
+function clock(iso?: string): string {
+  return iso ? new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "--:--";
+}
+
+function dayLabel(iso: string, now = new Date()): string {
+  const d = new Date(iso);
+  const a = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const b = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const days = Math.round((a - b) / 86400000);
+  if (days === 0) return "Today";
+  if (days === 1) return "Tomorrow";
+  return d.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+}
+
+export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings, catalog, onOpenUrl, onSelectTab }) => {
+  const [, setTick] = useState(0);
+  const [showAll, setShowAll] = useState(false);
+
   useEffect(() => {
     const timer = setInterval(() => setTick((t) => t + 1), 30000);
     return () => clearInterval(timer);
   }, []);
 
-  // Quick lookup for team logos
-  const teamLogos = useMemo(() => {
+  const logos = useMemo(() => {
     const map: Record<string, string> = {};
-    if (catalog?.teams) {
-      for (const t of catalog.teams) {
-        if (t.code && t.image) map[t.code.toUpperCase()] = t.image;
-        if (t.name && t.image) map[t.name.toUpperCase()] = t.image;
-      }
+    for (const t of catalog?.teams || []) {
+      if (t.code && t.image) map[t.code.toUpperCase()] = t.image;
+      if (t.name && t.image) map[t.name.toUpperCase()] = t.image;
     }
     return map;
   }, [catalog]);
 
   const now = Date.now();
-  const currentEvent = currentStreamEvent(events, now);
+  const phase = streamPhase(events, status, now);
+  const upcoming = upcomingStreamMatches(events, now);
+  const followed = (e: StreamEvent) =>
+    (!!e.team1 && settings.followedTeams.includes(e.team1)) || (!!e.team2 && settings.followedTeams.includes(e.team2));
 
-  const upcomingEvents = upcomingStreamMatches(events, now);
-  const displayUpcoming = upcomingEvents.slice(0, 40);
-  const nextInRotation = displayUpcoming[0];
-
-  // Only genuine bangers where isBanger is explicitly true
-  const nextBanger = upcomingEvents.find((e) => e.isBanger);
-
-  const formatRelativeTime = (utcIso?: string, rawTime?: string): string => {
-    if (!utcIso) return rawTime || "Upcoming";
-    const diffMs = new Date(utcIso).getTime() - Date.now();
-    if (diffMs <= 0) return "Airing Now";
-    const totalSec = Math.floor(diffMs / 1000);
-    const hours = Math.floor(totalSec / 3600);
-    const mins = Math.floor((totalSec % 3600) / 60);
-    const days = Math.floor(hours / 24);
-    if (days > 0) return `in ${days}d ${hours % 24}h`;
-    if (hours > 0) return `in ${hours}h ${mins}m`;
-    return `in ${Math.max(1, mins)}m`;
+  const Logo: React.FC<{ code?: string; size: number }> = ({ code, size }) => {
+    if (!code) return null;
+    const src = logos[code.toUpperCase()];
+    const box = { width: size, height: size };
+    return src ? (
+      <img src={src} alt="" style={box} className="object-contain shrink-0" />
+    ) : (
+      <span
+        style={box}
+        className="rounded bg-[#091428] border border-[#1e282d] text-[9px] font-bold text-[#c8aa6e] flex items-center justify-center shrink-0"
+      >
+        {code.slice(0, 3)}
+      </span>
+    );
   };
 
-  const formatStartedTime = (utcIso?: string): string => {
-    if (!utcIso) return "Airing Now";
-    const started = new Date(utcIso).getTime();
-    const diffMins = Math.floor((Date.now() - started) / 60000);
-    if (diffMins < 0) return "Airing Now";
-    if (diffMins < 60) return `Started ${diffMins}m ago`;
-    const h = Math.floor(diffMins / 60);
-    const m = diffMins % 60;
-    return `Started ${h}h ${m}m ago`;
-  };
+  const Matchup: React.FC<{ e: StreamEvent; big?: boolean }> = ({ e, big }) =>
+    e.team1 && e.team2 ? (
+      <span className={`flex items-center ${big ? "gap-3" : "gap-1.5"} min-w-0`}>
+        <span className={`flex items-center ${big ? "gap-2" : "gap-1.5"}`}>
+          <Logo code={e.team1} size={big ? 36 : 16} />
+          <span
+            className={`font-bold ${big ? "text-2xl" : "text-xs"} ${
+              settings.followedTeams.includes(e.team1) ? "text-[#c8aa6e]" : "text-[#f0e6d2]"
+            }`}
+          >
+            {e.team1}
+          </span>
+        </span>
+        <span className={`text-[#7e8e9f] ${big ? "text-sm" : "text-[11px]"}`}>vs</span>
+        <span className={`flex items-center ${big ? "gap-2" : "gap-1.5"}`}>
+          <Logo code={e.team2} size={big ? 36 : 16} />
+          <span
+            className={`font-bold ${big ? "text-2xl" : "text-xs"} ${
+              settings.followedTeams.includes(e.team2) ? "text-[#c8aa6e]" : "text-[#f0e6d2]"
+            }`}
+          >
+            {e.team2}
+          </span>
+        </span>
+      </span>
+    ) : (
+      <span className={`font-semibold text-[#f0e6d2] ${big ? "text-xl" : "text-xs"}`}>{e.name || "Broadcast segment"}</span>
+    );
 
-  const getDayHeader = (utcIso?: string): string => {
-    if (!utcIso) return "Upcoming Schedule";
-    const date = new Date(utcIso);
-    const nowDate = new Date();
+  const WatchButtons: React.FC = () => (
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        onClick={() => onOpenUrl(TWITCH_URL)}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#9146ff] hover:bg-[#a970ff] text-white font-bold text-xs"
+      >
+        <Play className="w-3.5 h-3.5 fill-current" /> Twitch
+      </button>
+      <button
+        onClick={() => onOpenUrl(YOUTUBE_LIVE_URL)}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#cc0000] hover:bg-[#e60000] text-white font-bold text-xs"
+      >
+        <Play className="w-3.5 h-3.5 fill-current" /> YouTube
+      </button>
+      <button
+        onClick={() => onOpenUrl("https://lolworlds.com/schedule")}
+        className="flex items-center gap-1 px-2 py-1.5 text-xs text-[#9bb3c9] hover:text-[#f0e6d2]"
+      >
+        Full schedule <ExternalLink className="w-3 h-3" />
+      </button>
+    </div>
+  );
 
-    const dMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-    const nowMidnight = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate()).getTime();
-    const diffDays = Math.round((dMidnight - nowMidnight) / 86400000);
+  // ── On break: the marathon has ended for now ───────────────────────────
+  if (phase.kind === "break") {
+    const nextLine =
+      phase.next && ts(phase.next.utcIso) - now > 24 * 60 * 60 * 1000
+        ? `The next marathon starts ${new Date(phase.next.utcIso).toLocaleDateString([], {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+        })} at ${clock(phase.next.utcIso)} with ${streamEventTitle(phase.next)}.`
+      : null;
+    return (
+      <div className="p-4 max-w-3xl mx-auto overflow-y-auto h-full">
+        <div className="bg-[#0a1420] border border-[#1e282d] rounded-xl p-6 text-center space-y-4">
+          <div className="w-12 h-12 mx-auto rounded-full bg-[#c8aa6e]/10 border border-[#c8aa6e]/30 flex items-center justify-center">
+            <Moon className="w-6 h-6 text-[#c8aa6e]" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-lg font-bold text-[#f0e6d2]">{status?.headline || "The 24/7 marathon is taking a break"}</h2>
+            <p className="text-sm text-[#9bb3c9] leading-relaxed max-w-xl mx-auto">
+              {status?.message ||
+                nextLine ||
+                "It comes back before the next big international event. Check back here or follow the channel to know when it starts."}
+            </p>
+            {status?.message && nextLine && <p className="text-xs text-[#0ac8b9]">{nextLine}</p>}
+            {phase.lastAired && (
+              <p className="text-[11px] text-[#7e8e9f]">
+                Last aired: {phase.lastAired.team1 && phase.lastAired.team2 ? `${phase.lastAired.team1} vs ${phase.lastAired.team2}, ` : ""}
+                {streamEventTitle(phase.lastAired)}
+                {phase.lastAired.stage ? ` ${phase.lastAired.stage}` : ""}
+              </p>
+            )}
+          </div>
+          <div className="flex flex-wrap justify-center gap-2 pt-1">
+            {onSelectTab && (
+              <button
+                onClick={() => onSelectTab("live")}
+                className="px-3.5 py-2 rounded-md bg-[#c8aa6e] hover:bg-[#f0e6d2] text-[#091428] font-bold text-xs"
+              >
+                Live pro matches
+              </button>
+            )}
+            <button
+              onClick={() => onOpenUrl(YOUTUBE_CHANNEL_URL)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#cc0000] hover:bg-[#e60000] text-white font-bold text-xs"
+            >
+              <Play className="w-3.5 h-3.5 fill-current" /> Full VODs on YouTube
+            </button>
+            <button
+              onClick={() => onOpenUrl(TWITCH_URL)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#9146ff] hover:bg-[#a970ff] text-white font-bold text-xs"
+            >
+              Follow on Twitch
+            </button>
+            <button
+              onClick={() => onOpenUrl(DISCORD_URL)}
+              className="px-3.5 py-2 rounded-md border border-[#1e282d] hover:border-[#c8aa6e]/60 text-[#f0e6d2] text-xs"
+            >
+              Discord
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Tomorrow";
+  // ── On air (or a short pause between matches) ──────────────────────────
+  const current = phase.kind === "airing" ? phase.current : null;
+  const next = phase.next;
+  const progress =
+    current && next ? Math.min(1, Math.max(0, (now - ts(current.utcIso)) / (ts(next.utcIso) - ts(current.utcIso)))) : null;
+  const nextBanger = upcoming.find((e) => e.isBanger);
+  const showBanger = nextBanger && nextBanger !== next;
 
-    return date.toLocaleDateString([], {
-      weekday: "long",
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  // Group upcoming events by calendar day
-  const groupedUpcoming = useMemo(() => {
-    const groups: { day: string; events: StreamEvent[] }[] = [];
-    const map = new Map<string, StreamEvent[]>();
-
-    for (const e of displayUpcoming) {
-      const day = getDayHeader(e.utcIso);
-      if (!map.has(day)) {
-        const arr: StreamEvent[] = [];
-        map.set(day, arr);
-        groups.push({ day, events: arr });
-      }
-      map.get(day)!.push(e);
+  // Schedule after the next match, grouped by day and then by event + stage
+  const later = upcoming.slice(1);
+  const dayKeys: string[] = [];
+  const byDay = new Map<string, StreamEvent[]>();
+  for (const e of later) {
+    const k = dayLabel(e.utcIso);
+    if (!byDay.has(k)) {
+      byDay.set(k, []);
+      dayKeys.push(k);
     }
-    return groups;
-  }, [displayUpcoming]);
-
-  const t1Logo = currentEvent?.team1 ? teamLogos[currentEvent.team1.toUpperCase()] : undefined;
-  const t2Logo = currentEvent?.team2 ? teamLogos[currentEvent.team2.toUpperCase()] : undefined;
+    byDay.get(k)!.push(e);
+  }
+  const shownDays = showAll ? dayKeys : dayKeys.slice(0, DAYS_SHOWN);
 
   return (
-    <div className="p-4 space-y-4 max-w-4xl mx-auto overflow-y-auto h-full select-none">
-      {/* 24/7 Broadcast Hero Card */}
-      <div className="bg-[#0a1420] border border-[#0ac8b9] rounded-lg p-5 shadow-xl relative overflow-hidden">
-        {/* Top Badges */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="bg-[#0ac8b9] text-[#091428] font-bold text-xs px-2.5 py-0.5 rounded flex items-center gap-1.5 shadow-sm">
+    <div className="p-4 space-y-4 max-w-3xl mx-auto overflow-y-auto h-full select-none">
+      {/* Now playing */}
+      <section className="bg-[#0a1420] border border-[#0ac8b9]/50 rounded-xl overflow-hidden">
+        <div className="p-5 space-y-3">
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <span className="flex items-center gap-1.5 font-bold tracking-wider text-[#0ac8b9] uppercase">
               <Radio className="w-3.5 h-3.5 animate-pulse" />
-              24/7 BROADCAST STREAM
+              {current ? "Now on the 24/7 stream" : "24/7 stream · short break"}
             </span>
-            {currentEvent?.isBanger && (
-              <span className="bg-[#ff4655] text-white font-bold text-[10px] px-2 py-0.5 rounded flex items-center gap-1 shadow-sm">
-                <Flame className="w-3 h-3 fill-current" />
-                S-TIER BANGER
+            {current?.isBanger && (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-[#ff4655] px-2 py-0.5 rounded">
+                <Flame className="w-3 h-3 fill-current" /> BANGER
               </span>
             )}
           </div>
-          <span className="text-xs text-[#0ac8b9] font-mono">
-            {currentEvent ? formatStartedTime(currentEvent.utcIso) : "Off air right now"}
-          </span>
+
+          {current ? (
+            <div className="space-y-1">
+              <Matchup e={current} big />
+              <div className="text-xs text-[#c8aa6e] font-semibold">
+                {streamEventTitle(current)}
+                {current.stage ? ` · ${current.stage}` : ""}
+              </div>
+            </div>
+          ) : (
+            next && (
+              <div className="space-y-1">
+                <div className="text-sm text-[#9bb3c9]">Next match starts {relTime(next.utcIso, now)}</div>
+                <Matchup e={next} big />
+                <div className="text-xs text-[#c8aa6e] font-semibold">
+                  {streamEventTitle(next)}
+                  {next.stage ? ` · ${next.stage}` : ""}
+                </div>
+              </div>
+            )
+          )}
+
+          {progress != null && (
+            <div className="space-y-1">
+              <div className="h-1.5 rounded-full bg-[#091428] overflow-hidden">
+                <div className="h-full bg-[#0ac8b9]" style={{ width: `${Math.round(progress * 100)}%` }} />
+              </div>
+              <div className="flex justify-between text-[10px] text-[#7e8e9f] font-mono">
+                <span>started {clock(current!.utcIso)}</span>
+                <span>next match {relTime(next!.utcIso, now)}</span>
+              </div>
+            </div>
+          )}
+
+          <WatchButtons />
         </div>
 
-        {/* Current Matchup Hero */}
-        <div className="mb-4">
-          <div className="flex flex-wrap items-center gap-3 my-1">
-            {currentEvent?.team1 && (
-              <div className="flex items-center gap-2">
-                {t1Logo ? (
-                  <img src={t1Logo} alt="" className="w-8 h-8 object-contain" />
-                ) : (
-                  <div className="w-8 h-8 rounded bg-[#091428] border border-[#1e282d] flex items-center justify-center font-bold text-xs text-[#c8aa6e]">
-                    {currentEvent.team1.slice(0, 3)}
-                  </div>
-                )}
-                <span className="text-xl font-bold text-[#f0e6d2] tracking-wide">
-                  {currentEvent.team1}
-                </span>
-              </div>
-            )}
-
-            {currentEvent?.team1 && currentEvent?.team2 && (
-              <span className="text-sm font-semibold text-[#7e8e9f] px-1">vs</span>
-            )}
-
-            {currentEvent?.team2 && (
-              <div className="flex items-center gap-2">
-                {t2Logo ? (
-                  <img src={t2Logo} alt="" className="w-8 h-8 object-contain" />
-                ) : (
-                  <div className="w-8 h-8 rounded bg-[#091428] border border-[#1e282d] flex items-center justify-center font-bold text-xs text-[#c8aa6e]">
-                    {currentEvent.team2.slice(0, 3)}
-                  </div>
-                )}
-                <span className="text-xl font-bold text-[#f0e6d2] tracking-wide">
-                  {currentEvent.team2}
-                </span>
-              </div>
-            )}
-
-            {!currentEvent?.team1 && !currentEvent?.team2 && (
-              <h1 className="text-xl font-bold text-[#f0e6d2]">
-                {currentEvent ? currentEvent.name || "Broadcast Intermission" : "Between marathons — next match below"}
-              </h1>
-            )}
-          </div>
-
-          <div className="text-xs text-[#c8aa6e] font-semibold mt-1">
-            {currentEvent
-              ? `${currentEvent.event} ${currentEvent.season} ${
-                  currentEvent.stage ? `· ${currentEvent.stage}` : ""
-                }`
-              : "Continuous Uninterrupted Tournament Archives"}
-          </div>
-        </div>
-
-        {/* Up Next in Rotation Teaser */}
-        {nextInRotation && (
-          <div className="bg-[#091428]/80 border border-[#1e282d] rounded px-3 py-2 mb-4 flex items-center justify-between text-xs">
-            <span className="text-[#7e8e9f]">
-              <strong className="text-[#0ac8b9]">Up Next:</strong>{" "}
-              {nextInRotation.team1 && nextInRotation.team2
-                ? `${nextInRotation.team1} vs ${nextInRotation.team2}`
-                : nextInRotation.name || "Next Match"}{" "}
-              <span className="text-[#536675]">
-                ({nextInRotation.event} {nextInRotation.season}
-                {nextInRotation.stage ? ` · ${nextInRotation.stage}` : ""})
-              </span>
-            </span>
-            <span className="font-mono text-[#0ac8b9] font-medium shrink-0 ml-2">
-              {formatRelativeTime(nextInRotation.utcIso, nextInRotation.rawTime)}
+        {/* Up next, once */}
+        {current && next && (
+          <div className="border-t border-[#1e282d] bg-[#091428]/60 px-5 py-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-[#0ac8b9] uppercase tracking-wider text-[10px] shrink-0">Up next</span>
+              <Matchup e={next} />
+              {next.isBanger && <Flame className="w-3.5 h-3.5 text-[#ff4655] fill-current shrink-0" aria-label="Banger" />}
+            </div>
+            <span className="font-mono text-[#9bb3c9] shrink-0 ml-auto">
+              {clock(next.utcIso)} · {relTime(next.utcIso, now)}
             </span>
           </div>
         )}
+      </section>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => onOpenUrl("https://www.twitch.tv/LoLWorldChampionship")}
-            className="flex items-center gap-2 px-4 py-2 rounded bg-[#9146ff] hover:bg-[#a970ff] text-white font-bold text-xs transition-colors shadow-md"
-          >
-            <Play className="w-3.5 h-3.5 fill-current" />
-            <span>Watch on Twitch</span>
-          </button>
-          <button
-            onClick={() => onOpenUrl("https://www.youtube.com/@LoLWorldChampionships/live")}
-            className="flex items-center gap-2 px-4 py-2 rounded bg-[#cc0000] hover:bg-[#e60000] text-white font-bold text-xs transition-colors shadow-md"
-          >
-            <Play className="w-3.5 h-3.5 fill-current" />
-            <span>Watch on YouTube</span>
-          </button>
-          <button
-            onClick={() => onOpenUrl("https://lolworlds.com")}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded bg-[#091428] hover:bg-[#121e2d] border border-[#1e282d] hover:border-[#c8aa6e] text-[#f0e6d2] text-xs transition-colors"
-          >
-            <span>Full Schedule on lolworlds.com</span>
-            <ExternalLink className="w-3.5 h-3.5 text-[#7e8e9f]" />
-          </button>
-        </div>
-      </div>
-
-      {/* Next S-Tier Banger Banner (Only rendered if genuine banger exists) */}
-      {nextBanger && (
-        <div className="bg-[#1e131d] border border-[#ff4655] rounded-lg p-3.5 flex items-center justify-between shadow-lg">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded bg-[#ff4655]/20 flex items-center justify-center text-[#ff4655] shrink-0">
-              <Trophy className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-[10px] font-bold text-[#ff4655] tracking-wider uppercase flex items-center gap-1.5">
-                <Flame className="w-3 h-3 fill-current" />
-                Upcoming S-Tier Banger
-              </div>
-              <div className="text-xs font-bold text-[#f0e6d2] mt-0.5">
-                {nextBanger.team1 && nextBanger.team2
-                  ? `${nextBanger.team1} vs ${nextBanger.team2}`
-                  : nextBanger.name}{" "}
-                · {nextBanger.event} {nextBanger.season}
-                {nextBanger.stage ? ` · ${nextBanger.stage}` : ""}
-              </div>
-            </div>
+      {/* Next banger, only when it isn't already the next match */}
+      {showBanger && nextBanger && (
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg border border-[#ff4655]/50 bg-[#1e131d] text-xs">
+          <div className="flex items-center gap-2 min-w-0">
+            <Flame className="w-3.5 h-3.5 text-[#ff4655] fill-current shrink-0" />
+            <span className="font-bold text-[#ff4655] uppercase tracking-wider text-[10px] shrink-0">Next banger</span>
+            <Matchup e={nextBanger} />
+            <span className="text-[#7e8e9f] truncate hidden sm:inline">
+              {streamEventTitle(nextBanger)}
+              {nextBanger.stage ? ` · ${nextBanger.stage}` : ""}
+            </span>
           </div>
-          <div className="text-right shrink-0">
-            <div className="text-xs font-mono font-bold text-[#ff4655]">
-              {formatRelativeTime(nextBanger.utcIso, nextBanger.rawTime)}
-            </div>
-            <div className="text-[10px] text-[#7e8e9f] font-mono mt-0.5">
-              {nextBanger.utcIso
-                ? new Date(nextBanger.utcIso).toLocaleTimeString([], {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })
-                : ""}
-            </div>
-          </div>
+          <span className="font-mono text-[#ff4655] shrink-0">{relTime(nextBanger.utcIso, now)}</span>
         </div>
       )}
 
-      {/* Grouped Upcoming Marathon Schedule */}
-      <div>
-        <div className="flex items-center justify-between pb-2 border-b border-[#1e282d] mb-3">
-          <h3 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-2">
-            <Calendar className="w-3.5 h-3.5 text-[#0ac8b9]" />
-            Upcoming Marathon Schedule ({upcomingEvents.length > 0 ? upcomingEvents.length : displayUpcoming.length})
+      {/* Schedule */}
+      {later.length > 0 && (
+        <section className="space-y-3">
+          <h3 className="flex items-center gap-2 text-xs font-bold text-[#c8aa6e] uppercase tracking-wider">
+            <Calendar className="w-3.5 h-3.5 text-[#0ac8b9]" /> Coming up on the marathon
           </h3>
-          <span className="text-[11px] text-[#7e8e9f]">
-            Continuous 24/7 Playout Rotation
-          </span>
-        </div>
-
-        <div className="space-y-4">
-          {groupedUpcoming.map((group) => (
-            <div key={group.day} className="space-y-2">
-              {/* Day Header Banner */}
-              <div className="flex items-center gap-2 px-1 pt-1">
-                <span className="text-xs font-bold text-[#0ac8b9] uppercase tracking-wider">
-                  {group.day}
-                </span>
-                <div className="flex-1 h-px bg-[#1e282d]" />
-                <span className="text-[10px] text-[#7e8e9f]">
-                  {group.events.length} {group.events.length === 1 ? "match" : "matches"}
-                </span>
-              </div>
-
-              {/* Day Match Rows */}
-              <div className="space-y-1.5">
-                {group.events.map((e, idx) => {
-                  const isFollowed =
-                    (e.team1 && settings.followedTeams.includes(e.team1)) ||
-                    (e.team2 && settings.followedTeams.includes(e.team2));
-
-                  const m1Logo = e.team1 ? teamLogos[e.team1.toUpperCase()] : undefined;
-                  const m2Logo = e.team2 ? teamLogos[e.team2.toUpperCase()] : undefined;
-
-                  const localTime = e.utcIso
-                    ? new Date(e.utcIso).toLocaleTimeString([], {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })
-                    : "--:--";
-
+          {shownDays.map((day) => {
+            const list = byDay.get(day)!;
+            return (
+              <div key={day} className="rounded-lg border border-[#1e282d] overflow-hidden">
+                <div className="flex items-center justify-between px-3.5 py-2 bg-[#0a1420] text-[11px]">
+                  <span className="font-bold text-[#0ac8b9] uppercase tracking-wider">{day}</span>
+                  <span className="text-[#7e8e9f]">
+                    {list.length} {list.length === 1 ? "match" : "matches"}
+                  </span>
+                </div>
+                {list.map((e, i) => {
+                  const prev = list[i - 1];
+                  const group = `${streamEventTitle(e)}${e.stage ? ` · ${e.stage}` : ""}`;
+                  const prevGroup = prev ? `${streamEventTitle(prev)}${prev.stage ? ` · ${prev.stage}` : ""}` : "";
+                  const fol = followed(e);
                   return (
-                    <div
-                      key={idx}
-                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-lg border transition-all ${
-                        isFollowed
-                          ? "bg-[#101923] border-[#c8aa6e]/70 shadow-sm"
-                          : "bg-[#0a1420] border-[#1e282d] hover:border-[#0ac8b9]/60"
-                      }`}
-                    >
-                      {/* Left: Timing */}
-                      <div className="w-28 shrink-0">
-                        <div className="font-mono text-xs font-bold text-[#0ac8b9]">
-                          {localTime}
+                    <React.Fragment key={String(e.id)}>
+                      {group !== prevGroup && (
+                        <div className="px-3.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[#c8aa6e]/80 border-t border-[#1e282d] bg-[#091428]">
+                          {group}
                         </div>
-                        <div className="text-[10px] text-[#7e8e9f] font-mono mt-0.5">
-                          {formatRelativeTime(e.utcIso, e.rawTime)}
-                        </div>
+                      )}
+                      <div
+                        className={`flex items-center gap-3 px-3.5 py-2 border-t border-[#1e282d]/60 text-xs ${
+                          fol ? "bg-[#c8aa6e]/5" : "bg-[#091428]"
+                        }`}
+                      >
+                        <span className="w-16 shrink-0 font-mono font-semibold text-[#9bb3c9]">{clock(e.utcIso)}</span>
+                        <span className="flex-1 min-w-0">
+                          <Matchup e={e} />
+                        </span>
+                        <span className="flex items-center gap-1.5 shrink-0">
+                          {fol && <Star className="w-3.5 h-3.5 text-[#c8aa6e] fill-current" aria-label="A team you follow" />}
+                          {e.isBanger && <Flame className="w-3.5 h-3.5 text-[#ff4655] fill-current" aria-label="Banger" />}
+                          {day === "Today" && <span className="text-[10px] font-mono text-[#7e8e9f] w-14 text-right">{relTime(e.utcIso, now)}</span>}
+                        </span>
                       </div>
-
-                      {/* Center: Matchup & Details */}
-                      <div className="flex-1 min-w-0 px-3">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {e.team1 ? (
-                            <div className="flex items-center gap-1.5">
-                              {m1Logo ? (
-                                <img src={m1Logo} alt="" className="w-4 h-4 object-contain" />
-                              ) : (
-                                <span className="w-4 h-4 rounded bg-[#091428] text-[9px] font-bold text-[#c8aa6e] flex items-center justify-center">
-                                  {e.team1.slice(0, 2)}
-                                </span>
-                              )}
-                              <span
-                                className={`text-xs font-bold ${
-                                  settings.followedTeams.includes(e.team1)
-                                    ? "text-[#c8aa6e]"
-                                    : "text-[#f0e6d2]"
-                                }`}
-                              >
-                                {e.team1}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-xs font-semibold text-[#f0e6d2]">
-                              {e.name || "Broadcast Segment"}
-                            </span>
-                          )}
-
-                          {e.team1 && e.team2 && (
-                            <span className="text-[11px] text-[#7e8e9f] font-medium">vs</span>
-                          )}
-
-                          {e.team2 && (
-                            <div className="flex items-center gap-1.5">
-                              {m2Logo ? (
-                                <img src={m2Logo} alt="" className="w-4 h-4 object-contain" />
-                              ) : (
-                                <span className="w-4 h-4 rounded bg-[#091428] text-[9px] font-bold text-[#c8aa6e] flex items-center justify-center">
-                                  {e.team2.slice(0, 2)}
-                                </span>
-                              )}
-                              <span
-                                className={`text-xs font-bold ${
-                                  settings.followedTeams.includes(e.team2)
-                                    ? "text-[#c8aa6e]"
-                                    : "text-[#f0e6d2]"
-                                }`}
-                              >
-                                {e.team2}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Tournament Stage Subtitle */}
-                        <div className="text-[11px] text-[#7e8e9f] truncate mt-0.5">
-                          {e.event} {e.season} {e.stage ? `· ${e.stage}` : ""}
-                        </div>
-                      </div>
-
-                      {/* Right: Badges */}
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {isFollowed && (
-                          <span className="text-[10px] font-bold text-[#c8aa6e] bg-[#c8aa6e]/10 border border-[#c8aa6e]/30 px-2 py-0.5 rounded flex items-center gap-1">
-                            <Star className="w-3 h-3 fill-current" />
-                            FOLLOWED
-                          </span>
-                        )}
-                        {e.isBanger && (
-                          <span className="text-[10px] font-bold text-white bg-[#ff4655] px-2 py-0.5 rounded flex items-center gap-1 shadow-sm">
-                            <Flame className="w-3 h-3 fill-current" />
-                            BANGER
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                    </React.Fragment>
                   );
                 })}
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
+            );
+          })}
+          {dayKeys.length > DAYS_SHOWN && (
+            <button
+              onClick={() => setShowAll((s) => !s)}
+              className="w-full flex items-center justify-center gap-1 py-2 text-xs text-[#0ac8b9] hover:underline"
+            >
+              {showAll ? "Show less" : `Show ${dayKeys.length - DAYS_SHOWN} more days`}
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAll ? "rotate-180" : ""}`} />
+            </button>
+          )}
+          <p className="text-[10px] text-[#7e8e9f] flex items-center gap-3">
+            <span className="flex items-center gap-1">
+              <Star className="w-3 h-3 text-[#c8aa6e] fill-current" /> team you follow
+            </span>
+            <span className="flex items-center gap-1">
+              <Flame className="w-3 h-3 text-[#ff4655] fill-current" /> banger
+            </span>
+            <span>Times are in your time zone.</span>
+          </p>
+        </section>
+      )}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { Match, StreamEvent, AppSettings, League } from "./types";
+import { Match, StreamEvent, StreamStatus, AppSettings, League } from "./types";
 
 // Current schedule codes folded into the code their franchise history is stored under in
 // all_time_h2h.json (keep in sync with CODE_ALIASES in h2h-refresh/assemble.py).
@@ -153,6 +153,37 @@ const ts = (iso?: string): number => {
   if (!iso) return NaN;
   return new Date(iso).getTime();
 };
+
+export type StreamPhase =
+  | { kind: "airing"; current: StreamEvent; next?: StreamEvent }
+  | { kind: "between"; next: StreamEvent }
+  | { kind: "break"; next?: StreamEvent; lastAired?: StreamEvent };
+
+/** Gap after which "nothing on" stops being a short pause and counts as the marathon being on break. */
+const BREAK_AFTER_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Where the 24/7 marathon is: airing a match, briefly between matches, or on break (the playlist
+ * has ended, or the next match is more than a day away). The owner's status note can force a break.
+ */
+export function streamPhase(events: StreamEvent[], status?: StreamStatus | null, now = Date.now()): StreamPhase {
+  const current = currentStreamEvent(events, now);
+  const upcoming = upcomingStreamMatches(events, now);
+  const next = upcoming[0];
+  const lastAired = events
+    .filter((e) => e.type !== "special" && ts(e.utcIso) <= now)
+    .sort((a, b) => ts(b.utcIso) - ts(a.utcIso))[0];
+  if (status?.onBreak === true) return { kind: "break", next, lastAired };
+  if (current) return { kind: "airing", current, next };
+  if (next && (status?.onBreak === false || ts(next.utcIso) - now <= BREAK_AFTER_MS)) return { kind: "between", next };
+  return { kind: "break", next, lastAired };
+}
+
+/** "Worlds 2024" from event "Worlds" + season "S14 (2024)". */
+export function streamEventTitle(e: StreamEvent): string {
+  const year = /\b(20\d\d|19\d\d)\b/.exec(e.season || "")?.[1];
+  return year ? `${e.event} ${year}` : `${e.event} ${e.season || ""}`.trim();
+}
 
 /** The match airing on the 24/7 stream right now, or null if it is off air. */
 export function currentStreamEvent(events: StreamEvent[], now = Date.now()): StreamEvent | null {

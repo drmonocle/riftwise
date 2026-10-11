@@ -91,6 +91,17 @@ export interface StreamEvent {
   isBanger?: boolean;
 }
 
+/**
+ * Optional note the stream owner publishes at lolworlds.com/riftwatch/stream-status.json.
+ * Every field is optional; without the file the app works it out from the schedule alone.
+ */
+export interface StreamStatus {
+  /** true forces "on break", false forces "on air" logic; leave it out to decide from the schedule. */
+  onBreak?: boolean;
+  headline?: string;
+  message?: string;
+}
+
 export interface Region {
   code: string;
   name: string;

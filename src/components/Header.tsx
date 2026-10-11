@@ -1,7 +1,7 @@
 import React from "react";
-import { AppSettings, Match, StreamEvent, AppUpdateInfo, LiveShow } from "../types";
+import { AppSettings, Match, StreamEvent, StreamStatus, AppUpdateInfo, LiveShow } from "../types";
 import { Radio, RefreshCw, Eye, EyeOff, Heart, Sparkles, Minimize2, Maximize2, Download, Smartphone } from "lucide-react";
-import { currentStreamEvent, formatStreamHeaderTitle } from "../helpers";
+import { formatStreamHeaderTitle, streamPhase } from "../helpers";
 import { APP_VERSION } from "../version";
 import { IS_DESKTOP, IS_WEB, IS_WINDOWS_BROWSER, DESKTOP_DOWNLOAD_URL } from "../platform";
 
@@ -10,6 +10,7 @@ interface HeaderProps {
   onUpdateSettings: (s: Partial<AppSettings>) => void;
   liveMatches: Match[];
   streamEvents: StreamEvent[];
+  streamStatus?: StreamStatus | null;
   onRefresh: () => void;
   isRefreshing: boolean;
   onSelectTab: (tab: any) => void;
@@ -30,6 +31,7 @@ export const Header: React.FC<HeaderProps> = ({
   onUpdateSettings,
   liveMatches,
   streamEvents,
+  streamStatus,
   onRefresh,
   isRefreshing,
   onSelectTab,
@@ -41,8 +43,11 @@ export const Header: React.FC<HeaderProps> = ({
   const hasLive = liveMatches.length > 0;
   const onAir = !hasLive && liveShows.length > 0 ? liveShows[0] : null;
   const firstLive = hasLive ? liveMatches[0] : null;
-  const currStream = currentStreamEvent(streamEvents);
-  const streamInfo = formatStreamHeaderTitle(currStream);
+  const phase = streamPhase(streamEvents, streamStatus);
+  const streamInfo =
+    phase.kind === "airing"
+      ? formatStreamHeaderTitle(phase.current)
+      : { title: phase.kind === "break" ? "Twitch 24/7: On break" : "Twitch 24/7: Back shortly", isLive: false };
   const extraLive = liveMatches.length > 1 ? ` +${liveMatches.length - 1}` : "";
 
   return (
@@ -114,7 +119,7 @@ export const Header: React.FC<HeaderProps> = ({
               ? "bg-[#0a1420] border-[#0ac8b9]/60 text-[#0ac8b9] hover:border-[#0ac8b9] hover:bg-[#121e2d]"
               : "bg-[#0a1420] border-[#1e282d] text-[#7e8e9f] hover:border-[#7e8e9f]"
           }`}
-          title={streamInfo.isLive ? `${streamInfo.title} · Click to view stream` : "Twitch 24/7 Stream is currently offline"}
+          title={streamInfo.isLive ? `${streamInfo.title} · Click to view stream` : phase.kind === "break" ? "The 24/7 marathon is on break · Click for details" : "Twitch 24/7 Stream is currently offline"}
         >
           <Radio className={`w-3.5 h-3.5 flex-shrink-0 ${streamInfo.isLive ? "text-[#0ac8b9] animate-pulse" : ""}`} />
           <span className="font-semibold truncate">{streamInfo.title}</span>
