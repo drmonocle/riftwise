@@ -5,6 +5,13 @@ import type { H2HData } from "./helpers";
 // app suddenly shows "sync failed" with HTTP 401/403, look up the current key from lolesports.com.
 const RIOT_API_KEY = "0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z";
 const RIOT_BASE = "https://esports-api.lolesports.com/persisted/gw";
+// Riot shows a few leagues under internal short codes; use the names viewers know.
+const LEAGUE_NAME_FIXES: Record<string, string> = { demacia_cup: "Demacia Cup" };
+export function leagueDisplayName(league: { name?: string; slug?: string } | undefined, fallback = "League"): string {
+  if (!league) return fallback;
+  return (league.slug && LEAGUE_NAME_FIXES[league.slug]) || league.name || league.slug || fallback;
+}
+
 const STREAM_SCHEDULE_URL = "https://lolworlds.com/api.ashx?type=schedule-json";
 const STREAM_STATUS_URL = "https://lolworlds.com/riftwatch/stream-status.json";
 
@@ -349,7 +356,7 @@ export async function fetchLiveMatches(): Promise<{
       if (ev.state === "inProgress" && ev.league?.slug) {
         shows.push({
           leagueSlug: String(ev.league.slug),
-          leagueName: ev.league.name || ev.league.slug,
+          leagueName: leagueDisplayName(ev.league),
           startTimeUtc: ev.startTime || "",
           streamUrl: buildStreamUrl(ev.streams),
         });
@@ -370,7 +377,7 @@ export async function fetchLiveMatches(): Promise<{
 
     matches.push({
       matchId: m.id || ev.id,
-      leagueName: ev.league?.name || "League",
+      leagueName: leagueDisplayName(ev.league),
       leagueSlug: ev.league?.slug || "",
       blockName: ev.blockName || "",
       startTimeUtc: ev.startTime || new Date().toISOString(),
@@ -408,7 +415,7 @@ function scheduleEventsToMatches(rawEvents: any[]): Match[] {
 
     matches.push({
       matchId: m.id || ev.id,
-      leagueName: ev.league?.name || "League",
+      leagueName: leagueDisplayName(ev.league),
       leagueSlug: ev.league?.slug || "",
       blockName: ev.blockName || "",
       startTimeUtc: ev.startTime || "",

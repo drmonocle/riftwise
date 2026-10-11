@@ -57,3 +57,12 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #c8aa6e;
 }
+
+/* Phones zoom the page in when a text box with text smaller than 16px gets focus. */
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

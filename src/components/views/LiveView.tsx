@@ -553,11 +553,11 @@ export const LiveView: React.FC<LiveViewProps> = ({
               {nextTag}
             </span>
             <span className="text-[#9bb3c9] font-medium">
-              {nextMatch.leagueName} {nextMatch.blockName ? `· ${nextMatch.blockName}` : ""}
+              {nextMatch.blockName || ""}
             </span>
           </div>
 
-          <div className="bg-[#0a1420] border border-[#c8aa6e] rounded-xl p-6 shadow-xl shadow-[#c8aa6e]/5 relative overflow-hidden">
+          <div className="bg-[#0a1420] border border-[#c8aa6e] rounded-xl p-4 sm:p-6 shadow-xl shadow-[#c8aa6e]/5 relative overflow-hidden">
             {/* Ambient Background Glow */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-[#c8aa6e]/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
 
@@ -572,9 +572,9 @@ export const LiveView: React.FC<LiveViewProps> = ({
               </div>
 
               {/* Matchup Banner */}
-              <div className="flex items-center justify-center gap-6 sm:gap-12 w-full my-2">
+              <div className="flex items-center justify-center gap-3 sm:gap-12 w-full my-2">
                 {/* Team 1 */}
-                <div className="flex flex-col items-center flex-1 max-w-[180px]">
+                <div className="flex flex-col items-center flex-1 min-w-0 max-w-[180px]">
                   {nextMatch.team1Image ? (
                     <img
                       src={nextMatch.team1Image}
@@ -647,7 +647,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 </div>
 
                 {/* Team 2 */}
-                <div className="flex flex-col items-center flex-1 max-w-[180px]">
+                <div className="flex flex-col items-center flex-1 min-w-0 max-w-[180px]">
                   {nextMatch.team2Image ? (
                     <img
                       src={nextMatch.team2Image}
@@ -857,9 +857,9 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 {unstarted.slice(0, 4).map((m) => (
                   <div
                     key={m.matchId}
-                    className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d] hover:border-[#c8aa6e]/60 transition-all text-xs"
+                    className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 p-3 rounded-lg bg-[#0a1420] border border-[#1e282d] hover:border-[#c8aa6e]/60 transition-all text-xs"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
                       <span className="font-bold text-[#0ac8b9] text-[11px] w-20 truncate">
                         {m.leagueName}
                       </span>
@@ -934,7 +934,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       </div>
                       <span className="text-[#9bb3c9] text-[11px] font-medium">Bo{m.bestOf}</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 ml-auto">
                       <RowH2H m={m} schedule={schedule} />
                       <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />
                       <div className="text-[#9bb3c9] font-mono text-[11px] font-medium">
@@ -977,9 +977,9 @@ export const LiveView: React.FC<LiveViewProps> = ({
             {comingUp.map((m) => (
               <div
                 key={m.matchId}
-                className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d] hover:border-[#c8aa6e]/60 transition-all text-xs"
+                className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 p-3 rounded-lg bg-[#0a1420] border border-[#1e282d] hover:border-[#c8aa6e]/60 transition-all text-xs"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
                   <span className="font-bold text-[#0ac8b9] text-[11px] w-20 truncate">
                     {m.leagueName}
                   </span>
@@ -1054,7 +1054,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   </div>
                   <span className="text-[#9bb3c9] text-[11px] font-medium">Bo{m.bestOf}</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 ml-auto">
                   <RowH2H m={m} schedule={schedule} />
                   <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />
                   <div className="text-[#9bb3c9] font-mono text-[11px] font-medium">

@@ -179,6 +179,44 @@ def load_renames(cache_path: str) -> list:
         return json.load(f)
 
 
+def load_team_shorts(cache_path: str, max_age_days: int = 7) -> dict:
+    """Leaguepedia's short team names (SKT, C9, HLE...) so the search box finds teams by abbreviation.
+    Refreshed weekly; the cached copy is used in between or if Leaguepedia can't be reached."""
+    try:
+        if time.time() - os.path.getmtime(cache_path) < max_age_days * 86400:
+            with open(cache_path, encoding="utf-8") as f:
+                return json.load(f)
+    except OSError:
+        pass
+    shorts, offset = {}, 0
+    try:
+        while True:
+            q = urllib.parse.urlencode({
+                "tables": "Teams", "fields": "Name,Short", "where": "Short IS NOT NULL AND Short != ''",
+                "format": "json", "limit": 500, "offset": offset, "order by": "Name",
+            })
+            req = urllib.request.Request("https://lol.fandom.com/wiki/Special:CargoExport?" + q, headers=LEAGUEPEDIA_UA)
+            page = json.load(urllib.request.urlopen(req, timeout=60))
+            for r in page:
+                if r.get("Name") and r.get("Short"):
+                    shorts[r["Name"]] = str(r["Short"])
+            if len(page) < 500:
+                break
+            offset += 500
+            time.sleep(1.5)
+        if len(shorts) > 1000:
+            with open(cache_path, "w", encoding="utf-8") as f:
+                json.dump(shorts, f, ensure_ascii=False)
+            return shorts
+    except Exception as e:
+        print(f"Teams download failed ({e}); using the cached copy")
+    try:
+        with open(cache_path, encoding="utf-8") as f:
+            return json.load(f)
+    except OSError:
+        return {}
+
+
 class Lineage:
     """Maps (team name, date) to one team across rebrands, so T1 includes SK Telecom T1."""
 
@@ -321,6 +359,7 @@ def main() -> None:
     links = [(x["Date"][:10], x["OriginalName"], x["NewName"]) for x in renames
              if (x.get("Verb") or "").lower() in RENAME_VERBS and x.get("Date")]
     links += MANUAL_LINKS
+    team_shorts = load_team_shorts(os.path.join(os.path.dirname(os.path.abspath(args.renames_cache)), "team_shorts.json"))
     lineage = Lineage(links, names_dates)
     spans = {}
     for n, ds in names_dates.items():
@@ -655,7 +694,13 @@ def main() -> None:
         s = slug(name)
         names = [e for e in fr_eras[fid] if e["g"] >= 1]
         aka = [e["n"] for e in names if e["n"] != name]
-        search_teams.append({"n": name, "s": s, "g": t["g"], "y": t["to"][:4], **({"a": " | ".join(aka)} if aka else {})})
+        codes = []
+        for e in sorted(names, key=lambda e: -e["g"]):
+            c = str(team_shorts.get(e["n"]) or "").strip()
+            if c and c.lower() not in (x.lower() for x in codes) and c.lower() != name.lower():
+                codes.append(c)
+        search_teams.append({"n": name, "s": s, "g": t["g"], "y": t["to"][:4],
+                             **({"a": " | ".join(aka)} if aka else {}), **({"c": " | ".join(codes)} if codes else {})})
         ss = team_series[fid]
         sw = sum(1 for x in ss if (x["fa"] if x["w"] == x["a"] else x["fb"]) == fid)
         roster = []
@@ -705,6 +750,7 @@ def main() -> None:
                             if (t["t"], t["fid"]) in player_events[page]}, key=lambda x: x[1], reverse=True)
         write(os.path.join(vdir, "players", f"{s}.json"), {
             "name": pname(page), "page": page, "role": p["roles"].most_common(1)[0][0],
+            "club": last_team, "clubTo": p["teams"][last_team]["to"] if last_team in p["teams"] else last_date,
             "g": p["g"], "w": p["w"], "k": p["k"], "d": p["d"], "a": p["a"], "kda": kda(p["k"], p["d"], p["a"]),
             "csm": r1(p["cs"] / sm) if sm else None, "gpm": round(p["gold"] / sm) if sm else None,
             "dpm": round(p["dmg"] / sm) if sm else None,

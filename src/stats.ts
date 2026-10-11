@@ -11,8 +11,8 @@ const STATS_BASE =
     ? "/riftwatch/stats"
     : "https://lolworlds.com/riftwatch/stats";
 
-/** a = other names the team has played under, joined by " | " (searchable). */
-export interface StatsSearchTeam { n: string; s: string; g: number; y: string; a?: string }
+/** a = other names the team has played under, c = short names (SKT, C9...), each joined by " | ". */
+export interface StatsSearchTeam { n: string; s: string; g: number; y: string; a?: string; c?: string }
 export interface StatsSearchPlayer { n: string; s: string; t: string; g: number; y: string }
 export interface StatsSearch { teams: StatsSearchTeam[]; players: StatsSearchPlayer[] }
 
@@ -52,6 +52,8 @@ export interface TeamStats {
 
 export interface PlayerStats {
   name: string; page: string; role: string;
+  /** The club they play (or last played) for, ignoring one-off national-team games. */
+  club?: string; clubTo?: string;
   g: number; w: number; k: number; d: number; a: number; kda: number;
   csm: number | null; gpm: number | null; dpm: number | null;
   teams: { n: string; s: string | null; g: number; w: number; from: string; to: string }[];
@@ -151,16 +153,27 @@ export function winRate(w: number, g: number): string {
 }
 
 /** Case- and accent-insensitive search. Exact and prefix matches first, then by games played. */
-export function searchByName<T extends { n: string; g: number; a?: string }>(items: T[], query: string, limit = 30): T[] {
+export function searchByName<T extends { n: string; g: number; a?: string; c?: string }>(items: T[], query: string, limit = 30): T[] {
   const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   const q = norm(query.trim());
   if (!q) return items.slice(0, limit);
   const scored: [number, T][] = [];
   for (const it of items) {
+    // Short names: "SKT", "C9", "HLE" find the team they stand for
+    if (it.c && norm(it.c).split(" | ").includes(q)) {
+      scored.push([0, it]);
+      continue;
+    }
     const n = norm(it.n);
     const i = n.indexOf(q);
     if (i >= 0) {
       scored.push([n === q ? 0 : i === 0 ? 1 : 2, it]);
+      continue;
+    }
+    // Ignore punctuation and spaces: "geng" finds Gen.G, "100thieves" finds 100 Thieves
+    const bare = (s: string) => s.replace(/[^a-z0-9]/g, "");
+    if (bare(q) && bare(n).includes(bare(q))) {
+      scored.push([bare(n) === bare(q) ? 0 : 2, it]);
       continue;
     }
     // Old names (e.g. "SK Telecom T1" finds T1)
