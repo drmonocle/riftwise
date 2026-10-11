@@ -44,6 +44,16 @@ interface SettingsViewProps {
   lastUpdateCheck?: { at: number; error: string | null } | null;
 }
 
+/** Release notes are written in Markdown; show them as plain readable text. */
+function plainNotes(md: string): string {
+  return md
+    .split("\n")
+    .map((l) => l.replace(/^#+\s*/, "").replace(/\*\*(.+?)\*\*/g, "$1").replace(/`([^`]+)`/g, "$1").replace(/^\s*[-*]\s+/, "• "))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 export const SettingsView: React.FC<SettingsViewProps> = ({
   settings,
   catalog,
@@ -182,8 +192,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               )}
 
               {updateInfo.releaseNotes && (
-                <div className="p-3 rounded bg-[#091428] border border-[#1e282d] text-[11px] text-[#7e8e9f] max-h-24 overflow-y-auto whitespace-pre-line font-mono">
-                  {updateInfo.releaseNotes}
+                <div className="p-3 rounded bg-[#091428] border border-[#1e282d] text-[11px] text-[#9bb3c9] max-h-32 overflow-y-auto whitespace-pre-line leading-relaxed">
+                  {plainNotes(updateInfo.releaseNotes)}
                 </div>
               )}
             </div>
@@ -475,7 +485,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div>
               <div className="font-semibold text-[#f0e6d2]">Live Kickoff Desktop Alerts</div>
               <div className="text-[11px] text-[#7e8e9f]">
-                Display desktop notifications when followed teams or players begin a match.
+                Display desktop notifications when followed teams or players begin a match.{" "}
+                <button
+                  type="button"
+                  onClick={() =>
+                    import("@tauri-apps/api/core").then(({ invoke }) =>
+                      invoke("send_notification", {
+                        title: "RiftWatch test alert",
+                        body: "Alerts work. You'll get one like this when a team you follow starts a match.",
+                      }).catch(() => {}),
+                    )
+                  }
+                  className="text-[#0ac8b9] hover:underline"
+                >
+                  Send a test alert
+                </button>
               </div>
             </div>
             <button

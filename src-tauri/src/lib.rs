@@ -67,6 +67,25 @@ fn quit_app(app: tauri::AppHandle) {
     app.exit(0);
 }
 
+/// The first time the X button hides RiftWatch to the tray, say so: otherwise it looks like it quit.
+/// Remembered with a marker file so it is only said once.
+fn tell_once_about_tray(app: &tauri::AppHandle) {
+    use tauri_plugin_notification::NotificationExt;
+    let Ok(dir) = app.path().app_local_data_dir() else { return };
+    let marker = dir.join("tray_hint_shown");
+    if marker.exists() {
+        return;
+    }
+    let _ = std::fs::create_dir_all(&dir);
+    let _ = std::fs::write(&marker, b"1");
+    let _ = app
+        .notification()
+        .builder()
+        .title("RiftWatch is still running")
+        .body("It's in the system tray (bottom-right, near the clock) so match alerts keep working. Right-click the icon to quit, or change this in Settings.")
+        .show();
+}
+
 /// Shows a native desktop notification (used for kickoff / pre-match / banger alerts).
 #[tauri::command]
 fn send_notification(app: tauri::AppHandle, title: String, body: String) {
@@ -432,12 +451,21 @@ pub fn run() {
                     let _ = w.hide();
                 }
             }
+            // Restarted by the updater: come back in front, where the old window was
+            if std::env::args().any(|a| a == "--updated") {
+                if let Some(w) = app.get_webview_window("main") {
+                    let _ = w.show();
+                    let _ = w.unminimize();
+                    let _ = w.set_focus();
+                }
+            }
             let show_i = MenuItem::with_id(app, "show", "Open RiftWatch", true, None::<&str>)?;
             let hide_i = MenuItem::with_id(app, "hide", "Hide to Tray", true, None::<&str>)?;
             let sep1 = PredefinedMenuItem::separator(app)?;
 
             let nav_live = MenuItem::with_id(app, "nav_live", "🔴 Live Matches", true, None::<&str>)?;
             let nav_schedule = MenuItem::with_id(app, "nav_schedule", "📅 Schedule & Results", true, None::<&str>)?;
+            let nav_stats = MenuItem::with_id(app, "nav_stats", "📊 Pro Stats", true, None::<&str>)?;
             let nav_stream = MenuItem::with_id(app, "nav_stream", "📺 24/7 Stream Marathon", true, None::<&str>)?;
             let nav_watchlist = MenuItem::with_id(app, "nav_watchlist", "⭐ Watchlist & Teams", true, None::<&str>)?;
             let nav_news = MenuItem::with_id(app, "nav_news", "📰 News & Intel", true, None::<&str>)?;
@@ -463,6 +491,7 @@ pub fn run() {
                     &sep1,
                     &nav_live,
                     &nav_schedule,
+                    &nav_stats,
                     &nav_stream,
                     &nav_watchlist,
                     &nav_news,
@@ -502,10 +531,11 @@ pub fn run() {
                                 let _ = w.hide();
                             }
                         }
-                        "nav_live" | "nav_schedule" | "nav_stream" | "nav_watchlist" | "nav_news" | "nav_settings" => {
+                        "nav_live" | "nav_schedule" | "nav_stats" | "nav_stream" | "nav_watchlist" | "nav_news" | "nav_settings" => {
                             let tab = match event.id.as_ref() {
                                 "nav_live" => "live",
                                 "nav_schedule" => "schedule",
+                                "nav_stats" => "stats",
                                 "nav_stream" => "stream",
                                 "nav_watchlist" => "watchlist",
                                 "nav_news" => "news",
@@ -583,6 +613,7 @@ pub fn run() {
                     if CLOSE_TO_TRAY.load(Ordering::Relaxed) {
                         api.prevent_close();
                         let _ = window.hide();
+                        tell_once_about_tray(window.app_handle());
                     } else {
                         window.app_handle().exit(0);
                     }
