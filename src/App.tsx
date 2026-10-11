@@ -18,6 +18,15 @@ import {
   EMPTY_CATALOG,
 } from "./api";
 import { APP_VERSION } from "./version";
+
+// Read before the first render marks the app as launched (see the initial-tab logic below).
+const FIRST_DESKTOP_LAUNCH = (() => {
+  try {
+    return IS_DESKTOP && !localStorage.getItem("riftwatch_has_launched");
+  } catch {
+    return false;
+  }
+})();
 import { ArrowDownToLine, WifiOff, AlertTriangle } from "lucide-react";
 import { IS_DESKTOP, IS_WEB, matchIdFromHash } from "./platform";
 import { reconcileLiveAndSchedule, playKickoffChime, applyH2HData, loadBundledH2H } from "./helpers";
@@ -56,6 +65,8 @@ export default function App() {
   const [catalog, setCatalog] = useState<CatalogData>(() =>
     IS_HUD_WINDOW ? EMPTY_CATALOG : loadCachedCatalog() ?? EMPTY_CATALOG,
   );
+
+  const [showWelcome, setShowWelcome] = useState(FIRST_DESKTOP_LAUNCH);
 
   // Initial tab. The desktop app's very first launch opens the Watchlist so people pick their
   // teams; the public web page opens on live scores, so a first-time visitor sees matches at once.
@@ -303,7 +314,7 @@ export default function App() {
     }
   }, []);
 
-  // Desktop keyboard shortcuts (F5, Ctrl+R, Ctrl+1..7, Ctrl+S, Ctrl+D). Not on the web page: there
+  // Desktop keyboard shortcuts (F5, Ctrl+R, Ctrl+1..7 in tab order, Ctrl+S, Ctrl+D). Not on the web page: there
   // they would hijack the browser's own Reload, Save Page and tab-switching shortcuts.
   useEffect(() => {
     if (!IS_DESKTOP) return;
@@ -324,19 +335,19 @@ export default function App() {
         setActiveTab("schedule");
       } else if (e.ctrlKey && e.key === "3") {
         e.preventDefault();
-        setActiveTab("stream");
+        setActiveTab("stats");
       } else if (e.ctrlKey && e.key === "4") {
         e.preventDefault();
-        setActiveTab("watchlist");
+        setActiveTab("stream");
       } else if (e.ctrlKey && e.key === "5") {
         e.preventDefault();
-        setActiveTab("news");
+        setActiveTab("watchlist");
       } else if (e.ctrlKey && e.key === "6") {
         e.preventDefault();
-        setActiveTab("settings");
+        setActiveTab("news");
       } else if (e.ctrlKey && e.key === "7") {
         e.preventDefault();
-        setActiveTab("stats");
+        setActiveTab("settings");
       } else if (e.ctrlKey && e.key.toLowerCase() === "s") {
         e.preventDefault();
         handleUpdateSettings({ spoilerMode: !settingsRef.current.spoilerMode });
@@ -695,6 +706,33 @@ export default function App() {
           onUpdateSettings={handleUpdateSettings}
           isDetached={false}
         />
+      )}
+
+      {showWelcome && (
+        <div className="bg-[#0a1420] border-b border-[#c8aa6e]/40 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 text-xs" role="status">
+          <div className="flex-1 text-[#9bb3c9] leading-relaxed">
+            <strong className="text-[#c8aa6e]">Welcome to RiftWatch!</strong> Start by following the teams you care about
+            below: they get highlighted everywhere and you get an alert when they play. RiftWatch also starts with Windows,
+            quietly in the tray; you can turn that off in Settings.
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={() => {
+                setShowWelcome(false);
+                setActiveTab("live");
+              }}
+              className="px-3 py-1.5 rounded-md bg-[#c8aa6e] hover:bg-[#f0e6d2] text-[#091428] font-bold"
+            >
+              Show live matches
+            </button>
+            <button
+              onClick={() => setShowWelcome(false)}
+              className="px-3 py-1.5 rounded-md border border-[#1e282d] hover:border-[#c8aa6e]/60 text-[#f0e6d2]"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Main Content View Container */}
