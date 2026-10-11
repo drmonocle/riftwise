@@ -1,7 +1,7 @@
 import React from "react";
-import { Radio, Calendar, Flame, Star, Newspaper, Settings } from "lucide-react";
+import { Radio, Calendar, Flame, Star, Newspaper, Settings, BarChart3 } from "lucide-react";
 
-export type TabKey = "live" | "schedule" | "stream" | "watchlist" | "news" | "settings";
+export type TabKey = "live" | "schedule" | "stats" | "stream" | "watchlist" | "news" | "settings";
 
 interface NavigationProps {
   activeTab: TabKey;
@@ -18,6 +18,7 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onSelectTab, 
       badge: liveCount > 0 ? liveCount : undefined,
     },
     { key: "schedule", label: "Schedule", icon: <Calendar className="w-4 h-4" /> },
+    { key: "stats", label: "Stats", icon: <BarChart3 className="w-4 h-4" /> },
     { key: "stream", label: "24/7 Stream", icon: <Radio className="w-4 h-4" /> },
     { key: "watchlist", label: "Watchlist", icon: <Star className="w-4 h-4" /> },
     { key: "news", label: "Dispatch", icon: <Newspaper className="w-4 h-4" /> },
