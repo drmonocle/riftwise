@@ -18,6 +18,15 @@ fn show_ticker(app: tauri::AppHandle) {
     // The HUD is a passive overlay: showing it (also at Windows sign-in) must not take the keyboard
     // away from whatever the user is doing.
     if let Some(w) = app.get_webview_window("ticker") {
+        #[cfg(target_os = "windows")]
+        if let Ok(hwnd) = w.hwnd() {
+            extern "system" {
+                fn ShowWindow(hwnd: *mut std::ffi::c_void, cmd: i32) -> i32;
+            }
+            const SW_SHOWNOACTIVATE: i32 = 4;
+            unsafe { ShowWindow(hwnd.0 as *mut std::ffi::c_void, SW_SHOWNOACTIVATE) };
+            return;
+        }
         let _ = w.show();
     }
 }
