@@ -15,9 +15,19 @@ fn start_window_drag(window: tauri::WebviewWindow) {
 
 #[tauri::command]
 fn show_ticker(app: tauri::AppHandle) {
+    // The HUD is a passive overlay: showing it (also at Windows sign-in) must not take the keyboard
+    // away from whatever the user is doing.
     if let Some(w) = app.get_webview_window("ticker") {
+        #[cfg(target_os = "windows")]
+        if let Ok(hwnd) = w.hwnd() {
+            extern "system" {
+                fn ShowWindow(hwnd: *mut std::ffi::c_void, cmd: i32) -> i32;
+            }
+            const SW_SHOWNOACTIVATE: i32 = 4;
+            unsafe { ShowWindow(hwnd.0 as *mut std::ffi::c_void, SW_SHOWNOACTIVATE) };
+            return;
+        }
         let _ = w.show();
-        let _ = w.set_focus();
     }
 }
 
@@ -65,6 +75,43 @@ fn set_compact_mode(app: tauri::AppHandle, compact: bool) {
 #[tauri::command]
 fn quit_app(app: tauri::AppHandle) {
     app.exit(0);
+}
+
+/// Where a window was last left (main window and floating HUD), so it reopens in the same spot.
+fn window_place_file(app: &tauri::AppHandle, label: &str) -> Option<std::path::PathBuf> {
+    app.path().app_local_data_dir().ok().map(|d| d.join(format!("{label}_window_pos.txt")))
+}
+
+fn save_window_place(window: &tauri::Window, x: i32, y: i32) {
+    // Minimized windows report a far-off position; don't remember that
+    if window.is_minimized().unwrap_or(false) || x <= -30000 || y <= -30000 {
+        return;
+    }
+    if let Some(f) = window_place_file(window.app_handle(), window.label()) {
+        if let Some(dir) = f.parent() {
+            let _ = std::fs::create_dir_all(dir);
+        }
+        let _ = std::fs::write(f, format!("{x},{y}"));
+    }
+}
+
+/// Puts a window back where it was, but only if that spot is on a screen that is still connected
+/// (a monitor that was unplugged would otherwise leave the window out of sight).
+fn restore_window_place(app: &tauri::AppHandle, label: &str) {
+    let (Some(w), Some(f)) = (app.get_webview_window(label), window_place_file(app, label)) else { return };
+    let Ok(text) = std::fs::read_to_string(&f) else { return };
+    let n: Vec<i32> = text.trim().split(',').filter_map(|s| s.trim().parse().ok()).collect();
+    if n.len() != 2 {
+        return;
+    }
+    let (x, y) = (n[0], n[1]);
+    let on_screen = w.available_monitors().unwrap_or_default().iter().any(|m| {
+        let (p, s) = (m.position(), m.size());
+        x + 40 >= p.x && y + 10 >= p.y && x + 40 < p.x + s.width as i32 && y + 10 < p.y + s.height as i32
+    });
+    if on_screen {
+        let _ = w.set_position(tauri::PhysicalPosition::new(x, y));
+    }
 }
 
 /// The first time the X button hides RiftWatch to the tray, say so: otherwise it looks like it quit.
@@ -451,11 +498,18 @@ pub fn run() {
                     let _ = w.hide();
                 }
             }
+            restore_window_place(app.handle(), "main");
+            restore_window_place(app.handle(), "ticker");
             // Restarted by the updater: come back in front, where the old window was
             if std::env::args().any(|a| a == "--updated") {
                 if let Some(w) = app.get_webview_window("main") {
                     let _ = w.show();
                     let _ = w.unminimize();
+                    let _ = w.set_focus();
+                }
+            } else if !std::env::args().any(|a| a == "--minimized") {
+                // A normal launch: the main window gets the keyboard, not the hidden HUD window
+                if let Some(w) = app.get_webview_window("main") {
                     let _ = w.set_focus();
                 }
             }
@@ -608,6 +662,11 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
+            if let tauri::WindowEvent::Moved(pos) = event {
+                if window.label() == "main" || window.label() == "ticker" {
+                    save_window_place(window, pos.x, pos.y);
+                }
+            }
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 if window.label() == "main" {
                     if CLOSE_TO_TRAY.load(Ordering::Relaxed) {

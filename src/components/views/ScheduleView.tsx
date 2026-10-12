@@ -4,6 +4,7 @@ import { Search, Calendar, Star, Trophy } from "lucide-react";
 import { AddToCalendarMenu } from "../AddToCalendarMenu";
 import { ShareMatchButton } from "../ShareMatchButton";
 import { isMatchFollowed, computeHeadToHead } from "../../helpers";
+import { clickable } from "../../a11y";
 import { H2HMeter } from "../H2HMeter";
 import { StandingsView } from "./StandingsView";
 
@@ -287,7 +288,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           <Star className={`w-3.5 h-3.5 ${isT1Followed ? "fill-[#c8aa6e]" : ""}`} />
                         </button>
                         <span
-                          onClick={() => onSelectTeam?.(m.team1Code, m.team1Name)}
+                          {...clickable(() => onSelectTeam?.(m.team1Code, m.team1Name))}
                           className="text-xs font-bold text-[#f0e6d2] hover:text-[#c8aa6e] cursor-pointer transition-colors"
                           title={`Click to view ${m.team1Name} roster`}
                         >
@@ -349,7 +350,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           />
                         )}
                         <span
-                          onClick={() => onSelectTeam?.(m.team2Code, m.team2Name)}
+                          {...clickable(() => onSelectTeam?.(m.team2Code, m.team2Name))}
                           className="text-xs font-bold text-[#f0e6d2] hover:text-[#c8aa6e] cursor-pointer transition-colors"
                           title={`Click to view ${m.team2Name} roster`}
                         >

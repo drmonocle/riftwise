@@ -12,6 +12,7 @@ import {
   formatLate,
   DELAY_GRACE_MIN,
 } from "../../helpers";
+import { clickable } from "../../a11y";
 import { H2HMeter } from "../H2HMeter";
 
 interface LiveViewProps {
@@ -273,7 +274,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                           <Star className={`w-3.5 h-3.5 ${isT1Followed ? "fill-[#c8aa6e]" : ""}`} />
                         </button>
                         <span
-                          onClick={() => onSelectTeam?.(m.team1Code, m.team1Name)}
+                          {...clickable(() => onSelectTeam?.(m.team1Code, m.team1Name))}
                           className="font-bold text-base text-[#f0e6d2] hover:text-[#c8aa6e] cursor-pointer transition-colors"
                           title={`View ${m.team1Name} roster`}
                         >
@@ -291,7 +292,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       />
                     ) : (
                       <div
-                        onClick={() => onSelectTeam?.(m.team1Code, m.team1Name)}
+                        {...clickable(() => onSelectTeam?.(m.team1Code, m.team1Name))}
                         className="w-10 h-10 bg-[#091428] rounded flex items-center justify-center font-bold text-xs text-[#c8aa6e] cursor-pointer font-mono"
                       >
                         {m.team1Code.slice(0, 3)}
@@ -350,7 +351,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       />
                     ) : (
                       <div
-                        onClick={() => onSelectTeam?.(m.team2Code, m.team2Name)}
+                        {...clickable(() => onSelectTeam?.(m.team2Code, m.team2Name))}
                         className="w-10 h-10 bg-[#091428] rounded flex items-center justify-center font-bold text-xs text-[#c8aa6e] cursor-pointer font-mono"
                       >
                         {m.team2Code.slice(0, 3)}
@@ -359,7 +360,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     <div>
                       <div className="flex items-center gap-1.5">
                         <span
-                          onClick={() => onSelectTeam?.(m.team2Code, m.team2Name)}
+                          {...clickable(() => onSelectTeam?.(m.team2Code, m.team2Name))}
                           className="font-bold text-base text-[#f0e6d2] hover:text-[#c8aa6e] cursor-pointer transition-colors"
                           title={`View ${m.team2Name} roster`}
                         >
@@ -594,7 +595,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     />
                   ) : (
                     <div
-                      onClick={() => onSelectTeam?.(nextMatch!.team1Code, nextMatch!.team1Name)}
+                      {...clickable(() => onSelectTeam?.(nextMatch!.team1Code, nextMatch!.team1Name))}
                       className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-[#091428] border border-[#1e282d] hover:border-[#c8aa6e] flex items-center justify-center font-bold text-lg text-[#c8aa6e] mb-2 font-mono cursor-pointer"
                       title={`View ${nextMatch.team1Name} roster`}
                     >
@@ -603,7 +604,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   )}
                   <div className="flex items-center justify-center gap-1.5 w-full">
                     <span
-                      onClick={() => onSelectTeam?.(nextMatch!.team1Code, nextMatch!.team1Name)}
+                      {...clickable(() => onSelectTeam?.(nextMatch!.team1Code, nextMatch!.team1Name))}
                       className="font-bold text-base sm:text-lg text-[#f0e6d2] hover:text-[#c8aa6e] cursor-pointer truncate transition-colors"
                       title={`View ${nextMatch.team1Name} roster`}
                     >
@@ -641,7 +642,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     </button>
                   </div>
                   <div
-                    onClick={() => onSelectTeam?.(nextMatch!.team1Code, nextMatch!.team1Name)}
+                    {...clickable(() => onSelectTeam?.(nextMatch!.team1Code, nextMatch!.team1Name))}
                     className="text-xs text-[#9bb3c9] hover:text-[#0ac8b9] cursor-pointer font-mono font-medium"
                   >
                     {nextMatch.team1Code}
@@ -667,7 +668,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     />
                   ) : (
                     <div
-                      onClick={() => onSelectTeam?.(nextMatch!.team2Code, nextMatch!.team2Name)}
+                      {...clickable(() => onSelectTeam?.(nextMatch!.team2Code, nextMatch!.team2Name))}
                       className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-[#091428] border border-[#1e282d] hover:border-[#c8aa6e] flex items-center justify-center font-bold text-lg text-[#c8aa6e] mb-2 font-mono cursor-pointer"
                       title={`View ${nextMatch.team2Name} roster`}
                     >
@@ -676,7 +677,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   )}
                   <div className="flex items-center justify-center gap-1.5 w-full">
                     <span
-                      onClick={() => onSelectTeam?.(nextMatch!.team2Code, nextMatch!.team2Name)}
+                      {...clickable(() => onSelectTeam?.(nextMatch!.team2Code, nextMatch!.team2Name))}
                       className="font-bold text-base sm:text-lg text-[#f0e6d2] hover:text-[#c8aa6e] cursor-pointer truncate transition-colors"
                       title={`View ${nextMatch.team2Name} roster`}
                     >
@@ -714,7 +715,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     </button>
                   </div>
                   <div
-                    onClick={() => onSelectTeam?.(nextMatch!.team2Code, nextMatch!.team2Name)}
+                    {...clickable(() => onSelectTeam?.(nextMatch!.team2Code, nextMatch!.team2Name))}
                     className="text-xs text-[#9bb3c9] hover:text-[#0ac8b9] cursor-pointer font-mono font-medium"
                   >
                     {nextMatch.team2Code}
@@ -874,7 +875,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       </span>
                       <div className="flex items-center gap-1 text-[#f0e6d2] font-semibold">
                         <span
-                          onClick={() => onSelectTeam?.(m.team1Code, m.team1Name)}
+                          {...clickable(() => onSelectTeam?.(m.team1Code, m.team1Name))}
                           className="hover:text-[#c8aa6e] cursor-pointer transition-colors"
                           title={`View ${m.team1Name} roster`}
                         >
@@ -908,7 +909,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                         </button>
                         <span className="text-[#9bb3c9] mx-1">vs</span>
                         <span
-                          onClick={() => onSelectTeam?.(m.team2Code, m.team2Name)}
+                          {...clickable(() => onSelectTeam?.(m.team2Code, m.team2Name))}
                           className="hover:text-[#c8aa6e] cursor-pointer transition-colors"
                           title={`View ${m.team2Name} roster`}
                         >
@@ -994,7 +995,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   </span>
                   <div className="flex items-center gap-1 text-[#f0e6d2] font-semibold">
                     <span
-                      onClick={() => onSelectTeam?.(m.team1Code, m.team1Name)}
+                      {...clickable(() => onSelectTeam?.(m.team1Code, m.team1Name))}
                       className="hover:text-[#c8aa6e] cursor-pointer transition-colors"
                       title={`View ${m.team1Name} roster`}
                     >
@@ -1028,7 +1029,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     </button>
                     <span className="text-[#9bb3c9] mx-1">vs</span>
                     <span
-                      onClick={() => onSelectTeam?.(m.team2Code, m.team2Name)}
+                      {...clickable(() => onSelectTeam?.(m.team2Code, m.team2Name))}
                       className="hover:text-[#c8aa6e] cursor-pointer transition-colors"
                       title={`View ${m.team2Name} roster`}
                     >

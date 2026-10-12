@@ -142,6 +142,12 @@ async function load<T>(path: string): Promise<T> {
 
 export const loadStatsMeta = () => load<StatsMeta>("meta.json");
 export const loadStatsSearch = () => load<StatsSearch>("search.json");
+// Split search lists: the Teams list is ~70 KB, players ~300 KB, so each loads only when needed.
+// Builds made before the split only have search.json, so fall back to it.
+export const loadTeamIndex = () =>
+  load<StatsSearchTeam[]>("search-teams.json").catch(() => loadStatsSearch().then((s) => s.teams));
+export const loadPlayerIndex = () =>
+  load<StatsSearchPlayer[]>("search-players.json").catch(() => loadStatsSearch().then((s) => s.players));
 export const loadTeamStats = (slug: string) => load<TeamStats>(`teams/${slug}.json`);
 export const loadPlayerStats = (slug: string) => load<PlayerStats>(`players/${slug}.json`);
 export const loadChampionStats = (key: string) => load<ChampionStats>(`champions/${key}.json`);

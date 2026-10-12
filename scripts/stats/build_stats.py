@@ -6,7 +6,8 @@ so the Stats tab never downloads or crunches the whole database:
 
   <out>/latest.json                    {"version": "...", "built": "..."}  (never cached)
   <out>/<version>/meta.json            totals, years, patches
-  <out>/<version>/search.json          team + player names for the search box
+  <out>/<version>/search-teams.json    team names for the search box (search-players.json: players;
+                                       search.json: both, for app versions up to 0.3.24)
   <out>/<version>/teams/<slug>.json    one team (all its names: SK Telecom T1 and T1 are one team)
   <out>/<version>/players/<slug>.json  one player
   <out>/<version>/champions/<key>.json pick/ban/win rates for all time, a year or a patch
@@ -876,7 +877,9 @@ def main() -> None:
 
     search_teams.sort(key=lambda x: -x["g"])
     search_players.sort(key=lambda x: -x["g"])
-    write(os.path.join(vdir, "search.json"), {"teams": search_teams, "players": search_players})
+    write(os.path.join(vdir, "search.json"), {"teams": search_teams, "players": search_players})  # app <= 0.3.24
+    write(os.path.join(vdir, "search-teams.json"), search_teams)      # small: loads with the Teams tab
+    write(os.path.join(vdir, "search-players.json"), search_players)  # larger: only for Players / Compare
     write(os.path.join(vdir, "meta.json"), {
         "version": version, "games": len(games), "series": len(series_list),
         "teams": len(search_teams), "players": len(search_players),

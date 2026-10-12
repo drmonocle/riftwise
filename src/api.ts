@@ -12,6 +12,13 @@ export function leagueDisplayName(league: { name?: string; slug?: string } | und
   return (league.slug && LEAGUE_NAME_FIXES[league.slug]) || league.name || league.slug || fallback;
 }
 
+// Typos in Riot's own team names, fixed so viewers see the real name.
+const TEAM_NAME_FIXES: Record<string, string> = { "KaBuM! Eports": "KaBuM! Esports" };
+export function teamDisplayName(name: string | undefined, fallback = "TBD"): string {
+  const n = (name || "").trim();
+  return n ? TEAM_NAME_FIXES[n] || n : fallback;
+}
+
 const STREAM_SCHEDULE_URL = "https://lolworlds.com/api.ashx?type=schedule-json";
 const STREAM_STATUS_URL = "https://lolworlds.com/riftwatch/stream-status.json";
 
@@ -138,11 +145,30 @@ export function loadSettings(): AppSettings {
       for (const key of ["followedTeams", "followedPlayers", "followedLeagues", "followedRegions"] as const) {
         if (!Array.isArray(parsed[key])) parsed[key] = [...DEFAULT_SETTINGS[key]];
       }
+      // Only text entries count; team codes are upper case everywhere else in the app.
+      for (const key of ["followedTeams", "followedPlayers", "followedLeagues", "followedRegions"] as const) {
+        parsed[key] = Array.from(
+          new Set((parsed[key] as unknown[]).filter((x): x is string => typeof x === "string" && x.trim() !== "")),
+        );
+      }
+      parsed.followedTeams = Array.from(new Set((parsed.followedTeams as string[]).map((c) => c.toUpperCase())));
       // Region codes saved by older versions (EUROPE, APAC) map to the current ones.
       parsed.followedRegions = Array.from(
         new Set((parsed.followedRegions as string[]).map((c) => LEGACY_REGION_CODES[c] || c)),
       );
-      return { ...DEFAULT_SETTINGS, ...parsed };
+      // A value an older version saved (or a hand-edited one) that this version doesn't know falls
+      // back to the default instead of breaking the app (an unknown default tab opened a blank page).
+      const merged = { ...DEFAULT_SETTINGS, ...parsed } as AppSettings;
+      const oneOf = <T,>(v: unknown, allowed: readonly T[], dflt: T): T => (allowed.includes(v as T) ? (v as T) : dflt);
+      merged.defaultTab = oneOf(merged.defaultTab, ["live", "schedule", "stats", "stream", "watchlist", "news", "settings"] as const, DEFAULT_SETTINGS.defaultTab);
+      merged.tickerMode = oneOf(merged.tickerMode, ["docked", "detached", "hidden"] as const, DEFAULT_SETTINGS.tickerMode);
+      merged.tickerCycleSec = oneOf(Number(merged.tickerCycleSec), [3, 5, 8, 12], DEFAULT_SETTINGS.tickerCycleSec);
+      for (const key of Object.keys(DEFAULT_SETTINGS) as (keyof AppSettings)[]) {
+        if (typeof DEFAULT_SETTINGS[key] === "boolean" && typeof merged[key] !== "boolean") {
+          (merged as unknown as Record<string, unknown>)[key] = DEFAULT_SETTINGS[key];
+        }
+      }
+      return merged;
     }
   } catch (e) {
     console.error("Failed to load settings:", e);
@@ -216,7 +242,7 @@ export async function fetchLiveCatalog(current?: CatalogData): Promise<CatalogDa
     for (const t of rawTeams) {
       if (t.status !== "active" || !t.players || t.players.length === 0 || !t.slug) continue;
       const code = (t.code || t.slug).trim().toUpperCase();
-      const name = (t.name || t.slug).trim();
+      const name = teamDisplayName(t.name || t.slug, "");
       const homeLeague = t.homeLeague?.name || "";
       const homeRegion = t.homeLeague?.region || "";
 
@@ -386,11 +412,11 @@ export async function fetchLiveMatches(): Promise<{
       winner: (t1.result?.outcome === "win" ? t1.code : t2.result?.outcome === "win" ? t2.code : undefined),
       streamUrl: buildStreamUrl(ev.streams),
       team1Code: t1.code || t1.name || "TBD",
-      team1Name: t1.name || "TBD",
+      team1Name: teamDisplayName(t1.name),
       team1Image: t1.image,
       team1Score: t1.result?.gameWins ?? 0,
       team2Code: t2.code || t2.name || "TBD",
-      team2Name: t2.name || "TBD",
+      team2Name: teamDisplayName(t2.name),
       team2Image: t2.image,
       team2Score: t2.result?.gameWins ?? 0,
       games: (m.games || []).map((g: any) => ({
@@ -423,11 +449,11 @@ function scheduleEventsToMatches(rawEvents: any[]): Match[] {
       bestOf: m.strategy?.count || 3,
       streamUrl: buildStreamUrl(ev.streams),
       team1Code: t1.code || t1.name || "TBD",
-      team1Name: t1.name || "TBD",
+      team1Name: teamDisplayName(t1.name),
       team1Image: t1.image,
       team1Score: t1.result?.gameWins ?? 0,
       team2Code: t2.code || t2.name || "TBD",
-      team2Name: t2.name || "TBD",
+      team2Name: teamDisplayName(t2.name),
       team2Image: t2.image,
       team2Score: t2.result?.gameWins ?? 0,
       games: [],

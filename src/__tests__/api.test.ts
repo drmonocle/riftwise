@@ -71,6 +71,27 @@ describe("loadSettings", () => {
     expect(s.followedRegions).toEqual([]);
     expect(s.followedLeagues).toEqual([]);
   });
+  it("repairs settings an old version (or a hand edit) left behind instead of opening a blank page", () => {
+    (globalThis as any).localStorage = fakeStorage();
+    localStorage.setItem(
+      "riftwatch_settings",
+      JSON.stringify({
+        spoilerMode: "yes",
+        tickerMode: "floating",
+        tickerCycleSec: 0,
+        defaultTab: "news-old",
+        followedTeams: ["t1", "GEN", null, 42, "T1"],
+        followedPlayers: "Faker",
+      }),
+    );
+    const s = loadSettings();
+    expect(s.defaultTab).toBe(DEFAULT_SETTINGS.defaultTab);
+    expect(s.tickerMode).toBe(DEFAULT_SETTINGS.tickerMode);
+    expect(s.tickerCycleSec).toBe(DEFAULT_SETTINGS.tickerCycleSec);
+    expect(s.spoilerMode).toBe(DEFAULT_SETTINGS.spoilerMode);
+    expect(s.followedTeams).toEqual(["T1", "GEN"]);
+    expect(s.followedPlayers).toEqual(DEFAULT_SETTINGS.followedPlayers);
+  });
   it("maps old region codes and falls back only when a list is missing", () => {
     (globalThis as any).localStorage = fakeStorage();
     localStorage.setItem("riftwatch_settings", JSON.stringify({ followedRegions: ["EUROPE", "KOREA", "EMEA"] }));

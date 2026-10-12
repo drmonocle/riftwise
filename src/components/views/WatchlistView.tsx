@@ -37,6 +37,14 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
   isRefreshingCatalog = false,
 }) => {
   const [tab, setTab] = useState<WatchlistSubTab>("teams");
+  // With dozens of follows the quick-remove chips filled a phone screen; show a few until asked
+  const [showAllChips, setShowAllChips] = useState(false);
+  const CHIP_LIMIT = 12;
+  const chipTotal = settings.followedTeams.length + settings.followedPlayers.length;
+  const teamChips = showAllChips ? settings.followedTeams : settings.followedTeams.slice(0, CHIP_LIMIT);
+  const playerChips = showAllChips
+    ? settings.followedPlayers
+    : settings.followedPlayers.slice(0, Math.max(0, CHIP_LIMIT - teamChips.length));
   const [search, setSearch] = useState("");
   const [expandedTeamSlug, setExpandedTeamSlug] = useState<string | null>(null);
 
@@ -219,7 +227,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
 
         {/* Quick-remove chips */}
         <div className="flex flex-wrap gap-1.5 pt-1">
-          {settings.followedTeams.map((code) => (
+          {teamChips.map((code) => (
             <span
               key={`chip-t-${code}`}
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#091428] border border-[#c8aa6e]/40 text-[#c8aa6e] font-semibold text-[10px]"
@@ -229,13 +237,14 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                 onClick={() => toggleTeam(code)}
                 className="hover:text-white"
                 title="Remove from watchlist"
+                aria-label={`Stop following ${code}`}
               >
                 <X className="w-3 h-3" />
               </button>
             </span>
           ))}
 
-          {settings.followedPlayers.map((name) => (
+          {playerChips.map((name) => (
             <span
               key={`chip-p-${name}`}
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#091428] border border-[#0ac8b9]/40 text-[#0ac8b9] font-semibold text-[10px]"
@@ -245,11 +254,22 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                 onClick={() => togglePlayer(name)}
                 className="hover:text-white"
                 title="Remove from watchlist"
+                aria-label={`Stop following ${name}`}
               >
                 <X className="w-3 h-3" />
               </button>
             </span>
           ))}
+
+          {chipTotal > CHIP_LIMIT && (
+            <button
+              type="button"
+              onClick={() => setShowAllChips((v) => !v)}
+              className="inline-flex items-center px-2 py-0.5 rounded border border-[#1e282d] text-[#0ac8b9] hover:border-[#0ac8b9]/60 text-[10px] font-semibold"
+            >
+              {showAllChips ? "Show fewer" : `Show all ${chipTotal}`}
+            </button>
+          )}
 
           {settings.followedRegions.length > 0 && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#091428] border border-[#7e8e9f]/40 text-[#f0e6d2] text-[10px]">

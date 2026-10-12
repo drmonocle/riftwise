@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { CatalogData, Match, AppSettings, PlayerEntry } from "../types";
 import { X, Star, Calendar, Shield, ExternalLink, User } from "lucide-react";
 import { computeHeadToHead, pickTeamByCode } from "../helpers";
@@ -56,6 +56,15 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
+  // Keyboard and screen-reader users land inside the pop-up, and go back where they were on close
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!teamCode) return;
+    const before = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+    return () => before?.focus?.();
+  }, [teamCode]);
+
   if (!teamCode) return null;
 
   const upperCode = teamCode.toUpperCase();
@@ -98,6 +107,9 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm select-none animate-fadeIn"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${teamName || teamCode} team details`}
     >
       <div
         className="bg-[#0a1420] border border-[#c8aa6e]/60 rounded-2xl max-w-2xl w-full max-h-[88vh] overflow-hidden flex flex-col shadow-2xl relative"
@@ -140,7 +152,9 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
 
           <button
             type="button"
+            ref={closeRef}
             onClick={onClose}
+            aria-label="Close team details"
             className="p-2 rounded-lg bg-[#091428] hover:bg-[#1e282d] text-[#9bb3c9] hover:text-[#f0e6d2] transition-colors border border-[#1e282d]"
             title="Close"
           >
