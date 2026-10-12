@@ -529,6 +529,14 @@ export function reconcileLiveAndSchedule(
       continue; // NEVER add completed matches to finalLive
     }
 
+    // The schedule is polled less often: show the match as live there too, with the latest score
+    if (sm && lm.state === "inProgress") {
+      sm.state = "inProgress";
+      sm.team1Score = lm.team1Score;
+      sm.team2Score = lm.team2Score;
+      if (lm.games?.length) sm.games = lm.games;
+    }
+
     if (!liveById.has(lm.matchId)) {
       liveById.add(lm.matchId);
       finalLive.push(lm);

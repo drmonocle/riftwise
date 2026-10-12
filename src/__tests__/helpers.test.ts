@@ -73,6 +73,15 @@ describe("reconcileLiveAndSchedule", () => {
     const { finalLive } = reconcileLiveAndSchedule([match({ matchId: "x", state: "inProgress" })], sched);
     expect(finalLive).toHaveLength(1);
   });
+
+  it("marks a live match as live in a stale schedule, with the live score", () => {
+    const sched = [match({ matchId: "x", bestOf: 5, state: "unstarted" })];
+    const live = [match({ matchId: "x", bestOf: 5, state: "inProgress", team2Score: 1 })];
+    const { finalLive, finalSchedule } = reconcileLiveAndSchedule(live, sched);
+    expect(finalLive).toHaveLength(1);
+    expect(finalSchedule[0].state).toBe("inProgress");
+    expect(finalSchedule[0].team2Score).toBe(1);
+  });
 });
 
 describe("computeLeagueStandings", () => {

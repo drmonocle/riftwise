@@ -857,15 +857,19 @@ export default function App() {
       <footer className="bg-[#0a0e17] border-t border-[#1e282d] px-4 py-1 flex items-center justify-between text-[11px] text-[#7e8e9f] select-none">
         <div className="flex items-center gap-2">
           <span className={`w-1.5 h-1.5 rounded-full ${syncFailed ? "bg-[#e84057]" : "bg-[#0ac8b9]"}`} />
-          <span>{syncLabel}</span>
+          <span className="whitespace-nowrap">{syncLabel}</span>
         </div>
         <div className="flex items-center gap-3">
           {settings.spoilerMode && (
-            <span className="text-[#c8aa6e] font-semibold">SPOILER MODE ACTIVE</span>
+            <span className="text-[#c8aa6e] font-semibold whitespace-nowrap">
+              <span className="hidden sm:inline">SPOILER MODE ACTIVE</span>
+              <span className="sm:hidden">SPOILERS HIDDEN</span>
+            </span>
           )}
+          {/* Narrow screens: make room for the spoiler notice so the footer stays on one line */}
           <span
             onClick={() => handleOpenUrl("https://drmonocle.com")}
-            className="hover:text-[#c8aa6e] cursor-pointer"
+            className={`hover:text-[#c8aa6e] cursor-pointer whitespace-nowrap ${settings.spoilerMode ? "hidden sm:inline" : ""}`}
           >
             Monocle Productions LLC
           </span>

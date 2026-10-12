@@ -239,7 +239,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 const isT1Followed = settings.followedTeams.includes(m.team1Code);
                 const isT2Followed = settings.followedTeams.includes(m.team2Code);
                 const isRevealed = !!revealedMatchIds[m.matchId];
-                const showScore = m.state === "completed" && (!settings.spoilerMode || isRevealed);
+                const isLive = m.state === "inProgress";
+                const showScore = (m.state === "completed" || isLive) && (!settings.spoilerMode || isRevealed);
                 const h2h = computeHeadToHead(m.team1Code, m.team2Code, schedule, m.matchId);
 
                 return (
@@ -261,7 +262,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     {/* Time, Calendar & League */}
                     <div className="flex items-center gap-2 min-w-0 sm:w-44 shrink sm:shrink-0 order-1">
                       <span className="font-mono text-xs text-[#0ac8b9] font-bold shrink-0">{timeStr}</span>
-                      {m.state !== "completed" && (
+                      {m.state === "unstarted" && (
                         <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />
                       )}
                       <span className="text-[11px] text-[#9bb3c9] truncate font-medium">{m.leagueName}</span>
@@ -319,12 +320,12 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                                 {m.team1Score} : {m.team2Score}
                               </span>
                             </div>
-                          ) : m.state === "completed" && settings.spoilerMode ? (
+                          ) : (m.state === "completed" || isLive) && settings.spoilerMode ? (
                             <button
                               type="button"
                               onClick={() => toggleReveal(m.matchId)}
                               className="text-[11px] px-2 py-0.5 rounded bg-[#091428] border border-[#1e282d] text-[#9bb3c9] hover:text-[#c8aa6e] hover:border-[#c8aa6e]/60 transition-colors cursor-pointer"
-                              title="Click to reveal final score"
+                              title={isLive ? "Click to reveal the live score" : "Click to reveal final score"}
                             >
                               Reveal
                             </button>
@@ -379,6 +380,11 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       </span>
                       {m.state === "completed" ? (
                         <span className="text-[10px] text-[#9bb3c9] font-semibold">FINAL</span>
+                      ) : isLive ? (
+                        <span className="flex items-center gap-1 text-[10px] text-[#e84057] font-bold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#e84057] animate-pulse" />
+                          LIVE
+                        </span>
                       ) : (
                         <span className="text-[10px] text-[#c8aa6e] font-semibold">UPCOMING</span>
                       )}

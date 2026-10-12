@@ -386,8 +386,9 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 </div>
 
                 {/* Series Progression Game Tracker */}
-                {m.bestOf > 1 && (
-                  <div className="flex items-center justify-center gap-1.5 my-2 pt-2 border-t border-[#1e282d]/40">
+                {/* Hidden in spoiler mode: the game number gives the series score away (Game 5 = 2-2) */}
+                {m.bestOf > 1 && showScore && (
+                  <div className="flex flex-wrap items-center justify-center gap-1.5 my-2 pt-2 border-t border-[#1e282d]/40">
                     {Array.from({ length: m.bestOf }).map((_, idx) => {
                       const gNum = idx + 1;
                       const winsNeeded = Math.ceil((m.bestOf || 1) / 2);
@@ -396,21 +397,30 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       const isPast = gNum <= totalGamesPlayed;
                       const isCurrent = !isMatchDone && !isPast && totalGamesPlayed === idx;
                       const isNotNeeded = isMatchDone && gNum > totalGamesPlayed;
+                      // Between games Riot marks the next game "unstarted": say "Next", not "Live"
+                      const isBetweenGames =
+                        isCurrent && (m.games?.length ?? 0) > 0 && !m.games.some((g) => g.state === "inProgress");
 
                       if (isNotNeeded) return null;
 
                       return (
                         <span
                           key={gNum}
-                          className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold border transition-all ${
-                            isCurrent
+                          className={`px-1.5 sm:px-2.5 py-0.5 rounded text-[10px] font-mono font-bold border whitespace-nowrap transition-all ${
+                            isCurrent && isBetweenGames
+                              ? "bg-[#c8aa6e]/10 border-[#c8aa6e] text-[#c8aa6e]"
+                              : isCurrent
                               ? "bg-[#e84057]/20 border-[#e84057] text-[#e84057] animate-pulse"
                               : isPast
                               ? "bg-[#091428] border-[#1e282d] text-[#0ac8b9]"
                               : "bg-[#091428]/40 border-[#1e282d]/50 text-[#7e8e9f]"
                           }`}
                         >
-                          {isCurrent ? `● Game ${gNum} (Live)` : `Game ${gNum}`}
+                          {isCurrent && !isBetweenGames && "● "}
+                          <span className="sm:hidden">G</span>
+                          <span className="hidden sm:inline">Game </span>
+                          {gNum}
+                          {isCurrent && (isBetweenGames ? " · Next" : " · Live")}
                         </span>
                       );
                     })}
@@ -474,16 +484,15 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 {upNext.map((m) => (
                   <div
                     key={m.matchId}
-                    className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d] text-xs"
+                    className="flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-1 p-3 rounded-lg bg-[#0a1420] border border-[#1e282d] text-xs"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="font-bold text-[#0ac8b9] text-[11px] w-20 truncate">{m.leagueName}</span>
-                      <span className="text-[#f0e6d2] font-semibold truncate">
-                        {m.team1Name} <span className="text-[#9bb3c9] mx-1">vs</span> {m.team2Name}
-                      </span>
-                      <span className="text-[#9bb3c9] text-[11px] font-medium">Bo{m.bestOf}</span>
-                    </div>
-                    <div className="text-[#9bb3c9] font-mono text-[11px] font-medium shrink-0 ml-2">
+                    {/* Phones: league, Bo and time on the first line, the teams on the second */}
+                    <span className="font-bold text-[#0ac8b9] text-[11px] flex-1 sm:flex-none sm:w-24 truncate min-w-0">{m.leagueName}</span>
+                    <span className="order-last sm:order-none basis-full sm:basis-auto sm:flex-1 text-[#f0e6d2] font-semibold truncate min-w-0">
+                      {m.team1Name} <span className="text-[#9bb3c9] mx-1">vs</span> {m.team2Name}
+                    </span>
+                    <span className="text-[#9bb3c9] text-[11px] font-medium shrink-0">Bo{m.bestOf}</span>
+                    <div className="text-[#9bb3c9] font-mono text-[11px] font-medium shrink-0">
                       {formatMatchTime(m.startTimeUtc)}
                     </div>
                   </div>

@@ -250,12 +250,16 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           </div>
                           {h2h && <H2HMeter team1Code={teamCode} team2Code={oppCode} h2h={h2h} matchId={m.matchId} />}
                         </div>
-                        <div className="text-right font-mono text-[11px] text-[#0ac8b9]">
-                          {new Date(m.startTimeUtc).toLocaleDateString([], {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </div>
+                        {m.state === "inProgress" ? (
+                          <div className="text-right font-mono text-[11px] font-bold text-[#e84057]">LIVE</div>
+                        ) : (
+                          <div className="text-right font-mono text-[11px] text-[#0ac8b9]">
+                            {new Date(m.startTimeUtc).toLocaleDateString([], {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -280,6 +284,18 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                     const oppScore = isT1 ? m.team2Score : m.team1Score;
                     const oppName = isT1 ? m.team2Name : m.team1Name;
                     const won = myScore > oppScore;
+
+                    if (settings.spoilerMode) {
+                      return (
+                        <div
+                          key={m.matchId}
+                          className="p-2.5 rounded-lg bg-[#091428] border border-[#1e282d] flex items-center justify-between text-xs"
+                        >
+                          <span className="font-semibold text-[#f0e6d2]">vs {oppName}</span>
+                          <span className="text-[10px] text-[#9bb3c9]">Result hidden (spoiler mode)</span>
+                        </div>
+                      );
+                    }
 
                     return (
                       <div
