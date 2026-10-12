@@ -20,7 +20,18 @@ export const ShareMatchButton: React.FC<{ match: Match; className?: string }> = 
       await navigator.clipboard.writeText(url);
       setCopied(true);
     } catch {
-      window.prompt("Copy this link:", url);
+      // The async clipboard can refuse (e.g. the desktop window isn't focused): try the old copy
+      // command before falling back to a box the user copies from by hand.
+      const ta = document.createElement("textarea");
+      ta.value = url;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      ta.remove();
+      if (ok) setCopied(true);
+      else window.prompt("Copy this link:", url);
     }
   };
 

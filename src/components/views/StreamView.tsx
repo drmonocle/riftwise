@@ -295,7 +295,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
 
       {/* Next banger, only when it isn't already the next match */}
       {showBanger && nextBanger && (
-        <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg border border-[#ff4655]/50 bg-[#1e131d] text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-2.5 rounded-lg border border-[#ff4655]/50 bg-[#1e131d] text-xs">
           <div className="flex items-center gap-2 min-w-0">
             <Flame className="w-3.5 h-3.5 text-[#ff4655] fill-current shrink-0" />
             <span className="font-bold text-[#ff4655] uppercase tracking-wider text-[10px] shrink-0">Next banger</span>
