@@ -237,7 +237,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <button
                   onClick={() => onCheckForUpdate?.()}
                   disabled={isCheckingUpdate}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#091428] hover:bg-[#121e2d] border border-[#1e282d] hover:border-[#c8aa6e] text-[#f0e6d2] font-semibold text-xs transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded bg-[#091428] hover:bg-[#121e2d] border border-[#1e282d] hover:border-[#c8aa6e] text-[#f0e6d2] font-semibold text-xs transition-colors disabled:opacity-50"
                   title="Check GitHub Releases for new updates"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isCheckingUpdate ? "animate-spin text-[#c8aa6e]" : ""}`} />
@@ -246,7 +246,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                 <button
                   onClick={() => onOpenUrl("https://github.com/drmonocle/riftwatch/releases")}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#091428] hover:bg-[#121e2d] border border-[#1e282d] text-[#7e8e9f] hover:text-[#f0e6d2] text-xs transition-colors"
+                  className="flex items-center gap-1.5 whitespace-nowrap px-2.5 py-1.5 rounded bg-[#091428] hover:bg-[#121e2d] border border-[#1e282d] text-[#7e8e9f] hover:text-[#f0e6d2] text-xs transition-colors"
                   title="View all releases on GitHub"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
