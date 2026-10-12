@@ -35,6 +35,7 @@
         "alwaysOnTop": true,
         "resizable": true,
         "visible": false,
+        "focus": false,
         "shadow": false
       }
     ],

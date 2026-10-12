@@ -14,7 +14,8 @@ import {
   loadPlayerStats,
   loadRecords,
   loadStatsMeta,
-  loadStatsSearch,
+  loadTeamIndex,
+  loadPlayerIndex,
   loadTeamStats,
   loadTitles,
   searchByName,
@@ -960,16 +961,19 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings }) => {
   const [team, setTeam] = useState<string | null>(null);
   const [player, setPlayer] = useState<string | null>(null);
   const { data: meta, error: metaError } = useLoad<StatsMeta>(loadStatsMeta, []);
-  const needsSearch = tab === "teams" || tab === "players" || tab === "compare";
-  const [search, setSearch] = useState<StatsSearch | null>(null);
+  // Team and player name lists load separately and only for the screens that need them
+  const needTeams = tab === "teams" || tab === "compare";
+  const needPlayers = tab === "players" || tab === "compare";
+  const [teamIdx, setTeamIdx] = useState<StatsSearch["teams"] | null>(null);
+  const [playerIdx, setPlayerIdx] = useState<StatsSearch["players"] | null>(null);
   const [searchError, setSearchError] = useState(false);
 
   useEffect(() => {
-    if (!needsSearch || search) return;
-    loadStatsSearch()
-      .then(setSearch)
-      .catch(() => setSearchError(true));
-  }, [needsSearch, search]);
+    if (needTeams && !teamIdx) loadTeamIndex().then(setTeamIdx).catch(() => setSearchError(true));
+    if (needPlayers && !playerIdx) loadPlayerIndex().then(setPlayerIdx).catch(() => setSearchError(true));
+  }, [needTeams, needPlayers, teamIdx, playerIdx]);
+  const search: StatsSearch | null =
+    (needTeams && !teamIdx) || (needPlayers && !playerIdx) ? null : { teams: teamIdx || [], players: playerIdx || [] };
 
   const openTeam = (s: string) => {
     setTab("teams");

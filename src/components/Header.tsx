@@ -69,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({
       </button>
 
       {/* Status pills: these shrink and truncate instead of wrapping; on phones the ticker shows the same info */}
-      <div className="hidden sm:flex items-center gap-2 min-w-0 flex-1">
+      <div className="hidden sm:flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
         {updateInfo?.hasUpdate && (
           <button
             onClick={() => onSelectTab("settings")}
@@ -144,7 +144,7 @@ export const Header: React.FC<HeaderProps> = ({
             href={DESKTOP_DOWNLOAD_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className={`${pill} font-semibold bg-[#c8aa6e] border-[#c8aa6e] text-[#091428] hover:bg-[#f0e6d2]`}
+            className={`${pill} hidden sm:inline-flex font-semibold bg-[#c8aa6e] border-[#c8aa6e] text-[#091428] hover:bg-[#f0e6d2]`}
             title="Download RiftWatch for Windows (free, about 4 MB, no installer)"
           >
             <Download className="w-3.5 h-3.5" />

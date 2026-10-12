@@ -11,6 +11,7 @@ import {
   FolderOpen,
   Heart,
   Check,
+  AlertTriangle,
   Globe,
   Radio,
   Database,
@@ -201,10 +202,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-[#0ac8b9]" />
-                  <span className="font-semibold text-[#f0e6d2] text-xs">
-                    RiftWatch is up to date (v{APP_VERSION})
-                  </span>
+                  {lastUpdateCheck?.error && !isCheckingUpdate ? (
+                    // The check failed, so we can't say whether this is the newest version
+                    <>
+                      <AlertTriangle className="w-4 h-4 text-[#c8aa6e]" />
+                      <span className="font-semibold text-[#f0e6d2] text-xs">
+                        Couldn't check for updates · you have v{APP_VERSION}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4 text-[#0ac8b9]" />
+                      <span className="font-semibold text-[#f0e6d2] text-xs">
+                        RiftWatch is up to date (v{APP_VERSION})
+                      </span>
+                    </>
+                  )}
                 </div>
                 <div
                   className={`text-[11px] mt-0.5 ml-6 ${lastUpdateCheck?.error ? "text-[#e84057]" : "text-[#7e8e9f]"}`}
@@ -213,7 +226,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   {isCheckingUpdate
                     ? "Checking GitHub for a newer release…"
                     : lastUpdateCheck?.error
-                      ? lastUpdateCheck.error
+                      ? `${lastUpdateCheck.error} Check your internet connection and try again.`
                       : lastUpdateCheck
                         ? `Checked at ${new Date(lastUpdateCheck.at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · latest release is v${updateInfo?.latestVersion || APP_VERSION}`
                         : "Updates are checked automatically a few seconds after launch."}
