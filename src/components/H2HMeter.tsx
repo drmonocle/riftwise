@@ -1,6 +1,7 @@
 import React from "react";
 import { Swords } from "lucide-react";
 import { HeadToHeadStats } from "../helpers";
+import { tl } from "../i18n";
 
 interface H2HMeterProps {
   team1Code: string;
@@ -34,8 +35,8 @@ export const H2HBar: React.FC<{ t1Pct: number; className?: string }> = ({ t1Pct,
 export const H2HMeter: React.FC<H2HMeterProps> = ({ team1Code, team2Code, h2h, size = "sm", matchId }) => {
   const total = h2h.team1Wins + h2h.team2Wins;
   const t1Pct = total > 0 ? Math.round((h2h.team1Wins / total) * 100) : 50;
-  const summary = `All-time head-to-head: ${team1Code} ${h2h.team1Wins}-${h2h.team2Wins} ${team2Code} (${h2h.totalGames} games)`;
-  const label = `${summary}. Show full history.`;
+  const summary = tl("All-time head-to-head: {a} {w1}-{w2} {b} ({games} games)", { a: team1Code, w1: h2h.team1Wins, w2: h2h.team2Wins, b: team2Code, games: h2h.totalGames });
+  const label = tl("{summary}. Show full history.", { summary });
 
   const open = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -49,7 +50,7 @@ export const H2HMeter: React.FC<H2HMeterProps> = ({ team1Code, team2Code, h2h, s
         type="button"
         onClick={open}
         aria-label={label}
-        title={`${summary} · tap for history`}
+        title={tl("{summary} · tap for history", { summary })}
         className="flex flex-col items-center w-[84px] mt-1 rounded px-0.5 hover:bg-[#1e282d]/60 transition-colors cursor-pointer"
       >
         <div className="flex items-center justify-between w-full text-[9px] font-mono leading-none mb-0.5">
@@ -67,12 +68,12 @@ export const H2HMeter: React.FC<H2HMeterProps> = ({ team1Code, team2Code, h2h, s
       type="button"
       onClick={open}
       aria-label={label}
-      title={`${summary} · tap for history`}
+      title={tl("{summary} · tap for history", { summary })}
       className="w-full max-w-xs px-3 py-2 rounded-lg bg-[#091428] border border-[#c8aa6e]/40 hover:border-[#c8aa6e] transition-colors cursor-pointer text-left"
     >
       <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-wider text-[#c8aa6e] font-semibold mb-1.5">
         <Swords className="w-3 h-3 text-[#0ac8b9]" />
-        <span>All-Time H2H · {h2h.totalGames} games</span>
+        <span>{tl("All-Time H2H · {games} games", { games: h2h.totalGames })}</span>
       </div>
       <div className="flex items-center gap-2 text-xs font-mono font-bold">
         <span className="whitespace-nowrap" style={{ color: T1_COLOR }}>

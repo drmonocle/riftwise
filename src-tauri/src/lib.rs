@@ -114,6 +114,32 @@ fn restore_window_place(app: &tauri::AppHandle, label: &str) {
     }
 }
 
+/// Tray menu items by id, so the app can relabel them in the reader's language.
+struct TrayItems(std::sync::Mutex<std::collections::HashMap<String, MenuItem<tauri::Wry>>>);
+
+/// The "still running in the tray" notice, translated by the app (English until it sets it).
+static TRAY_HINT: std::sync::Mutex<(String, String)> = std::sync::Mutex::new((String::new(), String::new()));
+
+/// Sets the translated tray menu labels and tray notice. Keys are the menu ids, plus
+/// "tray_hint_title" / "tray_hint_body".
+#[tauri::command]
+fn set_ui_texts(app: tauri::AppHandle, texts: std::collections::HashMap<String, String>) {
+    if let Some(items) = app.try_state::<TrayItems>() {
+        if let Ok(map) = items.0.lock() {
+            for (id, item) in map.iter() {
+                if let Some(text) = texts.get(id) {
+                    let _ = item.set_text(text);
+                }
+            }
+        }
+    }
+    if let (Some(title), Some(body)) = (texts.get("tray_hint_title"), texts.get("tray_hint_body")) {
+        if let Ok(mut hint) = TRAY_HINT.lock() {
+            *hint = (title.clone(), body.clone());
+        }
+    }
+}
+
 /// The first time the X button hides RiftWatch to the tray, say so: otherwise it looks like it quit.
 /// Remembered with a marker file so it is only said once.
 fn tell_once_about_tray(app: &tauri::AppHandle) {
@@ -125,11 +151,18 @@ fn tell_once_about_tray(app: &tauri::AppHandle) {
     }
     let _ = std::fs::create_dir_all(&dir);
     let _ = std::fs::write(&marker, b"1");
+    let (title, body) = match TRAY_HINT.lock() {
+        Ok(h) if !h.0.is_empty() => (h.0.clone(), h.1.clone()),
+        _ => (
+            "RiftWatch is still running".to_string(),
+            "It's in the system tray (bottom-right, near the clock) so match alerts keep working. Right-click the icon to quit, or change this in Settings.".to_string(),
+        ),
+    };
     let _ = app
         .notification()
         .builder()
-        .title("RiftWatch is still running")
-        .body("It's in the system tray (bottom-right, near the clock) so match alerts keep working. Right-click the icon to quit, or change this in Settings.")
+        .title(title)
+        .body(body)
         .show();
 }
 
@@ -486,7 +519,8 @@ pub fn run() {
             set_close_to_tray,
             send_notification,
             set_autostart,
-            apply_app_update
+            apply_app_update,
+            set_ui_texts
         ])
         .setup(|app| {
             #[cfg(target_os = "windows")]
@@ -536,6 +570,15 @@ pub fn run() {
             let sep4 = PredefinedMenuItem::separator(app)?;
 
             let quit_i = MenuItem::with_id(app, "quit", "Quit RiftWatch", true, None::<&str>)?;
+
+            let mut by_id = std::collections::HashMap::new();
+            for item in [
+                &show_i, &hide_i, &nav_live, &nav_schedule, &nav_stats, &nav_stream, &nav_watchlist, &nav_news,
+                &nav_settings, &toggle_hud, &stream_twitch, &stream_youtube, &stream_sched, &kofi_support, &quit_i,
+            ] {
+                by_id.insert(item.id().0.clone(), item.clone());
+            }
+            app.manage(TrayItems(std::sync::Mutex::new(by_id)));
 
             let menu = Menu::with_items(
                 app,

@@ -11,6 +11,7 @@ import {
   TournamentInfo,
   TournamentStandings,
 } from "../../api";
+import { tl, locale, regionName } from "../../i18n";
 
 interface StandingsViewProps {
   schedule: Match[];
@@ -42,7 +43,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
     let cancelled = false;
     fetchLeagueIds()
       .then((ids) => !cancelled && setLeagueIds(ids))
-      .catch(() => !cancelled && setError("Couldn't load the league list from Riot."))
+      .catch(() => !cancelled && setError(tl("Couldn't load the league list from Riot.")))
       .finally(() => !cancelled && setLoading(null));
     return () => {
       cancelled = true;
@@ -88,7 +89,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
         setTournaments(list);
         setSelectedTournament(pickCurrentTournament(list)?.id || "");
       })
-      .catch(() => !cancelled && setError("Couldn't load this league's tournaments from Riot."))
+      .catch(() => !cancelled && setError(tl("Couldn't load this league's tournaments from Riot.")))
       .finally(() => !cancelled && setLoading(null));
     return () => {
       cancelled = true;
@@ -107,7 +108,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
         setStandings(s);
         setStageIndex(currentStageIndex(s.stages));
       })
-      .catch(() => !cancelled && setError("Couldn't load standings from Riot right now."))
+      .catch(() => !cancelled && setError(tl("Couldn't load standings from Riot right now.")))
       .finally(() => !cancelled && setLoading(null));
     return () => {
       cancelled = true;
@@ -140,18 +141,18 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
           ))}
         </div>
         <label className="relative ml-auto">
-          <span className="sr-only">Choose any league</span>
+          <span className="sr-only">{tl("Choose any league")}</span>
           <select
             value={activeLeague}
             onChange={(e) => setSelectedLeague(e.target.value)}
             className="appearance-none bg-[#0a0e17] border border-[#1e282d] rounded-lg pl-3 pr-8 py-1 text-xs text-[#f0e6d2] focus:border-[#c8aa6e] focus:outline-none"
           >
             <option value="" disabled>
-              All leagues…
+              {tl("All leagues…")}
             </option>
             {allLeagues.map((l) => (
               <option key={l.slug} value={l.slug}>
-                {l.region ? `${l.region} · ` : ""}{l.name}
+                {l.region ? `${regionName(l.region)} · ` : ""}{l.name}
               </option>
             ))}
           </select>
@@ -163,7 +164,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
       {tournaments.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <label className="relative">
-            <span className="sr-only">Tournament</span>
+            <span className="sr-only">{tl("Tournament")}</span>
             <select
               value={selectedTournament}
               onChange={(e) => setSelectedTournament(e.target.value)}
@@ -210,25 +211,25 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
           aria-pressed={!hideResults}
         >
           {hideResults ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-          {hideResults ? "Spoiler mode: match results hidden. Reveal this stage" : "Hide this stage's results again"}
+          {hideResults ? tl("Spoiler mode: match results hidden. Reveal this stage") : tl("Hide this stage's results again")}
         </button>
       )}
 
       {/* Body */}
       {error ? (
-        <Notice icon={<Trophy className="w-8 h-8 text-[#c8aa6e]/40 mx-auto" />} title="Standings unavailable" text={error} />
+        <Notice icon={<Trophy className="w-8 h-8 text-[#c8aa6e]/40 mx-auto" />} title={tl("Standings unavailable")} text={error} />
       ) : loading ? (
         <Notice
           icon={<RefreshCw className="w-6 h-6 text-[#0ac8b9] mx-auto animate-spin" />}
-          title={loading === "leagues" ? "Loading leagues…" : loading === "tournaments" ? "Finding the current split…" : "Loading standings…"}
+          title={loading === "leagues" ? tl("Loading leagues…") : loading === "tournaments" ? tl("Finding the current split…") : tl("Loading standings…")}
         />
       ) : !activeLeague ? (
-        <Notice icon={<Trophy className="w-8 h-8 text-[#c8aa6e]/40 mx-auto" />} title="Pick a league" text="Choose a league above to see its official standings." />
+        <Notice icon={<Trophy className="w-8 h-8 text-[#c8aa6e]/40 mx-auto" />} title={tl("Pick a league")} text={tl("Choose a league above to see its official standings.")} />
       ) : !stage ? (
         <Notice
           icon={<Trophy className="w-8 h-8 text-[#c8aa6e]/40 mx-auto" />}
-          title="No standings yet"
-          text="Riot hasn't published a table for this tournament yet."
+          title={tl("No standings yet")}
+          text={tl("Riot hasn't published a table for this tournament yet.")}
         />
       ) : (
         <div className="space-y-4">
@@ -244,9 +245,9 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                   <thead className="bg-[#091428] border-b border-[#1e282d] text-[#9bb3c9] font-bold uppercase tracking-wider text-[11px]">
                     <tr>
                       <th className="py-2.5 px-3 w-10 text-center">#</th>
-                      <th className="py-2.5 px-3">Team</th>
+                      <th className="py-2.5 px-3">{tl("Team")}</th>
                       <th className="py-2.5 px-3 text-center whitespace-nowrap">W – L</th>
-                      <th className="py-2.5 px-3 text-center hidden sm:table-cell">Win%</th>
+                      <th className="py-2.5 px-3 text-center hidden sm:table-cell">{tl("Win%")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#1e282d]/60">
@@ -266,7 +267,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                   type="button"
                                   onClick={() => onSelectTeam(team.code, team.name)}
                                   className="font-bold text-[#f0e6d2] group-hover:text-[#c8aa6e] transition-colors truncate text-left"
-                                  title={`View ${team.name} roster`}
+                                  title={tl("View {team} roster", { team: team.name })}
                                 >
                                   <span className="sm:hidden">{team.code}</span>
                                   <span className="hidden sm:inline">{team.name}</span>
@@ -279,8 +280,8 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                       onToggleTeamFollow(team.code);
                                     }}
                                     className={`p-1 rounded hover:bg-[#1e282d] transition-colors shrink-0 ${isFollowed ? "text-[#c8aa6e]" : "text-[#7e8e9f] hover:text-[#c8aa6e]"}`}
-                                    aria-label={isFollowed ? `Unfollow ${team.code}` : `Follow ${team.code}`}
-                                    title={isFollowed ? `Unfollow ${team.code}` : `Follow ${team.code}`}
+                                    aria-label={isFollowed ? tl("Unfollow {name}", { name: team.code }) : tl("Follow {name}", { name: team.code })}
+                                    title={isFollowed ? tl("Unfollow {name}", { name: team.code }) : tl("Follow {name}", { name: team.code })}
                                   >
                                     <Star className={`w-3.5 h-3.5 ${isFollowed ? "fill-[#c8aa6e]" : ""}`} />
                                   </button>
@@ -326,7 +327,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
           )}
           {standings && (
             <div className="text-[10px] text-[#7e8e9f] text-right">
-              Official standings from lolesports.com · updated {new Date(standings.fetchedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+              {tl("Official standings from lolesports.com · updated {time}", { time: new Date(standings.fetchedAt).toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit" }) })}
             </div>
           )}
         </div>
@@ -353,10 +354,10 @@ function prettyTournament(t: TournamentInfo): string {
 
 function tournamentStatus(t: TournamentInfo): string {
   const today = new Date().toISOString().slice(0, 10);
-  const fmt = (d: string) => new Date(d + "T12:00:00Z").toLocaleDateString([], { month: "short", day: "numeric" });
-  if (t.startDate <= today && today <= t.endDate) return `In progress · ${fmt(t.startDate)} – ${fmt(t.endDate)}`;
-  if (t.endDate < today) return `Finished ${fmt(t.endDate)}`;
-  return `Starts ${fmt(t.startDate)}`;
+  const fmt = (d: string) => new Date(d + "T12:00:00Z").toLocaleDateString(locale(), { month: "short", day: "numeric" });
+  if (t.startDate <= today && today <= t.endDate) return tl("In progress · {from} – {to}", { from: fmt(t.startDate), to: fmt(t.endDate) });
+  if (t.endDate < today) return tl("Finished {date}", { date: fmt(t.endDate) });
+  return tl("Starts {date}", { date: fmt(t.startDate) });
 }
 
 const Notice: React.FC<{ icon: React.ReactNode; title: string; text?: string }> = ({ icon, title, text }) => (
@@ -416,7 +417,7 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
               disabled={tbd}
               onClick={() => onSelectTeam(t.code, t.name)}
               className={`flex items-center gap-2 min-w-0 ${won ? "text-[#0ac8b9] font-bold" : "text-[#f0e6d2]"} disabled:text-[#7e8e9f]`}
-              title={tbd ? undefined : `View ${t.name} roster`}
+              title={tbd ? undefined : tl("View {team} roster", { team: t.name })}
             >
               <TeamLogo code={t.code} image={tbd ? undefined : t.image} onClick={() => !tbd && onSelectTeam(t.code, t.name)} size="w-5 h-5" />
               <span className="truncate">{t.code}</span>
@@ -428,7 +429,7 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
         );
       })}
       <div className="text-[9px] uppercase tracking-wider text-[#7e8e9f] pt-0.5">
-        {match.state === "inProgress" ? <span className="text-[#e84057]">Live</span> : match.state === "completed" ? (masked ? "Final · hidden" : "Final") : "Upcoming"}
+        {match.state === "inProgress" ? <span className="text-[#e84057]">{tl("Live")}</span> : match.state === "completed" ? (masked ? tl("Final · hidden") : tl("Final")) : tl("Upcoming")}
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Match } from "../types";
 import { CalendarPlus, Calendar, Download, ExternalLink } from "lucide-react";
+import { tl } from "../i18n";
 
 interface AddToCalendarMenuProps {
   match: Match;
@@ -51,11 +52,11 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
 
   const title = `[LoL] ${match.team1Code} vs ${match.team2Code} (${match.leagueName})`;
   const description = [
-    `League of Legends Esports: ${match.team1Name} vs ${match.team2Name}`,
-    `League: ${match.leagueName}${match.blockName ? ` - ${match.blockName}` : ""}`,
-    `Format: Best of ${match.bestOf}`,
-    `Watch Live: https://lolesports.com`,
-    `Tracked via RiftWatch Desktop`,
+    tl("League of Legends Esports: {a} vs {b}", { a: match.team1Name, b: match.team2Name }),
+    tl("League: {league}", { league: `${match.leagueName}${match.blockName ? ` - ${match.blockName}` : ""}` }),
+    tl("Format: Best of {n}", { n: match.bestOf }),
+    tl("Watch live: {url}", { url: "https://lolesports.com" }),
+    tl("Added from RiftWatch"),
   ].join("\n");
   const location = "https://lolesports.com";
 
@@ -128,7 +129,7 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
               ? "bg-[#c8aa6e]/20 text-[#c8aa6e]"
               : "text-[#9bb3c9] hover:text-[#c8aa6e] hover:bg-[#1e282d]"
           }`}
-          title="Add match to Calendar (Google, Apple, Outlook, Yahoo)"
+          title={tl("Add match to Calendar (Google, Apple, Outlook, Yahoo)")}
         >
           <CalendarPlus className="w-3.5 h-3.5" />
         </button>
@@ -146,7 +147,7 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
           }`}
         >
           <CalendarPlus className="w-3.5 h-3.5 text-[#c8aa6e]" />
-          <span>Add to Calendar</span>
+          <span>{tl("Add to Calendar")}</span>
         </button>
       )}
 
@@ -158,7 +159,7 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
         >
           <div className="px-3 py-1.5 border-b border-[#1e282d] text-[10px] font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
             <Calendar className="w-3 h-3" />
-            <span>Select Calendar Type</span>
+            <span>{tl("Select Calendar Type")}</span>
           </div>
 
           <div className="py-1">
@@ -173,7 +174,7 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
             >
               <div className="flex items-center gap-2">
                 <span className="text-sm">🌐</span>
-                <span className="font-medium">Google Calendar</span>
+                <span className="font-medium">{tl("Google Calendar")}</span>
               </div>
               <ExternalLink className="w-3 h-3 text-[#9bb3c9]" />
             </button>
@@ -186,7 +187,7 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
             >
               <div className="flex items-center gap-2">
                 <span className="text-sm">🍏</span>
-                <span className="font-medium">Apple Calendar (.ics)</span>
+                <span className="font-medium">{tl("Apple Calendar (.ics)")}</span>
               </div>
               <Download className="w-3 h-3 text-[#9bb3c9]" />
             </button>
@@ -202,7 +203,7 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
             >
               <div className="flex items-center gap-2">
                 <span className="text-sm">📧</span>
-                <span className="font-medium">Outlook.com / 365</span>
+                <span className="font-medium">{tl("Outlook.com / 365")}</span>
               </div>
               <ExternalLink className="w-3 h-3 text-[#9bb3c9]" />
             </button>
@@ -218,7 +219,7 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
             >
               <div className="flex items-center gap-2">
                 <span className="text-sm">🟣</span>
-                <span className="font-medium">Yahoo Calendar</span>
+                <span className="font-medium">{tl("Yahoo Calendar")}</span>
               </div>
               <ExternalLink className="w-3 h-3 text-[#9bb3c9]" />
             </button>

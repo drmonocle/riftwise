@@ -3,6 +3,8 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./App.css";
 import { IS_WEB } from "./platform";
+import { loadSettings } from "./api";
+import { initI18n } from "./i18n";
 
 // On lolworlds.com the site-wide service worker serves every request cache-first, which would
 // show stale live scores. /riftwatch/sw.js is a pass-through worker whose narrower scope wins.
@@ -10,8 +12,22 @@ if (IS_WEB && "serviceWorker" in navigator && window.location.pathname.startsWit
   navigator.serviceWorker.register("/riftwatch/sw.js", { scope: "/riftwatch/" }).catch(() => {});
 }
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+// The language is loaded before the first render, so every screen can simply call tl().
+const startLanguage = loadSettings().language;
+initI18n(startLanguage).finally(() => {
+  ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  );
+});
+
+// The language was changed in another window (main window <-> floating HUD): follow it.
+window.addEventListener("storage", (e) => {
+  if (e.key !== "riftwatch_settings") return;
+  try {
+    if (JSON.parse(e.newValue || "{}").language !== startLanguage) window.location.reload();
+  } catch {
+    /* ignore */
+  }
+});

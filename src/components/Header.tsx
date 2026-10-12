@@ -4,6 +4,7 @@ import { Radio, RefreshCw, Eye, EyeOff, Heart, Sparkles, Minimize2, Maximize2, D
 import { formatStreamHeaderTitle, streamPhase } from "../helpers";
 import { APP_VERSION } from "../version";
 import { IS_DESKTOP, IS_WEB, IS_WINDOWS_BROWSER, DESKTOP_DOWNLOAD_URL } from "../platform";
+import { tl, tn } from "../i18n";
 
 interface HeaderProps {
   settings: AppSettings;
@@ -47,7 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
   const streamInfo =
     phase.kind === "airing"
       ? formatStreamHeaderTitle(phase.current)
-      : { title: phase.kind === "break" ? "Twitch 24/7: On break" : "Twitch 24/7: Back shortly", isLive: false };
+      : { title: phase.kind === "break" ? tl("Twitch 24/7: On break") : tl("Twitch 24/7: Back shortly"), isLive: false };
   const extraLive = liveMatches.length > 1 ? ` +${liveMatches.length - 1}` : "";
 
   return (
@@ -62,8 +63,8 @@ export const Header: React.FC<HeaderProps> = ({
       <button
         onClick={() => onOpenUrl("https://ko-fi.com/monocle")}
         className={`${iconBtn} flex-shrink-0 bg-[#720e9e] border-[#720e9e] hover:bg-[#8c19bd] text-white`}
-        aria-label="Support RiftWatch on Ko-fi"
-        title="Support RiftWatch development on Ko-fi"
+        aria-label={tl("Support RiftWatch on Ko-fi")}
+        title={tl("Support RiftWatch development on Ko-fi")}
       >
         <Heart className="w-3.5 h-3.5 fill-current" />
       </button>
@@ -74,10 +75,10 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => onSelectTab("settings")}
             className={`${pill} flex-shrink-0 font-bold bg-[#0ac8b9] border-[#0ac8b9] text-[#091428] hover:bg-[#0ac8b9]/80 animate-pulse`}
-            title={`New version v${updateInfo.latestVersion} available! Click to update.`}
+            title={tl("New version v{version} available! Click to update.", { version: updateInfo.latestVersion })}
           >
             <Sparkles className="w-3 h-3" />
-            <span>Update v{updateInfo.latestVersion}</span>
+            <span>{tl("Update v{version}", { version: updateInfo.latestVersion })}</span>
           </button>
         )}
 
@@ -92,10 +93,10 @@ export const Header: React.FC<HeaderProps> = ({
           }`}
           title={
             hasLive
-              ? `${liveMatches.length} live pro match(es). Click to view.`
+              ? tn("{n} live pro match. Click to view.", "{n} live pro matches. Click to view.", liveMatches.length)
               : onAir
-                ? `${onAir.leagueName} broadcast is on air, no match has started yet`
-                : "No pro matches live right now"
+                ? tl("{league} broadcast is on air, no match has started yet", { league: onAir.leagueName })
+                : tl("No pro matches live right now")
           }
         >
           <span
@@ -105,10 +106,10 @@ export const Header: React.FC<HeaderProps> = ({
           />
           <span>
             {hasLive
-              ? `LIVE ${firstLive?.team1Code} vs ${firstLive?.team2Code}${extraLive}`
+              ? tl("LIVE {a} vs {b}", { a: firstLive?.team1Code ?? "", b: firstLive?.team2Code ?? "" }) + extraLive
               : onAir
-                ? `${onAir.leagueName} on air`
-                : "No live matches"}
+                ? tl("{league} on air", { league: onAir.leagueName })
+                : tl("No live matches")}
           </span>
         </button>
 
@@ -119,7 +120,7 @@ export const Header: React.FC<HeaderProps> = ({
               ? "bg-[#0a1420] border-[#0ac8b9]/60 text-[#0ac8b9] hover:border-[#0ac8b9] hover:bg-[#121e2d]"
               : "bg-[#0a1420] border-[#1e282d] text-[#7e8e9f] hover:border-[#7e8e9f]"
           }`}
-          title={streamInfo.isLive ? `${streamInfo.title} · Click to view stream` : phase.kind === "break" ? "The 24/7 marathon is on break · Click for details" : "Twitch 24/7 Stream is currently offline"}
+          title={streamInfo.isLive ? tl("{title} · Click to view stream", { title: streamInfo.title }) : phase.kind === "break" ? tl("The 24/7 marathon is on break · Click for details") : tl("Twitch 24/7 Stream is currently offline")}
         >
           <Radio className={`w-3.5 h-3.5 flex-shrink-0 ${streamInfo.isLive ? "text-[#0ac8b9] animate-pulse" : ""}`} />
           <span className="font-semibold truncate">{streamInfo.title}</span>
@@ -132,11 +133,11 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onInstall}
             className={`${pill} font-semibold bg-[#0a1420] border-[#0ac8b9]/60 text-[#0ac8b9] hover:bg-[#121e2d]`}
-            aria-label="Install RiftWatch on this device"
-            title="Add RiftWatch to your home screen or desktop"
+            aria-label={tl("Install RiftWatch on this device")}
+            title={tl("Add RiftWatch to your home screen or desktop")}
           >
             <Smartphone className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Install</span>
+            <span className="hidden sm:inline">{tl("Install")}</span>
           </button>
         )}
         {IS_WEB && IS_WINDOWS_BROWSER && (
@@ -145,11 +146,11 @@ export const Header: React.FC<HeaderProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             className={`${pill} hidden sm:inline-flex font-semibold bg-[#c8aa6e] border-[#c8aa6e] text-[#091428] hover:bg-[#f0e6d2]`}
-            title="Download RiftWatch for Windows (free, about 4 MB, no installer)"
+            title={tl("Download RiftWatch for Windows (free, about 4 MB, no installer)")}
           >
             <Download className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Download for Windows</span>
-            <span className="md:hidden">Windows</span>
+            <span className="hidden md:inline">{tl("Download for Windows")}</span>
+            <span className="md:hidden">{tl("Windows")}</span>
           </a>
         )}
         <button
@@ -159,12 +160,12 @@ export const Header: React.FC<HeaderProps> = ({
               ? "bg-[#c8aa6e] border-[#c8aa6e] text-[#091428]"
               : "bg-[#0a1420] border-[#1e282d] text-[#f0e6d2] hover:bg-[#121e2d]"
           }`}
-          aria-label={settings.spoilerMode ? "Show spoilers" : "Hide spoilers"}
+          aria-label={settings.spoilerMode ? tl("Show spoilers") : tl("Hide spoilers")}
           aria-pressed={settings.spoilerMode}
-          title={settings.spoilerMode ? "Spoilers hidden: scores and gold are masked. Click to show." : "Spoilers shown. Click to hide scores and gold."}
+          title={settings.spoilerMode ? tl("Spoilers hidden: scores and gold are masked. Click to show.") : tl("Spoilers shown. Click to hide scores and gold.")}
         >
           {settings.spoilerMode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-          <span className="hidden sm:inline">Spoilers</span>
+          <span className="hidden sm:inline">{tl("Spoilers")}</span>
         </button>
 
         {IS_DESKTOP && (
@@ -175,8 +176,8 @@ export const Header: React.FC<HeaderProps> = ({
                 ? "bg-[#0ac8b9] border-[#0ac8b9] text-[#091428]"
                 : "bg-[#0a1420] border-[#1e282d] text-[#f0e6d2] hover:bg-[#121e2d]"
             }`}
-            aria-label={settings.compactMode ? "Expand window" : "Compact window"}
-            title={`${settings.compactMode ? "Expand window" : "Compact window"} (Alt+Shift+L summons/hides app anywhere)`}
+            aria-label={settings.compactMode ? tl("Expand window") : tl("Compact window")}
+            title={tl("{action} (Alt+Shift+L summons/hides app anywhere)", { action: settings.compactMode ? tl("Expand window") : tl("Compact window") })}
           >
             {settings.compactMode ? <Maximize2 className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
           </button>
@@ -186,8 +187,8 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onRefresh}
           disabled={isRefreshing}
           className={`${iconBtn} bg-[#0a1420] border-[#1e282d] text-[#f0e6d2] hover:bg-[#121e2d]`}
-          aria-label="Refresh match data"
-          title="Refresh match data"
+          aria-label={tl("Refresh match data")}
+          title={tl("Refresh match data")}
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#c8aa6e]" : ""}`} />
         </button>

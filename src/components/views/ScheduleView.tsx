@@ -7,6 +7,7 @@ import { isMatchFollowed, computeHeadToHead } from "../../helpers";
 import { clickable } from "../../a11y";
 import { H2HMeter } from "../H2HMeter";
 import { StandingsView } from "./StandingsView";
+import { tl, locale } from "../../i18n";
 
 interface ScheduleViewProps {
   schedule: Match[];
@@ -119,17 +120,17 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     return filterRange === "results" ? -d : d;
   });
   const dayOf = (iso: string) => {
-    if (!iso) return "Date to be announced";
+    if (!iso) return tl("Date to be announced");
     const d = new Date(iso);
     const days = Math.round(
       (new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() -
         new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) /
         86400000,
     );
-    if (days === 0) return "Today";
-    if (days === 1) return "Tomorrow";
-    if (days === -1) return "Yesterday";
-    return d.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+    if (days === 0) return tl("Today");
+    if (days === 1) return tl("Tomorrow");
+    if (days === -1) return tl("Yesterday");
+    return d.toLocaleDateString(locale(), { weekday: "long", month: "short", day: "numeric" });
   };
 
   return (
@@ -147,7 +148,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             }`}
           >
             <Calendar className="w-3.5 h-3.5" />
-            <span>Matches & Schedule</span>
+            <span>{tl("Matches & Schedule")}</span>
           </button>
           <button
             type="button"
@@ -159,7 +160,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             }`}
           >
             <Trophy className="w-3.5 h-3.5" />
-            <span>League Standings</span>
+            <span>{tl("League Standings")}</span>
           </button>
         </div>
       </div>
@@ -188,7 +189,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       : "text-[#9bb3c9] hover:text-[#f0e6d2] hover:bg-[#121e2d]"
                   }`}
                 >
-                  {r}
+                  {r === "today" ? tl("Today") : r === "upcoming" ? tl("Upcoming") : tl("Results")}
                 </button>
               ))}
             </div>
@@ -202,17 +203,17 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     ? "bg-[#c8aa6e]/20 border-[#c8aa6e] text-[#c8aa6e]"
                     : "bg-[#0a1420] border-[#1e282d] text-[#9bb3c9] hover:text-[#f0e6d2]"
                 }`}
-                title="Filter by your followed teams and leagues"
+                title={tl("Filter by your followed teams and leagues")}
               >
                 <Star className={`w-3.5 h-3.5 ${followedOnly ? "fill-current" : ""}`} />
-                <span>Followed only</span>
+                <span>{tl("Followed only")}</span>
               </button>
 
               <div className="relative flex-1">
                 <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-[#9bb3c9]" />
                 <input
                   type="text"
-                  placeholder="Search team or league…"
+                  placeholder={tl("Search team or league…")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-[#0a1420] border border-[#1e282d] rounded pl-8 pr-3 py-1 text-xs text-[#f0e6d2] focus:outline-none focus:border-[#c8aa6e]"
@@ -225,8 +226,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           {filtered.length === 0 ? (
             <div className="text-center py-16 text-[#9bb3c9] text-xs" role="status">
               {isLoading && schedule.length === 0
-                ? "Loading the schedule…"
-                : 'No scheduled matches match your active filters. Try switching tabs or turning off "Followed only".'}
+                ? tl("Loading the schedule…")
+                : tl('No scheduled matches match your active filters. Try switching tabs or turning off "Followed only".')}
             </div>
           ) : (
             <div className="space-y-2">
@@ -234,7 +235,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 const day = dayOf(m.startTimeUtc);
                 const newDay = filterRange !== "today" && (idx === 0 || dayOf(filtered[idx - 1].startTimeUtc) !== day);
                 const timeStr = m.startTimeUtc
-                  ? new Date(m.startTimeUtc).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                  ? new Date(m.startTimeUtc).toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" })
                   : "--:--";
 
                 const isT1Followed = settings.followedTeams.includes(m.team1Code);
@@ -282,15 +283,15 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           className={`p-0.5 rounded hover:bg-[#1e282d] transition-colors shrink-0 ${
                             isT1Followed ? "text-[#c8aa6e]" : "text-[#9bb3c9] hover:text-[#c8aa6e]"
                           }`}
-                          aria-label={isT1Followed ? `Unfollow ${m.team1Code}` : `Follow ${m.team1Code}`}
-                          title={isT1Followed ? `Unfollow ${m.team1Code}` : `Follow ${m.team1Code}`}
+                          aria-label={isT1Followed ? tl("Unfollow {name}", { name: m.team1Code }) : tl("Follow {name}", { name: m.team1Code })}
+                          title={isT1Followed ? tl("Unfollow {name}", { name: m.team1Code }) : tl("Follow {name}", { name: m.team1Code })}
                         >
                           <Star className={`w-3.5 h-3.5 ${isT1Followed ? "fill-[#c8aa6e]" : ""}`} />
                         </button>
                         <span
                           {...clickable(() => onSelectTeam?.(m.team1Code, m.team1Name))}
                           className="text-xs font-bold text-[#f0e6d2] hover:text-[#c8aa6e] cursor-pointer transition-colors"
-                          title={`Click to view ${m.team1Name} roster`}
+                          title={tl("Click to view {team} roster", { team: m.team1Name })}
                         >
                           {m.team1Code}
                         </span>
@@ -315,7 +316,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                                   ? "cursor-pointer hover:text-[#c8aa6e] bg-[#091428] px-2 py-0.5 rounded border border-[#1e282d]"
                                   : ""
                               }`}
-                              title={settings.spoilerMode ? "Click to re-hide score" : undefined}
+                              title={settings.spoilerMode ? tl("Click to re-hide score") : undefined}
                             >
                               <span className="text-[#f0e6d2]">
                                 {m.team1Score} : {m.team2Score}
@@ -326,12 +327,12 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                               type="button"
                               onClick={() => toggleReveal(m.matchId)}
                               className="text-[11px] px-2 py-0.5 rounded bg-[#091428] border border-[#1e282d] text-[#9bb3c9] hover:text-[#c8aa6e] hover:border-[#c8aa6e]/60 transition-colors cursor-pointer"
-                              title={isLive ? "Click to reveal the live score" : "Click to reveal final score"}
+                              title={isLive ? tl("Click to reveal the live score") : tl("Click to reveal final score")}
                             >
-                              Reveal
+                              {tl("Reveal")}
                             </button>
                           ) : (
-                            <span className="text-[#9bb3c9] font-medium">VS</span>
+                            <span className="text-[#9bb3c9] font-medium">{tl("VS")}</span>
                           )}
                         </div>
                         {(showScore || m.state !== "completed") && h2h && (
@@ -352,7 +353,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         <span
                           {...clickable(() => onSelectTeam?.(m.team2Code, m.team2Name))}
                           className="text-xs font-bold text-[#f0e6d2] hover:text-[#c8aa6e] cursor-pointer transition-colors"
-                          title={`Click to view ${m.team2Name} roster`}
+                          title={tl("Click to view {team} roster", { team: m.team2Name })}
                         >
                           {m.team2Code}
                         </span>
@@ -365,8 +366,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           className={`p-0.5 rounded hover:bg-[#1e282d] transition-colors shrink-0 ${
                             isT2Followed ? "text-[#c8aa6e]" : "text-[#9bb3c9] hover:text-[#c8aa6e]"
                           }`}
-                          aria-label={isT2Followed ? `Unfollow ${m.team2Code}` : `Follow ${m.team2Code}`}
-                          title={isT2Followed ? `Unfollow ${m.team2Code}` : `Follow ${m.team2Code}`}
+                          aria-label={isT2Followed ? tl("Unfollow {name}", { name: m.team2Code }) : tl("Follow {name}", { name: m.team2Code })}
+                          title={isT2Followed ? tl("Unfollow {name}", { name: m.team2Code }) : tl("Follow {name}", { name: m.team2Code })}
                         >
                           <Star className={`w-3.5 h-3.5 ${isT2Followed ? "fill-[#c8aa6e]" : ""}`} />
                         </button>
@@ -380,14 +381,14 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         Bo{m.bestOf}
                       </span>
                       {m.state === "completed" ? (
-                        <span className="text-[10px] text-[#9bb3c9] font-semibold">FINAL</span>
+                        <span className="text-[10px] text-[#9bb3c9] font-semibold">{tl("FINAL")}</span>
                       ) : isLive ? (
                         <span className="flex items-center gap-1 text-[10px] text-[#e84057] font-bold">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#e84057] animate-pulse" />
-                          LIVE
+                          {tl("LIVE")}
                         </span>
                       ) : (
-                        <span className="text-[10px] text-[#c8aa6e] font-semibold">UPCOMING</span>
+                        <span className="text-[10px] text-[#c8aa6e] font-semibold">{tl("UPCOMING")}</span>
                       )}
                     </div>
                   </div>

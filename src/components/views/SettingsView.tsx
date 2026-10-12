@@ -12,6 +12,7 @@ import {
   Heart,
   Check,
   AlertTriangle,
+  Languages,
   Globe,
   Radio,
   Database,
@@ -31,6 +32,7 @@ import {
   DESKTOP_RELEASES_URL,
   DESKTOP_CHECKSUM_URL,
 } from "../../platform";
+import { tl, locale, LANGUAGES, TRANSLATION_EMAIL, TRANSLATION_MAILTO, detectLanguage } from "../../i18n";
 
 interface SettingsViewProps {
   settings: AppSettings;
@@ -84,7 +86,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       });
     } catch (err: any) {
       setIsInstallingUpdate(false);
-      setInstallError(typeof err === "string" ? err : err?.message || "Failed to download update.");
+      setInstallError(typeof err === "string" ? err : err?.message || tl("Failed to download update."));
     }
   };
 
@@ -115,9 +117,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center justify-between">
           <span className="flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-[#0ac8b9]" />
-            Software Updates
+            {tl("Software Updates")}
           </span>
-          <span className="text-[11px] font-mono text-[#7e8e9f]">Current: v{APP_VERSION}</span>
+          <span className="text-[11px] font-mono text-[#7e8e9f]">{tl("Current: v{version}", { version: APP_VERSION })}</span>
         </h2>
 
         <div
@@ -133,14 +135,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#0ac8b9] text-[#091428] uppercase tracking-wider animate-pulse">
-                      Update Available
+                      {tl("Update Available")}
                     </span>
                     <span className="font-bold text-sm text-[#f0e6d2]">
                       RiftWatch v{updateInfo.latestVersion}
                     </span>
                   </div>
                   <div className="text-[11px] text-[#c8aa6e] mt-1 font-medium">
-                    {updateInfo.releaseName || `Release v${updateInfo.latestVersion}`}
+                    {updateInfo.releaseName || tl("Release v{version}", { version: updateInfo.latestVersion })}
                   </div>
                 </div>
 
@@ -153,12 +155,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     {isInstallingUpdate ? (
                       <>
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        <span>Updating…</span>
+                        <span>{tl("Updating…")}</span>
                       </>
                     ) : (
                       <>
                         <Download className="w-3.5 h-3.5" />
-                        <span>Update & Restart Now</span>
+                        <span>{tl("Update & Restart Now")}</span>
                       </>
                     )}
                   </button>
@@ -168,7 +170,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#091428] hover:bg-[#121e2d] border border-[#1e282d] hover:border-[#c8aa6e] text-[#f0e6d2] font-semibold text-xs transition-colors"
                   >
                     <ExternalLink className="w-3.5 h-3.5 text-[#7e8e9f]" />
-                    <span>Notes</span>
+                    <span>{tl("Notes")}</span>
                   </button>
                 </div>
               </div>
@@ -176,7 +178,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               {isInstallingUpdate && (
                 <div className="p-2.5 rounded bg-[#091428] border border-[#0ac8b9]/40 text-[#0ac8b9] text-xs flex items-center gap-2">
                   <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
-                  <span>Downloading latest release binary and replacing executable… RiftWatch will reopen automatically.</span>
+                  <span>{tl("Downloading latest release binary and replacing executable… RiftWatch will reopen automatically.")}</span>
                 </div>
               )}
 
@@ -187,7 +189,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     onClick={() => onOpenUrl(updateInfo.releaseUrl)}
                     className="underline text-[11px] hover:text-white"
                   >
-                    Download manually
+                    {tl("Download manually")}
                   </button>
                 </div>
               )}
@@ -214,7 +216,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <>
                       <Check className="w-4 h-4 text-[#0ac8b9]" />
                       <span className="font-semibold text-[#f0e6d2] text-xs">
-                        RiftWatch is up to date (v{APP_VERSION})
+                        {tl("RiftWatch is up to date (v{version})", { version: APP_VERSION })}
                       </span>
                     </>
                   )}
@@ -224,12 +226,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   role="status"
                 >
                   {isCheckingUpdate
-                    ? "Checking GitHub for a newer release…"
+                    ? tl("Checking GitHub for a newer release…")
                     : lastUpdateCheck?.error
-                      ? `${lastUpdateCheck.error} Check your internet connection and try again.`
+                      ? `${lastUpdateCheck.error} ${tl("Check your internet connection and try again.")}`
                       : lastUpdateCheck
-                        ? `Checked at ${new Date(lastUpdateCheck.at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · latest release is v${updateInfo?.latestVersion || APP_VERSION}`
-                        : "Updates are checked automatically a few seconds after launch."}
+                        ? tl("Checked at {time} · latest release is v{version}", { time: new Date(lastUpdateCheck.at).toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit" }), version: updateInfo?.latestVersion || APP_VERSION })
+                        : tl("Updates are checked automatically a few seconds after launch.")}
                 </div>
               </div>
 
@@ -238,19 +240,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   onClick={() => onCheckForUpdate?.()}
                   disabled={isCheckingUpdate}
                   className="flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded bg-[#091428] hover:bg-[#121e2d] border border-[#1e282d] hover:border-[#c8aa6e] text-[#f0e6d2] font-semibold text-xs transition-colors disabled:opacity-50"
-                  title="Check GitHub Releases for new updates"
+                  title={tl("Check GitHub Releases for new updates")}
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isCheckingUpdate ? "animate-spin text-[#c8aa6e]" : ""}`} />
-                  <span>{isCheckingUpdate ? "Checking…" : "Check for Updates"}</span>
+                  <span>{isCheckingUpdate ? tl("Checking…") : tl("Check for Updates")}</span>
                 </button>
 
                 <button
                   onClick={() => onOpenUrl("https://github.com/drmonocle/riftwatch/releases")}
                   className="flex items-center gap-1.5 whitespace-nowrap px-2.5 py-1.5 rounded bg-[#091428] hover:bg-[#121e2d] border border-[#1e282d] text-[#7e8e9f] hover:text-[#f0e6d2] text-xs transition-colors"
-                  title="View all releases on GitHub"
+                  title={tl("View all releases on GitHub")}
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  <span>All Releases</span>
+                  <span>{tl("All Releases")}</span>
                 </button>
               </div>
             </div>
@@ -264,13 +266,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <section className="space-y-3">
           <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
             <Download className="w-3.5 h-3.5 text-[#0ac8b9]" />
-            RiftWatch for Windows
+            {tl("RiftWatch for Windows")}
           </h2>
           <div className="p-4 rounded-lg border border-[#1e282d] bg-[#0a1420] space-y-3">
             <p className="text-[#9bb3c9] text-xs leading-relaxed">
-              The desktop app adds a floating always-on-top ticker, a system tray icon, a global hotkey
-              (Alt+Shift+L), kickoff notifications and automatic updates. It is free, about 4 MB, and needs
-              no installer.
+              {tl("The desktop app adds a floating always-on-top ticker, a system tray icon, a global hotkey (Alt+Shift+L), kickoff notifications and automatic updates. It is free, about 4 MB, and needs no installer.")}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <a
@@ -280,7 +280,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-[#c8aa6e] hover:bg-[#f0e6d2] text-[#091428] font-bold text-xs transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Download RiftWatch.exe</span>
+                <span>{tl("Download RiftWatch.exe")}</span>
               </a>
               <a
                 href={DESKTOP_RELEASES_URL}
@@ -289,7 +289,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#091428] hover:bg-[#121e2d] border border-[#1e282d] hover:border-[#c8aa6e] text-[#f0e6d2] font-semibold text-xs transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5 text-[#7e8e9f]" />
-                <span>Release notes</span>
+                <span>{tl("Release notes")}</span>
               </a>
               <a
                 href={DESKTOP_CHECKSUM_URL}
@@ -297,34 +297,76 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 rel="noopener noreferrer"
                 className="text-[11px] text-[#7e8e9f] hover:text-[#c8aa6e] underline"
               >
-                SHA-256 checksum
+                {tl("SHA-256 checksum")}
               </a>
             </div>
             <p className="text-[11px] text-[#7e8e9f] leading-relaxed">
-              Windows 10 or 11. RiftWatch isn't code-signed yet, so Windows SmartScreen may say "Windows
-              protected your PC": click <strong>More info</strong>, then <strong>Run anyway</strong>. The
-              download comes straight from GitHub.
+              {tl("Windows 10 or 11. RiftWatch isn't code-signed yet, so Windows SmartScreen may say \"Windows protected your PC\": click More info, then Run anyway. The download comes straight from GitHub.")}
             </p>
             <p className="text-[11px] text-[#7e8e9f] leading-relaxed">
-              Each release lists the SHA-256 checksum of the file, so you can check your download matches.
+              {tl("Each release lists the SHA-256 checksum of the file, so you can check your download matches.")}
             </p>
           </div>
         </section>
       )}
+      {/* Language: names in their own language; the help line is in the language now on screen */}
+      <section className="space-y-3">
+        <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
+          <Languages className="w-3.5 h-3.5 text-[#0ac8b9]" />
+          {tl("Language")}
+        </h2>
+        <div className="p-3 rounded-lg bg-[#0a1420] border border-[#1e282d] space-y-2">
+          <select
+            value={settings.language}
+            onChange={(e) => {
+              onUpdateSettings({ language: e.target.value as AppSettings["language"] });
+              // Every screen reads its text once, so load the new language with a quick reload
+              window.setTimeout(() => window.location.reload(), 150);
+            }}
+            aria-label={tl("Language")}
+            className="w-full sm:w-auto bg-[#091428] border border-[#1e282d] rounded-lg px-3 py-2 text-sm text-[#f0e6d2]"
+          >
+            <option value="auto">
+              {tl("Automatic")} ({LANGUAGES.find((l) => l.code === detectLanguage())?.name})
+            </option>
+            {LANGUAGES.map((l) => (
+              <option key={l.code} value={l.code}>
+                {l.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-[11px] text-[#9bb3c9] leading-relaxed">
+            {tl("Is this language wrong? Email me:")}{" "}
+            <a
+              href={TRANSLATION_MAILTO()}
+              onClick={(e) => {
+                if (IS_DESKTOP) {
+                  e.preventDefault();
+                  onOpenUrl(TRANSLATION_MAILTO());
+                }
+              }}
+              className="text-[#0ac8b9] underline"
+            >
+              {TRANSLATION_EMAIL}
+            </a>
+          </p>
+        </div>
+      </section>
+
       {/* 1. Display & Live Ticker Bar */}
       <section className="space-y-3">
         <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
           <Monitor className="w-3.5 h-3.5 text-[#0ac8b9]" />
-          Display & Live Ticker Bar
+          {tl("Display & Live Ticker Bar")}
         </h2>
 
         <div className="space-y-2">
           {/* Spoiler Mode */}
           <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">Spoiler Mode</div>
+              <div className="font-semibold text-[#f0e6d2]">{tl("Spoiler Mode")}</div>
               <div className="text-[11px] text-[#7e8e9f]">
-                Hide all match scores, game results, and in-game statistics until manually revealed.
+                {tl("Hide all match scores, game results, and in-game statistics until manually revealed.")}
               </div>
             </div>
             <button
@@ -335,16 +377,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   : "bg-[#1e282d] text-[#7e8e9f] hover:text-[#f0e6d2]"
               }`}
             >
-              {settings.spoilerMode ? "ON" : "OFF"}
+              {settings.spoilerMode ? tl("ON") : tl("OFF")}
             </button>
           </div>
 
           {/* Live Ticker Mode Selector */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">Live Ticker Bar Mode</div>
+              <div className="font-semibold text-[#f0e6d2]">{tl("Live Ticker Bar Mode")}</div>
               <div className="text-[11px] text-[#7e8e9f]">
-                Display real-time scores, countdowns, and 24/7 stream highlights.
+                {tl("Display real-time scores, countdowns, and 24/7 stream highlights.")}
               </div>
             </div>
             <div className="flex items-center gap-1 bg-[#091428] p-1 rounded border border-[#1e282d]">
@@ -367,7 +409,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       : "text-[#7e8e9f] hover:text-[#f0e6d2]"
                   }`}
                 >
-                  {mode === "detached" ? "⧉ Detached HUD" : mode}
+                  {mode === "detached" ? "⧉ " + tl("Detached HUD") : mode === "docked" ? tl("Docked") : tl("Hidden")}
                 </button>
               ))}
             </div>
@@ -377,9 +419,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           {IS_DESKTOP && (
           <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">Detached Ticker Always on Top</div>
+              <div className="font-semibold text-[#f0e6d2]">{tl("Detached Ticker Always on Top")}</div>
               <div className="text-[11px] text-[#7e8e9f]">
-                Keep the floating desktop HUD bar pinned above full-screen games and browser windows.
+                {tl("Keep the floating desktop HUD bar pinned above full-screen games and browser windows.")}
               </div>
             </div>
             <button
@@ -396,7 +438,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   : "bg-[#1e282d] text-[#7e8e9f] hover:text-[#f0e6d2]"
               }`}
             >
-              {settings.tickerTopmost ? "ON" : "OFF"}
+              {settings.tickerTopmost ? tl("ON") : tl("OFF")}
             </button>
           </div>
           )}
@@ -404,9 +446,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           {/* Ticker Rotation Speed */}
           <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">Ticker Rotation Interval</div>
+              <div className="font-semibold text-[#f0e6d2]">{tl("Ticker Rotation Interval")}</div>
               <div className="text-[11px] text-[#7e8e9f]">
-                How long each match or highlight stays visible on the ribbon before rotating.
+                {tl("How long each match or highlight stays visible on the ribbon before rotating.")}
               </div>
             </div>
             <div className="flex items-center gap-1 bg-[#091428] p-1 rounded border border-[#1e282d]">
@@ -429,9 +471,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           {/* Default Tab on Launch */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">Default Tab on Launch</div>
+              <div className="font-semibold text-[#f0e6d2]">{tl("Default Tab on Launch")}</div>
               <div className="text-[11px] text-[#7e8e9f]">
-                Choose which view opens automatically when starting RiftWatch.
+                {tl("Choose which view opens automatically when starting RiftWatch.")}
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-1 bg-[#091428] p-1 rounded border border-[#1e282d]">
@@ -445,7 +487,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       : "text-[#7e8e9f] hover:text-[#f0e6d2]"
                   }`}
                 >
-                  {t}
+                  {
+                    { live: tl("Live"), schedule: tl("Schedule"), stats: tl("Stats"), stream: tl("24/7 Stream"), watchlist: tl("Watchlist") }[t]
+                  }
                 </button>
               ))}
             </div>
@@ -457,7 +501,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <section className="space-y-3">
         <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
           <Bell className="w-3.5 h-3.5 text-[#0ac8b9]" />
-          {IS_DESKTOP ? "Desktop Notifications & Sound Alerts" : "Sound Alerts"}
+          {IS_DESKTOP ? tl("Desktop Notifications & Sound Alerts") : tl("Sound Alerts")}
         </h2>
 
         <div className="space-y-2">
@@ -466,10 +510,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div>
               <div className="font-semibold text-[#f0e6d2] flex items-center gap-1.5">
                 <Volume2 className="w-3.5 h-3.5 text-[#0ac8b9]" />
-                <span>Kickoff Hextech Audio Chime</span>
+                <span>{tl("Kickoff Hextech Audio Chime")}</span>
               </div>
               <div className="text-[11px] text-[#7e8e9f]">
-                Synthesize a rich LoL-style hextech harmonic chime when a followed match begins. (0 KB assets)
+                {tl("Synthesize a rich LoL-style hextech harmonic chime when a followed match begins. (0 KB assets)")}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -477,10 +521,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="button"
                 onClick={() => playKickoffChime()}
                 className="px-2.5 py-1 rounded bg-[#091428] hover:bg-[#121e2d] border border-[#1e282d] hover:border-[#c8aa6e] text-[#c8aa6e] font-semibold text-xs transition-colors flex items-center gap-1"
-                title="Play a test sample of the procedural hextech chime"
+                title={tl("Play a test sample of the procedural hextech chime")}
               >
                 <Volume2 className="w-3 h-3" />
-                <span>Test Sound</span>
+                <span>{tl("Test Sound")}</span>
               </button>
               <button
                 onClick={() => onUpdateSettings({ soundAlerts: !settings.soundAlerts })}
@@ -488,7 +532,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   settings.soundAlerts ? "bg-[#0ac8b9] text-[#091428]" : "bg-[#1e282d] text-[#7e8e9f]"
                 }`}
               >
-                {settings.soundAlerts ? "ON" : "OFF"}
+                {settings.soundAlerts ? tl("ON") : tl("OFF")}
               </button>
             </div>
           </div>
@@ -496,22 +540,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           {IS_DESKTOP && (<>
           <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">Live Kickoff Desktop Alerts</div>
+              <div className="font-semibold text-[#f0e6d2]">{tl("Live Kickoff Desktop Alerts")}</div>
               <div className="text-[11px] text-[#7e8e9f]">
-                Display desktop notifications when followed teams or players begin a match.{" "}
+                {tl("Display desktop notifications when followed teams or players begin a match.")}{" "}
                 <button
                   type="button"
                   onClick={() =>
                     import("@tauri-apps/api/core").then(({ invoke }) =>
                       invoke("send_notification", {
-                        title: "RiftWatch test alert",
-                        body: "Alerts work. You'll get one like this when a team you follow starts a match.",
+                        title: tl("RiftWatch test alert"),
+                        body: tl("Alerts work. You'll get one like this when a team you follow starts a match."),
                       }).catch(() => {}),
                     )
                   }
                   className="text-[#0ac8b9] hover:underline"
                 >
-                  Send a test alert
+                  {tl("Send a test alert")}
                 </button>
               </div>
             </div>
@@ -521,15 +565,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 settings.notifyKickoff ? "bg-[#0ac8b9] text-[#091428]" : "bg-[#1e282d] text-[#7e8e9f]"
               }`}
             >
-              {settings.notifyKickoff ? "ON" : "OFF"}
+              {settings.notifyKickoff ? tl("ON") : tl("OFF")}
             </button>
           </div>
 
           <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">Pre-match 15m Countdown</div>
+              <div className="font-semibold text-[#f0e6d2]">{tl("Pre-match 15m Countdown")}</div>
               <div className="text-[11px] text-[#7e8e9f]">
-                Display a reminder notification 15 minutes before your followed pro matches go live.
+                {tl("Display a reminder notification 15 minutes before your followed pro matches go live.")}
               </div>
             </div>
             <button
@@ -538,15 +582,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 settings.notifyPregame ? "bg-[#0ac8b9] text-[#091428]" : "bg-[#1e282d] text-[#7e8e9f]"
               }`}
             >
-              {settings.notifyPregame ? "ON" : "OFF"}
+              {settings.notifyPregame ? tl("ON") : tl("OFF")}
             </button>
           </div>
 
           <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">24/7 Stream & S-Tier Banger Alerts</div>
+              <div className="font-semibold text-[#f0e6d2]">{tl("24/7 Stream & S-Tier Banger Alerts")}</div>
               <div className="text-[11px] text-[#7e8e9f]">
-                Notify when S-Tier legendary marathon games begin on Twitch and YouTube.
+                {tl("Notify when S-Tier legendary marathon games begin on Twitch and YouTube.")}
               </div>
             </div>
             <button
@@ -555,7 +599,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 settings.notifyStream ? "bg-[#0ac8b9] text-[#091428]" : "bg-[#1e282d] text-[#7e8e9f]"
               }`}
             >
-              {settings.notifyStream ? "ON" : "OFF"}
+              {settings.notifyStream ? tl("ON") : tl("OFF")}
             </button>
           </div>
           </>)}
@@ -567,7 +611,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <section className="space-y-3">
         <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
           <Minimize2 className="w-3.5 h-3.5 text-[#0ac8b9]" />
-          System Tray, Ergonomics & Hotkeys
+          {tl("System Tray, Ergonomics & Hotkeys")}
         </h2>
 
         <div className="space-y-2">
@@ -576,23 +620,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div>
               <div className="font-semibold text-[#f0e6d2] flex items-center gap-1.5">
                 <Keyboard className="w-3.5 h-3.5 text-[#0ac8b9]" />
-                <span>Global Summon Hotkey</span>
+                <span>{tl("Global Summon Hotkey")}</span>
               </div>
               <div className="text-[11px] text-[#7e8e9f]">
-                Summon or hide RiftWatch instantly from anywhere in Windows (even inside full-screen games or browser).
+                {tl("Summon or hide RiftWatch instantly from anywhere in Windows (even inside full-screen games or browser).")}
               </div>
             </div>
             <span className="px-2.5 py-1 rounded bg-[#091428] border border-[#0ac8b9]/60 text-[#0ac8b9] font-mono font-bold text-xs tracking-wider">
-              Alt + Shift + L
+              {tl("Alt + Shift + L")}
             </span>
           </div>
 
           {/* Compact Mode */}
           <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">Compact Desktop Mode</div>
+              <div className="font-semibold text-[#f0e6d2]">{tl("Compact Desktop Mode")}</div>
               <div className="text-[11px] text-[#7e8e9f]">
-                Fit RiftWatch into a tight, distraction-free mini window for second monitors or split-screen gaming.
+                {tl("Fit RiftWatch into a tight, distraction-free mini window for second monitors or split-screen gaming.")}
               </div>
             </div>
             <button
@@ -601,15 +645,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 settings.compactMode ? "bg-[#0ac8b9] text-[#091428]" : "bg-[#1e282d] text-[#7e8e9f]"
               }`}
             >
-              {settings.compactMode ? "ON" : "OFF"}
+              {settings.compactMode ? tl("ON") : tl("OFF")}
             </button>
           </div>
 
           <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">Close Button Minimizes to System Tray</div>
+              <div className="font-semibold text-[#f0e6d2]">{tl("Close Button Minimizes to System Tray")}</div>
               <div className="text-[11px] text-[#7e8e9f]">
-                Keep RiftWatch running silently in the Windows notification area when you click the window X button.
+                {tl("Keep RiftWatch running silently in the Windows notification area when you click the window X button.")}
               </div>
             </div>
             <button
@@ -620,15 +664,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   : "bg-[#1e282d] text-[#7e8e9f]"
               }`}
             >
-              {settings.minimizeToTrayOnClose ? "ON" : "OFF"}
+              {settings.minimizeToTrayOnClose ? tl("ON") : tl("OFF")}
             </button>
           </div>
 
           <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">Start RiftWatch with Windows</div>
+              <div className="font-semibold text-[#f0e6d2]">{tl("Start RiftWatch with Windows")}</div>
               <div className="text-[11px] text-[#7e8e9f]">
-                Launch automatically in the background when you sign in to Windows.
+                {tl("Launch automatically in the background when you sign in to Windows.")}
               </div>
             </div>
             <button
@@ -637,7 +681,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 settings.startWithWindows ? "bg-[#0ac8b9] text-[#091428]" : "bg-[#1e282d] text-[#7e8e9f]"
               }`}
             >
-              {settings.startWithWindows ? "ON" : "OFF"}
+              {settings.startWithWindows ? tl("ON") : tl("OFF")}
             </button>
           </div>
         </div>
@@ -648,22 +692,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <section className="space-y-3">
         <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
           <Globe className="w-3.5 h-3.5 text-[#c8aa6e]" />
-          Watchlist & Following Status
+          {tl("Watchlist & Following Status")}
         </h2>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-lg bg-[#0a1420] border border-[#1e282d]">
           <div>
-            <div className="font-bold text-[#f0e6d2] text-xs">Active Tracked Entities</div>
+            <div className="font-bold text-[#f0e6d2] text-xs">{tl("Active Tracked Entities")}</div>
             <div className="text-[11px] text-[#c8aa6e] mt-0.5">
-              {settings.followedTeams.length} teams · {settings.followedPlayers.length} players ·{" "}
-              {settings.followedRegions.length} regions · {settings.followedLeagues.length} leagues
+              {tl("{teams} teams · {players} players · {regions} regions · {leagues} leagues", {
+                teams: settings.followedTeams.length,
+                players: settings.followedPlayers.length,
+                regions: settings.followedRegions.length,
+                leagues: settings.followedLeagues.length,
+              })}
             </div>
           </div>
           <button
             onClick={handleResetWatchlist}
             className="px-3 py-1.5 rounded bg-[#091428] border border-[#e84057]/40 text-[#e84057] hover:bg-[#e84057] hover:text-white font-semibold text-xs transition-colors"
           >
-            Reset All Follows
+            {tl("Reset All Follows")}
           </button>
         </div>
       </section>
@@ -672,17 +720,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <section className="space-y-3">
         <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
           <Radio className="w-3.5 h-3.5 text-[#0ac8b9]" />
-          24/7 Stream Rebroadcasts (Twitch & YouTube)
+          {tl("24/7 Stream Rebroadcasts (Twitch & YouTube)")}
         </h2>
 
         <div className="p-3.5 rounded-lg bg-[#0a1420] border border-[#1e282d] space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <div className="font-bold text-[#0ac8b9] text-xs">
-                Twitch: twitch.tv/LoLWorldChampionship · YouTube: @LoLWorldChampionships
+                {tl("Twitch: twitch.tv/LoLWorldChampionship · YouTube: @LoLWorldChampionships")}
               </div>
               <div className="text-[11px] text-[#7e8e9f] mt-0.5">
-                Continuous curated tournament broadcast marathon synced with lolworlds.com.
+                {tl("Continuous curated tournament broadcast marathon synced with lolworlds.com.")}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -690,19 +738,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 onClick={() => onOpenUrl("https://www.twitch.tv/LoLWorldChampionship")}
                 className="px-3 py-1 rounded bg-[#9146ff] hover:bg-[#a970ff] text-white font-bold text-xs transition-colors"
               >
-                Twitch ↗
+                {tl("Twitch ↗")}
               </button>
               <button
                 onClick={() => onOpenUrl("https://www.youtube.com/@LoLWorldChampionships/live")}
                 className="px-3 py-1 rounded bg-[#cc0000] hover:bg-[#e60000] text-white font-bold text-xs transition-colors"
               >
-                YouTube ↗
+                {tl("YouTube ↗")}
               </button>
               <button
                 onClick={() => onOpenUrl("https://lolworlds.com")}
                 className="px-3 py-1 rounded bg-[#091428] border border-[#1e282d] text-[#7e8e9f] hover:text-[#f0e6d2] font-semibold text-xs transition-colors"
               >
-                Schedule ↗
+                {tl("Schedule ↗")}
               </button>
             </div>
           </div>
@@ -713,15 +761,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <section className="space-y-3">
         <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
           <RefreshCw className="w-3.5 h-3.5 text-[#0ac8b9]" />
-          Data Sources & Diagnostics
+          {tl("Data Sources & Diagnostics")}
         </h2>
 
         <div className="grid gap-1.5">
           {[
-            { name: "LoL Esports Schedule Feed", endpoint: "esports-api.lolesports.com/getSchedule" },
-            { name: "Live Game State Feed", endpoint: "esports-api.lolesports.com/getLive" },
-            { name: "24/7 Stream Marathon Schedule", endpoint: "lolworlds.com/api.ashx?type=schedule-json" },
-            { name: "Global Teams & Rosters Directory", endpoint: "esports-api.lolesports.com/getTeams" },
+            { name: tl("LoL Esports Schedule Feed"), endpoint: "esports-api.lolesports.com/getSchedule" },
+            { name: tl("Live Game State Feed"), endpoint: "esports-api.lolesports.com/getLive" },
+            { name: tl("24/7 Stream Marathon Schedule"), endpoint: "lolworlds.com/api.ashx?type=schedule-json" },
+            { name: tl("Global Teams & Rosters Directory"), endpoint: "esports-api.lolesports.com/getTeams" },
           ].map((ds) => (
             <div
               key={ds.name}
@@ -756,10 +804,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <RefreshCw className={`w-3.5 h-3.5 ${isSyncingCatalog ? "animate-spin text-[#0ac8b9]" : ""}`} />
               <span>
                 {isSyncingCatalog
-                  ? "Syncing Global Teams & Rosters…"
+                  ? tl("Syncing global teams & rosters…")
                   : syncSuccess
-                  ? "Catalog Updated!"
-                  : `Sync Directory (${catalog?.teams.length || 778} Teams, ${catalog?.players.length || 4634} Players)`}
+                  ? tl("Catalog updated!")
+                  : tl("Sync directory ({teams} teams, {players} players)", { teams: catalog?.teams.length || 778, players: catalog?.players.length || 4634 })}
               </span>
             </button>
           )}
@@ -769,7 +817,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#0a1420] border border-[#1e282d] hover:border-[#e84057] text-[#7e8e9f] hover:text-[#e84057] transition-colors text-xs"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>{cacheCleared ? "Cache Cleared!" : "Clear Cache"}</span>
+            <span>{cacheCleared ? tl("Cache cleared!") : tl("Clear cache")}</span>
           </button>
         </div>
       </section>
@@ -779,17 +827,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div>
           <div className="font-bold text-[#f0e6d2] flex items-center gap-1.5 text-sm">
             <Heart className="w-4 h-4 text-[#ff4655] fill-current" />
-            Support RiftWatch
+            {tl("Support RiftWatch")}
           </div>
           <div className="text-[11px] text-[#7e8e9f] mt-0.5">
-            RiftWatch is 100% free and open-source. Help fund 24/7 broadcast servers and active development.
+            {tl("RiftWatch is 100% free and open-source. Help fund 24/7 broadcast servers and active development.")}
           </div>
         </div>
         <button
           onClick={() => onOpenUrl("https://ko-fi.com/monocle")}
           className="flex items-center gap-1.5 px-4 py-2 rounded bg-[#720e9e] hover:bg-[#8c19bd] text-white font-bold text-xs transition-colors shrink-0"
         >
-          <span>Support on Ko-fi</span>
+          <span>{tl("Support on Ko-fi")}</span>
           <ExternalLink className="w-3.5 h-3.5" />
         </button>
       </section>
@@ -798,13 +846,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <footer className="pt-2 text-[11px] text-[#7e8e9f] space-y-1">
         <div className="flex items-center justify-between">
           <div>
-            {IS_DESKTOP ? `RiftWatch Desktop v${APP_VERSION} · Rust & WebView2` : `RiftWatch Web v${APP_VERSION}`} · MIT License
+            {IS_DESKTOP ? `RiftWatch Desktop v${APP_VERSION} · Rust & WebView2` : `RiftWatch Web v${APP_VERSION}`} · {tl("MIT License")}
           </div>
           <button
             onClick={() => onOpenUrl("https://github.com/drmonocle/riftwatch")}
             className="hover:text-[#c8aa6e] underline"
           >
-            GitHub Repository ↗
+            {tl("GitHub Repository ↗")}
           </button>
         </div>
         <div className="text-[10px] text-[#536675]">

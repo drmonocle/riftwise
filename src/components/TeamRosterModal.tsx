@@ -3,6 +3,7 @@ import { CatalogData, Match, AppSettings, PlayerEntry } from "../types";
 import { X, Star, Calendar, Shield, ExternalLink, User } from "lucide-react";
 import { computeHeadToHead, pickTeamByCode } from "../helpers";
 import { H2HMeter } from "./H2HMeter";
+import { tl, locale, roleName } from "../i18n";
 
 interface TeamRosterModalProps {
   teamCode: string | null;
@@ -109,7 +110,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label={`${teamName || teamCode} team details`}
+      aria-label={tl("{team} team details", { team: teamName || teamCode })}
     >
       <div
         className="bg-[#0a1420] border border-[#c8aa6e]/60 rounded-2xl max-w-2xl w-full max-h-[88vh] overflow-hidden flex flex-col shadow-2xl relative"
@@ -134,8 +135,8 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                   className={`p-1 rounded hover:bg-[#1e282d] transition-colors ${
                     isTeamFollowed ? "text-[#c8aa6e]" : "text-[#9bb3c9] hover:text-[#c8aa6e]"
                   }`}
-                  aria-label={isTeamFollowed ? `Unfollow ${upperCode}` : `Follow ${upperCode}`}
-                  title={isTeamFollowed ? `Unfollow ${upperCode}` : `Follow ${upperCode}`}
+                  aria-label={isTeamFollowed ? tl("Unfollow {name}", { name: upperCode }) : tl("Follow {name}", { name: upperCode })}
+                  title={isTeamFollowed ? tl("Unfollow {name}", { name: upperCode }) : tl("Follow {name}", { name: upperCode })}
                 >
                   <Star className={`w-4 h-4 ${isTeamFollowed ? "fill-[#c8aa6e]" : ""}`} />
                 </button>
@@ -154,9 +155,9 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
             type="button"
             ref={closeRef}
             onClick={onClose}
-            aria-label="Close team details"
+            aria-label={tl("Close team details")}
             className="p-2 rounded-lg bg-[#091428] hover:bg-[#1e282d] text-[#9bb3c9] hover:text-[#f0e6d2] transition-colors border border-[#1e282d]"
-            title="Close"
+            title={tl("Close")}
           >
             <X className="w-4 h-4" />
           </button>
@@ -169,9 +170,9 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-2">
                 <Shield className="w-3.5 h-3.5 text-[#0ac8b9]" />
-                <span>Active Roster ({players.length})</span>
+                <span>{tl("Active Roster ({n})", { n: players.length })}</span>
               </h3>
-              <span className="text-[11px] text-[#9bb3c9]">Click star to follow player</span>
+              <span className="text-[11px] text-[#9bb3c9]">{tl("Click star to follow player")}</span>
             </div>
 
             {players.length > 0 ? (
@@ -205,7 +206,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             <span
                               className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${colors.bg} ${colors.text} ${colors.border}`}
                             >
-                              {p.role}
+                              {roleName(p.role)}
                             </span>
                           </div>
                           {p.realName && (
@@ -220,8 +221,8 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                         className={`p-1.5 rounded hover:bg-[#1e282d] transition-colors shrink-0 ml-2 ${
                           isPlayerFollowed ? "text-[#c8aa6e]" : "text-[#9bb3c9] hover:text-[#c8aa6e]"
                         }`}
-                        aria-label={isPlayerFollowed ? `Unfollow ${p.name}` : `Follow ${p.name}`}
-                        title={isPlayerFollowed ? `Unfollow ${p.name}` : `Follow ${p.name}`}
+                        aria-label={isPlayerFollowed ? tl("Unfollow {name}", { name: p.name }) : tl("Follow {name}", { name: p.name })}
+                        title={isPlayerFollowed ? tl("Unfollow {name}", { name: p.name }) : tl("Follow {name}", { name: p.name })}
                       >
                         <Star className={`w-4 h-4 ${isPlayerFollowed ? "fill-[#c8aa6e]" : ""}`} />
                       </button>
@@ -231,7 +232,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
               </div>
             ) : (
               <div className="p-6 text-center rounded-xl bg-[#091428] border border-[#1e282d] text-xs text-[#9bb3c9]">
-                Roster details for {displayName} are not currently cataloged.
+                {tl("Roster details for {team} are not currently cataloged.", { team: displayName })}
               </div>
             )}
           </section>
@@ -242,7 +243,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
             <section className="space-y-2">
               <h3 className="text-xs font-bold text-[#0ac8b9] uppercase tracking-wider flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5" />
-                <span>Next Scheduled Matches</span>
+                <span>{tl("Next Scheduled Matches")}</span>
               </h3>
               {upcomingMatches.length > 0 ? (
                 <div className="space-y-1.5">
@@ -265,10 +266,10 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           {h2h && <H2HMeter team1Code={teamCode} team2Code={oppCode} h2h={h2h} matchId={m.matchId} />}
                         </div>
                         {m.state === "inProgress" ? (
-                          <div className="text-right font-mono text-[11px] font-bold text-[#e84057]">LIVE</div>
+                          <div className="text-right font-mono text-[11px] font-bold text-[#e84057]">{tl("LIVE")}</div>
                         ) : (
                           <div className="text-right font-mono text-[11px] text-[#0ac8b9]">
-                            {new Date(m.startTimeUtc).toLocaleDateString([], {
+                            {new Date(m.startTimeUtc).toLocaleDateString(locale(), {
                               month: "short",
                               day: "numeric",
                             })}
@@ -280,7 +281,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                 </div>
               ) : (
                 <div className="p-3 text-center rounded-lg bg-[#091428] border border-[#1e282d] text-xs text-[#9bb3c9]">
-                  No upcoming matches scheduled in this window.
+                  {tl("No upcoming matches scheduled in this window.")}
                 </div>
               )}
             </section>
@@ -288,7 +289,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
             {/* Recent Results */}
             <section className="space-y-2">
               <h3 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
-                <span>Recent Series Results</span>
+                <span>{tl("Recent Series Results")}</span>
               </h3>
               {completedMatches.length > 0 ? (
                 <div className="space-y-1.5">
@@ -306,7 +307,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           className="p-2.5 rounded-lg bg-[#091428] border border-[#1e282d] flex items-center justify-between text-xs"
                         >
                           <span className="font-semibold text-[#f0e6d2]">vs {oppName}</span>
-                          <span className="text-[10px] text-[#9bb3c9]">Result hidden (spoiler mode)</span>
+                          <span className="text-[10px] text-[#9bb3c9]">{tl("Result hidden (spoiler mode)")}</span>
                         </div>
                       );
                     }
@@ -336,7 +337,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                 </div>
               ) : (
                 <div className="p-3 text-center rounded-lg bg-[#091428] border border-[#1e282d] text-xs text-[#9bb3c9]">
-                  No recent completed series found in schedule.
+                  {tl("No recent completed series found in schedule.")}
                 </div>
               )}
             </section>
@@ -345,13 +346,13 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
 
         {/* Footer */}
         <div className="p-3 border-t border-[#1e282d] bg-[#091428] flex items-center justify-between text-xs text-[#9bb3c9]">
-          <span className="text-[11px]">Synced with Riot Global Directory</span>
+          <span className="text-[11px]">{tl("Synced with Riot Global Directory")}</span>
           <button
             type="button"
             onClick={() => onOpenUrl(`https://lolesports.com/teams/${catalogTeam?.slug || displayName.toLowerCase()}`)}
             className="flex items-center gap-1.5 px-3 py-1 rounded bg-[#0a1420] hover:bg-[#121e2d] border border-[#1e282d] text-[#0ac8b9] font-semibold text-xs transition-colors"
           >
-            <span>View on LoLEsports</span>
+            <span>{tl("View on LoLEsports")}</span>
             <ExternalLink className="w-3.5 h-3.5" />
           </button>
         </div>

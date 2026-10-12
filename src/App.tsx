@@ -43,6 +43,7 @@ import { NewsView } from "./components/views/NewsView";
 import { StatsView } from "./components/views/StatsView";
 import { SettingsView } from "./components/views/SettingsView";
 import { TeamRosterModal } from "./components/TeamRosterModal";
+import { tl, locale } from "./i18n";
 
 // The floating HUD is the same app loaded with ?mode=detached in its own window.
 const IS_HUD_WINDOW = window.location.search.includes("mode=detached");
@@ -186,6 +187,35 @@ export default function App() {
       window.removeEventListener("riftwatch_settings_updated", handleSync);
       window.removeEventListener("storage", handleSync);
     };
+  }, []);
+
+  // The tray menu and tray notice live on the Windows side: hand them the translated labels once.
+  useEffect(() => {
+    if (IS_HUD_WINDOW || !IS_DESKTOP) return;
+    const texts: Record<string, string> = {
+      show: tl("Open RiftWatch"),
+      hide: tl("Hide to Tray"),
+      nav_live: "🔴 " + tl("Live Matches"),
+      nav_schedule: "📅 " + tl("Schedule & Results"),
+      nav_stats: "📊 " + tl("Pro Stats"),
+      nav_stream: "📺 " + tl("24/7 Stream Marathon"),
+      nav_watchlist: "⭐ " + tl("Watchlist & Teams"),
+      nav_news: "📰 " + tl("News & Intel"),
+      nav_settings: "⚙ " + tl("Settings"),
+      toggle_hud: "📌 " + tl("Toggle Desktop HUD"),
+      stream_twitch: "▶ " + tl("Watch 24/7 on Twitch"),
+      stream_youtube: "▶ " + tl("Watch 24/7 on YouTube"),
+      stream_sched: "🌐 " + tl("Full Schedule (lolworlds.com)"),
+      kofi_support: "☕ " + tl("Support on Ko-fi"),
+      quit: tl("Quit RiftWatch"),
+      tray_hint_title: tl("RiftWatch is still running"),
+      tray_hint_body: tl(
+        "It's in the system tray (bottom-right, near the clock) so match alerts keep working. Right-click the icon to quit, or change this in Settings.",
+      ),
+    };
+    import("@tauri-apps/api/core")
+      .then(({ invoke }) => invoke("set_ui_texts", { texts }).catch(() => {}))
+      .catch(() => {});
   }, []);
 
   // Synchronize Compact Desktop mode window sizing
@@ -370,7 +400,7 @@ export default function App() {
     try {
       const info = await checkForAppUpdate(APP_VERSION);
       setUpdateInfo(info);
-      setUpdateCheck({ at: Date.now(), error: info ? null : "Couldn't reach GitHub to check for updates." });
+      setUpdateCheck({ at: Date.now(), error: info ? null : tl("Couldn't reach GitHub to check for updates.") });
       if (info?.hasUpdate && !IS_HUD_WINDOW) {
         // Notify once per version rather than on every startup / manual check
         let alreadyNotified = false;
@@ -383,8 +413,8 @@ export default function App() {
         if (!alreadyNotified) {
           import("@tauri-apps/api/core").then(({ invoke }) => {
             invoke("send_notification", {
-              title: "⚡ RiftWatch Update Available",
-              body: `Version v${info.latestVersion} is available. Open Settings to install it.`,
+              title: "⚡ " + tl("RiftWatch update available"),
+              body: tl("Version v{version} is available. Open Settings to install it.", { version: info.latestVersion }),
             }).catch(() => {});
           });
         }
@@ -503,8 +533,8 @@ export default function App() {
             import("@tauri-apps/api/core")
               .then(({ invoke }) => {
                 invoke("send_notification", {
-                  title: `🔴 MATCH LIVE: ${m.team1Code} vs ${m.team2Code}`,
-                  body: `${m.leagueName} match is now live! (Bo${m.bestOf})`,
+                  title: "🔴 " + tl("MATCH LIVE: {a} vs {b}", { a: m.team1Code, b: m.team2Code }),
+                  body: tl("{league} match is now live! (Bo{n})", { league: m.leagueName, n: m.bestOf }),
                 }).catch(() => {});
               })
               .catch(() => {});
@@ -528,12 +558,12 @@ export default function App() {
           if (!notifiedBangers.current.has(key)) {
             notifiedBangers.current.add(key);
             const matchup =
-              ev.team1 && ev.team2 ? `${ev.team1} vs ${ev.team2}` : ev.name || "Legendary Match";
+              ev.team1 && ev.team2 ? `${ev.team1} vs ${ev.team2}` : ev.name || tl("Legendary match");
             import("@tauri-apps/api/core")
               .then(({ invoke }) => {
                 invoke("send_notification", {
-                  title: `🔥 S-TIER BANGER AIRING NOW`,
-                  body: `${matchup} (${ev.event} ${ev.season}) is playing on 24/7 stream!`,
+                  title: "🔥 " + tl("S-TIER BANGER AIRING NOW"),
+                  body: tl("{matchup} ({event}) is playing on the 24/7 stream!", { matchup, event: `${ev.event} ${ev.season}` }),
                 }).catch(() => {});
               })
               .catch(() => {});
@@ -575,7 +605,7 @@ export default function App() {
       setHighlightMatchId(pendingMatchId);
       setPendingMatchId(null);
     } else if (lastSync && schedule.length > 0) {
-      showToast("That match isn't in the current schedule window.");
+      showToast(tl("That match isn't in the current schedule window."));
       setPendingMatchId(null);
     }
   }, [pendingMatchId, liveMatches, schedule, lastSync, showToast]);
@@ -636,11 +666,11 @@ export default function App() {
 
   const syncLabel = syncFailed
     ? lastSync
-      ? `Connection problem · showing data from ${new Date(lastSync).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`
-      : "Can't reach the data sources right now"
+      ? tl("Connection problem · showing data from {time}", { time: new Date(lastSync).toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit" }) })
+      : tl("Can't reach the data sources right now")
     : lastSync
-      ? `Updated ${new Date(lastSync).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`
-      : "Loading…";
+      ? tl("Updated {time}", { time: new Date(lastSync).toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit" }) })
+      : tl("Loading…");
 
   return (
     <div className="flex flex-col h-screen w-screen bg-[#091428] text-[#f0e6d2] overflow-hidden select-none">
@@ -679,16 +709,15 @@ export default function App() {
             <AlertTriangle className={`w-4 h-4 shrink-0 ${outage === "riot-key" ? "text-[#e84057]" : "text-[#c8aa6e]"}`} />
           )}
           <span>
-            {outage === "offline" && "You're offline. Live scores and schedules will come back when the connection does."}
+            {outage === "offline" && tl("You're offline. Live scores and schedules will come back when the connection does.")}
             {outage === "riot-down" &&
-              "Riot's LoL Esports data isn't responding right now. Nothing is wrong on your end; RiftWatch retries every minute and the 24/7 stream guide still works."}
+              tl("Riot's LoL Esports data isn't responding right now. Nothing is wrong on your end; RiftWatch retries every minute and the 24/7 stream guide still works.")}
             {outage === "riot-key" && (
               <>
-                Riot changed the key RiftWatch uses for esports data. Please{" "}
+                {tl("Riot changed the key RiftWatch uses for esports data.")}{" "}
                 <button type="button" onClick={() => handleOpenUrl("https://github.com/drmonocle/riftwatch/releases")} className="underline hover:text-[#c8aa6e]">
-                  update RiftWatch
+                  {tl("Update RiftWatch")}
                 </button>
-                .
               </>
             )}
           </span>
@@ -711,9 +740,8 @@ export default function App() {
       {showWelcome && (
         <div className="bg-[#0a1420] border-b border-[#c8aa6e]/40 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 text-xs" role="status">
           <div className="flex-1 text-[#9bb3c9] leading-relaxed">
-            <strong className="text-[#c8aa6e]">Welcome to RiftWatch!</strong> Start by following the teams you care about
-            below: they get highlighted everywhere and you get an alert when they play. RiftWatch also starts with Windows,
-            quietly in the tray; you can turn that off in Settings.
+            <strong className="text-[#c8aa6e]">{tl("Welcome to RiftWatch!")}</strong>{" "}
+            {tl("Start by following the teams you care about below: they get highlighted everywhere and you get an alert when they play. RiftWatch also starts with Windows, quietly in the tray; you can turn that off in Settings.")}
           </div>
           <div className="flex gap-2 shrink-0">
             <button
@@ -723,13 +751,13 @@ export default function App() {
               }}
               className="px-3 py-1.5 rounded-md bg-[#c8aa6e] hover:bg-[#f0e6d2] text-[#091428] font-bold"
             >
-              Show live matches
+              {tl("Show live matches")}
             </button>
             <button
               onClick={() => setShowWelcome(false)}
               className="px-3 py-1.5 rounded-md border border-[#1e282d] hover:border-[#c8aa6e]/60 text-[#f0e6d2]"
             >
-              Got it
+              {tl("Got it")}
             </button>
           </div>
         </div>
@@ -862,8 +890,8 @@ export default function App() {
         <div className="flex items-center gap-3">
           {settings.spoilerMode && (
             <span className="text-[#c8aa6e] font-semibold whitespace-nowrap">
-              <span className="hidden sm:inline">SPOILER MODE ACTIVE</span>
-              <span className="sm:hidden">SPOILERS HIDDEN</span>
+              <span className="hidden sm:inline">{tl("SPOILER MODE ACTIVE")}</span>
+              <span className="sm:hidden">{tl("SPOILERS HIDDEN")}</span>
             </span>
           )}
           {/* Narrow screens: make room for the spoiler notice so the footer stays on one line */}
@@ -871,7 +899,7 @@ export default function App() {
             onClick={() => handleOpenUrl("https://drmonocle.com")}
             className={`hover:text-[#c8aa6e] cursor-pointer whitespace-nowrap ${settings.spoilerMode ? "hidden sm:inline" : ""}`}
           >
-            Monocle Productions LLC
+            {tl("Monocle Productions LLC")}
           </span>
           {IS_DESKTOP && <button
             onClick={() =>
@@ -880,11 +908,11 @@ export default function App() {
                 .catch(() => {})
             }
             className="flex items-center gap-1 px-2 py-0.5 rounded border border-[#1e282d] text-[#a09b8c] hover:text-[#f0e6d2] hover:border-[#c8aa6e] hover:bg-[#121e2d] transition-colors"
-            aria-label="Hide RiftWatch to the system tray"
-            title="Hide RiftWatch to the system tray (click the tray icon or press Alt+Shift+L to bring it back)"
+            aria-label={tl("Hide RiftWatch to the system tray")}
+            title={tl("Hide RiftWatch to the system tray (click the tray icon or press Alt+Shift+L to bring it back)")}
           >
             <ArrowDownToLine className="w-3 h-3" />
-            <span>Hide to tray</span>
+            <span>{tl("Hide to tray")}</span>
           </button>}
         </div>
       </footer>

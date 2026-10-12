@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { StreamEvent, StreamStatus, AppSettings, CatalogData } from "../../types";
 import { streamPhase, streamEventTitle, upcomingStreamMatches } from "../../helpers";
 import { Radio, Play, ExternalLink, Flame, Star, Moon, Calendar, ChevronDown } from "lucide-react";
+import { tl, tn, locale, stageName } from "../../i18n";
 
 interface StreamViewProps {
   events: StreamEvent[];
@@ -23,17 +24,17 @@ const ts = (iso?: string) => (iso ? new Date(iso).getTime() : NaN);
 function relTime(iso?: string, now = Date.now()): string {
   const diff = ts(iso) - now;
   if (isNaN(diff)) return "";
-  if (diff <= 0) return "now";
+  if (diff <= 0) return tl("now");
   const mins = Math.floor(diff / 60000);
   const h = Math.floor(mins / 60);
   const d = Math.floor(h / 24);
-  if (d > 0) return `in ${d}d ${h % 24}h`;
-  if (h > 0) return `in ${h}h ${mins % 60}m`;
-  return `in ${Math.max(1, mins)}m`;
+  if (d > 0) return tl("in {d}d {h}h", { d, h: h % 24 });
+  if (h > 0) return tl("in {h}h {m}m", { h, m: mins % 60 });
+  return tl("in {m}m", { m: Math.max(1, mins) });
 }
 
 function clock(iso?: string): string {
-  return iso ? new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "--:--";
+  return iso ? new Date(iso).toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit" }) : "--:--";
 }
 
 function dayLabel(iso: string, now = new Date()): string {
@@ -41,9 +42,9 @@ function dayLabel(iso: string, now = new Date()): string {
   const a = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   const b = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const days = Math.round((a - b) / 86400000);
-  if (days === 0) return "Today";
-  if (days === 1) return "Tomorrow";
-  return d.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+  if (days === 0) return tl("Today");
+  if (days === 1) return tl("Tomorrow");
+  return d.toLocaleDateString(locale(), { weekday: "long", month: "short", day: "numeric" });
 }
 
 export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings, catalog, onOpenUrl, onSelectTab }) => {
@@ -99,7 +100,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
             {e.team1}
           </span>
         </span>
-        <span className={`text-[#7e8e9f] ${big ? "text-sm" : "text-[11px]"}`}>vs</span>
+        <span className={`text-[#7e8e9f] ${big ? "text-sm" : "text-[11px]"}`}>{tl("vs")}</span>
         <span className={`flex items-center ${big ? "gap-2" : "gap-1.5"}`}>
           <Logo code={e.team2} size={big ? 36 : 16} />
           <span
@@ -112,7 +113,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
         </span>
       </span>
     ) : (
-      <span className={`font-semibold text-[#f0e6d2] ${big ? "text-xl" : "text-xs"}`}>{e.name || "Broadcast segment"}</span>
+      <span className={`font-semibold text-[#f0e6d2] ${big ? "text-xl" : "text-xs"}`}>{e.name || tl("Broadcast segment")}</span>
     );
 
   const WatchButtons: React.FC = () => (
@@ -133,7 +134,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
         onClick={() => onOpenUrl("https://lolworlds.com/schedule")}
         className="flex items-center gap-1 px-2 py-1.5 text-xs text-[#9bb3c9] hover:text-[#f0e6d2]"
       >
-        Full schedule <ExternalLink className="w-3 h-3" />
+        {tl("Full schedule")} <ExternalLink className="w-3 h-3" />
       </button>
     </div>
   );
@@ -142,11 +143,11 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
   if (phase.kind === "break") {
     const nextLine =
       phase.next && ts(phase.next.utcIso) - now > 24 * 60 * 60 * 1000
-        ? `The next marathon starts ${new Date(phase.next.utcIso).toLocaleDateString([], {
-          weekday: "long",
-          month: "long",
-          day: "numeric",
-        })} at ${clock(phase.next.utcIso)} with ${streamEventTitle(phase.next)}.`
+        ? tl("The next marathon starts {date} at {time} with {event}.", {
+            date: new Date(phase.next.utcIso).toLocaleDateString(locale(), { weekday: "long", month: "long", day: "numeric" }),
+            time: clock(phase.next.utcIso),
+            event: streamEventTitle(phase.next),
+          })
       : null;
     return (
       <div className="p-4 max-w-3xl mx-auto overflow-y-auto h-full">
@@ -155,18 +156,18 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
             <Moon className="w-6 h-6 text-[#c8aa6e]" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-lg font-bold text-[#f0e6d2]">{status?.headline || "The 24/7 marathon is taking a break"}</h2>
+            <h2 className="text-lg font-bold text-[#f0e6d2]">{status?.headline || tl("The 24/7 marathon is taking a break")}</h2>
             <p className="text-sm text-[#9bb3c9] leading-relaxed max-w-xl mx-auto">
               {status?.message ||
                 nextLine ||
-                "It comes back before the next big international event. Check back here or follow the channel to know when it starts."}
+                tl("It comes back before the next big international event. Check back here or follow the channel to know when it starts.")}
             </p>
             {status?.message && nextLine && <p className="text-xs text-[#0ac8b9]">{nextLine}</p>}
             {phase.lastAired && (
               <p className="text-[11px] text-[#7e8e9f]">
                 Last aired: {phase.lastAired.team1 && phase.lastAired.team2 ? `${phase.lastAired.team1} vs ${phase.lastAired.team2}, ` : ""}
                 {streamEventTitle(phase.lastAired)}
-                {phase.lastAired.stage ? ` ${phase.lastAired.stage}` : ""}
+                {phase.lastAired.stage ? ` ${stageName(phase.lastAired.stage)}` : ""}
               </p>
             )}
           </div>
@@ -176,7 +177,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                 onClick={() => onSelectTab("live")}
                 className="px-3.5 py-2 rounded-md bg-[#c8aa6e] hover:bg-[#f0e6d2] text-[#091428] font-bold text-xs"
               >
-                Live pro matches
+                {tl("Live pro matches")}
               </button>
             )}
             <button
@@ -189,13 +190,13 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
               onClick={() => onOpenUrl(TWITCH_URL)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#9146ff] hover:bg-[#a970ff] text-white font-bold text-xs"
             >
-              Follow on Twitch
+              {tl("Follow on Twitch")}
             </button>
             <button
               onClick={() => onOpenUrl(DISCORD_URL)}
               className="px-3.5 py-2 rounded-md border border-[#1e282d] hover:border-[#c8aa6e]/60 text-[#f0e6d2] text-xs"
             >
-              Discord
+              {tl("Discord")}
             </button>
           </div>
         </div>
@@ -233,7 +234,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
           <div className="flex items-center justify-between gap-2 text-xs">
             <span className="flex items-center gap-1.5 font-bold tracking-wider text-[#0ac8b9] uppercase">
               <Radio className="w-3.5 h-3.5 animate-pulse" />
-              {current ? "Now on the 24/7 stream" : "24/7 stream · short break"}
+              {current ? tl("Now on the 24/7 stream") : tl("24/7 stream · short break")}
             </span>
             {current?.isBanger && (
               <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-[#ff4655] px-2 py-0.5 rounded">
@@ -247,17 +248,17 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
               <Matchup e={current} big />
               <div className="text-xs text-[#c8aa6e] font-semibold">
                 {streamEventTitle(current)}
-                {current.stage ? ` · ${current.stage}` : ""}
+                {current.stage ? ` · ${stageName(current.stage)}` : ""}
               </div>
             </div>
           ) : (
             next && (
               <div className="space-y-1">
-                <div className="text-sm text-[#9bb3c9]">Next match starts {relTime(next.utcIso, now)}</div>
+                <div className="text-sm text-[#9bb3c9]">{tl("Next match starts {when}", { when: relTime(next.utcIso, now) })}</div>
                 <Matchup e={next} big />
                 <div className="text-xs text-[#c8aa6e] font-semibold">
                   {streamEventTitle(next)}
-                  {next.stage ? ` · ${next.stage}` : ""}
+                  {next.stage ? ` · ${stageName(next.stage)}` : ""}
                 </div>
               </div>
             )
@@ -269,8 +270,8 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                 <div className="h-full bg-[#0ac8b9]" style={{ width: `${Math.round(progress * 100)}%` }} />
               </div>
               <div className="flex justify-between text-[10px] text-[#7e8e9f] font-mono">
-                <span>started {clock(current!.utcIso)}</span>
-                <span>next match {relTime(next!.utcIso, now)}</span>
+                <span>{tl("started {time}", { time: clock(current!.utcIso) })}</span>
+                <span>{tl("next match {when}", { when: relTime(next!.utcIso, now) })}</span>
               </div>
             </div>
           )}
@@ -282,9 +283,9 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
         {current && next && (
           <div className="border-t border-[#1e282d] bg-[#091428]/60 px-5 py-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-[#0ac8b9] uppercase tracking-wider text-[10px] shrink-0">Up next</span>
+              <span className="font-bold text-[#0ac8b9] uppercase tracking-wider text-[10px] shrink-0">{tl("Up next")}</span>
               <Matchup e={next} />
-              {next.isBanger && <Flame className="w-3.5 h-3.5 text-[#ff4655] fill-current shrink-0" aria-label="Banger" />}
+              {next.isBanger && <Flame className="w-3.5 h-3.5 text-[#ff4655] fill-current shrink-0" aria-label={tl("Banger")} />}
             </div>
             <span className="font-mono text-[#9bb3c9] shrink-0 ml-auto">
               {clock(next.utcIso)} · {relTime(next.utcIso, now)}
@@ -298,11 +299,11 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-2.5 rounded-lg border border-[#ff4655]/50 bg-[#1e131d] text-xs">
           <div className="flex items-center gap-2 min-w-0">
             <Flame className="w-3.5 h-3.5 text-[#ff4655] fill-current shrink-0" />
-            <span className="font-bold text-[#ff4655] uppercase tracking-wider text-[10px] shrink-0">Next banger</span>
+            <span className="font-bold text-[#ff4655] uppercase tracking-wider text-[10px] shrink-0">{tl("Next banger")}</span>
             <Matchup e={nextBanger} />
             <span className="text-[#7e8e9f] truncate hidden sm:inline">
               {streamEventTitle(nextBanger)}
-              {nextBanger.stage ? ` · ${nextBanger.stage}` : ""}
+              {nextBanger.stage ? ` · ${stageName(nextBanger.stage)}` : ""}
             </span>
           </div>
           <span className="font-mono text-[#ff4655] shrink-0">{relTime(nextBanger.utcIso, now)}</span>
@@ -313,7 +314,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
       {later.length > 0 && (
         <section className="space-y-3">
           <h3 className="flex items-center gap-2 text-xs font-bold text-[#c8aa6e] uppercase tracking-wider">
-            <Calendar className="w-3.5 h-3.5 text-[#0ac8b9]" /> Coming up on the marathon
+            <Calendar className="w-3.5 h-3.5 text-[#0ac8b9]" /> {tl("Coming up on the marathon")}
           </h3>
           {shownDays.map((day) => {
             const list = byDay.get(day)!;
@@ -322,13 +323,13 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                 <div className="flex items-center justify-between px-3.5 py-2 bg-[#0a1420] text-[11px]">
                   <span className="font-bold text-[#0ac8b9] uppercase tracking-wider">{day}</span>
                   <span className="text-[#7e8e9f]">
-                    {list.length} {list.length === 1 ? "match" : "matches"}
+                    {tn("{n} match", "{n} matches", list.length)}
                   </span>
                 </div>
                 {list.map((e, i) => {
                   const prev = list[i - 1];
-                  const group = `${streamEventTitle(e)}${e.stage ? ` · ${e.stage}` : ""}`;
-                  const prevGroup = prev ? `${streamEventTitle(prev)}${prev.stage ? ` · ${prev.stage}` : ""}` : "";
+                  const group = `${streamEventTitle(e)}${e.stage ? ` · ${stageName(e.stage)}` : ""}`;
+                  const prevGroup = prev ? `${streamEventTitle(prev)}${prev.stage ? ` · ${stageName(prev.stage)}` : ""}` : "";
                   const fol = followed(e);
                   return (
                     <React.Fragment key={String(e.id)}>
@@ -347,9 +348,9 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                           <Matchup e={e} />
                         </span>
                         <span className="flex items-center gap-1.5 shrink-0">
-                          {fol && <Star className="w-3.5 h-3.5 text-[#c8aa6e] fill-current" aria-label="A team you follow" />}
-                          {e.isBanger && <Flame className="w-3.5 h-3.5 text-[#ff4655] fill-current" aria-label="Banger" />}
-                          {day === "Today" && <span className="text-[10px] font-mono text-[#7e8e9f] w-14 text-right">{relTime(e.utcIso, now)}</span>}
+                          {fol && <Star className="w-3.5 h-3.5 text-[#c8aa6e] fill-current" aria-label={tl("A team you follow")} />}
+                          {e.isBanger && <Flame className="w-3.5 h-3.5 text-[#ff4655] fill-current" aria-label={tl("Banger")} />}
+                          {day === tl("Today") && <span className="text-[10px] font-mono text-[#7e8e9f] min-w-14 whitespace-nowrap text-right">{relTime(e.utcIso, now)}</span>}
                         </span>
                       </div>
                     </React.Fragment>
@@ -363,18 +364,18 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
               onClick={() => setShowAll((s) => !s)}
               className="w-full flex items-center justify-center gap-1 py-2 text-xs text-[#0ac8b9] hover:underline"
             >
-              {showAll ? "Show less" : `Show ${dayKeys.length - DAYS_SHOWN} more days`}
+              {showAll ? tl("Show less") : tn("Show {n} more day", "Show {n} more days", dayKeys.length - DAYS_SHOWN)}
               <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAll ? "rotate-180" : ""}`} />
             </button>
           )}
           <p className="text-[10px] text-[#7e8e9f] flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <Star className="w-3 h-3 text-[#c8aa6e] fill-current" /> team you follow
+              <Star className="w-3 h-3 text-[#c8aa6e] fill-current" /> {tl("team you follow")}
             </span>
             <span className="flex items-center gap-1">
-              <Flame className="w-3 h-3 text-[#ff4655] fill-current" /> banger
+              <Flame className="w-3 h-3 text-[#ff4655] fill-current" /> {tl("banger")}
             </span>
-            <span>Times are in your time zone.</span>
+            <span>{tl("Times are in your time zone.")}</span>
           </p>
         </section>
       )}

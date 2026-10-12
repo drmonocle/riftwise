@@ -14,6 +14,7 @@ import {
 } from "../../helpers";
 import { clickable } from "../../a11y";
 import { H2HMeter } from "../H2HMeter";
+import { tl, tc, locale } from "../../i18n";
 
 interface LiveViewProps {
   matches: Match[];
@@ -51,12 +52,12 @@ function useCountdown(utcDateStr?: string) {
       const diff = target - now;
 
       if (isNaN(target)) {
-        setTimeLeft({ hours: 0, minutes: 0, seconds: 0, isPast: false, formatted: "Scheduled" });
+        setTimeLeft({ hours: 0, minutes: 0, seconds: 0, isPast: false, formatted: tl("Scheduled") });
         return;
       }
 
       if (diff <= 0) {
-        setTimeLeft({ hours: 0, minutes: 0, seconds: 0, isPast: true, formatted: "Starting momentarily" });
+        setTimeLeft({ hours: 0, minutes: 0, seconds: 0, isPast: true, formatted: tl("Starting momentarily") });
         return;
       }
 
@@ -69,11 +70,11 @@ function useCountdown(utcDateStr?: string) {
       if (hours > 24) {
         const days = Math.floor(hours / 24);
         const remHours = hours % 24;
-        str = `Starts in ${days}d ${remHours}h ${minutes}m`;
+        str = tl("Starts in {d}d {h}h {m}m", { d: days, h: remHours, m: minutes });
       } else if (hours > 0) {
-        str = `Starts in ${hours}h ${minutes}m ${seconds}s`;
+        str = tl("Starts in {h}h {m}m {s}s", { h: hours, m: minutes, s: seconds });
       } else {
-        str = `Starts in ${minutes}m ${seconds}s`;
+        str = tl("Starts in {m}m {s}s", { m: minutes, s: seconds });
       }
 
       setTimeLeft({ hours, minutes, seconds, isPast: false, formatted: str });
@@ -96,8 +97,8 @@ function formatMatchTime(iso: string): string {
       d.getMonth() === today.getMonth() &&
       d.getFullYear() === today.getFullYear();
 
-    const timeStr = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-    if (isToday) return `Today at ${timeStr}`;
+    const timeStr = d.toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit" });
+    if (isToday) return tl("Today at {time}", { time: timeStr });
 
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
@@ -106,9 +107,9 @@ function formatMatchTime(iso: string): string {
       d.getMonth() === tomorrow.getMonth() &&
       d.getFullYear() === tomorrow.getFullYear();
 
-    if (isTomorrow) return `Tomorrow at ${timeStr}`;
+    if (isTomorrow) return tl("Tomorrow at {time}", { time: timeStr });
 
-    return `${d.toLocaleDateString([], { month: "short", day: "numeric" })} at ${timeStr}`;
+    return tl("{date} at {time}", { date: d.toLocaleDateString(locale(), { month: "short", day: "numeric" }), time: timeStr });
   } catch {
     return iso;
   }
@@ -175,7 +176,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
   const isFollowed = (m: Match) => isMatchFollowed(m, settings, catalog?.leagues);
 
   let nextMatch: Match | undefined;
-  let nextTag = "Next upcoming match";
+  let nextTag = tl("Next upcoming match");
   let comingUp: Match[] = [];
 
   if (hasWatchlist) {
@@ -186,16 +187,16 @@ export const LiveView: React.FC<LiveViewProps> = ({
         settings.followedTeams.includes(nextMatch.team1Code) ||
         settings.followedTeams.includes(nextMatch.team2Code);
       nextTag = isTeam
-        ? "Next match you follow"
-        : `Next in your leagues · ${nextMatch.leagueName}`;
-      if (minutesLate(nextMatch, now) >= DELAY_GRACE_MIN) nextTag = `Delayed · ${nextMatch.leagueName}`;
+        ? tl("Next match you follow")
+        : tl("Next in your leagues · {league}", { league: nextMatch.leagueName });
+      if (minutesLate(nextMatch, now) >= DELAY_GRACE_MIN) nextTag = tl("Delayed · {league}", { league: nextMatch.leagueName });
       comingUp = followedMatches.slice(1, 5);
     }
   } else {
     // User has no watchlist items: show upcoming matches overall or say none at all
     if (unstarted.length > 0) {
       nextMatch = unstarted[0];
-      nextTag = "Next upcoming match";
+      nextTag = tl("Next upcoming match");
       comingUp = unstarted.slice(1, 5);
     }
   }
@@ -214,11 +215,11 @@ export const LiveView: React.FC<LiveViewProps> = ({
         <div className="flex items-center justify-between pb-1 border-b border-[#1e282d]">
           <h2 className="text-xs font-bold text-[#e84057] uppercase tracking-wider flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#e84057] animate-ping" />
-            Live Pro Matches ({matches.length})
+            {tl("Live Pro Matches ({n})", { n: matches.length })}
           </h2>
           {settings.spoilerMode && (
             <span className="text-[10px] text-[#c8aa6e] bg-[#c8aa6e]/10 border border-[#c8aa6e]/30 px-2 py-0.5 rounded">
-              SPOILER MODE ACTIVE · CLICK SCORE TO REVEAL
+              {tl("SPOILER MODE ACTIVE · CLICK SCORE TO REVEAL")}
             </span>
           )}
         </div>
@@ -248,7 +249,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   <span className="flex items-center gap-1.5">
                     <ShareMatchButton match={m} />
                     <span className="font-medium bg-[#091428] px-2 py-0.5 rounded border border-[#1e282d]">
-                      Best of {m.bestOf}
+                      {tl("Best of {n}", { n: m.bestOf })}
                     </span>
                   </span>
                 </div>
@@ -256,27 +257,27 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 {/* Match Scoreboard */}
                 <div className="grid grid-cols-5 items-center gap-2 my-2">
                   {/* Team 1 */}
-                  <div className="col-span-2 flex items-center justify-end gap-3 text-right">
-                    <div>
-                      <div className="flex items-center justify-end gap-1.5">
+                  <div className="col-span-2 min-w-0 flex items-center justify-end gap-2 sm:gap-3 text-right">
+                    <div className="min-w-0">
+                      <div className="flex items-center justify-end gap-1.5 min-w-0">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             toggleTeamFollow(m.team1Code);
                           }}
-                          className={`p-1 rounded hover:bg-[#1e282d] transition-colors ${
+                          className={`p-1 shrink-0 rounded hover:bg-[#1e282d] transition-colors ${
                             isT1Followed ? "text-[#c8aa6e]" : "text-[#9bb3c9] hover:text-[#c8aa6e]"
                           }`}
-                          aria-label={isT1Followed ? `Unfollow ${m.team1Code}` : `Follow ${m.team1Code}`}
-                          title={isT1Followed ? `Unfollow ${m.team1Code}` : `Follow ${m.team1Code}`}
+                          aria-label={isT1Followed ? tl("Unfollow {name}", { name: m.team1Code }) : tl("Follow {name}", { name: m.team1Code })}
+                          title={isT1Followed ? tl("Unfollow {name}", { name: m.team1Code }) : tl("Follow {name}", { name: m.team1Code })}
                         >
                           <Star className={`w-3.5 h-3.5 ${isT1Followed ? "fill-[#c8aa6e]" : ""}`} />
                         </button>
                         <span
                           {...clickable(() => onSelectTeam?.(m.team1Code, m.team1Name))}
-                          className="font-bold text-base text-[#f0e6d2] hover:text-[#c8aa6e] cursor-pointer transition-colors"
-                          title={`View ${m.team1Name} roster`}
+                          className="font-bold text-sm sm:text-base text-[#f0e6d2] hover:text-[#c8aa6e] cursor-pointer transition-colors truncate"
+                          title={tl("View {team} roster", { team: m.team1Name })}
                         >
                           {m.team1Name}
                         </span>
@@ -287,13 +288,13 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       <img
                         src={m.team1Image}
                         alt={m.team1Code}
-                        className="w-10 h-10 object-contain rounded cursor-pointer"
+                        className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 object-contain rounded cursor-pointer"
                         onClick={() => onSelectTeam?.(m.team1Code, m.team1Name)}
                       />
                     ) : (
                       <div
                         {...clickable(() => onSelectTeam?.(m.team1Code, m.team1Name))}
-                        className="w-10 h-10 bg-[#091428] rounded flex items-center justify-center font-bold text-xs text-[#c8aa6e] cursor-pointer font-mono"
+                        className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 bg-[#091428] rounded flex items-center justify-center font-bold text-xs text-[#c8aa6e] cursor-pointer font-mono"
                       >
                         {m.team1Code.slice(0, 3)}
                       </div>
@@ -308,7 +309,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                         className={`text-2xl text-[#f0e6d2] ${
                           settings.spoilerMode ? "cursor-pointer group flex flex-col items-center" : ""
                         }`}
-                        title={settings.spoilerMode ? "Click to re-hide score" : undefined}
+                        title={settings.spoilerMode ? tl("Click to re-hide score") : undefined}
                       >
                         <div>
                           <span className="text-[#0ac8b9]">{m.team1Score}</span>
@@ -317,7 +318,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                         </div>
                         {settings.spoilerMode && (
                           <span className="text-[9px] text-[#9bb3c9] opacity-80 group-hover:opacity-100 font-sans tracking-tight">
-                            Revealed (hide)
+                            {tl("Revealed (hide)")}
                           </span>
                         )}
                       </div>
@@ -326,11 +327,11 @@ export const LiveView: React.FC<LiveViewProps> = ({
                         type="button"
                         onClick={() => toggleReveal(m.matchId)}
                         className="text-xs text-[#9bb3c9] bg-[#091428] hover:bg-[#121e2d] hover:text-[#c8aa6e] py-1 px-2.5 rounded border border-[#1e282d] hover:border-[#c8aa6e]/50 transition-all cursor-pointer flex flex-col items-center gap-0.5 group"
-                        title="Click to reveal live score for this match"
+                        title={tl("Click to reveal live score for this match")}
                       >
-                        <span className="font-bold">VS</span>
+                        <span className="font-bold">{tl("VS")}</span>
                         <span className="text-[9px] text-[#9bb3c9] group-hover:text-[#c8aa6e]">
-                          Reveal
+                          {tl("Reveal")}
                         </span>
                       </button>
                     )}
@@ -341,28 +342,28 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   </div>
 
                   {/* Team 2 */}
-                  <div className="col-span-2 flex items-center gap-3 text-left">
+                  <div className="col-span-2 min-w-0 flex items-center gap-2 sm:gap-3 text-left">
                     {m.team2Image ? (
                       <img
                         src={m.team2Image}
                         alt={m.team2Code}
-                        className="w-10 h-10 object-contain rounded cursor-pointer"
+                        className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 object-contain rounded cursor-pointer"
                         onClick={() => onSelectTeam?.(m.team2Code, m.team2Name)}
                       />
                     ) : (
                       <div
                         {...clickable(() => onSelectTeam?.(m.team2Code, m.team2Name))}
-                        className="w-10 h-10 bg-[#091428] rounded flex items-center justify-center font-bold text-xs text-[#c8aa6e] cursor-pointer font-mono"
+                        className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 bg-[#091428] rounded flex items-center justify-center font-bold text-xs text-[#c8aa6e] cursor-pointer font-mono"
                       >
                         {m.team2Code.slice(0, 3)}
                       </div>
                     )}
-                    <div>
-                      <div className="flex items-center gap-1.5">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
                         <span
                           {...clickable(() => onSelectTeam?.(m.team2Code, m.team2Name))}
-                          className="font-bold text-base text-[#f0e6d2] hover:text-[#c8aa6e] cursor-pointer transition-colors"
-                          title={`View ${m.team2Name} roster`}
+                          className="font-bold text-sm sm:text-base text-[#f0e6d2] hover:text-[#c8aa6e] cursor-pointer transition-colors truncate"
+                          title={tl("View {team} roster", { team: m.team2Name })}
                         >
                           {m.team2Name}
                         </span>
@@ -372,11 +373,11 @@ export const LiveView: React.FC<LiveViewProps> = ({
                             e.stopPropagation();
                             toggleTeamFollow(m.team2Code);
                           }}
-                          className={`p-1 rounded hover:bg-[#1e282d] transition-colors ${
+                          className={`p-1 shrink-0 rounded hover:bg-[#1e282d] transition-colors ${
                             isT2Followed ? "text-[#c8aa6e]" : "text-[#9bb3c9] hover:text-[#c8aa6e]"
                           }`}
-                          aria-label={isT2Followed ? `Unfollow ${m.team2Code}` : `Follow ${m.team2Code}`}
-                          title={isT2Followed ? `Unfollow ${m.team2Code}` : `Follow ${m.team2Code}`}
+                          aria-label={isT2Followed ? tl("Unfollow {name}", { name: m.team2Code }) : tl("Follow {name}", { name: m.team2Code })}
+                          title={isT2Followed ? tl("Unfollow {name}", { name: m.team2Code }) : tl("Follow {name}", { name: m.team2Code })}
                         >
                           <Star className={`w-3.5 h-3.5 ${isT2Followed ? "fill-[#c8aa6e]" : ""}`} />
                         </button>
@@ -418,10 +419,9 @@ export const LiveView: React.FC<LiveViewProps> = ({
                           }`}
                         >
                           {isCurrent && !isBetweenGames && "● "}
-                          <span className="sm:hidden">G</span>
-                          <span className="hidden sm:inline">Game </span>
-                          {gNum}
-                          {isCurrent && (isBetweenGames ? " · Next" : " · Live")}
+                          <span className="sm:hidden">{tc("short game", "G{n}", { n: gNum })}</span>
+                          <span className="hidden sm:inline">{tl("Game {n}", { n: gNum })}</span>
+                          {isCurrent && (isBetweenGames ? " · " + tl("Next") : " · " + tl("Live"))}
                         </span>
                       );
                     })}
@@ -447,7 +447,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     return (
                       <span className="flex items-center gap-1.5 text-[#e84057] font-semibold text-[11px]">
                         <span className="w-2 h-2 rounded-full bg-[#e84057] animate-ping" />
-                        Match In Progress
+                        {tl("Match In Progress")}
                       </span>
                     );
                   })()}
@@ -457,7 +457,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     className="flex items-center gap-1.5 px-3 py-1 rounded bg-[#0ac8b9] hover:bg-[#0ac8b9]/80 text-[#091428] font-bold text-xs transition-colors"
                   >
                     <Tv className="w-3.5 h-3.5" />
-                    <span>Watch Stream</span>
+                    <span>{tl("Watch Stream")}</span>
                   </button>
                 </div>
               </div>
@@ -473,12 +473,12 @@ export const LiveView: React.FC<LiveViewProps> = ({
           return (
             <section className="space-y-2 pt-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-[#7e8e9f] uppercase tracking-wider">Up Next</span>
+                <span className="font-bold text-[#7e8e9f] uppercase tracking-wider">{tl("Up Next")}</span>
                 <button
                   onClick={() => onSelectTab("schedule")}
                   className="text-[#0ac8b9] hover:underline text-[11px] font-medium"
                 >
-                  Full schedule →
+                  {tl("Full schedule →")}
                 </button>
               </div>
               <div className="grid gap-2">
@@ -490,7 +490,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     {/* Phones: league, Bo and time on the first line, the teams on the second */}
                     <span className="font-bold text-[#0ac8b9] text-[11px] flex-1 sm:flex-none sm:w-24 truncate min-w-0">{m.leagueName}</span>
                     <span className="order-last sm:order-none basis-full sm:basis-auto sm:flex-1 text-[#f0e6d2] font-semibold truncate min-w-0">
-                      {m.team1Name} <span className="text-[#9bb3c9] mx-1">vs</span> {m.team2Name}
+                      {m.team1Name} <span className="text-[#9bb3c9] mx-1">{tl("vs")}</span> {m.team2Name}
                     </span>
                     <span className="text-[#9bb3c9] text-[11px] font-medium shrink-0">Bo{m.bestOf}</span>
                     <div className="text-[#9bb3c9] font-mono text-[11px] font-medium shrink-0">
@@ -500,11 +500,10 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 ))}
               </div>
               <p className="text-[11px] text-[#7e8e9f] text-center pt-1">
-                Want fewer leagues or only your teams? Pick them in the{" "}
+                {tl("Want fewer leagues or only your teams? Pick them in the Watchlist tab.")}{" "}
                 <button onClick={() => onSelectTab("watchlist")} className="text-[#c8aa6e] hover:underline">
-                  Watchlist
-                </button>{" "}
-                tab.
+                  {tl("Open Watchlist")}
+                </button>
               </p>
             </section>
           );
@@ -519,7 +518,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
       <div className="p-4 h-full flex items-center justify-center" role="status">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0a1420] border border-[#1e282d] text-[#9bb3c9] text-xs">
           <Clock className="w-3.5 h-3.5 text-[#0ac8b9] animate-pulse" />
-          <span>Loading live matches and the schedule…</span>
+          <span>{tl("Loading live matches and the schedule…")}</span>
         </div>
       </div>
     );
@@ -532,7 +531,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
       <div className="text-center py-4 border-b border-[#1e282d]">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0a1420] border border-[#1e282d] text-[#7e8e9f] text-xs mb-1">
           <Clock className="w-3.5 h-3.5 text-[#0ac8b9]" />
-          <span>No pro matches are live right now</span>
+          <span>{tl("No pro matches are live right now")}</span>
         </div>
         {liveShows.length > 0 && (
           <div className="mt-2 flex flex-wrap items-center justify-center gap-2" role="status">
@@ -543,7 +542,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 onClick={() => s.streamUrl && onOpenUrl(s.streamUrl)}
                 disabled={!s.streamUrl}
                 className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1a1708] border border-[#c8aa6e]/60 text-[#f0e6d2] text-xs hover:border-[#c8aa6e] disabled:cursor-default"
-                title={s.streamUrl ? `Open the ${s.leagueName} broadcast` : undefined}
+                title={s.streamUrl ? tl("Open the {league} broadcast", { league: s.leagueName }) : undefined}
               >
                 <span className="w-2 h-2 rounded-full bg-[#e84057] animate-pulse" />
                 <span>
@@ -577,7 +576,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 <span className="font-semibold text-[#0ac8b9]">{nextMatch.leagueName}</span>
                 <span>·</span>
                 <span className="font-mono bg-[#091428] px-2 py-0.5 rounded border border-[#1e282d]">
-                  Best of {nextMatch.bestOf}
+                  {tl("Best of {n}", { n: nextMatch.bestOf })}
                 </span>
               </div>
 
@@ -591,13 +590,13 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       alt={nextMatch.team1Code}
                       className="w-14 h-14 sm:w-16 sm:h-16 object-contain mb-2 drop-shadow-md cursor-pointer hover:scale-105 transition-transform"
                       onClick={() => onSelectTeam?.(nextMatch!.team1Code, nextMatch!.team1Name)}
-                      title={`View ${nextMatch.team1Name} roster`}
+                      title={tl("View {team} roster", { team: nextMatch.team1Name })}
                     />
                   ) : (
                     <div
                       {...clickable(() => onSelectTeam?.(nextMatch!.team1Code, nextMatch!.team1Name))}
                       className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-[#091428] border border-[#1e282d] hover:border-[#c8aa6e] flex items-center justify-center font-bold text-lg text-[#c8aa6e] mb-2 font-mono cursor-pointer"
-                      title={`View ${nextMatch.team1Name} roster`}
+                      title={tl("View {team} roster", { team: nextMatch.team1Name })}
                     >
                       {nextMatch.team1Code.slice(0, 3)}
                     </div>
@@ -606,7 +605,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     <span
                       {...clickable(() => onSelectTeam?.(nextMatch!.team1Code, nextMatch!.team1Name))}
                       className="font-bold text-base sm:text-lg text-[#f0e6d2] hover:text-[#c8aa6e] cursor-pointer truncate transition-colors"
-                      title={`View ${nextMatch.team1Name} roster`}
+                      title={tl("View {team} roster", { team: nextMatch.team1Name })}
                     >
                       {nextMatch.team1Name}
                     </span>
@@ -623,13 +622,13 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       }`}
                       aria-label={
                         settings.followedTeams.includes(nextMatch.team1Code)
-                          ? `Unfollow ${nextMatch.team1Code}`
-                          : `Follow ${nextMatch.team1Code}`
+                          ? tl("Unfollow {name}", { name: nextMatch.team1Code })
+                          : tl("Follow {name}", { name: nextMatch.team1Code })
                       }
                       title={
                         settings.followedTeams.includes(nextMatch.team1Code)
-                          ? `Unfollow ${nextMatch.team1Code}`
-                          : `Follow ${nextMatch.team1Code}`
+                          ? tl("Unfollow {name}", { name: nextMatch.team1Code })
+                          : tl("Follow {name}", { name: nextMatch.team1Code })
                       }
                     >
                       <Star
@@ -652,7 +651,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 {/* VS Center */}
                 <div className="flex flex-col items-center">
                   <span className="text-xs font-bold text-[#9bb3c9] bg-[#091428] border border-[#1e282d] px-2.5 py-1 rounded-full uppercase tracking-widest font-mono">
-                    VS
+                    {tl("VS")}
                   </span>
                 </div>
 
@@ -664,13 +663,13 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       alt={nextMatch.team2Code}
                       className="w-14 h-14 sm:w-16 sm:h-16 object-contain mb-2 drop-shadow-md cursor-pointer hover:scale-105 transition-transform"
                       onClick={() => onSelectTeam?.(nextMatch!.team2Code, nextMatch!.team2Name)}
-                      title={`View ${nextMatch.team2Name} roster`}
+                      title={tl("View {team} roster", { team: nextMatch.team2Name })}
                     />
                   ) : (
                     <div
                       {...clickable(() => onSelectTeam?.(nextMatch!.team2Code, nextMatch!.team2Name))}
                       className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-[#091428] border border-[#1e282d] hover:border-[#c8aa6e] flex items-center justify-center font-bold text-lg text-[#c8aa6e] mb-2 font-mono cursor-pointer"
-                      title={`View ${nextMatch.team2Name} roster`}
+                      title={tl("View {team} roster", { team: nextMatch.team2Name })}
                     >
                       {nextMatch.team2Code.slice(0, 3)}
                     </div>
@@ -679,7 +678,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     <span
                       {...clickable(() => onSelectTeam?.(nextMatch!.team2Code, nextMatch!.team2Name))}
                       className="font-bold text-base sm:text-lg text-[#f0e6d2] hover:text-[#c8aa6e] cursor-pointer truncate transition-colors"
-                      title={`View ${nextMatch.team2Name} roster`}
+                      title={tl("View {team} roster", { team: nextMatch.team2Name })}
                     >
                       {nextMatch.team2Name}
                     </span>
@@ -696,13 +695,13 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       }`}
                       aria-label={
                         settings.followedTeams.includes(nextMatch.team2Code)
-                          ? `Unfollow ${nextMatch.team2Code}`
-                          : `Follow ${nextMatch.team2Code}`
+                          ? tl("Unfollow {name}", { name: nextMatch.team2Code })
+                          : tl("Follow {name}", { name: nextMatch.team2Code })
                       }
                       title={
                         settings.followedTeams.includes(nextMatch.team2Code)
-                          ? `Unfollow ${nextMatch.team2Code}`
-                          : `Follow ${nextMatch.team2Code}`
+                          ? tl("Unfollow {name}", { name: nextMatch.team2Code })
+                          : tl("Follow {name}", { name: nextMatch.team2Code })
                       }
                     >
                       <Star
@@ -741,20 +740,20 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 {nextIsDelayed ? (
                   <div className="flex flex-col items-center gap-1" role="status">
                     <span className="px-2.5 py-0.5 rounded bg-[#c8aa6e] text-[#091428] text-[10px] font-extrabold uppercase tracking-wider">
-                      Delayed
+                      {tl("Delayed")}
                     </span>
                     <div className="text-xl sm:text-2xl font-extrabold text-[#c8aa6e] font-mono tracking-tight">
-                      {formatLate(lateMin)} late
+                      {tl("{time} late", { time: formatLate(lateMin) })}
                     </div>
                     <div className="text-[11px] text-[#9bb3c9]">
                       {nextShow
-                        ? `The ${nextShow.leagueName} broadcast is on air. Game 1 hasn't started yet.`
-                        : "Riot hasn't marked this match as started yet."}
+                        ? tl("The {league} broadcast is on air. Game 1 hasn't started yet.", { league: nextShow.leagueName })
+                        : tl("Riot hasn't marked this match as started yet.")}
                     </div>
                   </div>
                 ) : (
                   <div className="text-xl sm:text-2xl font-extrabold text-[#0ac8b9] font-mono tracking-tight animate-pulse">
-                    {countdown.formatted || "Calculating…"}
+                    {countdown.formatted || tl("Calculating…")}
                   </div>
                 )}
                 <div className="text-xs text-[#9bb3c9] mt-1 flex items-center gap-1.5 font-medium">
@@ -775,7 +774,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     <div className="mt-4 w-full pt-3 border-t border-[#1e282d]/60">
                       <div className="text-[10px] font-bold text-[#c8aa6e] uppercase tracking-wider mb-2 flex items-center justify-center gap-1.5">
                         <Tv className="w-3 h-3 text-[#c8aa6e]" />
-                        <span>Broadcast & Live Stream Channels</span>
+                        <span>{tl("Broadcast & Live Stream Channels")}</span>
                       </div>
                       <div className="flex flex-wrap items-center justify-center gap-2">
                         {streams.map((s, idx) => (
@@ -792,7 +791,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                                 ? "bg-[#ff0000]/15 hover:bg-[#ff0000]/30 border border-[#ff0000]/50 text-[#fca5a5]"
                                 : "bg-[#091428] hover:bg-[#121e2d] border border-[#0ac8b9]/60 text-[#0ac8b9]"
                             }`}
-                            title={`Open ${s.name} (${s.url})`}
+                            title={tl("Open {name} ({url})", { name: s.name, url: s.url })}
                           >
                             {s.icon === "twitch" && (
                               <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -829,9 +828,9 @@ export const LiveView: React.FC<LiveViewProps> = ({
               <Star className="w-6 h-6 fill-[#c8aa6e]/20" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-[#f0e6d2]">No Upcoming Matches in Your Watchlist</h3>
+              <h3 className="text-base font-bold text-[#f0e6d2]">{tl("No Upcoming Matches in Your Watchlist")}</h3>
               <p className="text-xs text-[#9bb3c9] mt-1.5 leading-relaxed">
-                None of your followed teams, leagues, or regions have matches scheduled in the current window.
+                {tl("None of your followed teams, leagues, or regions have matches scheduled in the current window.")}
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
@@ -839,13 +838,13 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 onClick={() => onSelectTab("watchlist")}
                 className="px-4 py-2 rounded-lg bg-[#c8aa6e] hover:bg-[#f0e6d2] text-[#091428] font-bold text-xs transition-colors shadow"
               >
-                Manage Watchlist
+                {tl("Manage Watchlist")}
               </button>
               <button
                 onClick={() => onSelectTab("schedule")}
                 className="px-4 py-2 rounded-lg bg-[#091428] hover:bg-[#121e2d] border border-[#1e282d] hover:border-[#c8aa6e]/50 text-[#f0e6d2] font-semibold text-xs transition-colors"
               >
-                Browse All Matches ({unstarted.length})
+                {tl("Browse All Matches ({n})", { n: unstarted.length })}
               </button>
             </div>
           </div>
@@ -854,7 +853,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
             <section className="space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-[#7e8e9f] uppercase tracking-wider">
-                  Upcoming in Other Leagues
+                  {tl("Upcoming in Other Leagues")}
                 </span>
                 <button
                   onClick={() => onSelectTab("schedule")}
@@ -877,7 +876,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                         <span
                           {...clickable(() => onSelectTeam?.(m.team1Code, m.team1Name))}
                           className="hover:text-[#c8aa6e] cursor-pointer transition-colors"
-                          title={`View ${m.team1Name} roster`}
+                          title={tl("View {team} roster", { team: m.team1Name })}
                         >
                           {m.team1Name}
                         </span>
@@ -892,13 +891,13 @@ export const LiveView: React.FC<LiveViewProps> = ({
                           }`}
                           aria-label={
                             settings.followedTeams.includes(m.team1Code)
-                              ? `Unfollow ${m.team1Code}`
-                              : `Follow ${m.team1Code}`
+                              ? tl("Unfollow {name}", { name: m.team1Code })
+                              : tl("Follow {name}", { name: m.team1Code })
                           }
                           title={
                             settings.followedTeams.includes(m.team1Code)
-                              ? `Unfollow ${m.team1Code}`
-                              : `Follow ${m.team1Code}`
+                              ? tl("Unfollow {name}", { name: m.team1Code })
+                              : tl("Follow {name}", { name: m.team1Code })
                           }
                         >
                           <Star
@@ -907,11 +906,11 @@ export const LiveView: React.FC<LiveViewProps> = ({
                             }`}
                           />
                         </button>
-                        <span className="text-[#9bb3c9] mx-1">vs</span>
+                        <span className="text-[#9bb3c9] mx-1">{tl("vs")}</span>
                         <span
                           {...clickable(() => onSelectTeam?.(m.team2Code, m.team2Name))}
                           className="hover:text-[#c8aa6e] cursor-pointer transition-colors"
-                          title={`View ${m.team2Name} roster`}
+                          title={tl("View {team} roster", { team: m.team2Name })}
                         >
                           {m.team2Name}
                         </span>
@@ -926,13 +925,13 @@ export const LiveView: React.FC<LiveViewProps> = ({
                           }`}
                           aria-label={
                             settings.followedTeams.includes(m.team2Code)
-                              ? `Unfollow ${m.team2Code}`
-                              : `Follow ${m.team2Code}`
+                              ? tl("Unfollow {name}", { name: m.team2Code })
+                              : tl("Follow {name}", { name: m.team2Code })
                           }
                           title={
                             settings.followedTeams.includes(m.team2Code)
-                              ? `Unfollow ${m.team2Code}`
-                              : `Follow ${m.team2Code}`
+                              ? tl("Unfollow {name}", { name: m.team2Code })
+                              : tl("Follow {name}", { name: m.team2Code })
                           }
                         >
                           <Star
@@ -962,16 +961,16 @@ export const LiveView: React.FC<LiveViewProps> = ({
           <div className="w-12 h-12 rounded-full bg-[#0ac8b9]/10 border border-[#0ac8b9]/30 flex items-center justify-center mx-auto text-[#0ac8b9]">
             <Calendar className="w-6 h-6" />
           </div>
-          <h3 className="text-base font-bold text-[#f0e6d2]">No Upcoming Pro Matches Scheduled</h3>
+          <h3 className="text-base font-bold text-[#f0e6d2]">{tl("No Upcoming Pro Matches Scheduled")}</h3>
           <p className="text-xs text-[#9bb3c9] max-w-md mx-auto leading-relaxed">
-            There are currently no upcoming pro matches scheduled across any league in the current broadcast window.
+            {tl("There are currently no upcoming pro matches scheduled across any league in the current broadcast window.")}
           </p>
           <div className="pt-2">
             <button
               onClick={() => onSelectTab("schedule")}
               className="px-4 py-2 rounded-lg bg-[#c8aa6e] hover:bg-[#f0e6d2] text-[#091428] font-bold text-xs transition-colors shadow"
             >
-              Check Full Schedule
+              {tl("Check Full Schedule")}
             </button>
           </div>
         </div>
@@ -981,7 +980,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
       {comingUp.length > 0 && (
         <section className="space-y-2">
           <h3 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider">
-            Coming Up Next
+            {tl("Coming Up Next")}
           </h3>
           <div className="grid gap-2">
             {comingUp.map((m) => (
@@ -997,7 +996,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     <span
                       {...clickable(() => onSelectTeam?.(m.team1Code, m.team1Name))}
                       className="hover:text-[#c8aa6e] cursor-pointer transition-colors"
-                      title={`View ${m.team1Name} roster`}
+                      title={tl("View {team} roster", { team: m.team1Name })}
                     >
                       {m.team1Name}
                     </span>
@@ -1012,13 +1011,13 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       }`}
                       aria-label={
                         settings.followedTeams.includes(m.team1Code)
-                          ? `Unfollow ${m.team1Code}`
-                          : `Follow ${m.team1Code}`
+                          ? tl("Unfollow {name}", { name: m.team1Code })
+                          : tl("Follow {name}", { name: m.team1Code })
                       }
                       title={
                         settings.followedTeams.includes(m.team1Code)
-                          ? `Unfollow ${m.team1Code}`
-                          : `Follow ${m.team1Code}`
+                          ? tl("Unfollow {name}", { name: m.team1Code })
+                          : tl("Follow {name}", { name: m.team1Code })
                       }
                     >
                       <Star
@@ -1027,11 +1026,11 @@ export const LiveView: React.FC<LiveViewProps> = ({
                         }`}
                       />
                     </button>
-                    <span className="text-[#9bb3c9] mx-1">vs</span>
+                    <span className="text-[#9bb3c9] mx-1">{tl("vs")}</span>
                     <span
                       {...clickable(() => onSelectTeam?.(m.team2Code, m.team2Name))}
                       className="hover:text-[#c8aa6e] cursor-pointer transition-colors"
-                      title={`View ${m.team2Name} roster`}
+                      title={tl("View {team} roster", { team: m.team2Name })}
                     >
                       {m.team2Name}
                     </span>
@@ -1046,13 +1045,13 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       }`}
                       aria-label={
                         settings.followedTeams.includes(m.team2Code)
-                          ? `Unfollow ${m.team2Code}`
-                          : `Follow ${m.team2Code}`
+                          ? tl("Unfollow {name}", { name: m.team2Code })
+                          : tl("Follow {name}", { name: m.team2Code })
                       }
                       title={
                         settings.followedTeams.includes(m.team2Code)
-                          ? `Unfollow ${m.team2Code}`
-                          : `Follow ${m.team2Code}`
+                          ? tl("Unfollow {name}", { name: m.team2Code })
+                          : tl("Follow {name}", { name: m.team2Code })
                       }
                     >
                       <Star
@@ -1083,7 +1082,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
           onClick={() => onSelectTab("schedule")}
           className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#c8aa6e] hover:bg-[#f0e6d2] text-[#091428] font-bold text-xs transition-colors shadow"
         >
-          <span>View Full Schedule</span>
+          <span>{tl("View Full Schedule")}</span>
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>

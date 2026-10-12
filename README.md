@@ -49,6 +49,9 @@ Every match card carries a head-to-head meter. Tap it for the full record: games
 ### 🙈 Spoiler mode
 Hides scores, winners, series progress, bracket results and head-to-head scores until you reveal a match. Toggle it any time (`Ctrl+S` in the Windows app).
 
+### 🌐 11 languages
+English, Español, Português (Brasil), 한국어, Tiếng Việt, 简体中文, 繁體中文, 日本語, Français, Deutsch and Türkçe, written the way each region's fans and casters talk (롤드컵 and 원딜 in Korean, 名局 in Chinese, partidazo, jogaço...). RiftWatch picks your browser or Windows language automatically; change it under **Settings → Language**. Spot a bad translation? The email next to the language picker goes straight to the developer. Translator notes: [`src/i18n/GLOSSARY.md`](src/i18n/GLOSSARY.md).
+
 ### 🔗 Share a match
 The link icon on any match copies a link that opens it in the web version: `lolworlds.com/riftwatch/#match/<id>`.
 
