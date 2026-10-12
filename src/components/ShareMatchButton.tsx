@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Check, Link2 } from "lucide-react";
 import { Match } from "../types";
 import { matchShareUrl } from "../platform";
+import { tl } from "../i18n";
 
 /** Copies a link that opens this match in the web version (lolworlds.com/riftwatch/#match/<id>). */
 export const ShareMatchButton: React.FC<{ match: Match; className?: string }> = ({ match, className = "" }) => {
@@ -9,8 +10,8 @@ export const ShareMatchButton: React.FC<{ match: Match; className?: string }> = 
 
   useEffect(() => {
     if (!copied) return;
-    const t = window.setTimeout(() => setCopied(false), 1800);
-    return () => window.clearTimeout(t);
+    const timer = window.setTimeout(() => setCopied(false), 1800);
+    return () => window.clearTimeout(timer);
   }, [copied]);
 
   const copy = async (e: React.MouseEvent) => {
@@ -31,11 +32,11 @@ export const ShareMatchButton: React.FC<{ match: Match; className?: string }> = 
       const ok = document.execCommand("copy");
       ta.remove();
       if (ok) setCopied(true);
-      else window.prompt("Copy this link:", url);
+      else window.prompt(tl("Copy this link:"), url);
     }
   };
 
-  const label = copied ? "Link copied" : `Copy link to ${match.team1Code} vs ${match.team2Code}`;
+  const label = copied ? tl("Link copied") : tl("Copy link to {a} vs {b}", { a: match.team1Code, b: match.team2Code });
   return (
     <button
       type="button"

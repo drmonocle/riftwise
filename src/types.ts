@@ -156,6 +156,8 @@ export interface AppSettings {
   compactMode?: boolean;
   minimizeToTrayOnClose: boolean;
   startWithWindows: boolean;
+  /** "auto" follows the browser / Windows language. */
+  language: "auto" | "en" | "es" | "pt-BR" | "ko" | "vi" | "zh-CN" | "zh-TW" | "ja" | "fr" | "de" | "tr";
   followedTeams: string[];
   followedPlayers: string[];
   followedLeagues: string[];

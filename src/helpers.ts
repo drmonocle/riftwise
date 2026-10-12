@@ -1,4 +1,5 @@
 import { Match, StreamEvent, StreamStatus, AppSettings, League } from "./types";
+import { tl, eventName, stageName } from "./i18n";
 
 // Current schedule codes folded into the code their franchise history is stored under in
 // all_time_h2h.json (keep in sync with CODE_ALIASES in h2h-refresh/assemble.py).
@@ -182,7 +183,7 @@ export function streamPhase(events: StreamEvent[], status?: StreamStatus | null,
 /** "Worlds 2024" from event "Worlds" + season "S14 (2024)". */
 export function streamEventTitle(e: StreamEvent): string {
   const year = /\b(20\d\d|19\d\d)\b/.exec(e.season || "")?.[1];
-  return year ? `${e.event} ${year}` : `${e.event} ${e.season || ""}`.trim();
+  return year ? `${eventName(e.event)} ${year}` : `${eventName(e.event)} ${e.season || ""}`.trim();
 }
 
 /** The match airing on the 24/7 stream right now, or null if it is off air. */
@@ -268,7 +269,7 @@ export function getLeagueBroadcastStreams(
   // If Riot's live API provided a direct active stream link, prioritize it
   if (riotStreamUrl && riotStreamUrl.trim()) {
     streams.push({
-      name: "Watch Live",
+      name: tl("Watch Live"),
       url: riotStreamUrl.trim(),
       icon: "riot",
       badge: "LIVE FEED",
@@ -337,7 +338,7 @@ export function getLeagueBroadcastStreams(
  */
 export function formatStreamHeaderTitle(e: StreamEvent | null): { title: string; isLive: boolean } {
   if (!e) {
-    return { title: "Twitch 24/7: Offline", isLive: false };
+    return { title: tl("Twitch 24/7: Offline"), isLive: false };
   }
 
   // Extract 4-digit year from season (e.g. "S13 (2023)" -> "2023", "2024" -> "2024")
@@ -347,7 +348,7 @@ export function formatStreamHeaderTitle(e: StreamEvent | null): { title: string;
     year = m ? m[1] : e.season;
   }
 
-  const stage = e.stage || e.event || "";
+  const stage = e.stage ? stageName(e.stage) : e.event ? eventName(e.event) : "";
   const match = e.team1 && e.team2 ? `${e.team1} vs ${e.team2}` : e.name || "";
 
   // Combine: "Twitch 24/7: [Year] [Stage] · [Match]" (e.g. "Twitch 24/7: 2023 Finals · WBG vs T1")
@@ -363,10 +364,10 @@ export function formatStreamHeaderTitle(e: StreamEvent | null): { title: string;
   }
 
   if (details.length > 0) {
-    return { title: `Twitch 24/7: ${details.join(" · ")}`, isLive: true };
+    return { title: tl("Twitch 24/7: {details}", { details: details.join(" · ") }), isLive: true };
   }
 
-  return { title: "Twitch 24/7: Airing Now", isLive: true };
+  return { title: tl("Twitch 24/7: Airing Now"), isLive: true };
 }
 
 /**
@@ -457,7 +458,7 @@ export function minutesLate(m: Match, now = Date.now()): number {
 export function formatLate(mins: number): string {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  return h > 0 ? tl("{h}h {m}m", { h, m }) : tl("{m}m", { m });
 }
 
 /**

@@ -1,5 +1,6 @@
 import React from "react";
 import { Radio, Calendar, Flame, Star, Newspaper, Settings, BarChart3 } from "lucide-react";
+import { tl, tc } from "../i18n";
 
 export type TabKey = "live" | "schedule" | "stats" | "stream" | "watchlist" | "news" | "settings";
 
@@ -14,17 +15,17 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onSelectTab, 
   const tabs: { key: TabKey; label: string; short: string; icon: React.ReactNode; badge?: number }[] = [
     {
       key: "live",
-      label: "Live Matches",
-      short: "Live",
+      label: tl("Live Matches"),
+      short: tc("short tab", "Live"),
       icon: <Flame className="w-4 h-4" />,
       badge: liveCount > 0 ? liveCount : undefined,
     },
-    { key: "schedule", label: "Schedule", short: "Games", icon: <Calendar className="w-4 h-4" /> },
-    { key: "stats", label: "Stats", short: "Stats", icon: <BarChart3 className="w-4 h-4" /> },
-    { key: "stream", label: "24/7 Stream", short: "24/7", icon: <Radio className="w-4 h-4" /> },
-    { key: "watchlist", label: "Watchlist", short: "Follow", icon: <Star className="w-4 h-4" /> },
-    { key: "news", label: "Dispatch", short: "News", icon: <Newspaper className="w-4 h-4" /> },
-    { key: "settings", label: "Settings", short: "Settings", icon: <Settings className="w-4 h-4" /> },
+    { key: "schedule", label: tl("Schedule"), short: tc("short tab", "Games"), icon: <Calendar className="w-4 h-4" /> },
+    { key: "stats", label: tl("Stats"), short: tc("short tab", "Stats"), icon: <BarChart3 className="w-4 h-4" /> },
+    { key: "stream", label: tl("24/7 Stream"), short: tc("short tab", "24/7"), icon: <Radio className="w-4 h-4" /> },
+    { key: "watchlist", label: tl("Watchlist"), short: tc("short tab", "Follow"), icon: <Star className="w-4 h-4" /> },
+    { key: "news", label: tl("Dispatch"), short: tc("short tab", "News"), icon: <Newspaper className="w-4 h-4" /> },
+    { key: "settings", label: tl("Settings"), short: tc("short tab", "Settings"), icon: <Settings className="w-4 h-4" /> },
   ];
 
   return (

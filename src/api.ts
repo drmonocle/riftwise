@@ -1,5 +1,13 @@
 import { Match, LiveStats, LiveShow, StreamEvent, StreamStatus, AppSettings, Team, Region, League, PlayerEntry, AppUpdateInfo } from "./types";
 import type { H2HData } from "./helpers";
+import { tk, currentLang } from "./i18n";
+
+// Riot's own translations for league, stage and block names ("8강", "Cuartos de Final"...).
+const RIOT_HL: Record<string, string> = {
+  en: "en-US", es: "es-MX", "pt-BR": "pt-BR", ko: "ko-KR", vi: "vi-VN", "zh-CN": "zh-CN",
+  "zh-TW": "zh-TW", ja: "ja-JP", fr: "fr-FR", de: "de-DE", tr: "tr-TR",
+};
+const riotHl = (): string => RIOT_HL[currentLang()] || "en-US";
 
 // Public key used by the lolesports.com web client (not a private secret). Riot may rotate it; if the
 // app suddenly shows "sync failed" with HTTP 401/403, look up the current key from lolesports.com.
@@ -34,7 +42,7 @@ export const MAJOR_REGIONS: Region[] = [
   { code: "VIETNAM", name: "Vietnam", leagues: ["VCS"], badge: "🇻🇳" },
   { code: "HONG KONG, MACAU, TAIWAN", name: "Hong Kong, Macau & Taiwan", leagues: ["PCS"], badge: "🇹🇼" },
   { code: "LATIN AMERICA", name: "Latin America", leagues: ["LLA"], badge: "🌎" },
-  { code: "OCEANIA", name: "Oceania", leagues: ["Oceanic leagues"], badge: "🇦🇺" },
+  { code: "OCEANIA", name: "Oceania", leagues: [tk("Oceanic leagues")], badge: "🇦🇺" },
 ];
 
 export const DEFAULT_FOLLOWED_REGIONS = MAJOR_REGIONS.map((r) => r.code);
@@ -128,6 +136,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   compactMode: false,
   minimizeToTrayOnClose: true,
   startWithWindows: true,
+  language: "auto",
   followedTeams: ["T1", "GEN", "G2", "FLY", "BLG"],
   followedPlayers: ["Faker", "Chovy", "Ruler", "Caps"],
   followedLeagues: [...DEFAULT_FOLLOWED_LEAGUES],
@@ -160,6 +169,7 @@ export function loadSettings(): AppSettings {
       // back to the default instead of breaking the app (an unknown default tab opened a blank page).
       const merged = { ...DEFAULT_SETTINGS, ...parsed } as AppSettings;
       const oneOf = <T,>(v: unknown, allowed: readonly T[], dflt: T): T => (allowed.includes(v as T) ? (v as T) : dflt);
+      merged.language = oneOf(merged.language, ["auto", "en", "es", "pt-BR", "ko", "vi", "zh-CN", "zh-TW", "ja", "fr", "de", "tr"] as const, "auto");
       merged.defaultTab = oneOf(merged.defaultTab, ["live", "schedule", "stats", "stream", "watchlist", "news", "settings"] as const, DEFAULT_SETTINGS.defaultTab);
       merged.tickerMode = oneOf(merged.tickerMode, ["docked", "detached", "hidden"] as const, DEFAULT_SETTINGS.tickerMode);
       merged.tickerCycleSec = oneOf(Number(merged.tickerCycleSec), [3, 5, 8, 12], DEFAULT_SETTINGS.tickerCycleSec);
@@ -198,6 +208,8 @@ export function loadCachedCatalog(): CatalogData | null {
     const raw = localStorage.getItem("riftwatch_catalog");
     if (raw) {
       const parsed = JSON.parse(raw);
+      // Names come back in the reader's language, so a catalog saved in another language is refetched
+      if ((parsed.lang || "en") !== currentLang()) return null;
       if (parsed.teams?.length > 0 && parsed.players?.length > 0 && parsed.leagues?.length > 0) {
         return parsed as CatalogData;
       }
@@ -216,7 +228,7 @@ export async function loadBundledCatalog(): Promise<CatalogData> {
 
 export function saveCatalog(catalog: CatalogData): void {
   try {
-    localStorage.setItem("riftwatch_catalog", JSON.stringify(catalog));
+    localStorage.setItem("riftwatch_catalog", JSON.stringify({ ...catalog, lang: currentLang() }));
     window.dispatchEvent(new CustomEvent("riftwatch_catalog_updated", { detail: catalog }));
   } catch (e) {
     console.error("Failed to save catalog:", e);
@@ -230,8 +242,8 @@ export function saveCatalog(catalog: CatalogData): void {
 export async function fetchLiveCatalog(current?: CatalogData): Promise<CatalogData | null> {
   try {
     const [teamsData, leaguesData] = await Promise.all([
-      fetchJson(`${RIOT_BASE}/getTeams?hl=en-US`, { headers: riotHeaders }, 30000),
-      fetchJson(`${RIOT_BASE}/getLeagues?hl=en-US`, { headers: riotHeaders }, 30000),
+      fetchJson(`${RIOT_BASE}/getTeams?hl=${riotHl()}`, { headers: riotHeaders }, 30000),
+      fetchJson(`${RIOT_BASE}/getLeagues?hl=${riotHl()}`, { headers: riotHeaders }, 30000),
     ]);
 
     const rawTeams = teamsData?.data?.teams || [];
@@ -370,7 +382,7 @@ export async function fetchLiveMatches(): Promise<{
   liveStats: Record<string, LiveStats>;
   shows: LiveShow[];
 }> {
-  const data = await fetchJson(`${RIOT_BASE}/getLive?hl=en-US`, { headers: riotHeaders });
+  const data = await fetchJson(`${RIOT_BASE}/getLive?hl=${riotHl()}`, { headers: riotHeaders });
   const rawEvents = data?.data?.schedule?.events || [];
 
   const matches: Match[] = [];
@@ -468,14 +480,14 @@ function scheduleEventsToMatches(rawEvents: any[]): Match[] {
  * "next match for a team you follow" can see further ahead.
  */
 export async function fetchSchedule(extraNewerPages = 2): Promise<Match[]> {
-  const first = await fetchJson(`${RIOT_BASE}/getSchedule?hl=en-US`, { headers: riotHeaders });
+  const first = await fetchJson(`${RIOT_BASE}/getSchedule?hl=${riotHl()}`, { headers: riotHeaders });
   const all: Match[] = scheduleEventsToMatches(first?.data?.schedule?.events || []);
 
   let token: string | undefined = first?.data?.schedule?.pages?.newer;
   for (let i = 0; i < extraNewerPages && token; i++) {
     try {
       const next = await fetchJson(
-        `${RIOT_BASE}/getSchedule?hl=en-US&pageToken=${encodeURIComponent(token)}`,
+        `${RIOT_BASE}/getSchedule?hl=${riotHl()}&pageToken=${encodeURIComponent(token)}`,
         { headers: riotHeaders },
       );
       all.push(...scheduleEventsToMatches(next?.data?.schedule?.events || []));
@@ -615,7 +627,7 @@ export async function fetchLeagueIds(): Promise<Record<string, { id: string; nam
   const key = "riftwatch_league_ids";
   const cached = readCache<Record<string, { id: string; name: string; region: string }>>(key, TOURNAMENTS_TTL_MS);
   if (cached) return cached;
-  const data = await fetchJson(`${RIOT_BASE}/getLeagues?hl=en-US`, { headers: riotHeaders });
+  const data = await fetchJson(`${RIOT_BASE}/getLeagues?hl=${riotHl()}`, { headers: riotHeaders });
   const out: Record<string, { id: string; name: string; region: string }> = {};
   for (const l of data?.data?.leagues || []) {
     if (l?.slug && l?.id) out[String(l.slug).toLowerCase()] = { id: String(l.id), name: l.name || l.slug, region: l.region || "" };
@@ -629,7 +641,7 @@ export async function fetchLeagueTournaments(leagueId: string): Promise<Tourname
   const key = `riftwatch_tournaments_${leagueId}`;
   const cached = readCache<TournamentInfo[]>(key, TOURNAMENTS_TTL_MS);
   if (cached) return cached;
-  const data = await fetchJson(`${RIOT_BASE}/getTournamentsForLeague?hl=en-US&leagueId=${encodeURIComponent(leagueId)}`, {
+  const data = await fetchJson(`${RIOT_BASE}/getTournamentsForLeague?hl=${riotHl()}&leagueId=${encodeURIComponent(leagueId)}`, {
     headers: riotHeaders,
   });
   const raw: any[] = data?.data?.leagues?.[0]?.tournaments || [];
@@ -654,7 +666,7 @@ export async function fetchTournamentStandings(tournamentId: string): Promise<To
   const key = `riftwatch_standings_${tournamentId}`;
   const cached = readCache<TournamentStandings>(key, STANDINGS_TTL_MS);
   if (cached) return cached;
-  const data = await fetchJson(`${RIOT_BASE}/getStandingsV3?hl=en-US&tournamentId=${encodeURIComponent(tournamentId)}`, {
+  const data = await fetchJson(`${RIOT_BASE}/getStandingsV3?hl=${riotHl()}&tournamentId=${encodeURIComponent(tournamentId)}`, {
     headers: riotHeaders,
   });
   const s = data?.data?.standings?.[0];

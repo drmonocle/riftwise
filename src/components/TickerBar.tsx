@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { AppSettings, Match, StreamEvent } from "../types";
 import { ChevronLeft, ChevronRight, Pin, PinOff, Minimize2, Maximize2, X } from "lucide-react";
-import { currentStreamEvent, nextUpcomingMatches, computeHeadToHead } from "../helpers";
+import { currentStreamEvent, nextUpcomingMatches, computeHeadToHead, streamEventTitle } from "../helpers";
 import { IS_DESKTOP } from "../platform";
+import { tl, locale, stageName } from "../i18n";
 
 interface TickerBarProps {
   settings: AppSettings;
@@ -75,14 +76,14 @@ export const TickerBar: React.FC<TickerBarProps> = ({
 
   // 1. Live pro matches
   for (const m of liveMatches) {
-    const scores = settings.spoilerMode ? "Scores Hidden" : `${m.team1Score} : ${m.team2Score}`;
+    const scores = settings.spoilerMode ? tl("Scores Hidden") : `${m.team1Score} : ${m.team2Score}`;
     items.push({
       id: `live-${m.matchId}`,
-      badge: "● LIVE",
+      badge: "● " + tl("LIVE"),
       badgeBg: "bg-[#e84057]",
       badgeFg: "text-white",
       headline: `${m.leagueName} · ${m.team1Code} ${scores} ${m.team2Code}`,
-      details: settings.spoilerMode ? "Spoiler mode active" : `Bo${m.bestOf}`,
+      details: settings.spoilerMode ? tl("Spoiler mode active") : `Bo${m.bestOf}`,
       targetTab: "live",
     });
   }
@@ -93,11 +94,11 @@ export const TickerBar: React.FC<TickerBarProps> = ({
     const matchup = cur.team1 && cur.team2 ? `${cur.team1} vs ${cur.team2}` : cur.name || `${cur.event} ${cur.season}`;
     items.push({
       id: `stream-${cur.id}`,
-      badge: "📺 24/7 STREAM",
+      badge: "📺 " + tl("24/7 STREAM"),
       badgeBg: "bg-[#0ac8b9]",
       badgeFg: "text-[#091428]",
-      headline: `24/7 Marathon: ${matchup}`,
-      details: `${cur.event} ${cur.season}${cur.stage ? ` · ${cur.stage}` : ""}`,
+      headline: tl("24/7 Marathon: {matchup}", { matchup }),
+      details: `${streamEventTitle(cur)}${cur.stage ? ` · ${stageName(cur.stage)}` : ""}`,
       targetTab: "stream",
     });
   }
@@ -105,18 +106,18 @@ export const TickerBar: React.FC<TickerBarProps> = ({
   // 3. Upcoming matches (not yet started; teams you follow come first)
   for (const m of nextUpcomingMatches(upcomingMatches, settings.followedTeams, 3)) {
     const relTime = m.startTimeUtc
-      ? new Date(m.startTimeUtc).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
-      : "Soon";
+      ? new Date(m.startTimeUtc).toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit" })
+      : tl("Soon");
     const h2h = computeHeadToHead(m.team1Code, m.team2Code, upcomingMatches, m.matchId);
     items.push({
       id: `up-${m.matchId}`,
-      badge: "⏰ UPCOMING",
+      badge: "⏰ " + tl("UPCOMING"),
       badgeBg: "bg-[#c8aa6e]",
       badgeFg: "text-[#091428]",
       headline: `${m.leagueName} · ${m.team1Code} vs ${m.team2Code}`,
       details: h2h
-        ? `Starts at ${relTime} · H2H ${m.team1Code} ${h2h.team1Wins}-${h2h.team2Wins} ${m.team2Code}`
-        : `Starts at ${relTime}`,
+        ? tl("Starts at {time}", { time: relTime }) + ` · H2H ${m.team1Code} ${h2h.team1Wins}-${h2h.team2Wins} ${m.team2Code}`
+        : tl("Starts at {time}", { time: relTime }),
       targetTab: "schedule",
     });
   }
@@ -161,7 +162,7 @@ export const TickerBar: React.FC<TickerBarProps> = ({
           data-tauri-drag-region
           onMouseDown={handleStartDrag}
           className="cursor-move flex items-center justify-center text-[#c8aa6e] hover:text-white mr-2 text-sm select-none px-1.5 py-0.5 rounded hover:bg-[#1e282d] transition-colors"
-          title="Click and drag to reposition floating HUD"
+          title={tl("Click and drag to reposition floating HUD")}
         >
           ⠿
         </div>
@@ -178,7 +179,7 @@ export const TickerBar: React.FC<TickerBarProps> = ({
           if (currentItem) onSelectTab(currentItem.targetTab);
         }}
         className="flex items-center gap-2.5 overflow-hidden flex-1 cursor-pointer"
-        title="Click to jump to match"
+        title={tl("Click to jump to match")}
       >
         {currentItem ? (
           <>
@@ -191,7 +192,7 @@ export const TickerBar: React.FC<TickerBarProps> = ({
             <span className="text-[#7e8e9f] hidden sm:inline truncate">· {currentItem.details}</span>
           </>
         ) : (
-          <span className="text-[#7e8e9f] italic">Checking live pro games & 24/7 marathon…</span>
+          <span className="text-[#7e8e9f] italic">{tl("Checking live pro games & 24/7 marathon…")}</span>
         )}
       </div>
 
@@ -205,16 +206,16 @@ export const TickerBar: React.FC<TickerBarProps> = ({
             <button
               onClick={() => setIndex((prev) => (prev - 1 + items.length) % items.length)}
               className="p-0.5 hover:text-[#c8aa6e] rounded hover:bg-[#1e282d]"
-              aria-label="Previous item"
-              title="Previous item"
+              aria-label={tl("Previous item")}
+              title={tl("Previous item")}
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setIndex((prev) => (prev + 1) % items.length)}
               className="p-0.5 hover:text-[#c8aa6e] rounded hover:bg-[#1e282d]"
-              aria-label="Next item"
-              title="Next item"
+              aria-label={tl("Next item")}
+              title={tl("Next item")}
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
@@ -226,10 +227,10 @@ export const TickerBar: React.FC<TickerBarProps> = ({
           IS_DESKTOP && <button
             onClick={handleDetach}
             className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:text-[#0ac8b9] hover:bg-[#1e282d] text-[10px]"
-            title="Detach to floating desktop HUD overlay"
+            title={tl("Detach to floating desktop HUD overlay")}
           >
             <Maximize2 className="w-3 h-3" />
-            <span>Detach</span>
+            <span>{tl("Detach")}</span>
           </button>
         ) : (
           <>
@@ -245,9 +246,9 @@ export const TickerBar: React.FC<TickerBarProps> = ({
               className={`p-1 rounded hover:bg-[#1e282d] ${
                 settings.tickerTopmost ? "text-[#c8aa6e]" : "text-[#7e8e9f]"
               }`}
-              aria-label={settings.tickerTopmost ? "Unpin from always on top" : "Pin always on top"}
+              aria-label={settings.tickerTopmost ? tl("Unpin from always on top") : tl("Pin always on top")}
               aria-pressed={settings.tickerTopmost}
-              title={settings.tickerTopmost ? "Pinned Always on Top" : "Unpinned"}
+              title={settings.tickerTopmost ? tl("Pinned always on top") : tl("Unpinned")}
             >
               {settings.tickerTopmost ? <Pin className="w-3 h-3" /> : <PinOff className="w-3 h-3" />}
             </button>
@@ -255,10 +256,10 @@ export const TickerBar: React.FC<TickerBarProps> = ({
             <button
               onClick={handleDock}
               className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:text-[#c8aa6e] hover:bg-[#1e282d] text-[10px]"
-              title="Dock back to main RiftWatch window"
+              title={tl("Dock back to main RiftWatch window")}
             >
               <Minimize2 className="w-3 h-3" />
-              <span>Dock</span>
+              <span>{tl("Dock")}</span>
             </button>
           </>
         )}
@@ -267,8 +268,8 @@ export const TickerBar: React.FC<TickerBarProps> = ({
         <button
           onClick={handleClose}
           className="p-1 hover:text-[#e84057] rounded hover:bg-[#1e282d]"
-          aria-label="Hide ticker bar"
-          title="Hide ticker bar (can be restored in Settings)"
+          aria-label={tl("Hide ticker bar")}
+          title={tl("Hide ticker bar (can be restored in Settings)")}
         >
           <X className="w-3 h-3" />
         </button>

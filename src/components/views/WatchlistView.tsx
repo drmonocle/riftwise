@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { AppSettings, CatalogData, CatalogTeam, PlayerEntry, League } from "../../types";
 import { MAJOR_REGIONS, DEFAULT_FOLLOWED_REGIONS, POPULAR_PLAYERS, GLOBAL_LEAGUES } from "../../api";
 import { Search, Check, Plus, X, Globe, User, Shield, Trophy, RefreshCw } from "lucide-react";
+import { tl, tn, regionName, roleName } from "../../i18n";
 
 interface WatchlistViewProps {
   settings: AppSettings;
@@ -190,12 +191,12 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
   // Search input placeholder per tab
   const searchPlaceholder =
     tab === "teams"
-      ? `Search all ${catalog.teams.length || 778} active teams…`
+      ? tl("Search all {n} active teams…", { n: catalog.teams.length || 778 })
       : tab === "players"
-      ? `Search all ${catalog.players.length || 4634} registered pro players…`
+      ? tl("Search all {n} registered pro players…", { n: catalog.players.length || 4634 })
       : tab === "regions"
-      ? "Search regions…"
-      : `Search all ${catalog.leagues.length || 51} Riot leagues…`;
+      ? tl("Search regions…")
+      : tl("Search all {n} Riot leagues…", { n: catalog.leagues.length || 51 });
 
   return (
     <div className="p-4 space-y-4 max-w-4xl mx-auto overflow-y-auto h-full select-none text-xs">
@@ -204,11 +205,15 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="font-bold text-[#c8aa6e] uppercase tracking-wider text-[11px]">
-              Active Watchlist
+              {tl("Active Watchlist")}
             </span>
             <span className="text-[#7e8e9f] text-[11px]">
-              {settings.followedTeams.length} teams · {settings.followedPlayers.length} players ·{" "}
-              {settings.followedRegions.length} regions · {settings.followedLeagues.length} leagues
+              {tl("{teams} teams · {players} players · {regions} regions · {leagues} leagues", {
+                teams: settings.followedTeams.length,
+                players: settings.followedPlayers.length,
+                regions: settings.followedRegions.length,
+                leagues: settings.followedLeagues.length,
+              })}
             </span>
           </div>
 
@@ -217,10 +222,10 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
               onClick={onRefreshCatalog}
               disabled={isRefreshingCatalog}
               className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#091428] border border-[#1e282d] text-[10px] text-[#7e8e9f] hover:text-[#0ac8b9] transition-colors"
-              title="Check Riot API for roster transfers, trades, and new leagues"
+              title={tl("Check Riot API for roster transfers, trades, and new leagues")}
             >
               <RefreshCw className={`w-3 h-3 ${isRefreshingCatalog ? "animate-spin text-[#0ac8b9]" : ""}`} />
-              <span>{isRefreshingCatalog ? "Syncing Directory…" : "Check Roster Updates"}</span>
+              <span>{isRefreshingCatalog ? tl("Syncing directory…") : tl("Check roster updates")}</span>
             </button>
           )}
         </div>
@@ -236,8 +241,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
               <button
                 onClick={() => toggleTeam(code)}
                 className="hover:text-white"
-                title="Remove from watchlist"
-                aria-label={`Stop following ${code}`}
+                title={tl("Remove from watchlist")}
+                aria-label={tl("Stop following {name}", { name: code })}
               >
                 <X className="w-3 h-3" />
               </button>
@@ -253,8 +258,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
               <button
                 onClick={() => togglePlayer(name)}
                 className="hover:text-white"
-                title="Remove from watchlist"
-                aria-label={`Stop following ${name}`}
+                title={tl("Remove from watchlist")}
+                aria-label={tl("Stop following {name}", { name })}
               >
                 <X className="w-3 h-3" />
               </button>
@@ -267,13 +272,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
               onClick={() => setShowAllChips((v) => !v)}
               className="inline-flex items-center px-2 py-0.5 rounded border border-[#1e282d] text-[#0ac8b9] hover:border-[#0ac8b9]/60 text-[10px] font-semibold"
             >
-              {showAllChips ? "Show fewer" : `Show all ${chipTotal}`}
+              {showAllChips ? tl("Show fewer") : tl("Show all {n}", { n: chipTotal })}
             </button>
           )}
 
           {settings.followedRegions.length > 0 && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#091428] border border-[#7e8e9f]/40 text-[#f0e6d2] text-[10px]">
-              <span>🌐 {settings.followedRegions.length} Regions</span>
+              <span>🌐 {tl("{n} Regions", { n: settings.followedRegions.length })}</span>
             </span>
           )}
         </div>
@@ -289,7 +294,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             }`}
           >
             <Shield className="w-3.5 h-3.5" />
-            <span>Teams ({settings.followedTeams.length})</span>
+            <span>{tl("Teams ({n})", { n: settings.followedTeams.length })}</span>
           </button>
 
           <button
@@ -299,7 +304,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             }`}
           >
             <User className="w-3.5 h-3.5" />
-            <span>Players ({settings.followedPlayers.length})</span>
+            <span>{tl("Players ({n})", { n: settings.followedPlayers.length })}</span>
           </button>
 
           <button
@@ -309,7 +314,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             }`}
           >
             <Globe className="w-3.5 h-3.5" />
-            <span>Regions ({settings.followedRegions.length})</span>
+            <span>{tl("Regions ({n})", { n: settings.followedRegions.length })}</span>
           </button>
 
           <button
@@ -319,7 +324,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             }`}
           >
             <Trophy className="w-3.5 h-3.5" />
-            <span>Leagues ({settings.followedLeagues.length})</span>
+            <span>{tl("Leagues ({n})", { n: settings.followedLeagues.length })}</span>
           </button>
         </div>
 
@@ -342,8 +347,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           <div className="flex items-center justify-between text-[11px] text-[#7e8e9f]">
             <span>
               {!q
-                ? `Showing major pro teams (${filteredTeams.length} of ${catalog.teams.length}) · type above to search all teams`
-                : `Found ${filteredTeams.length} teams matching "${q}"`}
+                ? tl("Showing major pro teams ({shown} of {total}) · type above to search all teams", { shown: filteredTeams.length, total: catalog.teams.length })
+                : tl('Found {n} teams matching "{q}"', { n: filteredTeams.length, q })}
             </span>
           </div>
 
@@ -393,7 +398,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                           onClick={() => setExpandedTeamSlug(isExpanded ? null : team.slug)}
                           className="px-2 py-1 rounded bg-[#091428] border border-[#1e282d] text-[10px] text-[#7e8e9f] hover:text-[#f0e6d2]"
                         >
-                          {isExpanded ? `▲ Roster (${roster.length})` : `▼ Roster (${roster.length})`}
+                          {(isExpanded ? "▲ " : "▼ ") + tl("Roster ({n})", { n: roster.length })}
                         </button>
                       )}
 
@@ -406,7 +411,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                         }`}
                       >
                         {isFollowed ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                        <span>{isFollowed ? "Following" : "Follow"}</span>
+                        <span>{isFollowed ? tl("Following") : tl("Follow")}</span>
                       </button>
                     </div>
                   </div>
@@ -415,7 +420,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   {isExpanded && roster.length > 0 && (
                     <div className="mt-2.5 pt-2.5 border-t border-[#1e282d] space-y-1">
                       <div className="text-[10px] text-[#7e8e9f] uppercase tracking-wider mb-1">
-                        Active Registered Roster ({roster.length} players)
+                        {tn("Active roster ({n} player)", "Active roster ({n} players)", roster.length)}
                       </div>
                       {roster.map((p) => {
                         const isPlayerFollowed = settings.followedPlayers.includes(p.name);
@@ -423,7 +428,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                           <div key={`${p.teamCode}-${p.name}`} className="flex items-center justify-between text-[11px] py-0.5">
                             <div className="flex items-center gap-2">
                               <span className="text-[10px] font-mono px-1 rounded bg-[#0a0e17] text-[#0ac8b9] w-12 text-center">
-                                {p.role}
+                                {roleName(p.role)}
                               </span>
                               <span className="text-[#f0e6d2] font-semibold">{p.name}</span>
                               {p.realName && <span className="text-[#7e8e9f]">({p.realName})</span>}
@@ -434,7 +439,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                                 isPlayerFollowed ? "text-[#0ac8b9]" : "text-[#7e8e9f] hover:text-[#c8aa6e]"
                               }`}
                             >
-                              {isPlayerFollowed ? "★ Following" : "☆ Follow"}
+                              {isPlayerFollowed ? "★ " + tl("Following") : "☆ " + tl("Follow")}
                             </button>
                           </div>
                         );
@@ -454,8 +459,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           <div className="flex items-center justify-between text-[11px] text-[#7e8e9f]">
             <span>
               {!q
-                ? `Showing top pro players (${filteredPlayers.length} of ${catalog.players.length}) · type above to search all registered pros`
-                : `Found ${filteredPlayers.length} players matching "${q}"`}
+                ? tl("Showing top pro players ({shown} of {total}) · type above to search all registered pros", { shown: filteredPlayers.length, total: catalog.players.length })
+                : tl('Found {n} players matching "{q}"', { n: filteredPlayers.length, q })}
             </span>
           </div>
 
@@ -475,7 +480,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#0a0e17] border border-[#1e282d] text-[#0ac8b9] w-14 text-center">
-                      {player.role}
+                      {roleName(player.role)}
                     </span>
                     <div>
                       <div className="font-bold text-xs text-[#f0e6d2] flex items-center gap-1.5">
@@ -504,7 +509,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     }`}
                   >
                     {isFollowed ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                    <span>{isFollowed ? "Following" : "Follow"}</span>
+                    <span>{isFollowed ? tl("Following") : tl("Follow")}</span>
                   </button>
                 </div>
               );
@@ -518,20 +523,20 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="text-[11px] text-[#7e8e9f]">
-              Following a region follows every league in it. All {MAJOR_REGIONS.length} regions are followed by default; unfollow the ones you don't care about to tighten "Followed only" and your match alerts.
+              {tl("Following a region follows every league in it. All {n} regions are followed by default; unfollow the ones you don't care about to tighten \"Followed only\" and your match alerts.", { n: MAJOR_REGIONS.length })}
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={followAllRegions}
                 className="px-2.5 py-1 rounded bg-[#0a1420] border border-[#c8aa6e] text-[#c8aa6e] hover:bg-[#c8aa6e] hover:text-[#091428] font-semibold text-[11px] transition-colors"
               >
-                ★ Follow All
+                {tl("★ Follow All")}
               </button>
               <button
                 onClick={unfollowAllRegions}
                 className="px-2.5 py-1 rounded bg-[#0a1420] border border-[#1e282d] text-[#7e8e9f] hover:text-[#e84057] font-semibold text-[11px] transition-colors"
               >
-                Unfollow All
+                {tl("Unfollow All")}
               </button>
             </div>
           </div>
@@ -553,9 +558,9 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   <div className="flex items-center gap-3">
                     <span className="text-xl">{region.badge}</span>
                     <div>
-                      <div className="font-bold text-xs text-[#f0e6d2]">{region.name}</div>
+                      <div className="font-bold text-xs text-[#f0e6d2]">{regionName(region.code, region.name)}</div>
                       <div className="text-[10px] text-[#7e8e9f]">
-                        {region.leagues.join(" · ")}
+                        {region.leagues.map((l) => tl(l)).join(" · ")}
                       </div>
                     </div>
                   </div>
@@ -572,7 +577,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     }`}
                   >
                     {isFollowed ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                    <span>{isFollowed ? "Following" : "Follow"}</span>
+                    <span>{isFollowed ? tl("Following") : tl("Follow")}</span>
                   </button>
                 </div>
               );
@@ -586,26 +591,26 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="text-[11px] text-[#7e8e9f]">
-              Tracking all {catalog.leagues.length || 51} global Riot leagues. Followed leagues appear in filtered schedules and live notifications.
+              {tl("Tracking all {n} global Riot leagues. Followed leagues appear in filtered schedules and live notifications.", { n: catalog.leagues.length || 51 })}
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={followAllLeagues}
                 className="px-2.5 py-1 rounded bg-[#0a1420] border border-[#c8aa6e] text-[#c8aa6e] hover:bg-[#c8aa6e] hover:text-[#091428] font-semibold text-[11px] transition-colors"
               >
-                Follow All ({catalog.leagues.length || 51})
+                {tl("Follow all ({n})", { n: catalog.leagues.length || 51 })}
               </button>
               <button
                 onClick={unfollowAllLeagues}
                 className="px-2.5 py-1 rounded bg-[#0a1420] border border-[#1e282d] text-[#7e8e9f] hover:text-[#e84057] font-semibold text-[11px] transition-colors"
               >
-                Unfollow All
+                {tl("Unfollow All")}
               </button>
               <button
                 onClick={followInternationalEvents}
                 className="px-2.5 py-1 rounded bg-[#0a1420] border border-[#0ac8b9] text-[#0ac8b9] hover:bg-[#0ac8b9] hover:text-[#091428] font-semibold text-[11px] transition-colors"
               >
-                ★ International Events
+                {tl("★ International Events")}
               </button>
             </div>
           </div>
@@ -639,7 +644,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     )}
                     <div>
                       <div className="font-semibold text-xs text-[#f0e6d2]">{league.name}</div>
-                      <div className="text-[10px] text-[#7e8e9f] uppercase">{league.region || "Global"}</div>
+                      <div className="text-[10px] text-[#7e8e9f] uppercase">{league.region ? regionName(league.region) : tl("Global")}</div>
                     </div>
                   </div>
 
@@ -655,7 +660,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     }`}
                   >
                     {isFollowed ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                    <span>{isFollowed ? "Following" : "Follow"}</span>
+                    <span>{isFollowed ? tl("Following") : tl("Follow")}</span>
                   </button>
                 </div>
               );
