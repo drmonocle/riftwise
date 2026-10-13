@@ -9,8 +9,10 @@ interface H2HMeterProps {
   h2h: HeadToHeadStats;
   /** "sm" fits under a schedule row score; "md" is the full banner with labels. */
   size?: "sm" | "md";
-  /** The match this meter sits on (its own result is left out of the details view). */
+  /** The match this meter sits on (the details view shows the record as of that match). */
   matchId?: string;
+  /** False while that match's score is hidden (spoiler mode): its games stay out of the record. */
+  countThisMatch?: boolean;
 }
 
 export const T1_COLOR = "#0ac8b9";
@@ -22,6 +24,7 @@ export interface OpenH2HDetail {
   team1Code: string;
   team2Code: string;
   matchId?: string;
+  countThisMatch?: boolean;
 }
 
 export const H2HBar: React.FC<{ t1Pct: number; className?: string }> = ({ t1Pct, className = "h-1.5" }) => (
@@ -32,7 +35,7 @@ export const H2HBar: React.FC<{ t1Pct: number; className?: string }> = ({ t1Pct,
 );
 
 /** Split bar of all-time game wins between two teams. Tap it for the full history. */
-export const H2HMeter: React.FC<H2HMeterProps> = ({ team1Code, team2Code, h2h, size = "sm", matchId }) => {
+export const H2HMeter: React.FC<H2HMeterProps> = ({ team1Code, team2Code, h2h, size = "sm", matchId, countThisMatch = true }) => {
   const total = h2h.team1Wins + h2h.team2Wins;
   const t1Pct = total > 0 ? Math.round((h2h.team1Wins / total) * 100) : 50;
   const summary = tl("All-time head-to-head: {a} {w1}-{w2} {b} ({games} games)", { a: team1Code, w1: h2h.team1Wins, w2: h2h.team2Wins, b: team2Code, games: h2h.totalGames });
@@ -40,7 +43,7 @@ export const H2HMeter: React.FC<H2HMeterProps> = ({ team1Code, team2Code, h2h, s
 
   const open = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const detail: OpenH2HDetail = { team1Code, team2Code, matchId };
+    const detail: OpenH2HDetail = { team1Code, team2Code, matchId, countThisMatch };
     window.dispatchEvent(new CustomEvent(OPEN_H2H_EVENT, { detail }));
   };
 

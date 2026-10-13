@@ -834,6 +834,7 @@ export default function App() {
           team1Code={h2hDetail.team1Code}
           team2Code={h2hDetail.team2Code}
           matchId={h2hDetail.matchId}
+          countThisMatch={h2hDetail.countThisMatch !== false}
           schedule={schedule}
           catalog={catalog}
           spoilerMode={settings.spoilerMode}

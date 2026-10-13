@@ -11,6 +11,8 @@ interface H2HDetailsModalProps {
   team2Code: string;
   /** Match the view was opened from; its own result is not counted. */
   matchId?: string;
+  /** False while the match's score is hidden: its games stay out of the record. */
+  countThisMatch?: boolean;
   schedule: Match[];
   catalog?: CatalogData;
   spoilerMode: boolean;
@@ -59,6 +61,7 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
   team1Code,
   team2Code,
   matchId,
+  countThisMatch = true,
   schedule,
   catalog,
   spoilerMode,
@@ -92,7 +95,7 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const h2h = computeHeadToHead(c1, c2, schedule, matchId);
+  const h2h = computeHeadToHead(c1, c2, schedule, matchId, countThisMatch);
   const t1 = teamInfo(catalog, team1Code);
   const t2 = teamInfo(catalog, team2Code);
   const total = h2h ? h2h.team1Wins + h2h.team2Wins : 0;
@@ -103,7 +106,7 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
   const domestic: [number, number] = h2h
     ? [Math.max(0, h2h.team1Wins - intl[0]), Math.max(0, h2h.team2Wins - intl[1])]
     : [0, 0];
-  const meetings: H2HMeeting[] = recentMeetings(c1, c2, series?.recent, schedule, matchId);
+  const meetings: H2HMeeting[] = recentMeetings(c1, c2, series?.recent, schedule, matchId, countThisMatch);
 
   const Team: React.FC<{ code: string; info: { name: string; image?: string }; color: string; align: "left" | "right" }> = ({
     code,

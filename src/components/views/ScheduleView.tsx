@@ -244,7 +244,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 const isRevealed = !!revealedMatchIds[m.matchId];
                 const isLive = m.state === "inProgress";
                 const showScore = (m.state === "completed" || isLive) && (!settings.spoilerMode || isRevealed);
-                const h2h = computeHeadToHead(m.team1Code, m.team2Code, schedule, m.matchId);
+                const h2h = computeHeadToHead(m.team1Code, m.team2Code, schedule, m.matchId, showScore);
 
                 return (
                   <React.Fragment key={m.matchId}>
@@ -337,7 +337,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           )}
                         </div>
                         {(showScore || m.state !== "completed") && h2h && (
-                          <H2HMeter team1Code={m.team1Code} team2Code={m.team2Code} h2h={h2h} matchId={m.matchId} />
+                          <H2HMeter team1Code={m.team1Code} team2Code={m.team2Code} h2h={h2h} matchId={m.matchId} countThisMatch={showScore} />
                         )}
                       </div>
 

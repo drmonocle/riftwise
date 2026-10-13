@@ -115,7 +115,8 @@ export function recentMeetings(
   team2Code: string,
   published: [string, string, number, number][] | undefined,
   schedule: Match[] | undefined,
-  excludeMatchId?: string,
+  matchId?: string,
+  countThisMatch = true,
   limit = 10,
 ): H2HMeeting[] {
   const c1 = normalizeTeamCode(team1Code);
@@ -123,15 +124,22 @@ export function recentMeetings(
   const [a] = [c1, c2].sort();
   const flip = a !== c1; // published scores are from the alphabetically-first team's side
 
+  // Opened from a finished match: list meetings up to and including it (see computeHeadToHead)
+  const self = matchId ? schedule?.find((m) => m.matchId === matchId) : undefined;
+  const selfDone = self?.state === "completed";
+  const asOfMs = selfDone ? new Date(self!.startTimeUtc).getTime() : Infinity;
+  const asOfDate = selfDone ? self!.startTimeUtc.slice(0, 10) : "9999";
+
   const out: H2HMeeting[] = [];
   for (const m of schedule || []) {
-    if (m.state !== "completed" || m.matchId === excludeMatchId) continue;
+    if (m.state !== "completed") continue;
+    if (m.matchId === matchId && !countThisMatch) continue;
     const m1 = normalizeTeamCode(m.team1Code);
     const m2 = normalizeTeamCode(m.team2Code);
     const direct = m1 === c1 && m2 === c2;
     if (!direct && !(m1 === c2 && m2 === c1)) continue;
     const t = new Date(m.startTimeUtc).getTime();
-    if (isNaN(t) || t < H2H_CUTOFF_MS) continue;
+    if (isNaN(t) || t < H2H_CUTOFF_MS || t > asOfMs) continue;
     out.push({
       date: m.startTimeUtc.slice(0, 10),
       tournament: m.leagueName,
@@ -141,6 +149,7 @@ export function recentMeetings(
     });
   }
   for (const [date, tournament, aw, bw] of published || []) {
+    if (date > asOfDate || (selfDone && !countThisMatch && date === asOfDate)) continue;
     out.push({ date, tournament, team1Score: flip ? bw : aw, team2Score: flip ? aw : bw });
   }
   out.sort((x, y) => y.date.localeCompare(x.date));
@@ -577,27 +586,49 @@ export interface HeadToHeadStats {
 /** User requirement: show the H2H whenever the teams have any recorded history. */
 export const H2H_MIN_GAMES = 1;
 
+/**
+ * Head-to-head record shown with a match (in games). A finished match shows the record *after* it: its
+ * own games count, meetings played later don't. A live match also counts the games already finished,
+ * and an upcoming one shows everything played so far. Pass countThisMatch=false when the match's score
+ * is hidden (spoiler mode), so the record can't give the result away.
+ */
 export function computeHeadToHead(
   team1Code: string,
   team2Code: string,
   schedule?: Match[],
-  excludeMatchId?: string
+  matchId?: string,
+  countThisMatch = true
 ): HeadToHeadStats | null {
-  const stats = rawHeadToHead(team1Code, team2Code, schedule, excludeMatchId);
+  const stats = rawHeadToHead(team1Code, team2Code, schedule, matchId, countThisMatch);
   return stats && stats.totalGames >= H2H_MIN_GAMES ? stats : null;
 }
 
 function rawHeadToHead(
   team1Code: string,
   team2Code: string,
-  schedule?: Match[],
-  excludeMatchId?: string
+  schedule: Match[] | undefined,
+  matchId: string | undefined,
+  countThisMatch: boolean
 ): HeadToHeadStats | null {
   const c1 = normalizeTeamCode(team1Code);
   const c2 = normalizeTeamCode(team2Code);
   if (!c1 || !c2 || c1 === c2 || c1 === "TBD" || c2 === "TBD") return null;
 
-  // 1. All-time games from all_time_h2h.json
+  const time = (m: Match) => new Date(m.startTimeUtc).getTime();
+  const samePair = (m: Match) => {
+    const m1 = normalizeTeamCode(m.team1Code);
+    const m2 = normalizeTeamCode(m.team2Code);
+    return (m1 === c1 && m2 === c2) || (m1 === c2 && m2 === c1);
+  };
+  const scores = (m: Match): [number, number] =>
+    normalizeTeamCode(m.team1Code) === c1 ? [m.team1Score || 0, m.team2Score || 0] : [m.team2Score || 0, m.team1Score || 0];
+
+  const self = matchId ? schedule?.find((m) => m.matchId === matchId) : undefined;
+  const selfTime = self ? time(self) : NaN;
+  // A finished match's record stops at that match: later meetings are left out
+  const asOf = self?.state === "completed" && !isNaN(selfTime) ? selfTime : Infinity;
+
+  // 1. All-time games from the H2H table (everything before the cutoff)
   let t1AllTimeWins = 0;
   let t2AllTimeWins = 0;
   let hasAllTimeRecord = false;
@@ -615,63 +646,55 @@ function rawHeadToHead(
     hasAllTimeRecord = true;
   }
 
-  // A match played before the cutoff is already inside the all-time table. When it is the match
-  // being shown, take its own result back out so it never counts as its own H2H history.
-  const self = excludeMatchId ? schedule?.find((m) => m.matchId === excludeMatchId) : undefined;
-  if (hasAllTimeRecord && self && self.state === "completed") {
-    const selfTime = new Date(self.startTimeUtc).getTime();
-    if (!isNaN(selfTime) && selfTime < H2H_CUTOFF_MS) {
-      const selfIsC1Team1 = normalizeTeamCode(self.team1Code) === c1;
-      t1AllTimeWins = Math.max(0, t1AllTimeWins - ((selfIsC1Team1 ? self.team1Score : self.team2Score) || 0));
-      t2AllTimeWins = Math.max(0, t2AllTimeWins - ((selfIsC1Team1 ? self.team2Score : self.team1Score) || 0));
+  const CUTOFF_MS = H2H_CUTOFF_MS;
+
+  // Meetings inside the table that must come back out: ones played after the shown match, and the
+  // shown match itself when its result is hidden.
+  if (hasAllTimeRecord && schedule) {
+    for (const m of schedule) {
+      if (m.state !== "completed" || !samePair(m)) continue;
+      const t = time(m);
+      if (isNaN(t) || t >= CUTOFF_MS) continue;
+      const isSelf = m.matchId === matchId;
+      if ((!isSelf && t > asOf) || (isSelf && !countThisMatch)) {
+        const [s1, s2] = scores(m);
+        t1AllTimeWins = Math.max(0, t1AllTimeWins - s1);
+        t2AllTimeWins = Math.max(0, t2AllTimeWins - s2);
+      }
     }
   }
 
-  // 2. Schedule additions: only count matches AFTER the H2H data's cutoff
-  // or count all completed matches if not in all_time_h2h, and strictly exclude `excludeMatchId`
+  // 2. Results newer than the table come from the schedule (all of them for pairs the table lacks)
   let scheduleT1Wins = 0;
   let scheduleT2Wins = 0;
   let recentMeetingsCount = 0;
   let lastWinner: string | undefined;
   let lastDate: string | undefined;
 
-  const CUTOFF_MS = H2H_CUTOFF_MS;
-
   if (schedule && schedule.length > 0) {
-    const pastMatches = schedule
-      .filter((m) => {
-        if (m.state !== "completed") return false;
-        if (excludeMatchId && m.matchId === excludeMatchId) return false;
-        const m1 = normalizeTeamCode(m.team1Code);
-        const m2 = normalizeTeamCode(m.team2Code);
-        const isMatchup = (m1 === c1 && m2 === c2) || (m1 === c2 && m2 === c1);
-        if (!isMatchup) return false;
-
-        if (hasAllTimeRecord) {
-          const matchTime = new Date(m.startTimeUtc).getTime();
-          return !isNaN(matchTime) && matchTime >= CUTOFF_MS;
-        }
-        return true;
-      })
-      .sort((a, b) => new Date(b.startTimeUtc).getTime() - new Date(a.startTimeUtc).getTime());
-
-    recentMeetingsCount = pastMatches.length;
-
-    for (const m of pastMatches) {
-      const isC1Team1 = normalizeTeamCode(m.team1Code) === c1;
-      const c1Score = isC1Team1 ? m.team1Score : m.team2Score;
-      const c2Score = isC1Team1 ? m.team2Score : m.team1Score;
-      scheduleT1Wins += c1Score;
-      scheduleT2Wins += c2Score;
+    const counted = schedule.filter((m) => {
+      if (m.matchId === matchId || m.state !== "completed" || !samePair(m)) return false;
+      const t = time(m);
+      if (isNaN(t) || t > asOf) return false;
+      return !hasAllTimeRecord || t >= CUTOFF_MS;
+    });
+    // The shown match's own games: finished, or the games already done in a live series
+    if (self && countThisMatch && samePair(self)) {
+      const inTable = self.state === "completed" && hasAllTimeRecord && selfTime < CUTOFF_MS;
+      if ((self.state === "completed" || self.state === "inProgress") && !inTable) counted.push(self);
+    }
+    for (const m of counted) {
+      const [s1, s2] = scores(m);
+      scheduleT1Wins += s1;
+      scheduleT2Wins += s2;
     }
 
-    if (pastMatches.length > 0) {
-      const last = pastMatches[0];
-      const isLastC1Team1 = normalizeTeamCode(last.team1Code) === c1;
-      const lastC1Score = isLastC1Team1 ? last.team1Score : last.team2Score;
-      const lastC2Score = isLastC1Team1 ? last.team2Score : last.team1Score;
-      lastWinner = lastC1Score > lastC2Score ? c1 : c2;
-      lastDate = last.startTimeUtc;
+    const finished = counted.filter((m) => m.state === "completed").sort((a, b) => time(b) - time(a));
+    recentMeetingsCount = finished.length;
+    if (finished.length > 0) {
+      const [l1, l2] = scores(finished[0]);
+      lastWinner = l1 > l2 ? c1 : c2;
+      lastDate = finished[0].startTimeUtc;
     }
   }
 
