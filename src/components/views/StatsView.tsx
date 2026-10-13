@@ -21,7 +21,9 @@ import {
   searchByName,
   winRate,
 } from "../../stats";
-import { tl, tn, tk, locale, roleName, tc } from "../../i18n";
+import { tl, tn, tk, locale, roleName, tc, eventTitle } from "../../i18n";
+import { searchAlias, isNonLatin } from "../../searchAliases";
+import { champName, useChampionNames } from "../../champions";
 
 type StatsTab = "teams" | "players" | "champions" | "records" | "titles" | "compare";
 
@@ -111,7 +113,7 @@ const Picker: React.FC<{
   const items = useMemo(() => {
     if (kind === "teams") {
       const list = q ? search.teams : search.teams.filter((t) => t.y >= String(+thisYear - 1));
-      return searchByName(list, q, compact ? 8 : 40).map((t) => {
+      return searchByName(list, searchAlias(q), compact ? 8 : 40).map((t) => {
         // When an old name is what matched, say so ("was SK Telecom T1")
         const old =
           q && t.a && !t.n.toLowerCase().includes(q.toLowerCase())
@@ -121,7 +123,16 @@ const Picker: React.FC<{
       });
     }
     const list = q ? search.players : search.players.filter((p) => p.y >= String(+thisYear - 1));
-    return searchByName(list, q, compact ? 8 : 40).map((p) => ({ s: p.s, n: p.n, sub: `${p.t} · ${tl("{n} games", { n: fmtNum(p.g) })}` }));
+    let found = searchByName(list, searchAlias(q), compact ? 8 : 40);
+    if (q && found.length === 0) {
+      // A team tag in the player search ("DFM", "CFO"): show that team's players, most recent first
+      const teams = searchByName(search.teams, searchAlias(q), 2).map((t) => t.n.toLowerCase());
+      found = list
+        .filter((p) => teams.includes((p.t || "").toLowerCase()))
+        .sort((a, b) => b.y.localeCompare(a.y) || b.g - a.g)
+        .slice(0, compact ? 8 : 40);
+    }
+    return found.map((p) => ({ s: p.s, n: p.n, sub: `${p.t} · ${tl("{n} games", { n: fmtNum(p.g) })}` }));
   }, [kind, search, q, compact, thisYear]);
 
   return (
@@ -158,7 +169,7 @@ const Picker: React.FC<{
             <span className={`text-[#7e8e9f] text-[11px] truncate shrink-0 max-w-[55%] ${compact ? "hidden sm:inline" : ""}`}>{it.sub}</span>
           </button>
         ))}
-        {items.length === 0 && <p className="text-xs text-[#9bb3c9] py-3">{kind === "teams" ? tl("No teams match \"{q}\".", { q }) : tl("No players match \"{q}\".", { q })}</p>}
+        {items.length === 0 && <p className="text-xs text-[#9bb3c9] py-3">{kind === "teams" ? tl("No teams match \"{q}\".", { q }) : tl("No players match \"{q}\".", { q })}{isNonLatin(q) ? " " + tl("Names here use English letters. Try the in-game name, like Faker or T1.") : ""}</p>}
       </div>
     </div>
   );
@@ -233,8 +244,8 @@ const TeamPage: React.FC<{
               <li key={x.t + x.date} className="flex justify-between gap-2">
                 <span className="text-[#f0e6d2]">
                   <Trophy className={`w-3 h-3 inline mr-1 ${x.kind === "Worlds" ? "text-[#c8aa6e]" : "text-[#7e8e9f]"}`} />
-                  {x.t}
-                  {x.as !== t.name && <span className="text-[#7e8e9f]"> (as {x.as})</span>}
+                  {eventTitle(x.t)}
+                  {x.as !== t.name && <span className="text-[#7e8e9f]"> ({tl("as {name}", { name: x.as })})</span>}
                 </span>
                 <span className="text-[#7e8e9f] shrink-0">
                   {x.score} vs {x.l}
@@ -344,7 +355,7 @@ const TeamPage: React.FC<{
           <ul className="text-xs grid grid-cols-2 gap-x-3 gap-y-1">
             {t.champs.map((c) => (
               <li key={c.c} className="flex justify-between">
-                <span className="text-[#f0e6d2]">{c.c}</span>
+                <span className="text-[#f0e6d2]">{champName(c.c)}</span>
                 <span className="text-[#7e8e9f]">
                   {c.g} · {winRate(c.w, c.g)}
                 </span>
@@ -356,7 +367,7 @@ const TeamPage: React.FC<{
           <ul className="text-xs grid grid-cols-2 gap-x-3 gap-y-1">
             {t.bans.map((c) => (
               <li key={c.c} className="flex justify-between">
-                <span className="text-[#f0e6d2]">{c.c}</span>
+                <span className="text-[#f0e6d2]">{champName(c.c)}</span>
                 <span className="text-[#7e8e9f]">{c.g}</span>
               </li>
             ))}
@@ -391,7 +402,7 @@ const PlayerPage: React.FC<{ slug: string; spoiler: boolean; onTeam: (slug: stri
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
           <Stat label={tl("Games")} value={`${fmtNum(p.w)}-${fmtNum(p.g - p.w)}`} sub={tl("{pct} win rate", { pct: winRate(p.w, p.g) })} />
           <Stat label={tl("KDA")} value={p.kda} sub={`${fmtNum(p.k)} / ${fmtNum(p.d)} / ${fmtNum(p.a)}`} />
-          <Stat label={tl("Champions")} value={p.nChamps} sub={p.champs[0] ? tl("most: {champion}", { champion: p.champs[0].c }) : undefined} />
+          <Stat label={tl("Champions")} value={p.nChamps} sub={p.champs[0] ? tl("most: {champion}", { champion: champName(p.champs[0].c) }) : undefined} />
           <Stat
             label={tl("Titles")}
             value={p.titles.length}
@@ -458,7 +469,7 @@ const PlayerPage: React.FC<{ slug: string; spoiler: boolean; onTeam: (slug: stri
             <tbody>
               {p.champs.slice(0, 20).map((c) => (
                 <tr key={c.c} className="border-t border-[#1e282d]">
-                  <td className={`${td} text-[#f0e6d2]`}>{c.c}</td>
+                  <td className={`${td} text-[#f0e6d2]`}>{champName(c.c)}</td>
                   <td className={`${td} text-[#9bb3c9]`}>{c.g}</td>
                   <td className={`${td} text-[#9bb3c9]`}>{winRate(c.w, c.g)}</td>
                   <td className={`${td} text-[#9bb3c9]`}>{c.kda}</td>
@@ -481,8 +492,8 @@ const PlayerPage: React.FC<{ slug: string; spoiler: boolean; onTeam: (slug: stri
               {p.recent.map((r, i) => (
                 <li key={i} className="flex justify-between gap-2 min-w-0">
                   <span className="truncate min-w-0">
-                    <span className={r.win ? "text-[#0ac8b9] font-bold" : "text-[#e84057] font-bold"}>{r.win ? "W" : "L"}</span>{" "}
-                    <span className="text-[#f0e6d2]">{r.c}</span>{" "}
+                    <span className={r.win ? "text-[#0ac8b9] font-bold" : "text-[#e84057] font-bold"}>{r.win ? tc("short result", "W") : tc("short result", "L")}</span>{" "}
+                    <span className="text-[#f0e6d2]">{champName(r.c)}</span>{" "}
                     <span className="text-[#9bb3c9]">
                       {r.k}/{r.d}/{r.a} vs {r.opp}
                     </span>
@@ -499,7 +510,7 @@ const PlayerPage: React.FC<{ slug: string; spoiler: boolean; onTeam: (slug: stri
               <li key={k} className="flex justify-between gap-2">
                 <span className="text-[#9bb3c9]">{BEST_LABEL[k] ? tl(BEST_LABEL[k]) : k}</span>
                 <span className="text-[#f0e6d2] text-right truncate">
-                  {fmtNum(b.v)} <span className="text-[#7e8e9f]">({b.c} vs {b.opp}, {b.date.slice(0, 4)})</span>
+                  {fmtNum(b.v)} <span className="text-[#7e8e9f]">({champName(b.c)} vs {b.opp}, {b.date.slice(0, 4)})</span>
                 </span>
               </li>
             ))}
@@ -514,7 +525,7 @@ const PlayerPage: React.FC<{ slug: string; spoiler: boolean; onTeam: (slug: stri
               <li key={t + date} className="flex justify-between gap-2">
                 <span className="text-[#f0e6d2]">
                   <Trophy className={`w-3 h-3 inline mr-1 ${kind === "Worlds" ? "text-[#c8aa6e]" : "text-[#7e8e9f]"}`} />
-                  {t}
+                  {eventTitle(t)}
                 </span>
                 <span className="text-[#7e8e9f] shrink-0">{date}</span>
               </li>
@@ -628,7 +639,7 @@ const ChampionsPanel: React.FC<{ meta: StatsMeta }> = ({ meta }) => {
             <tbody>
               {rows.map((c) => (
                 <tr key={c.c} className="border-t border-[#1e282d]">
-                  <td className={`${td} text-[#f0e6d2] font-semibold`}>{c.c}</td>
+                  <td className={`${td} text-[#f0e6d2] font-semibold`}>{champName(c.c)}</td>
                   <td className={`${td} text-[#7e8e9f]`}>{c.role ? roleName(c.role) : "–"}</td>
                   <td className={`${td} text-[#9bb3c9]`}>{Math.round(c.presence * 100)}%</td>
                   <td className={`${td} text-[#9bb3c9]`}>{c.p}</td>
@@ -685,7 +696,7 @@ const RecordsPanel: React.FC<{ onTeam: (s: string) => void; onPlayer: (s: string
               <LinkBtn onClick={() => onPlayer(p.ps)}>{p.pl}</LinkBtn>
               <span className="text-[#9bb3c9]">
                 {" "}
-                {p.c} {p.kda}
+                {champName(p.c)} {p.kda}
               </span>
             </div>
             <div className="text-[10px] text-[#7e8e9f] truncate">
@@ -816,7 +827,7 @@ const TitlesPanel: React.FC<{ onTeam: (s: string) => void }> = ({ onTeam }) => {
               <tr key={x.t + x.date} className="border-t border-[#1e282d]">
                 <td className={`${td} text-[#f0e6d2]`}>
                   <Trophy className={`w-3 h-3 inline mr-1 ${x.kind === "Worlds" ? "text-[#c8aa6e]" : "text-[#7e8e9f]"}`} />
-                  {x.t}
+                  {eventTitle(x.t)}
                 </td>
                 <td className={td}>
                   <LinkBtn onClick={x.s ? () => onTeam(x.s!) : undefined}>{x.as}</LinkBtn>
@@ -920,7 +931,7 @@ const ComparePanel: React.FC<{ search: StatsSearch }> = ({ search }) => {
           <CompareRow label={tl("Champions played")} a={x.nChamps} b={y.nChamps} />
           <CompareRow label={tl("Titles")} a={x.titles.length} b={y.titles.length} />
           <CompareRow label={tl("Worlds")} a={x.titles.filter((t) => t[2] === "Worlds").length} b={y.titles.filter((t) => t[2] === "Worlds").length} />
-          <CompareRow label={tl("Most played")} a={x.champs[0]?.c ?? "–"} b={y.champs[0]?.c ?? "–"} />
+          <CompareRow label={tl("Most played")} a={x.champs[0] ? champName(x.champs[0].c) : "–"} b={y.champs[0] ? champName(y.champs[0].c) : "–"} />
         </>
       );
     }
@@ -967,6 +978,7 @@ const ComparePanel: React.FC<{ search: StatsSearch }> = ({ search }) => {
 // ── Main view ─────────────────────────────────────────────────────────────
 
 export const StatsView: React.FC<StatsViewProps> = ({ settings }) => {
+  useChampionNames();
   const [tab, setTab] = useState<StatsTab>("teams");
   const [team, setTeam] = useState<string | null>(null);
   const [player, setPlayer] = useState<string | null>(null);

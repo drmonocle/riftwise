@@ -7,7 +7,8 @@ import { isMatchFollowed, computeHeadToHead } from "../../helpers";
 import { clickable } from "../../a11y";
 import { H2HMeter } from "../H2HMeter";
 import { StandingsView } from "./StandingsView";
-import { tl, locale } from "../../i18n";
+import { tl, locale, clockOptions } from "../../i18n";
+import { searchAlias } from "../../searchAliases";
 
 interface ScheduleViewProps {
   schedule: Match[];
@@ -107,7 +108,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
     // Search query
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+      const q = searchAlias(searchQuery).toLowerCase();
       const text = `${m.team1Code} ${m.team1Name} ${m.team2Code} ${m.team2Name} ${m.leagueName}`.toLowerCase();
       if (!text.includes(q)) return false;
     }
@@ -183,7 +184,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 <button
                   key={r}
                   onClick={() => setFilterRange(r)}
-                  className={`px-3 py-1 text-xs font-semibold rounded transition-all capitalize ${
+                  className={`px-3 py-1 text-xs font-semibold rounded transition-all ${
                     filterRange === r
                       ? "bg-[#c8aa6e] text-[#091428]"
                       : "text-[#9bb3c9] hover:text-[#f0e6d2] hover:bg-[#121e2d]"
@@ -235,7 +236,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 const day = dayOf(m.startTimeUtc);
                 const newDay = filterRange !== "today" && (idx === 0 || dayOf(filtered[idx - 1].startTimeUtc) !== day);
                 const timeStr = m.startTimeUtc
-                  ? new Date(m.startTimeUtc).toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" })
+                  ? new Date(m.startTimeUtc).toLocaleTimeString(locale(), clockOptions())
                   : "--:--";
 
                 const isT1Followed = settings.followedTeams.includes(m.team1Code);

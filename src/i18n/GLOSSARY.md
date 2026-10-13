@@ -50,5 +50,11 @@ Other choices worth knowing:
 - **de**: du form; kills/assists/picks stay English; roster = Kader; standings = Tabelle; system tray = Infobereich.
 - **tr**: informal "sen"; text never glues a Turkish case ending onto a team or league name
   (writes "Takip et: {name}" instead of "{name}'i takip et"), so names of any shape read correctly.
+- `tournament::` = season words inside tournament names (Split, Summer, Regional Qualifier...), `short result::`
+  = W/L letters, `short best of::` = Bo3/BO3, `league::Demacia Cup` = 德玛西亚杯 etc.
+- Champion names are not in these files: they come from Riot's Data Dragon in each language (아지르, 阿兹尔,
+  アジール, Ngộ Không...), loaded by `src/champions.ts`. Simplified Chinese uses the everyday name (阿狸), not the epithet.
+- Search understands the best-known nicknames written in other alphabets (페이커, 티원, B站, 滔搏, フェイカー...):
+  `src/searchAliases.ts`. Anything else in a non-Latin alphabet shows a tip to use the in-game name.
 - Windows SmartScreen buttons use Windows' own wording in each language (Más información / Ejecutar de todas
   formas, 추가 정보 / 실행, 更多信息 / 仍要运行, 詳細情報 / 実行, Weitere Informationen / Trotzdem ausführen...).

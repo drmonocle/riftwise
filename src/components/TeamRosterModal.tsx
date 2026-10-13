@@ -3,7 +3,7 @@ import { CatalogData, Match, AppSettings, PlayerEntry } from "../types";
 import { X, Star, Calendar, Shield, ExternalLink, User } from "lucide-react";
 import { computeHeadToHead, pickTeamByCode } from "../helpers";
 import { H2HMeter } from "./H2HMeter";
-import { tl, locale, roleName } from "../i18n";
+import { tl, locale, roleName, regionName } from "../i18n";
 
 interface TeamRosterModalProps {
   teamCode: string | null;
@@ -146,7 +146,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                   {upperCode}
                 </span>
                 {catalogTeam?.league && <span>· {catalogTeam.league}</span>}
-                {catalogTeam?.region && <span>· {catalogTeam.region}</span>}
+                {catalogTeam?.region && <span>· {regionName(catalogTeam.region)}</span>}
               </div>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { AppSettings, CatalogData, CatalogTeam, PlayerEntry, League } from "../.
 import { MAJOR_REGIONS, DEFAULT_FOLLOWED_REGIONS, POPULAR_PLAYERS, GLOBAL_LEAGUES } from "../../api";
 import { Search, Check, Plus, X, Globe, User, Shield, Trophy, RefreshCw } from "lucide-react";
 import { tl, tn, regionName, roleName } from "../../i18n";
+import { searchAlias, isNonLatin } from "../../searchAliases";
 
 interface WatchlistViewProps {
   settings: AppSettings;
@@ -109,6 +110,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
   };
 
   const q = search.trim().toLowerCase();
+  // 페이커 -> faker, B站 -> bilibili: fans type names the way their community writes them
+  const qs = searchAlias(search).trim().toLowerCase();
 
   // Filtered TEAMS: searches across all catalog.teams (~778 teams)
   const filteredTeams = useMemo(() => {
@@ -126,13 +129,14 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
     return all
       .filter(
         (t) =>
-          t.code.toLowerCase().includes(q) ||
-          t.name.toLowerCase().includes(q) ||
-          t.league.toLowerCase().includes(q) ||
-          t.region.toLowerCase().includes(q)
+          t.code.toLowerCase().includes(qs) ||
+          t.name.toLowerCase().includes(qs) ||
+          t.league.toLowerCase().includes(qs) ||
+          t.region.toLowerCase().includes(qs) ||
+          regionName(t.region).toLowerCase().includes(qs)
       )
       .slice(0, 100);
-  }, [catalog.teams, settings.followedTeams, q]);
+  }, [catalog.teams, settings.followedTeams, qs]);
 
   // Filtered PLAYERS: searches across all catalog.players (~4,634 players)
   const filteredPlayers = useMemo(() => {
@@ -148,25 +152,26 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
     return all
       .filter(
         (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.teamCode.toLowerCase().includes(q) ||
-          p.teamName.toLowerCase().includes(q) ||
-          p.role.toLowerCase().includes(q) ||
-          (p.realName && p.realName.toLowerCase().includes(q))
+          p.name.toLowerCase().includes(qs) ||
+          p.teamCode.toLowerCase().includes(qs) ||
+          p.teamName.toLowerCase().includes(qs) ||
+          p.role.toLowerCase().includes(qs) ||
+          (p.realName && p.realName.toLowerCase().includes(qs))
       )
       .slice(0, 100);
-  }, [catalog.players, settings.followedPlayers, q]);
+  }, [catalog.players, settings.followedPlayers, qs]);
 
   // Filtered REGIONS
   const filteredRegions = useMemo(() => {
     if (!q) return MAJOR_REGIONS;
     return MAJOR_REGIONS.filter(
       (r) =>
-        r.name.toLowerCase().includes(q) ||
-        r.code.toLowerCase().includes(q) ||
-        r.leagues.some((l) => l.toLowerCase().includes(q))
+        r.name.toLowerCase().includes(qs) ||
+        r.code.toLowerCase().includes(qs) ||
+        regionName(r.code, r.name).toLowerCase().includes(qs) ||
+        r.leagues.some((l) => l.toLowerCase().includes(qs))
     );
-  }, [q]);
+  }, [qs]);
 
   // Filtered LEAGUES: searches across all catalog.leagues (~51 leagues)
   const filteredLeagues = useMemo(() => {
@@ -182,11 +187,12 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
     }
     return all.filter(
       (l) =>
-        l.name.toLowerCase().includes(q) ||
-        l.slug.toLowerCase().includes(q) ||
-        l.region.toLowerCase().includes(q)
+        l.name.toLowerCase().includes(qs) ||
+        l.slug.toLowerCase().includes(qs) ||
+        l.region.toLowerCase().includes(qs) ||
+        regionName(l.region).toLowerCase().includes(qs)
     );
-  }, [catalog.leagues, q]);
+  }, [catalog.leagues, qs]);
 
   // Search input placeholder per tab
   const searchPlaceholder =
@@ -348,7 +354,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             <span>
               {!q
                 ? tl("Showing major pro teams ({shown} of {total}) · type above to search all teams", { shown: filteredTeams.length, total: catalog.teams.length })
-                : tl('Found {n} teams matching "{q}"', { n: filteredTeams.length, q })}
+                : tl('Found {n} teams matching "{q}"', { n: filteredTeams.length, q }) + (filteredTeams.length === 0 && isNonLatin(search) ? " · " + tl("Names here use English letters. Try the in-game name, like Faker or T1.") : "")}
             </span>
           </div>
 
@@ -460,7 +466,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             <span>
               {!q
                 ? tl("Showing top pro players ({shown} of {total}) · type above to search all registered pros", { shown: filteredPlayers.length, total: catalog.players.length })
-                : tl('Found {n} players matching "{q}"', { n: filteredPlayers.length, q })}
+                : tl('Found {n} players matching "{q}"', { n: filteredPlayers.length, q }) + (filteredPlayers.length === 0 && isNonLatin(search) ? " · " + tl("Names here use English letters. Try the in-game name, like Faker or T1.") : "")}
             </span>
           </div>
 

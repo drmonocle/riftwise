@@ -403,7 +403,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       }
                     }).catch(() => {});
                   }}
-                  className={`px-3 py-1 text-xs font-semibold rounded transition-all capitalize ${
+                  className={`px-3 py-1 text-xs font-semibold rounded transition-all ${
                     settings.tickerMode === mode
                       ? "bg-[#c8aa6e] text-[#091428]"
                       : "text-[#7e8e9f] hover:text-[#f0e6d2]"
@@ -481,7 +481,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <button
                   key={t}
                   onClick={() => onUpdateSettings({ defaultTab: t })}
-                  className={`px-2.5 py-1 text-xs font-semibold rounded transition-all capitalize ${
+                  className={`px-2.5 py-1 text-xs font-semibold rounded transition-all ${
                     settings.defaultTab === t
                       ? "bg-[#c8aa6e] text-[#091428]"
                       : "text-[#7e8e9f] hover:text-[#f0e6d2]"

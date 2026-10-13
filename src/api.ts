@@ -1,6 +1,6 @@
 import { Match, LiveStats, LiveShow, StreamEvent, StreamStatus, AppSettings, Team, Region, League, PlayerEntry, AppUpdateInfo } from "./types";
 import type { H2HData } from "./helpers";
-import { tk, currentLang } from "./i18n";
+import { tk, tc, currentLang, eventName } from "./i18n";
 
 // Riot's own translations for league, stage and block names ("8강", "Cuartos de Final"...).
 const RIOT_HL: Record<string, string> = {
@@ -8,6 +8,18 @@ const RIOT_HL: Record<string, string> = {
   "zh-TW": "zh-TW", ja: "ja-JP", fr: "fr-FR", de: "de-DE", tr: "tr-TR",
 };
 const riotHl = (): string => RIOT_HL[currentLang()] || "en-US";
+// Riot translates region names too ("한국", "国际赛区"), but follows and region matching use the English
+// codes (KOREA, INTERNATIONAL...), which the app translates itself. So regions always come from en-US.
+
+/** Riot's league list: names in the reader's language, regions as English codes. */
+async function fetchRiotLeagues(timeout?: number): Promise<any[]> {
+  const english = fetchJson(`${RIOT_BASE}/getLeagues?hl=en-US`, { headers: riotHeaders }, timeout);
+  if (riotHl() === "en-US") return (await english)?.data?.leagues || [];
+  const [en, local] = await Promise.all([english, fetchJson(`${RIOT_BASE}/getLeagues?hl=${riotHl()}`, { headers: riotHeaders }, timeout).catch(() => null)]);
+  const names = new Map<string, string>();
+  for (const l of local?.data?.leagues || []) if (l?.slug && l?.name) names.set(l.slug, l.name);
+  return (en?.data?.leagues || []).map((l: any) => ({ ...l, name: names.get(l.slug) || l.name }));
+}
 
 // Public key used by the lolesports.com web client (not a private secret). Riot may rotate it; if the
 // app suddenly shows "sync failed" with HTTP 401/403, look up the current key from lolesports.com.
@@ -15,8 +27,12 @@ const RIOT_API_KEY = "0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z";
 const RIOT_BASE = "https://esports-api.lolesports.com/persisted/gw";
 // Riot shows a few leagues under internal short codes; use the names viewers know.
 const LEAGUE_NAME_FIXES: Record<string, string> = { demacia_cup: "Demacia Cup" };
+// International events use the app's own wording (롤드컵, 先锋赛...) so they read the same everywhere.
+const EVENT_SLUGS: Record<string, string> = { worlds: "Worlds", msi: "MSI", first_stand: "First Stand" };
 export function leagueDisplayName(league: { name?: string; slug?: string } | undefined, fallback = "League"): string {
   if (!league) return fallback;
+  if (league.slug && EVENT_SLUGS[league.slug]) return eventName(EVENT_SLUGS[league.slug]);
+  if (league.slug === "demacia_cup") return tc("league", "Demacia Cup");
   return (league.slug && LEAGUE_NAME_FIXES[league.slug]) || league.name || league.slug || fallback;
 }
 
@@ -208,8 +224,10 @@ export function loadCachedCatalog(): CatalogData | null {
     const raw = localStorage.getItem("riftwatch_catalog");
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Names come back in the reader's language, so a catalog saved in another language is refetched
+      // Names come back in the reader's language, so a catalog saved in another language is refetched.
+      // regions:"en" marks catalogs saved since regions are always English codes (0.3.27).
       if ((parsed.lang || "en") !== currentLang()) return null;
+      if (currentLang() !== "en" && parsed.regions !== "en") return null;
       if (parsed.teams?.length > 0 && parsed.players?.length > 0 && parsed.leagues?.length > 0) {
         return parsed as CatalogData;
       }
@@ -228,7 +246,7 @@ export async function loadBundledCatalog(): Promise<CatalogData> {
 
 export function saveCatalog(catalog: CatalogData): void {
   try {
-    localStorage.setItem("riftwatch_catalog", JSON.stringify({ ...catalog, lang: currentLang() }));
+    localStorage.setItem("riftwatch_catalog", JSON.stringify({ ...catalog, lang: currentLang(), regions: "en" }));
     window.dispatchEvent(new CustomEvent("riftwatch_catalog_updated", { detail: catalog }));
   } catch (e) {
     console.error("Failed to save catalog:", e);
@@ -241,9 +259,9 @@ export function saveCatalog(catalog: CatalogData): void {
  */
 export async function fetchLiveCatalog(current?: CatalogData): Promise<CatalogData | null> {
   try {
-    const [teamsData, leaguesData] = await Promise.all([
-      fetchJson(`${RIOT_BASE}/getTeams?hl=${riotHl()}`, { headers: riotHeaders }, 30000),
-      fetchJson(`${RIOT_BASE}/getLeagues?hl=${riotHl()}`, { headers: riotHeaders }, 30000),
+    const [teamsData, rawLeagues] = await Promise.all([
+      fetchJson(`${RIOT_BASE}/getTeams?hl=en-US`, { headers: riotHeaders }, 30000),
+      fetchRiotLeagues(30000),
     ]);
 
     const rawTeams = teamsData?.data?.teams || [];
@@ -301,7 +319,6 @@ export async function fetchLiveCatalog(current?: CatalogData): Promise<CatalogDa
       }
     }
 
-    const rawLeagues = leaguesData?.data?.leagues || [];
     const cleanLeagues: League[] = [];
     for (const l of rawLeagues) {
       if (!l.slug || !l.name) continue;
@@ -624,12 +641,12 @@ function writeCache(key: string, data: unknown): void {
 
 /** All leagues Riot lists, slug -> id (needed to look up a league's tournaments). Cached a day. */
 export async function fetchLeagueIds(): Promise<Record<string, { id: string; name: string; region: string }>> {
-  const key = "riftwatch_league_ids";
+  const key = "riftwatch_league_ids_v2";
   const cached = readCache<Record<string, { id: string; name: string; region: string }>>(key, TOURNAMENTS_TTL_MS);
   if (cached) return cached;
-  const data = await fetchJson(`${RIOT_BASE}/getLeagues?hl=${riotHl()}`, { headers: riotHeaders });
+  const leagues = await fetchRiotLeagues();
   const out: Record<string, { id: string; name: string; region: string }> = {};
-  for (const l of data?.data?.leagues || []) {
+  for (const l of leagues) {
     if (l?.slug && l?.id) out[String(l.slug).toLowerCase()] = { id: String(l.id), name: l.name || l.slug, region: l.region || "" };
   }
   writeCache(key, out);
