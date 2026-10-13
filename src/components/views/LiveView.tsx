@@ -492,7 +492,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     <span className="order-last sm:order-none basis-full sm:basis-auto sm:flex-1 text-[#f0e6d2] font-semibold truncate min-w-0">
                       {m.team1Name} <span className="text-[#9bb3c9] mx-1">{tl("vs")}</span> {m.team2Name}
                     </span>
-                    <span className="text-[#9bb3c9] text-[11px] font-medium shrink-0">Bo{m.bestOf}</span>
+                    <span className="text-[#9bb3c9] text-[11px] font-medium shrink-0">{tc("short best of", "Bo{n}", { n: m.bestOf })}</span>
                     <div className="text-[#9bb3c9] font-mono text-[11px] font-medium shrink-0">
                       {formatMatchTime(m.startTimeUtc)}
                     </div>
@@ -941,7 +941,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                           />
                         </button>
                       </div>
-                      <span className="text-[#9bb3c9] text-[11px] font-medium">Bo{m.bestOf}</span>
+                      <span className="text-[#9bb3c9] text-[11px] font-medium">{tc("short best of", "Bo{n}", { n: m.bestOf })}</span>
                     </div>
                     <div className="flex items-center gap-2 ml-auto">
                       <RowH2H m={m} schedule={schedule} />
@@ -1061,7 +1061,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       />
                     </button>
                   </div>
-                  <span className="text-[#9bb3c9] text-[11px] font-medium">Bo{m.bestOf}</span>
+                  <span className="text-[#9bb3c9] text-[11px] font-medium">{tc("short best of", "Bo{n}", { n: m.bestOf })}</span>
                 </div>
                 <div className="flex items-center gap-2 ml-auto">
                   <RowH2H m={m} schedule={schedule} />

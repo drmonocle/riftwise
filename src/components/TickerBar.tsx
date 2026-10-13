@@ -3,7 +3,7 @@ import { AppSettings, Match, StreamEvent } from "../types";
 import { ChevronLeft, ChevronRight, Pin, PinOff, Minimize2, Maximize2, X } from "lucide-react";
 import { currentStreamEvent, nextUpcomingMatches, computeHeadToHead, streamEventTitle } from "../helpers";
 import { IS_DESKTOP } from "../platform";
-import { tl, locale, stageName } from "../i18n";
+import { tl, tc, locale, stageName } from "../i18n";
 
 interface TickerBarProps {
   settings: AppSettings;
@@ -83,7 +83,7 @@ export const TickerBar: React.FC<TickerBarProps> = ({
       badgeBg: "bg-[#e84057]",
       badgeFg: "text-white",
       headline: `${m.leagueName} · ${m.team1Code} ${scores} ${m.team2Code}`,
-      details: settings.spoilerMode ? tl("Spoiler mode active") : `Bo${m.bestOf}`,
+      details: settings.spoilerMode ? tl("Spoiler mode active") : tc("short best of", "Bo{n}", { n: m.bestOf }),
       targetTab: "live",
     });
   }

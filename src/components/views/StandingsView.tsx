@@ -6,12 +6,13 @@ import {
   fetchLeagueTournaments,
   fetchTournamentStandings,
   pickCurrentTournament,
+  leagueDisplayName,
   BracketMatch,
   StandingsStage,
   TournamentInfo,
   TournamentStandings,
 } from "../../api";
-import { tl, locale, regionName } from "../../i18n";
+import { tl, tc, locale, regionName } from "../../i18n";
 
 interface StandingsViewProps {
   schedule: Match[];
@@ -60,7 +61,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
       seen.add(s);
       out.push({ slug: s, name });
     };
-    for (const slug of settings.followedLeagues || []) add(slug, leagueIds[slug.toLowerCase()]?.name || slug);
+    for (const slug of settings.followedLeagues || []) add(slug, leagueDisplayName({ slug: slug.toLowerCase(), name: leagueIds[slug.toLowerCase()]?.name }, slug));
     for (const m of schedule) add(m.leagueSlug, m.leagueName);
     return out;
   }, [settings.followedLeagues, schedule, leagueIds]);
@@ -68,8 +69,8 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
   const allLeagues = useMemo(
     () =>
       Object.entries(leagueIds)
-        .map(([slug, l]) => ({ slug, name: l.name, region: l.region }))
-        .sort((a, b) => a.region.localeCompare(b.region) || a.name.localeCompare(b.name)),
+        .map(([slug, l]) => ({ slug, name: leagueDisplayName({ slug, name: l.name }), region: l.region }))
+        .sort((a, b) => regionName(a.region).localeCompare(regionName(b.region), locale()) || a.name.localeCompare(b.name)),
     [leagueIds],
   );
 
@@ -140,12 +141,12 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
             </button>
           ))}
         </div>
-        <label className="relative ml-auto">
+        <label className="relative ml-auto max-w-full min-w-0">
           <span className="sr-only">{tl("Choose any league")}</span>
           <select
             value={activeLeague}
             onChange={(e) => setSelectedLeague(e.target.value)}
-            className="appearance-none bg-[#0a0e17] border border-[#1e282d] rounded-lg pl-3 pr-8 py-1 text-xs text-[#f0e6d2] focus:border-[#c8aa6e] focus:outline-none"
+            className="appearance-none max-w-full truncate bg-[#0a0e17] border border-[#1e282d] rounded-lg pl-3 pr-8 py-1 text-xs text-[#f0e6d2] focus:border-[#c8aa6e] focus:outline-none"
           >
             <option value="" disabled>
               {tl("All leagues…")}
@@ -163,12 +164,12 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
       {/* Tournament + stage */}
       {tournaments.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
-          <label className="relative">
+          <label className="relative max-w-full min-w-0">
             <span className="sr-only">{tl("Tournament")}</span>
             <select
               value={selectedTournament}
               onChange={(e) => setSelectedTournament(e.target.value)}
-              className="appearance-none bg-[#0a1420] border border-[#1e282d] rounded-lg pl-3 pr-8 py-1 text-xs font-semibold text-[#f0e6d2] focus:border-[#c8aa6e] focus:outline-none"
+              className="appearance-none max-w-full truncate bg-[#0a1420] border border-[#1e282d] rounded-lg pl-3 pr-8 py-1 text-xs font-semibold text-[#f0e6d2] focus:border-[#c8aa6e] focus:outline-none"
             >
               {tournaments.slice(0, 12).map((t) => (
                 <option key={t.id} value={t.id}>
@@ -347,9 +348,26 @@ function currentStageIndex(stages: StandingsStage[]): number {
   return 0;
 }
 
+// Riot only gives tournaments a slug ("lck_split_2_2026", "lec_summer_2025"); the season words in it
+// are translated the way each region says them (서머, 夏季赛, Verano...).
+const tournamentWords = (): [RegExp, string][] => [
+  [/\bRegional Qualifier\b/, tc("tournament", "Regional Qualifier")],
+  [/\bRegional Finals\b/, tc("tournament", "Regional Finals")],
+  [/\bSeason Finals\b/, tc("tournament", "Season Finals")],
+  [/\bSplit\b/, tc("tournament", "Split")],
+  [/\bSpring\b/, tc("tournament", "Spring")],
+  [/\bSummer\b/, tc("tournament", "Summer")],
+  [/\bWinter\b/, tc("tournament", "Winter")],
+  [/\bCUP\b/, tc("tournament", "Cup")],
+  [/\bKickoff\b/, tc("tournament", "Kickoff")],
+  [/\bPlayoffs\b/, tc("tournament", "Playoffs")],
+  [/\bFinals\b/, tc("tournament", "Finals")],
+];
+
 function prettyTournament(t: TournamentInfo): string {
   const words = t.slug.replace(/[-_]+/g, " ").trim().split(" ");
-  return words.map((w) => (/^\d/.test(w) || w.length <= 4 ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1))).join(" ");
+  const english = words.map((w) => (/^\d/.test(w) || w.length <= 4 ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1))).join(" ");
+  return tournamentWords().reduce((s, [re, word]) => s.replace(re, word), english);
 }
 
 function tournamentStatus(t: TournamentInfo): string {

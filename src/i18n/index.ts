@@ -69,6 +69,12 @@ export function locale(): string {
   return current;
 }
 
+/** Clock times: 2:00 PM / 下午2:00 where clocks are 12-hour, 02:00 where they are 24-hour. */
+export function clockOptions(): Intl.DateTimeFormatOptions {
+  const h12 = new Intl.DateTimeFormat(current, { hour: "numeric" }).resolvedOptions().hour12;
+  return { hour: h12 ? "numeric" : "2-digit", minute: "2-digit" };
+}
+
 export function resolveLang(setting: LangSetting | undefined): Lang {
   return setting && setting !== "auto" && CODES.includes(setting) ? (setting as Lang) : detectLanguage();
 }
@@ -154,6 +160,13 @@ export function regionName(code: string, english?: string): string {
 
 /** Event names as fans say them (Worlds is 롤드컵 to Korean fans, S赛 / 全球总决赛 in China...). */
 export const eventName = (event: string): string => tc("event", event);
+
+/** Title names from the stats ("Worlds 2025 Main Event", "First Stand 2026") with the event in the reader's wording. */
+export function eventTitle(title: string): string {
+  const m = /^(Worlds|MSI|First Stand)\b(.*?)(?: Main Event)?$/.exec(title || "");
+  if (m) return eventName(m[1]) + m[2];
+  return /^Demacia Cup\b/.test(title || "") ? tc("league", "Demacia Cup") + title.slice(11) : title;
+}
 
 const STAGE_ALIASES: Record<string, string> = {
   "semi finals": "Semifinals",
