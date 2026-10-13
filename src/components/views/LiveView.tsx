@@ -336,8 +336,9 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       </button>
                     )}
                     {(() => {
-                      const h2h = computeHeadToHead(m.team1Code, m.team2Code, schedule, m.matchId);
-                      return h2h ? <H2HMeter team1Code={m.team1Code} team2Code={m.team2Code} h2h={h2h} matchId={m.matchId} /> : null;
+                      // Games already finished in this series count, unless the score is hidden
+                      const h2h = computeHeadToHead(m.team1Code, m.team2Code, schedule, m.matchId, showScore);
+                      return h2h ? <H2HMeter team1Code={m.team1Code} team2Code={m.team2Code} h2h={h2h} matchId={m.matchId} countThisMatch={showScore} /> : null;
                     })()}
                   </div>
 

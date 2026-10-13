@@ -119,8 +119,25 @@ describe("computeHeadToHead", () => {
     const done = (id: string) => match({ matchId: id, state: "completed", team1Code: "AAA", team2Code: "BBB", team1Score: 2, team2Score: 1 });
     expect(computeHeadToHead("AAA", "BBB", [])).toBeNull();
     expect(computeHeadToHead("AAA", "BBB", [done("1")])).toMatchObject({ team1Wins: 2, team2Wins: 1, totalGames: 3 });
-    // The match itself never counts towards its own H2H.
-    expect(computeHeadToHead("AAA", "BBB", [done("1")], "1")).toBeNull();
+    // A finished match's card shows the record after it (its own games count)...
+    expect(computeHeadToHead("AAA", "BBB", [done("1")], "1")).toMatchObject({ team1Wins: 2, team2Wins: 1 });
+    // ...unless its score is hidden (spoiler mode).
+    expect(computeHeadToHead("AAA", "BBB", [done("1")], "1", false)).toBeNull();
+  });
+
+  it("stops an older card at that match and counts finished games of a live series", () => {
+    const at = (id: string, day: number, s1: number, s2: number, state: "completed" | "inProgress" = "completed") =>
+      match({ matchId: id, state, team1Code: "CCC", team2Code: "DDD", team1Score: s1, team2Score: s2, startTimeUtc: `2031-01-${String(day).padStart(2, "0")}T10:00:00Z` });
+    const sched = [at("a", 1, 3, 1), at("b", 5, 0, 3), at("c", 9, 2, 0, "inProgress")];
+    // Card of match a: only a counts, not b played later, and not the live c
+    expect(computeHeadToHead("CCC", "DDD", sched, "a")).toMatchObject({ team1Wins: 3, team2Wins: 1 });
+    // Card of match b: a + b
+    expect(computeHeadToHead("CCC", "DDD", sched, "b")).toMatchObject({ team1Wins: 3, team2Wins: 4 });
+    // Live card of c: a + b + the 2 games CCC already won in c; with spoilers hidden, without them
+    expect(computeHeadToHead("CCC", "DDD", sched, "c")).toMatchObject({ team1Wins: 5, team2Wins: 4 });
+    expect(computeHeadToHead("CCC", "DDD", sched, "c", false)).toMatchObject({ team1Wins: 3, team2Wins: 4 });
+    // An upcoming meeting sees every finished game
+    expect(computeHeadToHead("CCC", "DDD", sched)).toMatchObject({ team1Wins: 3, team2Wins: 4 });
   });
 
   it("takes a match back out of downloaded data that already includes it", () => {
@@ -129,12 +146,23 @@ describe("computeHeadToHead", () => {
       applyH2HData({ cutoff: "2030-01-01T00:00:00Z", pairs: { GEN__T1: [before.team2Wins + 1, before.team1Wins + 2] } }),
     ).toBe(true);
     const played = match({ matchId: "final", state: "completed", startTimeUtc: "2029-06-01T10:00:00Z", team1Score: 2, team2Score: 1 });
-    // T1 2-1 GEN is inside the downloaded table; on its own card it must not count.
+    // T1 2-1 GEN is inside the downloaded table: counted once on its own card, and taken back out
+    // when its score is hidden.
     expect(computeHeadToHead("T1", "GEN", [played], "final")).toMatchObject({
+      team1Wins: before.team1Wins + 2,
+      team2Wins: before.team2Wins + 1,
+    });
+    expect(computeHeadToHead("T1", "GEN", [played], "final", false)).toMatchObject({
       team1Wins: before.team1Wins,
       team2Wins: before.team2Wins,
     });
     expect(computeHeadToHead("T1", "GEN", [played])?.totalGames).toBe(before.totalGames + 3);
+    // A later meeting that is also inside the table doesn't count on the earlier card
+    const later = match({ matchId: "later", state: "completed", startTimeUtc: "2029-07-01T10:00:00Z", team1Score: 0, team2Score: 3 });
+    expect(computeHeadToHead("T1", "GEN", [played, later], "final")).toMatchObject({
+      team1Wins: before.team1Wins + 2,
+      team2Wins: Math.max(0, before.team2Wins + 1 - 3),
+    });
   });
 });
 describe("h2hKey", () => {
@@ -164,8 +192,9 @@ describe("recentMeetings", () => {
       { date: "2031-01-01", tournament: "LCK", team1Score: 3, team2Score: 2, matchId: "new" },
       { date: "2025-10-18", tournament: "Worlds 2025", team1Score: 0, team2Score: 1 },
     ]);
-    // The match the view was opened from is left out.
-    expect(recentMeetings("T1", "GEN", published, [played], "new")).toHaveLength(1);
+    // Opened from that match: it is listed; with its score hidden it is left out.
+    expect(recentMeetings("T1", "GEN", published, [played], "new")).toHaveLength(2);
+    expect(recentMeetings("T1", "GEN", published, [played], "new", false)).toHaveLength(1);
   });
 });
 
