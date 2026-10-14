@@ -38,6 +38,9 @@ export default defineConfig(({ mode }) => ({
   base: mode === "web" ? "/riftwatch/" : "/",
   build: mode === "web" ? { outDir: "dist-web", emptyOutDir: true } : undefined,
 
+  // `vite preview` of the web build: send the alert API to the live server, as IIS does in production
+  preview: { proxy: { "/riftwatch/api": { target: "https://lolworlds.com", changeOrigin: true } } },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors
