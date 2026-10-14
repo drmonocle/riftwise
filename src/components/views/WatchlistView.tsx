@@ -3,6 +3,8 @@ import { AppSettings, CatalogData, CatalogTeam, PlayerEntry, League } from "../.
 import { MAJOR_REGIONS, DEFAULT_FOLLOWED_REGIONS, POPULAR_PLAYERS, GLOBAL_LEAGUES } from "../../api";
 import { Search, Check, Plus, X, Globe, User, Shield, Trophy, RefreshCw } from "lucide-react";
 import { tl, tn, regionName, roleName } from "../../i18n";
+import { IS_WEB } from "../../platform";
+import { PushAlertsBanner } from "../PushAlerts";
 import { searchAlias, isNonLatin } from "../../searchAliases";
 
 interface WatchlistViewProps {
@@ -289,6 +291,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           )}
         </div>
       </div>
+
+      {IS_WEB && <PushAlertsBanner settings={settings} />}
 
       {/* Sub-tab Navigation & Search */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[#1e282d]">

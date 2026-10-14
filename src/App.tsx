@@ -44,6 +44,7 @@ import { StatsView } from "./components/views/StatsView";
 import { SettingsView } from "./components/views/SettingsView";
 import { TeamRosterModal } from "./components/TeamRosterModal";
 import { tl, locale } from "./i18n";
+import { syncPush } from "./push";
 
 // The floating HUD is the same app loaded with ?mode=detached in its own window.
 const IS_HUD_WINDOW = window.location.search.includes("mode=detached");
@@ -572,6 +573,46 @@ export default function App() {
       }
     }
   }, [streamEvents, settings.notifyStream]);
+
+  // Desktop: "starting soon" 15 minutes before a followed team plays (the web gets it from the alert server)
+  const notifiedPregame = useRef(new Set<string>());
+  useEffect(() => {
+    if (IS_HUD_WINDOW || !IS_DESKTOP || !settings.notifyPregame) return;
+    const check = () => {
+      const followed = new Set(settings.followedTeams.map((t) => t.toUpperCase()));
+      const now = Date.now();
+      for (const m of schedule) {
+        if (m.state !== "unstarted" || notifiedPregame.current.has(m.matchId)) continue;
+        if (!followed.has(m.team1Code.toUpperCase()) && !followed.has(m.team2Code.toUpperCase())) continue;
+        const until = new Date(m.startTimeUtc).getTime() - now;
+        if (until > 0 && until <= 15 * 60 * 1000) {
+          notifiedPregame.current.add(m.matchId);
+          const minutes = Math.ceil(until / 60000);
+          import("@tauri-apps/api/core")
+            .then(({ invoke }) =>
+              invoke("send_notification", {
+                title: "⏰ " + tl("Starting soon: {a} vs {b}", { a: m.team1Code, b: m.team2Code }),
+                body: tl("{league} · starts in {n} min", { league: m.leagueName, n: minutes }),
+              }).catch(() => {}),
+            )
+            .catch(() => {});
+        }
+      }
+    };
+    check();
+    const timer = setInterval(check, 60_000);
+    return () => clearInterval(timer);
+  }, [schedule, settings.notifyPregame, settings.followedTeams]);
+
+  // Web: keep the alert server's copy of the followed teams and alert choices current
+  useEffect(() => {
+    if (!IS_WEB || IS_HUD_WINDOW) return;
+    const timer = setTimeout(() => {
+      syncPush(settings).catch(() => {});
+    }, 2000);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.followedTeams, settings.notifyKickoff, settings.notifyPregame, settings.notifyStream]);
 
   // ---------------------------------------------------------------
   // Catalog (teams / players / leagues)

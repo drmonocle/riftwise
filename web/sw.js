@@ -15,6 +15,75 @@ padding:10px 18px;font-weight:700;font-size:14px}</style></head><body><div><h1>R
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 
+// ---- Alerts (Web Push from riftwatch-push on HomeServer) ----
+// The payload is {title, body, url, tag}, already in the reader's language.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { title: "RiftWatch", body: event.data ? event.data.text() : "" };
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || "RiftWatch", {
+      body: data.body || "",
+      icon: "/riftwatch/icon-192.png",
+      tag: data.tag || undefined,
+      data: { url: data.url || "/riftwatch/" },
+    }),
+  );
+});
+
+// Tapping an alert opens RiftWatch (an open tab is reused) at the match it is about.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL((event.notification.data && event.notification.data.url) || "/riftwatch/", self.location.origin).href;
+  event.waitUntil(
+    (async () => {
+      const tabs = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      const tab = tabs.find((c) => c.url.startsWith(self.location.origin + "/riftwatch/"));
+      if (tab) {
+        await tab.focus();
+        try {
+          await tab.navigate(url);
+        } catch {
+          /* focusing is enough if navigation isn't allowed */
+        }
+        return;
+      }
+      await self.clients.openWindow(url);
+    })(),
+  );
+});
+
+// The browser replaced its push address: sign up again with what the page last saved.
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open("riftwatch-push");
+      const saved = await cache.match("/riftwatch/push-state");
+      if (!saved) return;
+      const state = await saved.json();
+      const key = Uint8Array.from(atob(state.publicKey.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+      const sub = await self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+      const body = { ...state, ...sub.toJSON() };
+      delete body.publicKey;
+      await fetch("/riftwatch/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (event.oldSubscription) {
+        await fetch("/riftwatch/api/push/unsubscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ endpoint: event.oldSubscription.endpoint }),
+        });
+      }
+    })().catch(() => {}),
+  );
+});
+
 self.addEventListener("fetch", (event) => {
   if (event.request.mode !== "navigate") return; // assets and APIs: plain network, no caching
   event.respondWith(

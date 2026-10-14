@@ -33,6 +33,7 @@ import {
   DESKTOP_CHECKSUM_URL,
 } from "../../platform";
 import { tl, locale, LANGUAGES, TRANSLATION_EMAIL, TRANSLATION_MAILTO, detectLanguage } from "../../i18n";
+import { PushAlertsCard } from "../PushAlerts";
 
 interface SettingsViewProps {
   settings: AppSettings;
@@ -501,10 +502,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <section className="space-y-3">
         <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
           <Bell className="w-3.5 h-3.5 text-[#0ac8b9]" />
-          {IS_DESKTOP ? tl("Desktop Notifications & Sound Alerts") : tl("Sound Alerts")}
+          {IS_DESKTOP ? tl("Desktop Notifications & Sound Alerts") : tl("Alerts & Sound")}
         </h2>
 
         <div className="space-y-2">
+          {!IS_DESKTOP && <PushAlertsCard settings={settings} onUpdateSettings={onUpdateSettings} />}
           {/* Kickoff Audio Chime */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
             <div>
