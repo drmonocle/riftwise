@@ -1,9 +1,11 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { CatalogData, Match, AppSettings, PlayerEntry } from "../types";
-import { X, Star, Calendar, Shield, ExternalLink, User } from "lucide-react";
+import { X, Star, Calendar, Shield, ExternalLink, User, BarChart3 } from "lucide-react";
 import { computeHeadToHead, pickTeamByCode } from "../helpers";
 import { H2HMeter } from "./H2HMeter";
 import { tl, locale, roleName, regionName } from "../i18n";
+import { findHubTeam, loadHubIndex } from "../hub/data";
+import { navigateHub } from "../hub/route";
 
 interface TeamRosterModalProps {
   teamCode: string | null;
@@ -35,6 +37,35 @@ const ROLE_COLORS: Record<string, { bg: string; text: string; border: string }> 
   Bot: { bg: "bg-rose-500/10", text: "text-rose-400", border: "border-rose-500/30" },
   Support: { bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500/30" },
   Sub: { bg: "bg-slate-500/10", text: "text-slate-400", border: "border-slate-500/30" },
+};
+
+/** "Full history and stats": opens the team's page in the stats hub. */
+const TeamStatsLink: React.FC<{ name: string; code: string; onDone: () => void }> = ({ name, code, onDone }) => {
+  const [busy, setBusy] = useState(false);
+  const [missing, setMissing] = useState(false);
+  if (missing) return null;
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={() => {
+        setBusy(true);
+        loadHubIndex()
+          .then((index) => {
+            const slug = findHubTeam(index, name, code);
+            if (!slug) return setMissing(true);
+            navigateHub({ kind: "team", slug });
+            onDone();
+          })
+          .catch(() => setMissing(true))
+          .finally(() => setBusy(false));
+      }}
+      className="mt-1.5 flex items-center gap-1 text-[11px] text-[#0ac8b9] hover:underline disabled:opacity-60"
+    >
+      <BarChart3 className="w-3 h-3" />
+      {tl("Full history and stats")}
+    </button>
+  );
 };
 
 export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
@@ -148,6 +179,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                 {catalogTeam?.league && <span>· {catalogTeam.league}</span>}
                 {catalogTeam?.region && <span>· {regionName(catalogTeam.region)}</span>}
               </div>
+              <TeamStatsLink name={displayName} code={upperCode} onDone={onClose} />
             </div>
           </div>
 

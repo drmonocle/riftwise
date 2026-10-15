@@ -6,8 +6,9 @@
 import { IS_WEB } from "./platform";
 
 // Same origin on the web version; the desktop app reads it from lolworlds.com.
+// (vite preview on this PC passes /riftwatch/stats on to lolworlds.com, or serves a local build.)
 const STATS_BASE =
-  IS_WEB && typeof window !== "undefined" && window.location.hostname.endsWith("lolworlds.com")
+  IS_WEB && typeof window !== "undefined" && /(^|\.)lolworlds\.com$|^localhost$|^127\.0\.0\.1$/.test(window.location.hostname)
     ? "/riftwatch/stats"
     : "https://lolworlds.com/riftwatch/stats";
 
@@ -106,7 +107,8 @@ function getVersion(force = false): Promise<string> {
   return versionPromise;
 }
 
-class MissingFile extends Error {}
+/** The file isn't in the current build (for hub pages: no such team / player / ...). */
+export class MissingFile extends Error {}
 
 function fetchVersioned<T>(v: string, path: string): Promise<T> {
   const key = `${v}/${path}`;
@@ -126,7 +128,8 @@ function fetchVersioned<T>(v: string, path: string): Promise<T> {
   return p;
 }
 
-async function load<T>(path: string): Promise<T> {
+/** One file of the current stats build (path inside the version folder, e.g. "hub/meta.json"). */
+export async function load<T>(path: string): Promise<T> {
   const v = await getVersion();
   try {
     return await fetchVersioned<T>(v, path);

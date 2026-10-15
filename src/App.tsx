@@ -27,7 +27,7 @@ const FIRST_DESKTOP_LAUNCH = (() => {
     return false;
   }
 })();
-import { ArrowDownToLine, WifiOff, AlertTriangle } from "lucide-react";
+import { ArrowDownToLine, WifiOff, AlertTriangle, X } from "lucide-react";
 import { IS_DESKTOP, IS_WEB, matchIdFromHash } from "./platform";
 import { reconcileLiveAndSchedule, playKickoffChime, applyH2HData, loadBundledH2H } from "./helpers";
 import { H2HDetailsModal } from "./components/H2HDetailsModal";
@@ -45,6 +45,8 @@ import { SettingsView } from "./components/views/SettingsView";
 import { TeamRosterModal } from "./components/TeamRosterModal";
 import { tl, locale } from "./i18n";
 import { syncPush } from "./push";
+import { STARTED_ON_HUB, navigateHub, onHubRoute, syncFromLocation, syncTabAddress } from "./hub/route";
+import { HubSearch } from "./components/hub/HubSearch";
 
 // The floating HUD is the same app loaded with ?mode=detached in its own window.
 const IS_HUD_WINDOW = window.location.search.includes("mode=detached");
@@ -73,6 +75,8 @@ export default function App() {
   // Initial tab. The desktop app's very first launch opens the Watchlist so people pick their
   // teams; the public web page opens on live scores, so a first-time visitor sees matches at once.
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
+    // Opened at a stats page address (lolworlds.com/riftwatch/player/faker): show it
+    if (STARTED_ON_HUB) return "stats";
     try {
       const hasLaunched = localStorage.getItem("riftwatch_has_launched");
       if (!hasLaunched) {
@@ -82,6 +86,49 @@ export default function App() {
     } catch {}
     return loadSettings().defaultTab || "live";
   });
+
+  const activeTabRef = useRef(activeTab);
+  const selectTab = useCallback((tab: TabKey) => {
+    syncTabAddress(activeTabRef.current, tab);
+    activeTabRef.current = tab;
+    setActiveTab(tab);
+  }, []);
+  const [searchOpen, setSearchOpen] = useState(false);
+  // One-time note about the stats hub and features people were missing (closed for good with X)
+  const [hubTip, setHubTip] = useState(() => {
+    try {
+      return !IS_HUD_WINDOW && localStorage.getItem("riftwatch_tip_hub_v1") !== "1";
+    } catch {
+      return false;
+    }
+  });
+  const closeHubTip = () => {
+    setHubTip(false);
+    try {
+      localStorage.setItem("riftwatch_tip_hub_v1", "1");
+    } catch {
+      /* fine */
+    }
+  };
+
+  // Opening any stats page (from the search, a link, a team card) brings up the Stats tab;
+  // the browser's Back / Forward move between pages and tabs.
+  useEffect(() => {
+    const offRoute = onHubRoute(() => {
+      if (activeTabRef.current !== "stats") selectTab("stats");
+    });
+    const onPop = () => {
+      const r = syncFromLocation();
+      const tab: TabKey = r ? "stats" : activeTabRef.current === "stats" ? (window.history.state?.tab as TabKey) || "live" : activeTabRef.current;
+      activeTabRef.current = tab;
+      setActiveTab(tab);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => {
+      offRoute();
+      window.removeEventListener("popstate", onPop);
+    };
+  }, [selectTab]);
 
   const [liveMatches, setLiveMatches] = useState<Match[]>([]);
   const [liveShows, setLiveShows] = useState<LiveShow[]>([]);
@@ -245,7 +292,7 @@ export default function App() {
     import("@tauri-apps/api/event")
       .then(async ({ listen }) => {
         const offTab = await listen<string>("navigate_tab", (event) => {
-          if (event.payload) setActiveTab(event.payload as TabKey);
+          if (event.payload) selectTab(event.payload as TabKey);
         });
         const offHud = await listen("toggle_hud", () => {
           const next = settingsRef.current.tickerMode === "detached" ? "docked" : "detached";
@@ -264,7 +311,7 @@ export default function App() {
       cancelled = true;
       unlisteners.forEach((off) => off());
     };
-  }, [handleUpdateSettings]);
+  }, [handleUpdateSettings, selectTab]);
 
   // ---------------------------------------------------------------
   // Data polling
@@ -360,25 +407,25 @@ export default function App() {
         refreshData(true);
       } else if (e.ctrlKey && e.key === "1") {
         e.preventDefault();
-        setActiveTab("live");
+        selectTab("live");
       } else if (e.ctrlKey && e.key === "2") {
         e.preventDefault();
-        setActiveTab("schedule");
+        selectTab("schedule");
       } else if (e.ctrlKey && e.key === "3") {
         e.preventDefault();
-        setActiveTab("stats");
+        selectTab("stats");
       } else if (e.ctrlKey && e.key === "4") {
         e.preventDefault();
-        setActiveTab("stream");
+        selectTab("stream");
       } else if (e.ctrlKey && e.key === "5") {
         e.preventDefault();
-        setActiveTab("watchlist");
+        selectTab("watchlist");
       } else if (e.ctrlKey && e.key === "6") {
         e.preventDefault();
-        setActiveTab("news");
+        selectTab("news");
       } else if (e.ctrlKey && e.key === "7") {
         e.preventDefault();
-        setActiveTab("settings");
+        selectTab("settings");
       } else if (e.ctrlKey && e.key.toLowerCase() === "s") {
         e.preventDefault();
         handleUpdateSettings({ spoilerMode: !settingsRef.current.spoilerMode });
@@ -392,7 +439,7 @@ export default function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleUpdateSettings, refreshData]);
+  }, [handleUpdateSettings, refreshData, selectTab]);
 
   // Software update check
   const handleCheckForUpdate = useCallback(async () => {
@@ -638,18 +685,18 @@ export default function App() {
   useEffect(() => {
     if (!pendingMatchId) return;
     if (liveMatches.some((m) => m.matchId === pendingMatchId)) {
-      setActiveTab("live");
+      selectTab("live");
       setHighlightMatchId(pendingMatchId);
       setPendingMatchId(null);
     } else if (schedule.some((m) => m.matchId === pendingMatchId)) {
-      setActiveTab("schedule");
+      selectTab("schedule");
       setHighlightMatchId(pendingMatchId);
       setPendingMatchId(null);
     } else if (lastSync && schedule.length > 0) {
       showToast(tl("That match isn't in the current schedule window."));
       setPendingMatchId(null);
     }
-  }, [pendingMatchId, liveMatches, schedule, lastSync, showToast]);
+  }, [pendingMatchId, liveMatches, schedule, lastSync, showToast, selectTab]);
 
   // Refresh from Riot in the background if the saved copy is older than 24 hours
   useEffect(() => {
@@ -724,15 +771,25 @@ export default function App() {
         streamStatus={streamStatus}
         onRefresh={() => refreshData(true)}
         isRefreshing={isRefreshing}
-        onSelectTab={setActiveTab}
+        onSelectTab={selectTab}
         onOpenUrl={handleOpenUrl}
         updateInfo={updateInfo}
         onInstall={installPrompt ? () => installPrompt.prompt?.() : undefined}
         liveShows={liveShows}
+        onSearch={() => setSearchOpen((v) => !v)}
       />
 
+      {/* Stats search (teams, players, tournaments, champions), opened from the header */}
+      {searchOpen && (
+        <div className="bg-[#0a0e17] border-b border-[#1e282d] px-3 sm:px-4 py-2">
+          <div className="max-w-2xl mx-auto">
+            <HubSearch big autoFocus onDone={() => setSearchOpen(false)} />
+          </div>
+        </div>
+      )}
+
       {/* Tab Navigation */}
-      <Navigation activeTab={activeTab} onSelectTab={setActiveTab} liveCount={liveMatches.length} />
+      <Navigation activeTab={activeTab} onSelectTab={selectTab} liveCount={liveMatches.length} />
 
       {/* Data outage banner */}
       {outage && (
@@ -772,7 +829,7 @@ export default function App() {
           liveMatches={liveMatches}
           upcomingMatches={schedule}
           streamEvents={streamEvents}
-          onSelectTab={setActiveTab}
+          onSelectTab={selectTab}
           onUpdateSettings={handleUpdateSettings}
           isDetached={false}
         />
@@ -788,7 +845,7 @@ export default function App() {
             <button
               onClick={() => {
                 setShowWelcome(false);
-                setActiveTab("live");
+                selectTab("live");
               }}
               className="px-3 py-1.5 rounded-md bg-[#c8aa6e] hover:bg-[#f0e6d2] text-[#091428] font-bold"
             >
@@ -804,6 +861,32 @@ export default function App() {
         </div>
       )}
 
+      {hubTip && !showWelcome && activeTab !== "stats" && (
+        <div className="bg-[#0a1420] border-b border-[#c8aa6e]/40 px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs" role="status">
+          <div className="flex-1 min-w-[14rem] text-[#9bb3c9] leading-relaxed">
+            <strong className="text-[#c8aa6e]">{tl("New: Pro Stats for every game since 2011.")}</strong>{" "}
+            {tl("Search any team, player, tournament or champion; every match has its draft, builds and a link to watch it.")}{" "}
+            <span className="text-[#7e8e9f] hidden sm:inline">
+              {tl("Also: group tables and brackets are under Schedule → Standings & Brackets, and tapping the head-to-head bar on a match shows the all-time record.")}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => {
+                closeHubTip();
+                navigateHub({ kind: "home" });
+              }}
+              className="px-3 py-1.5 rounded-md bg-[#c8aa6e] hover:bg-[#f0e6d2] text-[#091428] font-bold"
+            >
+              {tl("Open Pro Stats")}
+            </button>
+            <button onClick={closeHubTip} aria-label={tl("Close")} className="p-1 text-[#7e8e9f] hover:text-[#f0e6d2]">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Content View Container */}
       <main className="flex-1 overflow-hidden relative">
         {activeTab === "live" && (
@@ -813,7 +896,7 @@ export default function App() {
             settings={settings}
             catalog={catalog}
             onOpenUrl={handleOpenUrl}
-            onSelectTab={setActiveTab}
+            onSelectTab={selectTab}
             onUpdateSettings={handleUpdateSettings}
             onSelectTeam={(code, name) => setSelectedTeam({ code, name })}
             highlightMatchId={highlightMatchId}
@@ -840,7 +923,7 @@ export default function App() {
             settings={settings}
             catalog={catalog}
             onOpenUrl={handleOpenUrl}
-            onSelectTab={setActiveTab}
+            onSelectTab={selectTab}
           />
         )}
         {activeTab === "watchlist" && (
@@ -852,7 +935,7 @@ export default function App() {
             isRefreshingCatalog={isRefreshing}
           />
         )}
-        {activeTab === "stats" && <StatsView settings={settings} />}
+        {activeTab === "stats" && <StatsView settings={settings} onOpenUrl={handleOpenUrl} />}
         {activeTab === "news" && <NewsView onOpenUrl={handleOpenUrl} />}
         {activeTab === "settings" && (
           <SettingsView

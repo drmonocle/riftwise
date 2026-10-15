@@ -1,6 +1,6 @@
 import React from "react";
 import { AppSettings, Match, StreamEvent, StreamStatus, AppUpdateInfo, LiveShow } from "../types";
-import { Radio, RefreshCw, Eye, EyeOff, Heart, Sparkles, Minimize2, Maximize2, Download, Smartphone } from "lucide-react";
+import { Radio, RefreshCw, Eye, EyeOff, Heart, Sparkles, Minimize2, Maximize2, Download, Smartphone, Search } from "lucide-react";
 import { formatStreamHeaderTitle, streamPhase } from "../helpers";
 import { APP_VERSION } from "../version";
 import { IS_DESKTOP, IS_WEB, IS_WINDOWS_BROWSER, DESKTOP_DOWNLOAD_URL } from "../platform";
@@ -21,6 +21,8 @@ interface HeaderProps {
   onInstall?: () => void;
   /** Broadcasts on air with no match in progress (e.g. a delayed start). */
   liveShows?: LiveShow[];
+  /** Opens the stats search (teams, players, tournaments, champions). */
+  onSearch?: () => void;
 }
 
 // Shared look for the small header controls: one line, never wrapping.
@@ -40,6 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
   updateInfo,
   onInstall,
   liveShows = [],
+  onSearch,
 }) => {
   const hasLive = liveMatches.length > 0;
   const onAir = !hasLive && liveShows.length > 0 ? liveShows[0] : null;
@@ -152,6 +155,17 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="hidden md:inline">{tl("Download for Windows")}</span>
             <span className="md:hidden">{tl("Windows")}</span>
           </a>
+        )}
+        {onSearch && (
+          <button
+            onClick={onSearch}
+            className={`${pill} bg-[#0a1420] border-[#1e282d] text-[#f0e6d2] hover:bg-[#121e2d] hover:border-[#c8aa6e]/60`}
+            aria-label={tl("Search teams, players and tournaments")}
+            title={tl("Search teams, players and tournaments")}
+          >
+            <Search className="w-3.5 h-3.5" />
+            <span className="hidden lg:inline">{tl("Search")}</span>
+          </button>
         )}
         <button
           onClick={() => onUpdateSettings({ spoilerMode: !settings.spoilerMode })}
