@@ -1,7 +1,7 @@
 /** One series (a "match": Bo1 to Bo5): every game's draft, scoreboard, builds, runes and objectives. */
 import React, { useState } from "react";
 import { PlayCircle, Swords, Clock } from "lucide-react";
-import { tl, tc, roleName, locale } from "../../i18n";
+import { tl, tc, tk, roleName, locale } from "../../i18n";
 import { champName } from "../../champions";
 import { loadHubSeries } from "../../hub/data";
 import type { GamePlayer, HubGame, HubSeries, SideStats } from "../../hub/types";
@@ -32,7 +32,7 @@ const fmtMin = (m?: number | null) => {
   return `${mm}:${String(ss).padStart(2, "0")}`;
 };
 const DRAKE_LABEL: Record<string, string> = {
-  infernal: "Infernal", mountain: "Mountain", ocean: "Ocean", cloud: "Cloud", hextech: "Hextech", chemtech: "Chemtech",
+  infernal: tk("Infernal"), mountain: tk("Mountain"), ocean: tk("Ocean"), cloud: tk("Cloud"), hextech: tk("Hextech"), chemtech: tk("Chemtech"),
 };
 
 export const MatchPage: React.FC<{ slug: string; onOpenUrl: (url: string) => void }> = ({ slug, onOpenUrl }) => {

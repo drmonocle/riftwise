@@ -7,6 +7,7 @@ import { champName } from "../../champions";
 import { loadHubPlayer } from "../../hub/data";
 import type { HubPlayer } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
+import { PlayerGamesArchive } from "./Archives";
 import {
   card,
   ChampIcon,
@@ -278,6 +279,8 @@ const PlayerView: React.FC<{ p: HubPlayer; onOpenUrl: (url: string) => void }> =
           </ul>
         </Section>
       </div>
+
+      <PlayerGamesArchive slug={p.u} />
     </div>
   );
 };

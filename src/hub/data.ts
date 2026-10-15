@@ -189,3 +189,6 @@ export function findHubTeam(index: HubIndex, name: string, code?: string): strin
   if (!t && c) t = pick(index.teams.filter((x) => x[5] && x[5].toLowerCase().split(" | ").includes(c)));
   return t ? slugOf(t[0], t[1]) : null;
 }
+
+export const loadTeamSeries = (slug: string) => load<import("./types").TeamSeriesRow[]>(`hub/teamseries/${slug}.json`);
+export const loadPlayerGames = (slug: string) => load<import("./types").PlayerGameRow[]>(`hub/playergames/${slug}.json`);

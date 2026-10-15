@@ -15,6 +15,10 @@ folder, so one latest.json switch publishes both:
   hub/event/<slug>.json             tournament page: info, results, standings, stages and bracket, leaders
   hub/game/<slug>.json              one series: each game's draft, players, items, runes, objectives, VOD
   hub/champ/<slug>.json             champion page
+  hub/teamseries/<slug>.json        every series of a team: [date, opponent, its slug, won, lost, event, event slug,
+                                    series slug, stage, name played under], newest first
+  hub/playergames/<slug>.json       every game of a player with stats: [date, series slug, champion, k, d, a, won, team,
+                                    opponent, event, role, event slug], newest first
   hub/events/<year>.json            all tournaments of a year
   hub/records.json, hub/titles.json the Stats tab's records and title lists, with links to the hub pages
   hub/alias.json                    {"team": {old slug: current slug}}: teams that changed name
@@ -421,6 +425,8 @@ def build(ctx) -> dict:
     p_best = defaultdict(dict)         # page -> stat -> (value, date, champ, opp, event, game slug)
     t_events = defaultdict(list)       # fid -> per-tournament rows
     t_recent = defaultdict(list)       # fid -> heap of the newest series
+    t_series = defaultdict(list)       # team slug -> every series it played (results archive)
+    p_games = defaultdict(list)        # page -> every game with stats (game log)
     champ = defaultdict(lambda: {"years": defaultdict(lambda: [0, 0, 0]), "roles": Counter(),
                                  "players": defaultdict(lambda: [0, 0, 0, 0, 0]), "recent": [], "p": 0, "w": 0, "b": 0,
                                  "best": None})
@@ -479,7 +485,10 @@ def build(ctx) -> dict:
 
         # Per-tournament aggregates
         tp = defaultdict(lambda: {"g": 0, "w": 0, "k": 0, "d": 0, "a": 0, "cs": 0, "gold": 0, "dmg": 0, "min": 0.0,
-                                  "team": Counter(), "champs": Counter()})
+                                  "team": Counter(), "champs": Counter(), "roles": Counter(), "tk": 0, "vis": 0, "vg": 0})
+        # team stats in this tournament (games with a scoreboard): sums, divided by "g" in the app
+        tts = defaultdict(lambda: {"g": 0, "w": 0, "min": 0.0, "k": 0, "d": 0, "gd": 0, "drag": 0, "bar": 0, "tow": 0,
+                                   "her": 0, "grub": 0})
         tc = defaultdict(lambda: [0, 0, 0])  # champion -> picks, wins, bans
         tteam = defaultdict(lambda: {"g": 0, "w": 0, "sg": 0, "sw": 0, "name": None})
         stage_rows = defaultdict(list)
@@ -584,11 +593,29 @@ def build(ctx) -> dict:
                         m = parse_len(t["gamelength"])
                         if m:
                             item["min"] = r1(m)
+                    if t is not None and t["team1_gold"] is not None and t["team2_gold"] is not None:
+                        for side, name, other in (("blue", g["t1"], "red"), ("red", g["t2"], "blue")):
+                            sd, od = sides.get(side, {}), sides.get(other, {})
+                            z = tts[name]
+                            z["g"] += 1
+                            z["w"] += 1 if g["w"] == name else 0
+                            z["min"] += item.get("min") or 0
+                            z["k"] += sd.get("k") or 0
+                            z["d"] += od.get("k") or 0
+                            z["gd"] += (sd.get("gold") or 0) - (od.get("gold") or 0)
+                            z["drag"] += sd.get("drag") or 0
+                            z["bar"] += sd.get("barons") or 0
+                            z["tow"] += sd.get("towers") or 0
+                            z["her"] += sd.get("heralds") or 0
+                            z["grub"] += sd.get("grubs") or 0
                     rows = prow.get(gid, []) if gid else []
                     if rows:
                         n_stats_games += 1
                         plist = []
                         opp_of = {a: b, b: a}
+                        team_kills = Counter()
+                        for r in rows:
+                            team_kills[r["team"]] += r["kills"] or 0
                         for r in sorted(rows, key=lambda r: (r["side"] or 0, ROLE_ORDER.get(r["role"] or "", 9))):
                             page = r["page_key"]
                             k, d, aa = r["kills"] or 0, r["deaths"] or 0, r["assists"] or 0
@@ -616,9 +643,16 @@ def build(ctx) -> dict:
                                     x["dmg"] += r["damage"] or 0
                                     x["min"] += mins
                                 x["team"][team_name] += 1
+                                x["roles"][r["role"] or "?"] += 1
+                                x["tk"] += team_kills[team_name]
+                                if r["vision"] is not None and mins:
+                                    x["vis"] += r["vision"]
+                                    x["vg"] += mins
                                 if r["champion"]:
                                     x["champs"][r["champion"]] += 1
                                 opp = opp_of.get(team_name, "")
+                                p_games[page].append((g["date"][:10], gslug, r["champion"] or "", k, d, aa, won, team_name, opp, en,
+                                                      r["role"] or "", eslug))
                                 latest_heap(p_recent[page], (g["date"], gslug, r["champion"] or "", k, d, aa, won, opp, en, team_name), 20)
                                 if ctx.consistent.get(gid):
                                     for key, val in (("kills", k), ("assists", aa), ("dmg", r["damage"] or 0), ("cs", r["cs"] or 0)):
@@ -665,7 +699,7 @@ def build(ctx) -> dict:
                                     1 if any(g.get("p") for g in games_out) else 0))
 
             # Team rows for this tournament and the team pages' recent series
-            for name, u, mine, theirs, opp in ((an, au, wa, wb, bn), (bn, bu, wb, wa, an)):
+            for name, u, mine, theirs, opp, opp_u in ((an, au, wa, wb, bn, bu), (bn, bu, wb, wa, an, au)):
                 x = tteam[(name, u)]
                 x["g"] += mine + theirs
                 x["w"] += mine
@@ -675,6 +709,7 @@ def build(ctx) -> dict:
                 if u and played:
                     fid = ctx.team_of(name, date[:10] if date else "0000")
                     latest_heap(t_recent[fid], (date, gslug or "", opp, mine, theirs, en, eslug), 15)
+                    t_series[u].append((date[:10], opp, opp_u, mine, theirs, en, eslug, gslug, tab or "", name))
 
             stage_rows[tab or ""].append({
                 "g": gslug, "a": an, "au": au, "ac": ac, "b": bn, "bu": bu, "bc": bc,
@@ -740,6 +775,18 @@ def build(ctx) -> dict:
                 "dpm": lead(lambda x: x["dmg"] / x["min"] if x["min"] else None, fmt=round),
                 "pool": lead(lambda x: len(x["champs"])),
             }
+        # Every player's numbers in this tournament (sums; the app works out the per-game and per-minute rates)
+        players_out = []
+        for page, x in sorted(tp.items(), key=lambda kv: -kv[1]["g"]):
+            team = x["team"].most_common(1)[0][0]
+            players_out.append({
+                "n": ctx.pname(page), "u": player_slug.get(page), "t": team, "tu": team_ref(team, last_date or "")[1],
+                "r": x["roles"].most_common(1)[0][0], "g": x["g"], "w": x["w"], "k": x["k"], "d": x["d"], "a": x["a"],
+                "tk": x["tk"], "cs": x["cs"], "gold": x["gold"], "dmg": x["dmg"], "min": r1(x["min"]),
+                "vis": x["vis"], "vmin": r1(x["vg"]), "c": [c for c, _ in x["champs"].most_common(3)], "nc": len(x["champs"]),
+            })
+        team_stats_out = sorted(({"t": n, "u": team_ref(n, last_date or "")[1], **{k: (r1(v) if k == "min" else v) for k, v in z.items()}}
+                                 for n, z in tts.items() if z["g"]), key=lambda x: (-x["w"] / x["g"], -x["g"]))
         champs_out = sorted(({"c": c, "p": v[0], "w": v[1], "b": v[2]} for c, v in tc.items()),
                             key=lambda x: -(x["p"] + x["b"]))[:40]
         teams_out = sorted(({"t": n, "u": u, **v} for (n, u), v in tteam.items()),
@@ -763,6 +810,7 @@ def build(ctx) -> dict:
             "results": res_out, "resultsFrom": res_from if res_out else None,
             "standings": stand_out, "stages": stages, "teams": teams_out,
             "leaders": leaders, "champs": champs_out, "statsGames": n_stats_games,
+            "players": players_out, "teamStats": team_stats_out,
             "games": sum(len(v) for v in series.values()), "series": sum(1 for st in stages for _ in st["series"]),
         }
         out.json(f"event/{eslug}.json", {k: v for k, v in event.items() if v not in (None, [], {})})
@@ -892,6 +940,11 @@ def build(ctx) -> dict:
                             1 if t["g"] >= SEO_MIN_GAMES else 0))
     search_teams.sort(key=lambda x: -x[2])
 
+    # Every series of each team (results archive, Compare's head-to-head list): newest first
+    for u, rows in t_series.items():
+        rows.sort(key=lambda r: r[0], reverse=True)
+        out.json(f"teamseries/{u}.json", [list(r) for r in rows])
+
     # -- player pages -------------------------------------------------------------------------
     search_players = []
     titles_by_event = defaultdict(list)
@@ -936,6 +989,9 @@ def build(ctx) -> dict:
             "titles": [{"t": t, "date": d, "kind": k, "e": tname_slug.get(t)} for t, d, k in my_titles][:60],
         }
         out.json(f"player/{u}.json", obj)
+        games = sorted(p_games.get(page, []), key=lambda r: r[0], reverse=True)
+        if games:
+            out.json(f"playergames/{u}.json", [list(r) for r in games])
         search_players.append([name, short_slug(name, u), club, p["g"], last_date[:4], (role or "")[:1],
                                " ".join(x for x in (bio.get("Name"), bio.get("NativeName")) if x) if p["g"] >= 50 else ""])
         seo["player"].append((u, f"{name} – pro stats, champions and career | {SITE}",

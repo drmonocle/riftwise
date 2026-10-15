@@ -1,11 +1,12 @@
 /** Tournament page: results and prize money, standings, bracket, every series, leaders and champions. */
 import React, { useMemo, useState } from "react";
 import { Trophy, MapPin, CalendarDays, Coins } from "lucide-react";
-import { tl, tn, regionName, stageName } from "../../i18n";
+import { tl, tn, tk, regionName, stageName } from "../../i18n";
 import { winRate } from "../../stats";
 import { loadHubEvent } from "../../hub/data";
 import type { HubEvent, SeriesRow, Stage, StandingRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
+import { EventPlayerStats, EventTeamStatsTable } from "./EventTables";
 import {
   card,
   ChampLink,
@@ -148,6 +149,9 @@ const EventView: React.FC<{ e: HubEvent }> = ({ e }) => {
       {lists.length > 0 && <StageLists stages={lists} />}
 
       {e.leaders && Object.keys(e.leaders).length > 0 && <Leaders e={e} />}
+
+      <EventPlayerStats e={e} hidden={resultsHidden} />
+      <EventTeamStatsTable e={e} hidden={resultsHidden} />
 
       <div className="grid gap-3 md:grid-cols-2">
         {e.champs && e.champs.length > 0 && <EventChamps e={e} />}
@@ -315,11 +319,11 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
 };
 
 const LEADER_TITLES: Record<string, string> = {
-  kda: "Best KDA",
-  kills: "Kills per game",
-  csm: "CS per minute",
-  dpm: "Damage per minute",
-  pool: "Most champions played",
+  kda: tk("Best KDA"),
+  kills: tk("Kills per game"),
+  csm: tk("CS per minute"),
+  dpm: tk("Damage per minute"),
+  pool: tk("Most champions played"),
 };
 
 const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
