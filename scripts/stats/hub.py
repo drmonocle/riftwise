@@ -992,12 +992,19 @@ def build(ctx) -> dict:
     latest_major = [x for y in years[:2] for x in events_by_year[y]
                     if x.get("lv") == "Primary" and not x.get("q") and (x.get("en") or "") <= today and x.get("g", 0) >= 4 and not x.get("p")]
     latest_major.sort(key=lambda x: x.get("en") or "", reverse=True)
+    # Running now or starting within two weeks (main leagues and internationals, whole events not stages)
+    soon = (datetime.date.today() + datetime.timedelta(days=14)).isoformat()
+    current = [x for y in years[:2] for x in events_by_year[y]
+               if x.get("lv") == "Primary" and not x.get("q") and not x.get("p") and (x.get("st") or "9") <= soon
+               and (x.get("en") or "") >= today]
+    current.sort(key=lambda x: (x.get("r") != "International", x.get("st") or ""))
     this_year = today[:4]
     busiest = sorted(((x, p) for x, p in ((ctx.players[pg], pg) for pg in ctx.players)
                       if x["years"].get(this_year, {}).get("g", 0) >= 10),
                      key=lambda t: -t[0]["years"][this_year]["g"])[:12]
     home = {
         "latest": latest_major[:12],
+        "now": [{k: v for k, v in x.items() if k not in ("w", "wu")} for x in current[:12]],
         "busiest": [{"n": ctx.pname(pg), "u": player_slug.get(pg), "g": x["years"][this_year]["g"], "w": x["years"][this_year]["w"],
                      "kda": kda(x["years"][this_year]["k"], x["years"][this_year]["d"], x["years"][this_year]["a"])} for x, pg in busiest],
         "year": this_year,

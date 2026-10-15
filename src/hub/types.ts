@@ -45,6 +45,8 @@ export interface EventListItem {
 
 export interface HubHome {
   latest: EventListItem[];
+  /** running now or starting within two weeks (builds from 2026-10-15 on) */
+  now?: EventListItem[];
   busiest: { n: string; u: string | null; g: number; w: number; kda: number }[];
   year: string;
 }

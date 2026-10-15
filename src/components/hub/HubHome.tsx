@@ -52,6 +52,20 @@ export const HubHome: React.FC = () => {
       <Page state={home}>
         {(h) => (
           <div className="grid gap-3 md:grid-cols-2">
+            {h.now && h.now.length > 0 && (
+              <Section title={tl("Happening now")}>
+                <ul className="text-xs space-y-1.5">
+                  {h.now.map((e) => (
+                    <li key={e.u} className="flex items-center justify-between gap-2 min-w-0">
+                      <EventLink name={e.n} u={e.u} />
+                      <span className="text-[#7e8e9f] shrink-0">
+                        {fmtDate(e.st, false)} – {fmtDate(e.en, false)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </Section>
+            )}
             <Section title={tl("Latest tournaments")}>
               <ul className="text-xs space-y-1.5">
                 {h.latest.map((e) => (
