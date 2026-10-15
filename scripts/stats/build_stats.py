@@ -305,6 +305,10 @@ def main() -> None:
 
     con = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
     con.row_factory = sqlite3.Row
+    # The build reads the same tables several times; on the server the disk is often busy with other
+    # programs, so keep what was read in memory (map the file, 2 GB page cache).
+    con.execute("PRAGMA mmap_size = 8000000000")
+    con.execute("PRAGMA cache_size = -2000000")
 
     # -- Games -----------------------------------------------------------------
     games = {}
