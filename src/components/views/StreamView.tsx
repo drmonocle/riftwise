@@ -3,6 +3,7 @@ import { StreamEvent, StreamStatus, AppSettings, CatalogData } from "../../types
 import { streamPhase, streamEventTitle, upcomingStreamMatches } from "../../helpers";
 import { Radio, Play, ExternalLink, Flame, Star, Moon, Calendar, ChevronDown } from "lucide-react";
 import { tl, tn, locale, stageName } from "../../i18n";
+import { StreamBracket } from "../hub/StreamBracket";
 
 interface StreamViewProps {
   events: StreamEvent[];
@@ -200,6 +201,9 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
             </button>
           </div>
         </div>
+        <div className="mt-4">
+          <StreamBracket events={events} now={now} />
+        </div>
       </div>
     );
   }
@@ -379,6 +383,8 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
           </p>
         </section>
       )}
+
+      <StreamBracket events={events} now={now} />
     </div>
   );
 };

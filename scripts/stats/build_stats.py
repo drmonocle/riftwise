@@ -22,6 +22,9 @@ well-known links Leaguepedia's table lacks (MANUAL_LINKS).
 Each run writes a new <version> folder and only then points latest.json at it, so readers never
 see a half-written build. Older version folders are removed (the newest two are kept).
 
+The stats hub (tournament, series, champion pages and readable page links) is built by hub.py into
+<version>/hub/ in the same run; see that file. --no-hub skips it.
+
   python build_stats.py --db C:\\Users\\TV\\twitch_bot\\data\\pro_games_catalog.db --out C:\\inetpub\\wwwroot\\riftwatch\\stats
 """
 import argparse
@@ -33,7 +36,9 @@ import os
 import re
 import shutil
 import sqlite3
+import sys
 import time
+import types
 import urllib.parse
 import urllib.request
 from collections import Counter, defaultdict
@@ -290,7 +295,11 @@ def main() -> None:
     ap.add_argument("--db", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--renames-cache", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "team_renames.json"))
+    ap.add_argument("--lp-db", help="Leaguepedia sidecar database (default: lp_all_games.db next to --db)")
+    ap.add_argument("--no-hub", action="store_true", help="skip the stats hub pages")
     args = ap.parse_args()
+    if not args.lp_db:
+        args.lp_db = os.path.join(os.path.dirname(os.path.abspath(args.db)), "lp_all_games.db")
     t0 = time.time()
     checks = Counter()
 
@@ -568,7 +577,7 @@ def main() -> None:
             game_champs[gid].append((champ, won, k, d, a, r["role"] or "?"))
 
         if g["major"] and g["min"] >= RECORD_MIN_MINUTES and consistent[gid]:
-            base = {"pl": pname(page), "ps": page, "team": team, "opp": opp, "c": champ, "date": g["date"],
+            base = {"pl": pname(page), "ps": page, "pk": page, "gid": gid, "team": team, "opp": opp, "c": champ, "date": g["date"],
                     "t": g["t"], "kda": f"{k}/{d}/{a}"}
             record_rows["kills"].append((k, base))
             record_rows["assists"].append((a, base))
@@ -684,6 +693,14 @@ def main() -> None:
     # -- Write -------------------------------------------------------------------------
     version = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d%H%M%S")
     vdir = os.path.join(args.out, version)
+    # The build readers use right now: the hub hard-links its unchanged files from there
+    prev_vdir = None
+    try:
+        with open(os.path.join(args.out, "latest.json"), encoding="utf-8") as f:
+            prev = os.path.join(args.out, str(json.load(f)["version"]))
+        prev_vdir = prev if os.path.isdir(prev) else None
+    except (OSError, ValueError, KeyError):
+        pass
     os.makedirs(vdir, exist_ok=True)
 
     search_teams, search_players = [], []
@@ -806,7 +823,7 @@ def main() -> None:
     checks["top-league games with confirmed kills"] = len(killed)
 
     def game_row(gid, g, v):
-        return {"v": v, "a": g["t1"], "b": g["t2"], "w": g["w"], "date": g["date"], "t": g["t"],
+        return {"v": v, "gid": gid, "a": g["t1"], "b": g["t2"], "w": g["w"], "date": g["date"], "t": g["t"],
                 "min": r1(g["min"]), "score": f"{g['k1']}-{g['k2']}" if g["k1"] is not None else None}
 
     comebacks = []
@@ -858,10 +875,10 @@ def main() -> None:
         },
         "player": {k: top(v) for k, v in record_rows.items()},
         "career": {
-            "games": [{"v": p["g"], "pl": pname(pg), "ps": slug(pg)} for pg, p in sorted(players.items(), key=lambda kv: -kv[1]["g"])[:10]],
-            "kills": [{"v": p["k"], "pl": pname(pg), "ps": slug(pg)} for pg, p in sorted(players.items(), key=lambda kv: -kv[1]["k"])[:10]],
-            "assists": [{"v": p["a"], "pl": pname(pg), "ps": slug(pg)} for pg, p in sorted(players.items(), key=lambda kv: -kv[1]["a"])[:10]],
-            "pool": [{"v": len(p["champs"]), "pl": pname(pg), "ps": slug(pg)} for pg, p in sorted(players.items(), key=lambda kv: -len(kv[1]["champs"]))[:10]],
+            "games": [{"v": p["g"], "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(players.items(), key=lambda kv: -kv[1]["g"])[:10]],
+            "kills": [{"v": p["k"], "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(players.items(), key=lambda kv: -kv[1]["k"])[:10]],
+            "assists": [{"v": p["a"], "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(players.items(), key=lambda kv: -kv[1]["a"])[:10]],
+            "pool": [{"v": len(p["champs"]), "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(players.items(), key=lambda kv: -len(kv[1]["champs"]))[:10]],
         },
         "team": {
             "streaks": [{"v": n, "team": fr_name[f], "s": tslug(f), "date": d} for f, (n, d) in sorted(best_by_team.items(), key=lambda kv: -kv[1][0])[:10]],
@@ -886,6 +903,24 @@ def main() -> None:
         "from": min(g["date"] for g in games.values()), "to": max(g["date"] for g in games.values()),
         "champions": champ_index,
     })
+    if not args.no_hub:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import hub
+        try:
+            hub_stats = hub.build(types.SimpleNamespace(
+                con=con, lp_db=args.lp_db, vdir=vdir, prev_vdir=prev_vdir, version=version, checks=checks,
+                games=games, tstats=tstats, consistent=consistent, players=players, teams=teams,
+                team_series=team_series, series_list=series_list, titles=titles, titles_by_team=titles_by_team,
+                fr_name=fr_name, fr_eras=fr_eras, fr_games=fr_games, team_of=team_of, pname=pname,
+                team_shorts=team_shorts, team_players=team_players, team_roles=team_roles, player_events=player_events,
+                records=records,
+            ))
+        except Exception:
+            # Leave the last good build in place rather than publish one without its hub
+            shutil.rmtree(vdir, ignore_errors=True)
+            raise
+        print(f"hub: {hub_stats}")
+
     write(os.path.join(vdir, "checks.json"), dict(checks))
     for k, v in checks.items():
         print(f"  check: {k}: {v}")

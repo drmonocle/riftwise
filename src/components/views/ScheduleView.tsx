@@ -161,7 +161,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             }`}
           >
             <Trophy className="w-3.5 h-3.5" />
-            <span>{tl("League Standings")}</span>
+            <span>{tl("Standings & Brackets")}</span>
           </button>
         </div>
       </div>

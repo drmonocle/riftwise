@@ -31,15 +31,37 @@ const webPlugin = {
     ),
 };
 
+// `vite preview` only: RIFTWATCH_STATS_DIR=<folder> serves a stats build made on this PC
+// (scripts/stats/build_stats.py --out <folder>) at /riftwatch/stats, for testing new stats pages.
+const localStats = {
+  name: "riftwatch-local-stats",
+  configurePreviewServer(server: any) {
+    const dir = process.env.RIFTWATCH_STATS_DIR;
+    if (!dir) return;
+    server.middlewares.use("/riftwatch/stats", (req: any, res: any, next: any) => {
+      const file = path.join(dir, decodeURIComponent((req.url || "/").split("?")[0]));
+      if (!file.startsWith(path.resolve(dir)) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) return next();
+      res.setHeader("Content-Type", file.endsWith(".json") ? "application/json; charset=utf-8" : "text/plain; charset=utf-8");
+      fs.createReadStream(file).pipe(res);
+    });
+  },
+};
+
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), tailwindcss(), ...(mode === "web" ? [webPlugin] : [])],
+  plugins: [react(), tailwindcss(), ...(mode === "web" ? [webPlugin, localStats] : [])],
 
   // `npm run build:web` builds the browser version served at lolworlds.com/riftwatch/
   base: mode === "web" ? "/riftwatch/" : "/",
   build: mode === "web" ? { outDir: "dist-web", emptyOutDir: true } : undefined,
 
   // `vite preview` of the web build: send the alert API to the live server, as IIS does in production
-  preview: { proxy: { "/riftwatch/api": { target: "https://lolworlds.com", changeOrigin: true } } },
+  preview: {
+    proxy: {
+      "/riftwatch/api": { target: "https://lolworlds.com", changeOrigin: true },
+      // the data files only: /riftwatch/stats itself is the stats page
+      "^/riftwatch/stats/(latest\\.json|\\d+/)": { target: "https://lolworlds.com", changeOrigin: true },
+    },
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
