@@ -58,6 +58,7 @@ type store struct {
 	pages     map[string]map[string]entry // kind -> slug -> entry
 	order     map[string][]string         // kind -> slugs in file order (for sitemaps)
 	alias     map[string]string           // old team slug -> current
+	failed    string                      // a build without hub files (logged once, not retried)
 	indexHTML string
 	indexMod  time.Time
 	checked   time.Time
@@ -88,7 +89,7 @@ func (s *store) refresh() {
 		Version string `json:"version"`
 	}
 	b, err := os.ReadFile(filepath.Join(s.site, "stats", "latest.json"))
-	if err != nil || json.Unmarshal(b, &latest) != nil || latest.Version == "" || latest.Version == s.version {
+	if err != nil || json.Unmarshal(b, &latest) != nil || latest.Version == "" || latest.Version == s.version || latest.Version == s.failed {
 		return
 	}
 	hub := filepath.Join(s.site, "stats", latest.Version, "hub")
@@ -98,6 +99,7 @@ func (s *store) refresh() {
 		f, err := os.Open(filepath.Join(hub, "seo", kind+".tsv"))
 		if err != nil {
 			log.Printf("stats %s: no %s.tsv (%v); keeping the previous build", latest.Version, kind, err)
+			s.failed = latest.Version
 			return
 		}
 		m := map[string]entry{}
