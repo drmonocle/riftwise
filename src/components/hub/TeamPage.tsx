@@ -6,6 +6,7 @@ import { winRate } from "../../stats";
 import { loadHubTeam } from "../../hub/data";
 import type { HubTeam } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
+import { TeamSeriesArchive } from "./Archives";
 import {
   card,
   ChampLink,
@@ -197,6 +198,8 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
           </div>
         </Section>
       )}
+
+      <TeamSeriesArchive slug={t.u} teamName={t.name} />
 
       <Section title={tl("Roster")}>
         <div className="space-y-2">

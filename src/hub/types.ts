@@ -120,7 +120,55 @@ export interface HubEvent {
   statsGames?: number;
   games?: number;
   series?: number;
+  /** every player's sums in this tournament (rates are worked out in the app) */
+  players?: EventPlayer[];
+  teamStats?: EventTeamStats[];
 }
+
+export interface EventPlayer {
+  n: string;
+  u: string | null;
+  t: string;
+  tu: string | null;
+  r: string;
+  g: number;
+  w: number;
+  k: number;
+  d: number;
+  a: number;
+  /** team kills in the games played (for kill participation) */
+  tk: number;
+  cs: number;
+  gold: number;
+  dmg: number;
+  /** minutes of the games with cs / gold / damage */
+  min: number;
+  vis: number;
+  vmin: number;
+  c: string[];
+  nc: number;
+}
+
+export interface EventTeamStats {
+  t: string;
+  u: string | null;
+  g: number;
+  w: number;
+  min: number;
+  k: number;
+  d: number;
+  gd: number;
+  drag: number;
+  bar: number;
+  tow: number;
+  her: number;
+  grub: number;
+}
+
+/** [date, opponent, opponent slug, won, lost, event, event slug, series slug, stage, name played under] */
+export type TeamSeriesRow = [string, string, string | null, number, number, string, string, string | null, string, string];
+/** [date, series slug, champion, k, d, a, won, team, opponent, event, role, event slug] */
+export type PlayerGameRow = [string, string, string, number, number, number, number, string, string, string, string, string];
 
 export interface SideStats {
   k?: number;

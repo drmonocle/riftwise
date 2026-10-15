@@ -29,6 +29,7 @@ import {
   usePageTitle,
 } from "../hub/ui";
 import { HubSearch } from "../hub/HubSearch";
+import { HeadToHeadSeries } from "../hub/Archives";
 import { HubHome, EventsBrowse } from "../hub/HubHome";
 import { TeamPage } from "../hub/TeamPage";
 import { PlayerPage } from "../hub/PlayerPage";
@@ -534,6 +535,9 @@ const ComparePanel: React.FC = () => {
             <tbody>{rows}</tbody>
           </table>
         </div>
+      )}
+      {kind === "team" && a && b && data.a && data.b && (
+        <HeadToHeadSeries a={a} b={b} aName={data.a.name} bName={data.b.name} />
       )}
     </div>
   );

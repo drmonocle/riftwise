@@ -1,7 +1,7 @@
 /** One search box for every team, player, tournament and champion since 2011. */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Users, User, Trophy, Swords, X } from "lucide-react";
-import { tl, roleName } from "../../i18n";
+import { tl, tk, roleName } from "../../i18n";
 import { champName } from "../../champions";
 import { isNonLatin } from "../../searchAliases";
 import { HubHit, HubIndex, HubSearchKind, loadHubIndex, searchHub } from "../../hub/data";
@@ -12,10 +12,10 @@ const KIND_ROUTE: Record<HubSearchKind, HubRoute["kind"]> = { team: "team", play
 export const hitRoute = (h: HubHit): HubRoute => ({ kind: KIND_ROUTE[h.kind], slug: h.slug }) as HubRoute;
 
 const GROUPS: { kind: HubSearchKind; label: string; icon: React.ReactNode }[] = [
-  { kind: "team", label: "Teams", icon: <Users className="w-3 h-3" /> },
-  { kind: "player", label: "Players", icon: <User className="w-3 h-3" /> },
-  { kind: "event", label: "Tournaments", icon: <Trophy className="w-3 h-3" /> },
-  { kind: "champ", label: "Champions", icon: <Swords className="w-3 h-3" /> },
+  { kind: "team", label: tk("Teams"), icon: <Users className="w-3 h-3" /> },
+  { kind: "player", label: tk("Players"), icon: <User className="w-3 h-3" /> },
+  { kind: "event", label: tk("Tournaments"), icon: <Trophy className="w-3 h-3" /> },
+  { kind: "champ", label: tk("Champions"), icon: <Swords className="w-3 h-3" /> },
 ];
 
 export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big?: boolean; placeholder?: string }> = ({ autoFocus, onDone, big, placeholder }) => {
