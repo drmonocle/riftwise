@@ -25,6 +25,7 @@ Slugs are readable ("faker", "t1", "worlds-2025-main-event") and are what the pa
 (lolworlds.com/riftwatch/player/faker). Inputs are read-only: the catalog plus, when present, the
 Leaguepedia sidecar database (lp_all_games.db) for every series' stage, order and score.
 """
+import concurrent.futures
 import datetime
 import hashlib
 import heapq
@@ -34,6 +35,7 @@ import math
 import os
 import re
 import sqlite3
+import threading
 import time
 import unicodedata
 from collections import Counter, defaultdict
@@ -172,7 +174,13 @@ def parse_len(s):
 
 class Writer:
     """Writes hub files. A file whose content is the same as in the previous build is hard-linked to
-    it instead (most series never change again), so a nightly build stays fast and small."""
+    it instead (most series never change again), so a nightly build stays fast and small.
+
+    Files are written by a pool of threads: on the server each new file waits for the virus scanner
+    and a busy disk, so writing many at once is several times faster than one after another."""
+
+    THREADS = 16
+    MAX_PENDING = 4000  # files queued but not yet on disk (bounds memory)
 
     def __init__(self, vdir, prev_vdir):
         self.root = os.path.join(vdir, "hub")
@@ -187,6 +195,31 @@ class Writer:
         self.manifest = {}
         self.dirs = set()
         self.written = self.linked = self.bytes = 0
+        self.lock = threading.Lock()
+        self.slots = threading.BoundedSemaphore(self.MAX_PENDING)
+        self.pool = concurrent.futures.ThreadPoolExecutor(self.THREADS)
+        self.errors = []
+
+    def _store(self, rel, path, data, link):
+        try:
+            if link:
+                try:
+                    os.link(os.path.join(self.prev_root, rel), path)
+                    with self.lock:
+                        self.linked += 1
+                    return
+                except OSError:
+                    pass
+            with open(path, "wb") as f:
+                f.write(data)
+            with self.lock:
+                self.written += 1
+                self.bytes += len(data)
+        except Exception as e:  # reported by finish()
+            with self.lock:
+                self.errors.append(f"{rel}: {e}")
+        finally:
+            self.slots.release()
 
     def _put(self, rel, data: bytes):
         h = hashlib.sha1(data).hexdigest()[:16]
@@ -196,17 +229,8 @@ class Writer:
         if d not in self.dirs:
             os.makedirs(d, exist_ok=True)
             self.dirs.add(d)
-        if self.prev.get(rel) == h:
-            try:
-                os.link(os.path.join(self.prev_root, rel), path)
-                self.linked += 1
-                return
-            except OSError:
-                pass
-        with open(path, "wb") as f:
-            f.write(data)
-        self.written += 1
-        self.bytes += len(data)
+        self.slots.acquire()
+        self.pool.submit(self._store, rel, path, data, self.prev.get(rel) == h)
 
     def json(self, rel, obj):
         self._put(rel, json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
@@ -215,6 +239,9 @@ class Writer:
         self._put(rel, text.encode("utf-8"))
 
     def finish(self):
+        self.pool.shutdown(wait=True)
+        if self.errors:
+            raise OSError(f"{len(self.errors)} hub files could not be written, e.g. {self.errors[:3]}")
         with open(os.path.join(self.root, "manifest.json"), "w", encoding="utf-8") as f:
             json.dump(self.manifest, f, separators=(",", ":"))
 
