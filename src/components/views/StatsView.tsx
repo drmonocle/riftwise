@@ -22,19 +22,10 @@ import {
 } from "../../stats";
 import { tl, tk, tc, roleName, eventTitle } from "../../i18n";
 import { champName, useChampionNames } from "../../champions";
+import { loadHubMeta, loadHubRecords, loadHubTitles } from "../../hub/data";
+import type { HubRecords, HubTitle } from "../../hub/types";
 import {
-  HubIndex,
-  HubHit,
-  loadHubIndex,
-  loadHubMeta,
-  loadHubPlayer,
-  loadHubRecords,
-  loadHubTeam,
-  loadHubTitles,
-  searchHub,
-} from "../../hub/data";
-import type { HubPlayer, HubRecords, HubTeam, HubTitle } from "../../hub/types";
-import {
+  CompareRoute,
   HubRoute,
   canGoBack,
   hubBack,
@@ -162,7 +153,7 @@ const mmss = (m: number) => {
   const s = Math.round(m * 60);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
-import { HeadToHeadSeries } from "../hub/Archives";
+import { ComparePage } from "../hub/ComparePage";
 import { LeaguePage, LeaguesPanel, PatchesPanel } from "../hub/MetaPages";
 import { HubHome, EventsBrowse } from "../hub/HubHome";
 import { TeamPage } from "../hub/TeamPage";
@@ -674,266 +665,6 @@ const TitlesPanel: React.FC = () => {
 
 // ── Compare ───────────────────────────────────────────────────────────────
 
-const ComparePick: React.FC<{
-  kind: "team" | "player";
-  onPick: (slug: string, name: string) => void;
-}> = ({ kind, onPick }) => {
-  const [q, setQ] = useState("");
-  const [index, setIndex] = useState<HubIndex | null>(null);
-  useEffect(() => {
-    loadHubIndex()
-      .then(setIndex)
-      .catch(() => {});
-  }, []);
-  const hits: HubHit[] = index && q.trim() ? searchHub(index, q, 6)[kind] : [];
-  return (
-    <div className="space-y-1">
-      <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder={
-          kind === "team" ? tl("Pick a team…") : tl("Pick a player…")
-        }
-        aria-label={kind === "team" ? tl("Pick a team…") : tl("Pick a player…")}
-        className="w-full bg-[#091428] border border-[#1e282d] rounded-lg px-2.5 py-1.5 text-xs text-[#f0e6d2] placeholder-[#7e8e9f]"
-      />
-      {hits.map((h) => (
-        <button
-          key={h.slug}
-          type="button"
-          onClick={() => {
-            onPick(h.slug, h.name);
-            setQ("");
-          }}
-          className="w-full flex justify-between gap-2 px-2 py-1 rounded bg-[#091428] hover:bg-[#121e2d] text-left text-xs min-w-0"
-        >
-          <span className="text-[#f0e6d2] font-semibold truncate">
-            {h.name}
-          </span>
-          <span className="text-[#7e8e9f] truncate shrink-0 max-w-[50%]">
-            {h.sub}
-          </span>
-        </button>
-      ))}
-    </div>
-  );
-};
-
-const CompareRow: React.FC<{
-  label: string;
-  a: React.ReactNode;
-  b: React.ReactNode;
-}> = ({ label, a, b }) => (
-  <tr className="border-t border-[#1e282d]">
-    <td className={`${td} text-right text-[#f0e6d2] font-semibold w-2/5`}>
-      {a}
-    </td>
-    <td className={`${td} text-center text-[#7e8e9f] text-[11px]`}>{label}</td>
-    <td className={`${td} text-[#f0e6d2] font-semibold w-2/5`}>{b}</td>
-  </tr>
-);
-
-const ComparePanel: React.FC = () => {
-  usePageTitle(tl("Compare"));
-  const [kind, setKind] = useState<"team" | "player">("team");
-  const [a, setA] = useState<string | null>(null);
-  const [b, setB] = useState<string | null>(null);
-  const [data, setData] = useState<{
-    a: HubTeam | HubPlayer | null;
-    b: HubTeam | HubPlayer | null;
-  }>({ a: null, b: null });
-
-  useEffect(() => {
-    let alive = true;
-    const loader: (s: string) => Promise<HubTeam | HubPlayer> =
-      kind === "team" ? loadHubTeam : loadHubPlayer;
-    Promise.all([
-      a ? loader(a).catch(() => null) : null,
-      b ? loader(b).catch(() => null) : null,
-    ]).then(([x, y]) => alive && setData({ a: x, b: y }));
-    return () => {
-      alive = false;
-    };
-  }, [kind, a, b]);
-
-  const switchKind = (k: "team" | "player") => {
-    setKind(k);
-    setA(null);
-    setB(null);
-    setData({ a: null, b: null });
-  };
-
-  let rows: React.ReactNode = null;
-  if (data.a && data.b) {
-    if (kind === "team") {
-      const x = data.a as HubTeam;
-      const y = data.b as HubTeam;
-      const h = x.opps.find((o) => o.n === y.name);
-      rows = (
-        <>
-          <CompareRow
-            label={tl("Head to head (games)")}
-            a={h ? h.w : "–"}
-            b={h ? h.g - h.w : "–"}
-          />
-          <CompareRow
-            label={tl("Games won")}
-            a={`${x.w}-${x.g - x.w}`}
-            b={`${y.w}-${y.g - y.w}`}
-          />
-          <CompareRow
-            label={tl("Win rate")}
-            a={winRate(x.w, x.g)}
-            b={winRate(y.w, y.g)}
-          />
-          <CompareRow
-            label={tl("Series won")}
-            a={winRate(x.sw, x.sg)}
-            b={winRate(y.sw, y.sg)}
-          />
-          <CompareRow
-            label={tl("Titles")}
-            a={x.titles.length}
-            b={y.titles.length}
-          />
-          <CompareRow
-            label={tl("Worlds")}
-            a={x.titles.filter((t) => t.kind === "Worlds").length}
-            b={y.titles.filter((t) => t.kind === "Worlds").length}
-          />
-          <CompareRow
-            label={tl("Best streak")}
-            a={x.bestStreak?.n ?? "–"}
-            b={y.bestStreak?.n ?? "–"}
-          />
-          <CompareRow label={tl("Avg game (min)")} a={x.avgMin} b={y.avgMin} />
-          <CompareRow
-            label={tl("Kills / game")}
-            a={x.kills ?? "–"}
-            b={y.kills ?? "–"}
-          />
-          <CompareRow
-            label={tl("Dragons / game")}
-            a={x.obj?.dragons ?? "–"}
-            b={y.obj?.dragons ?? "–"}
-          />
-          <CompareRow
-            label={tl("Gold diff / game")}
-            a={x.obj ? Math.round(x.obj.golddiff) : "–"}
-            b={y.obj ? Math.round(y.obj.golddiff) : "–"}
-          />
-        </>
-      );
-    } else {
-      const x = data.a as HubPlayer;
-      const y = data.b as HubPlayer;
-      rows = (
-        <>
-          <CompareRow
-            label={tl("Role")}
-            a={roleName(x.role)}
-            b={roleName(y.role)}
-          />
-          <CompareRow label={tl("Games")} a={fmtNum(x.g)} b={fmtNum(y.g)} />
-          <CompareRow
-            label={tl("Win rate")}
-            a={winRate(x.w, x.g)}
-            b={winRate(y.w, y.g)}
-          />
-          <CompareRow label={tl("KDA")} a={x.kda} b={y.kda} />
-          <CompareRow label={tl("Kills")} a={fmtNum(x.k)} b={fmtNum(y.k)} />
-          <CompareRow label={tl("Assists")} a={fmtNum(x.a)} b={fmtNum(y.a)} />
-          <CompareRow
-            label={tl("CS / min")}
-            a={x.csm ?? "–"}
-            b={y.csm ?? "–"}
-          />
-          <CompareRow
-            label={tl("Damage / min")}
-            a={x.dpm ?? "–"}
-            b={y.dpm ?? "–"}
-          />
-          <CompareRow
-            label={tl("Champions played")}
-            a={x.nChamps}
-            b={y.nChamps}
-          />
-          <CompareRow
-            label={tl("Titles")}
-            a={x.titles.length}
-            b={y.titles.length}
-          />
-          <CompareRow
-            label={tl("Worlds")}
-            a={x.titles.filter((t) => t.kind === "Worlds").length}
-            b={y.titles.filter((t) => t.kind === "Worlds").length}
-          />
-          <CompareRow
-            label={tl("Most played")}
-            a={x.champs[0] ? champName(x.champs[0].c) : "–"}
-            b={y.champs[0] ? champName(y.champs[0].c) : "–"}
-          />
-        </>
-      );
-    }
-  }
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 text-xs">
-        {(["team", "player"] as const).map((k) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => switchKind(k)}
-            className={`px-2.5 py-1.5 rounded-lg border ${
-              kind === k
-                ? "bg-[#c8aa6e] text-[#091428] font-bold border-[#c8aa6e]"
-                : "border-[#1e282d] text-[#9bb3c9]"
-            }`}
-          >
-            {k === "team" ? tl("Teams") : tl("Players")}
-          </button>
-        ))}
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        {[
-          { s: a, set: setA, d: data.a },
-          { s: b, set: setB, d: data.b },
-        ].map((side, i) => (
-          <div key={i} className={`${card} space-y-1 min-w-0`}>
-            {side.d && (
-              <div className="text-sm font-bold truncate">
-                <HubLink to={{ kind, slug: side.s! }}>{side.d.name}</HubLink>
-              </div>
-            )}
-            {side.s ? (
-              <button
-                type="button"
-                onClick={() => side.set(null)}
-                className="text-[11px] text-[#0ac8b9] hover:underline"
-              >
-                {tl("Change")}
-              </button>
-            ) : (
-              <ComparePick kind={kind} onPick={(s) => side.set(s)} />
-            )}
-          </div>
-        ))}
-      </div>
-      {rows && (
-        <div className={card}>
-          <table className="w-full text-xs">
-            <tbody>{rows}</tbody>
-          </table>
-        </div>
-      )}
-      {kind === "team" && a && b && data.a && data.b && (
-        <HeadToHeadSeries a={a} b={b} aName={data.a.name} bName={data.b.name} />
-      )}
-    </div>
-  );
-};
 
 // ── The Stats tab ─────────────────────────────────────────────────────────
 
@@ -1047,7 +778,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
           ))}
         {route.kind === "records" && <RecordsPanel />}
         {route.kind === "titles" && <TitlesPanel />}
-        {route.kind === "compare" && <ComparePanel />}
+        {route.kind === "compare" && <ComparePage route={route as CompareRoute} />}
         {route.kind === "team" && <TeamPage slug={route.slug} />}
         {route.kind === "player" && (
           <PlayerPage slug={route.slug} onOpenUrl={onOpenUrl} />

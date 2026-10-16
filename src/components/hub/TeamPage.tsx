@@ -7,6 +7,7 @@ import { loadHubTeam } from "../../hub/data";
 import type { HubTeam } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { TeamSeriesArchive } from "./Archives";
+import { TeamPeriodStats } from "./PeriodStats";
 import {
   card,
   ChampLink,
@@ -102,6 +103,8 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
           )}
         </div>
       </div>
+
+      <TeamPeriodStats slug={t.u} />
 
       {t.titles.length > 0 && (
         <Section title={tl("Titles")}>
