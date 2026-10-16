@@ -30,7 +30,7 @@ import { card, ChampLink, fmtNum, HubLink, isFresh, RevealButton, Section, td, u
 type Mode = "team" | "player";
 
 /** Team / player picker: type, then Enter (or a click) picks; arrow keys move through the list. */
-const ComparePick: React.FC<{ kind: Mode; onPick: (slug: string) => void; autoFocus?: boolean }> = ({ kind, onPick, autoFocus }) => {
+export const ComparePick: React.FC<{ kind: Mode; onPick: (slug: string) => void; autoFocus?: boolean }> = ({ kind, onPick, autoFocus }) => {
   const [q, setQ] = useState("");
   const [index, setIndex] = useState<HubIndex | null>(null);
   const [sel, setSel] = useState(0);
@@ -117,7 +117,7 @@ const sgn = (v: number | null) => (v == null ? "–" : `${v > 0 ? "+" : ""}${fmt
 const perGame = (n: number, g: number) => (g ? Number((n / g).toFixed(1)) : null);
 
 /** Choices both logs offer: all, last N, years and tournaments of either, newest first. */
-function bothOptions(a: { date: string; e: string; en: string }[], b: { date: string; e: string; en: string }[]): PeriodOption[] {
+export function bothOptions(a: { date: string; e: string; en: string }[], b: { date: string; e: string; en: string }[]): PeriodOption[] {
   const merged = [...a, ...b].sort((x, y) => (x.date < y.date ? 1 : x.date > y.date ? -1 : 0));
   const opts = periodOptions(merged, 80);
   const n = Math.min(a.length, b.length);
@@ -183,6 +183,11 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
             {k === "team" ? tl("Teams") : tl("Players")}
           </button>
         ))}
+        {ready && mode === "team" && (
+          <HubLink to={{ kind: "prep", a: a!, b: b!, period: route.period }} className="text-[#0ac8b9] hover:underline">
+            {tl("Match prep")}
+          </HubLink>
+        )}
         {ready && (
           <span className="flex items-center gap-1.5 ml-auto min-w-0">
             <span className="text-[#7e8e9f]">{tl("Stats for")}</span>
@@ -228,7 +233,7 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
   );
 };
 
-const TeamRows: React.FC<{ x: HubTeam; y: HubTeam; ra: TeamGameRow[]; rb: TeamGameRow[]; bSlug: string; career: boolean; periodLabel: string }> = ({
+export const TeamRows: React.FC<{ x: HubTeam; y: HubTeam; ra: TeamGameRow[]; rb: TeamGameRow[]; bSlug: string; career: boolean; periodLabel: string }> = ({
   x,
   y,
   ra,

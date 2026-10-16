@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { X, Swords, Eye, EyeOff, Globe, Home } from "lucide-react";
+import { X, Swords, Eye, EyeOff, Globe, Home, ClipboardList } from "lucide-react";
+import { findHubTeam, loadHubIndex } from "../hub/data";
+import { navigateHub } from "../hub/route";
 import { Match, CatalogData } from "../types";
 import { computeHeadToHead, h2hKey, normalizeTeamCode, pickTeamByCode, recentMeetings, H2HMeeting } from "../helpers";
 import { fetchH2HSeries, H2HSeriesEntry } from "../api";
@@ -246,8 +248,37 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
               </ul>
             )}
           </div>
+          <PrepButton t1={{ code: team1Code, name: t1.name }} t2={{ code: team2Code, name: t2.name }} onDone={onClose} />
         </div>
       </div>
     </div>
+  );
+};
+
+/** "Match prep": opens the stats hub's prep page for these two teams (when both are in the stats). */
+const PrepButton: React.FC<{ t1: { code: string; name: string }; t2: { code: string; name: string }; onDone: () => void }> = ({ t1, t2, onDone }) => {
+  const [state, setState] = useState<"" | "busy" | "missing">("");
+  if (state === "missing") return null;
+  return (
+    <button
+      type="button"
+      disabled={state === "busy"}
+      onClick={() => {
+        setState("busy");
+        loadHubIndex()
+          .then((index) => {
+            const a = findHubTeam(index, t1.name, t1.code);
+            const b = findHubTeam(index, t2.name, t2.code);
+            if (!a || !b) return setState("missing");
+            navigateHub({ kind: "prep", a, b });
+            onDone();
+          })
+          .catch(() => setState("missing"));
+      }}
+      className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-[#c8aa6e]/40 text-[#c8aa6e] text-xs font-semibold hover:bg-[#c8aa6e]/10 disabled:opacity-60"
+    >
+      <ClipboardList className="w-3.5 h-3.5" />
+      {tl("Match prep: form, drafts, lanes and storylines")}
+    </button>
   );
 };

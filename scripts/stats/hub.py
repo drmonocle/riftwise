@@ -158,6 +158,21 @@ def rmin(x):
     return round(x, 3)
 
 
+# Milestones worth a caster's mention, and how close counts as "within reach"
+MILESTONES = {"games": (100, 5), "wins": (100, 5), "kills": (500, 12), "assists": (1000, 25)}
+
+
+def milestone_notes(totals):
+    """[{"k": "ms", "s": "wins", "n": 1200, "left": 3}, ...] for totals close to the next round number."""
+    out = []
+    for key, (step, reach) in MILESTONES.items():
+        v = totals.get(key) or 0
+        nxt = (v // step + 1) * step
+        if v >= step // 2 and nxt - v <= reach:
+            out.append({"k": "ms", "s": key, "n": nxt, "left": nxt - v})
+    return out
+
+
 def r2(x):
     return round(x, 2)
 
@@ -1302,6 +1317,18 @@ def build(ctx) -> dict:
             if u_r:
                 team_earnings[ctx.team_of(r["Team"], date_r or "0000")] += r["Prize_USD"]
 
+    # -- storylines: collected on the team and player pages, the best go to notes.json ---------
+    all_notes = []
+    notes_cut = (datetime.date.today() - datetime.timedelta(days=30)).isoformat()
+
+    def note_score(nt):
+        """How notable a note is (rough): big round numbers and long streaks first."""
+        if nt["k"] == "ms":
+            return nt["n"] / {"games": 100, "wins": 80, "kills": 500, "assists": 1000}[nt["s"]] - nt["left"] * 0.05
+        if nt["k"] == "streak":
+            return nt["n"] * 0.8
+        return nt["n"] * 0.5
+
     # -- team pages -------------------------------------------------------------------------
     search_teams = []
     alias = {}
@@ -1361,6 +1388,34 @@ def build(ctx) -> dict:
             "sides": t_side.get(fid),
             "bansVs": [{"c": c, "g": n} for c, n in t_bans_vs.get(fid, Counter()).most_common(15)],
         }
+        # -- storylines -------------------------------------------------------------------------
+        notes = milestone_notes({"wins": t["w"], "games": t["g"]})
+        ss_sorted = sorted(ss, key=lambda x: (x["date"], x["id"]))
+        if ss_sorted:
+            won_last = (ss_sorted[-1]["fa"] if ss_sorted[-1]["w"] == ss_sorted[-1]["a"] else ss_sorted[-1]["fb"]) == fid
+            n_streak = 0
+            for x in reversed(ss_sorted):
+                if ((x["fa"] if x["w"] == x["a"] else x["fb"]) == fid) != won_last:
+                    break
+                n_streak += 1
+            if n_streak >= 4:
+                notes.append({"k": "streak", "w": 1 if won_last else 0, "n": n_streak})
+        this_year = today[:4]
+        side_rec = {"b": [0, 0], "r": [0, 0]}
+        for r in t_games.get(fid, []):
+            if r[0][:4] == this_year:
+                side_rec[r[6]][0] += 1
+                side_rec[r[6]][1] += r[7]
+        for sd_k, (g_s, w_s) in side_rec.items():
+            if g_s >= 6 and w_s == g_s:
+                notes.append({"k": "side", "side": sd_k, "n": g_s, "y": this_year})
+        if notes:
+            as_of = max([x["date"] for x in ss_sorted[-1:]] + [t["to"] or ""])[:10]
+            obj["notes"] = {"asOf": as_of, "list": notes}
+            if (t["to"] or "") >= notes_cut:
+                lu_last = next((x.get("lu") for x in tevents if x.get("lu")), None)
+                for nt in notes:
+                    all_notes.append((note_score(nt), lu_last, {**nt, "t": "team", "name": name, "u": u, "asOf": as_of}))
         out.json(f"team/{u}.json", obj)
         search_teams.append([name, short_slug(name, u), t["g"], t["to"][:4], " | ".join(e["n"] for e in eras if e["n"] != name), " | ".join(codes),
                              lpt.get("Region") or ""])
@@ -1426,6 +1481,24 @@ def build(ctx) -> dict:
             "best": {k: {"v": v[0], "date": v[1], "c": v[2], "opp": v[3], "en": v[4], "g": v[5]} for k, v in p_best.get(page, {}).items()},
             "titles": [{"t": t, "date": d, "kind": k, "e": tname_slug.get(t)} for t, d, k in my_titles][:60],
         }
+        # -- storylines -------------------------------------------------------------------------
+        notes = milestone_notes({"games": p["g"], "wins": p["w"], "kills": p["k"], "assists": p["a"]})
+        this_year = today[:4]
+        champ_rec = defaultdict(lambda: [0, 0])
+        for r in p_games.get(page, []):
+            if r[0][:4] == this_year and r[2]:
+                champ_rec[r[2]][0] += 1
+                champ_rec[r[2]][1] += r[6]
+        unbeaten = sorted(((g_c, c) for c, (g_c, w_c) in champ_rec.items() if g_c >= 5 and w_c == g_c), reverse=True)
+        if unbeaten:
+            notes.append({"k": "champ", "c": unbeaten[0][1], "n": unbeaten[0][0], "y": this_year})
+        if notes:
+            as_of = (last_date or "")[:10]
+            obj["notes"] = {"asOf": as_of, "list": notes}
+            if (last_date or "") >= notes_cut and p["g"] >= 100:
+                lu_last = next((x.get("lu") for x in obj["events"] if x.get("lu")), None)
+                for nt in notes:
+                    all_notes.append((note_score(nt), lu_last, {**nt, "t": "player", "name": name, "u": u, "asOf": as_of}))
         out.json(f"player/{u}.json", obj)
         games = sorted(p_games.get(page, []), key=lambda r: r[0], reverse=True)
         if games:
@@ -1584,6 +1657,11 @@ def build(ctx) -> dict:
                               f"every winner and full results, standings and stats.", 1 if primary or len(lst) >= 4 else 0))
     leagues_out.sort(key=lambda x: (-x["pr"], -x["g"]))
     out.json("leagues.json", leagues_out)
+
+    # storylines for the stats home: teams and players whose latest tournament is in a main league
+    main_leagues = {l["u"] for l in leagues_out if l["pr"]}
+    all_notes.sort(key=lambda x: -x[0])
+    out.json("notes.json", [x[2] for x in all_notes if x[1] in main_leagues][:40])
 
     # -- champion game logs per league and year, and their index -----------------------------------
     cg_years = defaultdict(dict)

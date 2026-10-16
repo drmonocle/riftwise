@@ -10,6 +10,7 @@ import { useDDragon } from "../../hub/ddragon";
 import { PlayerGamesArchive } from "./Archives";
 import { PlayerPeriodStats } from "./PeriodStats";
 import { PlayerRanks } from "./Ranks";
+import { OwnStorylines } from "./Storylines";
 import {
   card,
   ChampIcon,
@@ -206,6 +207,7 @@ const PlayerView: React.FC<{
         </p>
       </div>
 
+      <OwnStorylines notes={p.notes} spoilerKey={`notes:player:${p.u}`} share={`${p.u}-storylines`} />
       <PlayerPeriodStats slug={p.u} />
       <PlayerRanks slug={p.u} events={p.events} />
 

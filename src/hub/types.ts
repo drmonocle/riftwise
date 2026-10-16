@@ -289,6 +289,8 @@ export interface HubSeries {
 }
 
 export interface HubTeam {
+  /** storylines: milestones within reach, streaks, unbeaten runs */
+  notes?: import("../components/hub/Storylines").Notes;
   name: string;
   u: string;
   region?: string;
@@ -322,6 +324,8 @@ export interface HubTeam {
 }
 
 export interface HubPlayer {
+  /** storylines: milestones within reach, streaks, unbeaten runs */
+  notes?: import("../components/hub/Storylines").Notes;
   name: string;
   u: string;
   page: string;

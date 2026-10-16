@@ -26,6 +26,7 @@ import type { HubRecords, HubTitle } from "../../hub/types";
 import {
   CompareRoute,
   HubRoute,
+  PrepRoute,
   canGoBack,
   hubBack,
   hubShareUrl,
@@ -155,6 +156,7 @@ import { ComparePage } from "../hub/ComparePage";
 import { ChampionsPage } from "../hub/ChampionsPage";
 import { AboutPage, reportUrl } from "../hub/AboutPage";
 import { DownloadsPage } from "../hub/DownloadsPage";
+import { PrepPage } from "../hub/PrepPage";
 import { LeaguePage, LeaguesPanel, PatchesPanel } from "../hub/MetaPages";
 import { HubHome, EventsBrowse } from "../hub/HubHome";
 import { TeamPage } from "../hub/TeamPage";
@@ -617,6 +619,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
         {route.kind === "records" && <RecordsPanel />}
         {route.kind === "downloads" && <DownloadsPage onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
         {route.kind === "about" && <AboutPage onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
+        {route.kind === "prep" && <PrepPage route={route as PrepRoute} />}
         {route.kind === "titles" && <TitlesPanel />}
         {route.kind === "compare" && <ComparePage route={route as CompareRoute} />}
         {route.kind === "team" && <TeamPage slug={route.slug} />}
