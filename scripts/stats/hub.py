@@ -832,8 +832,12 @@ def build(ctx) -> dict:
                                 else:
                                     sd4[2] += 1
                                     sd4[3] += 1 if side_won else 0
+                    # the player comes from this game's scoreboard (one champion per game), so Leaguepedia's
+                    # other spellings ("Scary Jerry" for ScaryJerry, an old name like "GotzY" for Aeon) still link
+                    penta_by_champ = ({r["champion"]: r["page_key"] for r in prow.get(g["gid"], []) if r["champion"] and r["page_key"]}
+                                      if g["gid"] and (mid, g["n"]) in pentas else {})
                     for page, ch, cnt in pentas.get((mid, g["n"]), []):
-                        page = canon_page(page)
+                        page = penta_by_champ.get(ch) or canon_page(page)
                         facts["pentas"].append({"n": ctx.pname(page), "u": player_slug.get(page), "c": ch, "g": gslug, "x": cnt})
                         p_pentas[page].append((g["date"][:10], ch, gslug, en, cnt))
                         all_pentas.append((g["date"][:10], page, ch, gslug, en, eslug, an, bn, cnt))
