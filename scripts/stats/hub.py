@@ -669,6 +669,7 @@ def build(ctx) -> dict:
     H2H_ALIASES = {"TLAW": "TL", "MKOI": "MDK", "KRX": "DRX", "DNS": "KDF", "DNF": "KDF"}  # = CODE_ALIASES in src/helpers.ts
     INTL_RE = re.compile(r"world|msi|mid-season|first stand", re.I)
     rating_games = []  # (date, league, international, fid a, fid b, a won, tier, region) for the ratings
+    rating_extra = []  # per rating game: (a on blue side, gold a - gold b, minutes, players a, players b) or None
 
     def fid_on(name, day):
         try:
@@ -1205,10 +1206,23 @@ def build(ctx) -> dict:
                         if g["w"] in (a, b):
                             gd = (g["date"] or date)[:10]
                             rating_games.append((gd, lg_r, intl_r, fid_on(a, gd), fid_on(b, gd), 1 if g["w"] == a else 0, tier_r, reg_r))
+                            gid_r = g["gid"]
+                            blue_r = (1 if g["t1"] == a else 0) if g["t1"] in (a, b) else None
+                            t_r = trow.get(gid_r) if gid_r else None
+                            gold_r = None
+                            if t_r is not None and blue_r is not None and t_r["team1_gold"] and t_r["team2_gold"]:
+                                gold_r = (t_r["team1_gold"] - t_r["team2_gold"]) * (1 if blue_r else -1)
+                            base_r = ctx.games.get(gid_r) if gid_r else None
+                            side_p = {g["t1"]: [], g["t2"]: []}
+                            for r in (prow.get(gid_r, []) if gid_r else []):
+                                if r["page_key"] and r["team"] in side_p:
+                                    side_p[r["team"]].append(canon_page(r["page_key"]))
+                            rating_extra.append((blue_r, gold_r, (base_r or {}).get("min"), side_p.get(a) or [], side_p.get(b) or []))
                 elif wa + wb and date:
                     fa_r, fb_r = fid_on(a, date[:10]), fid_on(b, date[:10])
                     rating_games += ([(date[:10], lg_r, intl_r, fa_r, fb_r, 1, tier_r, reg_r)] * wa
                                      + [(date[:10], lg_r, intl_r, fa_r, fb_r, 0, tier_r, reg_r)] * wb)
+                    rating_extra += [None] * (wa + wb)
             if played and winner:
                 ra, rb = roster_region.get((op, a)), roster_region.get((op, b))
                 if ra and rb and ra != rb:
@@ -1426,8 +1440,12 @@ def build(ctx) -> dict:
     # -- ratings: win chances and power rankings ---------------------------------------------
     if os.environ.get("RW_DUMP_RATING_GAMES"):  # for tuning scripts/stats/ratings.py offline
         with open(os.environ["RW_DUMP_RATING_GAMES"], "w", encoding="utf-8") as f:
-            json.dump([[d, lg, i, str(fa), str(fb), w, t_, r_] for d, lg, i, fa, fb, w, t_, r_ in rating_games], f)
-    rated, rating_tests, rated_leagues = team_ratings.run(rating_games)
+            json.dump([[d, lg, i, str(fa), str(fb), w, t_, r_] + (list(x) if x else [None, None, None, [], []])
+                       for (d, lg, i, fa, fb, w, t_, r_), x in zip(rating_games, rating_extra)], f)
+    # with each game's side, gold difference and lineups when known (players carry their rating between teams)
+    if len(rating_extra) != len(rating_games):  # never mismatch games and details: drop the details instead
+        rating_extra = [None] * len(rating_games)
+    rated, rating_tests, rated_leagues = team_ratings.run([g + tuple(x) if x else g for g, x in zip(rating_games, rating_extra)])
     # TIER2_GAP pulls every rating down a few hundred points; shift them all by one number so the average active
     # top-league team is 1500 (only differences matter for rankings, win chances and the backtest)
     newest_r0 = max((x["last"] for x in rated.values()), default="0000-00-00")
