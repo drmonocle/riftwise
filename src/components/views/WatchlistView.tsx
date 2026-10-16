@@ -207,7 +207,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
       : tl("Search all {n} Riot leagues…", { n: catalog.leagues.length || 51 });
 
   return (
-    <div className="p-4 space-y-4 max-w-4xl mx-auto overflow-y-auto h-full select-none text-xs">
+    <div className="p-4 space-y-4 page-4xl overflow-y-auto h-full select-none text-xs">
       {/* Active Watchlist Summary */}
       <div className="p-3 rounded-lg bg-[#0a1420] border border-[#1e282d] space-y-2">
         <div className="flex items-center justify-between">

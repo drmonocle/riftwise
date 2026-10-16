@@ -31,7 +31,7 @@ const SOURCES = [
 ] as const;
 
 export const NewsView: React.FC<NewsViewProps> = ({ onOpenUrl }) => (
-  <div className="p-4 space-y-4 max-w-4xl mx-auto overflow-y-auto h-full select-none">
+  <div className="p-4 space-y-4 page-4xl overflow-y-auto h-full select-none">
     <div className="pb-1 border-b border-[#1e282d]">
       <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
         <Newspaper className="w-3.5 h-3.5 text-[#0ac8b9]" />

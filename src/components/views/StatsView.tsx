@@ -531,7 +531,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
     <SpoilerProvider on={settings.spoilerMode}>
       <div
         ref={scroller}
-        className="p-4 space-y-4 max-w-5xl mx-auto overflow-y-auto h-full"
+        className="p-4 space-y-4 page-5xl overflow-y-auto h-full"
       >
         <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#1e282d]">
           <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-2">

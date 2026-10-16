@@ -74,3 +74,25 @@
 .rw-capturing .rw-capture-only {
   display: flex;
 }
+
+/* A tab's page scrolls across the full window width, so the scrollbar sits at the window's right edge;
+   the content stays centred at a readable width (side padding instead of max-width + auto margins). */
+.page-2xl,
+.page-3xl,
+.page-4xl,
+.page-5xl {
+  padding-left: max(1rem, calc((100% - var(--page-w)) / 2));
+  padding-right: max(1rem, calc((100% - var(--page-w)) / 2));
+}
+.page-2xl {
+  --page-w: 42rem;
+}
+.page-3xl {
+  --page-w: 48rem;
+}
+.page-4xl {
+  --page-w: 56rem;
+}
+.page-5xl {
+  --page-w: 64rem;
+}
