@@ -336,6 +336,7 @@ def build(ctx) -> dict:
             "vod": r["vod_url"], "gid": r["catalog_game_id"] if r["has_stats"] else None, "mvp": r["mvp"] or None,
         }
     added_new = 0
+    filled_new = 0
     tname_to_op = {}
     for r in con.execute(
         """SELECT game_id, match_id, game_number, tournament_name, overview_page, stage_tab, date_utc, patch, team1, team2,
@@ -349,6 +350,12 @@ def build(ctx) -> dict:
         if g:
             if not g["gid"] and r["game_id"] in ctx.games:
                 g["gid"] = r["game_id"]
+            if not (g["t1"] and g["t2"]) and r["team1"] and r["team2"]:
+                # played in the last days: all_games has the slot, matches has who played and won
+                g.update({"t1": r["team1"], "t2": r["team2"], "date": (r["date_utc"] or g["date"])[:16],
+                          "w": r["winner"] if r["winner"] in (r["team1"], r["team2"]) else None, "status": "full"})
+                g["patch"] = g["patch"] or r["patch"]
+                filled_new += 1
             continue
         games_by_op[op][key] = {
             "mid": key[0], "n": key[1], "status": "full", "tname": r["tournament_name"], "date": (r["date_utc"] or "")[:16],
@@ -358,6 +365,13 @@ def build(ctx) -> dict:
         }
         added_new += 1
     checks["hub: games newer than all_games (from matches)"] = added_new
+    checks["hub: fresh games given teams from matches"] = filled_new
+    placeholders = 0
+    for gm in games_by_op.values():
+        for key in [k for k, g in gm.items() if not g["t1"] and not g["t2"] and not g["w"] and not g["gid"]]:
+            del gm[key]
+            placeholders += 1
+    checks["hub: placeholder games left out (no teams, no result)"] = placeholders
 
     # -- pentakills (Leaguepedia ScoreboardPlayers), tournament rosters and their region codes --
     lp_game_key = {}
