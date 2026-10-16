@@ -1,21 +1,25 @@
-/** Champion page: pro picks, bans and wins by year, roles, best players and the latest pro games. */
-import React from "react";
+/** Champion page: pro picks, bans and wins by year and patch, builds, matchups, best players and the latest pro games. */
+import React, { useMemo, useState } from "react";
 import { tl, tc, roleName } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { loadHubChamp } from "../../hub/data";
 import type { HubChamp } from "../../hub/types";
-import { useDDragon } from "../../hub/ddragon";
+import { isFinishedItem, useDDragon } from "../../hub/ddragon";
 import {
   card,
   ChampIcon,
+  ChampLink,
   fmtDate,
   fmtNum,
   HubLink,
+  ItemIcon,
   Page,
   PlayerLink,
   RevealButton,
+  RuneIcon,
   Section,
+  SpellIcon,
   Stat,
   td,
   th,
@@ -31,10 +35,19 @@ export const ChampPage: React.FC<{ slug: string }> = ({ slug }) => {
   return <Page state={state}>{(c) => <ChampView c={c} />}</Page>;
 };
 
+const pctOf = (w: number, g: number) => (g ? `${Math.round((w / g) * 100)}%` : "–");
+
 const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
+  const ddReady = useDDragon();
   const [recentHidden, revealRecent] = useHidden(`champ-recent:${c.u}`, c.recent[0]?.date);
   const maxYear = Math.max(1, ...c.years.map((y) => y.p + y.b));
   const totalRoles = c.roles.reduce((s, r) => s + r.p, 0) || 1;
+  const mainRoles = c.roles.filter((r) => r.p / totalRoles >= 0.1).map((r) => r.r);
+  const roleKeys = Object.keys(c.matchups || {}).filter((r) => mainRoles.includes(r));
+  const [muRole, setMuRole] = useState(roleKeys[0] || "");
+  const showDuos = mainRoles.some((r) => r === "Bot" || r === "Support") && (c.duos || []).length > 0;
+  const items = useMemo(() => (c.builds?.items || []).filter(([it]) => isFinishedItem(it)).slice(0, 8), [c.builds, ddReady]); // eslint-disable-line react-hooks/exhaustive-deps
+  const maxPatch = Math.max(1, ...(c.patches || []).map((p) => (p.pk + p.b) / Math.max(p.g, 1)));
   return (
     <div className="space-y-3">
       <div className={`${card} flex gap-3 items-start`}>
@@ -47,13 +60,91 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               .map((r) => `${roleName(r.r)} ${Math.round((r.p / totalRoles) * 100)}%`)
               .join(" · ")}
           </p>
-          <div className="grid grid-cols-3 gap-2 mt-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
             <Stat label={tl("Picks")} value={fmtNum(c.p)} />
             <Stat label={tl("Bans")} value={fmtNum(c.b)} />
             <Stat label={tl("Win %")} value={winRate(c.w, c.p)} />
+            {c.side && c.side[0] + c.side[2] > 0 && (
+              <Stat label={tl("Blue / red side")} value={`${pctOf(c.side[1], c.side[0])} / ${pctOf(c.side[3], c.side[2])}`} sub={tl("win rate on each side")} />
+            )}
           </div>
         </div>
       </div>
+
+      {c.builds && c.builds.g > 0 && (
+        <Section title={tl("Pro builds in the last 12 months")}>
+          <p className="text-[11px] text-[#7e8e9f]">
+            {tl("From {n} pro games since {date}. Share of games and win rate.", { n: fmtNum(c.builds.g), date: fmtDate(c.builds.since) })}
+          </p>
+          <div className="grid gap-3 md:grid-cols-3">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f] mb-1">{tl("Items")}</div>
+              <ul className="space-y-1 text-xs">
+                {items.map(([it, g, w]) => (
+                  <li key={it} className="flex items-center gap-2 min-w-0">
+                    <ItemIcon name={it} size={22} />
+                    <span className="truncate flex-1 text-[#f0e6d2]">{it}</span>
+                    <span className="text-[#9bb3c9] tabular-nums shrink-0">{pctOf(g, c.builds!.g)}</span>
+                    <span className="text-[#7e8e9f] tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f] mb-1">{tl("Keystones")}</div>
+              <ul className="space-y-1 text-xs">
+                {c.builds.keys.map(([k, g, w]) => (
+                  <li key={k} className="flex items-center gap-2 min-w-0">
+                    <RuneIcon name={k} size={22} />
+                    <span className="truncate flex-1 text-[#f0e6d2]">{k}</span>
+                    <span className="text-[#9bb3c9] tabular-nums shrink-0">{pctOf(g, c.builds!.g)}</span>
+                    <span className="text-[#7e8e9f] tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f] mb-1">{tl("Summoner spells")}</div>
+              <ul className="space-y-1 text-xs">
+                {c.builds.spells.map(([sp, g, w]) => (
+                  <li key={sp} className="flex items-center gap-2 min-w-0">
+                    <span className="flex gap-0.5">
+                      {sp.split(" + ").map((x) => (
+                        <SpellIcon key={x} name={x} size={20} />
+                      ))}
+                    </span>
+                    <span className="truncate flex-1 text-[#f0e6d2]">{sp}</span>
+                    <span className="text-[#9bb3c9] tabular-nums shrink-0">{pctOf(g, c.builds!.g)}</span>
+                    <span className="text-[#7e8e9f] tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </Section>
+      )}
+
+      {c.patches && c.patches.length > 0 && (
+        <Section title={tl("Recent patches")}>
+          <div className="space-y-1">
+            {c.patches.map((p) => {
+              const pres = (p.pk + p.b) / Math.max(p.g, 1);
+              return (
+                <div key={p.p} className="grid grid-cols-[3.5rem_1fr_auto] items-center gap-2 text-xs">
+                  <span className="text-[#f0e6d2] font-semibold">{p.p}</span>
+                  <div className="h-2.5 bg-[#091428] rounded overflow-hidden">
+                    <div className="h-full bg-[#c8aa6e]/70" style={{ width: `${(pres / maxPatch) * 100}%` }} />
+                  </div>
+                  <span className="text-[#9bb3c9] tabular-nums text-right w-56 truncate">
+                    {tl("{pres} presence · {p} picks · {wr}", { pres: `${Math.round(pres * 100)}%`, p: p.pk, wr: p.pk ? pctOf(p.w, p.pk) : "–" })}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-[10px] text-[#7e8e9f]">{tl("Presence = picked or banned in that share of games (all leagues).")}</p>
+        </Section>
+      )}
 
       <Section title={tl("By year")}>
         <div className="space-y-1">
@@ -76,6 +167,76 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
           {tl("Bans")}
         </p>
       </Section>
+
+      {(roleKeys.length > 0 || showDuos) && (
+        <div className="grid gap-3 md:grid-cols-2">
+          {roleKeys.length > 0 && (
+            <Section title={tl("Matchups")}>
+              {roleKeys.length > 1 && (
+                <div className="flex gap-1">
+                  {roleKeys.map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setMuRole(r)}
+                      className={`px-2 py-0.5 rounded text-[11px] border ${
+                        r === muRole ? "bg-[#c8aa6e] text-[#091428] font-bold border-[#c8aa6e]" : "border-[#1e282d] text-[#9bb3c9]"
+                      }`}
+                    >
+                      {roleName(r)}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <table className="w-full text-xs">
+                <thead>
+                  <tr>
+                    <th className={th}>{tl("Against")}</th>
+                    <th className={th}>{tl("Games")}</th>
+                    <th className={th}>{tl("Win %")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(c.matchups?.[muRole] || []).slice(0, 15).map(([oc, g, w]) => (
+                    <tr key={oc} className="border-t border-[#1e282d]">
+                      <td className={`${td} max-w-[10rem]`}>
+                        <ChampLink name={oc} size={16} />
+                      </td>
+                      <td className={`${td} text-[#9bb3c9]`}>{g}</td>
+                      <td className={`${td} ${w / g >= 0.5 ? "text-[#0ac8b9]" : "text-[#e84057]"}`}>{pctOf(w, g)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="text-[10px] text-[#7e8e9f]">{tl("Against the champion in the same role, all pro games, 3+ games.")}</p>
+            </Section>
+          )}
+          {showDuos && (
+            <Section title={tl("Bot lane partners")}>
+              <table className="w-full text-xs">
+                <thead>
+                  <tr>
+                    <th className={th}>{tl("With")}</th>
+                    <th className={th}>{tl("Games")}</th>
+                    <th className={th}>{tl("Win %")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(c.duos || []).slice(0, 15).map(([pc, g, w]) => (
+                    <tr key={pc} className="border-t border-[#1e282d]">
+                      <td className={`${td} max-w-[10rem]`}>
+                        <ChampLink name={pc} size={16} />
+                      </td>
+                      <td className={`${td} text-[#9bb3c9]`}>{g}</td>
+                      <td className={`${td} ${w / g >= 0.5 ? "text-[#0ac8b9]" : "text-[#e84057]"}`}>{pctOf(w, g)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Section>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-3 md:grid-cols-2">
         <Section title={tl("Most games on {champion}", { champion: champName(c.name) })}>
@@ -106,7 +267,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
           {recentHidden ? (
             <p className="text-[11px] text-[#7e8e9f] italic">{tl("Hidden while spoiler mode is on.")}</p>
           ) : (
-            <ul className="text-xs space-y-1.5">
+            <ul className="text-xs space-y-2">
               {c.recent.map((r, i) => (
                 <li key={i} className="min-w-0">
                   <div className="flex items-center justify-between gap-2 min-w-0">
@@ -119,6 +280,20 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     </span>
                     <span className="text-[#7e8e9f] shrink-0">{fmtDate(r.date, false)}</span>
                   </div>
+                  {r.it && r.it.length > 0 && (
+                    <div className="flex items-center gap-0.5 mt-0.5">
+                      {r.ks && <RuneIcon name={r.ks} size={18} />}
+                      {r.stt && <RuneIcon name={r.stt} size={14} />}
+                      <span className="w-1" />
+                      {r.it.map((it, j) => (
+                        <ItemIcon key={j} name={it} size={18} />
+                      ))}
+                      <span className="w-1" />
+                      {(r.sp || []).map((sp) => (
+                        <SpellIcon key={sp} name={sp} size={14} />
+                      ))}
+                    </div>
+                  )}
                   <div className="text-[10px] text-[#7e8e9f] truncate">{r.en}</div>
                 </li>
               ))}
@@ -129,3 +304,4 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
     </div>
   );
 };
+

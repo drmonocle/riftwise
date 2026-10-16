@@ -34,6 +34,9 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
     { key: "gpm", label: tl("GPM"), title: tl("Gold per minute"), value: (p) => per(p.gold, p.min, 0) },
     { key: "dpm", label: tl("DPM"), title: tl("Damage per minute"), value: (p) => per(p.dmg, p.min, 0) },
     { key: "vpm", label: tl("VS/m"), title: tl("Vision score per minute"), value: (p) => per(p.vis, p.vmin, 2) },
+    { key: "dmgs", label: tl("DMG%"), title: tl("Share of the team's damage to champions"), value: (p) => (p.td ? per(p.sd || 0, p.td, 3) : null), render: (p) => (p.td ? pct(per(p.sd || 0, p.td, 3)) : "–") },
+    { key: "golds", label: tl("Gold%"), title: tl("Share of the team's gold"), value: (p) => (p.tg ? per(p.sg || 0, p.tg, 3) : null), render: (p) => (p.tg ? pct(per(p.sg || 0, p.tg, 3)) : "–") },
+    { key: "viss", label: tl("VS%"), title: tl("Share of the team's vision score"), value: (p) => (p.tv ? per(p.sv || 0, p.tv, 3) : null), render: (p) => (p.tv ? pct(per(p.sv || 0, p.tv, 3)) : "–") },
     {
       key: "nc",
       label: tl("Champions"),
@@ -48,6 +51,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
       ),
     },
   ];
+  if (players.some((p) => p.mvp)) cols.splice(5, 0, { key: "mvp", label: tl("POG"), title: tl("Player of the Game awards"), value: (p) => p.mvp || 0 });
   return (
     <Section title={tl("Player stats")}>
       <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
@@ -82,8 +86,21 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
     { key: "g", label: tl("Games"), value: (t) => t.g },
     { key: "wr", label: tl("Win %"), value: (t) => per(t.w, t.g, 3), render: (t) => pct(per(t.w, t.g, 3)) },
     { key: "min", label: tl("Avg game"), value: (t) => per(t.min, t.g), render: (t) => tl("{n} min", { n: per(t.min, t.g) ?? "–" }) },
+    { key: "kd", label: "K:D", title: tl("Kills per death"), value: (t) => per(t.k, Math.max(t.d, 1), 2) },
     { key: "k", label: tl("Kills"), title: tl("Kills per game"), value: (t) => per(t.k, t.g) },
     { key: "d", label: tl("Deaths"), title: tl("Deaths per game"), value: (t) => per(t.d, t.g) },
+    { key: "gpm", label: tl("GPM"), title: tl("Team gold per minute"), value: (t) => (t.gold ? per(t.gold, t.min, 0) : null) },
+    {
+      key: "gdm",
+      label: tl("GD/m"),
+      title: tl("Gold difference per minute, end of game"),
+      value: (t) => per(t.gd, t.min, 0),
+      render: (t) => {
+        const v = per(t.gd, t.min, 0) ?? 0;
+        return <span className={v >= 0 ? "text-[#0ac8b9]" : "text-[#e84057]"}>{`${v >= 0 ? "+" : ""}${v}`}</span>;
+      },
+    },
+    { key: "blue", label: tl("Blue%"), title: tl("Share of games on blue side"), value: (t) => (t.blue != null ? per(t.blue, t.g, 3) : null), render: (t) => (t.blue != null ? pct(per(t.blue, t.g, 3)) : "–") },
     {
       key: "gd",
       label: tl("Gold diff"),
@@ -95,8 +112,13 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
       },
     },
     { key: "drag", label: tl("Dragons"), title: tl("Dragons per game"), value: (t) => per(t.drag, t.g, 2) },
+    { key: "drap", label: tl("DRA%"), title: tl("Share of all dragons taken in their games"), value: (t) => (t.odrag != null && t.drag + t.odrag ? per(t.drag, t.drag + t.odrag, 3) : null), render: (t) => (t.odrag != null && t.drag + t.odrag ? pct(per(t.drag, t.drag + t.odrag, 3)) : "–") },
     { key: "bar", label: tl("Barons"), title: tl("Barons per game"), value: (t) => per(t.bar, t.g, 2) },
+    { key: "barp", label: tl("Baron%"), title: tl("Share of all barons taken in their games"), value: (t) => (t.obar != null && t.bar + t.obar ? per(t.bar, t.bar + t.obar, 3) : null), render: (t) => (t.obar != null && t.bar + t.obar ? pct(per(t.bar, t.bar + t.obar, 3)) : "–") },
     { key: "tow", label: tl("Towers"), title: tl("Towers per game"), value: (t) => per(t.tow, t.g, 1) },
+    { key: "tl", label: tl("Lost"), title: tl("Towers lost per game"), value: (t) => (t.tl != null ? per(t.tl, t.g, 1) : null) },
+    { key: "csm", label: tl("CS/m"), title: tl("Team CS per minute"), value: (t) => (t.pmin ? per(t.cs || 0, t.pmin, 1) : null) },
+    { key: "dpm", label: tl("DPM"), title: tl("Team damage per minute"), value: (t) => (t.pmin ? per(t.dmg || 0, t.pmin, 0) : null) },
     { key: "grub", label: tl("Void grubs"), title: tl("Void grubs per game"), value: (t) => per(t.grub, t.g, 1) },
   ];
   // Void grubs only exist since 2024

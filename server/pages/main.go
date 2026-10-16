@@ -1,5 +1,5 @@
 // riftwatch-pages gives every RiftWatch stats page (lolworlds.com/riftwatch/player/faker,
-// /team/t1, /tournament/worlds-2025, /match/..., /champion/ahri, /stats...) the app's index.html
+// /team/t1, /tournament/worlds-2025, /match/..., /champion/ahri, /league/lck, /stats...) the app's index.html
 // with that page's own title, description, canonical address and link-preview tags, so search
 // engines index each page and links shared in chat apps show what they point to. It also serves
 // the sitemaps. IIS sends only those addresses here; everything else stays plain IIS.
@@ -28,18 +28,23 @@ import (
 )
 
 const (
-	version  = "1.0.0"
+	version  = "1.1.0"
 	origin   = "https://lolworlds.com"
 	basePath = "/riftwatch/"
 	perMap   = 45000 // URLs per sitemap file (the limit is 50,000)
 )
 
 // Path segment -> seo file kind
-var kinds = map[string]string{"team": "team", "player": "player", "tournament": "event", "match": "game", "champion": "champ"}
-var kindPath = map[string]string{"team": "team", "player": "player", "event": "tournament", "game": "match", "champ": "champion"}
+var kinds = map[string]string{"team": "team", "player": "player", "tournament": "event", "match": "game", "champion": "champ", "league": "league"}
+var kindPath = map[string]string{"team": "team", "player": "player", "event": "tournament", "game": "match", "champ": "champion", "league": "league"}
+
+// Every build has these; league.tsv only exists in builds from 2026-10 on, so it's optional.
+var requiredKinds = []string{"team", "player", "event", "game", "champ"}
 var sections = map[string][2]string{
 	"":            {"Pro Stats: every League of Legends esports game since 2011", "Search every pro League of Legends team, player, tournament and champion since 2011: results, brackets, drafts, builds and records, rebuilt every night."},
 	"tournaments": {"Pro LoL tournaments by year", "Every professional League of Legends tournament since 2011, by year: results, brackets, standings and stats."},
+	"leagues":     {"Every pro LoL league and its champions", "Every professional League of Legends league since 2011: each season's winner, the most successful teams and every tournament."},
+	"patches":     {"The pro LoL meta on every patch", "The most picked and banned champions on every League of Legends patch in professional play, since 2011."},
 	"champions":   {"Champion pick, ban and win rates in pro play", "Pick, ban and win rates for every champion in professional League of Legends, by patch and by year."},
 	"records":     {"All-time pro LoL records", "Fastest wins, longest games, most kills and other all-time records from professional League of Legends."},
 	"titles":      {"Every pro LoL title winner", "Every Worlds, MSI, First Stand and league title winner in professional League of Legends history."},
@@ -95,8 +100,12 @@ func (s *store) refresh() {
 	hub := filepath.Join(s.site, "stats", latest.Version, "hub")
 	pages := map[string]map[string]entry{}
 	order := map[string][]string{}
-	for _, kind := range []string{"team", "player", "event", "game", "champ"} {
+	for _, kind := range append(requiredKinds, "league") {
 		f, err := os.Open(filepath.Join(hub, "seo", kind+".tsv"))
+		if err != nil && kind == "league" {
+			pages[kind] = map[string]entry{}
+			continue
+		}
 		if err != nil {
 			log.Printf("stats %s: no %s.tsv (%v); keeping the previous build", latest.Version, kind, err)
 			s.failed = latest.Version
@@ -124,8 +133,8 @@ func (s *store) refresh() {
 		alias = a.Team
 	}
 	s.pages, s.order, s.alias, s.version = pages, order, alias, latest.Version
-	log.Printf("stats %s loaded: %d teams, %d players, %d events, %d matches, %d champions",
-		latest.Version, len(pages["team"]), len(pages["player"]), len(pages["event"]), len(pages["game"]), len(pages["champ"]))
+	log.Printf("stats %s loaded: %d teams, %d players, %d events, %d matches, %d champions, %d leagues",
+		latest.Version, len(pages["team"]), len(pages["player"]), len(pages["event"]), len(pages["game"]), len(pages["champ"]), len(pages["league"]))
 }
 
 var (
@@ -231,7 +240,7 @@ func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 	if name == "sitemap" {
 		fmt.Fprint(w, `<?xml version="1.0" encoding="UTF-8"?>`+"\n"+`<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`+"\n")
 		fmt.Fprintf(w, "<sitemap><loc>%s%ssitemap-sections-1.xml</loc></sitemap>\n", origin, basePath)
-		for _, kind := range []string{"team", "player", "event", "champ", "game"} {
+		for _, kind := range []string{"team", "player", "event", "league", "champ", "game"} {
 			n := 0
 			for _, slug := range s.order[kind] {
 				if s.pages[kind][slug].index {
@@ -309,7 +318,7 @@ func main() {
 		json.NewEncoder(w).Encode(map[string]any{
 			"ok": s.indexHTML != "" && s.version != "", "version": version, "stats": s.version,
 			"teams": len(s.pages["team"]), "players": len(s.pages["player"]), "events": len(s.pages["event"]),
-			"matches": len(s.pages["game"]), "champions": len(s.pages["champ"]),
+			"matches": len(s.pages["game"]), "champions": len(s.pages["champ"]), "leagues": len(s.pages["league"]),
 		})
 	})
 	mux.HandleFunc(basePath, func(w http.ResponseWriter, r *http.Request) {

@@ -1,6 +1,6 @@
 /** Stats hub front page and the tournament browser. */
 import React, { useMemo, useState } from "react";
-import { Trophy, Swords, Medal, GitCompare, CalendarRange, Crown } from "lucide-react";
+import { Trophy, Swords, Medal, GitCompare, CalendarRange, Crown, Layers, History } from "lucide-react";
 import { tl, tn, tk, regionName } from "../../i18n";
 import { loadEventsOfYear, loadHubHome, loadHubMeta } from "../../hub/data";
 import type { EventListItem, HubMeta } from "../../hub/types";
@@ -10,7 +10,9 @@ import { card, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerLink, RevealButt
 
 const QUICK: { to: HubRoute; label: string; sub: string; icon: React.ReactNode }[] = [
   { to: { kind: "tournaments" }, label: tk("Tournaments"), sub: tk("Every event since 2011"), icon: <CalendarRange className="w-4 h-4" /> },
+  { to: { kind: "leagues" }, label: tk("Leagues"), sub: tk("Every season and its champion"), icon: <Layers className="w-4 h-4" /> },
   { to: { kind: "champions" }, label: tk("Champions"), sub: tk("Pick, ban and win rates"), icon: <Swords className="w-4 h-4" /> },
+  { to: { kind: "patches" }, label: tk("Patches"), sub: tk("The pro meta on every patch"), icon: <History className="w-4 h-4" /> },
   { to: { kind: "records" }, label: tk("Records"), sub: tk("Fastest, longest, best games"), icon: <Medal className="w-4 h-4" /> },
   { to: { kind: "titles" }, label: tk("Titles"), sub: tk("Every champion, every league"), icon: <Trophy className="w-4 h-4" /> },
   { to: { kind: "compare" }, label: tk("Compare"), sub: tk("Any two teams or players"), icon: <GitCompare className="w-4 h-4" /> },
@@ -37,7 +39,7 @@ export const HubHome: React.FC = () => {
         <HubSearch big />
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {QUICK.map((q) => (
           <HubLink key={q.label} to={q.to} className={`${card} p-3 hover:border-[#c8aa6e]/60 transition-colors block`}>
             <div className="flex items-center gap-1.5 text-[#c8aa6e] font-bold text-xs">

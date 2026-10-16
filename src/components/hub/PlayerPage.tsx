@@ -78,7 +78,17 @@ const PlayerView: React.FC<{ p: HubPlayer; onOpenUrl: (url: string) => void }> =
         {p.club && (
           <p className="text-[11px] text-[#7e8e9f]">
             <TeamLink name={p.club} u={p.clubU} /> {tl("(last game {date})", { date: fmtDate(p.clubTo) })}
+            {p.bio.contract && <> · {tl("Contract until {date}", { date: fmtDate(p.bio.contract) })}</>}
+            {p.bio.res && <> · {tl("Residency: {region}", { region: p.bio.res })}</>}
           </p>
+        )}
+        {p.bio.fav && p.bio.fav.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1 mt-1 text-[11px] text-[#7e8e9f]">
+            {tl("Favorite champions:")}
+            {p.bio.fav.map((c) => (
+              <ChampLink key={c} name={c} size={16} showName={false} />
+            ))}
+          </div>
         )}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
           <Stat label={tl("Games")} value={`${fmtNum(p.w)}-${fmtNum(p.g - p.w)}`} sub={tl("{pct} win rate", { pct: winRate(p.w, p.g) })} />
@@ -92,6 +102,8 @@ const PlayerView: React.FC<{ p: HubPlayer; onOpenUrl: (url: string) => void }> =
           {p.csm != null && <Stat label={tl("CS / min")} value={p.csm} />}
           {p.gpm != null && <Stat label={tl("Gold / min")} value={fmtNum(p.gpm)} />}
           {p.dpm != null && <Stat label={tl("Damage / min")} value={fmtNum(p.dpm)} />}
+          {p.mvp ? <Stat label={tl("Player of the Game")} value={fmtNum(p.mvp)} sub={tl("awards (where recorded)")} /> : null}
+          {p.pentas && p.pentas.length > 0 && <Stat label={tl("Pentakills")} value={p.pentas.reduce((s, x) => s + x.x, 0)} />}
         </div>
         <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[11px]">
           {links.map(([label, url]) => (
@@ -101,6 +113,11 @@ const PlayerView: React.FC<{ p: HubPlayer; onOpenUrl: (url: string) => void }> =
             </button>
           ))}
         </div>
+        {p.bio.soloq && p.bio.soloq.length > 0 && (
+          <p className="text-[10px] text-[#7e8e9f] mt-2">
+            {tl("Solo queue:")} {p.bio.soloq.join(" · ")}
+          </p>
+        )}
         <p className="text-[10px] text-[#7e8e9f] mt-2">{tl("All-Star and show matches aren't counted.")}</p>
       </div>
 
@@ -279,6 +296,33 @@ const PlayerView: React.FC<{ p: HubPlayer; onOpenUrl: (url: string) => void }> =
           </ul>
         </Section>
       </div>
+
+      {p.pentas && p.pentas.length > 0 && (
+        <Section title={tl("Pentakills")}>
+          <ul className="text-xs space-y-1">
+            {p.pentas.map((x, i) => (
+              <li key={i} className="flex items-center justify-between gap-2 min-w-0">
+                <span className="flex items-center gap-1.5 min-w-0">
+                  <ChampIcon name={x.c} size={18} />
+                  <span className="truncate">
+                    {champName(x.c)}
+                    {x.x > 1 && <span className="text-[#c8aa6e]"> ×{x.x}</span>}
+                    <span className="text-[#7e8e9f]"> · {x.en}</span>
+                  </span>
+                </span>
+                <span className="flex items-center gap-2 shrink-0 text-[#7e8e9f]">
+                  {fmtDate(x.date)}
+                  {x.g && (
+                    <HubLink to={{ kind: "match", slug: x.g }} className="text-[#0ac8b9] hover:underline">
+                      {tl("Details")}
+                    </HubLink>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
 
       <PlayerGamesArchive slug={p.u} />
     </div>

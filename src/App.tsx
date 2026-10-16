@@ -40,13 +40,19 @@ import { ScheduleView } from "./components/views/ScheduleView";
 import { StreamView } from "./components/views/StreamView";
 import { WatchlistView } from "./components/views/WatchlistView";
 import { NewsView } from "./components/views/NewsView";
-import { StatsView } from "./components/views/StatsView";
 import { SettingsView } from "./components/views/SettingsView";
 import { TeamRosterModal } from "./components/TeamRosterModal";
 import { tl, locale } from "./i18n";
 import { syncPush } from "./push";
 import { STARTED_ON_HUB, navigateHub, onHubRoute, syncFromLocation, syncTabAddress } from "./hub/route";
-import { HubSearch } from "./components/hub/HubSearch";
+// The stats hub is big and most visits are for live scores, so its code loads when first opened.
+const StatsView = React.lazy(() => import("./components/views/StatsView").then((m) => ({ default: m.StatsView })));
+const HubSearch = React.lazy(() => import("./components/hub/HubSearch").then((m) => ({ default: m.HubSearch })));
+const lazyFallback = (
+  <div className="py-10 text-center text-xs text-[#9bb3c9]" role="status">
+    …
+  </div>
+);
 
 // The floating HUD is the same app loaded with ?mode=detached in its own window.
 const IS_HUD_WINDOW = window.location.search.includes("mode=detached");
@@ -783,7 +789,9 @@ export default function App() {
       {searchOpen && (
         <div className="bg-[#0a0e17] border-b border-[#1e282d] px-3 sm:px-4 py-2">
           <div className="max-w-2xl mx-auto">
-            <HubSearch big autoFocus onDone={() => setSearchOpen(false)} />
+            <React.Suspense fallback={lazyFallback}>
+              <HubSearch big autoFocus onDone={() => setSearchOpen(false)} />
+            </React.Suspense>
           </div>
         </div>
       )}
@@ -935,7 +943,11 @@ export default function App() {
             isRefreshingCatalog={isRefreshing}
           />
         )}
-        {activeTab === "stats" && <StatsView settings={settings} onOpenUrl={handleOpenUrl} />}
+        {activeTab === "stats" && (
+          <React.Suspense fallback={lazyFallback}>
+            <StatsView settings={settings} onOpenUrl={handleOpenUrl} />
+          </React.Suspense>
+        )}
         {activeTab === "news" && <NewsView onOpenUrl={handleOpenUrl} />}
         {activeTab === "settings" && (
           <SettingsView

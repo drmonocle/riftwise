@@ -192,3 +192,6 @@ export function findHubTeam(index: HubIndex, name: string, code?: string): strin
 
 export const loadTeamSeries = (slug: string) => load<import("./types").TeamSeriesRow[]>(`hub/teamseries/${slug}.json`);
 export const loadPlayerGames = (slug: string) => load<import("./types").PlayerGameRow[]>(`hub/playergames/${slug}.json`);
+export const loadPatches = () => load<import("./types").PatchRow[]>("hub/patches.json");
+export const loadLeagues = () => load<import("./types").LeagueRow[]>("hub/leagues.json");
+export const loadLeague = (slug: string) => load<import("./types").HubLeague>(`hub/league/${slug}.json`);

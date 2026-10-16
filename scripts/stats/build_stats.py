@@ -872,8 +872,8 @@ def main() -> None:
         "note": f"Top leagues and international events only. Games shorter than {RECORD_MIN_MINUTES} minutes are skipped, "
                 "and a game only counts when its numbers agree across Leaguepedia's tables.",
         "game": {
-            "fastest": [game_row(gid, g, r1(g["min"])) for gid, g in sorted(timed, key=lambda x: x[1]["min"])[:10]],
-            "longest": [game_row(gid, g, r1(g["min"])) for gid, g in sorted(timed, key=lambda x: -x[1]["min"])[:10]],
+            "fastest": [game_row(gid, g, round(g["min"], 3)) for gid, g in sorted(timed, key=lambda x: x[1]["min"])[:10]],
+            "longest": [game_row(gid, g, round(g["min"], 3)) for gid, g in sorted(timed, key=lambda x: -x[1]["min"])[:10]],
             "bloodiest": [game_row(gid, g, g["tk"]) for gid, g in sorted(killed, key=lambda x: -(x[1]["k1"] + x[1]["k2"]))[:10]],
             "comebacks": [game_row(gid, g, v) for v, gid, g in comebacks[:10]],
         },

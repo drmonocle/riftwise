@@ -123,6 +123,12 @@ export interface HubEvent {
   /** every player's sums in this tournament (rates are worked out in the app) */
   players?: EventPlayer[];
   teamStats?: EventTeamStats[];
+  /** league page slug */
+  lu?: string | null;
+  overview?: EventOverview | null;
+  rosters?: EventRoster[];
+  /** international events: series won between regions */
+  regions?: { a: string; b: string; wa: number; wb: number }[];
 }
 
 export interface EventPlayer {
@@ -147,6 +153,15 @@ export interface EventPlayer {
   vmin: number;
   c: string[];
   nc: number;
+  /** own and team totals of damage, gold and vision (for the shares) */
+  sd?: number;
+  td?: number;
+  sg?: number;
+  tg?: number;
+  sv?: number;
+  tv?: number;
+  /** Player of the Game awards in this tournament */
+  mvp?: number;
 }
 
 export interface EventTeamStats {
@@ -163,6 +178,18 @@ export interface EventTeamStats {
   tow: number;
   her: number;
   grub: number;
+  gold?: number;
+  /** towers lost */
+  tl?: number;
+  odrag?: number;
+  obar?: number;
+  oher?: number;
+  blue?: number;
+  /** games with player rows, their minutes, team CS and damage */
+  pg?: number;
+  pmin?: number;
+  cs?: number;
+  dmg?: number;
 }
 
 /** [date, opponent, opponent slug, won, lost, event, event slug, series slug, stage, name played under] */
@@ -221,6 +248,8 @@ export interface HubGame {
   vod?: string;
   ff?: number;
   remake?: number;
+  /** Player of the Game */
+  mvp?: { n: string; u: string | null };
   min?: number | null;
   t?: { blue: SideStats; red: SideStats };
   p?: GamePlayer[];
@@ -266,6 +295,11 @@ export interface HubTeam {
   titles: (Omit<Title, "s"> & { e?: string | null })[];
   bestStreak: { n: number; date: string } | null;
   roster: { y: string; p: { n: string; u: string | null; g: number; r: string }[] }[];
+  /** prize money in USD as listed on Leaguepedia */
+  earnings?: number;
+  /** [blue games, blue wins, red games, red wins] */
+  sides?: [number, number, number, number] | null;
+  bansVs?: { c: string; g: number }[];
 }
 
 export interface HubPlayer {
@@ -276,7 +310,14 @@ export interface HubPlayer {
   club?: string;
   clubU?: string | null;
   clubTo?: string;
-  bio: Partial<Record<"real" | "native" | "country" | "born" | "res" | "twitter" | "stream" | "youtube", string>> & { retired?: number };
+  bio: Partial<Record<"real" | "native" | "country" | "born" | "res" | "twitter" | "stream" | "youtube" | "contract", string>> & {
+    retired?: number;
+    fav?: string[];
+    soloq?: string[];
+  };
+  /** Player of the Game awards (where Leaguepedia records them) */
+  mvp?: number;
+  pentas?: { date: string; c: string; g: string | null; en: string; x: number }[];
   g: number;
   w: number;
   k: number;
@@ -308,7 +349,19 @@ export interface HubChamp {
   years: { y: string; p: number; w: number; b: number }[];
   roles: { r: string; p: number }[];
   players: { n: string; u: string | null; g: number; w: number; kda: number }[];
-  recent: { date: string; g: string | null; n: string; u: string | null; team: string; opp: string; k: number; d: number; a: number; win: number; en: string }[];
+  recent: {
+    date: string; g: string | null; n: string; u: string | null; team: string; opp: string; k: number; d: number; a: number; win: number; en: string;
+    it?: string[]; ks?: string; stt?: string; sp?: string[]; r?: string;
+  }[];
+  /** [blue games, blue wins, red games, red wins] */
+  side?: [number, number, number, number];
+  /** builds in the last 12 months: [name, games, wins] */
+  builds?: { since: string; g: number; items: [string, number, number][]; keys: [string, number, number][]; spells: [string, number, number][] } | null;
+  /** role -> [opponent champion, games, wins] */
+  matchups?: Record<string, [string, number, number][]> | null;
+  /** bot lane partner -> [champion, games, wins] */
+  duos?: [string, number, number][] | null;
+  patches?: { p: string; pk: number; w: number; b: number; g: number }[];
 }
 
 export interface HubGameRecord {
@@ -357,6 +410,12 @@ export interface HubRecords {
   player: Record<"kills" | "assists" | "dmg" | "cs" | "perfect", HubPlayerRecord[]>;
   career: Record<"games" | "kills" | "assists" | "pool", HubCareerRecord[]>;
   team: Record<"streaks" | "titles", HubTeamRecord[]>;
+  /** Every pentakill Leaguepedia's scoreboards record (builds from 2026-10-16 on) */
+  pentas?: {
+    total: number;
+    recent: { date: string; n: string; u: string | null; c: string; g: string | null; t: string; e: string | null; a: string; b: string; x: number }[];
+    most: { n: string; u: string | null; v: number }[];
+  };
 }
 export interface HubTitle {
   t: string;
@@ -368,4 +427,65 @@ export interface HubTitle {
   score: string;
   u: string | null;
   e: string | null;
+}
+
+// ── audit round (2026-10-16): tournament facts, rosters, regions, team / player / champion extras ──
+
+export interface GameRef {
+  g: string | null;
+  a: string;
+  b: string;
+  v: number;
+}
+
+export interface EventOverview {
+  g: number;
+  min: number;
+  kills: number;
+  blue: number;
+  red: number;
+  drakes: Record<string, number>;
+  short: GameRef | null;
+  long: GameRef | null;
+  bloody: GameRef | null;
+  farm: { v: number; n: string; u: string | null; c: string; cs: number; min: number; g: string | null } | null;
+  pentas: { n: string; u: string | null; c: string; g: string | null; x: number }[];
+  mvp: { n: string; u: string | null; v: number }[];
+}
+
+export interface EventRoster {
+  t: string;
+  u: string | null;
+  r?: string | null;
+  /** [name, slug, role, country] */
+  p: [string, string | null, string, string][];
+}
+
+export interface PatchRow {
+  p: string;
+  from: string;
+  to: string;
+  g: number;
+  /** [champion, picks, bans, wins] */
+  c: [string, number, number, number][];
+}
+
+export interface LeagueRow {
+  l: string;
+  u: string;
+  r?: string | null;
+  n: number;
+  from?: string | null;
+  to?: string | null;
+  pr: number;
+  g: number;
+}
+
+export interface HubLeague {
+  l: string;
+  u: string;
+  region?: string | null;
+  primary: boolean;
+  events: (EventListItem & { y: string })[];
+  titles: { t: string; u: string | null; n: number }[];
 }

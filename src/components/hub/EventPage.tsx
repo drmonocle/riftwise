@@ -7,6 +7,7 @@ import { loadHubEvent } from "../../hub/data";
 import type { HubEvent, SeriesRow, Stage, StandingRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { EventPlayerStats, EventTeamStatsTable } from "./EventTables";
+import { EventFacts, EventRosters, RegionalRecords } from "./EventExtras";
 import {
   card,
   ChampLink,
@@ -57,7 +58,14 @@ const EventView: React.FC<{ e: HubEvent }> = ({ e }) => {
               {e.end && e.end !== e.start ? ` – ${fmtDate(e.end)}` : ""}
             </span>
           )}
-          {e.league && <span>{e.league}</span>}
+          {e.league &&
+            (e.lu ? (
+              <HubLink to={{ kind: "league", slug: e.lu }} className="text-[#9bb3c9] hover:text-[#c8aa6e] hover:underline">
+                {e.league}
+              </HubLink>
+            ) : (
+              <span>{e.league}</span>
+            ))}
           {e.region && <span>{regionName(e.region, e.region)}</span>}
           {(e.country || e.type) && (
             <span className="flex items-center gap-1">
@@ -136,6 +144,8 @@ const EventView: React.FC<{ e: HubEvent }> = ({ e }) => {
         </Section>
       )}
 
+      {e.overview && <EventFacts o={e.overview} hidden={resultsHidden} />}
+
       {bracket.length > 0 && <Bracket stages={bracket} />}
 
       {e.standings && e.standings.length > 0 && (
@@ -152,6 +162,7 @@ const EventView: React.FC<{ e: HubEvent }> = ({ e }) => {
 
       <EventPlayerStats e={e} hidden={resultsHidden} />
       <EventTeamStatsTable e={e} hidden={resultsHidden} />
+      <RegionalRecords e={e} hidden={resultsHidden} />
 
       <div className="grid gap-3 md:grid-cols-2">
         {e.champs && e.champs.length > 0 && <EventChamps e={e} />}
@@ -180,6 +191,7 @@ const EventView: React.FC<{ e: HubEvent }> = ({ e }) => {
           </Section>
         )}
       </div>
+      {e.rosters && e.rosters.length > 0 && <EventRosters rosters={e.rosters} />}
     </div>
   );
 };
