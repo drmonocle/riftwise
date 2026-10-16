@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   BarChart3,
   Trophy,
@@ -13,14 +13,11 @@ import {
 } from "lucide-react";
 import { AppSettings } from "../../types";
 import {
-  ChampionStats,
   StatsMeta,
   INTERNATIONAL_KINDS,
-  loadChampionStats,
   loadStatsMeta,
-  winRate,
 } from "../../stats";
-import { tl, tk, tc, roleName, eventTitle } from "../../i18n";
+import { tl, tk, tc, eventTitle } from "../../i18n";
 import { champName, useChampionNames } from "../../champions";
 import { loadHubMeta, loadHubRecords, loadHubTitles } from "../../hub/data";
 import type { HubRecords, HubTitle } from "../../hub/types";
@@ -37,7 +34,6 @@ import { useDDragon } from "../../hub/ddragon";
 import {
   card,
   ChampIcon,
-  ChampLink,
   CopyLinkButton,
   EventLink,
   Failed,
@@ -154,6 +150,7 @@ const mmss = (m: number) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
 import { ComparePage } from "../hub/ComparePage";
+import { ChampionsPage } from "../hub/ChampionsPage";
 import { LeaguePage, LeaguesPanel, PatchesPanel } from "../hub/MetaPages";
 import { HubHome, EventsBrowse } from "../hub/HubHome";
 import { TeamPage } from "../hub/TeamPage";
@@ -209,174 +206,6 @@ const SECTIONS: {
     icon: <GitCompare className="w-3.5 h-3.5" />,
   },
 ];
-
-// ── Champions table (pick / ban / win rates by patch or year) ─────────────
-
-type ChampSort = "presence" | "p" | "b" | "wr" | "kda";
-
-const ChampionsPanel: React.FC<{ meta: StatsMeta }> = ({ meta }) => {
-  usePageTitle(tl("Champions"));
-  const [key, setKey] = useState(
-    () => meta.champions.find((k) => k.startsWith("p")) || meta.champions[0],
-  );
-  const [scope, setScope] = useState<"major" | "all">("major");
-  const [sort, setSort] = useState<ChampSort>("presence");
-  const [role, setRole] = useState("All");
-  const state = useLoad<ChampionStats>(() => loadChampionStats(key), [key]);
-
-  const block = state.data?.[scope] || state.data?.all;
-  const rows = useMemo(() => {
-    if (!block) return [];
-    const n = block.games;
-    const list = block.champs
-      .filter((c) => role === "All" || c.role === role)
-      .map((c) => ({
-        ...c,
-        presence: (c.p + c.b) / n,
-        wr: c.p ? c.w / c.p : 0,
-      }));
-    const val = (c: (typeof list)[number]) =>
-      sort === "presence"
-        ? c.presence
-        : sort === "wr"
-          ? c.p >= 10
-            ? c.wr
-            : -1
-          : sort === "kda"
-            ? (c.kda ?? -1)
-            : c[sort];
-    return list.sort((a, b) => val(b) - val(a)).slice(0, 80);
-  }, [block, sort, role]);
-
-  const label = (k: string) =>
-    k === "all"
-      ? tl("All time (2011 to today)")
-      : k.startsWith("p")
-        ? tl("Patch {patch}", { patch: k.slice(1) })
-        : tl("Year {year}", { year: k.slice(1) });
-  const SortTh: React.FC<{ k: ChampSort; children: React.ReactNode }> = ({
-    k,
-    children,
-  }) => (
-    <th className={th}>
-      <button
-        type="button"
-        onClick={() => setSort(k)}
-        className={sort === k ? "text-[#c8aa6e]" : "hover:text-[#f0e6d2]"}
-      >
-        {children}
-        {sort === k ? " ▼" : ""}
-      </button>
-    </th>
-  );
-
-  return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2 text-xs">
-        <select
-          value={key}
-          onChange={(e) => setKey(e.target.value)}
-          aria-label={tl("Patch or year")}
-          className="bg-[#091428] border border-[#1e282d] rounded-lg px-2 py-1.5 text-[#f0e6d2]"
-        >
-          {meta.champions.includes("all") && (
-            <option value="all">{label("all")}</option>
-          )}
-          {meta.champions
-            .filter((k) => k.startsWith("p"))
-            .map((k) => (
-              <option key={k} value={k}>
-                {label(k)}
-              </option>
-            ))}
-          {meta.champions
-            .filter((k) => k.startsWith("y"))
-            .map((k) => (
-              <option key={k} value={k}>
-                {label(k)}
-              </option>
-            ))}
-        </select>
-        <select
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          aria-label={tl("Role")}
-          className="bg-[#091428] border border-[#1e282d] rounded-lg px-2 py-1.5 text-[#f0e6d2]"
-        >
-          {["All", "Top", "Jungle", "Mid", "Bot", "Support"].map((r) => (
-            <option key={r} value={r}>
-              {r === "All" ? tl("All roles") : roleName(r)}
-            </option>
-          ))}
-        </select>
-        <div className="flex rounded-lg border border-[#1e282d] overflow-hidden">
-          {(["major", "all"] as const).map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setScope(s)}
-              className={`px-2.5 py-1.5 ${scope === s ? "bg-[#c8aa6e] text-[#091428] font-bold" : "text-[#9bb3c9]"}`}
-            >
-              {s === "major" ? tl("Top leagues") : tl("All leagues")}
-            </button>
-          ))}
-        </div>
-        {block && (
-          <span className="text-[#7e8e9f]">
-            {tl("{n} games", { n: fmtNum(block.games) })}
-          </span>
-        )}
-      </div>
-      {state.loading ? (
-        <Loading />
-      ) : state.error || !block ? (
-        <Failed />
-      ) : (
-        <div className={`${card} overflow-x-auto`}>
-          <table className="w-full text-xs">
-            <thead>
-              <tr>
-                <th className={th}>{tl("Champion")}</th>
-                <th className={th}>{tl("Role")}</th>
-                <SortTh k="presence">{tl("Presence")}</SortTh>
-                <SortTh k="p">{tl("Picks")}</SortTh>
-                <SortTh k="b">{tl("Bans")}</SortTh>
-                <SortTh k="wr">{tl("Win %")}</SortTh>
-                <SortTh k="kda">{tl("KDA")}</SortTh>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((c) => (
-                <tr key={c.c} className="border-t border-[#1e282d]">
-                  <td className={`${td} font-semibold max-w-[10rem]`}>
-                    <ChampLink name={c.c} size={18} />
-                  </td>
-                  <td className={`${td} text-[#7e8e9f]`}>
-                    {c.role ? roleName(c.role) : "–"}
-                  </td>
-                  <td className={`${td} text-[#9bb3c9]`}>
-                    {Math.round(c.presence * 100)}%
-                  </td>
-                  <td className={`${td} text-[#9bb3c9]`}>{c.p}</td>
-                  <td className={`${td} text-[#9bb3c9]`}>{c.b}</td>
-                  <td className={`${td} text-[#9bb3c9]`}>
-                    {c.p ? winRate(c.w, c.p) : "–"}
-                  </td>
-                  <td className={`${td} text-[#9bb3c9]`}>{c.kda ?? "–"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="text-[10px] text-[#7e8e9f] mt-2">
-            {tl(
-              'Presence = picked or banned in that share of games. "Top leagues" = the main regional leagues plus Worlds, MSI and other internationals.',
-            )}
-          </p>
-        </div>
-      )}
-    </div>
-  );
-};
 
 // ── Records ───────────────────────────────────────────────────────────────
 
@@ -770,7 +599,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
         {route.kind === "league" && <LeaguePage slug={route.slug} />}
         {route.kind === "champions" &&
           (statsMeta.data ? (
-            <ChampionsPanel meta={statsMeta.data} />
+            <ChampionsPage meta={statsMeta.data} query={"query" in route ? route.query : undefined} />
           ) : statsMeta.error ? (
             <Failed />
           ) : (
