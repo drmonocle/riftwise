@@ -148,8 +148,8 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onOpenUrl:
         </div>
         {(g.t?.blue?.picks?.length || g.t?.blue?.bans?.length) && (
           <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[#1e282d]">
-            <Draft st={g.t?.blue} />
-            <Draft st={g.t?.red} right />
+            <Draft st={g.t?.blue} side="blue" />
+            <Draft st={g.t?.red} side="red" right />
           </div>
         )}
       </div>
@@ -212,23 +212,29 @@ const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red
   );
 };
 
-const Draft: React.FC<{ st?: SideStats; right?: boolean }> = ({ st, right }) => (
+// Draft order: blue picks 1st, 4th, 5th, 8th, 9th; red 2nd, 3rd, 6th, 7th, 10th. Bans and picks come in two phases (3 + 2).
+const PICK_NO: Record<"blue" | "red", number[]> = { blue: [1, 4, 5, 8, 9], red: [2, 3, 6, 7, 10] };
+
+const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean }> = ({ st, side, right }) => (
   <div className={`space-y-1.5 min-w-0 ${right ? "text-right" : ""}`}>
     {st?.bans && st.bans.length > 0 && (
       <div className={`flex flex-wrap items-center gap-1 ${right ? "justify-end" : ""}`}>
         <span className="text-[10px] text-[#7e8e9f] uppercase mr-1">{tl("Bans")}</span>
         {st.bans.map((c, i) => (
-          <span key={i} className="opacity-60 grayscale">
+          <span key={i} className={`opacity-60 grayscale ${i === 3 ? "ml-2" : ""}`} title={tl("Ban {n}", { n: i + 1 })}>
             <ChampIcon name={c} size={20} />
           </span>
         ))}
       </div>
     )}
     {st?.picks && st.picks.length > 0 && (
-      <div className={`flex flex-wrap items-center gap-1 ${right ? "justify-end" : ""}`}>
-        <span className="text-[10px] text-[#7e8e9f] uppercase mr-1">{tl("Picks")}</span>
+      <div className={`flex flex-wrap items-start gap-1 ${right ? "justify-end" : ""}`}>
+        <span className="text-[10px] text-[#7e8e9f] uppercase mr-1 mt-1.5">{tl("Picks")}</span>
         {st.picks.map((c, i) => (
-          <ChampIcon key={i} name={c} size={24} />
+          <span key={i} className={`flex flex-col items-center ${i === 3 ? "ml-2" : ""}`} title={tl("Pick {n} of the draft", { n: PICK_NO[side][i] ?? i + 1 })}>
+            <ChampIcon name={c} size={24} />
+            <span className="text-[9px] text-[#7e8e9f] tabular-nums leading-tight">{`${side === "blue" ? "B" : "R"}${i + 1}`}</span>
+          </span>
         ))}
       </div>
     )}

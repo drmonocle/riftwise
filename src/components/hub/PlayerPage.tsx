@@ -8,6 +8,7 @@ import { loadHubPlayer } from "../../hub/data";
 import type { HubPlayer } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { PlayerGamesArchive } from "./Archives";
+import { PlayerPeriodStats } from "./PeriodStats";
 import {
   card,
   ChampIcon,
@@ -203,6 +204,8 @@ const PlayerView: React.FC<{
           {tl("All-Star and show matches aren't counted.")}
         </p>
       </div>
+
+      <PlayerPeriodStats slug={p.u} />
 
       {p.titles.length > 0 && (
         <Section title={tl("Titles")}>

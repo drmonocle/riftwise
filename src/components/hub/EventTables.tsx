@@ -72,7 +72,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
           </label>
         )}
       </div>
-      <SortTable rows={rows} columns={cols} initial={{ key: "kda", desc: true }} rowKey={(p, i) => `${p.u || p.n}-${p.t}-${i}`} />
+      <SortTable rows={rows} columns={cols} initial={{ key: "kda", desc: true }} rowKey={(p, i) => `${p.u || p.n}-${p.t}-${i}`} copyName={`${e.u}-players`} />
       <p className="text-[10px] text-[#7e8e9f]">{tl("Click a column to sort. K / D / A are per game; KP = kill participation.")}</p>
     </Section>
   );
@@ -125,7 +125,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
   const cols = all.filter((c) => c.key !== "grub" || teams.some((t) => t.grub > 0));
   return (
     <Section title={tl("Team stats")}>
-      <SortTable rows={teams} columns={cols} initial={{ key: "wr", desc: true }} rowKey={(t, i) => `${t.t}-${i}`} />
+      <SortTable rows={teams} columns={cols} initial={{ key: "wr", desc: true }} rowKey={(t, i) => `${t.t}-${i}`} copyName={`${e.u}-teams`} />
       <p className="text-[10px] text-[#7e8e9f]">{tl("Per game, games with a full scoreboard only.")}</p>
     </Section>
   );

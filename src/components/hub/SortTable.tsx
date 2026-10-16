@@ -1,6 +1,70 @@
 /** A table whose columns sort when their header is clicked (gol.gg-style stat tables). */
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
+import { ClipboardCopy, Download } from "lucide-react";
+import { tl } from "../../i18n";
+import { IS_WEB } from "../../platform";
 import { td, th } from "./ui";
+
+/** A cell as text, with champion / item pictures written as their names. */
+function cellText(el: Element): string {
+  const parts: string[] = [];
+  const walk = (n: Node) => {
+    if (n.nodeType === Node.TEXT_NODE) parts.push(n.textContent || "");
+    else if (n instanceof HTMLImageElement) parts.push(n.alt ? ` ${n.alt} ` : "");
+    else n.childNodes.forEach(walk);
+  };
+  walk(el);
+  return parts.join("").replace(/[▼▲]/g, "").replace(/\s+/g, " ").trim();
+}
+
+/** The table as shown (sorted and filtered), as rows of text. */
+function tableRows(table: HTMLTableElement): string[][] {
+  return [...table.rows].map((tr) => [...tr.cells].map(cellText));
+}
+
+const csvCell = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+
+/** Copy (for pasting into a spreadsheet) and CSV download buttons for a table. */
+export const TableExport: React.FC<{ tableRef: React.RefObject<HTMLTableElement | null>; name: string }> = ({ tableRef, name }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    if (!tableRef.current) return;
+    const text = tableRows(tableRef.current).map((r) => r.join("\t")).join("\n");
+    navigator.clipboard?.writeText(text).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1800);
+      },
+      () => {},
+    );
+  };
+  const download = () => {
+    if (!tableRef.current) return;
+    // byte-order mark so Excel reads accents and Korean / Chinese names correctly
+    const csv = "﻿" + tableRows(tableRef.current).map((r) => r.map(csvCell).join(",")).join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${name}.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const btn = "flex items-center gap-1 px-2 py-1 rounded border border-[#1e282d] text-[#9bb3c9] hover:text-[#f0e6d2] hover:border-[#2c3c44]";
+  return (
+    <div className="flex justify-end gap-1.5 text-[10px]">
+      <button type="button" onClick={copy} className={btn} title={tl("Copy the table to paste into a spreadsheet")}>
+        <ClipboardCopy className="w-3 h-3" />
+        {copied ? tl("Copied") : tl("Copy")}
+      </button>
+      {IS_WEB && (
+        <button type="button" onClick={download} className={btn} title={tl("Download as a CSV file")}>
+          <Download className="w-3 h-3" />
+          CSV
+        </button>
+      )}
+    </div>
+  );
+};
 
 export interface Column<T> {
   key: string;
@@ -19,6 +83,7 @@ export function SortTable<T>({
   initial,
   rowKey,
   limit,
+  copyName,
 }: {
   rows: T[];
   columns: Column<T>[];
@@ -26,8 +91,11 @@ export function SortTable<T>({
   rowKey: (row: T, i: number) => string;
   /** show only this many rows (after sorting) */
   limit?: number;
+  /** file name for the Copy / CSV buttons (they show when this is set) */
+  copyName?: string;
 }) {
   const [sort, setSort] = useState(initial);
+  const tableRef = useRef<HTMLTableElement>(null);
   const col = columns.find((c) => c.key === sort.key) || columns[0];
   const sorted = useMemo(() => {
     const list = [...rows];
@@ -42,8 +110,10 @@ export function SortTable<T>({
     return limit ? list.slice(0, limit) : list;
   }, [rows, col, sort.desc, limit]);
   return (
+    <div className="space-y-1.5">
+    {copyName && <TableExport tableRef={tableRef} name={copyName} />}
     <div className="overflow-x-auto">
-      <table className="w-full text-xs">
+      <table ref={tableRef} className="w-full text-xs">
         <thead>
           <tr>
             {columns.map((c) => (
@@ -72,6 +142,7 @@ export function SortTable<T>({
           ))}
         </tbody>
       </table>
+    </div>
     </div>
   );
 }

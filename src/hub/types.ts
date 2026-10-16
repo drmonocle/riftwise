@@ -194,8 +194,25 @@ export interface EventTeamStats {
 
 /** [date, opponent, opponent slug, won, lost, event, event slug, series slug, stage, name played under] */
 export type TeamSeriesRow = [string, string, string | null, number, number, string, string, string | null, string, string];
-/** [date, series slug, champion, k, d, a, won, team, opponent, event, role, event slug] */
-export type PlayerGameRow = [string, string, string, number, number, number, number, string, string, string, string, string];
+/**
+ * [date, series slug, champion, k, d, a, won, team, opponent, event, role, event slug,
+ *  cs, gold, damage, vision, minutes, team kills, team damage, team gold, team vision]
+ * (the last nine are in builds from 2026-10-16 on; null when the game has no full scoreboard)
+ */
+export type PlayerGameRow = [
+  string, string, string, number, number, number, number, string, string, string, string, string,
+  (number | null)?, (number | null)?, (number | null)?, (number | null)?, (number | null)?,
+  (number | null)?, (number | null)?, (number | null)?, (number | null)?,
+];
+/**
+ * [date, series slug, event slug, event, opponent, its slug, side "b"/"r", won 0/1, minutes, kills, deaths,
+ *  gold, opp gold, dragons, opp dragons, barons, opp barons, towers, opp towers, bans, picks, opponent's bans]
+ */
+export type TeamGameRow = [
+  string, string, string, string, string, string | null, "b" | "r", number, number | null, number | null, number | null,
+  number | null, number | null, number | null, number | null, number | null, number | null, number | null, number | null,
+  string[], string[], string[]?,
+];
 
 export interface SideStats {
   k?: number;

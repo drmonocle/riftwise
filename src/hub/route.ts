@@ -4,6 +4,7 @@
  *
  *   /riftwatch/stats                      hub front page
  *   /riftwatch/stats/<section>[/<year>]   tournaments, leagues, champions, patches, records, titles, compare
+ *   /riftwatch/stats/compare?teams=t1,gen-g&p=y2026   a comparison (players=..., p = period: all, last20, y2026, e:<event>)
  *   /riftwatch/player/<slug>              /team/<slug>  /tournament/<slug>  /match/<slug>  /champion/<slug>  /league/<slug>
  *
  * The desktop app has no address bar, so it keeps its own back stack instead.
@@ -16,10 +17,12 @@ export type HubEntity = "team" | "player" | "event" | "match" | "champ" | "leagu
 
 export type HubRoute =
   | { kind: "home" }
-  | { kind: HubSection; year?: string }
+  | { kind: HubSection; year?: string; mode?: "team" | "player"; a?: string; b?: string; period?: string }
   | { kind: HubEntity; slug: string };
 
 export const HUB_HOME: HubRoute = { kind: "home" };
+/** The compare page with who is compared over which period (all in the address). */
+export type CompareRoute = { kind: "compare"; mode?: "team" | "player"; a?: string; b?: string; period?: string };
 const SECTIONS: HubSection[] = ["tournaments", "leagues", "champions", "patches", "records", "titles", "compare"];
 const ENTITY_PATH: Record<HubEntity, string> = {
   team: "team", player: "player", event: "tournament", match: "match", champ: "champion", league: "league",
@@ -30,7 +33,7 @@ const PATH_ENTITY: Record<string, HubEntity> = Object.fromEntries(Object.entries
 export const BASE: string = (import.meta.env.BASE_URL || "/").replace(/\/?$/, "/");
 
 /** The hub page an address points at, or null when it isn't one (the live scores page, say). */
-export function parseHubPath(pathname: string): HubRoute | null {
+export function parseHubPath(pathname: string, search = ""): HubRoute | null {
   if (!pathname.startsWith(BASE)) return null;
   const parts = pathname.slice(BASE.length).split("/").filter(Boolean).map((p) => {
     try {
@@ -43,6 +46,7 @@ export function parseHubPath(pathname: string): HubRoute | null {
     if (parts.length === 1) return HUB_HOME;
     if ((SECTIONS as string[]).includes(parts[1])) {
       const kind = parts[1] as HubSection;
+      if (kind === "compare") return { kind, ...parseCompare(search) };
       return kind === "tournaments" && parts[2] && /^\d{4}$/.test(parts[2]) ? { kind, year: parts[2] } : { kind };
     }
     return null;
@@ -51,8 +55,21 @@ export function parseHubPath(pathname: string): HubRoute | null {
   return kind && parts[1] && parts.length === 2 ? { kind, slug: parts[1].toLowerCase() } : null;
 }
 
+/** ?teams=a,b&p=y2026 -> who is compared over which period */
+function parseCompare(search: string): { mode?: "team" | "player"; a?: string; b?: string; period?: string } {
+  const q = new URLSearchParams(search);
+  const mode = q.has("players") ? "player" : q.has("teams") ? "team" : undefined;
+  if (!mode) return {};
+  const [a, b] = (q.get(mode === "player" ? "players" : "teams") || "").split(",").map((x) => x.trim().toLowerCase());
+  return { mode, a: a || undefined, b: b || undefined, period: q.get("p") || undefined };
+}
+
 export function hubPath(r: HubRoute): string {
   if (r.kind === "home") return `${BASE}stats`;
+  if (r.kind === "compare" && "mode" in r && r.mode && (r.a || r.b)) {
+    const q = `${r.mode === "player" ? "players" : "teams"}=${[r.a || "", r.b || ""].map(encodeURIComponent).join(",")}`;
+    return `${BASE}stats/compare?${q}${r.period && r.period !== "all" ? `&p=${encodeURIComponent(r.period)}` : ""}`;
+  }
   if ((SECTIONS as string[]).includes(r.kind)) {
     const y = "year" in r && r.year ? `/${r.year}` : "";
     return `${BASE}stats/${r.kind}${y}`;
@@ -67,7 +84,7 @@ export const sameRoute = (a: HubRoute, b: HubRoute) => hubPath(a) === hubPath(b)
 
 // ── The current page ──────────────────────────────────────────────────────
 
-const atStart = IS_WEB && typeof window !== "undefined" ? parseHubPath(window.location.pathname) : null;
+const atStart = IS_WEB && typeof window !== "undefined" ? parseHubPath(window.location.pathname, window.location.search) : null;
 let current: HubRoute = atStart || HUB_HOME;
 const desktopStack: HubRoute[] = [];
 const listeners = new Set<() => void>();
@@ -133,7 +150,7 @@ export const canGoBack = (): boolean => (IS_WEB ? !!(window.history.state && win
 
 /** Called by the app on the browser's Back / Forward: returns the hub page there, or null. */
 export function syncFromLocation(): HubRoute | null {
-  const r = parseHubPath(window.location.pathname);
+  const r = parseHubPath(window.location.pathname, window.location.search);
   if (r) {
     current = r;
     emit();
