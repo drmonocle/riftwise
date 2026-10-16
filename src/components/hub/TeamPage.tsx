@@ -85,6 +85,14 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
           <Stat label={tl("Avg game")} value={tl("{n} min", { n: t.avgMin })} />
           {t.kills != null && <Stat label={tl("Kills / game")} value={t.kills} sub={tl("{n} deaths", { n: t.deaths ?? 0 })} />}
           {t.obj && <Stat label={tl("Dragons / game")} value={t.obj.dragons} sub={tl("{n} barons", { n: t.obj.barons })} />}
+          {t.earnings ? <Stat label={tl("Prize money")} value={fmtUsd(t.earnings)} sub={tl("as listed in US dollars")} /> : null}
+          {t.sides && t.sides[0] + t.sides[2] > 0 && (
+            <Stat
+              label={tl("Blue / red side")}
+              value={`${winRate(t.sides[1], t.sides[0])} / ${winRate(t.sides[3], t.sides[2])}`}
+              sub={tl("{b} blue games · {r} red", { b: fmtNum(t.sides[0]), r: fmtNum(t.sides[2]) })}
+            />
+          )}
           {t.obj && (
             <Stat
               label={tl("Gold diff / game")}
@@ -270,6 +278,18 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
             ))}
           </ul>
         </Section>
+        {t.bansVs && t.bansVs.length > 0 && (
+          <Section title={tl("Most banned against them")}>
+            <ul className="text-xs grid grid-cols-2 gap-x-3 gap-y-1">
+              {t.bansVs.map((c) => (
+                <li key={c.c} className="flex justify-between gap-1 min-w-0">
+                  <ChampLink name={c.c} size={16} />
+                  <span className="text-[#7e8e9f] shrink-0">{c.g}</span>
+                </li>
+              ))}
+            </ul>
+          </Section>
+        )}
       </div>
     </div>
   );

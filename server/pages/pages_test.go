@@ -39,6 +39,7 @@ func testSite(t *testing.T) *store {
 		"event":  "worlds-2025\tWorlds 2025 | RiftWatch\tWorlds 2025.\t1\n",
 		"game":   "worlds-2025-finals-1\tT1 vs KT | RiftWatch\tT1 vs KT.\t1\n",
 		"champ":  "ahri\tAhri in pro play | RiftWatch\tAhri.\t1\n",
+		"league": "lck\tLCK – every season | RiftWatch\tLCK.\t1\n",
 	}
 	for k, v := range files {
 		must(os.WriteFile(filepath.Join(hub, "seo", k+".tsv"), []byte(v), 0o644))
@@ -101,6 +102,12 @@ func TestUnknownAndOldNames(t *testing.T) {
 	if w := get(s, "/riftwatch/stats/tournaments/2019"); w.Code != 200 || !strings.Contains(w.Body.String(), "in 2019") {
 		t.Errorf("tournaments of a year: %d", w.Code)
 	}
+	if w := get(s, "/riftwatch/league/lck"); w.Code != 200 || !strings.Contains(w.Body.String(), "<title>LCK – every season | RiftWatch</title>") {
+		t.Errorf("league page: %d", w.Code)
+	}
+	if w := get(s, "/riftwatch/stats/patches"); w.Code != 200 || !strings.Contains(w.Body.String(), "every patch") {
+		t.Errorf("patches section: %d", w.Code)
+	}
 	if w := get(s, "/riftwatch/stats/nope"); w.Code != 404 {
 		t.Errorf("unknown section: %d", w.Code)
 	}
@@ -118,5 +125,25 @@ func TestSitemaps(t *testing.T) {
 	}
 	if !strings.Contains(get(s, "/riftwatch/sitemap-sections-1.xml").Body.String(), "/riftwatch/stats/records") {
 		t.Error("sections sitemap")
+	}
+	if !strings.Contains(idx, "sitemap-league-1.xml") || !strings.Contains(get(s, "/riftwatch/sitemap-league-1.xml").Body.String(), "/riftwatch/league/lck</loc>") {
+		t.Error("league sitemap")
+	}
+}
+
+// A build from before league pages existed still loads (no league.tsv).
+func TestOldBuildWithoutLeagues(t *testing.T) {
+	s := testSite(t)
+	os.Remove(filepath.Join(s.site, "stats", "20261015000000", "hub", "seo", "league.tsv"))
+	s2 := &store{site: s.site}
+	s2.refresh()
+	if s2.version == "" {
+		t.Fatal("build without league.tsv was rejected")
+	}
+	if w := get(s2, "/riftwatch/team/t1"); w.Code != 200 {
+		t.Errorf("team page: %d", w.Code)
+	}
+	if w := get(s2, "/riftwatch/league/lck"); w.Code != 404 {
+		t.Errorf("league page without data: %d", w.Code)
 	}
 }

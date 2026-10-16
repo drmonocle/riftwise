@@ -3,16 +3,16 @@
  * bookmarked and found by search engines:
  *
  *   /riftwatch/stats                      hub front page
- *   /riftwatch/stats/<section>[/<year>]   tournaments, champions, records, titles, compare
- *   /riftwatch/player/<slug>              /team/<slug>  /tournament/<slug>  /match/<slug>  /champion/<slug>
+ *   /riftwatch/stats/<section>[/<year>]   tournaments, leagues, champions, patches, records, titles, compare
+ *   /riftwatch/player/<slug>              /team/<slug>  /tournament/<slug>  /match/<slug>  /champion/<slug>  /league/<slug>
  *
  * The desktop app has no address bar, so it keeps its own back stack instead.
  */
 import { useSyncExternalStore } from "react";
 import { IS_WEB } from "../platform";
 
-export type HubSection = "tournaments" | "champions" | "records" | "titles" | "compare";
-export type HubEntity = "team" | "player" | "event" | "match" | "champ";
+export type HubSection = "tournaments" | "leagues" | "champions" | "patches" | "records" | "titles" | "compare";
+export type HubEntity = "team" | "player" | "event" | "match" | "champ" | "league";
 
 export type HubRoute =
   | { kind: "home" }
@@ -20,8 +20,10 @@ export type HubRoute =
   | { kind: HubEntity; slug: string };
 
 export const HUB_HOME: HubRoute = { kind: "home" };
-const SECTIONS: HubSection[] = ["tournaments", "champions", "records", "titles", "compare"];
-const ENTITY_PATH: Record<HubEntity, string> = { team: "team", player: "player", event: "tournament", match: "match", champ: "champion" };
+const SECTIONS: HubSection[] = ["tournaments", "leagues", "champions", "patches", "records", "titles", "compare"];
+const ENTITY_PATH: Record<HubEntity, string> = {
+  team: "team", player: "player", event: "tournament", match: "match", champ: "champion", league: "league",
+};
 const PATH_ENTITY: Record<string, HubEntity> = Object.fromEntries(Object.entries(ENTITY_PATH).map(([k, v]) => [v, k as HubEntity]));
 
 /** "/riftwatch/" on the web build, "/" in the desktop app. */

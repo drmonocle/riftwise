@@ -1,6 +1,6 @@
 /** One series (a "match": Bo1 to Bo5): every game's draft, scoreboard, builds, runes and objectives. */
 import React, { useState } from "react";
-import { PlayCircle, Swords, Clock } from "lucide-react";
+import { PlayCircle, Swords, Clock, Crown } from "lucide-react";
 import { tl, tc, tk, roleName, locale } from "../../i18n";
 import { champName } from "../../champions";
 import { loadHubSeries } from "../../hub/data";
@@ -27,9 +27,8 @@ import {
 const fmtGold = (g?: number) => (g == null ? "–" : `${(g / 1000).toFixed(1)}k`);
 const fmtMin = (m?: number | null) => {
   if (m == null) return "";
-  const mm = Math.floor(m);
-  const ss = Math.round((m - mm) * 60);
-  return `${mm}:${String(ss).padStart(2, "0")}`;
+  const s = Math.round(m * 60);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
 const DRAKE_LABEL: Record<string, string> = {
   infernal: tk("Infernal"), mountain: tk("Mountain"), ocean: tk("Ocean"), cloud: tk("Cloud"), hextech: tk("Hextech"), chemtech: tk("Chemtech"),
@@ -125,6 +124,12 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onOpenUrl:
             {g.patch && <span>{tl("Patch {patch}", { patch: g.patch })}</span>}
             {g.date && <span>{new Date(`${g.date.replace(" ", "T")}Z`).toLocaleString(locale(), { dateStyle: "medium", timeStyle: "short" })}</span>}
             {g.ff ? <span className="text-[#c8aa6e]">{tl("Forfeit")}</span> : null}
+            {g.mvp && !hidden && (
+              <span className="flex items-center gap-1 text-[#c8aa6e]">
+                <Crown className="w-3 h-3" />
+                {tl("Player of the Game:")} <PlayerLink name={g.mvp.n} u={g.mvp.u} className="text-[#c8aa6e] hover:underline font-semibold" />
+              </span>
+            )}
           </span>
           {g.vod && (
             <button
@@ -240,6 +245,8 @@ const Scoreboard: React.FC<{ name: string; side: "blue" | "red"; players: GamePl
 }) => {
   const color = side === "blue" ? "#4a9eff" : "#e84057";
   const totalK = players.reduce((s, p) => s + p.k, 0);
+  const totalDmg = players.reduce((s, p) => s + (p.dm || 0), 0);
+  const totalGold = players.reduce((s, p) => s + (p.gd || 0), 0);
   return (
     <section className={`${card} p-3 min-w-0`} style={{ borderTopColor: color, borderTopWidth: 2 }}>
       <h3 className="text-xs font-bold text-[#f0e6d2] mb-2 flex items-center gap-2">
@@ -249,14 +256,20 @@ const Scoreboard: React.FC<{ name: string; side: "blue" | "red"; players: GamePl
       </h3>
       <div className="space-y-2">
         {players.map((p, i) => (
-          <PlayerRow key={i} p={p} teamKills={totalK} minutes={minutes} />
+          <PlayerRow key={i} p={p} teamKills={totalK} teamDmg={totalDmg} teamGold={totalGold} minutes={minutes} />
         ))}
       </div>
     </section>
   );
 };
 
-const PlayerRow: React.FC<{ p: GamePlayer; teamKills: number; minutes?: number | null }> = ({ p, teamKills, minutes }) => {
+const PlayerRow: React.FC<{ p: GamePlayer; teamKills: number; teamDmg: number; teamGold: number; minutes?: number | null }> = ({
+  p,
+  teamKills,
+  teamDmg,
+  teamGold,
+  minutes,
+}) => {
   const kp = teamKills ? Math.round(((p.k + p.a) / teamKills) * 100) : null;
   const csm = p.cs != null && minutes ? (p.cs / minutes).toFixed(1) : null;
   return (
@@ -303,8 +316,19 @@ const PlayerRow: React.FC<{ p: GamePlayer; teamKills: number; minutes?: number |
           </span>
         )}
         <span className="text-[10px] text-[#7e8e9f] tabular-nums">
-          {p.gd != null && <>{tl("{n} gold", { n: fmtNum(p.gd) })}</>}
-          {p.dm != null && <> · {tl("{n} dmg", { n: fmtNum(p.dm) })}</>}
+          {p.gd != null && (
+            <>
+              {tl("{n} gold", { n: fmtNum(p.gd) })}
+              {teamGold ? ` (${Math.round((p.gd / teamGold) * 100)}%)` : ""}
+            </>
+          )}
+          {p.dm != null && (
+            <>
+              {" · "}
+              {tl("{n} dmg", { n: fmtNum(p.dm) })}
+              {teamDmg ? ` (${Math.round((p.dm / teamDmg) * 100)}%)` : ""}
+            </>
+          )}
           {p.v != null && <> · {tl("{n} vision", { n: p.v })}</>}
         </span>
       </div>

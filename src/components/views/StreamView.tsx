@@ -3,7 +3,10 @@ import { StreamEvent, StreamStatus, AppSettings, CatalogData } from "../../types
 import { streamPhase, streamEventTitle, upcomingStreamMatches } from "../../helpers";
 import { Radio, Play, ExternalLink, Flame, Star, Moon, Calendar, ChevronDown } from "lucide-react";
 import { tl, tn, locale, stageName } from "../../i18n";
-import { StreamBracket } from "../hub/StreamBracket";
+import { lazyPart } from "../../lazyPart";
+import { PartBoundary } from "../PartBoundary";
+// Loaded with the stats hub code, only when the 24/7 tab is opened
+const StreamBracket = lazyPart(() => import("../hub/StreamBracket").then((m) => m.StreamBracket));
 
 interface StreamViewProps {
   events: StreamEvent[];
@@ -202,7 +205,11 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
           </div>
         </div>
         <div className="mt-4">
-          <StreamBracket events={events} now={now} />
+          <PartBoundary>
+            <React.Suspense fallback={null}>
+              <StreamBracket events={events} now={now} />
+            </React.Suspense>
+          </PartBoundary>
         </div>
       </div>
     );
@@ -384,7 +391,11 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
         </section>
       )}
 
-      <StreamBracket events={events} now={now} />
+      <PartBoundary>
+        <React.Suspense fallback={null}>
+          <StreamBracket events={events} now={now} />
+        </React.Suspense>
+      </PartBoundary>
     </div>
   );
 };

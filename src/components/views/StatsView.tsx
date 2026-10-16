@@ -1,15 +1,51 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { BarChart3, Trophy, Swords, Medal, ArrowLeft, GitCompare, Home, CalendarRange } from "lucide-react";
+import {
+  BarChart3,
+  Trophy,
+  Swords,
+  Medal,
+  ArrowLeft,
+  GitCompare,
+  Home,
+  CalendarRange,
+  Layers,
+  History,
+} from "lucide-react";
 import { AppSettings } from "../../types";
-import { ChampionStats, StatsMeta, INTERNATIONAL_KINDS, loadChampionStats, loadStatsMeta, winRate } from "../../stats";
+import {
+  ChampionStats,
+  StatsMeta,
+  INTERNATIONAL_KINDS,
+  loadChampionStats,
+  loadStatsMeta,
+  winRate,
+} from "../../stats";
 import { tl, tk, tc, roleName, eventTitle } from "../../i18n";
 import { champName, useChampionNames } from "../../champions";
-import { HubIndex, HubHit, loadHubIndex, loadHubMeta, loadHubPlayer, loadHubRecords, loadHubTeam, loadHubTitles, searchHub } from "../../hub/data";
+import {
+  HubIndex,
+  HubHit,
+  loadHubIndex,
+  loadHubMeta,
+  loadHubPlayer,
+  loadHubRecords,
+  loadHubTeam,
+  loadHubTitles,
+  searchHub,
+} from "../../hub/data";
 import type { HubPlayer, HubRecords, HubTeam, HubTitle } from "../../hub/types";
-import { HubRoute, canGoBack, hubBack, hubShareUrl, navigateHub, useHubRoute } from "../../hub/route";
+import {
+  HubRoute,
+  canGoBack,
+  hubBack,
+  hubShareUrl,
+  navigateHub,
+  useHubRoute,
+} from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import {
   card,
+  ChampIcon,
   ChampLink,
   CopyLinkButton,
   EventLink,
@@ -20,16 +56,114 @@ import {
   Loading,
   Page,
   PlayerLink,
+  RevealButton,
   Section,
   SpoilerProvider,
   td,
   th,
   TeamLink,
+  useHidden,
   useLoad,
   usePageTitle,
 } from "../hub/ui";
 import { HubSearch } from "../hub/HubSearch";
+
+/** Every pro pentakill: the players with the most, and the newest (spoiler mode hides fresh ones). */
+const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
+  p,
+}) => {
+  const [n, setN] = useState(15);
+  return (
+    <>
+      <Section title={tl("Most pentakills")}>
+        <ol className="text-xs space-y-1.5">
+          {p.most.map((x, i) => (
+            <li key={i} className="flex justify-between gap-2 min-w-0">
+              <PlayerLink name={x.n} u={x.u} />
+              <span className="text-[#c8aa6e] font-bold">{x.v}</span>
+            </li>
+          ))}
+        </ol>
+        <p className="text-[10px] text-[#7e8e9f]">
+          {tl(
+            "{n} pentakills recorded by Leaguepedia. Complete from 2018 on; earlier years only partly, so older players are undercounted.",
+            {
+              n: fmtNum(p.total),
+            },
+          )}
+        </p>
+      </Section>
+      <Section title={tl("Latest pentakills")}>
+        <ol className="text-xs space-y-1.5">
+          {p.recent.slice(0, n).map((x, i) => (
+            <PentaRow key={i} x={x} />
+          ))}
+        </ol>
+        {p.recent.length > n && (
+          <button
+            type="button"
+            onClick={() => setN((v) => v + 30)}
+            className="text-xs text-[#0ac8b9] hover:underline"
+          >
+            {tl("Show more ({n} left)", { n: p.recent.length - n })}
+          </button>
+        )}
+      </Section>
+    </>
+  );
+};
+
+const PentaRow: React.FC<{
+  x: NonNullable<HubRecords["pentas"]>["recent"][number];
+}> = ({ x }) => {
+  const [hidden, reveal] = useHidden(`penta:${x.g}:${x.n}`, x.date);
+  return (
+    <li className="min-w-0">
+      <div className="flex items-center gap-1.5 min-w-0">
+        {hidden ? (
+          <RevealButton onReveal={reveal} small />
+        ) : (
+          <>
+            <ChampIcon name={x.c} size={18} />
+            <span className="truncate">
+              <PlayerLink name={x.n} u={x.u} />{" "}
+              <span className="text-[#9bb3c9]">{champName(x.c)}</span>
+              {x.x > 1 && <span className="text-[#c8aa6e]"> ×{x.x}</span>}{" "}
+              {x.g ? (
+                <HubLink
+                  to={{ kind: "match", slug: x.g }}
+                  className="text-[#9bb3c9] hover:text-[#c8aa6e] hover:underline"
+                >
+                  {x.a} vs {x.b}
+                </HubLink>
+              ) : (
+                <span className="text-[#9bb3c9]">
+                  {x.a} vs {x.b}
+                </span>
+              )}
+            </span>
+          </>
+        )}
+      </div>
+      <div className="text-[10px] text-[#7e8e9f] truncate">
+        <EventLink
+          name={x.t}
+          u={x.e}
+          className="text-[#7e8e9f] hover:text-[#c8aa6e] hover:underline"
+        />{" "}
+        · {fmtDate(x.date)}
+      </div>
+    </li>
+  );
+};
+
+/** Minutes as m:ss (records are kept to the second) */
+const mmss = (m: number) => {
+  const s = Math.round(m * 60);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+};
 import { HeadToHeadSeries } from "../hub/Archives";
+import { LeaguePage, LeaguesPanel, PatchesPanel } from "../hub/MetaPages";
 import { HubHome, EventsBrowse } from "../hub/HubHome";
 import { TeamPage } from "../hub/TeamPage";
 import { PlayerPage } from "../hub/PlayerPage";
@@ -42,13 +176,47 @@ interface StatsViewProps {
   onOpenUrl: (url: string) => void;
 }
 
-const SECTIONS: { kind: HubRoute["kind"]; label: string; icon: React.ReactNode }[] = [
+const SECTIONS: {
+  kind: HubRoute["kind"];
+  label: string;
+  icon: React.ReactNode;
+}[] = [
   { kind: "home", label: tk("Home"), icon: <Home className="w-3.5 h-3.5" /> },
-  { kind: "tournaments", label: tk("Tournaments"), icon: <CalendarRange className="w-3.5 h-3.5" /> },
-  { kind: "champions", label: tk("Champions"), icon: <Swords className="w-3.5 h-3.5" /> },
-  { kind: "records", label: tk("Records"), icon: <Medal className="w-3.5 h-3.5" /> },
-  { kind: "titles", label: tk("Titles"), icon: <Trophy className="w-3.5 h-3.5" /> },
-  { kind: "compare", label: tk("Compare"), icon: <GitCompare className="w-3.5 h-3.5" /> },
+  {
+    kind: "tournaments",
+    label: tk("Tournaments"),
+    icon: <CalendarRange className="w-3.5 h-3.5" />,
+  },
+  {
+    kind: "leagues",
+    label: tk("Leagues"),
+    icon: <Layers className="w-3.5 h-3.5" />,
+  },
+  {
+    kind: "champions",
+    label: tk("Champions"),
+    icon: <Swords className="w-3.5 h-3.5" />,
+  },
+  {
+    kind: "patches",
+    label: tk("Patches"),
+    icon: <History className="w-3.5 h-3.5" />,
+  },
+  {
+    kind: "records",
+    label: tk("Records"),
+    icon: <Medal className="w-3.5 h-3.5" />,
+  },
+  {
+    kind: "titles",
+    label: tk("Titles"),
+    icon: <Trophy className="w-3.5 h-3.5" />,
+  },
+  {
+    kind: "compare",
+    label: tk("Compare"),
+    icon: <GitCompare className="w-3.5 h-3.5" />,
+  },
 ];
 
 // ── Champions table (pick / ban / win rates by patch or year) ─────────────
@@ -57,7 +225,9 @@ type ChampSort = "presence" | "p" | "b" | "wr" | "kda";
 
 const ChampionsPanel: React.FC<{ meta: StatsMeta }> = ({ meta }) => {
   usePageTitle(tl("Champions"));
-  const [key, setKey] = useState(() => meta.champions.find((k) => k.startsWith("p")) || meta.champions[0]);
+  const [key, setKey] = useState(
+    () => meta.champions.find((k) => k.startsWith("p")) || meta.champions[0],
+  );
   const [scope, setScope] = useState<"major" | "all">("major");
   const [sort, setSort] = useState<ChampSort>("presence");
   const [role, setRole] = useState("All");
@@ -69,17 +239,40 @@ const ChampionsPanel: React.FC<{ meta: StatsMeta }> = ({ meta }) => {
     const n = block.games;
     const list = block.champs
       .filter((c) => role === "All" || c.role === role)
-      .map((c) => ({ ...c, presence: (c.p + c.b) / n, wr: c.p ? c.w / c.p : 0 }));
+      .map((c) => ({
+        ...c,
+        presence: (c.p + c.b) / n,
+        wr: c.p ? c.w / c.p : 0,
+      }));
     const val = (c: (typeof list)[number]) =>
-      sort === "presence" ? c.presence : sort === "wr" ? (c.p >= 10 ? c.wr : -1) : sort === "kda" ? c.kda ?? -1 : c[sort];
+      sort === "presence"
+        ? c.presence
+        : sort === "wr"
+          ? c.p >= 10
+            ? c.wr
+            : -1
+          : sort === "kda"
+            ? (c.kda ?? -1)
+            : c[sort];
     return list.sort((a, b) => val(b) - val(a)).slice(0, 80);
   }, [block, sort, role]);
 
   const label = (k: string) =>
-    k === "all" ? tl("All time (2011 to today)") : k.startsWith("p") ? tl("Patch {patch}", { patch: k.slice(1) }) : tl("Year {year}", { year: k.slice(1) });
-  const SortTh: React.FC<{ k: ChampSort; children: React.ReactNode }> = ({ k, children }) => (
+    k === "all"
+      ? tl("All time (2011 to today)")
+      : k.startsWith("p")
+        ? tl("Patch {patch}", { patch: k.slice(1) })
+        : tl("Year {year}", { year: k.slice(1) });
+  const SortTh: React.FC<{ k: ChampSort; children: React.ReactNode }> = ({
+    k,
+    children,
+  }) => (
     <th className={th}>
-      <button type="button" onClick={() => setSort(k)} className={sort === k ? "text-[#c8aa6e]" : "hover:text-[#f0e6d2]"}>
+      <button
+        type="button"
+        onClick={() => setSort(k)}
+        className={sort === k ? "text-[#c8aa6e]" : "hover:text-[#f0e6d2]"}
+      >
         {children}
         {sort === k ? " ▼" : ""}
       </button>
@@ -95,17 +288,23 @@ const ChampionsPanel: React.FC<{ meta: StatsMeta }> = ({ meta }) => {
           aria-label={tl("Patch or year")}
           className="bg-[#091428] border border-[#1e282d] rounded-lg px-2 py-1.5 text-[#f0e6d2]"
         >
-          {meta.champions.includes("all") && <option value="all">{label("all")}</option>}
-          {meta.champions.filter((k) => k.startsWith("p")).map((k) => (
-            <option key={k} value={k}>
-              {label(k)}
-            </option>
-          ))}
-          {meta.champions.filter((k) => k.startsWith("y")).map((k) => (
-            <option key={k} value={k}>
-              {label(k)}
-            </option>
-          ))}
+          {meta.champions.includes("all") && (
+            <option value="all">{label("all")}</option>
+          )}
+          {meta.champions
+            .filter((k) => k.startsWith("p"))
+            .map((k) => (
+              <option key={k} value={k}>
+                {label(k)}
+              </option>
+            ))}
+          {meta.champions
+            .filter((k) => k.startsWith("y"))
+            .map((k) => (
+              <option key={k} value={k}>
+                {label(k)}
+              </option>
+            ))}
         </select>
         <select
           value={role}
@@ -131,7 +330,11 @@ const ChampionsPanel: React.FC<{ meta: StatsMeta }> = ({ meta }) => {
             </button>
           ))}
         </div>
-        {block && <span className="text-[#7e8e9f]">{tl("{n} games", { n: fmtNum(block.games) })}</span>}
+        {block && (
+          <span className="text-[#7e8e9f]">
+            {tl("{n} games", { n: fmtNum(block.games) })}
+          </span>
+        )}
       </div>
       {state.loading ? (
         <Loading />
@@ -157,18 +360,26 @@ const ChampionsPanel: React.FC<{ meta: StatsMeta }> = ({ meta }) => {
                   <td className={`${td} font-semibold max-w-[10rem]`}>
                     <ChampLink name={c.c} size={18} />
                   </td>
-                  <td className={`${td} text-[#7e8e9f]`}>{c.role ? roleName(c.role) : "–"}</td>
-                  <td className={`${td} text-[#9bb3c9]`}>{Math.round(c.presence * 100)}%</td>
+                  <td className={`${td} text-[#7e8e9f]`}>
+                    {c.role ? roleName(c.role) : "–"}
+                  </td>
+                  <td className={`${td} text-[#9bb3c9]`}>
+                    {Math.round(c.presence * 100)}%
+                  </td>
                   <td className={`${td} text-[#9bb3c9]`}>{c.p}</td>
                   <td className={`${td} text-[#9bb3c9]`}>{c.b}</td>
-                  <td className={`${td} text-[#9bb3c9]`}>{c.p ? winRate(c.w, c.p) : "–"}</td>
+                  <td className={`${td} text-[#9bb3c9]`}>
+                    {c.p ? winRate(c.w, c.p) : "–"}
+                  </td>
                   <td className={`${td} text-[#9bb3c9]`}>{c.kda ?? "–"}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           <p className="text-[10px] text-[#7e8e9f] mt-2">
-            {tl("Presence = picked or banned in that share of games. \"Top leagues\" = the main regional leagues plus Worlds, MSI and other internationals.")}
+            {tl(
+              'Presence = picked or banned in that share of games. "Top leagues" = the main regional leagues plus Worlds, MSI and other internationals.',
+            )}
           </p>
         </div>
       )}
@@ -184,44 +395,70 @@ const RecordsPanel: React.FC = () => {
   return (
     <Page state={state}>
       {(r) => {
-        const gameList = (title: string, rows: HubRecords["game"]["fastest"], fmt: (v: number) => string) => (
+        const gameList = (
+          title: string,
+          rows: HubRecords["game"]["fastest"],
+          fmt: (v: number) => string,
+        ) => (
           <Section title={title}>
             <ol className="text-xs space-y-1.5">
               {rows.map((g, i) => (
                 <li key={i} className="min-w-0">
                   <div className="truncate">
-                    <span className="text-[#c8aa6e] font-bold mr-1">{fmt(g.v)}</span>
+                    <span className="text-[#c8aa6e] font-bold mr-1">
+                      {fmt(g.v)}
+                    </span>
                     {g.g ? (
                       <HubLink to={{ kind: "match", slug: g.g }}>
-                        {g.w} over {g.w === g.a ? g.b : g.a}
+                        {tl("{w} beat {l}", {
+                          w: g.w,
+                          l: g.w === g.a ? g.b : g.a,
+                        })}
                       </HubLink>
                     ) : (
                       <span className="text-[#f0e6d2]">
-                        {g.w} over {g.w === g.a ? g.b : g.a}
+                        {tl("{w} beat {l}", {
+                          w: g.w,
+                          l: g.w === g.a ? g.b : g.a,
+                        })}
                       </span>
                     )}
                   </div>
                   <div className="text-[10px] text-[#7e8e9f] truncate">
-                    <EventLink name={g.t} u={g.e} className="text-[#7e8e9f] hover:text-[#c8aa6e] hover:underline" /> · {fmtDate(g.date)}
+                    <EventLink
+                      name={g.t}
+                      u={g.e}
+                      className="text-[#7e8e9f] hover:text-[#c8aa6e] hover:underline"
+                    />{" "}
+                    · {fmtDate(g.date)}
                   </div>
                 </li>
               ))}
             </ol>
           </Section>
         );
-        const playerList = (title: string, rows: HubRecords["player"]["kills"], fmt: (v: number) => string = fmtNum) => (
+        const playerList = (
+          title: string,
+          rows: HubRecords["player"]["kills"],
+          fmt: (v: number) => string = fmtNum,
+        ) => (
           <Section title={title}>
             <ol className="text-xs space-y-1.5">
               {rows.map((p, i) => (
                 <li key={i} className="min-w-0">
                   <div className="truncate">
-                    <span className="text-[#c8aa6e] font-bold mr-1">{fmt(p.v)}</span>
+                    <span className="text-[#c8aa6e] font-bold mr-1">
+                      {fmt(p.v)}
+                    </span>
                     <PlayerLink name={p.pl} u={p.u} />
                     <span className="text-[#9bb3c9]">
                       {" "}
                       {champName(p.c)}{" "}
                       {p.g ? (
-                        <HubLink to={{ kind: "match", slug: p.g }} className="text-[#9bb3c9] hover:text-[#c8aa6e] hover:underline">
+                        <HubLink
+                          to={{ kind: "match", slug: p.g }}
+                          className="text-[#9bb3c9] hover:text-[#c8aa6e] hover:underline"
+                        >
                           {p.kda}
                         </HubLink>
                       ) : (
@@ -230,20 +467,31 @@ const RecordsPanel: React.FC = () => {
                     </span>
                   </div>
                   <div className="text-[10px] text-[#7e8e9f] truncate">
-                    vs {p.opp} · <EventLink name={p.t} u={p.e} className="text-[#7e8e9f] hover:text-[#c8aa6e] hover:underline" /> · {fmtDate(p.date)}
+                    vs {p.opp} ·{" "}
+                    <EventLink
+                      name={p.t}
+                      u={p.e}
+                      className="text-[#7e8e9f] hover:text-[#c8aa6e] hover:underline"
+                    />{" "}
+                    · {fmtDate(p.date)}
                   </div>
                 </li>
               ))}
             </ol>
           </Section>
         );
-        const careerList = (title: string, rows: HubRecords["career"]["games"]) => (
+        const careerList = (
+          title: string,
+          rows: HubRecords["career"]["games"],
+        ) => (
           <Section title={title}>
             <ol className="text-xs space-y-1.5">
               {rows.map((p, i) => (
                 <li key={i} className="flex justify-between gap-2 min-w-0">
                   <PlayerLink name={p.pl} u={p.u} />
-                  <span className="text-[#c8aa6e] font-bold">{fmtNum(p.v)}</span>
+                  <span className="text-[#c8aa6e] font-bold">
+                    {fmtNum(p.v)}
+                  </span>
                 </li>
               ))}
             </ol>
@@ -252,39 +500,66 @@ const RecordsPanel: React.FC = () => {
         return (
           <div className="space-y-3">
             <p className="text-[11px] text-[#7e8e9f]">
-              {tl("Top leagues and international events only. Games shorter than 14 minutes are skipped, and a game only counts when its numbers agree across Leaguepedia's tables.")}{" "}
-              {tl("Career totals count every pro game except All-Star and show matches. The top records were checked against Leaguepedia.")}
+              {tl(
+                "Top leagues and international events only. Games shorter than 14 minutes are skipped, and a game only counts when its numbers agree across Leaguepedia's tables.",
+              )}{" "}
+              {tl(
+                "Career totals count every pro game except All-Star and show matches. The top records were checked against Leaguepedia.",
+              )}
             </p>
             <div className="grid gap-3 md:grid-cols-2">
-              {gameList(tl("Fastest wins"), r.game.fastest, (v) => tl("{n} min", { n: v }))}
-              {gameList(tl("Longest games"), r.game.longest, (v) => tl("{n} min", { n: v }))}
-              {gameList(tl("Most kills in a game"), r.game.bloodiest, (v) => tl("{n} kills", { n: v }))}
-              {gameList(tl("Won with the biggest gold deficit (end of game)"), r.game.comebacks, (v) => `${(v / 1000).toFixed(1)}k`)}
+              {gameList(tl("Fastest wins"), r.game.fastest, mmss)}
+              {gameList(tl("Longest games"), r.game.longest, mmss)}
+              {gameList(tl("Most kills in a game"), r.game.bloodiest, (v) =>
+                tl("{n} kills", { n: v }),
+              )}
+              {gameList(
+                tl("Won with the biggest gold deficit (end of game)"),
+                r.game.comebacks,
+                (v) => `${(v / 1000).toFixed(1)}k`,
+              )}
               {playerList(tl("Most kills by one player"), r.player.kills)}
               {playerList(tl("Most assists by one player"), r.player.assists)}
-              {playerList(tl("Best deathless games (kills + assists)"), r.player.perfect)}
+              {playerList(
+                tl("Best deathless games (kills + assists)"),
+                r.player.perfect,
+              )}
               {playerList(tl("Most damage in a game"), r.player.dmg)}
               {playerList(tl("Most CS in a game"), r.player.cs)}
+              {r.pentas && r.pentas.recent.length > 0 && (
+                <PentakillRecords p={r.pentas} />
+              )}
               <Section title={tl("Longest win streaks")}>
                 <ol className="text-xs space-y-1.5">
                   {r.team.streaks.map((t, i) => (
                     <li key={i} className="flex justify-between gap-2 min-w-0">
                       <TeamLink name={t.team} u={t.u} />
                       <span className="text-[#7e8e9f]">
-                        <span className="text-[#c8aa6e] font-bold">{tl("{n} games", { n: t.v })}</span> · {tl("ended {date}", { date: fmtDate(t.date) })}
+                        <span className="text-[#c8aa6e] font-bold">
+                          {tl("{n} games", { n: t.v })}
+                        </span>{" "}
+                        · {tl("ended {date}", { date: fmtDate(t.date) })}
                       </span>
                     </li>
                   ))}
                 </ol>
               </Section>
-              <Section title={tl("Most international titles (Worlds, MSI, First Stand)")}>
+              <Section
+                title={tl(
+                  "Most international titles (Worlds, MSI, First Stand)",
+                )}
+              >
                 <ol className="text-xs space-y-1.5">
                   {r.team.titles.map((t, i) => (
                     <li key={i} className="flex justify-between gap-2 min-w-0">
                       <TeamLink name={t.team} u={t.u} />
                       <span className="text-[#7e8e9f]">
-                        {t.worlds ? tl("{n} Worlds", { n: t.worlds }) + " · " : ""}
-                        <span className="text-[#c8aa6e] font-bold">{tl("{n} total", { n: t.v })}</span>
+                        {t.worlds
+                          ? tl("{n} Worlds", { n: t.worlds }) + " · "
+                          : ""}
+                        <span className="text-[#c8aa6e] font-bold">
+                          {tl("{n} total", { n: t.v })}
+                        </span>
                       </span>
                     </li>
                   ))}
@@ -314,7 +589,8 @@ const TITLE_FILTERS = [
 const TitlesPanel: React.FC = () => {
   usePageTitle(tl("Titles"));
   const state = useLoad<HubTitle[]>(loadHubTitles, []);
-  const [kind, setKind] = useState<(typeof TITLE_FILTERS)[number]["key"]>("International");
+  const [kind, setKind] =
+    useState<(typeof TITLE_FILTERS)[number]["key"]>("International");
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -324,7 +600,9 @@ const TitlesPanel: React.FC = () => {
             type="button"
             onClick={() => setKind(f.key)}
             className={`px-2.5 py-1.5 rounded-lg border ${
-              kind === f.key ? "bg-[#c8aa6e] text-[#091428] font-bold border-[#c8aa6e]" : "border-[#1e282d] text-[#9bb3c9]"
+              kind === f.key
+                ? "bg-[#c8aa6e] text-[#091428] font-bold border-[#c8aa6e]"
+                : "border-[#1e282d] text-[#9bb3c9]"
             }`}
           >
             {tl(f.label)}
@@ -357,19 +635,31 @@ const TitlesPanel: React.FC = () => {
                 </thead>
                 <tbody>
                   {rows.map((x) => (
-                    <tr key={x.t + x.date} className="border-t border-[#1e282d]">
+                    <tr
+                      key={x.t + x.date}
+                      className="border-t border-[#1e282d]"
+                    >
                       <td className={`${td} max-w-[14rem] truncate`}>
-                        <Trophy className={`w-3 h-3 inline mr-1 ${x.kind === "Worlds" ? "text-[#c8aa6e]" : "text-[#7e8e9f]"}`} />
+                        <Trophy
+                          className={`w-3 h-3 inline mr-1 ${x.kind === "Worlds" ? "text-[#c8aa6e]" : "text-[#7e8e9f]"}`}
+                        />
                         <EventLink name={eventTitle(x.t)} u={x.e} />
                       </td>
                       <td className={td}>
                         <TeamLink name={x.as} u={x.u} />
-                        {x.as !== x.w && <span className="text-[#7e8e9f] text-[10px]"> ({tl("now {team}", { team: x.w })})</span>}
+                        {x.as !== x.w && (
+                          <span className="text-[#7e8e9f] text-[10px]">
+                            {" "}
+                            ({tl("now {team}", { team: x.w })})
+                          </span>
+                        )}
                       </td>
                       <td className={`${td} text-[#9bb3c9]`}>
                         {x.score} vs {x.l}
                       </td>
-                      <td className={`${td} text-[#7e8e9f]`}>{fmtDate(x.date)}</td>
+                      <td className={`${td} text-[#7e8e9f]`}>
+                        {fmtDate(x.date)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -384,11 +674,16 @@ const TitlesPanel: React.FC = () => {
 
 // ── Compare ───────────────────────────────────────────────────────────────
 
-const ComparePick: React.FC<{ kind: "team" | "player"; onPick: (slug: string, name: string) => void }> = ({ kind, onPick }) => {
+const ComparePick: React.FC<{
+  kind: "team" | "player";
+  onPick: (slug: string, name: string) => void;
+}> = ({ kind, onPick }) => {
   const [q, setQ] = useState("");
   const [index, setIndex] = useState<HubIndex | null>(null);
   useEffect(() => {
-    loadHubIndex().then(setIndex).catch(() => {});
+    loadHubIndex()
+      .then(setIndex)
+      .catch(() => {});
   }, []);
   const hits: HubHit[] = index && q.trim() ? searchHub(index, q, 6)[kind] : [];
   return (
@@ -396,7 +691,9 @@ const ComparePick: React.FC<{ kind: "team" | "player"; onPick: (slug: string, na
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder={kind === "team" ? tl("Pick a team…") : tl("Pick a player…")}
+        placeholder={
+          kind === "team" ? tl("Pick a team…") : tl("Pick a player…")
+        }
         aria-label={kind === "team" ? tl("Pick a team…") : tl("Pick a player…")}
         className="w-full bg-[#091428] border border-[#1e282d] rounded-lg px-2.5 py-1.5 text-xs text-[#f0e6d2] placeholder-[#7e8e9f]"
       />
@@ -410,17 +707,27 @@ const ComparePick: React.FC<{ kind: "team" | "player"; onPick: (slug: string, na
           }}
           className="w-full flex justify-between gap-2 px-2 py-1 rounded bg-[#091428] hover:bg-[#121e2d] text-left text-xs min-w-0"
         >
-          <span className="text-[#f0e6d2] font-semibold truncate">{h.name}</span>
-          <span className="text-[#7e8e9f] truncate shrink-0 max-w-[50%]">{h.sub}</span>
+          <span className="text-[#f0e6d2] font-semibold truncate">
+            {h.name}
+          </span>
+          <span className="text-[#7e8e9f] truncate shrink-0 max-w-[50%]">
+            {h.sub}
+          </span>
         </button>
       ))}
     </div>
   );
 };
 
-const CompareRow: React.FC<{ label: string; a: React.ReactNode; b: React.ReactNode }> = ({ label, a, b }) => (
+const CompareRow: React.FC<{
+  label: string;
+  a: React.ReactNode;
+  b: React.ReactNode;
+}> = ({ label, a, b }) => (
   <tr className="border-t border-[#1e282d]">
-    <td className={`${td} text-right text-[#f0e6d2] font-semibold w-2/5`}>{a}</td>
+    <td className={`${td} text-right text-[#f0e6d2] font-semibold w-2/5`}>
+      {a}
+    </td>
     <td className={`${td} text-center text-[#7e8e9f] text-[11px]`}>{label}</td>
     <td className={`${td} text-[#f0e6d2] font-semibold w-2/5`}>{b}</td>
   </tr>
@@ -431,12 +738,19 @@ const ComparePanel: React.FC = () => {
   const [kind, setKind] = useState<"team" | "player">("team");
   const [a, setA] = useState<string | null>(null);
   const [b, setB] = useState<string | null>(null);
-  const [data, setData] = useState<{ a: HubTeam | HubPlayer | null; b: HubTeam | HubPlayer | null }>({ a: null, b: null });
+  const [data, setData] = useState<{
+    a: HubTeam | HubPlayer | null;
+    b: HubTeam | HubPlayer | null;
+  }>({ a: null, b: null });
 
   useEffect(() => {
     let alive = true;
-    const loader: (s: string) => Promise<HubTeam | HubPlayer> = kind === "team" ? loadHubTeam : loadHubPlayer;
-    Promise.all([a ? loader(a).catch(() => null) : null, b ? loader(b).catch(() => null) : null]).then(([x, y]) => alive && setData({ a: x, b: y }));
+    const loader: (s: string) => Promise<HubTeam | HubPlayer> =
+      kind === "team" ? loadHubTeam : loadHubPlayer;
+    Promise.all([
+      a ? loader(a).catch(() => null) : null,
+      b ? loader(b).catch(() => null) : null,
+    ]).then(([x, y]) => alive && setData({ a: x, b: y }));
     return () => {
       alive = false;
     };
@@ -457,17 +771,57 @@ const ComparePanel: React.FC = () => {
       const h = x.opps.find((o) => o.n === y.name);
       rows = (
         <>
-          <CompareRow label={tl("Head to head (games)")} a={h ? h.w : "–"} b={h ? h.g - h.w : "–"} />
-          <CompareRow label={tl("Games won")} a={`${x.w}-${x.g - x.w}`} b={`${y.w}-${y.g - y.w}`} />
-          <CompareRow label={tl("Win rate")} a={winRate(x.w, x.g)} b={winRate(y.w, y.g)} />
-          <CompareRow label={tl("Series won")} a={winRate(x.sw, x.sg)} b={winRate(y.sw, y.sg)} />
-          <CompareRow label={tl("Titles")} a={x.titles.length} b={y.titles.length} />
-          <CompareRow label={tl("Worlds")} a={x.titles.filter((t) => t.kind === "Worlds").length} b={y.titles.filter((t) => t.kind === "Worlds").length} />
-          <CompareRow label={tl("Best streak")} a={x.bestStreak?.n ?? "–"} b={y.bestStreak?.n ?? "–"} />
+          <CompareRow
+            label={tl("Head to head (games)")}
+            a={h ? h.w : "–"}
+            b={h ? h.g - h.w : "–"}
+          />
+          <CompareRow
+            label={tl("Games won")}
+            a={`${x.w}-${x.g - x.w}`}
+            b={`${y.w}-${y.g - y.w}`}
+          />
+          <CompareRow
+            label={tl("Win rate")}
+            a={winRate(x.w, x.g)}
+            b={winRate(y.w, y.g)}
+          />
+          <CompareRow
+            label={tl("Series won")}
+            a={winRate(x.sw, x.sg)}
+            b={winRate(y.sw, y.sg)}
+          />
+          <CompareRow
+            label={tl("Titles")}
+            a={x.titles.length}
+            b={y.titles.length}
+          />
+          <CompareRow
+            label={tl("Worlds")}
+            a={x.titles.filter((t) => t.kind === "Worlds").length}
+            b={y.titles.filter((t) => t.kind === "Worlds").length}
+          />
+          <CompareRow
+            label={tl("Best streak")}
+            a={x.bestStreak?.n ?? "–"}
+            b={y.bestStreak?.n ?? "–"}
+          />
           <CompareRow label={tl("Avg game (min)")} a={x.avgMin} b={y.avgMin} />
-          <CompareRow label={tl("Kills / game")} a={x.kills ?? "–"} b={y.kills ?? "–"} />
-          <CompareRow label={tl("Dragons / game")} a={x.obj?.dragons ?? "–"} b={y.obj?.dragons ?? "–"} />
-          <CompareRow label={tl("Gold diff / game")} a={x.obj ? Math.round(x.obj.golddiff) : "–"} b={y.obj ? Math.round(y.obj.golddiff) : "–"} />
+          <CompareRow
+            label={tl("Kills / game")}
+            a={x.kills ?? "–"}
+            b={y.kills ?? "–"}
+          />
+          <CompareRow
+            label={tl("Dragons / game")}
+            a={x.obj?.dragons ?? "–"}
+            b={y.obj?.dragons ?? "–"}
+          />
+          <CompareRow
+            label={tl("Gold diff / game")}
+            a={x.obj ? Math.round(x.obj.golddiff) : "–"}
+            b={y.obj ? Math.round(y.obj.golddiff) : "–"}
+          />
         </>
       );
     } else {
@@ -475,18 +829,50 @@ const ComparePanel: React.FC = () => {
       const y = data.b as HubPlayer;
       rows = (
         <>
-          <CompareRow label={tl("Role")} a={roleName(x.role)} b={roleName(y.role)} />
+          <CompareRow
+            label={tl("Role")}
+            a={roleName(x.role)}
+            b={roleName(y.role)}
+          />
           <CompareRow label={tl("Games")} a={fmtNum(x.g)} b={fmtNum(y.g)} />
-          <CompareRow label={tl("Win rate")} a={winRate(x.w, x.g)} b={winRate(y.w, y.g)} />
+          <CompareRow
+            label={tl("Win rate")}
+            a={winRate(x.w, x.g)}
+            b={winRate(y.w, y.g)}
+          />
           <CompareRow label={tl("KDA")} a={x.kda} b={y.kda} />
           <CompareRow label={tl("Kills")} a={fmtNum(x.k)} b={fmtNum(y.k)} />
           <CompareRow label={tl("Assists")} a={fmtNum(x.a)} b={fmtNum(y.a)} />
-          <CompareRow label={tl("CS / min")} a={x.csm ?? "–"} b={y.csm ?? "–"} />
-          <CompareRow label={tl("Damage / min")} a={x.dpm ?? "–"} b={y.dpm ?? "–"} />
-          <CompareRow label={tl("Champions played")} a={x.nChamps} b={y.nChamps} />
-          <CompareRow label={tl("Titles")} a={x.titles.length} b={y.titles.length} />
-          <CompareRow label={tl("Worlds")} a={x.titles.filter((t) => t.kind === "Worlds").length} b={y.titles.filter((t) => t.kind === "Worlds").length} />
-          <CompareRow label={tl("Most played")} a={x.champs[0] ? champName(x.champs[0].c) : "–"} b={y.champs[0] ? champName(y.champs[0].c) : "–"} />
+          <CompareRow
+            label={tl("CS / min")}
+            a={x.csm ?? "–"}
+            b={y.csm ?? "–"}
+          />
+          <CompareRow
+            label={tl("Damage / min")}
+            a={x.dpm ?? "–"}
+            b={y.dpm ?? "–"}
+          />
+          <CompareRow
+            label={tl("Champions played")}
+            a={x.nChamps}
+            b={y.nChamps}
+          />
+          <CompareRow
+            label={tl("Titles")}
+            a={x.titles.length}
+            b={y.titles.length}
+          />
+          <CompareRow
+            label={tl("Worlds")}
+            a={x.titles.filter((t) => t.kind === "Worlds").length}
+            b={y.titles.filter((t) => t.kind === "Worlds").length}
+          />
+          <CompareRow
+            label={tl("Most played")}
+            a={x.champs[0] ? champName(x.champs[0].c) : "–"}
+            b={y.champs[0] ? champName(y.champs[0].c) : "–"}
+          />
         </>
       );
     }
@@ -501,7 +887,9 @@ const ComparePanel: React.FC = () => {
             type="button"
             onClick={() => switchKind(k)}
             className={`px-2.5 py-1.5 rounded-lg border ${
-              kind === k ? "bg-[#c8aa6e] text-[#091428] font-bold border-[#c8aa6e]" : "border-[#1e282d] text-[#9bb3c9]"
+              kind === k
+                ? "bg-[#c8aa6e] text-[#091428] font-bold border-[#c8aa6e]"
+                : "border-[#1e282d] text-[#9bb3c9]"
             }`}
           >
             {k === "team" ? tl("Teams") : tl("Players")}
@@ -520,7 +908,11 @@ const ComparePanel: React.FC = () => {
               </div>
             )}
             {side.s ? (
-              <button type="button" onClick={() => side.set(null)} className="text-[11px] text-[#0ac8b9] hover:underline">
+              <button
+                type="button"
+                onClick={() => side.set(null)}
+                className="text-[11px] text-[#0ac8b9] hover:underline"
+              >
                 {tl("Change")}
               </button>
             ) : (
@@ -545,7 +937,10 @@ const ComparePanel: React.FC = () => {
 
 // ── The Stats tab ─────────────────────────────────────────────────────────
 
-export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl }) => {
+export const StatsView: React.FC<StatsViewProps> = ({
+  settings,
+  onOpenUrl,
+}) => {
   useChampionNames();
   useDDragon();
   const route = useHubRoute();
@@ -563,22 +958,38 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl }) => 
 
   return (
     <SpoilerProvider on={settings.spoilerMode}>
-      <div ref={scroller} className="p-4 space-y-4 max-w-5xl mx-auto overflow-y-auto h-full">
+      <div
+        ref={scroller}
+        className="p-4 space-y-4 max-w-5xl mx-auto overflow-y-auto h-full"
+      >
         <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#1e282d]">
           <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-2">
             <BarChart3 className="w-4 h-4" /> {tl("Pro Stats")}
           </h2>
           {hubMeta.data && (
             <span className="text-[11px] text-[#7e8e9f]">
-              {tl("{n} pro games · {from}–{to} · updated daily", { n: fmtNum(hubMeta.data.games), from: "2011", to: hubMeta.data.years.find((y) => y <= String(new Date().getFullYear())) || "" })}
+              {tl("{n} pro games · {from}–{to} · updated daily", {
+                n: fmtNum(hubMeta.data.games),
+                from: "2011",
+                to:
+                  hubMeta.data.years.find(
+                    (y) => y <= String(new Date().getFullYear()),
+                  ) || "",
+              })}
             </span>
           )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {!isSection && (
-            <button type="button" onClick={back} className="flex items-center gap-1 text-xs text-[#0ac8b9] hover:underline shrink-0" aria-label={tl("Back")}>
-              <ArrowLeft className="w-3.5 h-3.5" /> {canGoBack() ? tl("Back") : tl("Stats home")}
+            <button
+              type="button"
+              onClick={back}
+              className="flex items-center gap-1 text-xs text-[#0ac8b9] hover:underline shrink-0"
+              aria-label={tl("Back")}
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />{" "}
+              {canGoBack() ? tl("Back") : tl("Stats home")}
             </button>
           )}
           {!isSection && <CopyLinkButton url={hubShareUrl(route)} />}
@@ -607,26 +1018,50 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl }) => 
 
         {settings.spoilerMode && (
           <p className="text-[11px] text-[#c8aa6e] bg-[#c8aa6e]/10 border border-[#c8aa6e]/30 rounded-lg px-3 py-2">
-            {tl("Spoiler mode is on: results from the last two weeks are hidden until you reveal them. Older results and career stats still show.")}
+            {tl(
+              "Spoiler mode is on: results from the last two weeks are hidden until you reveal them. Older results and career stats still show.",
+            )}
           </p>
         )}
 
         {route.kind === "home" && <HubHome />}
         {route.kind === "tournaments" && (
-          <EventsBrowse year={route.year} meta={hubMeta.data} onYear={(y) => navigateHub({ kind: "tournaments", year: y }, { replace: true })} />
+          <EventsBrowse
+            year={route.year}
+            meta={hubMeta.data}
+            onYear={(y) =>
+              navigateHub({ kind: "tournaments", year: y }, { replace: true })
+            }
+          />
         )}
-        {route.kind === "champions" && (statsMeta.data ? <ChampionsPanel meta={statsMeta.data} /> : statsMeta.error ? <Failed /> : <Loading />)}
+        {route.kind === "leagues" && <LeaguesPanel />}
+        {route.kind === "patches" && <PatchesPanel />}
+        {route.kind === "league" && <LeaguePage slug={route.slug} />}
+        {route.kind === "champions" &&
+          (statsMeta.data ? (
+            <ChampionsPanel meta={statsMeta.data} />
+          ) : statsMeta.error ? (
+            <Failed />
+          ) : (
+            <Loading />
+          ))}
         {route.kind === "records" && <RecordsPanel />}
         {route.kind === "titles" && <TitlesPanel />}
         {route.kind === "compare" && <ComparePanel />}
         {route.kind === "team" && <TeamPage slug={route.slug} />}
-        {route.kind === "player" && <PlayerPage slug={route.slug} onOpenUrl={onOpenUrl} />}
+        {route.kind === "player" && (
+          <PlayerPage slug={route.slug} onOpenUrl={onOpenUrl} />
+        )}
         {route.kind === "event" && <EventPage slug={route.slug} />}
-        {route.kind === "match" && <MatchPage slug={route.slug} onOpenUrl={onOpenUrl} />}
+        {route.kind === "match" && (
+          <MatchPage slug={route.slug} onOpenUrl={onOpenUrl} />
+        )}
         {route.kind === "champ" && <ChampPage slug={route.slug} />}
 
         <p className="text-[10px] text-[#7e8e9f] text-center pt-2">
-          {tl("Stats come from RiftWatch's pro games catalog (built from public Leaguepedia data) and are rebuilt every night.")}
+          {tl(
+            "Stats come from RiftWatch's pro games catalog (built from public Leaguepedia data) and are rebuilt every night.",
+          )}
         </p>
       </div>
     </SpoilerProvider>
