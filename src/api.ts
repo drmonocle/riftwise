@@ -1,4 +1,4 @@
-import { Match, LiveStats, LiveShow, StreamEvent, StreamStatus, AppSettings, Team, Region, League, PlayerEntry, AppUpdateInfo } from "./types";
+import { Match, LiveShow, StreamEvent, StreamStatus, AppSettings, Team, Region, League, PlayerEntry, AppUpdateInfo } from "./types";
 import type { H2HData } from "./helpers";
 import { tk, tc, currentLang, eventName } from "./i18n";
 
@@ -141,9 +141,6 @@ export const GLOBAL_LEAGUES: League[] = [
 
 export const DEFAULT_SETTINGS: AppSettings = {
   spoilerMode: false,
-  tickerMode: "docked",
-  tickerTopmost: true,
-  tickerCycleSec: 5,
   defaultTab: "live",
   notifyKickoff: true,
   notifyPregame: true,
@@ -187,8 +184,8 @@ export function loadSettings(): AppSettings {
       const oneOf = <T,>(v: unknown, allowed: readonly T[], dflt: T): T => (allowed.includes(v as T) ? (v as T) : dflt);
       merged.language = oneOf(merged.language, ["auto", "en", "es", "pt-BR", "ko", "vi", "zh-CN", "zh-TW", "ja", "fr", "de", "tr"] as const, "auto");
       merged.defaultTab = oneOf(merged.defaultTab, ["live", "schedule", "stats", "stream", "watchlist", "news", "settings"] as const, DEFAULT_SETTINGS.defaultTab);
-      merged.tickerMode = oneOf(merged.tickerMode, ["docked", "detached", "hidden"] as const, DEFAULT_SETTINGS.tickerMode);
-      merged.tickerCycleSec = oneOf(Number(merged.tickerCycleSec), [3, 5, 8, 12], DEFAULT_SETTINGS.tickerCycleSec);
+      // Settings for the removed ticker bar / desktop HUD (0.4.0) are dropped
+      for (const old of ["tickerMode", "tickerTopmost", "tickerCycleSec"]) delete (merged as unknown as Record<string, unknown>)[old];
       for (const key of Object.keys(DEFAULT_SETTINGS) as (keyof AppSettings)[]) {
         if (typeof DEFAULT_SETTINGS[key] === "boolean" && typeof merged[key] !== "boolean") {
           (merged as unknown as Record<string, unknown>)[key] = DEFAULT_SETTINGS[key];
@@ -396,14 +393,12 @@ export function buildStreamUrl(streams: any[] | undefined): string {
 
 export async function fetchLiveMatches(): Promise<{
   matches: Match[];
-  liveStats: Record<string, LiveStats>;
   shows: LiveShow[];
 }> {
   const data = await fetchJson(`${RIOT_BASE}/getLive?hl=${riotHl()}`, { headers: riotHeaders });
   const rawEvents = data?.data?.schedule?.events || [];
 
   const matches: Match[] = [];
-  const liveStats: Record<string, LiveStats> = {};
   const shows: LiveShow[] = [];
 
   for (const ev of rawEvents) {
@@ -444,10 +439,12 @@ export async function fetchLiveMatches(): Promise<{
       team1Name: teamDisplayName(t1.name),
       team1Image: t1.image,
       team1Score: t1.result?.gameWins ?? 0,
+      team1Id: t1.id,
       team2Code: t2.code || t2.name || "TBD",
       team2Name: teamDisplayName(t2.name),
       team2Image: t2.image,
       team2Score: t2.result?.gameWins ?? 0,
+      team2Id: t2.id,
       games: (m.games || []).map((g: any) => ({
         id: g.id,
         number: g.number,
@@ -455,7 +452,7 @@ export async function fetchLiveMatches(): Promise<{
       })),
     });
   }
-  return { matches, liveStats, shows };
+  return { matches, shows };
 }
 
 function scheduleEventsToMatches(rawEvents: any[]): Match[] {

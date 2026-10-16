@@ -9,43 +9,6 @@ use tauri_plugin_opener::OpenerExt;
 mod update;
 
 #[tauri::command]
-fn start_window_drag(window: tauri::WebviewWindow) {
-    let _ = window.start_dragging();
-}
-
-#[tauri::command]
-fn show_ticker(app: tauri::AppHandle) {
-    // The HUD is a passive overlay: showing it (also at Windows sign-in) must not take the keyboard
-    // away from whatever the user is doing.
-    if let Some(w) = app.get_webview_window("ticker") {
-        #[cfg(target_os = "windows")]
-        if let Ok(hwnd) = w.hwnd() {
-            extern "system" {
-                fn ShowWindow(hwnd: *mut std::ffi::c_void, cmd: i32) -> i32;
-            }
-            const SW_SHOWNOACTIVATE: i32 = 4;
-            unsafe { ShowWindow(hwnd.0 as *mut std::ffi::c_void, SW_SHOWNOACTIVATE) };
-            return;
-        }
-        let _ = w.show();
-    }
-}
-
-#[tauri::command]
-fn hide_ticker(app: tauri::AppHandle) {
-    if let Some(w) = app.get_webview_window("ticker") {
-        let _ = w.hide();
-    }
-}
-
-#[tauri::command]
-fn set_ticker_topmost(app: tauri::AppHandle, topmost: bool) {
-    if let Some(w) = app.get_webview_window("ticker") {
-        let _ = w.set_always_on_top(topmost);
-    }
-}
-
-#[tauri::command]
 fn show_main(app: tauri::AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.show();
@@ -77,7 +40,7 @@ fn quit_app(app: tauri::AppHandle) {
     app.exit(0);
 }
 
-/// Where a window was last left (main window and floating HUD), so it reopens in the same spot.
+/// Where the main window was last left, so it reopens in the same spot.
 fn window_place_file(app: &tauri::AppHandle, label: &str) -> Option<std::path::PathBuf> {
     app.path().app_local_data_dir().ok().map(|d| d.join(format!("{label}_window_pos.txt")))
 }
@@ -507,10 +470,6 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .invoke_handler(tauri::generate_handler![
-            show_ticker,
-            hide_ticker,
-            set_ticker_topmost,
-            start_window_drag,
             show_main,
             hide_main,
             set_compact_mode,
@@ -533,7 +492,6 @@ pub fn run() {
                 }
             }
             restore_window_place(app.handle(), "main");
-            restore_window_place(app.handle(), "ticker");
             // Restarted by the updater: come back in front, where the old window was
             if std::env::args().any(|a| a == "--updated") {
                 if let Some(w) = app.get_webview_window("main") {
@@ -542,7 +500,7 @@ pub fn run() {
                     let _ = w.set_focus();
                 }
             } else if !std::env::args().any(|a| a == "--minimized") {
-                // A normal launch: the main window gets the keyboard, not the hidden HUD window
+                // A normal launch: the main window gets the keyboard
                 if let Some(w) = app.get_webview_window("main") {
                     let _ = w.set_focus();
                 }
@@ -560,9 +518,6 @@ pub fn run() {
             let nav_settings = MenuItem::with_id(app, "nav_settings", "⚙ Settings", true, None::<&str>)?;
             let sep2 = PredefinedMenuItem::separator(app)?;
 
-            let toggle_hud = MenuItem::with_id(app, "toggle_hud", "📌 Toggle Desktop HUD", true, None::<&str>)?;
-            let sep3 = PredefinedMenuItem::separator(app)?;
-
             let stream_twitch = MenuItem::with_id(app, "stream_twitch", "▶ Watch 24/7 on Twitch", true, None::<&str>)?;
             let stream_youtube = MenuItem::with_id(app, "stream_youtube", "▶ Watch 24/7 on YouTube", true, None::<&str>)?;
             let stream_sched = MenuItem::with_id(app, "stream_sched", "🌐 Full Schedule (lolworlds.com)", true, None::<&str>)?;
@@ -574,7 +529,7 @@ pub fn run() {
             let mut by_id = std::collections::HashMap::new();
             for item in [
                 &show_i, &hide_i, &nav_live, &nav_schedule, &nav_stats, &nav_stream, &nav_watchlist, &nav_news,
-                &nav_settings, &toggle_hud, &stream_twitch, &stream_youtube, &stream_sched, &kofi_support, &quit_i,
+                &nav_settings, &stream_twitch, &stream_youtube, &stream_sched, &kofi_support, &quit_i,
             ] {
                 by_id.insert(item.id().0.clone(), item.clone());
             }
@@ -594,8 +549,6 @@ pub fn run() {
                     &nav_news,
                     &nav_settings,
                     &sep2,
-                    &toggle_hud,
-                    &sep3,
                     &stream_twitch,
                     &stream_youtube,
                     &stream_sched,
@@ -646,18 +599,6 @@ pub fn run() {
                                 let _ = w.emit("navigate_tab", tab);
                             }
                         }
-                        "toggle_hud" => {
-                            // Let the main window flip the setting so the toggle and Settings stay in sync.
-                            if let Some(w) = app.get_webview_window("main") {
-                                let _ = w.emit("toggle_hud", ());
-                            } else if let Some(w) = app.get_webview_window("ticker") {
-                                if w.is_visible().unwrap_or(false) {
-                                    let _ = w.hide();
-                                } else {
-                                    let _ = w.show();
-                                }
-                            }
-                        }
                         "stream_twitch" => {
                             open_url_checked(app, "https://www.twitch.tv/LoLWorldChampionship");
                         }
@@ -706,7 +647,7 @@ pub fn run() {
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::Moved(pos) = event {
-                if window.label() == "main" || window.label() == "ticker" {
+                if window.label() == "main" {
                     save_window_place(window, pos.x, pos.y);
                 }
             }

@@ -3,7 +3,7 @@ import React, { useMemo, useState } from "react";
 import { Crown } from "lucide-react";
 import { tl, tn, regionName } from "../../i18n";
 import { loadLeague, loadLeagues, loadPatches } from "../../hub/data";
-import type { HubLeague, LeagueRow, PatchMove, PatchRow } from "../../hub/types";
+import type { HubLeague, LeagueRow, LeagueStep, PatchMove, PatchRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import {
   card,
@@ -114,6 +114,27 @@ const Movers: React.FC<{ title: string; list: PatchMove[]; up?: boolean }> = ({ 
     <div />
   );
 
+/** NA LCS (2013–2018) → LCS (2019–2024) → LTA North (2025) → LCS (2026–): each step links to its league. */
+const HistoryChain: React.FC<{ steps: LeagueStep[]; current: string; small?: boolean }> = ({ steps, current, small }) => (
+  <div className={`flex flex-wrap items-center gap-x-1 gap-y-0.5 ${small ? "text-[10px] mt-0.5" : "text-xs"} text-[#7e8e9f]`}>
+    {steps.map((st, i) => (
+      <React.Fragment key={`${st.l}-${i}`}>
+        {i > 0 && <span aria-hidden="true">→</span>}
+        <span className="whitespace-nowrap">
+          {st.u && st.u !== current ? (
+            <HubLink to={{ kind: "league", slug: st.u }} className="hover:text-[#c8aa6e] hover:underline">
+              {st.s || st.l}
+            </HubLink>
+          ) : (
+            <span className={st.u === current ? "text-[#f0e6d2] font-semibold" : ""}>{st.s || st.l}</span>
+          )}
+          {st.y && <span> ({st.y})</span>}
+        </span>
+      </React.Fragment>
+    ))}
+  </div>
+);
+
 // ── Leagues ───────────────────────────────────────────────────────────────
 
 type LeagueScope = "current" | "past" | "all";
@@ -163,7 +184,7 @@ export const LeaguesPanel: React.FC = () => {
 const LeagueLists: React.FC<{ rows: LeagueRow[]; scope: LeagueScope; q: string }> = ({ rows, scope, q }) => {
   const groups = useMemo(() => {
     const qq = q.trim().toLowerCase();
-    const match = (l: LeagueRow) => !qq || `${l.l} ${l.r || ""}`.toLowerCase().includes(qq);
+    const match = (l: LeagueRow) => !qq || `${l.s || ""} ${l.l} ${l.r || ""}`.toLowerCase().includes(qq);
     const newest = rows.reduce((m, l) => (l.to && l.to > m ? l.to : m), "");
     const isCurrent = (l: LeagueRow) => !!l.to && l.to >= newest;
     const intl = (l: LeagueRow) => (l.r || "").toLowerCase() === "international";
@@ -206,8 +227,14 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
         <tbody>
           {list.map((l) => (
             <tr key={l.u} className="border-t border-[#1e282d]">
-              <td className={`${td} max-w-[16rem] truncate`}>
-                <HubLink to={{ kind: "league", slug: l.u }}>{l.l}</HubLink>
+              <td className={`${td} max-w-[22rem]`}>
+                <div className="flex items-baseline gap-2 min-w-0">
+                  {l.s && <span className="shrink-0 font-bold text-[#c8aa6e]">{l.s}</span>}
+                  <HubLink to={{ kind: "league", slug: l.u }} className="truncate">
+                    {l.l}
+                  </HubLink>
+                </div>
+                {l.h && l.h.length > 1 && <HistoryChain steps={l.h} current={l.u} small />}
               </td>
               <td className={`${td} text-[#9bb3c9]`}>{l.r ? regionName(l.r, l.r) : ""}</td>
               <td className={`${td} text-[#7e8e9f]`}>{l.from && l.to ? (l.from === l.to ? l.from : `${l.from}–${l.to}`) : ""}</td>
@@ -237,7 +264,10 @@ const LeagueView: React.FC<{ l: HubLeague }> = ({ l }) => {
   return (
     <div className="space-y-3">
       <div className={card}>
-        <h2 className="text-lg font-bold text-[#f0e6d2]">{l.l}</h2>
+        <h2 className="text-lg font-bold text-[#f0e6d2]">
+          {l.s && <span className="text-[#c8aa6e] mr-2">{l.s}</span>}
+          {l.l}
+        </h2>
         <p className="text-[11px] text-[#9bb3c9]">
           {[
             l.region ? regionName(l.region, l.region) : null,
@@ -247,6 +277,12 @@ const LeagueView: React.FC<{ l: HubLeague }> = ({ l }) => {
             .filter(Boolean)
             .join(" · ")}
         </p>
+        {l.history && l.history.length > 1 && (
+          <div className="mt-2 space-y-0.5">
+            <div className="text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f]">{tl("History")}</div>
+            <HistoryChain steps={l.history} current={l.u} />
+          </div>
+        )}
       </div>
       {l.titles.length > 0 && (
         <Section title={tl("Most titles")}>

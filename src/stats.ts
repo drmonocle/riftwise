@@ -88,6 +88,7 @@ export interface Records {
 const VERSION_MAX_AGE_MS = 60 * 60 * 1000;
 let versionPromise: Promise<string> | null = null;
 let versionCheckedAt = 0;
+let builtAt: string | null = null; // when the current build finished (latest.json "built")
 const cache = new Map<string, Promise<any>>(); // keyed by "<version>/<path>"
 
 function getVersion(force = false): Promise<string> {
@@ -98,13 +99,26 @@ function getVersion(force = false): Promise<string> {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
-      .then((j) => String(j.version))
+      .then((j) => {
+        if (j.built) builtAt = String(j.built);
+        return String(j.version);
+      })
       .catch((e) => {
         versionPromise = null; // try again next time
         throw e;
       });
   }
   return versionPromise;
+}
+
+/** When the stats database was last rebuilt from new games (ISO time), or null if it can't be read. */
+export async function statsUpdatedAt(force = false): Promise<string | null> {
+  try {
+    await getVersion(force);
+  } catch {
+    return null;
+  }
+  return builtAt;
 }
 
 /** The file isn't in the current build (for hub pages: no such team / player / ...). */

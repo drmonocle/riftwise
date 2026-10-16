@@ -34,7 +34,6 @@ import { H2HDetailsModal } from "./components/H2HDetailsModal";
 import { OPEN_H2H_EVENT, OpenH2HDetail } from "./components/H2HMeter";
 import { Header } from "./components/Header";
 import { Navigation, TabKey } from "./components/Navigation";
-import { TickerBar } from "./components/TickerBar";
 import { LiveView } from "./components/views/LiveView";
 import { ScheduleView } from "./components/views/ScheduleView";
 import { StreamView } from "./components/views/StreamView";
@@ -43,6 +42,7 @@ import { NewsView } from "./components/views/NewsView";
 import { SettingsView } from "./components/views/SettingsView";
 import { TeamRosterModal } from "./components/TeamRosterModal";
 import { tl, locale } from "./i18n";
+import { statsUpdatedAt } from "./stats";
 import { syncPush } from "./push";
 import { STARTED_ON_HUB, navigateHub, onHubRoute, syncFromLocation, syncTabAddress } from "./hub/route";
 import { lazyPart } from "./lazyPart";
@@ -55,9 +55,6 @@ const lazyFallback = (
     …
   </div>
 );
-
-// The floating HUD is the same app loaded with ?mode=detached in its own window.
-const IS_HUD_WINDOW = window.location.search.includes("mode=detached");
 
 // How often each data source is re-fetched (ms)
 const LIVE_POLL_MS = 60_000;
@@ -73,10 +70,7 @@ export default function App() {
     settingsRef.current = settings;
   }, [settings]);
 
-  // The HUD window never shows the catalog, so skip loading it there.
-  const [catalog, setCatalog] = useState<CatalogData>(() =>
-    IS_HUD_WINDOW ? EMPTY_CATALOG : loadCachedCatalog() ?? EMPTY_CATALOG,
-  );
+  const [catalog, setCatalog] = useState<CatalogData>(() => loadCachedCatalog() ?? EMPTY_CATALOG);
 
   const [showWelcome, setShowWelcome] = useState(FIRST_DESKTOP_LAUNCH);
 
@@ -105,7 +99,7 @@ export default function App() {
   // One-time note about the stats hub and features people were missing (closed for good with X)
   const [hubTip, setHubTip] = useState(() => {
     try {
-      return !IS_HUD_WINDOW && localStorage.getItem("riftwatch_tip_hub_v1") !== "1";
+      return localStorage.getItem("riftwatch_tip_hub_v1") !== "1";
     } catch {
       return false;
     }
@@ -145,6 +139,8 @@ export default function App() {
   const [streamStatus, setStreamStatus] = useState<StreamStatus | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastSync, setLastSync] = useState<number | null>(null);
+  // When the stats database last took in new games (shown in the footer)
+  const [dbUpdated, setDbUpdated] = useState<string | null>(null);
   const [syncFailed, setSyncFailed] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<AppUpdateInfo | null>(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
@@ -168,7 +164,6 @@ export default function App() {
 
   // Tapping any H2H meter opens the details view.
   useEffect(() => {
-    if (IS_HUD_WINDOW) return;
     const onOpen = (e: Event) => setH2hDetail((e as CustomEvent<OpenH2HDetail>).detail);
     window.addEventListener(OPEN_H2H_EVENT, onOpen);
     return () => window.removeEventListener(OPEN_H2H_EVENT, onOpen);
@@ -230,7 +225,7 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, []);
 
-  // Sync settings across windows (main window and detached HUD window)
+  // Sync settings across windows / browser tabs
   useEffect(() => {
     const handleSync = () => {
       const fresh = loadSettings();
@@ -247,7 +242,7 @@ export default function App() {
 
   // The tray menu and tray notice live on the Windows side: hand them the translated labels once.
   useEffect(() => {
-    if (IS_HUD_WINDOW || !IS_DESKTOP) return;
+    if (!IS_DESKTOP) return;
     const texts: Record<string, string> = {
       show: tl("Open RiftWatch"),
       hide: tl("Hide to Tray"),
@@ -258,7 +253,6 @@ export default function App() {
       nav_watchlist: "⭐ " + tl("Watchlist & Teams"),
       nav_news: "📰 " + tl("News & Intel"),
       nav_settings: "⚙ " + tl("Settings"),
-      toggle_hud: "📌 " + tl("Toggle Desktop HUD"),
       stream_twitch: "▶ " + tl("Watch 24/7 on Twitch"),
       stream_youtube: "▶ " + tl("Watch 24/7 on YouTube"),
       stream_sched: "🌐 " + tl("Full Schedule (lolworlds.com)"),
@@ -276,7 +270,6 @@ export default function App() {
 
   // Synchronize Compact Desktop mode window sizing
   useEffect(() => {
-    if (IS_HUD_WINDOW) return;
     import("@tauri-apps/api/core")
       .then(({ invoke }) => {
         invoke("set_compact_mode", { compact: !!settings.compactMode }).catch(() => {});
@@ -291,9 +284,8 @@ export default function App() {
     saveSettings(updated);
   }, []);
 
-  // Listen for tray menu events (main window only, with proper cleanup)
+  // Listen for tray menu events (with proper cleanup)
   useEffect(() => {
-    if (IS_HUD_WINDOW) return;
     let cancelled = false;
     const unlisteners: Array<() => void> = [];
 
@@ -302,16 +294,8 @@ export default function App() {
         const offTab = await listen<string>("navigate_tab", (event) => {
           if (event.payload) selectTab(event.payload as TabKey);
         });
-        const offHud = await listen("toggle_hud", () => {
-          const next = settingsRef.current.tickerMode === "detached" ? "docked" : "detached";
-          handleUpdateSettings({ tickerMode: next });
-        });
-        if (cancelled) {
-          offTab();
-          offHud();
-        } else {
-          unlisteners.push(offTab, offHud);
-        }
+        if (cancelled) offTab();
+        else unlisteners.push(offTab);
       })
       .catch(() => {});
 
@@ -319,7 +303,7 @@ export default function App() {
       cancelled = true;
       unlisteners.forEach((off) => off());
     };
-  }, [handleUpdateSettings, selectTab]);
+  }, [selectTab]);
 
   // ---------------------------------------------------------------
   // Data polling
@@ -400,7 +384,7 @@ export default function App() {
     }
   }, []);
 
-  // Desktop keyboard shortcuts (F5, Ctrl+R, Ctrl+1..7 in tab order, Ctrl+S, Ctrl+D). Not on the web page: there
+  // Desktop keyboard shortcuts (F5, Ctrl+R, Ctrl+1..7 in tab order, Ctrl+S). Not on the web page: there
   // they would hijack the browser's own Reload, Save Page and tab-switching shortcuts.
   useEffect(() => {
     if (!IS_DESKTOP) return;
@@ -437,11 +421,6 @@ export default function App() {
       } else if (e.ctrlKey && e.key.toLowerCase() === "s") {
         e.preventDefault();
         handleUpdateSettings({ spoilerMode: !settingsRef.current.spoilerMode });
-      } else if (IS_DESKTOP && e.ctrlKey && e.key.toLowerCase() === "d") {
-        e.preventDefault();
-        handleUpdateSettings({
-          tickerMode: settingsRef.current.tickerMode === "detached" ? "docked" : "detached",
-        });
       }
     };
 
@@ -457,7 +436,7 @@ export default function App() {
       const info = await checkForAppUpdate(APP_VERSION);
       setUpdateInfo(info);
       setUpdateCheck({ at: Date.now(), error: info ? null : tl("Couldn't reach GitHub to check for updates.") });
-      if (info?.hasUpdate && !IS_HUD_WINDOW) {
+      if (info?.hasUpdate) {
         // Notify once per version rather than on every startup / manual check
         let alreadyNotified = false;
         try {
@@ -480,20 +459,30 @@ export default function App() {
     }
   }, []);
 
-  // Check for updates on startup (main window only, delayed 2.5s)
+  // The stats database is rebuilt whenever new games come in: keep its time in the footer current
   useEffect(() => {
-    if (IS_HUD_WINDOW) return;
+    let alive = true;
+    const check = () =>
+      statsUpdatedAt(true).then((t) => {
+        if (alive && t) setDbUpdated(t);
+      });
+    check();
+    const timer = window.setInterval(check, 10 * 60_000);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  // Check for updates on startup (delayed 2.5s)
+  useEffect(() => {
     const timer = setTimeout(() => {
       handleCheckForUpdate();
     }, 2500);
     return () => clearTimeout(timer);
   }, [handleCheckForUpdate]);
 
-  // The HUD window only needs to poll while it is actually the active ticker.
-  const pollingActive = !IS_HUD_WINDOW || settings.tickerMode === "detached";
-
   useEffect(() => {
-    if (!pollingActive) return;
     let cancelled = false;
     let timer: number | undefined;
 
@@ -518,36 +507,13 @@ export default function App() {
       if (timer) window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [pollingActive, refreshData]);
+  }, [refreshData]);
 
   // ---------------------------------------------------------------
-  // Native window sync (main window only; the HUD window just follows)
+  // Native window sync
   // ---------------------------------------------------------------
-  useEffect(() => {
-    if (IS_HUD_WINDOW) return;
-    import("@tauri-apps/api/core")
-      .then(({ invoke }) => {
-        if (settings.tickerMode === "detached") {
-          invoke("show_ticker").catch(() => {});
-        } else {
-          invoke("hide_ticker").catch(() => {});
-        }
-      })
-      .catch(() => {});
-  }, [settings.tickerMode]);
-
-  useEffect(() => {
-    if (IS_HUD_WINDOW) return;
-    import("@tauri-apps/api/core")
-      .then(({ invoke }) => {
-        invoke("set_ticker_topmost", { topmost: settings.tickerTopmost }).catch(() => {});
-      })
-      .catch(() => {});
-  }, [settings.tickerTopmost]);
-
   // Tell the native side whether closing the window should hide to tray or quit
   useEffect(() => {
-    if (IS_HUD_WINDOW) return;
     import("@tauri-apps/api/core")
       .then(({ invoke }) => {
         invoke("set_close_to_tray", { enabled: settings.minimizeToTrayOnClose }).catch(() => {});
@@ -557,7 +523,6 @@ export default function App() {
 
   // Synchronize Windows autostart on sign-in
   useEffect(() => {
-    if (IS_HUD_WINDOW) return;
     import("@tauri-apps/api/core")
       .then(({ invoke }) => {
         invoke("set_autostart", { enabled: settings.startWithWindows }).catch(() => {});
@@ -572,7 +537,6 @@ export default function App() {
   const notifiedBangers = useRef(new Set<string>());
 
   useEffect(() => {
-    if (IS_HUD_WINDOW) return;
     if ((!settings.notifyKickoff && !settings.soundAlerts) || liveMatches.length === 0) return;
 
     const followed = new Set(settings.followedTeams.map((t) => t.toUpperCase()));
@@ -601,7 +565,6 @@ export default function App() {
   }, [liveMatches, settings.notifyKickoff, settings.soundAlerts, settings.followedTeams]);
 
   useEffect(() => {
-    if (IS_HUD_WINDOW) return;
     if (!settings.notifyStream || streamEvents.length === 0) return;
 
     const now = Date.now();
@@ -632,7 +595,7 @@ export default function App() {
   // Desktop: "starting soon" 15 minutes before a followed team plays (the web gets it from the alert server)
   const notifiedPregame = useRef(new Set<string>());
   useEffect(() => {
-    if (IS_HUD_WINDOW || !IS_DESKTOP || !settings.notifyPregame) return;
+    if (!IS_DESKTOP || !settings.notifyPregame) return;
     const check = () => {
       const followed = new Set(settings.followedTeams.map((t) => t.toUpperCase()));
       const now = Date.now();
@@ -661,7 +624,7 @@ export default function App() {
 
   // Web: keep the alert server's copy of the followed teams and alert choices current
   useEffect(() => {
-    if (!IS_WEB || IS_HUD_WINDOW) return;
+    if (!IS_WEB) return;
     const timer = setTimeout(() => {
       syncPush(settings).catch(() => {});
     }, 2000);
@@ -674,7 +637,7 @@ export default function App() {
   // ---------------------------------------------------------------
   // First run: load the snapshot bundled with the app (kept out of the startup bundle).
   useEffect(() => {
-    if (IS_HUD_WINDOW || catalog.teams.length > 0) return;
+    if (catalog.teams.length > 0) return;
     const load = () =>
       loadBundledCatalog()
         .then((bundled) => setCatalog((prev) => (prev.teams.length > 0 ? prev : bundled)))
@@ -708,7 +671,6 @@ export default function App() {
 
   // Refresh from Riot in the background if the saved copy is older than 24 hours
   useEffect(() => {
-    if (IS_HUD_WINDOW) return;
     const cached = loadCachedCatalog();
     const age = Date.now() - (cached?.updatedAt || 0);
     if (age > 24 * 60 * 60 * 1000) {
@@ -743,30 +705,29 @@ export default function App() {
       });
   };
 
-  // If running in detached HUD mode (query parameter ?mode=detached)
-  if (IS_HUD_WINDOW) {
-    return (
-      <div className="w-screen h-screen bg-[#080c14] overflow-hidden m-0 p-0 select-none">
-        <TickerBar
-          settings={settings}
-          liveMatches={liveMatches}
-          upcomingMatches={schedule}
-          streamEvents={streamEvents}
-          onSelectTab={() => {}}
-          onUpdateSettings={handleUpdateSettings}
-          isDetached={true}
-        />
-      </div>
-    );
-  }
-
+  const clock = (t: number) => new Date(t).toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit" });
+  // "2:08 PM" today, "Oct 15, 2:08 PM" before that
+  const whenText = (iso: string) => {
+    const d = new Date(iso);
+    return d.toDateString() === new Date().toDateString()
+      ? clock(d.getTime())
+      : d.toLocaleString(locale(), { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  };
   const syncLabel = syncFailed
     ? lastSync
-      ? tl("Connection problem · showing data from {time}", { time: new Date(lastSync).toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit" }) })
+      ? tl("Connection problem · showing data from {time}", { time: clock(lastSync) })
       : tl("Can't reach the data sources right now")
-    : lastSync
-      ? tl("Updated {time}", { time: new Date(lastSync).toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit" }) })
-      : tl("Loading…");
+    : dbUpdated
+      ? tl("Database updated {time}", { time: whenText(dbUpdated) })
+      : lastSync
+        ? tl("Live scores up to date")
+        : tl("Loading…");
+  const syncTitle = [
+    dbUpdated ? tl("Stats database last took in new games: {time}", { time: whenText(dbUpdated) }) : "",
+    lastSync ? tl("Live scores last checked: {time}", { time: clock(lastSync) }) : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   return (
     <div className="flex flex-col h-screen w-screen bg-[#091428] text-[#f0e6d2] overflow-hidden select-none">
@@ -832,19 +793,6 @@ export default function App() {
             )}
           </span>
         </div>
-      )}
-
-      {/* Docked Ticker Bar */}
-      {(settings.tickerMode === "docked" || (!IS_DESKTOP && settings.tickerMode === "detached")) && (
-        <TickerBar
-          settings={settings}
-          liveMatches={liveMatches}
-          upcomingMatches={schedule}
-          streamEvents={streamEvents}
-          onSelectTab={selectTab}
-          onUpdateSettings={handleUpdateSettings}
-          isDetached={false}
-        />
       )}
 
       {showWelcome && (
@@ -1028,7 +976,9 @@ export default function App() {
       <footer className="bg-[#0a0e17] border-t border-[#1e282d] px-4 py-1 flex items-center justify-between text-[11px] text-[#7e8e9f] select-none">
         <div className="flex items-center gap-2">
           <span className={`w-1.5 h-1.5 rounded-full ${syncFailed ? "bg-[#e84057]" : "bg-[#0ac8b9]"}`} />
-          <span className="whitespace-nowrap">{syncLabel}</span>
+          <span className="whitespace-nowrap" title={syncTitle || undefined}>
+            {syncLabel}
+          </span>
         </div>
         <div className="flex items-center gap-3">
           {settings.spoilerMode && (

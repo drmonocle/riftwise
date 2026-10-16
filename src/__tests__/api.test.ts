@@ -86,8 +86,9 @@ describe("loadSettings", () => {
     );
     const s = loadSettings();
     expect(s.defaultTab).toBe(DEFAULT_SETTINGS.defaultTab);
-    expect(s.tickerMode).toBe(DEFAULT_SETTINGS.tickerMode);
-    expect(s.tickerCycleSec).toBe(DEFAULT_SETTINGS.tickerCycleSec);
+    // settings of the removed ticker bar are dropped
+    expect("tickerMode" in s).toBe(false);
+    expect("tickerCycleSec" in s).toBe(false);
     expect(s.spoilerMode).toBe(DEFAULT_SETTINGS.spoilerMode);
     expect(s.followedTeams).toEqual(["T1", "GEN"]);
     expect(s.followedPlayers).toEqual(DEFAULT_SETTINGS.followedPlayers);

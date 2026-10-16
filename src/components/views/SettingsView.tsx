@@ -271,7 +271,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </h2>
           <div className="p-4 rounded-lg border border-[#1e282d] bg-[#0a1420] space-y-3">
             <p className="text-[#9bb3c9] text-xs leading-relaxed">
-              {tl("The desktop app adds a floating always-on-top ticker, a system tray icon, a global hotkey (Alt+Shift+L), kickoff notifications and automatic updates. It is free, about 4 MB, and needs no installer.")}
+              {tl("The desktop app adds a system tray icon, a global hotkey (Alt+Shift+L), kickoff notifications and automatic updates. It is free, about 4 MB, and needs no installer.")}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <a
@@ -354,11 +354,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </section>
 
-      {/* 1. Display & Live Ticker Bar */}
+      {/* 1. Display */}
       <section className="space-y-3">
         <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
           <Monitor className="w-3.5 h-3.5 text-[#0ac8b9]" />
-          {tl("Display & Live Ticker Bar")}
+          {tl("Display")}
         </h2>
 
         <div className="space-y-2">
@@ -380,93 +380,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             >
               {settings.spoilerMode ? tl("ON") : tl("OFF")}
             </button>
-          </div>
-
-          {/* Live Ticker Mode Selector */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
-            <div>
-              <div className="font-semibold text-[#f0e6d2]">{tl("Live Ticker Bar Mode")}</div>
-              <div className="text-[11px] text-[#7e8e9f]">
-                {tl("Display real-time scores, countdowns, and 24/7 stream highlights.")}
-              </div>
-            </div>
-            <div className="flex items-center gap-1 bg-[#091428] p-1 rounded border border-[#1e282d]">
-              {(IS_DESKTOP ? (["docked", "detached", "hidden"] as const) : (["docked", "hidden"] as const)).map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => {
-                    onUpdateSettings({ tickerMode: mode });
-                    import("@tauri-apps/api/core").then(({ invoke }) => {
-                      if (mode === "detached") {
-                        invoke("show_ticker").catch(() => {});
-                      } else {
-                        invoke("hide_ticker").catch(() => {});
-                      }
-                    }).catch(() => {});
-                  }}
-                  className={`px-3 py-1 text-xs font-semibold rounded transition-all ${
-                    settings.tickerMode === mode
-                      ? "bg-[#c8aa6e] text-[#091428]"
-                      : "text-[#7e8e9f] hover:text-[#f0e6d2]"
-                  }`}
-                >
-                  {mode === "detached" ? "⧉ " + tl("Detached HUD") : mode === "docked" ? tl("Docked") : tl("Hidden")}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Detached Pin Always on Top */}
-          {IS_DESKTOP && (
-          <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
-            <div>
-              <div className="font-semibold text-[#f0e6d2]">{tl("Detached Ticker Always on Top")}</div>
-              <div className="text-[11px] text-[#7e8e9f]">
-                {tl("Keep the floating desktop HUD bar pinned above full-screen games and browser windows.")}
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                const nextVal = !settings.tickerTopmost;
-                onUpdateSettings({ tickerTopmost: nextVal });
-                import("@tauri-apps/api/core").then(({ invoke }) => {
-                  invoke("set_ticker_topmost", { topmost: nextVal }).catch(() => {});
-                }).catch(() => {});
-              }}
-              className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
-                settings.tickerTopmost
-                  ? "bg-[#0ac8b9] text-[#091428]"
-                  : "bg-[#1e282d] text-[#7e8e9f] hover:text-[#f0e6d2]"
-              }`}
-            >
-              {settings.tickerTopmost ? tl("ON") : tl("OFF")}
-            </button>
-          </div>
-          )}
-
-          {/* Ticker Rotation Speed */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
-            <div>
-              <div className="font-semibold text-[#f0e6d2]">{tl("Ticker Rotation Interval")}</div>
-              <div className="text-[11px] text-[#7e8e9f]">
-                {tl("How long each match or highlight stays visible on the ribbon before rotating.")}
-              </div>
-            </div>
-            <div className="flex items-center gap-1 bg-[#091428] p-1 rounded border border-[#1e282d]">
-              {[3, 5, 8, 12].map((sec) => (
-                <button
-                  key={sec}
-                  onClick={() => onUpdateSettings({ tickerCycleSec: sec })}
-                  className={`px-2.5 py-1 text-xs font-semibold rounded transition-all ${
-                    (settings.tickerCycleSec || 5) === sec
-                      ? "bg-[#0ac8b9] text-[#091428]"
-                      : "text-[#7e8e9f] hover:text-[#f0e6d2]"
-                  }`}
-                >
-                  {sec}s
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Default Tab on Launch */}

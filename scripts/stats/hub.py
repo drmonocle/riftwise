@@ -53,6 +53,7 @@ import time
 import unicodedata
 from collections import Counter, defaultdict
 
+import leagues_info
 import ratings as team_ratings
 
 SITE = "RiftWatch"
@@ -1825,6 +1826,25 @@ def build(ctx) -> dict:
                 continue
             league_events[x["l"]].append({k: v for k, v in x.items() if k not in ("kids", "res", "p")} | {"y": year})
     leagues_out = []
+    league_years = {}  # league -> (first year, last year) with games, for history chains without fixed years
+    for lg, lst in league_events.items():
+        played_y = sorted({(e.get("st") or e.get("en") or e["y"])[:4] for e in lst if e.get("g")} - {""})
+        if played_y:
+            league_years[lg] = (played_y[0], played_y[-1])
+
+    def league_history(lg):
+        """[{l, s, u, y}] of the renamed / merged leagues this one belongs to (leagues_info.HISTORY), or None."""
+        chain = leagues_info.history_of(lg)
+        if not chain:
+            return None
+        out_h = []
+        for name, years in chain:
+            if years is None:
+                f_, t_ = league_years.get(name, (None, None))
+                years = (f_ if f_ == t_ else f"{f_}–{t_}") if f_ else None
+            out_h.append({"l": name, "s": leagues_info.SHORT.get(name), "u": league_slug.get(name), "y": years})
+        return out_h
+
     for lg, lst in league_events.items():
         lst.sort(key=lambda e: (e.get("en") or "", e.get("st") or ""), reverse=True)
         event_ids = {e["u"] for e in lst}
@@ -1839,13 +1859,16 @@ def build(ctx) -> dict:
         # Main list: real leagues and recurring internationals, not one-off shows
         primary = any(e.get("lv") == "Primary" for e in lst) and (games_l >= 100 or (intl and len(played) >= 2))
         years_l = sorted({y for e in (played or lst) for y in [(e.get("st") or e.get("en") or e["y"])[:4]] if y.isdigit()})
+        short_l = leagues_info.SHORT.get(lg)
+        hist_l = league_history(lg)
         out.json(f"league/{lu}.json", {
-            "l": lg, "u": lu, "region": next((e.get("r") for e in lst if e.get("r")), None), "primary": primary,
+            "l": lg, "u": lu, "s": short_l, "history": hist_l,
+            "region": next((e.get("r") for e in lst if e.get("r")), None), "primary": primary,
             "events": lst, "titles": [{"t": t_, "u": u_, "n": n_} for (t_, u_), n_ in wins.most_common(30)],
         })
-        leagues_out.append({"l": lg, "u": lu, "r": next((e.get("r") for e in lst if e.get("r")), None), "n": len(lst),
+        leagues_out.append({"l": lg, "u": lu, "s": short_l, "r": next((e.get("r") for e in lst if e.get("r")), None), "n": len(lst),
                             "from": years_l[0] if years_l else None, "to": years_l[-1] if years_l else None,
-                            "pr": 1 if primary else 0, "g": games_l})
+                            "pr": 1 if primary else 0, "g": games_l, **({"h": hist_l} if hist_l else {})})
         seo["league"].append((lu, f"{lg} – every season, champions and results | {SITE}",
                               f"{lg}: {len(lst)} tournaments{' from ' + years_l[0] + ' to ' + years_l[-1] if years_l else ''}, "
                               f"every winner and full results, standings and stats.", 1 if primary or len(lst) >= 4 else 0))

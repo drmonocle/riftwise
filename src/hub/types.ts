@@ -538,9 +538,20 @@ export interface PatchRow {
 }
 export type PatchMove = [string, number, number, number, number];
 
+/** One step in a league's history: league, its short name, page, years ("2019–2024", "2026–") */
+export interface LeagueStep {
+  l: string;
+  s?: string | null;
+  u?: string | null;
+  y?: string | null;
+}
 export interface LeagueRow {
   l: string;
   u: string;
+  /** short name (LCK, LCS, CBLOL...) */
+  s?: string | null;
+  /** renamed / merged leagues it belongs to, oldest first (NA LCS -> LCS -> LTA North -> LCS) */
+  h?: LeagueStep[];
   r?: string | null;
   n: number;
   from?: string | null;
@@ -552,6 +563,8 @@ export interface LeagueRow {
 export interface HubLeague {
   l: string;
   u: string;
+  s?: string | null;
+  history?: LeagueStep[] | null;
   region?: string | null;
   primary: boolean;
   events: (EventListItem & { y: string })[];

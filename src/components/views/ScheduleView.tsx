@@ -266,12 +266,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     {/* Time, Calendar & League */}
                     <div className="flex items-center gap-2 min-w-0 sm:w-44 shrink sm:shrink-0 order-1">
                       <span className="font-mono text-xs text-[#0ac8b9] font-bold shrink-0">{timeStr}</span>
-                      {m.state === "unstarted" && (
-                        <>
-                          <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />
-                          <MatchPrepButton match={m} compact />
-                        </>
-                      )}
+                      {m.state === "unstarted" && <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />}
+                      {m.state !== "completed" && <MatchPrepButton match={m} compact />}
                       <span className="text-[11px] text-[#9bb3c9] truncate font-medium">{m.leagueName}</span>
                     </div>
 

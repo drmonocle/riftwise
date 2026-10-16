@@ -72,7 +72,7 @@ export const Header: React.FC<HeaderProps> = ({
         <Heart className="w-3.5 h-3.5 fill-current" />
       </button>
 
-      {/* Status pills: these shrink and truncate instead of wrapping; on phones the ticker shows the same info */}
+      {/* Status pills: these shrink and truncate instead of wrapping; on phones the Live tab shows the live count */}
       <div className="hidden sm:flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
         {updateInfo?.hasUpdate && (
           <button

@@ -35,33 +35,14 @@ export interface Match {
   team1Name: string;
   team1Image?: string;
   team1Score: number;
+  /** Riot's team ids (live matches): tell which team is on blue side in the live game feed */
+  team1Id?: string;
   team2Code: string;
   team2Name: string;
   team2Image?: string;
   team2Score: number;
+  team2Id?: string;
   games: Game[];
-  blueTeamId?: string;
-  redTeamId?: string;
-}
-
-export interface LiveStats {
-  matchId: string;
-  blue: {
-    teamId?: string;
-    gold: number;
-    kills: number;
-    towers?: number;
-    dragons?: number;
-    barons?: number;
-  };
-  red: {
-    teamId?: string;
-    gold: number;
-    kills: number;
-    towers?: number;
-    dragons?: number;
-    barons?: number;
-  };
 }
 
 /**
@@ -145,9 +126,6 @@ export interface CatalogData {
 
 export interface AppSettings {
   spoilerMode: boolean;
-  tickerMode: "docked" | "detached" | "hidden";
-  tickerTopmost: boolean;
-  tickerCycleSec: number;
   defaultTab: "live" | "schedule" | "stats" | "stream" | "watchlist" | "news" | "settings";
   notifyKickoff: boolean;
   notifyPregame: boolean;
