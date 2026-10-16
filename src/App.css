@@ -66,3 +66,11 @@
     font-size: 16px !important;
   }
 }
+
+/* "Save as image" of a stats section: the footer shows only in the picture */
+.rw-capture-only {
+  display: none;
+}
+.rw-capturing .rw-capture-only {
+  display: flex;
+}

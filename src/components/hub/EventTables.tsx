@@ -53,7 +53,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
   ];
   if (players.some((p) => p.mvp)) cols.splice(5, 0, { key: "mvp", label: tl("POG"), title: tl("Player of the Game awards"), value: (p) => p.mvp || 0 });
   return (
-    <Section title={tl("Player stats")}>
+    <Section title={tl("Player stats")} share={`${e.u}-players`}>
       <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
         {["All", ...ROLES].map((r) => (
           <button
@@ -124,7 +124,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
   // Void grubs only exist since 2024
   const cols = all.filter((c) => c.key !== "grub" || teams.some((t) => t.grub > 0));
   return (
-    <Section title={tl("Team stats")}>
+    <Section title={tl("Team stats")} share={`${e.u}-teams`}>
       <SortTable rows={teams} columns={cols} initial={{ key: "wr", desc: true }} rowKey={(t, i) => `${t.t}-${i}`} copyName={`${e.u}-teams`} />
       <p className="text-[10px] text-[#7e8e9f]">{tl("Per game, games with a full scoreboard only.")}</p>
     </Section>

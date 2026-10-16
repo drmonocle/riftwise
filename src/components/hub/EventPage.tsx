@@ -1,6 +1,7 @@
 /** Tournament page: results and prize money, standings, bracket, every series, leaders and champions. */
 import React, { useMemo, useState } from "react";
-import { Trophy, MapPin, CalendarDays, Coins } from "lucide-react";
+import { Trophy, MapPin, CalendarDays, Coins, Download } from "lucide-react";
+import { downloadEventCsv } from "./DownloadsPage";
 import { tl, tn, tk, regionName, stageName } from "../../i18n";
 import { winRate } from "../../stats";
 import { loadHubEvent } from "../../hub/data";
@@ -29,14 +30,14 @@ import {
   usePageTitle,
 } from "./ui";
 
-export const EventPage: React.FC<{ slug: string }> = ({ slug }) => {
+export const EventPage: React.FC<{ slug: string; onOpenUrl?: (url: string) => void }> = ({ slug, onOpenUrl }) => {
   const state = useLoad(() => loadHubEvent(slug), [slug]);
   usePageTitle(state.data?.n);
   useDDragon();
-  return <Page state={state}>{(e) => <EventView e={e} />}</Page>;
+  return <Page state={state}>{(e) => <EventView e={e} onOpenUrl={onOpenUrl} />}</Page>;
 };
 
-const EventView: React.FC<{ e: HubEvent }> = ({ e }) => {
+const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = ({ e, onOpenUrl }) => {
   const [resultsHidden, revealResults] = useHidden(`event:${e.u}`, e.end);
   const stages = e.stages || [];
   const bracket = stages.filter((s) => s.kind === "bracket");
@@ -101,6 +102,16 @@ const EventView: React.FC<{ e: HubEvent }> = ({ e }) => {
             <Stat label={tl("Series")} value={fmtNum(e.series || 0)} />
             <Stat label={tl("Teams")} value={e.teams?.length || "–"} />
           </div>
+        )}
+        {(e.games || 0) > 0 && !e.whole && (
+          <button
+            type="button"
+            onClick={() => downloadEventCsv(e.u, onOpenUrl).catch(() => {})}
+            className="mt-2 flex items-center gap-1 text-[11px] text-[#0ac8b9] hover:underline"
+          >
+            <Download className="w-3 h-3" />
+            {tl("Download every game (CSV)")}
+          </button>
         )}
       </div>
 

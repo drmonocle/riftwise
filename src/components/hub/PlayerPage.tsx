@@ -9,6 +9,7 @@ import type { HubPlayer } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { PlayerGamesArchive } from "./Archives";
 import { PlayerPeriodStats } from "./PeriodStats";
+import { PlayerRanks } from "./Ranks";
 import {
   card,
   ChampIcon,
@@ -206,6 +207,7 @@ const PlayerView: React.FC<{
       </div>
 
       <PlayerPeriodStats slug={p.u} />
+      <PlayerRanks slug={p.u} events={p.events} />
 
       {p.titles.length > 0 && (
         <Section title={tl("Titles")}>

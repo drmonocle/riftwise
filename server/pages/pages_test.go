@@ -108,6 +108,9 @@ func TestUnknownAndOldNames(t *testing.T) {
 	if w := get(s, "/riftwatch/stats/patches"); w.Code != 200 || !strings.Contains(w.Body.String(), "every patch") {
 		t.Errorf("patches section: %d", w.Code)
 	}
+	if w := get(s, "/riftwatch/stats/downloads"); w.Code != 200 || !strings.Contains(w.Body.String(), "CSV") {
+		t.Errorf("downloads section: %d", w.Code)
+	}
 	if w := get(s, "/riftwatch/stats/nope"); w.Code != 404 {
 		t.Errorf("unknown section: %d", w.Code)
 	}

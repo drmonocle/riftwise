@@ -1,5 +1,5 @@
 /** Building blocks shared by the stats hub pages. */
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Check, Clock, Eye, Link2, SearchX } from "lucide-react";
 import { MissingFile } from "../../stats";
 import { tl, locale } from "../../i18n";
@@ -8,6 +8,7 @@ import { HubRoute, hubPath, navigateHub } from "../../hub/route";
 import { champIcon, itemIcon, runeIcon, spellIcon } from "../../hub/ddragon";
 import { prettySlug } from "../../hub/data";
 import { IS_WEB } from "../../platform";
+import { CaptureFooter, ShareButtons } from "./ShareImage";
 
 export const card = "bg-[#0a1420] border border-[#1e282d] rounded-xl p-4";
 export const th = "text-left font-semibold text-[#7e8e9f] py-1.5 pr-3 whitespace-nowrap";
@@ -89,15 +90,31 @@ export const Stat: React.FC<{ label: string; value: React.ReactNode; sub?: React
   </div>
 );
 
-export const Section: React.FC<{ title: string; children: React.ReactNode; right?: React.ReactNode; id?: string }> = ({ title, children, right, id }) => (
-  <section className={`${card} space-y-2 min-w-0`} id={id}>
-    <div className="flex items-center justify-between gap-2">
-      <h3 className="text-xs font-bold uppercase tracking-wider text-[#c8aa6e]">{title}</h3>
-      {right}
-    </div>
-    {children}
-  </section>
-);
+/** A titled card. With `share` (a file name) it gets Copy image / Save image buttons and a RiftWatch footer in the picture. */
+export const Section: React.FC<{ title: string; children: React.ReactNode; right?: React.ReactNode; id?: string; share?: string }> = ({
+  title,
+  children,
+  right,
+  id,
+  share,
+}) => {
+  const ref = useRef<HTMLElement>(null);
+  return (
+    <section ref={ref} className={`${card} space-y-2 min-w-0`} id={id}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[#c8aa6e]">{title}</h3>
+        {(right || share) && (
+          <span className="flex flex-wrap items-center justify-end gap-2 min-w-0 ml-auto">
+            {right}
+            {share && <ShareButtons target={ref} name={share} />}
+          </span>
+        )}
+      </div>
+      {children}
+      {share && <CaptureFooter />}
+    </section>
+  );
+};
 
 /** Sets the browser tab's title while a page is open. */
 export function usePageTitle(title: string | null | undefined): void {

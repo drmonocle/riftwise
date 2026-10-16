@@ -24,6 +24,7 @@ import {
 } from "../../hub/period";
 import { HeadToHeadSeries } from "./Archives";
 import { PeriodPicker } from "./PeriodStats";
+import { DraftTendencies } from "./DraftTendencies";
 import { card, ChampLink, fmtNum, HubLink, isFresh, RevealButton, Section, td, useHidden, usePageTitle } from "./ui";
 
 type Mode = "team" | "player";
@@ -162,6 +163,8 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
     () => (ready ? (mode === "team" ? inPeriod(logs.b as TeamGameRow[], period, teamRowRef) : inPeriod(logs.b as PlayerGameRow[], period, playerRowRef)) : []),
     [ready, logs.b, period, mode],
   );
+  const opt = options.find((o) => o.key === period);
+  const periodLabel = !opt || opt.key === "all" ? tl("All time") : opt.group === "basic" ? tl("Last {n} games", { n: opt.label }) : opt.label;
   const freshDate = [...selA, ...selB].map((r) => r[0]).find((x) => isFresh(x));
   const [hidden, reveal] = useHidden(`compare:${mode}:${a}:${b}:${period}`, freshDate);
 
@@ -216,23 +219,31 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
             <RevealButton onReveal={reveal} />
           </div>
         ) : mode === "team" ? (
-          <TeamRows x={info.a as HubTeam} y={info.b as HubTeam} ra={selA as TeamGameRow[]} rb={selB as TeamGameRow[]} bSlug={b!} career={period === "all"} />
+          <TeamRows x={info.a as HubTeam} y={info.b as HubTeam} ra={selA as TeamGameRow[]} rb={selB as TeamGameRow[]} bSlug={b!} career={period === "all"} periodLabel={periodLabel} />
         ) : (
-          <PlayerRows x={info.a as HubPlayer} y={info.b as HubPlayer} ra={selA as PlayerGameRow[]} rb={selB as PlayerGameRow[]} career={period === "all"} />
+          <PlayerRows x={info.a as HubPlayer} y={info.b as HubPlayer} ra={selA as PlayerGameRow[]} rb={selB as PlayerGameRow[]} career={period === "all"} periodLabel={periodLabel} />
         ))}
       {mode === "team" && ready && <HeadToHeadSeries a={a!} b={b!} aName={info.a!.name} bName={info.b!.name} />}
     </div>
   );
 };
 
-const TeamRows: React.FC<{ x: HubTeam; y: HubTeam; ra: TeamGameRow[]; rb: TeamGameRow[]; bSlug: string; career: boolean }> = ({ x, y, ra, rb, bSlug, career }) => {
+const TeamRows: React.FC<{ x: HubTeam; y: HubTeam; ra: TeamGameRow[]; rb: TeamGameRow[]; bSlug: string; career: boolean; periodLabel: string }> = ({
+  x,
+  y,
+  ra,
+  rb,
+  bSlug,
+  career,
+  periodLabel,
+}) => {
   const A = useMemo(() => teamAgg(ra), [ra]);
   const B = useMemo(() => teamAgg(rb), [rb]);
   const h2h = useMemo(() => teamHeadToHead(ra, bSlug), [ra, bSlug]);
   const wr = (w: number, g: number) => (g ? w / g : null);
   return (
     <>
-      <div className={card}>
+      <Section title={`${x.name} vs ${y.name}`} right={<span className="text-[11px] text-[#9bb3c9]">{periodLabel}</span>} share={`${x.name}-vs-${y.name}-${periodLabel}`}>
         <table className="w-full text-xs">
           <tbody>
             <Row label={tl("Head to head (games)")} a={h2h.g ? h2h.w : "–"} b={h2h.g ? h2h.g - h2h.w : "–"} va={h2h.g ? h2h.w : null} vb={h2h.g ? h2h.g - h2h.w : null} />
@@ -262,13 +273,13 @@ const TeamRows: React.FC<{ x: HubTeam; y: HubTeam; ra: TeamGameRow[]; rb: TeamGa
             )}
           </tbody>
         </table>
-      </div>
+      </Section>
       <div className="grid sm:grid-cols-2 gap-3">
         {[
-          { n: x.name, t: A },
-          { n: y.name, t: B },
+          { n: x.name, t: A, rows: ra },
+          { n: y.name, t: B, rows: rb },
         ].map((s) => (
-          <Section key={s.n} title={tl("Most picked: {team}", { team: s.n })}>
+          <Section key={s.n} title={tl("Most picked: {team}", { team: s.n })} share={`${s.n}-draft-${periodLabel}`}>
             <ul className="text-xs grid grid-cols-2 gap-x-3 gap-y-1">
               {s.t.picks.slice(0, 10).map(([c, n, w]) => (
                 <li key={c} className="flex justify-between gap-1 min-w-0">
@@ -279,6 +290,7 @@ const TeamRows: React.FC<{ x: HubTeam; y: HubTeam; ra: TeamGameRow[]; rb: TeamGa
                 </li>
               ))}
             </ul>
+            <DraftTendencies rows={s.rows} />
           </Section>
         ))}
       </div>
@@ -286,7 +298,14 @@ const TeamRows: React.FC<{ x: HubTeam; y: HubTeam; ra: TeamGameRow[]; rb: TeamGa
   );
 };
 
-const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb: PlayerGameRow[]; career: boolean }> = ({ x, y, ra, rb, career }) => {
+const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb: PlayerGameRow[]; career: boolean; periodLabel: string }> = ({
+  x,
+  y,
+  ra,
+  rb,
+  career,
+  periodLabel,
+}) => {
   const A = useMemo(() => playerAgg(ra), [ra]);
   const B = useMemo(() => playerAgg(rb), [rb]);
   const h2h = useMemo(() => playerHeadToHead(ra, rb), [ra, rb]);
@@ -298,7 +317,7 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
   const pg = (p: typeof A) => `${perGame(p.k, p.g) ?? "–"} / ${perGame(p.d, p.g) ?? "–"} / ${perGame(p.a, p.g) ?? "–"}`;
   return (
     <>
-      <div className={card}>
+      <Section title={`${x.name} vs ${y.name}`} right={<span className="text-[11px] text-[#9bb3c9]">{periodLabel}</span>} share={`${x.name}-vs-${y.name}-${periodLabel}`}>
         <table className="w-full text-xs">
           <tbody>
             <Row label={tl("Role")} a={A.roles[0] ? roleName(A.roles[0]) : "–"} b={B.roles[0] ? roleName(B.roles[0]) : "–"} />
@@ -323,7 +342,7 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
             )}
           </tbody>
         </table>
-      </div>
+      </Section>
       <div className="grid sm:grid-cols-2 gap-3">
         {[
           { n: x.name, p: A },

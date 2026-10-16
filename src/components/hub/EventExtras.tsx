@@ -65,7 +65,7 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean }> = ({
   const sideTotal = o.blue + o.red;
   const drakes = Object.entries(o.drakes).sort((a, b) => b[1] - a[1]);
   return (
-    <Section title={tl("Tournament facts")}>
+    <Section title={tl("Tournament facts")} share="tournament-facts">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <Stat label={tl("Games")} value={fmtNum(o.g)} />
         <Stat label={tl("Avg game")} value={mmss(o.min)} />
