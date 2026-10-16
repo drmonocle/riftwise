@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 
 const DD = "https://ddragon.leagueoflegends.com/cdn";
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-const KEY = "riftwatch_ddragon_maps_v2";
+const KEY = "riftwatch_ddragon_maps_v3";
 
 interface Maps {
   v: string;
@@ -17,6 +17,7 @@ interface Maps {
   spell: Record<string, string>; // normalized name -> image file ("SummonerFlash.png")
   rune: Record<string, string>; // normalized name -> icon path ("perk-images/Styles/...png")
   full: Record<string, 1>; // normalized names of finished items (not parts, starters or consumables)
+  names: string[]; // every champion's English name ("Kai'Sa"), for the draft board
 }
 
 let maps: Maps | null = null;
@@ -29,6 +30,7 @@ function loadMaps(): Promise<void> {
   if (loading) return loading;
   loading = (async () => {
     try {
+      localStorage.removeItem("riftwatch_ddragon_maps_v2"); // older copy without the champion list
       const cached = JSON.parse(localStorage.getItem(KEY) || "null");
       if (cached && Date.now() - cached.at < WEEK_MS) {
         maps = cached.maps;
@@ -41,10 +43,11 @@ function loadMaps(): Promise<void> {
       const v: string = (await (await fetch("https://ddragon.leagueoflegends.com/api/versions.json")).json())[0];
       const get = (f: string) => fetch(`${DD}/${v}/data/en_US/${f}`).then((r) => r.json());
       const [champs, items, spells, runes] = await Promise.all([get("champion.json"), get("item.json"), get("summoner.json"), get("runesReforged.json")]);
-      const m: Maps = { v, champ: {}, item: {}, spell: {}, rune: {}, full: {} };
+      const m: Maps = { v, champ: {}, item: {}, spell: {}, rune: {}, full: {}, names: [] };
       for (const [id, c] of Object.entries<any>(champs.data)) {
         m.champ[norm(c.name)] = id;
         m.champ[norm(id)] = id;
+        m.names.push(c.name);
       }
       for (const [id, it] of Object.entries<any>(items.data)) {
         const k = norm(it.name);
@@ -83,6 +86,11 @@ export function useDDragon(): boolean {
     };
   }, []);
   return ready;
+}
+
+/** Every champion's English name (empty until the lists are loaded, or offline). */
+export function championList(): string[] {
+  return maps?.names || [];
 }
 
 export function champIcon(name: string | undefined): string | null {

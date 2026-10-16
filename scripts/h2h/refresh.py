@@ -1,7 +1,9 @@
 """Rebuild the live all-time head-to-head table for RiftWatch.
 
-Starts from the bundled src/all_time_h2h.json (every game up to BASE_CUTOFF, all tournaments)
-and adds every completed series since then from the lolesports API, across every league.
+Starts from the newest stats build's head-to-head table (lolworlds.com/riftwatch/stats/<version>/hub/h2h/base.json:
+every game in the RiftWatch database, rebuilt whenever the database changes) or, if that can't be read, from the
+bundled src/all_time_h2h.json (every game up to BASE_CUTOFF), and adds every completed series since then from the
+lolesports API, across every league.
 Writes {"cutoff", "pairs", ...} to the output path; the app downloads it and counts schedule
 results from `cutoff` on itself, so nothing is counted twice.
 
@@ -14,6 +16,7 @@ import os
 import re
 import sys
 import time
+import unicodedata
 import urllib.parse
 import urllib.request
 from collections import defaultdict
@@ -34,6 +37,28 @@ API = "https://esports-api.lolesports.com/persisted/gw"
 HEADERS = {"x-api-key": "0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z", "User-Agent": "RiftWatch-H2H/1.0"}
 # A match still marked unstarted this long after its start time is treated as postponed, not pending.
 STALE_PENDING = timedelta(hours=48)
+# The stats build's table (same games as the stats pages). H2H_HUB_BASE can point at a local file for testing.
+HUB = "https://lolworlds.com/riftwatch/stats"
+
+
+def hub_base():
+    """(pairs, series, cutoff) from the newest stats build, or None."""
+    try:
+        local = os.environ.get("H2H_HUB_BASE")
+        if local:
+            data = json.load(open(local, encoding="utf-8"))
+        else:
+            req = lambda u: urllib.request.Request(u, headers={"User-Agent": "RiftWatch-H2H/1.0"})
+            with urllib.request.urlopen(req(f"{HUB}/latest.json"), timeout=30) as r:
+                version = json.load(r)["version"]
+            with urllib.request.urlopen(req(f"{HUB}/{version}/hub/h2h/base.json"), timeout=60) as r:
+                data = json.load(r)
+        if not data.get("cutoff") or not data.get("pairs") or data["cutoff"] <= BASE_CUTOFF:
+            return None
+        return data["pairs"], data.get("series") or {}, data["cutoff"], data.get("names") or {}
+    except Exception as e:  # stats site down: fall back to the bundled table
+        print(f"stats build table unavailable ({e}); using the bundled one")
+        return None
 
 
 def get(path, **params):
@@ -51,6 +76,45 @@ def get(path, **params):
 def norm(code):
     c = (code or "").strip().upper()
     return CODE_ALIASES.get(c, c)
+
+
+def name_key(name):
+    """"LYON (2024 American Team)" and "LYON" -> "lyon" (Leaguepedia adds the bracket to tell same-named teams apart)."""
+    n = unicodedata.normalize("NFKD", re.sub(r"\s*\(.*?\)", "", name or "")).encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z0-9]+", "", n)
+
+
+def code_fixes(base_names, base_pairs):
+    """Our code -> lolesports code, for teams whose lolesports code isn't ours, matched by the team's current
+    name (names[0]), so e.g. our "100T" history counts for lolesports' "100". Codes lolesports also uses are kept."""
+    ours = set(base_names)
+    teams = get("getTeams")["teams"]
+    theirs_all = {norm(t.get("code")) for t in teams}
+    by_name = defaultdict(set)
+    for code, names in base_names.items():
+        if names and code not in theirs_all:
+            by_name[name_key(names[0])].add(code)
+    games = defaultdict(int)
+    for k, (aw, bw) in base_pairs.items():
+        for c in k.split("__"):
+            games[c] += aw + bw
+    fixes = {}
+    for t in teams:
+        theirs = norm(t.get("code"))
+        cands = by_name.get(name_key(t.get("name")), set())
+        if not theirs or theirs in ours or len(cands) != 1:
+            continue
+        mine = next(iter(cands))
+        if fixes.get(mine, theirs) != theirs:
+            fixes[mine] = None  # two lolesports codes for one of ours: leave it alone
+        else:
+            fixes[mine] = theirs
+    # lolesports sometimes gives two teams one code ("LYON" = LYON and Lyon Academy): the busier of ours gets it
+    best = {}
+    for mine, theirs in fixes.items():
+        if theirs and (theirs not in best or games[mine] > games[best[theirs]]):
+            best[theirs] = mine
+    return {mine: theirs for theirs, mine in best.items()}
 
 
 def parse_time(s):
@@ -72,8 +136,43 @@ def league_events(league_id, since):
 
 def main(out_path):
     now = datetime.now(timezone.utc)
-    base_cutoff = parse_time(BASE_CUTOFF)
-    base = json.load(open(BASE_PATH, encoding="utf-8"))
+    hub = hub_base()
+    if hub:
+        base, hub_series, base_cutoff_s, names = hub
+        print(f"base: stats build table, {len(base)} pairs up to {base_cutoff_s}")
+        fixes = code_fixes(names, base) if names else {}
+        if fixes:
+            print(f"{len(fixes)} codes renamed to lolesports codes, e.g. "
+                  + ", ".join(f"{a}->{b}" for a, b in sorted(fixes.items())[:12]))
+            ren = lambda k: "__".join(sorted(fixes.get(c, c) for c in k.split("__")))
+            moved = defaultdict(lambda: [0, 0])
+            for k, (aw, bw) in base.items():
+                a, b = k.split("__")
+                a2, b2 = fixes.get(a, a), fixes.get(b, b)
+                if a2 == b2:
+                    continue
+                if a2 > b2:
+                    a2, b2, aw, bw = b2, a2, bw, aw
+                moved[f"{a2}__{b2}"][0] += aw
+                moved[f"{a2}__{b2}"][1] += bw
+            base = dict(moved)
+            renamed = {}
+            for k, v in hub_series.items():
+                k2 = ren(k)
+                first = fixes.get(k.split("__")[0], k.split("__")[0])
+                if len(set(k2.split("__"))) < 2:
+                    continue
+                if first != k2.split("__")[0]:  # sides swapped
+                    v = {"intl": v["intl"][::-1], "recent": [[d, e, bw, aw] for d, e, aw, bw in v["recent"]]}
+                if k2 in renamed:  # two of our codes became one: keep both histories
+                    old = renamed[k2]
+                    v = {"intl": [old["intl"][0] + v["intl"][0], old["intl"][1] + v["intl"][1]],
+                         "recent": sorted(old["recent"] + v["recent"], reverse=True)[:RECENT_N]}
+                renamed[k2] = v
+            hub_series = renamed
+    else:
+        base, hub_series, base_cutoff_s = json.load(open(BASE_PATH, encoding="utf-8")), None, BASE_CUTOFF
+    base_cutoff = parse_time(base_cutoff_s)
 
     events = {}
     for league in get("getLeagues")["leagues"]:
@@ -97,7 +196,9 @@ def main(out_path):
 
     # Series history for the H2H details view: catalog history plus the new series.
     series = {}
-    if os.path.exists(BASE_SERIES_PATH):
+    if hub_series is not None:
+        series = hub_series
+    elif os.path.exists(BASE_SERIES_PATH):
         series = json.load(open(BASE_SERIES_PATH, encoding="utf-8"))
     new_series = []
 
@@ -134,7 +235,7 @@ def main(out_path):
         "version": 2,
         "generated": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "cutoff": cutoff.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "baseCutoff": BASE_CUTOFF,
+        "baseCutoff": base_cutoff_s,
         "seriesAdded": added,
         "pairs": {f"{a}__{b}": v for (a, b), v in sorted(pairs.items())},
     }
@@ -151,7 +252,7 @@ def main(out_path):
     for name, data in shards.items():
         with open(os.path.join(out_dir, "series", f"{name}.json"), "w", encoding="utf-8", newline="") as f:
             json.dump(dict(sorted(data.items())), f, ensure_ascii=False, separators=(",", ":"))
-    print(f"{len(events)} events since {BASE_CUTOFF}; added {added} completed series; "
+    print(f"{len(events)} events since {base_cutoff_s}; added {added} completed series; "
           f"{len(out['pairs'])} pairs; cutoff {out['cutoff']}; {len(series)} pairs with history in {len(shards)} shards")
 
 

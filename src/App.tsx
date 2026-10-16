@@ -950,7 +950,7 @@ export default function App() {
         {activeTab === "stats" && (
           <PartBoundary>
             <React.Suspense fallback={lazyFallback}>
-              <StatsView settings={settings} onOpenUrl={handleOpenUrl} />
+              <StatsView settings={settings} onOpenUrl={handleOpenUrl} schedule={schedule} />
             </React.Suspense>
           </PartBoundary>
         )}

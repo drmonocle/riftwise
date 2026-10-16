@@ -1,5 +1,5 @@
 /**
- * Stats hub data: page files and the search lists, from the nightly stats build (stats/<version>/hub/).
+ * Stats hub data: page files and the search lists, from the stats build (rebuilt when the database changes) (stats/<version>/hub/).
  * Every page fetches only its own small file.
  */
 import { load } from "../stats";
@@ -199,3 +199,4 @@ export const loadChampGames = (league: string, year: string) => load<import("./t
 export const loadPatches = () => load<import("./types").PatchRow[]>("hub/patches.json");
 export const loadLeagues = () => load<import("./types").LeagueRow[]>("hub/leagues.json");
 export const loadLeague = (slug: string) => load<import("./types").HubLeague>(`hub/league/${slug}.json`);
+export const loadRatings = () => load<import("./types").HubRatings>("hub/ratings.json");

@@ -75,6 +75,19 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
           <Stat label={tl("Games")} value={`${fmtNum(t.w)}-${fmtNum(t.g - t.w)}`} sub={tl("{pct} win rate", { pct: winRate(t.w, t.g) })} />
           <Stat label={tl("Series")} value={`${t.sw}-${t.sg - t.sw}`} sub={tl("{pct} won", { pct: winRate(t.sw, t.sg) })} />
+          {t.rating && (
+            <HubLink to={{ kind: "rankings" }} className="block hover:opacity-80">
+              <Stat
+                label={tl("Power ranking")}
+                value={`#${t.rating.rank ?? t.rating.lrank}`}
+                sub={
+                  t.rating.rank != null
+                    ? tl("#{lrank} in {league} · rating {r}", { lrank: t.rating.lrank, league: t.rating.league || "–", r: t.rating.r })
+                    : tl("in {league} · rating {r}", { league: t.rating.league || "–", r: t.rating.r })
+                }
+              />
+            </HubLink>
+          )}
           <Stat
             label={tl("Titles")}
             value={t.titles.length}

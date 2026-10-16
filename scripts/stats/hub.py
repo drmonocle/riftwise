@@ -53,6 +53,8 @@ import time
 import unicodedata
 from collections import Counter, defaultdict
 
+import ratings as team_ratings
+
 SITE = "RiftWatch"
 RECENT_EVENT_DAYS = 30        # event and series descriptions leave the winner out while this fresh
 SEO_MIN_GAMES = 10            # thinner team / player pages are kept out of search engines
@@ -451,6 +453,17 @@ def build(ctx) -> dict:
     for page, p in ctx.players.items():
         player_slug_maker.add(page, ctx.pname(page), p["g"], alt=page)
     player_slug = player_slug_maker.build()
+    # Leaguepedia's scoreboards sometimes spell a player's page in another case ("vital" for the page "Vital"):
+    # map such a name to the one player page it can only mean
+    pages_by_lower = defaultdict(list)
+    for page in ctx.players:
+        pages_by_lower[page.lower()].append(page)
+
+    def canon_page(page):
+        if page in ctx.players:
+            return page
+        same = pages_by_lower.get((page or "").lower(), [])
+        return same[0] if len(same) == 1 else page
 
     ops = sorted(set(games_by_op) | {op for op in sched_by_op if op in lp_tourn})
     op_games = {op: len(games_by_op.get(op, {})) for op in ops}
@@ -648,6 +661,45 @@ def build(ctx) -> dict:
 
     kept = {}                          # stage -> its sums, for the whole-event page
     champ_games = defaultdict(lambda: {"ev": {}, "g": []})  # (league slug, year) -> champion game log
+    h2h_pairs = defaultdict(lambda: [0, 0])     # (code a, code b) sorted -> game wins of a, of b
+    h2h_series = defaultdict(list)              # (code a, code b) -> [(date, event, wins a, wins b, international)]
+    h2h_newest = ""                              # newest game in the table (its cutoff)
+    h2h_names = defaultdict(dict)                # code -> team name -> its newest game under that code
+    H2H_ALIASES = {"TLAW": "TL", "MKOI": "MDK", "KRX": "DRX", "DNS": "KDF", "DNF": "KDF"}  # = CODE_ALIASES in src/helpers.ts
+    INTL_RE = re.compile(r"world|msi|mid-season|first stand", re.I)
+    rating_games = []  # (date, league, international, fid a, fid b, a won, tier, region) for the ratings
+
+    def fid_on(name, day):
+        try:
+            return ctx.team_of(name, day or "0000")
+        except Exception:
+            return None
+    fr_code = {}      # fid -> its current code (from its newest name that has one)
+    code_owner = {}   # code -> (newest date, fid) of the franchise that uses it now
+    for fid, eras in ctx.fr_eras.items():
+        for e in sorted(eras, key=lambda e: e["to"], reverse=True):
+            c = str(ctx.team_shorts.get(e["n"]) or (lp_team.get(e["n"]) or {}).get("Short") or "").strip().upper()
+            if c:
+                c = H2H_ALIASES.get(c, c)
+                fr_code[fid] = c
+                last = max(x["to"] for x in eras)
+                if c not in code_owner or last > code_owner[c][0]:
+                    code_owner[c] = (last, fid)
+                break
+
+    def h2h_code(name, date, code_then):
+        try:
+            fid = ctx.team_of(name, date[:10] if date else "0000")
+        except Exception:
+            fid = None
+        c = fr_code.get(fid)
+        if c and code_owner.get(c, (0, None))[1] == fid:
+            return c
+        if fid is not None and fid not in fr_code and fid in ctx.fr_name:
+            return ctx.fr_name[fid].upper()  # a team with no code at all goes by its name (as in Riot's own table)
+        c = H2H_ALIASES.get((code_then or "").upper(), (code_then or "").upper())
+        # the code at the time, unless an active franchise owns it now (then this old team is left out)
+        return c if c and code_owner.get(c, (0, fid))[1] in (fid, None) else None
     dl_index = defaultdict(lambda: defaultdict(list))  # league slug -> year -> [[event slug, name, games]]
     CSV_HEAD = ["date", "league", "tournament", "stage", "patch", "series", "game", "url", "side", "position", "player", "team",
                 "opponent", "champion", "pick_order", "result", "length_sec", "kills", "deaths", "assists", "team_kills",
@@ -781,6 +833,7 @@ def build(ctx) -> dict:
                                     sd4[2] += 1
                                     sd4[3] += 1 if side_won else 0
                     for page, ch, cnt in pentas.get((mid, g["n"]), []):
+                        page = canon_page(page)
                         facts["pentas"].append({"n": ctx.pname(page), "u": player_slug.get(page), "c": ch, "g": gslug, "x": cnt})
                         p_pentas[page].append((g["date"][:10], ch, gslug, en, cnt))
                         all_pentas.append((g["date"][:10], page, ch, gslug, en, eslug, an, bn, cnt))
@@ -1049,7 +1102,9 @@ def build(ctx) -> dict:
                             for ch in order:
                                 r = team_rows.get(ch)
                                 lst.append([ch, -1] if r is None else [ch, ROLE_ORDER.get(r["role"] or "", -1), r["kills"], r["deaths"],
-                                                                       r["assists"], r["cs"], r["gold"], r["damage"]])
+                                                                       r["assists"], r["cs"], r["gold"], r["damage"],
+                                                                       ctx.pname(r["page_key"]) if r["page_key"] else r["raw_name"],
+                                                                       player_slug.get(r["page_key"])])
                             picks_out.append(lst)
                         if picks_out[0] or picks_out[1]:
                             cg = champ_games[(lu_c, (g["date"] or "0000")[:4])]
@@ -1057,7 +1112,9 @@ def build(ctx) -> dict:
                             cg["g"].append([g["date"][:10], fix_patch(g["patch"], g["date"]) or "", ei, 1 if g["w"] == g["t1"] else 0,
                                             item.get("min"), picks_out[0], picks_out[1],
                                             (sides.get("blue") or {}).get("bans") or [], (sides.get("red") or {}).get("bans") or [],
-                                            1 if (sides.get("blue") or {}).get("picks") else 0])
+                                            1 if (sides.get("blue") or {}).get("picks") else 0,
+                                            # for the game finder: teams, their pages, the series page and game number
+                                            g["t1"], g["t2"], team_ref(g["t1"], g["date"])[1], team_ref(g["t2"], g["date"])[1], gslug, g["n"]])
                     # Download rows: one per player and one per team
                     if g["t1"] and g["t2"] and (g["w"] or rows):
                         g_len = round((item.get("min") or 0) * 60) or ""
@@ -1116,6 +1173,37 @@ def build(ctx) -> dict:
                     fid = ctx.team_of(name, date[:10] if date else "0000")
                     latest_heap(t_recent[fid], (date, gslug or "", opp, mine, theirs, en, eslug), 15)
                     t_series[u].append((date[:10], opp, opp_u, mine, theirs, en, eslug, gslug, tab or "", name))
+            if played and (wa or wb):
+                ca, cb = h2h_code(a, date, ac), h2h_code(b, date, bc)
+                if ca and cb and ca != cb and "TBD" not in (ca, cb):
+                    for c_, n_ in ((ca, a), (cb, b)):
+                        if date[:10] > h2h_names[c_].get(n_, ""):
+                            h2h_names[c_][n_] = date[:10]
+                    ga, gb = wa, wb
+                    if ca > cb:
+                        ca, cb, ga, gb = cb, ca, gb, ga
+                    h2h_pairs[(ca, cb)][0] += ga
+                    h2h_pairs[(ca, cb)][1] += gb
+                    h2h_series[(ca, cb)].append((date[:10], en, ga, gb, 1 if INTL_RE.search(en or "") or info.get("Region") == "International" else 0))
+                    newest_g = max((g["date"] for g in glist if g["w"]), default=date)
+                    if newest_g > h2h_newest:
+                        h2h_newest = newest_g
+            if played and not (s and s.get("ff")) and (info.get("TournamentLevel") or "") not in ("Showmatch", "Show Match"):
+                # national teams (Asian Games, KeSPA Cup guests) never get a home league
+                intl_r = 1 if (info.get("Region") == "International" or INTL_RE.search(en or "")
+                               or "national team" in f"{a} {b}".lower()) else 0
+                lg_r = info.get("League")
+                tier_r = 1 if info.get("TournamentLevel") == "Primary" else 2
+                reg_r = info.get("Region")
+                if any(g["w"] in (a, b) for g in glist):
+                    for g in glist:
+                        if g["w"] in (a, b):
+                            gd = (g["date"] or date)[:10]
+                            rating_games.append((gd, lg_r, intl_r, fid_on(a, gd), fid_on(b, gd), 1 if g["w"] == a else 0, tier_r, reg_r))
+                elif wa + wb and date:
+                    fa_r, fb_r = fid_on(a, date[:10]), fid_on(b, date[:10])
+                    rating_games += ([(date[:10], lg_r, intl_r, fa_r, fb_r, 1, tier_r, reg_r)] * wa
+                                     + [(date[:10], lg_r, intl_r, fa_r, fb_r, 0, tier_r, reg_r)] * wb)
             if played and winner:
                 ra, rb = roster_region.get((op, a)), roster_region.get((op, b))
                 if ra and rb and ra != rb:
@@ -1330,7 +1418,60 @@ def build(ctx) -> dict:
             return nt["n"] * 0.8
         return nt["n"] * 0.5
 
+    # -- ratings: win chances and power rankings ---------------------------------------------
+    if os.environ.get("RW_DUMP_RATING_GAMES"):  # for tuning scripts/stats/ratings.py offline
+        with open(os.environ["RW_DUMP_RATING_GAMES"], "w", encoding="utf-8") as f:
+            json.dump([[d, lg, i, str(fa), str(fb), w, t_, r_] for d, lg, i, fa, fb, w, t_, r_ in rating_games], f)
+    rated, rating_tests, rated_leagues = team_ratings.run(rating_games)
+    newest_r = max((x["last"] for x in rated.values()), default="0000-00-00")
+    active_cut = (datetime.date.fromisoformat(newest_r) - datetime.timedelta(days=120)).isoformat() if newest_r[0] != "0" else "9"
+    before_30 = (datetime.date.fromisoformat(newest_r) - datetime.timedelta(days=30)).isoformat() if newest_r[0] != "0" else "0"
+    # active teams with a home league; national teams are left out (their games still count for the clubs they met)
+    ranked = sorted(((fid, x) for fid, x in rated.items()
+                     if x["last"] >= active_cut and x["g"] >= 15 and x["league"] and team_slug.get(fid) and fid in ctx.fr_name
+                     and "national team" not in ctx.fr_name[fid].lower()),
+                    key=lambda kv: -kv[1]["r"])
+    tier_of = lambda lg_: rated_leagues.get(lg_, (2, None))[0]
+    n_top = sum(1 for _, x in ranked if tier_of(x["league"]) == 1)
+    team_rating = {}
+    league_rank = Counter()
+    world_rank = 0
+    rank_rows = []
+    for fid, x in ranked:
+        lg_r = x["league"]
+        league_rank[lg_r] += 1
+        top_r = tier_of(lg_r) == 1
+        world_rank += 1 if top_r else 0
+        was = team_ratings.rating_on(x["hist"], before_30)
+        # a world rank only for top-league teams: second-tier leagues never meet them, so theirs is a league rank
+        team_rating[fid] = {"r": round(x["r"]), "rank": world_rank if top_r else None, "of": n_top, "league": lg_r,
+                            "lrank": league_rank[lg_r], "chg30": round(x["r"] - was) if was is not None else None}
+        lpt_r = lp_team.get(ctx.fr_name[fid]) or {}
+        code_r = str(ctx.team_shorts.get(ctx.fr_name[fid]) or lpt_r.get("Short") or "").strip()
+        rank_rows.append([team_slug[fid], ctx.fr_name[fid], code_r, lg_r, league_slug.get(lg_r), round(x["r"]),
+                          team_rating[fid]["chg30"], x["g"], x["last"], 1 if top_r else 2])
+    # league strength: average of each top league's best four active teams
+    by_league_r = defaultdict(list)
+    for row in rank_rows:
+        if row[9] == 1:
+            by_league_r[row[3]].append(row[5])
+    league_rows = sorted(([lg_r, league_slug.get(lg_r), round(sum(sorted(v, reverse=True)[:4]) / min(4, len(v))), len(v)]
+                          for lg_r, v in by_league_r.items() if lg_r and len(v) >= 4), key=lambda r: -r[2])
+    out.json("ratings.json", {
+        "asof": newest_r, "games": len(rating_games),
+        "teams": rank_rows, "leagues": league_rows,
+        "test": {"from": team_ratings.TEST_FROM, "all": team_ratings.score(rating_tests),
+                 "intl": team_ratings.score(rating_tests, lambda t: t[3]),
+                 "settled": team_ratings.score(rating_tests, lambda t: t[4]),
+                 "calibration": team_ratings.calibration(rating_tests)},
+    })
+    checks["hub: rated teams (active)"] = len(rank_rows)
+    checks["hub: rated teams in top leagues"] = n_top
+    checks["hub: rating test accuracy"] = team_ratings.score(rating_tests).get("acc")
+
     # -- team pages -------------------------------------------------------------------------
+    stakes_team = {}    # team slug -> name, notes, starters (active teams), for hub/stakes.json
+    stakes_player = {}  # player slug -> (notes as of, notes)
     search_teams = []
     alias = {}
     for fid, t in ctx.teams.items():
@@ -1369,7 +1510,7 @@ def build(ctx) -> dict:
                 prize_shown.add(pe)
                 x.setdefault("usd", pu)
         obj = {
-            "name": name, "u": u, "region": lpt.get("Region"), "codes": codes,
+            "name": name, "u": u, "region": lpt.get("Region"), "codes": codes, "rating": team_rating.get(fid),
             "disbanded": 1 if lpt.get("IsDisbanded") else 0,
             "g": t["g"], "w": t["w"], "sg": len(ss), "sw": sw, "from": t["from"], "to": t["to"],
             "names": [{"n": e["n"], "from": e["from"], "to": e["to"], "g": e["g"]} for e in eras],
@@ -1417,6 +1558,13 @@ def build(ctx) -> dict:
                 lu_last = next((x.get("lu") for x in tevents if x.get("lu")), None)
                 for nt in notes:
                     all_notes.append((note_score(nt), lu_last, {**nt, "t": "team", "name": name, "u": u, "asOf": as_of}))
+        if (t["to"] or "") >= active_cut:
+            starters = []
+            for role_s in ("Top", "Jungle", "Mid", "Bot", "Support"):
+                best_s = max((x for x in (roster[0]["p"] if roster else []) if x["r"] == role_s and x["u"]), key=lambda x: x["g"], default=None)
+                if best_s:
+                    starters.append([best_s["n"], best_s["u"], role_s])
+            stakes_team[u] = {"n": name, "a": obj["notes"]["asOf"] if notes else None, "l": notes or [], "p": starters}
         out.json(f"team/{u}.json", obj)
         search_teams.append([name, short_slug(name, u), t["g"], t["to"][:4], " | ".join(e["n"] for e in eras if e["n"] != name), " | ".join(codes),
                              lpt.get("Region") or ""])
@@ -1500,6 +1648,7 @@ def build(ctx) -> dict:
                 lu_last = next((x.get("lu") for x in obj["events"] if x.get("lu")), None)
                 for nt in notes:
                     all_notes.append((note_score(nt), lu_last, {**nt, "t": "player", "name": name, "u": u, "asOf": as_of}))
+            stakes_player[u] = (as_of, notes)
         out.json(f"player/{u}.json", obj)
         games = sorted(p_games.get(page, []), key=lambda r: r[0], reverse=True)
         if games:
@@ -1512,6 +1661,15 @@ def build(ctx) -> dict:
                               f"{', ' + str(len(my_titles)) + ' titles' if my_titles else ''}. Champion pool, tournaments and career bests.",
                               1 if p["g"] >= SEO_MIN_GAMES else 0))
     search_players.sort(key=lambda x: -x[3])
+
+    # -- what's at stake: storylines of every active team and its starters, for "On the line today" ------
+    stakes = {}
+    for u_s, x in stakes_team.items():
+        ps = [[n_, pu, r_, *stakes_player[pu]] for n_, pu, r_ in x["p"] if pu in stakes_player]
+        if x["l"] or ps:
+            stakes[u_s] = {"n": x["n"], "a": x["a"], "l": x["l"], "p": ps}
+    out.json("stakes.json", stakes)
+    checks["hub: teams with stakes"] = len(stakes)
 
     # -- champion pages -------------------------------------------------------------------------
     # Newest patches with a fair number of games (the champion pages' patch trend)
@@ -1615,6 +1773,23 @@ def build(ctx) -> dict:
             pres[ch] = x["p"][ch] + x["b"][ch]
         patches_out.append({"p": pt, "from": x["from"], "to": x["to"], "g": x["g"],
                             "c": [[ch, x["p"][ch], x["b"][ch], x["w"][ch]] for ch, _ in pres.most_common(12)]})
+    # patch movers: biggest changes in presence (picked or banned) against the patch before
+    # (both with 30+ games): [champion, presence now, presence before, wins, picks now]
+    big = [p_["p"] for p_ in patches_out if p_["g"] >= 30]
+    for p_ in patches_out:
+        if p_["p"] not in big or big.index(p_["p"]) + 1 >= len(big):
+            continue
+        now_s, was_s = patch_stats[p_["p"]], patch_stats[big[big.index(p_["p"]) + 1]]
+        moves = []
+        for ch in set(now_s["p"]) | set(now_s["b"]) | set(was_s["p"]) | set(was_s["b"]):
+            pn = (now_s["p"][ch] + now_s["b"][ch]) / now_s["g"]
+            pw = (was_s["p"][ch] + was_s["b"][ch]) / was_s["g"]
+            if max(pn, pw) >= 0.1:
+                moves.append((pn - pw, [ch, round(pn, 3), round(pw, 3), now_s["w"][ch], now_s["p"][ch]]))
+        moves.sort(key=lambda m: m[0])
+        p_["prev"] = big[big.index(p_["p"]) + 1]
+        p_["up"] = [m[1] for m in reversed(moves[-6:]) if m[0] >= 0.05]
+        p_["down"] = [m[1] for m in moves[:6] if m[0] <= -0.05]
     out.json("patches.json", patches_out)
 
     # -- league history: every tournament of a league with its winner ----------------------------
@@ -1662,7 +1837,8 @@ def build(ctx) -> dict:
     # storylines for the stats home: teams and players whose latest tournament is in a main league
     main_leagues = {l["u"] for l in leagues_out if l["pr"]}
     all_notes.sort(key=lambda x: -x[0])
-    out.json("notes.json", [x[2] for x in all_notes if x[1] in main_leagues][:40])
+    # national teams (Asian Games, KeSPA Cup guests) aren't what fans follow week to week
+    out.json("notes.json", [x[2] for x in all_notes if x[1] in main_leagues and "national team" not in x[2]["name"].lower()][:40])
 
     # -- champion game logs per league and year, and their index -----------------------------------
     cg_years = defaultdict(dict)
@@ -1675,6 +1851,21 @@ def build(ctx) -> dict:
         cg_years[lu_c][year_c] = len(cg["g"])
     out.json("champgames/index.json", [{"u": l["u"], "l": l["l"], "r": l["r"], "pr": l["pr"], "y": cg_years[l["u"]]}
                                        for l in leagues_out if l["u"] in cg_years])
+
+    # -- head-to-head base for the app's H2H meters (see .github/workflows/h2h-data.yml) ----------
+    h2h_out = {"version": 1, "cutoff": (h2h_newest.replace(" ", "T") + ":00Z") if h2h_newest else None,
+               "pairs": {f"{a}__{b}": v for (a, b), v in sorted(h2h_pairs.items())}, "series": {},
+               # lets the H2H workflow match a team whose lolesports code differs from ours (e.g. "100" / "100T");
+               # newest name first
+               "names": {c: sorted(n, key=lambda x: n[x], reverse=True) for c, n in sorted(h2h_names.items())}}
+    for (a, b), lst in h2h_series.items():
+        lst.sort(reverse=True)
+        h2h_out["series"][f"{a}__{b}"] = {
+            "intl": [sum(x[2] for x in lst if x[4]), sum(x[3] for x in lst if x[4])],
+            "recent": [[d, en_, ga, gb] for d, en_, ga, gb, _ in lst[:10]],
+        }
+    out.json("h2h/base.json", h2h_out)
+    checks["hub: h2h pairs"] = len(h2h_pairs)
 
     # -- a league's whole season (all splits + playoffs) for percentile ranks ------------------------
     by_season = defaultdict(list)

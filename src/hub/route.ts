@@ -3,7 +3,8 @@
  * bookmarked and found by search engines:
  *
  *   /riftwatch/stats                      hub front page
- *   /riftwatch/stats/<section>[/<year>]   tournaments, leagues, champions, patches, records, titles, compare, data, about, prep
+ *   /riftwatch/stats/<section>[/<year>]   tournaments, leagues, champions, patches, records, titles, compare, data, about, prep,
+ *                                         rankings, finder (?league=..&year=..&team=..), draft (?teams=a,b)
  *   /riftwatch/stats/compare?teams=t1,gen-g&p=y2026   a comparison (players=..., p = period: all, last20, y2026, e:<event>)
  *   /riftwatch/stats/champions?league=lck&year=2026&event=..&patch=26.18&side=b&role=Mid   champion stats with filters
  *   /riftwatch/player/<slug>              /team/<slug>  /tournament/<slug>  /match/<slug>  /champion/<slug>  /league/<slug>
@@ -13,7 +14,9 @@
 import { useSyncExternalStore } from "react";
 import { IS_WEB } from "../platform";
 
-export type HubSection = "tournaments" | "leagues" | "champions" | "patches" | "records" | "titles" | "compare" | "data" | "about" | "prep";
+export type HubSection =
+  | "tournaments" | "leagues" | "champions" | "patches" | "records" | "titles" | "compare" | "data" | "about" | "prep"
+  | "rankings" | "finder" | "draft";
 export type HubEntity = "team" | "player" | "event" | "match" | "champ" | "league";
 
 export type HubRoute =
@@ -26,7 +29,11 @@ export const HUB_HOME: HubRoute = { kind: "home" };
 export type CompareRoute = { kind: "compare"; mode?: "team" | "player"; a?: string; b?: string; period?: string };
 /** Match prep for two teams: /riftwatch/stats/prep?teams=t1,gen-g&p=y2026 */
 export type PrepRoute = { kind: "prep"; a?: string; b?: string; period?: string };
-const SECTIONS: HubSection[] = ["tournaments", "leagues", "champions", "patches", "records", "titles", "compare", "data", "about", "prep"];
+const SECTIONS: HubSection[] = [
+  "tournaments", "leagues", "champions", "patches", "records", "titles", "compare", "data", "about", "prep", "rankings", "finder", "draft",
+];
+/** Pages that keep their filters in the address (?league=lck&year=2026...). */
+const QUERY_SECTIONS: HubSection[] = ["champions", "finder", "draft"];
 const ENTITY_PATH: Record<HubEntity, string> = {
   team: "team", player: "player", event: "tournament", match: "match", champ: "champion", league: "league",
 };
@@ -54,8 +61,8 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
         const c = parseCompare(search);
         return { kind, a: c.a, b: c.b, period: c.period };
       }
-      // the Champions page keeps its filters in the address (?league=lck&year=2026&patch=26.18...)
-      if (kind === "champions" && search.replace(/^\?/, "")) return { kind, query: search.replace(/^\?/, "") };
+      // these pages keep their filters in the address (?league=lck&year=2026&patch=26.18...)
+      if (QUERY_SECTIONS.includes(kind) && search.replace(/^\?/, "")) return { kind, query: search.replace(/^\?/, "") };
       return kind === "tournaments" && parts[2] && /^\d{4}$/.test(parts[2]) ? { kind, year: parts[2] } : { kind };
     }
     return null;
@@ -80,7 +87,7 @@ export function hubPath(r: HubRoute): string {
     const q = `${players ? "players" : "teams"}=${[r.a || "", r.b || ""].map(encodeURIComponent).join(",")}`;
     return `${BASE}stats/${r.kind}?${q}${r.period && r.period !== "all" ? `&p=${encodeURIComponent(r.period)}` : ""}`;
   }
-  if (r.kind === "champions" && "query" in r && r.query) return `${BASE}stats/champions?${r.query}`;
+  if (QUERY_SECTIONS.includes(r.kind as HubSection) && "query" in r && r.query) return `${BASE}stats/${r.kind}?${r.query}`;
   if ((SECTIONS as string[]).includes(r.kind)) {
     const y = "year" in r && r.year ? `/${r.year}` : "";
     return `${BASE}stats/${r.kind}${y}`;
