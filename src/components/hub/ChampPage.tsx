@@ -35,7 +35,8 @@ export const ChampPage: React.FC<{ slug: string }> = ({ slug }) => {
   return <Page state={state}>{(c) => <ChampView c={c} />}</Page>;
 };
 
-const pctOf = (w: number, g: number) => (g ? `${Math.round((w / g) * 100)}%` : "–");
+// "<1%" rather than "0%" for something that did happen, just rarely
+const pctOf = (w: number, g: number) => (!g ? "–" : w > 0 && (w / g) * 100 < 0.5 ? "<1%" : `${Math.round((w / g) * 100)}%`);
 
 const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
   const ddReady = useDDragon();
