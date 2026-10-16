@@ -251,7 +251,7 @@ export const TeamRows: React.FC<{ x: HubTeam; y: HubTeam; ra: TeamGameRow[]; rb:
       <Section title={`${x.name} vs ${y.name}`} right={<span className="text-[11px] text-[#9bb3c9]">{periodLabel}</span>} share={`${x.name}-vs-${y.name}-${periodLabel}`}>
         <table className="w-full text-xs">
           <tbody>
-            <Row label={tl("Head to head (games)")} a={h2h.g ? h2h.w : "–"} b={h2h.g ? h2h.g - h2h.w : "–"} va={h2h.g ? h2h.w : null} vb={h2h.g ? h2h.g - h2h.w : null} />
+            <Row label={career ? tl("Head to head (games)") : tl("Head to head this period (games)")} a={h2h.g ? h2h.w : "–"} b={h2h.g ? h2h.g - h2h.w : "–"} va={h2h.g ? h2h.w : null} vb={h2h.g ? h2h.g - h2h.w : null} />
             <Row label={tl("Games won")} a={`${A.w}-${A.g - A.w}`} b={`${B.w}-${B.g - B.w}`} />
             <Row label={tl("Win rate")} a={winRate(A.w, A.g)} b={winRate(B.w, B.g)} va={wr(A.w, A.g)} vb={wr(B.w, B.g)} />
             <Row label={tl("Blue side wins")} a={`${winRate(A.blue[1], A.blue[0])} (${A.blue[0]})`} b={`${winRate(B.blue[1], B.blue[0])} (${B.blue[0]})`} va={wr(A.blue[1], A.blue[0])} vb={wr(B.blue[1], B.blue[0])} />
@@ -326,7 +326,7 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
         <table className="w-full text-xs">
           <tbody>
             <Row label={tl("Role")} a={A.roles[0] ? roleName(A.roles[0]) : "–"} b={B.roles[0] ? roleName(B.roles[0]) : "–"} />
-            {h2h.g > 0 && <Row label={tl("Head to head (games)")} a={h2h.w} b={h2h.g - h2h.w} va={h2h.w} vb={h2h.g - h2h.w} />}
+            {h2h.g > 0 && <Row label={career ? tl("Head to head (games)") : tl("Head to head this period (games)")} a={h2h.w} b={h2h.g - h2h.w} va={h2h.w} vb={h2h.g - h2h.w} />}
             <Row label={tl("Games won")} a={`${A.w}-${A.g - A.w}`} b={`${B.w}-${B.g - B.w}`} />
             <Row label={tl("Win rate")} a={winRate(A.w, A.g)} b={winRate(B.w, B.g)} va={wr(A.w, A.g)} vb={wr(B.w, B.g)} />
             <Row label={tl("KDA")} a={A.kda} b={B.kda} va={A.kda} vb={B.kda} />

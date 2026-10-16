@@ -116,25 +116,34 @@ const Movers: React.FC<{ title: string; list: PatchMove[]; up?: boolean }> = ({ 
 
 // ── Leagues ───────────────────────────────────────────────────────────────
 
+type LeagueScope = "current" | "past" | "all";
+
+/**
+ * Every league. "Current" (leagues with games this year) comes first, split into international events, main
+ * leagues and the rest; "Past main leagues" are the big ones that stopped (NA LCS, EU LCS, LMS...).
+ */
 export const LeaguesPanel: React.FC = () => {
   usePageTitle(tl("Leagues"));
   const state = useLoad(loadLeagues, []);
-  const [scope, setScope] = useState<"main" | "all">("main");
+  const [scope, setScope] = useState<LeagueScope>("current");
   const [q, setQ] = useState("");
+  const labels: Record<LeagueScope, string> = {
+    current: tl("Current"),
+    past: tl("Past main leagues"),
+    all: tl("Everything"),
+  };
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <div className="flex rounded-lg border border-[#1e282d] overflow-hidden">
-          {(["main", "all"] as const).map((s) => (
+          {(["current", "past", "all"] as const).map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => setScope(s)}
-              className={`px-2.5 py-1.5 ${scope === s ? "bg-[#c8aa6e] text-[#091428] font-bold" : "text-[#9bb3c9]"}`}
+              className={`px-2.5 py-1.5 ${scope === s ? "bg-[#c8aa6e] text-[#091428] font-bold" : "text-[#9bb3c9] hover:text-[#f0e6d2]"}`}
             >
-              {s === "main"
-                ? tl("Main leagues & internationals")
-                : tl("Everything")}
+              {labels[s]}
             </button>
           ))}
         </div>
@@ -146,28 +155,44 @@ export const LeaguesPanel: React.FC = () => {
           className="bg-[#091428] border border-[#1e282d] rounded-lg px-2.5 py-1.5 text-[#f0e6d2] placeholder-[#7e8e9f] flex-1 min-w-[10rem]"
         />
       </div>
-      <Page state={state}>
-        {(rows: LeagueRow[]) => <LeagueTable rows={rows} scope={scope} q={q} />}
-      </Page>
+      <Page state={state}>{(rows: LeagueRow[]) => <LeagueLists rows={rows} scope={scope} q={q} />}</Page>
     </div>
   );
 };
 
-const LeagueTable: React.FC<{
-  rows: LeagueRow[];
-  scope: "main" | "all";
-  q: string;
-}> = ({ rows, scope, q }) => {
-  const list = useMemo(() => {
+const LeagueLists: React.FC<{ rows: LeagueRow[]; scope: LeagueScope; q: string }> = ({ rows, scope, q }) => {
+  const groups = useMemo(() => {
     const qq = q.trim().toLowerCase();
-    return rows.filter((l) =>
-      qq
-        ? `${l.l} ${l.r || ""}`.toLowerCase().includes(qq)
-        : scope === "all" || l.pr,
-    );
+    const match = (l: LeagueRow) => !qq || `${l.l} ${l.r || ""}`.toLowerCase().includes(qq);
+    const newest = rows.reduce((m, l) => (l.to && l.to > m ? l.to : m), "");
+    const isCurrent = (l: LeagueRow) => !!l.to && l.to >= newest;
+    const intl = (l: LeagueRow) => (l.r || "").toLowerCase() === "international";
+    const list = rows.filter(match);
+    if (scope === "all") return [{ key: "all", title: "", rows: list }];
+    if (scope === "past") return [{ key: "past", title: "", rows: list.filter((l) => l.pr && !isCurrent(l)) }];
+    const now = list.filter(isCurrent);
+    return [
+      { key: "intl", title: tl("International events"), rows: now.filter((l) => intl(l)) },
+      { key: "main", title: tl("Main leagues"), rows: now.filter((l) => l.pr && !intl(l)) },
+      { key: "other", title: tl("Other leagues this year"), rows: now.filter((l) => !l.pr && !intl(l)), limit: 40 },
+    ].filter((g) => g.rows.length);
   }, [rows, scope, q]);
+  if (!groups.length) return <p className="text-xs text-[#9bb3c9] py-4 text-center">{tl("No leagues match.")}</p>;
   return (
-    <div className={`${card} overflow-x-auto`}>
+    <div className="space-y-3">
+      {groups.map((g) => (
+        <LeagueTable key={g.key} title={g.title} rows={g.rows} limit={g.limit} />
+      ))}
+    </div>
+  );
+};
+
+const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number }> = ({ title, rows, limit }) => {
+  const [n, setN] = useState(limit || 0);
+  const list = n ? rows.slice(0, n) : rows;
+  return (
+    <div className={`${card} overflow-x-auto space-y-2`}>
+      {title && <h3 className="text-xs font-bold uppercase tracking-wider text-[#c8aa6e]">{title}</h3>}
       <table className="w-full text-xs">
         <thead>
           <tr>
@@ -184,22 +209,19 @@ const LeagueTable: React.FC<{
               <td className={`${td} max-w-[16rem] truncate`}>
                 <HubLink to={{ kind: "league", slug: l.u }}>{l.l}</HubLink>
               </td>
-              <td className={`${td} text-[#9bb3c9]`}>
-                {l.r ? regionName(l.r, l.r) : ""}
-              </td>
-              <td className={`${td} text-[#7e8e9f]`}>
-                {l.from && l.to
-                  ? l.from === l.to
-                    ? l.from
-                    : `${l.from}–${l.to}`
-                  : ""}
-              </td>
+              <td className={`${td} text-[#9bb3c9]`}>{l.r ? regionName(l.r, l.r) : ""}</td>
+              <td className={`${td} text-[#7e8e9f]`}>{l.from && l.to ? (l.from === l.to ? l.from : `${l.from}–${l.to}`) : ""}</td>
               <td className={`${td} text-[#9bb3c9]`}>{l.n}</td>
               <td className={`${td} text-[#7e8e9f]`}>{fmtNum(l.g)}</td>
             </tr>
           ))}
         </tbody>
       </table>
+      {n > 0 && rows.length > n && (
+        <button type="button" onClick={() => setN(0)} className="text-xs text-[#0ac8b9] hover:underline">
+          {tl("Show more ({n} left)", { n: rows.length - n })}
+        </button>
+      )}
     </div>
   );
 };

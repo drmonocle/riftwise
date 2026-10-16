@@ -2947,7 +2947,7 @@ dependencies = [
 
 [[package]]
 name = "riftwatch-tauri"
-version = "0.3.37"
+version = "0.3.38"
 dependencies = [
  "serde",
  "serde_json",
