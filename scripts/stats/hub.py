@@ -1034,8 +1034,11 @@ def build(ctx) -> dict:
                 continue
             fid = ctx.team_of(name, (last_date or "0000")[:10])
             usd = next((r.get("usd") for r in res_out if r["t"] == name and res_from == "this"), None)
+            # prize listed on the whole event: shown later on this team's last stage of it
+            pusd = next((r.get("usd") for r in res_out if r["t"] == name and res_from == "event"), None)
             t_events[fid].append({"e": eslug, "en": en, "date": end, "as": name, "g": x["g"], "w": x["w"], "sg": x["sg"],
-                                  "sw": x["sw"], "pl": place_of.get(name), **({"usd": usd} if usd else {})})
+                                  "sw": x["sw"], "pl": place_of.get(name), **({"usd": usd} if usd else {}),
+                                  **({"_pu": pusd, "_pe": base_of(op)} if pusd else {})})
 
         winner_row = next((r for r in res_out if r["p"] == "1"), None)
         events_by_year[event["year"]].append({
@@ -1140,6 +1143,12 @@ def build(ctx) -> dict:
                                              "r": ctx.team_roles[fid][pg].most_common(1)[0][0]} for pg, n in top if n >= 3]})
         recent = sorted(t_recent.get(fid, []), reverse=True)
         tevents = sorted(t_events.get(fid, []), key=lambda x: x["date"] or "", reverse=True)
+        prize_shown = set()
+        for x in tevents:  # newest first: the event's prize goes on the last stage this team played
+            pe, pu = x.pop("_pe", None), x.pop("_pu", None)
+            if pe and pe not in prize_shown:
+                prize_shown.add(pe)
+                x.setdefault("usd", pu)
         obj = {
             "name": name, "u": u, "region": lpt.get("Region"), "codes": codes,
             "disbanded": 1 if lpt.get("IsDisbanded") else 0,
