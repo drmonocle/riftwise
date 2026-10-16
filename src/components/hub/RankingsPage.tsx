@@ -148,7 +148,8 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
         <p className="text-[#9bb3c9]">
           {tl(
             "Every active pro team on one scale, across all regions. Ratings come from every pro game since 2011: beating a strong team moves you up more than beating a weak one, and international events are what compare the regions.",
-          )}
+          )}{" "}
+          {tl("A team's rating mostly follows the five players it fields, so a roster change counts right away.")}
         </p>
         <p className="text-[#7e8e9f]">
           {tl(
@@ -369,8 +370,8 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       </div>
       <p className="text-[11px] text-[#7e8e9f]">
         {tn(
-          "Ratings are a guide, not a prediction market: they know results, not rosters, so a team that just changed players can be off for a while. {n} active team is rated.",
-          "Ratings are a guide, not a prediction market: they know results, not rosters, so a team that just changed players can be off for a while. {n} active teams are rated.",
+          "Ratings are a guide, not a prediction market: they know results and who played, not form or injuries, and a brand-new player starts close to their team's level. {n} active team is rated.",
+          "Ratings are a guide, not a prediction market: they know results and who played, not form or injuries, and a brand-new player starts close to their team's level. {n} active teams are rated.",
           d.teams.length,
         )}
       </p>
