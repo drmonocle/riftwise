@@ -1051,6 +1051,7 @@
   "No leagues match.": "Eşleşen lig yok.",
   "All {n} teams": "{n} takımın hepsi",
   "This list has the teams in top leagues, the only ones that meet across regions. Pick a second-tier league above (LCK CL, LFL, NACL...) to see its teams.": "Bu listede yalnızca bölgeler arası karşılaşan üst lig takımları var. İkinci kademe bir ligin (LCK CL, LFL, NACL...) takımlarını görmek için yukarıdan ligi seç.",
+  "Top-league teams against second-tier teams ({n} games since {year}): we gave the top-league team {pred} on average, and it won {won}.": "Üst lig takımları ikinci kademe takımlara karşı ({year} yılından beri {n} oyun): üst lig takımına ortalama {pred} şans verdik, kazandığı oran {won}.",
   "now {team}": "şimdi: {team}",
   "title match::Final": "Final",
   "title winner::Champion": "Kazanan",

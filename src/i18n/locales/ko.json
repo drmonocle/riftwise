@@ -1051,6 +1051,7 @@
   "No leagues match.": "맞는 리그가 없어요.",
   "All {n} teams": "전체 {n}팀",
   "This list has the teams in top leagues, the only ones that meet across regions. Pick a second-tier league above (LCK CL, LFL, NACL...) to see its teams.": "이 목록은 지역끼리 맞붙는 1부 리그 팀만 보여 줘요. 2부 리그 팀(LCK CL, LFL, NACL 등)은 위에서 리그를 골라 보세요.",
+  "Top-league teams against second-tier teams ({n} games since {year}): we gave the top-league team {pred} on average, and it won {won}.": "1부 리그 팀 대 2부 리그 팀({year}년 이후 {n}세트): 1부 리그 팀의 승리 확률을 평균 {pred}로 봤고, 실제로는 {won}를 이겼어요.",
   "now {team}": "현재 {team}",
   "title match::Final": "결승",
   "title winner::Champion": "우승팀",

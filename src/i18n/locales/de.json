@@ -1051,6 +1051,7 @@
   "No leagues match.": "Keine passende Liga.",
   "All {n} teams": "Alle {n} Teams",
   "This list has the teams in top leagues, the only ones that meet across regions. Pick a second-tier league above (LCK CL, LFL, NACL...) to see its teams.": "Diese Liste zeigt die Teams der Top-Ligen, die einzigen, die über Regionen hinweg aufeinandertreffen. Wähle oben eine zweite Liga (LCK CL, LFL, NACL ...), um ihre Teams zu sehen.",
+  "Top-league teams against second-tier teams ({n} games since {year}): we gave the top-league team {pred} on average, and it won {won}.": "Teams aus Top-Ligen gegen Teams aus zweiten Ligen ({n} Spiele seit {year}): Wir gaben dem Top-Liga-Team im Schnitt {pred}, gewonnen hat es {won}.",
   "now {team}": "jetzt {team}",
   "title match::Final": "Finale",
   "title winner::Champion": "Sieger",

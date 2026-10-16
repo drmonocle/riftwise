@@ -1051,6 +1051,7 @@
   "No leagues match.": "Không có giải nào khớp.",
   "All {n} teams": "Cả {n} đội",
   "This list has the teams in top leagues, the only ones that meet across regions. Pick a second-tier league above (LCK CL, LFL, NACL...) to see its teams.": "Danh sách này gồm các đội ở giải hàng đầu, những đội duy nhất gặp nhau giữa các khu vực. Chọn một giải hạng hai ở trên (LCK CL, LFL, NACL...) để xem các đội của giải đó.",
+  "Top-league teams against second-tier teams ({n} games since {year}): we gave the top-league team {pred} on average, and it won {won}.": "Đội giải hàng đầu gặp đội hạng hai ({n} ván từ {year}): trung bình chúng tôi cho đội giải hàng đầu {pred}, và họ thắng {won}.",
   "now {team}": "nay là {team}",
   "title match::Final": "Chung kết",
   "title winner::Champion": "Nhà vô địch",

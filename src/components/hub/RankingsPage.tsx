@@ -343,6 +343,19 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               </tbody>
             </table>
           </div>
+          {t.cross && t.cross.n > 0 && t.cross.pred != null && t.cross.won != null && (
+            <p className="text-[11px] text-[#9bb3c9]">
+              {tl(
+                "Top-league teams against second-tier teams ({n} games since {year}): we gave the top-league team {pred} on average, and it won {won}.",
+                {
+                  n: fmtNum(t.cross.n),
+                  year: t.from.slice(0, 4),
+                  pred: pct(t.cross.pred),
+                  won: pct(t.cross.won),
+                },
+              )}
+            </p>
+          )}
           <p className="text-[11px] text-[#7e8e9f]">
             {tl(
               "A best-of-five makes the favourite's edge bigger: 60% per game is {bo3} in a best-of-three and {bo5} in a best-of-five.",

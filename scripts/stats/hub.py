@@ -1427,6 +1427,19 @@ def build(ctx) -> dict:
         with open(os.environ["RW_DUMP_RATING_GAMES"], "w", encoding="utf-8") as f:
             json.dump([[d, lg, i, str(fa), str(fb), w, t_, r_] for d, lg, i, fa, fb, w, t_, r_ in rating_games], f)
     rated, rating_tests, rated_leagues = team_ratings.run(rating_games)
+    # TIER2_GAP pulls every rating down a few hundred points; shift them all by one number so the average active
+    # top-league team is 1500 (only differences matter for rankings, win chances and the backtest)
+    newest_r0 = max((x["last"] for x in rated.values()), default="0000-00-00")
+    if newest_r0[0] != "0":
+        cut_r0 = (datetime.date.fromisoformat(newest_r0) - datetime.timedelta(days=120)).isoformat()
+        tops_r = [x["r"] for fid, x in rated.items()
+                  if x["last"] >= cut_r0 and x["g"] >= 15 and x["league"] and team_slug.get(fid) and fid in ctx.fr_name
+                  and "national team" not in ctx.fr_name[fid].lower() and rated_leagues.get(x["league"], (2, None))[0] == 1]
+        if tops_r:
+            shift_r = 1500 - sum(tops_r) / len(tops_r)
+            for x in rated.values():
+                x["r"] += shift_r
+                x["hist"] = [(d_, v_ + shift_r) for d_, v_ in x["hist"]]
     newest_r = max((x["last"] for x in rated.values()), default="0000-00-00")
     active_cut = (datetime.date.fromisoformat(newest_r) - datetime.timedelta(days=120)).isoformat() if newest_r[0] != "0" else "9"
     before_30 = (datetime.date.fromisoformat(newest_r) - datetime.timedelta(days=30)).isoformat() if newest_r[0] != "0" else "0"
@@ -1467,6 +1480,7 @@ def build(ctx) -> dict:
         "test": {"from": team_ratings.TEST_FROM, "all": team_ratings.score(rating_tests),
                  "intl": team_ratings.score(rating_tests, lambda t: t[3]),
                  "settled": team_ratings.score(rating_tests, lambda t: t[4]),
+                 "cross": team_ratings.cross(rating_tests),
                  "calibration": team_ratings.calibration(rating_tests)},
     })
     checks["hub: rated teams (active)"] = len(rank_rows)

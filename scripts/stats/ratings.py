@@ -8,7 +8,8 @@ Elo, one update per game, over every pro game with a result since 2011:
 - at the start of each year every team is pulled part of the way back to its league's average (rosters change);
 - international games are what move whole regions against each other, so they count a bit more;
 - second-tier leagues (LCK CL, LFL, NACL ...) never play the top leagues, so their scale would drift on its own:
-  at the start of each year their average is set TIER2_GAP below the average of their region's top league(s).
+  at the start of each year their average is set TIER2_GAP below the average of their region's top league(s);
+- a team promoted from a second-tier league starts at least just below its new league's average.
 
 `run` also tests itself: before each game from TEST_FROM on it records the chance it gave team a, so the site
 can say how often the favourite actually won. Standard library only; hub.py calls `run` and writes hub/ratings.json.
@@ -25,7 +26,11 @@ NEW_OFFSET = -40.0   # new team vs its league's average
 NEW_UNKNOWN = 1350.0 # new team in a league with fewer than MIN_LEAGUE rated teams
 MIN_LEAGUE = 4
 YEAR_REGRESS = 0.3   # share of the way back to the league average at the start of a year
-TIER2_GAP = 150.0    # second-tier league average below its region's top league(s)
+TIER2_GAP = 400.0    # second-tier league average below its region's top league(s); tuned on the 181 games
+                     # between a top-league and a second-tier team since 2024 (predicted 67%, actual 69%)
+PROMOTE = True       # a team moving up from a second-tier league starts at least at its new league's average - 40
+                     # (with TIER2_GAP 400 it would otherwise arrive far too low and drain points from leagues
+                     # that promote teams: LEC, LCS, CBLOL; G2 fell from #4 to #9 without this)
 ACTIVE_DAYS = 400    # a team counts toward its league's average for this long after its last game
 TEST_FROM = "2024-01-01"
 REGION_ALIASES = {"Europe": "EMEA", "Americas": "North America", "Oceania": "OCE", "LAT": "Latin America"}
@@ -57,10 +62,11 @@ def run(games, test_from=TEST_FROM, **kw):
     """games: iterable of (date "YYYY-MM-DD[...]", league, international 0/1, team a, team b, a won 0/1,
     tier 1/2 (top league or not), region).
     Returns (teams, tests, leagues): teams = {team: {"r", "g", "last", "league", "hist": [(date, rating)]}},
-    tests = [(date, chance given to team a, a won, international, both established)],
+    tests = [(date, chance given to team a, a won, international, both established, tier of a, tier of b)]
+    (tier of each team's home league: 1 top, 2 second tier, 0 none yet),
     leagues = {league: (tier, region)} as last seen."""
     p = dict(K=K, K_NEW=K_NEW, NEW_GAMES=NEW_GAMES, K_INTL=K_INTL, NEW_OFFSET=NEW_OFFSET, NEW_UNKNOWN=NEW_UNKNOWN,
-             YEAR_REGRESS=YEAR_REGRESS, TIER2_GAP=TIER2_GAP)
+             YEAR_REGRESS=YEAR_REGRESS, TIER2_GAP=TIER2_GAP, PROMOTE=PROMOTE)
     p.update(kw)
     teams = {}
     members = defaultdict(set)  # league -> teams whose home league it is
@@ -122,6 +128,10 @@ def run(games, test_from=TEST_FROM, **kw):
         if not intl and lg:
             x["yc"][lg] += 1
             if x["league"] != lg and x["yc"][lg] >= x["yc"].get(x["league"], 0):
+                if p.get("PROMOTE") and league_info.get(x["league"], (0, None))[0] == 2 and league_info.get(lg, (0, None))[0] == 1:
+                    avg = league_avg(lg, today)
+                    if avg is not None:
+                        x["r"] = max(x["r"], avg + p["NEW_OFFSET"])
                 if x["league"]:
                     members[x["league"]].discard(t)
                 x["league"] = lg
@@ -138,7 +148,9 @@ def run(games, test_from=TEST_FROM, **kw):
         xa, xb = get(a, lg, intl, day), get(b, lg, intl, day)
         e = expected(xa["r"], xb["r"])
         if day >= test_from:
-            tests.append((day, e, a_won, intl, xa["g"] >= p["NEW_GAMES"] and xb["g"] >= p["NEW_GAMES"]))
+            ta = league_info.get(xa["league"], (0, None))[0]
+            tb = league_info.get(xb["league"], (0, None))[0]
+            tests.append((day, e, a_won, intl, xa["g"] >= p["NEW_GAMES"] and xb["g"] >= p["NEW_GAMES"], ta, tb))
         ka = p["K_NEW"] if xa["g"] < p["NEW_GAMES"] else p["K"]
         kb = p["K_NEW"] if xb["g"] < p["NEW_GAMES"] else p["K"]
         if intl:
@@ -161,9 +173,9 @@ def score(tests, only=None):
     rows = [t for t in tests if only is None or only(t)]
     if not rows:
         return {"n": 0}
-    right = sum(1 for _, e, w, _, _ in rows if (e > 0.5 and w) or (e < 0.5 and not w) or e == 0.5)
-    brier = sum((e - (1 if w else 0)) ** 2 for _, e, w, _, _ in rows) / len(rows)
-    ll = -sum(math.log(max(1e-9, e if w else 1 - e)) for _, e, w, _, _ in rows) / len(rows)
+    right = sum(1 for _, e, w, *_ in rows if (e > 0.5 and w) or (e < 0.5 and not w) or e == 0.5)
+    brier = sum((e - (1 if w else 0)) ** 2 for _, e, w, *_ in rows) / len(rows)
+    ll = -sum(math.log(max(1e-9, e if w else 1 - e)) for _, e, w, *_ in rows) / len(rows)
     return {"n": len(rows), "acc": round(right / len(rows), 4), "brier": round(brier, 4), "logloss": round(ll, 4)}
 
 
@@ -171,10 +183,23 @@ def calibration(tests, bins=(0.5, 0.6, 0.7, 0.8, 0.9, 1.01)):
     """For favourites at 50-60%, 60-70% ...: games and how often the favourite won."""
     out = []
     for lo, hi in zip(bins, bins[1:]):
-        rows = [(max(e, 1 - e), (w if e >= 0.5 else not w)) for _, e, w, _, _ in tests if lo <= max(e, 1 - e) < hi]
+        rows = [(max(e, 1 - e), (w if e >= 0.5 else not w)) for _, e, w, *_ in tests if lo <= max(e, 1 - e) < hi]
         if rows:
             out.append([round(lo * 100), round(min(hi, 1) * 100), len(rows), round(sum(1 for _, ok in rows if ok) / len(rows), 4)])
     return out
+
+
+def cross(tests):
+    """Games between a top-league team and a second-tier team: how often we expected the top-league side to win,
+    and how often it did (checks TIER2_GAP)."""
+    rows = []
+    for _, e, w, _, _, ta, tb in tests:
+        if {ta, tb} == {1, 2}:
+            rows.append((e, w) if ta == 1 else (1 - e, not w))
+    if not rows:
+        return {"n": 0}
+    return {"n": len(rows), "pred": round(sum(e for e, _ in rows) / len(rows), 4),
+            "won": round(sum(1 for _, w in rows if w) / len(rows), 4)}
 
 
 def rating_on(hist, day):
