@@ -154,7 +154,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
           })
       : null;
     return (
-      <div className="p-4 max-w-3xl mx-auto overflow-y-auto h-full">
+      <div className="p-4 page-3xl overflow-y-auto h-full">
         <div className="bg-[#0a1420] border border-[#1e282d] rounded-xl p-6 text-center space-y-4">
           <div className="w-12 h-12 mx-auto rounded-full bg-[#c8aa6e]/10 border border-[#c8aa6e]/30 flex items-center justify-center">
             <Moon className="w-6 h-6 text-[#c8aa6e]" />
@@ -238,7 +238,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
   const shownDays = showAll ? dayKeys : dayKeys.slice(0, DAYS_SHOWN);
 
   return (
-    <div className="p-4 space-y-4 max-w-3xl mx-auto overflow-y-auto h-full select-none">
+    <div className="p-4 space-y-4 page-3xl overflow-y-auto h-full select-none">
       {/* Now playing */}
       <section className="bg-[#0a1420] border border-[#0ac8b9]/50 rounded-xl overflow-hidden">
         <div className="p-5 space-y-3">

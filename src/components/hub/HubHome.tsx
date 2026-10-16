@@ -35,7 +35,10 @@ export const HubHome: React.FC = () => {
               events: fmtNum(meta.data.events),
               players: fmtNum(meta.data.players),
               teams: fmtNum(meta.data.teams),
-            })}
+            })}{" "}
+            <HubLink to={{ kind: "about" }} className="text-[#7e8e9f] hover:text-[#c8aa6e] hover:underline">
+              {tl("(games with a result; players and teams with full scoreboards)")}
+            </HubLink>
           </p>
         )}
         <HubSearch big />

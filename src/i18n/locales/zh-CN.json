@@ -933,6 +933,7 @@
   "{n} win away from {total} pro wins|{n} wins away from {total} pro wins": "距离职业生涯 {total} 胜还差 {n} 胜",
   "{n} kill away from {total} career kills|{n} kills away from {total} career kills": "距离生涯 {total} 杀还差 {n} 杀",
   "{n} assist away from {total} career assists|{n} assists away from {total} career assists": "距离生涯 {total} 次助攻还差 {n} 次",
+  "(games with a result; players and teams with full scoreboards)": "（有结果的小局；有完整数据的选手和战队）",
   "now {team}": "现 {team}",
   "title match::Final": "决赛",
   "title winner::Champion": "冠军",

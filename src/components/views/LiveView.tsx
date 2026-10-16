@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Match, AppSettings, CatalogData, LiveShow } from "../../types";
 import { Tv, ExternalLink, Calendar, Clock, ChevronRight, Star, Swords } from "lucide-react";
 import { AddToCalendarMenu } from "../AddToCalendarMenu";
+import { MatchPrepButton } from "../MatchPrepButton";
 import { ShareMatchButton } from "../ShareMatchButton";
 import {
   getLeagueBroadcastStreams,
@@ -211,7 +212,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
   // If pro matches are live right now
   if (matches.length > 0) {
     return (
-      <div className="p-4 space-y-4 max-w-4xl mx-auto overflow-y-auto h-full">
+      <div className="p-4 space-y-4 page-4xl overflow-y-auto h-full">
         <div className="flex items-center justify-between pb-1 border-b border-[#1e282d]">
           <h2 className="text-xs font-bold text-[#e84057] uppercase tracking-wider flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#e84057] animate-ping" />
@@ -527,7 +528,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
 
   // IDLE STATE: No matches live right now -> Show Next Match Hero with Live Countdown
   return (
-    <div className="p-4 space-y-6 max-w-4xl mx-auto overflow-y-auto h-full">
+    <div className="p-4 space-y-6 page-4xl overflow-y-auto h-full">
       {/* Idle Notice Header */}
       <div className="text-center py-4 border-b border-[#1e282d]">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0a1420] border border-[#1e282d] text-[#7e8e9f] text-xs mb-1">
@@ -765,6 +766,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 {/* Calendar Integration Button */}
                 <div className="mt-3.5 flex items-center justify-center gap-2">
                   <AddToCalendarMenu match={nextMatch} onOpenUrl={onOpenUrl} />
+                  <MatchPrepButton match={nextMatch} />
                   <ShareMatchButton match={nextMatch} className="border border-[#1e282d] bg-[#091428] p-1.5" />
                 </div>
 
@@ -947,6 +949,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     <div className="flex items-center gap-2 ml-auto">
                       <RowH2H m={m} schedule={schedule} />
                       <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />
+                      <MatchPrepButton match={m} compact />
                       <div className="text-[#9bb3c9] font-mono text-[11px] font-medium">
                         {formatMatchTime(m.startTimeUtc)}
                       </div>
@@ -1067,6 +1070,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 <div className="flex items-center gap-2 ml-auto">
                   <RowH2H m={m} schedule={schedule} />
                   <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />
+                  <MatchPrepButton match={m} compact />
                   <div className="text-[#9bb3c9] font-mono text-[11px] font-medium">
                     {formatMatchTime(m.startTimeUtc)}
                   </div>

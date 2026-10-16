@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Match, AppSettings, CatalogData } from "../../types";
 import { Search, Calendar, Star, Trophy } from "lucide-react";
 import { AddToCalendarMenu } from "../AddToCalendarMenu";
+import { MatchPrepButton } from "../MatchPrepButton";
 import { ShareMatchButton } from "../ShareMatchButton";
 import { isMatchFollowed, computeHeadToHead } from "../../helpers";
 import { clickable } from "../../a11y";
@@ -135,7 +136,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   };
 
   return (
-    <div className="p-4 space-y-4 max-w-4xl mx-auto overflow-y-auto h-full select-none">
+    <div className="p-4 space-y-4 page-4xl overflow-y-auto h-full select-none">
       {/* Top Segmented Control: Schedule vs Standings */}
       <div className="flex items-center justify-between pb-2 border-b border-[#1e282d]">
         <div className="flex items-center gap-1.5 bg-[#0a0e17] p-1 rounded-lg border border-[#1e282d]">
@@ -266,7 +267,10 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     <div className="flex items-center gap-2 min-w-0 sm:w-44 shrink sm:shrink-0 order-1">
                       <span className="font-mono text-xs text-[#0ac8b9] font-bold shrink-0">{timeStr}</span>
                       {m.state === "unstarted" && (
-                        <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />
+                        <>
+                          <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />
+                          <MatchPrepButton match={m} compact />
+                        </>
                       )}
                       <span className="text-[11px] text-[#9bb3c9] truncate font-medium">{m.leagueName}</span>
                     </div>

@@ -933,6 +933,7 @@
   "{n} win away from {total} pro wins|{n} wins away from {total} pro wins": "{total} profesyonel galibiyete {n} galibiyet kaldı",
   "{n} kill away from {total} career kills|{n} kills away from {total} career kills": "Kariyerde {total} kill'e {n} kill kaldı",
   "{n} assist away from {total} career assists|{n} assists away from {total} career assists": "Kariyerde {total} asiste {n} asist kaldı",
+  "(games with a result; players and teams with full scoreboards)": "(sonucu olan oyunlar; tam skor tablosu olan oyuncular ve takımlar)",
   "now {team}": "şimdi: {team}",
   "title match::Final": "Final",
   "title winner::Champion": "Kazanan",
