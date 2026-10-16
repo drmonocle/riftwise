@@ -20,7 +20,7 @@ import unicodedata
 import urllib.parse
 import urllib.request
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 BASE_PATH = os.path.join(ROOT, "src", "all_time_h2h.json")
@@ -173,10 +173,15 @@ def main(out_path):
     else:
         base, hub_series, base_cutoff_s = json.load(open(BASE_PATH, encoding="utf-8")), None, BASE_CUTOFF
     base_cutoff = parse_time(base_cutoff_s)
+    # With the stats build's table, also look a few days before its cutoff and keep only the series it doesn't have
+    # (matched below by teams and date): its newest games carry their series' scheduled start, so a series that
+    # began exactly at the cutoff would otherwise count twice (MVK-FUR 3-0 at Worlds 2026 showed as 6-0), and a
+    # series the database was late to get is still counted.
+    window = base_cutoff - timedelta(days=3) if hub else base_cutoff
 
     events = {}
     for league in get("getLeagues")["leagues"]:
-        for e in league_events(league["id"], base_cutoff):
+        for e in league_events(league["id"], window):
             events[e["match"]["id"]] = e
 
     # Stop just before the earliest match that has started but isn't finished, so a series that
@@ -201,11 +206,16 @@ def main(out_path):
     elif os.path.exists(BASE_SERIES_PATH):
         series = json.load(open(BASE_SERIES_PATH, encoding="utf-8"))
     new_series = []
+    known = defaultdict(list)  # pair -> dates of the series the base table already has
+    for key, entry in series.items():
+        for d, *_ in entry.get("recent", []):
+            if d and len(d) >= 10:  # a few old series have no date
+                known[key].append(date.fromisoformat(d[:10]))
 
-    added = 0
-    for e in events.values():
+    added = skipped = 0
+    for e in sorted(events.values(), key=lambda e: e["startTime"]):
         start = parse_time(e["startTime"])
-        if e.get("state") != "completed" or not (base_cutoff <= start < cutoff):
+        if e.get("state") != "completed" or not (window <= start < cutoff):
             continue
         t1, t2 = e["match"]["teams"]
         a, b = norm(t1.get("code")), norm(t2.get("code"))
@@ -215,18 +225,24 @@ def main(out_path):
             continue
         if a > b:
             a, b, aw, bw = b, a, bw, aw
+        # already in the base table: same teams within a day (each base series matches one lolesports series)
+        same = [i for i, d in enumerate(known.get(f"{a}__{b}", [])) if abs((d - start.date()).days) <= 1]
+        if same:
+            known[f"{a}__{b}"].pop(same[0])
+            skipped += 1
+            continue
         pairs[(a, b)][0] += aw
         pairs[(a, b)][1] += bw
         added += 1
         league = (e.get("league") or {}).get("name") or ""
         new_series.append((f"{a}__{b}", start.strftime("%Y-%m-%d"), league, aw, bw))
 
-    for key, date, league, aw, bw in sorted(new_series, key=lambda s: s[1], reverse=True):
+    for key, day, league, aw, bw in sorted(new_series, key=lambda s: s[1], reverse=True):
         entry = series.setdefault(key, {"intl": [0, 0], "recent": []})
         if INTL_LEAGUE.search(league):
             entry["intl"][0] += aw
             entry["intl"][1] += bw
-        entry["recent"].insert(0, [date, league, aw, bw])
+        entry["recent"].insert(0, [day, league, aw, bw])
     for entry in series.values():
         entry["recent"].sort(key=lambda s: s[0], reverse=True)
         del entry["recent"][RECENT_N:]
@@ -252,7 +268,7 @@ def main(out_path):
     for name, data in shards.items():
         with open(os.path.join(out_dir, "series", f"{name}.json"), "w", encoding="utf-8", newline="") as f:
             json.dump(dict(sorted(data.items())), f, ensure_ascii=False, separators=(",", ":"))
-    print(f"{len(events)} events since {base_cutoff_s}; added {added} completed series; "
+    print(f"{len(events)} events since {window:%Y-%m-%d %H:%M}; added {added} completed series, {skipped} already in the base; "
           f"{len(out['pairs'])} pairs; cutoff {out['cutoff']}; {len(series)} pairs with history in {len(shards)} shards")
 
 

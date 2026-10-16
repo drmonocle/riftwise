@@ -212,11 +212,15 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                 aria-label={tl("Show")}
                 className={sel}
               >
-                {[25, 50, 100, 1000].map((n) => (
-                  <option key={n} value={n}>
-                    {n === 1000 ? tl("All teams") : tl("Top {n}", { n })}
-                  </option>
-                ))}
+                {/* only sizes smaller than the list, then the whole list */}
+                {[25, 50, 100]
+                  .filter((n) => n < rows.length)
+                  .map((n) => (
+                    <option key={n} value={n}>
+                      {tl("Top {n}", { n })}
+                    </option>
+                  ))}
+                <option value={1000}>{tl("All {n} teams", { n: rows.length })}</option>
               </select>
             )}
           </span>
@@ -240,6 +244,13 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           limit={league ? undefined : limit}
           copyName={`riftwatch-power-rankings${league ? "-" + league : ""}`}
         />
+        {!league && (
+          <p className="text-[11px] text-[#7e8e9f]" data-nocapture="1">
+            {tl(
+              "This list has the teams in top leagues, the only ones that meet across regions. Pick a second-tier league above (LCK CL, LFL, NACL...) to see its teams.",
+            )}
+          </p>
+        )}
       </Section>
 
       <div className="grid gap-3 md:grid-cols-2">
