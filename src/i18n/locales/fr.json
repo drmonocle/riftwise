@@ -933,6 +933,7 @@
   "{n} win away from {total} pro wins|{n} wins away from {total} pro wins": "À {n} victoire des {total} victoires pros|À {n} victoires des {total} victoires pros",
   "{n} kill away from {total} career kills|{n} kills away from {total} career kills": "À {n} kill des {total} kills en carrière|À {n} kills des {total} kills en carrière",
   "{n} assist away from {total} career assists|{n} assists away from {total} career assists": "À {n} assist des {total} assists en carrière|À {n} assists des {total} assists en carrière",
+  "(games with a result; players and teams with full scoreboards)": "(parties avec un résultat ; joueurs et équipes avec un tableau complet)",
   "now {team}": "désormais {team}",
   "title match::Final": "Finale",
   "title winner::Champion": "Vainqueur",

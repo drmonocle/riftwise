@@ -933,6 +933,7 @@
   "{n} win away from {total} pro wins|{n} wins away from {total} pro wins": "Còn {n} trận thắng nữa là đạt {total} trận thắng chuyên nghiệp",
   "{n} kill away from {total} career kills|{n} kills away from {total} career kills": "Còn {n} lần hạ gục nữa là đạt {total} hạ gục sự nghiệp",
   "{n} assist away from {total} career assists|{n} assists away from {total} career assists": "Còn {n} lần hỗ trợ nữa là đạt {total} hỗ trợ sự nghiệp",
+  "(games with a result; players and teams with full scoreboards)": "(các ván có kết quả; tuyển thủ và đội có bảng điểm đầy đủ)",
   "now {team}": "nay là {team}",
   "title match::Final": "Chung kết",
   "title winner::Champion": "Nhà vô địch",

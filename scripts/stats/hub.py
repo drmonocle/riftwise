@@ -1740,9 +1740,13 @@ def build(ctx) -> dict:
         "year": this_year,
     }
     out.json("home.json", home)
+    # Headline counts: games with a recorded result (not slots with only a VOD link), and tournaments counted once
+    # (Worlds 2025, not also its Play-In and Main Event) with at least one game
+    games_played = sum(1 for gm in games_by_op.values() for g in gm.values() if g["w"])
+    tournaments_played = sum(1 for lst in events_by_year.values() for x in lst if not x.get("p") and x.get("g"))
     out.json("meta.json", {
-        "version": ctx.version, "games": sum(op_games.values()), "statsGames": len(ctx.games),
-        "series": n_series_pages, "teams": len(search_teams), "players": len(search_players), "events": len(search_events),
+        "version": ctx.version, "games": games_played, "statsGames": len(ctx.games),
+        "series": n_series_pages, "teams": len(search_teams), "players": len(search_players), "events": tournaments_played,
         "champs": len(search_champs), "years": years,
     })
     for kind, rows in seo.items():

@@ -933,6 +933,7 @@
   "{n} win away from {total} pro wins|{n} wins away from {total} pro wins": "プロ通算{total}勝まであと{n}勝",
   "{n} kill away from {total} career kills|{n} kills away from {total} career kills": "通算{total}キルまであと{n}キル",
   "{n} assist away from {total} career assists|{n} assists away from {total} career assists": "通算{total}アシストまであと{n}",
+  "(games with a result; players and teams with full scoreboards)": "（結果があるゲーム、全スコアボードがある選手とチーム）",
   "now {team}": "現 {team}",
   "title match::Final": "決勝",
   "title winner::Champion": "優勝",
