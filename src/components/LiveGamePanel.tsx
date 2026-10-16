@@ -5,9 +5,9 @@
  * while the page is visible. Between games it shows the last game's final numbers.
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { Castle, ChevronDown, ChevronUp, Crown, Shield, Swords } from "lucide-react";
 import type { Match } from "../types";
-import { tl } from "../i18n";
+import { tl, roleName } from "../i18n";
 import {
   LiveDetailsParticipant,
   LiveFrame,
@@ -23,6 +23,7 @@ import { champName } from "../champions";
 
 const POLL_MS = 15_000;
 const ROLE_ORDER = ["top", "jungle", "mid", "bottom", "support"];
+const ROLE_LABEL: Record<string, string> = { top: "Top", jungle: "Jungle", mid: "Mid", bottom: "Bot", support: "Support" };
 const DRAGON_COLOR: Record<string, string> = {
   infernal: "#e84057",
   ocean: "#3fa7ff",
@@ -220,13 +221,21 @@ const TeamLine: React.FC<{ side: SideInfo; align: "left" | "right" }> = ({ side,
       <span className="font-mono text-[#c8aa6e]">{k(side.t.totalGold)}</span>
     </div>
     <div className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-[#9bb3c9] ${align === "right" ? "justify-end" : ""}`}>
-      <span title={tl("Kills")}>⚔ {side.t.totalKills}</span>
-      <span title={tl("Towers")}>♜ {side.t.towers}</span>
-      <span title={tl("Barons")}>B {side.t.barons}</span>
-      <span title={tl("Inhibitors")}>I {side.t.inhibitors}</span>
+      <span className="flex items-center gap-0.5" title={tl("Kills")}>
+        <Swords className="w-3 h-3" /> {side.t.totalKills}
+      </span>
+      <span className="flex items-center gap-0.5" title={tl("Towers")}>
+        <Castle className="w-3 h-3" /> {side.t.towers}
+      </span>
+      <span className="flex items-center gap-0.5" title={tl("Barons")}>
+        <Crown className="w-3 h-3" /> {side.t.barons}
+      </span>
+      <span className="flex items-center gap-0.5" title={tl("Inhibitors")}>
+        <Shield className="w-3 h-3" /> {side.t.inhibitors}
+      </span>
       <span className="flex items-center gap-0.5" title={tl("Dragons")}>
         {side.t.dragons.length === 0 ? (
-          <span>D 0</span>
+          <span className="text-[#7e8e9f]">{tl("No dragons")}</span>
         ) : (
           side.t.dragons.map((d, i) => (
             <span key={i} className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: DRAGON_COLOR[d] || "#7e8e9f" }} title={dragonName(d)} />
@@ -249,12 +258,12 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
   const r = byRole(right);
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-[11px] min-w-[36rem]">
+      <table className="w-full text-[11px] min-w-[28rem] table-fixed">
         <tbody>
           {ROLE_ORDER.map((role, i) => (
             <tr key={role} className="border-t border-[#1e282d]/60">
               <PlayerCells p={l[i]} align="left" />
-              <td className="px-1 text-center text-[9px] uppercase text-[#7e8e9f] w-10">{role === "bottom" ? "bot" : role}</td>
+              <td className="px-1 text-center text-[9px] uppercase text-[#7e8e9f] w-12">{roleName(ROLE_LABEL[role])}</td>
               <PlayerCells p={r[i]} align="right" />
             </tr>
           ))}
@@ -273,23 +282,28 @@ const PlayerCells: React.FC<{ p: PlayerRow; align: "left" | "right" }> = ({ p, a
   const right = align === "right";
   const health = p.frame.maxHealth > 0 ? p.frame.currentHealth / p.frame.maxHealth : null;
   return (
-    <td className="py-1">
-      <div className={`flex items-center gap-1.5 ${right ? "flex-row-reverse text-right" : ""}`}>
+    <td className="py-1.5 align-top">
+      <div className={`flex items-start gap-2 ${right ? "flex-row-reverse text-right" : ""}`}>
         <div className="relative shrink-0">
           {icon ? (
-            <img src={icon} alt={champName(p.meta.championId)} title={champName(p.meta.championId)} width={24} height={24} className="rounded" />
+            <img src={icon} alt={champName(p.meta.championId)} title={champName(p.meta.championId)} width={28} height={28} className="rounded" />
           ) : (
-            <span className="w-6 h-6 inline-block rounded bg-[#1e282d]" />
+            <span className="w-7 h-7 inline-block rounded bg-[#1e282d]" />
           )}
           <span className="absolute -bottom-1 -right-1 text-[8px] bg-[#091428] rounded px-0.5 text-[#f0e6d2]">{p.frame.level}</span>
           {health != null && health < 1 && (
             <span className="absolute -bottom-0.5 left-0 h-0.5 rounded bg-[#0ac8b9]" style={{ width: `${Math.max(0, health) * 100}%` }} />
           )}
         </div>
-        <div className="min-w-0">
-          <div className="font-semibold text-[#f0e6d2] truncate">{playerName(p.meta.summonerName)}</div>
-          <div className="text-[10px] text-[#9bb3c9] font-mono">
-            {p.frame.kills}/{p.frame.deaths}/{p.frame.assists} · {p.frame.creepScore} CS · {k(p.frame.totalGold)}
+        <div className="min-w-0 flex-1 space-y-0.5">
+          <div className={`flex items-baseline gap-2 ${right ? "flex-row-reverse" : ""}`}>
+            <span className="font-semibold text-[#f0e6d2] truncate">{playerName(p.meta.summonerName)}</span>
+            <span className="font-mono font-bold text-[#f0e6d2] shrink-0">
+              {p.frame.kills}/{p.frame.deaths}/{p.frame.assists}
+            </span>
+          </div>
+          <div className="text-[10px] text-[#9bb3c9] font-mono whitespace-nowrap">
+            {p.frame.creepScore} CS · {k(p.frame.totalGold)}
             {p.det && (
               <span className="text-[#7e8e9f]">
                 {" "}
@@ -297,15 +311,15 @@ const PlayerCells: React.FC<{ p: PlayerRow; align: "left" | "right" }> = ({ p, a
               </span>
             )}
           </div>
+          {items.length > 0 && (
+            <div className={`flex gap-0.5 ${right ? "justify-end" : ""}`}>
+              {items.map((id, i) => {
+                const src = itemIconById(id);
+                return src ? <img key={`${id}-${i}`} src={src} alt="" width={18} height={18} className="rounded" /> : null;
+              })}
+            </div>
+          )}
         </div>
-        {items.length > 0 && (
-          <div className={`hidden sm:flex gap-0.5 shrink-0 ${right ? "mr-auto" : "ml-auto"}`}>
-            {items.map((id, i) => {
-              const src = itemIconById(id);
-              return src ? <img key={`${id}-${i}`} src={src} alt="" width={18} height={18} className="rounded" /> : null;
-            })}
-          </div>
-        )}
       </div>
     </td>
   );

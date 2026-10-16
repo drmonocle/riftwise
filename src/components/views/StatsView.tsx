@@ -649,7 +649,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
 
         <p className="text-[10px] text-[#7e8e9f] text-center pt-2">
           {tl(
-            "Stats come from RiftWatch's pro games catalog (built from public Leaguepedia data) and are rebuilt whenever new games come in.",
+            "Stats come from RiftWise's pro games catalog (built from public Leaguepedia data) and are rebuilt whenever new games come in.",
           )}
         </p>
         <p className="text-[11px] text-center flex flex-wrap justify-center gap-x-3 gap-y-1">

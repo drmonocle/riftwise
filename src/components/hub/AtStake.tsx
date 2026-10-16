@@ -111,7 +111,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[] }> = ({ schedule }) => {
   return (
     <Section
       title={tl("On the line today")}
-      share="riftwatch-on-the-line-today"
+      share="riftwise-on-the-line-today"
     >
       <p className="text-[11px] text-[#7e8e9f]">
         {tl("Milestones and streaks for the matches in the next 24 hours.")}

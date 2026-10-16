@@ -58,7 +58,7 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="bg-[#0a0e17] border-b border-[#c8aa6e] px-3 sm:px-4 py-2 flex items-center gap-3 select-none">
       {/* Brand */}
       <div className="flex items-baseline gap-1.5 cursor-pointer flex-shrink-0" onClick={() => onSelectTab("live")}>
-        <span className="text-[#c8aa6e] font-bold text-lg tracking-wider">RIFTWATCH</span>
+        <span className="text-[#c8aa6e] font-bold text-lg tracking-wider">RIFTWISE</span>
         <span className="hidden sm:inline text-[#a09b8c] text-[10px]">v{APP_VERSION}</span>
       </div>
 
@@ -66,8 +66,8 @@ export const Header: React.FC<HeaderProps> = ({
       <button
         onClick={() => onOpenUrl("https://ko-fi.com/monocle")}
         className={`${iconBtn} flex-shrink-0 bg-[#720e9e] border-[#720e9e] hover:bg-[#8c19bd] text-white`}
-        aria-label={tl("Support RiftWatch on Ko-fi")}
-        title={tl("Support RiftWatch development on Ko-fi")}
+        aria-label={tl("Support RiftWise on Ko-fi")}
+        title={tl("Support RiftWise development on Ko-fi")}
       >
         <Heart className="w-3.5 h-3.5 fill-current" />
       </button>
@@ -136,8 +136,8 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onInstall}
             className={`${pill} font-semibold bg-[#0a1420] border-[#0ac8b9]/60 text-[#0ac8b9] hover:bg-[#121e2d]`}
-            aria-label={tl("Install RiftWatch on this device")}
-            title={tl("Add RiftWatch to your home screen or desktop")}
+            aria-label={tl("Install RiftWise on this device")}
+            title={tl("Add RiftWise to your home screen or desktop")}
           >
             <Smartphone className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{tl("Install")}</span>
@@ -149,7 +149,7 @@ export const Header: React.FC<HeaderProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             className={`${pill} hidden sm:inline-flex font-semibold bg-[#c8aa6e] border-[#c8aa6e] text-[#091428] hover:bg-[#f0e6d2]`}
-            title={tl("Download RiftWatch for Windows (free, about 4 MB, no installer)")}
+            title={tl("Download RiftWise for Windows (free, about 4 MB, no installer)")}
           >
             <Download className="w-3.5 h-3.5" />
             <span className="hidden md:inline">{tl("Download for Windows")}</span>

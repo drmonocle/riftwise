@@ -1,7 +1,7 @@
 /**
  * Match prep: everything an analyst gathers before a broadcast for one matchup, on one page and for any period:
  * storylines (milestones, streaks, head-to-head), recent form, every series between them, team numbers and draft
- * tendencies, and the lanes player against player. Address: /riftwatch/stats/prep?teams=t1,gen-g&p=y2026
+ * tendencies, and the lanes player against player. Address: /riftwise/stats/prep?teams=t1,gen-g&p=y2026
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -260,7 +260,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
             <div className="flex flex-wrap items-baseline justify-between gap-2 border-b pb-2">
               <h1 className="text-xl font-bold">{title}</h1>
               <span className="text-xs">
-                {tl("Match prep")} · {periodLabel} · {new Date().toISOString().slice(0, 10)} · RiftWatch Pro Stats · lolworlds.com/riftwatch
+                {tl("Match prep")} · {periodLabel} · {new Date().toISOString().slice(0, 10)} · RiftWise Pro Stats · lolworlds.com/riftwise
               </span>
             </div>
             {body(true)}

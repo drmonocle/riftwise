@@ -1,4 +1,4 @@
-// riftwatch-pages gives every RiftWatch stats page (lolworlds.com/riftwatch/player/faker,
+// riftwise-pages gives every RiftWise stats page (lolworlds.com/riftwise/player/faker,
 // /team/t1, /tournament/worlds-2025, /match/..., /champion/ahri, /league/lck, /stats...) the app's index.html
 // with that page's own title, description, canonical address and link-preview tags, so search
 // engines index each page and links shared in chat apps show what they point to. It also serves
@@ -7,7 +7,7 @@
 // Titles and descriptions come from the nightly stats build (stats/<version>/hub/seo/*.tsv), and the
 // page itself is the deployed index.html; both are re-read when they change.
 //
-//	riftwatch-pages -site C:\inetpub\wwwroot\riftwatch -addr 127.0.0.1:8093
+//	riftwise-pages -site C:\inetpub\wwwroot\riftwise -addr 127.0.0.1:8093
 package main
 
 import (
@@ -30,7 +30,7 @@ import (
 const (
 	version  = "1.4.0"
 	origin   = "https://lolworlds.com"
-	basePath = "/riftwatch/"
+	basePath = "/riftwise/"
 	perMap   = 45000 // URLs per sitemap file (the limit is 50,000)
 )
 
@@ -54,7 +54,7 @@ var sections = map[string][2]string{
 	"rankings":    {"LoL power rankings: every pro team, every region", "Power rankings for every active professional League of Legends team on one scale across all regions, with win chances, league strength and how accurate they have been."},
 	"finder":      {"Pro LoL game finder", "Find any professional League of Legends game: filter by league, year, patch, team, champion, side and result, then download the list."},
 	"draft":       {"Pro LoL draft board", "Plan a League of Legends draft between two pro teams with their champion pools, first picks, bans and win rates in view."},
-	"about":       {"How RiftWatch counts pro LoL stats", "Where RiftWatch's pro League of Legends numbers come from and what every stat means: KDA, KP, DMG%, GD per minute, presence, blind picks and more."},
+	"about":       {"How RiftWise counts pro LoL stats", "Where RiftWise's pro League of Legends numbers come from and what every stat means: KDA, KP, DMG%, GD per minute, presence, blind picks and more."},
 }
 
 type entry struct {
@@ -162,7 +162,7 @@ func (s *store) page(title, desc, canonical string, index bool) string {
 	var tags strings.Builder
 	tags.WriteString(`<link rel="canonical" href="` + c + `" />` + "\n")
 	tags.WriteString(`    <meta property="og:type" content="website" />` + "\n")
-	tags.WriteString(`    <meta property="og:site_name" content="RiftWatch" />` + "\n")
+	tags.WriteString(`    <meta property="og:site_name" content="RiftWise" />` + "\n")
 	tags.WriteString(`    <meta property="og:title" content="` + t + `" />` + "\n")
 	tags.WriteString(`    <meta property="og:description" content="` + d + `" />` + "\n")
 	tags.WriteString(`    <meta property="og:url" content="` + c + `" />` + "\n")
@@ -189,12 +189,12 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		}
 		info, ok := sections[sec]
 		if !ok || len(parts) > 3 || (len(parts) == 3 && sec != "tournaments") {
-			status, title, desc, index = http.StatusNotFound, "Page not found | RiftWatch", sections[""][1], false
+			status, title, desc, index = http.StatusNotFound, "Page not found | RiftWise", sections[""][1], false
 			break
 		}
-		title, desc = info[0]+" | RiftWatch", info[1]
+		title, desc = info[0]+" | RiftWise", info[1]
 		if len(parts) == 3 {
-			title = "Pro LoL tournaments in " + parts[2] + " | RiftWatch"
+			title = "Pro LoL tournaments in " + parts[2] + " | RiftWise"
 			desc = "Every professional League of Legends tournament in " + parts[2] + ": results, brackets, standings and stats."
 		}
 	case len(parts) == 2 && kinds[parts[0]] != "":
@@ -208,7 +208,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if !ok {
-			status, title, desc, index = http.StatusNotFound, "Page not found | RiftWatch", sections[""][1], false
+			status, title, desc, index = http.StatusNotFound, "Page not found | RiftWise", sections[""][1], false
 			break
 		}
 		title, desc, index = e.title, e.desc, e.index
@@ -220,7 +220,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	canonical := origin + r.URL.Path
 	body := s.page(title, desc, canonical, index)
 	if body == "" {
-		http.Error(w, "RiftWatch is starting, try again in a moment", http.StatusServiceUnavailable)
+		http.Error(w, "RiftWise is starting, try again in a moment", http.StatusServiceUnavailable)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -231,7 +231,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Sitemaps: /riftwatch/sitemap.xml lists the pieces (/riftwatch/sitemap-<kind>-<n>.xml).
+// Sitemaps: /riftwise/sitemap.xml lists the pieces (/riftwise/sitemap-<kind>-<n>.xml).
 func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 	s.refresh()
 	name := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, basePath), ".xml")
@@ -298,7 +298,7 @@ func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	site := flag.String("site", `C:\inetpub\wwwroot\riftwatch`, "the deployed RiftWatch web folder")
+	site := flag.String("site", `C:\inetpub\wwwroot\riftwise`, "the deployed RiftWise web folder")
 	addr := flag.String("addr", "127.0.0.1:8093", "listen address (IIS forwards to it)")
 	logDir := flag.String("logs", "", "folder for pages.log (default: log to the console)")
 	flag.Parse()
@@ -339,6 +339,6 @@ func main() {
 		s.serve(w, r)
 	})
 	srv := &http.Server{Addr: *addr, Handler: mux, ReadHeaderTimeout: 10 * time.Second, WriteTimeout: 30 * time.Second}
-	log.Printf("riftwatch-pages %s on %s, site %s", version, *addr, *site)
+	log.Printf("riftwise-pages %s on %s, site %s", version, *addr, *site)
 	log.Fatal(srv.ListenAndServe())
 }

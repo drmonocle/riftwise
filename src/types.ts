@@ -73,7 +73,7 @@ export interface StreamEvent {
 }
 
 /**
- * Optional note the stream owner publishes at lolworlds.com/riftwatch/stream-status.json.
+ * Optional note the stream owner publishes at lolworlds.com/riftwise/stream-status.json.
  * Every field is optional; without the file the app works it out from the schedule alone.
  */
 export interface StreamStatus {

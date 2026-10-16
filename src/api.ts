@@ -44,7 +44,7 @@ export function teamDisplayName(name: string | undefined, fallback = "TBD"): str
 }
 
 const STREAM_SCHEDULE_URL = "https://lolworlds.com/api.ashx?type=schedule-json";
-const STREAM_STATUS_URL = "https://lolworlds.com/riftwatch/stream-status.json";
+const STREAM_STATUS_URL = "https://lolworlds.com/riftwise/stream-status.json";
 
 export const MAJOR_REGIONS: Region[] = [
   { code: "INTERNATIONAL", name: "International", leagues: ["Worlds", "MSI", "First Stand"], badge: "🌐" },
@@ -521,7 +521,7 @@ export async function fetchSchedule(extraNewerPages = 2): Promise<Match[]> {
  * All-time H2H table rebuilt every few hours by the h2h-data GitHub Action
  * (scripts/h2h/refresh.py), so records stay current between app releases.
  */
-const H2H_DATA_URL = "https://raw.githubusercontent.com/drmonocle/riftwatch/h2h-data/h2h.json";
+const H2H_DATA_URL = "https://raw.githubusercontent.com/drmonocle/riftwise/h2h-data/h2h.json";
 const H2H_CACHE_KEY = "riftwatch_h2h_data";
 
 function isH2HData(d: any): d is H2HData {
@@ -740,7 +740,7 @@ export interface H2HSeriesEntry {
   recent: [string, string, number, number][];
 }
 
-const H2H_SERIES_URL = "https://raw.githubusercontent.com/drmonocle/riftwatch/h2h-data/series/";
+const H2H_SERIES_URL = "https://raw.githubusercontent.com/drmonocle/riftwise/h2h-data/series/";
 const seriesShards = new Map<string, Promise<Record<string, H2HSeriesEntry>>>();
 
 export function fetchH2HSeries(pairKey: string): Promise<H2HSeriesEntry | null> {
@@ -824,12 +824,12 @@ export function compareSemver(v1: string, v2: string): number {
 }
 
 /**
- * Query GitHub Releases API for the latest published RiftWatch release.
+ * Query GitHub Releases API for the latest published RiftWise release.
  * Returns metadata and direct download URL for the standalone .exe asset.
  */
 export async function checkForAppUpdate(currentVersion: string): Promise<AppUpdateInfo | null> {
   try {
-    const res = await fetch("https://api.github.com/repos/drmonocle/riftwatch/releases/latest", {
+    const res = await fetch("https://api.github.com/repos/drmonocle/riftwise/releases/latest", {
       headers: {
         Accept: "application/vnd.github.v3+json",
       },
@@ -846,10 +846,10 @@ export async function checkForAppUpdate(currentVersion: string): Promise<AppUpda
     );
     const downloadUrl =
       exeAsset?.browser_download_url ||
-      `https://github.com/drmonocle/riftwatch/releases/download/${latestTag}/RiftWatch.exe`;
+      `https://github.com/drmonocle/riftwise/releases/download/${latestTag}/RiftWise.exe`;
 
     const sumAsset = (data.assets || []).find((a: any) =>
-      a.name?.toLowerCase() === `${String(exeAsset?.name || "RiftWatch.exe").toLowerCase()}.sha256`
+      a.name?.toLowerCase() === `${String(exeAsset?.name || "RiftWise.exe").toLowerCase()}.sha256`
     );
     const checksumUrl = sumAsset?.browser_download_url || `${downloadUrl}.sha256`;
 
@@ -859,7 +859,7 @@ export async function checkForAppUpdate(currentVersion: string): Promise<AppUpda
       latestVersion: cleanLatest,
       releaseName: data.name || latestTag,
       releaseNotes: data.body || "",
-      releaseUrl: data.html_url || "https://github.com/drmonocle/riftwatch/releases",
+      releaseUrl: data.html_url || "https://github.com/drmonocle/riftwise/releases",
       downloadUrl,
       checksumUrl,
       publishedAt: data.published_at || "",

@@ -56,7 +56,7 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
     tl("League: {league}", { league: `${match.leagueName}${match.blockName ? ` - ${match.blockName}` : ""}` }),
     tl("Format: Best of {n}", { n: match.bestOf }),
     tl("Watch live: {url}", { url: "https://lolesports.com" }),
-    tl("Added from RiftWatch"),
+    tl("Added from RiftWise"),
   ].join("\n");
   const location = "https://lolesports.com";
 
@@ -87,11 +87,11 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
     const icsContent = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
-      "PRODID:-//RiftWatch//LoL Esports Calendar//EN",
+      "PRODID:-//RiftWise//LoL Esports Calendar//EN",
       "CALSCALE:GREGORIAN",
       "METHOD:PUBLISH",
       "BEGIN:VEVENT",
-      `UID:riftwatch-${match.matchId || Date.now()}@monocle.gg`,
+      `UID:riftwise-${match.matchId || Date.now()}@monocle.gg`,
       `DTSTAMP:${formatGoogleDate(new Date())}`,
       `DTSTART:${formatGoogleDate(startDate)}`,
       `DTEND:${formatGoogleDate(endDate)}`,

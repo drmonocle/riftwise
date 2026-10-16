@@ -15,7 +15,7 @@ import (
 const (
 	maxSubs      = 50000
 	maxTeams     = 200
-	apiPrefix    = "/riftwatch/api/push/"
+	apiPrefix    = "/riftwise/api/push/"
 	perIPPerMin  = 30
 	testInterval = 20 * time.Second
 )

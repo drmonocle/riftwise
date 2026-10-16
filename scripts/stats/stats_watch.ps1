@@ -1,15 +1,15 @@
-# Starts the stats build (task RiftWatchStatsBuild) whenever the game database has changed since the last build,
+# Starts the stats build (task RiftWiseStatsBuild) whenever the game database has changed since the last build,
 # so new results show up on the stats pages within minutes instead of the next morning.
-# Run every 10 minutes by task RiftWatchStatsWatch on HomeServer (installed by hs_stats_watch_install.ps1).
+# Run every 10 minutes by task RiftWiseStatsWatch on HomeServer (installed by hs_stats_watch_install.ps1).
 #
 # Waits until the database has been quiet for 5 minutes and none of the jobs that write it are running,
 # leaves at least 60 minutes between builds, and still builds once a day if nothing changed.
 $ErrorActionPreference = "Stop"
-$Build = "RiftWatchStatsBuild"
+$Build = "RiftWiseStatsBuild"
 $Writers = "TwitchBotNightlyCatalog", "Claude-LpScheduleRefresh", "Claude-OeDailyRefresh", "Claude-LpWeeklyRefresh"
 $Data = "C:\Users\TV\twitch_bot\data"
 $Files = "pro_games_catalog.db", "lp_all_games.db"
-$Log = "C:\Scripts\riftwatch\stats_watch.log"
+$Log = "C:\Scripts\riftwise\stats_watch.log"
 $Quiet = [TimeSpan]::FromMinutes(5)
 $MinGap = [TimeSpan]::FromMinutes(60)
 $Daily = [TimeSpan]::FromHours(22)

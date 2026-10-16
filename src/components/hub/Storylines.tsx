@@ -126,7 +126,7 @@ export const HomeStorylines: React.FC = () => {
     <StoryList
       title={tl("Storylines")}
       spoilerKey="home-notes"
-      share="riftwatch-storylines"
+      share="riftwise-storylines"
       lines={rows.map((r, i) => ({ key: `${r.u}-${i}`, who: { name: r.name, to: { kind: r.t, slug: r.u } }, text: noteText(r), asOf: r.asOf }))}
     />
   );

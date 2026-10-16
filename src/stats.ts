@@ -6,11 +6,11 @@
 import { IS_WEB } from "./platform";
 
 // Same origin on the web version; the desktop app reads it from lolworlds.com.
-// (vite preview on this PC passes /riftwatch/stats on to lolworlds.com, or serves a local build.)
+// (vite preview on this PC passes /riftwise/stats on to lolworlds.com, or serves a local build.)
 const STATS_BASE =
   IS_WEB && typeof window !== "undefined" && /(^|\.)lolworlds\.com$|^localhost$|^127\.0\.0\.1$/.test(window.location.hostname)
-    ? "/riftwatch/stats"
-    : "https://lolworlds.com/riftwatch/stats";
+    ? "/riftwise/stats"
+    : "https://lolworlds.com/riftwise/stats";
 
 /** a = other names the team has played under, c = short names (SKT, C9...), each joined by " | ". */
 export interface StatsSearchTeam { n: string; s: string; g: number; y: string; a?: string; c?: string }
@@ -173,7 +173,7 @@ export async function loadText(path: string): Promise<string> {
 /** Full web address of a file of the current stats build (for links that open in a browser). */
 export async function statsFileUrl(path: string): Promise<string> {
   const v = await getVersion();
-  return `https://lolworlds.com/riftwatch/stats/${v}/${path}`;
+  return `https://lolworlds.com/riftwise/stats/${v}/${path}`;
 }
 
 export const loadStatsMeta = () => load<StatsMeta>("meta.json");

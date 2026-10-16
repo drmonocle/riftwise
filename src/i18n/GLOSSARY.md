@@ -1,4 +1,4 @@
-# RiftWatch translations
+# RiftWise translations
 
 Each language is one file in `locales/` (`es.json`, `ko.json`, ...). The left side is the English text
 in the app, the right side is what that language shows. To fix a translation, change the right side only.

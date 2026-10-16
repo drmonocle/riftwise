@@ -201,7 +201,7 @@ describe("recentMeetings", () => {
 describe("shareable match links", () => {
   it("round-trips a match id through the web URL hash", () => {
     const url = matchShareUrl("115 abc/1");
-    expect(url).toBe("https://lolworlds.com/riftwatch/#match/115%20abc%2F1");
+    expect(url).toBe("https://lolworlds.com/riftwise/#match/115%20abc%2F1");
     expect(matchIdFromHash(new URL(url).hash)).toBe("115 abc/1");
     expect(matchIdFromHash("#other")).toBeNull();
     expect(matchIdFromHash("")).toBeNull();

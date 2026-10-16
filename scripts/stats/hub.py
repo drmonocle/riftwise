@@ -1,5 +1,5 @@
 """
-Stats hub pages (the gol.gg / Leaguepedia-style part of RiftWatch's Stats tab).
+Stats hub pages (the gol.gg / Leaguepedia-style part of RiftWise's Stats tab).
 
 build_stats.py calls build() after the classic Stats tab files are written, into the same version
 folder, so one latest.json switch publishes both:
@@ -33,7 +33,7 @@ folder, so one latest.json switch publishes both:
   hub/manifest.json                 file -> content hash, so the next build can hard-link unchanged files
 
 Slugs are readable ("faker", "t1", "worlds-2025-main-event") and are what the page URLs use
-(lolworlds.com/riftwatch/player/faker). Inputs are read-only: the catalog plus, when present, the
+(lolworlds.com/riftwise/player/faker). Inputs are read-only: the catalog plus, when present, the
 Leaguepedia sidecar database (lp_all_games.db) for every series' stage, order and score.
 """
 import concurrent.futures
@@ -56,7 +56,7 @@ from collections import Counter, defaultdict
 import leagues_info
 import ratings as team_ratings
 
-SITE = "RiftWatch"
+SITE = "RiftWise"
 RECENT_EVENT_DAYS = 30        # event and series descriptions leave the winner out while this fresh
 SEO_MIN_GAMES = 10            # thinner team / player pages are kept out of search engines
 KNOCKOUT_TAB = re.compile(
@@ -1127,7 +1127,7 @@ def build(ctx) -> dict:
                             sd, od = sides.get(side) or {}, sides.get("red" if side == "blue" else "blue") or {}
                             result = 1 if g["w"] == tname_c else 0 if g["w"] else ""
                             common = [g["date"][:10], info.get("League") or "", en, tab or "", item.get("patch") or "", gslug, g["n"],
-                                      f"https://lolworlds.com/riftwatch/match/{gslug}", side.capitalize()]
+                                      f"https://lolworlds.com/riftwise/match/{gslug}", side.capitalize()]
                             team_rows = sorted((r for r in rows if r["team"] == tname_c), key=lambda r: ROLE_ORDER.get(r["role"] or "", 9))
                             order = sd.get("picks") or []
                             for r in team_rows:

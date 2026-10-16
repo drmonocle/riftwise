@@ -1,5 +1,5 @@
 """
-Builds the RiftWatch Stats tab data from the Twitch bot's pro games catalog.
+Builds the RiftWise Stats tab data from the Twitch bot's pro games catalog.
 
 Reads pro_games_catalog.db (read-only) and writes small JSON files the app loads one at a time,
 so the Stats tab never downloads or crunches the whole database:
@@ -25,7 +25,7 @@ see a half-written build. Older version folders are removed (the newest two are 
 The stats hub (tournament, series, champion pages and readable page links) is built by hub.py into
 <version>/hub/ in the same run; see that file. --no-hub skips it.
 
-  python build_stats.py --db C:\\Users\\TV\\twitch_bot\\data\\pro_games_catalog.db --out C:\\inetpub\\wwwroot\\riftwatch\\stats
+  python build_stats.py --db C:\\Users\\TV\\twitch_bot\\data\\pro_games_catalog.db --out C:\\inetpub\\wwwroot\\riftwise\\stats
 """
 import argparse
 import bisect
@@ -63,7 +63,7 @@ MANUAL_LINKS = [
     ("2017-11-30", "Samsung Galaxy", "KSV eSports"),      # Leaguepedia says "acquire"; the org then became Gen.G
 ]
 RENAME_VERBS = {"rename", "rebrand", "reband"}
-LEAGUEPEDIA_UA = {"User-Agent": "RiftWatch-stats/1.0 (lolworlds.com; nightly stats build)"}
+LEAGUEPEDIA_UA = {"User-Agent": "RiftWise-stats/1.0 (lolworlds.com; nightly stats build)"}
 
 FINAL_STAGE = re.compile(r"^(grand )?finals?$", re.I)
 # League tournaments that crown a champion (the regular season and promotion events don't)

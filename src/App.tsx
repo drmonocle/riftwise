@@ -77,7 +77,7 @@ export default function App() {
   // Initial tab. The desktop app's very first launch opens the Watchlist so people pick their
   // teams; the public web page opens on live scores, so a first-time visitor sees matches at once.
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
-    // Opened at a stats page address (lolworlds.com/riftwatch/player/faker): show it
+    // Opened at a stats page address (lolworlds.com/riftwise/player/faker): show it
     if (STARTED_ON_HUB) return "stats";
     try {
       const hasLaunched = localStorage.getItem("riftwatch_has_launched");
@@ -97,6 +97,22 @@ export default function App() {
   }, []);
   const [searchOpen, setSearchOpen] = useState(false);
   // One-time note about the stats hub and features people were missing (closed for good with X)
+  // One-time note for people who used the app before it was renamed (0.4.0): RiftWatch is now RiftWise
+  const [renameNote, setRenameNote] = useState(() => {
+    try {
+      return localStorage.getItem("riftwatch_has_launched") !== null && localStorage.getItem("riftwatch_tip_rename_v1") !== "1";
+    } catch {
+      return false;
+    }
+  });
+  const closeRenameNote = () => {
+    setRenameNote(false);
+    try {
+      localStorage.setItem("riftwatch_tip_rename_v1", "1");
+    } catch {
+      /* fine */
+    }
+  };
   const [hubTip, setHubTip] = useState(() => {
     try {
       return localStorage.getItem("riftwatch_tip_hub_v1") !== "1";
@@ -244,7 +260,7 @@ export default function App() {
   useEffect(() => {
     if (!IS_DESKTOP) return;
     const texts: Record<string, string> = {
-      show: tl("Open RiftWatch"),
+      show: tl("Open RiftWise"),
       hide: tl("Hide to Tray"),
       nav_live: "🔴 " + tl("Live Matches"),
       nav_schedule: "📅 " + tl("Schedule & Results"),
@@ -257,8 +273,8 @@ export default function App() {
       stream_youtube: "▶ " + tl("Watch 24/7 on YouTube"),
       stream_sched: "🌐 " + tl("Full Schedule (lolworlds.com)"),
       kofi_support: "☕ " + tl("Support on Ko-fi"),
-      quit: tl("Quit RiftWatch"),
-      tray_hint_title: tl("RiftWatch is still running"),
+      quit: tl("Quit RiftWise"),
+      tray_hint_title: tl("RiftWise is still running"),
       tray_hint_body: tl(
         "It's in the system tray (bottom-right, near the clock) so match alerts keep working. Right-click the icon to quit, or change this in Settings.",
       ),
@@ -448,7 +464,7 @@ export default function App() {
         if (!alreadyNotified) {
           import("@tauri-apps/api/core").then(({ invoke }) => {
             invoke("send_notification", {
-              title: "⚡ " + tl("RiftWatch update available"),
+              title: "⚡ " + tl("RiftWise update available"),
               body: tl("Version v{version} is available. Open Settings to install it.", { version: info.latestVersion }),
             }).catch(() => {});
           });
@@ -782,12 +798,12 @@ export default function App() {
           <span>
             {outage === "offline" && tl("You're offline. Live scores and schedules will come back when the connection does.")}
             {outage === "riot-down" &&
-              tl("Riot's LoL Esports data isn't responding right now. Nothing is wrong on your end; RiftWatch retries every minute and the 24/7 stream guide still works.")}
+              tl("Riot's LoL Esports data isn't responding right now. Nothing is wrong on your end; RiftWise retries every minute and the 24/7 stream guide still works.")}
             {outage === "riot-key" && (
               <>
-                {tl("Riot changed the key RiftWatch uses for esports data.")}{" "}
-                <button type="button" onClick={() => handleOpenUrl("https://github.com/drmonocle/riftwatch/releases")} className="underline hover:text-[#c8aa6e]">
-                  {tl("Update RiftWatch")}
+                {tl("Riot changed the key RiftWise uses for esports data.")}{" "}
+                <button type="button" onClick={() => handleOpenUrl("https://github.com/drmonocle/riftwise/releases")} className="underline hover:text-[#c8aa6e]">
+                  {tl("Update RiftWise")}
                 </button>
               </>
             )}
@@ -798,8 +814,8 @@ export default function App() {
       {showWelcome && (
         <div className="bg-[#0a1420] border-b border-[#c8aa6e]/40 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 text-xs" role="status">
           <div className="flex-1 text-[#9bb3c9] leading-relaxed">
-            <strong className="text-[#c8aa6e]">{tl("Welcome to RiftWatch!")}</strong>{" "}
-            {tl("Start by following the teams you care about below: they get highlighted everywhere and you get an alert when they play. RiftWatch also starts with Windows, quietly in the tray; you can turn that off in Settings.")}
+            <strong className="text-[#c8aa6e]">{tl("Welcome to RiftWise!")}</strong>{" "}
+            {tl("Start by following the teams you care about below: they get highlighted everywhere and you get an alert when they play. RiftWise also starts with Windows, quietly in the tray; you can turn that off in Settings.")}
           </div>
           <div className="flex gap-2 shrink-0">
             <button
@@ -821,7 +837,19 @@ export default function App() {
         </div>
       )}
 
-      {hubTip && !showWelcome && activeTab !== "stats" && (
+      {renameNote && !showWelcome && (
+        <div className="bg-[#0a1420] border-b border-[#c8aa6e]/40 px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs" role="status">
+          <div className="flex-1 min-w-[14rem] text-[#9bb3c9] leading-relaxed">
+            <strong className="text-[#c8aa6e]">{tl("RiftWatch is now RiftWise.")}</strong>{" "}
+            {tl("Same app, new name. Your settings and followed teams are all still here, and the web version is now at lolworlds.com/riftwise.")}
+          </div>
+          <button onClick={closeRenameNote} aria-label={tl("Close")} className="p-1 text-[#7e8e9f] hover:text-[#f0e6d2] shrink-0">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {hubTip && !showWelcome && !renameNote && activeTab !== "stats" && (
         <div className="bg-[#0a1420] border-b border-[#c8aa6e]/40 px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs" role="status">
           <div className="flex-1 min-w-[14rem] text-[#9bb3c9] leading-relaxed">
             <strong className="text-[#c8aa6e]">{tl("New: Pro Stats for every game since 2011.")}</strong>{" "}
@@ -1001,8 +1029,8 @@ export default function App() {
                 .catch(() => {})
             }
             className="flex items-center gap-1 px-2 py-0.5 rounded border border-[#1e282d] text-[#a09b8c] hover:text-[#f0e6d2] hover:border-[#c8aa6e] hover:bg-[#121e2d] transition-colors"
-            aria-label={tl("Hide RiftWatch to the system tray")}
-            title={tl("Hide RiftWatch to the system tray (click the tray icon or press Alt+Shift+L to bring it back)")}
+            aria-label={tl("Hide RiftWise to the system tray")}
+            title={tl("Hide RiftWise to the system tray (click the tray icon or press Alt+Shift+L to bring it back)")}
           >
             <ArrowDownToLine className="w-3 h-3" />
             <span>{tl("Hide to tray")}</span>

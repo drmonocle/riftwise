@@ -1,4 +1,4 @@
-module riftwatch-push
+module riftwise-push
 
 go 1.22
 

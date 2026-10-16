@@ -1,17 +1,17 @@
-// riftwatch-push sends RiftWatch's phone and browser alerts (Web Push).
+// riftwise-push sends RiftWise's phone and browser alerts (Web Push).
 //
 // It watches Riot's lolesports feed and the 24/7 stream schedule, and sends:
 //   - "starting soon" 15 minutes before a match of a team you follow,
 //   - "match live" when it starts,
 //   - "S-tier banger airing now" when a legendary game starts on the 24/7 stream.
 //
-// The web app (lolworlds.com/riftwatch) registers a browser's push address and the teams it follows
-// through /riftwatch/api/push/*, which IIS forwards here. Nothing else about the person is stored.
+// The web app (lolworlds.com/riftwise) registers a browser's push address and the teams it follows
+// through /riftwise/api/push/*, which IIS forwards here. Nothing else about the person is stored.
 //
-//	riftwatch-push serve  [-data DIR] [-addr 127.0.0.1:8092]   run the API and the alert loop
-//	riftwatch-push key    [-data DIR]                          print the public VAPID key
-//	riftwatch-push stats  [-data DIR]                          subscriber counts
-//	riftwatch-push sample [-data DIR] -kind kickoff|pregame|banger|test [-team T1]
+//	riftwise-push serve  [-data DIR] [-addr 127.0.0.1:8092]   run the API and the alert loop
+//	riftwise-push key    [-data DIR]                          print the public VAPID key
+//	riftwise-push stats  [-data DIR]                          subscriber counts
+//	riftwise-push sample [-data DIR] -kind kickoff|pregame|banger|test [-team T1]
 //	                                                           send a sample alert to followers of a team
 package main
 
@@ -30,12 +30,12 @@ const version = "1.0.0"
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: riftwatch-push serve|key|stats|sample [flags]")
+		fmt.Fprintln(os.Stderr, "usage: riftwise-push serve|key|stats|sample [flags]")
 		os.Exit(2)
 	}
 	cmd := os.Args[1]
 	fs := flag.NewFlagSet(cmd, flag.ExitOnError)
-	dataDir := fs.String("data", `C:\Sites\riftwatch-push-data`, "data folder (keys, subscriptions, locales, logs)")
+	dataDir := fs.String("data", `C:\Sites\riftwise-push-data`, "data folder (keys, subscriptions, locales, logs)")
 	addr := fs.String("addr", "127.0.0.1:8092", "listen address (serve)")
 	kind := fs.String("kind", "test", "sample: kickoff, pregame, banger or test")
 	team := fs.String("team", "T1", "sample: send to people following this team")
@@ -49,7 +49,7 @@ func main() {
 	switch cmd {
 	case "serve":
 		app.openLog()
-		log.Printf("riftwatch-push %s starting on %s, %d subscriptions", version, *addr, app.store.count())
+		log.Printf("riftwise-push %s starting on %s, %d subscriptions", version, *addr, app.store.count())
 		go app.alertLoop()
 		log.Fatal(app.serveHTTP(*addr))
 	case "key":

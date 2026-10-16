@@ -2,7 +2,7 @@
  * Game finder: every game of a league's year (hub/champgames/<league>/<year>.json), narrowed by tournament, patch,
  * team, opponent, side, result, champions (with / against / banned), player and game length. Conditions are about
  * one side of the game ("T1 on red with Azir against Orianna, and lost"); a game matches when either side does.
- * Filters live in the address: /riftwatch/stats/finder?league=lck&year=2026&team=T1&champ=Azir
+ * Filters live in the address: /riftwise/stats/finder?league=lck&year=2026&team=T1&champ=Azir
  */
 import React, { useMemo, useRef, useState } from "react";
 import { tl, tn } from "../../i18n";
@@ -195,7 +195,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
           events={file.data.events}
           q={q}
           setQ={setQ}
-          name={`riftwatch-games-${league}-${year}`}
+          name={`riftwise-games-${league}-${year}`}
         />
       )}
     </div>

@@ -139,7 +139,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       {tl("Update Available")}
                     </span>
                     <span className="font-bold text-sm text-[#f0e6d2]">
-                      RiftWatch v{updateInfo.latestVersion}
+                      RiftWise v{updateInfo.latestVersion}
                     </span>
                   </div>
                   <div className="text-[11px] text-[#c8aa6e] mt-1 font-medium">
@@ -179,7 +179,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               {isInstallingUpdate && (
                 <div className="p-2.5 rounded bg-[#091428] border border-[#0ac8b9]/40 text-[#0ac8b9] text-xs flex items-center gap-2">
                   <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
-                  <span>{tl("Downloading latest release binary and replacing executable… RiftWatch will reopen automatically.")}</span>
+                  <span>{tl("Downloading latest release binary and replacing executable… RiftWise will reopen automatically.")}</span>
                 </div>
               )}
 
@@ -217,7 +217,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <>
                       <Check className="w-4 h-4 text-[#0ac8b9]" />
                       <span className="font-semibold text-[#f0e6d2] text-xs">
-                        {tl("RiftWatch is up to date (v{version})", { version: APP_VERSION })}
+                        {tl("RiftWise is up to date (v{version})", { version: APP_VERSION })}
                       </span>
                     </>
                   )}
@@ -248,7 +248,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </button>
 
                 <button
-                  onClick={() => onOpenUrl("https://github.com/drmonocle/riftwatch/releases")}
+                  onClick={() => onOpenUrl("https://github.com/drmonocle/riftwise/releases")}
                   className="flex items-center gap-1.5 whitespace-nowrap px-2.5 py-1.5 rounded bg-[#091428] hover:bg-[#121e2d] border border-[#1e282d] text-[#7e8e9f] hover:text-[#f0e6d2] text-xs transition-colors"
                   title={tl("View all releases on GitHub")}
                 >
@@ -267,7 +267,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <section className="space-y-3">
           <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
             <Download className="w-3.5 h-3.5 text-[#0ac8b9]" />
-            {tl("RiftWatch for Windows")}
+            {tl("RiftWise for Windows")}
           </h2>
           <div className="p-4 rounded-lg border border-[#1e282d] bg-[#0a1420] space-y-3">
             <p className="text-[#9bb3c9] text-xs leading-relaxed">
@@ -281,7 +281,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-[#c8aa6e] hover:bg-[#f0e6d2] text-[#091428] font-bold text-xs transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>{tl("Download RiftWatch.exe")}</span>
+                <span>{tl("Download RiftWise.exe")}</span>
               </a>
               <a
                 href={DESKTOP_RELEASES_URL}
@@ -302,7 +302,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </a>
             </div>
             <p className="text-[11px] text-[#7e8e9f] leading-relaxed">
-              {tl("Windows 10 or 11. RiftWatch isn't code-signed yet, so Windows SmartScreen may say \"Windows protected your PC\": click More info, then Run anyway. The download comes straight from GitHub.")}
+              {tl("Windows 10 or 11. RiftWise isn't code-signed yet, so Windows SmartScreen may say \"Windows protected your PC\": click More info, then Run anyway. The download comes straight from GitHub.")}
             </p>
             <p className="text-[11px] text-[#7e8e9f] leading-relaxed">
               {tl("Each release lists the SHA-256 checksum of the file, so you can check your download matches.")}
@@ -387,7 +387,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div>
               <div className="font-semibold text-[#f0e6d2]">{tl("Default Tab on Launch")}</div>
               <div className="text-[11px] text-[#7e8e9f]">
-                {tl("Choose which view opens automatically when starting RiftWatch.")}
+                {tl("Choose which view opens automatically when starting RiftWise.")}
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-1 bg-[#091428] p-1 rounded border border-[#1e282d]">
@@ -463,7 +463,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   onClick={() =>
                     import("@tauri-apps/api/core").then(({ invoke }) =>
                       invoke("send_notification", {
-                        title: tl("RiftWatch test alert"),
+                        title: tl("RiftWise test alert"),
                         body: tl("Alerts work. You'll get one like this when a team you follow starts a match."),
                       }).catch(() => {}),
                     )
@@ -538,7 +538,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <span>{tl("Global Summon Hotkey")}</span>
               </div>
               <div className="text-[11px] text-[#7e8e9f]">
-                {tl("Summon or hide RiftWatch instantly from anywhere in Windows (even inside full-screen games or browser).")}
+                {tl("Summon or hide RiftWise instantly from anywhere in Windows (even inside full-screen games or browser).")}
               </div>
             </div>
             <span className="px-2.5 py-1 rounded bg-[#091428] border border-[#0ac8b9]/60 text-[#0ac8b9] font-mono font-bold text-xs tracking-wider">
@@ -551,7 +551,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div>
               <div className="font-semibold text-[#f0e6d2]">{tl("Compact Desktop Mode")}</div>
               <div className="text-[11px] text-[#7e8e9f]">
-                {tl("Fit RiftWatch into a tight, distraction-free mini window for second monitors or split-screen gaming.")}
+                {tl("Fit RiftWise into a tight, distraction-free mini window for second monitors or split-screen gaming.")}
               </div>
             </div>
             <button
@@ -568,7 +568,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div>
               <div className="font-semibold text-[#f0e6d2]">{tl("Close Button Minimizes to System Tray")}</div>
               <div className="text-[11px] text-[#7e8e9f]">
-                {tl("Keep RiftWatch running silently in the Windows notification area when you click the window X button.")}
+                {tl("Keep RiftWise running silently in the Windows notification area when you click the window X button.")}
               </div>
             </div>
             <button
@@ -585,7 +585,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">{tl("Start RiftWatch with Windows")}</div>
+              <div className="font-semibold text-[#f0e6d2]">{tl("Start RiftWise with Windows")}</div>
               <div className="text-[11px] text-[#7e8e9f]">
                 {tl("Launch automatically in the background when you sign in to Windows.")}
               </div>
@@ -742,10 +742,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div>
           <div className="font-bold text-[#f0e6d2] flex items-center gap-1.5 text-sm">
             <Heart className="w-4 h-4 text-[#ff4655] fill-current" />
-            {tl("Support RiftWatch")}
+            {tl("Support RiftWise")}
           </div>
           <div className="text-[11px] text-[#7e8e9f] mt-0.5">
-            {tl("RiftWatch is 100% free and open-source. Help fund 24/7 broadcast servers and active development.")}
+            {tl("RiftWise is 100% free and open-source. Help fund 24/7 broadcast servers and active development.")}
           </div>
         </div>
         <button
@@ -761,10 +761,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <footer className="pt-2 text-[11px] text-[#7e8e9f] space-y-1">
         <div className="flex items-center justify-between">
           <div>
-            {IS_DESKTOP ? `RiftWatch Desktop v${APP_VERSION} · Rust & WebView2` : `RiftWatch Web v${APP_VERSION}`} · {tl("MIT License")}
+            {IS_DESKTOP ? `RiftWise Desktop v${APP_VERSION} · Rust & WebView2` : `RiftWise Web v${APP_VERSION}`} · {tl("MIT License")}
           </div>
           <button
-            onClick={() => onOpenUrl("https://github.com/drmonocle/riftwatch")}
+            onClick={() => onOpenUrl("https://github.com/drmonocle/riftwise")}
             className="hover:text-[#c8aa6e] underline"
           >
             {tl("GitHub Repository ↗")}

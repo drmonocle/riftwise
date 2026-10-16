@@ -123,7 +123,7 @@ describe("translations", () => {
   it.each(langs)("%s keeps product and brand names", (lang) => {
     const dict = load(lang);
     for (const [k, v] of Object.entries(dict)) {
-      for (const brand of ["RiftWatch", "Twitch", "YouTube", "GitHub", "Ko-fi", "Leaguepedia", "lolworlds.com", "Alt+Shift+L"]) {
+      for (const brand of ["RiftWise", "Twitch", "YouTube", "GitHub", "Ko-fi", "Leaguepedia", "lolworlds.com", "Alt+Shift+L"]) {
         if (k.includes(brand)) expect(v, `${lang}: ${k}`).toContain(brand);
       }
     }

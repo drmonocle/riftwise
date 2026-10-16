@@ -103,7 +103,7 @@ fn set_ui_texts(app: tauri::AppHandle, texts: std::collections::HashMap<String, 
     }
 }
 
-/// The first time the X button hides RiftWatch to the tray, say so: otherwise it looks like it quit.
+/// The first time the X button hides RiftWise to the tray, say so: otherwise it looks like it quit.
 /// Remembered with a marker file so it is only said once.
 fn tell_once_about_tray(app: &tauri::AppHandle) {
     use tauri_plugin_notification::NotificationExt;
@@ -117,7 +117,7 @@ fn tell_once_about_tray(app: &tauri::AppHandle) {
     let (title, body) = match TRAY_HINT.lock() {
         Ok(h) if !h.0.is_empty() => (h.0.clone(), h.1.clone()),
         _ => (
-            "RiftWatch is still running".to_string(),
+            "RiftWise is still running".to_string(),
             "It's in the system tray (bottom-right, near the clock) so match alerts keep working. Right-click the icon to quit, or change this in Settings.".to_string(),
         ),
     };
@@ -136,7 +136,7 @@ fn send_notification(app: tauri::AppHandle, title: String, body: String) {
     let _ = app.notification().builder().title(title).body(body).show();
 }
 
-/// Adds or removes RiftWatch from the current user's Windows startup list (no admin needed).
+/// Adds or removes RiftWise from the current user's Windows startup list (no admin needed).
 #[tauri::command]
 fn set_autostart(enabled: bool) -> Result<(), String> {
     #[cfg(target_os = "windows")]
@@ -145,13 +145,19 @@ fn set_autostart(enabled: bool) -> Result<(), String> {
         const CREATE_NO_WINDOW: u32 = 0x08000000;
         const RUN_KEY: &str = r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run";
 
+        // Versions up to 0.3.40 were called RiftWatch: drop their startup entry so it can't start the app twice.
+        let _ = std::process::Command::new("reg")
+            .args(["delete", RUN_KEY, "/v", "RiftWatch", "/f"])
+            .creation_flags(CREATE_NO_WINDOW)
+            .status();
+
         let mut cmd = std::process::Command::new("reg");
         if enabled {
             let exe = std::env::current_exe().map_err(|e| e.to_string())?;
             let value = format!("\"{}\" --minimized", exe.display());
-            cmd.args(["add", RUN_KEY, "/v", "RiftWatch", "/t", "REG_SZ", "/d", &value, "/f"]);
+            cmd.args(["add", RUN_KEY, "/v", "RiftWise", "/t", "REG_SZ", "/d", &value, "/f"]);
         } else {
-            cmd.args(["delete", RUN_KEY, "/v", "RiftWatch", "/f"]);
+            cmd.args(["delete", RUN_KEY, "/v", "RiftWise", "/f"]);
         }
         let status = cmd
             .creation_flags(CREATE_NO_WINDOW)
@@ -159,7 +165,7 @@ fn set_autostart(enabled: bool) -> Result<(), String> {
             .map_err(|e| e.to_string())?;
         // Deleting a value that isn't there reports failure; that's fine.
         if enabled && !status.success() {
-            return Err("Could not add RiftWatch to Windows startup".into());
+            return Err("Could not add RiftWise to Windows startup".into());
         }
     }
     #[cfg(not(target_os = "windows"))]
@@ -210,8 +216,8 @@ fn apply_app_update(app: tauri::AppHandle, download_url: String, checksum_url: S
         let current_exe = std::env::current_exe().map_err(|e| format!("Failed to locate current executable: {}", e))?;
 
         let temp_dir = std::env::temp_dir();
-        let new_exe = temp_dir.join("RiftWatch_update.exe");
-        let sum_file = temp_dir.join("RiftWatch_update.sha256");
+        let new_exe = temp_dir.join("RiftWise_update.exe");
+        let sum_file = temp_dir.join("RiftWise_update.sha256");
 
         const CREATE_NO_WINDOW: u32 = 0x08000000;
 
@@ -270,7 +276,7 @@ fn apply_app_update(app: tauri::AppHandle, download_url: String, checksum_url: S
         if let Err(e) = std::fs::rename(&current_exe, &old_exe) {
             cleanup();
             return Err(format!(
-                "Couldn't replace RiftWatch in {} ({}). Move RiftWatch.exe to a folder you can write to (for example Documents) or download the update from GitHub.",
+                "Couldn't replace RiftWise in {} ({}). Move RiftWise.exe to a folder you can write to (for example Documents) or download the update from GitHub.",
                 current_exe.parent().map(|d| d.display().to_string()).unwrap_or_default(),
                 e
             ));
@@ -338,17 +344,14 @@ fn is_another_instance_running() -> bool {
         }
 
         if unsafe { GetLastError() } == ERROR_ALREADY_EXISTS {
-            let win_title: Vec<u16> = OsStr::new("RiftWatch")
-                .encode_wide()
-                .chain(std::iter::once(0))
-                .collect();
-            let mut hwnd = unsafe { FindWindowW(std::ptr::null(), win_title.as_ptr()) };
-            if hwnd.is_null() {
-                let win_title2: Vec<u16> = OsStr::new("RiftWatch - LoL Esports Companion")
-                    .encode_wide()
-                    .chain(std::iter::once(0))
-                    .collect();
-                hwnd = unsafe { FindWindowW(std::ptr::null(), win_title2.as_ptr()) };
+            // The running copy's window: this name, or "RiftWatch" (what versions up to 0.3.40 were called)
+            let mut hwnd = std::ptr::null_mut();
+            for title in ["RiftWise", "RiftWatch", "RiftWatch - LoL Esports Companion"] {
+                let wide: Vec<u16> = OsStr::new(title).encode_wide().chain(std::iter::once(0)).collect();
+                hwnd = unsafe { FindWindowW(std::ptr::null(), wide.as_ptr()) };
+                if !hwnd.is_null() {
+                    break;
+                }
             }
             if !hwnd.is_null() {
                 unsafe {
@@ -505,7 +508,7 @@ pub fn run() {
                     let _ = w.set_focus();
                 }
             }
-            let show_i = MenuItem::with_id(app, "show", "Open RiftWatch", true, None::<&str>)?;
+            let show_i = MenuItem::with_id(app, "show", "Open RiftWise", true, None::<&str>)?;
             let hide_i = MenuItem::with_id(app, "hide", "Hide to Tray", true, None::<&str>)?;
             let sep1 = PredefinedMenuItem::separator(app)?;
 
@@ -524,7 +527,7 @@ pub fn run() {
             let kofi_support = MenuItem::with_id(app, "kofi_support", "☕ Support on Ko-fi", true, None::<&str>)?;
             let sep4 = PredefinedMenuItem::separator(app)?;
 
-            let quit_i = MenuItem::with_id(app, "quit", "Quit RiftWatch", true, None::<&str>)?;
+            let quit_i = MenuItem::with_id(app, "quit", "Quit RiftWise", true, None::<&str>)?;
 
             let mut by_id = std::collections::HashMap::new();
             for item in [
@@ -565,7 +568,7 @@ pub fn run() {
 
             let mut builder = TrayIconBuilder::new()
                 .menu(&menu)
-                .tooltip("RiftWatch - LoL Esports Companion")
+                .tooltip("RiftWise - LoL Esports Companion")
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| {
                     match event.id.as_ref() {
@@ -687,7 +690,7 @@ pub fn run() {
 static RELAUNCH_AFTER_EXIT: std::sync::Mutex<Option<(std::path::PathBuf, std::path::PathBuf)>> =
     std::sync::Mutex::new(None);
 
-/// `RiftWatch.exe.old --relaunch-after <pid> <new exe>`: wait (up to 30 s) for the updating
+/// `RiftWise.exe.old --relaunch-after <pid> <new exe>`: wait (up to 30 s) for the updating
 /// process to exit, then start the new version. Runs before any window or single-instance check.
 #[cfg(target_os = "windows")]
 fn relaunch_helper(args: &[String]) {

@@ -1,17 +1,17 @@
 {
-  "name": "RiftWatch",
-  "short_name": "RiftWatch",
+  "name": "RiftWise",
+  "short_name": "RiftWise",
   "description": "Live League of Legends esports scores, schedules, standings, all-time head-to-head records and the 24/7 classic tournament stream.",
-  "id": "/riftwatch/",
-  "start_url": "/riftwatch/",
-  "scope": "/riftwatch/",
+  "id": "/riftwise/",
+  "start_url": "/riftwise/",
+  "scope": "/riftwise/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#091428",
   "theme_color": "#091428",
   "icons": [
-    { "src": "/riftwatch/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/riftwatch/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/riftwatch/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/riftwise/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/riftwise/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/riftwise/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

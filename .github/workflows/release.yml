@@ -1,6 +1,6 @@
 name: Release
 
-# Builds RiftWatch.exe on GitHub's Windows runners from the tagged commit and attaches it, its
+# Builds RiftWise.exe on GitHub's Windows runners from the tagged commit and attaches it, its
 # SHA-256 and the zip to a DRAFT release. Review the draft on GitHub, then publish it (that is
 # what makes it "Latest" and reaches the in-app updater).
 #
@@ -63,19 +63,19 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force unsigned, release | Out-Null
-          Copy-Item src-tauri\target\release\riftwatch-tauri.exe unsigned\RiftWatch.exe
-          $vi = (Get-Item unsigned\RiftWatch.exe).VersionInfo
+          Copy-Item src-tauri\target\release\riftwise-tauri.exe unsigned\RiftWise.exe
+          $vi = (Get-Item unsigned\RiftWise.exe).VersionInfo
           $want = (Get-Content package.json -Raw | ConvertFrom-Json).version
           "ProductName=$($vi.ProductName) ProductVersion=$($vi.ProductVersion) CompanyName=$($vi.CompanyName) Copyright=$($vi.LegalCopyright)"
-          if ($vi.ProductName -ne "RiftWatch") { throw "ProductName is '$($vi.ProductName)', expected RiftWatch" }
+          if ($vi.ProductName -ne "RiftWise") { throw "ProductName is '$($vi.ProductName)', expected RiftWise" }
           if ($vi.ProductVersion -ne $want) { throw "ProductVersion is '$($vi.ProductVersion)', expected $want" }
 
       - name: Upload the unsigned exe
         id: upload-unsigned
         uses: actions/upload-artifact@v4
         with:
-          name: RiftWatch-unsigned
-          path: unsigned/RiftWatch.exe
+          name: RiftWise-unsigned
+          path: unsigned/RiftWise.exe
           if-no-files-found: error
 
       - name: Sign with SignPath (waits for the maintainer's approval)
@@ -95,27 +95,27 @@ jobs:
         shell: pwsh
         run: |
           if ($env:SIGNING -eq 'true') {
-            $signed = Get-ChildItem signed -Recurse -Filter RiftWatch.exe | Select-Object -First 1
-            if (-not $signed) { throw "SignPath returned no RiftWatch.exe" }
+            $signed = Get-ChildItem signed -Recurse -Filter RiftWise.exe | Select-Object -First 1
+            if (-not $signed) { throw "SignPath returned no RiftWise.exe" }
             $sig = Get-AuthenticodeSignature $signed.FullName
             "Signature: $($sig.Status); signer: $($sig.SignerCertificate.Subject)"
             if ($sig.Status -ne 'Valid') { throw "The signed file's signature is $($sig.Status), not Valid" }
-            Copy-Item $signed.FullName release\RiftWatch.exe -Force
+            Copy-Item $signed.FullName release\RiftWise.exe -Force
           } else {
-            Copy-Item unsigned\RiftWatch.exe release\RiftWatch.exe -Force
+            Copy-Item unsigned\RiftWise.exe release\RiftWise.exe -Force
           }
-          $hash = (Get-FileHash release\RiftWatch.exe -Algorithm SHA256).Hash.ToLower()
-          Set-Content -Path release\RiftWatch.exe.sha256 -Value "$hash  RiftWatch.exe" -Encoding ascii -NoNewline
-          Compress-Archive -Path release\RiftWatch.exe -DestinationPath release\RiftWatch-windows-x64.zip -Force
-          "RiftWatch.exe $([math]::Round((Get-Item release\RiftWatch.exe).Length / 1MB, 2)) MB, sha256 $hash, signed=$env:SIGNING"
+          $hash = (Get-FileHash release\RiftWise.exe -Algorithm SHA256).Hash.ToLower()
+          Set-Content -Path release\RiftWise.exe.sha256 -Value "$hash  RiftWise.exe" -Encoding ascii -NoNewline
+          Compress-Archive -Path release\RiftWise.exe -DestinationPath release\RiftWise-windows-x64.zip -Force
+          "RiftWise.exe $([math]::Round((Get-Item release\RiftWise.exe).Length / 1MB, 2)) MB, sha256 $hash, signed=$env:SIGNING"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: RiftWatch-windows
+          name: RiftWise-windows
           path: |
-            release/RiftWatch.exe
-            release/RiftWatch.exe.sha256
-            release/RiftWatch-windows-x64.zip
+            release/RiftWise.exe
+            release/RiftWise.exe.sha256
+            release/RiftWise-windows-x64.zip
           if-no-files-found: error
 
       - name: Draft the GitHub release
@@ -125,12 +125,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = "${{ github.ref_name }}"
-          $hash = (Get-Content release\RiftWatch.exe.sha256 -Raw).Split(' ')[0]
+          $hash = (Get-Content release\RiftWise.exe.sha256 -Raw).Split(' ')[0]
           if ($env:SIGNING -eq 'true') {
-            $sig = Get-AuthenticodeSignature release\RiftWatch.exe
+            $sig = Get-AuthenticodeSignature release\RiftWise.exe
             $trust = "**Signed.** Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/). Signer: ``$($sig.SignerCertificate.Subject)``."
           } else {
-            $trust = "**SmartScreen:** RiftWatch isn't code-signed yet, so Windows may show ""Windows protected your PC"". Click **More info -> Run anyway**."
+            $trust = "**SmartScreen:** RiftWise isn't code-signed yet, so Windows may show ""Windows protected your PC"". Click **More info -> Run anyway**."
           }
-          $notes = "Built from $tag by GitHub Actions.`n`n### Checksum`n- ``RiftWatch.exe``: ``$hash```n`n$trust"
-          gh release create $tag release\RiftWatch.exe release\RiftWatch.exe.sha256 release\RiftWatch-windows-x64.zip --draft --title "RiftWatch $tag" --notes $notes
+          $notes = "Built from $tag by GitHub Actions.`n`n### Checksum`n- ``RiftWise.exe``: ``$hash```n`n$trust"
+          gh release create $tag release\RiftWise.exe release\RiftWise.exe.sha256 release\RiftWise-windows-x64.zip --draft --title "RiftWise $tag" --notes $notes
