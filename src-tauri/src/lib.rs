@@ -9,43 +9,6 @@ use tauri_plugin_opener::OpenerExt;
 mod update;
 
 #[tauri::command]
-fn start_window_drag(window: tauri::WebviewWindow) {
-    let _ = window.start_dragging();
-}
-
-#[tauri::command]
-fn show_ticker(app: tauri::AppHandle) {
-    // The HUD is a passive overlay: showing it (also at Windows sign-in) must not take the keyboard
-    // away from whatever the user is doing.
-    if let Some(w) = app.get_webview_window("ticker") {
-        #[cfg(target_os = "windows")]
-        if let Ok(hwnd) = w.hwnd() {
-            extern "system" {
-                fn ShowWindow(hwnd: *mut std::ffi::c_void, cmd: i32) -> i32;
-            }
-            const SW_SHOWNOACTIVATE: i32 = 4;
-            unsafe { ShowWindow(hwnd.0 as *mut std::ffi::c_void, SW_SHOWNOACTIVATE) };
-            return;
-        }
-        let _ = w.show();
-    }
-}
-
-#[tauri::command]
-fn hide_ticker(app: tauri::AppHandle) {
-    if let Some(w) = app.get_webview_window("ticker") {
-        let _ = w.hide();
-    }
-}
-
-#[tauri::command]
-fn set_ticker_topmost(app: tauri::AppHandle, topmost: bool) {
-    if let Some(w) = app.get_webview_window("ticker") {
-        let _ = w.set_always_on_top(topmost);
-    }
-}
-
-#[tauri::command]
 fn show_main(app: tauri::AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.show();
@@ -77,7 +40,7 @@ fn quit_app(app: tauri::AppHandle) {
     app.exit(0);
 }
 
-/// Where a window was last left (main window and floating HUD), so it reopens in the same spot.
+/// Where the main window was last left, so it reopens in the same spot.
 fn window_place_file(app: &tauri::AppHandle, label: &str) -> Option<std::path::PathBuf> {
     app.path().app_local_data_dir().ok().map(|d| d.join(format!("{label}_window_pos.txt")))
 }
@@ -140,7 +103,7 @@ fn set_ui_texts(app: tauri::AppHandle, texts: std::collections::HashMap<String, 
     }
 }
 
-/// The first time the X button hides RiftWatch to the tray, say so: otherwise it looks like it quit.
+/// The first time the X button hides RiftWise to the tray, say so: otherwise it looks like it quit.
 /// Remembered with a marker file so it is only said once.
 fn tell_once_about_tray(app: &tauri::AppHandle) {
     use tauri_plugin_notification::NotificationExt;
@@ -154,7 +117,7 @@ fn tell_once_about_tray(app: &tauri::AppHandle) {
     let (title, body) = match TRAY_HINT.lock() {
         Ok(h) if !h.0.is_empty() => (h.0.clone(), h.1.clone()),
         _ => (
-            "RiftWatch is still running".to_string(),
+            "RiftWise is still running".to_string(),
             "It's in the system tray (bottom-right, near the clock) so match alerts keep working. Right-click the icon to quit, or change this in Settings.".to_string(),
         ),
     };
@@ -173,7 +136,7 @@ fn send_notification(app: tauri::AppHandle, title: String, body: String) {
     let _ = app.notification().builder().title(title).body(body).show();
 }
 
-/// Adds or removes RiftWatch from the current user's Windows startup list (no admin needed).
+/// Adds or removes RiftWise from the current user's Windows startup list (no admin needed).
 #[tauri::command]
 fn set_autostart(enabled: bool) -> Result<(), String> {
     #[cfg(target_os = "windows")]
@@ -182,13 +145,19 @@ fn set_autostart(enabled: bool) -> Result<(), String> {
         const CREATE_NO_WINDOW: u32 = 0x08000000;
         const RUN_KEY: &str = r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run";
 
+        // Versions up to 0.3.40 were called RiftWatch: drop their startup entry so it can't start the app twice.
+        let _ = std::process::Command::new("reg")
+            .args(["delete", RUN_KEY, "/v", "RiftWatch", "/f"])
+            .creation_flags(CREATE_NO_WINDOW)
+            .status();
+
         let mut cmd = std::process::Command::new("reg");
         if enabled {
             let exe = std::env::current_exe().map_err(|e| e.to_string())?;
             let value = format!("\"{}\" --minimized", exe.display());
-            cmd.args(["add", RUN_KEY, "/v", "RiftWatch", "/t", "REG_SZ", "/d", &value, "/f"]);
+            cmd.args(["add", RUN_KEY, "/v", "RiftWise", "/t", "REG_SZ", "/d", &value, "/f"]);
         } else {
-            cmd.args(["delete", RUN_KEY, "/v", "RiftWatch", "/f"]);
+            cmd.args(["delete", RUN_KEY, "/v", "RiftWise", "/f"]);
         }
         let status = cmd
             .creation_flags(CREATE_NO_WINDOW)
@@ -196,7 +165,7 @@ fn set_autostart(enabled: bool) -> Result<(), String> {
             .map_err(|e| e.to_string())?;
         // Deleting a value that isn't there reports failure; that's fine.
         if enabled && !status.success() {
-            return Err("Could not add RiftWatch to Windows startup".into());
+            return Err("Could not add RiftWise to Windows startup".into());
         }
     }
     #[cfg(not(target_os = "windows"))]
@@ -247,8 +216,8 @@ fn apply_app_update(app: tauri::AppHandle, download_url: String, checksum_url: S
         let current_exe = std::env::current_exe().map_err(|e| format!("Failed to locate current executable: {}", e))?;
 
         let temp_dir = std::env::temp_dir();
-        let new_exe = temp_dir.join("RiftWatch_update.exe");
-        let sum_file = temp_dir.join("RiftWatch_update.sha256");
+        let new_exe = temp_dir.join("RiftWise_update.exe");
+        let sum_file = temp_dir.join("RiftWise_update.sha256");
 
         const CREATE_NO_WINDOW: u32 = 0x08000000;
 
@@ -307,7 +276,7 @@ fn apply_app_update(app: tauri::AppHandle, download_url: String, checksum_url: S
         if let Err(e) = std::fs::rename(&current_exe, &old_exe) {
             cleanup();
             return Err(format!(
-                "Couldn't replace RiftWatch in {} ({}). Move RiftWatch.exe to a folder you can write to (for example Documents) or download the update from GitHub.",
+                "Couldn't replace RiftWise in {} ({}). Move RiftWise.exe to a folder you can write to (for example Documents) or download the update from GitHub.",
                 current_exe.parent().map(|d| d.display().to_string()).unwrap_or_default(),
                 e
             ));
@@ -375,17 +344,14 @@ fn is_another_instance_running() -> bool {
         }
 
         if unsafe { GetLastError() } == ERROR_ALREADY_EXISTS {
-            let win_title: Vec<u16> = OsStr::new("RiftWatch")
-                .encode_wide()
-                .chain(std::iter::once(0))
-                .collect();
-            let mut hwnd = unsafe { FindWindowW(std::ptr::null(), win_title.as_ptr()) };
-            if hwnd.is_null() {
-                let win_title2: Vec<u16> = OsStr::new("RiftWatch - LoL Esports Companion")
-                    .encode_wide()
-                    .chain(std::iter::once(0))
-                    .collect();
-                hwnd = unsafe { FindWindowW(std::ptr::null(), win_title2.as_ptr()) };
+            // The running copy's window: this name, or "RiftWatch" (what versions up to 0.3.40 were called)
+            let mut hwnd = std::ptr::null_mut();
+            for title in ["RiftWise", "RiftWatch", "RiftWatch - LoL Esports Companion"] {
+                let wide: Vec<u16> = OsStr::new(title).encode_wide().chain(std::iter::once(0)).collect();
+                hwnd = unsafe { FindWindowW(std::ptr::null(), wide.as_ptr()) };
+                if !hwnd.is_null() {
+                    break;
+                }
             }
             if !hwnd.is_null() {
                 unsafe {
@@ -507,10 +473,6 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .invoke_handler(tauri::generate_handler![
-            show_ticker,
-            hide_ticker,
-            set_ticker_topmost,
-            start_window_drag,
             show_main,
             hide_main,
             set_compact_mode,
@@ -533,7 +495,6 @@ pub fn run() {
                 }
             }
             restore_window_place(app.handle(), "main");
-            restore_window_place(app.handle(), "ticker");
             // Restarted by the updater: come back in front, where the old window was
             if std::env::args().any(|a| a == "--updated") {
                 if let Some(w) = app.get_webview_window("main") {
@@ -542,12 +503,12 @@ pub fn run() {
                     let _ = w.set_focus();
                 }
             } else if !std::env::args().any(|a| a == "--minimized") {
-                // A normal launch: the main window gets the keyboard, not the hidden HUD window
+                // A normal launch: the main window gets the keyboard
                 if let Some(w) = app.get_webview_window("main") {
                     let _ = w.set_focus();
                 }
             }
-            let show_i = MenuItem::with_id(app, "show", "Open RiftWatch", true, None::<&str>)?;
+            let show_i = MenuItem::with_id(app, "show", "Open RiftWise", true, None::<&str>)?;
             let hide_i = MenuItem::with_id(app, "hide", "Hide to Tray", true, None::<&str>)?;
             let sep1 = PredefinedMenuItem::separator(app)?;
 
@@ -560,21 +521,18 @@ pub fn run() {
             let nav_settings = MenuItem::with_id(app, "nav_settings", "⚙ Settings", true, None::<&str>)?;
             let sep2 = PredefinedMenuItem::separator(app)?;
 
-            let toggle_hud = MenuItem::with_id(app, "toggle_hud", "📌 Toggle Desktop HUD", true, None::<&str>)?;
-            let sep3 = PredefinedMenuItem::separator(app)?;
-
             let stream_twitch = MenuItem::with_id(app, "stream_twitch", "▶ Watch 24/7 on Twitch", true, None::<&str>)?;
             let stream_youtube = MenuItem::with_id(app, "stream_youtube", "▶ Watch 24/7 on YouTube", true, None::<&str>)?;
             let stream_sched = MenuItem::with_id(app, "stream_sched", "🌐 Full Schedule (lolworlds.com)", true, None::<&str>)?;
             let kofi_support = MenuItem::with_id(app, "kofi_support", "☕ Support on Ko-fi", true, None::<&str>)?;
             let sep4 = PredefinedMenuItem::separator(app)?;
 
-            let quit_i = MenuItem::with_id(app, "quit", "Quit RiftWatch", true, None::<&str>)?;
+            let quit_i = MenuItem::with_id(app, "quit", "Quit RiftWise", true, None::<&str>)?;
 
             let mut by_id = std::collections::HashMap::new();
             for item in [
                 &show_i, &hide_i, &nav_live, &nav_schedule, &nav_stats, &nav_stream, &nav_watchlist, &nav_news,
-                &nav_settings, &toggle_hud, &stream_twitch, &stream_youtube, &stream_sched, &kofi_support, &quit_i,
+                &nav_settings, &stream_twitch, &stream_youtube, &stream_sched, &kofi_support, &quit_i,
             ] {
                 by_id.insert(item.id().0.clone(), item.clone());
             }
@@ -594,8 +552,6 @@ pub fn run() {
                     &nav_news,
                     &nav_settings,
                     &sep2,
-                    &toggle_hud,
-                    &sep3,
                     &stream_twitch,
                     &stream_youtube,
                     &stream_sched,
@@ -612,7 +568,7 @@ pub fn run() {
 
             let mut builder = TrayIconBuilder::new()
                 .menu(&menu)
-                .tooltip("RiftWatch - LoL Esports Companion")
+                .tooltip("RiftWise - LoL Esports Companion")
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| {
                     match event.id.as_ref() {
@@ -644,18 +600,6 @@ pub fn run() {
                                 let _ = w.unminimize();
                                 let _ = w.set_focus();
                                 let _ = w.emit("navigate_tab", tab);
-                            }
-                        }
-                        "toggle_hud" => {
-                            // Let the main window flip the setting so the toggle and Settings stay in sync.
-                            if let Some(w) = app.get_webview_window("main") {
-                                let _ = w.emit("toggle_hud", ());
-                            } else if let Some(w) = app.get_webview_window("ticker") {
-                                if w.is_visible().unwrap_or(false) {
-                                    let _ = w.hide();
-                                } else {
-                                    let _ = w.show();
-                                }
                             }
                         }
                         "stream_twitch" => {
@@ -706,7 +650,7 @@ pub fn run() {
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::Moved(pos) = event {
-                if window.label() == "main" || window.label() == "ticker" {
+                if window.label() == "main" {
                     save_window_place(window, pos.x, pos.y);
                 }
             }
@@ -746,7 +690,7 @@ pub fn run() {
 static RELAUNCH_AFTER_EXIT: std::sync::Mutex<Option<(std::path::PathBuf, std::path::PathBuf)>> =
     std::sync::Mutex::new(None);
 
-/// `RiftWatch.exe.old --relaunch-after <pid> <new exe>`: wait (up to 30 s) for the updating
+/// `RiftWise.exe.old --relaunch-after <pid> <new exe>`: wait (up to 30 s) for the updating
 /// process to exit, then start the new version. Runs before any window or single-instance check.
 #[cfg(target_os = "windows")]
 fn relaunch_helper(args: &[String]) {

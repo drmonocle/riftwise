@@ -1,6 +1,6 @@
 /**
  * Data downloads: every pro game as CSV (one row per player and one per team, like Oracle's Elixir), per tournament,
- * or a league's whole year joined in the browser from its tournaments. Free; credit RiftWatch and Leaguepedia.
+ * or a league's whole year joined in the browser from its tournaments. Free; credit RiftWise and Leaguepedia.
  */
 import React, { useMemo, useState } from "react";
 import { Download } from "lucide-react";
@@ -58,11 +58,11 @@ export const DownloadsPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({
         <p className="text-[#9bb3c9]">
           {tl("One row per player and one per team for every game, with the champion, pick order, K/D/A, CS, gold, damage, vision, objectives, bans and picks. Opens in Excel, Google Sheets, Python or R.")}
         </p>
-        <p className="text-[#9bb3c9]">{tl("Free to use. Please credit RiftWatch (lolworlds.com/riftwatch) and Leaguepedia (CC BY-SA 3.0).")}</p>
+        <p className="text-[#9bb3c9]">{tl("Free to use. Please credit RiftWise (lolworlds.com/riftwise) and Leaguepedia (CC BY-SA 3.0).")}</p>
         {!IS_WEB && (
           <button
             type="button"
-            onClick={() => onOpenUrl?.("https://lolworlds.com/riftwatch/stats/data")}
+            onClick={() => onOpenUrl?.("https://lolworlds.com/riftwise/stats/data")}
             className="text-[#0ac8b9] hover:underline font-semibold"
           >
             {tl("Downloads work best in your browser: open this page there")}
@@ -117,7 +117,7 @@ const LeagueYears: React.FC<{ league: DownloadLeague; onOpenUrl?: (url: string) 
   const [busy, setBusy] = useState<string>("");
   const wholeYear = async (y: string) => {
     if (!IS_WEB && onOpenUrl) {
-      onOpenUrl("https://lolworlds.com/riftwatch/stats/data");
+      onOpenUrl("https://lolworlds.com/riftwise/stats/data");
       return;
     }
     const evs = league.y[y];

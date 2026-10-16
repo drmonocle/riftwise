@@ -3,6 +3,8 @@ import { Match, AppSettings, CatalogData, LiveShow } from "../../types";
 import { Tv, ExternalLink, Calendar, Clock, ChevronRight, Star, Swords } from "lucide-react";
 import { AddToCalendarMenu } from "../AddToCalendarMenu";
 import { MatchPrepButton } from "../MatchPrepButton";
+import { LiveGamePanel } from "../LiveGamePanel";
+import { WinChanceLine } from "../WinChanceLine";
 import { ShareMatchButton } from "../ShareMatchButton";
 import {
   getLeagueBroadcastStreams,
@@ -430,6 +432,12 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   </div>
                 )}
 
+                {/* The game being played: gold, objectives, players (spoiler mode hides it like the score) */}
+                <LiveGamePanel match={m} showStats={showScore} />
+                <div className="mt-2">
+                  <WinChanceLine match={m} />
+                </div>
+
                 {/* Action Footer */}
                 <div className="flex items-center justify-between pt-3 mt-2 border-t border-[#1e282d]/60 text-xs">
                   {(() => {
@@ -442,7 +450,12 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       return (
                         <span className="flex items-center gap-1.5 text-[#0ac8b9] font-bold text-[11px]">
                           <span className="w-2 h-2 rounded-full bg-[#0ac8b9]" />
-                          Final · {winnerName} Won ({Math.max(m.team1Score, m.team2Score)}-{Math.min(m.team1Score, m.team2Score)})
+                          {showScore
+                            ? tl("Final · {team} won {score}", {
+                                team: winnerName,
+                                score: `${Math.max(m.team1Score, m.team2Score)}-${Math.min(m.team1Score, m.team2Score)}`,
+                              })
+                            : tl("Series over")}
                         </span>
                       );
                     }
@@ -454,13 +467,16 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     );
                   })()}
 
-                  <button
-                    onClick={() => onOpenUrl(m.streamUrl || "https://lolesports.com")}
-                    className="flex items-center gap-1.5 px-3 py-1 rounded bg-[#0ac8b9] hover:bg-[#0ac8b9]/80 text-[#091428] font-bold text-xs transition-colors"
-                  >
-                    <Tv className="w-3.5 h-3.5" />
-                    <span>{tl("Watch Stream")}</span>
-                  </button>
+                  <span className="flex flex-wrap items-center justify-end gap-2">
+                    <MatchPrepButton match={m} />
+                    <button
+                      onClick={() => onOpenUrl(m.streamUrl || "https://lolesports.com")}
+                      className="flex items-center gap-1.5 px-3 py-1 rounded bg-[#0ac8b9] hover:bg-[#0ac8b9]/80 text-[#091428] font-bold text-xs transition-colors"
+                    >
+                      <Tv className="w-3.5 h-3.5" />
+                      <span>{tl("Watch Stream")}</span>
+                    </button>
+                  </span>
                 </div>
               </div>
             );

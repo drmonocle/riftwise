@@ -13,7 +13,7 @@ export class PartBoundary extends React.Component<{ children: React.ReactNode },
   }
 
   componentDidCatch(err: unknown): void {
-    console.error("RiftWatch: part of the app failed", err);
+    console.error("RiftWise: part of the app failed", err);
   }
 
   render(): React.ReactNode {

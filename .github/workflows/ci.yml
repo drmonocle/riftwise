@@ -30,7 +30,7 @@ jobs:
           retention-days: 1
 
   rust:
-    # RiftWatch is a Windows app (registry autostart, updater, hotkeys), so check it on Windows.
+    # RiftWise is a Windows app (registry autostart, updater, hotkeys), so check it on Windows.
     runs-on: windows-latest
     needs: frontend
     steps:

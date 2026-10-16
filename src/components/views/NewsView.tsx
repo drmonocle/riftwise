@@ -26,7 +26,7 @@ const RIOT_NEWS: Partial<Record<Lang, string>> = {
   tr: "tr-TR",
 };
 
-/** Outlets we link to. Descriptions are general; RiftWatch does not scrape or republish their articles. */
+/** Outlets we link to. Descriptions are general; RiftWise does not scrape or republish their articles. */
 const SOURCES: Source[] = [
   {
     name: "Riot LoL Esports",
@@ -281,7 +281,7 @@ export const NewsView: React.FC<NewsViewProps> = ({ onOpenUrl }) => {
         </h2>
         <div className="text-[11px] text-[#7e8e9f] mt-0.5">
           {tl(
-            "Links to LoL Esports outlets. RiftWatch does not show live headlines here.",
+            "Links to LoL Esports outlets. RiftWise does not show live headlines here.",
           )}
         </div>
       </div>

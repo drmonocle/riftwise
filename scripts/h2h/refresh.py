@@ -1,7 +1,7 @@
-"""Rebuild the live all-time head-to-head table for RiftWatch.
+"""Rebuild the live all-time head-to-head table for RiftWise.
 
-Starts from the newest stats build's head-to-head table (lolworlds.com/riftwatch/stats/<version>/hub/h2h/base.json:
-every game in the RiftWatch database, rebuilt whenever the database changes) or, if that can't be read, from the
+Starts from the newest stats build's head-to-head table (lolworlds.com/riftwise/stats/<version>/hub/h2h/base.json:
+every game in the RiftWise database, rebuilt whenever the database changes) or, if that can't be read, from the
 bundled src/all_time_h2h.json (every game up to BASE_CUTOFF), and adds every completed series since then from the
 lolesports API, across every league.
 Writes {"cutoff", "pairs", ...} to the output path; the app downloads it and counts schedule
@@ -34,11 +34,11 @@ CODE_ALIASES = {"TLAW": "TL", "MKOI": "MDK", "KRX": "DRX", "DNS": "KDF", "DNF": 
 
 API = "https://esports-api.lolesports.com/persisted/gw"
 # Public key used by the lolesports.com web client (same one the app uses).
-HEADERS = {"x-api-key": "0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z", "User-Agent": "RiftWatch-H2H/1.0"}
+HEADERS = {"x-api-key": "0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z", "User-Agent": "RiftWise-H2H/1.0"}
 # A match still marked unstarted this long after its start time is treated as postponed, not pending.
 STALE_PENDING = timedelta(hours=48)
 # The stats build's table (same games as the stats pages). H2H_HUB_BASE can point at a local file for testing.
-HUB = "https://lolworlds.com/riftwatch/stats"
+HUB = "https://lolworlds.com/riftwise/stats"
 
 
 def hub_base():
@@ -48,7 +48,7 @@ def hub_base():
         if local:
             data = json.load(open(local, encoding="utf-8"))
         else:
-            req = lambda u: urllib.request.Request(u, headers={"User-Agent": "RiftWatch-H2H/1.0"})
+            req = lambda u: urllib.request.Request(u, headers={"User-Agent": "RiftWise-H2H/1.0"})
             with urllib.request.urlopen(req(f"{HUB}/latest.json"), timeout=30) as r:
                 version = json.load(r)["version"]
             with urllib.request.urlopen(req(f"{HUB}/{version}/hub/h2h/base.json"), timeout=60) as r:

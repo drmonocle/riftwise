@@ -68,14 +68,14 @@ export const PushAlertsCard: React.FC<{ settings: AppSettings; onUpdateSettings:
           <span>{tl("Alerts on this device")}</span>
         </div>
         <div className="text-[11px] text-[#7e8e9f]">
-          {tl("Get an alert on this phone or computer when a team you follow is about to play, even with RiftWatch closed.")}
+          {tl("Get an alert on this phone or computer when a team you follow is about to play, even with RiftWise closed.")}
         </div>
       </div>
 
       {status === "unsupported" && <p className="text-xs text-[#9bb3c9]">{tl("This browser can't show alerts. Try Chrome, Edge, Firefox or Safari.")}</p>}
       {status === "needs-install" && (
         <p className="text-xs text-[#9bb3c9]">
-          {tl("On iPhone or iPad: tap Share, then Add to Home Screen. Open RiftWatch from your home screen, then turn on alerts here.")}
+          {tl("On iPhone or iPad: tap Share, then Add to Home Screen. Open RiftWise from your home screen, then turn on alerts here.")}
         </p>
       )}
       {status === "blocked" && (
@@ -141,7 +141,7 @@ export const PushAlertsCard: React.FC<{ settings: AppSettings; onUpdateSettings:
 
       {note && <p className="text-xs text-[#c8aa6e]">{note}</p>}
       <p className="text-[10px] text-[#7e8e9f]">
-        {tl("To send alerts, RiftWatch keeps this browser's alert address and the teams you follow. Nothing else. Turning alerts off deletes it.")}
+        {tl("To send alerts, RiftWise keeps this browser's alert address and the teams you follow. Nothing else. Turning alerts off deletes it.")}
       </p>
     </div>
   );

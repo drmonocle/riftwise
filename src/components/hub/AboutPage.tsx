@@ -7,7 +7,7 @@ export const REPORT_EMAIL = "kyle.l.hoover@gmail.com";
 
 /** mailto link for "Report a wrong stat", with the page it's about filled in. */
 export const reportUrl = (page: string) =>
-  `mailto:${REPORT_EMAIL}?subject=${encodeURIComponent("RiftWatch stats: wrong number")}&body=${encodeURIComponent(
+  `mailto:${REPORT_EMAIL}?subject=${encodeURIComponent("RiftWise stats: wrong number")}&body=${encodeURIComponent(
     `Page: ${page}\n\nWhat looks wrong:\n\nWhat it should be (and where you saw it):\n`,
   )}`;
 
@@ -82,7 +82,7 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
       </Section>
       <Section title={tl("Use the data")}>
         <p className="text-[#9bb3c9]">
-          {tl("Free to use, also in videos, articles and broadcasts. Please credit RiftWatch (lolworlds.com/riftwatch) and Leaguepedia.")}{" "}
+          {tl("Free to use, also in videos, articles and broadcasts. Please credit RiftWise (lolworlds.com/riftwise) and Leaguepedia.")}{" "}
           <HubLink to={{ kind: "data" }} className="text-[#0ac8b9] hover:underline font-semibold">
             {tl("Data downloads")}
           </HubLink>

@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  SignPath artifact configuration for RiftWatch. This is a reference copy: SignPath keeps its own
+  SignPath artifact configuration for RiftWise. This is a reference copy: SignPath keeps its own
   copy (Project > Artifact configurations > "Initial"/default), so paste this in there after the
   application is accepted and let SignPath's editor validate it.
 
-  The release workflow uploads RiftWatch.exe with actions/upload-artifact, which wraps it in a ZIP,
+  The release workflow uploads RiftWise.exe with actions/upload-artifact, which wraps it in a ZIP,
   so the root element is <zip-file>. product-name is enforced: SignPath Foundation requires product
   name and version metadata on every signed binary.
 -->
 <artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
   <zip-file>
-    <pe-file path="RiftWatch.exe" product-name="RiftWatch">
+    <pe-file path="RiftWise.exe" product-name="RiftWise">
       <authenticode-sign/>
     </pe-file>
   </zip-file>

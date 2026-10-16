@@ -107,6 +107,12 @@ export function isFinishedItem(name: string): boolean {
   return !maps.item[k] || !!maps.full[k];
 }
 
+/** Item picture by Riot item id (the live feed sends ids). */
+export function itemIconById(id: number | undefined): string | null {
+  if (!maps || !id) return null;
+  return `${DD}/${maps.v}/img/item/${id}.png`;
+}
+
 export function itemIcon(name: string | undefined): string | null {
   if (!maps || !name) return null;
   const id = maps.item[norm(name)];

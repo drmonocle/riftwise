@@ -32,7 +32,7 @@ export type LangSetting = Lang | "auto";
 export const TRANSLATION_EMAIL = "kyle.l.hoover@gmail.com";
 /** mailto: link with the language in the subject, so reports say which language they're about. */
 export const TRANSLATION_MAILTO = (): string =>
-  `mailto:${TRANSLATION_EMAIL}?subject=${encodeURIComponent(`RiftWatch translation (${current})`)}`;
+  `mailto:${TRANSLATION_EMAIL}?subject=${encodeURIComponent(`RiftWise translation (${current})`)}`;
 
 const CODES = LANGUAGES.map((l) => l.code) as readonly string[];
 

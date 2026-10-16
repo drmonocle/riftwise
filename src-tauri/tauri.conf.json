@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "RiftWatch",
-  "version": "0.3.40",
-  "identifier": "com.monocle.riftwatch",
+  "productName": "RiftWise",
+  "version": "0.4.0",
+  "identifier": "com.monocle.riftwise",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -13,35 +13,18 @@
     "windows": [
       {
         "label": "main",
-        "title": "RiftWatch",
+        "title": "RiftWise",
         "width": 1000,
         "height": 720,
         "minWidth": 720,
         "minHeight": 460,
         "center": true,
         "decorations": true
-      },
-      {
-        "label": "ticker",
-        "title": "RiftWatch HUD",
-        "url": "index.html?mode=detached",
-        "width": 720,
-        "height": 38,
-        "minWidth": 450,
-        "minHeight": 38,
-        "maxHeight": 38,
-        "decorations": false,
-        "transparent": true,
-        "alwaysOnTop": true,
-        "resizable": true,
-        "visible": false,
-        "focus": false,
-        "shadow": false
       }
     ],
     "security": {
-      "csp": "upgrade-insecure-requests; default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'; connect-src 'self' ipc: http://ipc.localhost https://esports-api.lolesports.com https://lolworlds.com https://api.github.com https://raw.githubusercontent.com https://ddragon.leagueoflegends.com",
-      "devCsp": "upgrade-insecure-requests; default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'; connect-src 'self' ws://localhost:1420 http://localhost:1420 ipc: http://ipc.localhost https://esports-api.lolesports.com https://lolworlds.com https://api.github.com https://raw.githubusercontent.com https://ddragon.leagueoflegends.com"
+      "csp": "upgrade-insecure-requests; default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'; connect-src 'self' ipc: http://ipc.localhost https://esports-api.lolesports.com https://feed.lolesports.com https://lolworlds.com https://api.github.com https://raw.githubusercontent.com https://ddragon.leagueoflegends.com",
+      "devCsp": "upgrade-insecure-requests; default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'; connect-src 'self' ws://localhost:1420 http://localhost:1420 ipc: http://ipc.localhost https://esports-api.lolesports.com https://feed.lolesports.com https://lolworlds.com https://api.github.com https://raw.githubusercontent.com https://ddragon.leagueoflegends.com"
     }
   },
   "bundle": {
@@ -49,7 +32,7 @@
     "targets": "all",
     "publisher": "Monocle Productions LLC",
     "copyright": "Copyright (c) 2026 Monocle Productions LLC",
-    "shortDescription": "RiftWatch: live LoL esports scores, standings and head-to-head records",
+    "shortDescription": "RiftWise: live LoL esports scores, standings and head-to-head records",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

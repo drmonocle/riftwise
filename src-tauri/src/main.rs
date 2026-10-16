@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    riftwatch_tauri_lib::run()
+    riftwise_tauri_lib::run()
 }

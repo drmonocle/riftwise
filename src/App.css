@@ -42,17 +42,22 @@
   font-size: 13px !important;
 }
 
-/* Custom Hextech scrollbars */
+/* Custom Hextech scrollbars. Sideways ones (wide tables) are thicker and brighter so they're easy to grab. */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 12px;
 }
 ::-webkit-scrollbar-track {
   background: #0a0e17;
+  border-radius: 6px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e282d;
-  border-radius: 3px;
+  background: #2c3c44;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:horizontal {
+  background: #3d5260;
+  border: 2px solid #0a0e17;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #c8aa6e;

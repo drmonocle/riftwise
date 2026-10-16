@@ -15,9 +15,9 @@ const indexHTML = `<!doctype html>
     <meta charset="UTF-8" />
     <meta
       name="description"
-      content="RiftWatch: live scores."
+      content="RiftWise: live scores."
     />
-    <title>RiftWatch</title>
+    <title>RiftWise</title>
   </head>
   <body><div id="root"></div></body>
 </html>`
@@ -34,12 +34,12 @@ func testSite(t *testing.T) *store {
 	must(os.MkdirAll(filepath.Join(hub, "seo"), 0o755))
 	must(os.WriteFile(filepath.Join(dir, "stats", "latest.json"), []byte(`{"version": "20261015000000"}`), 0o644))
 	files := map[string]string{
-		"team":   "t1\tT1 – stats | RiftWatch\tT1: 1,216-644 & more <b>\t1\nsmall-team\tSmall – stats | RiftWatch\tFew games\t0\n",
-		"player": "faker\tFaker – pro stats | RiftWatch\tFaker, Mid for T1.\t1\n",
-		"event":  "worlds-2025\tWorlds 2025 | RiftWatch\tWorlds 2025.\t1\n",
-		"game":   "worlds-2025-finals-1\tT1 vs KT | RiftWatch\tT1 vs KT.\t1\n",
-		"champ":  "ahri\tAhri in pro play | RiftWatch\tAhri.\t1\n",
-		"league": "lck\tLCK – every season | RiftWatch\tLCK.\t1\n",
+		"team":   "t1\tT1 – stats | RiftWise\tT1: 1,216-644 & more <b>\t1\nsmall-team\tSmall – stats | RiftWise\tFew games\t0\n",
+		"player": "faker\tFaker – pro stats | RiftWise\tFaker, Mid for T1.\t1\n",
+		"event":  "worlds-2025\tWorlds 2025 | RiftWise\tWorlds 2025.\t1\n",
+		"game":   "worlds-2025-finals-1\tT1 vs KT | RiftWise\tT1 vs KT.\t1\n",
+		"champ":  "ahri\tAhri in pro play | RiftWise\tAhri.\t1\n",
+		"league": "lck\tLCK – every season | RiftWise\tLCK.\t1\n",
 	}
 	for k, v := range files {
 		must(os.WriteFile(filepath.Join(hub, "seo", k+".tsv"), []byte(v), 0o644))
@@ -63,16 +63,16 @@ func get(s *store, path string) *httptest.ResponseRecorder {
 
 func TestPageGetsItsOwnTags(t *testing.T) {
 	s := testSite(t)
-	w := get(s, "/riftwatch/team/t1")
+	w := get(s, "/riftwise/team/t1")
 	body := w.Body.String()
 	if w.Code != 200 {
 		t.Fatalf("status %d", w.Code)
 	}
 	for _, want := range []string{
-		"<title>T1 – stats | RiftWatch</title>",
+		"<title>T1 – stats | RiftWise</title>",
 		`<meta name="description" content="T1: 1,216-644 &amp; more &lt;b&gt;" />`,
-		`<link rel="canonical" href="https://lolworlds.com/riftwatch/team/t1" />`,
-		`<meta property="og:title" content="T1 – stats | RiftWatch" />`,
+		`<link rel="canonical" href="https://lolworlds.com/riftwise/team/t1" />`,
+		`<meta property="og:title" content="T1 – stats | RiftWise" />`,
 		`<div id="root"></div>`,
 	} {
 		if !strings.Contains(body, want) {
@@ -85,51 +85,51 @@ func TestPageGetsItsOwnTags(t *testing.T) {
 }
 
 func TestThinPageIsNoindex(t *testing.T) {
-	if !strings.Contains(get(testSite(t), "/riftwatch/team/small-team").Body.String(), `content="noindex"`) {
+	if !strings.Contains(get(testSite(t), "/riftwise/team/small-team").Body.String(), `content="noindex"`) {
 		t.Error("expected noindex")
 	}
 }
 
 func TestUnknownAndOldNames(t *testing.T) {
 	s := testSite(t)
-	if w := get(s, "/riftwatch/player/nobody"); w.Code != 404 || !strings.Contains(w.Body.String(), `<div id="root">`) {
+	if w := get(s, "/riftwise/player/nobody"); w.Code != 404 || !strings.Contains(w.Body.String(), `<div id="root">`) {
 		t.Errorf("unknown player: %d", w.Code)
 	}
-	w := get(s, "/riftwatch/team/sk-telecom-t1")
-	if w.Code != 301 || w.Header().Get("Location") != "/riftwatch/team/t1" {
+	w := get(s, "/riftwise/team/sk-telecom-t1")
+	if w.Code != 301 || w.Header().Get("Location") != "/riftwise/team/t1" {
 		t.Errorf("old team name: %d %q", w.Code, w.Header().Get("Location"))
 	}
-	if w := get(s, "/riftwatch/stats/tournaments/2019"); w.Code != 200 || !strings.Contains(w.Body.String(), "in 2019") {
+	if w := get(s, "/riftwise/stats/tournaments/2019"); w.Code != 200 || !strings.Contains(w.Body.String(), "in 2019") {
 		t.Errorf("tournaments of a year: %d", w.Code)
 	}
-	if w := get(s, "/riftwatch/league/lck"); w.Code != 200 || !strings.Contains(w.Body.String(), "<title>LCK – every season | RiftWatch</title>") {
+	if w := get(s, "/riftwise/league/lck"); w.Code != 200 || !strings.Contains(w.Body.String(), "<title>LCK – every season | RiftWise</title>") {
 		t.Errorf("league page: %d", w.Code)
 	}
-	if w := get(s, "/riftwatch/stats/patches"); w.Code != 200 || !strings.Contains(w.Body.String(), "every patch") {
+	if w := get(s, "/riftwise/stats/patches"); w.Code != 200 || !strings.Contains(w.Body.String(), "every patch") {
 		t.Errorf("patches section: %d", w.Code)
 	}
-	if w := get(s, "/riftwatch/stats/data"); w.Code != 200 || !strings.Contains(w.Body.String(), "CSV") {
+	if w := get(s, "/riftwise/stats/data"); w.Code != 200 || !strings.Contains(w.Body.String(), "CSV") {
 		t.Errorf("data section: %d", w.Code)
 	}
-	if w := get(s, "/riftwatch/stats/nope"); w.Code != 404 {
+	if w := get(s, "/riftwise/stats/nope"); w.Code != 404 {
 		t.Errorf("unknown section: %d", w.Code)
 	}
 }
 
 func TestSitemaps(t *testing.T) {
 	s := testSite(t)
-	idx := get(s, "/riftwatch/sitemap.xml").Body.String()
+	idx := get(s, "/riftwise/sitemap.xml").Body.String()
 	if !strings.Contains(idx, "sitemap-team-1.xml") || !strings.Contains(idx, "sitemap-game-1.xml") {
 		t.Errorf("index: %s", idx)
 	}
-	teams := get(s, "/riftwatch/sitemap-team-1.xml").Body.String()
-	if !strings.Contains(teams, "/riftwatch/team/t1</loc>") || strings.Contains(teams, "small-team") {
+	teams := get(s, "/riftwise/sitemap-team-1.xml").Body.String()
+	if !strings.Contains(teams, "/riftwise/team/t1</loc>") || strings.Contains(teams, "small-team") {
 		t.Errorf("teams: %s", teams)
 	}
-	if !strings.Contains(get(s, "/riftwatch/sitemap-sections-1.xml").Body.String(), "/riftwatch/stats/records") {
+	if !strings.Contains(get(s, "/riftwise/sitemap-sections-1.xml").Body.String(), "/riftwise/stats/records") {
 		t.Error("sections sitemap")
 	}
-	if !strings.Contains(idx, "sitemap-league-1.xml") || !strings.Contains(get(s, "/riftwatch/sitemap-league-1.xml").Body.String(), "/riftwatch/league/lck</loc>") {
+	if !strings.Contains(idx, "sitemap-league-1.xml") || !strings.Contains(get(s, "/riftwise/sitemap-league-1.xml").Body.String(), "/riftwise/league/lck</loc>") {
 		t.Error("league sitemap")
 	}
 }
@@ -143,10 +143,10 @@ func TestOldBuildWithoutLeagues(t *testing.T) {
 	if s2.version == "" {
 		t.Fatal("build without league.tsv was rejected")
 	}
-	if w := get(s2, "/riftwatch/team/t1"); w.Code != 200 {
+	if w := get(s2, "/riftwise/team/t1"); w.Code != 200 {
 		t.Errorf("team page: %d", w.Code)
 	}
-	if w := get(s2, "/riftwatch/league/lck"); w.Code != 404 {
+	if w := get(s2, "/riftwise/league/lck"); w.Code != 404 {
 		t.Errorf("league page without data: %d", w.Code)
 	}
 }

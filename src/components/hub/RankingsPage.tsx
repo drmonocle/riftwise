@@ -1,7 +1,7 @@
 /**
  * Power rankings: every active pro team on one scale across all regions (Elo over every pro game since 2011,
  * scripts/stats/ratings.py), league strength, and how often the higher-rated team actually won.
- * Address: /riftwatch/stats/rankings
+ * Address: /riftwise/stats/rankings
  */
 import React, { useMemo, useState } from "react";
 import { tl, tn } from "../../i18n";
@@ -173,7 +173,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
 
       <Section
         title={tl("Power rankings")}
-        share={`riftwatch-power-rankings${league ? "-" + league : ""}`}
+        share={`riftwise-power-rankings${league ? "-" + league : ""}`}
         right={
           <span
             className="flex flex-wrap items-center gap-2 text-xs"
@@ -242,7 +242,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           initial={{ key: "rank", desc: false }}
           rowKey={(x) => x.r[0]}
           limit={league ? undefined : limit}
-          copyName={`riftwatch-power-rankings${league ? "-" + league : ""}`}
+          copyName={`riftwise-power-rankings${league ? "-" + league : ""}`}
         />
         {!league && (
           <p className="text-[11px] text-[#7e8e9f]" data-nocapture="1">
@@ -256,7 +256,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       <div className="grid gap-3 md:grid-cols-2">
         <Section
           title={tl("League strength")}
-          share="riftwatch-league-strength"
+          share="riftwise-league-strength"
         >
           <p className="text-[11px] text-[#7e8e9f]">
             {tl("Average rating of each league's best four teams.")}

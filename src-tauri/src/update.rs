@@ -2,7 +2,7 @@
 
 use sha2::{Digest, Sha256};
 
-const RELEASE_DOWNLOAD_PREFIX: &str = "https://github.com/drmonocle/riftwatch/releases/download/";
+const RELEASE_DOWNLOAD_PREFIX: &str = "https://github.com/drmonocle/riftwise/releases/download/";
 
 /// Largest update binary we are willing to download (bytes).
 pub const MAX_UPDATE_BYTES: u64 = 100 * 1024 * 1024;
@@ -17,7 +17,7 @@ fn is_safe_segment(s: &str, allow_plus: bool) -> bool {
         })
 }
 
-/// True only for `https://github.com/drmonocle/riftwatch/releases/download/<tag>/<file>`.
+/// True only for `https://github.com/drmonocle/riftwise/releases/download/<tag>/<file>`.
 /// Rejects dot-segments, query strings, fragments, percent-escapes and extra path parts.
 pub fn is_official_release_asset(url: &str) -> bool {
     let Some(rest) = url.strip_prefix(RELEASE_DOWNLOAD_PREFIX) else {
@@ -40,7 +40,7 @@ pub fn parse_sha256(text: &str) -> Option<String> {
     }
 }
 
-/// Where the running exe is moved during an update: `RiftWatch.exe` -> `RiftWatch.exe.old`.
+/// Where the running exe is moved during an update: `RiftWise.exe` -> `RiftWise.exe.old`.
 pub fn old_exe_path(exe: &std::path::Path) -> std::path::PathBuf {
     let mut name = exe.file_name().map(|n| n.to_os_string()).unwrap_or_default();
     name.push(".old");
@@ -59,28 +59,28 @@ mod tests {
     #[test]
     fn accepts_official_assets() {
         assert!(is_official_release_asset(
-            "https://github.com/drmonocle/riftwatch/releases/download/v0.3.7/RiftWatch.exe"
+            "https://github.com/drmonocle/riftwise/releases/download/v0.3.7/RiftWise.exe"
         ));
         assert!(is_official_release_asset(
-            "https://github.com/drmonocle/riftwatch/releases/download/v0.3.7/RiftWatch.exe.sha256"
+            "https://github.com/drmonocle/riftwise/releases/download/v0.3.7/RiftWise.exe.sha256"
         ));
     }
 
     #[test]
     fn rejects_everything_else() {
         let bad = [
-            "http://github.com/drmonocle/riftwatch/releases/download/v1/RiftWatch.exe",
-            "https://github.com/drmonocle/riftwatch/releases/",
-            "https://github.com/drmonocle/riftwatch/releases/latest/download/RiftWatch.exe",
-            "https://github.com/drmonocle/riftwatch/releases/download/../../evil/x.exe",
-            "https://github.com/drmonocle/riftwatch/releases/download/v1/../x.exe",
-            "https://github.com/drmonocle/riftwatch/releases/download/v1/%2e%2e/x.exe",
-            "https://github.com/drmonocle/riftwatch/releases/download/v1/a.exe?x=1",
-            "https://github.com/drmonocle/riftwatch/releases/download/v1/a.exe#frag",
-            "https://github.com/drmonocle/riftwatch/releases/download/v1/a/b.exe",
-            "https://github.com/drmonocle/riftwatch/releases/download/v1/",
-            "https://github.com/drmonocle/riftwatch-evil/releases/download/v1/a.exe",
-            "https://github.com.evil.com/drmonocle/riftwatch/releases/download/v1/a.exe",
+            "http://github.com/drmonocle/riftwise/releases/download/v1/RiftWise.exe",
+            "https://github.com/drmonocle/riftwise/releases/",
+            "https://github.com/drmonocle/riftwise/releases/latest/download/RiftWise.exe",
+            "https://github.com/drmonocle/riftwise/releases/download/../../evil/x.exe",
+            "https://github.com/drmonocle/riftwise/releases/download/v1/../x.exe",
+            "https://github.com/drmonocle/riftwise/releases/download/v1/%2e%2e/x.exe",
+            "https://github.com/drmonocle/riftwise/releases/download/v1/a.exe?x=1",
+            "https://github.com/drmonocle/riftwise/releases/download/v1/a.exe#frag",
+            "https://github.com/drmonocle/riftwise/releases/download/v1/a/b.exe",
+            "https://github.com/drmonocle/riftwise/releases/download/v1/",
+            "https://github.com/drmonocle/riftwise-evil/releases/download/v1/a.exe",
+            "https://github.com.evil.com/drmonocle/riftwise/releases/download/v1/a.exe",
             "",
         ];
         for u in bad {
@@ -91,7 +91,7 @@ mod tests {
     #[test]
     fn parses_checksum_files() {
         let h = "a".repeat(64);
-        assert_eq!(parse_sha256(&format!("{h}  RiftWatch.exe\n")), Some(h.clone()));
+        assert_eq!(parse_sha256(&format!("{h}  RiftWise.exe\n")), Some(h.clone()));
         assert_eq!(parse_sha256(&h.to_uppercase()), Some(h));
         assert_eq!(parse_sha256("not a hash"), None);
         assert_eq!(parse_sha256(&"g".repeat(64)), None);
@@ -100,8 +100,8 @@ mod tests {
 
     #[test]
     fn old_exe_sits_beside_the_exe() {
-        let p = std::path::Path::new("C:/Apps/RiftWatch/RiftWatch.exe");
-        assert_eq!(old_exe_path(p), std::path::Path::new("C:/Apps/RiftWatch/RiftWatch.exe.old"));
+        let p = std::path::Path::new("C:/Apps/RiftWise/RiftWise.exe");
+        assert_eq!(old_exe_path(p), std::path::Path::new("C:/Apps/RiftWise/RiftWise.exe.old"));
     }
 
     #[test]

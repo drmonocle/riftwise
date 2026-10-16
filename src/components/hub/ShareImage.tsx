@@ -1,5 +1,5 @@
 /**
- * "Copy image" / "Save image" for a stats section: a PNG of exactly what's shown, with a small RiftWatch footer,
+ * "Copy image" / "Save image" for a stats section: a PNG of exactly what's shown, with a small RiftWise footer,
  * ready to paste into X, Discord or a broadcast graphic. Champion and item pictures come from Riot's Data Dragon,
  * which allows this (it sends Access-Control-Allow-Origin: *).
  */
@@ -27,8 +27,8 @@ async function capture(node: HTMLElement): Promise<Blob | null> {
 /** Shown only inside the picture. */
 export const CaptureFooter: React.FC = () => (
   <div className="rw-capture-only items-center justify-between gap-3 pt-2 mt-1 border-t border-[#1e282d] text-[10px] text-[#7e8e9f]">
-    <span className="font-bold text-[#c8aa6e]">RiftWatch Pro Stats</span>
-    <span>lolworlds.com/riftwatch · {new Date().toISOString().slice(0, 10)}</span>
+    <span className="font-bold text-[#c8aa6e]">RiftWise Pro Stats</span>
+    <span>lolworlds.com/riftwise · {new Date().toISOString().slice(0, 10)}</span>
   </div>
 );
 
@@ -59,7 +59,7 @@ export const ShareButtons: React.FC<{ target: React.RefObject<HTMLElement | null
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${name.replace(/[^\w.-]+/g, "-").slice(0, 80) || "riftwatch"}.png`;
+      a.download = `${name.replace(/[^\w.-]+/g, "-").slice(0, 80) || "riftwise"}.png`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       flash("");

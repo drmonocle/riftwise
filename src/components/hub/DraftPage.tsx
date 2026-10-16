@@ -2,7 +2,7 @@
  * Draft board: plan a draft between two pro teams in tournament order (3 bans, 3 picks, 2 bans, 2 picks per side)
  * with both teams' champion pools in view: how often each team picked or banned a champion over the chosen period,
  * how it went, who on the roster plays it, and each team's best picks still open. Fearless mode keeps the
- * champions of earlier games out. Address: /riftwatch/stats/draft?teams=t1,gen-g&p=y2026
+ * champions of earlier games out. Address: /riftwise/stats/draft?teams=t1,gen-g&p=y2026
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { RotateCcw, Undo2, ArrowLeftRight, ChevronsRight } from "lucide-react";

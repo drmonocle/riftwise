@@ -17,11 +17,11 @@ import (
 	webpush "github.com/SherClockHolmes/webpush-go"
 )
 
-// Riot's public key used by lolesports.com (the same one the RiftWatch app uses).
+// Riot's public key used by lolesports.com (the same one the RiftWise app uses).
 const riotKey = "0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z"
 const riotBase = "https://esports-api.lolesports.com/persisted/gw"
 const streamScheduleURL = "https://lolworlds.com/api.ashx?type=schedule-json"
-const streamStatusURL = "https://lolworlds.com/riftwatch/stream-status.json"
+const streamStatusURL = "https://lolworlds.com/riftwise/stream-status.json"
 
 const (
 	pollEvery     = 45 * time.Second
@@ -179,7 +179,7 @@ func (a *App) sendOne(s *Sub, msg []byte, ttl int) bool {
 		Endpoint: s.Endpoint,
 		Keys:     webpush.Keys{P256dh: s.P256dh, Auth: s.Auth},
 	}, &webpush.Options{
-		Subscriber:      "https://lolworlds.com/riftwatch/",
+		Subscriber:      "https://lolworlds.com/riftwise/",
 		VAPIDPublicKey:  a.vapid.Public,
 		VAPIDPrivateKey: a.vapid.Private,
 		TTL:             ttl,
@@ -353,7 +353,7 @@ func (a *App) alertMatch(kind, id string, e riotEvent, t1, t2 string, minutes in
 		return
 	}
 	bo := fmt.Sprint(e.Match.Strategy.Count)
-	url := "/riftwatch/#match/" + id
+	url := "/riftwise/#match/" + id
 	ok := a.sendTo(subs, map[string]int{"kickoff": 1800, "pregame": 900}[kind], func(lang string) payload {
 		league := a.leagueName(lang, e.League.Slug, e.League.Name)
 		if kind == "pregame" {
@@ -442,7 +442,7 @@ func (a *App) pollStream() {
 			return payload{
 				Title: "🔥 " + a.tr(lang, "S-TIER BANGER AIRING NOW", nil),
 				Body:  a.tr(lang, "{matchup} ({event}) is playing on the 24/7 stream!", map[string]string{"matchup": matchup, "event": event}),
-				URL:   "/riftwatch/", Tag: "banger-" + ev.ID,
+				URL:   "/riftwise/", Tag: "banger-" + ev.ID,
 			}
 		})
 		log.Printf("banger %s: sent %d/%d", ev.ID, ok, len(subs))
@@ -461,13 +461,13 @@ func (a *App) sendSample(kind, team string) int {
 		switch kind {
 		case "kickoff":
 			return payload{Title: "🔴 " + a.tr(lang, "MATCH LIVE: {a} vs {b}", map[string]string{"a": team, "b": "GEN"}),
-				Body: a.tr(lang, "{league} match is now live! (Bo{n})", map[string]string{"league": "LCK", "n": "5"}), URL: "/riftwatch/", Tag: "sample"}
+				Body: a.tr(lang, "{league} match is now live! (Bo{n})", map[string]string{"league": "LCK", "n": "5"}), URL: "/riftwise/", Tag: "sample"}
 		case "pregame":
 			return payload{Title: "⏰ " + a.tr(lang, "Starting soon: {a} vs {b}", map[string]string{"a": team, "b": "GEN"}),
-				Body: a.tr(lang, "{league} · starts in {n} min", map[string]string{"league": a.leagueName(lang, "worlds", "Worlds"), "n": "15"}), URL: "/riftwatch/", Tag: "sample"}
+				Body: a.tr(lang, "{league} · starts in {n} min", map[string]string{"league": a.leagueName(lang, "worlds", "Worlds"), "n": "15"}), URL: "/riftwise/", Tag: "sample"}
 		case "banger":
 			return payload{Title: "🔥 " + a.tr(lang, "S-TIER BANGER AIRING NOW", nil),
-				Body: a.tr(lang, "{matchup} ({event}) is playing on the 24/7 stream!", map[string]string{"matchup": "SKT vs SSG", "event": a.tr(lang, "event::Worlds", nil) + " S7 (2017)"}), URL: "/riftwatch/", Tag: "sample"}
+				Body: a.tr(lang, "{matchup} ({event}) is playing on the 24/7 stream!", map[string]string{"matchup": "SKT vs SSG", "event": a.tr(lang, "event::Worlds", nil) + " S7 (2017)"}), URL: "/riftwise/", Tag: "sample"}
 		}
 		return a.testPayload(lang)
 	})
@@ -475,8 +475,8 @@ func (a *App) sendSample(kind, team string) int {
 
 func (a *App) testPayload(lang string) payload {
 	return payload{
-		Title: a.tr(lang, "RiftWatch test alert", nil),
+		Title: a.tr(lang, "RiftWise test alert", nil),
 		Body:  a.tr(lang, "Alerts work. You'll get one like this when a team you follow starts a match.", nil),
-		URL:   "/riftwatch/", Tag: "test",
+		URL:   "/riftwise/", Tag: "test",
 	}
 }

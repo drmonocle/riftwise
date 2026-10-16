@@ -90,7 +90,7 @@ export const Stat: React.FC<{ label: string; value: React.ReactNode; sub?: React
   </div>
 );
 
-/** A titled card. With `share` (a file name) it gets Copy image / Save image buttons and a RiftWatch footer in the picture. */
+/** A titled card. With `share` (a file name) it gets Copy image / Save image buttons and a RiftWise footer in the picture. */
 export const Section: React.FC<{ title: string; children: React.ReactNode; right?: React.ReactNode; id?: string; share?: string }> = ({
   title,
   children,
@@ -121,7 +121,7 @@ export function usePageTitle(title: string | null | undefined): void {
   useEffect(() => {
     if (!title || !IS_WEB) return;
     const before = document.title;
-    document.title = `${title} | RiftWatch`;
+    document.title = `${title} | RiftWise`;
     return () => {
       document.title = before;
     };
@@ -278,7 +278,7 @@ export const RevealButton: React.FC<{ onReveal: () => void; small?: boolean }> =
   </button>
 );
 
-/** Copies the page's web address (lolworlds.com/riftwatch/...), also from the desktop app. */
+/** Copies the page's web address (lolworlds.com/riftwise/...), also from the desktop app. */
 export const CopyLinkButton: React.FC<{ url: string }> = ({ url }) => {
   const [copied, setCopied] = useState(false);
   useEffect(() => {
