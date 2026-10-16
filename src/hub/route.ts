@@ -5,6 +5,7 @@
  *   /riftwatch/stats                      hub front page
  *   /riftwatch/stats/<section>[/<year>]   tournaments, leagues, champions, patches, records, titles, compare
  *   /riftwatch/stats/compare?teams=t1,gen-g&p=y2026   a comparison (players=..., p = period: all, last20, y2026, e:<event>)
+ *   /riftwatch/stats/champions?league=lck&year=2026&event=..&patch=26.18&side=b&role=Mid   champion stats with filters
  *   /riftwatch/player/<slug>              /team/<slug>  /tournament/<slug>  /match/<slug>  /champion/<slug>  /league/<slug>
  *
  * The desktop app has no address bar, so it keeps its own back stack instead.
@@ -17,7 +18,7 @@ export type HubEntity = "team" | "player" | "event" | "match" | "champ" | "leagu
 
 export type HubRoute =
   | { kind: "home" }
-  | { kind: HubSection; year?: string; mode?: "team" | "player"; a?: string; b?: string; period?: string }
+  | { kind: HubSection; year?: string; mode?: "team" | "player"; a?: string; b?: string; period?: string; query?: string }
   | { kind: HubEntity; slug: string };
 
 export const HUB_HOME: HubRoute = { kind: "home" };
@@ -47,6 +48,8 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
     if ((SECTIONS as string[]).includes(parts[1])) {
       const kind = parts[1] as HubSection;
       if (kind === "compare") return { kind, ...parseCompare(search) };
+      // the Champions page keeps its filters in the address (?league=lck&year=2026&patch=26.18...)
+      if (kind === "champions" && search.replace(/^\?/, "")) return { kind, query: search.replace(/^\?/, "") };
       return kind === "tournaments" && parts[2] && /^\d{4}$/.test(parts[2]) ? { kind, year: parts[2] } : { kind };
     }
     return null;
@@ -70,6 +73,7 @@ export function hubPath(r: HubRoute): string {
     const q = `${r.mode === "player" ? "players" : "teams"}=${[r.a || "", r.b || ""].map(encodeURIComponent).join(",")}`;
     return `${BASE}stats/compare?${q}${r.period && r.period !== "all" ? `&p=${encodeURIComponent(r.period)}` : ""}`;
   }
+  if (r.kind === "champions" && "query" in r && r.query) return `${BASE}stats/champions?${r.query}`;
   if ((SECTIONS as string[]).includes(r.kind)) {
     const y = "year" in r && r.year ? `/${r.year}` : "";
     return `${BASE}stats/${r.kind}${y}`;

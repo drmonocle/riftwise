@@ -380,8 +380,19 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
 const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
   const games = e.statsGames || 0;
   const rows = useMemo(() => (e.champs || []).slice(0, 20), [e.champs]);
+  // the Champions page with this tournament picked: every champion, by patch / side / role, blind picks
+  const year = (e.start || e.end || "").slice(0, 4);
+  const more =
+    e.lu && /^\d{4}$/.test(year) ? (
+      <HubLink
+        to={{ kind: "champions", query: new URLSearchParams({ league: e.lu, year, ...(e.whole ? {} : { event: e.u }) }).toString() }}
+        className="text-[11px] text-[#0ac8b9] hover:underline"
+      >
+        {tl("Every champion, with filters")}
+      </HubLink>
+    ) : undefined;
   return (
-    <Section title={tl("Champions")}>
+    <Section title={tl("Champions")} right={more}>
       <table className="w-full text-xs">
         <thead>
           <tr>

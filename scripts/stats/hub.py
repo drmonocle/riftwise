@@ -627,6 +627,7 @@ def build(ctx) -> dict:
         return tp_m, tts_m, tc_m, facts_m, ev_m, tteam_m, regions_m, last, sum(p["stats"] for p in parts)
 
     kept = {}                          # stage -> its sums, for the whole-event page
+    champ_games = defaultdict(lambda: {"ev": {}, "g": []})  # (league slug, year) -> champion game log
     t_games = defaultdict(list)        # fid -> every game: see teamgames/<slug>.json
 
     for op in ops:
@@ -1001,6 +1002,31 @@ def build(ctx) -> dict:
                                 tc[r["champion"]][0] += 1
                                 tc[r["champion"]][1] += won
                         item["p"] = plist
+                    # Champion game log per league and year (the Champions page filters)
+                    lu_c = league_slug.get(info.get("League"))
+                    if lu_c and g["t1"] and g["t2"] and g["w"]:
+                        rows_by = defaultdict(dict)  # team -> champion -> scoreboard row
+                        for r in rows:
+                            if r["champion"]:
+                                rows_by[r["team"]][r["champion"]] = r
+                        picks_out = []
+                        for side, tname_c in (("blue", g["t1"]), ("red", g["t2"])):
+                            team_rows = rows_by.get(tname_c, {})
+                            order = (sides.get(side) or {}).get("picks") or [
+                                r["champion"] for r in sorted(team_rows.values(), key=lambda r: ROLE_ORDER.get(r["role"] or "", 9))]
+                            lst = []
+                            for ch in order:
+                                r = team_rows.get(ch)
+                                lst.append([ch, -1] if r is None else [ch, ROLE_ORDER.get(r["role"] or "", -1), r["kills"], r["deaths"],
+                                                                       r["assists"], r["cs"], r["gold"], r["damage"]])
+                            picks_out.append(lst)
+                        if picks_out[0] or picks_out[1]:
+                            cg = champ_games[(lu_c, (g["date"] or "0000")[:4])]
+                            ei = cg["ev"].setdefault(eslug, (len(cg["ev"]), en))[0]
+                            cg["g"].append([g["date"][:10], fix_patch(g["patch"], g["date"]) or "", ei, 1 if g["w"] == g["t1"] else 0,
+                                            item.get("min"), picks_out[0], picks_out[1],
+                                            (sides.get("blue") or {}).get("bans") or [], (sides.get("red") or {}).get("bans") or [],
+                                            1 if (sides.get("blue") or {}).get("picks") else 0])
                     # Bans count for champion and tournament pages
                     for sd in sides.values():
                         for ch in sd.get("bans", []):
@@ -1507,6 +1533,18 @@ def build(ctx) -> dict:
                               f"every winner and full results, standings and stats.", 1 if primary or len(lst) >= 4 else 0))
     leagues_out.sort(key=lambda x: (-x["pr"], -x["g"]))
     out.json("leagues.json", leagues_out)
+
+    # -- champion game logs per league and year, and their index -----------------------------------
+    cg_years = defaultdict(dict)
+    for (lu_c, year_c), cg in champ_games.items():
+        if not year_c.isdigit():
+            continue
+        cg["g"].sort(key=lambda x: x[0])
+        events_c = [[slug_c, name_c] for slug_c, (_, name_c) in sorted(cg["ev"].items(), key=lambda kv: kv[1][0])]
+        out.json(f"champgames/{lu_c}/{year_c}.json", {"events": events_c, "games": cg["g"]})
+        cg_years[lu_c][year_c] = len(cg["g"])
+    out.json("champgames/index.json", [{"u": l["u"], "l": l["l"], "r": l["r"], "pr": l["pr"], "y": cg_years[l["u"]]}
+                                       for l in leagues_out if l["u"] in cg_years])
 
     # -- browse, search, home, meta ----------------------------------------------------------
     search_events = []

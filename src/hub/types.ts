@@ -125,6 +125,8 @@ export interface HubEvent {
   teamStats?: EventTeamStats[];
   /** league page slug */
   lu?: string | null;
+  /** a whole event (Worlds = Play-In + Main Event): its tables sum its stages */
+  whole?: number;
   overview?: EventOverview | null;
   rosters?: EventRoster[];
   /** international events: series won between regions */
@@ -505,4 +507,22 @@ export interface HubLeague {
   primary: boolean;
   events: (EventListItem & { y: string })[];
   titles: { t: string; u: string | null; n: number }[];
+}
+
+// ── champion game logs per league and year (Champions page filters) ──
+
+/** [champion, role 0-4 (-1 unknown), kills, deaths, assists, cs, gold, damage] (stats missing without a scoreboard) */
+export type ChampPick = [string, number, number?, number?, number?, number?, number?, number?];
+/** [date, patch, event index, blue won 1/0, minutes, blue picks, red picks, blue bans, red bans, draft order known 1/0] */
+export type ChampGame = [string, string, number, number, number | null, ChampPick[], ChampPick[], string[], string[], number];
+export interface ChampGamesFile {
+  events: [string, string][];
+  games: ChampGame[];
+}
+export interface ChampLeagueIndex {
+  u: string;
+  l: string;
+  r: string | null;
+  pr: number;
+  y: Record<string, number>;
 }
