@@ -1051,6 +1051,7 @@
   "No leagues match.": "該当するリーグがありません。",
   "All {n} teams": "全{n}チーム",
   "This list has the teams in top leagues, the only ones that meet across regions. Pick a second-tier league above (LCK CL, LFL, NACL...) to see its teams.": "この一覧は地域をまたいで対戦するトップリーグのチームだけです。下部リーグ（LCK CL、LFL、NACL など）のチームは上でリーグを選んでください。",
+  "Top-league teams against second-tier teams ({n} games since {year}): we gave the top-league team {pred} on average, and it won {won}.": "トップリーグのチーム対下部リーグのチーム（{year}年以降 {n}ゲーム）：トップリーグ側の勝率を平均{pred}と見て、実際の勝率は{won}でした。",
   "now {team}": "現 {team}",
   "title match::Final": "決勝",
   "title winner::Champion": "優勝",

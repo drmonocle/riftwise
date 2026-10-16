@@ -320,6 +320,8 @@ export interface HubRatings {
     all: RatingScore;
     intl: RatingScore;
     settled: RatingScore;
+    /** games between a top-league and a second-tier team: average chance we gave the top-league side, how often it won */
+    cross?: { n: number; pred?: number; won?: number };
     /** favourite's chance from-to (%), games, how often the favourite won */
     calibration: [number, number, number, number][];
   };

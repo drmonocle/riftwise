@@ -1051,6 +1051,7 @@
   "No leagues match.": "沒有符合的聯賽。",
   "All {n} teams": "全部 {n} 支隊伍",
   "This list has the teams in top leagues, the only ones that meet across regions. Pick a second-tier league above (LCK CL, LFL, NACL...) to see its teams.": "此列表只包含頂級聯賽的隊伍，只有它們會跨賽區交手。想看次級聯賽（LCK CL、LFL、NACL 等）的隊伍，請在上方選擇聯賽。",
+  "Top-league teams against second-tier teams ({n} games since {year}): we gave the top-league team {pred} on average, and it won {won}.": "頂級聯賽隊伍對陣次級聯賽隊伍（{year} 年以來 {n} 小局）：我們平均給頂級聯賽一方 {pred} 的勝率，實際勝率為 {won}。",
   "now {team}": "現為 {team}",
   "title match::Final": "決賽",
   "title winner::Champion": "冠軍",
