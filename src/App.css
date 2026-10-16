@@ -96,3 +96,41 @@
 .page-5xl {
   --page-w: 64rem;
 }
+
+/* Caster sheet (Match prep -> Print sheet): a print-only copy of the page under <body>, black on white. */
+.rw-sheet {
+  display: none;
+}
+@media print {
+  @page {
+    margin: 10mm;
+  }
+  body.rw-printing > *:not(.rw-sheet) {
+    display: none !important;
+  }
+  html:has(body.rw-printing),
+  body.rw-printing {
+    background: #fff !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  body.rw-printing .rw-sheet {
+    display: block !important;
+    color: #111;
+  }
+  .rw-sheet * {
+    color: #111 !important;
+    background: transparent !important;
+    border-color: #c9c9c9 !important;
+    box-shadow: none !important;
+  }
+  .rw-sheet section,
+  .rw-sheet li,
+  .rw-sheet tr {
+    break-inside: avoid;
+  }
+  .rw-sheet button,
+  .rw-sheet [data-nocapture="1"] {
+    display: none !important;
+  }
+}

@@ -11,8 +11,9 @@ import {
   Layers,
   History,
   Database,
+  TrendingUp,
 } from "lucide-react";
-import { AppSettings } from "../../types";
+import { AppSettings, Match } from "../../types";
 import { IS_WEB } from "../../platform";
 import {
   StatsMeta,
@@ -157,6 +158,9 @@ import { ChampionsPage } from "../hub/ChampionsPage";
 import { AboutPage, reportUrl } from "../hub/AboutPage";
 import { DownloadsPage } from "../hub/DownloadsPage";
 import { PrepPage } from "../hub/PrepPage";
+import { RankingsPage } from "../hub/RankingsPage";
+import { FinderPage } from "../hub/FinderPage";
+import { DraftPage } from "../hub/DraftPage";
 import { LeaguePage, LeaguesPanel, PatchesPanel } from "../hub/MetaPages";
 import { HubHome, EventsBrowse } from "../hub/HubHome";
 import { TeamPage } from "../hub/TeamPage";
@@ -168,6 +172,8 @@ import { ChampPage } from "../hub/ChampPage";
 interface StatsViewProps {
   settings: AppSettings;
   onOpenUrl: (url: string) => void;
+  /** upcoming matches (for "On the line today" on the stats home) */
+  schedule?: Match[];
 }
 
 const SECTIONS: {
@@ -185,6 +191,11 @@ const SECTIONS: {
     kind: "leagues",
     label: tk("Leagues"),
     icon: <Layers className="w-3.5 h-3.5" />,
+  },
+  {
+    kind: "rankings",
+    label: tk("Rankings"),
+    icon: <TrendingUp className="w-3.5 h-3.5" />,
   },
   {
     kind: "champions",
@@ -511,6 +522,7 @@ const TitlesPanel: React.FC = () => {
 export const StatsView: React.FC<StatsViewProps> = ({
   settings,
   onOpenUrl,
+  schedule,
 }) => {
   useChampionNames();
   useDDragon();
@@ -539,7 +551,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
           </h2>
           {hubMeta.data && (
             <span className="text-[11px] text-[#7e8e9f]">
-              {tl("{n} pro games · {from}–{to} · updated daily", {
+              {tl("{n} pro games · {from}–{to} · updated through the day", {
                 n: fmtNum(hubMeta.data.games),
                 from: "2011",
                 to:
@@ -595,7 +607,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
           </p>
         )}
 
-        {route.kind === "home" && <HubHome />}
+        {route.kind === "home" && <HubHome schedule={schedule} />}
         {route.kind === "tournaments" && (
           <EventsBrowse
             year={route.year}
@@ -620,6 +632,9 @@ export const StatsView: React.FC<StatsViewProps> = ({
         {route.kind === "data" && <DownloadsPage onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
         {route.kind === "about" && <AboutPage onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
         {route.kind === "prep" && <PrepPage route={route as PrepRoute} />}
+        {route.kind === "rankings" && <RankingsPage />}
+        {route.kind === "finder" && <FinderPage query={"query" in route ? route.query : undefined} />}
+        {route.kind === "draft" && <DraftPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "titles" && <TitlesPanel />}
         {route.kind === "compare" && <ComparePage route={route as CompareRoute} />}
         {route.kind === "team" && <TeamPage slug={route.slug} />}
@@ -634,7 +649,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
 
         <p className="text-[10px] text-[#7e8e9f] text-center pt-2">
           {tl(
-            "Stats come from RiftWatch's pro games catalog (built from public Leaguepedia data) and are rebuilt every night.",
+            "Stats come from RiftWatch's pro games catalog (built from public Leaguepedia data) and are rebuilt whenever new games come in.",
           )}
         </p>
         <p className="text-[11px] text-center flex flex-wrap justify-center gap-x-3 gap-y-1">

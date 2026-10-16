@@ -33,7 +33,7 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
         <ul className="list-disc pl-4 space-y-1 text-[#9bb3c9]">
           <li>{tl("Leaguepedia (lol.fandom.com): every pro game since 2011, with scoreboards, drafts, rosters, results and prize money. Shared under the CC BY-SA 3.0 license.")}</li>
           <li>{tl("Riot's esports schedule: live scores and upcoming matches.")}</li>
-          <li>{tl("Everything is rebuilt every night (about 6:15 AM US Eastern). Games from the last day or two can still be missing details.")}</li>
+          <li>{tl("The stats are rebuilt whenever new games come in: results show up within a few hours of a series, full game stats (KDA, gold, items) overnight. The newest games can be missing details until then.")}</li>
         </ul>
       </Section>
       <Section title={tl("What counts")}>

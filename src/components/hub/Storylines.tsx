@@ -1,5 +1,5 @@
 /**
- * Storylines: milestones within reach, streaks, unbeaten runs (worked out nightly into the team / player files and
+ * Storylines: milestones within reach, streaks, unbeaten runs (worked out by each stats build into the team / player files and
  * hub/notes.json), written out as sentences a caster can read on air. Spoiler mode hides them while they use fresh games.
  */
 import React from "react";
@@ -66,46 +66,51 @@ export interface StoryLine {
   asOf?: string;
 }
 
-/** A list of storylines; with spoiler mode, hidden behind Reveal while any of them uses games from the last two weeks. */
+/** The lines themselves; with spoiler mode, hidden behind Reveal while any of them uses games from the last two weeks. */
+export const StoryBullets: React.FC<{ lines: StoryLine[]; spoilerKey: string }> = ({ lines, spoilerKey }) => {
+  const newest = lines.map((l) => l.asOf || "").sort().pop();
+  const [hidden, reveal] = useHidden(spoilerKey, newest || undefined);
+  if (hidden)
+    return (
+      <div className="py-2 text-center">
+        <RevealButton onReveal={reveal} />
+      </div>
+    );
+  return (
+    <ul className="text-xs space-y-1.5">
+      {lines.map((l) => (
+        <li key={l.key} className="flex items-start gap-2 min-w-0">
+          <Sparkles className="w-3.5 h-3.5 text-[#c8aa6e] shrink-0 mt-0.5" />
+          <span className="min-w-0">
+            {l.who && (
+              <>
+                <HubLink to={l.who.to} className="text-[#f0e6d2] font-semibold hover:underline">
+                  {l.who.name}
+                </HubLink>
+                {": "}
+              </>
+            )}
+            <span className="text-[#9bb3c9]">{l.text}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+};
+
+/** A titled card of storylines (nothing when there are none). */
 export const StoryList: React.FC<{ title?: string; lines: StoryLine[]; spoilerKey: string; share?: string; right?: React.ReactNode }> = ({
   title,
   lines,
   spoilerKey,
   share,
   right,
-}) => {
-  const newest = lines.map((l) => l.asOf || "").sort().pop();
-  const [hidden, reveal] = useHidden(spoilerKey, newest || undefined);
-  if (!lines.length) return null;
-  return (
+}) =>
+  lines.length ? (
     <Section title={title || tl("Storylines")} share={share} right={right}>
-      {hidden ? (
-        <div className="py-2 text-center">
-          <RevealButton onReveal={reveal} />
-        </div>
-      ) : (
-        <ul className="text-xs space-y-1.5">
-          {lines.map((l) => (
-            <li key={l.key} className="flex items-start gap-2 min-w-0">
-              <Sparkles className="w-3.5 h-3.5 text-[#c8aa6e] shrink-0 mt-0.5" />
-              <span className="min-w-0">
-                {l.who && (
-                  <>
-                    <HubLink to={l.who.to} className="text-[#f0e6d2] font-semibold hover:underline">
-                      {l.who.name}
-                    </HubLink>
-                    {": "}
-                  </>
-                )}
-                <span className="text-[#9bb3c9]">{l.text}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <StoryBullets lines={lines} spoilerKey={spoilerKey} />
     </Section>
-  );
-};
+  ) : null;
 
 /** A team's or player's own storylines (their page). */
 export const OwnStorylines: React.FC<{ notes?: Notes; spoilerKey: string; share?: string }> = ({ notes, spoilerKey, share }) =>

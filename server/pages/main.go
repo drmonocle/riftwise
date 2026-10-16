@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	version  = "1.3.0"
+	version  = "1.4.0"
 	origin   = "https://lolworlds.com"
 	basePath = "/riftwatch/"
 	perMap   = 45000 // URLs per sitemap file (the limit is 50,000)
@@ -41,7 +41,7 @@ var kindPath = map[string]string{"team": "team", "player": "player", "event": "t
 // Every build has these; league.tsv only exists in builds from 2026-10 on, so it's optional.
 var requiredKinds = []string{"team", "player", "event", "game", "champ"}
 var sections = map[string][2]string{
-	"":            {"Pro Stats: every League of Legends esports game since 2011", "Search every pro League of Legends team, player, tournament and champion since 2011: results, brackets, drafts, builds and records, rebuilt every night."},
+	"":            {"Pro Stats: every League of Legends esports game since 2011", "Search every pro League of Legends team, player, tournament and champion since 2011: results, brackets, drafts, builds, records and power rankings, updated through the day."},
 	"tournaments": {"Pro LoL tournaments by year", "Every professional League of Legends tournament since 2011, by year: results, brackets, standings and stats."},
 	"leagues":     {"Every pro LoL league and its champions", "Every professional League of Legends league since 2011: each season's winner, the most successful teams and every tournament."},
 	"patches":     {"The pro LoL meta on every patch", "The most picked and banned champions on every League of Legends patch in professional play, since 2011."},
@@ -51,6 +51,9 @@ var sections = map[string][2]string{
 	"compare":     {"Compare pro LoL teams and players", "Compare any two professional League of Legends teams or players side by side."},
 	"data":        {"Free pro LoL data downloads (CSV)", "Every professional League of Legends game since 2011 as a free CSV spreadsheet: players, champions, drafts, gold, damage and objectives."},
 	"prep":        {"LoL match prep for analysts and casters", "Prep any pro League of Legends match: storylines, form, head-to-head, team numbers, draft tendencies and every lane, free."},
+	"rankings":    {"LoL power rankings: every pro team, every region", "Power rankings for every active professional League of Legends team on one scale across all regions, with win chances, league strength and how accurate they have been."},
+	"finder":      {"Pro LoL game finder", "Find any professional League of Legends game: filter by league, year, patch, team, champion, side and result, then download the list."},
+	"draft":       {"Pro LoL draft board", "Plan a League of Legends draft between two pro teams with their champion pools, first picks, bans and win rates in view."},
 	"about":       {"How RiftWatch counts pro LoL stats", "Where RiftWatch's pro League of Legends numbers come from and what every stat means: KDA, KP, DMG%, GD per minute, presence, blind picks and more."},
 }
 

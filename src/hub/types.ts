@@ -1,4 +1,4 @@
-/** Shapes of the stats hub files (built nightly by scripts/stats/hub.py into stats/<version>/hub/). */
+/** Shapes of the stats hub files (built by scripts/stats/hub.py whenever the database changes, into stats/<version>/hub/). */
 import type { Title } from "../stats";
 
 export interface HubMeta {
@@ -288,6 +288,43 @@ export interface HubSeries {
   games: HubGame[];
 }
 
+/** A team's power rating (hub/ratings.json, scripts/stats/ratings.py); only for teams active in the last 120 days. */
+export interface TeamRating {
+  r: number;
+  /** rank among active teams in top leagues, and how many there are (null for second-tier teams: their
+   *  leagues never meet the top ones, so only their league rank means something) */
+  rank: number | null;
+  of: number;
+  /** home league (Leaguepedia name) and rank in it */
+  league: string;
+  lrank: number;
+  /** change over the last 30 days (null: no rating 30 days ago) */
+  chg30: number | null;
+}
+/** slug, name, code, league, league slug, rating, 30-day change, games rated, last game, tier (1 top league, 2 second tier) */
+export type RatingRow = [string, string, string, string, string | null, number, number | null, number, string, number];
+export interface RatingScore {
+  n: number;
+  acc?: number;
+  brier?: number;
+  logloss?: number;
+}
+export interface HubRatings {
+  asof: string;
+  games: number;
+  teams: RatingRow[];
+  /** top leagues: league, league slug, average rating of its best four teams, active teams */
+  leagues: [string, string | null, number, number][];
+  test: {
+    from: string;
+    all: RatingScore;
+    intl: RatingScore;
+    settled: RatingScore;
+    /** favourite's chance from-to (%), games, how often the favourite won */
+    calibration: [number, number, number, number][];
+  };
+}
+
 export interface HubTeam {
   /** storylines: milestones within reach, streaks, unbeaten runs */
   notes?: import("../components/hub/Storylines").Notes;
@@ -295,6 +332,7 @@ export interface HubTeam {
   u: string;
   region?: string;
   codes: string[];
+  rating?: TeamRating | null;
   disbanded: number;
   g: number;
   w: number;
@@ -491,7 +529,12 @@ export interface PatchRow {
   g: number;
   /** [champion, picks, bans, wins] */
   c: [string, number, number, number][];
+  /** patch movers against `prev` (the patch before with 30+ games): [champion, presence now, presence before, wins, picks] */
+  prev?: string;
+  up?: PatchMove[];
+  down?: PatchMove[];
 }
+export type PatchMove = [string, number, number, number, number];
 
 export interface LeagueRow {
   l: string;
@@ -515,10 +558,15 @@ export interface HubLeague {
 
 // ── champion game logs per league and year (Champions page filters) ──
 
-/** [champion, role 0-4 (-1 unknown), kills, deaths, assists, cs, gold, damage] (stats missing without a scoreboard) */
-export type ChampPick = [string, number, number?, number?, number?, number?, number?, number?];
-/** [date, patch, event index, blue won 1/0, minutes, blue picks, red picks, blue bans, red bans, draft order known 1/0] */
-export type ChampGame = [string, string, number, number, number | null, ChampPick[], ChampPick[], string[], string[], number];
+/** [champion, role 0-4 (-1 unknown), kills, deaths, assists, cs, gold, damage, player, player slug]
+ *  (stats and player missing without a scoreboard; player from builds of 2026-10-16 on) */
+export type ChampPick = [string, number, number?, number?, number?, number?, number?, number?, string?, (string | null)?];
+/** [date, patch, event index, blue won 1/0, minutes, blue picks, red picks, blue bans, red bans, draft order known 1/0,
+ *  blue team, red team, blue slug, red slug, series slug, game number] (the last six from builds of 2026-10-16 on) */
+export type ChampGame = [
+  string, string, number, number, number | null, ChampPick[], ChampPick[], string[], string[], number,
+  string?, string?, (string | null)?, (string | null)?, (string | null)?, number?,
+];
 export interface ChampGamesFile {
   events: [string, string][];
   games: ChampGame[];

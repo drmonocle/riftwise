@@ -4,10 +4,13 @@
  * tendencies, and the lanes player against player. Address: /riftwatch/stats/prep?teams=t1,gen-g&p=y2026
  */
 import React, { useEffect, useMemo, useState } from "react";
-import { GitCompare } from "lucide-react";
+import { createPortal } from "react-dom";
+import { GitCompare, Printer } from "lucide-react";
 import { tl, roleName } from "../../i18n";
 import { winRate } from "../../stats";
-import { loadHubPlayer, loadHubTeam, loadPlayerGames, loadTeamGames, loadTeamSeries } from "../../hub/data";
+import { loadHubPlayer, loadHubTeam, loadPlayerGames, loadRatings, loadTeamGames, loadTeamSeries } from "../../hub/data";
+import { gameChance, pct, seriesChance } from "../../hub/winChance";
+import { Change } from "./RankingsPage";
 import type { HubPlayer, HubTeam, PlayerGameRow, TeamGameRow, TeamSeriesRow } from "../../hub/types";
 import { PrepRoute, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
@@ -16,11 +19,11 @@ import { HeadToHeadSeries } from "./Archives";
 import { ComparePick, TeamRows, bothOptions } from "./ComparePage";
 import { PeriodPicker, defaultPeriod } from "./PeriodStats";
 import { StoryLine, StoryList, noteText } from "./Storylines";
-import { card, ChampIcon, fmtDate, HubLink, isFresh, Loading, RevealButton, Section, useHidden, usePageTitle } from "./ui";
+import { card, ChampIcon, fmtDate, HubLink, isFresh, Loading, RevealButton, Section, useHidden, useLoad, usePageTitle } from "./ui";
 
 const ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"];
 
-interface Side {
+export interface Side {
   team: HubTeam;
   games: TeamGameRow[];
   series: TeamSeriesRow[];
@@ -28,7 +31,7 @@ interface Side {
   players: ({ p: HubPlayer; log: PlayerGameRow[] } | null)[];
 }
 
-async function loadSide(slug: string): Promise<Side> {
+export async function loadSide(slug: string): Promise<Side> {
   const [team, games, series] = await Promise.all([
     loadHubTeam(slug),
     loadTeamGames(slug).catch(() => [] as TeamGameRow[]),
@@ -94,6 +97,97 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
   return <PrepView a={sides.a} b={sides.b} route={route} set={set} />;
 };
 
+/** Chances from the power ratings for one game, a best-of-three and a best-of-five, and where each team ranks. */
+const WinChances: React.FC<{ a: HubTeam; b: HubTeam }> = ({ a, b }) => {
+  const ratings = useLoad(loadRatings, []);
+  if (!a.rating || !b.rating) return null;
+  // second-tier leagues never meet the top ones: only compare teams on the same scale
+  if ((a.rating.rank == null || b.rating.rank == null) && a.rating.league !== b.rating.league) return null;
+  const p = gameChance(a.rating.r, b.rating.r);
+  const rows: [string, number][] = [
+    [tl("One game"), p],
+    [tl("Best of 3"), seriesChance(p, 3)],
+    [tl("Best of 5"), seriesChance(p, 5)],
+  ];
+  const acc = ratings.data?.test.all;
+  return (
+    <Section title={tl("Win chances")} share={`${a.u}-vs-${b.u}-win-chances`}>
+      <div className="flex items-center justify-between gap-2 text-xs font-bold">
+        <span className="text-[#0ac8b9] truncate">{a.name}</span>
+        <span className="text-[#e84057] truncate text-right">{b.name}</span>
+      </div>
+      <div className="space-y-1.5">
+        {rows.map(([label, x]) => (
+          <div key={label} className="grid grid-cols-[3rem_1fr_3rem] sm:grid-cols-[3.5rem_1fr_3.5rem] items-center gap-2 text-xs">
+            <span className="tabular-nums font-bold text-[#0ac8b9]">{pct(x)}</span>
+            <div className="relative h-4 rounded bg-[#e84057]/70 overflow-hidden">
+              <div className="absolute inset-y-0 left-0 bg-[#0ac8b9]/80" style={{ width: `${x * 100}%` }} />
+              <span className="absolute inset-0 flex items-center justify-center text-[10px] text-[#f0e6d2] font-semibold">{label}</span>
+            </div>
+            <span className="tabular-nums font-bold text-[#e84057] text-right">{pct(1 - x)}</span>
+          </div>
+        ))}
+      </div>
+      <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-[#9bb3c9]">
+        {[a, b].map((t) => (
+          <p key={t.u}>
+            <span className="text-[#f0e6d2] font-semibold">{t.name}</span>{" "}
+            {t.rating!.rank != null
+              ? tl("#{rank} of {of} worldwide · #{lrank} in {league} · rating {r}", {
+                  rank: t.rating!.rank,
+                  of: t.rating!.of,
+                  lrank: t.rating!.lrank,
+                  league: t.rating!.league || "–",
+                  r: t.rating!.r,
+                })
+              : tl("#{lrank} in {league} · rating {r}", { lrank: t.rating!.lrank, league: t.rating!.league || "–", r: t.rating!.r })}{" "}
+            (<Change v={t.rating!.chg30} /> {tl("in 30 days")})
+          </p>
+        ))}
+      </div>
+      <p className="text-[10px] text-[#7e8e9f]">
+        {acc && acc.n > 0
+          ? tl("From the power rankings (every pro game since 2011). Since {year}, the higher-rated team won {acc} of games.", {
+              year: ratings.data!.test.from.slice(0, 4),
+              acc: pct(acc.acc || 0),
+            })
+          : tl("From the power rankings (every pro game since 2011).")}{" "}
+        <HubLink to={{ kind: "rankings" }} className="text-[#0ac8b9] hover:underline" >
+          {tl("Power rankings")}
+        </HubLink>
+      </p>
+    </Section>
+  );
+};
+
+/**
+ * Printing: mounts a print-only copy of the page straight under <body> (outside the app's scrolling layout, which
+ * would cut it at one screen), then opens the print dialog once pictures had a moment to load.
+ */
+function usePrint(): { on: boolean; start: () => void } {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    if (!on) return;
+    document.body.classList.add("rw-printing");
+    const done = () => setOn(false);
+    window.addEventListener("afterprint", done);
+    const t = window.setTimeout(() => window.print(), 900);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener("afterprint", done);
+      document.body.classList.remove("rw-printing");
+    };
+  }, [on]);
+  // clicking again starts over (in case a browser never said the dialog closed)
+  return {
+    on,
+    start: () => {
+      setOn(false);
+      window.setTimeout(() => setOn(true), 0);
+    },
+  };
+}
+
 const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<PrepRoute>) => void }> = ({ a, b, route, set }) => {
   const options = useMemo(() => bothOptions(a.games.map(teamRowRef), b.games.map(teamRowRef)), [a.games, b.games]);
   const period: PeriodKey = route.period && options.some((o) => o.key === route.period) ? route.period : defaultPeriod(options);
@@ -104,6 +198,27 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
   const fresh = [...ra, ...rb].map((r) => r[0]).find((d) => isFresh(d));
   const [hidden, reveal] = useHidden(`prep:${a.team.u}:${b.team.u}:${period}`, fresh);
   const title = `${a.team.name} vs ${b.team.name}`;
+  const printing = usePrint();
+  const body = (print: boolean) => (
+    <>
+      <WinChances a={a.team} b={b.team} />
+      <PrepStorylines a={a} b={b} />
+      <Form a={a} b={b} />
+      <HeadToHeadSeries a={a.team.u} b={b.team.u} aName={a.team.name} bName={b.team.name} />
+      {hidden ? (
+        !print && (
+          <div className={`${card} py-4 text-center`}>
+            <RevealButton onReveal={reveal} />
+          </div>
+        )
+      ) : (
+        <>
+          <TeamRows x={a.team} y={b.team} ra={ra} rb={rb} bSlug={b.team.u} career={period === "all"} periodLabel={periodLabel} />
+          <Lanes a={a} b={b} period={period} periodLabel={periodLabel} title={title} />
+        </>
+      )}
+    </>
+  );
 
   return (
     <div className="space-y-3">
@@ -126,22 +241,32 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
             <GitCompare className="w-3.5 h-3.5" />
             {tl("Compare")}
           </HubLink>
+          <button
+            type="button"
+            onClick={printing.start}
+            className="flex items-center gap-1 text-[#0ac8b9] hover:underline"
+            title={tl("Print a caster sheet: everything on this page, on paper or as a PDF")}
+          >
+            <Printer className="w-3.5 h-3.5" />
+            {tl("Print sheet")}
+          </button>
         </div>
       </div>
 
-      <PrepStorylines a={a} b={b} />
-      <Form a={a} b={b} />
-      <HeadToHeadSeries a={a.team.u} b={b.team.u} aName={a.team.name} bName={b.team.name} />
-      {hidden ? (
-        <div className={`${card} py-4 text-center`}>
-          <RevealButton onReveal={reveal} />
-        </div>
-      ) : (
-        <>
-          <TeamRows x={a.team} y={b.team} ra={ra} rb={rb} bSlug={b.team.u} career={period === "all"} periodLabel={periodLabel} />
-          <Lanes a={a} b={b} period={period} periodLabel={periodLabel} title={title} />
-        </>
-      )}
+      {body(false)}
+      {printing.on &&
+        createPortal(
+          <div className="rw-sheet space-y-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-2 border-b pb-2">
+              <h1 className="text-xl font-bold">{title}</h1>
+              <span className="text-xs">
+                {tl("Match prep")} · {periodLabel} · {new Date().toISOString().slice(0, 10)} · RiftWatch Pro Stats · lolworlds.com/riftwatch
+              </span>
+            </div>
+            {body(true)}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };

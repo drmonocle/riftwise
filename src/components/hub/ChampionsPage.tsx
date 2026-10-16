@@ -1,5 +1,5 @@
 /**
- * Champion stats with analyst filters. "Top leagues" / "All leagues" read the nightly patch and year files; a
+ * Champion stats with analyst filters. "Top leagues" / "All leagues" read the built patch and year files; a
  * league reads its champion game log for a year and narrows it by tournament, patch, side and role in the
  * browser (blind-pick rate and first picks come from the draft order). Filters live in the address, so a view
  * can be shared: /riftwatch/stats/champions?league=lck&year=2026&patch=26.18&role=Mid
@@ -213,7 +213,7 @@ const LeagueTable: React.FC<{ league: string; years: string[]; q: URLSearchParam
   );
 };
 
-/** Top leagues / all leagues: the nightly patch and year files. */
+/** Top leagues / all leagues: the built patch and year files. */
 const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSearchParams; setQ: (p: Record<string, string | undefined>) => void }> = ({
   meta,
   scope,

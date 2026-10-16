@@ -303,7 +303,8 @@ def main() -> None:
     t0 = time.time()
     checks = Counter()
 
-    con = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
+    # The catalog's own jobs write to it during the day; wait for a write to finish instead of failing
+    con = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True, timeout=300)
     con.row_factory = sqlite3.Row
     # The build reads the same tables several times; on the server the disk is often busy with other
     # programs, so keep what was read in memory (map the file, 2 GB page cache).
@@ -929,13 +930,14 @@ def main() -> None:
     for k, v in checks.items():
         print(f"  check: {k}: {v}")
 
-    # Point readers at the new build, then remove old builds (keep the newest two).
+    # Point readers at the new build, then remove old builds (keep the newest three: the build runs whenever
+    # the database changes, a few times a day, and an open page may still be reading an older one).
     tmp = os.path.join(args.out, "latest.json.tmp")
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump({"version": version, "built": datetime.datetime.now(datetime.timezone.utc).isoformat()}, f)
     os.replace(tmp, os.path.join(args.out, "latest.json"))
     builds = sorted(d for d in os.listdir(args.out) if d.isdigit() and os.path.isdir(os.path.join(args.out, d)))
-    for old in builds[:-2]:
+    for old in builds[:-3]:
         shutil.rmtree(os.path.join(args.out, old), ignore_errors=True)
     print(f"done: {version} in {time.time() - t0:.0f}s")
 

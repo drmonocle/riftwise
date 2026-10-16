@@ -82,8 +82,8 @@ export interface Records {
   team: Record<"streaks" | "titles", TeamRecord[]>;
 }
 
-// The server rebuilds the stats every night under a new version and deletes old versions after
-// two builds. The desktop app can stay open in the tray for days, so the current version is
+// The server rebuilds the stats under a new version whenever the database changes (a few times a day)
+// and keeps the newest three. The desktop app can stay open in the tray for days, so the current version is
 // re-checked every hour, and a file that has gone missing triggers one fresh check and retry.
 const VERSION_MAX_AGE_MS = 60 * 60 * 1000;
 let versionPromise: Promise<string> | null = null;
@@ -146,7 +146,11 @@ export async function load<T>(path: string): Promise<T> {
 /** A text file of the current stats build (the CSV downloads); not cached, they're fetched once per click. */
 export async function loadText(path: string): Promise<string> {
   const v = await getVersion();
-  const r = await fetch(`${STATS_BASE}/${v}/${path}`, { signal: AbortSignal.timeout(60000) });
+  let r = await fetch(`${STATS_BASE}/${v}/${path}`, { signal: AbortSignal.timeout(60000) });
+  if (r.status === 404) {
+    const fresh = await getVersion(true);
+    if (fresh !== v) r = await fetch(`${STATS_BASE}/${fresh}/${path}`, { signal: AbortSignal.timeout(60000) });
+  }
   if (r.status === 404) throw new MissingFile(path);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.text();

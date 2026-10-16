@@ -3,7 +3,7 @@ import React, { useMemo, useState } from "react";
 import { Crown } from "lucide-react";
 import { tl, tn, regionName } from "../../i18n";
 import { loadLeague, loadLeagues, loadPatches } from "../../hub/data";
-import type { HubLeague, LeagueRow, PatchRow } from "../../hub/types";
+import type { HubLeague, LeagueRow, PatchMove, PatchRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import {
   card,
@@ -70,6 +70,12 @@ export const PatchesPanel: React.FC = () => {
                   </div>
                 ))}
               </div>
+              {p.prev && ((p.up?.length || 0) > 0 || (p.down?.length || 0) > 0) && (
+                <div className="grid sm:grid-cols-2 gap-x-4 gap-y-2 mt-2 pt-2 border-t border-[#1e282d]">
+                  <Movers title={tl("Rising since {patch}", { patch: p.prev })} list={p.up || []} up />
+                  <Movers title={tl("Falling since {patch}", { patch: p.prev })} list={p.down || []} />
+                </div>
+              )}
             </div>
           ))}
           {rows.length > n && (
@@ -86,6 +92,27 @@ export const PatchesPanel: React.FC = () => {
     </Page>
   );
 };
+
+/** Patch movers: presence before -> now, and the win rate now (5+ picks). */
+const Movers: React.FC<{ title: string; list: PatchMove[]; up?: boolean }> = ({ title, list, up }) =>
+  list.length ? (
+    <div className="min-w-0">
+      <div className={`text-[10px] uppercase tracking-wider font-bold mb-1 ${up ? "text-[#0ac8b9]" : "text-[#e84057]"}`}>{title}</div>
+      <ul className="text-xs space-y-1">
+        {list.map(([c, now, was, w, pk]) => (
+          <li key={c} className="flex items-center justify-between gap-2 min-w-0">
+            <ChampLink name={c} size={18} />
+            <span className="tabular-nums shrink-0 text-[#9bb3c9]" title={tl("Presence: picked or banned in this share of games")}>
+              {Math.round(was * 100)}% → <span className="text-[#f0e6d2] font-semibold">{Math.round(now * 100)}%</span>
+              {pk >= 5 && <span className="text-[#7e8e9f]"> · {tl("{pct} won", { pct: `${Math.round((w / pk) * 100)}%` })}</span>}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  ) : (
+    <div />
+  );
 
 // ── Leagues ───────────────────────────────────────────────────────────────
 
