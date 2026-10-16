@@ -10,8 +10,10 @@ import {
   CalendarRange,
   Layers,
   History,
+  Database,
 } from "lucide-react";
 import { AppSettings } from "../../types";
+import { IS_WEB } from "../../platform";
 import {
   StatsMeta,
   INTERNATIONAL_KINDS,
@@ -24,6 +26,7 @@ import type { HubRecords, HubTitle } from "../../hub/types";
 import {
   CompareRoute,
   HubRoute,
+  PrepRoute,
   canGoBack,
   hubBack,
   hubShareUrl,
@@ -151,6 +154,9 @@ const mmss = (m: number) => {
 };
 import { ComparePage } from "../hub/ComparePage";
 import { ChampionsPage } from "../hub/ChampionsPage";
+import { AboutPage, reportUrl } from "../hub/AboutPage";
+import { DownloadsPage } from "../hub/DownloadsPage";
+import { PrepPage } from "../hub/PrepPage";
 import { LeaguePage, LeaguesPanel, PatchesPanel } from "../hub/MetaPages";
 import { HubHome, EventsBrowse } from "../hub/HubHome";
 import { TeamPage } from "../hub/TeamPage";
@@ -204,6 +210,11 @@ const SECTIONS: {
     kind: "compare",
     label: tk("Compare"),
     icon: <GitCompare className="w-3.5 h-3.5" />,
+  },
+  {
+    kind: "data",
+    label: tk("Data"),
+    icon: <Database className="w-3.5 h-3.5" />,
   },
 ];
 
@@ -606,13 +617,16 @@ export const StatsView: React.FC<StatsViewProps> = ({
             <Loading />
           ))}
         {route.kind === "records" && <RecordsPanel />}
+        {route.kind === "data" && <DownloadsPage onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
+        {route.kind === "about" && <AboutPage onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
+        {route.kind === "prep" && <PrepPage route={route as PrepRoute} />}
         {route.kind === "titles" && <TitlesPanel />}
         {route.kind === "compare" && <ComparePage route={route as CompareRoute} />}
         {route.kind === "team" && <TeamPage slug={route.slug} />}
         {route.kind === "player" && (
           <PlayerPage slug={route.slug} onOpenUrl={onOpenUrl} />
         )}
-        {route.kind === "event" && <EventPage slug={route.slug} />}
+        {route.kind === "event" && <EventPage slug={route.slug} onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
         {route.kind === "match" && (
           <MatchPage slug={route.slug} onOpenUrl={onOpenUrl} />
         )}
@@ -622,6 +636,26 @@ export const StatsView: React.FC<StatsViewProps> = ({
           {tl(
             "Stats come from RiftWatch's pro games catalog (built from public Leaguepedia data) and are rebuilt every night.",
           )}
+        </p>
+        <p className="text-[11px] text-center flex flex-wrap justify-center gap-x-3 gap-y-1">
+          <HubLink to={{ kind: "about" }} className="text-[#9bb3c9] hover:text-[#c8aa6e] hover:underline">
+            {tl("How we count")}
+          </HubLink>
+          <a
+            href={reportUrl(hubShareUrl(route))}
+            onClick={(e) => {
+              if (!IS_WEB) {
+                e.preventDefault();
+                onOpenUrl(reportUrl(hubShareUrl(route)));
+              }
+            }}
+            className="text-[#9bb3c9] hover:text-[#c8aa6e] hover:underline"
+          >
+            {tl("Report a wrong stat")}
+          </a>
+          <HubLink to={{ kind: "data" }} className="text-[#9bb3c9] hover:text-[#c8aa6e] hover:underline">
+            {tl("Data downloads")}
+          </HubLink>
         </p>
       </div>
     </SpoilerProvider>

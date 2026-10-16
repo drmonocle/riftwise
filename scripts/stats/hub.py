@@ -20,9 +20,12 @@ folder, so one latest.json switch publishes both:
   hub/playergames/<slug>.json       every game of a player with stats: [date, series slug, champion, k, d, a, won, team,
                                     opponent, event, role, event slug, cs, gold, damage, vision, minutes, team kills,
                                     team damage, team gold, team vision], newest first
+  hub/csv/<event>.csv               every game of a tournament, one row per player and per team; csv/index.json
+                                    (not "downloads": lolworlds.com's request filtering blocks any URL with "/download")
+  hub/leagueyear/<league>/<year>.json  a league's whole season: player and team tables (percentile ranks)
   hub/teamgames/<slug>.json         every game of a team: [date, series slug, event slug, event, opponent, its slug, side b/r,
                                     won, minutes, kills, deaths, gold, opp gold, dragons, opp dragons, barons, opp barons,
-                                    towers, opp towers, bans, picks, opponent's bans], newest first
+                                    towers, opp towers, bans, picks, opponent's bans, roles of the picks], newest first
   hub/events/<year>.json            all tournaments of a year
   hub/records.json, hub/titles.json the Stats tab's records and title lists, with links to the hub pages
   hub/alias.json                    {"team": {old slug: current slug}}: teams that changed name
@@ -34,6 +37,8 @@ Slugs are readable ("faker", "t1", "worlds-2025-main-event") and are what the pa
 Leaguepedia sidecar database (lp_all_games.db) for every series' stage, order and score.
 """
 import concurrent.futures
+import csv
+import io
 import datetime
 import hashlib
 import heapq
@@ -152,6 +157,21 @@ def r1(x):
 def rmin(x):
     """Minutes kept to the second (a game length shown as m:ss)."""
     return round(x, 3)
+
+
+# Milestones worth a caster's mention, and how close counts as "within reach"
+MILESTONES = {"games": (100, 5), "wins": (100, 5), "kills": (500, 12), "assists": (1000, 25)}
+
+
+def milestone_notes(totals):
+    """[{"k": "ms", "s": "wins", "n": 1200, "left": 3}, ...] for totals close to the next round number."""
+    out = []
+    for key, (step, reach) in MILESTONES.items():
+        v = totals.get(key) or 0
+        nxt = (v // step + 1) * step
+        if v >= step // 2 and nxt - v <= reach:
+            out.append({"k": "ms", "s": key, "n": nxt, "left": nxt - v})
+    return out
 
 
 def r2(x):
@@ -628,6 +648,13 @@ def build(ctx) -> dict:
 
     kept = {}                          # stage -> its sums, for the whole-event page
     champ_games = defaultdict(lambda: {"ev": {}, "g": []})  # (league slug, year) -> champion game log
+    dl_index = defaultdict(lambda: defaultdict(list))  # league slug -> year -> [[event slug, name, games]]
+    CSV_HEAD = ["date", "league", "tournament", "stage", "patch", "series", "game", "url", "side", "position", "player", "team",
+                "opponent", "champion", "pick_order", "result", "length_sec", "kills", "deaths", "assists", "team_kills",
+                "team_deaths", "cs", "gold", "damage", "vision", "dragons", "opp_dragons", "barons", "opp_barons", "towers",
+                "opp_towers", "heralds", "void_grubs", "ban1", "ban2", "ban3", "ban4", "ban5", "pick1", "pick2", "pick3",
+                "pick4", "pick5"]
+    POS = {"Top": "top", "Jungle": "jungle", "Mid": "mid", "Bot": "bot", "Support": "support"}
     t_games = defaultdict(list)        # fid -> every game: see teamgames/<slug>.json
 
     for op in ops:
@@ -681,6 +708,7 @@ def build(ctx) -> dict:
         tteam = defaultdict(lambda: {"g": 0, "w": 0, "sg": 0, "sw": 0, "name": None})
         stage_rows = defaultdict(list)
         n_stats_games = 0
+        csv_rows = []
         first_date, last_date = None, None
 
         for mid, glist in series.items():
@@ -850,6 +878,8 @@ def build(ctx) -> dict:
                             z["her"] += sd.get("heralds") or 0
                             z["grub"] += sd.get("grubs") or 0
                     if g["t1"] and g["t2"] and g["w"]:
+                        pick_role = {(r["team"], r["champion"]): ROLE_ORDER.get(r["role"] or "", -1)
+                                     for r in (prow.get(gid, []) if gid else []) if r["champion"]}
                         for side, name, other_name in (("blue", g["t1"], g["t2"]), ("red", g["t2"], g["t1"])):
                             if not team_ref(name, g["date"])[1]:
                                 continue
@@ -858,7 +888,8 @@ def build(ctx) -> dict:
                                 g["date"][:10], gslug, eslug, en, other_name, team_ref(other_name, g["date"])[1], side[0],
                                 1 if g["w"] == name else 0, item.get("min"), sd.get("k"), od.get("k"), sd.get("gold"), od.get("gold"),
                                 sd.get("drag"), od.get("drag"), sd.get("barons"), od.get("barons"), sd.get("towers"), od.get("towers"),
-                                sd.get("bans") or [], sd.get("picks") or [], od.get("bans") or []])
+                                sd.get("bans") or [], sd.get("picks") or [], od.get("bans") or [],
+                                [pick_role.get((name, ch), -1) for ch in (sd.get("picks") or [])]])
                     rows = prow.get(gid, []) if gid else []
                     if rows:
                         n_stats_games += 1
@@ -1027,6 +1058,32 @@ def build(ctx) -> dict:
                                             item.get("min"), picks_out[0], picks_out[1],
                                             (sides.get("blue") or {}).get("bans") or [], (sides.get("red") or {}).get("bans") or [],
                                             1 if (sides.get("blue") or {}).get("picks") else 0])
+                    # Download rows: one per player and one per team
+                    if g["t1"] and g["t2"] and (g["w"] or rows):
+                        g_len = round((item.get("min") or 0) * 60) or ""
+                        for side, tname_c, oname_c in (("blue", g["t1"], g["t2"]), ("red", g["t2"], g["t1"])):
+                            sd, od = sides.get(side) or {}, sides.get("red" if side == "blue" else "blue") or {}
+                            result = 1 if g["w"] == tname_c else 0 if g["w"] else ""
+                            common = [g["date"][:10], info.get("League") or "", en, tab or "", item.get("patch") or "", gslug, g["n"],
+                                      f"https://lolworlds.com/riftwatch/match/{gslug}", side.capitalize()]
+                            team_rows = sorted((r for r in rows if r["team"] == tname_c), key=lambda r: ROLE_ORDER.get(r["role"] or "", 9))
+                            order = sd.get("picks") or []
+                            for r in team_rows:
+                                csv_rows.append(common + [
+                                    POS.get(r["role"] or "", r["role"] or ""), ctx.pname(r["page_key"]) if r["page_key"] else r["raw_name"] or "",
+                                    tname_c, oname_c, r["champion"] or "",
+                                    order.index(r["champion"]) + 1 if r["champion"] in order else "", result, g_len,
+                                    r["kills"], r["deaths"], r["assists"], sd.get("k", ""), od.get("k", ""), r["cs"], r["gold"],
+                                    r["damage"], r["vision"]] + [""] * 18)
+                            sums = lambda key: sum((r[key] or 0) for r in team_rows) if team_rows else ""
+                            bans5 = (list(sd.get("bans") or []) + [""] * 5)[:5]
+                            picks5 = (list(order) + [""] * 5)[:5]
+                            csv_rows.append(common + [
+                                "team", "", tname_c, oname_c, "", "", result, g_len, sd.get("k", ""), od.get("k", ""), sums("assists"),
+                                sd.get("k", ""), od.get("k", ""), sums("cs"), sd.get("gold", "") if sd.get("gold") is not None else sums("gold"),
+                                sums("damage"), sums("vision"), sd.get("drag", ""), od.get("drag", ""), sd.get("barons", ""),
+                                od.get("barons", ""), sd.get("towers", ""), od.get("towers", ""), sd.get("heralds", ""),
+                                sd.get("grubs", "")] + bans5 + picks5)
                     # Bans count for champion and tournament pages
                     for sd in sides.values():
                         for ch in sd.get("bans", []):
@@ -1141,7 +1198,16 @@ def build(ctx) -> dict:
         }
         out.json(f"event/{eslug}.json", {k: v for k, v in event.items() if v not in (None, [], {})})
         kept[op] = {"tp": tp, "tts": tts, "tc": tc, "facts": facts, "mvp": ev_mvp, "tteam": tteam, "regions": regions,
-                    "last": last_date, "stats": n_stats_games, "rosters": roster_out, "series": event["series"]}
+                    "last": last_date, "stats": n_stats_games, "rosters": roster_out, "series": event["series"],
+                    "lu": league_slug.get(info.get("League")), "y": event["year"], "en": en, "eslug": eslug}
+        if csv_rows:
+            buf = io.StringIO()
+            wcsv = csv.writer(buf, lineterminator="\n")
+            wcsv.writerow(CSV_HEAD)
+            wcsv.writerows(csv_rows)
+            out.text(f"csv/{eslug}.csv", buf.getvalue())
+            n_games_csv = sum(1 for r in csv_rows if r[9] == "team") // 2
+            dl_index[league_slug.get(info.get("League")) or ""][(start or end or "")[:4] or event["year"]].append([eslug, en, n_games_csv, start or ""])
 
         # Per-player and per-team tournament rows
         for page, x in tp.items():
@@ -1150,7 +1216,7 @@ def build(ctx) -> dict:
                 "e": eslug, "en": en, "date": end, "t": team, "tu": team_ref(team, last_date or "")[1], "g": x["g"], "w": x["w"],
                 "k": x["k"], "d": x["d"], "a": x["a"], "kda": kda(x["k"], x["d"], x["a"]),
                 "csm": r1(x["cs"] / x["min"]) if x["min"] else None, "c": [c for c, _ in x["champs"].most_common(3)],
-                "pl": place_of.get(team),
+                "pl": place_of.get(team), **({"lu": league_slug.get(info.get("League"))} if info.get("League") else {}),
             })
         for (name, u), x in tteam.items():
             if not u:
@@ -1161,7 +1227,8 @@ def build(ctx) -> dict:
             pusd = next((r.get("usd") for r in res_out if r["t"] == name and res_from == "event"), None)
             t_events[fid].append({"e": eslug, "en": en, "date": end, "as": name, "g": x["g"], "w": x["w"], "sg": x["sg"],
                                   "sw": x["sw"], "pl": place_of.get(name), **({"usd": usd} if usd else {}),
-                                  **({"_pu": pusd, "_pe": base_of(op)} if pusd else {})})
+                                  **({"_pu": pusd, "_pe": base_of(op)} if pusd else {}),
+                                  **({"lu": league_slug.get(info.get("League"))} if info.get("League") else {})})
 
         winner_row = next((r for r in res_out if r["p"] == "1"), None)
         events_by_year[event["year"]].append({
@@ -1251,6 +1318,18 @@ def build(ctx) -> dict:
             if u_r:
                 team_earnings[ctx.team_of(r["Team"], date_r or "0000")] += r["Prize_USD"]
 
+    # -- storylines: collected on the team and player pages, the best go to notes.json ---------
+    all_notes = []
+    notes_cut = (datetime.date.today() - datetime.timedelta(days=30)).isoformat()
+
+    def note_score(nt):
+        """How notable a note is (rough): big round numbers and long streaks first."""
+        if nt["k"] == "ms":
+            return nt["n"] / {"games": 100, "wins": 80, "kills": 500, "assists": 1000}[nt["s"]] - nt["left"] * 0.05
+        if nt["k"] == "streak":
+            return nt["n"] * 0.8
+        return nt["n"] * 0.5
+
     # -- team pages -------------------------------------------------------------------------
     search_teams = []
     alias = {}
@@ -1310,6 +1389,34 @@ def build(ctx) -> dict:
             "sides": t_side.get(fid),
             "bansVs": [{"c": c, "g": n} for c, n in t_bans_vs.get(fid, Counter()).most_common(15)],
         }
+        # -- storylines -------------------------------------------------------------------------
+        notes = milestone_notes({"wins": t["w"], "games": t["g"]})
+        ss_sorted = sorted(ss, key=lambda x: (x["date"], x["id"]))
+        if ss_sorted:
+            won_last = (ss_sorted[-1]["fa"] if ss_sorted[-1]["w"] == ss_sorted[-1]["a"] else ss_sorted[-1]["fb"]) == fid
+            n_streak = 0
+            for x in reversed(ss_sorted):
+                if ((x["fa"] if x["w"] == x["a"] else x["fb"]) == fid) != won_last:
+                    break
+                n_streak += 1
+            if n_streak >= 4:
+                notes.append({"k": "streak", "w": 1 if won_last else 0, "n": n_streak})
+        this_year = today[:4]
+        side_rec = {"b": [0, 0], "r": [0, 0]}
+        for r in t_games.get(fid, []):
+            if r[0][:4] == this_year:
+                side_rec[r[6]][0] += 1
+                side_rec[r[6]][1] += r[7]
+        for sd_k, (g_s, w_s) in side_rec.items():
+            if g_s >= 6 and w_s == g_s:
+                notes.append({"k": "side", "side": sd_k, "n": g_s, "y": this_year})
+        if notes:
+            as_of = max([x["date"] for x in ss_sorted[-1:]] + [t["to"] or ""])[:10]
+            obj["notes"] = {"asOf": as_of, "list": notes}
+            if (t["to"] or "") >= notes_cut:
+                lu_last = next((x.get("lu") for x in tevents if x.get("lu")), None)
+                for nt in notes:
+                    all_notes.append((note_score(nt), lu_last, {**nt, "t": "team", "name": name, "u": u, "asOf": as_of}))
         out.json(f"team/{u}.json", obj)
         search_teams.append([name, short_slug(name, u), t["g"], t["to"][:4], " | ".join(e["n"] for e in eras if e["n"] != name), " | ".join(codes),
                              lpt.get("Region") or ""])
@@ -1375,6 +1482,24 @@ def build(ctx) -> dict:
             "best": {k: {"v": v[0], "date": v[1], "c": v[2], "opp": v[3], "en": v[4], "g": v[5]} for k, v in p_best.get(page, {}).items()},
             "titles": [{"t": t, "date": d, "kind": k, "e": tname_slug.get(t)} for t, d, k in my_titles][:60],
         }
+        # -- storylines -------------------------------------------------------------------------
+        notes = milestone_notes({"games": p["g"], "wins": p["w"], "kills": p["k"], "assists": p["a"]})
+        this_year = today[:4]
+        champ_rec = defaultdict(lambda: [0, 0])
+        for r in p_games.get(page, []):
+            if r[0][:4] == this_year and r[2]:
+                champ_rec[r[2]][0] += 1
+                champ_rec[r[2]][1] += r[6]
+        unbeaten = sorted(((g_c, c) for c, (g_c, w_c) in champ_rec.items() if g_c >= 5 and w_c == g_c), reverse=True)
+        if unbeaten:
+            notes.append({"k": "champ", "c": unbeaten[0][1], "n": unbeaten[0][0], "y": this_year})
+        if notes:
+            as_of = (last_date or "")[:10]
+            obj["notes"] = {"asOf": as_of, "list": notes}
+            if (last_date or "") >= notes_cut and p["g"] >= 100:
+                lu_last = next((x.get("lu") for x in obj["events"] if x.get("lu")), None)
+                for nt in notes:
+                    all_notes.append((note_score(nt), lu_last, {**nt, "t": "player", "name": name, "u": u, "asOf": as_of}))
         out.json(f"player/{u}.json", obj)
         games = sorted(p_games.get(page, []), key=lambda r: r[0], reverse=True)
         if games:
@@ -1534,6 +1659,11 @@ def build(ctx) -> dict:
     leagues_out.sort(key=lambda x: (-x["pr"], -x["g"]))
     out.json("leagues.json", leagues_out)
 
+    # storylines for the stats home: teams and players whose latest tournament is in a main league
+    main_leagues = {l["u"] for l in leagues_out if l["pr"]}
+    all_notes.sort(key=lambda x: -x[0])
+    out.json("notes.json", [x[2] for x in all_notes if x[1] in main_leagues][:40])
+
     # -- champion game logs per league and year, and their index -----------------------------------
     cg_years = defaultdict(dict)
     for (lu_c, year_c), cg in champ_games.items():
@@ -1545,6 +1675,33 @@ def build(ctx) -> dict:
         cg_years[lu_c][year_c] = len(cg["g"])
     out.json("champgames/index.json", [{"u": l["u"], "l": l["l"], "r": l["r"], "pr": l["pr"], "y": cg_years[l["u"]]}
                                        for l in leagues_out if l["u"] in cg_years])
+
+    # -- a league's whole season (all splits + playoffs) for percentile ranks ------------------------
+    by_season = defaultdict(list)
+    for op_k, k in kept.items():
+        if k["lu"] and k["y"] and k["y"].isdigit() and k["tp"]:
+            by_season[(k["lu"], k["y"])].append(k)
+    n_seasons = 0
+    for (lu_s, y_s), parts_s in by_season.items():
+        tp_m, tts_m, tc_m, facts_m, ev_m, tteam_m, regions_m, last_m, n_stats_m = merge_stages(parts_s)
+        so = stats_out(tp_m, tts_m, tc_m, facts_m, ev_m, tteam_m, regions_m, last_m)
+        out.json(f"leagueyear/{lu_s}/{y_s}.json", {
+            "events": [[p["eslug"], p["en"]] for p in sorted(parts_s, key=lambda p: p["last"] or "")],
+            "statsGames": n_stats_m, "players": so["players"], "teamStats": so["teamStats"],
+        })
+        n_seasons += 1
+    checks["hub: league seasons"] = n_seasons
+
+    # -- downloads index: league -> year -> tournaments with a CSV ------------------------------------
+    names_l = {l["u"]: l for l in leagues_out}
+    dl_out = []
+    for lu_d, years_d in dl_index.items():
+        l = names_l.get(lu_d) or {}
+        dl_out.append({"u": lu_d, "l": l.get("l") or "", "r": l.get("r"), "pr": l.get("pr", 0),
+                       "g": sum(x[2] for evs in years_d.values() for x in evs),
+                       "y": {y: sorted(evs, key=lambda x: x[3]) for y, evs in sorted(years_d.items(), reverse=True)}})
+    dl_out.sort(key=lambda x: (-x["pr"], -x["g"]))
+    out.json("csv/index.json", dl_out)
 
     # -- browse, search, home, meta ----------------------------------------------------------
     search_events = []

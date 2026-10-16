@@ -143,6 +143,21 @@ export async function load<T>(path: string): Promise<T> {
   }
 }
 
+/** A text file of the current stats build (the CSV downloads); not cached, they're fetched once per click. */
+export async function loadText(path: string): Promise<string> {
+  const v = await getVersion();
+  const r = await fetch(`${STATS_BASE}/${v}/${path}`, { signal: AbortSignal.timeout(60000) });
+  if (r.status === 404) throw new MissingFile(path);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.text();
+}
+
+/** Full web address of a file of the current stats build (for links that open in a browser). */
+export async function statsFileUrl(path: string): Promise<string> {
+  const v = await getVersion();
+  return `https://lolworlds.com/riftwatch/stats/${v}/${path}`;
+}
+
 export const loadStatsMeta = () => load<StatsMeta>("meta.json");
 export const loadStatsSearch = () => load<StatsSearch>("search.json");
 // Split search lists: the Teams list is ~70 KB, players ~300 KB, so each loads only when needed.

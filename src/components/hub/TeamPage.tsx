@@ -8,6 +8,8 @@ import type { HubTeam } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { TeamSeriesArchive } from "./Archives";
 import { TeamPeriodStats } from "./PeriodStats";
+import { TeamRanks } from "./Ranks";
+import { OwnStorylines } from "./Storylines";
 import {
   card,
   ChampLink,
@@ -104,7 +106,9 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
         </div>
       </div>
 
+      <OwnStorylines notes={t.notes} spoilerKey={`notes:team:${t.u}`} share={`${t.u}-storylines`} />
       <TeamPeriodStats slug={t.u} />
+      <TeamRanks slug={t.u} events={t.events} />
 
       {t.titles.length > 0 && (
         <Section title={tl("Titles")}>

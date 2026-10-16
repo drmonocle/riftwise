@@ -1,6 +1,7 @@
 /** Stats hub front page and the tournament browser. */
 import React, { useMemo, useState } from "react";
-import { Trophy, Swords, Medal, GitCompare, CalendarRange, Crown, Layers, History } from "lucide-react";
+import { HomeStorylines } from "./Storylines";
+import { Trophy, Swords, Medal, GitCompare, CalendarRange, Crown, Layers, History, ClipboardList } from "lucide-react";
 import { tl, tn, tk, regionName } from "../../i18n";
 import { loadEventsOfYear, loadHubHome, loadHubMeta } from "../../hub/data";
 import type { EventListItem, HubMeta } from "../../hub/types";
@@ -16,6 +17,7 @@ const QUICK: { to: HubRoute; label: string; sub: string; icon: React.ReactNode }
   { to: { kind: "records" }, label: tk("Records"), sub: tk("Fastest, longest, best games"), icon: <Medal className="w-4 h-4" /> },
   { to: { kind: "titles" }, label: tk("Titles"), sub: tk("Every champion, every league"), icon: <Trophy className="w-4 h-4" /> },
   { to: { kind: "compare" }, label: tk("Compare"), sub: tk("Any two teams or players"), icon: <GitCompare className="w-4 h-4" /> },
+  { to: { kind: "prep" }, label: tk("Match prep"), sub: tk("Everything before a broadcast"), icon: <ClipboardList className="w-4 h-4" /> },
 ];
 
 export const HubHome: React.FC = () => {
@@ -50,6 +52,8 @@ export const HubHome: React.FC = () => {
           </HubLink>
         ))}
       </div>
+
+      <HomeStorylines />
 
       <Page state={home}>
         {(h) => (

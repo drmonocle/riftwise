@@ -213,7 +213,7 @@ export type PlayerGameRow = [
 export type TeamGameRow = [
   string, string, string, string, string, string | null, "b" | "r", number, number | null, number | null, number | null,
   number | null, number | null, number | null, number | null, number | null, number | null, number | null, number | null,
-  string[], string[], string[]?,
+  string[], string[], string[]?, number[]?,
 ];
 
 export interface SideStats {
@@ -289,6 +289,8 @@ export interface HubSeries {
 }
 
 export interface HubTeam {
+  /** storylines: milestones within reach, streaks, unbeaten runs */
+  notes?: import("../components/hub/Storylines").Notes;
   name: string;
   u: string;
   region?: string;
@@ -310,7 +312,7 @@ export interface HubTeam {
   opps: { n: string; u: string | null; g: number; w: number; last: string }[];
   champs: { c: string; g: number; w: number }[];
   bans: { c: string; g: number }[];
-  events: { e: string; en: string; date: string; as: string; g: number; w: number; sg: number; sw: number; pl?: string; usd?: number }[];
+  events: { e: string; en: string; date: string; as: string; g: number; w: number; sg: number; sw: number; pl?: string; usd?: number; lu?: string }[];
   titles: (Omit<Title, "s"> & { e?: string | null })[];
   bestStreak: { n: number; date: string } | null;
   roster: { y: string; p: { n: string; u: string | null; g: number; r: string }[] }[];
@@ -322,6 +324,8 @@ export interface HubTeam {
 }
 
 export interface HubPlayer {
+  /** storylines: milestones within reach, streaks, unbeaten runs */
+  notes?: import("../components/hub/Storylines").Notes;
   name: string;
   u: string;
   page: string;
@@ -352,7 +356,7 @@ export interface HubPlayer {
   nChamps: number;
   events: {
     e: string; en: string; date: string; t: string; tu: string | null; g: number; w: number;
-    k: number; d: number; a: number; kda: number; csm: number | null; c: string[]; pl?: string;
+    k: number; d: number; a: number; kda: number; csm: number | null; c: string[]; pl?: string; lu?: string;
   }[];
   recent: { date: string; g: string | null; c: string; k: number; d: number; a: number; win: number; opp: string; en: string; team: string }[];
   best: Record<string, { v: number; date: string; c: string; opp: string; en: string; g: string | null }>;
@@ -525,4 +529,12 @@ export interface ChampLeagueIndex {
   r: string | null;
   pr: number;
   y: Record<string, number>;
+}
+
+/** A league's whole season: every split and playoffs summed (hub/leagueyear/<league>/<year>.json) */
+export interface LeagueSeason {
+  events: [string, string][];
+  statsGames: number;
+  players: EventPlayer[];
+  teamStats: EventTeamStats[];
 }
