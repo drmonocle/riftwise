@@ -20,7 +20,8 @@ folder, so one latest.json switch publishes both:
   hub/playergames/<slug>.json       every game of a player with stats: [date, series slug, champion, k, d, a, won, team,
                                     opponent, event, role, event slug, cs, gold, damage, vision, minutes, team kills,
                                     team damage, team gold, team vision], newest first
-  hub/downloads/<event>.csv         every game of a tournament, one row per player and per team; downloads/index.json
+  hub/csv/<event>.csv               every game of a tournament, one row per player and per team; csv/index.json
+                                    (not "downloads": lolworlds.com's request filtering blocks any URL with "/download")
   hub/leagueyear/<league>/<year>.json  a league's whole season: player and team tables (percentile ranks)
   hub/teamgames/<slug>.json         every game of a team: [date, series slug, event slug, event, opponent, its slug, side b/r,
                                     won, minutes, kills, deaths, gold, opp gold, dragons, opp dragons, barons, opp barons,
@@ -1204,7 +1205,7 @@ def build(ctx) -> dict:
             wcsv = csv.writer(buf, lineterminator="\n")
             wcsv.writerow(CSV_HEAD)
             wcsv.writerows(csv_rows)
-            out.text(f"downloads/{eslug}.csv", buf.getvalue())
+            out.text(f"csv/{eslug}.csv", buf.getvalue())
             n_games_csv = sum(1 for r in csv_rows if r[9] == "team") // 2
             dl_index[league_slug.get(info.get("League")) or ""][(start or end or "")[:4] or event["year"]].append([eslug, en, n_games_csv, start or ""])
 
@@ -1700,7 +1701,7 @@ def build(ctx) -> dict:
                        "g": sum(x[2] for evs in years_d.values() for x in evs),
                        "y": {y: sorted(evs, key=lambda x: x[3]) for y, evs in sorted(years_d.items(), reverse=True)}})
     dl_out.sort(key=lambda x: (-x["pr"], -x["g"]))
-    out.json("downloads/index.json", dl_out)
+    out.json("csv/index.json", dl_out)
 
     # -- browse, search, home, meta ----------------------------------------------------------
     search_events = []

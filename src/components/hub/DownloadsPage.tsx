@@ -19,7 +19,7 @@ interface DownloadLeague {
   y: Record<string, [string, string, number, string][]>;
 }
 
-const loadDownloads = () => load<DownloadLeague[]>("hub/downloads/index.json");
+const loadDownloads = () => load<DownloadLeague[]>("hub/csv/index.json");
 
 /** Save text as a file (web), or open the file's address in the browser (desktop app). */
 export async function saveCsv(name: string, text: string) {
@@ -34,10 +34,10 @@ export async function saveCsv(name: string, text: string) {
 /** One tournament's CSV: downloaded on the web, opened in the browser from the desktop app. */
 export async function downloadEventCsv(slug: string, onOpenUrl?: (url: string) => void) {
   if (!IS_WEB && onOpenUrl) {
-    onOpenUrl(await statsFileUrl(`hub/downloads/${slug}.csv`));
+    onOpenUrl(await statsFileUrl(`hub/csv/${slug}.csv`));
     return;
   }
-  await saveCsv(`${slug}.csv`, await loadText(`hub/downloads/${slug}.csv`));
+  await saveCsv(`${slug}.csv`, await loadText(`hub/csv/${slug}.csv`));
 }
 
 export const CSV_COLUMNS =
@@ -62,7 +62,7 @@ export const DownloadsPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({
         {!IS_WEB && (
           <button
             type="button"
-            onClick={() => onOpenUrl?.("https://lolworlds.com/riftwatch/stats/downloads")}
+            onClick={() => onOpenUrl?.("https://lolworlds.com/riftwatch/stats/data")}
             className="text-[#0ac8b9] hover:underline font-semibold"
           >
             {tl("Downloads work best in your browser: open this page there")}
@@ -117,7 +117,7 @@ const LeagueYears: React.FC<{ league: DownloadLeague; onOpenUrl?: (url: string) 
   const [busy, setBusy] = useState<string>("");
   const wholeYear = async (y: string) => {
     if (!IS_WEB && onOpenUrl) {
-      onOpenUrl("https://lolworlds.com/riftwatch/stats/downloads");
+      onOpenUrl("https://lolworlds.com/riftwatch/stats/data");
       return;
     }
     const evs = league.y[y];
@@ -125,7 +125,7 @@ const LeagueYears: React.FC<{ league: DownloadLeague; onOpenUrl?: (url: string) 
     try {
       for (let i = 0; i < evs.length; i++) {
         setBusy(tl("Downloading {n} of {m}…", { n: i + 1, m: evs.length }));
-        const text = await loadText(`hub/downloads/${evs[i][0]}.csv`);
+        const text = await loadText(`hub/csv/${evs[i][0]}.csv`);
         parts.push(i === 0 ? text.replace(/\n+$/, "") : text.slice(text.indexOf("\n") + 1).replace(/\n+$/, ""));
       }
       await saveCsv(`${league.u}-${y}.csv`, parts.filter(Boolean).join("\n") + "\n");

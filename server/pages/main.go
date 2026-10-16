@@ -49,7 +49,7 @@ var sections = map[string][2]string{
 	"records":     {"All-time pro LoL records", "Fastest wins, longest games, most kills and other all-time records from professional League of Legends."},
 	"titles":      {"Every pro LoL title winner", "Every Worlds, MSI, First Stand and league title winner in professional League of Legends history."},
 	"compare":     {"Compare pro LoL teams and players", "Compare any two professional League of Legends teams or players side by side."},
-	"downloads":   {"Free pro LoL data downloads (CSV)", "Every professional League of Legends game since 2011 as a free CSV spreadsheet: players, champions, drafts, gold, damage and objectives."},
+	"data":        {"Free pro LoL data downloads (CSV)", "Every professional League of Legends game since 2011 as a free CSV spreadsheet: players, champions, drafts, gold, damage and objectives."},
 	"prep":        {"LoL match prep for analysts and casters", "Prep any pro League of Legends match: storylines, form, head-to-head, team numbers, draft tendencies and every lane, free."},
 	"about":       {"How RiftWatch counts pro LoL stats", "Where RiftWatch's pro League of Legends numbers come from and what every stat means: KDA, KP, DMG%, GD per minute, presence, blind picks and more."},
 }

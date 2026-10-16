@@ -212,7 +212,7 @@ const SECTIONS: {
     icon: <GitCompare className="w-3.5 h-3.5" />,
   },
   {
-    kind: "downloads",
+    kind: "data",
     label: tk("Data"),
     icon: <Database className="w-3.5 h-3.5" />,
   },
@@ -617,7 +617,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
             <Loading />
           ))}
         {route.kind === "records" && <RecordsPanel />}
-        {route.kind === "downloads" && <DownloadsPage onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
+        {route.kind === "data" && <DownloadsPage onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
         {route.kind === "about" && <AboutPage onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
         {route.kind === "prep" && <PrepPage route={route as PrepRoute} />}
         {route.kind === "titles" && <TitlesPanel />}
@@ -653,7 +653,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
           >
             {tl("Report a wrong stat")}
           </a>
-          <HubLink to={{ kind: "downloads" }} className="text-[#9bb3c9] hover:text-[#c8aa6e] hover:underline">
+          <HubLink to={{ kind: "data" }} className="text-[#9bb3c9] hover:text-[#c8aa6e] hover:underline">
             {tl("Data downloads")}
           </HubLink>
         </p>
