@@ -85,6 +85,33 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
           </Term>
         </dl>
       </Section>
+      <Section title={tl("Game rating")}>
+        <p className="text-rw-sub mb-2">
+          {tl("Every pro game gets a rating from 0 to 100 for how good it was to watch. It adds up eight things:")}
+        </p>
+        <dl>
+          <Term t={tl("Action")}>{tl("Up to 22.5 points: kills per minute, with extra credit when teams fight over Barons and Elder Dragons.")}</Term>
+          <Term t={tl("How close")}>
+            {tl("Up to 13.5 points: kills, gold and objectives close to even, games still level at 20 or 25 minutes, and wins by the team with fewer kills.")}
+          </Term>
+          <Term t={tl("Length")}>{tl("Up to 9 points: full marks from about 28 to 44 minutes; longer games keep them when they stay eventful.")}</Term>
+          <Term t={tl("Base races")}>{tl("Up to 4.5 points: both teams breaking inhibitors, Baron and Elder fights, pentakills.")}</Term>
+          <Term t={tl("Stakes")}>
+            {tl("Up to 40 points: a Worlds final counts most (40), then Worlds semifinals (37), the MSI final (35.5), Worlds quarterfinals (34) and the big leagues' finals (31). Academy and second-tier leagues count least.")}
+          </Term>
+          <Term t={tl("Series drama")}>
+            {tl("Up to 15 points: a deciding Game 5 (most of all after coming back from 0–2), must-win games, and a little less for the first games of a 3–0 sweep.")}
+          </Term>
+          <Term t={tl("Rivalries")}>{tl("Up to 4.5 points: famous clashes like T1 vs KT, LCK vs LPL knockouts and the best teams of each region meeting.")}</Term>
+          <Term t={tl("Comebacks")}>{tl("Up to 5 points: winning from far behind in gold, with less gold, or after losing inhibitors.")}</Term>
+        </dl>
+        <p className="text-rw-sub mt-2">
+          {tl("Tiers: S 90+, A 80+, B 70+, C 55+, D below. Only about 1 game in 2,000 reaches S. A series is rated by its best game.")}{" "}
+          <HubLink to={{ kind: "best" }} className="text-rw-teal hover:underline font-semibold">
+            {tl("Best games")}
+          </HubLink>
+        </p>
+      </Section>
       <Section title={tl("Not shown yet")}>
         <ul className="list-disc pl-4 space-y-1 text-rw-sub">
           <li>{tl("Solo kills: not in our data yet.")}</li>

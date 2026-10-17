@@ -37,6 +37,7 @@ import {
 } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { BestPage } from "../hub/BestPage";
+import { AboutMePage } from "../hub/AboutMePage";
 import {
   card,
   ChampIcon,
@@ -644,6 +645,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
         {route.kind === "finder" && <FinderPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "draft" && <DraftPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "best" && <BestPage query={"query" in route ? route.query : undefined} />}
+        {route.kind === "aboutme" && <AboutMePage onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
         {route.kind === "titles" && <TitlesPanel />}
         {route.kind === "compare" && <ComparePage route={route as CompareRoute} />}
         {route.kind === "team" && <TeamPage slug={route.slug} />}
@@ -664,6 +666,9 @@ export const StatsView: React.FC<StatsViewProps> = ({
         <p className="text-[11px] text-center flex flex-wrap justify-center gap-x-3 gap-y-1">
           <HubLink to={{ kind: "about" }} className="text-rw-sub hover:text-rw-accent hover:underline">
             {tl("How we count")}
+          </HubLink>
+          <HubLink to={{ kind: "aboutme" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("About RiftWise")}
           </HubLink>
           <a
             href={reportUrl(hubShareUrl(route))}

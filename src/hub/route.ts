@@ -8,6 +8,7 @@
  *                                         best (?view=series&year=2025&league=..)
  *   /stats/compare?teams=t1,gen-g&p=y2026   a comparison (players=..., p = period: all, last20, y2026, e:<event>)
  *   /stats/champions?league=lck&year=2026&event=..&patch=26.18&side=b&role=Mid   champion stats with filters
+ *   /about                      who makes RiftWise
  *   /player/<slug>              /team/<slug>  /tournament/<slug>  /match/<slug>[?g=<game>]  /champion/<slug>  /league/<slug>
  *
  * The desktop app has no address bar, so it keeps its own back stack instead.
@@ -17,7 +18,8 @@ import { IS_WEB, SITE_URL } from "../platform";
 
 export type HubSection =
   | "tournaments" | "leagues" | "champions" | "patches" | "records" | "titles" | "compare" | "data" | "about" | "prep"
-  | "rankings" | "finder" | "draft" | "best";
+  | "rankings" | "finder" | "draft" | "best"
+  | "aboutme"; // riftwise.gg/about (not under /stats)
 export type HubEntity = "team" | "player" | "event" | "match" | "champ" | "league";
 
 export type HubRoute =
@@ -54,6 +56,7 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
       return p;
     }
   });
+  if (parts[0] === "about" && parts.length === 1) return { kind: "aboutme" };
   if (parts[0] === "stats") {
     if (parts.length === 1) return HUB_HOME;
     if ((SECTIONS as string[]).includes(parts[1])) {
@@ -87,6 +90,7 @@ function parseCompare(search: string): { mode?: "team" | "player"; a?: string; b
 
 export function hubPath(r: HubRoute): string {
   if (r.kind === "home") return `${BASE}stats`;
+  if (r.kind === "aboutme") return `${BASE}about`;
   if ((r.kind === "compare" || r.kind === "prep") && "a" in r && (r.a || r.b) && (r.kind === "prep" || ("mode" in r && r.mode))) {
     const players = r.kind === "compare" && "mode" in r && r.mode === "player";
     const q = `${players ? "players" : "teams"}=${[r.a || "", r.b || ""].map(encodeURIComponent).join(",")}`;
