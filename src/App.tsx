@@ -1052,6 +1052,13 @@ export default function App() {
             </span>
           )}
           {/* Narrow screens: make room for the spoiler notice so the footer stays on one line */}
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "aboutme" })}
+            className={`hover:text-rw-accent whitespace-nowrap ${settings.spoilerMode ? "hidden sm:inline" : ""}`}
+          >
+            {tl("About")}
+          </button>
           <span
             onClick={() => handleOpenUrl("https://drmonocle.com")}
             className={`hover:text-rw-accent cursor-pointer whitespace-nowrap ${settings.spoilerMode ? "hidden sm:inline" : ""}`}

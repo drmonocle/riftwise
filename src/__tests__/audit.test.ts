@@ -111,3 +111,11 @@ describe("best games links", () => {
     expect(hubPath({ kind: "best", query: "league=lol-champions-korea" })).toBe("/stats/best?league=lol-champions-korea");
   });
 });
+
+describe("about page address", () => {
+  it("lives at /about, not under /stats", () => {
+    expect(hubPath({ kind: "aboutme" })).toBe("/about");
+    expect(parseHubPath("/about", "")).toEqual({ kind: "aboutme" });
+    expect(parseHubPath("/stats/about", "")).toEqual({ kind: "about" });
+  });
+});

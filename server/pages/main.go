@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	version  = "1.7.0"
+	version  = "1.8.0"
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -235,6 +235,9 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	status, title, desc, index := http.StatusOK, "", "", true
 
 	switch {
+	case len(parts) == 1 && parts[0] == "about":
+		title = "About RiftWise: made by Kyle \"Dr. Monocle\" Hoover | RiftWise"
+		desc = "Who makes RiftWise, why, and its promises: free forever, no ads, no selling data, no account needed."
 	case parts[0] == "stats":
 		sec := ""
 		if len(parts) > 1 {
@@ -328,6 +331,7 @@ func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 		for sec := range sections {
 			fmt.Fprintf(w, "<url><loc>%sstats%s</loc></url>\n", publicURL, map[bool]string{true: "", false: "/" + sec}[sec == ""])
 		}
+		fmt.Fprintf(w, "<url><loc>%sabout</loc></url>\n", publicURL)
 	} else if _, ok := s.pages[p[0]]; ok {
 		i := 0
 		for _, slug := range s.order[p[0]] {
