@@ -7,17 +7,44 @@
     <meta name="theme-color" content="#0c0a1d" />
     <meta
       name="description"
-      content="RiftWise: live League of Legends esports scores, schedules, standings, all-time head-to-head records and the 24/7 classic tournament stream."
+      content="RiftWise: live League of Legends esports scores, schedules, global power rankings, pro stats for every game since 2011, draft board, match prep, and the 24/7 classic tournament stream."
     />
     <!-- Open the connections the first data fetches need while the script is still loading. -->
     <link rel="preconnect" href="https://esports-api.lolesports.com" />
     <link rel="preconnect" href="https://raw.githubusercontent.com" />
     <!-- The desktop app finds its own window by this exact title (FindWindowW); keep it "RiftWise". -->
     <title>RiftWise</title>
+    <!-- Site-wide link preview and search data (Antigravity's SEO pass, 2026-10-17). Stats pages get their own from
+         the page service (server/pages), which takes these out first. -->
+    <link rel="canonical" href="https://riftwise.gg/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="RiftWise" />
+    <meta property="og:title" content="RiftWise: live LoL esports scores, pro stats, power rankings and draft tools" />
+    <meta property="og:description" content="Search every pro League of Legends match, player, team, tournament and champion since 2011. Live esports schedules, global power rankings, analyst match prep, draft board and free CSV data." />
+    <meta property="og:url" content="https://riftwise.gg/" />
+    <meta property="og:image" content="https://riftwise.gg/icon-512.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="RiftWise: live LoL esports scores, pro stats and power rankings" />
+    <meta name="twitter:description" content="Search every pro League of Legends match, player, team, tournament and champion since 2011. Live schedules, global power rankings, match prep and draft board." />
+    <meta name="twitter:image" content="https://riftwise.gg/icon-512.png" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://riftwise.gg/#website","name":"RiftWise","alternateName":["RiftWise.gg","RiftWise.lol","RiftWise Pro LoL Stats"],"url":"https://riftwise.gg/","sameAs":["https://github.com/drmonocle/riftwise"]},{"@type":"WebApplication","name":"RiftWise","applicationCategory":"SportsApplication","operatingSystem":"Web, Windows","url":"https://riftwise.gg/","description":"Live League of Legends esports scores, schedules, standings, global power rankings, analyst match prep, draft board, and a pro stats database covering every game since 2011."}]}</script>
   </head>
 
   <body>
     <div id="root"></div>
+    <noscript>
+      <main>
+        <h1>RiftWise: live League of Legends esports scores, pro stats since 2011, power rankings and analyst tools</h1>
+        <p>Search every professional League of Legends match, player, team, tournament, league and champion since 2011. Live match schedules, spoiler-free results, cross-region power rankings, match prep, draft boards and free CSV downloads.</p>
+        <nav aria-label="RiftWise">
+          <a href="/stats">Pro stats</a> · <a href="/stats/rankings">Power rankings</a> · <a href="/stats/tournaments">Tournaments</a> ·
+          <a href="/stats/leagues">Leagues</a> · <a href="/stats/champions">Champions</a> · <a href="/stats/patches">Patches</a> ·
+          <a href="/stats/records">Records</a> · <a href="/stats/titles">Title winners</a> · <a href="/stats/compare">Compare</a> ·
+          <a href="/stats/prep">Match prep</a> · <a href="/stats/draft">Draft board</a> · <a href="/stats/finder">Game finder</a> ·
+          <a href="/stats/data">CSV data</a> · <a href="https://lolworlds.com/">LoL Worlds 24/7 stream</a>
+        </nav>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
