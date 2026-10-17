@@ -3,7 +3,7 @@
  * (hub/playergames, hub/teamgames): all time, the last N games, a year, or one tournament. This is what
  * gol.gg's season / split selectors do, without a request per choice.
  */
-import type { PlayerGameRow, TeamGameRow } from "./types";
+import type { PlayerGameRow, PlayerTimeline, TeamGameRow, TeamTimeline } from "./types";
 
 /** "all", "last20", "y2026", "e:<event slug>" */
 export type PeriodKey = string;
@@ -59,6 +59,103 @@ export interface ChampLine {
   kda: number;
   csm: number | null;
   dpm: number | null;
+  /** average gold / CS lead over the lane opponent at 15 minutes (Oracle's Elixir games only) */
+  gd15: number | null;
+  csd15: number | null;
+}
+
+/** A running average that skips missing values. */
+class Avg {
+  s = 0;
+  n = 0;
+  add(v: number | null | undefined) {
+    if (v == null) return;
+    this.s += v;
+    this.n++;
+  }
+  get(digits = 0): number | null {
+    return this.n ? Number((this.s / this.n).toFixed(digits)) : null;
+  }
+}
+
+/** A yes/no rate in percent over the games where it's known. */
+class Rate {
+  y = 0;
+  n = 0;
+  add(v: boolean | null | undefined) {
+    if (v == null) return;
+    this.n++;
+    if (v) this.y++;
+  }
+  get(): number | null {
+    return share(this.y, this.n);
+  }
+}
+
+/** Oracle's Elixir's early-game numbers over some games (null when none of them has any). */
+export interface PlayerTl {
+  /** games with the leads at 15 minutes */
+  n: number;
+  gd10: number | null;
+  csd10: number | null;
+  xpd10: number | null;
+  gd15: number | null;
+  csd15: number | null;
+  xpd15: number | null;
+  gd20: number | null;
+  csd20: number | null;
+  xpd20: number | null;
+  /** % of games (first blood known) with the kill or an assist on it; % where they died for it */
+  fbPart: number | null;
+  fbVictim: number | null;
+  /** wards placed / cleared per minute, control wards bought per game */
+  wpm: number | null;
+  wcpm: number | null;
+  cw: number | null;
+}
+
+function playerTl(rows: PlayerGameRow[]): PlayerTl | null {
+  const leads = Array.from({ length: 9 }, () => new Avg());
+  const fbPart = new Rate();
+  const fbVictim = new Rate();
+  const cw = new Avg();
+  let wards = 0, cleared = 0, wMin = 0, any = false;
+  for (const r of rows) {
+    const t = r[21] as PlayerTimeline | null | undefined;
+    if (!t) continue;
+    any = true;
+    for (let i = 0; i < 9; i++) leads[i].add(t[i]);
+    const fb = t[9];
+    if (fb != null) {
+      fbPart.add(fb === 1 || fb === 2);
+      fbVictim.add(fb === 3);
+    }
+    const rmin = r[16];
+    if (rmin && t[10] != null && t[11] != null) {
+      wards += t[10];
+      cleared += t[11];
+      wMin += rmin;
+    }
+    cw.add(t[12]);
+  }
+  if (!any) return null;
+  return {
+    n: leads[3].n,
+    gd10: leads[0].get(),
+    csd10: leads[1].get(1),
+    xpd10: leads[2].get(),
+    gd15: leads[3].get(),
+    csd15: leads[4].get(1),
+    xpd15: leads[5].get(),
+    gd20: leads[6].get(),
+    csd20: leads[7].get(1),
+    xpd20: leads[8].get(),
+    fbPart: fbPart.get(),
+    fbVictim: fbVictim.get(),
+    wpm: ratio(wards, wMin, 2),
+    wcpm: ratio(cleared, wMin, 2),
+    cw: cw.get(1),
+  };
 }
 
 export interface PlayerAgg {
@@ -78,6 +175,8 @@ export interface PlayerAgg {
   visShare: number | null;
   champs: ChampLine[];
   roles: string[];
+  /** Oracle's Elixir's early-game numbers */
+  tl: PlayerTl | null;
 }
 
 export const kdaOf = (k: number, d: number, a: number) => Number(((k + a) / Math.max(d, 1)).toFixed(2));
@@ -87,7 +186,7 @@ export function playerAgg(rows: PlayerGameRow[]): PlayerAgg {
   let g = 0, w = 0, k = 0, d = 0, a = 0;
   let kpN = 0, kpD = 0, cs = 0, gold = 0, dmg = 0, vis = 0, minCs = 0, minGold = 0, minDmg = 0, minVis = 0;
   let sDmg = 0, tDmg = 0, sGold = 0, tGold = 0, sVis = 0, tVis = 0;
-  const champs = new Map<string, { g: number; w: number; k: number; d: number; a: number; cs: number; dmg: number; min: number; mcs: number; mdmg: number }>();
+  const champs = new Map<string, { g: number; w: number; k: number; d: number; a: number; cs: number; dmg: number; min: number; mcs: number; mdmg: number; gd15: Avg; csd15: Avg }>();
   const roles = new Map<string, number>();
   for (const r of rows) {
     g++;
@@ -132,7 +231,12 @@ export function playerAgg(rows: PlayerGameRow[]): PlayerAgg {
       tVis += tv;
     }
     if (c) {
-      const x = champs.get(c) || { g: 0, w: 0, k: 0, d: 0, a: 0, cs: 0, dmg: 0, min: 0, mcs: 0, mdmg: 0 };
+      const x = champs.get(c) || { g: 0, w: 0, k: 0, d: 0, a: 0, cs: 0, dmg: 0, min: 0, mcs: 0, mdmg: 0, gd15: new Avg(), csd15: new Avg() };
+      const t = r[21] as PlayerTimeline | null | undefined;
+      if (t) {
+        x.gd15.add(t[3]);
+        x.csd15.add(t[4]);
+      }
       x.g++;
       x.w += r[6] ? 1 : 0;
       x.k += r[3];
@@ -165,9 +269,13 @@ export function playerAgg(rows: PlayerGameRow[]): PlayerAgg {
     vsm: ratio(vis, minVis, 2),
     visShare: share(sVis, tVis),
     champs: [...champs.entries()]
-      .map(([c, x]) => ({ c, g: x.g, w: x.w, k: x.k, d: x.d, a: x.a, kda: kdaOf(x.k, x.d, x.a), csm: ratio(x.cs, x.mcs), dpm: ratio(x.dmg, x.mdmg, 0) }))
+      .map(([c, x]) => ({
+        c, g: x.g, w: x.w, k: x.k, d: x.d, a: x.a, kda: kdaOf(x.k, x.d, x.a), csm: ratio(x.cs, x.mcs), dpm: ratio(x.dmg, x.mdmg, 0),
+        gd15: x.gd15.get(), csd15: x.csd15.get(1),
+      }))
       .sort((p, q) => q.g - p.g || q.w - p.w),
     roles: [...roles.entries()].sort((p, q) => q[1] - p[1]).map(([r]) => r),
+    tl: playerTl(rows),
   };
 }
 
@@ -193,6 +301,122 @@ export interface TeamAgg {
   nPicks: number;
   bans: [string, number][];
   bansVs: [string, number][];
+  /** combined kills per minute (both teams) */
+  ckpm: number | null;
+  /** Oracle's Elixir's early-game numbers */
+  tl: TeamTl | null;
+}
+
+/** Oracle's Elixir's numbers for a team over some games (rates in percent of the games where they're known). */
+export interface TeamTl {
+  /** games with the gold lead at 15 minutes */
+  n: number;
+  gd10: number | null;
+  gd15: number | null;
+  gd20: number | null;
+  csd15: number | null;
+  xpd15: number | null;
+  /** % of games ahead in gold at 15 */
+  lead15: number | null;
+  /** [games, wins] when ahead / behind in gold at 15 */
+  ahead: [number, number];
+  behind: [number, number];
+  fb: number | null;
+  ft: number | null;
+  fmt: number | null;
+  f3t: number | null;
+  fd: number | null;
+  fh: number | null;
+  fbaron: number | null;
+  /** turret plates taken / lost per game */
+  plates: number | null;
+  platesLost: number | null;
+  /** void grubs per game and their share of all grubs in their games */
+  grubs: number | null;
+  grubShare: number | null;
+  wpm: number | null;
+  wcpm: number | null;
+  /** control wards bought per game, vision score per minute */
+  cw: number | null;
+  vspm: number | null;
+}
+
+function teamTl(rows: TeamGameRow[]): TeamTl | null {
+  const diffs = Array.from({ length: 5 }, () => new Avg());
+  const firsts = Array.from({ length: 7 }, () => new Rate());
+  const lead = new Rate();
+  const ahead: [number, number] = [0, 0];
+  const behind: [number, number] = [0, 0];
+  const plates = new Avg();
+  const platesLost = new Avg();
+  const grubs = new Avg();
+  const cw = new Avg();
+  let grubFor = 0, grubAll = 0, wards = 0, cleared = 0, vis = 0, wMin = 0, any = false;
+  for (const r of rows) {
+    const t = r[23] as TeamTimeline | null | undefined;
+    if (!t) continue;
+    any = true;
+    for (let i = 0; i < 5; i++) diffs[i].add(t[i]);
+    const g15 = t[1];
+    if (g15 != null) {
+      lead.add(g15 > 0);
+      if (g15 > 0) {
+        ahead[0]++;
+        ahead[1] += r[7];
+      } else if (g15 < 0) {
+        behind[0]++;
+        behind[1] += r[7];
+      }
+    }
+    for (let i = 0; i < 7; i++) {
+      const f = t[5 + i];
+      firsts[i].add(f == null ? null : f === 1);
+    }
+    if (t[12] != null && t[13] != null) {
+      plates.add(t[12]);
+      platesLost.add(t[13]);
+    }
+    if (t[14] != null && t[15] != null) {
+      grubs.add(t[14]);
+      grubFor += t[14];
+      grubAll += t[14] + t[15];
+    }
+    const rmin = r[8];
+    if (rmin && t[16] != null && t[17] != null && t[19] != null) {
+      wards += t[16];
+      cleared += t[17];
+      vis += t[19];
+      wMin += rmin;
+    }
+    cw.add(t[18]);
+  }
+  if (!any) return null;
+  return {
+    n: diffs[1].n,
+    gd10: diffs[0].get(),
+    gd15: diffs[1].get(),
+    gd20: diffs[2].get(),
+    csd15: diffs[3].get(1),
+    xpd15: diffs[4].get(),
+    lead15: lead.get(),
+    ahead,
+    behind,
+    fb: firsts[0].get(),
+    ft: firsts[1].get(),
+    fmt: firsts[2].get(),
+    f3t: firsts[3].get(),
+    fd: firsts[4].get(),
+    fh: firsts[5].get(),
+    fbaron: firsts[6].get(),
+    plates: plates.get(1),
+    platesLost: platesLost.get(1),
+    grubs: grubs.get(1),
+    grubShare: share(grubFor, grubAll),
+    wpm: ratio(wards, wMin, 2),
+    wcpm: ratio(cleared, wMin, 2),
+    cw: cw.get(1),
+    vspm: ratio(vis, wMin, 2),
+  };
 }
 
 const top = (m: Map<string, number>, n: number): [string, number][] => [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n);
@@ -200,7 +424,7 @@ const top = (m: Map<string, number>, n: number): [string, number][] => [...m.ent
 /** A team's numbers over some games. */
 export function teamAgg(rows: TeamGameRow[]): TeamAgg {
   let g = 0, w = 0, sg = 0, min = 0, minG = 0, kills = 0, deaths = 0, gold = 0, gd = 0, goldMin = 0, goldGames = 0;
-  let drag = 0, odrag = 0, bar = 0, obar = 0, tow = 0, otow = 0;
+  let drag = 0, odrag = 0, bar = 0, obar = 0, tow = 0, otow = 0, ck = 0, ckMin = 0;
   const blue: [number, number] = [0, 0];
   const red: [number, number] = [0, 0];
   const picks = new Map<string, [number, number]>();
@@ -221,6 +445,10 @@ export function teamAgg(rows: TeamGameRow[]): TeamAgg {
       sg++;
       kills += k;
       deaths += ok;
+      if (rmin) {
+        ck += k + ok;
+        ckMin += rmin;
+      }
       if (gl != null && ogl != null && rmin) {
         gold += gl;
         gd += gl - ogl;
@@ -263,6 +491,8 @@ export function teamAgg(rows: TeamGameRow[]): TeamAgg {
     nPicks: picks.size,
     bans: top(bans, 10),
     bansVs: top(bansVs, 10),
+    ckpm: ratio(ck, ckMin, 2),
+    tl: teamTl(rows),
   };
 }
 

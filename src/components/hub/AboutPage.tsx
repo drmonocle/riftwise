@@ -21,6 +21,13 @@ const Term: React.FC<{ t: string; children: React.ReactNode }> = ({ t, children 
 export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onOpenUrl }) => {
   usePageTitle(tl("How we count"));
   const report = reportUrl(typeof window !== "undefined" ? window.location.href : "");
+  const OE_URL = "https://oracleselixir.com/";
+  const openOe = (e: React.MouseEvent) => {
+    if (onOpenUrl) {
+      e.preventDefault();
+      onOpenUrl(OE_URL);
+    }
+  };
   const openReport = (e: React.MouseEvent) => {
     if (onOpenUrl) {
       e.preventDefault();
@@ -32,6 +39,12 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
       <Section title={tl("Where the numbers come from")}>
         <ul className="list-disc pl-4 space-y-1 text-rw-sub">
           <li>{tl("Leaguepedia (lol.fandom.com): every pro game since 2011, with scoreboards, drafts, rosters, results and prize money. Shared under the CC BY-SA 3.0 license.")}</li>
+          <li>
+            <a href="https://oracleselixir.com/" onClick={openOe} target="_blank" rel="noopener noreferrer" className="text-rw-teal hover:underline font-semibold">
+              Oracle's Elixir
+            </a>{" "}
+            {tl("(oracleselixir.com) by Tim Sevenhuysen: the early game of most pro games since 2014 (gold, CS and XP leads at 10, 15 and 20 minutes, first blood, first tower, turret plates, void grubs, wards). Free for non-commercial use with credit; thank you, Tim.")}
+          </li>
           <li>{tl("Riot's esports schedule: live scores and upcoming matches.")}</li>
           <li>{tl("The stats are rebuilt whenever new games come in: results show up within a few hours of a series, full game stats (KDA, gold, items) overnight. The newest games can be missing details until then.")}</li>
         </ul>
@@ -51,6 +64,15 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
           <Term t={`${tl("CS/m")} · ${tl("GPM")} · ${tl("DPM")}`}>{tl("Creep score, gold and damage to champions per minute of game time.")}</Term>
           <Term t={`${tl("DMG%")} · ${tl("Gold%")} · ${tl("VS%")}`}>{tl("A player's share of the team's damage to champions, gold and vision score.")}</Term>
           <Term t={tl("GD/m")}>{tl("The team's gold lead at the end of the game, per minute played.")}</Term>
+          <Term t="GD@15 · CSD@15 · XPD@15">
+            {tl("Gold, CS and experience lead at 15 minutes: a player against the opponent in the same role, a team against the other team. Also shown at 10 and 20 minutes.")}
+          </Term>
+          <Term t={tl("Ahead at 15")}>{tl("How often a team was ahead in gold at 15 minutes, and its win rate when ahead or behind then.")}</Term>
+          <Term t={`${tl("FB%")} · ${tl("FT%")}`}>
+            {tl("First blood and first tower: how often a team got it. For a player: how often they had the kill or an assist on first blood.")}
+          </Term>
+          <Term t={tl("DMG% − Gold%")}>{tl("Damage share minus gold share. Above zero: more damage than the gold they got would suggest.")}</Term>
+          <Term t="CKPM">{tl("Kills per minute by both teams together: how bloody a team's games are.")}</Term>
           <Term t={`${tl("DRA%")} · ${tl("Baron%")}`}>{tl("The share of all dragons (or barons) in a team's games that the team took.")}</Term>
           <Term t={tl("Presence")}>{tl("The share of games where a champion was picked or banned.")}</Term>
           <Term t={tl("Blind%")}>{tl("How often a champion was picked before the enemy laner was known (games where the draft order is known).")}</Term>
@@ -65,7 +87,9 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
       </Section>
       <Section title={tl("Not shown yet")}>
         <ul className="list-disc pl-4 space-y-1 text-rw-sub">
-          <li>{tl("Gold, CS and XP difference at 15 minutes, first blood, first tower, wards placed and cleared, solo kills: coming once the game timelines are in our database.")}</li>
+          <li>{tl("Solo kills: not in our data yet.")}</li>
+          <li>{tl("Early-game numbers (leads at 15, first blood, plates, wards) only cover games Oracle's Elixir has a timeline for: most league and international games, fewer small or old events.")}</li>
+          <li>{tl("Turret plates work differently since the 2026 patches (many more per game), so plate counts from before and after don't compare.")}</li>
           <li>{tl("Pentakills are fully recorded from 2018 on; Player of the Game mostly from 2018 on; prize money only where it's listed in US dollars.")}</li>
         </ul>
       </Section>
@@ -82,7 +106,7 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
       </Section>
       <Section title={tl("Use the data")}>
         <p className="text-rw-sub">
-          {tl("Free to use, also in videos, articles and broadcasts. Please credit RiftWise (lolworlds.com/riftwise) and Leaguepedia.")}{" "}
+          {tl("Free to use, also in videos, articles and broadcasts. Please credit RiftWise (lolworlds.com/riftwise) and Leaguepedia, and Oracle's Elixir for early-game numbers.")}{" "}
           <HubLink to={{ kind: "data" }} className="text-rw-teal hover:underline font-semibold">
             {tl("Data downloads")}
           </HubLink>

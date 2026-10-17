@@ -2,11 +2,28 @@
 import React, { useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import type { EventPlayer, EventTeamStats, HubEvent } from "../../hub/types";
-import { ChampIcon, PlayerLink, Section, TeamLink, fmtNum } from "./ui";
+import { ChampIcon, OeCredit, PlayerLink, Section, TeamLink, fmtNum } from "./ui";
 import { Column, SortTable, per } from "./SortTable";
 
 const ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"];
 const pct = (n: number | null) => (n === null ? "–" : `${Math.round(n * 100)}%`);
+const signed = (v: number | null) => (v == null ? "–" : <span className={v >= 0 ? "text-rw-teal" : "text-rw-red"}>{`${v > 0 ? "+" : ""}${fmtNum(v)}`}</span>);
+
+/** Oracle's Elixir columns for the player table (leads over the lane opponent at 15, first blood). */
+const playerEarlyCols = (): Column<EventPlayer>[] => [
+  { key: "g15", label: "GD@15", title: tl("Gold lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? per(p.g15 || 0, p.tn, 0) : null), render: (p) => signed(p.tn ? per(p.g15 || 0, p.tn, 0) : null) },
+  { key: "c15", label: "CSD@15", title: tl("CS lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? per(p.c15 || 0, p.tn, 1) : null), render: (p) => signed(p.tn ? per(p.c15 || 0, p.tn, 1) : null) },
+  { key: "x15", label: "XPD@15", title: tl("XP lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? per(p.x15 || 0, p.tn, 0) : null), render: (p) => signed(p.tn ? per(p.x15 || 0, p.tn, 0) : null) },
+  { key: "fbp", label: tl("FB%"), title: tl("Took part in first blood (kill or assist)"), value: (p) => (p.fbn ? per(p.fbp || 0, p.fbn, 3) : null), render: (p) => (p.fbn ? pct(per(p.fbp || 0, p.fbn, 3)) : "–") },
+];
+
+/** Oracle's Elixir columns for the team table. */
+const teamEarlyCols = (): Column<EventTeamStats>[] => [
+  { key: "g15", label: "GD@15", title: tl("Gold lead at 15 minutes"), value: (t) => (t.tn ? per(t.g15 || 0, t.tn, 0) : null), render: (t) => signed(t.tn ? per(t.g15 || 0, t.tn, 0) : null) },
+  { key: "fb", label: tl("FB%"), title: tl("First blood rate"), value: (t) => (t.fbn ? per(t.fb || 0, t.fbn, 3) : null), render: (t) => (t.fbn ? pct(per(t.fb || 0, t.fbn, 3)) : "–") },
+  { key: "ft", label: tl("FT%"), title: tl("First tower rate"), value: (t) => (t.fbn ? per(t.ft || 0, t.fbn, 3) : null), render: (t) => (t.fbn ? pct(per(t.ft || 0, t.fbn, 3)) : "–") },
+  { key: "pl", label: tl("Plates"), title: tl("Turret plates taken per game"), value: (t) => (t.pln ? per(t.pl || 0, t.pln, 1) : null) },
+];
 
 export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ e, hidden }) => {
   const players = hidden ? [] : e.players || [];
@@ -52,6 +69,8 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
     },
   ];
   if (players.some((p) => p.mvp)) cols.splice(5, 0, { key: "mvp", label: tl("POG"), title: tl("Player of the Game awards"), value: (p) => p.mvp || 0 });
+  const early = players.some((p) => p.tn || p.fbn);
+  if (early) cols.splice(cols.length - 1, 0, ...playerEarlyCols());
   return (
     <Section title={tl("Player stats")} share={`${e.u}-players`}>
       <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
@@ -74,6 +93,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
       </div>
       <SortTable rows={rows} columns={cols} initial={{ key: "kda", desc: true }} rowKey={(p, i) => `${p.u || p.n}-${p.t}-${i}`} copyName={`${e.u}-players`} />
       <p className="text-[10px] text-rw-muted">{tl("Click a column to sort. K / D / A are per game; KP = kill participation.")}</p>
+      {early && <OeCredit />}
     </Section>
   );
 };
@@ -123,10 +143,13 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
   ];
   // Void grubs only exist since 2024
   const cols = all.filter((c) => c.key !== "grub" || teams.some((t) => t.grub > 0));
+  const early = teams.some((t) => t.tn || t.fbn || t.pln);
+  if (early) cols.push(...teamEarlyCols());
   return (
     <Section title={tl("Team stats")} share={`${e.u}-teams`}>
       <SortTable rows={teams} columns={cols} initial={{ key: "wr", desc: true }} rowKey={(t, i) => `${t.t}-${i}`} copyName={`${e.u}-teams`} />
       <p className="text-[10px] text-rw-muted">{tl("Per game, games with a full scoreboard only.")}</p>
+      {early && <OeCredit />}
     </Section>
   );
 };

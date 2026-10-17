@@ -19,8 +19,10 @@ import { HeadToHeadSeries } from "./Archives";
 import { ComparePick, TeamRows, bothOptions } from "./ComparePage";
 import { PeriodPicker, defaultPeriod } from "./PeriodStats";
 import { StoryLine, StoryList, noteText } from "./Storylines";
-import { card, ChampIcon, fmtDate, HubLink, isFresh, Loading, RevealButton, Section, useHidden, useLoad, usePageTitle } from "./ui";
+import { card, ChampIcon, fmtDate, HubLink, isFresh, Loading, OeCredit, RevealButton, Section, useHidden, useLoad, usePageTitle } from "./ui";
 import { CopyPageImage } from "./ShareImage";
+
+const sgn = (v: number | null) => (v == null ? "–" : `${v > 0 ? "+" : ""}${v}`);
 
 const ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"];
 
@@ -390,6 +392,11 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
               {s.dpm != null ? ` · ${s.dpm} DPM` : ""}
               {s.dmgShare != null ? ` · ${s.dmgShare.toFixed(0)}% DMG` : ""}
             </div>
+            {s.tl && s.tl.gd15 != null && (
+              <div className="text-[11px] text-rw-muted tabular-nums" title={tl("Average lead over the lane opponent at 15 minutes")}>
+                @15 {sgn(s.tl.gd15)} {tl("gold")} · {sgn(s.tl.csd15)} CS · {sgn(s.tl.xpd15)} XP
+              </div>
+            )}
             <div className={`flex gap-1 flex-wrap ${right ? "justify-end" : ""}`}>
               {s.champs.slice(0, 4).map((c) => (
                 <span key={c.c} className="flex items-center gap-0.5 text-[10px] text-rw-sub" title={`${c.g} · ${winRate(c.w, c.g)}`}>
@@ -417,6 +424,7 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
         ))}
       </ul>
       <p className="text-[10px] text-rw-muted">{tl("Starters: the players with the most games in each team's newest roster. Games · win rate · KDA · kill participation; champions with games played.")}</p>
+      <OeCredit />
     </Section>
   );
 };
