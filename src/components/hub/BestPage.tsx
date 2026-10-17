@@ -172,11 +172,15 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
       <td className="py-2 pr-3 w-16">
         <RatingBadge r={rating} />
       </td>
-      <td className="py-2 pr-3 min-w-[12rem]">
+      <td className="py-2 pr-3 sm:min-w-[12rem]">
         <HubLink to={{ kind: "match", slug, game: n }} className="hover:underline">
           <Team name={a} won={w === 1} /> <span className="text-rw-muted">vs</span> <Team name={b} won={w === 2} />
           <span className="text-rw-sub"> · {tl("Game {n}", { n })}</span>
         </HubLink>
+        <div className="text-[10px] text-rw-muted mt-0.5 sm:hidden">
+          <EventLink name={en} u={eslug} className="hover:text-rw-accent hover:underline" />
+          {stage ? ` · ${stage}` : ""} · {fmtDate(date)}
+        </div>
         <div className="text-[10px] text-rw-muted mt-0.5 flex flex-wrap gap-x-2">
           {ka != null && kb != null && <span className="tabular-nums">{tl("{a}–{b} kills", { a: ka, b: kb })}</span>}
           {min ? <span className="tabular-nums">{tl("{n} min", { n: Math.round(min) })}</span> : null}
@@ -187,11 +191,11 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
           ) : null}
         </div>
       </td>
-      <td className="py-2 pr-3 min-w-[10rem]">
+      <td className="py-2 pr-3 min-w-[10rem] hidden sm:table-cell">
         <EventLink name={en} u={eslug} className="text-rw-sub hover:text-rw-accent hover:underline" />
         {stage && <div className="text-[10px] text-rw-muted">{stage}</div>}
       </td>
-      <td className="py-2 pr-1 text-rw-muted whitespace-nowrap text-right">{fmtDate(date)}</td>
+      <td className="py-2 pr-1 text-rw-muted whitespace-nowrap text-right hidden sm:table-cell">{fmtDate(date)}</td>
     </tr>
   );
 };
@@ -204,11 +208,15 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
       <td className="py-2 pr-3 w-16">
         <RatingBadge r={rating} />
       </td>
-      <td className="py-2 pr-3 min-w-[12rem]">
+      <td className="py-2 pr-3 sm:min-w-[12rem]">
         <HubLink to={{ kind: "match", slug }} className="hover:underline">
           <Team name={a} won={wa > wb} /> <span className="tabular-nums text-rw-text font-semibold">{wa}–{wb}</span>{" "}
           <Team name={b} won={wb > wa} />
         </HubLink>
+        <div className="text-[10px] text-rw-muted mt-0.5 sm:hidden">
+          <EventLink name={en} u={eslug} className="hover:text-rw-accent hover:underline" />
+          {stage ? ` · ${stage}` : ""} · {fmtDate(date)}
+        </div>
         <div className="text-[10px] text-rw-muted mt-0.5">
           {tn("{n} game", "{n} games", games)} ·{" "}
           <HubLink to={{ kind: "match", slug, game: bestN }} className="hover:underline hover:text-rw-accent">
@@ -216,11 +224,11 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
           </HubLink>
         </div>
       </td>
-      <td className="py-2 pr-3 min-w-[10rem]">
+      <td className="py-2 pr-3 min-w-[10rem] hidden sm:table-cell">
         <EventLink name={en} u={eslug} className="text-rw-sub hover:text-rw-accent hover:underline" />
         {stage && <div className="text-[10px] text-rw-muted">{stage}</div>}
       </td>
-      <td className="py-2 pr-1 text-rw-muted whitespace-nowrap text-right">{fmtDate(date)}</td>
+      <td className="py-2 pr-1 text-rw-muted whitespace-nowrap text-right hidden sm:table-cell">{fmtDate(date)}</td>
     </tr>
   );
 };
