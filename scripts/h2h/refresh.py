@@ -214,13 +214,13 @@ def main(out_path):
     elif os.path.exists(BASE_SERIES_PATH):
         series = json.load(open(BASE_SERIES_PATH, encoding="utf-8"))
     new_series = []
-    known = defaultdict(list)  # pair -> dates of the series the base table already has
+    known = defaultdict(list)  # pair -> (date, its row in series[pair]["recent"]) for the series the base table has
     for key, entry in series.items():
-        for d, *_ in entry.get("recent", []):
-            if d and len(d) >= 10:  # a few old series have no date
-                known[key].append(date.fromisoformat(d[:10]))
+        for row in entry.get("recent", []):
+            if row[0] and len(row[0]) >= 10:  # a few old series have no date
+                known[key].append((date.fromisoformat(row[0][:10]), row))
 
-    added = skipped = 0
+    added = skipped = topped = 0
     for e in sorted(events.values(), key=lambda e: e["startTime"]):
         start = parse_time(e["startTime"])
         if e.get("state") != "completed" or not (window <= start < cutoff):
@@ -234,10 +234,24 @@ def main(out_path):
         if a > b:
             a, b, aw, bw = b, a, bw, aw
         # already in the base table: same teams within a day (each base series matches one lolesports series)
-        same = [i for i, d in enumerate(known.get(f"{a}__{b}", [])) if abs((d - start.date()).days) <= 1]
+        same = [i for i, (d, _) in enumerate(known.get(f"{a}__{b}", [])) if abs((d - start.date()).days) <= 1]
         if same:
-            known[f"{a}__{b}"].pop(same[0])
-            skipped += 1
+            _, row = known[f"{a}__{b}"].pop(same[0])
+            # the game database can be a few games behind on a series played today (C9-FUR at Worlds 2026: it had
+            # game 1 of a 3-1): when lolesports has more games, count the missing ones
+            da, db = aw - row[2], bw - row[3]
+            if da >= 0 and db >= 0 and da + db > 0:
+                pairs[(a, b)][0] += da
+                pairs[(a, b)][1] += db
+                row[2], row[3] = aw, bw
+                league = (e.get("league") or {}).get("name") or ""
+                if big_event(league) or big_event(row[1]):
+                    entry = series[f"{a}__{b}"]
+                    entry["intl"][0] += da
+                    entry["intl"][1] += db
+                topped += 1
+            else:
+                skipped += 1
             continue
         pairs[(a, b)][0] += aw
         pairs[(a, b)][1] += bw
@@ -276,7 +290,7 @@ def main(out_path):
     for name, data in shards.items():
         with open(os.path.join(out_dir, "series", f"{name}.json"), "w", encoding="utf-8", newline="") as f:
             json.dump(dict(sorted(data.items())), f, ensure_ascii=False, separators=(",", ":"))
-    print(f"{len(events)} events since {window:%Y-%m-%d %H:%M}; added {added} completed series, {skipped} already in the base; "
+    print(f"{len(events)} events since {window:%Y-%m-%d %H:%M}; added {added} completed series, {skipped} already in the base, {topped} topped up from lolesports; "
           f"{len(out['pairs'])} pairs; cutoff {out['cutoff']}; {len(series)} pairs with history in {len(shards)} shards")
 
 
