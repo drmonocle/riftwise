@@ -28,7 +28,8 @@ folder, so one latest.json switch publishes both:
   hub/leagueyear/<league>/<year>.json  a league's whole season: player and team tables (percentile ranks)
   hub/teamgames/<slug>.json         every game of a team: [date, series slug, event slug, event, opponent, its slug, side b/r,
                                     won, minutes, kills, deaths, gold, opp gold, dragons, opp dragons, barons, opp barons,
-                                    towers, opp towers, bans, picks, opponent's bans, roles of the picks, timeline],
+                                    towers, opp towers, bans, picks, opponent's bans, roles of the picks, timeline,
+                                    each pick's gold lead over its lane opponent at 15 (or null)],
                                     newest first; timeline is Oracle's Elixir's [gd10, gd15, gd20, csd15, xpd15,
                                     first blood, first tower, first mid tower, first to 3 towers, first dragon, first
                                     herald, first baron, plates, opp plates, grubs, opp grubs, wards, wards killed,
@@ -913,6 +914,11 @@ def build(ctx) -> dict:
                     g_rows = prow.get(gid, []) if gid else []
                     oe_g = timeline.pick(oe.get((mid, g["n"])), {r["champion"] for r in g_rows if r["champion"]})
                     oe_p = oe_g["p"] if oe_g else {}
+                    # each champion's gold lead over its lane opponent at 15 (team logs, game finder)
+                    gd15_of = {}
+                    for ch_, r_ in oe_p.items():
+                        if r_["golddiffat15"] is not None:
+                            gd15_of[ch_] = timeline.ival(r_["golddiffat15"])
                     oe_side = {}
                     if oe_g:
                         for side, name in (("blue", g["t1"]), ("red", g["t2"])):
@@ -1004,7 +1010,8 @@ def build(ctx) -> dict:
                                 1 if g["w"] == name else 0, item.get("min"), sd.get("k"), od.get("k"), sd.get("gold"), od.get("gold"),
                                 sd.get("drag"), od.get("drag"), sd.get("barons"), od.get("barons"), sd.get("towers"), od.get("towers"),
                                 sd.get("bans") or [], sd.get("picks") or [], od.get("bans") or [],
-                                [pick_role.get((name, ch), -1) for ch in (sd.get("picks") or [])], oe_side.get(side)])
+                                [pick_role.get((name, ch), -1) for ch in (sd.get("picks") or [])], oe_side.get(side),
+                                [gd15_of.get(ch) for ch in (sd.get("picks") or [])] if gd15_of else None])
                     rows = prow.get(gid, []) if gid else []
                     if rows:
                         n_stats_games += 1
@@ -1190,7 +1197,8 @@ def build(ctx) -> dict:
                                 lst.append([ch, -1] if r is None else [ch, ROLE_ORDER.get(r["role"] or "", -1), r["kills"], r["deaths"],
                                                                        r["assists"], r["cs"], r["gold"], r["damage"],
                                                                        ctx.pname(r["page_key"]) if r["page_key"] else r["raw_name"],
-                                                                       player_slug.get(r["page_key"])])
+                                                                       player_slug.get(r["page_key"]),
+                                                                       *([gd15_of[ch]] if ch in gd15_of else [])])
                             picks_out.append(lst)
                         if picks_out[0] or picks_out[1]:
                             cg = champ_games[(lu_c, (g["date"] or "0000")[:4])]

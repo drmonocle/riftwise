@@ -1,6 +1,7 @@
 /**
  * How a team drafts, over the chosen period: blue-side first picks, red-side first two picks, phase 1 and phase 2
- * bans, which role they lock in first and keep for last, and flex picks (champions they played in two roles).
+ * bans, which role they lock in first and keep for last, which roles they pick in each phase, flex picks
+ * (champions they played in two roles), their most played lane pairs, and how deep each role's pool is (Fearless).
  */
 import React, { useMemo } from "react";
 import { tl, roleName } from "../../i18n";
@@ -48,8 +49,95 @@ export function draftTendencies(rows: TeamGameRow[]) {
       s.add(role);
       flexMap.set(c, s);
     });
+  // which roles they draft in phase 1 (first three picks) and phase 2 (last two: where counter-picks go)
+  const phaseRoles = (from: number, to: number) => {
+    const c = [0, 0, 0, 0, 0];
+    let n = 0;
+    for (const r of withDraft)
+      for (let i = from; i < to; i++) {
+        const role = (r[22] || [])[i];
+        if (role != null && role >= 0) {
+          c[role]++;
+          n++;
+        }
+      }
+    // share of games in which that role was picked in this phase
+    const games = withDraft.length || 1;
+    return n ? c.map((v, i) => [i, v / games] as [number, number]).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]) : [];
+  };
+  // lane pairs (bot + support, jungle + mid) and champions per role
+  const pairs = (ra: number, rb: number): Pair[] => {
+    const m = new Map<string, [number, number, number, number]>(); // games, wins, sum of both leads at 15, games with it
+    for (const r of withDraft) {
+      const roles = r[22] || [];
+      const ia = roles.indexOf(ra);
+      const ib = roles.indexOf(rb);
+      if (ia < 0 || ib < 0) continue;
+      const a = (r[20] || [])[ia];
+      const b = (r[20] || [])[ib];
+      if (!a || !b) continue;
+      const k = `${a}\u0000${b}`;
+      const x = m.get(k) || [0, 0, 0, 0];
+      x[0]++;
+      x[1] += r[7];
+      const ga = r[24]?.[ia];
+      const gb = r[24]?.[ib];
+      if (ga != null && gb != null) {
+        x[2] += ga + gb;
+        x[3]++;
+      }
+      m.set(k, x);
+    }
+    return [...m.entries()]
+      .filter(([, x]) => x[0] >= 2)
+      .sort((p, q) => q[1][0] - p[1][0])
+      .slice(0, 5)
+      .map(([k, x]) => {
+        const [a, b] = k.split("\u0000");
+        return [a, b, x[0], x[1], x[3] ? Math.round(x[2] / x[3]) : null];
+      });
+  };
+  // red's R1 + R2 opener pairs
+  const openers = new Map<string, [number, number]>();
+  for (const r of red) {
+    const [a, b] = r[20];
+    const k = `${a}\u0000${b}`;
+    const x = openers.get(k) || [0, 0];
+    x[0]++;
+    x[1] += r[7];
+    openers.set(k, x);
+  }
+  // which role gets the last pick(s), where counter-picks go: R5 on red, B4-B5 on blue
+  const lastRoles = (list: TeamGameRow[], idx: number[]) => {
+    const c = [0, 0, 0, 0, 0];
+    for (const r of list)
+      for (const i of idx) {
+        const role = (r[22] || [])[i];
+        if (role != null && role >= 0) c[role]++;
+      }
+    return list.length ? c.map((v, i) => [i, v / list.length] as [number, number]).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]) : [];
+  };
+  const perRole = ROLES.map(() => new Map<string, number>());
+  for (const r of rows)
+    (r[20] || []).forEach((c, i) => {
+      const role = (r[22] || [])[i];
+      if (role != null && role >= 0) perRole[role].set(c, (perRole[role].get(c) || 0) + 1);
+    });
   return {
     games: withDraft.length,
+    phase1: phaseRoles(0, 3),
+    phase2: phaseRoles(3, 5),
+    r5: lastRoles(red, [4]),
+    b45: lastRoles(blue, [3, 4]),
+    r12pairs: [...openers.entries()]
+      .filter(([, x]) => x[0] >= 2)
+      .sort((p, q) => q[1][0] - p[1][0])
+      .slice(0, 4)
+      .map(([k, x]) => [...k.split("\u0000"), x[0], x[1], null] as Pair),
+    botDuos: pairs(3, 4),
+    midJungle: pairs(1, 2),
+    /** per role: champions played, and how many of them 2+ times */
+    depth: perRole.map((m) => [m.size, [...m.values()].filter((n) => n >= 2).length] as [number, number]),
     b1: tally(blue, (r) => [r[20][0]], 5),
     r12: tally(red, (r) => r[20].slice(0, 2), 5),
     bans1: tally(withDraft, (r) => (r[19] || []).slice(0, 3), 6),
@@ -93,6 +181,37 @@ const RoleLine: React.FC<{ title: string; shares: [number, number][] }> = ({ tit
     </div>
   ) : null;
 
+/** [champion a, champion b, games, wins, their combined gold lead at 15 or null] */
+type Pair = [string, string, number, number, number | null];
+
+const Pairs: React.FC<{ title: string; hint?: string; list: Pair[] }> = ({ title, hint, list }) =>
+  list.length ? (
+    <div className="min-w-0">
+      <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1" title={hint}>
+        {title}
+      </div>
+      <ul className="text-xs space-y-1">
+        {list.map(([a, b, n, w, gd]) => (
+          <li key={`${a}-${b}`} className="flex justify-between gap-2 min-w-0">
+            <span className="flex items-center gap-1 min-w-0">
+              <ChampLink name={a} size={16} />
+              <span className="text-rw-muted">+</span>
+              <ChampLink name={b} size={16} />
+            </span>
+            <span className="text-rw-sub tabular-nums shrink-0">
+              {n} · {winRate(w, n)}
+              {gd != null && (
+                <span title={tl("Their combined gold lead over the lane opponents at 15 minutes")}>
+                  {` · ${gd > 0 ? "+" : ""}${gd}`}
+                </span>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  ) : null;
+
 export const DraftTendencies: React.FC<{ rows: TeamGameRow[] }> = ({ rows }) => {
   const d = useMemo(() => draftTendencies(rows), [rows]);
   if (d.games < 3) return null;
@@ -110,6 +229,32 @@ export const DraftTendencies: React.FC<{ rows: TeamGameRow[] }> = ({ rows }) => 
       </div>
       <RoleLine title={tl("First role locked in")} shares={d.firstRole} />
       <RoleLine title={tl("Role kept for last")} shares={d.lastRole} />
+      <RoleLine title={tl("Phase 1 picks")} shares={d.phase1} />
+      <RoleLine title={tl("Phase 2 picks")} shares={d.phase2} />
+      <RoleLine title={tl("Last pick on red (R5)")} shares={d.r5} />
+      <RoleLine title={tl("Last picks on blue (B4-B5)")} shares={d.b45} />
+      {(d.botDuos.length > 0 || d.midJungle.length > 0 || d.r12pairs.length > 0) && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Pairs
+            title={tl("Jungle + mid pairs")}
+            hint={tl("Games · win rate · combined gold lead at 15")}
+            list={d.midJungle}
+          />
+          <Pairs title={tl("Bot lane pairs")} hint={tl("Games · win rate · combined gold lead at 15")} list={d.botDuos} />
+          <Pairs title={tl("Red openers (R1 + R2)")} list={d.r12pairs} />
+        </div>
+      )}
+      <div className="text-xs" title={tl("Champions each role played in this period (in brackets: 2+ games). In Fearless, a Bo5 needs up to five per role.")}>
+        <span className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mr-2">{tl("Pool depth")}</span>
+        <span className="text-rw-text">
+          {d.depth.map(([n, two], i) => (
+            <span key={i} className={n < 5 ? "text-rw-red" : ""}>
+              {i > 0 ? " · " : ""}
+              {`${roleName(ROLES[i])} ${n} (${two})`}
+            </span>
+          ))}
+        </span>
+      </div>
       {d.flex.length > 0 && (
         <div className="text-xs flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="text-[10px] uppercase tracking-wider font-bold text-rw-muted">{tl("Flex picks")}</span>

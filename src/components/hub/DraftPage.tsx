@@ -16,12 +16,13 @@ import { ROLES } from "../../hub/champAgg";
 import {
   PeriodKey,
   inPeriod,
+  kdaOf,
   playerRowRef,
   teamRowRef,
 } from "../../hub/period";
 import { ComparePick, bothOptions } from "./ComparePage";
 import { PeriodPicker, defaultPeriod } from "./PeriodStats";
-import { Side, loadSide } from "./PrepPage";
+import { FearlessDepth, Side, loadSide } from "./PrepPage";
 import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, Section, useLoad, usePageTitle } from "./ui";
 import { loadHubChamp, prettySlug } from "../../hub/data";
 import type { LaneLine } from "../../hub/types";
@@ -41,13 +42,26 @@ const ORDER: { side: Who; ban: boolean }[] = [
   ...(["r", "b", "b", "r"] as Who[]).map((side) => ({ side, ban: false })),
 ];
 
+interface PlayerOnChamp {
+  name: string;
+  /** this period: games, wins, KDA, average gold lead over the lane opponent at 15 (Oracle's Elixir games) */
+  g: number;
+  w: number;
+  kda: number | null;
+  gd15: number | null;
+  /** whole career */
+  cg: number;
+  cw: number;
+  ckda: number;
+}
+
 interface Pool {
   picks: Map<string, [number, number]>; // champion -> games, wins
   bans: Map<string, number>;
   bansVs: Map<string, number>;
   roles: Map<string, Set<number>>;
-  /** who plays it: games, wins, average gold lead over the lane opponent at 15 (Oracle's Elixir games) */
-  players: Map<string, { name: string; g: number; w: number; gd15: number | null }[]>;
+  /** who on the roster plays it: in the period and in their whole career (catches pocket picks) */
+  players: Map<string, PlayerOnChamp[]>;
   games: number;
 }
 
@@ -76,22 +90,41 @@ function pool(side: Side, period: PeriodKey): Pool {
   }
   for (const pl of side.players) {
     if (!pl) continue;
-    const by = new Map<string, [number, number, number, number]>();
-    for (const g of inPeriod(pl.log, period, playerRowRef)) {
-      const x = by.get(g[2]) || [0, 0, 0, 0];
-      x[0]++;
-      x[1] += g[6];
-      const gd = g[21]?.[3];
-      if (gd != null) {
-        x[2] += gd;
-        x[3]++;
-      }
+    const now = new Set(inPeriod(pl.log, period, playerRowRef));
+    // champion -> [games, wins, k, d, a, gold lead sum, games with it] this period, then the same for the career
+    const by = new Map<string, number[]>();
+    for (const g of pl.log) {
+      if (!g[2]) continue;
+      const x = by.get(g[2]) || new Array(14).fill(0);
+      const add = (o: number) => {
+        x[o]++;
+        x[o + 1] += g[6];
+        x[o + 2] += g[3];
+        x[o + 3] += g[4];
+        x[o + 4] += g[5];
+        const gd = g[21]?.[3];
+        if (gd != null) {
+          x[o + 5] += gd;
+          x[o + 6]++;
+        }
+      };
+      if (now.has(g)) add(0);
+      add(7);
       by.set(g[2], x);
     }
-    for (const [c, [g, w, gd, n]] of by)
+    for (const [c, x] of by)
       p.players.set(c, [
         ...(p.players.get(c) || []),
-        { name: pl.p.name, g, w, gd15: n ? Math.round(gd / n) : null },
+        {
+          name: pl.p.name,
+          g: x[0],
+          w: x[1],
+          kda: x[0] ? kdaOf(x[2], x[3], x[4]) : null,
+          gd15: x[6] ? Math.round(x[5] / x[6]) : null,
+          cg: x[7],
+          cw: x[8],
+          ckda: kdaOf(x[9], x[10], x[11]),
+        },
       ]);
   }
   return p;
@@ -516,6 +549,7 @@ const Board: React.FC<{
           onPick={place}
         />
       </div>
+      <FearlessDepth a={blue} b={red} period={period} periodLabel="" title={`${blue.team.name}-${red.team.name}`} />
     </div>
   );
 };
@@ -668,17 +702,32 @@ const ChampInfo: React.FC<{
                 m: p.bansVs.get(c) || 0,
               })}
             </div>
-            {(p.players.get(c) || []).map((x) => (
-              <div key={x.name} className="text-rw-text">
-                {x.name}:{" "}
-                {tl("{n} games, won {pct}", { n: x.g, pct: winRate(x.w, x.g) })}
-                {x.gd15 != null && (
-                  <span className="text-rw-sub" title={tl("Average lead over the lane opponent at 15 minutes")}>
-                    {` · GD@15 ${x.gd15 > 0 ? "+" : ""}${x.gd15}`}
+            {(p.players.get(c) || [])
+              .sort((a, b) => b.g - a.g || b.cg - a.cg)
+              .map((x) => (
+                <div key={x.name} className="text-rw-text">
+                  <span className="font-semibold">{x.name}</span>:{" "}
+                  {x.g ? (
+                    <>
+                      {tl("{n} games, won {pct}", { n: x.g, pct: winRate(x.w, x.g) })}
+                      {x.kda != null && ` · ${x.kda} KDA`}
+                      {x.gd15 != null && (
+                        <span className="text-rw-sub" title={tl("Average lead over the lane opponent at 15 minutes")}>
+                          {` · GD@15 ${x.gd15 > 0 ? "+" : ""}${x.gd15}`}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-rw-accent" title={tl("Played it before, but not in this period")}>
+                      {tl("pocket pick")}
+                    </span>
+                  )}
+                  <span className="text-rw-muted">
+                    {" "}
+                    ({tl("career {n} games, won {pct}, {kda} KDA", { n: x.cg, pct: winRate(x.cw, x.cg), kda: x.ckda })})
                   </span>
-                )}
-              </div>
-            ))}
+                </div>
+              ))}
           </div>
         );
       })}
@@ -721,6 +770,14 @@ const Priorities: React.FC<{
             <span className="flex items-center gap-1.5 min-w-0">
               <ChampIcon name={c} size={18} />
               <span className="truncate text-rw-text">{champName(c)}</span>
+              {(p.roles.get(c)?.size || 0) > 1 && (
+                <span
+                  className="text-[9px] font-bold uppercase px-1 rounded bg-rw-accent/20 text-rw-accent shrink-0"
+                  title={[...(p.roles.get(c) || [])].map((r) => roleName(ROLES[r])).join(" / ")}
+                >
+                  {tl("flex")}
+                </span>
+              )}
             </span>
             <span className="text-rw-sub tabular-nums shrink-0">{v}</span>
           </button>

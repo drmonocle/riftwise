@@ -241,12 +241,12 @@ export type TeamTimeline = (number | null)[];
 /**
  * [date, series slug, event slug, event, opponent, its slug, side "b"/"r", won 0/1, minutes, kills, deaths,
  *  gold, opp gold, dragons, opp dragons, barons, opp barons, towers, opp towers, bans, picks, opponent's bans,
- *  roles of the picks, timeline]
+ *  roles of the picks, timeline, each pick's gold lead over its lane opponent at 15]
  */
 export type TeamGameRow = [
   string, string, string, string, string, string | null, "b" | "r", number, number | null, number | null, number | null,
   number | null, number | null, number | null, number | null, number | null, number | null, number | null, number | null,
-  string[], string[], string[]?, number[]?, (TeamTimeline | null)?,
+  string[], string[], string[]?, number[]?, (TeamTimeline | null)?, ((number | null)[] | null)?,
 ];
 
 export interface SideStats {
