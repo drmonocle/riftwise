@@ -198,13 +198,18 @@ export const BroadcastCardButton: React.FC<{ data: () => CardData; name: string 
         if (alive) setState("failed");
       } finally {
         if (alive) setJob(null);
-        setTimeout(() => alive && setState((s) => (s === "busy" ? "" : s)), 2200);
       }
     })();
     return () => {
       alive = false;
     };
   }, [job, name]);
+  // "Copied" / the error note go away after a moment
+  useEffect(() => {
+    if (state !== "copied" && state !== "failed") return;
+    const t = setTimeout(() => setState(""), 2200);
+    return () => clearTimeout(t);
+  }, [state]);
   const start = (save: boolean) => {
     setState("busy");
     setJob({ d: data(), save });
