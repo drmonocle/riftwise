@@ -31,6 +31,7 @@ import {
   useLoad,
   usePageTitle,
 } from "./ui";
+import { STable } from "../STable";
 
 export const EventPage: React.FC<{ slug: string; onOpenUrl?: (url: string) => void }> = ({ slug, onOpenUrl }) => {
   const state = useLoad(() => loadHubEvent(slug), [slug]);
@@ -137,7 +138,7 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
           {resultsHidden ? (
             <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
           ) : (
-            <table className="w-full text-xs">
+            <STable className="w-full text-xs">
               <tbody>
                 {e.results.slice(0, 32).map((r, i) => (
                   <tr key={i} className="border-t border-rw-border first:border-0">
@@ -152,7 +153,7 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </STable>
           )}
         </Section>
       )}
@@ -181,7 +182,7 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
         {e.champs && e.champs.length > 0 && <EventChamps e={e} />}
         {e.teams && e.teams.length > 0 && (
           <Section title={tl("Teams")}>
-            <table className="w-full text-xs">
+            <STable className="w-full text-xs">
               <thead>
                 <tr>
                   <th className={th}>{tl("Team")}</th>
@@ -200,7 +201,7 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </STable>
           </Section>
         )}
       </div>
@@ -324,7 +325,7 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
   const ties = rows.some((r) => r.st);
   return (
     <Section title={name} right={hidden && !hideAll ? <RevealButton onReveal={reveal} small /> : undefined}>
-      <table className="w-full text-xs">
+      <STable className="w-full text-xs">
         <thead>
           <tr>
             <th className={`${th} w-6`}>#</th>
@@ -345,7 +346,7 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
             </tr>
           ))}
         </tbody>
-      </table>
+      </STable>
     </Section>
   );
 };
@@ -413,7 +414,7 @@ const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
     ) : undefined;
   return (
     <Section title={tl("Champions")} right={more}>
-      <table className="w-full text-xs">
+      <STable className="w-full text-xs">
         <thead>
           <tr>
             <th className={th}>{tl("Champion")}</th>
@@ -436,7 +437,7 @@ const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
             </tr>
           ))}
         </tbody>
-      </table>
+      </STable>
     </Section>
   );
 };

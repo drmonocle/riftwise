@@ -19,6 +19,7 @@ import {
   td,
   th,
 } from "./ui";
+import { STable } from "../STable";
 
 const mmss = (m: number) => {
   const s = Math.round(m * 60);
@@ -256,7 +257,7 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
   if (!e.regions || e.regions.length === 0 || hidden) return null;
   return (
     <Section title={tl("Region vs region")}>
-      <table className="w-full text-xs">
+      <STable className="w-full text-xs">
         <thead>
           <tr>
             <th className={th}>{tl("Regions")}</th>
@@ -289,7 +290,7 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
             </tr>
           ))}
         </tbody>
-      </table>
+      </STable>
     </Section>
   );
 };

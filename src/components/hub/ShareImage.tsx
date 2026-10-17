@@ -9,11 +9,12 @@ import { toBlob } from "html-to-image";
 import { tl } from "../../i18n";
 import { IS_WEB } from "../../platform";
 
-async function capture(node: HTMLElement): Promise<Blob | null> {
+export async function capture(node: HTMLElement): Promise<Blob | null> {
   node.classList.add("rw-capturing");
   try {
     return await toBlob(node, {
-      pixelRatio: 2,
+      // sharp, but a whole page stays under the browsers' picture size limits
+      pixelRatio: Math.max(1, Math.min(2, 16000 / Math.max(1, node.scrollHeight))),
       // the picture's background is the theme's card colour (html-to-image needs a real colour, not a variable)
       backgroundColor: getComputedStyle(document.documentElement).getPropertyValue("--rw-surface").trim() || "#0a1428",
       skipFonts: true,
@@ -32,6 +33,60 @@ export const CaptureFooter: React.FC = () => (
     <span>lolworlds.com/riftwise · {new Date().toISOString().slice(0, 10)}</span>
   </div>
 );
+
+/**
+ * "Copy as image" for a whole page (Match prep): the button with its label, plus a save button on the web.
+ * The page's buttons (data-nocapture) are left out, and rw-capture-only parts (title, date) show in the picture.
+ */
+export const CopyPageImage: React.FC<{ target: React.RefObject<HTMLElement | null>; name: string }> = ({ target, name }) => {
+  const [state, setState] = useState<"" | "busy" | "copied" | "failed">("");
+  const flash = (s: typeof state) => {
+    setState(s);
+    if (s !== "busy") setTimeout(() => setState(""), 2200);
+  };
+  const run = async (save: boolean) => {
+    if (!target.current) return;
+    flash("busy");
+    try {
+      const blob = await capture(target.current);
+      if (!blob) throw new Error("no image");
+      if (save) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${name.replace(/[^\w.-]+/g, "-").slice(0, 80) || "riftwise"}.png`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        flash("");
+      } else {
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+        flash("copied");
+      }
+    } catch {
+      flash("failed");
+    }
+  };
+  return (
+    <span className="flex items-center gap-1.5">
+      <button
+        type="button"
+        onClick={() => run(false)}
+        disabled={state === "busy"}
+        className="flex items-center gap-1 text-rw-teal hover:underline disabled:opacity-50"
+        title={tl("Copy this whole page as a picture, to paste into Discord, X or a broadcast graphic")}
+      >
+        <Images className="w-3.5 h-3.5" />
+        {state === "busy" ? tl("Making the image…") : state === "copied" ? tl("Copied") : tl("Copy as an image")}
+      </button>
+      {IS_WEB && (
+        <button type="button" onClick={() => run(true)} disabled={state === "busy"} className="text-rw-teal hover:text-rw-text disabled:opacity-50" title={tl("Save as an image")} aria-label={tl("Save as an image")}>
+          <ImageDown className="w-3.5 h-3.5" />
+        </button>
+      )}
+      {state === "failed" && <span className="text-[10px] text-rw-red">{tl("Couldn't make the image")}</span>}
+    </span>
+  );
+};
 
 export const ShareButtons: React.FC<{ target: React.RefObject<HTMLElement | null>; name: string }> = ({ target, name }) => {
   const [state, setState] = useState<"" | "busy" | "copied" | "failed">("");

@@ -3,7 +3,7 @@
  * storylines (milestones, streaks, head-to-head), recent form, every series between them, team numbers and draft
  * tendencies, and the lanes player against player. Address: /riftwise/stats/prep?teams=t1,gen-g&p=y2026
  */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { GitCompare, Printer } from "lucide-react";
 import { tl, roleName } from "../../i18n";
@@ -20,6 +20,7 @@ import { ComparePick, TeamRows, bothOptions } from "./ComparePage";
 import { PeriodPicker, defaultPeriod } from "./PeriodStats";
 import { StoryLine, StoryList, noteText } from "./Storylines";
 import { card, ChampIcon, fmtDate, HubLink, isFresh, Loading, RevealButton, Section, useHidden, useLoad, usePageTitle } from "./ui";
+import { CopyPageImage } from "./ShareImage";
 
 const ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"];
 
@@ -201,6 +202,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
   const [hidden, reveal] = useHidden(`prep:${a.team.u}:${b.team.u}:${period}`, fresh);
   const title = `${a.team.name} vs ${b.team.name}`;
   const printing = usePrint();
+  const pageRef = useRef<HTMLDivElement>(null);
   const body = (print: boolean) => (
     <>
       <WinChances a={a.team} b={b.team} />
@@ -223,7 +225,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
   );
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" ref={pageRef}>
       <div className={`${card} flex flex-wrap items-center justify-between gap-2`}>
         <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-wider font-bold text-rw-accent">{tl("Match prep")}</div>
@@ -232,8 +234,12 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
             <span className="text-rw-muted font-normal"> vs </span>
             <HubLink to={{ kind: "team", slug: b.team.u }}>{b.team.name}</HubLink>
           </h2>
+          {/* only in the copied picture, where the controls are left out */}
+          <div className="rw-capture-only text-[11px] text-rw-sub gap-1">
+            {periodLabel} · {new Date().toISOString().slice(0, 10)} · RiftWise Pro Stats · lolworlds.com/riftwise
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-xs" data-nocapture="1">
           <span className="text-rw-muted">{tl("Stats for")}</span>
           <PeriodPicker options={options} value={period} onChange={(p) => set({ period: p })} />
           <HubLink
@@ -252,6 +258,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
             <Printer className="w-3.5 h-3.5" />
             {tl("Print sheet")}
           </button>
+          <CopyPageImage target={pageRef} name={`${title} match prep`} />
         </div>
       </div>
 

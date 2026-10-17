@@ -27,6 +27,7 @@ import {
   useLoad,
   usePageTitle,
 } from "./ui";
+import { STable } from "../STable";
 
 export const ChampPage: React.FC<{ slug: string }> = ({ slug }) => {
   const state = useLoad(() => loadHubChamp(slug), [slug]);
@@ -189,7 +190,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                   ))}
                 </div>
               )}
-              <table className="w-full text-xs">
+              <STable className="w-full text-xs">
                 <thead>
                   <tr>
                     <th className={th}>{tl("Against")}</th>
@@ -208,13 +209,13 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </STable>
               <p className="text-[10px] text-rw-muted">{tl("Against the champion in the same role, all pro games, 3+ games.")}</p>
             </Section>
           )}
           {showDuos && (
             <Section title={tl("Bot lane partners")}>
-              <table className="w-full text-xs">
+              <STable className="w-full text-xs">
                 <thead>
                   <tr>
                     <th className={th}>{tl("With")}</th>
@@ -233,7 +234,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </STable>
             </Section>
           )}
         </div>
@@ -241,7 +242,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
 
       <div className="grid gap-3 md:grid-cols-2">
         <Section title={tl("Most games on {champion}", { champion: champName(c.name) })}>
-          <table className="w-full text-xs">
+          <STable className="w-full text-xs">
             <thead>
               <tr>
                 <th className={th}>{tl("Player")}</th>
@@ -262,7 +263,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </STable>
         </Section>
         <Section title={tl("Latest pro games")} right={recentHidden ? <RevealButton onReveal={revealRecent} small /> : undefined}>
           {recentHidden ? (

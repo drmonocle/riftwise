@@ -30,6 +30,7 @@ import {
   useLoad,
   usePageTitle,
 } from "./ui";
+import { STable } from "../STable";
 
 export const TeamPage: React.FC<{ slug: string }> = ({ slug }) => {
   const state = useLoad(() => loadHubTeam(slug), [slug]);
@@ -169,7 +170,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
         </Section>
 
         <Section title={tl("By year")}>
-          <table className="w-full text-xs">
+          <STable className="w-full text-xs">
             <thead>
               <tr>
                 <th className={th}>{tl("Year")}</th>
@@ -191,7 +192,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </STable>
         </Section>
       </div>
 
@@ -207,7 +208,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
           }
         >
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <STable className="w-full text-xs">
               <thead>
                 <tr>
                   <th className={th}>{tl("Tournament")}</th>
@@ -222,7 +223,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
                   <EventRow key={x.e} x={x} teamName={t.name} />
                 ))}
               </tbody>
-            </table>
+            </STable>
           </div>
         </Section>
       )}
@@ -248,7 +249,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
 
       <Section title={tl("Against other teams")}>
         <div className="overflow-x-auto max-h-96">
-          <table className="w-full text-xs">
+          <STable className="w-full text-xs">
             <thead>
               <tr>
                 <th className={th}>{tl("Opponent")}</th>
@@ -267,11 +268,11 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
                     {o.w}-{o.g - o.w}
                   </td>
                   <td className={`${td} text-rw-sub`}>{winRate(o.w, o.g)}</td>
-                  <td className={`${td} text-rw-muted`}>{fmtDate(o.last)}</td>
+                  <td className={`${td} text-rw-muted`} data-sort={o.last}>{fmtDate(o.last)}</td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </STable>
         </div>
       </Section>
 

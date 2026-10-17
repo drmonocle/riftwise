@@ -26,6 +26,7 @@ import { HeadToHeadSeries } from "./Archives";
 import { PeriodPicker } from "./PeriodStats";
 import { DraftTendencies } from "./DraftTendencies";
 import { card, ChampLink, fmtNum, HubLink, isFresh, RevealButton, Section, td, useHidden, usePageTitle } from "./ui";
+import { STable } from "../STable";
 
 type Mode = "team" | "player";
 
@@ -369,7 +370,7 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
       </div>
       {shared.length > 0 && (
         <Section title={tl("Champions both played")}>
-          <table className="w-full text-xs">
+          <STable className="w-full text-xs">
             <tbody>
               {shared.map(({ c, o }) => (
                 <tr key={c.c} className="border-t border-rw-border">
@@ -387,7 +388,7 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
                 </tr>
               ))}
             </tbody>
-          </table>
+          </STable>
           <p className="text-[10px] text-rw-muted">{tl("Games · win rate · KDA")}</p>
         </Section>
       )}

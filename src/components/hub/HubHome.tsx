@@ -10,6 +10,7 @@ import type { EventListItem, HubMeta } from "../../hub/types";
 import { HubRoute } from "../../hub/route";
 import { HubSearch } from "./HubSearch";
 import { card, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerLink, RevealButton, Section, td, th, TeamLink, useHidden, useLoad, usePageTitle } from "./ui";
+import { STable } from "../STable";
 
 const QUICK: { to: HubRoute; label: string; sub: string; icon: React.ReactNode }[] = [
   { to: { kind: "rankings" }, label: tk("Power rankings"), sub: tk("Every team, every region, one scale"), icon: <TrendingUp className="w-4 h-4" /> },
@@ -89,7 +90,7 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
               </ul>
             </Section>
             <Section title={tl("Most games in {year}", { year: h.year })}>
-              <table className="w-full text-xs">
+              <STable className="w-full text-xs">
                 <tbody>
                   {h.busiest.map((p, i) => (
                     <tr key={p.n + i} className="border-t border-rw-border first:border-0">
@@ -101,7 +102,7 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </STable>
             </Section>
           </div>
         )}
@@ -193,7 +194,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
   if (rows.length === 0) return <p className="text-xs text-rw-sub py-6 text-center">{tl("No tournaments match.")}</p>;
   return (
     <div className={`${card} overflow-x-auto`}>
-      <table className="w-full text-xs">
+      <STable className="w-full text-xs">
         <thead>
           <tr>
             <th className={th}>{tl("Tournament")}</th>
@@ -208,7 +209,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
             <BrowseRow key={e.u} e={e} />
           ))}
         </tbody>
-      </table>
+      </STable>
     </div>
   );
 };
@@ -220,7 +221,7 @@ const BrowseRow: React.FC<{ e: EventListItem }> = ({ e }) => {
       <td className={`${td} max-w-[16rem] truncate`}>
         <EventLink name={e.n} u={e.u} />
       </td>
-      <td className={`${td} text-rw-muted`}>
+      <td className={`${td} text-rw-muted`} data-sort={e.st}>
         {fmtDate(e.st, false)}
         {e.en && e.en !== e.st ? ` – ${fmtDate(e.en, false)}` : ""}
       </td>
