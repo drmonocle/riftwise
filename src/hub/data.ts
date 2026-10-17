@@ -132,7 +132,9 @@ export function searchHub(index: HubIndex, query: string, limit = 6): Record<Hub
       if (t[4]) {
         const olds = t[4].split(" | ");
         const hit = olds.find((o) => score(o, q) >= 0 && score(o, q) <= 1.5) || olds.find((o) => score(o, q) >= 0);
-        if (hit) return [score(hit, q) + 1, hit];
+        // an old name that starts with the query ("DWG" -> DWG KIA, "Samsung" -> Samsung Galaxy) ranks with the
+        // current names that do, so the bigger team (Dplus Kia, Gen.G) comes before a small one named that way
+        if (hit) return [score(hit, q) <= 1.5 ? 1 : score(hit, q) + 1, hit];
       }
       return null;
     },

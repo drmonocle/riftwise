@@ -362,7 +362,7 @@ def build(ctx) -> dict:
     for r in con.execute(
         """SELECT match_id, game_number, status, tournament_name, overview_page, date_utc, patch, patch_inferred,
                   team1, team2, winner_side, winner, series_team1, series_team2, best_of, is_remake, ff, vod_url,
-                  catalog_game_id, has_stats, mvp FROM all_games WHERE overview_page IS NOT NULL"""
+                  vod_game_start, vod_pb, catalog_game_id, has_stats, mvp FROM all_games WHERE overview_page IS NOT NULL"""
     ):
         games_by_op[r["overview_page"]][(r["match_id"], r["game_number"])] = {
             "mid": r["match_id"], "n": r["game_number"] or 1, "status": r["status"], "tname": r["tournament_name"],
@@ -370,6 +370,8 @@ def build(ctx) -> dict:
             "w": r["winner"] if r["winner"] in (r["team1"], r["team2"]) else None,
             "sa": r["series_team1"], "sb": r["series_team2"], "bo": r["best_of"], "remake": r["is_remake"], "ff": r["ff"],
             "vod": r["vod_url"], "gid": r["catalog_game_id"] if r["has_stats"] else None, "mvp": r["mvp"] or None,
+            # the same VOD at the draft and at the game's start (Leaguepedia's timestamps)
+            "vpb": r["vod_pb"], "vgs": r["vod_game_start"],
         }
     added_new = 0
     filled_new = 0
@@ -821,7 +823,7 @@ def build(ctx) -> dict:
                 last_date = max(last_date or date, date)
 
             # Series page (only when there is something to show beyond the two names)
-            has_page = any(g["gid"] or g["vod"] or g["w"] for g in glist)
+            has_page = any(g["gid"] or g["vod"] or g.get("vgs") or g["w"] for g in glist)
             gslug = None
             if has_page:
                 rest = mid[len(op) + 1:] if mid.startswith(op + "_") else mid
@@ -840,6 +842,9 @@ def build(ctx) -> dict:
                             "date": g["date"], "st": {"full": "f", "results_only": "r"}.get(g["status"], "s")}
                     if g["vod"]:
                         item["vod"] = g["vod"]
+                    for key in ("vpb", "vgs"):
+                        if g.get(key) and g[key] != g["vod"]:
+                            item[key] = g[key]
                     if g["ff"]:
                         item["ff"] = 1
                     if g["remake"]:

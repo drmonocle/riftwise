@@ -44,3 +44,26 @@ describe("champion names", () => {
     expect(champName("Azir")).toBe("Azir");
   });
 });
+
+import { searchHub, type HubIndex } from "../hub/data";
+describe("team search by old names and short names", () => {
+  const index: HubIndex = {
+    teams: [
+      ["DWG KIA Youth", "", 120, "2022", "", "", "Korea"],
+      ["Dplus Kia", "", 1180, "2026", "DWG KIA | DAMWON Gaming", "DK", "Korea"],
+      ["T1", "", 1860, "2026", "SK Telecom T1", "SKT", "Korea"],
+      ["Gen.G", "", 1631, "2026", "KSV eSports | Samsung Galaxy", "GEN | KSV", "Korea"],
+      ["Samsung Blue", "", 300, "2014", "", "", "Korea"],
+    ],
+    players: [],
+    events: [],
+    champs: [],
+  };
+  it("puts the current org first", () => {
+    expect(searchHub(index, "DWG").team[0].name).toBe("Dplus Kia");
+    expect(searchHub(index, "damwon").team[0].name).toBe("Dplus Kia");
+    expect(searchHub(index, "SKT").team[0].name).toBe("T1");
+    expect(searchHub(index, "ksv").team[0].name).toBe("Gen.G");
+    expect(searchHub(index, "Samsung").team[0].name).toBe("Gen.G");
+  });
+});

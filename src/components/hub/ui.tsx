@@ -326,7 +326,7 @@ export const CopyLinkButton: React.FC<{ url: string }> = ({ url }) => {
     <button
       type="button"
       onClick={copy}
-      className={`flex items-center gap-1 text-xs shrink-0 ${copied ? "text-rw-teal" : "text-rw-muted hover:text-rw-accent"}`}
+      className={`flex items-center gap-1 min-h-8 px-1.5 rounded text-xs shrink-0 ${copied ? "text-rw-teal" : "text-rw-muted hover:text-rw-accent"}`}
     >
       {copied ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
       {copied ? tl("Link copied") : tl("Copy link")}

@@ -126,6 +126,12 @@ The `Release` workflow tests, builds on Windows and attaches `RiftWise.exe`, its
 
 RiftWise is free and open source. If it is useful to you: **[Support on Ko-fi](https://ko-fi.com/monocle)**.
 
+## 📊 Data sources
+
+- **[Leaguepedia](https://lol.fandom.com/)**: every pro game since 2011 (scoreboards, drafts, rosters, results), shared under CC BY-SA 3.0.
+- **[Oracle's Elixir](https://oracleselixir.com/)** by Tim Sevenhuysen: early-game numbers (gold / CS / XP leads at 10, 15 and 20 minutes, first blood, first tower, turret plates, void grubs, wards), used non-commercially with credit.
+- **Riot's esports schedule**: live scores and upcoming matches.
+
 ## 📜 Disclaimer
 
 RiftWise is an unofficial fan project by Monocle Productions LLC.
