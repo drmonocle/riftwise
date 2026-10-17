@@ -97,3 +97,17 @@ describe("player head-to-head", () => {
     expect(playerHeadToHead([row("s2", 1, "T1", 30)], [row("s2", 1, "T1", 30)])).toEqual({ g: 0, w: 0 });
   });
 });
+
+import { hubPath, parseHubPath } from "../hub/route";
+describe("best games links", () => {
+  it("a match page can open at one game", () => {
+    expect(hubPath({ kind: "match", slug: "worlds-2022-finals-1", game: 5 })).toBe("/match/worlds-2022-finals-1?g=5");
+    expect(parseHubPath("/match/worlds-2022-finals-1", "?g=5")).toEqual({ kind: "match", slug: "worlds-2022-finals-1", game: 5 });
+    expect(parseHubPath("/match/worlds-2022-finals-1", "")).toEqual({ kind: "match", slug: "worlds-2022-finals-1" });
+    expect(parseHubPath("/team/t1", "?g=5")).toEqual({ kind: "team", slug: "t1" });
+  });
+  it("the page keeps its filters in the address", () => {
+    expect(parseHubPath("/stats/best", "?view=series&year=2025")).toEqual({ kind: "best", query: "view=series&year=2025" });
+    expect(hubPath({ kind: "best", query: "league=lol-champions-korea" })).toBe("/stats/best?league=lol-champions-korea");
+  });
+});

@@ -120,6 +120,9 @@ func TestUnknownAndOldNames(t *testing.T) {
 	if w := get(s, "/riftwise/league/lck"); w.Code != 200 || !strings.Contains(w.Body.String(), "<title>LCK – every season | RiftWise</title>") {
 		t.Errorf("league page: %d", w.Code)
 	}
+	if w := get(s, "/riftwise/stats/best"); w.Code != 200 || !strings.Contains(w.Body.String(), "best pro LoL games") {
+		t.Errorf("best games: %d", w.Code)
+	}
 	if w := get(s, "/riftwise/stats/patches"); w.Code != 200 || !strings.Contains(w.Body.String(), "every patch") {
 		t.Errorf("patches section: %d", w.Code)
 	}

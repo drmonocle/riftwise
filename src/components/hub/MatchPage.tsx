@@ -6,12 +6,14 @@ import { champName } from "../../champions";
 import { loadHubSeries } from "../../hub/data";
 import type { GamePlayer, HubGame, HubSeries, SideStats } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
+import { RatingBadge } from "./BestPage";
 import {
   card,
   ChampIcon,
   EventLink,
   fmtDate,
   fmtNum,
+  HubLink,
   ItemIcon,
   Page,
   PlayerLink,
@@ -34,17 +36,18 @@ const DRAKE_LABEL: Record<string, string> = {
   infernal: tk("Infernal"), mountain: tk("Mountain"), ocean: tk("Ocean"), cloud: tk("Cloud"), hextech: tk("Hextech"), chemtech: tk("Chemtech"),
 };
 
-export const MatchPage: React.FC<{ slug: string; onOpenUrl: (url: string) => void }> = ({ slug, onOpenUrl }) => {
+export const MatchPage: React.FC<{ slug: string; game?: number; onOpenUrl: (url: string) => void }> = ({ slug, game, onOpenUrl }) => {
   const state = useLoad(() => loadHubSeries(slug), [slug]);
   usePageTitle(state.data ? `${state.data.a.n} vs ${state.data.b.n} – ${state.data.en}` : null);
   useDDragon();
-  return <Page state={state}>{(s) => <SeriesView s={s} slug={slug} onOpenUrl={onOpenUrl} />}</Page>;
+  return <Page state={state}>{(s) => <SeriesView key={`${slug}-${game || 0}`} s={s} slug={slug} game={game} onOpenUrl={onOpenUrl} />}</Page>;
 };
 
-const SeriesView: React.FC<{ s: HubSeries; slug: string; onOpenUrl: (url: string) => void }> = ({ s, slug, onOpenUrl }) => {
+const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUrl: (url: string) => void }> = ({ s, slug, game: startGame, onOpenUrl }) => {
   const [hidden, reveal] = useHidden(`series:${slug}`, s.date);
   const withStats = s.games.filter((g) => g.p && g.p.length);
-  const [gi, setGi] = useState(0);
+  // opened at one game (/match/<slug>?g=5, from Best games), else the first
+  const [gi, setGi] = useState(() => Math.max(0, s.games.findIndex((g) => g.n === startGame)));
   // spoiler mode shows every game a best-of could have, so a 3-0 doesn't give itself away by having 3 tabs
   const tabs = hidden ? Math.max(s.bo || 0, s.games.length) : s.games.length;
   const game = gi < s.games.length ? s.games[gi] : hidden ? undefined : s.games[s.games.length - 1];
@@ -58,6 +61,11 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; onOpenUrl: (url: string
           {s.stage && <span>· {s.stage}</span>}
           <span>· {fmtDate(s.date)}</span>
           <span>· {tc("series length", "Best of {n}", { n: s.bo })}</span>
+          {!hidden && s.r != null && (
+            <HubLink to={{ kind: "best", query: "view=series" }} className="ml-auto" title={tl("Series rating: its best game's")}>
+              <RatingBadge r={s.r} />
+            </HubLink>
+          )}
         </div>
         <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className="text-right min-w-0">
@@ -95,6 +103,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; onOpenUrl: (url: string
             >
               {tl("Game {n}", { n: g ? g.n : i + 1 })}
               {!hidden && g?.w ? <span className="ml-1 opacity-70">({g.w === 1 ? s.a.c || s.a.n : s.b.c || s.b.n})</span> : null}
+              {!hidden && g?.r != null ? <span className="ml-1.5 tabular-nums opacity-80">· {g.r.toFixed(0)}</span> : null}
             </button>
           ))}
         </div>
