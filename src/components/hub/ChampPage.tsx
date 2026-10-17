@@ -14,6 +14,7 @@ import {
   fmtNum,
   HubLink,
   ItemIcon,
+  OeCredit,
   Page,
   PlayerLink,
   RevealButton,
@@ -36,6 +37,12 @@ export const ChampPage: React.FC<{ slug: string }> = ({ slug }) => {
   return <Page state={state}>{(c) => <ChampView c={c} />}</Page>;
 };
 
+/** A lead at 15 minutes: "+250" in teal, "-40" in red. */
+const signedText = (v: number | null | undefined) => (v == null ? "–" : `${v > 0 ? "+" : ""}${fmtNum(v)}`);
+const Lead: React.FC<{ v: number | null | undefined }> = ({ v }) => (
+  <span className={v == null ? "text-rw-muted" : v >= 0 ? "text-rw-teal" : "text-rw-red"}>{signedText(v)}</span>
+);
+
 // "<1%" rather than "0%" for something that did happen, just rarely
 const pctOf = (w: number, g: number) => (!g ? "–" : w > 0 && (w / g) * 100 < 0.5 ? "<1%" : `${Math.round((w / g) * 100)}%`);
 
@@ -47,6 +54,11 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
   const mainRoles = c.roles.filter((r) => r.p / totalRoles >= 0.1).map((r) => r.r);
   const roleKeys = Object.keys(c.matchups || {}).filter((r) => mainRoles.includes(r));
   const [muRole, setMuRole] = useState(roleKeys[0] || "");
+  // this meta (last 12 months) first when there is one
+  const [muRecent, setMuRecent] = useState(() => Object.keys(c.matchups12 || {}).length > 0);
+  const muRows = ((muRecent ? c.matchups12 : c.matchups) || {})[muRole] || [];
+  const muLane = muRows.some((m) => m.length > 3);
+  const laneNow = (muRecent ? c.lane12 : c.lane)?.[muRole];
   const showDuos = mainRoles.some((r) => r === "Bot" || r === "Support") && (c.duos || []).length > 0;
   const items = useMemo(() => (c.builds?.items || []).filter(([it]) => isFinishedItem(it)).slice(0, 8), [c.builds, ddReady]); // eslint-disable-line react-hooks/exhaustive-deps
   const maxPatch = Math.max(1, ...(c.patches || []).map((p) => (p.pk + p.b) / Math.max(p.g, 1)));
@@ -170,74 +182,142 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         </p>
       </Section>
 
-      {(roleKeys.length > 0 || showDuos) && (
-        <div className="grid gap-3 md:grid-cols-2">
-          {roleKeys.length > 0 && (
-            <Section title={tl("Matchups")}>
-              {roleKeys.length > 1 && (
-                <div className="flex gap-1">
-                  {roleKeys.map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => setMuRole(r)}
-                      className={`px-2 py-0.5 rounded text-[11px] border ${
-                        r === muRole ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub"
-                      }`}
-                    >
-                      {roleName(r)}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <STable className="w-full text-xs">
-                <thead>
-                  <tr>
-                    <th className={th}>{tl("Against")}</th>
-                    <th className={th}>{tl("Games")}</th>
-                    <th className={th}>{tl("Win %")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(c.matchups?.[muRole] || []).slice(0, 15).map(([oc, g, w]) => (
-                    <tr key={oc} className="border-t border-rw-border">
-                      <td className={`${td} max-w-[10rem]`}>
-                        <ChampLink name={oc} size={16} />
-                      </td>
-                      <td className={`${td} text-rw-sub`}>{g}</td>
-                      <td className={`${td} ${w / g >= 0.5 ? "text-rw-teal" : "text-rw-red"}`}>{pctOf(w, g)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </STable>
-              <p className="text-[10px] text-rw-muted">{tl("Against the champion in the same role, all pro games, 3+ games.")}</p>
-            </Section>
+      {roleKeys.length > 0 && (
+        <Section
+          title={tl("Matchups")}
+          right={
+            c.matchups12 ? (
+              <span className="flex gap-1">
+                {[true, false].map((recent) => (
+                  <button
+                    key={String(recent)}
+                    type="button"
+                    onClick={() => setMuRecent(recent)}
+                    className={`px-2 py-0.5 rounded text-[11px] border ${
+                      recent === muRecent ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub"
+                    }`}
+                  >
+                    {recent ? tl("Last 12 months") : tl("All time")}
+                  </button>
+                ))}
+              </span>
+            ) : undefined
+          }
+        >
+          {roleKeys.length > 1 && (
+            <div className="flex gap-1">
+              {roleKeys.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setMuRole(r)}
+                  className={`px-2 py-0.5 rounded text-[11px] border ${
+                    r === muRole ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub"
+                  }`}
+                >
+                  {roleName(r)}
+                </button>
+              ))}
+            </div>
           )}
-          {showDuos && (
-            <Section title={tl("Bot lane partners")}>
-              <STable className="w-full text-xs">
-                <thead>
-                  <tr>
-                    <th className={th}>{tl("With")}</th>
-                    <th className={th}>{tl("Games")}</th>
-                    <th className={th}>{tl("Win %")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(c.duos || []).slice(0, 15).map(([pc, g, w]) => (
-                    <tr key={pc} className="border-t border-rw-border">
-                      <td className={`${td} max-w-[10rem]`}>
-                        <ChampLink name={pc} size={16} />
-                      </td>
-                      <td className={`${td} text-rw-sub`}>{g}</td>
-                      <td className={`${td} ${w / g >= 0.5 ? "text-rw-teal" : "text-rw-red"}`}>{pctOf(w, g)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </STable>
-            </Section>
+          {laneNow && laneNow.length > 2 && (
+            <p className="text-[11px] text-rw-sub">
+              {tl("In lane at 15 minutes: {gd} gold, {cs} CS, {xp} XP against the other {role}; ahead in {p} of games.", {
+                gd: signedText(laneNow[3]),
+                cs: signedText(laneNow[4]),
+                xp: signedText(laneNow[5]),
+                role: roleName(muRole),
+                p: pctOf(laneNow[6], laneNow[2]),
+              })}
+            </p>
           )}
-        </div>
+          <STable className="w-full text-xs">
+            <thead>
+              <tr>
+                <th className={th}>{tl("Against")}</th>
+                <th className={th}>{tl("Games")}</th>
+                <th className={th}>{tl("Win %")}</th>
+                {muLane && (
+                  <>
+                    <th className={th} title={tl("Gold lead over the lane opponent at 15 minutes")}>
+                      GD@15
+                    </th>
+                    <th className={th} title={tl("CS lead over the lane opponent at 15 minutes")}>
+                      CSD@15
+                    </th>
+                    <th className={th} title={tl("XP lead over the lane opponent at 15 minutes")}>
+                      XPD@15
+                    </th>
+                    <th className={th} title={tl("Games ahead in gold at 15 minutes")}>
+                      {tl("Lane %")}
+                    </th>
+                  </>
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {muRows.map(([oc, g, w, tn, gd, cs, xp, ahead]) => (
+                <tr key={oc} className="border-t border-rw-border">
+                  <td className={`${td} max-w-[10rem]`}>
+                    <ChampLink name={oc} size={16} />
+                  </td>
+                  <td className={`${td} text-rw-sub`}>{g}</td>
+                  <td className={`${td} ${w / g >= 0.5 ? "text-rw-teal" : "text-rw-red"}`}>{pctOf(w, g)}</td>
+                  {muLane && (
+                    <>
+                      <td className={td} data-sort={gd ?? ""}>
+                        <Lead v={gd} />
+                      </td>
+                      <td className={td} data-sort={cs ?? ""}>
+                        <Lead v={cs} />
+                      </td>
+                      <td className={td} data-sort={xp ?? ""}>
+                        <Lead v={xp} />
+                      </td>
+                      <td
+                        className={`${td} ${tn && ahead != null ? (ahead / tn >= 0.5 ? "text-rw-teal" : "text-rw-red") : "text-rw-muted"}`}
+                        data-sort={tn && ahead != null ? ahead / tn : ""}
+                        title={tn ? tl("{n} games with timelines", { n: tn }) : undefined}
+                      >
+                        {tn && ahead != null ? pctOf(ahead, tn) : "–"}
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </STable>
+          <p className="text-[10px] text-rw-muted">
+            {muRecent
+              ? tl("Against the champion in the same role, last 12 months, 2+ games.")
+              : tl("Against the champion in the same role, all pro games, 3+ games.")}
+          </p>
+          {muLane && <OeCredit />}
+        </Section>
+      )}
+      {showDuos && (
+        <Section title={tl("Bot lane partners")}>
+          <STable className="w-full text-xs">
+            <thead>
+              <tr>
+                <th className={th}>{tl("With")}</th>
+                <th className={th}>{tl("Games")}</th>
+                <th className={th}>{tl("Win %")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(c.duos || []).slice(0, 15).map(([pc, g, w]) => (
+                <tr key={pc} className="border-t border-rw-border">
+                  <td className={`${td} max-w-[10rem]`}>
+                    <ChampLink name={pc} size={16} />
+                  </td>
+                  <td className={`${td} text-rw-sub`}>{g}</td>
+                  <td className={`${td} ${w / g >= 0.5 ? "text-rw-teal" : "text-rw-red"}`}>{pctOf(w, g)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </STable>
+        </Section>
       )}
 
       <div className="grid gap-3 md:grid-cols-2">

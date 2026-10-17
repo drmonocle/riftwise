@@ -450,6 +450,9 @@ export interface HubPlayer {
   titles: { t: string; date: string; kind: string; e?: string | null }[];
 }
 
+/** [opponent champion, games, wins, games with lane leads?, gold lead at 15?, CS lead?, XP lead?, games ahead at 15?] */
+export type LaneLine = [string, number, number, number?, number?, number?, number?, number?];
+
 export interface HubChamp {
   name: string;
   u: string;
@@ -467,8 +470,14 @@ export interface HubChamp {
   side?: [number, number, number, number];
   /** builds in the last 12 months: [name, games, wins] */
   builds?: { since: string; g: number; items: [string, number, number][]; keys: [string, number, number][]; spells: [string, number, number][] } | null;
-  /** role -> [opponent champion, games, wins] */
-  matchups?: Record<string, [string, number, number][]> | null;
+  /** role -> [opponent champion, games, wins, then from Oracle's Elixir games: games with lane leads, average
+   *  gold / CS / XP lead at 15 minutes, games ahead in gold at 15] (all time, 3+ games) */
+  matchups?: Record<string, LaneLine[]> | null;
+  /** the same for the last 12 months (2+ games) */
+  matchups12?: Record<string, LaneLine[]> | null;
+  /** role -> [games, wins, games with lane leads, gold / CS / XP lead at 15, games ahead at 15]: all time, last 12 months */
+  lane?: Record<string, number[]> | null;
+  lane12?: Record<string, number[]> | null;
   /** bot lane partner -> [champion, games, wins] */
   duos?: [string, number, number][] | null;
   patches?: { p: string; pk: number; w: number; b: number; g: number }[];
