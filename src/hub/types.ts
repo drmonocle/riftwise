@@ -317,6 +317,8 @@ export interface HubGame {
   min?: number | null;
   t?: { blue: SideStats; red: SideStats };
   p?: GamePlayer[];
+  /** game rating 0-100 (MEPI): action, closeness, length, stakes, series drama, comebacks */
+  r?: number;
 }
 
 export interface HubSeries {
@@ -331,6 +333,33 @@ export interface HubSeries {
   sb: number;
   w: 0 | 1 | 2;
   games: HubGame[];
+  /** the series' rating: its best game's (0-100) */
+  r?: number;
+}
+
+/**
+ * A rated game (hub/best/...): [rating 0-100, series slug, game number, date, event, event slug, stage, team a, its slug,
+ * team b, its slug, winner 1 = a / 2 = b, minutes, kills a, kills b, has a VOD 1/0, league slug]
+ */
+export type BestGame = [
+  number, string, number, string, string, string, string, string, string | null, string, string | null, 1 | 2,
+  number | null, number | null, number | null, 0 | 1, string | null,
+];
+/** A rated series: [rating (its best game's), slug, date, event, event slug, stage, a, a slug, b, b slug, games won a, b,
+ * best game's number, games played, league slug] */
+export type BestSeries = [
+  number, string, string, string, string, string, string, string | null, string, string | null, number, number, number, number,
+  string | null,
+];
+export interface BestFile {
+  g: BestGame[];
+  s: BestSeries[];
+}
+/** hub/best/index.json: years with rated games, and leagues: [slug, name, short name, main league 1/0, years] */
+export interface BestIndex {
+  years: string[];
+  leagues: [string, string, string | null, number, string[]][];
+  n: number;
 }
 
 /** A team's power rating (hub/ratings.json, scripts/stats/ratings.py); only for teams active in the last 120 days. */

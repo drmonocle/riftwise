@@ -12,6 +12,7 @@ import {
   History,
   Database,
   TrendingUp,
+  Flame,
 } from "lucide-react";
 import { AppSettings, Match } from "../../types";
 import { IS_WEB } from "../../platform";
@@ -35,6 +36,7 @@ import {
   useHubRoute,
 } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
+import { BestPage } from "../hub/BestPage";
 import {
   card,
   ChampIcon,
@@ -197,6 +199,11 @@ const SECTIONS: {
     kind: "rankings",
     label: tk("Rankings"),
     icon: <TrendingUp className="w-3.5 h-3.5" />,
+  },
+  {
+    kind: "best",
+    label: tk("Best games"),
+    icon: <Flame className="w-3.5 h-3.5" />,
   },
   {
     kind: "champions",
@@ -636,6 +643,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
         {route.kind === "rankings" && <RankingsPage />}
         {route.kind === "finder" && <FinderPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "draft" && <DraftPage query={"query" in route ? route.query : undefined} />}
+        {route.kind === "best" && <BestPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "titles" && <TitlesPanel />}
         {route.kind === "compare" && <ComparePage route={route as CompareRoute} />}
         {route.kind === "team" && <TeamPage slug={route.slug} />}
@@ -644,7 +652,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
         )}
         {route.kind === "event" && <EventPage slug={route.slug} onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
         {route.kind === "match" && (
-          <MatchPage slug={route.slug} onOpenUrl={onOpenUrl} />
+          <MatchPage slug={route.slug} game={route.game} onOpenUrl={onOpenUrl} />
         )}
         {route.kind === "champ" && <ChampPage slug={route.slug} />}
 

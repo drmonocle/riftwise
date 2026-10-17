@@ -13,7 +13,8 @@ folder, so one latest.json switch publishes both:
   hub/team/<slug>.json              team page
   hub/player/<slug>.json            player page
   hub/event/<slug>.json             tournament page: info, results, standings, stages and bracket, leaders
-  hub/game/<slug>.json              one series: each game's draft, players, items, runes, objectives, VOD
+  hub/game/<slug>.json              one series: each game's draft, players, items, runes, objectives, VOD, rating
+  hub/best/...                      the best-rated games and series (all time, by year, by league, by league and year)
   hub/champ/<slug>.json             champion page
   hub/teamseries/<slug>.json        every series of a team: [date, opponent, its slug, won, lost, event, event slug,
                                     series slug, stage, name played under], newest first
@@ -427,7 +428,7 @@ def build(ctx) -> dict:
     tname_to_op = {}
     for r in con.execute(
         """SELECT game_id, match_id, game_number, tournament_name, overview_page, stage_tab, date_utc, patch, team1, team2,
-                  winner, best_of, vod_url FROM matches WHERE overview_page IS NOT NULL"""
+                  winner, best_of, vod_url, mepi_rating FROM matches WHERE overview_page IS NOT NULL"""
     ):
         op = r["overview_page"]
         if ctx.is_show(op, r["tournament_name"]):
@@ -437,6 +438,7 @@ def build(ctx) -> dict:
         key = (r["match_id"] or r["game_id"], r["game_number"] or 1)
         g = games_by_op[op].get(key)
         if g:
+            g["mepi"] = r["mepi_rating"]
             if not g["gid"] and r["game_id"] in ctx.games:
                 g["gid"] = r["game_id"]
             if not (g["t1"] and g["t2"]) and r["team1"] and r["team2"]:
@@ -450,7 +452,7 @@ def build(ctx) -> dict:
             "mid": key[0], "n": key[1], "status": "full", "tname": r["tournament_name"], "date": (r["date_utc"] or "")[:16],
             "patch": r["patch"], "t1": r["team1"], "t2": r["team2"], "w": r["winner"] if r["winner"] in (r["team1"], r["team2"]) else None,
             "sa": None, "sb": None, "bo": r["best_of"], "remake": 0, "ff": 0, "vod": r["vod_url"],
-            "gid": r["game_id"] if r["game_id"] in ctx.games else None, "tab": r["stage_tab"],
+            "gid": r["game_id"] if r["game_id"] in ctx.games else None, "tab": r["stage_tab"], "mepi": r["mepi_rating"],
         }
         added_new += 1
     checks["hub: games newer than all_games (from matches)"] = added_new
@@ -618,6 +620,8 @@ def build(ctx) -> dict:
     seo = defaultdict(list)
     n_series_pages = 0
     used_gslugs = set()
+    # Game ratings (MEPI, 0-100, Antigravity's engine on the catalog: matches.mepi_rating) for the Best games page
+    best_games, best_series = [], []
     gid_slug = {}                      # catalog game id -> its series page
     t_stage = time.time()
 
@@ -962,6 +966,8 @@ def build(ctx) -> dict:
                         item["ff"] = 1
                     if g["remake"]:
                         item["remake"] = 1
+                    if g.get("mepi") is not None and gw and not g["remake"]:
+                        item["r"] = round(float(g["mepi"]), 1)
                     mvp_pg = ctx.names.resolve(g.get("mvp"), [(r["page_key"], r["raw_name"]) for r in prow.get(g["gid"], [])]
                                                if g["gid"] else []) if g.get("mvp") else None
                     if mvp_pg:
@@ -1393,11 +1399,25 @@ def build(ctx) -> dict:
                         champ[ch]["years"][(g["date"] or "0000")[:4]][2] += 1
                     games_out.append(item)
                 stage_name = tab or ""
+                rated = [x for x in games_out if x.get("r") is not None]
+                # a series is as good as its best game
+                s_best = max(rated, key=lambda x: (x["r"], x["n"])) if rated else None
                 out.json(f"game/{gslug}.json", {
                     "e": eslug, "en": en, "stage": stage_name, "date": date, "bo": bo,
                     "a": {"n": an, "u": au, "c": ac}, "b": {"n": bn, "u": bu, "c": bc},
-                    "sa": wa, "sb": wb, "w": winner, "games": games_out,
+                    "sa": wa, "sb": wb, "w": winner, "games": games_out, **({"r": s_best["r"]} if s_best else {}),
                 })
+                lu_b = league_slug.get(lg_ev)
+                for x in rated:
+                    sd_ = x.get("t") or {}
+                    ka, kb = ((sd_.get("blue") or {}).get("k"), (sd_.get("red") or {}).get("k"))
+                    if x["blue"] == "b":
+                        ka, kb = kb, ka
+                    best_games.append([x["r"], gslug, x["n"], (x["date"] or date)[:10], en, eslug, stage_name, an, au, bn, bu, x["w"],
+                                       x.get("min"), ka, kb, 1 if x.get("vod") or x.get("vgs") else 0, lu_b])
+                if s_best:
+                    best_series.append([s_best["r"], gslug, date[:10], en, eslug, stage_name, an, au, bn, bu, wa, wb, s_best["n"],
+                                        len(games_out), lu_b])
                 n_series_pages += 1
                 gdate = date[:10]
                 title = f"{an} vs {bn} – {en}{' ' + stage_name if stage_name else ''}"
@@ -2177,6 +2197,42 @@ def build(ctx) -> dict:
                               f"every winner and full results, standings and stats.", 1 if primary or len(lst) >= 4 else 0))
     leagues_out.sort(key=lambda x: (-x["pr"], -x["g"]))
     out.json("leagues.json", leagues_out)
+
+    # Best games and series: all time, each year, each league, each league's year (best first, then newest)
+    def top(rows, n):
+        return heapq.nlargest(n, rows, key=lambda r: (r[0], r[3] if len(r) > 16 else r[2]))
+    year_of_g, year_of_s = (lambda r: r[3][:4]), (lambda r: r[2][:4])
+    by_year_g, by_year_s = defaultdict(list), defaultdict(list)
+    by_lg_g, by_lg_s = defaultdict(list), defaultdict(list)
+    for r in best_games:
+        by_year_g[year_of_g(r)].append(r)
+        if r[16]:
+            by_lg_g[r[16]].append(r)
+    for r in best_series:
+        by_year_s[year_of_s(r)].append(r)
+        if r[14]:
+            by_lg_s[r[14]].append(r)
+    out.json("best/all.json", {"g": top(best_games, 300), "s": top(best_series, 200)})
+    for y in by_year_g:
+        out.json(f"best/{y}.json", {"g": top(by_year_g[y], 200), "s": top(by_year_s.get(y, []), 100)})
+    best_leagues = []
+    for lg_row in leagues_out:
+        lu_ = lg_row["u"]
+        rows_g = by_lg_g.get(lu_, [])
+        if len(rows_g) < 20:
+            continue
+        rows_s = by_lg_s.get(lu_, [])
+        out.json(f"best/l/{lu_}.json", {"g": top(rows_g, 200), "s": top(rows_s, 100)})
+        yg, ys = defaultdict(list), defaultdict(list)
+        for r in rows_g:
+            yg[year_of_g(r)].append(r)
+        for r in rows_s:
+            ys[year_of_s(r)].append(r)
+        for y in yg:
+            out.json(f"best/l/{lu_}/{y}.json", {"g": top(yg[y], 100), "s": top(ys.get(y, []), 50)})
+        best_leagues.append([lu_, lg_row["l"], lg_row.get("s"), lg_row["pr"], sorted(yg, reverse=True)])
+    out.json("best/index.json", {"years": sorted(by_year_g, reverse=True), "leagues": best_leagues, "n": len(best_games)})
+    checks["hub: rated games (MEPI)"] = len(best_games)
 
     # storylines for the stats home: teams and players whose latest tournament is in a main league
     main_leagues = {l["u"] for l in leagues_out if l["pr"]}

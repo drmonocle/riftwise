@@ -260,4 +260,10 @@ export const loadChampGames = (league: string, year: string) => load<import("./t
 export const loadPatches = () => load<import("./types").PatchRow[]>("hub/patches.json");
 export const loadLeagues = () => load<import("./types").LeagueRow[]>("hub/leagues.json");
 export const loadLeague = withAlias<import("./types").HubLeague>("league");
+export const loadBestIndex = () => load<import("./types").BestIndex>("hub/best/index.json");
+/** The best-rated games and series: all time, a year, a league, or a league's year. */
+export const loadBest = (year?: string, league?: string) =>
+  load<import("./types").BestFile>(
+    league ? `hub/best/l/${league}${year ? `/${year}` : ""}.json` : year ? `hub/best/${year}.json` : "hub/best/all.json",
+  );
 export const loadRatings = () => load<import("./types").HubRatings>("hub/ratings.json");
