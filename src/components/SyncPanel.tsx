@@ -4,7 +4,8 @@
  * recovery code, sync code, download, sign out (everywhere), delete.
  */
 import React, { useEffect, useState } from "react";
-import { Cloud, KeyRound, LogIn, UserPlus, Hash, RefreshCw, Download, LogOut, Trash2, X, Copy, Check, ShieldCheck } from "lucide-react";
+import { Cloud, KeyRound, LogIn, UserPlus, Hash, RefreshCw, Download, LogOut, Trash2, X, Copy, Check, ShieldCheck, QrCode as QrIcon } from "lucide-react";
+import { QrCode } from "./QrCode";
 import { tl, locale } from "../i18n";
 import { IS_WEB } from "../platform";
 import {
@@ -18,6 +19,7 @@ import {
   login,
   loginWithCode,
   newRecoveryCode,
+  newSignInLink,
   newSyncCode,
   oauthSignIn,
   recover,
@@ -39,7 +41,8 @@ type Dialog =
   | { kind: "new-recovery" }
   | { kind: "delete" }
   | { kind: "show-recovery"; code: string }
-  | { kind: "show-code"; code: string };
+  | { kind: "show-code"; code: string }
+  | { kind: "qr" };
 
 /** A server error code in the reader's language. */
 function errorText(code: string): string {
@@ -68,6 +71,8 @@ function errorText(code: string): string {
       return tl("That's your only way to sign in. Add another one first.");
     case "expired":
       return tl("That took too long. Please try again.");
+    case "link_expired":
+      return tl("That QR code has expired or was already used. Make a new one on your other device.");
     case "cancelled":
       return tl("Signing in was cancelled.");
     case "linked_elsewhere":
@@ -110,6 +115,58 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
       {done ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
       {done ? tl("Copied") : tl("Copy")}
     </button>
+  );
+};
+
+/**
+ * A one-time sign-in QR code: scanning it with a phone camera opens lolworlds.com/riftwise signed in to this account.
+ * It works once, for 10 minutes; a new one can be made any time.
+ */
+const SignInQr: React.FC = () => {
+  const [link, setLink] = useState<{ url: string; until: number } | null>(null);
+  const [error, setError] = useState("");
+  const [now, setNow] = useState(Date.now());
+  const make = () => {
+    setError("");
+    setLink(null);
+    newSignInLink().then(
+      (l) => setLink({ url: l.url, until: Date.now() + l.expires * 1000 }),
+      (e) => setError(errorText((e as Error).message)),
+    );
+  };
+  useEffect(make, []);
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, []);
+  const left = link ? Math.max(0, Math.round((link.until - now) / 1000)) : 0;
+  return (
+    <div className="space-y-2">
+      <p className="text-[11px] text-rw-sub">
+        {tl("Scan this with your phone's camera to open RiftWise already signed in to this account. It works once, for 10 minutes.")}
+      </p>
+      <div className="flex justify-center">
+        {link && left > 0 ? (
+          <QrCode text={link.url} size={200} label={tl("Sign-in QR code")} />
+        ) : (
+          <div className="w-[200px] h-[200px] rounded-lg border border-rw-border flex items-center justify-center text-rw-muted text-center p-4">
+            {link ? tl("This code has expired.") : error || tl("One moment…")}
+          </div>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-[11px] text-rw-muted tabular-nums">
+          {link && left > 0 ? tl("Works for {time} more", { time: `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}` }) : ""}
+        </span>
+        <span className="flex gap-1.5">
+          {link && left > 0 && <CopyButton text={link.url} />}
+          <button type="button" className={plain} onClick={make}>
+            <RefreshCw className="w-3.5 h-3.5" />
+            {tl("New code")}
+          </button>
+        </span>
+      </div>
+    </div>
   );
 };
 
@@ -205,10 +262,16 @@ export const SyncPanel: React.FC<{ onOpenUrl: (url: string) => void }> = ({ onOp
                     : tl("Not synced yet")}
                 </div>
               </div>
-              <button type="button" className={plain} disabled={busy} onClick={() => run(() => syncNow())}>
-                <RefreshCw className={`w-3.5 h-3.5 ${busy ? "animate-spin" : ""}`} />
-                {tl("Sync now")}
-              </button>
+              <span className="flex flex-wrap gap-1.5">
+                <button type="button" className={primary} onClick={() => setDialog({ kind: "qr" })}>
+                  <QrIcon className="w-3.5 h-3.5" />
+                  {tl("Sign in on your phone")}
+                </button>
+                <button type="button" className={plain} disabled={busy} onClick={() => run(() => syncNow())}>
+                  <RefreshCw className={`w-3.5 h-3.5 ${busy ? "animate-spin" : ""}`} />
+                  {tl("Sync now")}
+                </button>
+              </span>
             </div>
 
             <div className="divide-y divide-rw-border border-t border-rw-border">
@@ -503,8 +566,20 @@ const SyncDialog: React.FC<{ dialog: Dialog; account: SyncAccount | null; onClos
             <code className="font-mono text-base tracking-wider text-rw-text bg-rw-bg border border-rw-border rounded-lg px-3 py-2 select-all">{dialog.code}</code>
             <CopyButton text={dialog.code} />
           </div>
+          <div className="border-t border-rw-border pt-2">
+            <SignInQr />
+          </div>
         </>
       );
+      action = (
+        <button type="button" className={primary} onClick={onClose}>
+          {tl("Done")}
+        </button>
+      );
+      break;
+    case "qr":
+      title = tl("Sign in on your phone");
+      body = <SignInQr />;
       action = (
         <button type="button" className={primary} onClick={onClose}>
           {tl("Done")}

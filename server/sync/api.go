@@ -25,10 +25,54 @@ type Server struct {
 	st    *Store
 	oauth *OAuth
 	lim   *limiter
+	links *links
 }
 
 func newServer(st *Store, o *OAuth) *Server {
-	return &Server{st: st, oauth: o, lim: &limiter{hits: map[string][]time.Time{}}}
+	return &Server{st: st, oauth: o, lim: &limiter{hits: map[string][]time.Time{}}, links: &links{m: map[string]linkEntry{}}}
+}
+
+// links are one-time sign-in links (the QR code a signed-in device shows): each works once, for linkTTL, and only
+// lives in memory (a restart just means making a new one).
+const linkTTL = 10 * time.Minute
+
+type linkEntry struct {
+	account string
+	created time.Time
+}
+
+type links struct {
+	mu sync.Mutex
+	m  map[string]linkEntry
+}
+
+func (l *links) add(account string) (string, bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	for k, e := range l.m {
+		if time.Since(e.created) > linkTTL {
+			delete(l.m, k)
+		}
+	}
+	if len(l.m) > 20000 {
+		return "", false
+	}
+	tok := randomToken(24)
+	l.m[tokenHash(tok)] = linkEntry{account: account, created: time.Now()}
+	return tok, true
+}
+
+// take hands a link's account over once (empty if unknown, used or too old).
+func (l *links) take(tok string) string {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	h := tokenHash(tok)
+	e, ok := l.m[h]
+	delete(l.m, h)
+	if !ok || time.Since(e.created) > linkTTL {
+		return ""
+	}
+	return e.account
 }
 
 // limiter counts attempts per key (an address, a username, an account) in a sliding window, in memory only.
@@ -286,6 +330,37 @@ func (s *Server) routes() http.Handler {
 		a := s.st.bySyncCode(codeHash(req.Code))
 		if a == nil || len(normCode(req.Code)) < 16 {
 			fail(w, 401, "wrong")
+			return
+		}
+		signIn(w, a, nil)
+	})
+
+	// QR code: a signed-in device asks for a one-time link; the phone that scans it is signed in to the same account
+	mux.HandleFunc(p+"link/new", func(w http.ResponseWriter, r *http.Request) {
+		a := signedIn(w, r)
+		if a == nil {
+			return
+		}
+		if !read(w, r, "link-new", 30, 10*time.Minute, nil) {
+			return
+		}
+		tok, ok := s.links.add(a.ID)
+		if !ok {
+			fail(w, 503, "busy")
+			return
+		}
+		reply(w, 200, map[string]any{"token": tok, "expires": int(linkTTL.Seconds())})
+	})
+
+	mux.HandleFunc(p+"link/use", func(w http.ResponseWriter, r *http.Request) {
+		var req struct{ Token string }
+		if !read(w, r, "link-use", 30, 10*time.Minute, &req) {
+			return
+		}
+		id := s.links.take(req.Token)
+		a := s.st.get(id)
+		if id == "" || a == nil {
+			fail(w, 401, "expired")
 			return
 		}
 		signIn(w, a, nil)

@@ -9,7 +9,7 @@
  */
 import { loadSettings, saveSettings } from "./api";
 import type { AppSettings } from "./types";
-import { IS_WEB } from "./platform";
+import { IS_WEB, WEB_APP_URL } from "./platform";
 import { allRevealed, replaceRevealed, REVEALED_EVENT } from "./revealed";
 
 const API = IS_WEB ? "/riftwise/api/sync/" : "https://lolworlds.com/riftwise/api/sync/";
@@ -81,11 +81,11 @@ async function call<T>(path: string, body?: unknown, method = body === undefined
   }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    if (res.status === 401 && path !== "login" && path !== "recover" && path !== "code/login" && path !== "delete" && path !== "password" && path !== "recovery/new") {
-      // signed out elsewhere (a password reset, "sign out everywhere") or the account is gone
-      forget();
-    }
-    throw new SyncError((data as { error?: string }).error || `http_${res.status}`);
+    const code = (data as { error?: string }).error || `http_${res.status}`;
+    // this device's sign-in is no longer valid (a password reset, "sign out everywhere", account deleted);
+    // other refusals (a wrong password, an expired QR code) leave it signed in
+    if (res.status === 401 && code === "not_signed_in" && tok) forget();
+    throw new SyncError(code);
   }
   return data as T;
 }
@@ -195,6 +195,41 @@ function schedulePush() {
   pushTimer = window.setTimeout(() => syncNow().catch(() => {}), 1500);
 }
 
+/**
+ * Sign-in hand-offs that arrive in the address: #link=... (a phone scanned another device's QR code), #signin=...
+ * (back from Discord / Twitch on the website), #signin-error=... and #signin-linked. Checked on start and whenever the
+ * address changes (the site may already be open in that tab).
+ */
+function handleHash() {
+  // open Settings first, then report (the Sync & account panel has to be there to show it)
+  const report = (detail: { error?: string; linked?: boolean }) => {
+    window.dispatchEvent(new CustomEvent(SYNC_EVENT, { detail: { open: true } }));
+    window.setTimeout(() => window.dispatchEvent(new CustomEvent(SYNC_EVENT, { detail })), 400);
+  };
+  const h = window.location.hash;
+  if (h.startsWith("#link=")) {
+    // a phone scanned the QR code another device showed: sign in to that account
+    const token = h.slice(6);
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    call<{ token: string; account: SyncAccount }>("link/use", { token })
+      .then((r) => signedIn(r.token, r.account))
+      .then(() => report({ linked: true }))
+      .catch((e) => report({ error: (e as Error).message === "expired" ? "link_expired" : (e as Error).message }));
+  } else if (h.startsWith("#signin=")) {
+    const ticket = h.slice(8);
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    call<{ token: string; account: SyncAccount }>("auth/ticket", { ticket })
+      .then((r) => signedIn(r.token, r.account))
+      .then(() => report({}))
+      .catch((e) => report({ error: (e as Error).message }));
+  } else if (h.startsWith("#signin-error=") || h === "#signin-linked") {
+    const error = h.startsWith("#signin-error=") ? decodeURIComponent(h.slice(14)) : "";
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    if (h === "#signin-linked") refreshAccount().catch(() => {});
+    report({ error });
+  }
+}
+
 let started = false;
 /** Called once at startup: sync now, on changes, every 2 minutes and when the window comes back. */
 export function startSync() {
@@ -204,21 +239,8 @@ export function startSync() {
   window.addEventListener(REVEALED_EVENT, schedulePush);
   window.setInterval(() => document.visibilityState === "visible" && syncNow().catch(() => {}), 2 * 60 * 1000);
   document.addEventListener("visibilitychange", () => document.visibilityState === "visible" && syncNow().catch(() => {}));
-  // the Discord / Twitch page sends the website back here with a one-time ticket
-  const h = window.location.hash;
-  if (h.startsWith("#signin=")) {
-    const ticket = h.slice(8);
-    history.replaceState(null, "", window.location.pathname + window.location.search);
-    call<{ token: string; account: SyncAccount }>("auth/ticket", { ticket })
-      .then((r) => signedIn(r.token, r.account))
-      .then(() => window.dispatchEvent(new CustomEvent(SYNC_EVENT, { detail: { open: true } })))
-      .catch((e) => window.dispatchEvent(new CustomEvent(SYNC_EVENT, { detail: { error: (e as Error).message } })));
-  } else if (h.startsWith("#signin-error=") || h === "#signin-linked") {
-    const error = h.startsWith("#signin-error=") ? decodeURIComponent(h.slice(14)) : "";
-    history.replaceState(null, "", window.location.pathname + window.location.search);
-    if (h === "#signin-linked") refreshAccount().catch(() => {});
-    window.setTimeout(() => window.dispatchEvent(new CustomEvent(SYNC_EVENT, { detail: { error, open: true } })), 500);
-  }
+  handleHash();
+  window.addEventListener("hashchange", handleHash);
   if (syncToken()) {
     syncNow().catch(() => {});
     refreshAccount().catch(() => {});
@@ -296,6 +318,12 @@ export async function setPassword(current: string, next: string, username?: stri
   write(ACCOUNT_KEY, r.account);
   changed();
   return r.recoveryCode || null;
+}
+
+/** A one-time sign-in link for the QR code (works once, for `expires` seconds). */
+export async function newSignInLink(): Promise<{ url: string; expires: number }> {
+  const r = await call<{ token: string; expires: number }>("link/new", {});
+  return { url: `${WEB_APP_URL}#link=${r.token}`, expires: r.expires };
 }
 
 export async function newRecoveryCode(password: string): Promise<string> {

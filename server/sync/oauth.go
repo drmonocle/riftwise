@@ -35,6 +35,9 @@ type OAuth struct {
 	Twitch  *oauthApp `json:"twitch"`
 
 	mu      sync.Mutex
+	path    string    // oauth.json, re-read when it changes (no restart needed after adding keys)
+	modTime time.Time // of the version loaded
+	checked time.Time // last time the file was looked at
 	pending map[string]*pendingLogin // state -> sign-in in progress
 	results map[string]*loginResult  // poll id -> finished sign-in (Windows app)
 	tickets map[string]*loginResult  // ticket -> finished sign-in (web page)
@@ -57,14 +60,8 @@ type loginResult struct {
 }
 
 func loadOAuth(dir string) *OAuth {
-	o := &OAuth{}
-	if err := readJSON(filepath.Join(dir, "oauth.json"), o); err != nil && !errors.Is(err, os.ErrNotExist) {
-		log.Printf("oauth.json: %v", err)
-	}
-	if o.Base == "" {
-		o.Base = "https://lolworlds.com/riftwise"
-	}
-	o.Base = strings.TrimRight(o.Base, "/")
+	o := &OAuth{path: filepath.Join(dir, "oauth.json"), Base: "https://lolworlds.com/riftwise"}
+	o.reload(true)
 	o.pending = map[string]*pendingLogin{}
 	o.results = map[string]*loginResult{}
 	o.tickets = map[string]*loginResult{}
@@ -72,7 +69,48 @@ func loadOAuth(dir string) *OAuth {
 	return o
 }
 
+// reload reads oauth.json again if it changed (looked at no more than every 20 seconds unless forced).
+func (o *OAuth) reload(force bool) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	if !force && time.Since(o.checked) < 20*time.Second {
+		return
+	}
+	o.checked = time.Now()
+	fi, err := os.Stat(o.path)
+	if err != nil {
+		if o.Discord != nil || o.Twitch != nil {
+			log.Printf("oauth.json gone: Discord and Twitch sign-in off")
+		}
+		o.Discord, o.Twitch, o.modTime = nil, nil, time.Time{}
+		return
+	}
+	if !force && fi.ModTime().Equal(o.modTime) {
+		return
+	}
+	var c struct {
+		Base    string    `json:"publicBase"`
+		Discord *oauthApp `json:"discord"`
+		Twitch  *oauthApp `json:"twitch"`
+	}
+	if err := readJSON(o.path, &c); err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			log.Printf("oauth.json: %v", err)
+		}
+		return
+	}
+	o.modTime = fi.ModTime()
+	if c.Base != "" {
+		o.Base = strings.TrimRight(c.Base, "/")
+	}
+	o.Discord, o.Twitch = c.Discord, c.Twitch
+	log.Printf("oauth.json loaded: discord=%v twitch=%v", c.Discord != nil && c.Discord.ClientSecret != "", c.Twitch != nil && c.Twitch.ClientSecret != "")
+}
+
 func (o *OAuth) app(provider string) *oauthApp {
+	o.reload(false)
+	o.mu.Lock()
+	defer o.mu.Unlock()
 	var a *oauthApp
 	switch provider {
 	case "discord":
@@ -88,8 +126,14 @@ func (o *OAuth) app(provider string) *oauthApp {
 
 func (o *OAuth) enabled(provider string) bool { return o.app(provider) != nil }
 
+func (o *OAuth) base() string {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	return o.Base
+}
+
 func (o *OAuth) redirectURI(provider string) string {
-	return o.Base + "/api/sync/auth/" + provider + "/callback"
+	return o.base() + "/api/sync/auth/" + provider + "/callback"
 }
 
 // start remembers a sign-in in progress and returns the provider's sign-in address and a poll id.
@@ -327,17 +371,18 @@ func (s *Server) finish(w http.ResponseWriter, r *http.Request, p *pendingLogin,
 			`<p style="max-width:28rem;text-align:center">%s</p>`, html.EscapeString(msg))
 		return
 	}
-	target := s.oauth.Base + "/#settings"
+	base := s.oauth.base()
+	target := base + "/#settings"
 	if res.Err != "" {
-		target = s.oauth.Base + "/#signin-error=" + url.QueryEscape(res.Err)
+		target = base + "/#signin-error=" + url.QueryEscape(res.Err)
 	} else if p != nil && p.Link != "" {
-		target = s.oauth.Base + "/#signin-linked"
+		target = base + "/#signin-linked"
 	} else {
 		ticket := randomToken(24)
 		s.oauth.mu.Lock()
 		s.oauth.tickets[ticket] = res
 		s.oauth.mu.Unlock()
-		target = s.oauth.Base + "/#signin=" + ticket
+		target = base + "/#signin=" + ticket
 	}
 	http.Redirect(w, r, target, http.StatusFound)
 }
