@@ -30,7 +30,7 @@ const FIRST_DESKTOP_LAUNCH = (() => {
 })();
 import { ArrowDownToLine, WifiOff, AlertTriangle, X } from "lucide-react";
 import { IS_DESKTOP, IS_WEB, matchIdFromHash } from "./platform";
-import { MOVE_PAGE_URL, clearMoveResult, closeMoveOffer, moveResult, offerMove } from "./move";
+import { clearMovedNote, movedHere } from "./move";
 import { reconcileLiveAndSchedule, playKickoffChime, applyH2HData, loadBundledH2H } from "./helpers";
 import { H2HDetailsModal } from "./components/H2HDetailsModal";
 import { OPEN_H2H_EVENT, OpenH2HDetail } from "./components/H2HMeter";
@@ -116,12 +116,11 @@ export default function App() {
       /* fine */
     }
   };
-  // The move to riftwise.gg: offer to bring settings over from lolworlds.com/riftwise, or say they arrived
-  const [moveNote, setMoveNote] = useState<"offer" | "ok" | "none" | null>(() => moveResult() ?? (offerMove() ? "offer" : null));
+  // The move to riftwise.gg: a one-time note when a browser's settings just came over from lolworlds.com/riftwise
+  const [moveNote, setMoveNote] = useState(movedHere);
   const closeMoveNote = () => {
-    if (moveNote === "offer") closeMoveOffer();
-    clearMoveResult();
-    setMoveNote(null);
+    clearMovedNote();
+    setMoveNote(false);
   };
   const [hubTip, setHubTip] = useState(() => {
     try {
@@ -877,30 +876,12 @@ export default function App() {
       {moveNote && !showWelcome && !renameNote && (
         <div className="bg-rw-surface border-b border-rw-accent/40 px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs" role="status">
           <div className="flex-1 min-w-[14rem] text-rw-sub leading-relaxed">
-            {moveNote === "offer" ? (
-              <>
-                <strong className="text-rw-accent">{tl("RiftWise has a new home: riftwise.gg.")}</strong>{" "}
-                {tl("Used RiftWise at lolworlds.com/riftwise before? Your followed teams and settings are still saved there. Bring them over in one click.")}
-              </>
-            ) : moveNote === "ok" ? (
-              tl("Your followed teams and settings are here now.")
-            ) : (
-              tl("Nothing was saved at lolworlds.com/riftwise in this browser, so there was nothing to bring over.")
-            )}
+            <strong className="text-rw-accent">{tl("RiftWise has a new home: riftwise.gg.")}</strong>{" "}
+            {tl("Your followed teams and settings came along.")}
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {moveNote === "offer" && (
-              <button
-                onClick={() => window.location.assign(MOVE_PAGE_URL)}
-                className="px-3 py-1.5 rounded-md bg-rw-accent hover:bg-rw-text text-rw-bg font-bold"
-              >
-                {tl("Bring them over")}
-              </button>
-            )}
-            <button onClick={closeMoveNote} aria-label={tl("Close")} className="p-1 text-rw-muted hover:text-rw-text">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <button onClick={closeMoveNote} aria-label={tl("Close")} className="p-1 text-rw-muted hover:text-rw-text shrink-0">
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 

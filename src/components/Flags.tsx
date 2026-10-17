@@ -36,6 +36,18 @@ const UK = (
   </>
 );
 
+// Chinese (both scripts)
+const CHINA = (
+  <>
+    <rect width="30" height="20" fill="#de2910" />
+    <polygon points={star(5, 5, 3)} fill="#ffde00" />
+    <polygon points={star(10, 2, 1, 23)} fill="#ffde00" />
+    <polygon points={star(12, 4, 1, 45)} fill="#ffde00" />
+    <polygon points={star(12, 7, 1, 0)} fill="#ffde00" />
+    <polygon points={star(10, 9, 1, 21)} fill="#ffde00" />
+  </>
+);
+
 // English: the US flag top left, the UK flag bottom right (id: unique per flag on the page)
 const english = (id: string) => (
   <>
@@ -96,32 +108,8 @@ const FLAGS: Record<Exclude<Lang, "en">, React.ReactNode> = {
       <polygon points={star(15, 10.4, 6)} fill="#ff0" />
     </>
   ),
-  "zh-CN": (
-    <>
-      <rect width="30" height="20" fill="#de2910" />
-      <polygon points={star(5, 5, 3)} fill="#ffde00" />
-      <polygon points={star(10, 2, 1, 23)} fill="#ffde00" />
-      <polygon points={star(12, 4, 1, 45)} fill="#ffde00" />
-      <polygon points={star(12, 7, 1, 0)} fill="#ffde00" />
-      <polygon points={star(10, 9, 1, 21)} fill="#ffde00" />
-    </>
-  ),
-  "zh-TW": (
-    <>
-      <rect width="30" height="20" fill="#fe0000" />
-      <rect width="15" height="10" fill="#000095" />
-      <polygon
-        points={Array.from({ length: 24 }, (_, i) => {
-          const a = ((i * 15 - 90) * Math.PI) / 180;
-          const r = i % 2 ? 2.4 : 3.8;
-          return `${(7.5 + r * Math.cos(a)).toFixed(2)},${(5 + r * Math.sin(a)).toFixed(2)}`;
-        }).join(" ")}
-        fill="#fff"
-      />
-      <circle cx="7.5" cy="5" r="2.1" fill="#000095" />
-      <circle cx="7.5" cy="5" r="1.75" fill="#fff" />
-    </>
-  ),
+  "zh-CN": CHINA,
+  "zh-TW": CHINA,
   ja: (
     <>
       <rect width="30" height="20" fill="#fff" />
