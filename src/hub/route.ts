@@ -4,10 +4,11 @@
  *
  *   /stats                      hub front page
  *   /stats/<section>[/<year>]   tournaments, leagues, champions, patches, records, titles, compare, data, about, prep,
- *                                         rankings, finder (?league=..&year=..&team=..), draft (?teams=a,b)
+ *                                         rankings, finder (?league=..&year=..&team=..), draft (?teams=a,b),
+ *                                         best (?view=series&year=2025&league=..)
  *   /stats/compare?teams=t1,gen-g&p=y2026   a comparison (players=..., p = period: all, last20, y2026, e:<event>)
  *   /stats/champions?league=lck&year=2026&event=..&patch=26.18&side=b&role=Mid   champion stats with filters
- *   /player/<slug>              /team/<slug>  /tournament/<slug>  /match/<slug>  /champion/<slug>  /league/<slug>
+ *   /player/<slug>              /team/<slug>  /tournament/<slug>  /match/<slug>[?g=<game>]  /champion/<slug>  /league/<slug>
  *
  * The desktop app has no address bar, so it keeps its own back stack instead.
  */
@@ -16,13 +17,13 @@ import { IS_WEB, SITE_URL } from "../platform";
 
 export type HubSection =
   | "tournaments" | "leagues" | "champions" | "patches" | "records" | "titles" | "compare" | "data" | "about" | "prep"
-  | "rankings" | "finder" | "draft";
+  | "rankings" | "finder" | "draft" | "best";
 export type HubEntity = "team" | "player" | "event" | "match" | "champ" | "league";
 
 export type HubRoute =
   | { kind: "home" }
   | { kind: HubSection; year?: string; mode?: "team" | "player"; a?: string; b?: string; period?: string; query?: string }
-  | { kind: HubEntity; slug: string };
+  | { kind: HubEntity; slug: string; game?: number };
 
 export const HUB_HOME: HubRoute = { kind: "home" };
 /** The compare page with who is compared over which period (all in the address). */
@@ -31,9 +32,10 @@ export type CompareRoute = { kind: "compare"; mode?: "team" | "player"; a?: stri
 export type PrepRoute = { kind: "prep"; a?: string; b?: string; period?: string };
 const SECTIONS: HubSection[] = [
   "tournaments", "leagues", "champions", "patches", "records", "titles", "compare", "data", "about", "prep", "rankings", "finder", "draft",
+  "best",
 ];
 /** Pages that keep their filters in the address (?league=lck&year=2026...). */
-const QUERY_SECTIONS: HubSection[] = ["champions", "finder", "draft"];
+const QUERY_SECTIONS: HubSection[] = ["champions", "finder", "draft", "best"];
 const ENTITY_PATH: Record<HubEntity, string> = {
   team: "team", player: "player", event: "tournament", match: "match", champ: "champion", league: "league",
 };
@@ -68,7 +70,10 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
     return null;
   }
   const kind = PATH_ENTITY[parts[0]];
-  return kind && parts[1] && parts.length === 2 ? { kind, slug: parts[1].toLowerCase() } : null;
+  if (!kind || !parts[1] || parts.length !== 2) return null;
+  // a match page can open at one of its games: /match/<slug>?g=5
+  const game = kind === "match" ? Number(new URLSearchParams(search).get("g")) || undefined : undefined;
+  return game ? { kind, slug: parts[1].toLowerCase(), game } : { kind, slug: parts[1].toLowerCase() };
 }
 
 /** ?teams=a,b&p=y2026 -> who is compared over which period */
@@ -92,7 +97,8 @@ export function hubPath(r: HubRoute): string {
     const y = "year" in r && r.year ? `/${r.year}` : "";
     return `${BASE}stats/${r.kind}${y}`;
   }
-  return `${BASE}${ENTITY_PATH[r.kind as HubEntity]}/${encodeURIComponent((r as { slug: string }).slug)}`;
+  const e = r as { slug: string; game?: number };
+  return `${BASE}${ENTITY_PATH[r.kind as HubEntity]}/${encodeURIComponent(e.slug)}${r.kind === "match" && e.game ? `?g=${e.game}` : ""}`;
 }
 
 /** Full shareable web address of a hub page (the desktop app shares these too). */
