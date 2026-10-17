@@ -315,15 +315,20 @@ export interface HubRatings {
   teams: RatingRow[];
   /** top leagues: league, league slug, average rating of its best four teams, active teams */
   leagues: [string, string | null, number, number][];
+  /** calibration on top of the published (top-league) scale: rating difference x intl for teams from two leagues,
+   * x other below the top leagues; a series' per-game edge over 50% x series[best of] */
+  adjust?: { intl: number; other: number; series: Record<string, number> };
   test: {
     from: string;
     all: RatingScore;
+    /** best of "3" / "5": favourite's chance from-to (%), series, how often the favourite won, chance given on average */
+    series?: Record<string, [number, number, number, number, number?][]>;
     intl: RatingScore;
     settled: RatingScore;
     /** games between a top-league and a second-tier team: average chance we gave the top-league side, how often it won */
     cross?: { n: number; pred?: number; won?: number };
-    /** favourite's chance from-to (%), games, how often the favourite won */
-    calibration: [number, number, number, number][];
+    /** favourite's chance from-to (%), games, how often the favourite won, chance given on average (newer builds) */
+    calibration: [number, number, number, number, number?][];
   };
 }
 

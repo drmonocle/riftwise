@@ -7,7 +7,7 @@ import React, { useMemo, useState } from "react";
 import { tl, tn } from "../../i18n";
 import { loadRatings } from "../../hub/data";
 import type { HubRatings, RatingRow } from "../../hub/types";
-import { gameChance, pct, seriesChance } from "../../hub/winChance";
+import { chanceContext, matchChance, pct, seriesChance } from "../../hub/winChance";
 import { SortTable, type Column } from "./SortTable";
 import {
   card,
@@ -119,7 +119,8 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       label: tl("vs #1"),
       title: tl("Chance to beat the top team in one game"),
       value: (x) => x.r[5],
-      render: (x) => (top ? pct(gameChance(x.r[5], top[5])) : "–"),
+      render: (x) =>
+        top ? pct(matchChance(x.r[5], top[5], chanceContext(x.r[9] === 1, top[9] === 1, x.r[3], top[3]), d.adjust)) : "–",
       className: "tabular-nums text-[#9bb3c9]",
     },
     {
@@ -139,6 +140,10 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
     },
   ];
   const t = d.test;
+  const saidCol = t.calibration.some((r) => r[4] != null);
+  const series3 = t.series?.["3"] || [];
+  const series5 = t.series?.["5"] || [];
+  const seriesBins = [50, 60, 70, 80, 90].filter((lo) => series3.some((r) => r[0] === lo) || series5.some((r) => r[0] === lo));
   return (
     <div className="space-y-3">
       <div className={`${card} space-y-2 text-xs`}>
@@ -320,11 +325,12 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                 <tr>
                   <th className={th}>{tl("Favourite's chance")}</th>
                   <th className={`${th} text-right`}>{tl("Games")}</th>
+                  {saidCol && <th className={`${th} text-right`} title={tl("The chance we gave the favourite, on average")}>{tl("We said")}</th>}
                   <th className={`${th} text-right`}>{tl("Favourite won")}</th>
                 </tr>
               </thead>
               <tbody>
-                {t.calibration.map(([lo, hi, n, won]) => (
+                {t.calibration.map(([lo, hi, n, won, said]) => (
                   <tr key={lo} className="border-t border-[#1e282d]">
                     <td className={td}>
                       {lo}–{Math.min(hi, 100)}%
@@ -334,6 +340,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                     >
                       {fmtNum(n)}
                     </td>
+                    {saidCol && <td className={`${td} text-right tabular-nums text-[#9bb3c9]`}>{said != null ? pct(said) : "–"}</td>}
                     <td
                       className={`${td} text-right tabular-nums font-bold text-[#f0e6d2]`}
                     >
@@ -344,6 +351,51 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               </tbody>
             </table>
           </div>
+          {series3.length + series5.length > 0 && (
+            <>
+              <p className="text-[11px] text-[#7e8e9f]">
+                {tl("Whole series since {year}: how often the favourite won the series (we said · it won · series).", {
+                  year: t.from.slice(0, 4),
+                })}
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr>
+                      <th className={th}>{tl("Favourite's chance")}</th>
+                      <th className={`${th} text-right`}>{tl("Best of 3")}</th>
+                      <th className={`${th} text-right`}>{tl("Best of 5")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {seriesBins.map((lo) => (
+                      <tr key={lo} className="border-t border-[#1e282d]">
+                        <td className={td}>
+                          {lo}–{lo + 10}%
+                        </td>
+                        {[series3, series5].map((rows, i) => {
+                          const row = rows.find((r) => r[0] === lo);
+                          return (
+                            <td key={i} className={`${td} text-right tabular-nums text-[#9bb3c9] whitespace-nowrap`}>
+                              {row ? (
+                                <>
+                                  {row[4] != null ? `${pct(row[4])} · ` : ""}
+                                  <span className="font-bold text-[#f0e6d2]">{pct(row[3])}</span>
+                                  <span className="hidden sm:inline"> · {fmtNum(row[2])}</span>
+                                </>
+                              ) : (
+                                "–"
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
           {t.cross && t.cross.n > 0 && t.cross.pred != null && t.cross.won != null && (
             <p className="text-[11px] text-[#9bb3c9]">
               {tl(
@@ -359,10 +411,10 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           )}
           <p className="text-[11px] text-[#7e8e9f]">
             {tl(
-              "A best-of-five makes the favourite's edge bigger: 60% per game is {bo3} in a best-of-three and {bo5} in a best-of-five.",
+              "A series is less certain than its games multiplied out: going by past series, a team at 60% per game wins about {bo3} of best-of-threes and {bo5} of best-of-fives.",
               {
-                bo3: pct(seriesChance(0.6, 3)),
-                bo5: pct(seriesChance(0.6, 5)),
+                bo3: pct(seriesChance(0.6, 3, d.adjust)),
+                bo5: pct(seriesChance(0.6, 5, d.adjust)),
               },
             )}
           </p>

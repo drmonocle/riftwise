@@ -9,7 +9,7 @@ import { GitCompare, Printer } from "lucide-react";
 import { tl, roleName } from "../../i18n";
 import { winRate } from "../../stats";
 import { loadHubPlayer, loadHubTeam, loadPlayerGames, loadRatings, loadTeamGames, loadTeamSeries } from "../../hub/data";
-import { gameChance, pct, seriesChance } from "../../hub/winChance";
+import { chanceContext, matchChance, pct, seriesChance } from "../../hub/winChance";
 import { Change } from "./RankingsPage";
 import type { HubPlayer, HubTeam, PlayerGameRow, TeamGameRow, TeamSeriesRow } from "../../hub/types";
 import { PrepRoute, navigateHub } from "../../hub/route";
@@ -100,14 +100,16 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
 /** Chances from the power ratings for one game, a best-of-three and a best-of-five, and where each team ranks. */
 const WinChances: React.FC<{ a: HubTeam; b: HubTeam }> = ({ a, b }) => {
   const ratings = useLoad(loadRatings, []);
-  if (!a.rating || !b.rating) return null;
+  if (!a.rating || !b.rating || !ratings.data) return null;
   // second-tier leagues never meet the top ones: only compare teams on the same scale
   if ((a.rating.rank == null || b.rating.rank == null) && a.rating.league !== b.rating.league) return null;
-  const p = gameChance(a.rating.r, b.rating.r);
+  const adjust = ratings.data.adjust;
+  const ctx = chanceContext(a.rating.rank != null, b.rating.rank != null, a.rating.league, b.rating.league);
+  const p = matchChance(a.rating.r, b.rating.r, ctx, adjust);
   const rows: [string, number][] = [
     [tl("One game"), p],
-    [tl("Best of 3"), seriesChance(p, 3)],
-    [tl("Best of 5"), seriesChance(p, 5)],
+    [tl("Best of 3"), seriesChance(p, 3, adjust)],
+    [tl("Best of 5"), seriesChance(p, 5, adjust)],
   ];
   const acc = ratings.data?.test.all;
   return (

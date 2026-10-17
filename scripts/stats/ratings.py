@@ -17,7 +17,11 @@ Elo, one update per game, over every pro game with a result since 2011, for team
   at the start of each year their average is set TIER2_GAP below the average of their region's top league(s),
   and a top-league team's rating does not move in the odd game against a second-tier team (cups, qualifiers);
 - a team promoted from a second-tier league starts at least just below its new league's average.
-Published ratings are DISPLAY x strength, so 1 / (1 + 10 ** (-difference / 400)) is directly the chance to win.
+Chances are calibrated on past games: a rating difference counts CONF_TOP for two top-league teams, CONF_INTL at
+international events and CONF_OTHER elsewhere (closer games are more random among the best teams), and a series is
+less certain than its games multiplied out (SERIES: each game's edge over 50% is scaled before combining). Published
+ratings are CONF_TOP x strength, so 1 / (1 + 10 ** (-difference / 400)) is the chance between two top-league teams;
+hub.py publishes the other factors relative to it ("adjust" in ratings.json) for the app.
 
 Tuned 2026-10-16 on 2022-23 games, checked on 2024-26 games (log loss 0.636 -> 0.623, favourite won 64.7% -> 65.9%).
 `run` also tests itself: before each game from TEST_FROM on it records the chance it gave team a, so the site
@@ -56,7 +60,10 @@ GAP_DAYS = 60        # a break this long (between splits) ...
 GAP_REG = 0.15       # ... pulls the team this share back to its league average
 GAP_K = 2.0          # ... and its K is this much bigger
 GAP_GAMES = 6        # ... for this many games
-DISPLAY = 0.9        # published rating differences = strength differences x DISPLAY (chances slightly less sure)
+CONF_TOP = 0.80      # how much a strength difference counts between two top-league teams (= published scale)
+CONF_INTL = 0.72     # ... at international events
+CONF_OTHER = 0.94    # ... in every other game (second-tier and smaller leagues)
+SERIES = {3: 0.85, 5: 0.70}  # a series: each game's edge over 50% is multiplied by this before combining
 SCALE = 400.0
 ACTIVE_DAYS = 400    # a team counts toward its league's average for this long after its last game
 TEST_FROM = "2024-01-01"
@@ -85,7 +92,7 @@ def _days(a, b):
     return _ordinal[b] - _ordinal[a]
 
 
-def run(games, test_from=TEST_FROM, **kw):
+def run(games, test_from=TEST_FROM, series_out=None, **kw):
     """games: iterable of (date "YYYY-MM-DD[...]", league, international 0/1, team a, team b, a won 0/1,
     tier 1/2 (top league or not), region) and optionally (a on blue side 1/0/None, gold a - gold b or None,
     minutes or None, players of a, players of b).
@@ -93,12 +100,15 @@ def run(games, test_from=TEST_FROM, **kw):
     "hist": [(date, published strength)]}},
     tests = [(date, chance given to team a, a won, international, both established, tier of a, tier of b)]
     (tier of each team's home league: 1 top, 2 second tier, 0 none yet),
-    leagues = {league: (tier, region)} as last seen."""
+    leagues = {league: (tier, region)} as last seen.
+    series_out (a list) gets every best-of-3 and best-of-5 from test_from on (games of the same two teams on the same
+    day): (date, chance given to team a to win it, best of, a won it, context "top"/"intl"/"other")."""
     p = dict(K=K, K_NEW=K_NEW, NEW_GAMES=NEW_GAMES, K_INTL=K_INTL, NEW_OFFSET=NEW_OFFSET, UNKNOWN_REL=UNKNOWN_REL,
              NEW_UNKNOWN=NEW_UNKNOWN, YEAR_REGRESS=YEAR_REGRESS, TIER2_GAP=TIER2_GAP, PROMOTE=PROMOTE,
              K_CROSS_TOP=K_CROSS_TOP, BLUE=BLUE, MOV_X=MOV_X, PW=PW, KP=KP, KP_NEW=KP_NEW, P_NEW=P_NEW,
              P_NEW_OFFSET=P_NEW_OFFSET, P_REGRESS=P_REGRESS, ROSTER_REG=ROSTER_REG, GAP_DAYS=GAP_DAYS,
-             GAP_REG=GAP_REG, GAP_K=GAP_K, GAP_GAMES=GAP_GAMES, DISPLAY=DISPLAY)
+             GAP_REG=GAP_REG, GAP_K=GAP_K, GAP_GAMES=GAP_GAMES, CONF_TOP=CONF_TOP, CONF_INTL=CONF_INTL,
+             CONF_OTHER=CONF_OTHER)
     p.update(kw)
     pw = p["PW"]
     teams = {}
@@ -107,6 +117,7 @@ def run(games, test_from=TEST_FROM, **kw):
     anchored = {}               # second-tier league -> year its average was last set
     players = {}                # player -> {"r", "g", "team", "year"}
     tests = []
+    played = []  # test games for series_out: (day, a, b, strength difference without side, context, a won)
 
     def raw_chance(d):
         return 1.0 / (1.0 + 10.0 ** (-d / SCALE))
@@ -245,8 +256,12 @@ def run(games, test_from=TEST_FROM, **kw):
         if day >= test_from:
             ta = league_info.get(xa["league"], (0, None))[0]
             tb = league_info.get(xb["league"], (0, None))[0]
-            tests.append((day, raw_chance(p["DISPLAY"] * (sa - sb + side)), a_won, intl,
+            ctx = "intl" if intl else "top" if ta == 1 and tb == 1 else "other"
+            conf = p["CONF_INTL"] if ctx == "intl" else p["CONF_TOP"] if ctx == "top" else p["CONF_OTHER"]
+            tests.append((day, raw_chance(conf * (sa - sb + side)), a_won, intl,
                           xa["g"] >= p["NEW_GAMES"] and xb["g"] >= p["NEW_GAMES"], ta, tb))
+            if series_out is not None:
+                played.append((day, a, b, conf * (sa - sb), ctx, a_won))
         ka = p["K_NEW"] if xa["g"] < p["NEW_GAMES"] else p["K"]
         kb = p["K_NEW"] if xb["g"] < p["NEW_GAMES"] else p["K"]
         ga = gb = 1.0
@@ -284,15 +299,47 @@ def run(games, test_from=TEST_FROM, **kw):
                     kp *= p["K_INTL"]
                 q["r"] += sign * kp * c * d * mult
                 q["g"] += 1
-            s = p["DISPLAY"] * strength(x)
+            s = p["CONF_TOP"] * strength(x)
             if x["hist"] and x["hist"][-1][0] == day:
                 x["hist"][-1] = (day, s)
             else:
                 x["hist"].append((day, s))
     for x in teams.values():
         x["elo"] = x["r"]
-        x["r"] = p["DISPLAY"] * strength(x)
+        x["r"] = p["CONF_TOP"] * strength(x)
+    if series_out is not None:
+        series_out.extend(_series(played))
     return teams, tests, league_info
+
+
+def series_chance_adj(p, bo):
+    """Chance to win a best-of-`bo` series from the one-game chance p, as calibrated on past series."""
+    c = SERIES.get(bo, 1.0)
+    return series_chance(0.5 + (p - 0.5) * c, bo)
+
+
+def _series(played):
+    """Group consecutive games of the same two teams on the same day into series (best of 3 or 5 only; the
+    length comes from the winner's game count)."""
+    out = []
+    cur = None
+    for day, a, b, d, ctx, a_won in played:
+        key = (day, frozenset((a, b)))
+        if cur and cur[0] == key:
+            cur[4][a if a_won else b] += 1
+            continue
+        if cur:
+            out.append(cur)
+        cur = (key, a, d, ctx, Counter({a if a_won else b: 1}), b)
+    if cur:
+        out.append(cur)
+    rows = []
+    for (day, _), a, d, ctx, wins, b in out:
+        wa, wb = wins[a], wins[b]
+        bo = 2 * max(wa, wb) - 1
+        if wa != wb and bo in (3, 5):
+            rows.append((day, series_chance_adj(1.0 / (1.0 + 10.0 ** (-d / SCALE)), bo), bo, 1 if wa > wb else 0, ctx))
+    return rows
 
 
 def score(tests, only=None):
@@ -307,13 +354,19 @@ def score(tests, only=None):
 
 
 def calibration(tests, bins=(0.5, 0.6, 0.7, 0.8, 0.9, 1.01)):
-    """For favourites at 50-60%, 60-70% ...: games and how often the favourite won."""
+    """For favourites at 50-60%, 60-70% ...: games, how often the favourite won, and the chance we gave on average."""
     out = []
     for lo, hi in zip(bins, bins[1:]):
         rows = [(max(e, 1 - e), (w if e >= 0.5 else not w)) for _, e, w, *_ in tests if lo <= max(e, 1 - e) < hi]
         if rows:
-            out.append([round(lo * 100), round(min(hi, 1) * 100), len(rows), round(sum(1 for _, ok in rows if ok) / len(rows), 4)])
+            out.append([round(lo * 100), round(min(hi, 1) * 100), len(rows), round(sum(1 for _, ok in rows if ok) / len(rows), 4),
+                        round(sum(f for f, _ in rows) / len(rows), 4)])
     return out
+
+
+def series_calibration(rows, bo):
+    """calibration() for the best-of-`bo` series in series_out rows."""
+    return calibration([(d, e, w) for d, e, b, w, _ in rows if b == bo])
 
 
 def cross(tests):

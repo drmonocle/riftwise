@@ -1445,7 +1445,9 @@ def build(ctx) -> dict:
     # with each game's side, gold difference and lineups when known (players carry their rating between teams)
     if len(rating_extra) != len(rating_games):  # never mismatch games and details: drop the details instead
         rating_extra = [None] * len(rating_games)
-    rated, rating_tests, rated_leagues = team_ratings.run([g + tuple(x) if x else g for g, x in zip(rating_games, rating_extra)])
+    rating_series = []
+    rated, rating_tests, rated_leagues = team_ratings.run([g + tuple(x) if x else g for g, x in zip(rating_games, rating_extra)],
+                                                          series_out=rating_series)
     # TIER2_GAP pulls every rating down a few hundred points; shift them all by one number so the average active
     # top-league team is 1500 (only differences matter for rankings, win chances and the backtest)
     newest_r0 = max((x["last"] for x in rated.values()), default="0000-00-00")
@@ -1496,7 +1498,13 @@ def build(ctx) -> dict:
     out.json("ratings.json", {
         "asof": newest_r, "games": len(rating_games),
         "teams": rank_rows, "leagues": league_rows,
+        # ratings are on the top-league scale; the app multiplies a difference by "intl" for two teams from different
+        # leagues and by "other" below the top leagues, and scales a series' per-game edge by series[best of]
+        "adjust": {"intl": round(team_ratings.CONF_INTL / team_ratings.CONF_TOP, 4),
+                   "other": round(team_ratings.CONF_OTHER / team_ratings.CONF_TOP, 4),
+                   "series": {str(k): v for k, v in team_ratings.SERIES.items()}},
         "test": {"from": team_ratings.TEST_FROM, "all": team_ratings.score(rating_tests),
+                 "series": {str(bo): team_ratings.series_calibration(rating_series, bo) for bo in (3, 5)},
                  "intl": team_ratings.score(rating_tests, lambda t: t[3]),
                  "settled": team_ratings.score(rating_tests, lambda t: t[4]),
                  "cross": team_ratings.cross(rating_tests),

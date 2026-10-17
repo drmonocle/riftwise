@@ -8,7 +8,7 @@ import type { Match } from "../types";
 import { tl } from "../i18n";
 import { findHubTeam, loadHubIndex, loadRatings } from "../hub/data";
 import { navigateHub } from "../hub/route";
-import { gameChance, pct, seriesChance } from "../hub/winChance";
+import { chanceContext, matchChance, pct, seriesChance } from "../hub/winChance";
 
 export const WinChanceLine: React.FC<{ match: Match }> = ({ match }) => {
   const [p, setP] = useState<number | null>(null);
@@ -22,7 +22,8 @@ export const WinChanceLine: React.FC<{ match: Match }> = ({ match }) => {
         const rb = ratings.teams.find((r) => r[0] === b);
         // r[9] = 1 for top-league teams; second-tier teams only compare within their own league
         if (!alive || !ra || !rb || ((ra[9] !== 1 || rb[9] !== 1) && ra[3] !== rb[3])) return;
-        setP(seriesChance(gameChance(ra[5], rb[5]), match.bestOf || 1));
+        const ctx = chanceContext(ra[9] === 1, rb[9] === 1, ra[3], rb[3]);
+        setP(seriesChance(matchChance(ra[5], rb[5], ctx, ratings.adjust), match.bestOf || 1, ratings.adjust));
       })
       .catch(() => {});
     return () => {
