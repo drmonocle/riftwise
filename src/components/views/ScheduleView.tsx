@@ -10,6 +10,7 @@ import { H2HMeter } from "../H2HMeter";
 import { StandingsView } from "./StandingsView";
 import { tl, locale, clockOptions } from "../../i18n";
 import { searchAlias } from "../../searchAliases";
+import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 
 interface ScheduleViewProps {
   schedule: Match[];
@@ -45,11 +46,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   });
   const [followedOnly, setFollowedOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [revealedMatchIds, setRevealedMatchIds] = useState<Record<string, boolean>>({});
-
-  const toggleReveal = (matchId: string) => {
-    setRevealedMatchIds((prev) => ({ ...prev, [matchId]: !prev[matchId] }));
-  };
+  // revealed scores are remembered on this device (src/revealed.ts) and synced with cloud sync
+  useRevealedVersion();
+  const toggleReveal = (matchId: string) => setRevealed(`match:${matchId}`, !isRevealed(`match:${matchId}`));
 
   // A shared link: show the filter the match lives in, then scroll to it.
   const [flashMatchId, setFlashMatchId] = useState<string | null>(null);
@@ -242,9 +241,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
                 const isT1Followed = settings.followedTeams.includes(m.team1Code);
                 const isT2Followed = settings.followedTeams.includes(m.team2Code);
-                const isRevealed = !!revealedMatchIds[m.matchId];
+                const shown = isRevealed(`match:${m.matchId}`);
                 const isLive = m.state === "inProgress";
-                const showScore = (m.state === "completed" || isLive) && (!settings.spoilerMode || isRevealed);
+                const showScore = (m.state === "completed" || isLive) && (!settings.spoilerMode || shown);
                 const h2h = computeHeadToHead(m.team1Code, m.team2Code, schedule, m.matchId, showScore);
 
                 return (
