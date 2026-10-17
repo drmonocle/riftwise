@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -165,6 +168,20 @@ func TestFlows(t *testing.T) {
 		t.Fatal("sync code sign-in", code, out)
 	}
 
+	// a QR code link signs a phone in once
+	_, out = d3.call("POST", "link/new", nil)
+	link := out["token"].(string)
+	phone := &client{t: t, h: h}
+	if code, out := phone.call("POST", "link/use", map[string]string{"token": link}); code != 200 || out["token"] == nil {
+		t.Fatal("link sign-in", code, out)
+	}
+	if code, _ := phone.call("POST", "link/use", map[string]string{"token": link}); code != 401 {
+		t.Fatal("a link worked twice", code)
+	}
+	if code, _ := (&client{t: t, h: h}).call("POST", "link/new", nil); code != 401 {
+		t.Fatal("signed-out device made a link", code)
+	}
+
 	// delete needs the password, then everything is gone
 	if code, _ := d3.call("POST", "delete", map[string]string{"password": "nope nope nope"}); code != 401 {
 		t.Fatal("delete without the password", code)
@@ -202,5 +219,23 @@ func TestLoginLimit(t *testing.T) {
 	}
 	if last != 429 {
 		t.Fatal("no limit on password guessing", last)
+	}
+}
+
+func TestOAuthKeysFile(t *testing.T) {
+	dir := t.TempDir()
+	o := loadOAuth(dir)
+	if o.enabled("discord") || o.enabled("twitch") {
+		t.Fatal("on without keys")
+	}
+	_ = os.WriteFile(filepath.Join(dir, "oauth.json"), []byte(`{"discord":{"clientId":"123","clientSecret":"s"}}`), 0o600)
+	o.reload(true) // the server looks again by itself within 20 seconds
+	if !o.enabled("discord") || o.enabled("twitch") {
+		t.Fatal("keys file not picked up")
+	}
+	u, poll, err := o.start("discord", "app", "")
+	if err != nil || poll == "" || !strings.Contains(u, "client_id=123") ||
+		!strings.Contains(u, url.QueryEscape("https://lolworlds.com/riftwise/api/sync/auth/discord/callback")) {
+		t.Fatal("start url", u, err)
 	}
 }
