@@ -569,7 +569,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
             <button
               type="button"
               onClick={back}
-              className="flex items-center gap-1 text-xs text-rw-teal hover:underline shrink-0"
+              className="flex items-center gap-1 min-h-8 px-1.5 -ml-1.5 rounded text-xs text-rw-teal hover:underline shrink-0"
               aria-label={tl("Back")}
             >
               <ArrowLeft className="w-3.5 h-3.5" />{" "}

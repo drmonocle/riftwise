@@ -206,6 +206,17 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
   const title = `${a.team.name} vs ${b.team.name}`;
   const printing = usePrint();
   const pageRef = useRef<HTMLDivElement>(null);
+  // one-game win chance from the power ratings, for the 16:9 card (same rule as Win chances below)
+  const ratings = useLoad(loadRatings, []);
+  const chance = useMemo<[number, number] | null>(() => {
+    const x = a.team.rating;
+    const y = b.team.rating;
+    if (!x || !y || !ratings.data) return null;
+    if ((x.rank == null || y.rank == null) && x.league !== y.league) return null;
+    const p = matchChance(x.r, y.r, chanceContext(x.rank != null, y.rank != null, x.league, y.league), ratings.data.adjust);
+    const pa = Math.round(p * 100);
+    return [pa, 100 - pa];
+  }, [a.team.rating, b.team.rating, ratings.data]);
   const body = (print: boolean) => (
     <>
       <WinChances a={a.team} b={b.team} />
@@ -220,7 +231,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
         )
       ) : (
         <>
-          <TeamRows x={a.team} y={b.team} ra={ra} rb={rb} bSlug={b.team.u} career={period === "all"} periodLabel={periodLabel} />
+          <TeamRows x={a.team} y={b.team} ra={ra} rb={rb} bSlug={b.team.u} career={period === "all"} periodLabel={periodLabel} chance={chance} />
           <Lanes a={a} b={b} period={period} periodLabel={periodLabel} title={title} />
           <FearlessDepth a={a} b={b} period={period} periodLabel={periodLabel} title={title} />
         </>
@@ -248,7 +259,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           <PeriodPicker options={options} value={period} onChange={(p) => set({ period: p })} />
           <HubLink
             to={{ kind: "compare", mode: "team", a: a.team.u, b: b.team.u, period }}
-            className="flex items-center gap-1 text-rw-teal hover:underline"
+            className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-teal hover:underline"
           >
             <GitCompare className="w-3.5 h-3.5" />
             {tl("Compare")}
@@ -256,7 +267,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           <button
             type="button"
             onClick={printing.start}
-            className="flex items-center gap-1 text-rw-teal hover:underline"
+            className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-teal hover:underline"
             title={tl("Print a caster sheet: everything on this page, on paper or as a PDF")}
           >
             <Printer className="w-3.5 h-3.5" />

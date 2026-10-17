@@ -172,6 +172,10 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
 
       {lists.length > 0 && <StageLists stages={lists} />}
 
+      {e.children && e.children.length > 0 && bracket.length === 0 && lists.length === 0 && !(e.standings && e.standings.length) && (
+        <ChildStages kids={e.children} />
+      )}
+
       {e.leaders && Object.keys(e.leaders).length > 0 && <Leaders e={e} />}
 
       <EventPlayerStats e={e} hidden={resultsHidden} />
@@ -247,6 +251,53 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
 };
 
 /** Knockout rounds as bracket columns (quarterfinals → semifinals → final), joined by lines. */
+/**
+ * The stages of a whole event (Play-In, Swiss, Main Event...) on the parent's page: pick a stage, see its bracket,
+ * standings and series. Starts on the newest stage that has a bracket (the knockouts), else the newest stage.
+ */
+const ChildStages: React.FC<{ kids: { n: string; u: string }[] }> = ({ kids }) => {
+  const state = useLoad(() => Promise.all(kids.map((k) => loadHubEvent(k.u).catch(() => null))), [kids.map((k) => k.u).join()]);
+  const loaded = (state.data || []).filter((x): x is HubEvent => !!x && !!((x.stages && x.stages.length) || (x.standings && x.standings.length)));
+  const start = useMemo(() => {
+    const withBracket = loaded.map((x, i) => ((x.stages || []).some((st) => st.kind === "bracket") ? i : -1)).filter((i) => i >= 0);
+    return withBracket.length ? withBracket[withBracket.length - 1] : loaded.length - 1;
+  }, [loaded]);
+  const [pick, setPick] = useState<number | null>(null);
+  if (!loaded.length) return null;
+  const i = Math.min(pick ?? start, loaded.length - 1);
+  const x = loaded[i];
+  const st = x.stages || [];
+  const b = st.filter((s) => s.kind === "bracket");
+  const l = st.filter((s) => s.kind === "list");
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+        <span className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mr-1">{tl("Stages")}</span>
+        {loaded.map((k, j) => (
+          <button
+            key={k.u}
+            type="button"
+            onClick={() => setPick(j)}
+            className={`px-2.5 py-1.5 min-h-8 rounded border ${j === i ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"}`}
+          >
+            {k.n}
+          </button>
+        ))}
+        <EventLink name={tl("Open {stage}", { stage: x.n })} u={x.u} className="ml-auto text-rw-teal hover:underline" />
+      </div>
+      {b.length > 0 && <Bracket stages={b} />}
+      {x.standings && x.standings.length > 0 && (
+        <div className={`grid gap-3 ${x.standings.length > 1 ? "md:grid-cols-2" : ""}`}>
+          {x.standings.map((t, k) => (
+            <Standings key={k} name={t.name === "Standings" ? tl("Standings") : tl("Group {name}", { name: t.name.replace(/^Group /, "") })} rows={t.rows} end={x.end} />
+          ))}
+        </div>
+      )}
+      {l.length > 0 && <StageLists stages={l} />}
+    </div>
+  );
+};
+
 export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boolean; note?: (r: SeriesRow) => React.ReactNode; title?: string }> = ({
   stages,
   hide,

@@ -307,6 +307,9 @@ export interface HubGame {
   /** f = full stats, r = result only, s = scheduled only */
   st: "f" | "r" | "s";
   vod?: string;
+  /** the same VOD at the draft and at the game start (Leaguepedia timestamps) */
+  vpb?: string;
+  vgs?: string;
   ff?: number;
   remake?: number;
   /** Player of the Game */

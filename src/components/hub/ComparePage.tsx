@@ -25,6 +25,7 @@ import {
 import { HeadToHeadSeries } from "./Archives";
 import { PeriodPicker } from "./PeriodStats";
 import { DraftTendencies } from "./DraftTendencies";
+import { BroadcastCardButton, playerCardData, teamCardData } from "./BroadcastCard";
 import { card, ChampLink, fmtNum, HubLink, isFresh, OeCredit, RevealButton, Section, td, useHidden, usePageTitle } from "./ui";
 import { STable } from "../STable";
 
@@ -234,22 +235,33 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
   );
 };
 
-export const TeamRows: React.FC<{ x: HubTeam; y: HubTeam; ra: TeamGameRow[]; rb: TeamGameRow[]; bSlug: string; career: boolean; periodLabel: string }> = ({
-  x,
-  y,
-  ra,
-  rb,
-  bSlug,
-  career,
-  periodLabel,
-}) => {
+export const TeamRows: React.FC<{
+  x: HubTeam;
+  y: HubTeam;
+  ra: TeamGameRow[];
+  rb: TeamGameRow[];
+  bSlug: string;
+  career: boolean;
+  periodLabel: string;
+  /** win chance of x and y in percent (Match prep), for the 16:9 card */
+  chance?: [number, number] | null;
+}> = ({ x, y, ra, rb, bSlug, career, periodLabel, chance }) => {
   const A = useMemo(() => teamAgg(ra), [ra]);
   const B = useMemo(() => teamAgg(rb), [rb]);
   const h2h = useMemo(() => teamHeadToHead(ra, bSlug), [ra, bSlug]);
   const wr = (w: number, g: number) => (g ? w / g : null);
   return (
     <>
-      <Section title={`${x.name} vs ${y.name}`} right={<span className="text-[11px] text-rw-sub">{periodLabel}</span>} share={`${x.name}-vs-${y.name}-${periodLabel}`}>
+      <Section
+        title={`${x.name} vs ${y.name}`}
+        right={
+          <span className="flex items-center gap-2">
+            <span className="text-[11px] text-rw-sub">{periodLabel}</span>
+            <BroadcastCardButton data={() => teamCardData(x, y, A, B, periodLabel, chance)} name={`${x.name}-vs-${y.name}`} />
+          </span>
+        }
+        share={`${x.name}-vs-${y.name}-${periodLabel}`}
+      >
         <table className="w-full text-xs">
           <tbody>
             <Row label={career ? tl("Head to head (games)") : tl("Head to head this period (games)")} a={h2h.g ? h2h.w : "–"} b={h2h.g ? h2h.g - h2h.w : "–"} va={h2h.g ? h2h.w : null} vb={h2h.g ? h2h.g - h2h.w : null} />
@@ -354,7 +366,27 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
   const pg = (p: typeof A) => `${perGame(p.k, p.g) ?? "–"} / ${perGame(p.d, p.g) ?? "–"} / ${perGame(p.a, p.g) ?? "–"}`;
   return (
     <>
-      <Section title={`${x.name} vs ${y.name}`} right={<span className="text-[11px] text-rw-sub">{periodLabel}</span>} share={`${x.name}-vs-${y.name}-${periodLabel}`}>
+      <Section
+        title={`${x.name} vs ${y.name}`}
+        right={
+          <span className="flex items-center gap-2">
+            <span className="text-[11px] text-rw-sub">{periodLabel}</span>
+            <BroadcastCardButton
+              data={() =>
+                playerCardData(
+                  { name: x.name, role: x.role ? roleName(x.role) : undefined, club: x.club },
+                  A,
+                  periodLabel,
+                  { name: y.name, role: y.role ? roleName(y.role) : undefined, club: y.club },
+                  B,
+                )
+              }
+              name={`${x.name}-vs-${y.name}`}
+            />
+          </span>
+        }
+        share={`${x.name}-vs-${y.name}-${periodLabel}`}
+      >
         <table className="w-full text-xs">
           <tbody>
             <Row label={tl("Role")} a={A.roles[0] ? roleName(A.roles[0]) : "–"} b={B.roles[0] ? roleName(B.roles[0]) : "–"} />

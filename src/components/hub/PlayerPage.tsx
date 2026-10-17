@@ -209,7 +209,7 @@ const PlayerView: React.FC<{
       </div>
 
       <OwnStorylines notes={p.notes} spoilerKey={`notes:player:${p.u}`} share={`${p.u}-storylines`} />
-      <PlayerPeriodStats slug={p.u} />
+      <PlayerPeriodStats slug={p.u} who={{ name: p.name, role: p.role ? roleName(p.role) : undefined, club: p.club }} />
       <PlayerRanks slug={p.u} events={p.events} />
 
       {p.titles.length > 0 && (

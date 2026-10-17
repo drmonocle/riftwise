@@ -131,15 +131,28 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onOpenUrl:
               </span>
             )}
           </span>
-          {g.vod && (
-            <button
-              type="button"
-              onClick={() => onOpenUrl(g.vod!)}
-              className="flex items-center gap-1 px-2 py-1 rounded-md bg-rw-red/15 border border-rw-red/50 text-rw-text hover:bg-rw-red/25 font-semibold"
-            >
-              <PlayCircle className="w-3.5 h-3.5 text-rw-red" />
-              {tl("Watch this game")}
-            </button>
+          {(g.vod || g.vpb || g.vgs) && (
+            <span className="flex flex-wrap items-center gap-1.5">
+              {(
+                [
+                  [g.vpb, tl("Watch the draft")],
+                  [g.vgs, tl("Watch from game start")],
+                  [g.vod, g.vpb || g.vgs ? tl("Full VOD") : tl("Watch this game")],
+                ] as [string | undefined, string][]
+              )
+                .filter(([url]) => !!url)
+                .map(([url, label]) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => onOpenUrl(url!)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 min-h-8 rounded-md bg-rw-red/15 border border-rw-red/50 text-rw-text hover:bg-rw-red/25 font-semibold"
+                  >
+                    <PlayCircle className="w-3.5 h-3.5 text-rw-red" />
+                    {label}
+                  </button>
+                ))}
+            </span>
           )}
         </div>
         <div className="grid grid-cols-2 gap-3">

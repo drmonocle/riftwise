@@ -22,6 +22,7 @@ import {
 import { useDDragon } from "../../hub/ddragon";
 import { SortTable, type Column } from "./SortTable";
 import { DraftTendencies } from "./DraftTendencies";
+import { BroadcastCardButton, playerCardData } from "./BroadcastCard";
 import {
   ChampLink,
   Loading,
@@ -246,16 +247,19 @@ export const defaultPeriod = (opts: PeriodOption[]): PeriodKey =>
 
 // ── players ───────────────────────────────────────────────────────────────
 
-export const PlayerPeriodStats: React.FC<{ slug: string }> = ({ slug }) => {
+type Who = { name: string; role?: string; club?: string };
+
+export const PlayerPeriodStats: React.FC<{ slug: string; who?: Who }> = ({ slug, who }) => {
   const state = useLoad(() => loadPlayerGames(slug), [slug]);
   if (state.loading) return null;
   if (!state.data || !state.data.length) return null;
-  return <PlayerPeriodView slug={slug} rows={state.data} />;
+  return <PlayerPeriodView slug={slug} rows={state.data} who={who} />;
 };
 
-const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[] }> = ({
+const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Who }> = ({
   slug,
   rows,
+  who,
 }) => {
   useDDragon();
   const options = useMemo(() => periodOptions(rows.map(playerRowRef)), [rows]);
@@ -327,11 +331,20 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[] }> = ({
         ] as Column<(typeof agg.champs)[number]>[])
       : []),
   ];
+  const periodText = (() => {
+    const o = options.find((x) => x.key === period);
+    return !o || o.key === "all" ? tl("All time") : o.group === "basic" ? tl("Last {n} games", { n: o.label }) : o.label;
+  })();
   return (
     <Section
       title={tl("Stats for")}
       right={
-        <PeriodPicker options={options} value={period} onChange={setPeriod} />
+        <>
+          <PeriodPicker options={options} value={period} onChange={setPeriod} />
+          {who && !hidden && (
+            <BroadcastCardButton data={() => playerCardData(who, agg, periodText)} name={`${who.name}-${period}`} />
+          )}
+        </>
       }
       share={`${slug}-${period}`}
     >
