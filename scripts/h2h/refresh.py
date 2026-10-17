@@ -27,7 +27,15 @@ BASE_PATH = os.path.join(ROOT, "src", "all_time_h2h.json")
 # Per-pair series history from the catalog (h2h-refresh/series_from_catalog.py), same cutoff.
 BASE_SERIES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "base_series.json")
 RECENT_N = 10
-INTL_LEAGUE = re.compile(r"world|msi|mid-season|first stand", re.I)
+# the H2H view's "Worlds · MSI · First Stand" line: only those three (not the Esports World Cup, the Americas Cup or
+# a Worlds qualifier); same test as big_event in scripts/stats/hub.py and isBigEvent in src/helpers.ts
+BIG_EVENT = re.compile(r"\bworlds?\b|world championship|\bmsi\b|mid-season invitational|first stand", re.I)
+NOT_BIG = re.compile(r"world cup|qualif", re.I)
+
+
+def big_event(name):
+    return bool(name and BIG_EVENT.search(name) and not NOT_BIG.search(name))
+
 BASE_CUTOFF = "2026-09-26T00:00:00Z"  # keep in sync with BUNDLED_H2H_CUTOFF in src/helpers.ts
 # keep in sync with CODE_ALIASES in src/helpers.ts
 CODE_ALIASES = {"TLAW": "TL", "MKOI": "MDK", "KRX": "DRX", "DNS": "KDF", "DNF": "KDF"}
@@ -239,7 +247,7 @@ def main(out_path):
 
     for key, day, league, aw, bw in sorted(new_series, key=lambda s: s[1], reverse=True):
         entry = series.setdefault(key, {"intl": [0, 0], "recent": []})
-        if INTL_LEAGUE.search(league):
+        if big_event(league):
             entry["intl"][0] += aw
             entry["intl"][1] += bw
         entry["recent"].insert(0, [day, league, aw, bw])

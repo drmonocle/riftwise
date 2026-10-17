@@ -663,11 +663,18 @@ def build(ctx) -> dict:
     kept = {}                          # stage -> its sums, for the whole-event page
     champ_games = defaultdict(lambda: {"ev": {}, "g": []})  # (league slug, year) -> champion game log
     h2h_pairs = defaultdict(lambda: [0, 0])     # (code a, code b) sorted -> game wins of a, of b
-    h2h_series = defaultdict(list)              # (code a, code b) -> [(date, event, wins a, wins b, international)]
+    h2h_series = defaultdict(list)              # (code a, code b) -> [(date, event, wins a, wins b, Worlds/MSI/First Stand)]
     h2h_newest = ""                              # newest game in the table (its cutoff)
     h2h_names = defaultdict(dict)                # code -> team name -> its newest game under that code
     H2H_ALIASES = {"TLAW": "TL", "MKOI": "MDK", "KRX": "DRX", "DNS": "KDF", "DNF": "KDF"}  # = CODE_ALIASES in src/helpers.ts
     INTL_RE = re.compile(r"world|msi|mid-season|first stand", re.I)
+    # the H2H view's "Worlds · MSI · First Stand" line: only those three (not the Esports World Cup, the Americas
+    # Cup or a Worlds qualifier); same test as scripts/h2h/refresh.py and isBigEvent in src/helpers.ts
+    BIG_EVENT_RE = re.compile(r"\bworlds?\b|world championship|\bmsi\b|mid-season invitational|first stand", re.I)
+    NOT_BIG_RE = re.compile(r"world cup|qualif", re.I)
+
+    def big_event(name):
+        return bool(name and BIG_EVENT_RE.search(name) and not NOT_BIG_RE.search(name))
     rating_games = []  # (date, league, international, fid a, fid b, a won, tier, region) for the ratings
     rating_extra = []  # per rating game: (a on blue side, gold a - gold b, minutes, players a, players b) or None
 
@@ -1190,7 +1197,7 @@ def build(ctx) -> dict:
                         ca, cb, ga, gb = cb, ca, gb, ga
                     h2h_pairs[(ca, cb)][0] += ga
                     h2h_pairs[(ca, cb)][1] += gb
-                    h2h_series[(ca, cb)].append((date[:10], en, ga, gb, 1 if INTL_RE.search(en or "") or info.get("Region") == "International" else 0))
+                    h2h_series[(ca, cb)].append((date[:10], en, ga, gb, 1 if big_event(en) else 0))
                     newest_g = max((g["date"] for g in glist if g["w"]), default=date)
                     if newest_g > h2h_newest:
                         h2h_newest = newest_g

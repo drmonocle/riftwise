@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { isMatchCompleted, normalizeTeamCode, reconcileLiveAndSchedule, computeLeagueStandings, buildAllTimeH2H, computeHeadToHead, applyH2HData, loadBundledH2H, h2hKey, recentMeetings, minutesLate, formatLate, isUpcomingOrDelayed, pickTeamByCode } from "../helpers";
+import { isMatchCompleted, normalizeTeamCode, reconcileLiveAndSchedule, computeLeagueStandings, buildAllTimeH2H, computeHeadToHead, applyH2HData, loadBundledH2H, h2hKey, recentMeetings, minutesLate, formatLate, isUpcomingOrDelayed, pickTeamByCode, isBigEvent } from "../helpers";
 import { matchIdFromHash, matchShareUrl } from "../platform";
 
 // The bundled table is loaded on demand now (kept out of the startup bundle).
@@ -109,6 +109,27 @@ describe("buildAllTimeH2H", () => {
     });
     expect(merged["NAVI__RED"]).toEqual([5, 3]);
     expect(merged["BRO__T1"]).toEqual([1, 4]);
+  });
+});
+
+describe("isBigEvent", () => {
+  it("is Worlds, MSI or First Stand only", () => {
+    expect(isBigEvent("worlds", "Worlds")).toBe(true);
+    expect(isBigEvent("msi", "MSI")).toBe(true);
+    expect(isBigEvent("first_stand", "First Stand")).toBe(true);
+    expect(isBigEvent(undefined, "Worlds 2026 Play-In")).toBe(true);
+    expect(isBigEvent(undefined, "Esports World Cup 2025")).toBe(false);
+    expect(isBigEvent("ewc", "Esports World Cup")).toBe(false);
+    expect(isBigEvent(undefined, "Americas Cup 2026")).toBe(false);
+    expect(isBigEvent(undefined, "Worlds Qualifying Series 2025")).toBe(false);
+    expect(isBigEvent("lcs", "LCS")).toBe(false);
+  });
+
+  it("counts schedule results from those events separately", () => {
+    const g = (id: string, slug: string, name: string, s1: number, s2: number) =>
+      match({ matchId: id, state: "completed", leagueSlug: slug, leagueName: name, team1Code: "EEE", team2Code: "FFF", team1Score: s1, team2Score: s2, startTimeUtc: "2031-02-01T10:00:00Z" });
+    const h = computeHeadToHead("FFF", "EEE", [g("w", "worlds", "Worlds", 1, 3), g("x", "ewc", "Esports World Cup", 2, 0)]);
+    expect(h).toMatchObject({ team1Wins: 3, team2Wins: 3, scheduleBigT1: 3, scheduleBigT2: 1 });
   });
 });
 
