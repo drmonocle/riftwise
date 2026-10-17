@@ -2,6 +2,7 @@
 import React, { useMemo, useState } from "react";
 import { Trophy, MapPin, CalendarDays, Coins, Download } from "lucide-react";
 import { downloadEventCsv } from "./DownloadsPage";
+import { BracketBoard, type BracketColumn } from "../BracketBoard";
 import { tl, tn, tk, regionName, stageName } from "../../i18n";
 import { winRate } from "../../stats";
 import { loadHubEvent } from "../../hub/data";
@@ -26,6 +27,7 @@ import {
   th,
   TeamLink,
   useHidden,
+  useHiddenCheck,
   useLoad,
   usePageTitle,
 } from "./ui";
@@ -46,12 +48,12 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
     <div className="space-y-3">
       <div className={card}>
         {e.parent && (
-          <p className="text-[11px] text-[#7e8e9f] mb-1">
-            {tl("Part of")} <EventLink name={e.parent.n} u={e.parent.u} className="text-[#c8aa6e] hover:underline" />
+          <p className="text-[11px] text-rw-muted mb-1">
+            {tl("Part of")} <EventLink name={e.parent.n} u={e.parent.u} className="text-rw-accent hover:underline" />
           </p>
         )}
-        <h2 className="text-lg font-bold text-[#f0e6d2]">{e.n}</h2>
-        <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[#9bb3c9] mt-1">
+        <h2 className="text-lg font-bold text-rw-text">{e.n}</h2>
+        <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-rw-sub mt-1">
           {(e.start || e.end) && (
             <span className="flex items-center gap-1">
               <CalendarDays className="w-3 h-3" />
@@ -61,7 +63,7 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
           )}
           {e.league &&
             (e.lu ? (
-              <HubLink to={{ kind: "league", slug: e.lu }} className="text-[#9bb3c9] hover:text-[#c8aa6e] hover:underline">
+              <HubLink to={{ kind: "league", slug: e.lu }} className="text-rw-sub hover:text-rw-accent hover:underline">
                 {e.league}
               </HubLink>
             ) : (
@@ -88,7 +90,7 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
                 key={s.u}
                 to={{ kind: "event", slug: s.u }}
                 className={`px-2.5 py-1 rounded-lg text-xs border ${
-                  s.u === e.u ? "bg-[#c8aa6e] text-[#091428] font-bold border-[#c8aa6e]" : "border-[#1e282d] text-[#9bb3c9] hover:text-[#f0e6d2]"
+                  s.u === e.u ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
                 }`}
               >
                 {s.n}
@@ -107,7 +109,7 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
           <button
             type="button"
             onClick={() => downloadEventCsv(e.u, onOpenUrl).catch(() => {})}
-            className="mt-2 flex items-center gap-1 text-[11px] text-[#0ac8b9] hover:underline"
+            className="mt-2 flex items-center gap-1 text-[11px] text-rw-teal hover:underline"
           >
             <Download className="w-3 h-3" />
             {tl("Download every game (CSV)")}
@@ -133,20 +135,20 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
           right={resultsHidden ? <RevealButton onReveal={revealResults} small /> : undefined}
         >
           {resultsHidden ? (
-            <p className="text-[11px] text-[#7e8e9f] italic">{tl("Hidden while spoiler mode is on.")}</p>
+            <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
           ) : (
             <table className="w-full text-xs">
               <tbody>
                 {e.results.slice(0, 32).map((r, i) => (
-                  <tr key={i} className="border-t border-[#1e282d] first:border-0">
-                    <td className={`${td} w-12 font-bold ${r.p === "1" ? "text-[#c8aa6e]" : "text-[#9bb3c9]"}`}>
+                  <tr key={i} className="border-t border-rw-border first:border-0">
+                    <td className={`${td} w-12 font-bold ${r.p === "1" ? "text-rw-accent" : "text-rw-sub"}`}>
                       {r.p === "1" && <Trophy className="w-3 h-3 inline mr-1" />}
                       {r.p}
                     </td>
                     <td className={td}>
                       <TeamLink name={r.t} u={r.u} />
                     </td>
-                    <td className={`${td} text-right text-[#7e8e9f]`}>{r.usd ? fmtUsd(r.usd) : ""}</td>
+                    <td className={`${td} text-right text-rw-muted`}>{r.usd ? fmtUsd(r.usd) : ""}</td>
                   </tr>
                 ))}
               </tbody>
@@ -189,12 +191,12 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
               </thead>
               <tbody>
                 {e.teams.map((t) => (
-                  <tr key={t.t} className="border-t border-[#1e282d]">
+                  <tr key={t.t} className="border-t border-rw-border">
                     <td className={`${td} max-w-[12rem] truncate`}>
                       <TeamLink name={t.t} u={t.u} />
                     </td>
-                    <td className={`${td} text-[#9bb3c9]`}>{resultsHidden ? "–" : `${t.sw}-${t.sg - t.sw}`}</td>
-                    <td className={`${td} text-[#9bb3c9]`}>{resultsHidden ? "–" : `${t.w}-${t.g - t.w}`}</td>
+                    <td className={`${td} text-rw-sub`}>{resultsHidden ? "–" : `${t.sw}-${t.sg - t.sw}`}</td>
+                    <td className={`${td} text-rw-sub`}>{resultsHidden ? "–" : `${t.w}-${t.g - t.w}`}</td>
                   </tr>
                 ))}
               </tbody>
@@ -210,28 +212,30 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
 // ── Series boxes ──────────────────────────────────────────────────────────
 
 /** One series as two team lines with scores; links to its match page. */
+const seriesKey = (r: SeriesRow) => `series:${r.g || r.a + r.b + r.date}`;
+
 export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: React.ReactNode; compact?: boolean }> = ({ r, hideResult, note, compact }) => {
-  const [hiddenBySpoiler, reveal] = useHidden(`series:${r.g || r.a + r.b + r.date}`, r.date);
+  const [hiddenBySpoiler, reveal] = useHidden(seriesKey(r), r.date);
   const hidden = hideResult || hiddenBySpoiler;
   const played = r.sa != null && r.sb != null;
   const line = (name: string, u: string | null, score: number | null, won: boolean) => (
     <div className="flex items-center justify-between gap-2 min-w-0">
-      <span className={`truncate ${!hidden && won ? "text-[#f0e6d2] font-bold" : "text-[#9bb3c9]"}`}>
-        <TeamLink name={name} u={u} className={!hidden && won ? "text-[#f0e6d2] font-bold hover:underline" : "text-[#9bb3c9] hover:text-[#f0e6d2] hover:underline"} />
+      <span className={`truncate ${!hidden && won ? "text-rw-text font-bold" : "text-rw-sub"}`}>
+        <TeamLink name={name} u={u} className={!hidden && won ? "text-rw-text font-bold hover:underline" : "text-rw-sub hover:text-rw-text hover:underline"} />
       </span>
-      <span className={`tabular-nums font-bold ${!hidden && won ? "text-[#0ac8b9]" : "text-[#7e8e9f]"}`}>{played ? (hidden ? "?" : score) : ""}</span>
+      <span className={`tabular-nums font-bold ${!hidden && won ? "text-rw-teal" : "text-rw-muted"}`}>{played ? (hidden ? "?" : score) : ""}</span>
     </div>
   );
   return (
-    <div className={`bg-[#091428] border border-[#1e282d] rounded-lg ${compact ? "px-2 py-1" : "px-2.5 py-1.5"} text-xs min-w-0`}>
+    <div className={`bg-rw-bg border border-rw-border rounded-lg ${compact ? "px-2 py-1" : "px-2.5 py-1.5"} text-xs min-w-0`}>
       {line(r.a, r.au, r.sa, r.w === 1)}
       {line(r.b, r.bu, r.sb, r.w === 2)}
-      <div className="flex items-center justify-between gap-2 mt-0.5 text-[10px] text-[#7e8e9f]">
+      <div className="flex items-center justify-between gap-2 mt-0.5 text-[10px] text-rw-muted">
         <span className="truncate">{note ?? fmtDate(r.date, false)}</span>
         <span className="flex items-center gap-1.5 shrink-0">
           {hiddenBySpoiler && !hideResult && played && <RevealButton onReveal={reveal} small />}
           {r.g && !hideResult && (
-            <HubLink to={{ kind: "match", slug: r.g }} className="text-[#0ac8b9] hover:underline">
+            <HubLink to={{ kind: "match", slug: r.g }} className="text-rw-teal hover:underline">
               {tl("Details")}
             </HubLink>
           )}
@@ -241,30 +245,35 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
   );
 };
 
-/** Knockout rounds as bracket columns (quarterfinals → semifinals → final). */
+/** Knockout rounds as bracket columns (quarterfinals → semifinals → final), joined by lines. */
 export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boolean; note?: (r: SeriesRow) => React.ReactNode; title?: string }> = ({
   stages,
   hide,
   note,
   title,
-}) => (
-  <Section title={title || tl("Bracket")}>
-    <div className="overflow-x-auto -mx-1 px-1 pb-1">
-      <div className="flex gap-3 min-w-max items-stretch">
-        {stages.map((st) => (
-          <div key={st.name} className="w-48 flex flex-col">
-            <div className="text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f] mb-1.5 truncate">{stageLabel(st.name)}</div>
-            <div className="flex flex-col justify-around flex-1 gap-2">
-              {st.series.map((r, i) => (
-                <SeriesBox key={i} r={r} hideResult={hide?.(r)} note={note?.(r)} compact />
-              ))}
-            </div>
-          </div>
-        ))}
+}) => {
+  const hiddenNow = useHiddenCheck();
+  const columns: BracketColumn[] = stages.map((st) => ({
+    key: st.name,
+    title: stageLabel(st.name),
+    items: st.series.map((r, i) => {
+      const shown = !hide?.(r) && !hiddenNow(seriesKey(r), r.date);
+      return {
+        key: `${st.name}-${i}`,
+        teams: [r.a, r.b],
+        winner: shown ? (r.w === 1 ? r.a : r.w === 2 ? r.b : null) : null,
+        node: <SeriesBox r={r} hideResult={hide?.(r)} note={note?.(r)} compact />,
+      };
+    }),
+  }));
+  return (
+    <Section title={title || tl("Bracket")}>
+      <div className="overflow-x-auto -mx-1 px-1 pb-1">
+        <BracketBoard columns={columns} />
       </div>
-    </div>
-  </Section>
-);
+    </Section>
+  );
+};
 
 /** Stage names from Leaguepedia ("Week 3", "Round 1", "Quarterfinals") in the reader's language where we can. */
 export function stageLabel(name: string): string {
@@ -292,7 +301,7 @@ const StageLists: React.FC<{ stages: Stage[] }> = ({ stages }) => {
               type="button"
               onClick={() => setI(k)}
               className={`px-2 py-1 rounded text-[11px] border ${
-                k === i ? "bg-[#c8aa6e] text-[#091428] font-bold border-[#c8aa6e]" : "border-[#1e282d] text-[#9bb3c9] hover:text-[#f0e6d2]"
+                k === i ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
               }`}
             >
               {stageLabel(s.name) || tl("Matches")}
@@ -326,13 +335,13 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={r.t + i} className="border-t border-[#1e282d]">
-              <td className={`${td} text-[#7e8e9f]`}>{hide ? "–" : r.pl ?? i + 1}</td>
+            <tr key={r.t + i} className="border-t border-rw-border">
+              <td className={`${td} text-rw-muted`}>{hide ? "–" : r.pl ?? i + 1}</td>
               <td className={`${td} max-w-[11rem] truncate`}>
                 <TeamLink name={r.t} u={r.u} />
               </td>
-              <td className={`${td} text-[#9bb3c9] tabular-nums`}>{hide ? "–" : `${r.sw ?? 0}-${r.sl ?? 0}${ties ? `-${r.st ?? 0}` : ""}`}</td>
-              <td className={`${td} text-[#7e8e9f] tabular-nums`}>{hide || r.gw == null ? "–" : `${r.gw}-${r.gl ?? 0}`}</td>
+              <td className={`${td} text-rw-sub tabular-nums`}>{hide ? "–" : `${r.sw ?? 0}-${r.sl ?? 0}${ties ? `-${r.st ?? 0}` : ""}`}</td>
+              <td className={`${td} text-rw-muted tabular-nums`}>{hide || r.gw == null ? "–" : `${r.gw}-${r.gl ?? 0}`}</td>
             </tr>
           ))}
         </tbody>
@@ -362,7 +371,7 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
             type="button"
             onClick={() => setK(x)}
             className={`px-2 py-1 rounded text-[11px] border ${
-              x === k ? "bg-[#c8aa6e] text-[#091428] font-bold border-[#c8aa6e]" : "border-[#1e282d] text-[#9bb3c9] hover:text-[#f0e6d2]"
+              x === k ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
             }`}
           >
             {tl(LEADER_TITLES[x])}
@@ -373,17 +382,17 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
         {rows.map((r, i) => (
           <li key={r.n + i} className="flex items-center justify-between gap-2 min-w-0">
             <span className="truncate min-w-0">
-              <span className="text-[#7e8e9f] mr-1.5 tabular-nums">{i + 1}.</span>
+              <span className="text-rw-muted mr-1.5 tabular-nums">{i + 1}.</span>
               <PlayerLink name={r.n} u={r.u} />
-              <span className="text-[#7e8e9f]"> · {r.t}</span>
+              <span className="text-rw-muted"> · {r.t}</span>
             </span>
-            <span className="shrink-0 text-[#9bb3c9] tabular-nums">
-              <span className="text-[#c8aa6e] font-bold">{fmtNum(r.v)}</span> · {tn("{n} game", "{n} games", r.g)}
+            <span className="shrink-0 text-rw-sub tabular-nums">
+              <span className="text-rw-accent font-bold">{fmtNum(r.v)}</span> · {tn("{n} game", "{n} games", r.g)}
             </span>
           </li>
         ))}
       </ol>
-      <p className="text-[10px] text-[#7e8e9f]">{tl("Players who played at least 40% of the most games anyone played here.")}</p>
+      <p className="text-[10px] text-rw-muted">{tl("Players who played at least 40% of the most games anyone played here.")}</p>
     </Section>
   );
 };
@@ -397,7 +406,7 @@ const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
     e.lu && /^\d{4}$/.test(year) ? (
       <HubLink
         to={{ kind: "champions", query: new URLSearchParams({ league: e.lu, year, ...(e.whole ? {} : { event: e.u }) }).toString() }}
-        className="text-[11px] text-[#0ac8b9] hover:underline"
+        className="text-[11px] text-rw-teal hover:underline"
       >
         {tl("Every champion, with filters")}
       </HubLink>
@@ -416,14 +425,14 @@ const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
         </thead>
         <tbody>
           {rows.map((c) => (
-            <tr key={c.c} className="border-t border-[#1e282d]">
+            <tr key={c.c} className="border-t border-rw-border">
               <td className={`${td} max-w-[9rem]`}>
                 <ChampLink name={c.c} size={18} />
               </td>
-              <td className={`${td} text-[#9bb3c9]`}>{games ? `${Math.round(((c.p + c.b) / games) * 100)}%` : "–"}</td>
-              <td className={`${td} text-[#9bb3c9]`}>{c.p}</td>
-              <td className={`${td} text-[#9bb3c9]`}>{c.b}</td>
-              <td className={`${td} text-[#9bb3c9]`}>{c.p ? winRate(c.w, c.p) : "–"}</td>
+              <td className={`${td} text-rw-sub`}>{games ? `${Math.round(((c.p + c.b) / games) * 100)}%` : "–"}</td>
+              <td className={`${td} text-rw-sub`}>{c.p}</td>
+              <td className={`${td} text-rw-sub`}>{c.b}</td>
+              <td className={`${td} text-rw-sub`}>{c.p ? winRate(c.w, c.p) : "–"}</td>
             </tr>
           ))}
         </tbody>

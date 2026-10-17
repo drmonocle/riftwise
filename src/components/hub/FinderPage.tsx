@@ -31,9 +31,9 @@ import {
 } from "./ui";
 
 const sel =
-  "bg-[#091428] border border-[#1e282d] rounded-lg px-2 py-1.5 text-[#f0e6d2] max-w-[12rem]";
+  "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text max-w-[12rem]";
 const num =
-  "bg-[#091428] border border-[#1e282d] rounded-lg px-2 py-1.5 text-[#f0e6d2] w-16";
+  "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text w-16";
 type Q = URLSearchParams;
 type SetQ = (p: Record<string, string | undefined>) => void;
 
@@ -113,10 +113,10 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
   return (
     <div className="space-y-3">
       <div className={`${card} space-y-2 text-xs`}>
-        <h2 className="text-base font-bold text-[#f0e6d2]">
+        <h2 className="text-base font-bold text-rw-text">
           {tl("Game finder")}
         </h2>
-        <p className="text-[#9bb3c9]">
+        <p className="text-rw-sub">
           {tl(
             'Find games by team, champion, player, side, result, patch and length. Conditions are about one team in the game: "T1 on red with Azir, against Orianna, lost".',
           )}
@@ -178,7 +178,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                   { replace: true },
                 )
               }
-              className="text-[#0ac8b9] hover:underline"
+              className="text-rw-teal hover:underline"
             >
               {tl("Clear filters")}
             </button>
@@ -329,7 +329,7 @@ const FinderBody: React.FC<{
           {champSel(tl("Banned: any"), opts.champs, q.get("ban") || "", (v) =>
             setQ({ ban: v || undefined }),
           )}
-          <span className="flex items-center gap-1 text-[#9bb3c9]">
+          <span className="flex items-center gap-1 text-rw-sub">
             {tl("Length (min)")}
             <input
               type="number"
@@ -351,8 +351,8 @@ const FinderBody: React.FC<{
             />
           </span>
         </div>
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#1e282d]">
-          <span className="text-[10px] uppercase tracking-wider font-bold text-[#c8aa6e]">
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-rw-border">
+          <span className="text-[10px] uppercase tracking-wider font-bold text-rw-accent">
             {tl("One team in the game")}
           </span>
           <select
@@ -431,12 +431,12 @@ const FinderBody: React.FC<{
       </div>
 
       <div className={`${card} space-y-2`}>
-        <p className="text-xs text-[#f0e6d2]">
+        <p className="text-xs text-rw-text">
           {tn("{n} game", "{n} games", found.length, {
             n: fmtNum(found.length),
           })}
           {found.length > 0 && sideCond && !hidden && (
-            <span className="text-[#9bb3c9]">
+            <span className="text-rw-sub">
               {" · "}
               {tl("won {w}, lost {l} ({pct})", {
                 w: won,
@@ -446,7 +446,7 @@ const FinderBody: React.FC<{
             </span>
           )}
           {avg != null && (
-            <span className="text-[#9bb3c9]">
+            <span className="text-rw-sub">
               {" "}
               · {tl("average {n} min", { n: avg.toFixed(1) })}
             </span>
@@ -478,13 +478,13 @@ const FinderBody: React.FC<{
                   {found.slice(0, limit).map(({ g, s }, i) => (
                     <tr
                       key={`${g[0]}-${g[14] || i}-${g[15] || 0}-${i}`}
-                      className="border-t border-[#1e282d]"
+                      className="border-t border-rw-border"
                     >
-                      <td className={`${td} text-[#9bb3c9]`}>
+                      <td className={`${td} text-rw-sub`}>
                         {g[14] ? (
                           <HubLink
                             to={{ kind: "match", slug: g[14] }}
-                            className="hover:text-[#c8aa6e] hover:underline"
+                            className="hover:text-rw-accent hover:underline"
                           >
                             {fmtDate(g[0])}
                             {g[15] ? ` · G${g[15]}` : ""}
@@ -494,7 +494,7 @@ const FinderBody: React.FC<{
                         )}
                       </td>
                       <td
-                        className={`${td} text-[#7e8e9f] max-w-[12rem] truncate`}
+                        className={`${td} text-rw-muted max-w-[12rem] truncate`}
                       >
                         {events[g[2]]?.[1] || ""}
                       </td>
@@ -510,12 +510,12 @@ const FinderBody: React.FC<{
                         focus={sideCond && s === 1}
                         won={g[3] === 0}
                       />
-                      <td className={`${td} font-semibold text-[#f0e6d2]`}>
+                      <td className={`${td} font-semibold text-rw-text`}>
                         {(g[3] === 1 ? g[10] : g[11]) ||
                           (g[3] === 1 ? tl("Blue") : tl("Red"))}
                       </td>
-                      <td className={`${td} text-[#9bb3c9]`}>{g[1]}</td>
-                      <td className={`${td} text-[#9bb3c9] tabular-nums`}>
+                      <td className={`${td} text-rw-sub`}>{g[1]}</td>
+                      <td className={`${td} text-rw-sub tabular-nums`}>
                         {g[4] != null ? g[4].toFixed(1) : ""}
                       </td>
                       <Picks list={g[5]} />
@@ -529,19 +529,19 @@ const FinderBody: React.FC<{
               <button
                 type="button"
                 onClick={() => setLimit((n) => n + 200)}
-                className="text-xs text-[#0ac8b9] hover:underline"
+                className="text-xs text-rw-teal hover:underline"
               >
                 {tl("Show more ({n} left)", { n: found.length - limit })}
               </button>
             )}
-            <p className="text-[10px] text-[#7e8e9f]">
+            <p className="text-[10px] text-rw-muted">
               {tl(
                 "Copy and CSV take the games shown; show more first to include them all.",
               )}
             </p>
           </>
         ) : (
-          <p className="text-xs text-[#9bb3c9]">
+          <p className="text-xs text-rw-sub">
             {tl("No games match. Try fewer filters.")}
           </p>
         )}
@@ -557,10 +557,10 @@ const TeamCell: React.FC<{
   won: boolean;
 }> = ({ name, u, focus, won }) => (
   <td
-    className={`${td} ${won ? "text-[#f0e6d2] font-semibold" : "text-[#9bb3c9]"} ${focus ? "underline decoration-[#c8aa6e] decoration-2 underline-offset-4" : ""}`}
+    className={`${td} ${won ? "text-rw-text font-semibold" : "text-rw-sub"} ${focus ? "underline decoration-rw-accent decoration-2 underline-offset-4" : ""}`}
   >
     {u ? (
-      <HubLink to={{ kind: "team", slug: u }} className="hover:text-[#c8aa6e]">
+      <HubLink to={{ kind: "team", slug: u }} className="hover:text-rw-accent">
         {name}
       </HubLink>
     ) : (

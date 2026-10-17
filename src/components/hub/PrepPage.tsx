@@ -74,14 +74,14 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
     return (
       <div className="space-y-3">
         <div className={`${card} space-y-2 text-xs`}>
-          <p className="text-[#f0e6d2] font-semibold">{tl("Match prep")}</p>
-          <p className="text-[#9bb3c9]">{tl("Pick two teams: storylines, form, head-to-head, team numbers, draft tendencies and every lane, on one page.")}</p>
+          <p className="text-rw-text font-semibold">{tl("Match prep")}</p>
+          <p className="text-rw-sub">{tl("Pick two teams: storylines, form, head-to-head, team numbers, draft tendencies and every lane, on one page.")}</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
           {(["a", "b"] as const).map((k) => (
             <div key={k} className={`${card} min-w-0`}>
               {(k === "a" ? a : b) ? (
-                <button type="button" onClick={() => set({ [k]: undefined })} className="text-[11px] text-[#0ac8b9] hover:underline">
+                <button type="button" onClick={() => set({ [k]: undefined })} className="text-[11px] text-rw-teal hover:underline">
                   {tl("Change")}
                 </button>
               ) : (
@@ -92,7 +92,7 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
         </div>
       </div>
     );
-  if (sides.failed) return <p className="text-xs text-[#9bb3c9] py-6 text-center">{tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>;
+  if (sides.failed) return <p className="text-xs text-rw-sub py-6 text-center">{tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>;
   if (!sides.a || !sides.b) return <Loading />;
   return <PrepView a={sides.a} b={sides.b} route={route} set={set} />;
 };
@@ -115,25 +115,25 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam }> = ({ a, b }) => {
   return (
     <Section title={tl("Win chances")} share={`${a.u}-vs-${b.u}-win-chances`}>
       <div className="flex items-center justify-between gap-2 text-xs font-bold">
-        <span className="text-[#0ac8b9] truncate">{a.name}</span>
-        <span className="text-[#e84057] truncate text-right">{b.name}</span>
+        <span className="text-rw-teal truncate">{a.name}</span>
+        <span className="text-rw-red truncate text-right">{b.name}</span>
       </div>
       <div className="space-y-1.5">
         {rows.map(([label, x]) => (
           <div key={label} className="grid grid-cols-[3rem_1fr_3rem] sm:grid-cols-[3.5rem_1fr_3.5rem] items-center gap-2 text-xs">
-            <span className="tabular-nums font-bold text-[#0ac8b9]">{pct(x)}</span>
-            <div className="relative h-4 rounded bg-[#e84057]/70 overflow-hidden">
-              <div className="absolute inset-y-0 left-0 bg-[#0ac8b9]/80" style={{ width: `${x * 100}%` }} />
-              <span className="absolute inset-0 flex items-center justify-center text-[10px] text-[#f0e6d2] font-semibold">{label}</span>
+            <span className="tabular-nums font-bold text-rw-teal">{pct(x)}</span>
+            <div className="relative h-4 rounded bg-rw-red/70 overflow-hidden">
+              <div className="absolute inset-y-0 left-0 bg-rw-teal/80" style={{ width: `${x * 100}%` }} />
+              <span className="absolute inset-0 flex items-center justify-center text-[10px] text-rw-text font-semibold">{label}</span>
             </div>
-            <span className="tabular-nums font-bold text-[#e84057] text-right">{pct(1 - x)}</span>
+            <span className="tabular-nums font-bold text-rw-red text-right">{pct(1 - x)}</span>
           </div>
         ))}
       </div>
-      <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-[#9bb3c9]">
+      <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-rw-sub">
         {[a, b].map((t) => (
           <p key={t.u}>
-            <span className="text-[#f0e6d2] font-semibold">{t.name}</span>{" "}
+            <span className="text-rw-text font-semibold">{t.name}</span>{" "}
             {t.rating!.rank != null
               ? tl("#{rank} of {of} worldwide · #{lrank} in {league} · rating {r}", {
                   rank: t.rating!.rank,
@@ -147,14 +147,14 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam }> = ({ a, b }) => {
           </p>
         ))}
       </div>
-      <p className="text-[10px] text-[#7e8e9f]">
+      <p className="text-[10px] text-rw-muted">
         {acc && acc.n > 0
           ? tl("From the power rankings (every pro game since 2011). Since {year}, the higher-rated team won {acc} of games.", {
               year: ratings.data!.test.from.slice(0, 4),
               acc: pct(acc.acc || 0),
             })
           : tl("From the power rankings (every pro game since 2011).")}{" "}
-        <HubLink to={{ kind: "rankings" }} className="text-[#0ac8b9] hover:underline" >
+        <HubLink to={{ kind: "rankings" }} className="text-rw-teal hover:underline" >
           {tl("Power rankings")}
         </HubLink>
       </p>
@@ -226,19 +226,19 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
     <div className="space-y-3">
       <div className={`${card} flex flex-wrap items-center justify-between gap-2`}>
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-[#c8aa6e]">{tl("Match prep")}</div>
-          <h2 className="text-lg font-bold text-[#f0e6d2] truncate">
+          <div className="text-[10px] uppercase tracking-wider font-bold text-rw-accent">{tl("Match prep")}</div>
+          <h2 className="text-lg font-bold text-rw-text truncate">
             <HubLink to={{ kind: "team", slug: a.team.u }}>{a.team.name}</HubLink>
-            <span className="text-[#7e8e9f] font-normal"> vs </span>
+            <span className="text-rw-muted font-normal"> vs </span>
             <HubLink to={{ kind: "team", slug: b.team.u }}>{b.team.name}</HubLink>
           </h2>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-[#7e8e9f]">{tl("Stats for")}</span>
+          <span className="text-rw-muted">{tl("Stats for")}</span>
           <PeriodPicker options={options} value={period} onChange={(p) => set({ period: p })} />
           <HubLink
             to={{ kind: "compare", mode: "team", a: a.team.u, b: b.team.u, period }}
-            className="flex items-center gap-1 text-[#0ac8b9] hover:underline"
+            className="flex items-center gap-1 text-rw-teal hover:underline"
           >
             <GitCompare className="w-3.5 h-3.5" />
             {tl("Compare")}
@@ -246,7 +246,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           <button
             type="button"
             onClick={printing.start}
-            className="flex items-center gap-1 text-[#0ac8b9] hover:underline"
+            className="flex items-center gap-1 text-rw-teal hover:underline"
             title={tl("Print a caster sheet: everything on this page, on paper or as a PDF")}
           >
             <Printer className="w-3.5 h-3.5" />
@@ -330,8 +330,8 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
             const w = rows.filter((r) => r[3] > r[4]).length;
             return (
               <div key={s.team.u} className="flex flex-wrap items-center gap-1.5 text-xs">
-                <span className="w-32 truncate font-semibold text-[#f0e6d2]">{s.team.name}</span>
-                <span className="text-[#9bb3c9] w-10 tabular-nums">
+                <span className="w-32 truncate font-semibold text-rw-text">{s.team.name}</span>
+                <span className="text-rw-sub w-10 tabular-nums">
                   {w}-{rows.length - w}
                 </span>
                 {rows.map((r) => {
@@ -341,7 +341,7 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
                       key={`${r[0]}-${r[7]}-${r[1]}`}
                       title={`${won ? "W" : "L"} ${r[3]}-${r[4]} vs ${r[1]} · ${r[5]} · ${fmtDate(r[0])}`}
                       className={`w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center ${
-                        won ? "bg-[#0ac8b9]/20 text-[#0ac8b9]" : "bg-[#e84057]/20 text-[#e84057]"
+                        won ? "bg-rw-teal/20 text-rw-teal" : "bg-rw-red/20 text-rw-red"
                       }`}
                     >
                       {won ? "W" : "L"}
@@ -351,7 +351,7 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
               </div>
             );
           })}
-          <p className="text-[10px] text-[#7e8e9f]">{tl("Newest first; hover a square for the opponent and score.")}</p>
+          <p className="text-[10px] text-rw-muted">{tl("Newest first; hover a square for the opponent and score.")}</p>
         </div>
       )}
     </Section>
@@ -367,25 +367,25 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
   };
   const cell = (pl: Side["players"][number], right: boolean) => {
     const s = stats(pl);
-    if (!pl) return <span className="text-[#7e8e9f]">–</span>;
+    if (!pl) return <span className="text-rw-muted">–</span>;
     return (
       <div className={`min-w-0 space-y-0.5 ${right ? "text-right" : ""}`}>
-        <HubLink to={{ kind: "player", slug: pl.p.u }} className="text-sm font-bold text-[#f0e6d2] hover:underline">
+        <HubLink to={{ kind: "player", slug: pl.p.u }} className="text-sm font-bold text-rw-text hover:underline">
           {pl.p.name}
         </HubLink>
         {s ? (
           <>
-            <div className="text-[11px] text-[#9bb3c9] tabular-nums">
+            <div className="text-[11px] text-rw-sub tabular-nums">
               {s.g} · {winRate(s.w, s.g)} · {s.kda} KDA{s.kp != null ? ` · KP ${s.kp.toFixed(0)}%` : ""}
             </div>
-            <div className="text-[11px] text-[#7e8e9f] tabular-nums">
+            <div className="text-[11px] text-rw-muted tabular-nums">
               {s.csm != null ? `${s.csm} CS/m` : ""}
               {s.dpm != null ? ` · ${s.dpm} DPM` : ""}
               {s.dmgShare != null ? ` · ${s.dmgShare.toFixed(0)}% DMG` : ""}
             </div>
             <div className={`flex gap-1 flex-wrap ${right ? "justify-end" : ""}`}>
               {s.champs.slice(0, 4).map((c) => (
-                <span key={c.c} className="flex items-center gap-0.5 text-[10px] text-[#9bb3c9]" title={`${c.g} · ${winRate(c.w, c.g)}`}>
+                <span key={c.c} className="flex items-center gap-0.5 text-[10px] text-rw-sub" title={`${c.g} · ${winRate(c.w, c.g)}`}>
                   <ChampIcon name={c.c} size={18} />
                   {c.g}
                 </span>
@@ -393,23 +393,23 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
             </div>
           </>
         ) : (
-          <div className="text-[11px] text-[#7e8e9f]">{tl("No games in this period")}</div>
+          <div className="text-[11px] text-rw-muted">{tl("No games in this period")}</div>
         )}
       </div>
     );
   };
   return (
-    <Section title={tl("Lane by lane")} right={<span className="text-[11px] text-[#9bb3c9]">{periodLabel}</span>} share={`${title}-lanes-${periodLabel}`}>
-      <ul className="divide-y divide-[#1e282d]">
+    <Section title={tl("Lane by lane")} right={<span className="text-[11px] text-rw-sub">{periodLabel}</span>} share={`${title}-lanes-${periodLabel}`}>
+      <ul className="divide-y divide-rw-border">
         {ROLES.map((r, i) => (
           <li key={r} className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 py-2">
             {cell(a.players[i], false)}
-            <span className="text-[10px] uppercase tracking-wider font-bold text-[#c8aa6e] text-center w-14">{roleName(r)}</span>
+            <span className="text-[10px] uppercase tracking-wider font-bold text-rw-accent text-center w-14">{roleName(r)}</span>
             {cell(b.players[i], true)}
           </li>
         ))}
       </ul>
-      <p className="text-[10px] text-[#7e8e9f]">{tl("Starters: the players with the most games in each team's newest roster. Games · win rate · KDA · kill participation; champions with games played.")}</p>
+      <p className="text-[10px] text-rw-muted">{tl("Starters: the players with the most games in each team's newest roster. Games · win rate · KDA · kill participation; champions with games played.")}</p>
     </Section>
   );
 };

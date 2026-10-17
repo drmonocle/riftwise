@@ -84,7 +84,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
     ) : (
       <span
         style={box}
-        className="rounded bg-[#091428] border border-[#1e282d] text-[9px] font-bold text-[#c8aa6e] flex items-center justify-center shrink-0"
+        className="rounded bg-rw-bg border border-rw-border text-[9px] font-bold text-rw-accent flex items-center justify-center shrink-0"
       >
         {code.slice(0, 3)}
       </span>
@@ -98,18 +98,18 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
           <Logo code={e.team1} size={big ? 36 : 16} />
           <span
             className={`font-bold ${big ? "text-2xl" : "text-xs"} ${
-              settings.followedTeams.includes(e.team1) ? "text-[#c8aa6e]" : "text-[#f0e6d2]"
+              settings.followedTeams.includes(e.team1) ? "text-rw-accent" : "text-rw-text"
             }`}
           >
             {e.team1}
           </span>
         </span>
-        <span className={`text-[#7e8e9f] ${big ? "text-sm" : "text-[11px]"}`}>{tl("vs")}</span>
+        <span className={`text-rw-muted ${big ? "text-sm" : "text-[11px]"}`}>{tl("vs")}</span>
         <span className={`flex items-center ${big ? "gap-2" : "gap-1.5"}`}>
           <Logo code={e.team2} size={big ? 36 : 16} />
           <span
             className={`font-bold ${big ? "text-2xl" : "text-xs"} ${
-              settings.followedTeams.includes(e.team2) ? "text-[#c8aa6e]" : "text-[#f0e6d2]"
+              settings.followedTeams.includes(e.team2) ? "text-rw-accent" : "text-rw-text"
             }`}
           >
             {e.team2}
@@ -117,7 +117,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
         </span>
       </span>
     ) : (
-      <span className={`font-semibold text-[#f0e6d2] ${big ? "text-xl" : "text-xs"}`}>{e.name || tl("Broadcast segment")}</span>
+      <span className={`font-semibold text-rw-text ${big ? "text-xl" : "text-xs"}`}>{e.name || tl("Broadcast segment")}</span>
     );
 
   const WatchButtons: React.FC = () => (
@@ -136,7 +136,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
       </button>
       <button
         onClick={() => onOpenUrl("https://lolworlds.com/schedule")}
-        className="flex items-center gap-1 px-2 py-1.5 text-xs text-[#9bb3c9] hover:text-[#f0e6d2]"
+        className="flex items-center gap-1 px-2 py-1.5 text-xs text-rw-sub hover:text-rw-text"
       >
         {tl("Full schedule")} <ExternalLink className="w-3 h-3" />
       </button>
@@ -155,20 +155,20 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
       : null;
     return (
       <div className="p-4 page-3xl overflow-y-auto h-full">
-        <div className="bg-[#0a1420] border border-[#1e282d] rounded-xl p-6 text-center space-y-4">
-          <div className="w-12 h-12 mx-auto rounded-full bg-[#c8aa6e]/10 border border-[#c8aa6e]/30 flex items-center justify-center">
-            <Moon className="w-6 h-6 text-[#c8aa6e]" />
+        <div className="bg-rw-surface border border-rw-border rounded-xl p-6 text-center space-y-4">
+          <div className="w-12 h-12 mx-auto rounded-full bg-rw-accent/10 border border-rw-accent/30 flex items-center justify-center">
+            <Moon className="w-6 h-6 text-rw-accent" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-lg font-bold text-[#f0e6d2]">{status?.headline || tl("The 24/7 marathon is taking a break")}</h2>
-            <p className="text-sm text-[#9bb3c9] leading-relaxed max-w-xl mx-auto">
+            <h2 className="text-lg font-bold text-rw-text">{status?.headline || tl("The 24/7 marathon is taking a break")}</h2>
+            <p className="text-sm text-rw-sub leading-relaxed max-w-xl mx-auto">
               {status?.message ||
                 nextLine ||
                 tl("It comes back before the next big international event. Check back here or follow the channel to know when it starts.")}
             </p>
-            {status?.message && nextLine && <p className="text-xs text-[#0ac8b9]">{nextLine}</p>}
+            {status?.message && nextLine && <p className="text-xs text-rw-teal">{nextLine}</p>}
             {phase.lastAired && (
-              <p className="text-[11px] text-[#7e8e9f]">
+              <p className="text-[11px] text-rw-muted">
                 Last aired: {phase.lastAired.team1 && phase.lastAired.team2 ? `${phase.lastAired.team1} vs ${phase.lastAired.team2}, ` : ""}
                 {streamEventTitle(phase.lastAired)}
                 {phase.lastAired.stage ? ` ${stageName(phase.lastAired.stage)}` : ""}
@@ -179,7 +179,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
             {onSelectTab && (
               <button
                 onClick={() => onSelectTab("live")}
-                className="px-3.5 py-2 rounded-md bg-[#c8aa6e] hover:bg-[#f0e6d2] text-[#091428] font-bold text-xs"
+                className="px-3.5 py-2 rounded-md bg-rw-accent hover:bg-rw-text text-rw-bg font-bold text-xs"
               >
                 {tl("Live pro matches")}
               </button>
@@ -198,7 +198,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
             </button>
             <button
               onClick={() => onOpenUrl(DISCORD_URL)}
-              className="px-3.5 py-2 rounded-md border border-[#1e282d] hover:border-[#c8aa6e]/60 text-[#f0e6d2] text-xs"
+              className="px-3.5 py-2 rounded-md border border-rw-border hover:border-rw-accent/60 text-rw-text text-xs"
             >
               {tl("Discord")}
             </button>
@@ -240,10 +240,10 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
   return (
     <div className="p-4 space-y-4 page-3xl overflow-y-auto h-full select-none">
       {/* Now playing */}
-      <section className="bg-[#0a1420] border border-[#0ac8b9]/50 rounded-xl overflow-hidden">
+      <section className="bg-rw-surface border border-rw-teal/50 rounded-xl overflow-hidden">
         <div className="p-5 space-y-3">
           <div className="flex items-center justify-between gap-2 text-xs">
-            <span className="flex items-center gap-1.5 font-bold tracking-wider text-[#0ac8b9] uppercase">
+            <span className="flex items-center gap-1.5 font-bold tracking-wider text-rw-teal uppercase">
               <Radio className="w-3.5 h-3.5 animate-pulse" />
               {current ? tl("Now on the 24/7 stream") : tl("24/7 stream · short break")}
             </span>
@@ -257,7 +257,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
           {current ? (
             <div className="space-y-1">
               <Matchup e={current} big />
-              <div className="text-xs text-[#c8aa6e] font-semibold">
+              <div className="text-xs text-rw-accent font-semibold">
                 {streamEventTitle(current)}
                 {current.stage ? ` · ${stageName(current.stage)}` : ""}
               </div>
@@ -265,9 +265,9 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
           ) : (
             next && (
               <div className="space-y-1">
-                <div className="text-sm text-[#9bb3c9]">{tl("Next match starts {when}", { when: relTime(next.utcIso, now) })}</div>
+                <div className="text-sm text-rw-sub">{tl("Next match starts {when}", { when: relTime(next.utcIso, now) })}</div>
                 <Matchup e={next} big />
-                <div className="text-xs text-[#c8aa6e] font-semibold">
+                <div className="text-xs text-rw-accent font-semibold">
                   {streamEventTitle(next)}
                   {next.stage ? ` · ${stageName(next.stage)}` : ""}
                 </div>
@@ -277,10 +277,10 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
 
           {progress != null && (
             <div className="space-y-1">
-              <div className="h-1.5 rounded-full bg-[#091428] overflow-hidden">
-                <div className="h-full bg-[#0ac8b9]" style={{ width: `${Math.round(progress * 100)}%` }} />
+              <div className="h-1.5 rounded-full bg-rw-bg overflow-hidden">
+                <div className="h-full bg-rw-teal" style={{ width: `${Math.round(progress * 100)}%` }} />
               </div>
-              <div className="flex justify-between text-[10px] text-[#7e8e9f] font-mono">
+              <div className="flex justify-between text-[10px] text-rw-muted font-mono">
                 <span>{tl("started {time}", { time: clock(current!.utcIso) })}</span>
                 <span>{tl("next match {when}", { when: relTime(next!.utcIso, now) })}</span>
               </div>
@@ -292,13 +292,13 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
 
         {/* Up next, once */}
         {current && next && (
-          <div className="border-t border-[#1e282d] bg-[#091428]/60 px-5 py-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs">
+          <div className="border-t border-rw-border bg-rw-bg/60 px-5 py-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-[#0ac8b9] uppercase tracking-wider text-[10px] shrink-0">{tl("Up next")}</span>
+              <span className="font-bold text-rw-teal uppercase tracking-wider text-[10px] shrink-0">{tl("Up next")}</span>
               <Matchup e={next} />
               {next.isBanger && <Flame className="w-3.5 h-3.5 text-[#ff4655] fill-current shrink-0" aria-label={tl("Banger")} />}
             </div>
-            <span className="font-mono text-[#9bb3c9] shrink-0 ml-auto">
+            <span className="font-mono text-rw-sub shrink-0 ml-auto">
               {clock(next.utcIso)} · {relTime(next.utcIso, now)}
             </span>
           </div>
@@ -307,12 +307,12 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
 
       {/* Next banger, only when it isn't already the next match */}
       {showBanger && nextBanger && (
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-2.5 rounded-lg border border-[#ff4655]/50 bg-[#1e131d] text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-2.5 rounded-lg border border-[#ff4655]/50 bg-rw-red/10 text-xs">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
             <Flame className="w-3.5 h-3.5 text-[#ff4655] fill-current shrink-0" />
             <span className="font-bold text-[#ff4655] uppercase tracking-wider text-[10px] shrink-0">{tl("Next banger")}</span>
             <Matchup e={nextBanger} />
-            <span className="text-[#7e8e9f] truncate hidden sm:inline">
+            <span className="text-rw-muted truncate hidden sm:inline">
               {streamEventTitle(nextBanger)}
               {nextBanger.stage ? ` · ${stageName(nextBanger.stage)}` : ""}
             </span>
@@ -324,16 +324,16 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
       {/* Schedule */}
       {later.length > 0 && (
         <section className="space-y-3">
-          <h3 className="flex items-center gap-2 text-xs font-bold text-[#c8aa6e] uppercase tracking-wider">
-            <Calendar className="w-3.5 h-3.5 text-[#0ac8b9]" /> {tl("Coming up on the marathon")}
+          <h3 className="flex items-center gap-2 text-xs font-bold text-rw-accent uppercase tracking-wider">
+            <Calendar className="w-3.5 h-3.5 text-rw-teal" /> {tl("Coming up on the marathon")}
           </h3>
           {shownDays.map((day) => {
             const list = byDay.get(day)!;
             return (
-              <div key={day} className="rounded-lg border border-[#1e282d] overflow-hidden">
-                <div className="flex items-center justify-between px-3.5 py-2 bg-[#0a1420] text-[11px]">
-                  <span className="font-bold text-[#0ac8b9] uppercase tracking-wider">{day}</span>
-                  <span className="text-[#7e8e9f]">
+              <div key={day} className="rounded-lg border border-rw-border overflow-hidden">
+                <div className="flex items-center justify-between px-3.5 py-2 bg-rw-surface text-[11px]">
+                  <span className="font-bold text-rw-teal uppercase tracking-wider">{day}</span>
+                  <span className="text-rw-muted">
                     {tn("{n} match", "{n} matches", list.length)}
                   </span>
                 </div>
@@ -345,23 +345,23 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                   return (
                     <React.Fragment key={String(e.id)}>
                       {group !== prevGroup && (
-                        <div className="px-3.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[#c8aa6e]/80 border-t border-[#1e282d] bg-[#091428]">
+                        <div className="px-3.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-rw-accent/80 border-t border-rw-border bg-rw-bg">
                           {group}
                         </div>
                       )}
                       <div
-                        className={`flex items-center gap-3 px-3.5 py-2 border-t border-[#1e282d]/60 text-xs ${
-                          fol ? "bg-[#c8aa6e]/5" : "bg-[#091428]"
+                        className={`flex items-center gap-3 px-3.5 py-2 border-t border-rw-border/60 text-xs ${
+                          fol ? "bg-rw-accent/5" : "bg-rw-bg"
                         }`}
                       >
-                        <span className="w-16 shrink-0 font-mono font-semibold text-[#9bb3c9]">{clock(e.utcIso)}</span>
+                        <span className="w-16 shrink-0 font-mono font-semibold text-rw-sub">{clock(e.utcIso)}</span>
                         <span className="flex-1 min-w-0">
                           <Matchup e={e} />
                         </span>
                         <span className="flex items-center gap-1.5 shrink-0">
-                          {fol && <Star className="w-3.5 h-3.5 text-[#c8aa6e] fill-current" aria-label={tl("A team you follow")} />}
+                          {fol && <Star className="w-3.5 h-3.5 text-rw-accent fill-current" aria-label={tl("A team you follow")} />}
                           {e.isBanger && <Flame className="w-3.5 h-3.5 text-[#ff4655] fill-current" aria-label={tl("Banger")} />}
-                          {day === tl("Today") && <span className="text-[10px] font-mono text-[#7e8e9f] min-w-14 whitespace-nowrap text-right">{relTime(e.utcIso, now)}</span>}
+                          {day === tl("Today") && <span className="text-[10px] font-mono text-rw-muted min-w-14 whitespace-nowrap text-right">{relTime(e.utcIso, now)}</span>}
                         </span>
                       </div>
                     </React.Fragment>
@@ -373,15 +373,15 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
           {dayKeys.length > DAYS_SHOWN && (
             <button
               onClick={() => setShowAll((s) => !s)}
-              className="w-full flex items-center justify-center gap-1 py-2 text-xs text-[#0ac8b9] hover:underline"
+              className="w-full flex items-center justify-center gap-1 py-2 text-xs text-rw-teal hover:underline"
             >
               {showAll ? tl("Show less") : tn("Show {n} more day", "Show {n} more days", dayKeys.length - DAYS_SHOWN)}
               <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAll ? "rotate-180" : ""}`} />
             </button>
           )}
-          <p className="text-[10px] text-[#7e8e9f] flex items-center gap-3">
+          <p className="text-[10px] text-rw-muted flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <Star className="w-3 h-3 text-[#c8aa6e] fill-current" /> {tl("team you follow")}
+              <Star className="w-3 h-3 text-rw-accent fill-current" /> {tl("team you follow")}
             </span>
             <span className="flex items-center gap-1">
               <Flame className="w-3 h-3 text-[#ff4655] fill-current" /> {tl("banger")}

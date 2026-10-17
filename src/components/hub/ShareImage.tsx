@@ -14,7 +14,8 @@ async function capture(node: HTMLElement): Promise<Blob | null> {
   try {
     return await toBlob(node, {
       pixelRatio: 2,
-      backgroundColor: "#0a1428",
+      // the picture's background is the theme's card colour (html-to-image needs a real colour, not a variable)
+      backgroundColor: getComputedStyle(document.documentElement).getPropertyValue("--rw-surface").trim() || "#0a1428",
       skipFonts: true,
       // leave the buttons themselves out of the picture
       filter: (n) => !(n instanceof HTMLElement && n.dataset.nocapture === "1"),
@@ -26,8 +27,8 @@ async function capture(node: HTMLElement): Promise<Blob | null> {
 
 /** Shown only inside the picture. */
 export const CaptureFooter: React.FC = () => (
-  <div className="rw-capture-only items-center justify-between gap-3 pt-2 mt-1 border-t border-[#1e282d] text-[10px] text-[#7e8e9f]">
-    <span className="font-bold text-[#c8aa6e]">RiftWise Pro Stats</span>
+  <div className="rw-capture-only items-center justify-between gap-3 pt-2 mt-1 border-t border-rw-border text-[10px] text-rw-muted">
+    <span className="font-bold text-rw-accent">RiftWise Pro Stats</span>
     <span>lolworlds.com/riftwise · {new Date().toISOString().slice(0, 10)}</span>
   </div>
 );
@@ -67,11 +68,11 @@ export const ShareButtons: React.FC<{ target: React.RefObject<HTMLElement | null
       flash("failed");
     }
   };
-  const btn = "p-1 rounded border border-[#1e282d] text-[#9bb3c9] hover:text-[#f0e6d2] hover:border-[#2c3c44] disabled:opacity-50";
+  const btn = "p-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-line disabled:opacity-50";
   return (
     <span data-nocapture="1" className="flex items-center gap-1 shrink-0">
-      {state === "copied" && <span className="text-[10px] text-[#0ac8b9]">{tl("Copied")}</span>}
-      {state === "failed" && <span className="text-[10px] text-[#e84057]">{tl("Couldn't make the image")}</span>}
+      {state === "copied" && <span className="text-[10px] text-rw-teal">{tl("Copied")}</span>}
+      {state === "failed" && <span className="text-[10px] text-rw-red">{tl("Couldn't make the image")}</span>}
       <button type="button" onClick={copy} disabled={state === "busy"} className={btn} title={tl("Copy as an image")} aria-label={tl("Copy as an image")}>
         <Images className="w-3.5 h-3.5" />
       </button>

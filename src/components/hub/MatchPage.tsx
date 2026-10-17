@@ -51,21 +51,21 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; onOpenUrl: (url: string
   return (
     <div className="space-y-3">
       <div className={card}>
-        <div className="text-[11px] text-[#7e8e9f] flex flex-wrap gap-x-2">
-          <EventLink name={s.en} u={s.e} className="text-[#c8aa6e] hover:underline" />
+        <div className="text-[11px] text-rw-muted flex flex-wrap gap-x-2">
+          <EventLink name={s.en} u={s.e} className="text-rw-accent hover:underline" />
           {s.stage && <span>· {s.stage}</span>}
           <span>· {fmtDate(s.date)}</span>
           <span>· {tc("series length", "Best of {n}", { n: s.bo })}</span>
         </div>
         <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className="text-right min-w-0">
-            <TeamLink name={s.a.n} u={s.a.u} className={`text-base sm:text-lg font-bold hover:underline ${!hidden && s.w === 1 ? "text-[#0ac8b9]" : "text-[#f0e6d2]"}`} />
+            <TeamLink name={s.a.n} u={s.a.u} className={`text-base sm:text-lg font-bold hover:underline ${!hidden && s.w === 1 ? "text-rw-teal" : "text-rw-text"}`} />
           </div>
-          <div className="text-2xl font-black text-[#f0e6d2] tabular-nums text-center min-w-[4.5rem]">
-            {scoreA} <span className="text-[#3a4a5a]">–</span> {scoreB}
+          <div className="text-2xl font-black text-rw-text tabular-nums text-center min-w-[4.5rem]">
+            {scoreA} <span className="text-rw-muted/60">–</span> {scoreB}
           </div>
           <div className="min-w-0">
-            <TeamLink name={s.b.n} u={s.b.u} className={`text-base sm:text-lg font-bold hover:underline ${!hidden && s.w === 2 ? "text-[#0ac8b9]" : "text-[#f0e6d2]"}`} />
+            <TeamLink name={s.b.n} u={s.b.u} className={`text-base sm:text-lg font-bold hover:underline ${!hidden && s.w === 2 ? "text-rw-teal" : "text-rw-text"}`} />
           </div>
         </div>
         {hidden && (
@@ -74,7 +74,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; onOpenUrl: (url: string
           </div>
         )}
         {withStats.length === 0 && (
-          <p className="mt-3 text-[11px] text-[#7e8e9f] text-center">{tl("Only the results of this series are known: no player stats were recorded for it.")}</p>
+          <p className="mt-3 text-[11px] text-rw-muted text-center">{tl("Only the results of this series are known: no player stats were recorded for it.")}</p>
         )}
       </div>
 
@@ -88,7 +88,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; onOpenUrl: (url: string
               aria-selected={i === gi}
               onClick={() => setGi(i)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${
-                i === gi ? "bg-[#c8aa6e] text-[#091428] border-[#c8aa6e]" : "border-[#1e282d] text-[#9bb3c9] hover:text-[#f0e6d2]"
+                i === gi ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
               }`}
             >
               {tl("Game {n}", { n: g.n })}
@@ -113,7 +113,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onOpenUrl:
   return (
     <div className="space-y-3">
       <div className={`${card} space-y-3`}>
-        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#7e8e9f]">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-rw-muted">
           <span className="flex items-center gap-2">
             {g.min != null && (
               <span className="flex items-center gap-1">
@@ -123,11 +123,11 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onOpenUrl:
             )}
             {g.patch && <span>{tl("Patch {patch}", { patch: g.patch })}</span>}
             {g.date && <span>{new Date(`${g.date.replace(" ", "T")}Z`).toLocaleString(locale(), { dateStyle: "medium", timeStyle: "short" })}</span>}
-            {g.ff ? <span className="text-[#c8aa6e]">{tl("Forfeit")}</span> : null}
+            {g.ff ? <span className="text-rw-accent">{tl("Forfeit")}</span> : null}
             {g.mvp && !hidden && (
-              <span className="flex items-center gap-1 text-[#c8aa6e]">
+              <span className="flex items-center gap-1 text-rw-accent">
                 <Crown className="w-3 h-3" />
-                {tl("Player of the Game:")} <PlayerLink name={g.mvp.n} u={g.mvp.u} className="text-[#c8aa6e] hover:underline font-semibold" />
+                {tl("Player of the Game:")} <PlayerLink name={g.mvp.n} u={g.mvp.u} className="text-rw-accent hover:underline font-semibold" />
               </span>
             )}
           </span>
@@ -135,9 +135,9 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onOpenUrl:
             <button
               type="button"
               onClick={() => onOpenUrl(g.vod!)}
-              className="flex items-center gap-1 px-2 py-1 rounded-md bg-[#e84057]/15 border border-[#e84057]/50 text-[#f0e6d2] hover:bg-[#e84057]/25 font-semibold"
+              className="flex items-center gap-1 px-2 py-1 rounded-md bg-rw-red/15 border border-rw-red/50 text-rw-text hover:bg-rw-red/25 font-semibold"
             >
-              <PlayCircle className="w-3.5 h-3.5 text-[#e84057]" />
+              <PlayCircle className="w-3.5 h-3.5 text-rw-red" />
               {tl("Watch this game")}
             </button>
           )}
@@ -147,7 +147,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onOpenUrl:
           <SideHeader name={redTeam.n} u={redTeam.u} side="red" won={!hidden && redWon} st={g.t?.red} right />
         </div>
         {(g.t?.blue?.picks?.length || g.t?.blue?.bans?.length) && (
-          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[#1e282d]">
+          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-rw-border">
             <Draft st={g.t?.blue} side="blue" />
             <Draft st={g.t?.red} side="red" right />
           </div>
@@ -161,7 +161,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onOpenUrl:
         </div>
       )}
       {g.st !== "f" && !g.p && (
-        <p className="text-[11px] text-[#7e8e9f] text-center">
+        <p className="text-[11px] text-rw-muted text-center">
           {g.st === "r" ? tl("Only the result of this game is known.") : tl("No result or stats were recorded for this game.")}
         </p>
       )}
@@ -177,7 +177,7 @@ const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red
   st,
   right,
 }) => {
-  const color = side === "blue" ? "#4a9eff" : "#e84057";
+  const color = side === "blue" ? "#4a9eff" : "var(--rw-red)";
   const obj: [string, React.ReactNode][] = [];
   if (st?.k != null) obj.push([tl("Kills"), st.k]);
   if (st?.gold != null) obj.push([tl("Gold"), fmtGold(st.gold)]);
@@ -195,19 +195,19 @@ const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red
         <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color }}>
           {side === "blue" ? tl("Blue side") : tl("Red side")}
         </span>
-        {won && <span className="text-[10px] font-bold text-[#0ac8b9]">{tc("short result", "W")}</span>}
+        {won && <span className="text-[10px] font-bold text-rw-teal">{tc("short result", "W")}</span>}
       </div>
-      <TeamLink name={name} u={u} className="text-sm font-bold text-[#f0e6d2] hover:underline" />
+      <TeamLink name={name} u={u} className="text-sm font-bold text-rw-text hover:underline" />
       {obj.length > 0 && (
         <div className={`mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] ${right ? "justify-end" : ""}`}>
           {obj.map(([l, v]) => (
-            <span key={l} className="text-[#7e8e9f]">
-              {l} <span className="text-[#f0e6d2] font-semibold">{v}</span>
+            <span key={l} className="text-rw-muted">
+              {l} <span className="text-rw-text font-semibold">{v}</span>
             </span>
           ))}
         </div>
       )}
-      {drakes.length > 0 && <div className="text-[10px] text-[#7e8e9f] mt-0.5">{drakes.join(" · ")}</div>}
+      {drakes.length > 0 && <div className="text-[10px] text-rw-muted mt-0.5">{drakes.join(" · ")}</div>}
     </div>
   );
 };
@@ -219,7 +219,7 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean }>
   <div className={`space-y-1.5 min-w-0 ${right ? "text-right" : ""}`}>
     {st?.bans && st.bans.length > 0 && (
       <div className={`flex flex-wrap items-center gap-1 ${right ? "justify-end" : ""}`}>
-        <span className="text-[10px] text-[#7e8e9f] uppercase mr-1">{tl("Bans")}</span>
+        <span className="text-[10px] text-rw-muted uppercase mr-1">{tl("Bans")}</span>
         {st.bans.map((c, i) => (
           <span key={i} className={`opacity-60 grayscale ${i === 3 ? "ml-2" : ""}`} title={tl("Ban {n}", { n: i + 1 })}>
             <ChampIcon name={c} size={20} />
@@ -229,11 +229,11 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean }>
     )}
     {st?.picks && st.picks.length > 0 && (
       <div className={`flex flex-wrap items-start gap-1 ${right ? "justify-end" : ""}`}>
-        <span className="text-[10px] text-[#7e8e9f] uppercase mr-1 mt-1.5">{tl("Picks")}</span>
+        <span className="text-[10px] text-rw-muted uppercase mr-1 mt-1.5">{tl("Picks")}</span>
         {st.picks.map((c, i) => (
           <span key={i} className={`flex flex-col items-center ${i === 3 ? "ml-2" : ""}`} title={tl("Pick {n} of the draft", { n: PICK_NO[side][i] ?? i + 1 })}>
             <ChampIcon name={c} size={24} />
-            <span className="text-[9px] text-[#7e8e9f] tabular-nums leading-tight">{`${side === "blue" ? "B" : "R"}${i + 1}`}</span>
+            <span className="text-[9px] text-rw-muted tabular-nums leading-tight">{`${side === "blue" ? "B" : "R"}${i + 1}`}</span>
           </span>
         ))}
       </div>
@@ -249,16 +249,16 @@ const Scoreboard: React.FC<{ name: string; side: "blue" | "red"; players: GamePl
   won,
   minutes,
 }) => {
-  const color = side === "blue" ? "#4a9eff" : "#e84057";
+  const color = side === "blue" ? "#4a9eff" : "var(--rw-red)";
   const totalK = players.reduce((s, p) => s + p.k, 0);
   const totalDmg = players.reduce((s, p) => s + (p.dm || 0), 0);
   const totalGold = players.reduce((s, p) => s + (p.gd || 0), 0);
   return (
     <section className={`${card} p-3 min-w-0`} style={{ borderTopColor: color, borderTopWidth: 2 }}>
-      <h3 className="text-xs font-bold text-[#f0e6d2] mb-2 flex items-center gap-2">
+      <h3 className="text-xs font-bold text-rw-text mb-2 flex items-center gap-2">
         <Swords className="w-3.5 h-3.5" style={{ color }} />
         {name}
-        {!hidden && won && <span className="text-[10px] text-[#0ac8b9]">{tl("Victory")}</span>}
+        {!hidden && won && <span className="text-[10px] text-rw-teal">{tl("Victory")}</span>}
       </h3>
       <div className="space-y-2">
         {players.map((p, i) => (
@@ -279,21 +279,21 @@ const PlayerRow: React.FC<{ p: GamePlayer; teamKills: number; teamDmg: number; t
   const kp = teamKills ? Math.round(((p.k + p.a) / teamKills) * 100) : null;
   const csm = p.cs != null && minutes ? (p.cs / minutes).toFixed(1) : null;
   return (
-    <div className="border-t border-[#1e282d] pt-2 first:border-0 first:pt-0 text-xs">
+    <div className="border-t border-rw-border pt-2 first:border-0 first:pt-0 text-xs">
       <div className="flex items-center gap-2 min-w-0">
         {p.c && <ChampIcon name={p.c} size={30} />}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 min-w-0">
-            <PlayerLink name={p.n} u={p.u} className="font-semibold text-[#f0e6d2] hover:text-[#c8aa6e] hover:underline truncate" />
-            {p.r && <span className="text-[10px] text-[#7e8e9f] shrink-0">{roleName(p.r)}</span>}
+            <PlayerLink name={p.n} u={p.u} className="font-semibold text-rw-text hover:text-rw-accent hover:underline truncate" />
+            {p.r && <span className="text-[10px] text-rw-muted shrink-0">{roleName(p.r)}</span>}
           </div>
-          <div className="text-[10px] text-[#7e8e9f] truncate">{p.c ? champName(p.c) : ""}</div>
+          <div className="text-[10px] text-rw-muted truncate">{p.c ? champName(p.c) : ""}</div>
         </div>
         <div className="text-right shrink-0">
-          <div className="font-bold text-[#f0e6d2] tabular-nums">
+          <div className="font-bold text-rw-text tabular-nums">
             {p.k}/{p.d}/{p.a}
           </div>
-          <div className="text-[10px] text-[#7e8e9f] tabular-nums">
+          <div className="text-[10px] text-rw-muted tabular-nums">
             {p.cs != null && <>{tl("{n} CS", { n: p.cs })}{csm ? ` (${csm})` : ""}</>}
             {kp != null && <> · {tl("{pct} KP", { pct: `${kp}%` })}</>}
           </div>
@@ -321,7 +321,7 @@ const PlayerRow: React.FC<{ p: GamePlayer; teamKills: number; teamDmg: number; t
             {p.stt && <RuneIcon name={p.stt} size={14} />}
           </span>
         )}
-        <span className="text-[10px] text-[#7e8e9f] tabular-nums">
+        <span className="text-[10px] text-rw-muted tabular-nums">
           {p.gd != null && (
             <>
               {tl("{n} gold", { n: fmtNum(p.gd) })}

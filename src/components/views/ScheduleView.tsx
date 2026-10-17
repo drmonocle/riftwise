@@ -138,15 +138,15 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   return (
     <div className="p-4 space-y-4 page-4xl overflow-y-auto h-full select-none">
       {/* Top Segmented Control: Schedule vs Standings */}
-      <div className="flex items-center justify-between pb-2 border-b border-[#1e282d]">
-        <div className="flex items-center gap-1.5 bg-[#0a0e17] p-1 rounded-lg border border-[#1e282d]">
+      <div className="flex items-center justify-between pb-2 border-b border-rw-border">
+        <div className="flex items-center gap-1.5 bg-rw-deep p-1 rounded-lg border border-rw-border">
           <button
             type="button"
             onClick={() => setMainSubTab("matches")}
             className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-semibold transition-all ${
               mainSubTab === "matches"
-                ? "bg-[#c8aa6e] text-[#091428] font-bold shadow"
-                : "text-[#9bb3c9] hover:text-[#f0e6d2] hover:bg-[#121e2d]"
+                ? "bg-rw-accent text-rw-bg font-bold shadow"
+                : "text-rw-sub hover:text-rw-text hover:bg-rw-raised"
             }`}
           >
             <Calendar className="w-3.5 h-3.5" />
@@ -157,8 +157,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             onClick={() => setMainSubTab("standings")}
             className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-semibold transition-all ${
               mainSubTab === "standings"
-                ? "bg-[#c8aa6e] text-[#091428] font-bold shadow"
-                : "text-[#9bb3c9] hover:text-[#f0e6d2] hover:bg-[#121e2d]"
+                ? "bg-rw-accent text-rw-bg font-bold shadow"
+                : "text-rw-sub hover:text-rw-text hover:bg-rw-raised"
             }`}
           >
             <Trophy className="w-3.5 h-3.5" />
@@ -178,17 +178,17 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
       ) : (
         <>
           {/* Filters & Search Header */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#1e282d]">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-rw-border">
             {/* Range Buttons */}
-            <div className="flex items-center gap-1 bg-[#0a0e17] p-1 rounded border border-[#1e282d]">
+            <div className="flex items-center gap-1 bg-rw-deep p-1 rounded border border-rw-border">
               {(["today", "upcoming", "results"] as const).map((r) => (
                 <button
                   key={r}
                   onClick={() => setFilterRange(r)}
                   className={`px-3 py-1 text-xs font-semibold rounded transition-all ${
                     filterRange === r
-                      ? "bg-[#c8aa6e] text-[#091428]"
-                      : "text-[#9bb3c9] hover:text-[#f0e6d2] hover:bg-[#121e2d]"
+                      ? "bg-rw-accent text-rw-bg"
+                      : "text-rw-sub hover:text-rw-text hover:bg-rw-raised"
                   }`}
                 >
                   {r === "today" ? tl("Today") : r === "upcoming" ? tl("Upcoming") : tl("Results")}
@@ -202,8 +202,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 onClick={() => setFollowedOnly(!followedOnly)}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs border transition-colors ${
                   followedOnly
-                    ? "bg-[#c8aa6e]/20 border-[#c8aa6e] text-[#c8aa6e]"
-                    : "bg-[#0a1420] border-[#1e282d] text-[#9bb3c9] hover:text-[#f0e6d2]"
+                    ? "bg-rw-accent/20 border-rw-accent text-rw-accent"
+                    : "bg-rw-surface border-rw-border text-rw-sub hover:text-rw-text"
                 }`}
                 title={tl("Filter by your followed teams and leagues")}
               >
@@ -212,13 +212,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
               </button>
 
               <div className="relative flex-1">
-                <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-[#9bb3c9]" />
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-rw-sub" />
                 <input
                   type="text"
                   placeholder={tl("Search team or league…")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#0a1420] border border-[#1e282d] rounded pl-8 pr-3 py-1 text-xs text-[#f0e6d2] focus:outline-none focus:border-[#c8aa6e]"
+                  className="w-full bg-rw-surface border border-rw-border rounded pl-8 pr-3 py-1 text-xs text-rw-text focus:outline-none focus:border-rw-accent"
                 />
               </div>
             </div>
@@ -226,7 +226,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
           {/* Match Rows */}
           {filtered.length === 0 ? (
-            <div className="text-center py-16 text-[#9bb3c9] text-xs" role="status">
+            <div className="text-center py-16 text-rw-sub text-xs" role="status">
               {isLoading && schedule.length === 0
                 ? tl("Loading the schedule…")
                 : tl('No scheduled matches match your active filters. Try switching tabs or turning off "Followed only".')}
@@ -250,25 +250,25 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 return (
                   <React.Fragment key={m.matchId}>
                   {newDay && (
-                    <div className="flex items-center gap-2 px-1 pt-2 text-[11px] font-bold uppercase tracking-wider text-[#0ac8b9]">
+                    <div className="flex items-center gap-2 px-1 pt-2 text-[11px] font-bold uppercase tracking-wider text-rw-teal">
                       {day}
-                      <span className="flex-1 h-px bg-[#1e282d]" />
+                      <span className="flex-1 h-px bg-rw-border" />
                     </div>
                   )}
                   <div
                     id={`match-${m.matchId}`}
-                    className={`flex flex-wrap sm:flex-nowrap items-center justify-between gap-y-1.5 bg-[#0a1420] border px-3 sm:px-4 py-2.5 rounded-lg transition-all ${
+                    className={`flex flex-wrap sm:flex-nowrap items-center justify-between gap-y-1.5 bg-rw-surface border px-3 sm:px-4 py-2.5 rounded-lg transition-all ${
                       flashMatchId === m.matchId
-                        ? "border-[#0ac8b9] ring-2 ring-[#0ac8b9]/40 shadow-lg shadow-[#0ac8b9]/10"
-                        : "border-[#1e282d] hover:border-[#c8aa6e]/80"
+                        ? "border-rw-teal ring-2 ring-rw-teal/40 shadow-lg shadow-rw-teal/10"
+                        : "border-rw-border hover:border-rw-accent/80"
                     }`}
                   >
                     {/* Time, Calendar & League */}
                     <div className="flex items-center gap-2 min-w-0 sm:w-44 shrink sm:shrink-0 order-1">
-                      <span className="font-mono text-xs text-[#0ac8b9] font-bold shrink-0">{timeStr}</span>
+                      <span className="font-mono text-xs text-rw-teal font-bold shrink-0">{timeStr}</span>
                       {m.state === "unstarted" && <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />}
                       {m.state !== "completed" && <MatchPrepButton match={m} compact />}
-                      <span className="text-[11px] text-[#9bb3c9] truncate font-medium">{m.leagueName}</span>
+                      <span className="text-[11px] text-rw-sub truncate font-medium">{m.leagueName}</span>
                     </div>
 
                     {/* Teams & Score */}
@@ -281,17 +281,17 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                             e.stopPropagation();
                             toggleTeamFollow(m.team1Code);
                           }}
-                          className={`p-0.5 rounded hover:bg-[#1e282d] transition-colors shrink-0 ${
-                            isT1Followed ? "text-[#c8aa6e]" : "text-[#9bb3c9] hover:text-[#c8aa6e]"
+                          className={`p-0.5 rounded hover:bg-rw-border transition-colors shrink-0 ${
+                            isT1Followed ? "text-rw-accent" : "text-rw-sub hover:text-rw-accent"
                           }`}
                           aria-label={isT1Followed ? tl("Unfollow {name}", { name: m.team1Code }) : tl("Follow {name}", { name: m.team1Code })}
                           title={isT1Followed ? tl("Unfollow {name}", { name: m.team1Code }) : tl("Follow {name}", { name: m.team1Code })}
                         >
-                          <Star className={`w-3.5 h-3.5 ${isT1Followed ? "fill-[#c8aa6e]" : ""}`} />
+                          <Star className={`w-3.5 h-3.5 ${isT1Followed ? "fill-rw-accent" : ""}`} />
                         </button>
                         <span
                           {...clickable(() => onSelectTeam?.(m.team1Code, m.team1Name))}
-                          className="text-xs font-bold text-[#f0e6d2] hover:text-[#c8aa6e] cursor-pointer transition-colors"
+                          className="text-xs font-bold text-rw-text hover:text-rw-accent cursor-pointer transition-colors"
                           title={tl("Click to view {team} roster", { team: m.team1Name })}
                         >
                           {m.team1Code}
@@ -314,12 +314,12 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                               onClick={() => settings.spoilerMode && toggleReveal(m.matchId)}
                               className={`text-xs ${
                                 settings.spoilerMode
-                                  ? "cursor-pointer hover:text-[#c8aa6e] bg-[#091428] px-2 py-0.5 rounded border border-[#1e282d]"
+                                  ? "cursor-pointer hover:text-rw-accent bg-rw-bg px-2 py-0.5 rounded border border-rw-border"
                                   : ""
                               }`}
                               title={settings.spoilerMode ? tl("Click to re-hide score") : undefined}
                             >
-                              <span className="text-[#f0e6d2]">
+                              <span className="text-rw-text">
                                 {m.team1Score} : {m.team2Score}
                               </span>
                             </div>
@@ -327,13 +327,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                             <button
                               type="button"
                               onClick={() => toggleReveal(m.matchId)}
-                              className="text-[11px] px-2 py-0.5 rounded bg-[#091428] border border-[#1e282d] text-[#9bb3c9] hover:text-[#c8aa6e] hover:border-[#c8aa6e]/60 transition-colors cursor-pointer"
+                              className="text-[11px] px-2 py-0.5 rounded bg-rw-bg border border-rw-border text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 transition-colors cursor-pointer"
                               title={isLive ? tl("Click to reveal the live score") : tl("Click to reveal final score")}
                             >
                               {tl("Reveal")}
                             </button>
                           ) : (
-                            <span className="text-[#9bb3c9] font-medium">{tl("VS")}</span>
+                            <span className="text-rw-sub font-medium">{tl("VS")}</span>
                           )}
                         </div>
                         {(showScore || m.state !== "completed") && h2h && (
@@ -353,7 +353,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         )}
                         <span
                           {...clickable(() => onSelectTeam?.(m.team2Code, m.team2Name))}
-                          className="text-xs font-bold text-[#f0e6d2] hover:text-[#c8aa6e] cursor-pointer transition-colors"
+                          className="text-xs font-bold text-rw-text hover:text-rw-accent cursor-pointer transition-colors"
                           title={tl("Click to view {team} roster", { team: m.team2Name })}
                         >
                           {m.team2Code}
@@ -364,13 +364,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                             e.stopPropagation();
                             toggleTeamFollow(m.team2Code);
                           }}
-                          className={`p-0.5 rounded hover:bg-[#1e282d] transition-colors shrink-0 ${
-                            isT2Followed ? "text-[#c8aa6e]" : "text-[#9bb3c9] hover:text-[#c8aa6e]"
+                          className={`p-0.5 rounded hover:bg-rw-border transition-colors shrink-0 ${
+                            isT2Followed ? "text-rw-accent" : "text-rw-sub hover:text-rw-accent"
                           }`}
                           aria-label={isT2Followed ? tl("Unfollow {name}", { name: m.team2Code }) : tl("Follow {name}", { name: m.team2Code })}
                           title={isT2Followed ? tl("Unfollow {name}", { name: m.team2Code }) : tl("Follow {name}", { name: m.team2Code })}
                         >
-                          <Star className={`w-3.5 h-3.5 ${isT2Followed ? "fill-[#c8aa6e]" : ""}`} />
+                          <Star className={`w-3.5 h-3.5 ${isT2Followed ? "fill-rw-accent" : ""}`} />
                         </button>
                       </div>
                     </div>
@@ -378,18 +378,18 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     {/* Status / Best Of */}
                     <div className="flex items-center gap-2 sm:w-32 justify-end shrink-0 ml-auto sm:ml-0 order-2 sm:order-3">
                       <ShareMatchButton match={m} />
-                      <span className="text-[10px] text-[#9bb3c9] bg-[#091428] px-2 py-0.5 rounded border border-[#1e282d] font-medium">
+                      <span className="text-[10px] text-rw-sub bg-rw-bg px-2 py-0.5 rounded border border-rw-border font-medium">
                         Bo{m.bestOf}
                       </span>
                       {m.state === "completed" ? (
-                        <span className="text-[10px] text-[#9bb3c9] font-semibold">{tl("FINAL")}</span>
+                        <span className="text-[10px] text-rw-sub font-semibold">{tl("FINAL")}</span>
                       ) : isLive ? (
-                        <span className="flex items-center gap-1 text-[10px] text-[#e84057] font-bold">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#e84057] animate-pulse" />
+                        <span className="flex items-center gap-1 text-[10px] text-rw-red font-bold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rw-red animate-pulse" />
                           {tl("LIVE")}
                         </span>
                       ) : (
-                        <span className="text-[10px] text-[#c8aa6e] font-semibold">{tl("UPCOMING")}</span>
+                        <span className="text-[10px] text-rw-accent font-semibold">{tl("UPCOMING")}</span>
                       )}
                     </div>
                   </div>

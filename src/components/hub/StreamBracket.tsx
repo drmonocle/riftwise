@@ -122,7 +122,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-[#c8aa6e] flex items-center gap-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-rw-accent flex items-center gap-2">
           <Trophy className="w-3.5 h-3.5" />
           {tl("{event}: bracket and standings", { event: streamEventTitle({ event: which.event, season: which.season } as StreamEvent) })}
         </h3>
@@ -130,14 +130,14 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           <button
             type="button"
             onClick={() => setShowAll((v) => !v)}
-            className="flex items-center gap-1 text-[11px] text-[#c8aa6e] hover:underline"
+            className="flex items-center gap-1 text-[11px] text-rw-accent hover:underline"
           >
             <Eye className="w-3 h-3" />
             {showAll ? tl("Hide results the stream hasn't shown yet") : tl("Show all results")}
           </button>
         )}
       </div>
-      <p className="text-[11px] text-[#7e8e9f]">
+      <p className="text-[11px] text-rw-muted">
         {airing.streamDone
           ? tl("The stream has shown this whole event, so every result is visible.")
           : tl("Results show up here once the stream has aired them, so nothing is spoiled.")}
@@ -150,7 +150,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
               type="button"
               onClick={() => setTab(i)}
               className={`px-2.5 py-1 rounded-lg text-xs border ${
-                i === tab ? "bg-[#c8aa6e] text-[#091428] font-bold border-[#c8aa6e]" : "border-[#1e282d] text-[#9bb3c9] hover:text-[#f0e6d2]"
+                i === tab ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
               }`}
             >
               {s.n}
@@ -173,7 +173,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
       )}
       {lists.map((st) => (
         <div key={st.name} className="space-y-1.5">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f]">{stageLabel(st.name)}</div>
+          <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted">{stageLabel(st.name)}</div>
           <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
             {st.series.map((r, i) => (
               <SeriesBox key={i} r={r} hideResult={hide(r)} note={note(r)} />
@@ -181,10 +181,10 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           </div>
         </div>
       ))}
-      <p className="text-[11px] text-[#7e8e9f]">
-        <EventLink name={tl("Full stats for {event}", { event: ev.n })} u={ev.u} className="text-[#0ac8b9] hover:underline" />
+      <p className="text-[11px] text-rw-muted">
+        <EventLink name={tl("Full stats for {event}", { event: ev.n })} u={ev.u} className="text-rw-teal hover:underline" />
         {" · "}
-        <HubLink to={{ kind: "home" }} className="text-[#0ac8b9] hover:underline">
+        <HubLink to={{ kind: "home" }} className="text-rw-teal hover:underline">
           {tl("Pro Stats")}
         </HubLink>
       </p>

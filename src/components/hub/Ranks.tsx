@@ -163,22 +163,22 @@ const Bars: React.FC<{
         key={r.label}
         className="grid grid-cols-[minmax(7rem,10rem)_1fr_auto] items-center gap-2 min-w-0"
       >
-        <span className="text-[#9bb3c9] truncate" title={r.label}>
+        <span className="text-rw-sub truncate" title={r.label}>
           {r.label}
         </span>
-        <span className="h-2 rounded bg-[#1e282d] overflow-hidden">
+        <span className="h-2 rounded bg-rw-border overflow-hidden">
           <span
             className="block h-full rounded"
             style={{
               width: `${Math.max(r.pct, 3)}%`,
               background:
-                r.pct >= 75 ? "#0ac8b9" : r.pct >= 40 ? "#c8aa6e" : "#e84057",
+                r.pct >= 75 ? "var(--rw-teal)" : r.pct >= 40 ? "var(--rw-accent)" : "var(--rw-red)",
             }}
           />
         </span>
-        <span className="tabular-nums text-[#f0e6d2] whitespace-nowrap">
+        <span className="tabular-nums text-rw-text whitespace-nowrap">
           {r.text}{" "}
-          <span className="text-[#7e8e9f]">
+          <span className="text-rw-muted">
             · {tl("{n} of {m}", { n: r.rank, m: r.of })}
           </span>
         </span>
@@ -210,7 +210,7 @@ const SeasonPicker: React.FC<{
   names: Map<string, string>;
 }> = ({ seasons, value, onChange, names }) => (
   <>
-    <span className="rw-capture-only text-xs font-semibold text-[#f0e6d2]">
+    <span className="rw-capture-only text-xs font-semibold text-rw-text">
       {(() => {
         const [lu, y] = value.split("|");
         return `${(names.get(lu) || lu).replace(/\s\d{4}$/, "")} ${y}`;
@@ -221,7 +221,7 @@ const SeasonPicker: React.FC<{
       value={value}
       onChange={(e) => onChange(e.target.value)}
       aria-label={tl("Season")}
-      className="bg-[#091428] border border-[#1e282d] rounded-lg px-2 py-1.5 text-xs text-[#f0e6d2] w-44 sm:w-56 max-w-full"
+      className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-xs text-rw-text w-44 sm:w-56 max-w-full"
     >
       {seasons.map(([lu, y]) => (
         <option key={`${lu}|${y}`} value={`${lu}|${y}`}>
@@ -267,13 +267,13 @@ export const PlayerRanks: React.FC<{
   let body: React.ReactNode = <Loading />;
   if (state.error)
     body = (
-      <p className="text-xs text-[#7e8e9f]">
+      <p className="text-xs text-rw-muted">
         {tl("No season numbers for this league yet.")}
       </p>
     );
   else if (season && !me)
     body = (
-      <p className="text-xs text-[#7e8e9f]">
+      <p className="text-xs text-rw-muted">
         {tl("Not enough games with a full scoreboard in this season.")}
       </p>
     );
@@ -296,7 +296,7 @@ export const PlayerRanks: React.FC<{
     }).filter((x): x is NonNullable<typeof x> => !!x);
     body =
       me.g < minG ? (
-        <p className="text-xs text-[#7e8e9f]">
+        <p className="text-xs text-rw-muted">
           {tl("Not enough games in this season to rank ({n} played).", {
             n: me.g,
           })}
@@ -304,7 +304,7 @@ export const PlayerRanks: React.FC<{
       ) : (
         <>
           <Bars rows={rows} />
-          <p className="text-[10px] text-[#7e8e9f]">
+          <p className="text-[10px] text-rw-muted">
             {tl(
               "Compared with the {n} {role} players with {g}+ games in {league} {year} (all splits and playoffs).",
               {
@@ -363,13 +363,13 @@ export const TeamRanks: React.FC<{
   let body: React.ReactNode = <Loading />;
   if (state.error)
     body = (
-      <p className="text-xs text-[#7e8e9f]">
+      <p className="text-xs text-rw-muted">
         {tl("No season numbers for this league yet.")}
       </p>
     );
   else if (season && !me)
     body = (
-      <p className="text-xs text-[#7e8e9f]">
+      <p className="text-xs text-rw-muted">
         {tl("Not enough games with a full scoreboard in this season.")}
       </p>
     );
@@ -393,7 +393,7 @@ export const TeamRanks: React.FC<{
     body = (
       <>
         <Bars rows={rows} />
-        <p className="text-[10px] text-[#7e8e9f]">
+        <p className="text-[10px] text-rw-muted">
           {tl(
             "Compared with the {n} teams of {league} {year} (all splits and playoffs).",
             {

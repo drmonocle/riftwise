@@ -59,9 +59,9 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
   return (
     <div ref={box} className="relative w-full">
       <label
-        className={`flex items-center gap-2 bg-[#091428] border border-[#1e282d] focus-within:border-[#c8aa6e]/70 rounded-lg ${big ? "px-3 py-2.5" : "px-2.5 py-1.5"}`}
+        className={`flex items-center gap-2 bg-rw-bg border border-rw-border focus-within:border-rw-accent/70 rounded-lg ${big ? "px-3 py-2.5" : "px-2.5 py-1.5"}`}
       >
-        <Search className={`${big ? "w-4 h-4" : "w-3.5 h-3.5"} text-[#7e8e9f] shrink-0`} />
+        <Search className={`${big ? "w-4 h-4" : "w-3.5 h-3.5"} text-rw-muted shrink-0`} />
         <input
           value={q}
           autoFocus={autoFocus}
@@ -87,29 +87,29 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
           }}
           placeholder={placeholder || tl("Search teams, players, tournaments, champions…")}
           aria-label={tl("Search pro stats")}
-          className={`bg-transparent outline-none text-[#f0e6d2] placeholder-[#7e8e9f] flex-1 min-w-0 ${big ? "text-sm" : "text-xs"}`}
+          className={`bg-transparent outline-none text-rw-text placeholder-rw-muted flex-1 min-w-0 ${big ? "text-sm" : "text-xs"}`}
         />
         {q && (
-          <button type="button" onClick={() => setQ("")} aria-label={tl("Clear")} className="text-[#7e8e9f] hover:text-[#f0e6d2]">
+          <button type="button" onClick={() => setQ("")} aria-label={tl("Clear")} className="text-rw-muted hover:text-rw-text">
             <X className="w-3.5 h-3.5" />
           </button>
         )}
       </label>
       {open && q.trim() && (
-        <div className="absolute z-40 left-0 right-0 mt-1 bg-[#0a1420] border border-[#c8aa6e]/40 rounded-lg shadow-2xl max-h-[70vh] overflow-y-auto p-1.5 text-xs">
+        <div className="absolute z-40 left-0 right-0 mt-1 bg-rw-surface border border-rw-accent/40 rounded-lg shadow-2xl max-h-[70vh] overflow-y-auto p-1.5 text-xs">
           {failed ? (
-            <p className="p-3 text-[#e84057]">{tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>
+            <p className="p-3 text-rw-red">{tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>
           ) : !index ? (
-            <p className="p-3 text-[#9bb3c9]">{tl("Loading…")}</p>
+            <p className="p-3 text-rw-sub">{tl("Loading…")}</p>
           ) : flat.length === 0 ? (
-            <p className="p-3 text-[#9bb3c9]">
+            <p className="p-3 text-rw-sub">
               {tl("Nothing matches \"{q}\".", { q })}
               {isNonLatin(q) ? " " + tl("Names here use English letters. Try the in-game name, like Faker or T1.") : ""}
             </p>
           ) : (
             GROUPS.filter((g) => results![g.kind].length).map((g) => (
               <div key={g.kind} className="mb-1 last:mb-0">
-                <div className="px-2 pt-1 pb-0.5 text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f] flex items-center gap-1">
+                <div className="px-2 pt-1 pb-0.5 text-[10px] uppercase tracking-wider font-bold text-rw-muted flex items-center gap-1">
                   {g.icon}
                   {tl(g.label)}
                 </div>
@@ -125,15 +125,15 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
                         onDone?.();
                       }}
                       className={`flex items-center justify-between gap-2 px-2 py-1.5 rounded-md min-w-0 ${
-                        i === active ? "bg-[#c8aa6e]/15 text-[#f0e6d2]" : "text-[#f0e6d2] hover:bg-[#121e2d]"
+                        i === active ? "bg-rw-accent/15 text-rw-text" : "text-rw-text hover:bg-rw-raised"
                       }`}
                     >
                       <span className="flex items-center gap-2 min-w-0">
                         {h.kind === "champ" && <ChampIcon name={h.name} size={18} />}
                         <span className="font-semibold truncate">{h.kind === "champ" ? champName(h.name) : h.name}</span>
-                        {h.matched && <span className="text-[#7e8e9f] truncate">({h.kind === "team" ? tl("was {name}", { name: h.matched }) : h.matched})</span>}
+                        {h.matched && <span className="text-rw-muted truncate">({h.kind === "team" ? tl("was {name}", { name: h.matched }) : h.matched})</span>}
                       </span>
-                      <span className="text-[#7e8e9f] text-[11px] truncate shrink-0 max-w-[50%]">
+                      <span className="text-rw-muted text-[11px] truncate shrink-0 max-w-[50%]">
                         {h.kind === "player"
                           ? [h.role ? roleName(h.role) : "", h.sub, h.year].filter(Boolean).join(" · ")
                           : h.kind === "champ"

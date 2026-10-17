@@ -55,29 +55,34 @@ export const Header: React.FC<HeaderProps> = ({
   const extraLive = liveMatches.length > 1 ? ` +${liveMatches.length - 1}` : "";
 
   return (
-    <header className="bg-[#0a0e17] border-b border-[#c8aa6e] px-3 sm:px-4 py-2 flex items-center gap-3 select-none">
-      {/* Brand */}
-      <div className="flex items-baseline gap-1.5 cursor-pointer flex-shrink-0" onClick={() => onSelectTab("live")}>
-        <span className="text-[#c8aa6e] font-bold text-lg tracking-wider">RIFTWISE</span>
-        <span className="hidden sm:inline text-[#a09b8c] text-[10px]">v{APP_VERSION}</span>
+    // Three columns: brand + support on the left, the status pills centred, the actions on the right. The side
+    // columns share the leftover space equally, so the pills sit in the middle of the window when there's room.
+    <header className="rw-header px-3 sm:px-4 py-2 grid grid-cols-[minmax(max-content,1fr)_minmax(0,auto)_minmax(max-content,1fr)] items-center gap-3 select-none">
+      <div className="flex items-center gap-2.5 min-w-0">
+        {/* Brand */}
+        <div className="flex items-baseline gap-1.5 cursor-pointer flex-shrink-0" onClick={() => onSelectTab("live")}>
+          <span className="rw-logo font-extrabold text-lg tracking-wider">RIFTWISE</span>
+          <span className="hidden sm:inline text-rw-muted text-[10px]">v{APP_VERSION}</span>
+        </div>
+
+        {/* Support (Ko-fi): "Support ♥", just the heart when space is short */}
+        <button
+          onClick={() => onOpenUrl("https://ko-fi.com/monocle")}
+          className={`${pill} flex-shrink-0 font-semibold bg-[#720e9e] border-[#720e9e] hover:bg-[#8c19bd] text-white`}
+          aria-label={tl("Support RiftWise on Ko-fi")}
+          title={tl("Support RiftWise development on Ko-fi")}
+        >
+          <span className="hidden lg:inline">{tl("Support")}</span>
+          <Heart className="w-3.5 h-3.5 fill-current" />
+        </button>
       </div>
 
-      {/* Support: sits just left of the live pills */}
-      <button
-        onClick={() => onOpenUrl("https://ko-fi.com/monocle")}
-        className={`${iconBtn} flex-shrink-0 bg-[#720e9e] border-[#720e9e] hover:bg-[#8c19bd] text-white`}
-        aria-label={tl("Support RiftWise on Ko-fi")}
-        title={tl("Support RiftWise development on Ko-fi")}
-      >
-        <Heart className="w-3.5 h-3.5 fill-current" />
-      </button>
-
-      {/* Status pills: these shrink and truncate instead of wrapping; on phones the Live tab shows the live count */}
-      <div className="hidden sm:flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+      {/* Status pills, centred: these shrink and truncate instead of wrapping; on phones the Live tab shows the live count */}
+      <div className="hidden sm:flex items-center justify-center gap-2 min-w-0 overflow-hidden">
         {updateInfo?.hasUpdate && (
           <button
             onClick={() => onSelectTab("settings")}
-            className={`${pill} flex-shrink-0 font-bold bg-[#0ac8b9] border-[#0ac8b9] text-[#091428] hover:bg-[#0ac8b9]/80 animate-pulse`}
+            className={`${pill} flex-shrink-0 font-bold bg-rw-teal border-rw-teal text-rw-bg hover:bg-rw-teal/80 animate-pulse`}
             title={tl("New version v{version} available! Click to update.", { version: updateInfo.latestVersion })}
           >
             <Sparkles className="w-3 h-3" />
@@ -89,10 +94,10 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={() => onSelectTab("live")}
           className={`${pill} flex-shrink-0 ${
             hasLive
-              ? "bg-[#1e131d] border-[#e84057] text-[#e84057] font-semibold"
+              ? "bg-rw-red/10 border-rw-red text-rw-red font-semibold"
               : onAir
-                ? "bg-[#1a1708] border-[#c8aa6e]/70 text-[#c8aa6e] font-semibold"
-                : "bg-[#0a1420] border-[#1e282d] text-[#7e8e9f] hover:border-[#c8aa6e]"
+                ? "bg-rw-accent/10 border-rw-accent/70 text-rw-accent font-semibold"
+                : "bg-rw-surface border-rw-border text-rw-muted hover:border-rw-accent"
           }`}
           title={
             hasLive
@@ -104,7 +109,7 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <span
             className={`w-2 h-2 rounded-full ${
-              hasLive ? "bg-[#e84057] animate-pulse" : onAir ? "bg-[#c8aa6e] animate-pulse" : "bg-[#7e8e9f]"
+              hasLive ? "bg-rw-red animate-pulse" : onAir ? "bg-rw-accent animate-pulse" : "bg-rw-muted"
             }`}
           />
           <span>
@@ -120,22 +125,22 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={() => onSelectTab("stream")}
           className={`${pill} min-w-0 ${
             streamInfo.isLive
-              ? "bg-[#0a1420] border-[#0ac8b9]/60 text-[#0ac8b9] hover:border-[#0ac8b9] hover:bg-[#121e2d]"
-              : "bg-[#0a1420] border-[#1e282d] text-[#7e8e9f] hover:border-[#7e8e9f]"
+              ? "bg-rw-surface border-rw-teal/60 text-rw-teal hover:border-rw-teal hover:bg-rw-raised"
+              : "bg-rw-surface border-rw-border text-rw-muted hover:border-rw-muted"
           }`}
           title={streamInfo.isLive ? tl("{title} · Click to view stream", { title: streamInfo.title }) : phase.kind === "break" ? tl("The 24/7 marathon is on break · Click for details") : tl("Twitch 24/7 Stream is currently offline")}
         >
-          <Radio className={`w-3.5 h-3.5 flex-shrink-0 ${streamInfo.isLive ? "text-[#0ac8b9] animate-pulse" : ""}`} />
+          <Radio className={`w-3.5 h-3.5 flex-shrink-0 ${streamInfo.isLive ? "text-rw-teal animate-pulse" : ""}`} />
           <span className="font-semibold truncate">{streamInfo.title}</span>
         </button>
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-1.5 flex-shrink-0 ml-auto">
+      <div className="flex items-center justify-end gap-1.5 min-w-0 col-start-3">
         {onInstall && (
           <button
             onClick={onInstall}
-            className={`${pill} font-semibold bg-[#0a1420] border-[#0ac8b9]/60 text-[#0ac8b9] hover:bg-[#121e2d]`}
+            className={`${pill} font-semibold bg-rw-surface border-rw-teal/60 text-rw-teal hover:bg-rw-raised`}
             aria-label={tl("Install RiftWise on this device")}
             title={tl("Add RiftWise to your home screen or desktop")}
           >
@@ -148,18 +153,18 @@ export const Header: React.FC<HeaderProps> = ({
             href={DESKTOP_DOWNLOAD_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className={`${pill} hidden sm:inline-flex font-semibold bg-[#c8aa6e] border-[#c8aa6e] text-[#091428] hover:bg-[#f0e6d2]`}
+            className={`${pill} hidden sm:inline-flex font-semibold bg-rw-accent border-rw-accent text-rw-bg hover:bg-rw-text`}
             title={tl("Download RiftWise for Windows (free, about 4 MB, no installer)")}
           >
             <Download className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">{tl("Download for Windows")}</span>
-            <span className="md:hidden">{tl("Windows")}</span>
+            <span className="hidden lg:inline 2xl:hidden">{tl("Windows app")}</span>
+            <span className="hidden 2xl:inline">{tl("Download the Windows app")}</span>
           </a>
         )}
         {onSearch && (
           <button
             onClick={onSearch}
-            className={`${pill} bg-[#0a1420] border-[#1e282d] text-[#f0e6d2] hover:bg-[#121e2d] hover:border-[#c8aa6e]/60`}
+            className={`${pill} bg-rw-surface border-rw-border text-rw-text hover:bg-rw-raised hover:border-rw-accent/60`}
             aria-label={tl("Search teams, players and tournaments")}
             title={tl("Search teams, players and tournaments")}
           >
@@ -171,8 +176,8 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={() => onUpdateSettings({ spoilerMode: !settings.spoilerMode })}
           className={`${pill} font-medium ${
             settings.spoilerMode
-              ? "bg-[#c8aa6e] border-[#c8aa6e] text-[#091428]"
-              : "bg-[#0a1420] border-[#1e282d] text-[#f0e6d2] hover:bg-[#121e2d]"
+              ? "bg-rw-accent border-rw-accent text-rw-bg"
+              : "bg-rw-surface border-rw-border text-rw-text hover:bg-rw-raised"
           }`}
           aria-label={settings.spoilerMode ? tl("Show spoilers") : tl("Hide spoilers")}
           aria-pressed={settings.spoilerMode}
@@ -187,8 +192,8 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => onUpdateSettings({ compactMode: !settings.compactMode })}
             className={`${iconBtn} ${
               settings.compactMode
-                ? "bg-[#0ac8b9] border-[#0ac8b9] text-[#091428]"
-                : "bg-[#0a1420] border-[#1e282d] text-[#f0e6d2] hover:bg-[#121e2d]"
+                ? "bg-rw-teal border-rw-teal text-rw-bg"
+                : "bg-rw-surface border-rw-border text-rw-text hover:bg-rw-raised"
             }`}
             aria-label={settings.compactMode ? tl("Expand window") : tl("Compact window")}
             title={tl("{action} (Alt+Shift+L summons/hides app anywhere)", { action: settings.compactMode ? tl("Expand window") : tl("Compact window") })}
@@ -200,11 +205,11 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onRefresh}
           disabled={isRefreshing}
-          className={`${iconBtn} bg-[#0a1420] border-[#1e282d] text-[#f0e6d2] hover:bg-[#121e2d]`}
+          className={`${iconBtn} bg-rw-surface border-rw-border text-rw-text hover:bg-rw-raised`}
           aria-label={tl("Refresh match data")}
           title={tl("Refresh match data")}
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#c8aa6e]" : ""}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-rw-accent" : ""}`} />
         </button>
       </div>
     </header>

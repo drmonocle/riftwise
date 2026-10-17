@@ -70,7 +70,7 @@ export const ComparePick: React.FC<{ kind: Mode; onPick: (slug: string) => void;
         }}
         placeholder={label}
         aria-label={label}
-        className="w-full bg-[#091428] border border-[#1e282d] rounded-lg px-2.5 py-1.5 text-xs text-[#f0e6d2] placeholder-[#7e8e9f]"
+        className="w-full bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1.5 text-xs text-rw-text placeholder-rw-muted"
       />
       {hits.map((h, i) => (
         <button
@@ -79,11 +79,11 @@ export const ComparePick: React.FC<{ kind: Mode; onPick: (slug: string) => void;
           onClick={() => pick(h)}
           onMouseEnter={() => setSel(i)}
           className={`w-full flex justify-between gap-2 px-2 py-1 rounded text-left text-xs min-w-0 ${
-            i === sel ? "bg-[#121e2d]" : "bg-[#091428] hover:bg-[#121e2d]"
+            i === sel ? "bg-rw-raised" : "bg-rw-bg hover:bg-rw-raised"
           }`}
         >
-          <span className="text-[#f0e6d2] font-semibold truncate">{h.name}</span>
-          <span className="text-[#7e8e9f] truncate shrink-0 max-w-[50%]">{h.sub}</span>
+          <span className="text-rw-text font-semibold truncate">{h.name}</span>
+          <span className="text-rw-muted truncate shrink-0 max-w-[50%]">{h.sub}</span>
         </button>
       ))}
     </div>
@@ -100,11 +100,11 @@ const Row: React.FC<{
   better?: "high" | "low";
 }> = ({ label, a, b, va, vb, better = "high" }) => {
   const win = va != null && vb != null && va !== vb ? ((va > vb) === (better === "high") ? "a" : "b") : null;
-  const cls = (side: "a" | "b") => (win === side ? "text-[#0ac8b9]" : "text-[#f0e6d2]");
+  const cls = (side: "a" | "b") => (win === side ? "text-rw-teal" : "text-rw-text");
   return (
-    <tr className="border-t border-[#1e282d]">
+    <tr className="border-t border-rw-border">
       <td className={`${td} text-right font-semibold w-2/5 tabular-nums ${cls("a")}`}>{a}</td>
-      <td className={`${td} text-center text-[#7e8e9f] text-[11px]`}>{label}</td>
+      <td className={`${td} text-center text-rw-muted text-[11px]`}>{label}</td>
       <td className={`${td} font-semibold w-2/5 tabular-nums ${cls("b")}`}>{b}</td>
     </tr>
   );
@@ -177,20 +177,20 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
             type="button"
             onClick={() => navigateHub({ kind: "compare", mode: k }, { replace: true })}
             className={`px-2.5 py-1.5 rounded-lg border ${
-              mode === k ? "bg-[#c8aa6e] text-[#091428] font-bold border-[#c8aa6e]" : "border-[#1e282d] text-[#9bb3c9]"
+              mode === k ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub"
             }`}
           >
             {k === "team" ? tl("Teams") : tl("Players")}
           </button>
         ))}
         {ready && mode === "team" && (
-          <HubLink to={{ kind: "prep", a: a!, b: b!, period: route.period }} className="text-[#0ac8b9] hover:underline">
+          <HubLink to={{ kind: "prep", a: a!, b: b!, period: route.period }} className="text-rw-teal hover:underline">
             {tl("Match prep")}
           </HubLink>
         )}
         {ready && (
           <span className="flex items-center gap-1.5 ml-auto min-w-0">
-            <span className="text-[#7e8e9f]">{tl("Stats for")}</span>
+            <span className="text-rw-muted">{tl("Stats for")}</span>
             <PeriodPicker options={options} value={period} onChange={(p) => set({ period: p })} />
           </span>
         )}
@@ -209,7 +209,7 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
               </div>
             )}
             {side.s ? (
-              <button type="button" onClick={() => set({ [side.key]: undefined })} className="text-[11px] text-[#0ac8b9] hover:underline">
+              <button type="button" onClick={() => set({ [side.key]: undefined })} className="text-[11px] text-rw-teal hover:underline">
                 {tl("Change")}
               </button>
             ) : (
@@ -248,7 +248,7 @@ export const TeamRows: React.FC<{ x: HubTeam; y: HubTeam; ra: TeamGameRow[]; rb:
   const wr = (w: number, g: number) => (g ? w / g : null);
   return (
     <>
-      <Section title={`${x.name} vs ${y.name}`} right={<span className="text-[11px] text-[#9bb3c9]">{periodLabel}</span>} share={`${x.name}-vs-${y.name}-${periodLabel}`}>
+      <Section title={`${x.name} vs ${y.name}`} right={<span className="text-[11px] text-rw-sub">{periodLabel}</span>} share={`${x.name}-vs-${y.name}-${periodLabel}`}>
         <table className="w-full text-xs">
           <tbody>
             <Row label={career ? tl("Head to head (games)") : tl("Head to head this period (games)")} a={h2h.g ? h2h.w : "–"} b={h2h.g ? h2h.g - h2h.w : "–"} va={h2h.g ? h2h.w : null} vb={h2h.g ? h2h.g - h2h.w : null} />
@@ -289,7 +289,7 @@ export const TeamRows: React.FC<{ x: HubTeam; y: HubTeam; ra: TeamGameRow[]; rb:
               {s.t.picks.slice(0, 10).map(([c, n, w]) => (
                 <li key={c} className="flex justify-between gap-1 min-w-0">
                   <ChampLink name={c} size={16} />
-                  <span className="text-[#7e8e9f] shrink-0 tabular-nums">
+                  <span className="text-rw-muted shrink-0 tabular-nums">
                     {n} · {winRate(w, n)}
                   </span>
                 </li>
@@ -322,7 +322,7 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
   const pg = (p: typeof A) => `${perGame(p.k, p.g) ?? "–"} / ${perGame(p.d, p.g) ?? "–"} / ${perGame(p.a, p.g) ?? "–"}`;
   return (
     <>
-      <Section title={`${x.name} vs ${y.name}`} right={<span className="text-[11px] text-[#9bb3c9]">{periodLabel}</span>} share={`${x.name}-vs-${y.name}-${periodLabel}`}>
+      <Section title={`${x.name} vs ${y.name}`} right={<span className="text-[11px] text-rw-sub">{periodLabel}</span>} share={`${x.name}-vs-${y.name}-${periodLabel}`}>
         <table className="w-full text-xs">
           <tbody>
             <Row label={tl("Role")} a={A.roles[0] ? roleName(A.roles[0]) : "–"} b={B.roles[0] ? roleName(B.roles[0]) : "–"} />
@@ -358,7 +358,7 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
               {s.p.champs.slice(0, 8).map((c) => (
                 <li key={c.c} className="flex justify-between gap-2 min-w-0">
                   <ChampLink name={c.c} size={16} />
-                  <span className="text-[#7e8e9f] shrink-0 tabular-nums">
+                  <span className="text-rw-muted shrink-0 tabular-nums">
                     {c.g} · {winRate(c.w, c.g)} · {c.kda} KDA
                   </span>
                 </li>
@@ -372,7 +372,7 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
           <table className="w-full text-xs">
             <tbody>
               {shared.map(({ c, o }) => (
-                <tr key={c.c} className="border-t border-[#1e282d]">
+                <tr key={c.c} className="border-t border-rw-border">
                   <td className={`${td} text-right tabular-nums w-2/5`}>
                     {c.g} · {winRate(c.w, c.g)} · {c.kda}
                   </td>
@@ -388,7 +388,7 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
               ))}
             </tbody>
           </table>
-          <p className="text-[10px] text-[#7e8e9f]">{tl("Games · win rate · KDA")}</p>
+          <p className="text-[10px] text-rw-muted">{tl("Games · win rate · KDA")}</p>
         </Section>
       )}
     </>

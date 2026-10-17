@@ -41,15 +41,15 @@ const GameLine: React.FC<{
 }> = ({ label, r, value }) =>
   r ? (
     <li className="flex flex-wrap items-baseline justify-between gap-x-2 min-w-0">
-      <span className="text-[#9bb3c9] shrink-0">{label}</span>
+      <span className="text-rw-sub shrink-0">{label}</span>
       <span className="min-w-0 text-right">
-        <span className="text-[#c8aa6e] font-bold">{value}</span>{" "}
+        <span className="text-rw-accent font-bold">{value}</span>{" "}
         {r.g ? (
           <HubLink to={{ kind: "match", slug: r.g }}>
             {r.a} vs {r.b}
           </HubLink>
         ) : (
-          <span className="text-[#f0e6d2]">
+          <span className="text-rw-text">
             {r.a} vs {r.b}
           </span>
         )}
@@ -103,21 +103,21 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean }> = ({
           />
           {o.farm && (
             <li className="flex flex-wrap items-baseline justify-between gap-x-2 min-w-0">
-              <span className="text-[#9bb3c9] shrink-0">
+              <span className="text-rw-sub shrink-0">
                 {tl("Best farming game")}
               </span>
               <span className="min-w-0 text-right">
-                <span className="text-[#c8aa6e] font-bold">
+                <span className="text-rw-accent font-bold">
                   {tl("{n} CS/min", { n: o.farm.v })}
                 </span>{" "}
                 <PlayerLink name={o.farm.n} u={o.farm.u} />{" "}
-                <span className="text-[#7e8e9f]">
+                <span className="text-rw-muted">
                   ({o.farm.cs} CS, {mmss(o.farm.min)})
                 </span>{" "}
                 {o.farm.g && (
                   <HubLink
                     to={{ kind: "match", slug: o.farm.g }}
-                    className="text-[#0ac8b9] hover:underline"
+                    className="text-rw-teal hover:underline"
                   >
                     {tl("Details")}
                   </HubLink>
@@ -128,22 +128,22 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean }> = ({
         </ul>
       )}
       {drakes.length > 0 && (
-        <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[#9bb3c9]">
-          <span className="text-[#7e8e9f] flex items-center gap-1">
+        <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-rw-sub">
+          <span className="text-rw-muted flex items-center gap-1">
             <Flame className="w-3 h-3" />
             {tl("Dragons taken:")}
           </span>
           {drakes.map(([k, n]) => (
             <span key={k}>
               {tl(DRAKE[k] || k)}{" "}
-              <span className="text-[#f0e6d2] font-semibold">{n}</span>
+              <span className="text-rw-text font-semibold">{n}</span>
             </span>
           ))}
         </div>
       )}
       {!hidden && o.pentas.length > 0 && (
         <div className="text-xs">
-          <span className="text-[#7e8e9f] flex items-center gap-1 mb-1">
+          <span className="text-rw-muted flex items-center gap-1 mb-1">
             <Swords className="w-3 h-3" />
             {tl("Pentakills")}
           </span>
@@ -152,11 +152,11 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean }> = ({
               <li key={i} className="flex items-center gap-1.5">
                 <ChampIcon name={p.c} size={16} />
                 <PlayerLink name={p.n} u={p.u} />
-                {p.x > 1 && <span className="text-[#c8aa6e]">×{p.x}</span>}
+                {p.x > 1 && <span className="text-rw-accent">×{p.x}</span>}
                 {p.g && (
                   <HubLink
                     to={{ kind: "match", slug: p.g }}
-                    className="text-[#0ac8b9] hover:underline ml-1"
+                    className="text-rw-teal hover:underline ml-1"
                   >
                     {tl("Details")}
                   </HubLink>
@@ -168,7 +168,7 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean }> = ({
       )}
       {!hidden && o.mvp.length > 0 && (
         <div className="text-xs">
-          <span className="text-[#7e8e9f] flex items-center gap-1 mb-1">
+          <span className="text-rw-muted flex items-center gap-1 mb-1">
             <Crown className="w-3 h-3" />
             {tl("Most Player of the Game awards")}
           </span>
@@ -176,13 +176,13 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean }> = ({
             {o.mvp.map((m) => (
               <span key={m.n}>
                 <PlayerLink name={m.n} u={m.u} />{" "}
-                <span className="text-[#c8aa6e] font-bold">{m.v}</span>
+                <span className="text-rw-accent font-bold">{m.v}</span>
               </span>
             ))}
           </div>
         </div>
       )}
-      <p className="text-[10px] text-[#7e8e9f] flex items-center gap-1">
+      <p className="text-[10px] text-rw-muted flex items-center gap-1">
         <Timer className="w-3 h-3" />
         {tl("Games with a full scoreboard only.")}
       </p>
@@ -203,7 +203,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[] }> = ({
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="text-[11px] text-[#0ac8b9] hover:underline"
+            className="text-[11px] text-rw-teal hover:underline"
           >
             {open
               ? tl("Show fewer")
@@ -216,12 +216,12 @@ export const EventRosters: React.FC<{ rosters: EventRoster[] }> = ({
         {(open ? rosters : rosters.slice(0, 4)).map((t) => (
           <div
             key={t.t}
-            className="bg-[#091428] border border-[#1e282d] rounded-lg p-2 text-xs min-w-0"
+            className="bg-rw-bg border border-rw-border rounded-lg p-2 text-xs min-w-0"
           >
             <div className="font-semibold mb-1 truncate">
               <TeamLink name={t.t} u={t.u} />
               {t.r && (
-                <span className="text-[#7e8e9f] text-[10px] ml-1">{t.r}</span>
+                <span className="text-rw-muted text-[10px] ml-1">{t.r}</span>
               )}
             </div>
             <ul className="space-y-0.5">
@@ -230,7 +230,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[] }> = ({
                   <span className="truncate min-w-0">
                     <PlayerLink name={n} u={u} />
                   </span>
-                  <span className="text-[#7e8e9f] shrink-0 text-[10px]">
+                  <span className="text-rw-muted shrink-0 text-[10px]">
                     {role
                       ? /coach/i.test(role)
                         ? tl("Coach")
@@ -265,22 +265,22 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
         </thead>
         <tbody>
           {e.regions.map((r) => (
-            <tr key={r.a + r.b} className="border-t border-[#1e282d]">
-              <td className={`${td} text-[#f0e6d2]`}>
+            <tr key={r.a + r.b} className="border-t border-rw-border">
+              <td className={`${td} text-rw-text`}>
                 {r.a} vs {r.b}
               </td>
               <td className={`${td} tabular-nums`}>
                 <span
                   className={
-                    r.wa > r.wb ? "text-[#0ac8b9] font-bold" : "text-[#9bb3c9]"
+                    r.wa > r.wb ? "text-rw-teal font-bold" : "text-rw-sub"
                   }
                 >
                   {r.wa}
                 </span>
-                <span className="text-[#7e8e9f]"> – </span>
+                <span className="text-rw-muted"> – </span>
                 <span
                   className={
-                    r.wb > r.wa ? "text-[#0ac8b9] font-bold" : "text-[#9bb3c9]"
+                    r.wb > r.wa ? "text-rw-teal font-bold" : "text-rw-sub"
                   }
                 >
                   {r.wb}

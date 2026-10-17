@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { THEMES, DEFAULT_THEME } from "../../theme";
 import { AppSettings, CatalogData, AppUpdateInfo } from "../../types";
 import {
   Monitor,
@@ -115,19 +116,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* 0. App Version & Software Updates (desktop app only) */}
       {IS_DESKTOP && (
       <section className="space-y-3">
-        <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center justify-between">
+        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center justify-between">
           <span className="flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-[#0ac8b9]" />
+            <Sparkles className="w-3.5 h-3.5 text-rw-teal" />
             {tl("Software Updates")}
           </span>
-          <span className="text-[11px] font-mono text-[#7e8e9f]">{tl("Current: v{version}", { version: APP_VERSION })}</span>
+          <span className="text-[11px] font-mono text-rw-muted">{tl("Current: v{version}", { version: APP_VERSION })}</span>
         </h2>
 
         <div
           className={`p-4 rounded-lg border transition-all ${
             updateInfo?.hasUpdate
-              ? "bg-[#0c1626] border-[#0ac8b9] shadow-lg shadow-[#0ac8b9]/10"
-              : "bg-[#0a1420] border-[#1e282d]"
+              ? "bg-rw-surface border-rw-teal shadow-lg shadow-rw-teal/10"
+              : "bg-rw-surface border-rw-border"
           }`}
         >
           {updateInfo?.hasUpdate ? (
@@ -135,14 +136,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#0ac8b9] text-[#091428] uppercase tracking-wider animate-pulse">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-rw-teal text-rw-bg uppercase tracking-wider animate-pulse">
                       {tl("Update Available")}
                     </span>
-                    <span className="font-bold text-sm text-[#f0e6d2]">
+                    <span className="font-bold text-sm text-rw-text">
                       RiftWise v{updateInfo.latestVersion}
                     </span>
                   </div>
-                  <div className="text-[11px] text-[#c8aa6e] mt-1 font-medium">
+                  <div className="text-[11px] text-rw-accent mt-1 font-medium">
                     {updateInfo.releaseName || tl("Release v{version}", { version: updateInfo.latestVersion })}
                   </div>
                 </div>
@@ -151,7 +152,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <button
                     onClick={handleInstallUpdate}
                     disabled={isInstallingUpdate}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-[#0ac8b9] hover:bg-[#0ac8b9]/80 text-[#091428] font-bold text-xs transition-colors shadow disabled:opacity-60"
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-rw-teal hover:bg-rw-teal/80 text-rw-bg font-bold text-xs transition-colors shadow disabled:opacity-60"
                   >
                     {isInstallingUpdate ? (
                       <>
@@ -168,23 +169,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                   <button
                     onClick={() => onOpenUrl(updateInfo.releaseUrl)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#091428] hover:bg-[#121e2d] border border-[#1e282d] hover:border-[#c8aa6e] text-[#f0e6d2] font-semibold text-xs transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-rw-bg hover:bg-rw-raised border border-rw-border hover:border-rw-accent text-rw-text font-semibold text-xs transition-colors"
                   >
-                    <ExternalLink className="w-3.5 h-3.5 text-[#7e8e9f]" />
+                    <ExternalLink className="w-3.5 h-3.5 text-rw-muted" />
                     <span>{tl("Notes")}</span>
                   </button>
                 </div>
               </div>
 
               {isInstallingUpdate && (
-                <div className="p-2.5 rounded bg-[#091428] border border-[#0ac8b9]/40 text-[#0ac8b9] text-xs flex items-center gap-2">
+                <div className="p-2.5 rounded bg-rw-bg border border-rw-teal/40 text-rw-teal text-xs flex items-center gap-2">
                   <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
                   <span>{tl("Downloading latest release binary and replacing executable… RiftWise will reopen automatically.")}</span>
                 </div>
               )}
 
               {installError && (
-                <div className="p-2.5 rounded bg-[#1e131d] border border-[#e84057]/40 text-[#e84057] text-xs flex items-center justify-between gap-2">
+                <div className="p-2.5 rounded bg-rw-red/10 border border-rw-red/40 text-rw-red text-xs flex items-center justify-between gap-2">
                   <span>{installError}</span>
                   <button
                     onClick={() => onOpenUrl(updateInfo.releaseUrl)}
@@ -196,7 +197,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               )}
 
               {updateInfo.releaseNotes && (
-                <div className="p-3 rounded bg-[#091428] border border-[#1e282d] text-[11px] text-[#9bb3c9] max-h-32 overflow-y-auto whitespace-pre-line leading-relaxed">
+                <div className="p-3 rounded bg-rw-bg border border-rw-border text-[11px] text-rw-sub max-h-32 overflow-y-auto whitespace-pre-line leading-relaxed">
                   {plainNotes(updateInfo.releaseNotes)}
                 </div>
               )}
@@ -208,22 +209,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   {lastUpdateCheck?.error && !isCheckingUpdate ? (
                     // The check failed, so we can't say whether this is the newest version
                     <>
-                      <AlertTriangle className="w-4 h-4 text-[#c8aa6e]" />
-                      <span className="font-semibold text-[#f0e6d2] text-xs">
+                      <AlertTriangle className="w-4 h-4 text-rw-accent" />
+                      <span className="font-semibold text-rw-text text-xs">
                         Couldn't check for updates · you have v{APP_VERSION}
                       </span>
                     </>
                   ) : (
                     <>
-                      <Check className="w-4 h-4 text-[#0ac8b9]" />
-                      <span className="font-semibold text-[#f0e6d2] text-xs">
+                      <Check className="w-4 h-4 text-rw-teal" />
+                      <span className="font-semibold text-rw-text text-xs">
                         {tl("RiftWise is up to date (v{version})", { version: APP_VERSION })}
                       </span>
                     </>
                   )}
                 </div>
                 <div
-                  className={`text-[11px] mt-0.5 ml-6 ${lastUpdateCheck?.error ? "text-[#e84057]" : "text-[#7e8e9f]"}`}
+                  className={`text-[11px] mt-0.5 ml-6 ${lastUpdateCheck?.error ? "text-rw-red" : "text-rw-muted"}`}
                   role="status"
                 >
                   {isCheckingUpdate
@@ -240,16 +241,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <button
                   onClick={() => onCheckForUpdate?.()}
                   disabled={isCheckingUpdate}
-                  className="flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded bg-[#091428] hover:bg-[#121e2d] border border-[#1e282d] hover:border-[#c8aa6e] text-[#f0e6d2] font-semibold text-xs transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded bg-rw-bg hover:bg-rw-raised border border-rw-border hover:border-rw-accent text-rw-text font-semibold text-xs transition-colors disabled:opacity-50"
                   title={tl("Check GitHub Releases for new updates")}
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isCheckingUpdate ? "animate-spin text-[#c8aa6e]" : ""}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 ${isCheckingUpdate ? "animate-spin text-rw-accent" : ""}`} />
                   <span>{isCheckingUpdate ? tl("Checking…") : tl("Check for Updates")}</span>
                 </button>
 
                 <button
                   onClick={() => onOpenUrl("https://github.com/drmonocle/riftwise/releases")}
-                  className="flex items-center gap-1.5 whitespace-nowrap px-2.5 py-1.5 rounded bg-[#091428] hover:bg-[#121e2d] border border-[#1e282d] text-[#7e8e9f] hover:text-[#f0e6d2] text-xs transition-colors"
+                  className="flex items-center gap-1.5 whitespace-nowrap px-2.5 py-1.5 rounded bg-rw-bg hover:bg-rw-raised border border-rw-border text-rw-muted hover:text-rw-text text-xs transition-colors"
                   title={tl("View all releases on GitHub")}
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -265,12 +266,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* 0b. Web version: offer the Windows app (served by GitHub, not this server) */}
       {IS_WEB && (
         <section className="space-y-3">
-          <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
-            <Download className="w-3.5 h-3.5 text-[#0ac8b9]" />
+          <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
+            <Download className="w-3.5 h-3.5 text-rw-teal" />
             {tl("RiftWise for Windows")}
           </h2>
-          <div className="p-4 rounded-lg border border-[#1e282d] bg-[#0a1420] space-y-3">
-            <p className="text-[#9bb3c9] text-xs leading-relaxed">
+          <div className="p-4 rounded-lg border border-rw-border bg-rw-surface space-y-3">
+            <p className="text-rw-sub text-xs leading-relaxed">
               {tl("The desktop app adds a system tray icon, a global hotkey (Alt+Shift+L), kickoff notifications and automatic updates. It is free, about 4 MB, and needs no installer.")}
             </p>
             <div className="flex flex-wrap items-center gap-2">
@@ -278,7 +279,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 href={DESKTOP_DOWNLOAD_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-[#c8aa6e] hover:bg-[#f0e6d2] text-[#091428] font-bold text-xs transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-rw-accent hover:bg-rw-text text-rw-bg font-bold text-xs transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>{tl("Download RiftWise.exe")}</span>
@@ -287,24 +288,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 href={DESKTOP_RELEASES_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#091428] hover:bg-[#121e2d] border border-[#1e282d] hover:border-[#c8aa6e] text-[#f0e6d2] font-semibold text-xs transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-rw-bg hover:bg-rw-raised border border-rw-border hover:border-rw-accent text-rw-text font-semibold text-xs transition-colors"
               >
-                <ExternalLink className="w-3.5 h-3.5 text-[#7e8e9f]" />
+                <ExternalLink className="w-3.5 h-3.5 text-rw-muted" />
                 <span>{tl("Release notes")}</span>
               </a>
               <a
                 href={DESKTOP_CHECKSUM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[11px] text-[#7e8e9f] hover:text-[#c8aa6e] underline"
+                className="text-[11px] text-rw-muted hover:text-rw-accent underline"
               >
                 {tl("SHA-256 checksum")}
               </a>
             </div>
-            <p className="text-[11px] text-[#7e8e9f] leading-relaxed">
+            <p className="text-[11px] text-rw-muted leading-relaxed">
               {tl("Windows 10 or 11. RiftWise isn't code-signed yet, so Windows SmartScreen may say \"Windows protected your PC\": click More info, then Run anyway. The download comes straight from GitHub.")}
             </p>
-            <p className="text-[11px] text-[#7e8e9f] leading-relaxed">
+            <p className="text-[11px] text-rw-muted leading-relaxed">
               {tl("Each release lists the SHA-256 checksum of the file, so you can check your download matches.")}
             </p>
           </div>
@@ -312,11 +313,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       )}
       {/* Language: names in their own language; the help line is in the language now on screen */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
-          <Languages className="w-3.5 h-3.5 text-[#0ac8b9]" />
+        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
+          <Languages className="w-3.5 h-3.5 text-rw-teal" />
           {tl("Language")}
         </h2>
-        <div className="p-3 rounded-lg bg-[#0a1420] border border-[#1e282d] space-y-2">
+        <div className="p-3 rounded-lg bg-rw-surface border border-rw-border space-y-2">
           <select
             value={settings.language}
             onChange={(e) => {
@@ -325,7 +326,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               window.setTimeout(() => window.location.reload(), 150);
             }}
             aria-label={tl("Language")}
-            className="w-full sm:w-auto bg-[#091428] border border-[#1e282d] rounded-lg px-3 py-2 text-sm text-[#f0e6d2]"
+            className="w-full sm:w-auto bg-rw-bg border border-rw-border rounded-lg px-3 py-2 text-sm text-rw-text"
           >
             <option value="auto">
               {tl("Automatic")} ({LANGUAGES.find((l) => l.code === detectLanguage())?.name})
@@ -336,7 +337,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </option>
             ))}
           </select>
-          <p className="text-[11px] text-[#9bb3c9] leading-relaxed">
+          <p className="text-[11px] text-rw-sub leading-relaxed">
             {tl("Is this language wrong? Email me:")}{" "}
             <a
               href={TRANSLATION_MAILTO()}
@@ -346,7 +347,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   onOpenUrl(TRANSLATION_MAILTO());
                 }
               }}
-              className="text-[#0ac8b9] underline"
+              className="text-rw-teal underline"
             >
               {TRANSLATION_EMAIL}
             </a>
@@ -356,17 +357,58 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* 1. Display */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
-          <Monitor className="w-3.5 h-3.5 text-[#0ac8b9]" />
+        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
+          <Monitor className="w-3.5 h-3.5 text-rw-teal" />
           {tl("Display")}
         </h2>
 
         <div className="space-y-2">
-          {/* Spoiler Mode */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
+          {/* Theme */}
+          <div className="p-3 rounded-lg bg-rw-surface border border-rw-border space-y-2">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">{tl("Spoiler Mode")}</div>
-              <div className="text-[11px] text-[#7e8e9f]">
+              <div className="font-semibold text-rw-text">{tl("Theme")}</div>
+              <div className="text-[11px] text-rw-muted">{tl("Pick the colours for RiftWise.")}</div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {THEMES.map((th) => {
+                const on = (settings.theme || DEFAULT_THEME) === th.id;
+                const name = { rift: tl("Rift"), classic: tl("Classic"), midnight: tl("Midnight") }[th.id];
+                const about = {
+                  rift: tl("Deep indigo with a soft violet, like the Rift Herald"),
+                  classic: tl("The original navy and Hextech gold"),
+                  midnight: tl("Graphite with a cool blue"),
+                }[th.id];
+                return (
+                  <button
+                    key={th.id}
+                    type="button"
+                    onClick={() => onUpdateSettings({ theme: th.id })}
+                    aria-pressed={on}
+                    className={`text-left rounded-lg border p-2.5 transition-all ${
+                      on ? "border-rw-accent ring-1 ring-rw-accent/50" : "border-rw-border hover:border-rw-line"
+                    }`}
+                    style={{ background: `linear-gradient(135deg, ${th.swatch[0]}, ${th.swatch[0]} 55%, ${th.swatch[1]}33)` }}
+                  >
+                    <div className="flex items-center gap-1.5 mb-1">
+                      {th.swatch.map((c) => (
+                        <span key={c} className="w-3 h-3 rounded-full border border-white/10" style={{ background: c }} />
+                      ))}
+                      <span className="ml-1 text-xs font-bold" style={{ color: th.swatch[1] }}>
+                        {name}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-white/60 leading-snug">{about}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Spoiler Mode */}
+          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-surface border border-rw-border">
+            <div>
+              <div className="font-semibold text-rw-text">{tl("Spoiler Mode")}</div>
+              <div className="text-[11px] text-rw-muted">
                 {tl("Hide all match scores, game results, and in-game statistics until manually revealed.")}
               </div>
             </div>
@@ -374,8 +416,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onClick={() => onUpdateSettings({ spoilerMode: !settings.spoilerMode })}
               className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
                 settings.spoilerMode
-                  ? "bg-[#0ac8b9] text-[#091428]"
-                  : "bg-[#1e282d] text-[#7e8e9f] hover:text-[#f0e6d2]"
+                  ? "bg-rw-teal text-rw-bg"
+                  : "bg-rw-border text-rw-muted hover:text-rw-text"
               }`}
             >
               {settings.spoilerMode ? tl("ON") : tl("OFF")}
@@ -383,22 +425,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
 
           {/* Default Tab on Launch */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-rw-surface border border-rw-border">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">{tl("Default Tab on Launch")}</div>
-              <div className="text-[11px] text-[#7e8e9f]">
+              <div className="font-semibold text-rw-text">{tl("Default Tab on Launch")}</div>
+              <div className="text-[11px] text-rw-muted">
                 {tl("Choose which view opens automatically when starting RiftWise.")}
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-1 bg-[#091428] p-1 rounded border border-[#1e282d]">
+            <div className="flex flex-wrap items-center gap-1 bg-rw-bg p-1 rounded border border-rw-border">
               {(["live", "schedule", "stats", "stream", "watchlist"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => onUpdateSettings({ defaultTab: t })}
                   className={`px-2.5 py-1 text-xs font-semibold rounded transition-all ${
                     settings.defaultTab === t
-                      ? "bg-[#c8aa6e] text-[#091428]"
-                      : "text-[#7e8e9f] hover:text-[#f0e6d2]"
+                      ? "bg-rw-accent text-rw-bg"
+                      : "text-rw-muted hover:text-rw-text"
                   }`}
                 >
                   {
@@ -413,21 +455,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* 2. Desktop Notifications & Sound Alerts */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
-          <Bell className="w-3.5 h-3.5 text-[#0ac8b9]" />
+        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
+          <Bell className="w-3.5 h-3.5 text-rw-teal" />
           {IS_DESKTOP ? tl("Desktop Notifications & Sound Alerts") : tl("Alerts & Sound")}
         </h2>
 
         <div className="space-y-2">
           {!IS_DESKTOP && <PushAlertsCard settings={settings} onUpdateSettings={onUpdateSettings} />}
           {/* Kickoff Audio Chime */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-rw-surface border border-rw-border">
             <div>
-              <div className="font-semibold text-[#f0e6d2] flex items-center gap-1.5">
-                <Volume2 className="w-3.5 h-3.5 text-[#0ac8b9]" />
+              <div className="font-semibold text-rw-text flex items-center gap-1.5">
+                <Volume2 className="w-3.5 h-3.5 text-rw-teal" />
                 <span>{tl("Kickoff Hextech Audio Chime")}</span>
               </div>
-              <div className="text-[11px] text-[#7e8e9f]">
+              <div className="text-[11px] text-rw-muted">
                 {tl("Synthesize a rich LoL-style hextech harmonic chime when a followed match begins. (0 KB assets)")}
               </div>
             </div>
@@ -435,7 +477,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <button
                 type="button"
                 onClick={() => playKickoffChime()}
-                className="px-2.5 py-1 rounded bg-[#091428] hover:bg-[#121e2d] border border-[#1e282d] hover:border-[#c8aa6e] text-[#c8aa6e] font-semibold text-xs transition-colors flex items-center gap-1"
+                className="px-2.5 py-1 rounded bg-rw-bg hover:bg-rw-raised border border-rw-border hover:border-rw-accent text-rw-accent font-semibold text-xs transition-colors flex items-center gap-1"
                 title={tl("Play a test sample of the procedural hextech chime")}
               >
                 <Volume2 className="w-3 h-3" />
@@ -444,7 +486,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <button
                 onClick={() => onUpdateSettings({ soundAlerts: !settings.soundAlerts })}
                 className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
-                  settings.soundAlerts ? "bg-[#0ac8b9] text-[#091428]" : "bg-[#1e282d] text-[#7e8e9f]"
+                  settings.soundAlerts ? "bg-rw-teal text-rw-bg" : "bg-rw-border text-rw-muted"
                 }`}
               >
                 {settings.soundAlerts ? tl("ON") : tl("OFF")}
@@ -453,10 +495,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
 
           {IS_DESKTOP && (<>
-          <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-surface border border-rw-border">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">{tl("Live Kickoff Desktop Alerts")}</div>
-              <div className="text-[11px] text-[#7e8e9f]">
+              <div className="font-semibold text-rw-text">{tl("Live Kickoff Desktop Alerts")}</div>
+              <div className="text-[11px] text-rw-muted">
                 {tl("Display desktop notifications when followed teams or players begin a match.")}{" "}
                 <button
                   type="button"
@@ -468,7 +510,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       }).catch(() => {}),
                     )
                   }
-                  className="text-[#0ac8b9] hover:underline"
+                  className="text-rw-teal hover:underline"
                 >
                   {tl("Send a test alert")}
                 </button>
@@ -477,41 +519,41 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               onClick={() => onUpdateSettings({ notifyKickoff: !settings.notifyKickoff })}
               className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
-                settings.notifyKickoff ? "bg-[#0ac8b9] text-[#091428]" : "bg-[#1e282d] text-[#7e8e9f]"
+                settings.notifyKickoff ? "bg-rw-teal text-rw-bg" : "bg-rw-border text-rw-muted"
               }`}
             >
               {settings.notifyKickoff ? tl("ON") : tl("OFF")}
             </button>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-surface border border-rw-border">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">{tl("Pre-match 15m Countdown")}</div>
-              <div className="text-[11px] text-[#7e8e9f]">
+              <div className="font-semibold text-rw-text">{tl("Pre-match 15m Countdown")}</div>
+              <div className="text-[11px] text-rw-muted">
                 {tl("Display a reminder notification 15 minutes before your followed pro matches go live.")}
               </div>
             </div>
             <button
               onClick={() => onUpdateSettings({ notifyPregame: !settings.notifyPregame })}
               className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
-                settings.notifyPregame ? "bg-[#0ac8b9] text-[#091428]" : "bg-[#1e282d] text-[#7e8e9f]"
+                settings.notifyPregame ? "bg-rw-teal text-rw-bg" : "bg-rw-border text-rw-muted"
               }`}
             >
               {settings.notifyPregame ? tl("ON") : tl("OFF")}
             </button>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-surface border border-rw-border">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">{tl("24/7 Stream & S-Tier Banger Alerts")}</div>
-              <div className="text-[11px] text-[#7e8e9f]">
+              <div className="font-semibold text-rw-text">{tl("24/7 Stream & S-Tier Banger Alerts")}</div>
+              <div className="text-[11px] text-rw-muted">
                 {tl("Notify when S-Tier legendary marathon games begin on Twitch and YouTube.")}
               </div>
             </div>
             <button
               onClick={() => onUpdateSettings({ notifyStream: !settings.notifyStream })}
               className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
-                settings.notifyStream ? "bg-[#0ac8b9] text-[#091428]" : "bg-[#1e282d] text-[#7e8e9f]"
+                settings.notifyStream ? "bg-rw-teal text-rw-bg" : "bg-rw-border text-rw-muted"
               }`}
             >
               {settings.notifyStream ? tl("ON") : tl("OFF")}
@@ -524,50 +566,50 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* 3. System Tray, Ergonomics & Startup (desktop app only) */}
       {IS_DESKTOP && (
       <section className="space-y-3">
-        <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
-          <Minimize2 className="w-3.5 h-3.5 text-[#0ac8b9]" />
+        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
+          <Minimize2 className="w-3.5 h-3.5 text-rw-teal" />
           {tl("System Tray, Ergonomics & Hotkeys")}
         </h2>
 
         <div className="space-y-2">
           {/* Global Summon Hotkey */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#0ac8b9]/40 shadow-sm">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-surface border border-rw-teal/40 shadow-sm">
             <div>
-              <div className="font-semibold text-[#f0e6d2] flex items-center gap-1.5">
-                <Keyboard className="w-3.5 h-3.5 text-[#0ac8b9]" />
+              <div className="font-semibold text-rw-text flex items-center gap-1.5">
+                <Keyboard className="w-3.5 h-3.5 text-rw-teal" />
                 <span>{tl("Global Summon Hotkey")}</span>
               </div>
-              <div className="text-[11px] text-[#7e8e9f]">
+              <div className="text-[11px] text-rw-muted">
                 {tl("Summon or hide RiftWise instantly from anywhere in Windows (even inside full-screen games or browser).")}
               </div>
             </div>
-            <span className="px-2.5 py-1 rounded bg-[#091428] border border-[#0ac8b9]/60 text-[#0ac8b9] font-mono font-bold text-xs tracking-wider">
+            <span className="px-2.5 py-1 rounded bg-rw-bg border border-rw-teal/60 text-rw-teal font-mono font-bold text-xs tracking-wider">
               {tl("Alt + Shift + L")}
             </span>
           </div>
 
           {/* Compact Mode */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-surface border border-rw-border">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">{tl("Compact Desktop Mode")}</div>
-              <div className="text-[11px] text-[#7e8e9f]">
+              <div className="font-semibold text-rw-text">{tl("Compact Desktop Mode")}</div>
+              <div className="text-[11px] text-rw-muted">
                 {tl("Fit RiftWise into a tight, distraction-free mini window for second monitors or split-screen gaming.")}
               </div>
             </div>
             <button
               onClick={() => onUpdateSettings({ compactMode: !settings.compactMode })}
               className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
-                settings.compactMode ? "bg-[#0ac8b9] text-[#091428]" : "bg-[#1e282d] text-[#7e8e9f]"
+                settings.compactMode ? "bg-rw-teal text-rw-bg" : "bg-rw-border text-rw-muted"
               }`}
             >
               {settings.compactMode ? tl("ON") : tl("OFF")}
             </button>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-surface border border-rw-border">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">{tl("Close Button Minimizes to System Tray")}</div>
-              <div className="text-[11px] text-[#7e8e9f]">
+              <div className="font-semibold text-rw-text">{tl("Close Button Minimizes to System Tray")}</div>
+              <div className="text-[11px] text-rw-muted">
                 {tl("Keep RiftWise running silently in the Windows notification area when you click the window X button.")}
               </div>
             </div>
@@ -575,25 +617,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onClick={() => onUpdateSettings({ minimizeToTrayOnClose: !settings.minimizeToTrayOnClose })}
               className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
                 settings.minimizeToTrayOnClose
-                  ? "bg-[#0ac8b9] text-[#091428]"
-                  : "bg-[#1e282d] text-[#7e8e9f]"
+                  ? "bg-rw-teal text-rw-bg"
+                  : "bg-rw-border text-rw-muted"
               }`}
             >
               {settings.minimizeToTrayOnClose ? tl("ON") : tl("OFF")}
             </button>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg bg-[#0a1420] border border-[#1e282d]">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-surface border border-rw-border">
             <div>
-              <div className="font-semibold text-[#f0e6d2]">{tl("Start RiftWise with Windows")}</div>
-              <div className="text-[11px] text-[#7e8e9f]">
+              <div className="font-semibold text-rw-text">{tl("Start RiftWise with Windows")}</div>
+              <div className="text-[11px] text-rw-muted">
                 {tl("Launch automatically in the background when you sign in to Windows.")}
               </div>
             </div>
             <button
               onClick={() => onUpdateSettings({ startWithWindows: !settings.startWithWindows })}
               className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
-                settings.startWithWindows ? "bg-[#0ac8b9] text-[#091428]" : "bg-[#1e282d] text-[#7e8e9f]"
+                settings.startWithWindows ? "bg-rw-teal text-rw-bg" : "bg-rw-border text-rw-muted"
               }`}
             >
               {settings.startWithWindows ? tl("ON") : tl("OFF")}
@@ -605,15 +647,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* 4. Watchlist Management */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
-          <Globe className="w-3.5 h-3.5 text-[#c8aa6e]" />
+        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
+          <Globe className="w-3.5 h-3.5 text-rw-accent" />
           {tl("Watchlist & Following Status")}
         </h2>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-lg bg-[#0a1420] border border-[#1e282d]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-lg bg-rw-surface border border-rw-border">
           <div>
-            <div className="font-bold text-[#f0e6d2] text-xs">{tl("Active Tracked Entities")}</div>
-            <div className="text-[11px] text-[#c8aa6e] mt-0.5">
+            <div className="font-bold text-rw-text text-xs">{tl("Active Tracked Entities")}</div>
+            <div className="text-[11px] text-rw-accent mt-0.5">
               {tl("{teams} teams · {players} players · {regions} regions · {leagues} leagues", {
                 teams: settings.followedTeams.length,
                 players: settings.followedPlayers.length,
@@ -624,7 +666,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
           <button
             onClick={handleResetWatchlist}
-            className="px-3 py-1.5 rounded bg-[#091428] border border-[#e84057]/40 text-[#e84057] hover:bg-[#e84057] hover:text-white font-semibold text-xs transition-colors"
+            className="px-3 py-1.5 rounded bg-rw-bg border border-rw-red/40 text-rw-red hover:bg-rw-red hover:text-white font-semibold text-xs transition-colors"
           >
             {tl("Reset All Follows")}
           </button>
@@ -633,18 +675,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* 5. 24/7 Stream Rebroadcasts */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
-          <Radio className="w-3.5 h-3.5 text-[#0ac8b9]" />
+        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
+          <Radio className="w-3.5 h-3.5 text-rw-teal" />
           {tl("24/7 Stream Rebroadcasts (Twitch & YouTube)")}
         </h2>
 
-        <div className="p-3.5 rounded-lg bg-[#0a1420] border border-[#1e282d] space-y-3">
+        <div className="p-3.5 rounded-lg bg-rw-surface border border-rw-border space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <div className="font-bold text-[#0ac8b9] text-xs">
+              <div className="font-bold text-rw-teal text-xs">
                 {tl("Twitch: twitch.tv/LoLWorldChampionship · YouTube: @LoLWorldChampionships")}
               </div>
-              <div className="text-[11px] text-[#7e8e9f] mt-0.5">
+              <div className="text-[11px] text-rw-muted mt-0.5">
                 {tl("Continuous curated tournament broadcast marathon synced with lolworlds.com.")}
               </div>
             </div>
@@ -663,7 +705,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </button>
               <button
                 onClick={() => onOpenUrl("https://lolworlds.com")}
-                className="px-3 py-1 rounded bg-[#091428] border border-[#1e282d] text-[#7e8e9f] hover:text-[#f0e6d2] font-semibold text-xs transition-colors"
+                className="px-3 py-1 rounded bg-rw-bg border border-rw-border text-rw-muted hover:text-rw-text font-semibold text-xs transition-colors"
               >
                 {tl("Schedule ↗")}
               </button>
@@ -674,8 +716,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* 6. Data Sources & Storage Diagnostics */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
-          <RefreshCw className="w-3.5 h-3.5 text-[#0ac8b9]" />
+        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
+          <RefreshCw className="w-3.5 h-3.5 text-rw-teal" />
           {tl("Data Sources & Diagnostics")}
         </h2>
 
@@ -688,13 +730,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           ].map((ds) => (
             <div
               key={ds.name}
-              className="flex items-center justify-between p-2.5 rounded bg-[#0a1420] border border-[#1e282d] text-[11px]"
+              className="flex items-center justify-between p-2.5 rounded bg-rw-surface border border-rw-border text-[11px]"
             >
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#0ac8b9]" />
-                <span className="text-[#f0e6d2] font-medium">{ds.name}</span>
+                <span className="w-2 h-2 rounded-full bg-rw-teal" />
+                <span className="text-rw-text font-medium">{ds.name}</span>
               </div>
-              <span className="text-[#7e8e9f] font-mono text-[10px]">{ds.endpoint}</span>
+              <span className="text-rw-muted font-mono text-[10px]">{ds.endpoint}</span>
             </div>
           ))}
         </div>
@@ -714,9 +756,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 }
               }}
               disabled={isSyncingCatalog}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#0a1420] border border-[#1e282d] hover:border-[#0ac8b9] text-[#f0e6d2] hover:text-[#0ac8b9] transition-colors text-xs font-semibold"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-rw-surface border border-rw-border hover:border-rw-teal text-rw-text hover:text-rw-teal transition-colors text-xs font-semibold"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncingCatalog ? "animate-spin text-[#0ac8b9]" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncingCatalog ? "animate-spin text-rw-teal" : ""}`} />
               <span>
                 {isSyncingCatalog
                   ? tl("Syncing global teams & rosters…")
@@ -729,7 +771,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           <button
             onClick={handleClearCache}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#0a1420] border border-[#1e282d] hover:border-[#e84057] text-[#7e8e9f] hover:text-[#e84057] transition-colors text-xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-rw-surface border border-rw-border hover:border-rw-red text-rw-muted hover:text-rw-red transition-colors text-xs"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>{cacheCleared ? tl("Cache cleared!") : tl("Clear cache")}</span>
@@ -738,13 +780,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </section>
 
       {/* 7. Support & About */}
-      <section className="p-4 rounded-lg bg-[#0a1420] border border-[#720e9e]/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <section className="p-4 rounded-lg bg-rw-surface border border-[#720e9e]/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <div className="font-bold text-[#f0e6d2] flex items-center gap-1.5 text-sm">
+          <div className="font-bold text-rw-text flex items-center gap-1.5 text-sm">
             <Heart className="w-4 h-4 text-[#ff4655] fill-current" />
             {tl("Support RiftWise")}
           </div>
-          <div className="text-[11px] text-[#7e8e9f] mt-0.5">
+          <div className="text-[11px] text-rw-muted mt-0.5">
             {tl("RiftWise is 100% free and open-source. Help fund 24/7 broadcast servers and active development.")}
           </div>
         </div>
@@ -758,19 +800,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </section>
 
       {/* Footer */}
-      <footer className="pt-2 text-[11px] text-[#7e8e9f] space-y-1">
+      <footer className="pt-2 text-[11px] text-rw-muted space-y-1">
         <div className="flex items-center justify-between">
           <div>
             {IS_DESKTOP ? `RiftWise Desktop v${APP_VERSION} · Rust & WebView2` : `RiftWise Web v${APP_VERSION}`} · {tl("MIT License")}
           </div>
           <button
             onClick={() => onOpenUrl("https://github.com/drmonocle/riftwise")}
-            className="hover:text-[#c8aa6e] underline"
+            className="hover:text-rw-accent underline"
           >
             {tl("GitHub Repository ↗")}
           </button>
         </div>
-        <div className="text-[10px] text-[#536675]">
+        <div className="text-[10px] text-rw-muted/80">
           {RIOT_LEGAL_NOTICE}
         </div>
       </footer>

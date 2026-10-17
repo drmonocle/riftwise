@@ -80,17 +80,17 @@ export const StoryBullets: React.FC<{ lines: StoryLine[]; spoilerKey: string }> 
     <ul className="text-xs space-y-1.5">
       {lines.map((l) => (
         <li key={l.key} className="flex items-start gap-2 min-w-0">
-          <Sparkles className="w-3.5 h-3.5 text-[#c8aa6e] shrink-0 mt-0.5" />
+          <Sparkles className="w-3.5 h-3.5 text-rw-accent shrink-0 mt-0.5" />
           <span className="min-w-0">
             {l.who && (
               <>
-                <HubLink to={l.who.to} className="text-[#f0e6d2] font-semibold hover:underline">
+                <HubLink to={l.who.to} className="text-rw-text font-semibold hover:underline">
                   {l.who.name}
                 </HubLink>
                 {": "}
               </>
             )}
-            <span className="text-[#9bb3c9]">{l.text}</span>
+            <span className="text-rw-sub">{l.text}</span>
           </span>
         </li>
       ))}
