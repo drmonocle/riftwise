@@ -8,8 +8,8 @@ import type { PlayerGameRow, TeamSeriesRow } from "../../hub/types";
 import { ChampIcon, EventLink, Failed, fmtDate, HubLink, isFresh, Loading, RevealButton, Section, TeamLink, useHidden, useLoad } from "./ui";
 
 const PAGE = 50;
-const btn = "px-2.5 py-1 rounded-lg border border-[#1e282d] hover:border-[#c8aa6e]/60 text-[#c8aa6e] text-xs font-semibold";
-const select = "bg-[#091428] border border-[#1e282d] rounded-lg px-2 py-1 text-xs text-[#f0e6d2]";
+const btn = "px-2.5 py-1 rounded-lg border border-rw-border hover:border-rw-accent/60 text-rw-accent text-xs font-semibold";
+const select = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text";
 
 /** A "Show ..." button that turns into the section once pressed (so the file loads only when wanted). */
 const OnDemand: React.FC<{ title: string; label: string; children: () => React.ReactNode }> = ({ title, label, children }) => {
@@ -36,7 +36,7 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; spoilerKey
   return (
     <div className="space-y-2">
       {hidden && (
-        <div className="flex items-center gap-2 text-[11px] text-[#7e8e9f]">
+        <div className="flex items-center gap-2 text-[11px] text-rw-muted">
           {tl("Results from the last two weeks are hidden.")} <RevealButton onReveal={reveal} small />
         </div>
       )}
@@ -47,7 +47,7 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; spoilerKey
           return (
             <li key={i} className="flex items-center justify-between gap-2 min-w-0">
               <span className="truncate min-w-0">
-                <span className={`font-bold tabular-nums ${hide ? "text-[#7e8e9f]" : won ? "text-[#0ac8b9]" : "text-[#e84057]"}`}>
+                <span className={`font-bold tabular-nums ${hide ? "text-rw-muted" : won ? "text-rw-teal" : "text-rw-red"}`}>
                   {hide ? "?" : `${won ? tc("short result", "W") : tc("short result", "L")} ${r[3]}-${r[4]}`}
                 </span>{" "}
                 {showOpp && (
@@ -55,16 +55,16 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; spoilerKey
                     vs <TeamLink name={r[1]} u={r[2]} />{" "}
                   </>
                 )}
-                {r[9] !== teamName && <span className="text-[#7e8e9f] text-[10px]">({tl("as {name}", { name: r[9] })}) </span>}
-                <span className="text-[#7e8e9f]">
-                  · <EventLink name={r[5]} u={r[6]} className="text-[#7e8e9f] hover:text-[#c8aa6e] hover:underline" />
+                {r[9] !== teamName && <span className="text-rw-muted text-[10px]">({tl("as {name}", { name: r[9] })}) </span>}
+                <span className="text-rw-muted">
+                  · <EventLink name={r[5]} u={r[6]} className="text-rw-muted hover:text-rw-accent hover:underline" />
                   {r[8] ? ` · ${r[8]}` : ""}
                 </span>
               </span>
-              <span className="flex items-center gap-2 shrink-0 text-[#7e8e9f]">
+              <span className="flex items-center gap-2 shrink-0 text-rw-muted">
                 {fmtDate(r[0])}
                 {r[7] && (
-                  <HubLink to={{ kind: "match", slug: r[7] }} className="text-[#0ac8b9] hover:underline">
+                  <HubLink to={{ kind: "match", slug: r[7] }} className="text-rw-teal hover:underline">
                     {tl("Details")}
                   </HubLink>
                 )}
@@ -74,7 +74,7 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; spoilerKey
         })}
       </ul>
       {rows.length > n && (
-        <button type="button" onClick={() => setN((x) => x + PAGE * 4)} className="text-[11px] text-[#0ac8b9] hover:underline">
+        <button type="button" onClick={() => setN((x) => x + PAGE * 4)} className="text-[11px] text-rw-teal hover:underline">
           {tl("Show more ({n} left)", { n: rows.length - n })}
         </button>
       )}
@@ -110,9 +110,9 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
           onChange={(e) => setQ(e.target.value)}
           placeholder={tl("Filter by opponent or tournament…")}
           aria-label={tl("Filter by opponent or tournament…")}
-          className={`${select} flex-1 min-w-[10rem] placeholder-[#7e8e9f]`}
+          className={`${select} flex-1 min-w-[10rem] placeholder-rw-muted`}
         />
-        <span className="text-[11px] text-[#9bb3c9]">{tn("{n} series", "{n} series", rows.length)} · {tl("{w} won", { w: won })}</span>
+        <span className="text-[11px] text-rw-sub">{tn("{n} series", "{n} series", rows.length)} · {tl("{w} won", { w: won })}</span>
       </div>
       <SeriesList rows={rows} teamName={teamName} spoilerKey={`teamseries:${slug}:${year}:${q}`} />
     </div>
@@ -137,10 +137,10 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
   return (
     <Section title={tl("Every series between them")}>
       {rows.length === 0 ? (
-        <p className="text-xs text-[#9bb3c9]">{tl("These two teams have never played each other.")}</p>
+        <p className="text-xs text-rw-sub">{tl("These two teams have never played each other.")}</p>
       ) : (
         <>
-          <p className="text-sm font-bold text-[#f0e6d2]">
+          <p className="text-sm font-bold text-rw-text">
             {hidden ? tn("{n} series", "{n} series", rows.length) : `${aName} ${wa} – ${rows.length - wa} ${bName}`}
           </p>
           <SeriesList rows={rows} teamName={aName} spoilerKey={`h2h:${a}:${b}`} showOpp={false} />
@@ -191,7 +191,7 @@ const PlayerGamesBody: React.FC<{ slug: string }> = ({ slug }) => {
             </option>
           ))}
         </select>
-        <span className="text-[11px] text-[#9bb3c9]">
+        <span className="text-[11px] text-rw-sub">
           {tn("{n} game", "{n} games", rows.length)}
           {!hidden && rows.length > 0 && <> · {tl("{pct} win rate", { pct: `${Math.round((won / rows.length) * 100)}%` })}</>}
           {rows.length > 0 && <> · {tl("KDA {n}", { n: ((k + a) / Math.max(d, 1)).toFixed(2) })}</>}
@@ -204,27 +204,27 @@ const PlayerGamesBody: React.FC<{ slug: string }> = ({ slug }) => {
           return (
             <li key={i} className="flex items-center justify-between gap-2 min-w-0">
               <span className="flex items-center gap-1.5 min-w-0">
-                <span className={`w-3.5 shrink-0 font-bold ${hide ? "text-[#7e8e9f]" : r[6] ? "text-[#0ac8b9]" : "text-[#e84057]"}`}>
+                <span className={`w-3.5 shrink-0 font-bold ${hide ? "text-rw-muted" : r[6] ? "text-rw-teal" : "text-rw-red"}`}>
                   {hide ? "?" : r[6] ? tc("short result", "W") : tc("short result", "L")}
                 </span>
                 <ChampIcon name={r[2]} size={18} />
                 <span className="truncate min-w-0">
-                  <span className="text-[#f0e6d2] tabular-nums">
+                  <span className="text-rw-text tabular-nums">
                     {r[3]}/{r[4]}/{r[5]}
                   </span>{" "}
-                  <span className="text-[#9bb3c9]">
+                  <span className="text-rw-sub">
                     vs {r[8]}
                     {r[10] ? ` · ${roleName(r[10])}` : ""}
                   </span>{" "}
-                  <span className="text-[#7e8e9f]">
-                    · <EventLink name={r[9]} u={r[11]} className="text-[#7e8e9f] hover:text-[#c8aa6e] hover:underline" />
+                  <span className="text-rw-muted">
+                    · <EventLink name={r[9]} u={r[11]} className="text-rw-muted hover:text-rw-accent hover:underline" />
                   </span>
                 </span>
               </span>
-              <span className="flex items-center gap-2 shrink-0 text-[#7e8e9f]">
+              <span className="flex items-center gap-2 shrink-0 text-rw-muted">
                 {fmtDate(r[0])}
                 {r[1] && (
-                  <HubLink to={{ kind: "match", slug: r[1] }} className="text-[#0ac8b9] hover:underline">
+                  <HubLink to={{ kind: "match", slug: r[1] }} className="text-rw-teal hover:underline">
                     {tl("Details")}
                   </HubLink>
                 )}
@@ -234,7 +234,7 @@ const PlayerGamesBody: React.FC<{ slug: string }> = ({ slug }) => {
         })}
       </ul>
       {rows.length > n && (
-        <button type="button" onClick={() => setN((x) => x + PAGE * 4)} className="text-[11px] text-[#0ac8b9] hover:underline">
+        <button type="button" onClick={() => setN((x) => x + PAGE * 4)} className="text-[11px] text-rw-teal hover:underline">
           {tl("Show more ({n} left)", { n: rows.length - n })}
         </button>
       )}

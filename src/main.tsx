@@ -5,6 +5,12 @@ import "./App.css";
 import { IS_WEB } from "./platform";
 import { loadSettings } from "./api";
 import { initI18n } from "./i18n";
+import { installWheelSideScroll } from "./wheelScroll";
+import { applyTheme } from "./theme";
+
+// Colours first, so the page never flashes the wrong theme
+applyTheme(loadSettings().theme);
+installWheelSideScroll();
 
 // On lolworlds.com the site-wide service worker serves every request cache-first, which would
 // show stale live scores. /riftwise/sw.js is a pass-through worker whose narrower scope wins.

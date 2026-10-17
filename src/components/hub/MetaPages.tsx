@@ -34,7 +34,7 @@ export const PatchesPanel: React.FC = () => {
     <Page state={state}>
       {(rows: PatchRow[]) => (
         <div className="space-y-3">
-          <p className="text-[11px] text-[#7e8e9f]">
+          <p className="text-[11px] text-rw-muted">
             {tl(
               "The most picked or banned champions on every patch, newest first (all pro leagues). Percent = presence: picked or banned in that share of games.",
             )}
@@ -42,10 +42,10 @@ export const PatchesPanel: React.FC = () => {
           {rows.slice(0, n).map((p) => (
             <div key={p.p} className={`${card} p-3`}>
               <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2">
-                <h3 className="text-sm font-bold text-[#f0e6d2]">
+                <h3 className="text-sm font-bold text-rw-text">
                   {tl("Patch {patch}", { patch: p.p })}
                 </h3>
-                <span className="text-[11px] text-[#7e8e9f]">
+                <span className="text-[11px] text-rw-muted">
                   {fmtDate(p.from)} – {fmtDate(p.to)} ·{" "}
                   {tn("{n} game", "{n} games", p.g)}
                 </span>
@@ -58,7 +58,7 @@ export const PatchesPanel: React.FC = () => {
                   >
                     <ChampLink name={c} size={18} />
                     <span
-                      className="text-[#9bb3c9] tabular-nums shrink-0"
+                      className="text-rw-sub tabular-nums shrink-0"
                       title={tl("{p} picks · {b} bans · {wr}", {
                         p: pk,
                         b,
@@ -71,7 +71,7 @@ export const PatchesPanel: React.FC = () => {
                 ))}
               </div>
               {p.prev && ((p.up?.length || 0) > 0 || (p.down?.length || 0) > 0) && (
-                <div className="grid sm:grid-cols-2 gap-x-4 gap-y-2 mt-2 pt-2 border-t border-[#1e282d]">
+                <div className="grid sm:grid-cols-2 gap-x-4 gap-y-2 mt-2 pt-2 border-t border-rw-border">
                   <Movers title={tl("Rising since {patch}", { patch: p.prev })} list={p.up || []} up />
                   <Movers title={tl("Falling since {patch}", { patch: p.prev })} list={p.down || []} />
                 </div>
@@ -82,7 +82,7 @@ export const PatchesPanel: React.FC = () => {
             <button
               type="button"
               onClick={() => setN((x) => x + 48)}
-              className="text-xs text-[#0ac8b9] hover:underline"
+              className="text-xs text-rw-teal hover:underline"
             >
               {tl("Show more ({n} left)", { n: rows.length - n })}
             </button>
@@ -97,14 +97,14 @@ export const PatchesPanel: React.FC = () => {
 const Movers: React.FC<{ title: string; list: PatchMove[]; up?: boolean }> = ({ title, list, up }) =>
   list.length ? (
     <div className="min-w-0">
-      <div className={`text-[10px] uppercase tracking-wider font-bold mb-1 ${up ? "text-[#0ac8b9]" : "text-[#e84057]"}`}>{title}</div>
+      <div className={`text-[10px] uppercase tracking-wider font-bold mb-1 ${up ? "text-rw-teal" : "text-rw-red"}`}>{title}</div>
       <ul className="text-xs space-y-1">
         {list.map(([c, now, was, w, pk]) => (
           <li key={c} className="flex items-center justify-between gap-2 min-w-0">
             <ChampLink name={c} size={18} />
-            <span className="tabular-nums shrink-0 text-[#9bb3c9]" title={tl("Presence: picked or banned in this share of games")}>
-              {Math.round(was * 100)}% → <span className="text-[#f0e6d2] font-semibold">{Math.round(now * 100)}%</span>
-              {pk >= 5 && <span className="text-[#7e8e9f]"> · {tl("{pct} won", { pct: `${Math.round((w / pk) * 100)}%` })}</span>}
+            <span className="tabular-nums shrink-0 text-rw-sub" title={tl("Presence: picked or banned in this share of games")}>
+              {Math.round(was * 100)}% → <span className="text-rw-text font-semibold">{Math.round(now * 100)}%</span>
+              {pk >= 5 && <span className="text-rw-muted"> · {tl("{pct} won", { pct: `${Math.round((w / pk) * 100)}%` })}</span>}
             </span>
           </li>
         ))}
@@ -116,17 +116,17 @@ const Movers: React.FC<{ title: string; list: PatchMove[]; up?: boolean }> = ({ 
 
 /** NA LCS (2013–2018) → LCS (2019–2024) → LTA North (2025) → LCS (2026–): each step links to its league. */
 const HistoryChain: React.FC<{ steps: LeagueStep[]; current: string; small?: boolean }> = ({ steps, current, small }) => (
-  <div className={`flex flex-wrap items-center gap-x-1 gap-y-0.5 ${small ? "text-[10px] mt-0.5" : "text-xs"} text-[#7e8e9f]`}>
+  <div className={`flex flex-wrap items-center gap-x-1 gap-y-0.5 ${small ? "text-[10px] mt-0.5" : "text-xs"} text-rw-muted`}>
     {steps.map((st, i) => (
       <React.Fragment key={`${st.l}-${i}`}>
         {i > 0 && <span aria-hidden="true">→</span>}
         <span className="whitespace-nowrap">
           {st.u && st.u !== current ? (
-            <HubLink to={{ kind: "league", slug: st.u }} className="hover:text-[#c8aa6e] hover:underline">
+            <HubLink to={{ kind: "league", slug: st.u }} className="hover:text-rw-accent hover:underline">
               {st.s || st.l}
             </HubLink>
           ) : (
-            <span className={st.u === current ? "text-[#f0e6d2] font-semibold" : ""}>{st.s || st.l}</span>
+            <span className={st.u === current ? "text-rw-text font-semibold" : ""}>{st.s || st.l}</span>
           )}
           {st.y && <span> ({st.y})</span>}
         </span>
@@ -156,13 +156,13 @@ export const LeaguesPanel: React.FC = () => {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <div className="flex rounded-lg border border-[#1e282d] overflow-hidden">
+        <div className="flex rounded-lg border border-rw-border overflow-hidden">
           {(["current", "past", "all"] as const).map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => setScope(s)}
-              className={`px-2.5 py-1.5 ${scope === s ? "bg-[#c8aa6e] text-[#091428] font-bold" : "text-[#9bb3c9] hover:text-[#f0e6d2]"}`}
+              className={`px-2.5 py-1.5 ${scope === s ? "bg-rw-accent text-rw-bg font-bold" : "text-rw-sub hover:text-rw-text"}`}
             >
               {labels[s]}
             </button>
@@ -173,7 +173,7 @@ export const LeaguesPanel: React.FC = () => {
           onChange={(e) => setQ(e.target.value)}
           placeholder={tl("Filter by name or region…")}
           aria-label={tl("Filter by name or region…")}
-          className="bg-[#091428] border border-[#1e282d] rounded-lg px-2.5 py-1.5 text-[#f0e6d2] placeholder-[#7e8e9f] flex-1 min-w-[10rem]"
+          className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1.5 text-rw-text placeholder-rw-muted flex-1 min-w-[10rem]"
         />
       </div>
       <Page state={state}>{(rows: LeagueRow[]) => <LeagueLists rows={rows} scope={scope} q={q} />}</Page>
@@ -198,7 +198,7 @@ const LeagueLists: React.FC<{ rows: LeagueRow[]; scope: LeagueScope; q: string }
       { key: "other", title: tl("Other leagues this year"), rows: now.filter((l) => !l.pr && !intl(l)), limit: 40 },
     ].filter((g) => g.rows.length);
   }, [rows, scope, q]);
-  if (!groups.length) return <p className="text-xs text-[#9bb3c9] py-4 text-center">{tl("No leagues match.")}</p>;
+  if (!groups.length) return <p className="text-xs text-rw-sub py-4 text-center">{tl("No leagues match.")}</p>;
   return (
     <div className="space-y-3">
       {groups.map((g) => (
@@ -213,7 +213,7 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
   const list = n ? rows.slice(0, n) : rows;
   return (
     <div className={`${card} overflow-x-auto space-y-2`}>
-      {title && <h3 className="text-xs font-bold uppercase tracking-wider text-[#c8aa6e]">{title}</h3>}
+      {title && <h3 className="text-xs font-bold uppercase tracking-wider text-rw-accent">{title}</h3>}
       <table className="w-full text-xs">
         <thead>
           <tr>
@@ -226,26 +226,26 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
         </thead>
         <tbody>
           {list.map((l) => (
-            <tr key={l.u} className="border-t border-[#1e282d]">
+            <tr key={l.u} className="border-t border-rw-border">
               <td className={`${td} max-w-[22rem]`}>
                 <div className="flex items-baseline gap-2 min-w-0">
-                  {l.s && <span className="shrink-0 font-bold text-[#c8aa6e]">{l.s}</span>}
+                  {l.s && <span className="shrink-0 font-bold text-rw-accent">{l.s}</span>}
                   <HubLink to={{ kind: "league", slug: l.u }} className="truncate">
                     {l.l}
                   </HubLink>
                 </div>
                 {l.h && l.h.length > 1 && <HistoryChain steps={l.h} current={l.u} small />}
               </td>
-              <td className={`${td} text-[#9bb3c9]`}>{l.r ? regionName(l.r, l.r) : ""}</td>
-              <td className={`${td} text-[#7e8e9f]`}>{l.from && l.to ? (l.from === l.to ? l.from : `${l.from}–${l.to}`) : ""}</td>
-              <td className={`${td} text-[#9bb3c9]`}>{l.n}</td>
-              <td className={`${td} text-[#7e8e9f]`}>{fmtNum(l.g)}</td>
+              <td className={`${td} text-rw-sub`}>{l.r ? regionName(l.r, l.r) : ""}</td>
+              <td className={`${td} text-rw-muted`}>{l.from && l.to ? (l.from === l.to ? l.from : `${l.from}–${l.to}`) : ""}</td>
+              <td className={`${td} text-rw-sub`}>{l.n}</td>
+              <td className={`${td} text-rw-muted`}>{fmtNum(l.g)}</td>
             </tr>
           ))}
         </tbody>
       </table>
       {n > 0 && rows.length > n && (
-        <button type="button" onClick={() => setN(0)} className="text-xs text-[#0ac8b9] hover:underline">
+        <button type="button" onClick={() => setN(0)} className="text-xs text-rw-teal hover:underline">
           {tl("Show more ({n} left)", { n: rows.length - n })}
         </button>
       )}
@@ -264,11 +264,11 @@ const LeagueView: React.FC<{ l: HubLeague }> = ({ l }) => {
   return (
     <div className="space-y-3">
       <div className={card}>
-        <h2 className="text-lg font-bold text-[#f0e6d2]">
-          {l.s && <span className="text-[#c8aa6e] mr-2">{l.s}</span>}
+        <h2 className="text-lg font-bold text-rw-text">
+          {l.s && <span className="text-rw-accent mr-2">{l.s}</span>}
           {l.l}
         </h2>
-        <p className="text-[11px] text-[#9bb3c9]">
+        <p className="text-[11px] text-rw-sub">
           {[
             l.region ? regionName(l.region, l.region) : null,
             tn("{n} tournament", "{n} tournaments", l.events.length),
@@ -279,7 +279,7 @@ const LeagueView: React.FC<{ l: HubLeague }> = ({ l }) => {
         </p>
         {l.history && l.history.length > 1 && (
           <div className="mt-2 space-y-0.5">
-            <div className="text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f]">{tl("History")}</div>
+            <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted">{tl("History")}</div>
             <HistoryChain steps={l.history} current={l.u} />
           </div>
         )}
@@ -292,11 +292,11 @@ const LeagueView: React.FC<{ l: HubLeague }> = ({ l }) => {
                 <span className="truncate">
                   <TeamLink name={t.t} u={t.u} />
                 </span>
-                <span className="text-[#c8aa6e] font-bold shrink-0">{t.n}</span>
+                <span className="text-rw-accent font-bold shrink-0">{t.n}</span>
               </li>
             ))}
           </ul>
-          <p className="text-[10px] text-[#7e8e9f]">
+          <p className="text-[10px] text-rw-muted">
             {tl(
               "Finals won (playoffs, championships and cups). Teams that changed names count as one.",
             )}
@@ -330,12 +330,12 @@ const LeagueEventRow: React.FC<{ e: HubLeague["events"][number] }> = ({
 }) => {
   const [hidden, reveal] = useHidden(`event:${e.u}`, e.en);
   return (
-    <tr className="border-t border-[#1e282d]">
+    <tr className="border-t border-rw-border">
       <td className={`${td} max-w-[12rem] sm:max-w-[16rem] truncate`}>
         <EventLink name={e.n} u={e.u} />
       </td>
       <td
-        className={`${td} text-[#7e8e9f] hidden sm:table-cell whitespace-nowrap`}
+        className={`${td} text-rw-muted hidden sm:table-cell whitespace-nowrap`}
       >
         {fmtDate(e.st, false)}
         {e.en && e.en !== e.st ? ` – ${fmtDate(e.en)}` : ""}
@@ -346,7 +346,7 @@ const LeagueEventRow: React.FC<{ e: HubLeague["events"][number] }> = ({
             <RevealButton onReveal={reveal} small />
           ) : (
             <span className="flex items-center gap-1">
-              <Crown className="w-3 h-3 text-[#c8aa6e] shrink-0" />
+              <Crown className="w-3 h-3 text-rw-accent shrink-0" />
               <TeamLink name={e.w} u={e.wu} />
             </span>
           )

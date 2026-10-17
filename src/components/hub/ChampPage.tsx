@@ -54,8 +54,8 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
       <div className={`${card} flex gap-3 items-start`}>
         <ChampIcon name={c.name} size={56} />
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-bold text-[#f0e6d2]">{champName(c.name)}</h2>
-          <p className="text-[11px] text-[#9bb3c9]">
+          <h2 className="text-lg font-bold text-rw-text">{champName(c.name)}</h2>
+          <p className="text-[11px] text-rw-sub">
             {c.roles
               .filter((r) => r.p / totalRoles >= 0.05)
               .map((r) => `${roleName(r.r)} ${Math.round((r.p / totalRoles) * 100)}%`)
@@ -74,38 +74,38 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
 
       {c.builds && c.builds.g > 0 && (
         <Section title={tl("Pro builds in the last 12 months")}>
-          <p className="text-[11px] text-[#7e8e9f]">
+          <p className="text-[11px] text-rw-muted">
             {tl("From {n} pro games since {date}. Share of games and win rate.", { n: fmtNum(c.builds.g), date: fmtDate(c.builds.since) })}
           </p>
           <div className="grid gap-3 md:grid-cols-3">
             <div>
-              <div className="text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f] mb-1">{tl("Items")}</div>
+              <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">{tl("Items")}</div>
               <ul className="space-y-1 text-xs">
                 {items.map(([it, g, w]) => (
                   <li key={it} className="flex items-center gap-2 min-w-0">
                     <ItemIcon name={it} size={22} />
-                    <span className="truncate flex-1 text-[#f0e6d2]">{it}</span>
-                    <span className="text-[#9bb3c9] tabular-nums shrink-0">{pctOf(g, c.builds!.g)}</span>
-                    <span className="text-[#7e8e9f] tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
+                    <span className="truncate flex-1 text-rw-text">{it}</span>
+                    <span className="text-rw-sub tabular-nums shrink-0">{pctOf(g, c.builds!.g)}</span>
+                    <span className="text-rw-muted tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
                   </li>
                 ))}
               </ul>
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f] mb-1">{tl("Keystones")}</div>
+              <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">{tl("Keystones")}</div>
               <ul className="space-y-1 text-xs">
                 {c.builds.keys.map(([k, g, w]) => (
                   <li key={k} className="flex items-center gap-2 min-w-0">
                     <RuneIcon name={k} size={22} />
-                    <span className="truncate flex-1 text-[#f0e6d2]">{k}</span>
-                    <span className="text-[#9bb3c9] tabular-nums shrink-0">{pctOf(g, c.builds!.g)}</span>
-                    <span className="text-[#7e8e9f] tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
+                    <span className="truncate flex-1 text-rw-text">{k}</span>
+                    <span className="text-rw-sub tabular-nums shrink-0">{pctOf(g, c.builds!.g)}</span>
+                    <span className="text-rw-muted tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
                   </li>
                 ))}
               </ul>
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f] mb-1">{tl("Summoner spells")}</div>
+              <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">{tl("Summoner spells")}</div>
               <ul className="space-y-1 text-xs">
                 {c.builds.spells.map(([sp, g, w]) => (
                   <li key={sp} className="flex items-center gap-2 min-w-0">
@@ -114,9 +114,9 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                         <SpellIcon key={x} name={x} size={20} />
                       ))}
                     </span>
-                    <span className="truncate flex-1 text-[#f0e6d2]">{sp}</span>
-                    <span className="text-[#9bb3c9] tabular-nums shrink-0">{pctOf(g, c.builds!.g)}</span>
-                    <span className="text-[#7e8e9f] tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
+                    <span className="truncate flex-1 text-rw-text">{sp}</span>
+                    <span className="text-rw-sub tabular-nums shrink-0">{pctOf(g, c.builds!.g)}</span>
+                    <span className="text-rw-muted tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
                   </li>
                 ))}
               </ul>
@@ -132,18 +132,18 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               const pres = (p.pk + p.b) / Math.max(p.g, 1);
               return (
                 <div key={p.p} className="grid grid-cols-[3.5rem_1fr_auto] items-center gap-2 text-xs">
-                  <span className="text-[#f0e6d2] font-semibold">{p.p}</span>
-                  <div className="h-2.5 bg-[#091428] rounded overflow-hidden">
-                    <div className="h-full bg-[#c8aa6e]/70" style={{ width: `${(pres / maxPatch) * 100}%` }} />
+                  <span className="text-rw-text font-semibold">{p.p}</span>
+                  <div className="h-2.5 bg-rw-bg rounded overflow-hidden">
+                    <div className="h-full bg-rw-accent/70" style={{ width: `${(pres / maxPatch) * 100}%` }} />
                   </div>
-                  <span className="text-[#9bb3c9] tabular-nums text-right w-56 truncate">
+                  <span className="text-rw-sub tabular-nums text-right w-56 truncate">
                     {tl("{pres} presence · {p} picks · {wr}", { pres: `${Math.round(pres * 100)}%`, p: p.pk, wr: p.pk ? pctOf(p.w, p.pk) : "–" })}
                   </span>
                 </div>
               );
             })}
           </div>
-          <p className="text-[10px] text-[#7e8e9f]">{tl("Presence = picked or banned in that share of games (all leagues).")}</p>
+          <p className="text-[10px] text-rw-muted">{tl("Presence = picked or banned in that share of games (all leagues).")}</p>
         </Section>
       )}
 
@@ -151,20 +151,20 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         <div className="space-y-1">
           {c.years.map((y) => (
             <div key={y.y} className="grid grid-cols-[3rem_1fr_auto] items-center gap-2 text-xs">
-              <span className="text-[#f0e6d2] font-semibold">{y.y}</span>
-              <div className="h-3 bg-[#091428] rounded overflow-hidden flex" title={`${y.p} / ${y.b}`}>
-                <div className="bg-[#0ac8b9]/70" style={{ width: `${(y.p / maxYear) * 100}%` }} />
-                <div className="bg-[#e84057]/50" style={{ width: `${(y.b / maxYear) * 100}%` }} />
+              <span className="text-rw-text font-semibold">{y.y}</span>
+              <div className="h-3 bg-rw-bg rounded overflow-hidden flex" title={`${y.p} / ${y.b}`}>
+                <div className="bg-rw-teal/70" style={{ width: `${(y.p / maxYear) * 100}%` }} />
+                <div className="bg-rw-red/50" style={{ width: `${(y.b / maxYear) * 100}%` }} />
               </div>
-              <span className="text-[#9bb3c9] tabular-nums text-right w-44 truncate">
+              <span className="text-rw-sub tabular-nums text-right w-44 truncate">
                 {tl("{p} picks · {b} bans · {wr}", { p: fmtNum(y.p), b: fmtNum(y.b), wr: y.p ? winRate(y.w, y.p) : "–" })}
               </span>
             </div>
           ))}
         </div>
-        <p className="text-[10px] text-[#7e8e9f]">
-          <span className="inline-block w-2 h-2 bg-[#0ac8b9]/70 mr-1" />
-          {tl("Picks")} <span className="inline-block w-2 h-2 bg-[#e84057]/50 ml-2 mr-1" />
+        <p className="text-[10px] text-rw-muted">
+          <span className="inline-block w-2 h-2 bg-rw-teal/70 mr-1" />
+          {tl("Picks")} <span className="inline-block w-2 h-2 bg-rw-red/50 ml-2 mr-1" />
           {tl("Bans")}
         </p>
       </Section>
@@ -181,7 +181,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                       type="button"
                       onClick={() => setMuRole(r)}
                       className={`px-2 py-0.5 rounded text-[11px] border ${
-                        r === muRole ? "bg-[#c8aa6e] text-[#091428] font-bold border-[#c8aa6e]" : "border-[#1e282d] text-[#9bb3c9]"
+                        r === muRole ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub"
                       }`}
                     >
                       {roleName(r)}
@@ -199,17 +199,17 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 </thead>
                 <tbody>
                   {(c.matchups?.[muRole] || []).slice(0, 15).map(([oc, g, w]) => (
-                    <tr key={oc} className="border-t border-[#1e282d]">
+                    <tr key={oc} className="border-t border-rw-border">
                       <td className={`${td} max-w-[10rem]`}>
                         <ChampLink name={oc} size={16} />
                       </td>
-                      <td className={`${td} text-[#9bb3c9]`}>{g}</td>
-                      <td className={`${td} ${w / g >= 0.5 ? "text-[#0ac8b9]" : "text-[#e84057]"}`}>{pctOf(w, g)}</td>
+                      <td className={`${td} text-rw-sub`}>{g}</td>
+                      <td className={`${td} ${w / g >= 0.5 ? "text-rw-teal" : "text-rw-red"}`}>{pctOf(w, g)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <p className="text-[10px] text-[#7e8e9f]">{tl("Against the champion in the same role, all pro games, 3+ games.")}</p>
+              <p className="text-[10px] text-rw-muted">{tl("Against the champion in the same role, all pro games, 3+ games.")}</p>
             </Section>
           )}
           {showDuos && (
@@ -224,12 +224,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 </thead>
                 <tbody>
                   {(c.duos || []).slice(0, 15).map(([pc, g, w]) => (
-                    <tr key={pc} className="border-t border-[#1e282d]">
+                    <tr key={pc} className="border-t border-rw-border">
                       <td className={`${td} max-w-[10rem]`}>
                         <ChampLink name={pc} size={16} />
                       </td>
-                      <td className={`${td} text-[#9bb3c9]`}>{g}</td>
-                      <td className={`${td} ${w / g >= 0.5 ? "text-[#0ac8b9]" : "text-[#e84057]"}`}>{pctOf(w, g)}</td>
+                      <td className={`${td} text-rw-sub`}>{g}</td>
+                      <td className={`${td} ${w / g >= 0.5 ? "text-rw-teal" : "text-rw-red"}`}>{pctOf(w, g)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -252,13 +252,13 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
             </thead>
             <tbody>
               {c.players.slice(0, 25).map((p) => (
-                <tr key={p.n + p.u} className="border-t border-[#1e282d]">
+                <tr key={p.n + p.u} className="border-t border-rw-border">
                   <td className={td}>
                     <PlayerLink name={p.n} u={p.u} />
                   </td>
-                  <td className={`${td} text-[#9bb3c9]`}>{p.g}</td>
-                  <td className={`${td} text-[#9bb3c9]`}>{winRate(p.w, p.g)}</td>
-                  <td className={`${td} text-[#9bb3c9]`}>{p.kda}</td>
+                  <td className={`${td} text-rw-sub`}>{p.g}</td>
+                  <td className={`${td} text-rw-sub`}>{winRate(p.w, p.g)}</td>
+                  <td className={`${td} text-rw-sub`}>{p.kda}</td>
                 </tr>
               ))}
             </tbody>
@@ -266,20 +266,20 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         </Section>
         <Section title={tl("Latest pro games")} right={recentHidden ? <RevealButton onReveal={revealRecent} small /> : undefined}>
           {recentHidden ? (
-            <p className="text-[11px] text-[#7e8e9f] italic">{tl("Hidden while spoiler mode is on.")}</p>
+            <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
           ) : (
             <ul className="text-xs space-y-2">
               {c.recent.map((r, i) => (
                 <li key={i} className="min-w-0">
                   <div className="flex items-center justify-between gap-2 min-w-0">
                     <span className="truncate min-w-0">
-                      <span className={`font-bold mr-1 ${r.win ? "text-[#0ac8b9]" : "text-[#e84057]"}`}>
+                      <span className={`font-bold mr-1 ${r.win ? "text-rw-teal" : "text-rw-red"}`}>
                         {r.win ? tc("short result", "W") : tc("short result", "L")}
                       </span>
-                      <PlayerLink name={r.n} u={r.u} /> <span className="text-[#9bb3c9] tabular-nums">{r.k}/{r.d}/{r.a}</span>{" "}
+                      <PlayerLink name={r.n} u={r.u} /> <span className="text-rw-sub tabular-nums">{r.k}/{r.d}/{r.a}</span>{" "}
                       {r.g ? <HubLink to={{ kind: "match", slug: r.g }}>vs {r.opp}</HubLink> : <span>vs {r.opp}</span>}
                     </span>
-                    <span className="text-[#7e8e9f] shrink-0">{fmtDate(r.date, false)}</span>
+                    <span className="text-rw-muted shrink-0">{fmtDate(r.date, false)}</span>
                   </div>
                   {r.it && r.it.length > 0 && (
                     <div className="flex items-center gap-0.5 mt-0.5">
@@ -295,7 +295,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                       ))}
                     </div>
                   )}
-                  <div className="text-[10px] text-[#7e8e9f] truncate">{r.en}</div>
+                  <div className="text-[10px] text-rw-muted truncate">{r.en}</div>
                 </li>
               ))}
             </ul>

@@ -44,7 +44,7 @@ export const ShareMatchButton: React.FC<{ match: Match; className?: string }> = 
       aria-label={label}
       title={label}
       className={`p-1 rounded transition-colors ${
-        copied ? "text-[#0ac8b9]" : "text-[#7e8e9f] hover:text-[#c8aa6e] hover:bg-[#1e282d]"
+        copied ? "text-rw-teal" : "text-rw-muted hover:text-rw-accent hover:bg-rw-border"
       } ${className}`}
     >
       {copied ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}

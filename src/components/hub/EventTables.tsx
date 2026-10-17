@@ -22,7 +22,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
   const cols: Column<EventPlayer>[] = [
     { key: "n", label: tl("Player"), value: (p) => p.n.toLowerCase(), render: (p) => <PlayerLink name={p.n} u={p.u} /> },
     { key: "t", label: tl("Team"), value: (p) => p.t.toLowerCase(), render: (p) => <span className="max-w-[8rem] truncate inline-block align-bottom"><TeamLink name={p.t} u={p.tu} /></span> },
-    { key: "r", label: tl("Role"), value: (p) => ROLES.indexOf(p.r), render: (p) => <span className="text-[#7e8e9f]">{roleName(p.r)}</span> },
+    { key: "r", label: tl("Role"), value: (p) => ROLES.indexOf(p.r), render: (p) => <span className="text-rw-muted">{roleName(p.r)}</span> },
     { key: "g", label: tl("Games"), value: (p) => p.g },
     { key: "wr", label: tl("Win %"), value: (p) => per(p.w, p.g, 3), render: (p) => pct(per(p.w, p.g, 3)) },
     { key: "kda", label: tl("KDA"), value: (p) => per(p.k + p.a, Math.max(p.d, 1), 2) },
@@ -46,7 +46,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
           {p.c.map((c) => (
             <ChampIcon key={c} name={c} size={16} />
           ))}
-          {p.nc > p.c.length && <span className="text-[10px] text-[#7e8e9f] ml-0.5">+{p.nc - p.c.length}</span>}
+          {p.nc > p.c.length && <span className="text-[10px] text-rw-muted ml-0.5">+{p.nc - p.c.length}</span>}
         </span>
       ),
     },
@@ -60,20 +60,20 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
             key={r}
             type="button"
             onClick={() => setRole(r)}
-            className={`px-2 py-1 rounded border ${role === r ? "bg-[#c8aa6e] text-[#091428] font-bold border-[#c8aa6e]" : "border-[#1e282d] text-[#9bb3c9] hover:text-[#f0e6d2]"}`}
+            className={`px-2 py-1 rounded border ${role === r ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"}`}
           >
             {r === "All" ? tl("All roles") : roleName(r)}
           </button>
         ))}
         {maxG >= 3 && (
-          <label className="flex items-center gap-1 ml-auto text-[#9bb3c9] cursor-pointer">
+          <label className="flex items-center gap-1 ml-auto text-rw-sub cursor-pointer">
             <input type="checkbox" checked={regular} onChange={(ev) => setRegular(ev.target.checked)} />
             {tl("Only players with {n}+ games", { n: minG })}
           </label>
         )}
       </div>
       <SortTable rows={rows} columns={cols} initial={{ key: "kda", desc: true }} rowKey={(p, i) => `${p.u || p.n}-${p.t}-${i}`} copyName={`${e.u}-players`} />
-      <p className="text-[10px] text-[#7e8e9f]">{tl("Click a column to sort. K / D / A are per game; KP = kill participation.")}</p>
+      <p className="text-[10px] text-rw-muted">{tl("Click a column to sort. K / D / A are per game; KP = kill participation.")}</p>
     </Section>
   );
 };
@@ -97,7 +97,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
       value: (t) => per(t.gd, t.min, 0),
       render: (t) => {
         const v = per(t.gd, t.min, 0) ?? 0;
-        return <span className={v >= 0 ? "text-[#0ac8b9]" : "text-[#e84057]"}>{`${v >= 0 ? "+" : ""}${v}`}</span>;
+        return <span className={v >= 0 ? "text-rw-teal" : "text-rw-red"}>{`${v >= 0 ? "+" : ""}${v}`}</span>;
       },
     },
     { key: "blue", label: tl("Blue%"), title: tl("Share of games on blue side"), value: (t) => (t.blue != null ? per(t.blue, t.g, 3) : null), render: (t) => (t.blue != null ? pct(per(t.blue, t.g, 3)) : "–") },
@@ -108,7 +108,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
       value: (t) => per(t.gd, t.g, 0),
       render: (t) => {
         const v = per(t.gd, t.g, 0) ?? 0;
-        return <span className={v >= 0 ? "text-[#0ac8b9]" : "text-[#e84057]"}>{`${v >= 0 ? "+" : ""}${fmtNum(v)}`}</span>;
+        return <span className={v >= 0 ? "text-rw-teal" : "text-rw-red"}>{`${v >= 0 ? "+" : ""}${fmtNum(v)}`}</span>;
       },
     },
     { key: "drag", label: tl("Dragons"), title: tl("Dragons per game"), value: (t) => per(t.drag, t.g, 2) },
@@ -126,7 +126,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
   return (
     <Section title={tl("Team stats")} share={`${e.u}-teams`}>
       <SortTable rows={teams} columns={cols} initial={{ key: "wr", desc: true }} rowKey={(t, i) => `${t.t}-${i}`} copyName={`${e.u}-teams`} />
-      <p className="text-[10px] text-[#7e8e9f]">{tl("Per game, games with a full scoreboard only.")}</p>
+      <p className="text-[10px] text-rw-muted">{tl("Per game, games with a full scoreboard only.")}</p>
     </Section>
   );
 };

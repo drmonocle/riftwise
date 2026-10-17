@@ -10,8 +10,8 @@ import { prettySlug } from "../../hub/data";
 import { IS_WEB } from "../../platform";
 import { CaptureFooter, ShareButtons } from "./ShareImage";
 
-export const card = "bg-[#0a1420] border border-[#1e282d] rounded-xl p-4";
-export const th = "text-left font-semibold text-[#7e8e9f] py-1.5 pr-3 whitespace-nowrap";
+export const card = "bg-rw-surface border border-rw-border rounded-xl p-4";
+export const th = "text-left font-semibold text-rw-muted py-1.5 pr-3 whitespace-nowrap";
 export const td = "py-1.5 pr-3 whitespace-nowrap";
 
 export const fmtNum = (n: number) => n.toLocaleString(locale());
@@ -52,23 +52,23 @@ export function useLoad<T>(fn: () => Promise<T>, deps: React.DependencyList): Lo
 }
 
 export const Loading: React.FC = () => (
-  <div className="py-10 text-center text-xs text-[#9bb3c9]" role="status">
-    <Clock className="w-4 h-4 inline mr-1.5 text-[#0ac8b9] animate-pulse" />
+  <div className="py-10 text-center text-xs text-rw-sub" role="status">
+    <Clock className="w-4 h-4 inline mr-1.5 text-rw-teal animate-pulse" />
     {tl("Loading…")}
   </div>
 );
 
 export const Failed: React.FC<{ missing?: boolean }> = ({ missing }) =>
   missing ? (
-    <div className="py-10 text-center text-xs text-[#9bb3c9] space-y-2">
-      <SearchX className="w-5 h-5 mx-auto text-[#7e8e9f]" />
+    <div className="py-10 text-center text-xs text-rw-sub space-y-2">
+      <SearchX className="w-5 h-5 mx-auto text-rw-muted" />
       <p>{tl("We couldn't find that page. It may have been renamed: try the search above.")}</p>
-      <HubLink to={{ kind: "home" }} className="text-[#0ac8b9] hover:underline">
+      <HubLink to={{ kind: "home" }} className="text-rw-teal hover:underline">
         {tl("Go to the stats home page")}
       </HubLink>
     </div>
   ) : (
-    <div className="py-10 text-center text-xs text-[#e84057]">
+    <div className="py-10 text-center text-xs text-rw-red">
       {tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}
     </div>
   );
@@ -83,10 +83,10 @@ export function Page<T>({ state, children }: { state: Loaded<T>; children: (data
 // ── Layout ────────────────────────────────────────────────────────────────
 
 export const Stat: React.FC<{ label: string; value: React.ReactNode; sub?: React.ReactNode }> = ({ label, value, sub }) => (
-  <div className="bg-[#091428] border border-[#1e282d] rounded-lg px-3 py-2 min-w-0">
-    <div className="text-[10px] uppercase tracking-wider text-[#7e8e9f] font-semibold truncate">{label}</div>
-    <div className="text-base font-bold text-[#f0e6d2] truncate">{value}</div>
-    {sub && <div className="text-[10px] text-[#9bb3c9] truncate">{sub}</div>}
+  <div className="bg-rw-bg border border-rw-border rounded-lg px-3 py-2 min-w-0">
+    <div className="text-[10px] uppercase tracking-wider text-rw-muted font-semibold truncate">{label}</div>
+    <div className="text-base font-bold text-rw-text truncate">{value}</div>
+    {sub && <div className="text-[10px] text-rw-sub truncate">{sub}</div>}
   </div>
 );
 
@@ -102,7 +102,7 @@ export const Section: React.FC<{ title: string; children: React.ReactNode; right
   return (
     <section ref={ref} className={`${card} space-y-2 min-w-0`} id={id}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-[#c8aa6e]">{title}</h3>
+        <h3 className="text-xs font-bold uppercase tracking-wider text-rw-accent">{title}</h3>
         {(right || share) && (
           <span className="flex flex-wrap items-center justify-end gap-2 min-w-0 ml-auto">
             {right}
@@ -144,7 +144,7 @@ export const HubLink: React.FC<{ to: HubRoute; className?: string; title?: strin
   <a
     href={IS_WEB ? hubPath(to) : "#"}
     title={title}
-    className={className ?? "text-[#f0e6d2] hover:text-[#c8aa6e] hover:underline"}
+    className={className ?? "text-rw-text hover:text-rw-accent hover:underline"}
     onClick={(e) => {
       if (IS_WEB && (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0)) return;
       e.preventDefault();
@@ -163,7 +163,7 @@ export const TeamLink: React.FC<{ name: string; u?: string | null; className?: s
       {name}
     </HubLink>
   ) : (
-    <span className="text-[#9bb3c9]">{name}</span>
+    <span className="text-rw-sub">{name}</span>
   );
 
 export const PlayerLink: React.FC<{ name: string; u?: string | null; className?: string }> = ({ name, u, className }) =>
@@ -172,7 +172,7 @@ export const PlayerLink: React.FC<{ name: string; u?: string | null; className?:
       {name}
     </HubLink>
   ) : (
-    <span className="text-[#9bb3c9]">{name}</span>
+    <span className="text-rw-sub">{name}</span>
   );
 
 export const EventLink: React.FC<{ name: string; u?: string | null; className?: string }> = ({ name, u, className }) =>
@@ -181,7 +181,7 @@ export const EventLink: React.FC<{ name: string; u?: string | null; className?: 
       {name}
     </HubLink>
   ) : (
-    <span className="text-[#9bb3c9]">{name}</span>
+    <span className="text-rw-sub">{name}</span>
   );
 
 // ── Pictures ──────────────────────────────────────────────────────────────
@@ -201,7 +201,7 @@ const Pic: React.FC<{ src: string | null; alt: string; size: number; round?: boo
       <span
         style={style}
         title={alt}
-        className={`inline-flex items-center justify-center shrink-0 bg-[#1e282d] text-[#9bb3c9] text-[9px] font-bold ${round ? "rounded-full" : "rounded"} ${className || ""}`}
+        className={`inline-flex items-center justify-center shrink-0 bg-rw-border text-rw-sub text-[9px] font-bold ${round ? "rounded-full" : "rounded"} ${className || ""}`}
       >
         {(fallback ?? alt).slice(0, 2)}
       </span>
@@ -230,7 +230,7 @@ export const RuneIcon: React.FC<{ name: string; size?: number }> = ({ name, size
 
 /** Champion picture + name, linked to the champion page. */
 export const ChampLink: React.FC<{ name: string; size?: number; showName?: boolean }> = ({ name, size = 20, showName = true }) => (
-  <HubLink to={{ kind: "champ", slug: prettySlug(name) }} className="inline-flex items-center gap-1.5 min-w-0 text-[#f0e6d2] hover:text-[#c8aa6e]">
+  <HubLink to={{ kind: "champ", slug: prettySlug(name) }} className="inline-flex items-center gap-1.5 min-w-0 text-rw-text hover:text-rw-accent">
     <ChampIcon name={name} size={size} />
     {showName && <span className="truncate">{champName(name)}</span>}
   </HubLink>
@@ -257,6 +257,12 @@ export const SpoilerProvider: React.FC<{ on: boolean; children: React.ReactNode 
 };
 
 /** True when this result should stay hidden (spoiler mode on, recent, not revealed yet). */
+/** useHidden's test for many items at once (a bracket deciding which lines it may highlight). */
+export function useHiddenCheck(): (key: string, date: string | undefined) => boolean {
+  const ctx = useContext(SpoilerContext);
+  return (key, date) => ctx.on && isFresh(date) && !ctx.revealed.has(key);
+}
+
 export function useHidden(key: string, date: string | undefined): [boolean, () => void] {
   const ctx = useContext(SpoilerContext);
   const hidden = ctx.on && isFresh(date) && !ctx.revealed.has(key);
@@ -271,7 +277,7 @@ export const RevealButton: React.FC<{ onReveal: () => void; small?: boolean }> =
       e.stopPropagation();
       onReveal();
     }}
-    className={`inline-flex items-center gap-1 rounded border border-[#c8aa6e]/50 text-[#c8aa6e] hover:bg-[#c8aa6e]/10 ${small ? "px-1.5 py-0 text-[10px]" : "px-2 py-0.5 text-[11px]"}`}
+    className={`inline-flex items-center gap-1 rounded border border-rw-accent/50 text-rw-accent hover:bg-rw-accent/10 ${small ? "px-1.5 py-0 text-[10px]" : "px-2 py-0.5 text-[11px]"}`}
   >
     <Eye className="w-3 h-3" />
     {tl("Reveal")}
@@ -307,7 +313,7 @@ export const CopyLinkButton: React.FC<{ url: string }> = ({ url }) => {
     <button
       type="button"
       onClick={copy}
-      className={`flex items-center gap-1 text-xs shrink-0 ${copied ? "text-[#0ac8b9]" : "text-[#7e8e9f] hover:text-[#c8aa6e]"}`}
+      className={`flex items-center gap-1 text-xs shrink-0 ${copied ? "text-rw-teal" : "text-rw-muted hover:text-rw-accent"}`}
     >
       {copied ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
       {copied ? tl("Link copied") : tl("Copy link")}

@@ -14,7 +14,7 @@ import { ChampAggRow, ROLES, champAgg, patchCompare } from "../../hub/champAgg";
 import { SortTable, type Column } from "./SortTable";
 import { card, ChampLink, Failed, fmtNum, HubLink, Loading, useLoad, usePageTitle } from "./ui";
 
-const sel = "bg-[#091428] border border-[#1e282d] rounded-lg px-2 py-1.5 text-[#f0e6d2] max-w-[14rem]";
+const sel = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text max-w-[14rem]";
 const pct = (v: number | null) => (v == null ? "–" : `${(v * 100).toFixed(1)}%`);
 
 export const ChampionsPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta, query }) => {
@@ -168,7 +168,7 @@ const LeagueTable: React.FC<{ league: string; years: string[]; q: URLSearchParam
   const eventName = eventSlug ? file.data.events.find(([s]) => s === eventSlug)?.[1] : null;
   const cols: Column<ChampAggRow>[] = [
     { key: "c", label: tl("Champion"), value: (c) => c.c, render: (c) => <ChampLink name={c.c} size={18} /> },
-    { key: "role", label: tl("Role"), value: (c) => c.role, render: (c) => <span className="text-[#7e8e9f]">{c.role >= 0 ? roleName(ROLES[c.role]) : "–"}</span> },
+    { key: "role", label: tl("Role"), value: (c) => c.role, render: (c) => <span className="text-rw-muted">{c.role >= 0 ? roleName(ROLES[c.role]) : "–"}</span> },
     { key: "presence", label: tl("Presence"), value: (c) => c.presence, render: (c) => pct(c.presence) },
     { key: "p", label: tl("Picks"), value: (c) => c.p },
     { key: "b", label: tl("Bans"), value: (c) => c.b },
@@ -182,7 +182,7 @@ const LeagueTable: React.FC<{ league: string; years: string[]; q: URLSearchParam
   ];
   return (
     <div className={`${card} space-y-2`}>
-      <div className="flex flex-wrap items-baseline justify-between gap-2 text-[11px] text-[#7e8e9f]">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 text-[11px] text-rw-muted">
         <span>
           {tl("{n} games", { n: fmtNum(result.games) })}
           {eventName && eventSlug && (
@@ -194,7 +194,7 @@ const LeagueTable: React.FC<{ league: string; years: string[]; q: URLSearchParam
         </span>
       </div>
       {result.games === 0 ? (
-        <p className="text-xs text-[#9bb3c9] py-4 text-center">{tl("No games match these filters.")}</p>
+        <p className="text-xs text-rw-sub py-4 text-center">{tl("No games match these filters.")}</p>
       ) : (
         <SortTable
           rows={result.rows}
@@ -206,7 +206,7 @@ const LeagueTable: React.FC<{ league: string; years: string[]; q: URLSearchParam
           copyName={["champions", q.get("league"), year, q.get("event"), q.get("patch"), q.get("side"), q.get("role")].filter(Boolean).join("-")}
         />
       )}
-      <p className="text-[10px] text-[#7e8e9f]">
+      <p className="text-[10px] text-rw-muted">
         {tl("Blind% = picked before the enemy laner was known (games with the draft order). B1 = blue side's first pick of the draft.")}
       </p>
     </div>
@@ -236,7 +236,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
   type Row = (typeof rows)[number];
   const cols: Column<Row>[] = [
     { key: "c", label: tl("Champion"), value: (c) => c.c, render: (c) => <ChampLink name={c.c} size={18} /> },
-    { key: "role", label: tl("Role"), value: (c) => c.role || "", render: (c) => <span className="text-[#7e8e9f]">{c.role ? roleName(c.role) : "–"}</span> },
+    { key: "role", label: tl("Role"), value: (c) => c.role || "", render: (c) => <span className="text-rw-muted">{c.role ? roleName(c.role) : "–"}</span> },
     { key: "presence", label: tl("Presence"), value: (c) => c.presence, render: (c) => pct(c.presence) },
     { key: "p", label: tl("Picks"), value: (c) => c.p },
     { key: "b", label: tl("Bans"), value: (c) => c.b },
@@ -264,7 +264,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
             ))}
         </select>
         <SideRole q={q} setQ={setQ} noSide />
-        {block && <span className="text-[#7e8e9f]">{tl("{n} games", { n: fmtNum(block.games) })}</span>}
+        {block && <span className="text-rw-muted">{tl("{n} games", { n: fmtNum(block.games) })}</span>}
       </div>
       {state.loading ? (
         <Loading />
@@ -273,7 +273,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
       ) : (
         <div className={card}>
           <SortTable rows={rows} columns={cols} initial={{ key: "presence", desc: true }} rowKey={(c) => c.c} copyName={`champions-${scope}-${key}`} />
-          <p className="text-[10px] text-[#7e8e9f] mt-2">
+          <p className="text-[10px] text-rw-muted mt-2">
             {tl('Presence = picked or banned in that share of games. "Top leagues" = the main regional leagues plus Worlds, MSI and other internationals.')}{" "}
             {tl("Pick a league above for tournament, patch, side and draft filters.")}
           </p>

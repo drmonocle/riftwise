@@ -136,8 +136,8 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
     return (
       <div className="space-y-3">
         <div className={`${card} space-y-2 text-xs`}>
-          <p className="text-[#f0e6d2] font-semibold">{tl("Draft board")}</p>
-          <p className="text-[#9bb3c9]">
+          <p className="text-rw-text font-semibold">{tl("Draft board")}</p>
+          <p className="text-rw-sub">
             {tl(
               "Pick a blue-side and a red-side team, then draft in tournament order with both teams' champion pools, bans and players in view.",
             )}
@@ -147,7 +147,7 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
           {(["a", "b"] as const).map((k) => (
             <div key={k} className={`${card} min-w-0 space-y-1`}>
               <div
-                className={`text-[10px] uppercase tracking-wider font-bold ${k === "a" ? "text-[#0ac8b9]" : "text-[#e84057]"}`}
+                className={`text-[10px] uppercase tracking-wider font-bold ${k === "a" ? "text-rw-teal" : "text-rw-red"}`}
               >
                 {k === "a" ? tl("Blue side") : tl("Red side")}
               </div>
@@ -155,7 +155,7 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
                 <button
                   type="button"
                   onClick={() => set({ [k]: null })}
-                  className="text-[11px] text-[#0ac8b9] hover:underline"
+                  className="text-[11px] text-rw-teal hover:underline"
                 >
                   {tl("Change")}
                 </button>
@@ -173,7 +173,7 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
     );
   if (sides.failed)
     return (
-      <p className="text-xs text-[#9bb3c9] py-6 text-center">
+      <p className="text-xs text-rw-sub py-6 text-center">
         {tl(
           "Couldn't load the stats right now. Check your connection and try again in a minute.",
         )}
@@ -285,39 +285,39 @@ const Board: React.FC<{
         className={`${card} flex flex-wrap items-center justify-between gap-2`}
       >
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-[#c8aa6e]">
+          <div className="text-[10px] uppercase tracking-wider font-bold text-rw-accent">
             {tl("Draft board")}
           </div>
           <h2 className="text-lg font-bold truncate">
             <HubLink
               to={{ kind: "team", slug: blue.team.u }}
-              className="text-[#0ac8b9]"
+              className="text-rw-teal"
             >
               {blue.team.name}
             </HubLink>
-            <span className="text-[#7e8e9f] font-normal"> vs </span>
+            <span className="text-rw-muted font-normal"> vs </span>
             <HubLink
               to={{ kind: "team", slug: red.team.u }}
-              className="text-[#e84057]"
+              className="text-rw-red"
             >
               {red.team.name}
             </HubLink>
           </h2>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-[#7e8e9f]">{tl("Pools from")}</span>
+          <span className="text-rw-muted">{tl("Pools from")}</span>
           <PeriodPicker options={options} value={period} onChange={onPeriod} />
           <button
             type="button"
             onClick={onSwap}
-            className="flex items-center gap-1 text-[#0ac8b9] hover:underline"
+            className="flex items-center gap-1 text-rw-teal hover:underline"
           >
             <ArrowLeftRight className="w-3.5 h-3.5" />
             {tl("Swap sides")}
           </button>
           <HubLink
             to={{ kind: "prep", a: blue.team.u, b: red.team.u, period }}
-            className="text-[#0ac8b9] hover:underline"
+            className="text-rw-teal hover:underline"
           >
             {tl("Match prep")}
           </HubLink>
@@ -337,7 +337,7 @@ const Board: React.FC<{
           <div className={`${card} space-y-2`}>
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span
-                className={`font-bold ${now ? (now.side === "b" ? "text-[#0ac8b9]" : "text-[#e84057]") : "text-[#c8aa6e]"}`}
+                className={`font-bold ${now ? (now.side === "b" ? "text-rw-teal" : "text-rw-red") : "text-rw-accent"}`}
               >
                 {now
                   ? now.ban
@@ -349,7 +349,7 @@ const Board: React.FC<{
                 <button
                   type="button"
                   onClick={undo}
-                  className="flex items-center gap-1 text-[#9bb3c9] hover:text-[#f0e6d2]"
+                  className="flex items-center gap-1 text-rw-sub hover:text-rw-text"
                 >
                   <Undo2 className="w-3.5 h-3.5" />
                   {tl("Undo")}
@@ -357,13 +357,13 @@ const Board: React.FC<{
                 <button
                   type="button"
                   onClick={reset}
-                  className="flex items-center gap-1 text-[#9bb3c9] hover:text-[#f0e6d2]"
+                  className="flex items-center gap-1 text-rw-sub hover:text-rw-text"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   {tl("Reset")}
                 </button>
                 <label
-                  className="flex items-center gap-1 text-[#9bb3c9]"
+                  className="flex items-center gap-1 text-rw-sub"
                   title={tl(
                     "Fearless: champions picked in earlier games of the series can't be picked again",
                   )}
@@ -379,7 +379,7 @@ const Board: React.FC<{
                   <button
                     type="button"
                     onClick={nextGame}
-                    className="flex items-center gap-1 text-[#0ac8b9] hover:underline"
+                    className="flex items-center gap-1 text-rw-teal hover:underline"
                   >
                     <ChevronsRight className="w-3.5 h-3.5" />
                     {tl("Next game")}
@@ -388,7 +388,7 @@ const Board: React.FC<{
               </span>
             </div>
             {fearless && used.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1 text-[10px] text-[#7e8e9f]">
+              <div className="flex flex-wrap items-center gap-1 text-[10px] text-rw-muted">
                 {tl("Used in earlier games:")}
                 {used.map((c) => (
                   <ChampIcon
@@ -401,7 +401,7 @@ const Board: React.FC<{
                 <button
                   type="button"
                   onClick={() => setUsed([])}
-                  className="text-[#0ac8b9] hover:underline ml-1"
+                  className="text-rw-teal hover:underline ml-1"
                 >
                   {tl("Clear")}
                 </button>
@@ -412,7 +412,7 @@ const Board: React.FC<{
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={tl("Search champions…")}
-                className="bg-[#091428] border border-[#1e282d] rounded-lg px-2 py-1.5 text-[#f0e6d2] w-40"
+                className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text w-40"
               />
               <span className="flex flex-wrap gap-1">
                 {[null, 0, 1, 2, 3, 4].map((r) => (
@@ -420,7 +420,7 @@ const Board: React.FC<{
                     key={String(r)}
                     type="button"
                     onClick={() => setRole(r)}
-                    className={`px-2 py-1 rounded border ${role === r ? "border-[#c8aa6e] text-[#c8aa6e]" : "border-[#1e282d] text-[#9bb3c9] hover:text-[#f0e6d2]"}`}
+                    className={`px-2 py-1 rounded border ${role === r ? "border-rw-accent text-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"}`}
                     title={
                       r == null
                         ? undefined
@@ -449,22 +449,22 @@ const Board: React.FC<{
                       off
                         ? "opacity-25 border-transparent"
                         : focus === c
-                          ? "border-[#c8aa6e]"
-                          : "border-transparent hover:border-[#2c3c44]"
+                          ? "border-rw-accent"
+                          : "border-transparent hover:border-rw-line"
                     }`}
                     title={champName(c)}
                   >
                     <ChampIcon name={c} size={36} />
-                    <span className="truncate w-full text-center text-[#9bb3c9]">
+                    <span className="truncate w-full text-center text-rw-sub">
                       {champName(c)}
                     </span>
                     {pb > 0 && (
-                      <span className="absolute top-0 left-0 px-0.5 rounded bg-[#0ac8b9] text-[#091428] font-bold">
+                      <span className="absolute top-0 left-0 px-0.5 rounded bg-rw-teal text-rw-bg font-bold">
                         {pb}
                       </span>
                     )}
                     {pr > 0 && (
-                      <span className="absolute top-0 right-0 px-0.5 rounded bg-[#e84057] text-[#091428] font-bold">
+                      <span className="absolute top-0 right-0 px-0.5 rounded bg-rw-red text-rw-bg font-bold">
                         {pr}
                       </span>
                     )}
@@ -472,7 +472,7 @@ const Board: React.FC<{
                 );
               })}
             </div>
-            <p className="text-[10px] text-[#7e8e9f]">
+            <p className="text-[10px] text-rw-muted">
               {tl(
                 "Numbers on a champion: games each team picked it in this period. Click a filled slot to change it.",
               )}
@@ -524,7 +524,7 @@ const TeamColumn: React.FC<{
   const mine = ORDER.map((o, i) => ({ ...o, i })).filter((o) => o.side === who);
   const bans = mine.filter((o) => o.ban);
   const picks = mine.filter((o) => !o.ban);
-  const color = who === "b" ? "#0ac8b9" : "#e84057";
+  const color = who === "b" ? "var(--rw-teal)" : "var(--rw-red)";
   const slot = (i: number, big: boolean) => {
     const c = slots[i];
     const active = step === i;
@@ -533,7 +533,7 @@ const TeamColumn: React.FC<{
         key={i}
         type="button"
         onClick={() => (c ? onSlot(i) : onPick(i))}
-        className={`flex items-center gap-2 rounded border ${big ? "p-1.5 w-full" : "p-0.5"} ${active ? "border-[#c8aa6e]" : "border-[#1e282d]"} bg-[#091428]`}
+        className={`flex items-center gap-2 rounded border ${big ? "p-1.5 w-full" : "p-0.5"} ${active ? "border-rw-accent" : "border-rw-border"} bg-rw-bg`}
         title={c ? tl("Click to change") : undefined}
       >
         {c ? (
@@ -544,11 +544,11 @@ const TeamColumn: React.FC<{
           />
         ) : (
           <span
-            className={`${big ? "w-8 h-8" : "w-6 h-6"} rounded bg-[#1e282d]`}
+            className={`${big ? "w-8 h-8" : "w-6 h-6"} rounded bg-rw-border`}
           />
         )}
         {big && (
-          <span className="text-xs text-[#f0e6d2] truncate">
+          <span className="text-xs text-rw-text truncate">
             {c ? champName(c) : ""}
           </span>
         )}
@@ -589,11 +589,11 @@ const ChampInfo: React.FC<{
         return (
           <div key={w} className="space-y-1 min-w-0">
             <div
-              className={`font-bold truncate ${w === "b" ? "text-[#0ac8b9]" : "text-[#e84057]"}`}
+              className={`font-bold truncate ${w === "b" ? "text-rw-teal" : "text-rw-red"}`}
             >
               {s.team.name}
             </div>
-            <div className="text-[#9bb3c9]">
+            <div className="text-rw-sub">
               {pk
                 ? tl("Picked {n} times, won {pct}", {
                     n: pk[0],
@@ -602,14 +602,14 @@ const ChampInfo: React.FC<{
                 : tl("Not picked in this period")}
               {roles.length > 0 && ` (${roles.join(" / ")})`}
             </div>
-            <div className="text-[#9bb3c9]">
+            <div className="text-rw-sub">
               {tl("Banned it {n} times · banned against them {m} times", {
                 n: p.bans.get(c) || 0,
                 m: p.bansVs.get(c) || 0,
               })}
             </div>
             {(p.players.get(c) || []).map((x) => (
-              <div key={x.name} className="text-[#f0e6d2]">
+              <div key={x.name} className="text-rw-text">
                 {x.name}:{" "}
                 {tl("{n} games, won {pct}", { n: x.g, pct: winRate(x.w, x.g) })}
               </div>
@@ -642,7 +642,7 @@ const Priorities: React.FC<{
     .filter(([c]) => !taken.has(c))
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6);
-  const color = who === "b" ? "text-[#0ac8b9]" : "text-[#e84057]";
+  const color = who === "b" ? "text-rw-teal" : "text-rw-red";
   const list = (rows: [string, string][]) => (
     <ul className="space-y-1">
       {rows.map(([c, v]) => (
@@ -650,13 +650,13 @@ const Priorities: React.FC<{
           <button
             type="button"
             onClick={() => onPick(c)}
-            className="flex items-center justify-between gap-2 w-full text-left hover:bg-[#091428] rounded px-1"
+            className="flex items-center justify-between gap-2 w-full text-left hover:bg-rw-bg rounded px-1"
           >
             <span className="flex items-center gap-1.5 min-w-0">
               <ChampIcon name={c} size={18} />
-              <span className="truncate text-[#f0e6d2]">{champName(c)}</span>
+              <span className="truncate text-rw-text">{champName(c)}</span>
             </span>
-            <span className="text-[#9bb3c9] tabular-nums shrink-0">{v}</span>
+            <span className="text-rw-sub tabular-nums shrink-0">{v}</span>
           </button>
         </li>
       ))}
@@ -673,19 +673,19 @@ const Priorities: React.FC<{
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f] mb-1">
+          <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">
             {tl("Most picked, still open")}
           </div>
           {list(open.map(([c, [g, w]]) => [c, `${g} · ${winRate(w, g)}`]))}
         </div>
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f] mb-1">
+          <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">
             {tl("Their usual bans")}
           </div>
           {list(bans.map(([c, n]) => [c, String(n)]))}
         </div>
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f] mb-1">
+          <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">
             {tl("Banned against them")}
           </div>
           {list(vs.map(([c, n]) => [c, String(n)]))}

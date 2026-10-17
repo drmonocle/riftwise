@@ -126,8 +126,8 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
           }}
           className={`p-1 rounded transition-colors ${
             isOpen
-              ? "bg-[#c8aa6e]/20 text-[#c8aa6e]"
-              : "text-[#9bb3c9] hover:text-[#c8aa6e] hover:bg-[#1e282d]"
+              ? "bg-rw-accent/20 text-rw-accent"
+              : "text-rw-sub hover:text-rw-accent hover:bg-rw-border"
           }`}
           title={tl("Add match to Calendar (Google, Apple, Outlook, Yahoo)")}
         >
@@ -142,11 +142,11 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
           }}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold border transition-all ${
             isOpen
-              ? "bg-[#c8aa6e]/15 border-[#c8aa6e] text-[#c8aa6e]"
-              : "bg-[#091428] border-[#1e282d] hover:border-[#c8aa6e] text-[#f0e6d2]"
+              ? "bg-rw-accent/15 border-rw-accent text-rw-accent"
+              : "bg-rw-bg border-rw-border hover:border-rw-accent text-rw-text"
           }`}
         >
-          <CalendarPlus className="w-3.5 h-3.5 text-[#c8aa6e]" />
+          <CalendarPlus className="w-3.5 h-3.5 text-rw-accent" />
           <span>{tl("Add to Calendar")}</span>
         </button>
       )}
@@ -154,10 +154,10 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
       {/* Dropdown Popover */}
       {isOpen && (
         <div
-          className="absolute right-0 mt-1 w-52 rounded-lg bg-[#0a1420] border border-[#c8aa6e]/80 shadow-2xl z-50 py-1 text-xs select-none backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
+          className="absolute right-0 mt-1 w-52 rounded-lg bg-rw-surface border border-rw-accent/80 shadow-2xl z-50 py-1 text-xs select-none backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="px-3 py-1.5 border-b border-[#1e282d] text-[10px] font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
+          <div className="px-3 py-1.5 border-b border-rw-border text-[10px] font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
             <Calendar className="w-3 h-3" />
             <span>{tl("Select Calendar Type")}</span>
           </div>
@@ -170,26 +170,26 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
                 onOpenUrl(googleUrl);
                 setIsOpen(false);
               }}
-              className="w-full text-left px-3 py-1.5 hover:bg-[#121e2d] hover:text-[#0ac8b9] text-[#f0e6d2] flex items-center justify-between transition-colors"
+              className="w-full text-left px-3 py-1.5 hover:bg-rw-raised hover:text-rw-teal text-rw-text flex items-center justify-between transition-colors"
             >
               <div className="flex items-center gap-2">
                 <span className="text-sm">🌐</span>
                 <span className="font-medium">{tl("Google Calendar")}</span>
               </div>
-              <ExternalLink className="w-3 h-3 text-[#9bb3c9]" />
+              <ExternalLink className="w-3 h-3 text-rw-sub" />
             </button>
 
             {/* Apple Calendar / iCal (.ics) */}
             <button
               type="button"
               onClick={handleDownloadIcs}
-              className="w-full text-left px-3 py-1.5 hover:bg-[#121e2d] hover:text-[#0ac8b9] text-[#f0e6d2] flex items-center justify-between transition-colors"
+              className="w-full text-left px-3 py-1.5 hover:bg-rw-raised hover:text-rw-teal text-rw-text flex items-center justify-between transition-colors"
             >
               <div className="flex items-center gap-2">
                 <span className="text-sm">🍏</span>
                 <span className="font-medium">{tl("Apple Calendar (.ics)")}</span>
               </div>
-              <Download className="w-3 h-3 text-[#9bb3c9]" />
+              <Download className="w-3 h-3 text-rw-sub" />
             </button>
 
             {/* Outlook Web */}
@@ -199,13 +199,13 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
                 onOpenUrl(outlookUrl);
                 setIsOpen(false);
               }}
-              className="w-full text-left px-3 py-1.5 hover:bg-[#121e2d] hover:text-[#0ac8b9] text-[#f0e6d2] flex items-center justify-between transition-colors"
+              className="w-full text-left px-3 py-1.5 hover:bg-rw-raised hover:text-rw-teal text-rw-text flex items-center justify-between transition-colors"
             >
               <div className="flex items-center gap-2">
                 <span className="text-sm">📧</span>
                 <span className="font-medium">{tl("Outlook.com / 365")}</span>
               </div>
-              <ExternalLink className="w-3 h-3 text-[#9bb3c9]" />
+              <ExternalLink className="w-3 h-3 text-rw-sub" />
             </button>
 
             {/* Yahoo Calendar */}
@@ -215,13 +215,13 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
                 onOpenUrl(yahooUrl);
                 setIsOpen(false);
               }}
-              className="w-full text-left px-3 py-1.5 hover:bg-[#121e2d] hover:text-[#0ac8b9] text-[#f0e6d2] flex items-center justify-between transition-colors"
+              className="w-full text-left px-3 py-1.5 hover:bg-rw-raised hover:text-rw-teal text-rw-text flex items-center justify-between transition-colors"
             >
               <div className="flex items-center gap-2">
                 <span className="text-sm">🟣</span>
                 <span className="font-medium">{tl("Yahoo Calendar")}</span>
               </div>
-              <ExternalLink className="w-3 h-3 text-[#9bb3c9]" />
+              <ExternalLink className="w-3 h-3 text-rw-sub" />
             </button>
           </div>
         </div>

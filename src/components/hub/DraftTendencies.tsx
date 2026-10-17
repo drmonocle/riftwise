@@ -63,14 +63,14 @@ export function draftTendencies(rows: TeamGameRow[]) {
 const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boolean }> = ({ title, hint, list, showWr }) =>
   list.length ? (
     <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f] mb-1" title={hint}>
+      <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1" title={hint}>
         {title}
       </div>
       <ul className="text-xs space-y-1">
         {list.map(([c, n, w]) => (
           <li key={c} className="flex justify-between gap-2 min-w-0">
             <ChampLink name={c} size={16} />
-            <span className="text-[#9bb3c9] tabular-nums shrink-0">
+            <span className="text-rw-sub tabular-nums shrink-0">
               {n}
               {showWr ? ` · ${winRate(w, n)}` : ""}
             </span>
@@ -83,8 +83,8 @@ const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boo
 const RoleLine: React.FC<{ title: string; shares: [number, number][] }> = ({ title, shares }) =>
   shares.length ? (
     <div className="text-xs">
-      <span className="text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f] mr-2">{title}</span>
-      <span className="text-[#f0e6d2]">
+      <span className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mr-2">{title}</span>
+      <span className="text-rw-text">
         {shares
           .slice(0, 3)
           .map(([r, v]) => `${roleName(ROLES[r])} ${Math.round(v * 100)}%`)
@@ -97,10 +97,10 @@ export const DraftTendencies: React.FC<{ rows: TeamGameRow[] }> = ({ rows }) => 
   const d = useMemo(() => draftTendencies(rows), [rows]);
   if (d.games < 3) return null;
   return (
-    <div className="space-y-2 pt-2 border-t border-[#1e282d]">
+    <div className="space-y-2 pt-2 border-t border-rw-border">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-[#c8aa6e]">{tl("Draft tendencies")}</h4>
-        <span className="text-[10px] text-[#7e8e9f]">{tl("{n} games with the draft order", { n: d.games })}</span>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-rw-accent">{tl("Draft tendencies")}</h4>
+        <span className="text-[10px] text-rw-muted">{tl("{n} games with the draft order", { n: d.games })}</span>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <List title={tl("First pick (blue)")} hint={tl("Their first pick when on blue side (B1)")} list={d.b1} showWr />
@@ -112,11 +112,11 @@ export const DraftTendencies: React.FC<{ rows: TeamGameRow[] }> = ({ rows }) => 
       <RoleLine title={tl("Role kept for last")} shares={d.lastRole} />
       {d.flex.length > 0 && (
         <div className="text-xs flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f]">{tl("Flex picks")}</span>
+          <span className="text-[10px] uppercase tracking-wider font-bold text-rw-muted">{tl("Flex picks")}</span>
           {d.flex.map(([c, roles]) => (
             <span key={c} className="flex items-center gap-1">
               <ChampLink name={c} size={16} />
-              <span className="text-[#7e8e9f]">({roles.map((r) => roleName(ROLES[r])).join(" / ")})</span>
+              <span className="text-rw-muted">({roles.map((r) => roleName(ROLES[r])).join(" / ")})</span>
             </span>
           ))}
         </div>

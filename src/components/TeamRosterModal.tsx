@@ -60,7 +60,7 @@ const TeamStatsLink: React.FC<{ name: string; code: string; onDone: () => void }
           .catch(() => setMissing(true))
           .finally(() => setBusy(false));
       }}
-      className="mt-1.5 flex items-center gap-1 text-[11px] text-[#0ac8b9] hover:underline disabled:opacity-60"
+      className="mt-1.5 flex items-center gap-1 text-[11px] text-rw-teal hover:underline disabled:opacity-60"
     >
       <BarChart3 className="w-3 h-3" />
       {tl("Full history and stats")}
@@ -144,36 +144,36 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
       aria-label={tl("{team} team details", { team: teamName || teamCode })}
     >
       <div
-        className="bg-[#0a1420] border border-[#c8aa6e]/60 rounded-2xl max-w-2xl w-full max-h-[88vh] overflow-hidden flex flex-col shadow-2xl relative"
+        className="bg-rw-surface border border-rw-accent/60 rounded-2xl max-w-2xl w-full max-h-[88vh] overflow-hidden flex flex-col shadow-2xl relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Bar */}
-        <div className="p-5 border-b border-[#1e282d] bg-gradient-to-r from-[#091428] via-[#0a1420] to-[#091428] flex items-center justify-between">
+        <div className="p-5 border-b border-rw-border bg-gradient-to-r from-rw-bg via-rw-surface to-rw-bg flex items-center justify-between">
           <div className="flex items-center gap-4">
             {teamImage ? (
               <img src={teamImage} alt={upperCode} className="w-14 h-14 object-contain rounded-lg drop-shadow" />
             ) : (
-              <div className="w-14 h-14 rounded-lg bg-[#091428] border border-[#1e282d] flex items-center justify-center font-bold text-xl text-[#c8aa6e]">
+              <div className="w-14 h-14 rounded-lg bg-rw-bg border border-rw-border flex items-center justify-center font-bold text-xl text-rw-accent">
                 {upperCode.slice(0, 3)}
               </div>
             )}
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-extrabold text-[#f0e6d2]">{displayName}</h2>
+                <h2 className="text-xl font-extrabold text-rw-text">{displayName}</h2>
                 <button
                   type="button"
                   onClick={() => onToggleTeamFollow(upperCode)}
-                  className={`p-1 rounded hover:bg-[#1e282d] transition-colors ${
-                    isTeamFollowed ? "text-[#c8aa6e]" : "text-[#9bb3c9] hover:text-[#c8aa6e]"
+                  className={`p-1 rounded hover:bg-rw-border transition-colors ${
+                    isTeamFollowed ? "text-rw-accent" : "text-rw-sub hover:text-rw-accent"
                   }`}
                   aria-label={isTeamFollowed ? tl("Unfollow {name}", { name: upperCode }) : tl("Follow {name}", { name: upperCode })}
                   title={isTeamFollowed ? tl("Unfollow {name}", { name: upperCode }) : tl("Follow {name}", { name: upperCode })}
                 >
-                  <Star className={`w-4 h-4 ${isTeamFollowed ? "fill-[#c8aa6e]" : ""}`} />
+                  <Star className={`w-4 h-4 ${isTeamFollowed ? "fill-rw-accent" : ""}`} />
                 </button>
               </div>
-              <div className="flex items-center gap-2 mt-1 text-xs text-[#9bb3c9]">
-                <span className="font-mono font-bold text-[#0ac8b9] bg-[#0ac8b9]/10 px-2 py-0.5 rounded border border-[#0ac8b9]/30">
+              <div className="flex items-center gap-2 mt-1 text-xs text-rw-sub">
+                <span className="font-mono font-bold text-rw-teal bg-rw-teal/10 px-2 py-0.5 rounded border border-rw-teal/30">
                   {upperCode}
                 </span>
                 {catalogTeam?.league && <span>· {catalogTeam.league}</span>}
@@ -188,7 +188,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
             ref={closeRef}
             onClick={onClose}
             aria-label={tl("Close team details")}
-            className="p-2 rounded-lg bg-[#091428] hover:bg-[#1e282d] text-[#9bb3c9] hover:text-[#f0e6d2] transition-colors border border-[#1e282d]"
+            className="p-2 rounded-lg bg-rw-bg hover:bg-rw-border text-rw-sub hover:text-rw-text transition-colors border border-rw-border"
             title={tl("Close")}
           >
             <X className="w-4 h-4" />
@@ -200,11 +200,11 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
           {/* Active 5-Man Lineup */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-2">
-                <Shield className="w-3.5 h-3.5 text-[#0ac8b9]" />
+              <h3 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-2">
+                <Shield className="w-3.5 h-3.5 text-rw-teal" />
                 <span>{tl("Active Roster ({n})", { n: players.length })}</span>
               </h3>
-              <span className="text-[11px] text-[#9bb3c9]">{tl("Click star to follow player")}</span>
+              <span className="text-[11px] text-rw-sub">{tl("Click star to follow player")}</span>
             </div>
 
             {players.length > 0 ? (
@@ -216,23 +216,23 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                   return (
                     <div
                       key={p.name}
-                      className="flex items-center justify-between p-3 rounded-xl bg-[#091428] border border-[#1e282d] hover:border-[#c8aa6e]/50 transition-all group"
+                      className="flex items-center justify-between p-3 rounded-xl bg-rw-bg border border-rw-border hover:border-rw-accent/50 transition-all group"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         {p.image ? (
                           <img
                             src={p.image}
                             alt={p.name}
-                            className="w-11 h-11 rounded-full object-cover bg-[#0a1420] border border-[#1e282d] shrink-0"
+                            className="w-11 h-11 rounded-full object-cover bg-rw-surface border border-rw-border shrink-0"
                           />
                         ) : (
-                          <div className="w-11 h-11 rounded-full bg-[#0a1420] border border-[#1e282d] flex items-center justify-center text-[#9bb3c9] shrink-0">
+                          <div className="w-11 h-11 rounded-full bg-rw-surface border border-rw-border flex items-center justify-center text-rw-sub shrink-0">
                             <User className="w-5 h-5 opacity-70" />
                           </div>
                         )}
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm text-[#f0e6d2] group-hover:text-[#c8aa6e] transition-colors truncate">
+                            <span className="font-bold text-sm text-rw-text group-hover:text-rw-accent transition-colors truncate">
                               {p.name}
                             </span>
                             <span
@@ -242,7 +242,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             </span>
                           </div>
                           {p.realName && (
-                            <div className="text-xs text-[#9bb3c9] truncate">{p.realName}</div>
+                            <div className="text-xs text-rw-sub truncate">{p.realName}</div>
                           )}
                         </div>
                       </div>
@@ -250,20 +250,20 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                       <button
                         type="button"
                         onClick={() => onTogglePlayerFollow(p.name)}
-                        className={`p-1.5 rounded hover:bg-[#1e282d] transition-colors shrink-0 ml-2 ${
-                          isPlayerFollowed ? "text-[#c8aa6e]" : "text-[#9bb3c9] hover:text-[#c8aa6e]"
+                        className={`p-1.5 rounded hover:bg-rw-border transition-colors shrink-0 ml-2 ${
+                          isPlayerFollowed ? "text-rw-accent" : "text-rw-sub hover:text-rw-accent"
                         }`}
                         aria-label={isPlayerFollowed ? tl("Unfollow {name}", { name: p.name }) : tl("Follow {name}", { name: p.name })}
                         title={isPlayerFollowed ? tl("Unfollow {name}", { name: p.name }) : tl("Follow {name}", { name: p.name })}
                       >
-                        <Star className={`w-4 h-4 ${isPlayerFollowed ? "fill-[#c8aa6e]" : ""}`} />
+                        <Star className={`w-4 h-4 ${isPlayerFollowed ? "fill-rw-accent" : ""}`} />
                       </button>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <div className="p-6 text-center rounded-xl bg-[#091428] border border-[#1e282d] text-xs text-[#9bb3c9]">
+              <div className="p-6 text-center rounded-xl bg-rw-bg border border-rw-border text-xs text-rw-sub">
                 {tl("Roster details for {team} are not currently cataloged.", { team: displayName })}
               </div>
             )}
@@ -273,7 +273,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             {/* Upcoming Matches */}
             <section className="space-y-2">
-              <h3 className="text-xs font-bold text-[#0ac8b9] uppercase tracking-wider flex items-center gap-1.5">
+              <h3 className="text-xs font-bold text-rw-teal uppercase tracking-wider flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5" />
                 <span>{tl("Next Scheduled Matches")}</span>
               </h3>
@@ -286,21 +286,21 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                     return (
                       <div
                         key={m.matchId}
-                        className="p-2.5 rounded-lg bg-[#091428] border border-[#1e282d] flex items-center justify-between text-xs"
+                        className="p-2.5 rounded-lg bg-rw-bg border border-rw-border flex items-center justify-between text-xs"
                       >
                         <div>
-                          <div className="font-semibold text-[#f0e6d2]">
-                            vs <span className="text-[#c8aa6e]">{opp}</span> ({oppCode})
+                          <div className="font-semibold text-rw-text">
+                            vs <span className="text-rw-accent">{opp}</span> ({oppCode})
                           </div>
-                          <div className="text-[10px] text-[#9bb3c9]">
+                          <div className="text-[10px] text-rw-sub">
                             {m.leagueName} · Bo{m.bestOf}
                           </div>
                           {h2h && <H2HMeter team1Code={teamCode} team2Code={oppCode} h2h={h2h} matchId={m.matchId} />}
                         </div>
                         {m.state === "inProgress" ? (
-                          <div className="text-right font-mono text-[11px] font-bold text-[#e84057]">{tl("LIVE")}</div>
+                          <div className="text-right font-mono text-[11px] font-bold text-rw-red">{tl("LIVE")}</div>
                         ) : (
-                          <div className="text-right font-mono text-[11px] text-[#0ac8b9]">
+                          <div className="text-right font-mono text-[11px] text-rw-teal">
                             {new Date(m.startTimeUtc).toLocaleDateString(locale(), {
                               month: "short",
                               day: "numeric",
@@ -312,7 +312,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                   })}
                 </div>
               ) : (
-                <div className="p-3 text-center rounded-lg bg-[#091428] border border-[#1e282d] text-xs text-[#9bb3c9]">
+                <div className="p-3 text-center rounded-lg bg-rw-bg border border-rw-border text-xs text-rw-sub">
                   {tl("No upcoming matches scheduled in this window.")}
                 </div>
               )}
@@ -320,7 +320,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
 
             {/* Recent Results */}
             <section className="space-y-2">
-              <h3 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
+              <h3 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
                 <span>{tl("Recent Series Results")}</span>
               </h3>
               {completedMatches.length > 0 ? (
@@ -336,10 +336,10 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                       return (
                         <div
                           key={m.matchId}
-                          className="p-2.5 rounded-lg bg-[#091428] border border-[#1e282d] flex items-center justify-between text-xs"
+                          className="p-2.5 rounded-lg bg-rw-bg border border-rw-border flex items-center justify-between text-xs"
                         >
-                          <span className="font-semibold text-[#f0e6d2]">vs {oppName}</span>
-                          <span className="text-[10px] text-[#9bb3c9]">{tl("Result hidden (spoiler mode)")}</span>
+                          <span className="font-semibold text-rw-text">vs {oppName}</span>
+                          <span className="text-[10px] text-rw-sub">{tl("Result hidden (spoiler mode)")}</span>
                         </div>
                       );
                     }
@@ -347,7 +347,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                     return (
                       <div
                         key={m.matchId}
-                        className="p-2.5 rounded-lg bg-[#091428] border border-[#1e282d] flex items-center justify-between text-xs"
+                        className="p-2.5 rounded-lg bg-rw-bg border border-rw-border flex items-center justify-between text-xs"
                       >
                         <div className="flex items-center gap-2">
                           <span
@@ -357,9 +357,9 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           >
                             {won ? "WIN" : "LOSS"}
                           </span>
-                          <span className="font-semibold text-[#f0e6d2]">vs {oppName}</span>
+                          <span className="font-semibold text-rw-text">vs {oppName}</span>
                         </div>
-                        <div className="font-mono font-bold text-xs text-[#f0e6d2]">
+                        <div className="font-mono font-bold text-xs text-rw-text">
                           <span className={won ? "text-emerald-400" : ""}>{myScore}</span> -{" "}
                           <span className={!won ? "text-rose-400" : ""}>{oppScore}</span>
                         </div>
@@ -368,7 +368,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                   })}
                 </div>
               ) : (
-                <div className="p-3 text-center rounded-lg bg-[#091428] border border-[#1e282d] text-xs text-[#9bb3c9]">
+                <div className="p-3 text-center rounded-lg bg-rw-bg border border-rw-border text-xs text-rw-sub">
                   {tl("No recent completed series found in schedule.")}
                 </div>
               )}
@@ -377,12 +377,12 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-3 border-t border-[#1e282d] bg-[#091428] flex items-center justify-between text-xs text-[#9bb3c9]">
+        <div className="p-3 border-t border-rw-border bg-rw-bg flex items-center justify-between text-xs text-rw-sub">
           <span className="text-[11px]">{tl("Synced with Riot Global Directory")}</span>
           <button
             type="button"
             onClick={() => onOpenUrl(`https://lolesports.com/teams/${catalogTeam?.slug || displayName.toLowerCase()}`)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded bg-[#0a1420] hover:bg-[#121e2d] border border-[#1e282d] text-[#0ac8b9] font-semibold text-xs transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1 rounded bg-rw-surface hover:bg-rw-raised border border-rw-border text-rw-teal font-semibold text-xs transition-colors"
           >
             <span>{tl("View on LoLEsports")}</span>
             <ExternalLink className="w-3.5 h-3.5" />

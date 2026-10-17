@@ -37,7 +37,7 @@ const Split: React.FC<{ icon: React.ReactNode; label: string; wins: [number, num
   const total = wins[0] + wins[1];
   if (total === 0) {
     return (
-      <div className="flex items-center justify-between text-[11px] text-[#7e8e9f] py-1">
+      <div className="flex items-center justify-between text-[11px] text-rw-muted py-1">
         <span className="flex items-center gap-1.5">{icon}{label}</span>
         <span>{tl("never met")}</span>
       </div>
@@ -46,12 +46,12 @@ const Split: React.FC<{ icon: React.ReactNode; label: string; wins: [number, num
   return (
     <div className="py-1">
       <div className="flex items-center justify-between gap-2 text-[11px] mb-1">
-        <span className="flex items-center gap-1.5 text-[#9bb3c9] min-w-0 truncate">{icon}{label}</span>
+        <span className="flex items-center gap-1.5 text-rw-sub min-w-0 truncate">{icon}{label}</span>
         <span className="font-mono font-bold whitespace-nowrap shrink-0">
           <span style={{ color: T1_COLOR }}>{c1} {wins[0]}</span>
-          <span className="text-[#7e8e9f]"> – </span>
+          <span className="text-rw-muted"> – </span>
           <span style={{ color: T2_COLOR }}>{wins[1]} {c2}</span>
-          <span className="hidden sm:inline text-[#7e8e9f] font-normal"> · {tl("{n} games", { n: total })}</span>
+          <span className="hidden sm:inline text-rw-muted font-normal"> · {tl("{n} games", { n: total })}</span>
         </span>
       </div>
       <H2HBar t1Pct={Math.round((wins[0] / total) * 100)} className="h-1" />
@@ -130,13 +130,13 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
       {info.image ? (
         <img src={info.image} alt="" className="w-9 h-9 object-contain shrink-0" />
       ) : (
-        <div className="w-9 h-9 rounded bg-[#091428] flex items-center justify-center font-mono text-[10px] text-[#c8aa6e] shrink-0">
+        <div className="w-9 h-9 rounded bg-rw-bg flex items-center justify-center font-mono text-[10px] text-rw-accent shrink-0">
           {code.slice(0, 3)}
         </div>
       )}
       <div className="min-w-0">
         <div className="font-bold text-sm whitespace-nowrap" style={{ color }}>{code}</div>
-        <div className="hidden sm:block text-[10px] text-[#7e8e9f] truncate">{info.name}</div>
+        <div className="hidden sm:block text-[10px] text-rw-muted truncate">{info.name}</div>
       </div>
     </button>
   );
@@ -151,18 +151,18 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full sm:max-w-lg max-h-[90vh] overflow-y-auto bg-[#0a1420] border border-[#c8aa6e]/50 rounded-t-2xl sm:rounded-xl shadow-2xl"
+        className="w-full sm:max-w-lg max-h-[90vh] overflow-y-auto bg-rw-surface border border-rw-accent/50 rounded-t-2xl sm:rounded-xl shadow-2xl"
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#1e282d]">
-          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-[#c8aa6e] font-semibold">
-            <Swords className="w-3.5 h-3.5 text-[#0ac8b9]" />
+        <div className="flex items-center justify-between px-4 py-3 border-b border-rw-border">
+          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-rw-accent font-semibold">
+            <Swords className="w-3.5 h-3.5 text-rw-teal" />
             {tl("All-time head-to-head")}
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label={tl("Close")}
-            className="p-1 rounded text-[#7e8e9f] hover:text-[#f0e6d2] hover:bg-[#1e282d]"
+            className="p-1 rounded text-rw-muted hover:text-rw-text hover:bg-rw-border"
           >
             <X className="w-4 h-4" />
           </button>
@@ -176,13 +176,13 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                 <>
                   <div className="font-mono font-extrabold text-2xl">
                     <span style={{ color: T1_COLOR }}>{h2h.team1Wins}</span>
-                    <span className="text-[#7e8e9f] mx-1.5">–</span>
+                    <span className="text-rw-muted mx-1.5">–</span>
                     <span style={{ color: T2_COLOR }}>{h2h.team2Wins}</span>
                   </div>
-                  <div className="text-[10px] text-[#7e8e9f]">{tl("{n} games · all tournaments", { n: total })}</div>
+                  <div className="text-[10px] text-rw-muted">{tl("{n} games · all tournaments", { n: total })}</div>
                 </>
               ) : (
-                <div className="text-xs text-[#7e8e9f]">{tl("No recorded games")}</div>
+                <div className="text-xs text-rw-muted">{tl("No recorded games")}</div>
               )}
             </div>
             <Team code={c2} info={t2} color={T2_COLOR} align="right" />
@@ -190,23 +190,23 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
           {h2h && <H2HBar t1Pct={t1Pct} className="h-2" />}
 
           {h2h && (
-            <div className="rounded-lg bg-[#091428] border border-[#1e282d] px-3 py-1.5">
-              <Split icon={<Globe className="w-3 h-3 text-[#c8aa6e]" />} label={tl("Worlds · MSI · First Stand")} wins={intl} c1={c1} c2={c2} />
-              <Split icon={<Home className="w-3 h-3 text-[#9bb3c9]" />} label={tl("Domestic & other events")} wins={domestic} c1={c1} c2={c2} />
+            <div className="rounded-lg bg-rw-bg border border-rw-border px-3 py-1.5">
+              <Split icon={<Globe className="w-3 h-3 text-rw-accent" />} label={tl("Worlds · MSI · First Stand")} wins={intl} c1={c1} c2={c2} />
+              <Split icon={<Home className="w-3 h-3 text-rw-sub" />} label={tl("Domestic & other events")} wins={domestic} c1={c1} c2={c2} />
               {series === undefined && !failed && (
-                <div className="text-[10px] text-[#7e8e9f] py-1">{tl("Loading tournament split…")}</div>
+                <div className="text-[10px] text-rw-muted py-1">{tl("Loading tournament split…")}</div>
               )}
             </div>
           )}
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <div className="text-[10px] uppercase tracking-wider text-[#c8aa6e] font-semibold">{tl("Recent meetings")}</div>
+              <div className="text-[10px] uppercase tracking-wider text-rw-accent font-semibold">{tl("Recent meetings")}</div>
               {spoilerMode && meetings.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setRevealed((r) => !r)}
-                  className="flex items-center gap-1 text-[10px] text-[#9bb3c9] hover:text-[#c8aa6e]"
+                  className="flex items-center gap-1 text-[10px] text-rw-sub hover:text-rw-accent"
                   aria-label={revealed ? tl("Hide scores") : tl("Reveal scores")}
                 >
                   {revealed ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
@@ -215,7 +215,7 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
               )}
             </div>
             {meetings.length === 0 ? (
-              <div className="text-[11px] text-[#7e8e9f] py-2">
+              <div className="text-[11px] text-rw-muted py-2">
                 {series === undefined && !failed
                   ? tl("Loading…")
                   : failed
@@ -229,23 +229,23 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                   return (
                     <li
                       key={`${m.date}-${m.tournament}-${i}`}
-                      className="flex items-center justify-between gap-2 text-[11px] px-2.5 py-1.5 rounded bg-[#091428] border border-[#1e282d]"
+                      className="flex items-center justify-between gap-2 text-[11px] px-2.5 py-1.5 rounded bg-rw-bg border border-rw-border"
                     >
                       <div className="min-w-0">
-                        <div className="text-[#f0e6d2] truncate">{m.tournament}</div>
-                        <div className="text-[10px] text-[#7e8e9f] font-mono">{m.date}</div>
+                        <div className="text-rw-text truncate">{m.tournament}</div>
+                        <div className="text-[10px] text-rw-muted font-mono">{m.date}</div>
                       </div>
                       {revealed ? (
                         <div className="font-mono font-bold shrink-0">
                           <span style={{ color: T1_COLOR }}>{c1} {m.team1Score}</span>
-                          <span className="text-[#7e8e9f]"> – </span>
+                          <span className="text-rw-muted"> – </span>
                           <span style={{ color: T2_COLOR }}>{m.team2Score} {c2}</span>
                           <span className="ml-2 text-[10px] font-sans font-semibold" style={{ color: t1Won ? T1_COLOR : T2_COLOR }}>
                             {tl("{team} won", { team: t1Won ? c1 : c2 })}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-[10px] text-[#7e8e9f] shrink-0">{tl("score hidden")}</span>
+                        <span className="text-[10px] text-rw-muted shrink-0">{tl("score hidden")}</span>
                       )}
                     </li>
                   );
@@ -280,7 +280,7 @@ const PrepButton: React.FC<{ t1: { code: string; name: string }; t2: { code: str
           })
           .catch(() => setState("missing"));
       }}
-      className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-[#c8aa6e]/40 text-[#c8aa6e] text-xs font-semibold hover:bg-[#c8aa6e]/10 disabled:opacity-60"
+      className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-rw-accent/40 text-rw-accent text-xs font-semibold hover:bg-rw-accent/10 disabled:opacity-60"
     >
       <ClipboardList className="w-3.5 h-3.5" />
       {tl("Match prep: form, drafts, lanes and storylines")}

@@ -71,11 +71,11 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
           {p.most.map((x, i) => (
             <li key={i} className="flex justify-between gap-2 min-w-0">
               <PlayerLink name={x.n} u={x.u} />
-              <span className="text-[#c8aa6e] font-bold">{x.v}</span>
+              <span className="text-rw-accent font-bold">{x.v}</span>
             </li>
           ))}
         </ol>
-        <p className="text-[10px] text-[#7e8e9f]">
+        <p className="text-[10px] text-rw-muted">
           {tl(
             "{n} pentakills recorded by Leaguepedia. Complete from 2018 on; earlier years only partly, so older players are undercounted.",
             {
@@ -94,7 +94,7 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
           <button
             type="button"
             onClick={() => setN((v) => v + 30)}
-            className="text-xs text-[#0ac8b9] hover:underline"
+            className="text-xs text-rw-teal hover:underline"
           >
             {tl("Show more ({n} left)", { n: p.recent.length - n })}
           </button>
@@ -118,17 +118,17 @@ const PentaRow: React.FC<{
             <ChampIcon name={x.c} size={18} />
             <span className="truncate">
               <PlayerLink name={x.n} u={x.u} />{" "}
-              <span className="text-[#9bb3c9]">{champName(x.c)}</span>
-              {x.x > 1 && <span className="text-[#c8aa6e]"> ×{x.x}</span>}{" "}
+              <span className="text-rw-sub">{champName(x.c)}</span>
+              {x.x > 1 && <span className="text-rw-accent"> ×{x.x}</span>}{" "}
               {x.g ? (
                 <HubLink
                   to={{ kind: "match", slug: x.g }}
-                  className="text-[#9bb3c9] hover:text-[#c8aa6e] hover:underline"
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {x.a} vs {x.b}
                 </HubLink>
               ) : (
-                <span className="text-[#9bb3c9]">
+                <span className="text-rw-sub">
                   {x.a} vs {x.b}
                 </span>
               )}
@@ -136,11 +136,11 @@ const PentaRow: React.FC<{
           </>
         )}
       </div>
-      <div className="text-[10px] text-[#7e8e9f] truncate">
+      <div className="text-[10px] text-rw-muted truncate">
         <EventLink
           name={x.t}
           u={x.e}
-          className="text-[#7e8e9f] hover:text-[#c8aa6e] hover:underline"
+          className="text-rw-muted hover:text-rw-accent hover:underline"
         />{" "}
         · {fmtDate(x.date)}
       </div>
@@ -247,7 +247,7 @@ const RecordsPanel: React.FC = () => {
               {rows.map((g, i) => (
                 <li key={i} className="min-w-0">
                   <div className="truncate">
-                    <span className="text-[#c8aa6e] font-bold mr-1">
+                    <span className="text-rw-accent font-bold mr-1">
                       {fmt(g.v)}
                     </span>
                     {g.g ? (
@@ -258,7 +258,7 @@ const RecordsPanel: React.FC = () => {
                         })}
                       </HubLink>
                     ) : (
-                      <span className="text-[#f0e6d2]">
+                      <span className="text-rw-text">
                         {tl("{w} beat {l}", {
                           w: g.w,
                           l: g.w === g.a ? g.b : g.a,
@@ -266,11 +266,11 @@ const RecordsPanel: React.FC = () => {
                       </span>
                     )}
                   </div>
-                  <div className="text-[10px] text-[#7e8e9f] truncate">
+                  <div className="text-[10px] text-rw-muted truncate">
                     <EventLink
                       name={g.t}
                       u={g.e}
-                      className="text-[#7e8e9f] hover:text-[#c8aa6e] hover:underline"
+                      className="text-rw-muted hover:text-rw-accent hover:underline"
                     />{" "}
                     · {fmtDate(g.date)}
                   </div>
@@ -289,17 +289,17 @@ const RecordsPanel: React.FC = () => {
               {rows.map((p, i) => (
                 <li key={i} className="min-w-0">
                   <div className="truncate">
-                    <span className="text-[#c8aa6e] font-bold mr-1">
+                    <span className="text-rw-accent font-bold mr-1">
                       {fmt(p.v)}
                     </span>
                     <PlayerLink name={p.pl} u={p.u} />
-                    <span className="text-[#9bb3c9]">
+                    <span className="text-rw-sub">
                       {" "}
                       {champName(p.c)}{" "}
                       {p.g ? (
                         <HubLink
                           to={{ kind: "match", slug: p.g }}
-                          className="text-[#9bb3c9] hover:text-[#c8aa6e] hover:underline"
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
                         >
                           {p.kda}
                         </HubLink>
@@ -308,12 +308,12 @@ const RecordsPanel: React.FC = () => {
                       )}
                     </span>
                   </div>
-                  <div className="text-[10px] text-[#7e8e9f] truncate">
+                  <div className="text-[10px] text-rw-muted truncate">
                     vs {p.opp} ·{" "}
                     <EventLink
                       name={p.t}
                       u={p.e}
-                      className="text-[#7e8e9f] hover:text-[#c8aa6e] hover:underline"
+                      className="text-rw-muted hover:text-rw-accent hover:underline"
                     />{" "}
                     · {fmtDate(p.date)}
                   </div>
@@ -331,7 +331,7 @@ const RecordsPanel: React.FC = () => {
               {rows.map((p, i) => (
                 <li key={i} className="flex justify-between gap-2 min-w-0">
                   <PlayerLink name={p.pl} u={p.u} />
-                  <span className="text-[#c8aa6e] font-bold">
+                  <span className="text-rw-accent font-bold">
                     {fmtNum(p.v)}
                   </span>
                 </li>
@@ -341,7 +341,7 @@ const RecordsPanel: React.FC = () => {
         );
         return (
           <div className="space-y-3">
-            <p className="text-[11px] text-[#7e8e9f]">
+            <p className="text-[11px] text-rw-muted">
               {tl(
                 "Top leagues and international events only. Games shorter than 14 minutes are skipped, and a game only counts when its numbers agree across Leaguepedia's tables.",
               )}{" "}
@@ -376,8 +376,8 @@ const RecordsPanel: React.FC = () => {
                   {r.team.streaks.map((t, i) => (
                     <li key={i} className="flex justify-between gap-2 min-w-0">
                       <TeamLink name={t.team} u={t.u} />
-                      <span className="text-[#7e8e9f]">
-                        <span className="text-[#c8aa6e] font-bold">
+                      <span className="text-rw-muted">
+                        <span className="text-rw-accent font-bold">
                           {tl("{n} games", { n: t.v })}
                         </span>{" "}
                         · {tl("ended {date}", { date: fmtDate(t.date) })}
@@ -395,11 +395,11 @@ const RecordsPanel: React.FC = () => {
                   {r.team.titles.map((t, i) => (
                     <li key={i} className="flex justify-between gap-2 min-w-0">
                       <TeamLink name={t.team} u={t.u} />
-                      <span className="text-[#7e8e9f]">
+                      <span className="text-rw-muted">
                         {t.worlds
                           ? tl("{n} Worlds", { n: t.worlds }) + " · "
                           : ""}
-                        <span className="text-[#c8aa6e] font-bold">
+                        <span className="text-rw-accent font-bold">
                           {tl("{n} total", { n: t.v })}
                         </span>
                       </span>
@@ -443,8 +443,8 @@ const TitlesPanel: React.FC = () => {
             onClick={() => setKind(f.key)}
             className={`px-2.5 py-1.5 rounded-lg border ${
               kind === f.key
-                ? "bg-[#c8aa6e] text-[#091428] font-bold border-[#c8aa6e]"
-                : "border-[#1e282d] text-[#9bb3c9]"
+                ? "bg-rw-accent text-rw-bg font-bold border-rw-accent"
+                : "border-rw-border text-rw-sub"
             }`}
           >
             {tl(f.label)}
@@ -479,27 +479,27 @@ const TitlesPanel: React.FC = () => {
                   {rows.map((x) => (
                     <tr
                       key={x.t + x.date}
-                      className="border-t border-[#1e282d]"
+                      className="border-t border-rw-border"
                     >
                       <td className={`${td} max-w-[14rem] truncate`}>
                         <Trophy
-                          className={`w-3 h-3 inline mr-1 ${x.kind === "Worlds" ? "text-[#c8aa6e]" : "text-[#7e8e9f]"}`}
+                          className={`w-3 h-3 inline mr-1 ${x.kind === "Worlds" ? "text-rw-accent" : "text-rw-muted"}`}
                         />
                         <EventLink name={eventTitle(x.t)} u={x.e} />
                       </td>
                       <td className={td}>
                         <TeamLink name={x.as} u={x.u} />
                         {x.as !== x.w && (
-                          <span className="text-[#7e8e9f] text-[10px]">
+                          <span className="text-rw-muted text-[10px]">
                             {" "}
                             ({tl("now {team}", { team: x.w })})
                           </span>
                         )}
                       </td>
-                      <td className={`${td} text-[#9bb3c9]`}>
+                      <td className={`${td} text-rw-sub`}>
                         {x.score} vs {x.l}
                       </td>
-                      <td className={`${td} text-[#7e8e9f]`}>
+                      <td className={`${td} text-rw-muted`}>
                         {fmtDate(x.date)}
                       </td>
                     </tr>
@@ -545,12 +545,12 @@ export const StatsView: React.FC<StatsViewProps> = ({
         ref={scroller}
         className="p-4 space-y-4 page-5xl overflow-y-auto h-full"
       >
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#1e282d]">
-          <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-rw-border">
+          <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-2">
             <BarChart3 className="w-4 h-4" /> {tl("Pro Stats")}
           </h2>
           {hubMeta.data && (
-            <span className="text-[11px] text-[#7e8e9f]">
+            <span className="text-[11px] text-rw-muted">
               {tl("{n} pro games · {from}–{to} · updated through the day", {
                 n: fmtNum(hubMeta.data.games),
                 from: "2011",
@@ -568,7 +568,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
             <button
               type="button"
               onClick={back}
-              className="flex items-center gap-1 text-xs text-[#0ac8b9] hover:underline shrink-0"
+              className="flex items-center gap-1 text-xs text-rw-teal hover:underline shrink-0"
               aria-label={tl("Back")}
             >
               <ArrowLeft className="w-3.5 h-3.5" />{" "}
@@ -583,8 +583,8 @@ export const StatsView: React.FC<StatsViewProps> = ({
                 to={{ kind: s.kind } as HubRoute}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
                   route.kind === s.kind
-                    ? "bg-[#c8aa6e] text-[#091428] border-[#c8aa6e]"
-                    : "border-[#1e282d] text-[#9bb3c9] hover:text-[#f0e6d2] hover:border-[#c8aa6e]/50"
+                    ? "bg-rw-accent text-rw-bg border-rw-accent"
+                    : "border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50"
                 }`}
               >
                 {s.icon}
@@ -600,7 +600,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
         </div>
 
         {settings.spoilerMode && (
-          <p className="text-[11px] text-[#c8aa6e] bg-[#c8aa6e]/10 border border-[#c8aa6e]/30 rounded-lg px-3 py-2">
+          <p className="text-[11px] text-rw-accent bg-rw-accent/10 border border-rw-accent/30 rounded-lg px-3 py-2">
             {tl(
               "Spoiler mode is on: results from the last two weeks are hidden until you reveal them. Older results and career stats still show.",
             )}
@@ -647,13 +647,13 @@ export const StatsView: React.FC<StatsViewProps> = ({
         )}
         {route.kind === "champ" && <ChampPage slug={route.slug} />}
 
-        <p className="text-[10px] text-[#7e8e9f] text-center pt-2">
+        <p className="text-[10px] text-rw-muted text-center pt-2">
           {tl(
             "Stats come from RiftWise's pro games catalog (built from public Leaguepedia data) and are rebuilt whenever new games come in.",
           )}
         </p>
         <p className="text-[11px] text-center flex flex-wrap justify-center gap-x-3 gap-y-1">
-          <HubLink to={{ kind: "about" }} className="text-[#9bb3c9] hover:text-[#c8aa6e] hover:underline">
+          <HubLink to={{ kind: "about" }} className="text-rw-sub hover:text-rw-accent hover:underline">
             {tl("How we count")}
           </HubLink>
           <a
@@ -664,11 +664,11 @@ export const StatsView: React.FC<StatsViewProps> = ({
                 onOpenUrl(reportUrl(hubShareUrl(route)));
               }
             }}
-            className="text-[#9bb3c9] hover:text-[#c8aa6e] hover:underline"
+            className="text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Report a wrong stat")}
           </a>
-          <HubLink to={{ kind: "data" }} className="text-[#9bb3c9] hover:text-[#c8aa6e] hover:underline">
+          <HubLink to={{ kind: "data" }} className="text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Data downloads")}
           </HubLink>
         </p>

@@ -252,15 +252,15 @@ const Card: React.FC<{
 }> = ({ s, text, onOpenUrl }) => (
   <button
     onClick={() => onOpenUrl(s.url)}
-    className="text-left bg-[#0a1420] border border-[#1e282d] hover:border-[#c8aa6e] p-4 rounded-lg transition-all group"
+    className="text-left bg-rw-surface border border-rw-border hover:border-rw-accent p-4 rounded-lg transition-all group"
   >
     <div className="flex items-center justify-between gap-2 mb-1.5">
-      <span className="text-sm font-bold text-[#f0e6d2] group-hover:text-[#c8aa6e] transition-colors">
+      <span className="text-sm font-bold text-rw-text group-hover:text-rw-accent transition-colors">
         {s.name}
       </span>
-      <ExternalLink className="w-3.5 h-3.5 text-[#0ac8b9] shrink-0" />
+      <ExternalLink className="w-3.5 h-3.5 text-rw-teal shrink-0" />
     </div>
-    <p className="text-xs text-[#7e8e9f] leading-relaxed">{text}</p>
+    <p className="text-xs text-rw-muted leading-relaxed">{text}</p>
   </button>
 );
 
@@ -274,12 +274,12 @@ export const NewsView: React.FC<NewsViewProps> = ({ onOpenUrl }) => {
   );
   return (
     <div className="p-4 space-y-4 page-4xl overflow-y-auto h-full select-none">
-      <div className="pb-1 border-b border-[#1e282d]">
-        <h2 className="text-xs font-bold text-[#c8aa6e] uppercase tracking-wider flex items-center gap-1.5">
-          <Newspaper className="w-3.5 h-3.5 text-[#0ac8b9]" />
+      <div className="pb-1 border-b border-rw-border">
+        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
+          <Newspaper className="w-3.5 h-3.5 text-rw-teal" />
           {tl("News Sources")}
         </h2>
-        <div className="text-[11px] text-[#7e8e9f] mt-0.5">
+        <div className="text-[11px] text-rw-muted mt-0.5">
           {tl(
             "Links to LoL Esports outlets. RiftWise does not show live headlines here.",
           )}
@@ -288,7 +288,7 @@ export const NewsView: React.FC<NewsViewProps> = ({ onOpenUrl }) => {
 
       {local.length > 0 && (
         <>
-          <h3 className="text-[10px] font-bold uppercase tracking-wider text-[#7e8e9f]">
+          <h3 className="text-[10px] font-bold uppercase tracking-wider text-rw-muted">
             {tl("In your language")}
           </h3>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -296,7 +296,7 @@ export const NewsView: React.FC<NewsViewProps> = ({ onOpenUrl }) => {
               <Card key={s.name} s={s} text={s.blurb} onOpenUrl={onOpenUrl} />
             ))}
           </div>
-          <h3 className="text-[10px] font-bold uppercase tracking-wider text-[#7e8e9f] pt-1">
+          <h3 className="text-[10px] font-bold uppercase tracking-wider text-rw-muted pt-1">
             {tl("International")}
           </h3>
         </>

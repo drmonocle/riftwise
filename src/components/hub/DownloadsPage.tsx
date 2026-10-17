@@ -54,16 +54,16 @@ export const DownloadsPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({
   return (
     <div className="space-y-3 text-xs">
       <div className={`${card} space-y-2`}>
-        <p className="text-[#f0e6d2] font-semibold">{tl("Every pro game as a spreadsheet (CSV), free.")}</p>
-        <p className="text-[#9bb3c9]">
+        <p className="text-rw-text font-semibold">{tl("Every pro game as a spreadsheet (CSV), free.")}</p>
+        <p className="text-rw-sub">
           {tl("One row per player and one per team for every game, with the champion, pick order, K/D/A, CS, gold, damage, vision, objectives, bans and picks. Opens in Excel, Google Sheets, Python or R.")}
         </p>
-        <p className="text-[#9bb3c9]">{tl("Free to use. Please credit RiftWise (lolworlds.com/riftwise) and Leaguepedia (CC BY-SA 3.0).")}</p>
+        <p className="text-rw-sub">{tl("Free to use. Please credit RiftWise (lolworlds.com/riftwise) and Leaguepedia (CC BY-SA 3.0).")}</p>
         {!IS_WEB && (
           <button
             type="button"
             onClick={() => onOpenUrl?.("https://lolworlds.com/riftwise/stats/data")}
-            className="text-[#0ac8b9] hover:underline font-semibold"
+            className="text-rw-teal hover:underline font-semibold"
           >
             {tl("Downloads work best in your browser: open this page there")}
           </button>
@@ -79,7 +79,7 @@ export const DownloadsPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({
             value={cur?.u || ""}
             onChange={(e) => setLeague(e.target.value)}
             aria-label={tl("Leagues")}
-            className="bg-[#091428] border border-[#1e282d] rounded-lg px-2 py-1.5 text-[#f0e6d2] max-w-full"
+            className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text max-w-full"
           >
             <optgroup label={tl("Leagues")}>
               {main.map((l) => (
@@ -100,8 +100,8 @@ export const DownloadsPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({
           </select>
           {cur && <LeagueYears league={cur} onOpenUrl={onOpenUrl} />}
           <Section title={tl("Columns")}>
-            <p className="font-mono text-[11px] text-[#9bb3c9] break-words">{CSV_COLUMNS}</p>
-            <p className="text-[10px] text-[#7e8e9f]">
+            <p className="font-mono text-[11px] text-rw-sub break-words">{CSV_COLUMNS}</p>
+            <p className="text-[10px] text-rw-muted">
               {tl("Team rows have position \"team\" and carry the objectives, bans and picks; player rows carry the player's numbers. Empty means not recorded.")}
             </p>
           </Section>
@@ -137,25 +137,25 @@ const LeagueYears: React.FC<{ league: DownloadLeague; onOpenUrl?: (url: string) 
   return (
     <div className={`${card} space-y-1`}>
       <div className="flex items-baseline justify-between gap-2">
-        <h3 className="text-sm font-bold text-[#f0e6d2]">{league.l || league.u}</h3>
-        {busy && <span className="text-[11px] text-[#c8aa6e]">{busy}</span>}
+        <h3 className="text-sm font-bold text-rw-text">{league.l || league.u}</h3>
+        {busy && <span className="text-[11px] text-rw-accent">{busy}</span>}
       </div>
       {years.map((y) => {
         const evs = league.y[y];
         const games = evs.reduce((s, e) => s + e[2], 0);
         return (
-          <div key={y} className="border-t border-[#1e282d] py-1.5">
+          <div key={y} className="border-t border-rw-border py-1.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <button type="button" onClick={() => setOpen(open === y ? null : y)} className="text-left">
-                <span className="font-bold text-[#f0e6d2]">{y}</span>{" "}
-                <span className="text-[#7e8e9f]">
+                <span className="font-bold text-rw-text">{y}</span>{" "}
+                <span className="text-rw-muted">
                   · {tn("{n} game", "{n} games", games)} · {tn("{n} tournament", "{n} tournaments", evs.length)}
                 </span>
               </button>
               <button
                 type="button"
                 onClick={() => wholeYear(y)}
-                className="flex items-center gap-1 px-2 py-1 rounded border border-[#1e282d] text-[#0ac8b9] hover:border-[#0ac8b9]"
+                className="flex items-center gap-1 px-2 py-1 rounded border border-rw-border text-rw-teal hover:border-rw-teal"
               >
                 <Download className="w-3 h-3" />
                 {tl("Whole year (CSV)")}
@@ -165,10 +165,10 @@ const LeagueYears: React.FC<{ league: DownloadLeague; onOpenUrl?: (url: string) 
               <ul className="mt-1 space-y-0.5 pl-2">
                 {evs.map(([slug, name, g]) => (
                   <li key={slug} className="flex items-center justify-between gap-2">
-                    <span className="truncate text-[#9bb3c9]">
-                      {name} <span className="text-[#7e8e9f]">· {tn("{n} game", "{n} games", g)}</span>
+                    <span className="truncate text-rw-sub">
+                      {name} <span className="text-rw-muted">· {tn("{n} game", "{n} games", g)}</span>
                     </span>
-                    <button type="button" onClick={() => downloadEventCsv(slug, onOpenUrl)} className="text-[#0ac8b9] hover:underline shrink-0">
+                    <button type="button" onClick={() => downloadEventCsv(slug, onOpenUrl)} className="text-rw-teal hover:underline shrink-0">
                       CSV
                     </button>
                   </li>

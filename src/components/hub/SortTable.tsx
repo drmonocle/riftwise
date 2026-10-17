@@ -49,7 +49,7 @@ export const TableExport: React.FC<{ tableRef: React.RefObject<HTMLTableElement 
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  const btn = "flex items-center gap-1 px-2 py-1 rounded border border-[#1e282d] text-[#9bb3c9] hover:text-[#f0e6d2] hover:border-[#2c3c44]";
+  const btn = "flex items-center gap-1 px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-line";
   return (
     <div className="flex justify-end gap-1.5 text-[10px]">
       <button type="button" onClick={copy} className={btn} title={tl("Copy the table to paste into a spreadsheet")}>
@@ -121,7 +121,7 @@ export function SortTable<T>({
                 <button
                   type="button"
                   onClick={() => setSort((s) => ({ key: c.key, desc: s.key === c.key ? !s.desc : true }))}
-                  className={sort.key === c.key ? "text-[#c8aa6e]" : "hover:text-[#f0e6d2]"}
+                  className={sort.key === c.key ? "text-rw-accent" : "hover:text-rw-text"}
                 >
                   {c.label}
                   {sort.key === c.key ? (sort.desc ? " ▼" : " ▲") : ""}
@@ -132,7 +132,7 @@ export function SortTable<T>({
         </thead>
         <tbody>
           {sorted.map((r, i) => (
-            <tr key={rowKey(r, i)} className="border-t border-[#1e282d]">
+            <tr key={rowKey(r, i)} className="border-t border-rw-border">
               {columns.map((c) => (
                 <td key={c.key} className={`${td} ${c.className || ""}`}>
                   {c.render ? c.render(r) : c.value(r) ?? "–"}

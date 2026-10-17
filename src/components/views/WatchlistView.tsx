@@ -209,13 +209,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
   return (
     <div className="p-4 space-y-4 page-4xl overflow-y-auto h-full select-none text-xs">
       {/* Active Watchlist Summary */}
-      <div className="p-3 rounded-lg bg-[#0a1420] border border-[#1e282d] space-y-2">
+      <div className="p-3 rounded-lg bg-rw-surface border border-rw-border space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-[#c8aa6e] uppercase tracking-wider text-[11px]">
+            <span className="font-bold text-rw-accent uppercase tracking-wider text-[11px]">
               {tl("Active Watchlist")}
             </span>
-            <span className="text-[#7e8e9f] text-[11px]">
+            <span className="text-rw-muted text-[11px]">
               {tl("{teams} teams · {players} players · {regions} regions · {leagues} leagues", {
                 teams: settings.followedTeams.length,
                 players: settings.followedPlayers.length,
@@ -229,10 +229,10 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             <button
               onClick={onRefreshCatalog}
               disabled={isRefreshingCatalog}
-              className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#091428] border border-[#1e282d] text-[10px] text-[#7e8e9f] hover:text-[#0ac8b9] transition-colors"
+              className="flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-teal transition-colors"
               title={tl("Check Riot API for roster transfers, trades, and new leagues")}
             >
-              <RefreshCw className={`w-3 h-3 ${isRefreshingCatalog ? "animate-spin text-[#0ac8b9]" : ""}`} />
+              <RefreshCw className={`w-3 h-3 ${isRefreshingCatalog ? "animate-spin text-rw-teal" : ""}`} />
               <span>{isRefreshingCatalog ? tl("Syncing directory…") : tl("Check roster updates")}</span>
             </button>
           )}
@@ -243,7 +243,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           {teamChips.map((code) => (
             <span
               key={`chip-t-${code}`}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#091428] border border-[#c8aa6e]/40 text-[#c8aa6e] font-semibold text-[10px]"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-accent/40 text-rw-accent font-semibold text-[10px]"
             >
               <span>{code}</span>
               <button
@@ -260,7 +260,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           {playerChips.map((name) => (
             <span
               key={`chip-p-${name}`}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#091428] border border-[#0ac8b9]/40 text-[#0ac8b9] font-semibold text-[10px]"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-teal/40 text-rw-teal font-semibold text-[10px]"
             >
               <span>{name}</span>
               <button
@@ -278,14 +278,14 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             <button
               type="button"
               onClick={() => setShowAllChips((v) => !v)}
-              className="inline-flex items-center px-2 py-0.5 rounded border border-[#1e282d] text-[#0ac8b9] hover:border-[#0ac8b9]/60 text-[10px] font-semibold"
+              className="inline-flex items-center px-2 py-0.5 rounded border border-rw-border text-rw-teal hover:border-rw-teal/60 text-[10px] font-semibold"
             >
               {showAllChips ? tl("Show fewer") : tl("Show all {n}", { n: chipTotal })}
             </button>
           )}
 
           {settings.followedRegions.length > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#091428] border border-[#7e8e9f]/40 text-[#f0e6d2] text-[10px]">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-muted/40 text-rw-text text-[10px]">
               <span>🌐 {tl("{n} Regions", { n: settings.followedRegions.length })}</span>
             </span>
           )}
@@ -295,12 +295,12 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
       {IS_WEB && <PushAlertsBanner settings={settings} />}
 
       {/* Sub-tab Navigation & Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[#1e282d]">
-        <div className="grid grid-cols-4 sm:flex items-center gap-1 bg-[#0a0e17] p-1 rounded-lg border border-[#1e282d]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-rw-border">
+        <div className="grid grid-cols-4 sm:flex items-center gap-1 bg-rw-deep p-1 rounded-lg border border-rw-border">
           <button
             onClick={() => setTab("teams")}
             className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold rounded transition-all ${
-              tab === "teams" ? "bg-[#c8aa6e] text-[#091428]" : "text-[#7e8e9f] hover:text-[#f0e6d2]"
+              tab === "teams" ? "bg-rw-accent text-rw-bg" : "text-rw-muted hover:text-rw-text"
             }`}
           >
             <Shield className="w-3.5 h-3.5" />
@@ -310,7 +310,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           <button
             onClick={() => setTab("players")}
             className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold rounded transition-all ${
-              tab === "players" ? "bg-[#c8aa6e] text-[#091428]" : "text-[#7e8e9f] hover:text-[#f0e6d2]"
+              tab === "players" ? "bg-rw-accent text-rw-bg" : "text-rw-muted hover:text-rw-text"
             }`}
           >
             <User className="w-3.5 h-3.5" />
@@ -320,7 +320,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           <button
             onClick={() => setTab("regions")}
             className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold rounded transition-all ${
-              tab === "regions" ? "bg-[#c8aa6e] text-[#091428]" : "text-[#7e8e9f] hover:text-[#f0e6d2]"
+              tab === "regions" ? "bg-rw-accent text-rw-bg" : "text-rw-muted hover:text-rw-text"
             }`}
           >
             <Globe className="w-3.5 h-3.5" />
@@ -330,7 +330,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           <button
             onClick={() => setTab("leagues")}
             className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold rounded transition-all ${
-              tab === "leagues" ? "bg-[#c8aa6e] text-[#091428]" : "text-[#7e8e9f] hover:text-[#f0e6d2]"
+              tab === "leagues" ? "bg-rw-accent text-rw-bg" : "text-rw-muted hover:text-rw-text"
             }`}
           >
             <Trophy className="w-3.5 h-3.5" />
@@ -340,13 +340,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
 
         {/* Dynamic Search Input */}
         <div className="relative w-full sm:w-72">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-[#7e8e9f]" />
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-rw-muted" />
           <input
             type="text"
             placeholder={searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[#0a1420] border border-[#1e282d] rounded-lg pl-8 pr-3 py-1 text-xs text-[#f0e6d2] focus:outline-none focus:border-[#c8aa6e]"
+            className="w-full bg-rw-surface border border-rw-border rounded-lg pl-8 pr-3 py-1 text-xs text-rw-text focus:outline-none focus:border-rw-accent"
           />
         </div>
       </div>
@@ -354,7 +354,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
       {/* 1. TEAMS SUB-TAB */}
       {tab === "teams" && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between text-[11px] text-[#7e8e9f]">
+          <div className="flex items-center justify-between text-[11px] text-rw-muted">
             <span>
               {!q
                 ? tl("Showing major pro teams ({shown} of {total}) · type above to search all teams", { shown: filteredTeams.length, total: catalog.teams.length })
@@ -375,8 +375,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   key={team.slug}
                   className={`rounded-lg border p-3 transition-all ${
                     isFollowed
-                      ? "bg-[#0a1420] border-[#c8aa6e] text-[#f0e6d2]"
-                      : "bg-[#091428] border-[#1e282d] text-[#7e8e9f] hover:border-[#7e8e9f]"
+                      ? "bg-rw-surface border-rw-accent text-rw-text"
+                      : "bg-rw-bg border-rw-border text-rw-muted hover:border-rw-muted"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -385,17 +385,17 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                         <img
                           src={team.image}
                           alt={team.code}
-                          className="w-9 h-9 object-contain rounded bg-[#0a0e17] p-0.5"
+                          className="w-9 h-9 object-contain rounded bg-rw-deep p-0.5"
                           loading="lazy"
                         />
                       ) : (
-                        <div className="w-9 h-9 rounded-lg bg-[#0a0e17] border border-[#1e282d] flex items-center justify-center font-bold font-mono text-xs text-[#c8aa6e]">
+                        <div className="w-9 h-9 rounded-lg bg-rw-deep border border-rw-border flex items-center justify-center font-bold font-mono text-xs text-rw-accent">
                           {team.code.slice(0, 3)}
                         </div>
                       )}
                       <div>
-                        <div className="font-bold text-xs text-[#f0e6d2]">{team.name}</div>
-                        <div className="text-[11px] text-[#7e8e9f]">
+                        <div className="font-bold text-xs text-rw-text">{team.name}</div>
+                        <div className="text-[11px] text-rw-muted">
                           {team.league ? `${team.league} · ` : ""}
                           {team.code}
                         </div>
@@ -406,7 +406,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       {roster.length > 0 && (
                         <button
                           onClick={() => setExpandedTeamSlug(isExpanded ? null : team.slug)}
-                          className="px-2 py-1 rounded bg-[#091428] border border-[#1e282d] text-[10px] text-[#7e8e9f] hover:text-[#f0e6d2]"
+                          className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-text"
                         >
                           {(isExpanded ? "▲ " : "▼ ") + tl("Roster ({n})", { n: roster.length })}
                         </button>
@@ -416,8 +416,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                         onClick={() => toggleTeam(team.code)}
                         className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors ${
                           isFollowed
-                            ? "bg-[#c8aa6e] text-[#091428]"
-                            : "bg-[#0a0e17] border border-[#1e282d] text-[#7e8e9f] hover:text-[#f0e6d2]"
+                            ? "bg-rw-accent text-rw-bg"
+                            : "bg-rw-deep border border-rw-border text-rw-muted hover:text-rw-text"
                         }`}
                       >
                         {isFollowed ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
@@ -428,8 +428,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
 
                   {/* Expanded Registered Roster */}
                   {isExpanded && roster.length > 0 && (
-                    <div className="mt-2.5 pt-2.5 border-t border-[#1e282d] space-y-1">
-                      <div className="text-[10px] text-[#7e8e9f] uppercase tracking-wider mb-1">
+                    <div className="mt-2.5 pt-2.5 border-t border-rw-border space-y-1">
+                      <div className="text-[10px] text-rw-muted uppercase tracking-wider mb-1">
                         {tn("Active roster ({n} player)", "Active roster ({n} players)", roster.length)}
                       </div>
                       {roster.map((p) => {
@@ -437,16 +437,16 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                         return (
                           <div key={`${p.teamCode}-${p.name}`} className="flex items-center justify-between text-[11px] py-0.5">
                             <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-mono px-1 rounded bg-[#0a0e17] text-[#0ac8b9] w-12 text-center">
+                              <span className="text-[10px] font-mono px-1 rounded bg-rw-deep text-rw-teal w-12 text-center">
                                 {roleName(p.role)}
                               </span>
-                              <span className="text-[#f0e6d2] font-semibold">{p.name}</span>
-                              {p.realName && <span className="text-[#7e8e9f]">({p.realName})</span>}
+                              <span className="text-rw-text font-semibold">{p.name}</span>
+                              {p.realName && <span className="text-rw-muted">({p.realName})</span>}
                             </div>
                             <button
                               onClick={() => togglePlayer(p.name)}
                               className={`text-[10px] font-semibold ${
-                                isPlayerFollowed ? "text-[#0ac8b9]" : "text-[#7e8e9f] hover:text-[#c8aa6e]"
+                                isPlayerFollowed ? "text-rw-teal" : "text-rw-muted hover:text-rw-accent"
                               }`}
                             >
                               {isPlayerFollowed ? "★ " + tl("Following") : "☆ " + tl("Follow")}
@@ -466,7 +466,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
       {/* 2. PLAYERS SUB-TAB */}
       {tab === "players" && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between text-[11px] text-[#7e8e9f]">
+          <div className="flex items-center justify-between text-[11px] text-rw-muted">
             <span>
               {!q
                 ? tl("Showing top pro players ({shown} of {total}) · type above to search all registered pros", { shown: filteredPlayers.length, total: catalog.players.length })
@@ -484,24 +484,24 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   onClick={() => togglePlayer(player.name)}
                   className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
                     isFollowed
-                      ? "bg-[#0a1420] border-[#0ac8b9] text-[#f0e6d2]"
-                      : "bg-[#091428] border-[#1e282d] text-[#7e8e9f] hover:border-[#7e8e9f]"
+                      ? "bg-rw-surface border-rw-teal text-rw-text"
+                      : "bg-rw-bg border-rw-border text-rw-muted hover:border-rw-muted"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#0a0e17] border border-[#1e282d] text-[#0ac8b9] w-14 text-center">
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-rw-deep border border-rw-border text-rw-teal w-14 text-center">
                       {roleName(player.role)}
                     </span>
                     <div>
-                      <div className="font-bold text-xs text-[#f0e6d2] flex items-center gap-1.5">
+                      <div className="font-bold text-xs text-rw-text flex items-center gap-1.5">
                         <span>{player.name}</span>
                         {player.realName && (
-                          <span className="text-[10px] font-normal text-[#7e8e9f]">
+                          <span className="text-[10px] font-normal text-rw-muted">
                             · {player.realName}
                           </span>
                         )}
                       </div>
-                      <div className="text-[10px] text-[#7e8e9f]">
+                      <div className="text-[10px] text-rw-muted">
                         {player.teamName} ({player.teamCode})
                       </div>
                     </div>
@@ -514,8 +514,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     }}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors ${
                       isFollowed
-                        ? "bg-[#0ac8b9] text-[#091428]"
-                        : "bg-[#0a0e17] border border-[#1e282d] text-[#7e8e9f] hover:text-[#f0e6d2]"
+                        ? "bg-rw-teal text-rw-bg"
+                        : "bg-rw-deep border border-rw-border text-rw-muted hover:text-rw-text"
                     }`}
                   >
                     {isFollowed ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
@@ -532,19 +532,19 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
       {tab === "regions" && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <div className="text-[11px] text-[#7e8e9f]">
+            <div className="text-[11px] text-rw-muted">
               {tl("Following a region follows every league in it. All {n} regions are followed by default; unfollow the ones you don't care about to tighten \"Followed only\" and your match alerts.", { n: MAJOR_REGIONS.length })}
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={followAllRegions}
-                className="px-2.5 py-1 rounded bg-[#0a1420] border border-[#c8aa6e] text-[#c8aa6e] hover:bg-[#c8aa6e] hover:text-[#091428] font-semibold text-[11px] transition-colors"
+                className="px-2.5 py-1 rounded bg-rw-surface border border-rw-accent text-rw-accent hover:bg-rw-accent hover:text-rw-bg font-semibold text-[11px] transition-colors"
               >
                 {tl("★ Follow All")}
               </button>
               <button
                 onClick={unfollowAllRegions}
-                className="px-2.5 py-1 rounded bg-[#0a1420] border border-[#1e282d] text-[#7e8e9f] hover:text-[#e84057] font-semibold text-[11px] transition-colors"
+                className="px-2.5 py-1 rounded bg-rw-surface border border-rw-border text-rw-muted hover:text-rw-red font-semibold text-[11px] transition-colors"
               >
                 {tl("Unfollow All")}
               </button>
@@ -561,15 +561,15 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   onClick={() => toggleRegion(region.code)}
                   className={`flex items-center justify-between p-3.5 rounded-lg border cursor-pointer transition-all ${
                     isFollowed
-                      ? "bg-[#0a1420] border-[#c8aa6e] text-[#f0e6d2]"
-                      : "bg-[#091428] border-[#1e282d] text-[#7e8e9f] hover:border-[#7e8e9f]"
+                      ? "bg-rw-surface border-rw-accent text-rw-text"
+                      : "bg-rw-bg border-rw-border text-rw-muted hover:border-rw-muted"
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-xl">{region.badge}</span>
                     <div>
-                      <div className="font-bold text-xs text-[#f0e6d2]">{regionName(region.code, region.name)}</div>
-                      <div className="text-[10px] text-[#7e8e9f]">
+                      <div className="font-bold text-xs text-rw-text">{regionName(region.code, region.name)}</div>
+                      <div className="text-[10px] text-rw-muted">
                         {region.leagues.map((l) => tl(l)).join(" · ")}
                       </div>
                     </div>
@@ -582,8 +582,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     }}
                     className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-semibold transition-colors ${
                       isFollowed
-                        ? "bg-[#c8aa6e] text-[#091428]"
-                        : "bg-[#0a0e17] border border-[#1e282d] text-[#7e8e9f] hover:text-[#f0e6d2]"
+                        ? "bg-rw-accent text-rw-bg"
+                        : "bg-rw-deep border border-rw-border text-rw-muted hover:text-rw-text"
                     }`}
                   >
                     {isFollowed ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
@@ -600,25 +600,25 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
       {tab === "leagues" && (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="text-[11px] text-[#7e8e9f]">
+            <div className="text-[11px] text-rw-muted">
               {tl("Tracking all {n} global Riot leagues. Followed leagues appear in filtered schedules and live notifications.", { n: catalog.leagues.length || 51 })}
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={followAllLeagues}
-                className="px-2.5 py-1 rounded bg-[#0a1420] border border-[#c8aa6e] text-[#c8aa6e] hover:bg-[#c8aa6e] hover:text-[#091428] font-semibold text-[11px] transition-colors"
+                className="px-2.5 py-1 rounded bg-rw-surface border border-rw-accent text-rw-accent hover:bg-rw-accent hover:text-rw-bg font-semibold text-[11px] transition-colors"
               >
                 {tl("Follow all ({n})", { n: catalog.leagues.length || 51 })}
               </button>
               <button
                 onClick={unfollowAllLeagues}
-                className="px-2.5 py-1 rounded bg-[#0a1420] border border-[#1e282d] text-[#7e8e9f] hover:text-[#e84057] font-semibold text-[11px] transition-colors"
+                className="px-2.5 py-1 rounded bg-rw-surface border border-rw-border text-rw-muted hover:text-rw-red font-semibold text-[11px] transition-colors"
               >
                 {tl("Unfollow All")}
               </button>
               <button
                 onClick={followInternationalEvents}
-                className="px-2.5 py-1 rounded bg-[#0a1420] border border-[#0ac8b9] text-[#0ac8b9] hover:bg-[#0ac8b9] hover:text-[#091428] font-semibold text-[11px] transition-colors"
+                className="px-2.5 py-1 rounded bg-rw-surface border border-rw-teal text-rw-teal hover:bg-rw-teal hover:text-rw-bg font-semibold text-[11px] transition-colors"
               >
                 {tl("★ International Events")}
               </button>
@@ -635,8 +635,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   onClick={() => toggleLeague(league.slug)}
                   className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
                     isFollowed
-                      ? "bg-[#0a1420] border-[#c8aa6e] text-[#f0e6d2]"
-                      : "bg-[#091428] border-[#1e282d] text-[#7e8e9f] hover:border-[#7e8e9f]"
+                      ? "bg-rw-surface border-rw-accent text-rw-text"
+                      : "bg-rw-bg border-rw-border text-rw-muted hover:border-rw-muted"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -644,17 +644,17 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       <img
                         src={league.image}
                         alt={league.name}
-                        className="w-8 h-8 object-contain rounded bg-[#0a0e17] p-0.5"
+                        className="w-8 h-8 object-contain rounded bg-rw-deep p-0.5"
                         loading="lazy"
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded bg-[#0a0e17] border border-[#1e282d] flex items-center justify-center font-bold text-xs text-[#0ac8b9]">
+                      <div className="w-8 h-8 rounded bg-rw-deep border border-rw-border flex items-center justify-center font-bold text-xs text-rw-teal">
                         <Trophy className="w-4 h-4" />
                       </div>
                     )}
                     <div>
-                      <div className="font-semibold text-xs text-[#f0e6d2]">{league.name}</div>
-                      <div className="text-[10px] text-[#7e8e9f] uppercase">{league.region ? regionName(league.region) : tl("Global")}</div>
+                      <div className="font-semibold text-xs text-rw-text">{league.name}</div>
+                      <div className="text-[10px] text-rw-muted uppercase">{league.region ? regionName(league.region) : tl("Global")}</div>
                     </div>
                   </div>
 
@@ -665,8 +665,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     }}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors ${
                       isFollowed
-                        ? "bg-[#c8aa6e] text-[#091428]"
-                        : "bg-[#0a0e17] border border-[#1e282d] text-[#7e8e9f] hover:text-[#f0e6d2]"
+                        ? "bg-rw-accent text-rw-bg"
+                        : "bg-rw-deep border border-rw-border text-rw-muted hover:text-rw-text"
                     }`}
                   >
                     {isFollowed ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}

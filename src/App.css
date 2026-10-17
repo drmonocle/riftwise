@@ -1,16 +1,88 @@
 @import "tailwindcss";
 
+/* Theme colours. Tailwind classes like bg-rw-surface or text-rw-accent/50 read these variables, and a theme
+   (src/theme.ts, Settings -> Display) is a set of values for them on <html data-theme="...">. */
+@theme inline {
+  --color-rw-bg: var(--rw-bg);
+  --color-rw-deep: var(--rw-deep);
+  --color-rw-surface: var(--rw-surface);
+  --color-rw-raised: var(--rw-raised);
+  --color-rw-border: var(--rw-border);
+  --color-rw-line: var(--rw-line);
+  --color-rw-accent: var(--rw-accent);
+  --color-rw-accent2: var(--rw-accent-2);
+  --color-rw-text: var(--rw-text);
+  --color-rw-sub: var(--rw-sub);
+  --color-rw-muted: var(--rw-muted);
+  --color-rw-teal: var(--rw-teal);
+  --color-rw-red: var(--rw-red);
+}
+
 @layer base {
-  :root {
-    --bg-main: #091428;
-    --bg-dark: #0a0e17;
-    --bg-surface: #0a1420;
-    --bg-surface-hover: #121e2d;
-    --border-main: #1e282d;
-    --gold: #c8aa6e;
-    --gold-hover: #f0e6d2;
-    --cyan: #0ac8b9;
-    --live: #e84057;
+  /* Rift (default): deep indigo with soft Rift Herald violet */
+  :root,
+  :root[data-theme="rift"] {
+    --rw-bg: #0c0a1d;
+    --rw-deep: #09071a;
+    --rw-surface: #151230;
+    --rw-raised: #201b44;
+    --rw-border: #2a2452;
+    --rw-line: #3d3570;
+    --rw-accent: #b39dff;
+    --rw-accent-2: #7f6bff;
+    --rw-text: #efeaff;
+    --rw-sub: #b9b0dc;
+    --rw-muted: #8c85b0;
+    --rw-teal: #2dd4bf;
+    --rw-red: #fb6f8f;
+    --rw-glow-1: rgba(139, 92, 246, 0.22);
+    --rw-glow-2: rgba(45, 212, 191, 0.08);
+    --rw-sheen: rgba(255, 255, 255, 0.045);
+    --rw-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(179, 157, 255, 0.03);
+    --rw-on-accent: #120d2c;
+    color-scheme: dark;
+  }
+  /* Classic: the original navy and Hextech gold */
+  :root[data-theme="classic"] {
+    --rw-bg: #091428;
+    --rw-deep: #0a0e17;
+    --rw-surface: #0a1420;
+    --rw-raised: #121e2d;
+    --rw-border: #1e282d;
+    --rw-line: #2c3c44;
+    --rw-accent: #c8aa6e;
+    --rw-accent-2: #a0844e;
+    --rw-text: #f0e6d2;
+    --rw-sub: #9bb3c9;
+    --rw-muted: #7e8e9f;
+    --rw-teal: #0ac8b9;
+    --rw-red: #e84057;
+    --rw-glow-1: rgba(200, 170, 110, 0.07);
+    --rw-glow-2: rgba(10, 200, 185, 0.05);
+    --rw-sheen: rgba(255, 255, 255, 0.025);
+    --rw-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.9);
+    --rw-on-accent: #091428;
+  }
+  /* Midnight: neutral graphite with a cool blue */
+  :root[data-theme="midnight"] {
+    --rw-bg: #0b0d12;
+    --rw-deep: #07090d;
+    --rw-surface: #12151d;
+    --rw-raised: #1b1f2a;
+    --rw-border: #252a36;
+    --rw-line: #353c4d;
+    --rw-accent: #8ab4ff;
+    --rw-accent-2: #5b8cff;
+    --rw-text: #e9edf5;
+    --rw-sub: #aab3c5;
+    --rw-muted: #7f889b;
+    --rw-teal: #22d3ee;
+    --rw-red: #f4577a;
+    --rw-glow-1: rgba(91, 140, 255, 0.14);
+    --rw-glow-2: rgba(34, 211, 238, 0.06);
+    --rw-sheen: rgba(255, 255, 255, 0.035);
+    --rw-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(138, 180, 255, 0.03);
+    --rw-on-accent: #0a0f1c;
   }
 
   html {
@@ -20,8 +92,8 @@
   body {
     margin: 0;
     padding: 0;
-    background-color: #091428;
-    color: #f0e6d2;
+    background-color: var(--rw-bg);
+    color: var(--rw-text);
     font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -48,19 +120,19 @@
   height: 12px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0e17;
+  background: var(--rw-deep);
   border-radius: 6px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2c3c44;
+  background: var(--rw-line);
   border-radius: 6px;
 }
 ::-webkit-scrollbar-thumb:horizontal {
-  background: #3d5260;
-  border: 2px solid #0a0e17;
+  background: color-mix(in oklab, var(--rw-line) 70%, var(--rw-accent) 30%);
+  border: 2px solid var(--rw-deep);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #c8aa6e;
+  background: var(--rw-accent);
 }
 
 /* Phones zoom the page in when a text box with text smaller than 16px gets focus. */
@@ -138,4 +210,48 @@
   .rw-sheet [data-nocapture="1"] {
     display: none !important;
   }
+}
+
+/* ---- Modern look (all themes): soft glows behind the app, a sheen and shadow on cards, gradient accents ---- */
+.rw-app {
+  background:
+    radial-gradient(1100px 520px at 8% -8%, var(--rw-glow-1), transparent 62%),
+    radial-gradient(900px 480px at 105% 0%, var(--rw-glow-2), transparent 60%),
+    var(--rw-bg);
+}
+@layer components {
+  /* cards and panels: a faint top sheen over the surface colour (hover colours still show through) */
+  .bg-rw-surface {
+    background-image: linear-gradient(180deg, var(--rw-sheen), transparent 55%);
+    box-shadow: var(--rw-shadow);
+  }
+  /* buttons and chips in the accent colour get a gentle two-tone gradient */
+  .bg-rw-accent {
+    background-image: linear-gradient(135deg, var(--rw-accent), var(--rw-accent-2));
+    color: var(--rw-on-accent);
+  }
+  .bg-rw-accent:hover {
+    filter: brightness(1.08);
+  }
+}
+.rw-header {
+  background:
+    linear-gradient(90deg, color-mix(in oklab, var(--rw-accent-2) 16%, transparent), transparent 45%),
+    linear-gradient(180deg, var(--rw-deep), color-mix(in oklab, var(--rw-deep) 80%, var(--rw-bg)));
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, var(--rw-accent), color-mix(in oklab, var(--rw-accent-2) 60%, transparent), transparent) 1;
+}
+.rw-logo {
+  background: linear-gradient(90deg, var(--rw-text), var(--rw-accent) 55%, var(--rw-accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.rw-nav {
+  background: color-mix(in oklab, var(--rw-bg) 82%, transparent);
+  backdrop-filter: blur(8px);
+}
+.rw-tab-active {
+  background: linear-gradient(180deg, transparent, color-mix(in oklab, var(--rw-accent) 12%, transparent));
+  box-shadow: inset 0 -2px 0 var(--rw-accent), 0 8px 18px -12px var(--rw-accent);
 }

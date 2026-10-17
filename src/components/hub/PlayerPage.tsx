@@ -94,15 +94,15 @@ const PlayerView: React.FC<{
   return (
     <div className="space-y-3">
       <div className={card}>
-        <h2 className="text-lg font-bold text-[#f0e6d2]">
+        <h2 className="text-lg font-bold text-rw-text">
           {p.name}
           {p.bio.native && (
-            <span className="text-[#9bb3c9] text-sm font-semibold ml-2">
+            <span className="text-rw-sub text-sm font-semibold ml-2">
               {p.bio.native}
             </span>
           )}
         </h2>
-        <p className="text-[11px] text-[#9bb3c9]">
+        <p className="text-[11px] text-rw-sub">
           {[
             roleName(p.role),
             p.bio.real,
@@ -114,7 +114,7 @@ const PlayerView: React.FC<{
             .join(" · ")}
         </p>
         {p.club && (
-          <p className="text-[11px] text-[#7e8e9f]">
+          <p className="text-[11px] text-rw-muted">
             <TeamLink name={p.club} u={p.clubU} />{" "}
             {tl("(last game {date})", { date: fmtDate(p.clubTo) })}
             {p.bio.contract && (
@@ -130,7 +130,7 @@ const PlayerView: React.FC<{
           </p>
         )}
         {p.bio.fav && p.bio.fav.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1 mt-1 text-[11px] text-[#7e8e9f]">
+          <div className="flex flex-wrap items-center gap-1 mt-1 text-[11px] text-rw-muted">
             {tl("Favorite champions:")}
             {p.bio.fav.map((c) => (
               <ChampLink key={c} name={c} size={16} showName={false} />
@@ -190,7 +190,7 @@ const PlayerView: React.FC<{
               key={label}
               type="button"
               onClick={() => onOpenUrl(url)}
-              className="text-[#0ac8b9] hover:underline flex items-center gap-1"
+              className="text-rw-teal hover:underline flex items-center gap-1"
             >
               <ExternalLink className="w-3 h-3" />
               {label}
@@ -198,11 +198,11 @@ const PlayerView: React.FC<{
           ))}
         </div>
         {p.bio.soloq && p.bio.soloq.length > 0 && (
-          <p className="text-[10px] text-[#7e8e9f] mt-2">
+          <p className="text-[10px] text-rw-muted mt-2">
             {tl("Solo queue:")} {p.bio.soloq.join(" · ")}
           </p>
         )}
-        <p className="text-[10px] text-[#7e8e9f] mt-2">
+        <p className="text-[10px] text-rw-muted mt-2">
           {tl("All-Star and show matches aren't counted.")}
         </p>
       </div>
@@ -216,13 +216,13 @@ const PlayerView: React.FC<{
           <ul className="text-xs space-y-1">
             {p.titles.map((x) => (
               <li key={x.t + x.date} className="flex justify-between gap-2">
-                <span className="text-[#f0e6d2] truncate min-w-0">
+                <span className="text-rw-text truncate min-w-0">
                   <Trophy
-                    className={`w-3 h-3 inline mr-1 ${x.kind === "Worlds" ? "text-[#c8aa6e]" : "text-[#7e8e9f]"}`}
+                    className={`w-3 h-3 inline mr-1 ${x.kind === "Worlds" ? "text-rw-accent" : "text-rw-muted"}`}
                   />
                   <EventLink name={eventTitle(x.t)} u={x.e} />
                 </span>
-                <span className="text-[#7e8e9f] shrink-0">
+                <span className="text-rw-muted shrink-0">
                   {fmtDate(x.date)}
                 </span>
               </li>
@@ -239,7 +239,7 @@ const PlayerView: React.FC<{
               <button
                 type="button"
                 onClick={() => setAllEvents((v) => !v)}
-                className="text-[11px] text-[#0ac8b9] hover:underline"
+                className="text-[11px] text-rw-teal hover:underline"
               >
                 {allEvents
                   ? tl("Show fewer")
@@ -279,7 +279,7 @@ const PlayerView: React.FC<{
                 <span className="truncate min-w-0">
                   <TeamLink name={t.n} u={t.u} />
                 </span>
-                <span className="text-[#7e8e9f] shrink-0">
+                <span className="text-rw-muted shrink-0">
                   {t.from.slice(0, 4)}–{t.to.slice(0, 4)} · {t.w}-{t.g - t.w}
                 </span>
               </li>
@@ -298,15 +298,15 @@ const PlayerView: React.FC<{
             </thead>
             <tbody>
               {p.years.map((y) => (
-                <tr key={y.y} className="border-t border-[#1e282d]">
-                  <td className={`${td} text-[#f0e6d2]`}>{y.y}</td>
-                  <td className={`${td} text-[#9bb3c9] max-w-[9rem] truncate`}>
+                <tr key={y.y} className="border-t border-rw-border">
+                  <td className={`${td} text-rw-text`}>{y.y}</td>
+                  <td className={`${td} text-rw-sub max-w-[9rem] truncate`}>
                     {y.team}
                   </td>
-                  <td className={`${td} text-[#9bb3c9]`}>
+                  <td className={`${td} text-rw-sub`}>
                     {y.w}-{y.g - y.w}
                   </td>
-                  <td className={`${td} text-[#9bb3c9]`}>{y.kda}</td>
+                  <td className={`${td} text-rw-sub`}>{y.kda}</td>
                 </tr>
               ))}
             </tbody>
@@ -321,7 +321,7 @@ const PlayerView: React.FC<{
             <button
               type="button"
               onClick={() => setAllChamps((v) => !v)}
-              className="text-[11px] text-[#0ac8b9] hover:underline"
+              className="text-[11px] text-rw-teal hover:underline"
             >
               {allChamps
                 ? tl("Show fewer")
@@ -343,16 +343,16 @@ const PlayerView: React.FC<{
             </thead>
             <tbody>
               {(allChamps ? p.champs : p.champs.slice(0, 15)).map((c) => (
-                <tr key={c.c} className="border-t border-[#1e282d]">
+                <tr key={c.c} className="border-t border-rw-border">
                   <td className={`${td} max-w-[10rem]`}>
                     <ChampLink name={c.c} size={18} />
                   </td>
-                  <td className={`${td} text-[#9bb3c9]`}>{c.g}</td>
-                  <td className={`${td} text-[#9bb3c9]`}>
+                  <td className={`${td} text-rw-sub`}>{c.g}</td>
+                  <td className={`${td} text-rw-sub`}>
                     {winRate(c.w, c.g)}
                   </td>
-                  <td className={`${td} text-[#9bb3c9]`}>{c.kda}</td>
-                  <td className={`${td} text-[#7e8e9f]`}>
+                  <td className={`${td} text-rw-sub`}>{c.kda}</td>
+                  <td className={`${td} text-rw-muted`}>
                     {c.k} / {c.d} / {c.a}
                   </td>
                 </tr>
@@ -372,7 +372,7 @@ const PlayerView: React.FC<{
           }
         >
           {recentHidden ? (
-            <p className="text-[11px] text-[#7e8e9f] italic">
+            <p className="text-[11px] text-rw-muted italic">
               {tl("Hidden while spoiler mode is on.")}
             </p>
           ) : (
@@ -384,7 +384,7 @@ const PlayerView: React.FC<{
                 >
                   <span className="flex items-center gap-1.5 min-w-0">
                     <span
-                      className={`w-3.5 shrink-0 font-bold ${r.win ? "text-[#0ac8b9]" : "text-[#e84057]"}`}
+                      className={`w-3.5 shrink-0 font-bold ${r.win ? "text-rw-teal" : "text-rw-red"}`}
                     >
                       {r.win
                         ? tc("short result", "W")
@@ -392,7 +392,7 @@ const PlayerView: React.FC<{
                     </span>
                     <ChampIcon name={r.c} size={18} />
                     <span className="truncate min-w-0">
-                      <span className="text-[#f0e6d2] tabular-nums">
+                      <span className="text-rw-text tabular-nums">
                         {r.k}/{r.d}/{r.a}
                       </span>{" "}
                       {r.g ? (
@@ -400,11 +400,11 @@ const PlayerView: React.FC<{
                           vs {r.opp}
                         </HubLink>
                       ) : (
-                        <span className="text-[#9bb3c9]">vs {r.opp}</span>
+                        <span className="text-rw-sub">vs {r.opp}</span>
                       )}
                     </span>
                   </span>
-                  <span className="text-[#7e8e9f] shrink-0">
+                  <span className="text-rw-muted shrink-0">
                     {fmtDate(r.date, false)}
                   </span>
                 </li>
@@ -416,17 +416,17 @@ const PlayerView: React.FC<{
           <ul className="text-xs space-y-1">
             {Object.entries(p.best).map(([k, b]) => (
               <li key={k} className="flex justify-between gap-2 min-w-0">
-                <span className="text-[#9bb3c9] shrink-0">
+                <span className="text-rw-sub shrink-0">
                   {BEST_LABEL[k] ? tl(BEST_LABEL[k]) : k}
                 </span>
-                <span className="text-[#f0e6d2] text-right truncate min-w-0">
+                <span className="text-rw-text text-right truncate min-w-0">
                   {fmtNum(b.v)}{" "}
-                  <span className="text-[#7e8e9f]">
+                  <span className="text-rw-muted">
                     ({champName(b.c)} vs{" "}
                     {b.g ? (
                       <HubLink
                         to={{ kind: "match", slug: b.g }}
-                        className="text-[#7e8e9f] hover:text-[#c8aa6e] hover:underline"
+                        className="text-rw-muted hover:text-rw-accent hover:underline"
                       >
                         {b.opp}
                       </HubLink>
@@ -454,16 +454,16 @@ const PlayerView: React.FC<{
                   <ChampIcon name={x.c} size={18} />
                   <span className="truncate">
                     {champName(x.c)}
-                    {x.x > 1 && <span className="text-[#c8aa6e]"> ×{x.x}</span>}
-                    <span className="text-[#7e8e9f]"> · {x.en}</span>
+                    {x.x > 1 && <span className="text-rw-accent"> ×{x.x}</span>}
+                    <span className="text-rw-muted"> · {x.en}</span>
                   </span>
                 </span>
-                <span className="flex items-center gap-2 shrink-0 text-[#7e8e9f]">
+                <span className="flex items-center gap-2 shrink-0 text-rw-muted">
                   {fmtDate(x.date)}
                   {x.g && (
                     <HubLink
                       to={{ kind: "match", slug: x.g }}
-                      className="text-[#0ac8b9] hover:underline"
+                      className="text-rw-teal hover:underline"
                     >
                       {tl("Details")}
                     </HubLink>
@@ -485,7 +485,7 @@ const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number] }> = ({
 }) => {
   const [hidden, reveal] = useHidden(`player-event:${x.e}`, x.date);
   return (
-    <tr className="border-t border-[#1e282d]">
+    <tr className="border-t border-rw-border">
       <td className={`${td} max-w-[13rem] truncate`}>
         <EventLink name={x.en} u={x.e} />
       </td>
@@ -493,15 +493,15 @@ const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number] }> = ({
         <TeamLink name={x.t} u={x.tu} />
       </td>
       <td
-        className={`${td} ${x.pl === "1" ? "text-[#c8aa6e] font-bold" : "text-[#9bb3c9]"}`}
+        className={`${td} ${x.pl === "1" ? "text-rw-accent font-bold" : "text-rw-sub"}`}
       >
         {hidden ? <RevealButton onReveal={reveal} small /> : x.pl || "–"}
       </td>
-      <td className={`${td} text-[#9bb3c9]`}>
+      <td className={`${td} text-rw-sub`}>
         {hidden ? x.g : `${x.w}-${x.g - x.w}`}
       </td>
-      <td className={`${td} text-[#9bb3c9]`}>{x.kda}</td>
-      <td className={`${td} text-[#9bb3c9]`}>{x.csm ?? "–"}</td>
+      <td className={`${td} text-rw-sub`}>{x.kda}</td>
+      <td className={`${td} text-rw-sub`}>{x.csm ?? "–"}</td>
       <td className={td}>
         <span className="flex gap-0.5">
           {x.c.map((c) => (

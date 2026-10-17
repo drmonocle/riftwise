@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { applyTheme } from "./theme";
 import { AppSettings, Match, StreamEvent, StreamStatus, CatalogData, AppUpdateInfo, LiveShow } from "./types";
 import {
   loadSettings,
@@ -51,7 +52,7 @@ import { PartBoundary } from "./components/PartBoundary";
 const StatsView = lazyPart(() => import("./components/views/StatsView").then((m) => m.StatsView));
 const HubSearch = lazyPart(() => import("./components/hub/HubSearch").then((m) => m.HubSearch));
 const lazyFallback = (
-  <div className="py-10 text-center text-xs text-[#9bb3c9]" role="status">
+  <div className="py-10 text-center text-xs text-rw-sub" role="status">
     …
   </div>
 );
@@ -292,6 +293,9 @@ export default function App() {
       })
       .catch(() => {});
   }, [settings.compactMode]);
+
+  // Colour theme (Settings -> Display); main.tsx applies the saved one before the first paint
+  useEffect(() => applyTheme(settings.theme), [settings.theme]);
 
   const handleUpdateSettings = useCallback((partial: Partial<AppSettings>) => {
     const updated = { ...settingsRef.current, ...partial };
@@ -746,7 +750,7 @@ export default function App() {
     .join("\n");
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#091428] text-[#f0e6d2] overflow-hidden select-none">
+    <div className="rw-app flex flex-col h-screen w-screen bg-rw-bg text-rw-text overflow-hidden select-none">
       {/* Header */}
       <Header
         settings={settings}
@@ -766,7 +770,7 @@ export default function App() {
 
       {/* Stats search (teams, players, tournaments, champions), opened from the header */}
       {searchOpen && (
-        <div className="bg-[#0a0e17] border-b border-[#1e282d] px-3 sm:px-4 py-2">
+        <div className="bg-rw-deep border-b border-rw-border px-3 sm:px-4 py-2">
           <div className="max-w-2xl mx-auto">
             <PartBoundary>
               <React.Suspense fallback={lazyFallback}>
@@ -786,14 +790,14 @@ export default function App() {
           role="status"
           className={`flex items-center gap-2 px-4 py-2 text-xs border-b ${
             outage === "riot-key"
-              ? "bg-[#1e131d] border-[#e84057]/60 text-[#f0e6d2]"
-              : "bg-[#1a1708] border-[#c8aa6e]/50 text-[#f0e6d2]"
+              ? "bg-rw-red/10 border-rw-red/60 text-rw-text"
+              : "bg-rw-accent/10 border-rw-accent/50 text-rw-text"
           }`}
         >
           {outage === "offline" ? (
-            <WifiOff className="w-4 h-4 text-[#c8aa6e] shrink-0" />
+            <WifiOff className="w-4 h-4 text-rw-accent shrink-0" />
           ) : (
-            <AlertTriangle className={`w-4 h-4 shrink-0 ${outage === "riot-key" ? "text-[#e84057]" : "text-[#c8aa6e]"}`} />
+            <AlertTriangle className={`w-4 h-4 shrink-0 ${outage === "riot-key" ? "text-rw-red" : "text-rw-accent"}`} />
           )}
           <span>
             {outage === "offline" && tl("You're offline. Live scores and schedules will come back when the connection does.")}
@@ -802,7 +806,7 @@ export default function App() {
             {outage === "riot-key" && (
               <>
                 {tl("Riot changed the key RiftWise uses for esports data.")}{" "}
-                <button type="button" onClick={() => handleOpenUrl("https://github.com/drmonocle/riftwise/releases")} className="underline hover:text-[#c8aa6e]">
+                <button type="button" onClick={() => handleOpenUrl("https://github.com/drmonocle/riftwise/releases")} className="underline hover:text-rw-accent">
                   {tl("Update RiftWise")}
                 </button>
               </>
@@ -812,9 +816,9 @@ export default function App() {
       )}
 
       {showWelcome && (
-        <div className="bg-[#0a1420] border-b border-[#c8aa6e]/40 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 text-xs" role="status">
-          <div className="flex-1 text-[#9bb3c9] leading-relaxed">
-            <strong className="text-[#c8aa6e]">{tl("Welcome to RiftWise!")}</strong>{" "}
+        <div className="bg-rw-surface border-b border-rw-accent/40 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 text-xs" role="status">
+          <div className="flex-1 text-rw-sub leading-relaxed">
+            <strong className="text-rw-accent">{tl("Welcome to RiftWise!")}</strong>{" "}
             {tl("Start by following the teams you care about below: they get highlighted everywhere and you get an alert when they play. RiftWise also starts with Windows, quietly in the tray; you can turn that off in Settings.")}
           </div>
           <div className="flex gap-2 shrink-0">
@@ -823,13 +827,13 @@ export default function App() {
                 setShowWelcome(false);
                 selectTab("live");
               }}
-              className="px-3 py-1.5 rounded-md bg-[#c8aa6e] hover:bg-[#f0e6d2] text-[#091428] font-bold"
+              className="px-3 py-1.5 rounded-md bg-rw-accent hover:bg-rw-text text-rw-bg font-bold"
             >
               {tl("Show live matches")}
             </button>
             <button
               onClick={() => setShowWelcome(false)}
-              className="px-3 py-1.5 rounded-md border border-[#1e282d] hover:border-[#c8aa6e]/60 text-[#f0e6d2]"
+              className="px-3 py-1.5 rounded-md border border-rw-border hover:border-rw-accent/60 text-rw-text"
             >
               {tl("Got it")}
             </button>
@@ -838,23 +842,23 @@ export default function App() {
       )}
 
       {renameNote && !showWelcome && (
-        <div className="bg-[#0a1420] border-b border-[#c8aa6e]/40 px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs" role="status">
-          <div className="flex-1 min-w-[14rem] text-[#9bb3c9] leading-relaxed">
-            <strong className="text-[#c8aa6e]">{tl("RiftWatch is now RiftWise.")}</strong>{" "}
+        <div className="bg-rw-surface border-b border-rw-accent/40 px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs" role="status">
+          <div className="flex-1 min-w-[14rem] text-rw-sub leading-relaxed">
+            <strong className="text-rw-accent">{tl("RiftWatch is now RiftWise.")}</strong>{" "}
             {tl("Same app, new name. Your settings and followed teams are all still here, and the web version is now at lolworlds.com/riftwise.")}
           </div>
-          <button onClick={closeRenameNote} aria-label={tl("Close")} className="p-1 text-[#7e8e9f] hover:text-[#f0e6d2] shrink-0">
+          <button onClick={closeRenameNote} aria-label={tl("Close")} className="p-1 text-rw-muted hover:text-rw-text shrink-0">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
       {hubTip && !showWelcome && !renameNote && activeTab !== "stats" && (
-        <div className="bg-[#0a1420] border-b border-[#c8aa6e]/40 px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs" role="status">
-          <div className="flex-1 min-w-[14rem] text-[#9bb3c9] leading-relaxed">
-            <strong className="text-[#c8aa6e]">{tl("New: Pro Stats for every game since 2011.")}</strong>{" "}
+        <div className="bg-rw-surface border-b border-rw-accent/40 px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs" role="status">
+          <div className="flex-1 min-w-[14rem] text-rw-sub leading-relaxed">
+            <strong className="text-rw-accent">{tl("New: Pro Stats for every game since 2011.")}</strong>{" "}
             {tl("Search any team, player, tournament or champion; every match has its draft, builds and a link to watch it.")}{" "}
-            <span className="text-[#7e8e9f] hidden sm:inline">
+            <span className="text-rw-muted hidden sm:inline">
               {tl("Also: group tables and brackets are under Schedule → Standings & Brackets, and tapping the head-to-head bar on a match shows the all-time record.")}
             </span>
           </div>
@@ -864,11 +868,11 @@ export default function App() {
                 closeHubTip();
                 navigateHub({ kind: "home" });
               }}
-              className="px-3 py-1.5 rounded-md bg-[#c8aa6e] hover:bg-[#f0e6d2] text-[#091428] font-bold"
+              className="px-3 py-1.5 rounded-md bg-rw-accent hover:bg-rw-text text-rw-bg font-bold"
             >
               {tl("Open Pro Stats")}
             </button>
-            <button onClick={closeHubTip} aria-label={tl("Close")} className="p-1 text-[#7e8e9f] hover:text-[#f0e6d2]">
+            <button onClick={closeHubTip} aria-label={tl("Close")} className="p-1 text-rw-muted hover:text-rw-text">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -967,7 +971,7 @@ export default function App() {
       {toast && (
         <div
           role="status"
-          className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg bg-[#0a1420] border border-[#c8aa6e]/60 text-xs text-[#f0e6d2] shadow-xl"
+          className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg bg-rw-surface border border-rw-accent/60 text-xs text-rw-text shadow-xl"
         >
           {toast}
         </div>
@@ -1001,16 +1005,16 @@ export default function App() {
       )}
 
       {/* Minimal Status Footer */}
-      <footer className="bg-[#0a0e17] border-t border-[#1e282d] px-4 py-1 flex items-center justify-between text-[11px] text-[#7e8e9f] select-none">
+      <footer className="bg-rw-deep border-t border-rw-border px-4 py-1 flex items-center justify-between text-[11px] text-rw-muted select-none">
         <div className="flex items-center gap-2">
-          <span className={`w-1.5 h-1.5 rounded-full ${syncFailed ? "bg-[#e84057]" : "bg-[#0ac8b9]"}`} />
+          <span className={`w-1.5 h-1.5 rounded-full ${syncFailed ? "bg-rw-red" : "bg-rw-teal"}`} />
           <span className="whitespace-nowrap" title={syncTitle || undefined}>
             {syncLabel}
           </span>
         </div>
         <div className="flex items-center gap-3">
           {settings.spoilerMode && (
-            <span className="text-[#c8aa6e] font-semibold whitespace-nowrap">
+            <span className="text-rw-accent font-semibold whitespace-nowrap">
               <span className="hidden sm:inline">{tl("SPOILER MODE ACTIVE")}</span>
               <span className="sm:hidden">{tl("SPOILERS HIDDEN")}</span>
             </span>
@@ -1018,7 +1022,7 @@ export default function App() {
           {/* Narrow screens: make room for the spoiler notice so the footer stays on one line */}
           <span
             onClick={() => handleOpenUrl("https://drmonocle.com")}
-            className={`hover:text-[#c8aa6e] cursor-pointer whitespace-nowrap ${settings.spoilerMode ? "hidden sm:inline" : ""}`}
+            className={`hover:text-rw-accent cursor-pointer whitespace-nowrap ${settings.spoilerMode ? "hidden sm:inline" : ""}`}
           >
             {tl("Monocle Productions LLC")}
           </span>
@@ -1028,7 +1032,7 @@ export default function App() {
                 .then(({ invoke }) => invoke("hide_main"))
                 .catch(() => {})
             }
-            className="flex items-center gap-1 px-2 py-0.5 rounded border border-[#1e282d] text-[#a09b8c] hover:text-[#f0e6d2] hover:border-[#c8aa6e] hover:bg-[#121e2d] transition-colors"
+            className="flex items-center gap-1 px-2 py-0.5 rounded border border-rw-border text-rw-muted hover:text-rw-text hover:border-rw-accent hover:bg-rw-raised transition-colors"
             aria-label={tl("Hide RiftWise to the system tray")}
             title={tl("Hide RiftWise to the system tray (click the tray icon or press Alt+Shift+L to bring it back)")}
           >

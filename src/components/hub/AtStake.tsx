@@ -113,19 +113,19 @@ export const AtStakeToday: React.FC<{ schedule: Match[] }> = ({ schedule }) => {
       title={tl("On the line today")}
       share="riftwise-on-the-line-today"
     >
-      <p className="text-[11px] text-[#7e8e9f]">
+      <p className="text-[11px] text-rw-muted">
         {tl("Milestones and streaks for the matches in the next 24 hours.")}
       </p>
       <div className="space-y-3">
         {blocks.map(({ m, lines }) => (
           <div key={m.matchId} className="space-y-1">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs border-b border-[#1e282d] pb-1">
-              <span className="font-bold text-[#f0e6d2]">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs border-b border-rw-border pb-1">
+              <span className="font-bold text-rw-text">
                 {m.team1Code}{" "}
-                <span className="text-[#7e8e9f] font-normal">vs</span>{" "}
+                <span className="text-rw-muted font-normal">vs</span>{" "}
                 {m.team2Code}
               </span>
-              <span className="text-[#7e8e9f]">
+              <span className="text-rw-muted">
                 {m.leagueName} ·{" "}
                 {m.state === "inProgress"
                   ? tl("Live now")

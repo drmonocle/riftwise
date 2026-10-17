@@ -59,7 +59,7 @@ export const PeriodPicker: React.FC<{
   return (
     <>
       {/* pictures ("Save as image") can't show a dropdown's choice, so they get it as text */}
-      <span className="rw-capture-only text-xs font-semibold text-[#f0e6d2]">
+      <span className="rw-capture-only text-xs font-semibold text-rw-text">
         {current ? label(current) : ""}
       </span>
       <select
@@ -67,7 +67,7 @@ export const PeriodPicker: React.FC<{
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label={tl("Stats for")}
-        className="bg-[#091428] border border-[#1e282d] rounded-lg px-2 py-1.5 text-xs text-[#f0e6d2] w-44 sm:w-60 max-w-full"
+        className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-xs text-rw-text w-44 sm:w-60 max-w-full"
       >
         {basic.map((o) => (
           <option key={o.key} value={o.key}>
@@ -244,7 +244,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[] }> = ({
             rowKey={(c) => c.c}
             copyName={`${slug}-champions`}
           />
-          <p className="text-[10px] text-[#7e8e9f]">
+          <p className="text-[10px] text-rw-muted">
             {tl("Games with a full scoreboard only.")}
           </p>
         </>
@@ -268,14 +268,14 @@ const ChampCounts: React.FC<{ title: string; list: [string, number][] }> = ({
 }) =>
   list.length ? (
     <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f] mb-1">
+      <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">
         {title}
       </div>
       <ul className="text-xs space-y-1">
         {list.map(([c, n]) => (
           <li key={c} className="flex justify-between gap-2 min-w-0">
             <ChampLink name={c} size={16} />
-            <span className="text-[#9bb3c9] tabular-nums shrink-0">{n}</span>
+            <span className="text-rw-sub tabular-nums shrink-0">{n}</span>
           </li>
         ))}
       </ul>
@@ -376,7 +376,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[] }> = ({
           <div className="grid sm:grid-cols-3 gap-4">
             {t.picks.length > 0 && (
               <div className="min-w-0">
-                <div className="text-[10px] uppercase tracking-wider font-bold text-[#7e8e9f] mb-1">
+                <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">
                   {tl("Most picked champions")}
                 </div>
                 <ul className="text-xs space-y-1">
@@ -386,7 +386,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[] }> = ({
                       className="flex items-center justify-between gap-2 min-w-0"
                     >
                       <ChampLink name={c} size={16} />
-                      <span className="text-[#9bb3c9] tabular-nums shrink-0">
+                      <span className="text-rw-sub tabular-nums shrink-0">
                         {n} · {winRate(w, n)}
                       </span>
                     </li>
@@ -402,7 +402,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[] }> = ({
           </div>
           <DraftTendencies rows={sel} />
           {t.sg < t.g && (
-            <p className="text-[10px] text-[#7e8e9f]">
+            <p className="text-[10px] text-rw-muted">
               {tl(
                 "Kills, gold and objectives: games with a full scoreboard only.",
               )}

@@ -19,12 +19,12 @@ export class PartBoundary extends React.Component<{ children: React.ReactNode },
   render(): React.ReactNode {
     if (!this.state.failed) return this.props.children;
     return (
-      <div className="py-10 text-center text-xs text-[#9bb3c9] space-y-3" role="alert">
+      <div className="py-10 text-center text-xs text-rw-sub space-y-3" role="alert">
         <p>{tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="px-3 py-1.5 rounded-lg border border-[#1e282d] text-[#0ac8b9] hover:border-[#0ac8b9]"
+          className="px-3 py-1.5 rounded-lg border border-rw-border text-rw-teal hover:border-rw-teal"
         >
           {tl("Reload")}
         </button>

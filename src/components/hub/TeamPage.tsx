@@ -49,22 +49,22 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
   return (
     <div className="space-y-3">
       <div className={card}>
-        <h2 className="text-lg font-bold text-[#f0e6d2]">
+        <h2 className="text-lg font-bold text-rw-text">
           {t.name}
-          {t.codes.length > 0 && <span className="text-[#7e8e9f] text-sm font-semibold ml-2">{t.codes.slice(0, 3).join(" · ")}</span>}
+          {t.codes.length > 0 && <span className="text-rw-muted text-sm font-semibold ml-2">{t.codes.slice(0, 3).join(" · ")}</span>}
         </h2>
-        <p className="text-[11px] text-[#7e8e9f]">
+        <p className="text-[11px] text-rw-muted">
           {[t.region ? regionName(t.region, t.region) : null, tl("Pro games from {from} to {to}", { from: fmtDate(t.from), to: fmtDate(t.to) }), t.disbanded ? tl("Disbanded") : null]
             .filter(Boolean)
             .join(" · ")}
         </p>
         {oldNames.length > 0 && (
-          <p className="text-[11px] text-[#9bb3c9] mt-1">
+          <p className="text-[11px] text-rw-sub mt-1">
             {tl("Also played as:")}{" "}
             {oldNames.map((n, i) => (
               <span key={n.n + n.from}>
                 {i > 0 && ", "}
-                <span className="text-[#f0e6d2]">{n.n}</span> ({n.from.slice(0, 4)}
+                <span className="text-rw-text">{n.n}</span> ({n.from.slice(0, 4)}
                 {n.to.slice(0, 4) !== n.from.slice(0, 4) ? `–${n.to.slice(0, 4)}` : ""})
               </span>
             ))}
@@ -128,12 +128,12 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
           <ul className="text-xs space-y-1">
             {t.titles.map((x) => (
               <li key={x.t + x.date} className="flex justify-between gap-2">
-                <span className="text-[#f0e6d2] min-w-0 truncate">
-                  <Trophy className={`w-3 h-3 inline mr-1 ${x.kind === "Worlds" ? "text-[#c8aa6e]" : "text-[#7e8e9f]"}`} />
+                <span className="text-rw-text min-w-0 truncate">
+                  <Trophy className={`w-3 h-3 inline mr-1 ${x.kind === "Worlds" ? "text-rw-accent" : "text-rw-muted"}`} />
                   <EventLink name={eventTitle(x.t)} u={x.e} />
-                  {x.as !== t.name && <span className="text-[#7e8e9f]"> ({tl("as {name}", { name: x.as })})</span>}
+                  {x.as !== t.name && <span className="text-rw-muted"> ({tl("as {name}", { name: x.as })})</span>}
                 </span>
-                <span className="text-[#7e8e9f] shrink-0">
+                <span className="text-rw-muted shrink-0">
                   {x.score} vs {x.l}
                 </span>
               </li>
@@ -145,23 +145,23 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
       <div className="grid gap-3 md:grid-cols-2">
         <Section title={tl("Recent series")} right={recentHidden ? <RevealButton onReveal={revealRecent} small /> : undefined}>
           {recentHidden ? (
-            <p className="text-[11px] text-[#7e8e9f] italic">{tl("Hidden while spoiler mode is on.")}</p>
+            <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
           ) : (
             <ul className="text-xs space-y-1">
               {t.recent.map((r, i) => (
                 <li key={i} className="flex justify-between gap-2 min-w-0">
                   <span className="truncate min-w-0">
-                    <span className={r.us > r.them ? "text-[#0ac8b9] font-bold" : "text-[#e84057] font-bold"}>
+                    <span className={r.us > r.them ? "text-rw-teal font-bold" : "text-rw-red font-bold"}>
                       {r.us > r.them ? "W" : "L"} {r.us}-{r.them}
                     </span>{" "}
                     {r.g ? (
                       <HubLink to={{ kind: "match", slug: r.g }}>vs {r.opp}</HubLink>
                     ) : (
-                      <span className="text-[#f0e6d2]">vs {r.opp}</span>
+                      <span className="text-rw-text">vs {r.opp}</span>
                     )}
-                    <span className="text-[#7e8e9f]"> · {r.en}</span>
+                    <span className="text-rw-muted"> · {r.en}</span>
                   </span>
-                  <span className="text-[#7e8e9f] shrink-0">{fmtDate(r.date, false)}</span>
+                  <span className="text-rw-muted shrink-0">{fmtDate(r.date, false)}</span>
                 </li>
               ))}
             </ul>
@@ -179,15 +179,15 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
             </thead>
             <tbody>
               {t.years.map((y) => (
-                <tr key={y.y} className="border-t border-[#1e282d]">
-                  <td className={`${td} text-[#f0e6d2]`}>
+                <tr key={y.y} className="border-t border-rw-border">
+                  <td className={`${td} text-rw-text`}>
                     {y.y}
-                    {y.as !== t.name && <span className="text-[#7e8e9f] text-[10px]"> as {y.as}</span>}
+                    {y.as !== t.name && <span className="text-rw-muted text-[10px]"> as {y.as}</span>}
                   </td>
-                  <td className={`${td} text-[#9bb3c9]`}>
+                  <td className={`${td} text-rw-sub`}>
                     {y.w}-{y.g - y.w}
                   </td>
-                  <td className={`${td} text-[#9bb3c9]`}>{winRate(y.w, y.g)}</td>
+                  <td className={`${td} text-rw-sub`}>{winRate(y.w, y.g)}</td>
                 </tr>
               ))}
             </tbody>
@@ -200,7 +200,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
           title={tl("Tournaments")}
           right={
             t.events.length > 15 ? (
-              <button type="button" onClick={() => setAllEvents((v) => !v)} className="text-[11px] text-[#0ac8b9] hover:underline">
+              <button type="button" onClick={() => setAllEvents((v) => !v)} className="text-[11px] text-rw-teal hover:underline">
                 {allEvents ? tl("Show fewer") : tl("Show all {n}", { n: t.events.length })}
               </button>
             ) : undefined
@@ -233,12 +233,12 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
         <div className="space-y-2">
           {t.roster.map((yr) => (
             <div key={yr.y} className="text-xs">
-              <span className="text-[#7e8e9f] font-semibold mr-2">{yr.y}</span>
+              <span className="text-rw-muted font-semibold mr-2">{yr.y}</span>
               {yr.p.map((p, i) => (
                 <span key={p.n + i}>
-                  {i > 0 && <span className="text-[#3a4a5a]"> · </span>}
+                  {i > 0 && <span className="text-rw-muted/60"> · </span>}
                   <PlayerLink name={p.n} u={p.u} />
-                  <span className="text-[#7e8e9f]"> {roleName(p.r)}</span>
+                  <span className="text-rw-muted"> {roleName(p.r)}</span>
                 </span>
               ))}
             </div>
@@ -259,15 +259,15 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
             </thead>
             <tbody>
               {t.opps.map((o) => (
-                <tr key={o.n} className="border-t border-[#1e282d]">
+                <tr key={o.n} className="border-t border-rw-border">
                   <td className={td}>
                     <TeamLink name={o.n} u={o.u} />
                   </td>
-                  <td className={`${td} text-[#9bb3c9]`}>
+                  <td className={`${td} text-rw-sub`}>
                     {o.w}-{o.g - o.w}
                   </td>
-                  <td className={`${td} text-[#9bb3c9]`}>{winRate(o.w, o.g)}</td>
-                  <td className={`${td} text-[#7e8e9f]`}>{fmtDate(o.last)}</td>
+                  <td className={`${td} text-rw-sub`}>{winRate(o.w, o.g)}</td>
+                  <td className={`${td} text-rw-muted`}>{fmtDate(o.last)}</td>
                 </tr>
               ))}
             </tbody>
@@ -281,7 +281,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
             {t.champs.map((c) => (
               <li key={c.c} className="flex justify-between gap-1 min-w-0">
                 <ChampLink name={c.c} size={16} />
-                <span className="text-[#7e8e9f] shrink-0">
+                <span className="text-rw-muted shrink-0">
                   {c.g} · {winRate(c.w, c.g)}
                 </span>
               </li>
@@ -293,7 +293,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
             {t.bans.map((c) => (
               <li key={c.c} className="flex justify-between gap-1 min-w-0">
                 <ChampLink name={c.c} size={16} />
-                <span className="text-[#7e8e9f] shrink-0">{c.g}</span>
+                <span className="text-rw-muted shrink-0">{c.g}</span>
               </li>
             ))}
           </ul>
@@ -304,7 +304,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
               {t.bansVs.map((c) => (
                 <li key={c.c} className="flex justify-between gap-1 min-w-0">
                   <ChampLink name={c.c} size={16} />
-                  <span className="text-[#7e8e9f] shrink-0">{c.g}</span>
+                  <span className="text-rw-muted shrink-0">{c.g}</span>
                 </li>
               ))}
             </ul>
@@ -318,17 +318,17 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
 const EventRow: React.FC<{ x: HubTeam["events"][number]; teamName: string }> = ({ x, teamName }) => {
   const [hidden, reveal] = useHidden(`team-event:${x.e}`, x.date);
   return (
-    <tr className="border-t border-[#1e282d]">
+    <tr className="border-t border-rw-border">
       <td className={`${td} max-w-[14rem] truncate`}>
         <EventLink name={x.en} u={x.e} />
-        {x.as && x.as !== teamName && <span className="text-[#7e8e9f] text-[10px]"> {tl("as {name}", { name: x.as })}</span>}
+        {x.as && x.as !== teamName && <span className="text-rw-muted text-[10px]"> {tl("as {name}", { name: x.as })}</span>}
       </td>
-      <td className={`${td} ${x.pl === "1" ? "text-[#c8aa6e] font-bold" : "text-[#9bb3c9]"}`}>
+      <td className={`${td} ${x.pl === "1" ? "text-rw-accent font-bold" : "text-rw-sub"}`}>
         {hidden ? <RevealButton onReveal={reveal} small /> : x.pl || "–"}
       </td>
-      <td className={`${td} text-[#9bb3c9]`}>{hidden ? "–" : `${x.sw}-${x.sg - x.sw}`}</td>
-      <td className={`${td} text-[#9bb3c9]`}>{hidden ? "–" : `${x.w}-${x.g - x.w}`}</td>
-      <td className={`${td} text-[#7e8e9f]`}>{x.usd && !hidden ? fmtUsd(x.usd) : ""}</td>
+      <td className={`${td} text-rw-sub`}>{hidden ? "–" : `${x.sw}-${x.sg - x.sw}`}</td>
+      <td className={`${td} text-rw-sub`}>{hidden ? "–" : `${x.w}-${x.g - x.w}`}</td>
+      <td className={`${td} text-rw-muted`}>{x.usd && !hidden ? fmtUsd(x.usd) : ""}</td>
     </tr>
   );
 };

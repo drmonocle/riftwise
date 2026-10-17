@@ -35,7 +35,7 @@ export const WinChanceLine: React.FC<{ match: Match }> = ({ match }) => {
     <button
       type="button"
       onClick={() => navigateHub({ kind: "rankings" })}
-      className="flex items-center justify-center gap-1.5 w-full text-[10px] text-[#9bb3c9] hover:text-[#c8aa6e]"
+      className="flex items-center justify-center gap-1.5 w-full text-[10px] text-rw-sub hover:text-rw-accent"
       title={tl("From the power rankings (every pro game since 2011).")}
     >
       <TrendingUp className="w-3 h-3" />

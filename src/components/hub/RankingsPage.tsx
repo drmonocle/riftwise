@@ -24,15 +24,15 @@ import {
 } from "./ui";
 
 const sel =
-  "bg-[#091428] border border-[#1e282d] rounded-lg px-2 py-1.5 text-[#f0e6d2] max-w-[14rem]";
+  "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text max-w-[14rem]";
 
 export const Change: React.FC<{ v: number | null | undefined }> = ({ v }) =>
   v == null ? (
-    <span className="text-[#7e8e9f]">–</span>
+    <span className="text-rw-muted">–</span>
   ) : (
     <span
       className={
-        v > 0 ? "text-[#0ac8b9]" : v < 0 ? "text-[#e84057]" : "text-[#7e8e9f]"
+        v > 0 ? "text-rw-teal" : v < 0 ? "text-rw-red" : "text-rw-muted"
       }
     >
       {v > 0 ? `+${v}` : v}
@@ -70,7 +70,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       key: "rank",
       label: "#",
       value: (x) => x.rank,
-      className: "text-[#7e8e9f] tabular-nums",
+      className: "text-rw-muted tabular-nums",
     },
     {
       key: "team",
@@ -80,7 +80,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
         <TeamLink
           name={x.r[1]}
           u={x.r[0]}
-          className="text-[#f0e6d2] hover:text-[#c8aa6e] hover:underline font-semibold"
+          className="text-rw-text hover:text-rw-accent hover:underline font-semibold"
         />
       ),
     },
@@ -92,19 +92,19 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
         x.r[4] ? (
           <HubLink
             to={{ kind: "league", slug: x.r[4] }}
-            className="text-[#9bb3c9] hover:text-[#c8aa6e] hover:underline"
+            className="text-rw-sub hover:text-rw-accent hover:underline"
           >
             {x.r[3]}
           </HubLink>
         ) : (
-          <span className="text-[#9bb3c9]">{x.r[3] || "–"}</span>
+          <span className="text-rw-sub">{x.r[3] || "–"}</span>
         ),
     },
     {
       key: "rating",
       label: tl("Rating"),
       value: (x) => x.r[5],
-      className: "tabular-nums font-bold text-[#c8aa6e]",
+      className: "tabular-nums font-bold text-rw-accent",
     },
     {
       key: "chg",
@@ -121,7 +121,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       value: (x) => x.r[5],
       render: (x) =>
         top ? pct(matchChance(x.r[5], top[5], chanceContext(x.r[9] === 1, top[9] === 1, x.r[3], top[3]), d.adjust)) : "–",
-      className: "tabular-nums text-[#9bb3c9]",
+      className: "tabular-nums text-rw-sub",
     },
     {
       key: "games",
@@ -129,14 +129,14 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       title: tl("Pro games rated"),
       value: (x) => x.r[7],
       render: (x) => fmtNum(x.r[7]),
-      className: "tabular-nums text-[#9bb3c9]",
+      className: "tabular-nums text-rw-sub",
     },
     {
       key: "last",
       label: tl("Last game"),
       value: (x) => x.r[8],
       render: (x) => fmtDate(x.r[8]),
-      className: "text-[#7e8e9f]",
+      className: "text-rw-muted",
     },
   ];
   const t = d.test;
@@ -147,23 +147,23 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
   return (
     <div className="space-y-3">
       <div className={`${card} space-y-2 text-xs`}>
-        <h2 className="text-base font-bold text-[#f0e6d2]">
+        <h2 className="text-base font-bold text-rw-text">
           {tl("Power rankings")}
         </h2>
-        <p className="text-[#9bb3c9]">
+        <p className="text-rw-sub">
           {tl(
             "Every active pro team on one scale, across all regions. Ratings come from every pro game since 2011: beating a strong team moves you up more than beating a weak one, and international events are what compare the regions.",
           )}{" "}
           {tl("A team's rating mostly follows the five players it fields, so a roster change counts right away.")}
         </p>
-        <p className="text-[#7e8e9f]">
+        <p className="text-rw-muted">
           {tl(
             "Up to {date} · {n} games rated · teams with a game in the last 120 days",
             { date: fmtDate(d.asof), n: fmtNum(d.games) },
           )}
         </p>
         {t.all.n > 0 && (
-          <p className="text-[#f0e6d2]">
+          <p className="text-rw-text">
             {tl(
               "How good is it? Since {year}, the higher-rated team won {acc} of {n} games ({intl} at international events).",
               {
@@ -233,10 +233,10 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
         }
       >
         {league && (
-          <p className="rw-capture-only text-xs text-[#9bb3c9]">{league}</p>
+          <p className="rw-capture-only text-xs text-rw-sub">{league}</p>
         )}
         {league && d.teams.find((r) => r[3] === league)?.[9] !== 1 && (
-          <p className="text-[11px] text-[#7e8e9f]">
+          <p className="text-[11px] text-rw-muted">
             {tl(
               "Second-tier leagues never play the top leagues, so their teams are ranked within their league; each year the league's average is set below its region's top league.",
             )}
@@ -251,7 +251,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           copyName={`riftwise-power-rankings${league ? "-" + league : ""}`}
         />
         {!league && (
-          <p className="text-[11px] text-[#7e8e9f]" data-nocapture="1">
+          <p className="text-[11px] text-rw-muted" data-nocapture="1">
             {tl(
               "This list has the teams in top leagues, the only ones that meet across regions. Pick a second-tier league above (LCK CL, LFL, NACL...) to see its teams.",
             )}
@@ -264,7 +264,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           title={tl("League strength")}
           share="riftwise-league-strength"
         >
-          <p className="text-[11px] text-[#7e8e9f]">
+          <p className="text-[11px] text-rw-muted">
             {tl("Average rating of each league's best four teams.")}
           </p>
           <div className="overflow-x-auto">
@@ -279,13 +279,13 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               </thead>
               <tbody>
                 {d.leagues.slice(0, 20).map(([l, u, r, n], i) => (
-                  <tr key={l} className="border-t border-[#1e282d]">
-                    <td className={`${td} text-[#7e8e9f]`}>{i + 1}</td>
+                  <tr key={l} className="border-t border-rw-border">
+                    <td className={`${td} text-rw-muted`}>{i + 1}</td>
                     <td className={td}>
                       {u ? (
                         <HubLink
                           to={{ kind: "league", slug: u }}
-                          className="text-[#f0e6d2] hover:text-[#c8aa6e] hover:underline"
+                          className="text-rw-text hover:text-rw-accent hover:underline"
                         >
                           {l}
                         </HubLink>
@@ -294,12 +294,12 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                       )}
                     </td>
                     <td
-                      className={`${td} text-right tabular-nums font-bold text-[#c8aa6e]`}
+                      className={`${td} text-right tabular-nums font-bold text-rw-accent`}
                     >
                       {r}
                     </td>
                     <td
-                      className={`${td} text-right tabular-nums text-[#9bb3c9]`}
+                      className={`${td} text-right tabular-nums text-rw-sub`}
                     >
                       {n}
                     </td>
@@ -311,7 +311,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
         </Section>
 
         <Section title={tl("How the chances hold up")}>
-          <p className="text-[11px] text-[#7e8e9f]">
+          <p className="text-[11px] text-rw-muted">
             {tl(
               "Every game since {year}, using only what was known before it: when we made a team the favourite by this much, how often it won.",
               {
@@ -331,18 +331,18 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               </thead>
               <tbody>
                 {t.calibration.map(([lo, hi, n, won, said]) => (
-                  <tr key={lo} className="border-t border-[#1e282d]">
+                  <tr key={lo} className="border-t border-rw-border">
                     <td className={td}>
                       {lo}–{Math.min(hi, 100)}%
                     </td>
                     <td
-                      className={`${td} text-right tabular-nums text-[#9bb3c9]`}
+                      className={`${td} text-right tabular-nums text-rw-sub`}
                     >
                       {fmtNum(n)}
                     </td>
-                    {saidCol && <td className={`${td} text-right tabular-nums text-[#9bb3c9]`}>{said != null ? pct(said) : "–"}</td>}
+                    {saidCol && <td className={`${td} text-right tabular-nums text-rw-sub`}>{said != null ? pct(said) : "–"}</td>}
                     <td
-                      className={`${td} text-right tabular-nums font-bold text-[#f0e6d2]`}
+                      className={`${td} text-right tabular-nums font-bold text-rw-text`}
                     >
                       {pct(won)}
                     </td>
@@ -353,7 +353,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           </div>
           {series3.length + series5.length > 0 && (
             <>
-              <p className="text-[11px] text-[#7e8e9f]">
+              <p className="text-[11px] text-rw-muted">
                 {tl("Whole series since {year}: how often the favourite won the series (we said · it won · series).", {
                   year: t.from.slice(0, 4),
                 })}
@@ -369,18 +369,18 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                   </thead>
                   <tbody>
                     {seriesBins.map((lo) => (
-                      <tr key={lo} className="border-t border-[#1e282d]">
+                      <tr key={lo} className="border-t border-rw-border">
                         <td className={td}>
                           {lo}–{lo + 10}%
                         </td>
                         {[series3, series5].map((rows, i) => {
                           const row = rows.find((r) => r[0] === lo);
                           return (
-                            <td key={i} className={`${td} text-right tabular-nums text-[#9bb3c9] whitespace-nowrap`}>
+                            <td key={i} className={`${td} text-right tabular-nums text-rw-sub whitespace-nowrap`}>
                               {row ? (
                                 <>
                                   {row[4] != null ? `${pct(row[4])} · ` : ""}
-                                  <span className="font-bold text-[#f0e6d2]">{pct(row[3])}</span>
+                                  <span className="font-bold text-rw-text">{pct(row[3])}</span>
                                   <span className="hidden sm:inline"> · {fmtNum(row[2])}</span>
                                 </>
                               ) : (
@@ -397,7 +397,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
             </>
           )}
           {t.cross && t.cross.n > 0 && t.cross.pred != null && t.cross.won != null && (
-            <p className="text-[11px] text-[#9bb3c9]">
+            <p className="text-[11px] text-rw-sub">
               {tl(
                 "Top-league teams against second-tier teams ({n} games since {year}): we gave the top-league team {pred} on average, and it won {won}.",
                 {
@@ -409,7 +409,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               )}
             </p>
           )}
-          <p className="text-[11px] text-[#7e8e9f]">
+          <p className="text-[11px] text-rw-muted">
             {tl(
               "A series is less certain than its games multiplied out: going by past series, a team at 60% per game wins about {bo3} of best-of-threes and {bo5} of best-of-fives.",
               {
@@ -420,7 +420,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           </p>
         </Section>
       </div>
-      <p className="text-[11px] text-[#7e8e9f]">
+      <p className="text-[11px] text-rw-muted">
         {tn(
           "Ratings are a guide, not a prediction market: they know results and who played, not form or injuries, and a brand-new player starts close to their team's level. {n} active team is rated.",
           "Ratings are a guide, not a prediction market: they know results and who played, not form or injuries, and a brand-new player starts close to their team's level. {n} active teams are rated.",

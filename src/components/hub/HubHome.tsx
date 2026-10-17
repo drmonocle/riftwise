@@ -32,16 +32,16 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
   return (
     <div className="space-y-4">
       <div className={`${card} space-y-3`}>
-        <h2 className="text-base font-bold text-[#f0e6d2]">{tl("Every pro League of Legends game, in one place")}</h2>
+        <h2 className="text-base font-bold text-rw-text">{tl("Every pro League of Legends game, in one place")}</h2>
         {meta.data && (
-          <p className="text-[11px] text-[#9bb3c9]">
+          <p className="text-[11px] text-rw-sub">
             {tl("{games} games · {events} tournaments · {players} players · {teams} teams · 2011 to today", {
               games: fmtNum(meta.data.games),
               events: fmtNum(meta.data.events),
               players: fmtNum(meta.data.players),
               teams: fmtNum(meta.data.teams),
             })}{" "}
-            <HubLink to={{ kind: "about" }} className="text-[#7e8e9f] hover:text-[#c8aa6e] hover:underline">
+            <HubLink to={{ kind: "about" }} className="text-rw-muted hover:text-rw-accent hover:underline">
               {tl("(games with a result; players and teams with full scoreboards)")}
             </HubLink>
           </p>
@@ -51,12 +51,12 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {QUICK.map((q) => (
-          <HubLink key={q.label} to={q.to} className={`${card} p-3 hover:border-[#c8aa6e]/60 transition-colors block`}>
-            <div className="flex items-center gap-1.5 text-[#c8aa6e] font-bold text-xs">
+          <HubLink key={q.label} to={q.to} className={`${card} p-3 hover:border-rw-accent/60 transition-colors block`}>
+            <div className="flex items-center gap-1.5 text-rw-accent font-bold text-xs">
               {q.icon}
               {tl(q.label)}
             </div>
-            <div className="text-[10px] text-[#7e8e9f] mt-0.5">{tl(q.sub)}</div>
+            <div className="text-[10px] text-rw-muted mt-0.5">{tl(q.sub)}</div>
           </HubLink>
         ))}
       </div>
@@ -73,7 +73,7 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
                   {h.now.map((e) => (
                     <li key={e.u} className="flex items-center justify-between gap-2 min-w-0">
                       <EventLink name={e.n} u={e.u} />
-                      <span className="text-[#7e8e9f] shrink-0">
+                      <span className="text-rw-muted shrink-0">
                         {fmtDate(e.st, false)} – {fmtDate(e.en, false)}
                       </span>
                     </li>
@@ -92,12 +92,12 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
               <table className="w-full text-xs">
                 <tbody>
                   {h.busiest.map((p, i) => (
-                    <tr key={p.n + i} className="border-t border-[#1e282d] first:border-0">
+                    <tr key={p.n + i} className="border-t border-rw-border first:border-0">
                       <td className={td}>
                         <PlayerLink name={p.n} u={p.u} />
                       </td>
-                      <td className={`${td} text-[#9bb3c9]`}>{tn("{n} game", "{n} games", p.g)}</td>
-                      <td className={`${td} text-[#7e8e9f]`}>{tl("KDA {n}", { n: p.kda })}</td>
+                      <td className={`${td} text-rw-sub`}>{tn("{n} game", "{n} games", p.g)}</td>
+                      <td className={`${td} text-rw-muted`}>{tl("KDA {n}", { n: p.kda })}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -106,7 +106,7 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
           </div>
         )}
       </Page>
-      <p className="text-[10px] text-[#7e8e9f] text-center">
+      <p className="text-[10px] text-rw-muted text-center">
         {tl("Data: Leaguepedia (CC BY-SA 3.0), updated through the day. Game statistics belong to Riot Games.")}
       </p>
     </div>
@@ -119,12 +119,12 @@ const LatestRow: React.FC<{ e: EventListItem }> = ({ e }) => {
     <li className="flex items-center justify-between gap-2 min-w-0">
       <span className="truncate min-w-0">
         <EventLink name={e.n} u={e.u} />
-        <span className="text-[#7e8e9f]"> · {fmtDate(e.en, false)}</span>
+        <span className="text-rw-muted"> · {fmtDate(e.en, false)}</span>
       </span>
       {e.w && (
-        <span className="shrink-0 flex items-center gap-1 text-[#c8aa6e]">
+        <span className="shrink-0 flex items-center gap-1 text-rw-accent">
           <Crown className="w-3 h-3" />
-          {hidden ? <RevealButton onReveal={reveal} small /> : <TeamLink name={e.w} u={e.wu} className="text-[#c8aa6e] hover:underline" />}
+          {hidden ? <RevealButton onReveal={reveal} small /> : <TeamLink name={e.w} u={e.wu} className="text-rw-accent hover:underline" />}
         </span>
       )}
     </li>
@@ -148,7 +148,7 @@ export const EventsBrowse: React.FC<{ year?: string; meta: HubMeta | null; onYea
           value={y}
           onChange={(e) => onYear(e.target.value)}
           aria-label={tl("Year")}
-          className="bg-[#091428] border border-[#1e282d] rounded-lg px-2 py-1.5 text-[#f0e6d2]"
+          className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text"
         >
           {years.map((yy) => (
             <option key={yy} value={yy}>
@@ -156,13 +156,13 @@ export const EventsBrowse: React.FC<{ year?: string; meta: HubMeta | null; onYea
             </option>
           ))}
         </select>
-        <div className="flex rounded-lg border border-[#1e282d] overflow-hidden">
+        <div className="flex rounded-lg border border-rw-border overflow-hidden">
           {(["main", "all"] as const).map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => setScope(s)}
-              className={`px-2.5 py-1.5 ${scope === s ? "bg-[#c8aa6e] text-[#091428] font-bold" : "text-[#9bb3c9]"}`}
+              className={`px-2.5 py-1.5 ${scope === s ? "bg-rw-accent text-rw-bg font-bold" : "text-rw-sub"}`}
             >
               {s === "main" ? tl("Main leagues & internationals") : tl("Everything")}
             </button>
@@ -173,7 +173,7 @@ export const EventsBrowse: React.FC<{ year?: string; meta: HubMeta | null; onYea
           onChange={(e) => setQ(e.target.value)}
           placeholder={tl("Filter by name or league…")}
           aria-label={tl("Filter by name or league…")}
-          className="bg-[#091428] border border-[#1e282d] rounded-lg px-2.5 py-1.5 text-[#f0e6d2] placeholder-[#7e8e9f] flex-1 min-w-[10rem]"
+          className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1.5 text-rw-text placeholder-rw-muted flex-1 min-w-[10rem]"
         />
       </div>
       <Page state={state}>{(list) => <EventsTable list={list} scope={scope} q={q} />}</Page>
@@ -190,7 +190,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
       return scope === "all" || (e.lv === "Primary" && !e.q);
     });
   }, [list, scope, q]);
-  if (rows.length === 0) return <p className="text-xs text-[#9bb3c9] py-6 text-center">{tl("No tournaments match.")}</p>;
+  if (rows.length === 0) return <p className="text-xs text-rw-sub py-6 text-center">{tl("No tournaments match.")}</p>;
   return (
     <div className={`${card} overflow-x-auto`}>
       <table className="w-full text-xs">
@@ -216,17 +216,17 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
 const BrowseRow: React.FC<{ e: EventListItem }> = ({ e }) => {
   const [hidden, reveal] = useHidden(`event:${e.u}`, e.en);
   return (
-    <tr className="border-t border-[#1e282d]">
+    <tr className="border-t border-rw-border">
       <td className={`${td} max-w-[16rem] truncate`}>
         <EventLink name={e.n} u={e.u} />
       </td>
-      <td className={`${td} text-[#7e8e9f]`}>
+      <td className={`${td} text-rw-muted`}>
         {fmtDate(e.st, false)}
         {e.en && e.en !== e.st ? ` – ${fmtDate(e.en, false)}` : ""}
       </td>
-      <td className={`${td} text-[#9bb3c9] max-w-[8rem] truncate`}>{e.r ? regionName(e.r, e.r) : ""}</td>
+      <td className={`${td} text-rw-sub max-w-[8rem] truncate`}>{e.r ? regionName(e.r, e.r) : ""}</td>
       <td className={`${td} max-w-[10rem] truncate`}>{e.w ? hidden ? <RevealButton onReveal={reveal} small /> : <TeamLink name={e.w} u={e.wu} /> : ""}</td>
-      <td className={`${td} text-[#7e8e9f]`}>{e.g || ""}</td>
+      <td className={`${td} text-rw-muted`}>{e.g || ""}</td>
     </tr>
   );
 };
