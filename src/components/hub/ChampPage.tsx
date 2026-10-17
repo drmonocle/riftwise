@@ -43,6 +43,35 @@ const Lead: React.FC<{ v: number | null | undefined }> = ({ v }) => (
   <span className={v == null ? "text-rw-muted" : v >= 0 ? "text-rw-teal" : "text-rw-red"}>{signedText(v)}</span>
 );
 
+/** Presence (filled line) and win rate (dashed, patches with 5+ picks) over the recent patches, oldest on the left. */
+const PatchTrend: React.FC<{ patches: NonNullable<HubChamp["patches"]> }> = ({ patches }) => {
+  const list = [...patches].reverse();
+  const w = 160;
+  const h = 36;
+  const x = (i: number) => (list.length > 1 ? (i / (list.length - 1)) * (w - 4) + 2 : w / 2);
+  const pres = list.map((p) => (p.pk + p.b) / Math.max(p.g, 1));
+  const top = Math.max(0.05, ...pres);
+  const presPts = pres.map((v, i) => `${x(i).toFixed(1)},${(h - 2 - (v / top) * (h - 4)).toFixed(1)}`).join(" ");
+  const wrPts = list
+    .map((p, i) => (p.pk >= 5 ? `${x(i).toFixed(1)},${(h - 2 - (p.w / p.pk) * (h - 4)).toFixed(1)}` : null))
+    .filter(Boolean)
+    .join(" ");
+  return (
+    <svg
+      width={w}
+      height={h}
+      viewBox={`0 0 ${w} ${h}`}
+      role="img"
+      aria-label={tl("Presence and win rate by patch, {from} to {to}", { from: list[0].p, to: list[list.length - 1].p })}
+    >
+      <title>{tl("Presence (solid) and win rate (dashed) by patch, {from} to {to}", { from: list[0].p, to: list[list.length - 1].p })}</title>
+      <line x1={0} x2={w} y1={h / 2} y2={h / 2} stroke="var(--rw-border)" strokeDasharray="2 3" />
+      <polyline points={presPts} fill="none" stroke="var(--rw-accent)" strokeWidth={2} strokeLinejoin="round" />
+      {wrPts && <polyline points={wrPts} fill="none" stroke="var(--rw-teal)" strokeWidth={1.5} strokeDasharray="4 3" />}
+    </svg>
+  );
+};
+
 // "<1%" rather than "0%" for something that did happen, just rarely
 const pctOf = (w: number, g: number) => (!g ? "–" : w > 0 && (w / g) * 100 < 0.5 ? "<1%" : `${Math.round((w / g) * 100)}%`);
 
@@ -139,16 +168,24 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
       )}
 
       {c.patches && c.patches.length > 0 && (
-        <Section title={tl("Recent patches")}>
+        <Section title={tl("Recent patches")} right={c.patches.length >= 3 ? <PatchTrend patches={c.patches} /> : undefined}>
           <div className="space-y-1">
-            {c.patches.map((p) => {
+            {c.patches.map((p, i) => {
               const pres = (p.pk + p.b) / Math.max(p.g, 1);
+              const before = c.patches![i + 1];
+              const d = before ? Math.round((pres - (before.pk + before.b) / Math.max(before.g, 1)) * 100) : null;
               return (
-                <div key={p.p} className="grid grid-cols-[3.5rem_1fr_auto] items-center gap-2 text-xs">
+                <div key={p.p} className="grid grid-cols-[3.5rem_1fr_2.5rem_auto] items-center gap-2 text-xs">
                   <span className="text-rw-text font-semibold">{p.p}</span>
                   <div className="h-2.5 bg-rw-bg rounded overflow-hidden">
                     <div className="h-full bg-rw-accent/70" style={{ width: `${(pres / maxPatch) * 100}%` }} />
                   </div>
+                  <span
+                    className={`tabular-nums text-right text-[10px] ${d == null || d === 0 ? "text-rw-muted" : d > 0 ? "text-rw-teal" : "text-rw-red"}`}
+                    title={before ? tl("Change in presence against {patch}, in points", { patch: before.p }) : undefined}
+                  >
+                    {d == null ? "" : d === 0 ? "=" : `${d > 0 ? "+" : ""}${d}`}
+                  </span>
                   <span className="text-rw-sub tabular-nums text-right w-56 truncate">
                     {tl("{pres} presence · {p} picks · {wr}", { pres: `${Math.round(pres * 100)}%`, p: p.pk, wr: p.pk ? pctOf(p.w, p.pk) : "–" })}
                   </span>

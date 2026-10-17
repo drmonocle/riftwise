@@ -629,9 +629,10 @@ export interface HubLeague {
 
 // ── champion game logs per league and year (Champions page filters) ──
 
-/** [champion, role 0-4 (-1 unknown), kills, deaths, assists, cs, gold, damage, player, player slug]
- *  (stats and player missing without a scoreboard; player from builds of 2026-10-16 on) */
-export type ChampPick = [string, number, number?, number?, number?, number?, number?, number?, string?, (string | null)?];
+/** [champion, role 0-4 (-1 unknown), kills, deaths, assists, cs, gold, damage, player, player slug, gold lead over the
+ *  lane opponent at 15] (stats and player missing without a scoreboard; player from builds of 2026-10-16 on, the lead
+ *  from 2026-10-17 on and only for games Oracle's Elixir has) */
+export type ChampPick = [string, number, number?, number?, number?, number?, number?, number?, string?, (string | null)?, number?];
 /** [date, patch, event index, blue won 1/0, minutes, blue picks, red picks, blue bans, red bans, draft order known 1/0,
  *  blue team, red team, blue slug, red slug, series slug, game number] (the last six from builds of 2026-10-16 on) */
 export type ChampGame = [
