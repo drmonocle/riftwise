@@ -10,6 +10,8 @@ import type { PlayerGameRow, TeamGameRow } from "../../hub/types";
 import {
   PeriodKey,
   PeriodOption,
+  PlayerTl,
+  TeamAgg,
   inPeriod,
   periodOptions,
   playerAgg,
@@ -23,6 +25,7 @@ import { DraftTendencies } from "./DraftTendencies";
 import {
   ChampLink,
   Loading,
+  OeCredit,
   RevealButton,
   Section,
   Stat,
@@ -37,8 +40,148 @@ const pct = (v: number | null | undefined) =>
   v == null ? "–" : `${v.toFixed(1)}%`;
 const dash = (v: number | null | undefined, suffix = "") =>
   v == null ? "–" : `${v}${suffix}`;
-const signed = (v: number | null) =>
+const signed = (v: number | null | undefined) =>
   v == null ? "–" : `${v > 0 ? "+" : ""}${fmtNum(v)}`;
+
+/** A small heading inside a section. */
+const Sub: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted">
+    {children}
+  </div>
+);
+
+/** A player's early game from Oracle's Elixir: leads over the lane opponent, first blood, warding. */
+export const PlayerEarly: React.FC<{
+  t: PlayerTl;
+  dmgShare: number | null;
+  goldShare: number | null;
+}> = ({ t, dmgShare, goldShare }) => {
+  const eff =
+    dmgShare != null && goldShare != null
+      ? Math.round((dmgShare - goldShare) * 10) / 10
+      : null;
+  const lead = (c: number | null, x: number | null) =>
+    tl("CS {c} · XP {x}", { c: signed(c), x: signed(x) });
+  return (
+    <div className="space-y-1">
+      <Sub>{tl("Early game")}</Sub>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <Stat
+          label="GD@10"
+          value={signed(t.gd10)}
+          sub={lead(t.csd10, t.xpd10)}
+        />
+        <Stat
+          label="GD@15"
+          value={signed(t.gd15)}
+          sub={lead(t.csd15, t.xpd15)}
+        />
+        <Stat
+          label="GD@20"
+          value={signed(t.gd20)}
+          sub={lead(t.csd20, t.xpd20)}
+        />
+        <Stat
+          label={tl("DMG% − Gold%")}
+          value={signed(eff)}
+          sub={tl("Damage vs. gold share")}
+        />
+        <Stat
+          label={tl("First blood")}
+          value={pct(t.fbPart)}
+          sub={tl("{p} died for it", { p: pct(t.fbVictim) })}
+        />
+        <Stat
+          label={tl("Wards / min")}
+          value={dash(t.wpm)}
+          sub={tl("{n} cleared / min", { n: dash(t.wcpm) })}
+        />
+        <Stat
+          label={tl("Control wards")}
+          value={dash(t.cw)}
+          sub={tl("bought per game")}
+        />
+      </div>
+      <OeCredit n={t.n} />
+    </div>
+  );
+};
+
+/** A team's early game from Oracle's Elixir: gold leads, firsts, plates, grubs, vision. */
+export const TeamEarly: React.FC<{ t: TeamAgg }> = ({ t: agg }) => {
+  const t = agg.tl;
+  if (!t) return null;
+  return (
+    <div className="space-y-1">
+      <Sub>{tl("Early game")}</Sub>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <Stat
+          label="GD@15"
+          value={signed(t.gd15)}
+          sub={`@10 ${signed(t.gd10)} · @20 ${signed(t.gd20)}`}
+        />
+        <Stat
+          label={tl("Ahead at 15")}
+          value={pct(t.lead15)}
+          sub={tl("Win {a} ahead · {b} behind", {
+            a: winRate(t.ahead[1], t.ahead[0]),
+            b: winRate(t.behind[1], t.behind[0]),
+          })}
+        />
+        <Stat
+          label={tl("First blood")}
+          value={pct(t.fb)}
+          sub={tl("First tower {p}", { p: pct(t.ft) })}
+        />
+        <Stat
+          label={tl("First mid tower")}
+          value={pct(t.fmt)}
+          sub={tl("First to 3 towers {p}", { p: pct(t.f3t) })}
+        />
+        <Stat
+          label={tl("First dragon")}
+          value={pct(t.fd)}
+          sub={tl("Herald {h} · Baron {b}", { h: pct(t.fh), b: pct(t.fbaron) })}
+        />
+        <Stat
+          label={tl("Turret plates")}
+          value={dash(t.plates)}
+          sub={
+            t.platesLost != null
+              ? tl("{n} lost", { n: t.platesLost })
+              : undefined
+          }
+        />
+        {t.grubs != null && (
+          <Stat
+            label={tl("Void grubs")}
+            value={dash(t.grubs)}
+            sub={tl("{p} of all grubs", { p: pct(t.grubShare) })}
+          />
+        )}
+        <Stat
+          label={tl("VS / min")}
+          value={dash(t.vspm)}
+          sub={tl("{w} wards · {c} cleared / min", {
+            w: dash(t.wpm),
+            c: dash(t.wcpm),
+          })}
+        />
+        <Stat
+          label={tl("Control wards")}
+          value={dash(t.cw)}
+          sub={tl("bought per game")}
+        />
+        <Stat
+          label="CKPM"
+          value={dash(agg.ckpm)}
+          sub={tl("Kills per minute, both teams")}
+        />
+      </div>
+      <OeCredit n={t.n} />
+    </div>
+  );
+};
 
 /** The period select (shared with Compare). */
 export const PeriodPicker: React.FC<{
@@ -165,6 +308,24 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[] }> = ({
           },
         ] as Column<(typeof agg.champs)[number]>[])
       : []),
+    ...(agg.tl
+      ? ([
+          {
+            key: "gd15",
+            label: "GD@15",
+            title: tl("Gold lead over the lane opponent at 15 minutes"),
+            value: (c) => c.gd15,
+            render: (c) => signed(c.gd15),
+          },
+          {
+            key: "csd15",
+            label: "CSD@15",
+            title: tl("CS lead over the lane opponent at 15 minutes"),
+            value: (c) => c.csd15,
+            render: (c) => signed(c.csd15),
+          },
+        ] as Column<(typeof agg.champs)[number]>[])
+      : []),
   ];
   return (
     <Section
@@ -237,6 +398,13 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[] }> = ({
                 .join(" · ")}
             />
           </div>
+          {agg.tl && (
+            <PlayerEarly
+              t={agg.tl}
+              dmgShare={agg.dmgShare}
+              goldShare={agg.goldShare}
+            />
+          )}
           <SortTable
             rows={agg.champs}
             columns={cols}
@@ -373,6 +541,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[] }> = ({
               sub={tl("different champions picked")}
             />
           </div>
+          <TeamEarly t={t} />
           <div className="grid sm:grid-cols-3 gap-4">
             {t.picks.length > 0 && (
               <div className="min-w-0">

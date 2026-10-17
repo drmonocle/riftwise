@@ -87,8 +87,20 @@ export const Stat: React.FC<{ label: string; value: React.ReactNode; sub?: React
   <div className="bg-rw-bg border border-rw-border rounded-lg px-3 py-2 min-w-0">
     <div className="text-[10px] uppercase tracking-wider text-rw-muted font-semibold truncate">{label}</div>
     <div className="text-base font-bold text-rw-text truncate">{value}</div>
-    {sub && <div className="text-[10px] text-rw-sub truncate">{sub}</div>}
+    {sub && (
+      <div className="text-[10px] text-rw-sub truncate" title={typeof sub === "string" ? sub : undefined}>
+        {sub}
+      </div>
+    )}
   </div>
+);
+
+/** The credit Oracle's Elixir's data asks for (free for non-commercial use with credit), under every early-game block. */
+export const OeCredit: React.FC<{ n?: number }> = ({ n }) => (
+  <p className="text-[10px] text-rw-muted">
+    {n != null ? tl("Early-game numbers from {n} games with timelines.", { n: fmtNum(n) }) + " " : ""}
+    {tl("Data: Oracle's Elixir (oracleselixir.com) by Tim Sevenhuysen.")}
+  </p>
 );
 
 /** A titled card. With `share` (a file name) it gets Copy image / Save image buttons and a RiftWise footer in the picture. */

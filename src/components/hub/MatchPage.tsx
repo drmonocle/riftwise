@@ -188,6 +188,9 @@ const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red
   if (st?.heralds) obj.push([tl("Heralds"), st.heralds]);
   if (st?.atakhan) obj.push([tl("Atakhan"), st.atakhan]);
   if (st?.elders) obj.push([tl("Elders"), st.elders]);
+  if (st?.pl != null) obj.push([tl("Plates"), st.pl]);
+  if (st?.g15 != null) obj.push(["GD@15", sgn(st.g15)]);
+  const firsts = [st?.fb === 1 ? tl("First blood") : null, st?.ft === 1 ? tl("First tower") : null].filter((x): x is string => !!x);
   const drakes = st?.drakes ? Object.entries(st.drakes).map(([k, n]) => `${tl(DRAKE_LABEL[k] || k)}${n && n > 1 ? ` ×${n}` : ""}`) : [];
   return (
     <div className={`min-w-0 ${right ? "text-right" : ""}`}>
@@ -208,9 +211,21 @@ const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red
         </div>
       )}
       {drakes.length > 0 && <div className="text-[10px] text-rw-muted mt-0.5">{drakes.join(" · ")}</div>}
+      {firsts.length > 0 && (
+        <div className={`mt-1 flex flex-wrap gap-1 ${right ? "justify-end" : ""}`}>
+          {firsts.map((f) => (
+            <span key={f} className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-rw-accent/15 border border-rw-accent/40 text-rw-text">
+              {f}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
+
+/** +1,234 / -56 */
+const sgn = (v: number | null | undefined) => (v == null ? "–" : `${v > 0 ? "+" : ""}${fmtNum(v)}`);
 
 // Draft order: blue picks 1st, 4th, 5th, 8th, 9th; red 2nd, 3rd, 6th, 7th, 10th. Bans and picks come in two phases (3 + 2).
 const PICK_NO: Record<"blue" | "red", number[]> = { blue: [1, 4, 5, 8, 9], red: [2, 3, 6, 7, 10] };
@@ -338,6 +353,18 @@ const PlayerRow: React.FC<{ p: GamePlayer; teamKills: number; teamDmg: number; t
           {p.v != null && <> · {tl("{n} vision", { n: p.v })}</>}
         </span>
       </div>
+      {(() => {
+        const bits = [
+          minutes && p.dm != null ? `${fmtNum(Math.round(p.dm / minutes))} ${tl("DPM")}` : null,
+          minutes && p.v != null ? `${(p.v / minutes).toFixed(2)} ${tl("VS/m")}` : null,
+          p.g15 != null ? `@15 ${sgn(p.g15)} ${tl("gold")} · ${sgn(p.c15)} CS · ${sgn(p.x15)} XP` : null,
+        ].filter(Boolean);
+        return bits.length ? (
+          <div className="mt-0.5 text-[10px] text-rw-muted tabular-nums" title={p.g15 != null ? tl("Lead over the lane opponent at 15 minutes (Oracle's Elixir)") : undefined}>
+            {bits.join(" · ")}
+          </div>
+        ) : null;
+      })()}
     </div>
   );
 };

@@ -19,13 +19,20 @@ folder, so one latest.json switch publishes both:
                                     series slug, stage, name played under], newest first
   hub/playergames/<slug>.json       every game of a player with stats: [date, series slug, champion, k, d, a, won, team,
                                     opponent, event, role, event slug, cs, gold, damage, vision, minutes, team kills,
-                                    team damage, team gold, team vision], newest first
+                                    team damage, team gold, team vision, timeline], newest first; timeline is
+                                    Oracle's Elixir's [gd10, csd10, xpd10, gd15, csd15, xpd15, gd20, csd20, xpd20,
+                                    first blood 1 kill / 2 assist / 3 died / 0, wards, wards killed, control wards]
+                                    or null (see timeline.py)
   hub/csv/<event>.csv               every game of a tournament, one row per player and per team; csv/index.json
                                     (not "downloads": lolworlds.com's request filtering blocks any URL with "/download")
   hub/leagueyear/<league>/<year>.json  a league's whole season: player and team tables (percentile ranks)
   hub/teamgames/<slug>.json         every game of a team: [date, series slug, event slug, event, opponent, its slug, side b/r,
                                     won, minutes, kills, deaths, gold, opp gold, dragons, opp dragons, barons, opp barons,
-                                    towers, opp towers, bans, picks, opponent's bans, roles of the picks], newest first
+                                    towers, opp towers, bans, picks, opponent's bans, roles of the picks, timeline],
+                                    newest first; timeline is Oracle's Elixir's [gd10, gd15, gd20, csd15, xpd15,
+                                    first blood, first tower, first mid tower, first to 3 towers, first dragon, first
+                                    herald, first baron, plates, opp plates, grubs, opp grubs, wards, wards killed,
+                                    control wards, vision score] or null (see timeline.py)
   hub/events/<year>.json            all tournaments of a year
   hub/records.json, hub/titles.json the Stats tab's records and title lists, with links to the hub pages
   hub/alias.json                    {"team": {old slug: current slug}}: teams that changed name
@@ -55,6 +62,7 @@ from collections import Counter, defaultdict
 
 import leagues_info
 import ratings as team_ratings
+import timeline
 
 SITE = "RiftWise"
 RECENT_EVENT_DAYS = 30        # event and series descriptions leave the winner out while this fresh
@@ -554,12 +562,16 @@ def build(ctx) -> dict:
     def new_tp_row():
         return {"g": 0, "w": 0, "k": 0, "d": 0, "a": 0, "cs": 0, "gold": 0, "dmg": 0, "min": 0.0,
                 "team": Counter(), "champs": Counter(), "roles": Counter(), "tk": 0, "vis": 0, "vg": 0,
-                "sdmg": 0, "tdmg": 0, "sgold": 0, "tgold": 0, "svis": 0, "tvis": 0}
+                "sdmg": 0, "tdmg": 0, "sgold": 0, "tgold": 0, "svis": 0, "tvis": 0,
+                # Oracle's Elixir: games with leads at 15 and their sums; games with first blood known, taking part, dying
+                "tn": 0, "g15": 0, "c15": 0, "x15": 0, "fbn": 0, "fbp": 0, "fbv": 0}
 
     def new_tts_row():
         return {"g": 0, "w": 0, "min": 0.0, "k": 0, "d": 0, "gd": 0, "drag": 0, "bar": 0, "tow": 0,
                 "her": 0, "grub": 0, "gold": 0, "tl": 0, "odrag": 0, "obar": 0, "oher": 0, "blue": 0,
-                "pg": 0, "pmin": 0.0, "cs": 0, "dmg": 0}
+                "pg": 0, "pmin": 0.0, "cs": 0, "dmg": 0,
+                # Oracle's Elixir: games with the lead at 15 and its sum; first blood / first tower; turret plates
+                "tn": 0, "g15": 0, "fbn": 0, "fb": 0, "ft": 0, "pln": 0, "pl": 0, "opl": 0}
 
     def new_facts():
         return {"g": 0, "min": 0.0, "kills": 0, "kg": 0, "blue": 0, "red": 0, "drakes": Counter(), "short": None,
@@ -598,6 +610,8 @@ def build(ctx) -> dict:
                 "vis": x["vis"], "vmin": r1(x["vg"]), "c": [c for c, _ in x["champs"].most_common(3)], "nc": len(x["champs"]),
                 "sd": x["sdmg"], "td": x["tdmg"], "sg": x["sgold"], "tg": x["tgold"], "sv": x["svis"], "tv": x["tvis"],
                 **({"mvp": ev_mvp[page]} if ev_mvp.get(page) else {}),
+                **({"tn": x["tn"], "g15": x["g15"], "c15": x["c15"], "x15": x["x15"]} if x["tn"] else {}),
+                **({"fbn": x["fbn"], "fbp": x["fbp"], "fbv": x["fbv"]} if x["fbn"] else {}),
             })
         team_stats_out = sorted(({"t": n, "u": team_ref(n, last_date or "")[1], **{k: (r1(v) if k == "min" else v) for k, v in z.items()}}
                                  for n, z in tts.items() if z["g"]), key=lambda x: (-x["w"] / x["g"], -x["g"]))
@@ -757,6 +771,7 @@ def build(ctx) -> dict:
                 f"""SELECT match_id, game_number, team1, team2, team1_bans, team2_bans, team1_picks, team2_picks, team1_roles,
                            team2_roles FROM game_drafts_lp WHERE match_id IN ({q})""", part):
                 drafts[(r["match_id"], r["game_number"])] = r
+        oe = timeline.load(con, mids, chunks)
 
         # Per-tournament aggregates
         tp = defaultdict(new_tp_row)
@@ -890,6 +905,36 @@ def build(ctx) -> dict:
                             if picks:
                                 sd["picks"] = picks
                         sides[side] = sd
+                    # Oracle's Elixir's numbers for this game (leads at 15, firsts, plates...), when it has the game
+                    g_rows = prow.get(gid, []) if gid else []
+                    oe_g = timeline.pick(oe.get((mid, g["n"])), {r["champion"] for r in g_rows if r["champion"]})
+                    oe_p = oe_g["p"] if oe_g else {}
+                    oe_side = {}
+                    if oe_g:
+                        for side, name in (("blue", g["t1"]), ("red", g["t2"])):
+                            r_oe = timeline.team_row(oe_g, name, [r["champion"] for r in g_rows if r["team"] == name], side)
+                            tl_ = timeline.team_tl(r_oe, g["date"]) if r_oe is not None else None
+                            if not tl_:
+                                continue
+                            oe_side[side] = tl_
+                            sd = sides.setdefault(side, {})
+                            for key, v in (("g15", tl_[1]), ("fb", tl_[5]), ("ft", tl_[6]), ("pl", tl_[12])):
+                                if v is not None:
+                                    sd[key] = v
+                            if "grubs" not in sd and tl_[14]:
+                                sd["grubs"] = tl_[14]
+                            z = tts[name]
+                            if tl_[1] is not None:
+                                z["tn"] += 1
+                                z["g15"] += tl_[1]
+                            if tl_[5] is not None and tl_[6] is not None:
+                                z["fbn"] += 1
+                                z["fb"] += tl_[5]
+                                z["ft"] += tl_[6]
+                            if tl_[12] is not None and tl_[13] is not None:
+                                z["pln"] += 1
+                                z["pl"] += tl_[12]
+                                z["opl"] += tl_[13]
                     if any(sides.values()):
                         item["t"] = sides
                     if base and item.get("min") is None and t is not None:
@@ -955,7 +1000,7 @@ def build(ctx) -> dict:
                                 1 if g["w"] == name else 0, item.get("min"), sd.get("k"), od.get("k"), sd.get("gold"), od.get("gold"),
                                 sd.get("drag"), od.get("drag"), sd.get("barons"), od.get("barons"), sd.get("towers"), od.get("towers"),
                                 sd.get("bans") or [], sd.get("picks") or [], od.get("bans") or [],
-                                [pick_role.get((name, ch), -1) for ch in (sd.get("picks") or [])]])
+                                [pick_role.get((name, ch), -1) for ch in (sd.get("picks") or [])], oe_side.get(side)])
                     rows = prow.get(gid, []) if gid else []
                     if rows:
                         n_stats_games += 1
@@ -993,6 +1038,9 @@ def build(ctx) -> dict:
                                    "it": [x for x in jlist(r["items"])], "tr": r["trinket"], "sp": jlist(r["spells"]),
                                    "ks": r["keystone"], "pt": r["primary_tree"], "stt": r["secondary_tree"],
                                    "rn": [x.strip() for x in str(r["runes"] or "").split(",") if x.strip()]}
+                            ptl = timeline.player_tl(oe_p[r["champion"]]) if r["champion"] in oe_p else None
+                            if ptl:
+                                row.update({"g15": ptl[3], "c15": ptl[4], "x15": ptl[5]})
                             plist.append({k2: v for k2, v in row.items() if v not in (None, [], "")})
                             # Collect for player, tournament, champion pages
                             team_name = r["team"]
@@ -1031,13 +1079,22 @@ def build(ctx) -> dict:
                                     x["vg"] += mins
                                 if r["champion"]:
                                     x["champs"][r["champion"]] += 1
+                                if ptl and ptl[3] is not None:
+                                    x["tn"] += 1
+                                    x["g15"] += ptl[3]
+                                    x["c15"] += ptl[4] or 0
+                                    x["x15"] += ptl[5] or 0
+                                if ptl and ptl[9] is not None:
+                                    x["fbn"] += 1
+                                    x["fbp"] += 1 if ptl[9] in (1, 2) else 0
+                                    x["fbv"] += 1 if ptl[9] == 3 else 0
                                 opp = opp_of.get(team_name, "")
                                 p_games[page].append((g["date"][:10], gslug, r["champion"] or "", k, d, aa, won, team_name, opp, en,
                                                       r["role"] or "", eslug, r["cs"], r["gold"], r["damage"], r["vision"],
                                                       rmin(mins) if mins else None, team_kills[team_name],
                                                       team_dmg[team_name] if r["damage"] is not None else None,
                                                       team_gold[team_name] if r["gold"] is not None else None,
-                                                      team_vis[team_name] if r["vision"] is not None else None))
+                                                      team_vis[team_name] if r["vision"] is not None else None, ptl))
                                 latest_heap(p_recent[page], (g["date"], gslug, r["champion"] or "", k, d, aa, won, opp, en, team_name), 20)
                                 if ctx.consistent.get(gid):
                                     for key, val in (("kills", k), ("assists", aa), ("dmg", r["damage"] or 0), ("cs", r["cs"] or 0)):

@@ -164,6 +164,15 @@ export interface EventPlayer {
   tv?: number;
   /** Player of the Game awards in this tournament */
   mvp?: number;
+  /** Oracle's Elixir: games with leads at 15 minutes, and the sums of the gold / CS / XP leads */
+  tn?: number;
+  g15?: number;
+  c15?: number;
+  x15?: number;
+  /** Oracle's Elixir: games where first blood is known, ones they took part in, ones they died in */
+  fbn?: number;
+  fbp?: number;
+  fbv?: number;
 }
 
 export interface EventTeamStats {
@@ -192,28 +201,52 @@ export interface EventTeamStats {
   pmin?: number;
   cs?: number;
   dmg?: number;
+  /** Oracle's Elixir: games with the gold lead at 15 and its sum; games with first blood / tower known, firsts taken;
+   *  games with turret plates known, plates taken and lost */
+  tn?: number;
+  g15?: number;
+  fbn?: number;
+  fb?: number;
+  ft?: number;
+  pln?: number;
+  pl?: number;
+  opl?: number;
 }
 
 /** [date, opponent, opponent slug, won, lost, event, event slug, series slug, stage, name played under] */
 export type TeamSeriesRow = [string, string, string | null, number, number, string, string, string | null, string, string];
 /**
+ * Oracle's Elixir's numbers for a player's game: [gd10, csd10, xpd10, gd15, csd15, xpd15, gd20, csd20, xpd20,
+ * first blood (1 got the kill, 2 assisted, 3 died, 0 none), wards placed, wards killed, control wards bought]
+ * (leads are against the lane opponent; any of them can be null)
+ */
+export type PlayerTimeline = (number | null)[];
+/**
  * [date, series slug, champion, k, d, a, won, team, opponent, event, role, event slug,
- *  cs, gold, damage, vision, minutes, team kills, team damage, team gold, team vision]
- * (the last nine are in builds from 2026-10-16 on; null when the game has no full scoreboard)
+ *  cs, gold, damage, vision, minutes, team kills, team damage, team gold, team vision, timeline]
+ * (cs .. team vision are in builds from 2026-10-16 on, the timeline from 2026-10-17; null when the game has no
+ * full scoreboard / Oracle's Elixir doesn't have it)
  */
 export type PlayerGameRow = [
   string, string, string, number, number, number, number, string, string, string, string, string,
   (number | null)?, (number | null)?, (number | null)?, (number | null)?, (number | null)?,
-  (number | null)?, (number | null)?, (number | null)?, (number | null)?,
+  (number | null)?, (number | null)?, (number | null)?, (number | null)?, (PlayerTimeline | null)?,
 ];
 /**
+ * Oracle's Elixir's numbers for a team's game: [gd10, gd15, gd20, csd15, xpd15, first blood, first tower,
+ * first mid tower, first to three towers, first dragon, first herald, first baron (1/0), plates, opp plates,
+ * grubs, opp grubs, wards placed, wards killed, control wards bought, vision score] (any of them can be null)
+ */
+export type TeamTimeline = (number | null)[];
+/**
  * [date, series slug, event slug, event, opponent, its slug, side "b"/"r", won 0/1, minutes, kills, deaths,
- *  gold, opp gold, dragons, opp dragons, barons, opp barons, towers, opp towers, bans, picks, opponent's bans]
+ *  gold, opp gold, dragons, opp dragons, barons, opp barons, towers, opp towers, bans, picks, opponent's bans,
+ *  roles of the picks, timeline]
  */
 export type TeamGameRow = [
   string, string, string, string, string, string | null, "b" | "r", number, number | null, number | null, number | null,
   number | null, number | null, number | null, number | null, number | null, number | null, number | null, number | null,
-  string[], string[], string[]?, number[]?,
+  string[], string[], string[]?, number[]?, (TeamTimeline | null)?,
 ];
 
 export interface SideStats {
@@ -230,6 +263,11 @@ export interface SideStats {
   elders?: number;
   grubs?: number;
   atakhan?: number;
+  /** Oracle's Elixir: gold lead at 15 minutes, first blood / first tower (1/0), turret plates */
+  g15?: number;
+  fb?: number;
+  ft?: number;
+  pl?: number;
 }
 
 export interface GamePlayer {
@@ -252,6 +290,10 @@ export interface GamePlayer {
   pt?: string;
   stt?: string;
   rn?: string[];
+  /** Oracle's Elixir: gold / CS / XP lead over the lane opponent at 15 minutes */
+  g15?: number;
+  c15?: number;
+  x15?: number;
 }
 
 export interface HubGame {

@@ -22,6 +22,8 @@ const r1 = (v: number) => v.toFixed(1);
 const r2 = (v: number) => v.toFixed(2);
 const pc = (v: number) => `${(v * 100).toFixed(1)}%`;
 const int = (v: number) => String(Math.round(v));
+const sInt = (v: number) => `${v > 0 ? "+" : ""}${Math.round(v)}`;
+const sR1 = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`;
 const div = (a: number | undefined, b: number | undefined) =>
   a != null && b ? a / b : null;
 
@@ -72,6 +74,11 @@ const PLAYER_METRICS: Metric<EventPlayer>[] = [
     value: (p) => div(p.vis, p.vmin),
     fmt: r2,
   },
+  // Oracle's Elixir (games with timelines only)
+  { key: "g15", label: tk("Gold lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? div(p.g15, p.tn) : null), fmt: sInt },
+  { key: "c15", label: tk("CS lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? div(p.c15, p.tn) : null), fmt: sR1 },
+  { key: "x15", label: tk("XP lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? div(p.x15, p.tn) : null), fmt: sInt },
+  { key: "fbp", label: tk("Took part in first blood (kill or assist)"), value: (p) => (p.fbn ? div(p.fbp, p.fbn) : null), fmt: pc },
   { key: "wr", label: tk("Win %"), value: (p) => div(p.w, p.g), fmt: pc },
 ];
 
@@ -121,6 +128,11 @@ const TEAM_METRICS: Metric<EventTeamStats>[] = [
     fmt: r1,
     low: true,
   },
+  // Oracle's Elixir (games with timelines only)
+  { key: "g15", label: tk("Gold lead at 15 minutes"), value: (t) => (t.tn ? div(t.g15, t.tn) : null), fmt: sInt },
+  { key: "fb", label: tk("First blood rate"), value: (t) => (t.fbn ? div(t.fb, t.fbn) : null), fmt: pc },
+  { key: "ft", label: tk("First tower rate"), value: (t) => (t.fbn ? div(t.ft, t.fbn) : null), fmt: pc },
+  { key: "pl", label: tk("Turret plates taken per game"), value: (t) => (t.pln ? div(t.pl, t.pln) : null), fmt: r1 },
 ];
 
 /** Rank and "better than X%" of `me` among `peers` for one metric. */

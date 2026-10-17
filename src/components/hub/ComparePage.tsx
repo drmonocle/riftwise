@@ -25,7 +25,7 @@ import {
 import { HeadToHeadSeries } from "./Archives";
 import { PeriodPicker } from "./PeriodStats";
 import { DraftTendencies } from "./DraftTendencies";
-import { card, ChampLink, fmtNum, HubLink, isFresh, RevealButton, Section, td, useHidden, usePageTitle } from "./ui";
+import { card, ChampLink, fmtNum, HubLink, isFresh, OeCredit, RevealButton, Section, td, useHidden, usePageTitle } from "./ui";
 import { STable } from "../STable";
 
 type Mode = "team" | "player";
@@ -267,6 +267,36 @@ export const TeamRows: React.FC<{ x: HubTeam; y: HubTeam; ra: TeamGameRow[]; rb:
             <Row label={tl("Baron%")} a={pct(A.baronShare)} b={pct(B.baronShare)} va={A.baronShare} vb={B.baronShare} />
             <Row label={tl("Towers")} a={d(A.towers)} b={d(B.towers)} va={A.towers} vb={B.towers} />
             <Row label={tl("Towers lost per game")} a={d(A.towersLost)} b={d(B.towersLost)} va={A.towersLost} vb={B.towersLost} better="low" />
+            <Row label="CKPM" a={d(A.ckpm)} b={d(B.ckpm)} />
+            {(A.tl || B.tl) && (
+              <>
+                <Row label="GD@10" a={sgn(A.tl?.gd10 ?? null)} b={sgn(B.tl?.gd10 ?? null)} va={A.tl?.gd10 ?? null} vb={B.tl?.gd10 ?? null} />
+                <Row label="GD@15" a={sgn(A.tl?.gd15 ?? null)} b={sgn(B.tl?.gd15 ?? null)} va={A.tl?.gd15 ?? null} vb={B.tl?.gd15 ?? null} />
+                <Row label={tl("Ahead at 15")} a={pct(A.tl?.lead15 ?? null)} b={pct(B.tl?.lead15 ?? null)} va={A.tl?.lead15 ?? null} vb={B.tl?.lead15 ?? null} />
+                <Row
+                  label={tl("Win rate when ahead at 15")}
+                  a={A.tl ? winRate(A.tl.ahead[1], A.tl.ahead[0]) : "–"}
+                  b={B.tl ? winRate(B.tl.ahead[1], B.tl.ahead[0]) : "–"}
+                  va={A.tl ? wr(A.tl.ahead[1], A.tl.ahead[0]) : null}
+                  vb={B.tl ? wr(B.tl.ahead[1], B.tl.ahead[0]) : null}
+                />
+                <Row
+                  label={tl("Win rate when behind at 15")}
+                  a={A.tl ? winRate(A.tl.behind[1], A.tl.behind[0]) : "–"}
+                  b={B.tl ? winRate(B.tl.behind[1], B.tl.behind[0]) : "–"}
+                  va={A.tl ? wr(A.tl.behind[1], A.tl.behind[0]) : null}
+                  vb={B.tl ? wr(B.tl.behind[1], B.tl.behind[0]) : null}
+                />
+                <Row label={tl("First blood")} a={pct(A.tl?.fb ?? null)} b={pct(B.tl?.fb ?? null)} va={A.tl?.fb ?? null} vb={B.tl?.fb ?? null} />
+                <Row label={tl("First tower")} a={pct(A.tl?.ft ?? null)} b={pct(B.tl?.ft ?? null)} va={A.tl?.ft ?? null} vb={B.tl?.ft ?? null} />
+                <Row label={tl("First dragon")} a={pct(A.tl?.fd ?? null)} b={pct(B.tl?.fd ?? null)} va={A.tl?.fd ?? null} vb={B.tl?.fd ?? null} />
+                <Row label={tl("Turret plates")} a={d(A.tl?.plates ?? null)} b={d(B.tl?.plates ?? null)} va={A.tl?.plates ?? null} vb={B.tl?.plates ?? null} />
+                {(A.tl?.grubs != null || B.tl?.grubs != null) && (
+                  <Row label={tl("Void grubs")} a={d(A.tl?.grubs ?? null)} b={d(B.tl?.grubs ?? null)} va={A.tl?.grubs ?? null} vb={B.tl?.grubs ?? null} />
+                )}
+                <Row label={tl("VS / min")} a={d(A.tl?.vspm ?? null)} b={d(B.tl?.vspm ?? null)} va={A.tl?.vspm ?? null} vb={B.tl?.vspm ?? null} />
+              </>
+            )}
             {career && (
               <>
                 <Row label={tl("Titles")} a={x.titles.length} b={y.titles.length} va={x.titles.length} vb={y.titles.length} />
@@ -279,6 +309,7 @@ export const TeamRows: React.FC<{ x: HubTeam; y: HubTeam; ra: TeamGameRow[]; rb:
             )}
           </tbody>
         </table>
+        {(A.tl || B.tl) && <OeCredit />}
       </Section>
       <div className="grid sm:grid-cols-2 gap-3">
         {[
@@ -339,6 +370,24 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
             <Row label={tl("DMG%")} a={pct(A.dmgShare)} b={pct(B.dmgShare)} va={A.dmgShare} vb={B.dmgShare} />
             <Row label={tl("Gold%")} a={pct(A.goldShare)} b={pct(B.goldShare)} va={A.goldShare} vb={B.goldShare} />
             <Row label={tl("VS / min")} a={d(A.vsm)} b={d(B.vsm)} va={A.vsm} vb={B.vsm} />
+            {(A.tl || B.tl) && (
+              <>
+                <Row label="GD@15" a={sgn(A.tl?.gd15 ?? null)} b={sgn(B.tl?.gd15 ?? null)} va={A.tl?.gd15 ?? null} vb={B.tl?.gd15 ?? null} />
+                <Row label="CSD@15" a={sgn(A.tl?.csd15 ?? null)} b={sgn(B.tl?.csd15 ?? null)} va={A.tl?.csd15 ?? null} vb={B.tl?.csd15 ?? null} />
+                <Row label="XPD@15" a={sgn(A.tl?.xpd15 ?? null)} b={sgn(B.tl?.xpd15 ?? null)} va={A.tl?.xpd15 ?? null} vb={B.tl?.xpd15 ?? null} />
+                <Row label={tl("First blood involvement")} a={pct(A.tl?.fbPart ?? null)} b={pct(B.tl?.fbPart ?? null)} va={A.tl?.fbPart ?? null} vb={B.tl?.fbPart ?? null} />
+                <Row
+                  label={tl("Died for first blood")}
+                  a={pct(A.tl?.fbVictim ?? null)}
+                  b={pct(B.tl?.fbVictim ?? null)}
+                  va={A.tl?.fbVictim ?? null}
+                  vb={B.tl?.fbVictim ?? null}
+                  better="low"
+                />
+                <Row label={tl("Wards / min")} a={d(A.tl?.wpm ?? null)} b={d(B.tl?.wpm ?? null)} va={A.tl?.wpm ?? null} vb={B.tl?.wpm ?? null} />
+                <Row label={tl("Wards cleared / min")} a={d(A.tl?.wcpm ?? null)} b={d(B.tl?.wcpm ?? null)} va={A.tl?.wcpm ?? null} vb={B.tl?.wcpm ?? null} />
+              </>
+            )}
             <Row label={tl("Champions played")} a={A.champs.length} b={B.champs.length} />
             {career && (
               <>
@@ -348,6 +397,7 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
             )}
           </tbody>
         </table>
+        {(A.tl || B.tl) && <OeCredit />}
       </Section>
       <div className="grid sm:grid-cols-2 gap-3">
         {[
