@@ -206,7 +206,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
       )}
 
       {/* Spoiler control for this stage */}
-      {settings.spoilerMode && stage && stage.sections.some((s) => s.type === "bracket") && (
+      {settings.spoilerMode && stage && stage.sections.length > 0 && (
         <button
           type="button"
           onClick={() => setRevealedStages((r) => ({ ...r, [revealKey]: !r[revealKey] }))}
@@ -293,13 +293,19 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                               </div>
                             </td>
                             <td className="py-2.5 px-3 text-center font-mono font-bold text-sm whitespace-nowrap">
-                              <span className="text-emerald-400">{team.wins}</span>
-                              <span className="text-rw-muted mx-1">–</span>
-                              <span className="text-rose-400">{team.losses}</span>
-                              {team.ties > 0 && <span className="text-rw-sub text-xs"> – {team.ties}</span>}
+                              {hideResults ? (
+                                <span className="text-rw-muted">? – ?</span>
+                              ) : (
+                                <>
+                                  <span className="text-emerald-400">{team.wins}</span>
+                                  <span className="text-rw-muted mx-1">–</span>
+                                  <span className="text-rose-400">{team.losses}</span>
+                                  {team.ties > 0 && <span className="text-rw-sub text-xs"> – {team.ties}</span>}
+                                </>
+                              )}
                             </td>
                             <td className="py-2.5 px-3 text-center font-mono text-xs text-rw-teal hidden sm:table-cell">
-                              {played > 0 ? `${Math.round((team.wins / played) * 100)}%` : "–"}
+                              {hideResults ? "–" : played > 0 ? `${Math.round((team.wins / played) * 100)}%` : "–"}
                             </td>
                           </tr>
                         );

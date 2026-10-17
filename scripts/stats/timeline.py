@@ -33,7 +33,13 @@ def load(con, mids, chunks) -> dict:
                            firstbloodkill, firstbloodassist, firstbloodvictim, wardsplaced, wardskilled, controlwardsbought
                     FROM oe_analytics_player_game WHERE match_id IN ({q})""", part):
                 if r["champion"]:
-                    games[(r["match_id"], r["game_number"])].setdefault(r["oe_gameid"], {"p": {}, "t": {}})["p"][r["champion"]] = r
+                    e = games[(r["match_id"], r["game_number"])].setdefault(r["oe_gameid"], {"p": {}, "t": {}})
+                    other = e["p"].get(r["champion"])
+                    if other is not None and other["side"] != r["side"]:
+                        # blind pick: both teams played this champion, so keep both rows by side
+                        e.setdefault("mirror", {})[r["champion"]] = {other["side"]: other, r["side"]: r}
+                    else:
+                        e["p"][r["champion"]] = r
             for r in con.execute(
                 f"""SELECT match_id, game_number, oe_gameid, side, lp_team, {", ".join(T_DIFF)}, {", ".join(T_FIRST)},
                            turretplates, opp_turretplates, void_grubs, opp_void_grubs, wardsplaced, wardskilled,
@@ -61,9 +67,16 @@ def team_row(e, name, champs, side):
     for r in e["t"].values():
         if r["lp_team"] and r["lp_team"] == name:
             return r
-    sides = Counter(e["p"][c]["side"] for c in champs if c in e["p"])
+    sides = Counter(e["p"][c]["side"] for c in champs if c in e["p"] and c not in e.get("mirror", {}))
     s = sides.most_common(1)[0][0] if sides else ("Blue" if side == "blue" else "Red")
     return e["t"].get(s)
+
+
+def player_row(e, champ, side):
+    """OE's row for the player on `champ`; for a champion both teams played (blind pick), the one on `side`."""
+    if champ in e.get("mirror", {}):
+        return e["mirror"][champ].get(side)
+    return e["p"].get(champ)
 
 
 def player_tl(r):

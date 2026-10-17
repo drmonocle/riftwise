@@ -7,7 +7,7 @@
 import React, { useMemo } from "react";
 import { tl, roleName } from "../../i18n";
 import { ChampionStats, StatsMeta, loadChampionStats } from "../../stats";
-import { loadChampGames, loadChampIndex } from "../../hub/data";
+import { loadAliases, loadChampGames, loadChampIndex } from "../../hub/data";
 import { navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { ChampAggRow, ROLES, champAgg, patchCompare } from "../../hub/champAgg";
@@ -107,7 +107,10 @@ export const ChampionsPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ m
   usePageTitle(tl("Champions"));
   useDDragon();
   const q = useMemo(() => new URLSearchParams(query || ""), [query]);
-  const scope = q.get("league") || q.get("scope") || "top";
+  const aliases = useLoad(loadAliases, []);
+  const asked = q.get("league") || q.get("scope") || "top";
+  // ?league=lck works too (a league's short name)
+  const scope = aliases.data?.league[asked.toLowerCase()] || asked;
   const setQ = (patch: Record<string, string | undefined>) => {
     const next = new URLSearchParams(q);
     for (const [k, v] of Object.entries(patch)) {
@@ -336,10 +339,9 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
   const rows = useMemo(() => {
     if (!block) return [];
     const shape = (b: NonNullable<typeof block>) =>
-      b.champs
-        .filter((c) => !roleQ || c.role === roleQ)
-        .map((c) => ({ ...c, presence: (c.p + c.b) / b.games, wr: c.p ? c.w / c.p : null }));
-    return deltas(shape(block), thenBlock ? shape(thenBlock) : null, 10);
+      b.champs.map((c) => ({ ...c, presence: Math.min(1, (c.p + c.b) / b.games), wr: c.p ? c.w / c.p : null }));
+    // the role filter applies to this patch only: a flex pick whose main role changed isn't "new"
+    return deltas(shape(block).filter((c) => !roleQ || c.role === roleQ), thenBlock ? shape(thenBlock) : null, 10);
   }, [block, thenBlock, roleQ]);
   const label = (k: string) =>
     k === "all" ? tl("All time (2011 to today)") : k.startsWith("p") ? tl("Patch {patch}", { patch: k.slice(1) }) : tl("Year {year}", { year: k.slice(1) });

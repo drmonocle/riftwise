@@ -207,7 +207,9 @@ const Pic: React.FC<{ src: string | null; alt: string; size: number; round?: boo
   fallback,
   className,
 }) => {
-  const [broken, setBroken] = useState(false);
+  // the picture that failed (a new picture gets its own try)
+  const [failed, setFailed] = useState<string | null>(null);
+  const broken = !!src && failed === src;
   const style = { width: size, height: size };
   if (!src || broken)
     return (
@@ -227,7 +229,7 @@ const Pic: React.FC<{ src: string | null; alt: string; size: number; round?: boo
       width={size}
       height={size}
       loading="lazy"
-      onError={() => setBroken(true)}
+      onError={() => setFailed(src)}
       className={`inline-block shrink-0 ${round ? "rounded-full" : "rounded"} ${className || ""}`}
       style={style}
     />

@@ -90,7 +90,9 @@ function pool(side: Side, period: PeriodKey): Pool {
   }
   for (const pl of side.players) {
     if (!pl) continue;
-    const now = new Set(inPeriod(pl.log, period, playerRowRef));
+    // a period's games are the ones for this team (a new signing's games for their old team are career only)
+    const teamNames = new Set((side.team.names || []).map((x) => x.n).concat(side.team.name));
+    const now = new Set(inPeriod(pl.log, period, playerRowRef).filter((g) => period === "all" || teamNames.has(g[7])));
     // champion -> [games, wins, k, d, a, gold lead sum, games with it] this period, then the same for the career
     const by = new Map<string, number[]>();
     for (const g of pl.log) {

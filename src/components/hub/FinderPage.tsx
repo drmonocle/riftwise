@@ -7,7 +7,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { tl, tn } from "../../i18n";
 import { champName } from "../../champions";
-import { loadChampGames, loadChampIndex } from "../../hub/data";
+import { loadAliases, loadChampGames, loadChampIndex } from "../../hub/data";
 import type { ChampGame, ChampPick } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
@@ -39,6 +39,15 @@ type Q = URLSearchParams;
 type SetQ = (p: Record<string, string | undefined>) => void;
 
 /** The side of `g` that meets every condition (0 blue, 1 red), or -1. */
+/** A side's team as one key across renames: its page, else its name. */
+const teamKey = (g: ChampGame, s: number) => (s === 0 ? g[12] || g[10] : g[13] || g[11]) || "";
+
+/** "26.18" -> 26018, so patches sort as patches (26.9 before 26.18). */
+const patchSort = (p: string) => {
+  const [a, b] = p.split(".").map(Number);
+  return (a || 0) * 1000 + (b || 0);
+};
+
 function matchSide(g: ChampGame, q: Q, eventIdx: number | null): number {
   if (eventIdx != null && g[2] !== eventIdx) return -1;
   const patch = q.get("patch");
@@ -56,16 +65,19 @@ function matchSide(g: ChampGame, q: Q, eventIdx: number | null): number {
   const champs = (q.get("champ") || "").split(",").filter(Boolean);
   const vsChamp = q.get("vschamp");
   const player = q.get("player");
+  // "won" / "lost" only means something for a side picked by another filter
+  const sided = !!(team || vs || side || champs.length || vsChamp || player);
   for (const s of [0, 1]) {
     const mine = s === 0 ? g[5] : g[6];
     const theirs = s === 0 ? g[6] : g[5];
-    const myTeam = s === 0 ? g[10] : g[11];
-    const theirTeam = s === 0 ? g[11] : g[10];
+    const myTeam = teamKey(g, s);
+    const theirTeam = teamKey(g, 1 - s);
     const won = s === 0 ? g[3] === 1 : g[3] === 0;
-    if (team && myTeam !== team) continue;
-    if (vs && theirTeam !== vs) continue;
+    // a team filter is the team's page (one entry across a rename), or a name from an older link
+    if (team && myTeam !== team && (s === 0 ? g[10] : g[11]) !== team) continue;
+    if (vs && theirTeam !== vs && (s === 0 ? g[11] : g[10]) !== vs) continue;
     if (side && side !== (s === 0 ? "b" : "r")) continue;
-    if (result && (result === "w") !== won) continue;
+    if (result && sided && (result === "w") !== won) continue;
     if (champs.some((c) => !mine.some((p) => p[0] === c))) continue;
     if (vsChamp && !theirs.some((p) => p[0] === vsChamp)) continue;
     if (player && !mine.some((p) => p[9] === player || p[8] === player))
@@ -89,7 +101,9 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
   };
   const index = useLoad(loadChampIndex, []);
   const leagues = index.data || [];
-  const league = q.get("league") || leagues.find((l) => l.pr)?.u || "";
+  const aliases = useLoad(loadAliases, []);
+  const asked = q.get("league") || "";
+  const league = aliases.data?.league[asked.toLowerCase()] || asked || leagues.find((l) => l.pr)?.u || "";
   const years = Object.keys(leagues.find((l) => l.u === league)?.y || {})
     .sort()
     .reverse();
@@ -203,6 +217,10 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
   );
 };
 
+/** The dropdown entry for a team filter: its page, or (older links) its name. */
+const teamOption = (teams: [string, string][], v: string | null) =>
+  !v ? "" : (teams.find(([k, n]) => k === v || n === v)?.[0] ?? v);
+
 const FinderBody: React.FC<{
   games: ChampGame[];
   events: [string, string][];
@@ -211,13 +229,15 @@ const FinderBody: React.FC<{
   name: string;
 }> = ({ games, events, q, setQ, name }) => {
   const opts = useMemo(() => {
-    const teams = new Set<string>();
+    const teams = new Map<string, string>(); // team page (or name) -> its newest name in this file
     const champs = new Set<string>();
     const players = new Map<string, string>(); // slug or name -> name
     const patches = new Set<string>();
     for (const g of games) {
-      if (g[10]) teams.add(g[10]);
-      if (g[11]) teams.add(g[11]);
+      for (const s of [0, 1]) {
+        const name = s === 0 ? g[10] : g[11];
+        if (name) teams.set(teamKey(g, s), name); // games are oldest first, so the newest name stays
+      }
       if (g[1]) patches.add(g[1]);
       for (const p of [...g[5], ...g[6]]) {
         champs.add(p[0]);
@@ -227,7 +247,7 @@ const FinderBody: React.FC<{
     }
     const byName = (a: string, b: string) => a.localeCompare(b);
     return {
-      teams: [...teams].sort(byName),
+      teams: [...teams.entries()].sort((a, b) => byName(a[1], b[1])),
       champs: [...champs].sort((a, b) =>
         champName(a).localeCompare(champName(b)),
       ),
@@ -357,27 +377,27 @@ const FinderBody: React.FC<{
             {tl("One team in the game")}
           </span>
           <select
-            value={q.get("team") || ""}
+            value={teamOption(opts.teams, q.get("team"))}
             onChange={(e) => setQ({ team: e.target.value || undefined })}
             aria-label={tl("Team")}
             className={sel}
           >
             <option value="">{tl("Team: any")}</option>
-            {opts.teams.map((t) => (
-              <option key={t} value={t}>
+            {opts.teams.map(([k, t]) => (
+              <option key={k} value={k}>
                 {t}
               </option>
             ))}
           </select>
           <select
-            value={q.get("vs") || ""}
+            value={teamOption(opts.teams, q.get("vs"))}
             onChange={(e) => setQ({ vs: e.target.value || undefined })}
             aria-label={tl("Opponent")}
             className={sel}
           >
             <option value="">{tl("Against: anyone")}</option>
-            {opts.teams.map((t) => (
-              <option key={t} value={t}>
+            {opts.teams.map(([k, t]) => (
+              <option key={k} value={k}>
                 {t}
               </option>
             ))}
@@ -531,7 +551,7 @@ const FinderBody: React.FC<{
                         {(g[3] === 1 ? g[10] : g[11]) ||
                           (g[3] === 1 ? tl("Blue") : tl("Red"))}
                       </td>
-                      <td className={`${td} text-rw-sub`}>{g[1]}</td>
+                      <td className={`${td} text-rw-sub`} data-sort={patchSort(g[1])}>{g[1]}</td>
                       <td className={`${td} text-rw-sub tabular-nums`}>
                         {g[4] != null ? g[4].toFixed(1) : ""}
                       </td>

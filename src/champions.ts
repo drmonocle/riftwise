@@ -15,6 +15,7 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 let names: Record<string, string> | null = null;
 let loading: Promise<void> | null = null;
+let loadedLoc: string | null = null; // the language `names` / `loading` are for
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 export function champName(english: string): string {
@@ -25,8 +26,17 @@ export function champName(english: string): string {
 
 export function loadChampionNames(): Promise<void> {
   const loc = DD_LOCALE[currentLang()];
-  if (!loc) return Promise.resolve();
-  if (loading) return loading;
+  if (!loc) {
+    // back to English: forget another language's names
+    names = null;
+    loading = null;
+    loadedLoc = null;
+    return Promise.resolve();
+  }
+  if (loading && loadedLoc === loc) return loading;
+  // the language changed: load its names
+  names = null;
+  loadedLoc = loc;
   loading = (async () => {
     const key = `riftwatch_champ_names_${loc}`;
     try {

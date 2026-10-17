@@ -1,7 +1,7 @@
 /** Tournament page: results and prize money, standings, bracket, every series, leaders and champions. */
 import React, { useMemo, useState } from "react";
 import { Trophy, MapPin, CalendarDays, Coins, Download } from "lucide-react";
-import { downloadEventCsv } from "./DownloadsPage";
+import { downloadEventCsv, downloadStagesCsv } from "./DownloadsPage";
 import { BracketBoard, type BracketColumn } from "../BracketBoard";
 import { tl, tn, tk, regionName, stageName } from "../../i18n";
 import { winRate } from "../../stats";
@@ -106,10 +106,15 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
             <Stat label={tl("Teams")} value={e.teams?.length || "–"} />
           </div>
         )}
-        {(e.games || 0) > 0 && !e.whole && (
+        {(e.games || 0) > 0 && (
           <button
             type="button"
-            onClick={() => downloadEventCsv(e.u, onOpenUrl).catch(() => {})}
+            onClick={() =>
+              (e.whole && e.children?.length
+                ? downloadStagesCsv(e.u, e.children.map((c) => c.u), onOpenUrl)
+                : downloadEventCsv(e.u, onOpenUrl)
+              ).catch(() => {})
+            }
             className="mt-2 flex items-center gap-1 text-[11px] text-rw-teal hover:underline"
           >
             <Download className="w-3 h-3" />
@@ -176,7 +181,8 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
         <ChildStages kids={e.children} />
       )}
 
-      {e.leaders && Object.keys(e.leaders).length > 0 && <Leaders e={e} />}
+      {/* the leaders' game counts tell who went deep: hidden with the results */}
+      {e.leaders && Object.keys(e.leaders).length > 0 && !resultsHidden && <Leaders e={e} />}
 
       <EventPlayerStats e={e} hidden={resultsHidden} />
       <EventTeamStatsTable e={e} hidden={resultsHidden} />

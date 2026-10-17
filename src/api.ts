@@ -106,22 +106,22 @@ export const POPULAR_PLAYERS: PlayerEntry[] = [
   { name: "Chovy", role: "Mid", teamCode: "GEN", teamName: "Gen.G Esports", realName: "Jeong Ji-hoon" },
   { name: "Ruler", role: "Bot", teamCode: "GEN", teamName: "Gen.G Esports", realName: "Park Jae-hyuk" },
   { name: "Caps", role: "Mid", teamCode: "G2", teamName: "G2 Esports", realName: "Rasmus Winther" },
-  { name: "Bwipo", role: "Top", teamCode: "FLY", teamName: "FlyQuest", realName: "Gabriël Rau" },
-  { name: "Gumayusi", role: "Bot", teamCode: "T1", teamName: "T1", realName: "Lee Min-hyeong" },
+  { name: "Bwipo", role: "Top", teamCode: "EST", teamName: "Estral Esports", realName: "Gabriël Rau" },
+  { name: "Gumayusi", role: "Bot", teamCode: "HLE", teamName: "Hanwha Life Esports", realName: "Lee Min-hyeong" },
   { name: "Keria", role: "Support", teamCode: "T1", teamName: "T1", realName: "Ryu Min-seok" },
   { name: "Oner", role: "Jungle", teamCode: "T1", teamName: "T1", realName: "Mun Hyeon-jun" },
   { name: "Zeus", role: "Top", teamCode: "HLE", teamName: "Hanwha Life Esports", realName: "Choi Woo-je" },
-  { name: "Viper", role: "Bot", teamCode: "HLE", teamName: "Hanwha Life Esports", realName: "Park Do-hyeon" },
+  { name: "Viper", role: "Bot", teamCode: "BLG", teamName: "Bilibili Gaming", realName: "Park Do-hyeon" },
   { name: "Knight", role: "Mid", teamCode: "BLG", teamName: "Bilibili Gaming", realName: "Zhuo Ding" },
   { name: "Bin", role: "Top", teamCode: "BLG", teamName: "Bilibili Gaming", realName: "Chen Ze-Bin" },
   { name: "JackeyLove", role: "Bot", teamCode: "TES", teamName: "Top Esports", realName: "Yu Wen-Bo" },
-  { name: "Scout", role: "Mid", teamCode: "LNG", teamName: "LNG Esports", realName: "Lee Ye-chan" },
-  { name: "Inspired", role: "Jungle", teamCode: "FLY", teamName: "FlyQuest", realName: "Kacper Słoma" },
-  { name: "Humanoid", role: "Mid", teamCode: "FNC", teamName: "Fnatic", realName: "Marek Brázda" },
-  { name: "Mikyx", role: "Support", teamCode: "G2", teamName: "G2 Esports", realName: "Mihael Mehle" },
+  { name: "Scout", role: "Mid", teamCode: "NS", teamName: "Nongshim RedForce", realName: "Lee Ye-chan" },
+  { name: "Inspired", role: "Jungle", teamCode: "LYON", teamName: "LYON", realName: "Kacper Słoma" },
+  { name: "Humanoid", role: "Mid", teamCode: "VIT", teamName: "Team Vitality", realName: "Marek Brázda" },
+  { name: "Mikyx", role: "Support", teamCode: "SK", teamName: "SK Gaming", realName: "Mihael Mehle" },
   { name: "ShowMaker", role: "Mid", teamCode: "DK", teamName: "Dplus KIA", realName: "Heo Su" },
   { name: "Canyon", role: "Jungle", teamCode: "GEN", teamName: "Gen.G Esports", realName: "Kim Geon-bu" },
-  { name: "Peyz", role: "Bot", teamCode: "JDG", teamName: "JD Gaming", realName: "Kim Su-hwan" },
+  { name: "Peyz", role: "Bot", teamCode: "T1", teamName: "T1", realName: "Kim Su-hwan" },
 ];
 
 export const GLOBAL_LEAGUES: League[] = [
@@ -640,7 +640,7 @@ function writeCache(key: string, data: unknown): void {
 
 /** All leagues Riot lists, slug -> id (needed to look up a league's tournaments). Cached a day. */
 export async function fetchLeagueIds(): Promise<Record<string, { id: string; name: string; region: string }>> {
-  const key = "riftwatch_league_ids_v2";
+  const key = `riftwatch_league_ids_v2_${riotHl()}`; // names come in the reader's language
   const cached = readCache<Record<string, { id: string; name: string; region: string }>>(key, TOURNAMENTS_TTL_MS);
   if (cached) return cached;
   const leagues = await fetchRiotLeagues();
@@ -654,7 +654,7 @@ export async function fetchLeagueIds(): Promise<Record<string, { id: string; nam
 
 /** A league's tournaments (splits, playoffs, cups), newest first. Cached a day. */
 export async function fetchLeagueTournaments(leagueId: string): Promise<TournamentInfo[]> {
-  const key = `riftwatch_tournaments_${leagueId}`;
+  const key = `riftwatch_tournaments_${leagueId}_${riotHl()}`;
   const cached = readCache<TournamentInfo[]>(key, TOURNAMENTS_TTL_MS);
   if (cached) return cached;
   const data = await fetchJson(`${RIOT_BASE}/getTournamentsForLeague?hl=${riotHl()}&leagueId=${encodeURIComponent(leagueId)}`, {
@@ -679,7 +679,7 @@ export function pickCurrentTournament(tournaments: TournamentInfo[], today = new
 
 /** A tournament's official standings: group tables and brackets per stage. Cached 10 minutes. */
 export async function fetchTournamentStandings(tournamentId: string): Promise<TournamentStandings> {
-  const key = `riftwatch_standings_${tournamentId}`;
+  const key = `riftwatch_standings_${tournamentId}_${riotHl()}`;
   const cached = readCache<TournamentStandings>(key, STANDINGS_TTL_MS);
   if (cached) return cached;
   const data = await fetchJson(`${RIOT_BASE}/getStandingsV3?hl=${riotHl()}&tournamentId=${encodeURIComponent(tournamentId)}`, {

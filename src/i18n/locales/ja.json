@@ -1265,6 +1265,7 @@
   "Watch the draft": "ドラフトを見る",
   "Watch from game start": "試合開始から見る",
   "Full VOD": "VOD 全体",
+  "Player stats are hidden while spoiler mode is on.": "ネタバレ防止モード中は選手データを表示しません。",
   "now {team}": "現 {team}",
   "title match::Final": "決勝",
   "title winner::Champion": "優勝",

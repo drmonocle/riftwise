@@ -40,6 +40,21 @@ export async function downloadEventCsv(slug: string, onOpenUrl?: (url: string) =
   await saveCsv(`${slug}.csv`, await loadText(`hub/csv/${slug}.csv`));
 }
 
+/** A whole event's CSV (Worlds = Play-In + Main Event): its stages' files in one, the header once. */
+export async function downloadStagesCsv(name: string, slugs: string[], onOpenUrl?: (url: string) => void) {
+  if (!IS_WEB && onOpenUrl) {
+    onOpenUrl("https://lolworlds.com/riftwise/stats/data");
+    return;
+  }
+  const parts: string[] = [];
+  for (const s of slugs) {
+    const text = await loadText(`hub/csv/${s}.csv`).catch(() => "");
+    if (!text) continue;
+    parts.push(parts.length === 0 ? text.replace(/\n+$/, "") : text.slice(text.indexOf("\n") + 1).replace(/\n+$/, ""));
+  }
+  if (parts.length) await saveCsv(`${name}.csv`, parts.join("\n") + "\n");
+}
+
 export const CSV_COLUMNS =
   "date, league, tournament, stage, patch, series, game, url, side, position (top / jungle / mid / bot / support / team), player, team, opponent, champion, pick_order, result, length_sec, kills, deaths, assists, team_kills, team_deaths, cs, gold, damage, vision, dragons, opp_dragons, barons, opp_barons, towers, opp_towers, heralds, void_grubs, ban1-5, pick1-5";
 

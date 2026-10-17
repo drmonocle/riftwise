@@ -100,7 +100,8 @@ export function draftTendencies(rows: TeamGameRow[]) {
   // red's R1 + R2 opener pairs
   const openers = new Map<string, [number, number]>();
   for (const r of red) {
-    const [a, b] = r[20];
+    // R1 and R2 are locked in together: the same pair either way round is one opener
+    const [a, b] = [r[20][0], r[20][1]].sort((x, y) => x.localeCompare(y));
     const k = `${a}\u0000${b}`;
     const x = openers.get(k) || [0, 0];
     x[0]++;

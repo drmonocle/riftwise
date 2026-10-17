@@ -1,4 +1,4 @@
-import { Match, StreamEvent, StreamStatus, AppSettings, League } from "./types";
+import { Match, StreamEvent, StreamStatus, AppSettings, League, PlayerEntry, CatalogTeam } from "./types";
 import { tl, eventName, stageName } from "./i18n";
 
 // Current schedule codes folded into the code their franchise history is stored under in
@@ -379,20 +379,56 @@ export function formatStreamHeaderTitle(e: StreamEvent | null): { title: string;
   return { title: tl("Twitch 24/7: Airing Now"), isLive: true };
 }
 
+// Riot lists some players on two teams (a main roster and its academy): a player's team is the one in the biggest league
+const LEAGUE_RANK = ["LCK", "LPL", "LEC", "LCS", "LTA NORTH", "LTA SOUTH", "LCP", "CBLOL", "PCS", "VCS", "LJL", "LLA"];
+
+function leagueRank(league?: string) {
+  const i = LEAGUE_RANK.indexOf((league || "").toUpperCase());
+  return i < 0 ? LEAGUE_RANK.length : i;
+}
+
+/** One catalog entry per player name (case-insensitive): the one on the team in the biggest league. */
+export function mainPlayerEntries(players: PlayerEntry[], teams: CatalogTeam[] = []): PlayerEntry[] {
+  const leagueOf = new Map(teams.map((t) => [t.slug, t.league]));
+  const rank = (p: PlayerEntry) => leagueRank(p.teamSlug ? leagueOf.get(p.teamSlug) : undefined);
+  const best = new Map<string, PlayerEntry>();
+  for (const p of players) {
+    const k = p.name.toLowerCase();
+    const cur = best.get(k);
+    if (!cur || rank(p) < rank(cur)) best.set(k, p);
+  }
+  return [...best.values()];
+}
+
+/** Team codes of the players you follow (each player's main team). */
+export function followedPlayerTeams(
+  followedPlayers: string[],
+  catalog?: { players?: PlayerEntry[]; teams?: CatalogTeam[] } | null,
+): string[] {
+  if (!followedPlayers.length || !catalog?.players?.length) return [];
+  const names = new Set(followedPlayers.map((n) => n.toLowerCase()));
+  const mine = catalog.players.filter((p) => names.has(p.name.toLowerCase()));
+  return [...new Set(mainPlayerEntries(mine, catalog.teams).map((p) => p.teamCode.toUpperCase()))];
+}
+
 /**
  * Determines whether a match matches the user's watchlist:
  * 1. Followed team (team1Code or team2Code in settings.followedTeams)
  * 2. Followed league (leagueSlug or lowercase leagueName in settings.followedLeagues)
  * 3. Followed region (if user follows the region associated with this league)
+ * 4. A followed player's team (playerTeams: from followedPlayerTeams)
  */
 export function isMatchFollowed(
   m: Match,
   settings: AppSettings,
-  leaguesCatalog?: League[]
+  leaguesCatalog?: League[],
+  playerTeams: string[] = [],
 ): boolean {
   if (
     settings.followedTeams.includes(m.team1Code) ||
-    settings.followedTeams.includes(m.team2Code)
+    settings.followedTeams.includes(m.team2Code) ||
+    playerTeams.includes((m.team1Code || "").toUpperCase()) ||
+    playerTeams.includes((m.team2Code || "").toUpperCase())
   ) {
     return true;
   }

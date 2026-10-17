@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	version  = "1.4.0"
+	version  = "1.5.0"
 	origin   = "https://lolworlds.com"
 	basePath = "/riftwise/"
 	perMap   = 45000 // URLs per sitemap file (the limit is 50,000)
@@ -66,10 +66,10 @@ type store struct {
 	mu        sync.RWMutex
 	site      string
 	version   string
-	pages     map[string]map[string]entry // kind -> slug -> entry
-	order     map[string][]string         // kind -> slugs in file order (for sitemaps)
-	alias     map[string]string           // old team slug -> current
-	failed    string                      // a build without hub files (logged once, not retried)
+	pages     map[string]map[string]entry  // kind -> slug -> entry
+	order     map[string][]string          // kind -> slugs in file order (for sitemaps)
+	alias     map[string]map[string]string // kind -> old slug or short name -> current (team: "sk-telecom-t1", league: "lck")
+	failed    string                       // a build without hub files (logged once, not retried)
 	indexHTML string
 	indexMod  time.Time
 	checked   time.Time
@@ -131,12 +131,13 @@ func (s *store) refresh() {
 		f.Close()
 		pages[kind] = m
 	}
-	alias := map[string]string{}
+	alias := map[string]map[string]string{}
 	var a struct {
-		Team map[string]string `json:"team"`
+		Team   map[string]string `json:"team"`
+		League map[string]string `json:"league"`
 	}
 	if b, err := os.ReadFile(filepath.Join(hub, "alias.json")); err == nil && json.Unmarshal(b, &a) == nil {
-		alias = a.Team
+		alias["team"], alias["league"] = a.Team, a.League
 	}
 	s.pages, s.order, s.alias, s.version = pages, order, alias, latest.Version
 	log.Printf("stats %s loaded: %d teams, %d players, %d events, %d matches, %d champions, %d leagues",
@@ -201,10 +202,10 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		kind, slug := kinds[parts[0]], strings.ToLower(parts[1])
 		s.mu.RLock()
 		e, ok := s.pages[kind][slug]
-		to := s.alias[slug]
+		to := s.alias[kind][slug]
 		s.mu.RUnlock()
-		if !ok && kind == "team" && to != "" {
-			http.Redirect(w, r, basePath+"team/"+to, http.StatusMovedPermanently)
+		if !ok && to != "" && to != slug && (kind == "team" || kind == "league") {
+			http.Redirect(w, r, basePath+kind+"/"+to, http.StatusMovedPermanently)
 			return
 		}
 		if !ok {

@@ -57,7 +57,11 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
         .map((r, i) => ({ r, rank: i + 1 })),
     [d.teams, league],
   );
-  const top = d.teams.find((r) => r[9] === 1) || d.teams[0];
+  // #1 of the list shown (a league's own #1 when one league is picked)
+  const top = rows[0]?.r;
+  // one scale for the whole column, so a lower-rated team never shows a better chance than one above it
+  const vs1 = (x: RatingRow) =>
+    top ? matchChance(x[5], top[5], league ? chanceContext(x[9] === 1, top[9] === 1, x[3], top[3]) : chanceContext(true, true, top[3], top[3]), d.adjust) : null;
   const leagues = useMemo(() => {
     const tier = new Map(d.teams.map((r) => [r[3], r[9]]));
     return [...tier.keys()]
@@ -119,9 +123,11 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       key: "vs1",
       label: tl("vs #1"),
       title: tl("Chance to beat the top team in one game"),
-      value: (x) => x.r[5],
-      render: (x) =>
-        top ? pct(matchChance(x.r[5], top[5], chanceContext(x.r[9] === 1, top[9] === 1, x.r[3], top[3]), d.adjust)) : "–",
+      value: (x) => vs1(x.r),
+      render: (x) => {
+        const v = vs1(x.r);
+        return v == null ? "–" : pct(v);
+      },
       className: "tabular-nums text-rw-sub",
     },
     {

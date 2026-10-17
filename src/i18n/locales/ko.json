@@ -1265,6 +1265,7 @@
   "Watch the draft": "밴픽 보기",
   "Watch from game start": "게임 시작부터 보기",
   "Full VOD": "전체 VOD",
+  "Player stats are hidden while spoiler mode is on.": "스포 방지 모드가 켜져 있으면 선수 기록이 숨겨져요.",
   "now {team}": "현재 {team}",
   "title match::Final": "결승",
   "title winner::Champion": "우승팀",

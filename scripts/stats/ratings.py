@@ -155,11 +155,11 @@ def run(games, test_from=TEST_FROM, series_out=None, **kw):
         year = today[:4]
         if league_info.get(lg, (1, None))[0] != 2 or anchored.get(lg) == year:
             return
-        anchored[lg] = year
         want = target(lg, today)
         xs = active(lg, today)
         if want is None or len(xs) < MIN_LEAGUE:
-            return
+            return  # try again on a later day of the year, once enough of the league's teams have played
+        anchored[lg] = year
         shift = want - sum(x["r"] for x in xs) / len(xs)
         for x in xs:
             shift_team(x, shift)

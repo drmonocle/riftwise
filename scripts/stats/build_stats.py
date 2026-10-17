@@ -43,6 +43,9 @@ import urllib.parse
 import urllib.request
 from collections import Counter, defaultdict
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from names import PlayerNames, champ_name, match_teams, team_key  # noqa: E402
+
 MIN_SEARCH_GAMES = 10     # teams / players with fewer games get no page
 RECORD_MIN_MINUTES = 14   # shorter "games" are remakes or forfeits
 TOP_PATCHES = 6           # newest patches that get their own champion file
@@ -68,8 +71,12 @@ LEAGUEPEDIA_UA = {"User-Agent": "RiftWise-stats/1.0 (lolworlds.com; nightly stat
 FINAL_STAGE = re.compile(r"^(grand )?finals?$", re.I)
 # League tournaments that crown a champion (the regular season and promotion events don't)
 TITLE_EVENT = re.compile(
-    r"(Playoffs|Championship|Season Finals|Mid-Season Showdown|Split 3)$|^LCK Cup \d{4}$|^Champions 201[2-4] (Spring|Summer|Winter)$"
+    r"(Playoffs|Championship|Season Finals|Grand Finals?|Mid-Season Showdown|Split 3)$|^LCK Cup \d{4}$|^CBLOL Cup \d{4}$"
+    r"|^Champions 201[2-4] (Spring|Summer|Winter)$"
 )
+# All-star games, show matches and season-opening exhibitions aren't counted anywhere (the pages say so)
+SHOWMATCH_LEVELS = {"Showmatch", "Show Match"}
+SHOWMATCH_NAME = re.compile(r"all-?stars?\b|show ?match|season opening|charity", re.I)
 # Finals the catalog can't settle on its own (a game is missing). (tournament) -> (winner, loser, score)
 TITLE_OVERRIDES = {
     "Worlds Season 1": ("Fnatic", "against All authority", "2-1"),  # catalog lacks game 3 of the final
@@ -261,8 +268,17 @@ class Lineage:
         if ra != rb:
             self.parent[ra] = rb
 
+    populated = None  # stretches with games, set once they are known (see main)
+
     def key(self, name: str, date: str):
-        return (name, bisect.bisect_right(self.bounds.get(name, []), date))
+        k = (name, bisect.bisect_right(self.bounds.get(name, []), date))
+        if self.populated is not None and k not in self.populated and name in self.bounds:
+            # an end-of-event or end-of-season date can fall after a rename, in a stretch of the old name with no
+            # games ("BRION" after it became "HANJIN BRION"): use the nearest stretch of that name that has games
+            near = [(abs(i - k[1]), -i) for i in range(len(self.bounds[name]) + 1) if (name, i) in self.populated]
+            if near:
+                k = (name, -min(near)[1])
+        return k
 
     def team(self, name: str, date: str):
         return self._find(self.key(name, date))
@@ -290,6 +306,14 @@ class Lineage:
                 members[self._find(k)] += 1
 
 
+def current_club(teams_sorted):
+    """A player's current team: the newest club they played 5+ games for (a one-game stand-in or a national team
+    doesn't count), else their newest club, else their newest team. teams_sorted: [(name, {"g", "to"})], newest first."""
+    clubs = [(n, v) for n, v in teams_sorted if "national team" not in n.lower()]
+    regular = [n for n, v in clubs if v["g"] >= 5]
+    return regular[0] if regular else clubs[0][0] if clubs else teams_sorted[0][0] if teams_sorted else None
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", required=True)
@@ -312,12 +336,20 @@ def main() -> None:
     con.execute("PRAGMA cache_size = -2000000")
 
     # -- Games -----------------------------------------------------------------
+    levels = {op: lvl for op, lvl in con.execute("SELECT OverviewPage, TournamentLevel FROM lp_tournaments")}
+
+    def is_show(op, tname):
+        return levels.get(op) in SHOWMATCH_LEVELS or bool(SHOWMATCH_NAME.search(tname or "") or SHOWMATCH_NAME.search(op or ""))
+
     games = {}
     for r in con.execute(
-        """SELECT game_id, match_id, tournament_name, tournament_tier, stage_tab, date_utc, patch, team1, team2,
-                  winner, duration_minutes, team1_kills, team2_kills, total_kills FROM matches
+        """SELECT game_id, match_id, game_number, overview_page, tournament_name, tournament_tier, stage_tab, date_utc, patch,
+                  team1, team2, winner, duration_minutes, team1_kills, team2_kills, total_kills FROM matches
            WHERE team1 IS NOT NULL AND team2 IS NOT NULL AND winner IN (team1, team2) AND team1 != team2"""
     ):
+        if is_show(r["overview_page"], r["tournament_name"]):
+            checks["games left out (all-star and show matches)"] += 1
+            continue
         games[r["game_id"]] = {
             "match": r["match_id"] or r["game_id"],
             "t": r["tournament_name"] or "",
@@ -334,22 +366,69 @@ def main() -> None:
             "k1": r["team1_kills"],
             "k2": r["team2_kills"],
             "tk": r["total_kills"],
+            "op": r["overview_page"] or "",
+            # same-day games in play order: full time, then the series and the game number
+            "order": ((r["date_utc"] or "")[:19], r["match_id"] or "", r["game_number"] or 0),
         }
     print(f"games: {len(games)}")
 
     tstats = {}
     for r in con.execute("SELECT * FROM team_game_stats"):
+        g = games.get(r["game_id"])
+        if g:
+            ts = dict(r)
+            # the table can list the two teams the other way round, or spell them differently: put them in the
+            # game's order (team1 = the game's team1) and under the game's names
+            a, b = match_teams([ts.get("team1"), ts.get("team2")], g["t1"], g["t2"]), None
+            if ts.get("team2") and a.get(ts["team2"]) == g["t1"] or ts.get("team1") and a.get(ts["team1"]) == g["t2"]:
+                for k in list(ts):
+                    if k.startswith("team1"):
+                        b = "team2" + k[5:]
+                        ts[k], ts[b] = ts[b], ts[k]
+                checks["team stats rows with the teams the other way round (turned)"] += 1
+            if ts.get("team1") is not None or ts.get("team2") is not None:
+                ts["team1"], ts["team2"] = g["t1"], g["t2"]
+            tstats[r["game_id"]] = ts
+
+    # The players' teams, as the game's own two names (other tables spell them differently: "Dplus KIA")
+    pnames = defaultdict(set)
+    for r in con.execute("SELECT game_id, team FROM player_game_stats"):
         if r["game_id"] in games:
-            tstats[r["game_id"]] = dict(r)
+            pnames[r["game_id"]].add(r["team"])
+    pteam = {gid: match_teams(ns, games[gid]["t1"], games[gid]["t2"]) for gid, ns in pnames.items()}
+    del pnames
 
     # Per-game player sums, used to check the team numbers before a game can hold a record
-    psum = defaultdict(lambda: defaultdict(lambda: [0, 0, 0, 0]))  # gid -> team -> [kills, gold, rows, gold rows]
-    for r in con.execute("SELECT game_id, team, kills, gold FROM player_game_stats"):
-        s = psum[r["game_id"]][r["team"]]
+    psum = defaultdict(lambda: defaultdict(lambda: [0, 0, 0, 0, 0]))  # gid -> team -> [kills, gold, rows, gold rows, deaths]
+    for r in con.execute("SELECT game_id, team, kills, deaths, gold FROM player_game_stats"):
+        team = pteam.get(r["game_id"], {}).get(r["team"])
+        if not team:
+            continue
+        s = psum[r["game_id"]][team]
         s[0] += r["kills"] or 0
         s[1] += r["gold"] or 0
         s[2] += 1
         s[3] += 1 if r["gold"] is not None else 0
+        s[4] += r["deaths"] or 0
+
+    # Team kills: the catalog has "0-0" (or nothing) for some games it never got a score for. Take the team
+    # stats table's numbers, else the ten players' (when each side's kills are the other side's deaths), else none
+    for gid, g in games.items():
+        if g["k1"] is not None and not (g["k1"] == 0 and g["k2"] == 0):
+            continue
+        ts = tstats.get(gid)
+        k1 = k2 = None
+        if ts and ts.get("team1_kills") is not None and ts.get("team2_kills") is not None and ts["team1_kills"] + ts["team2_kills"] > 0:
+            k1, k2 = ts["team1_kills"], ts["team2_kills"]
+            checks["team kills taken from the team stats table"] += 1
+        else:
+            ps = psum.get(gid) or {}
+            a, b = ps.get(g["t1"]), ps.get(g["t2"])
+            if a and b and a[2] == 5 and b[2] == 5 and a[0] + b[0] > 0 and a[0] == b[4] and b[0] == a[4]:
+                k1, k2 = a[0], b[0]
+                checks["team kills added from the players' scoreboard"] += 1
+        g["k1"], g["k2"] = k1, k2
+        g["tk"] = k1 + k2 if k1 is not None else None
 
     def kills_ok(gid, g):
         """Team kills match the players' kills on both sides (5 players each)."""
@@ -376,6 +455,16 @@ def main() -> None:
     links += MANUAL_LINKS
     team_shorts = load_team_shorts(os.path.join(os.path.dirname(os.path.abspath(args.renames_cache)), "team_shorts.json"))
     lineage = Lineage(links, names_dates)
+    shorts_by_key = {}
+    for n_, c_ in team_shorts.items():
+        shorts_by_key.setdefault(team_key(n_), c_)
+
+    def short_of(name):
+        """Leaguepedia's short name of a team: its own, else that of the same name without a "(...)" / ".CN" suffix."""
+        c = team_shorts.get(name)
+        if not c and name and (re.search(r"\(.*\)\s*$", name) or re.search(r"\.[A-Za-z]{2,3}$", name)):
+            c = shorts_by_key.get(team_key(name))
+        return str(c or "").strip()
     spans = {}
     for n, ds in names_dates.items():
         if n not in lineage.bounds:
@@ -385,6 +474,7 @@ def main() -> None:
             lo, hi = spans.get(k, (dte, dte))
             spans[k] = (min(lo, dte), max(hi, dte))
     lineage.merge_strays(spans)
+    lineage.populated = set(spans)
 
     # Era = one name used by one team for a stretch of time
     eras = defaultdict(lambda: {"from": "9999", "to": "0000", "g": 0})
@@ -426,6 +516,15 @@ def main() -> None:
     checks["teams with more than one name"] = merged
 
     # -- Player names ----------------------------------------------------------------
+    page_counts = {r[0]: r[1] for r in con.execute(
+        "SELECT page_key, COUNT(*) FROM player_game_stats WHERE page_key IS NOT NULL GROUP BY page_key")}
+    lp_pages = [r[0] for r in con.execute("SELECT OverviewPage FROM lp_players WHERE OverviewPage IS NOT NULL")]
+    try:
+        redirects = list(con.execute("SELECT alias, canonical_page FROM player_redirects"))
+    except sqlite3.Error:
+        redirects = []
+    player_names = PlayerNames(page_counts, lp_pages, redirects)
+    checks["player pages merged (same name, other case)"] = len(player_names.case)
     display = {}
     for r in con.execute("SELECT page, display FROM player_pages_map WHERE page IS NOT NULL"):
         if r["display"] and r["page"] not in display:
@@ -435,6 +534,21 @@ def main() -> None:
         return display.get(page) or re.sub(r"\s*\(.*\)$", "", page)
 
     # -- Series (best-of results) ----------------------------------------------------
+    # Leaguepedia's series scores: an upper-bracket team can start a series 1-0 up, so the games played
+    # (2-2) are not the result (3-2)
+    official = {}
+    if args.lp_db and os.path.exists(args.lp_db):
+        try:
+            lpc = sqlite3.connect(f"file:{args.lp_db}?mode=ro", uri=True, timeout=30)
+            for mid_, a_, b_, sa_, sb_ in lpc.execute(
+                    "SELECT MatchId, Team1, Team2, Team1Score, Team2Score FROM lp_match_schedule WHERE MatchId IS NOT NULL"):
+                try:
+                    official[mid_] = (a_, b_, int(sa_), int(sb_))
+                except (TypeError, ValueError):
+                    pass
+            lpc.close()
+        except sqlite3.Error:
+            pass
     series = defaultdict(lambda: {"games": [], "wins": Counter()})
     for gid, g in games.items():
         s = series[g["match"]]
@@ -445,12 +559,21 @@ def main() -> None:
         g0 = games[s["games"][0]]
         a, b = g0["t1"], g0["t2"]
         wa, wb = s["wins"][a], s["wins"][b]
+        off = official.get(mid)
+        if off and off[2] != off[3] and off[2] + off[3] > wa + wb:
+            m = match_teams([off[0], off[1]], a, b)
+            if m.get(off[0]) == a or m.get(off[1]) == b:
+                wa, wb = off[2], off[3]
+            elif m.get(off[0]) == b or m.get(off[1]) == a:
+                wa, wb = off[3], off[2]
+            if (wa, wb) != (s["wins"][a], s["wins"][b]):
+                checks["series scores taken from the bracket (1-0 head start)"] += 1
         if wa == wb or len({games[x]["t1"] for x in s["games"]} | {games[x]["t2"] for x in s["games"]}) != 2:
             checks["series skipped (tied or mixed teams)"] += 1
             continue
         date = max(games[x]["date"] for x in s["games"])
         series_list.append({
-            "id": mid, "date": date, "t": g0["t"], "tier": g0["tier"], "stage": g0["stage"],
+            "id": mid, "date": date, "t": g0["t"], "op": g0["op"], "tier": g0["tier"], "stage": g0["stage"],
             "major": g0["major"], "a": a, "b": b, "wa": wa, "wb": wb, "w": a if wa > wb else b,
             "fa": team_of(a, date), "fb": team_of(b, date),
         })
@@ -462,6 +585,10 @@ def main() -> None:
     by_tourn = defaultdict(list)
     for s in series_list:
         by_tourn[s["t"]].append(s)
+    # Leaguepedia's 1st place of each tournament (one team only; events with a pro and an amateur cup list two)
+    first_place = defaultdict(set)
+    for op_, team_ in con.execute("SELECT OverviewPage, Team FROM lp_tournament_results WHERE Place = '1' AND Team IS NOT NULL"):
+        first_place[op_].add(team_)
     titles = []
     for tname, ss in by_tourn.items():
         kind = title_kind(tname)
@@ -470,8 +597,8 @@ def main() -> None:
         if kind == "Regional":
             # League titles: top leagues' playoffs / cups / championships only
             low = tname.lower()
-            if not TOP_LEAGUE.match(tname) or not TITLE_EVENT.search(tname) or any(
-                    w in low for w in ("promotion", "qualif", "play-in", "regional finals", "lock")):
+            if not TOP_LEAGUE.match(tname) or not TITLE_EVENT.search(tname) or not any(s["major"] for s in ss) or any(
+                    w in low for w in ("promotion", "qualif", "play-in", "regional finals", "lock", "wildcard")):
                 continue
         finals = [s for s in ss if FINAL_STAGE.match(s["stage"]) or s["tier"].endswith("GRAND_FINALS")]
         if tname in TITLE_OVERRIDES:
@@ -484,7 +611,11 @@ def main() -> None:
         if not finals:
             checks["league events with no final in the catalog" if kind == "Regional" else f"no final found for {tname}"] += 1
             continue
-        f = max(finals, key=lambda s: (s["date"], s["id"]))
+        # The "Finals" tab can also hold a later decider (VCS 2019 Summer: a Worlds-spot match the day after the
+        # final): when Leaguepedia names one winner, the final is the newest series that team won
+        champ1 = first_place.get(ss[0]["op"]) or set()
+        won_by_1st = [s for s in finals if len(champ1) == 1 and match_teams([next(iter(champ1))], s["w"], "")]
+        f = max(won_by_1st or finals, key=lambda s: (s["date"], s["id"]))
         win_f = f["fa"] if f["w"] == f["a"] else f["fb"]
         lose_name = f["b"] if f["w"] == f["a"] else f["a"]
         titles.append({"t": tname, "date": f["date"], "kind": kind, "w": fr_name[win_f], "as": f["w"],
@@ -503,6 +634,8 @@ def main() -> None:
     players = defaultdict(lambda: {
         "g": 0, "w": 0, "k": 0, "d": 0, "a": 0, "cs": 0, "gold": 0, "dmg": 0, "stat_min": 0.0,
         "roles": Counter(), "teams": {}, "years": {}, "champs": {}, "recent": [], "best": {},
+        # top leagues and internationals only (the career records)
+        "mg": 0, "mk": 0, "ma": 0, "mchamps": set(),
     })
     champ_rows = defaultdict(lambda: defaultdict(lambda: {"p": 0, "w": 0, "k": 0, "d": 0, "a": 0, "roles": Counter()}))
     record_rows = {"kills": [], "assists": [], "dmg": [], "cs": [], "perfect": []}
@@ -518,18 +651,26 @@ def main() -> None:
         g = games.get(gid)
         if not g or not r["page_key"]:
             continue
-        page = r["page_key"]
-        team = r["team"]
-        if team not in (g["t1"], g["t2"]):
+        team = pteam.get(gid, {}).get(r["team"])
+        if not team:
             checks["player rows with a team not in the game"] += 1
             continue
+        page = player_names.page(r["page_key"], team)
+        if page != r["page_key"]:
+            checks["player rows moved to the right page"] += 1
         fid = team_of(team, g["date"])
         won = 1 if g["w"] == team else 0
         k, d, a = r["kills"] or 0, r["deaths"] or 0, r["assists"] or 0
-        champ = r["champion"] or ""
+        champ = champ_name(r["champion"]) or ""
         p = players[page]
         p["g"] += 1
         p["w"] += won
+        if g["major"]:
+            p["mg"] += 1
+            p["mk"] += k
+            p["ma"] += a
+            if champ:
+                p["mchamps"].add(champ)
         p["k"] += k
         p["d"] += d
         p["a"] += a
@@ -624,7 +765,8 @@ def main() -> None:
         ts = tstats.get(gid)
         if not ts:
             continue
-        bans = jlist(ts.get("team1_bans")) + jlist(ts.get("team2_bans"))
+        picked = {x[0] for x in rows}
+        bans = {c for c in (champ_name(x) for x in jlist(ts.get("team1_bans")) + jlist(ts.get("team2_bans"))) if c} - picked
         for key in keys:
             for scope in scopes:
                 for b in bans:
@@ -636,7 +778,7 @@ def main() -> None:
         "champ_w": Counter(), "bans_by": Counter(), "obj": Counter(), "obj_g": 0, "tourn": {}, "streak": 0,
         "best_streak": None, "from": "9999", "to": "0000",
     })
-    by_date = sorted(games.items(), key=lambda kv: (kv[1]["date"], kv[0]))
+    by_date = sorted(games.items(), key=lambda kv: (kv[1]["order"], kv[0]))
     for gid, g in by_date:
         ts = tstats.get(gid)
         f1, f2 = team_of(g["t1"], g["date"]), team_of(g["t2"], g["date"])
@@ -677,10 +819,10 @@ def main() -> None:
             if ts and team in (ts.get("team1"), ts.get("team2")):
                 pre = "team1" if ts.get("team1") == team else "team2"
                 opre = "team2" if pre == "team1" else "team1"
-                for c in jlist(ts.get(f"{pre}_picks")):
+                for c in filter(None, map(champ_name, jlist(ts.get(f"{pre}_picks")))):
                     t["champs"][c] += 1
                     t["champ_w"][c] += won
-                for c in jlist(ts.get(f"{pre}_bans")):
+                for c in filter(None, map(champ_name, jlist(ts.get(f"{pre}_bans")))):
                     t["bans_by"][c] += 1
                 if ts.get(f"{pre}_gold") is not None and ts.get(f"{opre}_gold") is not None:
                     t["obj_g"] += 1
@@ -719,7 +861,7 @@ def main() -> None:
         aka = [e["n"] for e in names if e["n"] != name]
         codes = []
         for e in sorted(names, key=lambda e: -e["g"]):
-            c = str(team_shorts.get(e["n"]) or "").strip()
+            c = short_of(e["n"])
             if c and c.lower() not in (x.lower() for x in codes) and c.lower() != name.lower():
                 codes.append(c)
         search_teams.append({"n": name, "s": s, "g": t["g"], "y": t["to"][:4],
@@ -761,11 +903,8 @@ def main() -> None:
             continue
         s = slug(page)
         teams_sorted = sorted(p["teams"].items(), key=lambda kv: kv[1]["to"], reverse=True)
-        # Current team: the club with the most games in the player's last year (not a one-off national team)
         last_date = teams_sorted[0][1]["to"] if teams_sorted else ""
-        cutoff = str(int(last_date[:4]) - 1) + last_date[4:] if last_date else ""
-        recent_clubs = [(v["g"], n) for n, v in teams_sorted if v["to"] >= cutoff and "National Team" not in n]
-        last_team = max(recent_clubs)[1] if recent_clubs else (teams_sorted[0][0] if teams_sorted else "")
+        last_team = current_club(teams_sorted) or ""
         search_players.append({"n": pname(page), "s": s, "t": last_team, "g": p["g"], "y": last_date[:4]})
         sm = p["stat_min"]
         p["recent"].sort(reverse=True)
@@ -868,6 +1007,10 @@ def main() -> None:
 
     intl = Counter(t["fid"] for t in titles if t["kind"] in INTERNATIONAL)
     worlds = Counter(t["fid"] for t in titles if t["kind"] == "Worlds")
+    msi = Counter(t["fid"] for t in titles if t["kind"] == "MSI")
+    domestic = Counter(t["fid"] for t in titles if t["kind"] == "Regional")
+    intl_order = sorted(intl, key=lambda f: (-intl[f], -worlds[f], -msi[f], -domestic[f], fr_name[f]))
+    major_players = [(pg, p) for pg, p in players.items() if p["mg"]]
     records = {
         "built": version,
         "note": f"Top leagues and international events only. Games shorter than {RECORD_MIN_MINUTES} minutes are skipped, "
@@ -880,14 +1023,14 @@ def main() -> None:
         },
         "player": {k: top(v) for k, v in record_rows.items()},
         "career": {
-            "games": [{"v": p["g"], "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(players.items(), key=lambda kv: -kv[1]["g"])[:10]],
-            "kills": [{"v": p["k"], "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(players.items(), key=lambda kv: -kv[1]["k"])[:10]],
-            "assists": [{"v": p["a"], "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(players.items(), key=lambda kv: -kv[1]["a"])[:10]],
-            "pool": [{"v": len(p["champs"]), "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(players.items(), key=lambda kv: -len(kv[1]["champs"]))[:10]],
+            "games": [{"v": p["mg"], "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(major_players, key=lambda kv: -kv[1]["mg"])[:10]],
+            "kills": [{"v": p["mk"], "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(major_players, key=lambda kv: -kv[1]["mk"])[:10]],
+            "assists": [{"v": p["ma"], "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(major_players, key=lambda kv: -kv[1]["ma"])[:10]],
+            "pool": [{"v": len(p["mchamps"]), "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(major_players, key=lambda kv: -len(kv[1]["mchamps"]))[:10]],
         },
         "team": {
             "streaks": [{"v": n, "team": fr_name[f], "s": tslug(f), "date": d} for f, (n, d) in sorted(best_by_team.items(), key=lambda kv: -kv[1][0])[:10]],
-            "titles": [{"v": n, "team": fr_name[f], "s": tslug(f), "worlds": worlds[f]} for f, n in intl.most_common(10)],
+            "titles": [{"v": intl[f], "team": fr_name[f], "s": tslug(f), "worlds": worlds[f]} for f in intl_order],
         },
     }
     for lst in records["player"].values():
@@ -918,7 +1061,7 @@ def main() -> None:
                 team_series=team_series, series_list=series_list, titles=titles, titles_by_team=titles_by_team,
                 fr_name=fr_name, fr_eras=fr_eras, fr_games=fr_games, team_of=team_of, pname=pname,
                 team_shorts=team_shorts, team_players=team_players, team_roles=team_roles, player_events=player_events,
-                records=records,
+                records=records, names=player_names, is_show=is_show, short_of=short_of, current_club=current_club,
             ))
         except Exception:
             # Leave the last good build in place rather than publish one without its hub

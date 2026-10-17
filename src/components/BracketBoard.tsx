@@ -46,6 +46,11 @@ export function bracketEdges(columns: BracketColumn[]): Edge[] {
         // bracket), there is no line
         j = next.findIndex((n) => n.teams.includes(it.winner!));
         on = j >= 0;
+        // the next match isn't filled in yet ("TBD"): the usual two-into-one place
+        if (j < 0 && next.length > 0 && next.length * 2 === cur.length && next[Math.floor(i / 2)]?.teams.some((t) => !known(t))) {
+          j = Math.floor(i / 2);
+          on = false;
+        }
       } else {
         const mine = it.teams.filter(known);
         const cand = next.map((n, k) => (n.teams.some((t) => known(t) && mine.includes(t)) ? k : -1)).filter((k) => k >= 0);

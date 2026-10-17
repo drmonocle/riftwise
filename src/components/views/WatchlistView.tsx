@@ -6,6 +6,7 @@ import { tl, tn, regionName, roleName } from "../../i18n";
 import { IS_WEB } from "../../platform";
 import { PushAlertsBanner } from "../PushAlerts";
 import { searchAlias, isNonLatin } from "../../searchAliases";
+import { mainPlayerEntries } from "../../helpers";
 
 interface WatchlistViewProps {
   settings: AppSettings;
@@ -142,7 +143,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
 
   // Filtered PLAYERS: searches across all catalog.players (~4,634 players)
   const filteredPlayers = useMemo(() => {
-    const all = catalog.players || [];
+    // A player Riot lists on a main roster and its academy shows once, with the main team
+    const all = mainPlayerEntries(catalog.players || [], catalog.teams);
     if (!q) {
       // Show followed players first, then famous popular players
       const followed = all.filter((p) => settings.followedPlayers.includes(p.name));
@@ -161,7 +163,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           (p.realName && p.realName.toLowerCase().includes(qs))
       )
       .slice(0, 100);
-  }, [catalog.players, settings.followedPlayers, qs]);
+  }, [catalog.players, catalog.teams, settings.followedPlayers, qs]);
 
   // Filtered REGIONS
   const filteredRegions = useMemo(() => {
@@ -366,8 +368,9 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             {filteredTeams.map((team) => {
               const isFollowed = settings.followedTeams.includes(team.code);
               const isExpanded = expandedTeamSlug === team.slug;
-              const roster = (catalog.players || []).filter(
-                (p) => p.teamSlug === team.slug || p.teamCode === team.code
+              // By slug: a team and its academy can share a code (LYON, Lyon Academy)
+              const roster = (catalog.players || []).filter((p) =>
+                p.teamSlug ? p.teamSlug === team.slug : p.teamCode === team.code
               );
 
               return (
@@ -435,7 +438,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       {roster.map((p) => {
                         const isPlayerFollowed = settings.followedPlayers.includes(p.name);
                         return (
-                          <div key={`${p.teamCode}-${p.name}`} className="flex items-center justify-between text-[11px] py-0.5">
+                          <div key={`${p.teamSlug || p.teamCode}-${p.name}`} className="flex items-center justify-between text-[11px] py-0.5">
                             <div className="flex items-center gap-2">
                               <span className="text-[10px] font-mono px-1 rounded bg-rw-deep text-rw-teal w-12 text-center">
                                 {roleName(p.role)}
@@ -480,7 +483,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
 
               return (
                 <div
-                  key={`${player.teamCode}-${player.name}`}
+                  key={`${player.teamSlug || player.teamCode}-${player.name}`}
                   onClick={() => togglePlayer(player.name)}
                   className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
                     isFollowed

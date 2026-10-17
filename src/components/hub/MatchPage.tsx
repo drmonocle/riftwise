@@ -45,7 +45,9 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; onOpenUrl: (url: string
   const [hidden, reveal] = useHidden(`series:${slug}`, s.date);
   const withStats = s.games.filter((g) => g.p && g.p.length);
   const [gi, setGi] = useState(0);
-  const game = s.games[Math.min(gi, s.games.length - 1)];
+  // spoiler mode shows every game a best-of could have, so a 3-0 doesn't give itself away by having 3 tabs
+  const tabs = hidden ? Math.max(s.bo || 0, s.games.length) : s.games.length;
+  const game = gi < s.games.length ? s.games[gi] : hidden ? undefined : s.games[s.games.length - 1];
   const scoreA = hidden ? "?" : s.sa;
   const scoreB = hidden ? "?" : s.sb;
   return (
@@ -78,11 +80,11 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; onOpenUrl: (url: string
         )}
       </div>
 
-      {s.games.length > 1 && (
+      {tabs > 1 && (
         <div className="flex flex-wrap gap-1.5" role="tablist">
-          {s.games.map((g, i) => (
+          {Array.from({ length: tabs }, (_, i) => s.games[i]).map((g, i) => (
             <button
-              key={g.n}
+              key={g ? g.n : `slot-${i}`}
               type="button"
               role="tab"
               aria-selected={i === gi}
@@ -91,19 +93,34 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; onOpenUrl: (url: string
                 i === gi ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
               }`}
             >
-              {tl("Game {n}", { n: g.n })}
-              {!hidden && g.w ? <span className="ml-1 opacity-70">({g.w === 1 ? s.a.c || s.a.n : s.b.c || s.b.n})</span> : null}
+              {tl("Game {n}", { n: g ? g.n : i + 1 })}
+              {!hidden && g?.w ? <span className="ml-1 opacity-70">({g.w === 1 ? s.a.c || s.a.n : s.b.c || s.b.n})</span> : null}
             </button>
           ))}
         </div>
       )}
 
-      {game && <GameView s={s} g={game} hidden={hidden} onOpenUrl={onOpenUrl} />}
+      {game ? (
+        <GameView s={s} g={game} hidden={hidden} onReveal={reveal} onOpenUrl={onOpenUrl} />
+      ) : (
+        hidden && (
+          <div className={`${card} py-4 text-center space-y-2`}>
+            <p className="text-[11px] text-rw-muted">{tl("Hidden while spoiler mode is on.")}</p>
+            <RevealButton onReveal={reveal} />
+          </div>
+        )
+      )}
     </div>
   );
 };
 
-const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onOpenUrl: (url: string) => void }> = ({ s, g, hidden, onOpenUrl }) => {
+const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: () => void; onOpenUrl: (url: string) => void }> = ({
+  s,
+  g,
+  hidden,
+  onReveal,
+  onOpenUrl,
+}) => {
   const blueTeam = g.blue === "a" ? s.a : s.b;
   const redTeam = g.blue === "a" ? s.b : s.a;
   const blueWon = (g.w === 1 && g.blue === "a") || (g.w === 2 && g.blue === "b");
@@ -156,8 +173,9 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onOpenUrl:
           )}
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <SideHeader name={blueTeam.n} u={blueTeam.u} side="blue" won={!hidden && blueWon} st={g.t?.blue} />
-          <SideHeader name={redTeam.n} u={redTeam.u} side="red" won={!hidden && redWon} st={g.t?.red} right />
+          {/* spoiler mode: the draft only (kills, gold and objectives give the result away) */}
+          <SideHeader name={blueTeam.n} u={blueTeam.u} side="blue" won={!hidden && blueWon} st={hidden ? undefined : g.t?.blue} />
+          <SideHeader name={redTeam.n} u={redTeam.u} side="red" won={!hidden && redWon} st={hidden ? undefined : g.t?.red} right />
         </div>
         {(g.t?.blue?.picks?.length || g.t?.blue?.bans?.length) && (
           <div className="grid grid-cols-2 gap-3 pt-2 border-t border-rw-border">
@@ -167,7 +185,13 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onOpenUrl:
         )}
       </div>
 
-      {(blue.length > 0 || red.length > 0) && (
+      {hidden && (blue.length > 0 || red.length > 0) && (
+        <div className={`${card} py-4 text-center space-y-2`}>
+          <p className="text-[11px] text-rw-muted">{tl("Player stats are hidden while spoiler mode is on.")}</p>
+          <RevealButton onReveal={onReveal} />
+        </div>
+      )}
+      {!hidden && (blue.length > 0 || red.length > 0) && (
         <div className="grid gap-3 lg:grid-cols-2">
           <Scoreboard name={blueTeam.n} side="blue" players={blue} hidden={hidden} won={blueWon} minutes={g.min} />
           <Scoreboard name={redTeam.n} side="red" players={red} hidden={hidden} won={redWon} minutes={g.min} />

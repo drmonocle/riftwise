@@ -6,15 +6,28 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Trophy, Eye } from "lucide-react";
 import { StreamEvent } from "../../types";
 import { tl, locale } from "../../i18n";
-import { streamEventTitle } from "../../helpers";
+import { normalizeTeamCode, streamEventTitle } from "../../helpers";
 import { loadEventsOfYear, loadHubEvent } from "../../hub/data";
 import type { HubEvent, SeriesRow } from "../../hub/types";
 import { Bracket, SeriesBox, Standings, stageLabel } from "./EventPage";
 import { EventLink, HubLink } from "./ui";
 
-const LEAGUE: Record<string, string> = { Worlds: "World Championship", MSI: "Mid-Season Invitational", "First Stand": "First Stand" };
+// the leagues a stream event can be in (MSI 2020 was replaced by the Mid-Season Cup)
+const LEAGUE: Record<string, string[]> = {
+  Worlds: ["World Championship"],
+  MSI: ["Mid-Season Invitational", "Mid-Season Cup"],
+  "First Stand": ["First Stand"],
+};
 const ts = (iso?: string) => (iso ? new Date(iso).getTime() : NaN);
-const pairKey = (a?: string | null, b?: string | null) => [String(a || "").toUpperCase(), String(b || "").toUpperCase()].sort().join("|");
+// The stream's schedule and Leaguepedia use different codes for a few teams
+const STREAM_CODE: Record<string, string> = {
+  PNG: "PAIN", "100": "100T", LLL: "LOUD", ITZ: "INTZ", SHR: "RYL", DWG: "DK", SSO: "SSW", KOO: "ROX", "CLG.P": "CLG", NJWS: "NWS",
+};
+const code = (c?: string | null) => {
+  const u = normalizeTeamCode(String(c || ""));
+  return STREAM_CODE[u] || u;
+};
+const pairKey = (a?: string | null, b?: string | null) => [code(a), code(b)].sort().join("|");
 
 /** The tournament the stream is on (or last showed, or shows next). */
 function streamTournament(events: StreamEvent[], now: number): { event: string; season: string; year: string } | null {
@@ -38,14 +51,16 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
     setStages(null);
     (async () => {
       const list = await loadEventsOfYear(which.year);
-      const league = LEAGUE[which.event];
-      const parent = list.find((e) => e.l === league && (e.kids || 0) > 0 && !e.p);
-      let slugs: string[];
-      if (parent) {
-        const p = await loadHubEvent(parent.u);
-        slugs = (p.children || []).map((c) => c.u);
-      } else {
-        slugs = list.filter((e) => e.l === league && !e.q && !e.p && (e.g || 0) > 0).map((e) => e.u);
+      let slugs: string[] = [];
+      for (const league of LEAGUE[which.event]) {
+        const parent = list.find((e) => e.l === league && (e.kids || 0) > 0 && !e.p);
+        if (parent) {
+          const p = await loadHubEvent(parent.u);
+          slugs = (p.children || []).map((c) => c.u);
+        } else {
+          slugs = list.filter((e) => e.l === league && !e.q && !e.p && (e.g || 0) > 0).map((e) => e.u);
+        }
+        if (slugs.length) break;
       }
       const loaded = await Promise.all(slugs.map((s) => loadHubEvent(s).catch(() => null)));
       if (alive) {

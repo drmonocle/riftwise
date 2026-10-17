@@ -1,7 +1,8 @@
 /**
  * A plain <table> whose columns sort when a header is clicked, worked out from what the cells show:
- * numbers ("1,630", "65%", "+12", "−3", "3-1" by its first number, "#4"), game times ("31:45"), years and date
- * ranges by their first year, and otherwise text. A cell can say what it sorts by with data-sort (dates, places);
+ * numbers ("1,630", "65%", "+12", "−3", "#4", "<1%"), records ("18-12": wins, then win rate), game times ("31:45"),
+ * dates ("2024-11-02"), years and date ranges by their first year, and otherwise text. A column with any text in it
+ * ("100 Thieves" next to "T1") sorts as text. A cell can say what it sorts by with data-sort (patches, places);
  * a header with data-nosort doesn't sort. Number columns sort high to low first, text A to Z; clicking again flips.
  *
  * Use it like <table>: <STable className="w-full text-xs"><thead>...</thead><tbody>{rows}</tbody></STable>.
@@ -23,6 +24,17 @@ export function sortValue(cell: HTMLTableCellElement | undefined): Val {
   if (!t || /^[–—-]+$/.test(t) || t === "?") return null;
   const time = /^(\d+):(\d{2})(?::(\d{2}))?$/.exec(t);
   if (time) return time[3] ? +time[1] * 3600 + +time[2] * 60 + +time[3] : +time[1] * 60 + +time[2];
+  const day = /^(\d{4})-(\d{2})-(\d{2})/.exec(t);
+  if (day) return Date.UTC(+day[1], +day[2] - 1, +day[3]);
+  const wl = /^(\d+)\s*[-–]\s*(\d+)$/.exec(t);
+  if (wl) {
+    const w = +wl[1];
+    const l = +wl[2];
+    if (w >= 1900 && l >= 1900) return w; // a range of years: its first year
+    return w + (w + l ? (w / (w + l)) * 0.999 : 0);
+  }
+  const under = /^<\s*(\d+(?:\.\d+)?)\s*%$/.exec(t);
+  if (under) return Number(under[1]) * 0.5;
   const plain = t.replace(/[\s,]/g, "").replace(/^[+#]/, "").replace(/^[−–]/, "-").replace(/^\$/, "");
   const lead = /^(-?\d+(?:\.\d+)?)([kKmM]?)/.exec(plain);
   if (lead) return Number(lead[1]) * (/k/i.test(lead[2]) ? 1e3 : /m/i.test(lead[2]) ? 1e6 : 1);
@@ -69,8 +81,12 @@ export const STable: React.FC<React.TableHTMLAttributes<HTMLTableElement> & { re
     const vals = [...tb.rows].map((tr, i) => ({
       key: String(shown[i].key),
       v: tr.cells.length === width ? sortValue(tr.cells[s.col]) : null,
+      cell: tr.cells.length === width ? tr.cells[s.col] : undefined,
       i,
     }));
+    // a column with any text sorts as text ("100 Thieves" among team names isn't the number 100)
+    if (vals.some((x) => typeof x.v === "string"))
+      for (const x of vals) if (typeof x.v === "number" && x.cell?.dataset.sort === undefined) x.v = (x.cell?.textContent || "").trim().toLocaleLowerCase();
     vals.sort((a, b) => {
       if (a.v === null && b.v === null) return a.i - b.i;
       if (a.v === null) return 1;
@@ -92,9 +108,10 @@ export const STable: React.FC<React.TableHTMLAttributes<HTMLTableElement> & { re
     if (th.dataset.nosort !== undefined) return;
     const col = th.cellIndex;
     const tb = ref.current?.tBodies[0];
-    // numbers start high to low, text A to Z
-    const sample = tb ? [...tb.rows].map((tr) => sortValue(tr.cells[col])).find((v) => v !== null) : null;
-    const s = sort && sort.col === col ? { col, desc: !sort.desc } : { col, desc: typeof sample === "number" };
+    // numbers start high to low, text A to Z (a column with any text is text)
+    const all = tb ? [...tb.rows].map((tr) => sortValue(tr.cells[col])).filter((v) => v !== null) : [];
+    const numeric = all.length > 0 && all.every((v) => typeof v === "number");
+    const s = sort && sort.col === col ? { col, desc: !sort.desc } : { col, desc: numeric };
     const next = sortRows(s);
     if (!next) return;
     setSort(s);

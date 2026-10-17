@@ -114,6 +114,9 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
     ? [Math.max(0, h2h.team1Wins - intl[0]), Math.max(0, h2h.team2Wins - intl[1])]
     : [0, 0];
   const meetings: H2HMeeting[] = recentMeetings(c1, c2, series?.recent, schedule, matchId, countThisMatch);
+  // spoiler mode: a meeting in the last two weeks would show in the totals, so they wait for Reveal too
+  const freshMeeting = meetings.some((m) => Date.now() - new Date(m.date).getTime() < 14 * 86400_000);
+  const hideTotals = spoilerMode && !revealed && freshMeeting;
 
   const Team: React.FC<{ code: string; info: { name: string; image?: string }; color: string; align: "left" | "right" }> = ({
     code,
@@ -175,9 +178,9 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
               {h2h ? (
                 <>
                   <div className="font-mono font-extrabold text-2xl">
-                    <span style={{ color: T1_COLOR }}>{h2h.team1Wins}</span>
+                    <span style={{ color: T1_COLOR }}>{hideTotals ? "?" : h2h.team1Wins}</span>
                     <span className="text-rw-muted mx-1.5">–</span>
-                    <span style={{ color: T2_COLOR }}>{h2h.team2Wins}</span>
+                    <span style={{ color: T2_COLOR }}>{hideTotals ? "?" : h2h.team2Wins}</span>
                   </div>
                   <div className="text-[10px] text-rw-muted">{tl("{n} games · all tournaments", { n: total })}</div>
                 </>
@@ -187,9 +190,9 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
             </div>
             <Team code={c2} info={t2} color={T2_COLOR} align="right" />
           </div>
-          {h2h && <H2HBar t1Pct={t1Pct} className="h-2" />}
+          {h2h && !hideTotals && <H2HBar t1Pct={t1Pct} className="h-2" />}
 
-          {h2h && (
+          {h2h && !hideTotals && (
             <div className="rounded-lg bg-rw-bg border border-rw-border px-3 py-1.5">
               <Split icon={<Globe className="w-3 h-3 text-rw-accent" />} label={tl("Worlds · MSI · First Stand")} wins={intl} c1={c1} c2={c2} />
               <Split icon={<Home className="w-3 h-3 text-rw-sub" />} label={tl("Domestic & other events")} wins={domestic} c1={c1} c2={c2} />

@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 
 const DD = "https://ddragon.leagueoflegends.com/cdn";
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-const KEY = "riftwatch_ddragon_maps_v3";
+const KEY = "riftwatch_ddragon_maps_v4";
 
 interface Maps {
   v: string;
@@ -55,7 +55,12 @@ function loadMaps(): Promise<void> {
         if (!m.item[k] || Number(id) < Number(m.item[k])) m.item[k] = id;
         const tags: string[] = it.tags || [];
         const finished = !(it.into && it.into.length) && !tags.includes("Consumable") && !tags.includes("Trinket");
-        if (finished && ((it.gold?.total ?? 0) >= 900 || (tags.includes("Boots") && (it.depth ?? 1) >= 2))) m.full[k] = 1;
+        const usable = !tags.includes("Consumable") && !tags.includes("Trinket");
+        // tier-2 boots now upgrade into tier-3 ones, but are what players finish on (Plated Steelcaps)
+        const tier2Boots = usable && tags.includes("Boots") && (it.depth ?? 1) >= 2;
+        // the support item's last upgrade costs little (Celestial Opposition, Bloodsong...)
+        const supportItem = finished && tags.includes("GoldPer") && (it.depth ?? 1) >= 2;
+        if ((finished && (it.gold?.total ?? 0) >= 900) || tier2Boots || supportItem) m.full[k] = 1;
       }
       for (const s of Object.values<any>(spells.data)) m.spell[norm(s.name)] = s.image.full;
       for (const tree of runes) {
@@ -130,6 +135,7 @@ const RETIRED_RUNES: Record<string, string> = {
   phaserush: "perk-images/Styles/Sorcery/PhaseRush/PhaseRush.png",
   predator: "perk-images/Styles/Domination/Predator/Predator.png",
   kleptomancy: "perk-images/Styles/Inspiration/Kleptomancy/Kleptomancy.png",
+  prototypeomnistone: "perk-images/Styles/Inspiration/MasterKey/MasterKey.png",
 };
 
 export function runeIcon(name: string | undefined): string | null {

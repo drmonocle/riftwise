@@ -424,7 +424,7 @@ const top = (m: Map<string, number>, n: number): [string, number][] => [...m.ent
 /** A team's numbers over some games. */
 export function teamAgg(rows: TeamGameRow[]): TeamAgg {
   let g = 0, w = 0, sg = 0, min = 0, minG = 0, kills = 0, deaths = 0, gold = 0, gd = 0, goldMin = 0, goldGames = 0;
-  let drag = 0, odrag = 0, bar = 0, obar = 0, tow = 0, otow = 0, ck = 0, ckMin = 0;
+  let drag = 0, odrag = 0, bar = 0, obar = 0, tow = 0, otow = 0, towG = 0, ck = 0, ckMin = 0;
   const blue: [number, number] = [0, 0];
   const red: [number, number] = [0, 0];
   const picks = new Map<string, [number, number]>();
@@ -459,8 +459,11 @@ export function teamAgg(rows: TeamGameRow[]): TeamAgg {
       odrag += odr || 0;
       bar += br || 0;
       obar += obr || 0;
-      tow += tw || 0;
-      otow += otw || 0;
+      if (tw != null && otw != null) {
+        tow += tw;
+        otow += otw;
+        towG++;
+      }
     }
     for (const c of rp || []) {
       const x = picks.get(c) || [0, 0];
@@ -485,8 +488,9 @@ export function teamAgg(rows: TeamGameRow[]): TeamAgg {
     gd: goldGames ? Math.round(gd / goldGames) : null,
     dragShare: share(drag, drag + odrag),
     baronShare: share(bar, bar + obar),
-    towers: ratio(tow, sg),
-    towersLost: ratio(otow, sg),
+    // over the games with towers recorded (some scoreboards have kills but no towers)
+    towers: ratio(tow, towG),
+    towersLost: ratio(otow, towG),
     picks: [...picks.entries()].sort((a, b) => b[1][0] - a[1][0]).slice(0, 15).map(([c, x]) => [c, x[0], x[1]]),
     nPicks: picks.size,
     bans: top(bans, 10),
@@ -496,14 +500,40 @@ export function teamAgg(rows: TeamGameRow[]): TeamAgg {
   };
 }
 
-/** Games two players played against each other (same series, different teams), from player A's log. */
+/**
+ * Games two players played against each other: the same game (same series and game length), on different teams.
+ * Only games both of them were in count, so a substitute who played one game of a series isn't counted for the
+ * others, and A vs B has as many games as B vs A. Games without a length fall back to the same series, up to the
+ * fewer games either player had in it.
+ */
 export function playerHeadToHead(a: PlayerGameRow[], b: PlayerGameRow[]): { g: number; w: number } {
-  const bSeries = new Map<string, string>();
-  for (const r of b) bSeries.set(r[1], r[7]);
+  const exact = (r: PlayerGameRow) => (r[16] != null ? `${r[1]}|${r[16]}` : null);
+  const bGame = new Map<string, string>();
+  const bLoose = new Map<string, { team: string; n: number }>();
+  for (const r of b) {
+    const k = exact(r);
+    if (k) bGame.set(k, r[7]);
+    else {
+      const x = bLoose.get(r[1]) || { team: r[7], n: 0 };
+      x.n++;
+      bLoose.set(r[1], x);
+    }
+  }
   let g = 0, w = 0;
+  const used = new Map<string, number>();
   for (const r of a) {
-    const bt = bSeries.get(r[1]);
-    if (bt !== undefined && bt !== r[7]) {
+    const k = exact(r);
+    if (k) {
+      const bt = bGame.get(k);
+      if (bt !== undefined && bt !== r[7]) {
+        g++;
+        w += r[6] ? 1 : 0;
+      }
+      continue;
+    }
+    const lb = bLoose.get(r[1]);
+    if (lb && lb.team !== r[7] && (used.get(r[1]) || 0) < lb.n) {
+      used.set(r[1], (used.get(r[1]) || 0) + 1);
       g++;
       w += r[6] ? 1 : 0;
     }

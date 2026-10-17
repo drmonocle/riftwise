@@ -4,6 +4,7 @@
  */
 import { load } from "../stats";
 import { searchAlias } from "../searchAliases";
+import { normalizeTeamCode } from "../helpers";
 import type {
   EventListItem,
   HubChamp,
@@ -35,17 +36,32 @@ const slugOf = (name: string, slug: string) => slug || prettySlug(name);
 
 export const loadHubMeta = () => load<HubMeta>("hub/meta.json");
 export const loadHubHome = () => load<HubHome>("hub/home.json");
-export const loadHubTeam = (slug: string) => load<HubTeam>(`hub/team/${slug}.json`);
+type Aliases = { team: Record<string, string>; league: Record<string, string> };
+export const loadAliases = () =>
+  load<Partial<Aliases>>("hub/alias.json")
+    .then((a): Aliases => ({ team: a.team || {}, league: a.league || {} }))
+    .catch((): Aliases => ({ team: {}, league: {} }));
+
+/** A page file; for an old team slug or a league's short name ("lck", "worlds"), the current page's. */
+const withAlias =
+  <T>(kind: keyof Aliases) =>
+  (slug: string): Promise<T> =>
+    load<T>(`hub/${kind}/${slug}.json`).catch(async (err) => {
+      const to = (await loadAliases())[kind][slug.toLowerCase()];
+      if (to && to !== slug) return load<T>(`hub/${kind}/${to}.json`);
+      throw err;
+    });
+
+export const loadHubTeam = withAlias<HubTeam>("team");
 export const loadHubPlayer = (slug: string) => load<HubPlayer>(`hub/player/${slug}.json`);
 export const loadHubEvent = (slug: string) => load<HubEvent>(`hub/event/${slug}.json`);
 export const loadHubSeries = (slug: string) => load<HubSeries>(`hub/game/${slug}.json`);
 export const loadHubChamp = (slug: string) => load<HubChamp>(`hub/champ/${slug}.json`);
 export const loadEventsOfYear = (year: string) => load<EventListItem[]>(`hub/events/${year}.json`);
-export const loadAliases = () => load<{ team: Record<string, string> }>("hub/alias.json").catch(() => ({ team: {} }));
 
 // ── Search ────────────────────────────────────────────────────────────────
 
-export type HubSearchKind = "team" | "player" | "event" | "champ";
+export type HubSearchKind = "team" | "player" | "event" | "champ" | "league";
 
 export interface HubHit {
   kind: HubSearchKind;
@@ -65,11 +81,12 @@ export interface HubIndex {
   players: SearchPlayerRow[];
   events: SearchEventRow[];
   champs: SearchChampRow[];
+  leagues?: import("./types").LeagueRow[];
 }
 
 let indexPromise: Promise<HubIndex> | null = null;
 
-/** The four search lists (about 600 KB compressed in all), loaded once when someone first searches. */
+/** The search lists (about 600 KB compressed in all), loaded once when someone first searches. */
 export function loadHubIndex(): Promise<HubIndex> {
   if (!indexPromise) {
     indexPromise = Promise.all([
@@ -77,8 +94,9 @@ export function loadHubIndex(): Promise<HubIndex> {
       load<SearchPlayerRow[]>("hub/search/players.json"),
       load<SearchEventRow[]>("hub/search/events.json"),
       load<SearchChampRow[]>("hub/search/champs.json"),
+      load<import("./types").LeagueRow[]>("hub/leagues.json").catch(() => []),
     ])
-      .then(([teams, players, events, champs]) => ({ teams, players, events, champs }))
+      .then(([teams, players, events, champs, leagues]) => ({ teams, players, events, champs, leagues }))
       .catch((e) => {
         indexPromise = null;
         throw e;
@@ -105,13 +123,13 @@ function score(name: string, q: string): number {
 const ROLE: Record<string, string> = { T: "Top", J: "Jungle", M: "Mid", B: "Bot", S: "Support" };
 
 /**
- * One search across teams, players, tournaments and champions. Exact and prefix matches first, then
+ * One search across teams, players, leagues, tournaments and champions. Exact and prefix matches first, then
  * by how much a name has played; old team names, short names (SKT, C9) and real names count too.
  */
 export function searchHub(index: HubIndex, query: string, limit = 6): Record<HubSearchKind, HubHit[]> {
   const raw = searchAlias(query.trim());
   const q = normText(raw);
-  const out: Record<HubSearchKind, HubHit[]> = { team: [], player: [], event: [], champ: [] };
+  const out: Record<HubSearchKind, HubHit[]> = { team: [], player: [], event: [], champ: [], league: [] };
   if (!q) return out;
   const pick = <T>(rows: T[], rank: (r: T) => [number, string | undefined] | null, weight: (r: T) => number, make: (r: T, m?: string) => HubHit) => {
     const scored: [number, number, T, string | undefined][] = [];
@@ -165,6 +183,25 @@ export function searchHub(index: HubIndex, query: string, limit = 6): Record<Hub
     (e) => (e[4] === "P" ? 100000 : 0) + Number(e[2] || 0) * 10 + Math.min(e[6], 9),
     (e) => ({ kind: "event", name: e[0], slug: slugOf(e[0], e[1]), sub: [e[3], e[5]?.slice(0, 4) || e[2]].filter(Boolean).join(" · "), games: e[6], year: e[2] }),
   );
+  out.league = pick(
+    index.leagues || [],
+    (l) => {
+      const s = Math.min(...[l.s ? score(l.s, q) : -1, score(l.l, q)].map((x) => (x < 0 ? 9 : x)));
+      if (s < 9) return [s, undefined];
+      // an old name of the league ("NA LCS", "OGN Champions")
+      const old = (l.h || []).find((h) => h.u !== l.u && ((h.s && score(h.s, q) >= 0 && score(h.s, q) <= 1) || score(h.l, q) >= 0));
+      return old ? [2, old.s || old.l] : null;
+    },
+    (l) => (l.pr ? 100000 : 0) + l.g,
+    (l, m) => ({
+      kind: "league",
+      name: l.l,
+      slug: l.u,
+      sub: [l.s && l.s !== l.l ? l.s : "", l.from && l.to ? (l.from === l.to ? l.from : `${l.from}–${l.to}`) : l.from || ""].filter(Boolean).join(" · "),
+      games: l.g,
+      matched: m,
+    }),
+  );
   out.champ = pick(
     index.champs,
     (c) => {
@@ -181,15 +218,37 @@ export const loadHubRecords = () => load<import("./types").HubRecords>("hub/reco
 export const loadHubTitles = () => load<import("./types").HubTitle[]>("hub/titles.json");
 
 /** The stats page of a team known only by its current name and short code (from Riot's feeds). */
+/** A team name without a "(...)" note or a ".CN"-style region suffix: "LYON (2024 American Team)" -> "lyon". */
+const bareTeam = (s: string) =>
+  normText(s || "")
+    .replace(/\s*\(.*?\)\s*$/, "")
+    .replace(/\.(cn|na|eu|kr|cis|vn|br|jp|tw)$/, "")
+    .trim();
+
+/**
+ * The hub team behind a team on the live schedule (Riot's name and code). Candidates: the same name, the same
+ * name without a "(...)" / ".CN" suffix, an old name, the same code (TLAW = TL); a name and code that both fit
+ * count most, then the team that played most recently (the active Ninjas in Pyjamas.CN, not the 2018 EU team).
+ */
 export function findHubTeam(index: HubIndex, name: string, code?: string): string | null {
   const n = normText(name || "");
-  const c = (code || "").toLowerCase();
-  const byName = index.teams.filter((t) => normText(t[0]) === n);
-  const pick = (rows: SearchTeamRow[]) => rows.sort((a, b) => b[3].localeCompare(a[3]) || b[2] - a[2])[0];
-  let t = pick(byName);
-  if (!t && n) t = pick(index.teams.filter((x) => x[4] && x[4].split(" | ").some((o) => normText(o) === n)));
-  if (!t && c) t = pick(index.teams.filter((x) => x[5] && x[5].toLowerCase().split(" | ").includes(c)));
-  return t ? slugOf(t[0], t[1]) : null;
+  const nb = bareTeam(name || "");
+  const c = normalizeTeamCode(code || "");
+  let best: SearchTeamRow | null = null;
+  let bestKey: [number, string, number] | null = null;
+  for (const t of index.teams) {
+    const exact = normText(t[0]) === n;
+    const nameFit =
+      exact || (!!nb && bareTeam(t[0]) === nb) || (!!t[4] && t[4].split(" | ").some((o) => normText(o) === n || (!!nb && bareTeam(o) === nb)));
+    const codeFit = !!c && !!t[5] && t[5].split(" | ").some((x) => normalizeTeamCode(x) === c);
+    if (!nameFit && !codeFit) continue;
+    const key: [number, string, number] = [(nameFit ? 2 : 0) + (codeFit ? 1 : 0), t[3] || "", t[2]];
+    if (!bestKey || key[0] > bestKey[0] || (key[0] === bestKey[0] && (key[1] > bestKey[1] || (key[1] === bestKey[1] && key[2] > bestKey[2])))) {
+      best = t;
+      bestKey = key;
+    }
+  }
+  return best ? slugOf(best[0], best[1]) : null;
 }
 
 export const loadTeamSeries = (slug: string) => load<import("./types").TeamSeriesRow[]>(`hub/teamseries/${slug}.json`);
@@ -200,5 +259,5 @@ export const loadChampIndex = () => load<import("./types").ChampLeagueIndex[]>("
 export const loadChampGames = (league: string, year: string) => load<import("./types").ChampGamesFile>(`hub/champgames/${league}/${year}.json`);
 export const loadPatches = () => load<import("./types").PatchRow[]>("hub/patches.json");
 export const loadLeagues = () => load<import("./types").LeagueRow[]>("hub/leagues.json");
-export const loadLeague = (slug: string) => load<import("./types").HubLeague>(`hub/league/${slug}.json`);
+export const loadLeague = withAlias<import("./types").HubLeague>("league");
 export const loadRatings = () => load<import("./types").HubRatings>("hub/ratings.json");

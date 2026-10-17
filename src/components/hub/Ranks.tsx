@@ -7,7 +7,7 @@ import React, { useMemo, useState } from "react";
 import { tl, tk, roleName } from "../../i18n";
 import { loadLeagueSeason, loadLeagues } from "../../hub/data";
 import type { EventPlayer, EventTeamStats, LeagueRow } from "../../hub/types";
-import { Loading, Section, useLoad } from "./ui";
+import { isFresh, Loading, RevealButton, Section, useHidden, useLoad } from "./ui";
 
 interface Metric<T> {
   key: string;
@@ -273,6 +273,9 @@ export const PlayerRanks: React.FC<{
         : Promise.reject(new Error("none")),
     [lu, year],
   );
+  // a season with games in the last two weeks: its ranks wait for Reveal in spoiler mode
+  const newest = events.filter((e) => e.lu === lu && (e.date || "").startsWith(year)).reduce((m, e) => (e.date > m ? e.date : m), "");
+  const [ranksHidden, revealRanks] = useHidden(`ranks:${slug}:${pick}`, newest && isFresh(newest) ? newest : undefined);
   if (!seasons.length) return null;
   const season = state.data;
   const me = season?.players.find((p) => p.u === slug);
@@ -344,7 +347,13 @@ export const PlayerRanks: React.FC<{
       }
       share={`${slug}-ranks-${lu}-${year}`}
     >
-      {body}
+      {ranksHidden ? (
+        <div className="py-3 text-center">
+          <RevealButton onReveal={revealRanks} />
+        </div>
+      ) : (
+        body
+      )}
     </Section>
   );
 };
@@ -369,6 +378,9 @@ export const TeamRanks: React.FC<{
         : Promise.reject(new Error("none")),
     [lu, year],
   );
+  // a season with games in the last two weeks: its ranks wait for Reveal in spoiler mode
+  const newest = events.filter((e) => e.lu === lu && (e.date || "").startsWith(year)).reduce((m, e) => (e.date > m ? e.date : m), "");
+  const [ranksHidden, revealRanks] = useHidden(`ranks:${slug}:${pick}`, newest && isFresh(newest) ? newest : undefined);
   if (!seasons.length) return null;
   const season = state.data;
   const me = season?.teamStats.find((t) => t.u === slug);
@@ -431,7 +443,13 @@ export const TeamRanks: React.FC<{
       }
       share={`${slug}-ranks-${lu}-${year}`}
     >
-      {body}
+      {ranksHidden ? (
+        <div className="py-3 text-center">
+          <RevealButton onReveal={revealRanks} />
+        </div>
+      ) : (
+        body
+      )}
     </Section>
   );
 };

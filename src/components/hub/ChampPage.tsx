@@ -49,7 +49,7 @@ const PatchTrend: React.FC<{ patches: NonNullable<HubChamp["patches"]> }> = ({ p
   const w = 160;
   const h = 36;
   const x = (i: number) => (list.length > 1 ? (i / (list.length - 1)) * (w - 4) + 2 : w / 2);
-  const pres = list.map((p) => (p.pk + p.b) / Math.max(p.g, 1));
+  const pres = list.map((p) => (p.pr ?? p.pk + p.b) / Math.max(p.g, 1));
   const top = Math.max(0.05, ...pres);
   const presPts = pres.map((v, i) => `${x(i).toFixed(1)},${(h - 2 - (v / top) * (h - 4)).toFixed(1)}`).join(" ");
   const wrPts = list
@@ -81,16 +81,19 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
   const maxYear = Math.max(1, ...c.years.map((y) => y.p + y.b));
   const totalRoles = c.roles.reduce((s, r) => s + r.p, 0) || 1;
   const mainRoles = c.roles.filter((r) => r.p / totalRoles >= 0.1).map((r) => r.r);
-  const roleKeys = Object.keys(c.matchups || {}).filter((r) => mainRoles.includes(r));
+  // the champion's roles in order of how often it's played there, with matchups in either list
+  const roleKeys = mainRoles.filter((r) => (c.matchups?.[r]?.length || 0) > 0 || (c.matchups12?.[r]?.length || 0) > 0);
   const [muRole, setMuRole] = useState(roleKeys[0] || "");
   // this meta (last 12 months) first when there is one
-  const [muRecent, setMuRecent] = useState(() => Object.keys(c.matchups12 || {}).length > 0);
+  const [muRecentPick, setMuRecent] = useState(() => Object.keys(c.matchups12 || {}).length > 0);
+  // the last 12 months have no matchups in this role: show all time
+  const muRecent = muRecentPick && (c.matchups12?.[muRole]?.length || 0) > 0;
   const muRows = ((muRecent ? c.matchups12 : c.matchups) || {})[muRole] || [];
   const muLane = muRows.some((m) => m.length > 3);
   const laneNow = (muRecent ? c.lane12 : c.lane)?.[muRole];
   const showDuos = mainRoles.some((r) => r === "Bot" || r === "Support") && (c.duos || []).length > 0;
   const items = useMemo(() => (c.builds?.items || []).filter(([it]) => isFinishedItem(it)).slice(0, 8), [c.builds, ddReady]); // eslint-disable-line react-hooks/exhaustive-deps
-  const maxPatch = Math.max(1, ...(c.patches || []).map((p) => (p.pk + p.b) / Math.max(p.g, 1)));
+  const maxPatch = Math.max(1, ...(c.patches || []).map((p) => (p.pr ?? p.pk + p.b) / Math.max(p.g, 1)));
   return (
     <div className="space-y-3">
       <div className={`${card} flex gap-3 items-start`}>
@@ -171,9 +174,9 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         <Section title={tl("Recent patches")} right={c.patches.length >= 3 ? <PatchTrend patches={c.patches} /> : undefined}>
           <div className="space-y-1">
             {c.patches.map((p, i) => {
-              const pres = (p.pk + p.b) / Math.max(p.g, 1);
+              const pres = (p.pr ?? p.pk + p.b) / Math.max(p.g, 1);
               const before = c.patches![i + 1];
-              const d = before ? Math.round((pres - (before.pk + before.b) / Math.max(before.g, 1)) * 100) : null;
+              const d = before ? Math.round((pres - (before.pr ?? before.pk + before.b) / Math.max(before.g, 1)) * 100) : null;
               return (
                 <div key={p.p} className="grid grid-cols-[3.5rem_1fr_2.5rem_auto] items-center gap-2 text-xs">
                   <span className="text-rw-text font-semibold">{p.p}</span>
