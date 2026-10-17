@@ -22,7 +22,9 @@ import {
 import { ComparePick, bothOptions } from "./ComparePage";
 import { PeriodPicker, defaultPeriod } from "./PeriodStats";
 import { Side, loadSide } from "./PrepPage";
-import { card, ChampIcon, HubLink, Loading, Section, usePageTitle } from "./ui";
+import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, Section, useLoad, usePageTitle } from "./ui";
+import { loadHubChamp, prettySlug } from "../../hub/data";
+import type { LaneLine } from "../../hub/types";
 
 type Who = "b" | "r";
 /** Tournament draft order: who acts and whether it's a ban or a pick. */
@@ -44,7 +46,8 @@ interface Pool {
   bans: Map<string, number>;
   bansVs: Map<string, number>;
   roles: Map<string, Set<number>>;
-  players: Map<string, { name: string; g: number; w: number }[]>;
+  /** who plays it: games, wins, average gold lead over the lane opponent at 15 (Oracle's Elixir games) */
+  players: Map<string, { name: string; g: number; w: number; gd15: number | null }[]>;
   games: number;
 }
 
@@ -73,17 +76,22 @@ function pool(side: Side, period: PeriodKey): Pool {
   }
   for (const pl of side.players) {
     if (!pl) continue;
-    const by = new Map<string, [number, number]>();
+    const by = new Map<string, [number, number, number, number]>();
     for (const g of inPeriod(pl.log, period, playerRowRef)) {
-      const x = by.get(g[2]) || [0, 0];
+      const x = by.get(g[2]) || [0, 0, 0, 0];
       x[0]++;
       x[1] += g[6];
+      const gd = g[21]?.[3];
+      if (gd != null) {
+        x[2] += gd;
+        x[3]++;
+      }
       by.set(g[2], x);
     }
-    for (const [c, [g, w]] of by)
+    for (const [c, [g, w, gd, n]] of by)
       p.players.set(c, [
         ...(p.players.get(c) || []),
-        { name: pl.p.name, g, w },
+        { name: pl.p.name, g, w, gd15: n ? Math.round(gd / n) : null },
       ]);
   }
   return p;
@@ -567,6 +575,58 @@ const TeamColumn: React.FC<{
 };
 
 /** What both teams have done with the champion under the pointer. */
+/**
+ * Lane counters for the champion in focus, from its champion page: who wins the lane against it (lowest gold lead
+ * at 15) and whom it beats, in its main role. The last 12 months when there are enough games, else all time.
+ */
+const LaneCounters: React.FC<{ c: string }> = ({ c }) => {
+  const state = useLoad(() => loadHubChamp(prettySlug(c)), [c]);
+  const data = state.data;
+  if (!data) return null;
+  const role = data.roles[0]?.r;
+  if (!role) return null;
+  const withLane = (m?: Record<string, LaneLine[]> | null) => (m?.[role] || []).filter((x) => x[3] != null && x[3] >= 3);
+  const recent = withLane(data.matchups12);
+  const rows = recent.length >= 4 ? recent : withLane(data.matchups);
+  if (rows.length < 2) return null;
+  const byLane = [...rows].sort((a, b) => (a[4] ?? 0) - (b[4] ?? 0));
+  const line = (x: LaneLine) => {
+    const [oc, g, w, , gd] = x;
+    return (
+      <li key={oc} className="flex items-center justify-between gap-2 min-w-0">
+        <ChampLink name={oc} size={16} />
+        <span className="tabular-nums text-rw-sub shrink-0" title={tl("{n} games against it", { n: g })}>
+          {gd != null && gd > 0 ? "+" : ""}
+          {gd} · {winRate(w, g)}
+        </span>
+      </li>
+    );
+  };
+  return (
+    <div className="space-y-2 pt-2 border-t border-rw-border text-xs">
+      <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted">
+        {tl("{champion} in lane ({role}, {when})", {
+          champion: champName(c),
+          role: roleName(role),
+          when: rows === recent ? tl("last 12 months") : tl("all time"),
+        })}
+      </div>
+      <div className="text-[10px] text-rw-muted">{tl("Gold lead at 15 · games won")}</div>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+        <div className="min-w-0">
+          <div className="text-[10px] text-rw-red font-semibold mb-1">{tl("Loses lane to")}</div>
+          <ul className="space-y-1">{byLane.slice(0, 5).map(line)}</ul>
+        </div>
+        <div className="min-w-0">
+          <div className="text-[10px] text-rw-teal font-semibold mb-1">{tl("Wins lane against")}</div>
+          <ul className="space-y-1">{byLane.slice(-5).reverse().map(line)}</ul>
+        </div>
+      </div>
+      <OeCredit />
+    </div>
+  );
+};
+
 const ChampInfo: React.FC<{
   c: string;
   pools: { b: Pool; r: Pool };
@@ -612,12 +672,18 @@ const ChampInfo: React.FC<{
               <div key={x.name} className="text-rw-text">
                 {x.name}:{" "}
                 {tl("{n} games, won {pct}", { n: x.g, pct: winRate(x.w, x.g) })}
+                {x.gd15 != null && (
+                  <span className="text-rw-sub" title={tl("Average lead over the lane opponent at 15 minutes")}>
+                    {` · GD@15 ${x.gd15 > 0 ? "+" : ""}${x.gd15}`}
+                  </span>
+                )}
               </div>
             ))}
           </div>
         );
       })}
     </div>
+    <LaneCounters c={c} />
   </Section>
 );
 

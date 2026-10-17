@@ -545,7 +545,11 @@ def build(ctx) -> dict:
                                  "players": defaultdict(lambda: [0, 0, 0, 0, 0]), "recent": [], "p": 0, "w": 0, "b": 0,
                                  "best": None, "side": [0, 0, 0, 0], "items": Counter(), "items_w": Counter(), "bg": 0,
                                  "keys": Counter(), "keys_w": Counter(), "spells": Counter(), "spells_w": Counter(),
-                                 "mu": defaultdict(lambda: [0, 0]), "duo": defaultdict(lambda: [0, 0])})
+                                 # matchups (all time, last 12 months): [games, wins, games with lane leads at 15,
+                                 # sum of gold / CS / XP lead at 15, games ahead in gold at 15]; lane: the same per role
+                                 "mu": defaultdict(lambda: [0] * 7), "mu12": defaultdict(lambda: [0] * 7),
+                                 "lane": defaultdict(lambda: [0] * 7), "lane12": defaultdict(lambda: [0] * 7),
+                                 "duo": defaultdict(lambda: [0, 0])})
     events_by_year = defaultdict(list)
     seo = defaultdict(list)
     n_series_pages = 0
@@ -1126,13 +1130,25 @@ def build(ctx) -> dict:
                                         c["spells"][sp] += 1
                                         c["spells_w"][sp] += won
                                 role = r["role"]
+                                recent_g = g["date"][:10] >= build_cut
+                                lane_keys = []
+                                if role:
+                                    lane_keys += [("lane", role)] + ([("lane12", role)] if recent_g else [])
                                 if role in lane and len(lane[role]) == 2:
                                     other_team = opp_of.get(r["team"])
                                     oc = lane[role].get(other_team)
                                     if oc:
-                                        m = c["mu"][(role, oc)]
-                                        m[0] += 1
-                                        m[1] += won
+                                        lane_keys += [("mu", (role, oc))] + ([("mu12", (role, oc))] if recent_g else [])
+                                for kind, key in lane_keys:
+                                    m = c[kind][key]
+                                    m[0] += 1
+                                    m[1] += won
+                                    if ptl and ptl[3] is not None:
+                                        m[2] += 1
+                                        m[3] += ptl[3]
+                                        m[4] += ptl[4] or 0
+                                        m[5] += ptl[5] or 0
+                                        m[6] += 1 if ptl[3] > 0 else 0
                                 partner_role = {"Bot": "Support", "Support": "Bot"}.get(role or "")
                                 if partner_role and lane.get(partner_role, {}).get(r["team"]):
                                     d2 = c["duo"][lane[partner_role][r["team"]]]
@@ -1803,20 +1819,32 @@ def build(ctx) -> dict:
         def top_counts(cnt, wins, n, min_games=1):
             return [[k, g_, wins[k]] for k, g_ in cnt.most_common(n) if g_ >= min_games]
 
-        matchups = defaultdict(list)
-        for (role, oc), (g_, w_) in v["mu"].items():
-            if g_ >= 3:
-                matchups[role].append([oc, g_, w_])
-        for role in matchups:
-            matchups[role].sort(key=lambda x: -x[1])
-            del matchups[role][25:]
+        def lane_tail(m):
+            """Lane numbers of a matchup / role: [games with leads, avg gold, CS, XP lead at 15, games ahead at 15]."""
+            return [m[2], round(m[3] / m[2]), round(m[4] / m[2], 1), round(m[5] / m[2]), m[6]] if m[2] else []
+
+        def mu_out(src, min_g, keep):
+            out_m = defaultdict(list)
+            for (role, oc), m in src.items():
+                if m[0] >= min_g:
+                    out_m[role].append([oc, m[0], m[1], *lane_tail(m)])
+            for role in out_m:
+                out_m[role].sort(key=lambda x: -x[1])
+                del out_m[role][keep:]
+            return out_m or None
+
+        matchups = mu_out(v["mu"], 3, 30)
         obj = {
             "name": c, "u": u, "p": v["p"], "w": v["w"], "b": v["b"],
             "side": v["side"],
             "builds": {"since": build_cut, "g": v["bg"], "items": top_counts(v["items"], v["items_w"], 14, 2),
                        "keys": top_counts(v["keys"], v["keys_w"], 6, 2), "spells": top_counts(v["spells"], v["spells_w"], 5, 2)}
             if v["bg"] else None,
-            "matchups": matchups or None,
+            "matchups": matchups,
+            # the last 12 months (this meta), and the champion's own lane numbers per role
+            "matchups12": mu_out(v["mu12"], 2, 30),
+            "lane": {role: [m[0], m[1], *lane_tail(m)] for role, m in v["lane"].items() if m[0]} or None,
+            "lane12": {role: [m[0], m[1], *lane_tail(m)] for role, m in v["lane12"].items() if m[0]} or None,
             "duos": sorted([[k, x[0], x[1]] for k, x in v["duo"].items() if x[0] >= 3], key=lambda x: -x[1])[:20] or None,
             "patches": [{"p": pt, "pk": patch_stats[pt]["p"].get(c, 0), "w": patch_stats[pt]["w"].get(c, 0),
                          "b": patch_stats[pt]["b"].get(c, 0), "g": patch_stats[pt]["g"]} for pt in recent_patches],
