@@ -44,7 +44,7 @@ func testSite(t *testing.T) *store {
 	for k, v := range files {
 		must(os.WriteFile(filepath.Join(hub, "seo", k+".tsv"), []byte(v), 0o644))
 	}
-	must(os.WriteFile(filepath.Join(hub, "alias.json"), []byte(`{"team": {"sk-telecom-t1": "t1"}, "league": {"lck": "lol-champions-korea", "worlds": "world-championship"}}`), 0o644))
+	must(os.WriteFile(filepath.Join(hub, "alias.json"), []byte(`{"team": {"sk-telecom-t1": "t1"}, "league": {"worlds": "world-championship"}}`), 0o644))
 	s := &store{site: dir}
 	s.refresh()
 	return s
