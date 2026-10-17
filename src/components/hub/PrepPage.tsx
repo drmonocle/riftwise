@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 import { GitCompare, Printer } from "lucide-react";
 import { tl, roleName } from "../../i18n";
 import { winRate } from "../../stats";
+import { champName } from "../../champions";
 import { loadHubPlayer, loadHubTeam, loadPlayerGames, loadRatings, loadTeamGames, loadTeamSeries } from "../../hub/data";
 import { chanceContext, matchChance, pct, seriesChance } from "../../hub/winChance";
 import { Change } from "./RankingsPage";
@@ -221,6 +222,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
         <>
           <TeamRows x={a.team} y={b.team} ra={ra} rb={rb} bSlug={b.team.u} career={period === "all"} periodLabel={periodLabel} />
           <Lanes a={a} b={b} period={period} periodLabel={periodLabel} title={title} />
+          <FearlessDepth a={a} b={b} period={period} periodLabel={periodLabel} title={title} />
         </>
       )}
     </>
@@ -367,6 +369,75 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
   );
 };
 
+/**
+ * Fearless pool depth: each starter's champions in the period, most played first. In a Fearless Bo5 every champion
+ * a team picks is gone for the rest of the series, so a role needs up to five; the shallowest pool (fewest
+ * champions with 2+ games) is where the other team can squeeze in games 3-5.
+ */
+export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string; title: string }> = ({
+  a,
+  b,
+  period,
+  periodLabel,
+  title,
+}) => {
+  const pools = useMemo(() => {
+    const of = (pl: Side["players"][number]) => {
+      if (!pl) return null;
+      const m = new Map<string, [number, number]>();
+      for (const g of inPeriod(pl.log, period, playerRowRef)) {
+        if (!g[2]) continue;
+        const x = m.get(g[2]) || [0, 0];
+        x[0]++;
+        x[1] += g[6];
+        m.set(g[2], x);
+      }
+      const list = [...m.entries()].sort((p, q) => q[1][0] - p[1][0]);
+      return { name: pl.p.name, list, deep: list.filter(([, x]) => x[0] >= 2).length };
+    };
+    return { a: a.players.map(of), b: b.players.map(of) };
+  }, [a, b, period]);
+  const all = [...pools.a, ...pools.b].filter((x): x is NonNullable<typeof x> => !!x && x.list.length > 0);
+  if (all.length < 4) return null;
+  const minDeep = Math.min(...all.map((x) => x.deep));
+  const cell = (x: (typeof pools.a)[number], right: boolean) =>
+    !x ? (
+      <span className="text-rw-muted">–</span>
+    ) : (
+      <div className={`min-w-0 space-y-1 ${right ? "text-right" : ""}`}>
+        <div className={`text-[11px] ${x.deep === minDeep ? "text-rw-red font-bold" : "text-rw-sub"}`}>
+          {x.name} · {tl("{n} with 2+ games", { n: x.deep })}
+          {x.deep === minDeep && ` · ${tl("pinch point")}`}
+        </div>
+        <div className={`flex flex-wrap gap-1 ${right ? "justify-end" : ""}`}>
+          {x.list.slice(0, 10).map(([c, [g, w]]) => (
+            <span key={c} className={`flex items-center gap-0.5 text-[10px] ${g >= 2 ? "text-rw-sub" : "text-rw-muted opacity-60"}`} title={`${champName(c)} · ${g} · ${winRate(w, g)}`}>
+              <ChampIcon name={c} size={18} />
+              {g}
+            </span>
+          ))}
+          {x.list.length > 10 && <span className="text-[10px] text-rw-muted self-center">+{x.list.length - 10}</span>}
+        </div>
+      </div>
+    );
+  return (
+    <Section title={tl("Fearless pool depth")} right={<span className="text-[11px] text-rw-sub">{periodLabel}</span>} share={`${title}-fearless-${periodLabel}`}>
+      <ul className="divide-y divide-rw-border">
+        {ROLES.map((r, i) => (
+          <li key={r} className="grid grid-cols-[1fr_auto_1fr] items-start gap-3 py-2">
+            {cell(pools.a[i], false)}
+            <span className="text-[10px] uppercase tracking-wider font-bold text-rw-accent text-center w-14 pt-0.5">{roleName(r)}</span>
+            {cell(pools.b[i], true)}
+          </li>
+        ))}
+      </ul>
+      <p className="text-[10px] text-rw-muted">
+        {tl("In Fearless, champions a team picks are gone for the rest of the series, so a Bo5 can need five per role. Red = the shallowest pool (fewest champions with 2+ games): the place to target in games 3-5.")}
+      </p>
+    </Section>
+  );
+};
+
 /** Lane by lane: each team's starter, their numbers in the period and most played champions. */
 const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string; title: string }> = ({ a, b, period, periodLabel, title }) => {
   const stats = (pl: Side["players"][number]) => {
@@ -397,6 +468,13 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
                 @15 {sgn(s.tl.gd15)} {tl("gold")} · {sgn(s.tl.csd15)} CS · {sgn(s.tl.xpd15)} XP
               </div>
             )}
+            <div className="text-[11px] text-rw-muted tabular-nums" title={tl("Champions played in this period; how much of their play is on their three most played")}>
+              {tl("Pool {n} ({m} with 2+ games) · top 3 = {p} of games", {
+                n: s.champs.length,
+                m: s.champs.filter((c) => c.g >= 2).length,
+                p: `${Math.round((s.champs.slice(0, 3).reduce((t, c) => t + c.g, 0) / Math.max(s.g, 1)) * 100)}%`,
+              })}
+            </div>
             <div className={`flex gap-1 flex-wrap ${right ? "justify-end" : ""}`}>
               {s.champs.slice(0, 4).map((c) => (
                 <span key={c.c} className="flex items-center gap-0.5 text-[10px] text-rw-sub" title={`${c.g} · ${winRate(c.w, c.g)}`}>
