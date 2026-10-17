@@ -1,8 +1,10 @@
 // riftwise-pages gives every RiftWise stats page (riftwise.gg/player/faker,
 // /team/t1, /tournament/worlds-2025, /match/..., /champion/ahri, /league/lck, /stats...) the app's index.html
-// with that page's own title, description, canonical address and link-preview tags, so search
-// engines index each page and links shared in chat apps show what they point to. It also serves
-// the sitemaps. IIS sends only those addresses here; everything else stays plain IIS.
+// with that page's own title, description, canonical address, link-preview tags, JSON-LD and a plain-HTML
+// summary in <noscript> (for crawlers that don't run scripts), so search engines index each page and links
+// shared in chat apps show what they point to. It also serves the sitemaps. IIS sends only those addresses
+// here; everything else stays plain IIS. (The JSON-LD / noscript / Twitter tags came from Antigravity's SEO pass
+// on the server, 2026-10-17.)
 //
 // Titles and descriptions come from the nightly stats build (stats/<version>/hub/seo/*.tsv), and the
 // page itself is the deployed index.html; both are re-read when they change.
@@ -31,7 +33,7 @@ import (
 )
 
 const (
-	version  = "1.6.0"
+	version  = "1.7.0"
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -163,7 +165,20 @@ func (s *store) refresh() {
 var (
 	reTitle = regexp.MustCompile(`(?s)<title>.*?</title>`)
 	reDesc  = regexp.MustCompile(`(?s)<meta\s+name="description"\s+content="[^"]*"\s*/?>`)
+	// the site-wide versions of these in index.html make way for the page's own
+	reSiteTags = regexp.MustCompile(`(?is)\s*(<link\s+rel="canonical"[^>]*>|<meta\s+(property="og:|name="twitter:)[^>]*>|<script\s+type="application/ld\+json">.*?</script>)`)
+	reNoscript = regexp.MustCompile(`(?is)\s*<noscript>.*?</noscript>`)
 )
+
+// Links in every page's <noscript> summary (paths under the site's root)
+var noscriptLinks = [][2]string{
+	{"", "RiftWise"}, {"stats", "Pro Stats"}, {"stats/rankings", "Power Rankings"}, {"stats/tournaments", "Tournaments"},
+	{"stats/leagues", "Leagues"}, {"stats/champions", "Champions"}, {"stats/patches", "Patches"}, {"stats/records", "Records"},
+	{"stats/titles", "Title winners"}, {"stats/compare", "Compare"}, {"stats/prep", "Match prep"}, {"stats/draft", "Draft board"},
+	{"stats/finder", "Game finder"}, {"stats/data", "CSV data"}, {"team/t1", "T1"}, {"team/geng", "Gen.G"},
+	{"team/bilibili-gaming", "BLG"}, {"team/g2-esports", "G2"}, {"team/fnatic", "Fnatic"}, {"player/faker", "Faker"},
+	{"player/chovy", "Chovy"}, {"player/caps", "Caps"}, {"player/keria", "Keria"}, {"player/ruler", "Ruler"},
+}
 
 // page returns index.html with this page's title, description and preview tags.
 func (s *store) page(title, desc, canonical string, index bool) string {
@@ -176,6 +191,8 @@ func (s *store) page(title, desc, canonical string, index bool) string {
 	t, d, c := html.EscapeString(title), html.EscapeString(desc), html.EscapeString(canonical)
 	doc = reTitle.ReplaceAllLiteralString(doc, "<title>"+t+"</title>")
 	doc = reDesc.ReplaceAllLiteralString(doc, `<meta name="description" content="`+d+`" />`)
+	doc = reSiteTags.ReplaceAllLiteralString(doc, "")
+	doc = reNoscript.ReplaceAllLiteralString(doc, "")
 	var tags strings.Builder
 	tags.WriteString(`<link rel="canonical" href="` + c + `" />` + "\n")
 	tags.WriteString(`    <meta property="og:type" content="website" />` + "\n")
@@ -185,11 +202,29 @@ func (s *store) page(title, desc, canonical string, index bool) string {
 	tags.WriteString(`    <meta property="og:url" content="` + c + `" />` + "\n")
 	tags.WriteString(`    <meta property="og:image" content="` + publicURL + `icon-512.png" />` + "\n")
 	tags.WriteString(`    <meta name="twitter:card" content="summary" />` + "\n")
+	tags.WriteString(`    <meta name="twitter:title" content="` + t + `" />` + "\n")
+	tags.WriteString(`    <meta name="twitter:description" content="` + d + `" />` + "\n")
+	tags.WriteString(`    <meta name="twitter:image" content="` + publicURL + `icon-512.png" />` + "\n")
 	if !index {
 		tags.WriteString(`    <meta name="robots" content="noindex" />` + "\n")
+	} else if ld, err := json.Marshal(map[string]any{
+		"@context": "https://schema.org", "@type": "WebPage", "name": title, "description": desc, "url": canonical,
+		"isPartOf": map[string]any{"@type": "WebSite", "name": "RiftWise", "alternateName": []string{"RiftWise.gg", "RiftWise Pro LoL Stats"}, "url": publicURL},
+	}); err == nil {
+		tags.WriteString(`    <script type="application/ld+json">` + string(ld) + `</script>` + "\n")
 	}
 	tags.WriteString("  </head>")
-	return strings.Replace(doc, "</head>", tags.String(), 1)
+	doc = strings.Replace(doc, "</head>", tags.String(), 1)
+	var ns strings.Builder
+	ns.WriteString(`<div id="root"></div><noscript><main><h1>` + t + `</h1><p>` + d + `</p><nav aria-label="RiftWise">`)
+	for i, l := range noscriptLinks {
+		if i > 0 {
+			ns.WriteString(" · ")
+		}
+		ns.WriteString(`<a href="` + publicPath + l[0] + `">` + l[1] + `</a>`)
+	}
+	ns.WriteString(` · <a href="https://lolworlds.com/">LoL Worlds 24/7 stream</a></nav></main></noscript>`)
+	return strings.Replace(doc, `<div id="root"></div>`, ns.String(), 1)
 }
 
 func (s *store) serve(w http.ResponseWriter, r *http.Request) {

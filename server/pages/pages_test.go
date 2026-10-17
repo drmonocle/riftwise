@@ -18,8 +18,11 @@ const indexHTML = `<!doctype html>
       content="RiftWise: live scores."
     />
     <title>RiftWise</title>
+    <link rel="canonical" href="https://riftwise.gg/" />
+    <meta property="og:title" content="Site-wide" />
+    <script type="application/ld+json">{"site":1}</script>
   </head>
-  <body><div id="root"></div></body>
+  <body><div id="root"></div><noscript><p>site-wide</p></noscript></body>
 </html>`
 
 func testSite(t *testing.T) *store {
@@ -73,6 +76,10 @@ func TestPageGetsItsOwnTags(t *testing.T) {
 		`<meta name="description" content="T1: 1,216-644 &amp; more &lt;b&gt;" />`,
 		`<link rel="canonical" href="https://riftwise.gg/team/t1" />`,
 		`<meta property="og:image" content="https://riftwise.gg/icon-512.png" />`,
+		`<meta name="twitter:title" content="T1 – stats | RiftWise" />`,
+		`<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage"`,
+		`<noscript><main><h1>T1 – stats | RiftWise</h1>`,
+		`<a href="/player/faker">Faker</a>`,
 		`<meta property="og:title" content="T1 – stats | RiftWise" />`,
 		`<div id="root"></div>`,
 	} {
@@ -82,6 +89,9 @@ func TestPageGetsItsOwnTags(t *testing.T) {
 	}
 	if strings.Contains(body, "live scores") || strings.Contains(body, "noindex") {
 		t.Error("old description or noindex left in")
+	}
+	if strings.Count(body, `rel="canonical"`) != 1 || strings.Contains(body, "Site-wide") || strings.Contains(body, `{"site":1}`) || strings.Contains(body, "site-wide") {
+		t.Error("the site-wide canonical / og / JSON-LD / noscript of index.html left in")
 	}
 }
 
