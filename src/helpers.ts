@@ -574,6 +574,9 @@ export function reconcileLiveAndSchedule(
 export interface HeadToHeadStats {
   team1Wins: number;
   team2Wins: number;
+  /** Of the results taken from the live schedule (newer than the H2H table): game wins at Worlds / MSI / First Stand */
+  scheduleBigT1: number;
+  scheduleBigT2: number;
   totalGames: number;
   totalMeetings: number;
   totalMatches: number;
@@ -581,6 +584,16 @@ export interface HeadToHeadStats {
   team2GameWins: number;
   lastWinner?: string;
   lastDate?: string;
+}
+
+/**
+ * Worlds, MSI or First Stand (the H2H view's international line), by lolesports league slug or name. Not the Esports
+ * World Cup, the Americas Cup or a Worlds qualifier; same test as big_event in scripts/h2h/refresh.py.
+ */
+export function isBigEvent(leagueSlug?: string, leagueName?: string): boolean {
+  if (/^(worlds|msi|first[-_]?stand)$/i.test(leagueSlug || "")) return true;
+  const n = leagueName || "";
+  return /\bworlds?\b|world championship|\bmsi\b|mid-season invitational|first stand/i.test(n) && !/world cup|qualif/i.test(n);
 }
 
 /** User requirement: show the H2H whenever the teams have any recorded history. */
@@ -667,6 +680,8 @@ function rawHeadToHead(
   // 2. Results newer than the table come from the schedule (all of them for pairs the table lacks)
   let scheduleT1Wins = 0;
   let scheduleT2Wins = 0;
+  let scheduleBigT1 = 0;
+  let scheduleBigT2 = 0;
   let recentMeetingsCount = 0;
   let lastWinner: string | undefined;
   let lastDate: string | undefined;
@@ -687,6 +702,10 @@ function rawHeadToHead(
       const [s1, s2] = scores(m);
       scheduleT1Wins += s1;
       scheduleT2Wins += s2;
+      if (isBigEvent(m.leagueSlug, m.leagueName)) {
+        scheduleBigT1 += s1;
+        scheduleBigT2 += s2;
+      }
     }
 
     const finished = counted.filter((m) => m.state === "completed").sort((a, b) => time(b) - time(a));
@@ -705,6 +724,8 @@ function rawHeadToHead(
   return {
     team1Wins,
     team2Wins,
+    scheduleBigT1,
+    scheduleBigT2,
     totalGames,
     totalMeetings: recentMeetingsCount,
     totalMatches: recentMeetingsCount,

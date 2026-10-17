@@ -103,8 +103,13 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
   const total = h2h ? h2h.team1Wins + h2h.team2Wins : 0;
   const t1Pct = total > 0 ? Math.round((h2h!.team1Wins / total) * 100) : 50;
 
+  // Worlds / MSI / First Stand: the published history up to the H2H data's cutoff, plus newer results from the schedule
   const intlRaw = series?.intl ?? [0, 0];
   const intl: [number, number] = flip ? [intlRaw[1], intlRaw[0]] : [intlRaw[0], intlRaw[1]];
+  if (h2h) {
+    intl[0] += h2h.scheduleBigT1;
+    intl[1] += h2h.scheduleBigT2;
+  }
   const domestic: [number, number] = h2h
     ? [Math.max(0, h2h.team1Wins - intl[0]), Math.max(0, h2h.team2Wins - intl[1])]
     : [0, 0];
