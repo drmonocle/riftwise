@@ -250,7 +250,6 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
   );
 };
 
-/** Knockout rounds as bracket columns (quarterfinals → semifinals → final), joined by lines. */
 /**
  * The stages of a whole event (Play-In, Swiss, Main Event...) on the parent's page: pick a stage, see its bracket,
  * standings and series. Starts on the newest stage that has a bracket (the knockouts), else the newest stage.
@@ -285,7 +284,7 @@ const ChildStages: React.FC<{ kids: { n: string; u: string }[] }> = ({ kids }) =
         ))}
         <EventLink name={tl("Open {stage}", { stage: x.n })} u={x.u} className="ml-auto text-rw-teal hover:underline" />
       </div>
-      {b.length > 0 && <Bracket stages={b} />}
+      {b.length > 0 && <Bracket key={x.u} stages={b} />}
       {x.standings && x.standings.length > 0 && (
         <div className={`grid gap-3 ${x.standings.length > 1 ? "md:grid-cols-2" : ""}`}>
           {x.standings.map((t, k) => (
@@ -293,11 +292,12 @@ const ChildStages: React.FC<{ kids: { n: string; u: string }[] }> = ({ kids }) =
           ))}
         </div>
       )}
-      {l.length > 0 && <StageLists stages={l} />}
+      {l.length > 0 && <StageLists key={x.u} stages={l} />}
     </div>
   );
 };
 
+/** Knockout rounds as bracket columns (quarterfinals → semifinals → final), joined by lines. */
 export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boolean; note?: (r: SeriesRow) => React.ReactNode; title?: string }> = ({
   stages,
   hide,
