@@ -282,7 +282,8 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                   {upcomingMatches.map((m) => {
                     const opp = m.team1Code.toUpperCase() === upperCode ? m.team2Name : m.team1Name;
                     const oppCode = m.team1Code.toUpperCase() === upperCode ? m.team2Code : m.team1Code;
-                    const h2h = computeHeadToHead(teamCode, oppCode, schedule, m.matchId);
+                    // spoiler mode: a series under way doesn't add its games yet
+                    const h2h = computeHeadToHead(teamCode, oppCode, schedule, m.matchId, !settings.spoilerMode);
                     return (
                       <div
                         key={m.matchId}

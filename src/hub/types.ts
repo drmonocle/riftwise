@@ -378,6 +378,8 @@ export interface HubRatings {
 }
 
 export interface HubTeam {
+  /** active teams: who played the latest games in each role, [name, slug, role] */
+  starters?: [string, string, string][];
   /** storylines: milestones within reach, streaks, unbeaten runs */
   notes?: import("../components/hub/Storylines").Notes;
   name: string;
@@ -483,7 +485,8 @@ export interface HubChamp {
   lane12?: Record<string, number[]> | null;
   /** bot lane partner -> [champion, games, wins] */
   duos?: [string, number, number][] | null;
-  patches?: { p: string; pk: number; w: number; b: number; g: number }[];
+  /** per patch: picks, wins, bans, games where it was picked or banned (pr, from builds of 2026-10-18), games */
+  patches?: { p: string; pk: number; w: number; b: number; pr?: number; g: number }[];
 }
 
 export interface HubGameRecord {
@@ -588,8 +591,8 @@ export interface PatchRow {
   from: string;
   to: string;
   g: number;
-  /** [champion, picks, bans, wins] */
-  c: [string, number, number, number][];
+  /** [champion, picks, bans, wins, games it was picked or banned in (builds from 2026-10-18)] */
+  c: [string, number, number, number, number?][];
   /** patch movers against `prev` (the patch before with 30+ games): [champion, presence now, presence before, wins, picks] */
   prev?: string;
   up?: PatchMove[];

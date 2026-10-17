@@ -73,6 +73,8 @@ const Card: React.FC<{ d: CardData }> = ({ d }) => {
     // signed numbers (gold leads): compare the raw values; otherwise share of the total
     let left = a + b > 0 ? a / (a + b) : 0.5;
     if (r.va < 0 || r.vb < 0) left = r.va === r.vb ? 0.5 : r.va > r.vb ? 0.7 : 0.3;
+    // lower is better (deaths, game length): the better side gets the longer bar
+    if (r.better === "low") left = 1 - left;
     const aBetter = r.better === "low" ? r.va < r.vb : r.va > r.vb;
     const bBetter = r.better === "low" ? r.vb < r.va : r.vb > r.va;
     return (

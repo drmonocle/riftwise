@@ -75,6 +75,11 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean }> = ({ 
   const [open, setOpen] = useState(false);
   const [history, setHistory] = useState<[number, number][] | null>(null);
   const startRef = useRef<Record<string, number>>({});
+  // the next game of the series starts with a clean slate (not game 1's numbers and gold graph)
+  useEffect(() => {
+    setState(null);
+    setHistory(null);
+  }, [game?.id]);
 
   useEffect(() => {
     if (!game || !showStats) return;

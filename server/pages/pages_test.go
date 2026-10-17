@@ -44,7 +44,7 @@ func testSite(t *testing.T) *store {
 	for k, v := range files {
 		must(os.WriteFile(filepath.Join(hub, "seo", k+".tsv"), []byte(v), 0o644))
 	}
-	must(os.WriteFile(filepath.Join(hub, "alias.json"), []byte(`{"team": {"sk-telecom-t1": "t1"}}`), 0o644))
+	must(os.WriteFile(filepath.Join(hub, "alias.json"), []byte(`{"team": {"sk-telecom-t1": "t1"}, "league": {"lck": "lol-champions-korea", "worlds": "world-championship"}}`), 0o644))
 	s := &store{site: dir}
 	s.refresh()
 	return s
@@ -98,6 +98,10 @@ func TestUnknownAndOldNames(t *testing.T) {
 	w := get(s, "/riftwise/team/sk-telecom-t1")
 	if w.Code != 301 || w.Header().Get("Location") != "/riftwise/team/t1" {
 		t.Errorf("old team name: %d %q", w.Code, w.Header().Get("Location"))
+	}
+	w = get(s, "/riftwise/league/worlds")
+	if w.Code != 301 || w.Header().Get("Location") != "/riftwise/league/world-championship" {
+		t.Errorf("league short name: %d %q", w.Code, w.Header().Get("Location"))
 	}
 	if w := get(s, "/riftwise/stats/tournaments/2019"); w.Code != 200 || !strings.Contains(w.Body.String(), "in 2019") {
 		t.Errorf("tournaments of a year: %d", w.Code)

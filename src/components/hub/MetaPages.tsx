@@ -52,7 +52,7 @@ export const PatchesPanel: React.FC = () => {
                 </span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-1 text-xs">
-                {p.c.map(([c, pk, b, w]) => (
+                {p.c.map(([c, pk, b, w, pr]) => (
                   <div
                     key={c}
                     className="flex items-center justify-between gap-1 min-w-0"
@@ -66,7 +66,7 @@ export const PatchesPanel: React.FC = () => {
                         wr: pk ? `${Math.round((w / pk) * 100)}%` : "–",
                       })}
                     >
-                      {Math.round(((pk + b) / Math.max(p.g, 1)) * 100)}%
+                      {Math.round(((pr ?? pk + b) / Math.max(p.g, 1)) * 100)}%
                     </span>
                   </div>
                 ))}
@@ -194,9 +194,10 @@ const LeagueLists: React.FC<{ rows: LeagueRow[]; scope: LeagueScope; q: string }
     if (scope === "past") return [{ key: "past", title: "", rows: list.filter((l) => l.pr && !isCurrent(l)) }];
     const now = list.filter(isCurrent);
     return [
-      { key: "intl", title: tl("International events"), rows: now.filter((l) => intl(l)) },
+      // the big internationals (Worlds, MSI, First Stand...); show events and invitationals go with the others
+      { key: "intl", title: tl("International events"), rows: now.filter((l) => intl(l) && l.pr) },
       { key: "main", title: tl("Main leagues"), rows: now.filter((l) => l.pr && !intl(l)) },
-      { key: "other", title: tl("Other leagues this year"), rows: now.filter((l) => !l.pr && !intl(l)), limit: 40 },
+      { key: "other", title: tl("Other leagues this year"), rows: now.filter((l) => !l.pr), limit: 40 },
     ].filter((g) => g.rows.length);
   }, [rows, scope, q]);
   if (!groups.length) return <p className="text-xs text-rw-sub py-4 text-center">{tl("No leagues match.")}</p>;
@@ -273,7 +274,7 @@ const LeagueView: React.FC<{ l: HubLeague }> = ({ l }) => {
           {[
             l.region ? regionName(l.region, l.region) : null,
             tn("{n} tournament", "{n} tournaments", l.events.length),
-            years.length ? `${years[years.length - 1]}–${years[0]}` : null,
+            years.length > 1 ? `${years[years.length - 1]}–${years[0]}` : years[0] || null,
           ]
             .filter(Boolean)
             .join(" · ")}

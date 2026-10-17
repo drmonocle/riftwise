@@ -4,7 +4,7 @@ import { Search, Calendar, Star, Trophy } from "lucide-react";
 import { AddToCalendarMenu } from "../AddToCalendarMenu";
 import { MatchPrepButton } from "../MatchPrepButton";
 import { ShareMatchButton } from "../ShareMatchButton";
-import { isMatchFollowed, computeHeadToHead } from "../../helpers";
+import { isMatchFollowed, followedPlayerTeams, computeHeadToHead } from "../../helpers";
 import { clickable } from "../../a11y";
 import { H2HMeter } from "../H2HMeter";
 import { StandingsView } from "./StandingsView";
@@ -84,6 +84,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
   const now = new Date();
   const todayStr = now.toDateString();
+  const playerTeams = followedOnly ? followedPlayerTeams(settings.followedPlayers, catalog) : [];
 
   // Filter matches
   const filtered = schedule.filter((m) => {
@@ -103,7 +104,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
     // Followed only
     if (followedOnly) {
-      if (!isMatchFollowed(m, settings, catalog?.leagues)) return false;
+      if (!isMatchFollowed(m, settings, catalog?.leagues, playerTeams)) return false;
     }
 
     // Search query

@@ -39,12 +39,16 @@ export function champAgg(games: ChampGame[], f: ChampFilter): { games: number; r
   type Acc = {
     p: number; w: number; b: number; k: number; d: number; a: number; ks: number; cs: number; gold: number; dmg: number; min: number;
     blindN: number; blindD: number; fp: number; roles: number[]; blueP: number; redP: number;
+    /** picks in any role (a role view scales the champion's bans by its share of picks in that role) */
+    allP: number;
+    /** games it was picked or banned in (once per game) */
+    pres: number;
   };
   const acc = new Map<string, Acc>();
   const get = (c: string): Acc => {
     let x = acc.get(c);
     if (!x) {
-      x = { p: 0, w: 0, b: 0, k: 0, d: 0, a: 0, ks: 0, cs: 0, gold: 0, dmg: 0, min: 0, blindN: 0, blindD: 0, fp: 0, roles: [0, 0, 0, 0, 0], blueP: 0, redP: 0 };
+      x = { p: 0, w: 0, b: 0, k: 0, d: 0, a: 0, ks: 0, cs: 0, gold: 0, dmg: 0, min: 0, blindN: 0, blindD: 0, fp: 0, roles: [0, 0, 0, 0, 0], blueP: 0, redP: 0, allP: 0, pres: 0 };
       acc.set(c, x);
     }
     return x;
@@ -55,6 +59,9 @@ export function champAgg(games: ChampGame[], f: ChampFilter): { games: number; r
     if (f.event !== undefined && ev !== f.event) continue;
     if (f.patch && patch !== f.patch) continue;
     n++;
+    // a champion counts once per game for presence (blind-pick mirrors, a ban written twice)
+    const present = new Set<string>();
+    const pickedHere = new Set([...bp, ...rp].map((x) => x[0]));
     const sides: ["b" | "r", typeof bp, typeof bb, typeof rp][] = [
       ["b", bp, bb, rp],
       ["r", rp, rb, bp],
@@ -64,8 +71,10 @@ export function champAgg(games: ChampGame[], f: ChampFilter): { games: number; r
       const won = side === "b" ? blueWon : 1 - blueWon;
       picks.forEach((pk, i) => {
         const [c, role, k, d, a, cs, gold, dmg] = pk;
+        get(c).allP++;
         if (f.role !== undefined && role !== f.role) return;
         const x = get(c);
+        present.add(c);
         x.p++;
         x.w += won;
         if (side === "b") x.blueP++;
@@ -92,20 +101,28 @@ export function champAgg(games: ChampGame[], f: ChampFilter): { games: number; r
         }
         if (ordered && side === "b" && i === 0) x.fp++;
       });
-      for (const c of bans) get(c).b++;
+      for (const c of new Set(bans)) {
+        if (pickedHere.has(c)) continue;
+        get(c).b++;
+        if (f.role === undefined) present.add(c);
+      }
     }
+    for (const c of present) get(c).pres++;
   }
   const rows: ChampAggRow[] = [];
   for (const [c, x] of acc) {
     if (f.role !== undefined && x.p === 0) continue; // a role view lists champions played in that role
     const role = x.roles.some((v) => v > 0) ? x.roles.indexOf(Math.max(...x.roles)) : -1;
+    // in a role view a ban counts by the champion's share of picks in that role (a top laner flexed to support
+    // once isn't 80% present among supports)
+    const b = f.role !== undefined ? (x.allP ? Math.round((x.b * x.p) / x.allP) : 0) : x.b;
     rows.push({
       c,
       role,
       p: x.p,
       w: x.w,
-      b: x.b,
-      presence: n ? (x.p + x.b) / n : 0,
+      b,
+      presence: n ? Math.min(1, (f.role !== undefined ? x.pres + b : x.pres) / n) : 0,
       wr: x.p ? x.w / x.p : null,
       kda: x.ks ? Number(((x.k + x.a) / Math.max(x.d, 1)).toFixed(2)) : null,
       blind: x.blindD ? x.blindN / x.blindD : null,

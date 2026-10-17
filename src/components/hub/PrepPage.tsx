@@ -41,8 +41,13 @@ export async function loadSide(slug: string): Promise<Side> {
     loadTeamGames(slug).catch(() => [] as TeamGameRow[]),
     loadTeamSeries(slug).catch(() => [] as TeamSeriesRow[]),
   ]);
+  // who played the team's latest games (the build's pick), else the most games in the newest roster year
   const latest = team.roster[0];
-  const starters = ROLES.map((r) => (latest?.p || []).filter((x) => x.r === r && x.u).sort((a, b) => b.g - a.g)[0] || null);
+  const starters = ROLES.map((r) => {
+    const st = team.starters?.find((x) => x[2] === r);
+    if (st) return { n: st[0], u: st[1], r, g: 0 };
+    return (latest?.p || []).filter((x) => x.r === r && x.u).sort((a, b) => b.g - a.g)[0] || null;
+  });
   const players = await Promise.all(
     starters.map((x) =>
       x && x.u

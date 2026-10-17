@@ -91,6 +91,8 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
     const qq = q.trim().toLowerCase();
     return (state.data || []).filter((r) => (year === "all" || r[0].startsWith(year)) && (!qq || r[1].toLowerCase().includes(qq) || r[5].toLowerCase().includes(qq)));
   }, [state.data, year, q]);
+  // the same spoiler switch as the list below: while its fresh results are hidden, so is the count of wins
+  const [seriesHidden] = useHidden(`teamseries:${slug}:${year}:${q}`, rows.find((r) => isFresh(r[0]))?.[0]);
   if (state.loading) return <Loading />;
   if (state.error || !state.data) return <Failed missing={state.missing} />;
   const won = rows.filter((r) => r[3] > r[4]).length;
@@ -112,7 +114,10 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
           aria-label={tl("Filter by opponent or tournament…")}
           className={`${select} flex-1 min-w-[10rem] placeholder-rw-muted`}
         />
-        <span className="text-[11px] text-rw-sub">{tn("{n} series", "{n} series", rows.length)} · {tl("{w} won", { w: won })}</span>
+        <span className="text-[11px] text-rw-sub">
+          {tn("{n} series", "{n} series", rows.length)}
+          {!seriesHidden && <> · {tl("{w} won", { w: won })}</>}
+        </span>
       </div>
       <SeriesList rows={rows} teamName={teamName} spoilerKey={`teamseries:${slug}:${year}:${q}`} />
     </div>
@@ -194,7 +199,7 @@ const PlayerGamesBody: React.FC<{ slug: string }> = ({ slug }) => {
         <span className="text-[11px] text-rw-sub">
           {tn("{n} game", "{n} games", rows.length)}
           {!hidden && rows.length > 0 && <> · {tl("{pct} win rate", { pct: `${Math.round((won / rows.length) * 100)}%` })}</>}
-          {rows.length > 0 && <> · {tl("KDA {n}", { n: ((k + a) / Math.max(d, 1)).toFixed(2) })}</>}
+          {!hidden && rows.length > 0 && <> · {tl("KDA {n}", { n: ((k + a) / Math.max(d, 1)).toFixed(2) })}</>}
         </span>
         {hidden && <RevealButton onReveal={reveal} small />}
       </div>
@@ -209,9 +214,7 @@ const PlayerGamesBody: React.FC<{ slug: string }> = ({ slug }) => {
                 </span>
                 <ChampIcon name={r[2]} size={18} />
                 <span className="truncate min-w-0">
-                  <span className="text-rw-text tabular-nums">
-                    {r[3]}/{r[4]}/{r[5]}
-                  </span>{" "}
+                  <span className="text-rw-text tabular-nums">{hide ? "?/?/?" : `${r[3]}/${r[4]}/${r[5]}`}</span>{" "}
                   <span className="text-rw-sub">
                     vs {r[8]}
                     {r[10] ? ` · ${roleName(r[10])}` : ""}

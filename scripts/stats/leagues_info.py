@@ -9,6 +9,7 @@ SHORT = {
     # internationals
     "World Championship": "Worlds",
     "Mid-Season Invitational": "MSI",
+    "First Stand": "FST",
     "Esports World Cup": "EWC",
     "Intel Extreme Masters": "IEM",
     # main leagues

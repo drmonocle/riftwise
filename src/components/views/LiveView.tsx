@@ -9,6 +9,7 @@ import { ShareMatchButton } from "../ShareMatchButton";
 import {
   getLeagueBroadcastStreams,
   isMatchFollowed,
+  followedPlayerTeams,
   computeHeadToHead,
   isUpcomingOrDelayed,
   minutesLate,
@@ -169,13 +170,15 @@ export const LiveView: React.FC<LiveViewProps> = ({
     .filter((m) => isUpcomingOrDelayed(m, liveLeagueSlugs, now))
     .sort((a, b) => new Date(a.startTimeUtc).getTime() - new Date(b.startTimeUtc).getTime());
 
+  const playerTeams = followedPlayerTeams(settings.followedPlayers, catalog);
   const hasWatchlist =
     settings.followedTeams.length > 0 ||
+    playerTeams.length > 0 ||
     settings.followedLeagues.length > 0 ||
     (settings.followedRegions && settings.followedRegions.length > 0);
 
   // Matches that match user's watchlist (followed teams, followed leagues, or followed regions)
-  const isFollowed = (m: Match) => isMatchFollowed(m, settings, catalog?.leagues);
+  const isFollowed = (m: Match) => isMatchFollowed(m, settings, catalog?.leagues, playerTeams);
 
   let nextMatch: Match | undefined;
   let nextTag = tl("Next upcoming match");
@@ -187,7 +190,9 @@ export const LiveView: React.FC<LiveViewProps> = ({
       nextMatch = followedMatches[0];
       const isTeam =
         settings.followedTeams.includes(nextMatch.team1Code) ||
-        settings.followedTeams.includes(nextMatch.team2Code);
+        settings.followedTeams.includes(nextMatch.team2Code) ||
+        playerTeams.includes(nextMatch.team1Code.toUpperCase()) ||
+        playerTeams.includes(nextMatch.team2Code.toUpperCase());
       nextTag = isTeam
         ? tl("Next match you follow")
         : tl("Next in your leagues · {league}", { league: nextMatch.leagueName });
