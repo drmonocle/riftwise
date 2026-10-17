@@ -168,6 +168,7 @@ import { PlayerPage } from "../hub/PlayerPage";
 import { EventPage } from "../hub/EventPage";
 import { MatchPage } from "../hub/MatchPage";
 import { ChampPage } from "../hub/ChampPage";
+import { STable } from "../STable";
 
 interface StatsViewProps {
   settings: AppSettings;
@@ -466,7 +467,7 @@ const TitlesPanel: React.FC = () => {
             .slice(0, 300);
           return (
             <div className={`${card} overflow-x-auto`}>
-              <table className="w-full text-xs">
+              <STable className="w-full text-xs">
                 <thead>
                   <tr>
                     <th className={th}>{tl("Event")}</th>
@@ -499,13 +500,13 @@ const TitlesPanel: React.FC = () => {
                       <td className={`${td} text-rw-sub`}>
                         {x.score} vs {x.l}
                       </td>
-                      <td className={`${td} text-rw-muted`}>
+                      <td className={`${td} text-rw-muted`} data-sort={x.date}>
                         {fmtDate(x.date)}
                       </td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </STable>
             </div>
           );
         }}

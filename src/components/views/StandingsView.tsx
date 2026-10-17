@@ -14,6 +14,7 @@ import {
   TournamentStandings,
 } from "../../api";
 import { tl, tc, locale, regionName } from "../../i18n";
+import { STable } from "../STable";
 
 interface StandingsViewProps {
   schedule: Match[];
@@ -243,7 +244,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                     {sec.name}
                   </div>
                 )}
-                <table className="w-full text-left text-xs">
+                <STable className="w-full text-left text-xs">
                   <thead className="bg-rw-bg border-b border-rw-border text-rw-sub font-bold uppercase tracking-wider text-[11px]">
                     <tr>
                       <th className="py-2.5 px-3 w-10 text-center">#</th>
@@ -305,7 +306,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                       }),
                     )}
                   </tbody>
-                </table>
+                </STable>
               </div>
             ) : (
               <div key={si} className="bg-rw-surface border border-rw-border rounded-xl shadow-lg overflow-hidden">

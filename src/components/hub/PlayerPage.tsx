@@ -30,6 +30,7 @@ import {
   useLoad,
   usePageTitle,
 } from "./ui";
+import { STable } from "../STable";
 
 const BEST_LABEL: Record<string, string> = {
   kills: tk("Most kills"),
@@ -249,7 +250,7 @@ const PlayerView: React.FC<{
           }
         >
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <STable className="w-full text-xs">
               <thead>
                 <tr>
                   <th className={th}>{tl("Tournament")}</th>
@@ -266,7 +267,7 @@ const PlayerView: React.FC<{
                   <PlayerEventRow key={x.e} x={x} />
                 ))}
               </tbody>
-            </table>
+            </STable>
           </div>
         </Section>
       )}
@@ -287,7 +288,7 @@ const PlayerView: React.FC<{
           </ul>
         </Section>
         <Section title={tl("By year")}>
-          <table className="w-full text-xs">
+          <STable className="w-full text-xs">
             <thead>
               <tr>
                 <th className={th}>{tl("Year")}</th>
@@ -310,7 +311,7 @@ const PlayerView: React.FC<{
                 </tr>
               ))}
             </tbody>
-          </table>
+          </STable>
         </Section>
       </div>
 
@@ -331,7 +332,7 @@ const PlayerView: React.FC<{
         }
       >
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <STable className="w-full text-xs">
             <thead>
               <tr>
                 <th className={th}>{tl("Champion")}</th>
@@ -358,7 +359,7 @@ const PlayerView: React.FC<{
                 </tr>
               ))}
             </tbody>
-          </table>
+          </STable>
         </div>
       </Section>
 

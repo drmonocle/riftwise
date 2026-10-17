@@ -29,6 +29,7 @@ import {
   useLoad,
   usePageTitle,
 } from "./ui";
+import { STable } from "../STable";
 
 const sel =
   "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text max-w-[12rem]";
@@ -460,7 +461,7 @@ const FinderBody: React.FC<{
           <>
             <TableExport tableRef={tableRef} name={name} />
             <div className="overflow-x-auto">
-              <table ref={tableRef} className="w-full text-xs">
+              <STable ref={tableRef} className="w-full text-xs">
                 <thead>
                   <tr>
                     <th className={th}>{tl("Date")}</th>
@@ -480,7 +481,7 @@ const FinderBody: React.FC<{
                       key={`${g[0]}-${g[14] || i}-${g[15] || 0}-${i}`}
                       className="border-t border-rw-border"
                     >
-                      <td className={`${td} text-rw-sub`}>
+                      <td className={`${td} text-rw-sub`} data-sort={g[0]}>
                         {g[14] ? (
                           <HubLink
                             to={{ kind: "match", slug: g[14] }}
@@ -523,7 +524,7 @@ const FinderBody: React.FC<{
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </STable>
             </div>
             {found.length > limit && (
               <button

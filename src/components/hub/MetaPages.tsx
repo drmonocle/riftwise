@@ -22,6 +22,7 @@ import {
   useLoad,
   usePageTitle,
 } from "./ui";
+import { STable } from "../STable";
 
 // ── Patches ───────────────────────────────────────────────────────────────
 
@@ -214,7 +215,7 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
   return (
     <div className={`${card} overflow-x-auto space-y-2`}>
       {title && <h3 className="text-xs font-bold uppercase tracking-wider text-rw-accent">{title}</h3>}
-      <table className="w-full text-xs">
+      <STable className="w-full text-xs">
         <thead>
           <tr>
             <th className={th}>{tl("League")}</th>
@@ -243,7 +244,7 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
             </tr>
           ))}
         </tbody>
-      </table>
+      </STable>
       {n > 0 && rows.length > n && (
         <button type="button" onClick={() => setN(0)} className="text-xs text-rw-teal hover:underline">
           {tl("Show more ({n} left)", { n: rows.length - n })}
@@ -305,7 +306,7 @@ const LeagueView: React.FC<{ l: HubLeague }> = ({ l }) => {
       )}
       <Section title={tl("Every tournament")}>
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <STable className="w-full text-xs">
             <thead>
               <tr>
                 <th className={th}>{tl("Tournament")}</th>
@@ -318,7 +319,7 @@ const LeagueView: React.FC<{ l: HubLeague }> = ({ l }) => {
                 <LeagueEventRow key={e.u} e={e} />
               ))}
             </tbody>
-          </table>
+          </STable>
         </div>
       </Section>
     </div>
@@ -336,6 +337,7 @@ const LeagueEventRow: React.FC<{ e: HubLeague["events"][number] }> = ({
       </td>
       <td
         className={`${td} text-rw-muted hidden sm:table-cell whitespace-nowrap`}
+        data-sort={e.st}
       >
         {fmtDate(e.st, false)}
         {e.en && e.en !== e.st ? ` – ${fmtDate(e.en)}` : ""}

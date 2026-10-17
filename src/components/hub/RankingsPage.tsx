@@ -22,6 +22,7 @@ import {
   useLoad,
   usePageTitle,
 } from "./ui";
+import { STable } from "../STable";
 
 const sel =
   "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text max-w-[14rem]";
@@ -268,7 +269,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
             {tl("Average rating of each league's best four teams.")}
           </p>
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <STable className="w-full text-xs">
               <thead>
                 <tr>
                   <th className={th}>#</th>
@@ -306,7 +307,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </STable>
           </div>
         </Section>
 
