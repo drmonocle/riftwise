@@ -2,17 +2,17 @@
  * Page links for the stats hub. On the web every page has its own address, so it can be shared,
  * bookmarked and found by search engines:
  *
- *   /riftwise/stats                      hub front page
- *   /riftwise/stats/<section>[/<year>]   tournaments, leagues, champions, patches, records, titles, compare, data, about, prep,
+ *   /stats                      hub front page
+ *   /stats/<section>[/<year>]   tournaments, leagues, champions, patches, records, titles, compare, data, about, prep,
  *                                         rankings, finder (?league=..&year=..&team=..), draft (?teams=a,b)
- *   /riftwise/stats/compare?teams=t1,gen-g&p=y2026   a comparison (players=..., p = period: all, last20, y2026, e:<event>)
- *   /riftwise/stats/champions?league=lck&year=2026&event=..&patch=26.18&side=b&role=Mid   champion stats with filters
- *   /riftwise/player/<slug>              /team/<slug>  /tournament/<slug>  /match/<slug>  /champion/<slug>  /league/<slug>
+ *   /stats/compare?teams=t1,gen-g&p=y2026   a comparison (players=..., p = period: all, last20, y2026, e:<event>)
+ *   /stats/champions?league=lck&year=2026&event=..&patch=26.18&side=b&role=Mid   champion stats with filters
+ *   /player/<slug>              /team/<slug>  /tournament/<slug>  /match/<slug>  /champion/<slug>  /league/<slug>
  *
  * The desktop app has no address bar, so it keeps its own back stack instead.
  */
 import { useSyncExternalStore } from "react";
-import { IS_WEB } from "../platform";
+import { IS_WEB, SITE_URL } from "../platform";
 
 export type HubSection =
   | "tournaments" | "leagues" | "champions" | "patches" | "records" | "titles" | "compare" | "data" | "about" | "prep"
@@ -27,7 +27,7 @@ export type HubRoute =
 export const HUB_HOME: HubRoute = { kind: "home" };
 /** The compare page with who is compared over which period (all in the address). */
 export type CompareRoute = { kind: "compare"; mode?: "team" | "player"; a?: string; b?: string; period?: string };
-/** Match prep for two teams: /riftwise/stats/prep?teams=t1,gen-g&p=y2026 */
+/** Match prep for two teams: /stats/prep?teams=t1,gen-g&p=y2026 */
 export type PrepRoute = { kind: "prep"; a?: string; b?: string; period?: string };
 const SECTIONS: HubSection[] = [
   "tournaments", "leagues", "champions", "patches", "records", "titles", "compare", "data", "about", "prep", "rankings", "finder", "draft",
@@ -39,7 +39,7 @@ const ENTITY_PATH: Record<HubEntity, string> = {
 };
 const PATH_ENTITY: Record<string, HubEntity> = Object.fromEntries(Object.entries(ENTITY_PATH).map(([k, v]) => [v, k as HubEntity]));
 
-/** "/riftwise/" on the web build, "/" in the desktop app. */
+/** "/" (riftwise.gg is the site root; the desktop app has no address). */
 export const BASE: string = (import.meta.env.BASE_URL || "/").replace(/\/?$/, "/");
 
 /** The hub page an address points at, or null when it isn't one (the live scores page, say). */
@@ -96,7 +96,7 @@ export function hubPath(r: HubRoute): string {
 }
 
 /** Full shareable web address of a hub page (the desktop app shares these too). */
-export const hubShareUrl = (r: HubRoute): string => `https://lolworlds.com/riftwise/${hubPath(r).slice(BASE.length)}`;
+export const hubShareUrl = (r: HubRoute): string => `${SITE_URL}${hubPath(r).slice(BASE.length)}`;
 
 export const sameRoute = (a: HubRoute, b: HubRoute) => hubPath(a) === hubPath(b);
 
@@ -178,7 +178,7 @@ export function syncFromLocation(): HubRoute | null {
 
 /**
  * Keeps the address bar in step with the main tabs on the web: the Stats tab shows its page's
- * address, any other tab the plain /riftwise/ address. Moving into or out of the Stats tab adds a
+ * address, any other tab the plain site address (/). Moving into or out of the Stats tab adds a
  * history entry (so Back returns to where you were); switching between other tabs doesn't.
  */
 export function syncTabAddress(prevTab: string, nextTab: string): void {

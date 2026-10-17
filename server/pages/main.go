@@ -1,4 +1,4 @@
-// riftwise-pages gives every RiftWise stats page (lolworlds.com/riftwise/player/faker,
+// riftwise-pages gives every RiftWise stats page (riftwise.gg/player/faker,
 // /team/t1, /tournament/worlds-2025, /match/..., /champion/ahri, /league/lck, /stats...) the app's index.html
 // with that page's own title, description, canonical address and link-preview tags, so search
 // engines index each page and links shared in chat apps show what they point to. It also serves
@@ -7,7 +7,10 @@
 // Titles and descriptions come from the nightly stats build (stats/<version>/hub/seo/*.tsv), and the
 // page itself is the deployed index.html; both are re-read when they change.
 //
-//	riftwise-pages -site C:\inetpub\wwwroot\riftwise -addr 127.0.0.1:8093
+// IIS forwards the pages as /riftwise/<page> (basePath, the address they had before the move to riftwise.gg);
+// every address this service writes (canonical, sitemaps, redirects) is the public one under -public.
+//
+//	riftwise-pages -site C:\inetpub\riftwise.gg -stats C:\inetpub\wwwroot\riftwise\stats -addr 127.0.0.1:8093
 package main
 
 import (
@@ -28,11 +31,23 @@ import (
 )
 
 const (
-	version  = "1.5.0"
-	origin   = "https://lolworlds.com"
-	basePath = "/riftwise/"
-	perMap   = 45000 // URLs per sitemap file (the limit is 50,000)
+	version  = "1.6.0"
+	basePath = "/riftwise/" // what IIS forwards here
+	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
+
+// publicURL is the site's public address with a trailing slash (-public); publicPath its path part ("/").
+var publicURL, publicPath = "https://riftwise.gg/", "/"
+
+func setPublic(u string) {
+	publicURL = strings.TrimRight(u, "/") + "/"
+	publicPath = "/"
+	if i := strings.Index(publicURL, "://"); i >= 0 {
+		if j := strings.Index(publicURL[i+3:], "/"); j >= 0 {
+			publicPath = publicURL[i+3+j:]
+		}
+	}
+}
 
 // Path segment -> seo file kind
 var kinds = map[string]string{"team": "team", "player": "player", "tournament": "event", "match": "game", "champion": "champ", "league": "league"}
@@ -64,7 +79,8 @@ type entry struct {
 
 type store struct {
 	mu        sync.RWMutex
-	site      string
+	site      string // the web build (index.html)
+	stats     string // the stats data (latest.json, <version>/hub/...)
 	version   string
 	pages     map[string]map[string]entry  // kind -> slug -> entry
 	order     map[string][]string          // kind -> slugs in file order (for sitemaps)
@@ -99,11 +115,11 @@ func (s *store) refresh() {
 	var latest struct {
 		Version string `json:"version"`
 	}
-	b, err := os.ReadFile(filepath.Join(s.site, "stats", "latest.json"))
+	b, err := os.ReadFile(filepath.Join(s.stats, "latest.json"))
 	if err != nil || json.Unmarshal(b, &latest) != nil || latest.Version == "" || latest.Version == s.version || latest.Version == s.failed {
 		return
 	}
-	hub := filepath.Join(s.site, "stats", latest.Version, "hub")
+	hub := filepath.Join(s.stats, latest.Version, "hub")
 	pages := map[string]map[string]entry{}
 	order := map[string][]string{}
 	for _, kind := range append(requiredKinds, "league") {
@@ -167,7 +183,7 @@ func (s *store) page(title, desc, canonical string, index bool) string {
 	tags.WriteString(`    <meta property="og:title" content="` + t + `" />` + "\n")
 	tags.WriteString(`    <meta property="og:description" content="` + d + `" />` + "\n")
 	tags.WriteString(`    <meta property="og:url" content="` + c + `" />` + "\n")
-	tags.WriteString(`    <meta property="og:image" content="` + origin + basePath + `icon-512.png" />` + "\n")
+	tags.WriteString(`    <meta property="og:image" content="` + publicURL + `icon-512.png" />` + "\n")
 	tags.WriteString(`    <meta name="twitter:card" content="summary" />` + "\n")
 	if !index {
 		tags.WriteString(`    <meta name="robots" content="noindex" />` + "\n")
@@ -205,7 +221,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		to := s.alias[kind][slug]
 		s.mu.RUnlock()
 		if !ok && to != "" && to != slug && (kind == "team" || kind == "league") {
-			http.Redirect(w, r, basePath+kind+"/"+to, http.StatusMovedPermanently)
+			http.Redirect(w, r, publicPath+parts[0]+"/"+to, http.StatusMovedPermanently)
 			return
 		}
 		if !ok {
@@ -218,7 +234,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	canonical := origin + r.URL.Path
+	canonical := publicURL + rest
 	body := s.page(title, desc, canonical, index)
 	if body == "" {
 		http.Error(w, "RiftWise is starting, try again in a moment", http.StatusServiceUnavailable)
@@ -232,7 +248,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Sitemaps: /riftwise/sitemap.xml lists the pieces (/riftwise/sitemap-<kind>-<n>.xml).
+// Sitemaps: riftwise.gg/sitemap.xml lists the pieces (riftwise.gg/sitemap-<kind>-<n>.xml).
 func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 	s.refresh()
 	name := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, basePath), ".xml")
@@ -246,7 +262,7 @@ func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "public, max-age=3600")
 	if name == "sitemap" {
 		fmt.Fprint(w, `<?xml version="1.0" encoding="UTF-8"?>`+"\n"+`<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`+"\n")
-		fmt.Fprintf(w, "<sitemap><loc>%s%ssitemap-sections-1.xml</loc></sitemap>\n", origin, basePath)
+		fmt.Fprintf(w, "<sitemap><loc>%ssitemap-sections-1.xml</loc></sitemap>\n", publicURL)
 		for _, kind := range []string{"team", "player", "event", "league", "champ", "game"} {
 			n := 0
 			for _, slug := range s.order[kind] {
@@ -255,7 +271,7 @@ func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			for i := 1; i <= (n+perMap-1)/perMap; i++ {
-				fmt.Fprintf(w, "<sitemap><loc>%s%ssitemap-%s-%d.xml</loc><lastmod>%s</lastmod></sitemap>\n", origin, basePath, kind, i, lastmod)
+				fmt.Fprintf(w, "<sitemap><loc>%ssitemap-%s-%d.xml</loc><lastmod>%s</lastmod></sitemap>\n", publicURL, kind, i, lastmod)
 			}
 		}
 		fmt.Fprint(w, "</sitemapindex>\n")
@@ -274,7 +290,7 @@ func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, `<?xml version="1.0" encoding="UTF-8"?>`+"\n"+`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`+"\n")
 	if p[0] == "sections" {
 		for sec := range sections {
-			fmt.Fprintf(w, "<url><loc>%s%sstats%s</loc></url>\n", origin, basePath, map[bool]string{true: "", false: "/" + sec}[sec == ""])
+			fmt.Fprintf(w, "<url><loc>%sstats%s</loc></url>\n", publicURL, map[bool]string{true: "", false: "/" + sec}[sec == ""])
 		}
 	} else if _, ok := s.pages[p[0]]; ok {
 		i := 0
@@ -289,7 +305,7 @@ func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 			if i > part*perMap {
 				break
 			}
-			fmt.Fprintf(w, "<url><loc>%s%s%s/%s</loc><lastmod>%s</lastmod></url>\n", origin, basePath, kindPath[p[0]], html.EscapeString(slug), lastmod)
+			fmt.Fprintf(w, "<url><loc>%s%s/%s</loc><lastmod>%s</lastmod></url>\n", publicURL, kindPath[p[0]], html.EscapeString(slug), lastmod)
 		}
 	} else {
 		http.NotFound(w, r)
@@ -299,7 +315,9 @@ func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	site := flag.String("site", `C:\inetpub\wwwroot\riftwise`, "the deployed RiftWise web folder")
+	site := flag.String("site", `C:\inetpub\riftwise.gg`, "the deployed RiftWise web folder (index.html)")
+	stats := flag.String("stats", "", "the stats data folder (default: <site>\\stats)")
+	public := flag.String("public", "https://riftwise.gg/", "the site's public address")
 	addr := flag.String("addr", "127.0.0.1:8093", "listen address (IIS forwards to it)")
 	logDir := flag.String("logs", "", "folder for pages.log (default: log to the console)")
 	flag.Parse()
@@ -313,7 +331,11 @@ func main() {
 			log.SetOutput(f)
 		}
 	}
-	s := &store{site: *site}
+	setPublic(*public)
+	if *stats == "" {
+		*stats = filepath.Join(*site, "stats")
+	}
+	s := &store{site: *site, stats: *stats}
 	s.refresh()
 
 	mux := http.NewServeMux()
@@ -340,6 +362,6 @@ func main() {
 		s.serve(w, r)
 	})
 	srv := &http.Server{Addr: *addr, Handler: mux, ReadHeaderTimeout: 10 * time.Second, WriteTimeout: 30 * time.Second}
-	log.Printf("riftwise-pages %s on %s, site %s", version, *addr, *site)
+	log.Printf("riftwise-pages %s on %s, site %s, stats %s, public %s", version, *addr, *site, *stats, publicURL)
 	log.Fatal(srv.ListenAndServe())
 }

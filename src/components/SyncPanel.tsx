@@ -119,7 +119,7 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
 };
 
 /**
- * A one-time sign-in QR code: scanning it with a phone camera opens lolworlds.com/riftwise signed in to this account.
+ * A one-time sign-in QR code: scanning it with a phone camera opens riftwise.gg signed in to this account.
  * It works once, for 10 minutes; a new one can be made any time.
  */
 const SignInQr: React.FC = () => {

@@ -1,7 +1,7 @@
 /**
  * Compare two teams or two players over any period (all time, last N games, a year, a tournament), side by side,
  * with the better number highlighted and their head-to-head. The choice lives in the address
- * (/riftwise/stats/compare?teams=t1,gen-g&p=y2026) so it can be shared.
+ * (/stats/compare?teams=t1,gen-g&p=y2026) so it can be shared.
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";

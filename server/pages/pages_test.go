@@ -45,7 +45,7 @@ func testSite(t *testing.T) *store {
 		must(os.WriteFile(filepath.Join(hub, "seo", k+".tsv"), []byte(v), 0o644))
 	}
 	must(os.WriteFile(filepath.Join(hub, "alias.json"), []byte(`{"team": {"sk-telecom-t1": "t1"}, "league": {"worlds": "world-championship"}}`), 0o644))
-	s := &store{site: dir}
+	s := &store{site: dir, stats: filepath.Join(dir, "stats")}
 	s.refresh()
 	return s
 }
@@ -71,7 +71,8 @@ func TestPageGetsItsOwnTags(t *testing.T) {
 	for _, want := range []string{
 		"<title>T1 – stats | RiftWise</title>",
 		`<meta name="description" content="T1: 1,216-644 &amp; more &lt;b&gt;" />`,
-		`<link rel="canonical" href="https://lolworlds.com/riftwise/team/t1" />`,
+		`<link rel="canonical" href="https://riftwise.gg/team/t1" />`,
+		`<meta property="og:image" content="https://riftwise.gg/icon-512.png" />`,
 		`<meta property="og:title" content="T1 – stats | RiftWise" />`,
 		`<div id="root"></div>`,
 	} {
@@ -96,11 +97,11 @@ func TestUnknownAndOldNames(t *testing.T) {
 		t.Errorf("unknown player: %d", w.Code)
 	}
 	w := get(s, "/riftwise/team/sk-telecom-t1")
-	if w.Code != 301 || w.Header().Get("Location") != "/riftwise/team/t1" {
+	if w.Code != 301 || w.Header().Get("Location") != "/team/t1" {
 		t.Errorf("old team name: %d %q", w.Code, w.Header().Get("Location"))
 	}
 	w = get(s, "/riftwise/league/worlds")
-	if w.Code != 301 || w.Header().Get("Location") != "/riftwise/league/world-championship" {
+	if w.Code != 301 || w.Header().Get("Location") != "/league/world-championship" {
 		t.Errorf("league short name: %d %q", w.Code, w.Header().Get("Location"))
 	}
 	if w := get(s, "/riftwise/stats/tournaments/2019"); w.Code != 200 || !strings.Contains(w.Body.String(), "in 2019") {
@@ -123,17 +124,17 @@ func TestUnknownAndOldNames(t *testing.T) {
 func TestSitemaps(t *testing.T) {
 	s := testSite(t)
 	idx := get(s, "/riftwise/sitemap.xml").Body.String()
-	if !strings.Contains(idx, "sitemap-team-1.xml") || !strings.Contains(idx, "sitemap-game-1.xml") {
+	if !strings.Contains(idx, "<loc>https://riftwise.gg/sitemap-team-1.xml</loc>") || !strings.Contains(idx, "sitemap-game-1.xml") {
 		t.Errorf("index: %s", idx)
 	}
 	teams := get(s, "/riftwise/sitemap-team-1.xml").Body.String()
-	if !strings.Contains(teams, "/riftwise/team/t1</loc>") || strings.Contains(teams, "small-team") {
+	if !strings.Contains(teams, "<loc>https://riftwise.gg/team/t1</loc>") || strings.Contains(teams, "small-team") {
 		t.Errorf("teams: %s", teams)
 	}
-	if !strings.Contains(get(s, "/riftwise/sitemap-sections-1.xml").Body.String(), "/riftwise/stats/records") {
+	if !strings.Contains(get(s, "/riftwise/sitemap-sections-1.xml").Body.String(), "<loc>https://riftwise.gg/stats/records</loc>") {
 		t.Error("sections sitemap")
 	}
-	if !strings.Contains(idx, "sitemap-league-1.xml") || !strings.Contains(get(s, "/riftwise/sitemap-league-1.xml").Body.String(), "/riftwise/league/lck</loc>") {
+	if !strings.Contains(idx, "sitemap-league-1.xml") || !strings.Contains(get(s, "/riftwise/sitemap-league-1.xml").Body.String(), "<loc>https://riftwise.gg/league/lck</loc>") {
 		t.Error("league sitemap")
 	}
 }
@@ -142,7 +143,7 @@ func TestSitemaps(t *testing.T) {
 func TestOldBuildWithoutLeagues(t *testing.T) {
 	s := testSite(t)
 	os.Remove(filepath.Join(s.site, "stats", "20261015000000", "hub", "seo", "league.tsv"))
-	s2 := &store{site: s.site}
+	s2 := &store{site: s.site, stats: s.stats}
 	s2.refresh()
 	if s2.version == "" {
 		t.Fatal("build without league.tsv was rejected")

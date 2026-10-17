@@ -30,6 +30,7 @@ const FIRST_DESKTOP_LAUNCH = (() => {
 })();
 import { ArrowDownToLine, WifiOff, AlertTriangle, X } from "lucide-react";
 import { IS_DESKTOP, IS_WEB, matchIdFromHash } from "./platform";
+import { MOVE_PAGE_URL, clearMoveResult, closeMoveOffer, moveResult, offerMove } from "./move";
 import { reconcileLiveAndSchedule, playKickoffChime, applyH2HData, loadBundledH2H } from "./helpers";
 import { H2HDetailsModal } from "./components/H2HDetailsModal";
 import { OPEN_H2H_EVENT, OpenH2HDetail } from "./components/H2HMeter";
@@ -79,7 +80,7 @@ export default function App() {
   // Initial tab. The desktop app's very first launch opens the Watchlist so people pick their
   // teams; the public web page opens on live scores, so a first-time visitor sees matches at once.
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
-    // Opened at a stats page address (lolworlds.com/riftwise/player/faker): show it
+    // Opened at a stats page address (riftwise.gg/player/faker): show it
     if (STARTED_ON_HUB) return "stats";
     try {
       const hasLaunched = localStorage.getItem("riftwatch_has_launched");
@@ -114,6 +115,13 @@ export default function App() {
     } catch {
       /* fine */
     }
+  };
+  // The move to riftwise.gg: offer to bring settings over from lolworlds.com/riftwise, or say they arrived
+  const [moveNote, setMoveNote] = useState<"offer" | "ok" | "none" | null>(() => moveResult() ?? (offerMove() ? "offer" : null));
+  const closeMoveNote = () => {
+    if (moveNote === "offer") closeMoveOffer();
+    clearMoveResult();
+    setMoveNote(null);
   };
   const [hubTip, setHubTip] = useState(() => {
     try {
@@ -858,7 +866,7 @@ export default function App() {
         <div className="bg-rw-surface border-b border-rw-accent/40 px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs" role="status">
           <div className="flex-1 min-w-[14rem] text-rw-sub leading-relaxed">
             <strong className="text-rw-accent">{tl("RiftWatch is now RiftWise.")}</strong>{" "}
-            {tl("Same app, new name. Your settings and followed teams are all still here, and the web version is now at lolworlds.com/riftwise.")}
+            {tl("Same app, new name. Your settings and followed teams are all still here, and the web version is now at riftwise.gg.")}
           </div>
           <button onClick={closeRenameNote} aria-label={tl("Close")} className="p-1 text-rw-muted hover:text-rw-text shrink-0">
             <X className="w-3.5 h-3.5" />
@@ -866,7 +874,37 @@ export default function App() {
         </div>
       )}
 
-      {hubTip && !showWelcome && !renameNote && activeTab !== "stats" && (
+      {moveNote && !showWelcome && !renameNote && (
+        <div className="bg-rw-surface border-b border-rw-accent/40 px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs" role="status">
+          <div className="flex-1 min-w-[14rem] text-rw-sub leading-relaxed">
+            {moveNote === "offer" ? (
+              <>
+                <strong className="text-rw-accent">{tl("RiftWise has a new home: riftwise.gg.")}</strong>{" "}
+                {tl("Used RiftWise at lolworlds.com/riftwise before? Your followed teams and settings are still saved there. Bring them over in one click.")}
+              </>
+            ) : moveNote === "ok" ? (
+              tl("Your followed teams and settings are here now.")
+            ) : (
+              tl("Nothing was saved at lolworlds.com/riftwise in this browser, so there was nothing to bring over.")
+            )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {moveNote === "offer" && (
+              <button
+                onClick={() => window.location.assign(MOVE_PAGE_URL)}
+                className="px-3 py-1.5 rounded-md bg-rw-accent hover:bg-rw-text text-rw-bg font-bold"
+              >
+                {tl("Bring them over")}
+              </button>
+            )}
+            <button onClick={closeMoveNote} aria-label={tl("Close")} className="p-1 text-rw-muted hover:text-rw-text">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {hubTip && !showWelcome && !renameNote && !moveNote && activeTab !== "stats" && (
         <div className="bg-rw-surface border-b border-rw-accent/40 px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs" role="status">
           <div className="flex-1 min-w-[14rem] text-rw-sub leading-relaxed">
             <strong className="text-rw-accent">{tl("New: Pro Stats for every game since 2011.")}</strong>{" "}

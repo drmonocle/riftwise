@@ -35,9 +35,9 @@ type OAuth struct {
 	Twitch  *oauthApp `json:"twitch"`
 
 	mu      sync.Mutex
-	path    string    // oauth.json, re-read when it changes (no restart needed after adding keys)
-	modTime time.Time // of the version loaded
-	checked time.Time // last time the file was looked at
+	path    string                   // oauth.json, re-read when it changes (no restart needed after adding keys)
+	modTime time.Time                // of the version loaded
+	checked time.Time                // last time the file was looked at
 	pending map[string]*pendingLogin // state -> sign-in in progress
 	results map[string]*loginResult  // poll id -> finished sign-in (Windows app)
 	tickets map[string]*loginResult  // ticket -> finished sign-in (web page)
@@ -371,7 +371,7 @@ func (s *Server) finish(w http.ResponseWriter, r *http.Request, p *pendingLogin,
 			`<p style="max-width:28rem;text-align:center">%s</p>`, html.EscapeString(msg))
 		return
 	}
-	base := s.oauth.base()
+	base := strings.TrimRight(siteURL, "/")
 	target := base + "/#settings"
 	if res.Err != "" {
 		target = base + "/#signin-error=" + url.QueryEscape(res.Err)

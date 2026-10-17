@@ -5,8 +5,9 @@
 //   - "match live" when it starts,
 //   - "S-tier banger airing now" when a legendary game starts on the 24/7 stream.
 //
-// The web app (lolworlds.com/riftwise) registers a browser's push address and the teams it follows
-// through /riftwise/api/push/*, which IIS forwards here. Nothing else about the person is stored.
+// The web app (riftwise.gg) registers a browser's push address and the teams it follows
+// through /api/push/* (and lolworlds.com/riftwise/api/push/* for the old address), which IIS forwards here as
+// /riftwise/api/push/*. Nothing else about the person is stored.
 //
 //	riftwise-push serve  [-data DIR] [-addr 127.0.0.1:8092]   run the API and the alert loop
 //	riftwise-push key    [-data DIR]                          print the public VAPID key
@@ -26,7 +27,7 @@ import (
 	"strings"
 )
 
-const version = "1.0.0"
+const version = "1.1.0"
 
 func main() {
 	if len(os.Args) < 2 {

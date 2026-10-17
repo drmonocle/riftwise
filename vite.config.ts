@@ -21,8 +21,8 @@ const webPlugin = {
     html.replace(
       "</head>",
       [
-        '    <link rel="manifest" href="/riftwise/manifest.webmanifest" />',
-        '    <link rel="apple-touch-icon" href="/riftwise/icon-192.png" />',
+        '    <link rel="manifest" href="/manifest.webmanifest" />',
+        '    <link rel="apple-touch-icon" href="/icon-192.png" />',
         '    <meta name="apple-mobile-web-app-capable" content="yes" />',
         '    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />',
         '    <meta name="apple-mobile-web-app-title" content="RiftWise" />',
@@ -32,13 +32,13 @@ const webPlugin = {
 };
 
 // `vite preview` only: RIFTWISE_STATS_DIR=<folder> serves a stats build made on this PC
-// (scripts/stats/build_stats.py --out <folder>) at /riftwise/stats, for testing new stats pages.
+// (scripts/stats/build_stats.py --out <folder>) at /stats, for testing new stats pages.
 const localStats = {
   name: "riftwise-local-stats",
   configurePreviewServer(server: any) {
     const dir = process.env.RIFTWISE_STATS_DIR;
     if (!dir) return;
-    server.middlewares.use("/riftwise/stats", (req: any, res: any, next: any) => {
+    server.middlewares.use("/stats", (req: any, res: any, next: any) => {
       const file = path.join(dir, decodeURIComponent((req.url || "/").split("?")[0]));
       if (!file.startsWith(path.resolve(dir)) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) return next();
       res.setHeader("Content-Type", file.endsWith(".json") ? "application/json; charset=utf-8" : "text/plain; charset=utf-8");
@@ -50,16 +50,17 @@ const localStats = {
 export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss(), ...(mode === "web" ? [webPlugin, localStats] : [])],
 
-  // `npm run build:web` builds the browser version served at lolworlds.com/riftwise/
-  base: mode === "web" ? "/riftwise/" : "/",
+  // `npm run build:web` builds the browser version served at riftwise.gg (the site root)
+  base: "/",
   build: mode === "web" ? { outDir: "dist-web", emptyOutDir: true } : undefined,
 
   // `vite preview` of the web build: send the alert API to the live server, as IIS does in production
   preview: {
     proxy: {
-      "/riftwise/api": { target: "https://lolworlds.com", changeOrigin: true },
-      // the data files only: /riftwise/stats itself is the stats page
-      "^/riftwise/stats/(latest\\.json|\\d+/)": { target: "https://lolworlds.com", changeOrigin: true },
+      // (the services also answer at lolworlds.com/riftwise/, where installed apps reach them)
+      "/api": { target: "https://lolworlds.com", changeOrigin: true, rewrite: (p: string) => "/riftwise" + p },
+      // the data files only: /stats itself is the stats page
+      "^/stats/(latest\\.json|\\d+/)": { target: "https://lolworlds.com", changeOrigin: true, rewrite: (p: string) => "/riftwise" + p },
     },
   },
 

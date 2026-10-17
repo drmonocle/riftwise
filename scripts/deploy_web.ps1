@@ -1,9 +1,10 @@
-# Builds the RiftWise web version and publishes it to lolworlds.com/riftwise/.
-# Target is the HomeServer's site root through the W: share. Only the riftwise\ folder is touched.
+# Builds the RiftWise web version and publishes it to riftwise.gg: the IIS site "riftwise.gg" on HomeServer
+# (C:\inetpub\riftwise.gg) through the W: share. Its stats folder is a virtual folder and isn't touched.
+# lolworlds.com/riftwise isn't deployed any more: it forwards every page to riftwise.gg (server/iis/).
 #   powershell -ExecutionPolicy Bypass -File scripts\deploy_web.ps1
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
-$target = "W:\inetpub\wwwroot\riftwise"
+$target = "W:\inetpub\riftwise.gg"
 
 Push-Location $root
 npm.cmd run build:web
@@ -15,4 +16,4 @@ New-Item -ItemType Directory -Force -Path $target | Out-Null
 if (Test-Path "$target\assets") { Remove-Item "$target\assets" -Recurse -Force }
 Copy-Item "$root\dist-web\*" $target -Recurse -Force   # includes web\* (sw.js, manifest, icons, web.config)
 
-Write-Host "Deployed to $target. Check https://lolworlds.com/riftwise/"
+Write-Host "Deployed to $target. Check https://riftwise.gg/"

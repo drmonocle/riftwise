@@ -41,7 +41,7 @@ folder, so one latest.json switch publishes both:
   hub/manifest.json                 file -> content hash, so the next build can hard-link unchanged files
 
 Slugs are readable ("faker", "t1", "worlds-2025-main-event") and are what the page URLs use
-(lolworlds.com/riftwise/player/faker). Inputs are read-only: the catalog plus, when present, the
+(riftwise.gg/player/faker). Inputs are read-only: the catalog plus, when present, the
 Leaguepedia sidecar database (lp_all_games.db) for every series' stage, order and score.
 """
 import concurrent.futures
@@ -1367,7 +1367,7 @@ def build(ctx) -> dict:
                             sd, od = sides.get(side) or {}, sides.get("red" if side == "blue" else "blue") or {}
                             result = 1 if g["w"] == tname_c else 0 if g["w"] else ""
                             common = [g["date"][:10], lg_ev or "", en, tab or "", item.get("patch") or "", gslug, g["n"],
-                                      f"https://lolworlds.com/riftwise/match/{gslug}", side.capitalize()]
+                                      f"https://riftwise.gg/match/{gslug}", side.capitalize()]
                             team_rows = sorted((r for r in rows if r["team"] == tname_c), key=lambda r: ROLE_ORDER.get(r["role"] or "", 9))
                             order = sd.get("picks") or []
                             for r in team_rows:

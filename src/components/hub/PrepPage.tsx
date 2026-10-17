@@ -1,7 +1,7 @@
 /**
  * Match prep: everything an analyst gathers before a broadcast for one matchup, on one page and for any period:
  * storylines (milestones, streaks, head-to-head), recent form, every series between them, team numbers and draft
- * tendencies, and the lanes player against player. Address: /riftwise/stats/prep?teams=t1,gen-g&p=y2026
+ * tendencies, and the lanes player against player. Address: /stats/prep?teams=t1,gen-g&p=y2026
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -256,7 +256,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           </h2>
           {/* only in the copied picture, where the controls are left out */}
           <div className="rw-capture-only text-[11px] text-rw-sub gap-1">
-            {periodLabel} · {new Date().toISOString().slice(0, 10)} · RiftWise Pro Stats · lolworlds.com/riftwise
+            {periodLabel} · {new Date().toISOString().slice(0, 10)} · RiftWise Pro Stats · riftwise.gg
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs" data-nocapture="1">
@@ -289,7 +289,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
             <div className="flex flex-wrap items-baseline justify-between gap-2 border-b pb-2">
               <h1 className="text-xl font-bold">{title}</h1>
               <span className="text-xs">
-                {tl("Match prep")} · {periodLabel} · {new Date().toISOString().slice(0, 10)} · RiftWise Pro Stats · lolworlds.com/riftwise
+                {tl("Match prep")} · {periodLabel} · {new Date().toISOString().slice(0, 10)} · RiftWise Pro Stats · riftwise.gg
               </span>
             </div>
             {body(true)}

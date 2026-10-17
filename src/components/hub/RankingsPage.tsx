@@ -1,7 +1,7 @@
 /**
  * Power rankings: every active pro team on one scale across all regions (Elo over every pro game since 2011,
  * scripts/stats/ratings.py), league strength, and how often the higher-rated team actually won.
- * Address: /riftwise/stats/rankings
+ * Address: /stats/rankings
  */
 import React, { useMemo, useState } from "react";
 import { tl, tn } from "../../i18n";

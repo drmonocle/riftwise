@@ -106,7 +106,7 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
       </Section>
       <Section title={tl("Use the data")}>
         <p className="text-rw-sub">
-          {tl("Free to use, also in videos, articles and broadcasts. Please credit RiftWise (lolworlds.com/riftwise) and Leaguepedia, and Oracle's Elixir for early-game numbers.")}{" "}
+          {tl("Free to use, also in videos, articles and broadcasts. Please credit RiftWise (riftwise.gg) and Leaguepedia, and Oracle's Elixir for early-game numbers.")}{" "}
           <HubLink to={{ kind: "data" }} className="text-rw-teal hover:underline font-semibold">
             {tl("Data downloads")}
           </HubLink>

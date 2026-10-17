@@ -5,9 +5,9 @@ import { AppSettings } from "./types";
 import { currentLang } from "./i18n";
 import { IS_WEB } from "./platform";
 
-const API = "/riftwise/api/push";
+const API = "/api/push";
 const ON_KEY = "riftwatch_push"; // "1" once this browser asked for alerts
-const SCOPE = "/riftwise/";
+const SCOPE = "/";
 
 export type PushStatus = "unsupported" | "needs-install" | "blocked" | "off" | "on";
 
@@ -22,7 +22,7 @@ function supported(): boolean {
 
 async function registration(): Promise<ServiceWorkerRegistration | undefined> {
   if (!("serviceWorker" in navigator)) return undefined;
-  return (await navigator.serviceWorker.getRegistration(SCOPE)) ?? navigator.serviceWorker.register("/riftwise/sw.js", { scope: SCOPE });
+  return (await navigator.serviceWorker.getRegistration(SCOPE)) ?? navigator.serviceWorker.register("/sw.js", { scope: SCOPE });
 }
 
 export async function getPushStatus(): Promise<PushStatus> {
@@ -70,7 +70,7 @@ async function post(path: string, data: unknown): Promise<unknown> {
 async function saveForWorker(data: object, publicKey: string): Promise<void> {
   try {
     const cache = await caches.open("riftwatch-push");
-    await cache.put("/riftwise/push-state", new Response(JSON.stringify({ ...data, publicKey })));
+    await cache.put("/push-state", new Response(JSON.stringify({ ...data, publicKey })));
   } catch {
     /* only a fallback */
   }
@@ -78,7 +78,7 @@ async function saveForWorker(data: object, publicKey: string): Promise<void> {
 
 async function savedEndpoint(): Promise<string | undefined> {
   try {
-    const r = await (await caches.open("riftwatch-push")).match("/riftwise/push-state");
+    const r = await (await caches.open("riftwatch-push")).match("/push-state");
     return r ? ((await r.json()) as { endpoint?: string }).endpoint : undefined;
   } catch {
     return undefined;

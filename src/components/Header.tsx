@@ -5,6 +5,7 @@ import { formatStreamHeaderTitle, streamPhase } from "../helpers";
 import { APP_VERSION } from "../version";
 import { IS_DESKTOP, IS_WEB, IS_WINDOWS_BROWSER, DESKTOP_DOWNLOAD_URL } from "../platform";
 import { tl, tn } from "../i18n";
+import { LanguageFlag } from "./LanguageFlag";
 
 interface HeaderProps {
   settings: AppSettings;
@@ -137,6 +138,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-1.5 min-w-0 col-start-3">
+        <LanguageFlag onUpdateSettings={onUpdateSettings} />
         {onInstall && (
           <button
             onClick={onInstall}

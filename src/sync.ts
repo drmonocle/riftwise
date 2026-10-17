@@ -1,6 +1,6 @@
 /**
  * Cloud sync (optional): keeps followed teams/players/leagues/regions, settings and revealed spoilers the same on
- * every device signed in to the same RiftWise account (server: server/sync, /riftwise/api/sync/*).
+ * every device signed in to the same RiftWise account (server: server/sync, /api/sync/*).
  *
  * Three synced fields, each with the time it last changed: "follows", "settings", "revealed". A local change is
  * sent a moment later; other devices' changes are fetched on start, every 2 minutes, and when the window comes
@@ -12,7 +12,8 @@ import type { AppSettings } from "./types";
 import { IS_WEB, WEB_APP_URL } from "./platform";
 import { allRevealed, replaceRevealed, REVEALED_EVENT } from "./revealed";
 
-const API = IS_WEB ? "/riftwise/api/sync/" : "https://lolworlds.com/riftwise/api/sync/";
+// The Windows app keeps the old address: installed apps can only reach lolworlds.com, and it keeps answering there
+const API = IS_WEB ? "/api/sync/" : "https://lolworlds.com/riftwise/api/sync/";
 const TOKEN_KEY = "riftwatch_sync_token";
 const ACCOUNT_KEY = "riftwatch_sync_account";
 const STATE_KEY = "riftwatch_sync_state"; // {times: {field: ms}, snap: {field: json}, last: ms}

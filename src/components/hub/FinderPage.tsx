@@ -2,7 +2,7 @@
  * Game finder: every game of a league's year (hub/champgames/<league>/<year>.json), narrowed by tournament, patch,
  * team, opponent, side, result, champions (with / against / banned), player and game length. Conditions are about
  * one side of the game ("T1 on red with Azir against Orianna, and lost"); a game matches when either side does.
- * Filters live in the address: /riftwise/stats/finder?league=lck&year=2026&team=T1&champ=Azir
+ * Filters live in the address: /stats/finder?league=lck&year=2026&team=T1&champ=Azir
  */
 import React, { useMemo, useRef, useState } from "react";
 import { tl, tn } from "../../i18n";
@@ -10,6 +10,7 @@ import { champName } from "../../champions";
 import { loadAliases, loadChampGames, loadChampIndex } from "../../hub/data";
 import type { ChampGame, ChampPick } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
+import { SITE_URL } from "../../platform";
 import { useDDragon } from "../../hub/ddragon";
 import { patchCompare } from "../../hub/champAgg";
 import { TableExport } from "./SortTable";
@@ -712,7 +713,7 @@ function downloadCohort(found: Found, events: [string, string][], name: string) 
     [
       g[0], events[g[2]]?.[1] || "", g[15] || "", g[1], g[10] || "", g[11] || "", (g[3] === 1 ? g[10] : g[11]) || (g[3] === 1 ? "Blue" : "Red"),
       g[4] != null ? g[4].toFixed(1) : "", champs(g[5]), champs(g[6]), players(g[5]), players(g[6]), (g[7] || []).join(" / "),
-      (g[8] || []).join(" / "), g[14] ? `https://lolworlds.com/riftwise/match/${g[14]}` : "",
+      (g[8] || []).join(" / "), g[14] ? `${SITE_URL}match/${g[14]}` : "",
     ].map(esc).join(","),
   );
   const csv = "\ufeff" + [head.join(","), ...lines].join("\r\n");
