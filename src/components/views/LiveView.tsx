@@ -18,6 +18,7 @@ import {
 import { clickable } from "../../a11y";
 import { H2HMeter } from "../H2HMeter";
 import { tl, tc, locale } from "../../i18n";
+import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 
 interface LiveViewProps {
   matches: Match[];
@@ -131,11 +132,9 @@ export const LiveView: React.FC<LiveViewProps> = ({
   isLoading,
   liveShows = [],
 }) => {
-  const [revealedMatchIds, setRevealedMatchIds] = useState<Record<string, boolean>>({});
-
-  const toggleReveal = (matchId: string) => {
-    setRevealedMatchIds((prev) => ({ ...prev, [matchId]: !prev[matchId] }));
-  };
+  // revealed scores are remembered on this device (src/revealed.ts) and synced with cloud sync
+  useRevealedVersion();
+  const toggleReveal = (matchId: string) => setRevealed(`match:${matchId}`, !isRevealed(`match:${matchId}`));
 
   // A shared link to a live match: scroll to its card and flash it.
   const [flashMatchId, setFlashMatchId] = useState<string | null>(null);
@@ -231,8 +230,8 @@ export const LiveView: React.FC<LiveViewProps> = ({
           {matches.map((m) => {
             const isT1Followed = settings.followedTeams.includes(m.team1Code);
             const isT2Followed = settings.followedTeams.includes(m.team2Code);
-            const isRevealed = !!revealedMatchIds[m.matchId];
-            const showScore = !settings.spoilerMode || isRevealed;
+            const shown = isRevealed(`match:${m.matchId}`);
+            const showScore = !settings.spoilerMode || shown;
 
             return (
               <div

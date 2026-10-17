@@ -48,6 +48,7 @@ import { syncPush } from "./push";
 import { STARTED_ON_HUB, navigateHub, onHubRoute, syncFromLocation, syncTabAddress } from "./hub/route";
 import { lazyPart } from "./lazyPart";
 import { PartBoundary } from "./components/PartBoundary";
+import { startSync, SYNC_EVENT } from "./sync";
 // The stats hub is big and most visits are for live scores, so its code loads when first opened.
 const StatsView = lazyPart(() => import("./components/views/StatsView").then((m) => m.StatsView));
 const HubSearch = lazyPart(() => import("./components/hub/HubSearch").then((m) => m.HubSearch));
@@ -293,6 +294,18 @@ export default function App() {
       })
       .catch(() => {});
   }, [settings.compactMode]);
+
+  // Cloud sync (optional account): sync on start, on changes and every few minutes; coming back from Discord /
+  // Twitch sign-in (or an error there) opens Settings
+  useEffect(() => {
+    const onSync = (e: Event) => {
+      const d = (e as CustomEvent<{ open?: boolean }>).detail;
+      if (d?.open) selectTab("settings");
+    };
+    window.addEventListener(SYNC_EVENT, onSync);
+    startSync();
+    return () => window.removeEventListener(SYNC_EVENT, onSync);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Colour theme (Settings -> Display); main.tsx applies the saved one before the first paint
   useEffect(() => applyTheme(settings.theme), [settings.theme]);

@@ -9,6 +9,7 @@ import { champIcon, itemIcon, runeIcon, spellIcon } from "../../hub/ddragon";
 import { prettySlug } from "../../hub/data";
 import { IS_WEB } from "../../platform";
 import { CaptureFooter, ShareButtons } from "./ShareImage";
+import { allRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 
 export const card = "bg-rw-surface border border-rw-border rounded-xl p-4";
 export const th = "text-left font-semibold text-rw-muted py-1.5 pr-3 whitespace-nowrap";
@@ -250,10 +251,10 @@ const SpoilerContext = createContext<{ on: boolean; revealed: Set<string>; revea
 });
 
 export const SpoilerProvider: React.FC<{ on: boolean; children: React.ReactNode }> = ({ on, children }) => {
-  const [revealed, setRevealed] = useState<Set<string>>(new Set());
-  return (
-    <SpoilerContext.Provider value={{ on, revealed, reveal: (k) => setRevealed((s) => new Set(s).add(k)) }}>{children}</SpoilerContext.Provider>
-  );
+  // revealed results are remembered on this device (src/revealed.ts) and synced with cloud sync
+  useRevealedVersion();
+  const revealed = new Set(Object.keys(allRevealed()));
+  return <SpoilerContext.Provider value={{ on, revealed, reveal: (k) => setRevealed(k, true) }}>{children}</SpoilerContext.Provider>;
 };
 
 /** True when this result should stay hidden (spoiler mode on, recent, not revealed yet). */

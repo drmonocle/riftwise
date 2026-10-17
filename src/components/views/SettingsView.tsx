@@ -35,6 +35,7 @@ import {
 } from "../../platform";
 import { tl, locale, LANGUAGES, TRANSLATION_EMAIL, TRANSLATION_MAILTO, detectLanguage } from "../../i18n";
 import { PushAlertsCard } from "../PushAlerts";
+import { SyncPanel } from "../SyncPanel";
 
 interface SettingsViewProps {
   settings: AppSettings;
@@ -354,6 +355,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </p>
         </div>
       </section>
+
+      {/* Cloud sync (optional account) */}
+      <SyncPanel onOpenUrl={onOpenUrl} />
 
       {/* 1. Display */}
       <section className="space-y-3">
