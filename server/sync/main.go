@@ -9,7 +9,8 @@
 // hashes, and the synced data (followed teams/players/leagues/regions, settings, revealed spoilers). No email,
 // no IP addresses (rate limits are kept in memory only).
 //
-// The web app and the Windows app call /riftwise/api/sync/*, which IIS forwards here.
+// The web app (riftwise.gg/api/sync/*) and the Windows app (lolworlds.com/riftwise/api/sync/*) call the API,
+// which IIS forwards here as /riftwise/api/sync/*.
 //
 //	riftwise-sync serve [-data DIR] [-addr 127.0.0.1:8094]   run the API
 //	riftwise-sync stats [-data DIR]                          account counts
@@ -24,7 +25,11 @@ import (
 	"path/filepath"
 )
 
-const version = "1.0.0"
+const version = "1.1.0"
+
+// siteURL is where a finished web sign-in lands (the provider's callback can still be the old address,
+// lolworlds.com/riftwise, as registered with Discord / Twitch: oauth.json publicBase).
+const siteURL = "https://riftwise.gg/"
 
 func main() {
 	if len(os.Args) < 2 {

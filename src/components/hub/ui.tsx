@@ -299,7 +299,7 @@ export const RevealButton: React.FC<{ onReveal: () => void; small?: boolean }> =
   </button>
 );
 
-/** Copies the page's web address (lolworlds.com/riftwise/...), also from the desktop app. */
+/** Copies the page's web address (riftwise.gg/...), also from the desktop app. */
 export const CopyLinkButton: React.FC<{ url: string }> = ({ url }) => {
   const [copied, setCopied] = useState(false);
   useEffect(() => {

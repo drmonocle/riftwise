@@ -8,7 +8,7 @@ Discord / Twitch sign-in when `oauth.json` has their app ids and secrets. No ema
   `oauth.json`, `logs\sync.log`), scheduled task **RiftWiseSync-Server** (LOCAL SERVICE, at startup) runs
   `run-server.cmd` -> `riftwise-sync.exe serve` on `127.0.0.1:8094`. IIS (`web/web.config`, rule "RiftWise Sync API")
   forwards `/riftwise/api/sync/*`.
-- Health: https://lolworlds.com/riftwise/api/sync/health. Counts: `riftwise-sync.exe stats -data C:\Sites\riftwise-sync-data`.
+- Health: https://riftwise.gg/api/sync/health (also at the old https://lolworlds.com/riftwise/api/sync/health). Counts: `riftwise-sync.exe stats -data C:\Sites\riftwise-sync-data`.
 - Build: `go test ./... ; go build -trimpath -o riftwise-sync.exe .` (needs golang.org/x/crypto).
 - Discord / Twitch: create an app, set its redirect address to
   `https://lolworlds.com/riftwise/api/sync/auth/discord/callback` (or `/twitch/callback`), then put

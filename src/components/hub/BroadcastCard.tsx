@@ -150,7 +150,7 @@ const Card: React.FC<{ d: CardData }> = ({ d }) => {
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderTop: "2px solid var(--rw-border)", paddingTop: 14, marginTop: 12, fontSize: 20, color: "var(--rw-muted)" }}>
         <span>
-          <span style={{ fontWeight: 800, color: "var(--rw-accent)" }}>RiftWise</span> · lolworlds.com/riftwise
+          <span style={{ fontWeight: 800, color: "var(--rw-accent)" }}>RiftWise</span> · riftwise.gg
         </span>
         <span>
           {d.note ? `${d.note} · ` : ""}

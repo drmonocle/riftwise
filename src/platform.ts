@@ -1,6 +1,6 @@
 /**
  * True inside the Windows desktop app (Tauri), false when the same UI runs as the web version
- * at lolworlds.com/riftwise. Desktop-only features (tray, hotkey, Windows startup,
+ * at riftwise.gg. Desktop-only features (tray, hotkey, Windows startup,
  * self-updater, native notifications) are hidden on the web.
  */
 export const IS_DESKTOP: boolean = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -13,7 +13,11 @@ export const RIOT_LEGAL_NOTICE =
   "are trademarks or registered trademarks of Riot Games, Inc.";
 
 /** The web version. Shared links always point here so they open without installing anything. */
-export const WEB_APP_URL = "https://lolworlds.com/riftwise/";
+/** The web version (riftwise.gg since 2026-10; lolworlds.com/riftwise pages forward there). */
+export const SITE_URL = "https://riftwise.gg/";
+export const WEB_APP_URL = SITE_URL;
+/** Where installed apps of 0.5.1 and older read the data: it keeps answering there. */
+export const OLD_SITE_URL = "https://lolworlds.com/riftwise/";
 
 export function matchShareUrl(matchId: string): string {
   return `${WEB_APP_URL}#match/${encodeURIComponent(matchId)}`;

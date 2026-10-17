@@ -2,7 +2,7 @@
 
 **Live League of Legends esports scores, schedules, official standings and all-time head-to-head records, in your browser or as a tiny Windows app.** Built for fans who follow more than one league, and for viewers of the 24/7 classic-tournament Twitch stream.
 
-> RiftWise was called **RiftWatch** up to version 0.3.40. Old links (`lolworlds.com/riftwatch`, `github.com/drmonocle/riftwatch`) forward here, and installed copies update themselves to RiftWise.
+> RiftWise was called **RiftWatch** up to version 0.3.40. Old links (`lolworlds.com/riftwatch`, `github.com/drmonocle/riftwatch`) forward here, and installed copies update themselves to RiftWise. Since 0.6.0 the web version lives at **riftwise.gg** (`lolworlds.com/riftwise` links forward there).
 
 [![Latest release](https://img.shields.io/github/v/release/drmonocle/riftwise?color=0ac8b9&label=Latest)](https://github.com/drmonocle/riftwise/releases/latest)
 [![Platform](https://img.shields.io/badge/desktop-Windows%2010%20%7C%2011-blue)](#-windows-app)
@@ -18,7 +18,7 @@
 
 | | |
 |---|---|
-| 🌐 **Web version** (any device, no install) | **[lolworlds.com/riftwise](https://lolworlds.com/riftwise/)** |
+| 🌐 **Web version** (any device, no install) | **[riftwise.gg](https://riftwise.gg/)** |
 | 🪟 **Windows app** (tray, hotkey, notifications) | **[Download RiftWise.exe](https://github.com/drmonocle/riftwise/releases/latest/download/RiftWise.exe)** |
 
 On a phone, open the web version and use **Add to Home Screen** to install it like an app.
@@ -55,7 +55,7 @@ Hides scores, winners, series progress, bracket results and head-to-head scores 
 English, Español, Português (Brasil), 한국어, Tiếng Việt, 简体中文, 繁體中文, 日本語, Français, Deutsch and Türkçe, written the way each region's fans and casters talk (롤드컵 and 원딜 in Korean, 名局 in Chinese, partidazo, jogaço...). RiftWise picks your browser or Windows language automatically; change it under **Settings → Language**. Spot a bad translation? The email next to the language picker goes straight to the developer. Translator notes: [`src/i18n/GLOSSARY.md`](src/i18n/GLOSSARY.md).
 
 ### 🔗 Share a match
-The link icon on any match copies a link that opens it in the web version: `lolworlds.com/riftwise/#match/<id>`.
+The link icon on any match copies a link that opens it in the web version: `riftwise.gg/#match/<id>`.
 
 <p align="center"><img src="screenshots/09_team_roster.png" alt="Team roster" width="780"></p>
 
@@ -86,10 +86,11 @@ No accounts, no analytics, no tracking. Your followed teams and settings stay on
 | Service | Why |
 |---|---|
 | `esports-api.lolesports.com` | Riot's public esports data: matches, schedules, standings, rosters |
-| `lolworlds.com` | The 24/7 stream schedule |
+| `riftwise.gg` | Stats data (the old address `lolworlds.com/riftwise` if riftwise.gg can't be reached) |
+| `lolworlds.com` | The 24/7 stream schedule, accounts and sync |
 | `api.github.com`, `raw.githubusercontent.com`, `github.com` | Update checks, the self-refreshing head-to-head data, and release downloads |
 
-The web version is served from lolworlds.com, which keeps normal web-server logs like any website.
+The web version is served from riftwise.gg, which keeps normal web-server logs like any website.
 
 ---
 

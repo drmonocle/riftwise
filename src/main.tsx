@@ -7,15 +7,18 @@ import { loadSettings } from "./api";
 import { initI18n } from "./i18n";
 import { installWheelSideScroll } from "./wheelScroll";
 import { applyTheme } from "./theme";
+import { importMovedSettings } from "./move";
+
+// Settings brought over from lolworlds.com/riftwise (#import=...) are saved before anything reads them
+importMovedSettings();
 
 // Colours first, so the page never flashes the wrong theme
 applyTheme(loadSettings().theme);
 installWheelSideScroll();
 
-// On lolworlds.com the site-wide service worker serves every request cache-first, which would
-// show stale live scores. /riftwise/sw.js is a pass-through worker whose narrower scope wins.
-if (IS_WEB && "serviceWorker" in navigator && window.location.pathname.startsWith("/riftwise")) {
-  navigator.serviceWorker.register("/riftwise/sw.js", { scope: "/riftwise/" }).catch(() => {});
+// The pass-through service worker: offline page, alerts, and what lets browsers offer "Add to Home Screen"
+if (IS_WEB && "serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
 }
 
 // The language is loaded before the first render, so every screen can simply call tl().

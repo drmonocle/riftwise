@@ -16,7 +16,7 @@ const apiPrefix = "/riftwise/api/sync/"
 
 // Pages that may call the API from a browser: the website (and its local test server) and the Windows app.
 var allowedOrigins = map[string]bool{
-	"https://lolworlds.com": true, "https://www.lolworlds.com": true,
+	"https://riftwise.gg": true, "https://lolworlds.com": true, "https://www.lolworlds.com": true,
 	"http://tauri.localhost": true, "https://tauri.localhost": true, "tauri://localhost": true,
 	"http://localhost:4173": true, "http://localhost:4174": true, "http://localhost:1420": true,
 }
@@ -121,7 +121,9 @@ func reply(w http.ResponseWriter, code int, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
-func fail(w http.ResponseWriter, code int, why string) { reply(w, code, map[string]string{"error": why}) }
+func fail(w http.ResponseWriter, code int, why string) {
+	reply(w, code, map[string]string{"error": why})
+}
 
 func bearer(r *http.Request) string {
 	h := r.Header.Get("Authorization")

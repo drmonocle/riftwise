@@ -4,7 +4,7 @@ import { Match } from "../types";
 import { matchShareUrl } from "../platform";
 import { tl } from "../i18n";
 
-/** Copies a link that opens this match in the web version (lolworlds.com/riftwise/#match/<id>). */
+/** Copies a link that opens this match in the web version (riftwise.gg/#match/<id>). */
 export const ShareMatchButton: React.FC<{ match: Match; className?: string }> = ({ match, className = "" }) => {
   const [copied, setCopied] = useState(false);
 

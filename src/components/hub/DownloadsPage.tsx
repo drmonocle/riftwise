@@ -6,7 +6,7 @@ import React, { useMemo, useState } from "react";
 import { Download } from "lucide-react";
 import { tl, tn } from "../../i18n";
 import { load, loadText, statsFileUrl } from "../../stats";
-import { IS_WEB } from "../../platform";
+import { IS_WEB, SITE_URL } from "../../platform";
 import { card, Failed, fmtNum, Loading, Section, useLoad, usePageTitle } from "./ui";
 
 interface DownloadLeague {
@@ -43,7 +43,7 @@ export async function downloadEventCsv(slug: string, onOpenUrl?: (url: string) =
 /** A whole event's CSV (Worlds = Play-In + Main Event): its stages' files in one, the header once. */
 export async function downloadStagesCsv(name: string, slugs: string[], onOpenUrl?: (url: string) => void) {
   if (!IS_WEB && onOpenUrl) {
-    onOpenUrl("https://lolworlds.com/riftwise/stats/data");
+    onOpenUrl(`${SITE_URL}stats/data`);
     return;
   }
   const parts: string[] = [];
@@ -73,11 +73,11 @@ export const DownloadsPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({
         <p className="text-rw-sub">
           {tl("One row per player and one per team for every game, with the champion, pick order, K/D/A, CS, gold, damage, vision, objectives, bans and picks. Opens in Excel, Google Sheets, Python or R.")}
         </p>
-        <p className="text-rw-sub">{tl("Free to use. Please credit RiftWise (lolworlds.com/riftwise) and Leaguepedia (CC BY-SA 3.0).")}</p>
+        <p className="text-rw-sub">{tl("Free to use. Please credit RiftWise (riftwise.gg) and Leaguepedia (CC BY-SA 3.0).")}</p>
         {!IS_WEB && (
           <button
             type="button"
-            onClick={() => onOpenUrl?.("https://lolworlds.com/riftwise/stats/data")}
+            onClick={() => onOpenUrl?.(`${SITE_URL}stats/data`)}
             className="text-rw-teal hover:underline font-semibold"
           >
             {tl("Downloads work best in your browser: open this page there")}
@@ -132,7 +132,7 @@ const LeagueYears: React.FC<{ league: DownloadLeague; onOpenUrl?: (url: string) 
   const [busy, setBusy] = useState<string>("");
   const wholeYear = async (y: string) => {
     if (!IS_WEB && onOpenUrl) {
-      onOpenUrl("https://lolworlds.com/riftwise/stats/data");
+      onOpenUrl(`${SITE_URL}stats/data`);
       return;
     }
     const evs = league.y[y];

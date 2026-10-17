@@ -30,7 +30,7 @@ export async function capture(node: HTMLElement): Promise<Blob | null> {
 export const CaptureFooter: React.FC = () => (
   <div className="rw-capture-only items-center justify-between gap-3 pt-2 mt-1 border-t border-rw-border text-[10px] text-rw-muted">
     <span className="font-bold text-rw-accent">RiftWise Pro Stats</span>
-    <span>lolworlds.com/riftwise · {new Date().toISOString().slice(0, 10)}</span>
+    <span>riftwise.gg · {new Date().toISOString().slice(0, 10)}</span>
   </div>
 );
 

@@ -23,11 +23,11 @@ const (
 // Push services browsers actually use. Anything else is refused, so the server can't be pointed at
 // arbitrary addresses.
 var pushHosts = []string{
-	"fcm.googleapis.com",              // Chrome, Edge on Android, Samsung Internet
+	"fcm.googleapis.com",                // Chrome, Edge on Android, Samsung Internet
 	"updates.push.services.mozilla.com", // Firefox
 	".push.services.mozilla.com",
-	".notify.windows.com",   // Edge on Windows
-	"web.push.apple.com",    // Safari, iPhone home-screen apps
+	".notify.windows.com", // Edge on Windows
+	"web.push.apple.com",  // Safari, iPhone home-screen apps
 	".push.apple.com",
 }
 

@@ -37,7 +37,7 @@ export const PushAlertsCard: React.FC<{ settings: AppSettings; onUpdateSettings:
     setNote(null);
     try {
       const s = await enablePush(settings);
-      if (s === "blocked") setNote(tl("Alerts are blocked for this site. Allow notifications for lolworlds.com in your browser's site settings, then try again."));
+      if (s === "blocked") setNote(tl("Alerts are blocked for this site. Allow notifications for riftwise.gg in your browser's site settings, then try again."));
     } catch {
       setNote(tl("Couldn't turn on alerts. Check your connection and try again."));
     } finally {
@@ -80,7 +80,7 @@ export const PushAlertsCard: React.FC<{ settings: AppSettings; onUpdateSettings:
       )}
       {status === "blocked" && (
         <p className="text-xs text-rw-sub">
-          {tl("Alerts are blocked for this site. Allow notifications for lolworlds.com in your browser's site settings, then try again.")}
+          {tl("Alerts are blocked for this site. Allow notifications for riftwise.gg in your browser's site settings, then try again.")}
         </p>
       )}
       {status === "off" && (

@@ -1,7 +1,5 @@
-// RiftWise web: service worker for /riftwise/.
-// lolworlds.com's site-wide /sw.js answers requests cache-first, which would keep live scores
-// stale. This worker's narrower scope takes over /riftwise/ and passes every request straight
-// to the network. It only steps in when the page itself can't be loaded (offline), and it is
+// RiftWise web (riftwise.gg): service worker for the whole site. It passes every request straight
+// to the network and only steps in when the page itself can't be loaded (offline), and it is
 // what lets browsers offer "Add to Home Screen".
 const OFFLINE_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>RiftWise</title>
@@ -27,9 +25,9 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title || "RiftWise", {
       body: data.body || "",
-      icon: "/riftwise/icon-192.png",
+      icon: "/icon-192.png",
       tag: data.tag || undefined,
-      data: { url: data.url || "/riftwise/" },
+      data: { url: data.url || "/" },
     }),
   );
 });
@@ -37,11 +35,11 @@ self.addEventListener("push", (event) => {
 // Tapping an alert opens RiftWise (an open tab is reused) at the match it is about.
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = new URL((event.notification.data && event.notification.data.url) || "/riftwise/", self.location.origin).href;
+  const url = new URL((event.notification.data && event.notification.data.url) || "/", self.location.origin).href;
   event.waitUntil(
     (async () => {
       const tabs = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-      const tab = tabs.find((c) => c.url.startsWith(self.location.origin + "/riftwise/"));
+      const tab = tabs.find((c) => c.url.startsWith(self.location.origin + "/"));
       if (tab) {
         await tab.focus();
         try {
@@ -61,20 +59,20 @@ self.addEventListener("pushsubscriptionchange", (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open("riftwatch-push");
-      const saved = await cache.match("/riftwise/push-state");
+      const saved = await cache.match("/push-state");
       if (!saved) return;
       const state = await saved.json();
       const key = Uint8Array.from(atob(state.publicKey.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
       const sub = await self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
       const body = { ...state, ...sub.toJSON() };
       delete body.publicKey;
-      await fetch("/riftwise/api/push/subscribe", {
+      await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       if (event.oldSubscription) {
-        await fetch("/riftwise/api/push/unsubscribe", {
+        await fetch("/api/push/unsubscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ endpoint: event.oldSubscription.endpoint }),

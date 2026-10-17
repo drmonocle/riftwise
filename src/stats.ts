@@ -3,14 +3,16 @@
  * (scripts/stats/build_stats.py) into small JSON files, and each screen fetches only the file it
  * shows, so the app never downloads or crunches the whole database.
  */
-import { IS_WEB } from "./platform";
+import { IS_WEB, OLD_SITE_URL, SITE_URL } from "./platform";
 
-// Same origin on the web version; the desktop app reads it from lolworlds.com.
-// (vite preview on this PC passes /riftwise/stats on to lolworlds.com, or serves a local build.)
-const STATS_BASE =
-  IS_WEB && typeof window !== "undefined" && /(^|\.)lolworlds\.com$|^localhost$|^127\.0\.0\.1$/.test(window.location.hostname)
-    ? "/riftwise/stats"
-    : "https://lolworlds.com/riftwise/stats";
+// Same origin on the web version; the desktop app reads it from riftwise.gg, and from the old address
+// (lolworlds.com/riftwise, which keeps answering) if riftwise.gg can't be reached.
+// (vite preview on this PC passes /stats on to the server, or serves a local build.)
+let STATS_BASE =
+  IS_WEB && typeof window !== "undefined" && /^riftwise\.gg$|^localhost$|^127\.0\.0\.1$/.test(window.location.hostname)
+    ? "/stats"
+    : `${SITE_URL}stats`;
+let statsFallback: string | null = IS_WEB ? null : `${OLD_SITE_URL}stats`;
 
 /** a = other names the team has played under, c = short names (SKT, C9...), each joined by " | ". */
 export interface StatsSearchTeam { n: string; s: string; g: number; y: string; a?: string; c?: string }
@@ -94,7 +96,15 @@ const cache = new Map<string, Promise<any>>(); // keyed by "<version>/<path>"
 function getVersion(force = false): Promise<string> {
   if (force || !versionPromise || Date.now() - versionCheckedAt > VERSION_MAX_AGE_MS) {
     versionCheckedAt = Date.now();
-    versionPromise = fetch(`${STATS_BASE}/latest.json`, { cache: "no-store", signal: AbortSignal.timeout(15000) })
+    const ask = () => fetch(`${STATS_BASE}/latest.json`, { cache: "no-store", signal: AbortSignal.timeout(15000) });
+    versionPromise = ask()
+      .catch((e) => {
+        // riftwise.gg out of reach (a network error, not an HTTP one): use the old address from now on
+        if (!statsFallback) throw e;
+        STATS_BASE = statsFallback;
+        statsFallback = null;
+        return ask();
+      })
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -173,7 +183,7 @@ export async function loadText(path: string): Promise<string> {
 /** Full web address of a file of the current stats build (for links that open in a browser). */
 export async function statsFileUrl(path: string): Promise<string> {
   const v = await getVersion();
-  return `https://lolworlds.com/riftwise/stats/${v}/${path}`;
+  return `${SITE_URL}stats/${v}/${path}`;
 }
 
 export const loadStatsMeta = () => load<StatsMeta>("meta.json");
