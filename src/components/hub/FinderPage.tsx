@@ -459,7 +459,23 @@ const FinderBody: React.FC<{
           </div>
         ) : found.length > 0 ? (
           <>
-            <TableExport tableRef={tableRef} name={name} />
+            <Cohort
+              found={found}
+              sideCond={sideCond}
+              champ={champs[0] || ""}
+              player={q.get("player") || ""}
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <TableExport tableRef={tableRef} name={name} />
+              <button
+                type="button"
+                onClick={() => downloadCohort(found, events, name)}
+                className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                title={tl("Every game found, not just the ones shown, with picks and bans")}
+              >
+                {tl("CSV of all {n} games", { n: fmtNum(found.length) })}
+              </button>
+            </div>
             <div className="overflow-x-auto">
               <STable ref={tableRef} className="w-full text-xs">
                 <thead>
@@ -538,7 +554,8 @@ const FinderBody: React.FC<{
             <p className="text-[10px] text-rw-muted">
               {tl(
                 "Copy and CSV take the games shown; show more first to include them all.",
-              )}
+              )}{" "}
+              {tl("\"CSV of all\" takes every game found.")}
             </p>
           </>
         ) : (
@@ -550,6 +567,142 @@ const FinderBody: React.FC<{
     </>
   );
 };
+
+type Found = { g: ChampGame; s: number }[];
+
+const tally = (m: Map<string, [number, number]>, n: number) =>
+  [...m.entries()].sort((a, b) => b[1][0] - a[1][0] || b[1][1] - a[1][1]).slice(0, n);
+
+/**
+ * What the games found add up to: blue side's record, kills per game, and the most picked and banned champions.
+ * With a condition on one side ("T1", "on red", "with Azir"), picks and bans are that side's and the win rate is theirs.
+ */
+const Cohort: React.FC<{ found: Found; sideCond: boolean; champ: string; player: string }> = ({ found, sideCond, champ, player }) => {
+  const d = useMemo(() => {
+    let blueW = 0, kills = 0, kg = 0, kMin = 0, gd = 0, gdn = 0;
+    const picks = new Map<string, [number, number]>();
+    const bans = new Map<string, [number, number]>();
+    for (const { g, s } of found) {
+      blueW += g[3];
+      ([
+        [g[5], g[7], g[3]],
+        [g[6], g[8], g[3] ? 0 : 1],
+      ] as [ChampPick[], string[], number][]).forEach(([pk, bn, won], i) => {
+        if (sideCond && i !== s) return;
+        for (const p of pk) {
+          const x = picks.get(p[0]) || [0, 0];
+          x[0]++;
+          x[1] += won;
+          picks.set(p[0], x);
+        }
+        for (const b of bn || []) {
+          const x = bans.get(b) || [0, 0];
+          x[0]++;
+          x[1] += won;
+          bans.set(b, x);
+        }
+      });
+      const all = [...g[5], ...g[6]];
+      if (all.length === 10 && all.every((p) => p[2] != null)) {
+        const k = all.reduce((t, p) => t + (p[2] || 0), 0);
+        kills += k;
+        kg++;
+        if (g[4]) kMin += g[4];
+      }
+      // the side the filters are about: its champion's / player's lead in lane at 15, else the team's (the five add up)
+      if (sideCond) {
+        const mine = s === 0 ? g[5] : g[6];
+        const one = champ ? mine.find((p) => p[0] === champ) : player ? mine.find((p) => p[9] === player || p[8] === player) : null;
+        if (one) {
+          if (one[10] != null) {
+            gd += one[10];
+            gdn++;
+          }
+        } else if (mine.length === 5 && mine.every((p) => p[10] != null)) {
+          gd += mine.reduce((t, p) => t + (p[10] || 0), 0);
+          gdn++;
+        }
+      }
+    }
+    return {
+      blueW,
+      kpg: kg ? kills / kg : null,
+      ckpm: kMin ? kills / kMin : null,
+      gd15: gdn ? Math.round(gd / gdn) : null,
+      gdn,
+      picks: tally(picks, 10),
+      bans: tally(bans, 8),
+    };
+  }, [found, sideCond, champ, player]);
+  const n = found.length;
+  const list = (title: string, rows: [string, [number, number]][], wr: boolean) =>
+    rows.length ? (
+      <div className="min-w-0">
+        <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">{title}</div>
+        <ul className="grid grid-cols-2 gap-x-3 gap-y-1">
+          {rows.map(([c, [g, w]]) => (
+            <li key={c} className="flex items-center justify-between gap-1 min-w-0">
+              <span className="flex items-center gap-1 min-w-0">
+                <ChampIcon name={c} size={16} />
+                <span className="truncate text-rw-text">{champName(c)}</span>
+              </span>
+              <span className="text-rw-sub tabular-nums shrink-0">
+                {g}
+                {wr ? ` · ${Math.round((w / g) * 100)}%` : ` · ${Math.round((g / n) * 100)}%`}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : null;
+  return (
+    <div className="space-y-2 pb-2 border-b border-rw-border text-xs">
+      <p className="text-rw-sub">
+        {tl("Blue side won {p}", { p: `${Math.round((d.blueW / n) * 100)}%` })}
+        {d.kpg != null && ` · ${tl("{n} kills per game", { n: d.kpg.toFixed(1) })}`}
+        {d.ckpm != null && ` · ${tl("{n} kills per minute", { n: d.ckpm.toFixed(2) })}`}
+        {d.gd15 != null && (
+          <span title={tl("{n} games with timelines (Oracle's Elixir)", { n: d.gdn })}>
+            {" · "}
+            {champ || player
+              ? tl("their lane at 15: {gd} gold", { gd: `${d.gd15 > 0 ? "+" : ""}${fmtNum(d.gd15)}` })
+              : tl("their gold lead at 15: {gd}", { gd: `${d.gd15 > 0 ? "+" : ""}${fmtNum(d.gd15)}` })}
+          </span>
+        )}
+      </p>
+      <div className="grid sm:grid-cols-2 gap-4">
+        {list(sideCond ? tl("Their most picked (games · win %)") : tl("Most picked (games · win %)"), d.picks, true)}
+        {list(sideCond ? tl("Their most banned (games · share)") : tl("Most banned (games · share)"), d.bans, false)}
+      </div>
+    </div>
+  );
+};
+
+/** Every game found as a CSV file (the table only holds the ones shown). */
+function downloadCohort(found: Found, events: [string, string][], name: string) {
+  const esc = (v: string | number | null | undefined) => {
+    const t = v == null ? "" : String(v);
+    return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+  };
+  const champs = (pk: ChampPick[]) => pk.map((p) => p[0]).join(" / ");
+  const players = (pk: ChampPick[]) => pk.map((p) => p[8] || "").join(" / ");
+  const head = ["date", "tournament", "game", "patch", "blue", "red", "winner", "minutes", "blue picks", "red picks",
+    "blue players", "red players", "blue bans", "red bans", "url"];
+  const lines = found.map(({ g }) =>
+    [
+      g[0], events[g[2]]?.[1] || "", g[15] || "", g[1], g[10] || "", g[11] || "", (g[3] === 1 ? g[10] : g[11]) || (g[3] === 1 ? "Blue" : "Red"),
+      g[4] != null ? g[4].toFixed(1) : "", champs(g[5]), champs(g[6]), players(g[5]), players(g[6]), (g[7] || []).join(" / "),
+      (g[8] || []).join(" / "), g[14] ? `https://lolworlds.com/riftwise/match/${g[14]}` : "",
+    ].map(esc).join(","),
+  );
+  const csv = "\ufeff" + [head.join(","), ...lines].join("\r\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${name}-all.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 const TeamCell: React.FC<{
   name?: string;

@@ -17,6 +17,92 @@ import { card, ChampLink, Failed, fmtNum, HubLink, Loading, useLoad, usePageTitl
 const sel = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text max-w-[14rem]";
 const pct = (v: number | null) => (v == null ? "–" : `${(v * 100).toFixed(1)}%`);
 
+/** Change against the compared patch, in points: "+12.5 ▲" in teal, "-8.0 ▼" in red, "new" when it wasn't there. */
+interface Delta {
+  /** presence then (null: not picked or banned at all) */
+  was: number | null;
+  dPres: number | null;
+  dWr: number | null;
+  /** from under 5% presence (or nothing) to over 15% */
+  emerging: boolean;
+}
+
+function deltas<T extends { c: string; presence: number; p: number; wr: number | null }>(
+  now: T[],
+  then: { c: string; presence: number; p: number; wr: number | null }[] | null,
+  minPicks: number,
+): (T & Delta)[] {
+  if (!then) return now.map((r) => ({ ...r, was: null, dPres: null, dWr: null, emerging: false }));
+  const by = new Map(then.map((r) => [r.c, r]));
+  return now.map((r) => {
+    const t = by.get(r.c);
+    const was = t ? t.presence : null;
+    return {
+      ...r,
+      was,
+      dPres: r.presence - (was || 0),
+      dWr: t && t.wr != null && r.wr != null && t.p >= minPicks && r.p >= minPicks ? r.wr - t.wr : null,
+      emerging: (was || 0) < 0.05 && r.presence > 0.15,
+    };
+  });
+}
+
+const Arrow: React.FC<{ v: number | null; isNew?: boolean }> = ({ v, isNew }) =>
+  isNew ? (
+    <span className="text-rw-accent font-semibold">{tl("new")}</span>
+  ) : v == null ? (
+    <span className="text-rw-muted">–</span>
+  ) : (
+    <span className={v > 0.0005 ? "text-rw-teal" : v < -0.0005 ? "text-rw-red" : "text-rw-muted"}>
+      {`${v > 0 ? "+" : ""}${(v * 100).toFixed(1)}`} {v > 0.0005 ? "▲" : v < -0.0005 ? "▼" : ""}
+    </span>
+  );
+
+function deltaColumns<T extends Delta & { presence: number }>(label: string): Column<T>[] {
+  return [
+    {
+      key: "dPres",
+      label: tl("Presence Δ"),
+      title: tl("Change in presence against {patch}, in points", { patch: label }),
+      value: (c) => c.dPres,
+      render: (c) => <Arrow v={c.dPres} isNew={c.was == null && c.presence > 0} />,
+    },
+    {
+      key: "dWr",
+      label: tl("Win % Δ"),
+      title: tl("Change in win rate against {patch}, in points (enough picks on both)", { patch: label }),
+      value: (c) => c.dWr,
+      render: (c) => <Arrow v={c.dWr} />,
+    },
+  ];
+}
+
+/** "Compare with": none, or another patch of the list (the one before is the usual pick). */
+const CompareWith: React.FC<{ value: string; options: [string, string][]; onChange: (v: string) => void; emerging: boolean; onEmerging: (v: boolean) => void }> = ({
+  value,
+  options,
+  onChange,
+  emerging,
+  onEmerging,
+}) => (
+  <>
+    <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={tl("Compare with")} className={sel}>
+      <option value="">{tl("Compare with: nothing")}</option>
+      {options.map(([k, l]) => (
+        <option key={k} value={k}>
+          {tl("Compare with {patch}", { patch: l })}
+        </option>
+      ))}
+    </select>
+    {value && (
+      <label className="flex items-center gap-1 text-rw-sub cursor-pointer">
+        <input type="checkbox" checked={emerging} onChange={(e) => onEmerging(e.target.checked)} />
+        {tl("Only new or rising picks")}
+      </label>
+    )}
+  </>
+);
+
 export const ChampionsPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta, query }) => {
   usePageTitle(tl("Champions"));
   useDDragon();
@@ -147,29 +233,36 @@ const LeagueTable: React.FC<{ league: string; years: string[]; q: URLSearchParam
   league,
   years,
   q,
+  setQ,
 }) => {
   const year = q.get("year") || [...years].sort().reverse()[0] || "";
   const file = useLoad(() => (year ? loadChampGames(league, year) : Promise.reject(new Error("no year"))), [league, year]);
   const eventSlug = q.get("event") || "";
   const roleQ = q.get("role") || "";
   const side = q.get("side") === "b" || q.get("side") === "r" ? (q.get("side") as "b" | "r") : undefined;
+  const vs = q.get("vs") || "";
   const result = useMemo(() => {
     if (!file.data) return null;
     const ei = eventSlug ? file.data.events.findIndex(([s]) => s === eventSlug) : -1;
-    return champAgg(file.data.games, {
-      event: ei >= 0 ? ei : undefined,
-      patch: q.get("patch") || undefined,
-      side,
-      role: roleQ ? ROLES.indexOf(roleQ) : undefined,
-    });
-  }, [file.data, eventSlug, q, side, roleQ]);
+    const f = { event: ei >= 0 ? ei : undefined, side, role: roleQ ? ROLES.indexOf(roleQ) : undefined };
+    const now = champAgg(file.data.games, { ...f, patch: q.get("patch") || undefined });
+    const then = vs ? champAgg(file.data.games, { ...f, patch: vs }) : null;
+    return { games: now.games, thenGames: then?.games || 0, rows: deltas(now.rows, then && then.games ? then.rows : null, 5) };
+  }, [file.data, eventSlug, q, side, roleQ, vs]);
+  const patchList = useMemo(
+    () => [...new Set((file.data?.games || []).map((g) => g[1]).filter(Boolean))].sort(patchCompare).reverse(),
+    [file.data],
+  );
+  const emerging = q.get("new") === "1";
   if (file.loading) return <Loading />;
   if (!file.data || !result) return <Failed />;
   const eventName = eventSlug ? file.data.events.find(([s]) => s === eventSlug)?.[1] : null;
-  const cols: Column<ChampAggRow>[] = [
+  type LRow = ChampAggRow & Delta;
+  const cols: Column<LRow>[] = [
     { key: "c", label: tl("Champion"), value: (c) => c.c, render: (c) => <ChampLink name={c.c} size={18} /> },
     { key: "role", label: tl("Role"), value: (c) => c.role, render: (c) => <span className="text-rw-muted">{c.role >= 0 ? roleName(ROLES[c.role]) : "–"}</span> },
     { key: "presence", label: tl("Presence"), value: (c) => c.presence, render: (c) => pct(c.presence) },
+    ...(vs && result.thenGames ? deltaColumns<LRow>(vs) : []),
     { key: "p", label: tl("Picks"), value: (c) => c.p },
     { key: "b", label: tl("Bans"), value: (c) => c.b },
     { key: "wr", label: tl("Win %"), value: (c) => (c.p >= 3 ? c.wr : null), render: (c) => (c.p ? pct(c.wr) : "–") },
@@ -182,9 +275,20 @@ const LeagueTable: React.FC<{ league: string; years: string[]; q: URLSearchParam
   ];
   return (
     <div className={`${card} space-y-2`}>
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <CompareWith
+          value={vs}
+          options={patchList.filter((p) => p !== q.get("patch")).map((p) => [p, p])}
+          onChange={(v) => setQ({ vs: v || undefined, new: undefined })}
+          emerging={emerging}
+          onEmerging={(v) => setQ({ new: v ? "1" : undefined })}
+        />
+        {vs && !q.get("patch") && <span className="text-[10px] text-rw-muted">{tl("Pick a patch above to compare it with this one.")}</span>}
+      </div>
       <div className="flex flex-wrap items-baseline justify-between gap-2 text-[11px] text-rw-muted">
         <span>
           {tl("{n} games", { n: fmtNum(result.games) })}
+          {vs && result.thenGames > 0 && ` · ${tl("{n} games on {patch}", { n: fmtNum(result.thenGames), patch: vs })}`}
           {eventName && eventSlug && (
             <>
               {" · "}
@@ -197,11 +301,11 @@ const LeagueTable: React.FC<{ league: string; years: string[]; q: URLSearchParam
         <p className="text-xs text-rw-sub py-4 text-center">{tl("No games match these filters.")}</p>
       ) : (
         <SortTable
-          rows={result.rows}
+          rows={emerging && vs ? result.rows.filter((r) => r.emerging) : result.rows}
           columns={cols}
           // with a role picked, bans (not tied to a role) would put e.g. top-lane bans at the top of a mid list
-          initial={{ key: roleQ ? "p" : "presence", desc: true }}
-          key={roleQ ? "by-picks" : "by-presence"}
+          initial={{ key: vs ? "dPres" : roleQ ? "p" : "presence", desc: true }}
+          key={vs ? "by-delta" : roleQ ? "by-picks" : "by-presence"}
           rowKey={(c) => c.c}
           copyName={["champions", q.get("league"), year, q.get("event"), q.get("patch"), q.get("side"), q.get("role")].filter(Boolean).join("-")}
         />
@@ -224,13 +328,19 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
   const state = useLoad<ChampionStats>(() => loadChampionStats(key), [key]);
   const block = state.data?.[scope] || state.data?.all;
   const roleQ = q.get("role") || "";
+  const patchKeys = meta.champions.filter((k) => k.startsWith("p"));
+  const vs = q.get("vs") && meta.champions.includes(q.get("vs")!) ? q.get("vs")! : "";
+  const then = useLoad<ChampionStats | null>(() => (vs ? loadChampionStats(vs) : Promise.resolve(null)), [vs]);
+  const thenBlock = then.data ? then.data[scope] || then.data.all : null;
+  const emerging = q.get("new") === "1";
   const rows = useMemo(() => {
     if (!block) return [];
-    const n = block.games;
-    return block.champs
-      .filter((c) => !roleQ || c.role === roleQ)
-      .map((c) => ({ ...c, presence: (c.p + c.b) / n, wr: c.p ? c.w / c.p : null }));
-  }, [block, roleQ]);
+    const shape = (b: NonNullable<typeof block>) =>
+      b.champs
+        .filter((c) => !roleQ || c.role === roleQ)
+        .map((c) => ({ ...c, presence: (c.p + c.b) / b.games, wr: c.p ? c.w / c.p : null }));
+    return deltas(shape(block), thenBlock ? shape(thenBlock) : null, 10);
+  }, [block, thenBlock, roleQ]);
   const label = (k: string) =>
     k === "all" ? tl("All time (2011 to today)") : k.startsWith("p") ? tl("Patch {patch}", { patch: k.slice(1) }) : tl("Year {year}", { year: k.slice(1) });
   type Row = (typeof rows)[number];
@@ -238,11 +348,14 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
     { key: "c", label: tl("Champion"), value: (c) => c.c, render: (c) => <ChampLink name={c.c} size={18} /> },
     { key: "role", label: tl("Role"), value: (c) => c.role || "", render: (c) => <span className="text-rw-muted">{c.role ? roleName(c.role) : "–"}</span> },
     { key: "presence", label: tl("Presence"), value: (c) => c.presence, render: (c) => pct(c.presence) },
+    ...(thenBlock ? deltaColumns<Row>(label(vs)) : []),
     { key: "p", label: tl("Picks"), value: (c) => c.p },
     { key: "b", label: tl("Bans"), value: (c) => c.b },
     { key: "wr", label: tl("Win %"), value: (c) => (c.p >= 10 ? c.wr : null), render: (c) => (c.p ? pct(c.wr) : "–") },
     { key: "kda", label: tl("KDA"), value: (c) => c.kda ?? null },
   ];
+  // the patch before the chosen one, for "Compare with" (patch keys are newest first)
+  const compareOptions: [string, string][] = patchKeys.filter((k) => k !== key).map((k) => [k, label(k)]);
   return (
     <>
       <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -264,6 +377,15 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
             ))}
         </select>
         <SideRole q={q} setQ={setQ} noSide />
+        {key.startsWith("p") && (
+          <CompareWith
+            value={vs}
+            options={compareOptions}
+            onChange={(v) => setQ({ vs: v || undefined, new: undefined })}
+            emerging={emerging}
+            onEmerging={(v) => setQ({ new: v ? "1" : undefined })}
+          />
+        )}
         {block && <span className="text-rw-muted">{tl("{n} games", { n: fmtNum(block.games) })}</span>}
       </div>
       {state.loading ? (
@@ -272,7 +394,14 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
         <Failed />
       ) : (
         <div className={card}>
-          <SortTable rows={rows} columns={cols} initial={{ key: "presence", desc: true }} rowKey={(c) => c.c} copyName={`champions-${scope}-${key}`} />
+          <SortTable
+            rows={emerging && thenBlock ? rows.filter((r) => r.emerging) : rows}
+            columns={cols}
+            initial={{ key: thenBlock ? "dPres" : "presence", desc: true }}
+            key={thenBlock ? "by-delta" : "by-presence"}
+            rowKey={(c) => c.c}
+            copyName={`champions-${scope}-${key}${vs ? `-vs-${vs}` : ""}`}
+          />
           <p className="text-[10px] text-rw-muted mt-2">
             {tl('Presence = picked or banned in that share of games. "Top leagues" = the main regional leagues plus Worlds, MSI and other internationals.')}{" "}
             {tl("Pick a league above for tournament, patch, side and draft filters.")}
