@@ -260,6 +260,15 @@ export const loadChampGames = (league: string, year: string) => load<import("./t
 export const loadPatches = () => load<import("./types").PatchRow[]>("hub/patches.json");
 export const loadLeagues = () => load<import("./types").LeagueRow[]>("hub/leagues.json");
 export const loadLeague = withAlias<import("./types").HubLeague>("league");
+
+/** Starts loading a hub page's file before it's opened (pointer on its link); the page then finds it ready. */
+export function prefetchHub(r: import("./route").HubRoute): void {
+  if (!("slug" in r)) return;
+  const go: Record<string, ((s: string) => Promise<unknown>) | undefined> = {
+    team: loadHubTeam, player: loadHubPlayer, event: loadHubEvent, match: loadHubSeries, champ: loadHubChamp, league: loadLeague,
+  };
+  go[r.kind]?.(r.slug).catch(() => {});
+}
 export const loadBestIndex = () => load<import("./types").BestIndex>("hub/best/index.json");
 /** The best-rated games and series: all time, a year, a league, or a league's year. */
 export const loadBest = (year?: string, league?: string) =>

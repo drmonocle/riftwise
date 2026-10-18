@@ -6,7 +6,7 @@ import { tl, locale } from "../../i18n";
 import { champName } from "../../champions";
 import { HubRoute, hubPath, navigateHub } from "../../hub/route";
 import { champIcon, itemIcon, runeIcon, spellIcon } from "../../hub/ddragon";
-import { prettySlug } from "../../hub/data";
+import { prefetchHub, prettySlug } from "../../hub/data";
 import { IS_WEB } from "../../platform";
 import { CaptureFooter, ShareButtons } from "./ShareImage";
 import { allRevealed, setRevealed, useRevealedVersion } from "../../revealed";
@@ -52,12 +52,31 @@ export function useLoad<T>(fn: () => Promise<T>, deps: React.DependencyList): Lo
   return state;
 }
 
-export const Loading: React.FC = () => (
-  <div className="py-10 text-center text-xs text-rw-sub" role="status">
-    <Clock className="w-4 h-4 inline mr-1.5 text-rw-teal animate-pulse" />
-    {tl("Loading…")}
-  </div>
-);
+export const Loading: React.FC = () => {
+  // most files arrive in well under a quarter second: only then say we're loading (no flash on every click)
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    const t = window.setTimeout(() => setSlow(true), 250);
+    return () => window.clearTimeout(t);
+  }, []);
+  return (
+    <div className="py-10 text-center text-xs text-rw-sub min-h-[6rem]" role="status" aria-busy="true">
+      {slow && (
+        <>
+          <Clock className="w-4 h-4 inline mr-1.5 text-rw-teal animate-pulse" />
+          {tl("Loading…")}
+        </>
+      )}
+    </div>
+  );
+};
+
+// a link the pointer only passes over isn't fetched: wait a moment first
+let prefetchTimer = 0;
+function prefetchSoon(to: HubRoute) {
+  window.clearTimeout(prefetchTimer);
+  prefetchTimer = window.setTimeout(() => prefetchHub(to), 80);
+}
 
 export const Failed: React.FC<{ missing?: boolean }> = ({ missing }) =>
   missing ? (
@@ -158,6 +177,9 @@ export const HubLink: React.FC<{ to: HubRoute; className?: string; title?: strin
     href={IS_WEB ? hubPath(to) : "#"}
     title={title}
     className={className ?? "text-rw-text hover:text-rw-accent hover:underline"}
+    onMouseEnter={() => prefetchSoon(to)}
+    onFocus={() => prefetchSoon(to)}
+    onTouchStart={() => prefetchHub(to)}
     onClick={(e) => {
       if (IS_WEB && (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0)) return;
       e.preventDefault();

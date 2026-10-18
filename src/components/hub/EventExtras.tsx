@@ -19,6 +19,7 @@ import {
   td,
   th,
 } from "./ui";
+import { RatingBadge } from "./BestPage";
 import { STable } from "../STable";
 
 const mmss = (m: number) => {
@@ -87,6 +88,23 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean }> = ({
       </div>
       {!hidden && (
         <ul className="text-xs space-y-1 mt-1">
+          {o.best && (
+            <li className="flex flex-wrap items-baseline justify-between gap-x-2 min-w-0">
+              <span className="text-rw-sub shrink-0">{tl("Best game")}</span>
+              <span className="min-w-0 text-right">
+                <RatingBadge r={o.best.v} />{" "}
+                {o.best.g ? (
+                  <HubLink to={{ kind: "match", slug: o.best.g, game: o.best.n }}>
+                    {o.best.a} vs {o.best.b} · {tl("Game {n}", { n: o.best.n })}
+                  </HubLink>
+                ) : (
+                  <span className="text-rw-text">
+                    {o.best.a} vs {o.best.b}
+                  </span>
+                )}
+              </span>
+            </li>
+          )}
           <GameLine
             label={tl("Shortest game")}
             r={o.short}

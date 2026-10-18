@@ -22,6 +22,7 @@ import {
   useLoad,
   usePageTitle,
 } from "./ui";
+import { CountryFlag, countryName } from "./CountryFlag";
 import { STable } from "../STable";
 
 const sel =
@@ -92,18 +93,25 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
     {
       key: "league",
       label: tl("League"),
-      value: (x) => x.r[3],
+      value: (x) => x.r[10] || x.r[3],
       render: (x) =>
         x.r[4] ? (
           <HubLink
             to={{ kind: "league", slug: x.r[4] }}
-            className="text-rw-sub hover:text-rw-accent hover:underline"
+            title={x.r[3]}
+            className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
           >
-            {x.r[3]}
+            {x.r[10] || x.r[3]}
           </HubLink>
         ) : (
-          <span className="text-rw-sub">{x.r[3] || "–"}</span>
+          <span className="text-rw-sub" title={x.r[3]}>{x.r[10] || x.r[3] || "–"}</span>
         ),
+    },
+    {
+      key: "country",
+      label: tl("Country"),
+      value: (x) => countryName(x.r[11]),
+      render: (x) => <CountryFlag cc={x.r[11]} />,
     },
     {
       key: "rating",

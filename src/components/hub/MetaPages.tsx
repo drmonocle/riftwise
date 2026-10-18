@@ -279,6 +279,9 @@ const LeagueView: React.FC<{ l: HubLeague }> = ({ l }) => {
             .filter(Boolean)
             .join(" · ")}
         </p>
+        <HubLink to={{ kind: "best", query: `league=${l.u}` }} className="mt-1 inline-block text-[11px] text-rw-teal hover:underline font-semibold">
+          {tl("Best games in this league")}
+        </HubLink>
         {l.history && l.history.length > 1 && (
           <div className="mt-2 space-y-0.5">
             <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted">{tl("History")}</div>

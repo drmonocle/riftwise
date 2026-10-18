@@ -31,6 +31,7 @@ import {
   useLoad,
   usePageTitle,
 } from "./ui";
+import { ratingTextClass } from "./BestPage";
 import { STable } from "../STable";
 
 export const EventPage: React.FC<{ slug: string; onOpenUrl?: (url: string) => void }> = ({ slug, onOpenUrl }) => {
@@ -245,6 +246,11 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
         <span className="truncate">{note ?? fmtDate(r.date, false)}</span>
         <span className="flex items-center gap-1.5 shrink-0">
           {hiddenBySpoiler && !hideResult && played && <RevealButton onReveal={reveal} small />}
+          {!hidden && r.r != null && (
+            <span className={`tabular-nums font-semibold ${ratingTextClass(r.r)}`} title={tl("Series rating: its best game's")}>
+              {r.r.toFixed(0)}
+            </span>
+          )}
           {r.g && !hideResult && (
             <HubLink to={{ kind: "match", slug: r.g }} className="text-rw-teal hover:underline">
               {tl("Details")}

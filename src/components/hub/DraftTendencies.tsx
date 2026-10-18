@@ -8,6 +8,7 @@ import { tl, roleName } from "../../i18n";
 import { winRate } from "../../stats";
 import type { TeamGameRow } from "../../hub/types";
 import { ROLES } from "../../hub/champAgg";
+import { champName } from "../../champions";
 import { ChampLink } from "./ui";
 
 type Count = [string, number, number]; // champion, games, wins
@@ -171,15 +172,16 @@ const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boo
 
 const RoleLine: React.FC<{ title: string; shares: [number, number][] }> = ({ title, shares }) =>
   shares.length ? (
-    <div className="text-xs">
-      <span className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mr-2">{title}</span>
-      <span className="text-rw-text">
-        {shares
-          .slice(0, 3)
-          .map(([r, v]) => `${roleName(ROLES[r])} ${Math.round(v * 100)}%`)
-          .join(" · ")}
-      </span>
-    </div>
+    <>
+      <dt className="text-[10px] uppercase tracking-wider font-bold text-rw-muted self-center">{title}</dt>
+      <dd className="text-xs text-rw-text flex flex-wrap gap-x-3">
+        {shares.slice(0, 3).map(([r, v]) => (
+          <span key={r} className="whitespace-nowrap">
+            {roleName(ROLES[r])} <span className="tabular-nums text-rw-sub">{Math.round(v * 100)}%</span>
+          </span>
+        ))}
+      </dd>
+    </>
   ) : null;
 
 /** [champion a, champion b, games, wins, their combined gold lead at 15 or null] */
@@ -194,10 +196,10 @@ const Pairs: React.FC<{ title: string; hint?: string; list: Pair[] }> = ({ title
       <ul className="text-xs space-y-1">
         {list.map(([a, b, n, w, gd]) => (
           <li key={`${a}-${b}`} className="flex justify-between gap-2 min-w-0">
-            <span className="flex items-center gap-1 min-w-0">
-              <ChampLink name={a} size={16} />
+            <span className="flex items-center gap-1 min-w-0" title={`${champName(a)} + ${champName(b)}`}>
+              <ChampLink name={a} size={18} showName={false} />
               <span className="text-rw-muted">+</span>
-              <ChampLink name={b} size={16} />
+              <ChampLink name={b} size={18} showName={false} />
             </span>
             <span className="text-rw-sub tabular-nums shrink-0">
               {n} · {winRate(w, n)}
@@ -217,25 +219,27 @@ export const DraftTendencies: React.FC<{ rows: TeamGameRow[] }> = ({ rows }) => 
   const d = useMemo(() => draftTendencies(rows), [rows]);
   if (d.games < 3) return null;
   return (
-    <div className="space-y-2 pt-2 border-t border-rw-border">
+    <div className="@container space-y-2 pt-2 border-t border-rw-border">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h4 className="text-xs font-bold uppercase tracking-wider text-rw-accent">{tl("Draft tendencies")}</h4>
         <span className="text-[10px] text-rw-muted">{tl("{n} games with the draft order", { n: d.games })}</span>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 @3xl:grid-cols-4 gap-x-6 gap-y-3">
         <List title={tl("First pick (blue)")} hint={tl("Their first pick when on blue side (B1)")} list={d.b1} showWr />
         <List title={tl("First picks (red)")} hint={tl("Their first two picks when on red side (R1-R2)")} list={d.r12} showWr />
         <List title={tl("Bans, phase 1")} hint={tl("Their first three bans")} list={d.bans1} />
         <List title={tl("Bans, phase 2")} hint={tl("Their last two bans")} list={d.bans2} />
       </div>
-      <RoleLine title={tl("First role locked in")} shares={d.firstRole} />
-      <RoleLine title={tl("Role kept for last")} shares={d.lastRole} />
-      <RoleLine title={tl("Phase 1 picks")} shares={d.phase1} />
-      <RoleLine title={tl("Phase 2 picks")} shares={d.phase2} />
-      <RoleLine title={tl("Last pick on red (R5)")} shares={d.r5} />
-      <RoleLine title={tl("Last picks on blue (B4-B5)")} shares={d.b45} />
+      <dl className="grid grid-cols-1 @md:grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+        <RoleLine title={tl("First role locked in")} shares={d.firstRole} />
+        <RoleLine title={tl("Role kept for last")} shares={d.lastRole} />
+        <RoleLine title={tl("Phase 1 picks")} shares={d.phase1} />
+        <RoleLine title={tl("Phase 2 picks")} shares={d.phase2} />
+        <RoleLine title={tl("Last pick on red (R5)")} shares={d.r5} />
+        <RoleLine title={tl("Last picks on blue (B4-B5)")} shares={d.b45} />
+      </dl>
       {(d.botDuos.length > 0 || d.midJungle.length > 0 || d.r12pairs.length > 0) && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 @md:grid-cols-2 @3xl:grid-cols-3 gap-x-6 gap-y-3">
           <Pairs
             title={tl("Jungle + mid pairs")}
             hint={tl("Games · win rate · combined gold lead at 15")}

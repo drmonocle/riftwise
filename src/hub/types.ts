@@ -64,6 +64,8 @@ export interface SeriesRow {
   bo: number;
   date: string;
   w: 0 | 1 | 2;
+  /** the series' game rating (0-100) */
+  r?: number;
 }
 
 export interface Stage {
@@ -376,7 +378,8 @@ export interface TeamRating {
   chg30: number | null;
 }
 /** slug, name, code, league, league slug, rating, 30-day change, games rated, last game, tier (1 top league, 2 second tier) */
-export type RatingRow = [string, string, string, string, string | null, number, number | null, number, string, number];
+/** [slug, team, code, league, league slug, rating, change over 30 days, games, last game, tier 1/2, league short name, country code] */
+export type RatingRow = [string, string, string, string, string | null, number, number | null, number, string, number, string?, (string | null)?];
 export interface RatingScore {
   n: number;
   acc?: number;
@@ -602,6 +605,8 @@ export interface EventOverview {
   short: GameRef | null;
   long: GameRef | null;
   bloody: GameRef | null;
+  /** the event's best-rated game (v = rating, n = game number) */
+  best?: GameRef & { n: number };
   farm: { v: number; n: string; u: string | null; c: string; cs: number; min: number; g: string | null } | null;
   pentas: { n: string; u: string | null; c: string; g: string | null; x: number }[];
   mvp: { n: string; u: string | null; v: number }[];
