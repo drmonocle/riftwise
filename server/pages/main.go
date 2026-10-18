@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	version  = "1.10.0"
+	version  = "1.10.1"
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -273,7 +273,11 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		}
 		title, desc, index = e.title, e.desc, e.index
 		if len(parts) == 3 { // one season of a league: /league/lck/2025
-			title = strings.TrimSuffix(title, " | RiftWise") + " " + parts[2] + " | RiftWise"
+			name := strings.TrimSuffix(title, " | RiftWise")
+			if i := strings.Index(name, " – "); i > 0 {
+				name = name[:i] // "LCK – every season, champions and results" -> "LCK"
+			}
+			title = name + " " + parts[2] + " season | RiftWise"
 			desc = parts[2] + ": " + desc
 			index = false // the league page itself is the one to list
 		}
