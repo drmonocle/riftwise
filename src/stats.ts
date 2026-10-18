@@ -93,7 +93,16 @@ let versionCheckedAt = 0;
 let builtAt: string | null = null; // when the current build finished (latest.json "built")
 const cache = new Map<string, Promise<any>>(); // keyed by "<version>/<path>"
 
+// Stats pages come with the current build's version (<meta name="rw-stats">, from the page service), which saves
+// a round trip before the first file. A build replaced since then is caught by the missing-file retry in load().
+const pageVersion =
+  IS_WEB && typeof document !== "undefined" ? document.querySelector('meta[name="rw-stats"]')?.getAttribute("content") || null : null;
+
 function getVersion(force = false): Promise<string> {
+  if (!force && !versionPromise && pageVersion && /^\d{14}$/.test(pageVersion)) {
+    versionCheckedAt = Date.now();
+    versionPromise = Promise.resolve(pageVersion);
+  }
   if (force || !versionPromise || Date.now() - versionCheckedAt > VERSION_MAX_AGE_MS) {
     versionCheckedAt = Date.now();
     const ask = () => fetch(`${STATS_BASE}/latest.json`, { cache: "no-store", signal: AbortSignal.timeout(15000) });

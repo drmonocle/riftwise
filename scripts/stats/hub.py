@@ -210,6 +210,37 @@ def phase_rank(phase):
     return 1
 
 
+# Leaguepedia's country names -> ISO 3166 codes (the flags in public/flags/<code>.svg)
+COUNTRY_CODE = {
+    "south korea": "kr", "korea": "kr", "china": "cn", "taiwan": "tw", "hong kong": "hk", "macau": "mo", "japan": "jp",
+    "vietnam": "vn", "thailand": "th", "philippines": "ph", "singapore": "sg", "malaysia": "my", "indonesia": "id",
+    "australia": "au", "new zealand": "nz", "united states": "us", "canada": "ca", "mexico": "mx", "brazil": "br",
+    "argentina": "ar", "chile": "cl", "colombia": "co", "peru": "pe", "uruguay": "uy", "costa rica": "cr",
+    "united kingdom": "gb", "england": "gb", "ireland": "ie", "france": "fr", "germany": "de", "spain": "es",
+    "portugal": "pt", "italy": "it", "netherlands": "nl", "belgium": "be", "denmark": "dk", "sweden": "se",
+    "norway": "no", "finland": "fi", "poland": "pl", "czech republic": "cz", "czechia": "cz", "slovakia": "sk",
+    "austria": "at", "switzerland": "ch", "hungary": "hu", "romania": "ro", "bulgaria": "bg", "greece": "gr",
+    "croatia": "hr", "serbia": "rs", "slovenia": "si", "turkey": "tr", "türkiye": "tr", "russia": "ru", "ukraine": "ua",
+    "belarus": "by", "kazakhstan": "kz", "israel": "il", "saudi arabia": "sa", "united arab emirates": "ae", "egypt": "eg",
+    "morocco": "ma", "south africa": "za", "lithuania": "lt", "latvia": "lv", "estonia": "ee", "cyprus": "cy",
+    "malta": "mt", "india": "in", "mongolia": "mn", "tunisia": "tn", "ecuador": "ec", "iceland": "is", "panama": "pa",
+    "jordan": "jo", "dominican republic": "do", "macao": "mo", "republic of ireland": "ie", "northern ireland": "gb",
+    "puerto rico": "pr", "luxembourg": "lu", "venezuela": "ve", "el salvador": "sv", "algeria": "dz", "oman": "om",
+    "kuwait": "kw", "lebanon": "lb", "guatemala": "gt", "bosnia and herzegovina": "ba", "iraq": "iq", "albania": "al",
+    "qatar": "qa", "bolivia": "bo", "paraguay": "py", "honduras": "hn", "nicaragua": "ni",
+}
+
+
+def country_code(name):
+    return COUNTRY_CODE.get(str(name or "").strip().lower())
+
+
+# Leagues played in one country: their teams' country when Leaguepedia has none for the team
+LEAGUE_COUNTRY = {"LCK": "kr", "LCK CL": "kr", "LPL": "cn", "LDL": "cn", "CBLOL": "br", "VCS": "vn", "LJL": "jp", "LFL": "fr",
+                  "PRM": "de", "SL": "es", "TCL": "tr", "NLC": "gb", "LIT": "it", "LPLOL": "pt", "UL": "pl", "HM": "cz",
+                  "LCO": "au", "LLA": "mx"}
+
+
 def r1(x):
     return round(x, 1)
 
@@ -386,7 +417,7 @@ def build(ctx) -> dict:
     ):
         lp_tourn[r["OverviewPage"]] = {k: clean(v) for k, v in dict(r).items()}
     lp_team = {}
-    for r in con.execute("SELECT Name, Short, Region, Location, IsDisbanded, Website, Twitter FROM lp_teams"):
+    for r in con.execute("SELECT Name, Short, Region, Location, TeamLocation, IsDisbanded, Website, Twitter FROM lp_teams"):
         lp_team[r["Name"]] = {k: clean(v) for k, v in dict(r).items()}
     lp_player = {}
     for r in con.execute(
@@ -428,7 +459,8 @@ def build(ctx) -> dict:
     tname_to_op = {}
     for r in con.execute(
         """SELECT game_id, match_id, game_number, tournament_name, overview_page, stage_tab, date_utc, patch, team1, team2,
-                  winner, best_of, vod_url, mepi_rating FROM matches WHERE overview_page IS NOT NULL"""
+                  winner, best_of, vod_url, mepi_rating, duration_minutes, team1_kills, team2_kills
+           FROM matches WHERE overview_page IS NOT NULL"""
     ):
         op = r["overview_page"]
         if ctx.is_show(op, r["tournament_name"]):
@@ -439,6 +471,9 @@ def build(ctx) -> dict:
         g = games_by_op[op].get(key)
         if g:
             g["mepi"] = r["mepi_rating"]
+            g["m_min"], g["m_k"] = r["duration_minutes"], {r["team1"]: r["team1_kills"], r["team2"]: r["team2_kills"]}
+            if not g["vod"] and r["vod_url"]:
+                g["vod"] = r["vod_url"]
             if not g["gid"] and r["game_id"] in ctx.games:
                 g["gid"] = r["game_id"]
             if not (g["t1"] and g["t2"]) and r["team1"] and r["team2"]:
@@ -453,6 +488,7 @@ def build(ctx) -> dict:
             "patch": r["patch"], "t1": r["team1"], "t2": r["team2"], "w": r["winner"] if r["winner"] in (r["team1"], r["team2"]) else None,
             "sa": None, "sb": None, "bo": r["best_of"], "remake": 0, "ff": 0, "vod": r["vod_url"],
             "gid": r["game_id"] if r["game_id"] in ctx.games else None, "tab": r["stage_tab"], "mepi": r["mepi_rating"],
+            "m_min": r["duration_minutes"], "m_k": {r["team1"]: r["team1_kills"], r["team2"]: r["team2_kills"]},
         }
         added_new += 1
     checks["hub: games newer than all_games (from matches)"] = added_new
@@ -647,7 +683,7 @@ def build(ctx) -> dict:
 
     def new_facts():
         return {"g": 0, "min": 0.0, "kills": 0, "kg": 0, "blue": 0, "red": 0, "drakes": Counter(), "short": None,
-                "long": None, "bloody": None, "pentas": [], "farm": None}
+                "long": None, "bloody": None, "pentas": [], "farm": None, "best": None}
 
     def stats_out(tp, tts, tc, facts, ev_mvp, tteam, regions, last_date):
         """Leaders, player / team / champion tables, facts, region and team records of a tournament
@@ -693,6 +729,7 @@ def build(ctx) -> dict:
                 "g": facts["g"], "min": rmin(facts["min"] / facts["g"]), "kills": r1(facts["kills"] / max(facts["kg"], 1)),
                 "blue": facts["blue"], "red": facts["red"], "drakes": dict(facts["drakes"]),
                 "short": facts["short"], "long": facts["long"], "bloody": facts["bloody"], "farm": facts["farm"],
+                **({"best": facts["best"]} if facts["best"] else {}),
                 "pentas": facts["pentas"],
                 "mvp": [{"n": ctx.pname(pg), "u": player_slug.get(pg), "v": n} for pg, n in ev_mvp.most_common(8)],
             }
@@ -757,7 +794,7 @@ def build(ctx) -> dict:
             facts_m["drakes"].update(f["drakes"])
             facts_m["pentas"] += f["pentas"]
             for k, better in (("short", lambda a, b: a < b), ("long", lambda a, b: a > b), ("bloody", lambda a, b: a > b),
-                              ("farm", lambda a, b: a > b)):
+                              ("farm", lambda a, b: a > b), ("best", lambda a, b: a > b)):
                 if f[k] and (facts_m[k] is None or better(f[k]["v"], facts_m[k]["v"])):
                     facts_m[k] = f[k]
             ev_m.update(p["mvp"])
@@ -920,12 +957,48 @@ def build(ctx) -> dict:
             if not a or not b or a == b or a == "TBD" or b == "TBD":
                 continue
             date = (glist[0]["date"] if glist and glist[0]["date"] else (s["date"] if s else "")) or ""
-            wa = sum(1 for g in glist if g["w"] == a)
-            wb = sum(1 for g in glist if g["w"] == b)
+            fa_, fb_ = ctx.team_of(a, date[:10] or "0000"), ctx.team_of(b, date[:10] or "0000")
+
+            def team_side(name, a=a, b=b, fa_=fa_, fb_=fb_, d_=date[:10] or "0000"):
+                """1 = series team a, 2 = team b, 0 = neither (exact name, then spelling, then franchise)."""
+                if not name:
+                    return 0
+                if name == a:
+                    return 1
+                if name == b:
+                    return 2
+                m_ = match_teams([name], a, b).get(name)
+                if m_ in (a, b):
+                    return 1 if m_ == a else 2
+                f_ = ctx.team_of(name, d_)
+                if f_ == fa_ and f_ != fb_:
+                    return 1
+                if f_ == fb_ and f_ != fa_:
+                    return 2
+                # a club's sister team (LoL Masters 2014: "SK Telecom T1 K" for "SK Telecom T1 (Club Masters)"):
+                # the club's first word, when only one side has it
+                first = lambda x: (re.sub(r"[^a-z0-9 ]", " ", x.lower()).split() or [""])[0]
+                t_, ta_, tb_ = first(name), first(a), first(b)
+                if len(t_) >= 2 and (t_ == ta_) != (t_ == tb_):
+                    return 1 if t_ == ta_ else 2
+                return 0
+
+            def win_side(g):
+                """The series side of a game's winner; when only the loser is known, the other side."""
+                w_ = team_side(g["w"])
+                if w_ or not g["w"]:
+                    return w_
+                other = g["t2"] if g["w"] == g["t1"] else g["t1"] if g["w"] == g["t2"] else None
+                o_ = team_side(other) if other else 0
+                return 3 - o_ if o_ else 0
+
+            wa = sum(1 for g in glist if win_side(g) == 1)
+            wb = sum(1 for g in glist if win_side(g) == 2)
             if not glist and s and s["sa"] is not None and s["sb"] is not None:
                 wa, wb = s["sa"], s["sb"]  # forfeits and series with no game list
-            elif s and s["sa"] is not None and s["sb"] is not None and (s["sa"], s["sb"]) != (wa, wb) and s.get("ff"):
-                wa, wb = s["sa"], s["sb"]
+            elif s and s["sa"] is not None and s["sb"] is not None and (s["sa"], s["sb"]) != (wa, wb) and (
+                    s.get("ff") or len(glist) < s["sa"] + s["sb"]):
+                wa, wb = s["sa"], s["sb"]  # a forfeit, or games missing from the catalog (Worlds Season 1 final: 2-1)
             bo = (s and s["bo"]) or (glist and glist[0]["bo"]) or max(1, len(glist))
             played = bool(glist) and any(g["w"] for g in glist) or (wa + wb > 0)
             winner = 1 if wa > wb else 2 if wb > wa else 0
@@ -933,6 +1006,8 @@ def build(ctx) -> dict:
             if not tab:
                 rest = mid[len(op) + 1:] if mid.startswith(op + "_") else ""
                 tab = rest.rsplit("_", 1)[0] if "_" in rest else ""
+            if tab and tab.strip().lower() in ("scoreboards", "scoreboard", "overview"):
+                tab = ""
             an, au, ac = team_ref(a, date)
             bn, bu, bc = team_ref(b, date)
             if date:
@@ -941,6 +1016,7 @@ def build(ctx) -> dict:
 
             # Series page (only when there is something to show beyond the two names)
             has_page = any(g["gid"] or g["vod"] or g.get("vgs") or g["w"] for g in glist)
+            s_rating = None
             gslug = None
             if has_page:
                 rest = mid[len(op) + 1:] if mid.startswith(op + "_") else mid
@@ -953,8 +1029,8 @@ def build(ctx) -> dict:
                         gid_slug[g["gid"]] = gslug
                 games_out = []
                 for g in glist:
-                    blue_is_a = g["t1"] == a
-                    gw = 1 if g["w"] == a else 2 if g["w"] == b else 0
+                    blue_is_a = g["t1"] == a or (g["t1"] != b and (team_side(g["t1"]) == 1 or team_side(g["t2"]) == 2))
+                    gw = win_side(g)
                     item = {"n": g["n"], "w": gw, "blue": "a" if blue_is_a else "b", "patch": fix_patch(g["patch"], g["date"]),
                             "date": g["date"], "st": {"full": "f", "results_only": "r"}.get(g["status"], "s")}
                     if g["vod"]:
@@ -1400,24 +1476,52 @@ def build(ctx) -> dict:
                     games_out.append(item)
                 stage_name = tab or ""
                 rated = [x for x in games_out if x.get("r") is not None]
-                # a series is as good as its best game
                 s_best = max(rated, key=lambda x: (x["r"], x["n"])) if rated else None
+                if s_best and (facts["best"] is None or s_best["r"] > facts["best"]["v"]):
+                    facts["best"] = {"g": gslug, "a": an, "b": bn, "v": s_best["r"], "n": s_best["n"]}
+                played_n = sum(1 for x in games_out if x.get("w") and not x.get("remake"))
+                s_rating = None
+                if s_best:
+                    rs = sorted((x["r"] for x in rated), reverse=True)
+                    if len(rs) >= 2:
+                        # its best game counts most, then its best three, then every game; a 3-2 gets a little more
+                        top3 = sum(rs[:3]) / len(rs[:3])
+                        adj = 1.5 if sorted((wa, wb)) == [2, 3] else (-2.0 if wa == 0 or wb == 0 else 0.0)
+                        s_rating = round(min(100.0, 0.55 * rs[0] + 0.30 * top3 + 0.15 * (sum(rs) / len(rs)) + adj), 1)
+                    else:
+                        s_rating = rs[0]
                 out.json(f"game/{gslug}.json", {
                     "e": eslug, "en": en, "stage": stage_name, "date": date, "bo": bo,
                     "a": {"n": an, "u": au, "c": ac}, "b": {"n": bn, "u": bu, "c": bc},
-                    "sa": wa, "sb": wb, "w": winner, "games": games_out, **({"r": s_best["r"]} if s_best else {}),
+                    "sa": wa, "sb": wb, "w": winner, "games": games_out, **({"r": s_rating} if s_rating is not None else {}),
                 })
                 lu_b = league_slug.get(lg_ev)
+                region_b = (info or {}).get("Region") if not lu_b else None  # Regional Finals: the region's league (below)
+                g_by_n = {g["n"]: g for g in glist}
                 for x in rated:
                     sd_ = x.get("t") or {}
                     ka, kb = ((sd_.get("blue") or {}).get("k"), (sd_.get("red") or {}).get("k"))
                     if x["blue"] == "b":
                         ka, kb = kb, ka
+                    g_ = g_by_n.get(x["n"]) or {}
+                    if ka is None or kb is None:
+                        # no scoreboard: the kills the catalog's match row has
+                        mk = g_.get("m_k") or {}
+                        ka_, kb_ = None, None
+                        for nm, kk in mk.items():
+                            sd_n = team_side(nm)
+                            if sd_n == 1:
+                                ka_ = kk
+                            elif sd_n == 2:
+                                kb_ = kk
+                        if ka_ is not None and kb_ is not None:
+                            ka, kb = ka_, kb_
                     best_games.append([x["r"], gslug, x["n"], (x["date"] or date)[:10], en, eslug, stage_name, an, au, bn, bu, x["w"],
-                                       x.get("min"), ka, kb, 1 if x.get("vod") or x.get("vgs") else 0, lu_b])
-                if s_best:
-                    best_series.append([s_best["r"], gslug, date[:10], en, eslug, stage_name, an, au, bn, bu, wa, wb, s_best["n"],
-                                        len(games_out), lu_b])
+                                       x.get("min") or (rmin(g_["m_min"]) if g_.get("m_min") else None), ka, kb,
+                                       1 if x.get("vod") or x.get("vgs") else 0, lu_b, region_b])
+                if s_best and played_n >= 2:
+                    best_series.append([s_rating, gslug, date[:10], en, eslug, stage_name, an, au, bn, bu, wa, wb, s_best["n"],
+                                        played_n, lu_b, region_b])
                 n_series_pages += 1
                 gdate = date[:10]
                 title = f"{an} vs {bn} – {en}{' ' + stage_name if stage_name else ''}"
@@ -1490,6 +1594,7 @@ def build(ctx) -> dict:
             stage_rows[tab or ""].append({
                 "g": gslug, "a": an, "au": au, "ac": ac, "b": bn, "bu": bu, "bc": bc,
                 "sa": wa if played else None, "sb": wb if played else None, "bo": bo, "date": date, "w": winner,
+                **({"r": s_rating} if s_rating is not None and played else {}),
                 "_o": ((s and s["ntab"]) or 999, (s and s["n"]) or 999, date),
             })
 
@@ -1740,8 +1845,23 @@ def build(ctx) -> dict:
                             "lrank": league_rank[lg_r], "chg30": round(x["r"] - was) if was is not None else None}
         lpt_r = lp_team.get(ctx.fr_name[fid]) or {}
         code_r = ctx.short_of(ctx.fr_name[fid]) or str(lpt_r.get("Short") or "").strip()
+        # the country the team plays in (Leaguepedia's TeamLocation), else the organisation's; for a team Leaguepedia
+        # files under another name (LYON (2024 American Team), Kiwoom DRX) its name without the note, or an older name
+        # of the franchise; else the league's country
+        nm_r = ctx.fr_name[fid]
+        # a region-suffixed name plays in that region (Ninjas in Pyjamas.CN: China, not the Swedish organisation)
+        cc_r = {"CN": "cn", "KR": "kr", "VN": "vn", "BR": "br", "JP": "jp"}.get(nm_r.rsplit(".", 1)[-1]) if "." in nm_r else None
+        older = [e["n"] for e in sorted(ctx.fr_eras.get(fid, []), key=lambda e: e.get("to") or "", reverse=True)]
+        for cand in [] if cc_r else [nm_r, re.sub(r"\s*\(.*\)\s*$", "", nm_r)] + older:
+            t_ = lp_team.get(cand) or {}
+            cc_r = country_code(t_.get("TeamLocation")) or country_code(t_.get("Location"))
+            if cc_r:
+                break
+        if not cc_r:
+            cc_r = LEAGUE_COUNTRY.get(leagues_info.SHORT.get(lg_r) or "")
         rank_rows.append([team_slug[fid], ctx.fr_name[fid], code_r, lg_r, league_slug.get(lg_r), round(x["r"]),
-                          team_rating[fid]["chg30"], x["g"], x["last"], 1 if top_r else 2])
+                          team_rating[fid]["chg30"], x["g"], x["last"], 1 if top_r else 2,
+                          leagues_info.SHORT.get(lg_r) or "", cc_r])
     # league strength: average of each top league's best four active teams
     by_league_r = defaultdict(list)
     for row in rank_rows:
@@ -2199,6 +2319,22 @@ def build(ctx) -> dict:
     out.json("leagues.json", leagues_out)
 
     # Best games and series: all time, each year, each league, each league's year (best first, then newest)
+    region_main = {}
+    for lg_row in leagues_out:
+        if lg_row["pr"] and lg_row.get("r"):
+            region_main.setdefault(str(lg_row["r"]).lower(), lg_row["u"])
+    for rows_, li in ((best_games, 16), (best_series, 14)):
+        for r in rows_:
+            region = r.pop()
+            if not r[li] and region:
+                r[li] = region_main.get(str(region).lower())
+    # a league's earlier names count as that league (OGN Champions in LCK, NA LCS in LCS...)
+    lineage_of = {}
+    for lg_row in leagues_out:
+        for step in lg_row.get("h") or []:
+            if step.get("u") and step["u"] != lg_row["u"]:
+                lineage_of.setdefault(step["u"], set()).add(lg_row["u"])
+
     def top(rows, n):
         return heapq.nlargest(n, rows, key=lambda r: (r[0], r[3] if len(r) > 16 else r[2]))
     year_of_g, year_of_s = (lambda r: r[3][:4]), (lambda r: r[2][:4])
@@ -2207,11 +2343,13 @@ def build(ctx) -> dict:
     for r in best_games:
         by_year_g[year_of_g(r)].append(r)
         if r[16]:
-            by_lg_g[r[16]].append(r)
+            for lu_ in {r[16]} | lineage_of.get(r[16], set()):
+                by_lg_g[lu_].append(r)
     for r in best_series:
         by_year_s[year_of_s(r)].append(r)
         if r[14]:
-            by_lg_s[r[14]].append(r)
+            for lu_ in {r[14]} | lineage_of.get(r[14], set()):
+                by_lg_s[lu_].append(r)
     out.json("best/all.json", {"g": top(best_games, 300), "s": top(best_series, 200)})
     for y in by_year_g:
         out.json(f"best/{y}.json", {"g": top(by_year_g[y], 200), "s": top(by_year_s.get(y, []), 100)})

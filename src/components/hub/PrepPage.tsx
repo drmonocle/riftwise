@@ -461,48 +461,83 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
     const rows = inPeriod(pl.log, period, playerRowRef);
     return rows.length ? playerAgg(rows) : null;
   };
-  const cell = (pl: Side["players"][number], right: boolean) => {
-    const s = stats(pl);
-    if (!pl) return <span className="text-rw-muted">–</span>;
-    return (
-      <div className={`min-w-0 space-y-0.5 ${right ? "text-right" : ""}`}>
-        <HubLink to={{ kind: "player", slug: pl.p.u }} className="text-sm font-bold text-rw-text hover:underline">
+  // one lane as a side-by-side table: a stat per row, the better number lit up
+  const fmt1 = (v: number) => v.toFixed(1);
+  const lane = (r: string, pa: Side["players"][number], pb: Side["players"][number]) => {
+    const sa = stats(pa);
+    const sb = stats(pb);
+    type Line = [string, number | null | undefined, number | null | undefined, (v: number) => string, string?];
+    const wr = (x: typeof sa) => (x && x.g ? (x.w / x.g) * 100 : null);
+    const lines: Line[] = [
+      [tl("Games"), sa?.g, sb?.g, (v) => String(v)],
+      [tl("Win rate"), wr(sa), wr(sb), (v) => `${Math.round(v)}%`],
+      ["KDA", sa?.kda, sb?.kda, (v) => v.toFixed(2)],
+      ["KP", sa?.kp, sb?.kp, (v) => `${Math.round(v)}%`, tl("Kill participation")],
+      [tl("CS/m"), sa?.csm, sb?.csm, fmt1],
+      [tl("DPM"), sa?.dpm, sb?.dpm, (v) => String(Math.round(v))],
+      [tl("DMG%"), sa?.dmgShare, sb?.dmgShare, (v) => `${Math.round(v)}%`],
+      [tl("Gold @15"), sa?.tl?.gd15, sb?.tl?.gd15, (v) => sgn(v), tl("Average lead over the lane opponent at 15 minutes")],
+      [tl("CS @15"), sa?.tl?.csd15, sb?.tl?.csd15, (v) => sgn(v)],
+      [tl("XP @15"), sa?.tl?.xpd15, sb?.tl?.xpd15, (v) => sgn(v)],
+    ];
+    const pool = (x: typeof sa) => (x ? `${x.champs.length} (${x.champs.filter((c) => c.g >= 2).length})` : "–");
+    const icons = (x: typeof sa, right: boolean) =>
+      x ? (
+        <div className={`flex gap-1 flex-wrap ${right ? "" : "justify-end"}`}>
+          {x.champs.slice(0, 4).map((c) => (
+            <span key={c.c} className="flex items-center gap-0.5 text-[10px] text-rw-sub" title={`${champName(c.c)} · ${c.g} · ${winRate(c.w, c.g)}`}>
+              <ChampIcon name={c.c} size={18} />
+              {c.g}
+            </span>
+          ))}
+        </div>
+      ) : null;
+    const name = (pl: Side["players"][number], right: boolean) =>
+      pl ? (
+        <HubLink to={{ kind: "player", slug: pl.p.u }} className={`text-sm font-bold text-rw-text hover:underline truncate ${right ? "" : "text-right"}`}>
           {pl.p.name}
         </HubLink>
-        {s ? (
-          <>
-            <div className="text-[11px] text-rw-sub tabular-nums">
-              {s.g} · {winRate(s.w, s.g)} · {s.kda} KDA{s.kp != null ? ` · KP ${s.kp.toFixed(0)}%` : ""}
-            </div>
-            <div className="text-[11px] text-rw-muted tabular-nums">
-              {s.csm != null ? `${s.csm} CS/m` : ""}
-              {s.dpm != null ? ` · ${s.dpm} DPM` : ""}
-              {s.dmgShare != null ? ` · ${s.dmgShare.toFixed(0)}% DMG` : ""}
-            </div>
-            {s.tl && s.tl.gd15 != null && (
-              <div className="text-[11px] text-rw-muted tabular-nums" title={tl("Average lead over the lane opponent at 15 minutes")}>
-                @15 {sgn(s.tl.gd15)} {tl("gold")} · {sgn(s.tl.csd15)} CS · {sgn(s.tl.xpd15)} XP
-              </div>
-            )}
-            <div className="text-[11px] text-rw-muted tabular-nums" title={tl("Champions played in this period; how much of their play is on their three most played")}>
-              {tl("Pool {n} ({m} with 2+ games) · top 3 = {p} of games", {
-                n: s.champs.length,
-                m: s.champs.filter((c) => c.g >= 2).length,
-                p: `${Math.round((s.champs.slice(0, 3).reduce((t, c) => t + c.g, 0) / Math.max(s.g, 1)) * 100)}%`,
+      ) : (
+        <span className="text-rw-muted">–</span>
+      );
+    const val = "tabular-nums text-[11px] py-0.5";
+    return (
+      <div className="py-2.5 max-w-lg mx-auto">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <div className="min-w-0 flex justify-end">{name(pa, false)}</div>
+          <span className="text-[10px] uppercase tracking-wider font-bold text-rw-accent text-center w-16">{roleName(r)}</span>
+          <div className="min-w-0 flex">{name(pb, true)}</div>
+        </div>
+        {sa || sb ? (
+          <div className="mt-1 grid grid-cols-[1fr_auto_1fr] gap-x-3">
+            {lines
+              .filter(([, va, vb]) => va != null || vb != null)
+              .map(([label, va, vb, f, hint]) => {
+                const better = va != null && vb != null && va !== vb ? (va > vb ? "a" : "b") : null;
+                return (
+                  <React.Fragment key={label}>
+                    <span className={`${val} text-right ${better === "a" ? "text-rw-teal font-semibold" : "text-rw-sub"}`}>{va != null ? f(va) : "–"}</span>
+                    <span className={`${val} text-rw-muted text-center w-16`} title={hint}>
+                      {label}
+                    </span>
+                    <span className={`${val} ${better === "b" ? "text-rw-teal font-semibold" : "text-rw-sub"}`}>{vb != null ? f(vb) : "–"}</span>
+                  </React.Fragment>
+                );
               })}
-            </div>
-            <div className={`flex gap-1 flex-wrap ${right ? "justify-end" : ""}`}>
-              {s.champs.slice(0, 4).map((c) => (
-                <span key={c.c} className="flex items-center gap-0.5 text-[10px] text-rw-sub" title={`${c.g} · ${winRate(c.w, c.g)}`}>
-                  <ChampIcon name={c.c} size={18} />
-                  {c.g}
-                </span>
-              ))}
-            </div>
-          </>
+            <span className={`${val} text-right text-rw-sub`}>{pool(sa)}</span>
+            <span className={`${val} text-rw-muted text-center w-16`} title={tl("Champions played in this period (in brackets: 2+ games)")}>
+              {tl("Pool")}
+            </span>
+            <span className={`${val} text-rw-sub`}>{pool(sb)}</span>
+          </div>
         ) : (
-          <div className="text-[11px] text-rw-muted">{tl("No games in this period")}</div>
+          <div className="text-[11px] text-rw-muted text-center">{tl("No games in this period")}</div>
         )}
+        <div className="mt-1.5 grid grid-cols-[1fr_auto_1fr] gap-x-3">
+          {icons(sa, false) || <span />}
+          <span className="w-16" />
+          {icons(sb, true) || <span />}
+        </div>
       </div>
     );
   };
@@ -510,14 +545,10 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
     <Section title={tl("Lane by lane")} right={<span className="text-[11px] text-rw-sub">{periodLabel}</span>} share={`${title}-lanes-${periodLabel}`}>
       <ul className="divide-y divide-rw-border">
         {ROLES.map((r, i) => (
-          <li key={r} className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 py-2">
-            {cell(a.players[i], false)}
-            <span className="text-[10px] uppercase tracking-wider font-bold text-rw-accent text-center w-14">{roleName(r)}</span>
-            {cell(b.players[i], true)}
-          </li>
+          <li key={r}>{lane(r, a.players[i], b.players[i])}</li>
         ))}
       </ul>
-      <p className="text-[10px] text-rw-muted">{tl("Starters: the players with the most games in each team's newest roster. Games · win rate · KDA · kill participation; champions with games played.")}</p>
+      <p className="text-[10px] text-rw-muted">{tl("Starters: the players with the most games in each team's newest roster. The better number of each pair is highlighted; champions with games played.")}</p>
       <OeCredit />
     </Section>
   );

@@ -25,7 +25,7 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title || "RiftWise", {
       body: data.body || "",
-      icon: "/icon-192.png",
+      icon: "/icon-192.png?v=2",
       tag: data.tag || undefined,
       data: { url: data.url || "/" },
     }),

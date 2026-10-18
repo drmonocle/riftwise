@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	version  = "1.8.0"
+	version  = "1.9.0"
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -173,7 +173,7 @@ var (
 
 // Links in every page's <noscript> summary (paths under the site's root)
 var noscriptLinks = [][2]string{
-	{"", "RiftWise"}, {"stats", "Pro Stats"}, {"stats/rankings", "Power Rankings"}, {"stats/tournaments", "Tournaments"},
+	{"", "RiftWise"}, {"stats", "Pro Stats"}, {"stats/rankings", "Power Rankings"}, {"stats/best", "Best games"}, {"stats/tournaments", "Tournaments"},
 	{"stats/leagues", "Leagues"}, {"stats/champions", "Champions"}, {"stats/patches", "Patches"}, {"stats/records", "Records"},
 	{"stats/titles", "Title winners"}, {"stats/compare", "Compare"}, {"stats/prep", "Match prep"}, {"stats/draft", "Draft board"},
 	{"stats/finder", "Game finder"}, {"stats/data", "CSV data"}, {"team/t1", "T1"}, {"team/geng", "Gen.G"},
@@ -184,7 +184,7 @@ var noscriptLinks = [][2]string{
 // page returns index.html with this page's title, description and preview tags.
 func (s *store) page(title, desc, canonical string, index bool) string {
 	s.mu.RLock()
-	doc := s.indexHTML
+	doc, ver := s.indexHTML, s.version
 	s.mu.RUnlock()
 	if doc == "" {
 		return ""
@@ -196,16 +196,20 @@ func (s *store) page(title, desc, canonical string, index bool) string {
 	doc = reNoscript.ReplaceAllLiteralString(doc, "")
 	var tags strings.Builder
 	tags.WriteString(`<link rel="canonical" href="` + c + `" />` + "\n")
+	if v := ver; v != "" {
+		// the app starts loading this build's files without asking for stats/latest.json first
+		tags.WriteString(`    <meta name="rw-stats" content="` + html.EscapeString(v) + `" />` + "\n")
+	}
 	tags.WriteString(`    <meta property="og:type" content="website" />` + "\n")
 	tags.WriteString(`    <meta property="og:site_name" content="RiftWise" />` + "\n")
 	tags.WriteString(`    <meta property="og:title" content="` + t + `" />` + "\n")
 	tags.WriteString(`    <meta property="og:description" content="` + d + `" />` + "\n")
 	tags.WriteString(`    <meta property="og:url" content="` + c + `" />` + "\n")
-	tags.WriteString(`    <meta property="og:image" content="` + publicURL + `icon-512.png" />` + "\n")
+	tags.WriteString(`    <meta property="og:image" content="` + publicURL + `icon-512.png?v=2" />` + "\n")
 	tags.WriteString(`    <meta name="twitter:card" content="summary" />` + "\n")
 	tags.WriteString(`    <meta name="twitter:title" content="` + t + `" />` + "\n")
 	tags.WriteString(`    <meta name="twitter:description" content="` + d + `" />` + "\n")
-	tags.WriteString(`    <meta name="twitter:image" content="` + publicURL + `icon-512.png" />` + "\n")
+	tags.WriteString(`    <meta name="twitter:image" content="` + publicURL + `icon-512.png?v=2" />` + "\n")
 	if !index {
 		tags.WriteString(`    <meta name="robots" content="noindex" />` + "\n")
 	} else if ld, err := json.Marshal(map[string]any{

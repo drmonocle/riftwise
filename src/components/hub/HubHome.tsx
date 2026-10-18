@@ -3,7 +3,7 @@ import React, { useMemo, useState } from "react";
 import { HomeStorylines } from "./Storylines";
 import { AtStakeToday } from "./AtStake";
 import type { Match } from "../../types";
-import { Trophy, Swords, Medal, GitCompare, CalendarRange, Crown, Layers, History, ClipboardList, TrendingUp, Search, LayoutGrid } from "lucide-react";
+import { Trophy, Swords, Medal, GitCompare, CalendarRange, Crown, Layers, History, ClipboardList, TrendingUp, Search, LayoutGrid, Flame } from "lucide-react";
 import { tl, tn, tk, regionName } from "../../i18n";
 import { loadEventsOfYear, loadHubHome, loadHubMeta } from "../../hub/data";
 import type { EventListItem, HubMeta } from "../../hub/types";
@@ -14,6 +14,7 @@ import { STable } from "../STable";
 
 const QUICK: { to: HubRoute; label: string; sub: string; icon: React.ReactNode }[] = [
   { to: { kind: "rankings" }, label: tk("Power rankings"), sub: tk("Every team, every region, one scale"), icon: <TrendingUp className="w-4 h-4" /> },
+  { to: { kind: "best" }, label: tk("Best games"), sub: tk("Highest-rated games and series"), icon: <Flame className="w-4 h-4" /> },
   { to: { kind: "tournaments" }, label: tk("Tournaments"), sub: tk("Every event since 2011"), icon: <CalendarRange className="w-4 h-4" /> },
   { to: { kind: "leagues" }, label: tk("Leagues"), sub: tk("Every season and its champion"), icon: <Layers className="w-4 h-4" /> },
   { to: { kind: "champions" }, label: tk("Champions"), sub: tk("Pick, ban and win rates"), icon: <Swords className="w-4 h-4" /> },

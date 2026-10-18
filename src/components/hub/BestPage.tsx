@@ -4,18 +4,23 @@
  * all time or by year and league. Every row opens the match page at that game.
  * Address: /stats/best?view=series&year=2025&league=lol-champions-korea
  */
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { PlayCircle } from "lucide-react";
 import { tl, tn } from "../../i18n";
-import { loadBest, loadBestIndex } from "../../hub/data";
+import { loadAliases, loadBest, loadBestIndex, normText } from "../../hub/data";
 import type { BestGame, BestSeries } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
-import { card, EventLink, Failed, fmtDate, HubLink, Loading, useHiddenCheck, useLoad, usePageTitle } from "./ui";
+import { card, EventLink, Failed, fmtDate, HubLink, isFresh, Loading, RevealButton, useHidden, useLoad, usePageTitle } from "./ui";
 
 /** S 90+, A 80+, B 70+, C 55+, D below */
 export function ratingTier(r: number): "S" | "A" | "B" | "C" | "D" {
   return r >= 90 ? "S" : r >= 80 ? "A" : r >= 70 ? "B" : r >= 55 ? "C" : "D";
 }
+const TIER_TEXT: Record<string, string> = { S: "text-amber-300", A: "text-rw-accent", B: "text-rw-teal", C: "text-rw-sub", D: "text-rw-muted" };
+/** The tier's text colour, for a rating shown as a bare number (bracket boxes). */
+export const ratingTextClass = (r: number) => TIER_TEXT[ratingTier(r)];
+const TIERS = ["S", "A", "B", "C", "D"] as const;
+const TIER_FLOOR: Record<string, number> = { S: 90, A: 80, B: 70, C: 55, D: 0 };
 const TIER_CLASS: Record<string, string> = {
   S: "bg-amber-400/20 text-amber-300 border-amber-400/50",
   A: "bg-rw-accent/20 text-rw-accent border-rw-accent/50",
@@ -45,13 +50,24 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
   usePageTitle(tl("Best games"));
   const q = useMemo(() => new URLSearchParams(query || ""), [query]);
   const view = q.get("view") === "series" ? "series" : "games";
-  const league = q.get("league") || "";
   const index = useLoad(loadBestIndex, []);
+  const aliases = useLoad(loadAliases, []);
+  // ?league=lck / worlds work too: a short name (index) or a league alias
+  const asked = (q.get("league") || "").toLowerCase();
+  const league = !asked
+    ? ""
+    : index.data?.leagues.find((l) => l[0] === asked)?.[0] ||
+      index.data?.leagues.find((l) => (l[2] || "").toLowerCase() === asked)?.[0] ||
+      aliases.data?.league[asked] ||
+      asked;
   const lgRow = index.data?.leagues.find((l) => l[0] === league);
   const years = (lgRow ? lgRow[4] : index.data?.years) || [];
   const year = q.get("year") && years.includes(q.get("year")!) ? q.get("year")! : "";
   const file = useLoad(() => loadBest(year || undefined, league || undefined), [year, league]);
-  const hiddenCheck = useHiddenCheck();
+  // filters on the list itself (not in the address): tiers, games with a VOD, a team
+  const [tiers, setTiers] = useState<Set<string>>(new Set());
+  const [vodOnly, setVodOnly] = useState(false);
+  const [team, setTeam] = useState("");
 
   const setQ = (patch: Record<string, string | undefined>) => {
     const next = new URLSearchParams(q);
@@ -65,9 +81,28 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
   const main = index.data?.leagues.filter((l) => l[3]) || [];
   const other = index.data?.leagues.filter((l) => !l[3]) || [];
   const rows: (BestGame | BestSeries)[] = (view === "series" ? file.data?.s : file.data?.g) || [];
-  // spoiler mode: games of the last days stay off the list (their rating says how close they were)
-  const shown = rows.filter((r) => !hiddenCheck("best", view === "series" ? (r as BestSeries)[2] : (r as BestGame)[3]));
-  const held = rows.length - shown.length;
+  const dateOf = (r: BestGame | BestSeries) => (view === "series" ? (r as BestSeries)[2] : (r as BestGame)[3]);
+  // spoiler mode: games of the last days stay off the list (their rating says how close they were) until Reveal
+  const [spoilerHidden, reveal] = useHidden("best", rows.map(dateOf).sort().pop());
+  const tq = normText(team.trim());
+  const shown = rows.filter((r) => {
+    if (spoilerHidden && isFresh(dateOf(r))) return false;
+    if (tiers.size && !tiers.has(ratingTier(r[0]))) return false;
+    if (vodOnly && view === "games" && !(r as BestGame)[15]) return false;
+    if (tq) {
+      const [a, b] = view === "series" ? [(r as BestSeries)[6], (r as BestSeries)[8]] : [(r as BestGame)[7], (r as BestGame)[9]];
+      if (!normText(a).includes(tq) && !normText(b).includes(tq)) return false;
+    }
+    return true;
+  });
+  const held = spoilerHidden ? rows.filter((r) => isFresh(dateOf(r))).length : 0;
+  const toggleTier = (t: string) =>
+    setTiers((cur) => {
+      const next = new Set(cur);
+      if (next.has(t)) next.delete(t);
+      else next.add(t);
+      return next;
+    });
 
   return (
     <div className="space-y-3">
@@ -117,15 +152,38 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
             )}
           </select>
         </div>
-        <p className="mt-2 text-[10px] text-rw-muted flex flex-wrap gap-x-2 gap-y-1 items-center">
+        <div className="mt-2 text-[10px] text-rw-muted flex flex-wrap gap-x-2 gap-y-1.5 items-center">
           <span>{tl("Tiers:")}</span>
-          {([95, 85, 75, 60, 40] as const).map((r) => (
-            <span key={r} className="inline-flex items-center gap-1">
-              <RatingBadge r={r} className="!py-0" />
-              <span>{{ 95: "90+", 85: "80+", 75: "70+", 60: "55+", 40: tl("below 55") }[r]}</span>
-            </span>
+          {TIERS.map((t) => (
+            <button
+              key={t}
+              type="button"
+              aria-pressed={tiers.has(t)}
+              onClick={() => toggleTier(t)}
+              title={tl("Show only this tier (click again to clear)")}
+              className={`inline-flex items-center gap-1 rounded-md px-1 py-0.5 ${tiers.has(t) ? "ring-2 ring-rw-accent" : tiers.size ? "opacity-50 hover:opacity-100" : ""}`}
+            >
+              <RatingBadge r={TIER_FLOOR[t] + 5} className="!py-0" />
+              <span>{t === "D" ? tl("below 55") : `${TIER_FLOOR[t]}+`}</span>
+            </button>
           ))}
-        </p>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+          <input
+            type="search"
+            value={team}
+            onChange={(e) => setTeam(e.target.value)}
+            placeholder={tl("Filter by team")}
+            aria-label={tl("Filter by team")}
+            className={`${sel} w-40`}
+          />
+          {view === "games" && (
+            <label className="flex items-center gap-1 text-rw-sub cursor-pointer">
+              <input type="checkbox" checked={vodOnly} onChange={(e) => setVodOnly(e.target.checked)} />
+              {tl("Only games with a VOD")}
+            </label>
+          )}
+        </div>
       </div>
 
       <div className={card}>
@@ -151,8 +209,9 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
           </div>
         )}
         {held > 0 && (
-          <p className="mt-2 text-[10px] text-rw-muted">
+          <p className="mt-2 text-[10px] text-rw-muted flex flex-wrap items-center gap-2">
             {tn("{n} recent game is left out while spoiler mode is on.", "{n} recent games are left out while spoiler mode is on.", held)}
+            <RevealButton onReveal={reveal} small />
           </p>
         )}
       </div>
@@ -185,9 +244,13 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
           {ka != null && kb != null && <span className="tabular-nums">{tl("{a}–{b} kills", { a: ka, b: kb })}</span>}
           {min ? <span className="tabular-nums">{tl("{n} min", { n: Math.round(min) })}</span> : null}
           {vod ? (
-            <span className="inline-flex items-center gap-0.5 text-rw-sub">
+            <HubLink
+              to={{ kind: "match", slug, game: n }}
+              className="inline-flex items-center gap-0.5 text-rw-teal hover:underline"
+              title={tl("Open the game: its VOD links are on the match page")}
+            >
               <PlayCircle className="w-3 h-3" /> {tl("VOD")}
-            </span>
+            </HubLink>
           ) : null}
         </div>
       </td>
