@@ -121,7 +121,7 @@ func TestUnknownAndOldNames(t *testing.T) {
 	if w := get(s, "/riftwise/league/lck"); w.Code != 200 || !strings.Contains(w.Body.String(), "<title>LCK – every season | RiftWise</title>") {
 		t.Errorf("league page: %d", w.Code)
 	}
-	if w := get(s, "/riftwise/league/lck/2025"); w.Code != 200 || !strings.Contains(w.Body.String(), "<title>LCK – every season 2025 | RiftWise</title>") || !strings.Contains(w.Body.String(), "noindex") {
+	if w := get(s, "/riftwise/league/lck/2025"); w.Code != 200 || !strings.Contains(w.Body.String(), "<title>LCK 2025 season | RiftWise</title>") || !strings.Contains(w.Body.String(), "noindex") {
 		t.Errorf("league season page: %d", w.Code)
 	}
 	if w := get(s, "/riftwise/league/worlds/2024"); w.Code != 301 || w.Header().Get("Location") != "/league/world-championship/2024" {
