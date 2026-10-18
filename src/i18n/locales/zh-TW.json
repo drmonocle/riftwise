@@ -1451,6 +1451,7 @@
   "Rating over the last year": "最近一年的評分",
   "Counters": "Counter",
   "{year} records": "{year} 年紀錄",
+  "Add the two teams to the address: /overlay?teams=t1,geng": "請在網址中加入兩支隊伍：/overlay?teams=t1,geng",
   "now {team}": "現為 {team}",
   "title match::Final": "決賽",
   "title winner::Champion": "冠軍",

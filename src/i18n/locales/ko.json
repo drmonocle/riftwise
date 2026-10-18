@@ -1451,6 +1451,7 @@
   "Rating over the last year": "최근 1년 레이팅",
   "Counters": "카운터",
   "{year} records": "{year} 기록",
+  "Add the two teams to the address: /overlay?teams=t1,geng": "주소에 두 팀을 넣어 주세요: /overlay?teams=t1,geng",
   "now {team}": "현재 {team}",
   "title match::Final": "결승",
   "title winner::Champion": "우승팀",

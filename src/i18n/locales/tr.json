@@ -1451,6 +1451,7 @@
   "Rating over the last year": "Son bir yılın puanı",
   "Counters": "Counterlar",
   "{year} records": "{year} rekorları",
+  "Add the two teams to the address: /overlay?teams=t1,geng": "İki takımı adrese ekle: /overlay?teams=t1,geng",
   "now {team}": "şimdi: {team}",
   "title match::Final": "Final",
   "title winner::Champion": "Kazanan",
