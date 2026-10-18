@@ -1,5 +1,5 @@
 /** One series (a "match": Bo1 to Bo5): every game's draft, scoreboard, builds, runes and objectives. */
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { PlayCircle, Swords, Clock, Crown } from "lucide-react";
 import { tl, tc, tk, roleName, locale, stageLabel } from "../../i18n";
 import { champName } from "../../champions";
@@ -7,6 +7,7 @@ import { loadHubSeries } from "../../hub/data";
 import type { GamePlayer, HubGame, HubSeries, SideStats } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { RatingBadge } from "./BestPage";
+import { navigateHub } from "../../hub/route";
 import {
   card,
   ChampIcon,
@@ -15,6 +16,7 @@ import {
   fmtNum,
   HubLink,
   ItemIcon,
+  OeCredit,
   Page,
   PlayerLink,
   RevealButton,
@@ -40,7 +42,7 @@ export const MatchPage: React.FC<{ slug: string; game?: number; onOpenUrl: (url:
   const state = useLoad(() => loadHubSeries(slug), [slug]);
   usePageTitle(state.data ? `${state.data.a.n} vs ${state.data.b.n} – ${state.data.en}` : null);
   useDDragon();
-  return <Page state={state}>{(s) => <SeriesView key={`${slug}-${game || 0}`} s={s} slug={slug} game={game} onOpenUrl={onOpenUrl} />}</Page>;
+  return <Page state={state}>{(s) => <SeriesView key={slug} s={s} slug={slug} game={game} onOpenUrl={onOpenUrl} />}</Page>;
 };
 
 const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUrl: (url: string) => void }> = ({ s, slug, game: startGame, onOpenUrl }) => {
@@ -48,6 +50,17 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
   const withStats = s.games.filter((g) => g.p && g.p.length);
   // opened at one game (/match/<slug>?g=5, from Best games), else the first
   const [gi, setGi] = useState(() => Math.max(0, s.games.findIndex((g) => g.n === startGame)));
+  // Back/Forward or a link to another game of this series
+  useEffect(() => {
+    const i = s.games.findIndex((g) => g.n === startGame);
+    if (i >= 0) setGi(i);
+  }, [startGame, s.games]);
+  // the address (and Copy link) follow the game on screen: /match/<slug>?g=3
+  const pick = (i: number) => {
+    setGi(i);
+    const g = s.games[i];
+    if (g) navigateHub({ kind: "match", slug, game: g.n }, { replace: true });
+  };
   // spoiler mode shows every game a best-of could have, so a 3-0 doesn't give itself away by having 3 tabs
   const tabs = hidden ? Math.max(s.bo || 0, s.games.length) : s.games.length;
   const game = gi < s.games.length ? s.games[gi] : hidden ? undefined : s.games[s.games.length - 1];
@@ -62,7 +75,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
           <span>· {fmtDate(s.date)}</span>
           <span>· {tc("series length", "Best of {n}", { n: s.bo })}</span>
           {!hidden && s.r != null && (
-            <HubLink to={{ kind: "best", query: "view=series" }} className="ml-auto" title={tl("Series rating: its best game's")}>
+            <HubLink to={{ kind: "best", query: "view=series" }} className="ml-auto" title={tl("Series rating: mostly its best game, then its other games")}>
               <RatingBadge r={s.r} />
             </HubLink>
           )}
@@ -96,7 +109,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
               type="button"
               role="tab"
               aria-selected={i === gi}
-              onClick={() => setGi(i)}
+              onClick={() => pick(i)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${
                 i === gi ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
               }`}
@@ -206,10 +219,123 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
           <Scoreboard name={redTeam.n} side="red" players={red} hidden={hidden} won={redWon} minutes={g.min} />
         </div>
       )}
+      {!hidden && <Leads g={g} blueName={blueTeam.n} redName={redTeam.n} blue={blue} red={red} />}
       {g.st !== "f" && !g.p && (
         <p className="text-[11px] text-rw-muted text-center">
           {g.st === "r" ? tl("Only the result of this game is known.") : tl("No result or stats were recorded for this game.")}
         </p>
+      )}
+    </div>
+  );
+};
+
+// ── Early-game leads (Oracle's Elixir): the team's gold and XP lead at 10 / 15 / 20 minutes and each lane at 15 ──
+
+const BLUE = "#4a9eff";
+const RED = "var(--rw-red)";
+const kfmt = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v) >= 1000 ? `${(Math.abs(v) / 1000).toFixed(1)}k` : Math.abs(v)}`;
+
+/** One row: a bar from the middle toward the side that leads (blue left, red right), its size against `max`. */
+const LeadBar: React.FC<{ label: React.ReactNode; left?: React.ReactNode; right?: React.ReactNode; v: number; max: number; tip: string }> = ({
+  label,
+  left,
+  right,
+  v,
+  max,
+  tip,
+}) => {
+  const w = max ? Math.min(50, (Math.abs(v) / max) * 50) : 0;
+  const blueAhead = v > 0;
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)] items-center gap-2 text-[11px]" title={tip}>
+      <span className="truncate text-right text-rw-sub">{left}</span>
+      <div className="relative h-5">
+        <div className="absolute inset-y-0 left-1/2 w-px bg-rw-line" />
+        {v !== 0 && (
+          <div
+            className="absolute top-1 bottom-1"
+            style={{
+              background: blueAhead ? BLUE : RED,
+              width: `${w}%`,
+              ...(blueAhead ? { right: "50%", borderRadius: "4px 0 0 4px" } : { left: "50%", borderRadius: "0 4px 4px 0" }),
+            }}
+          />
+        )}
+        <span
+          className="absolute inset-y-0 flex items-center tabular-nums font-semibold text-rw-text"
+          style={blueAhead ? { right: `calc(50% + ${w}% + 4px)` } : { left: `calc(50% + ${w}% + 4px)` }}
+        >
+          {v === 0 ? "0" : kfmt(Math.abs(v))}
+        </span>
+        <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 text-[9px] text-rw-muted">{label}</span>
+      </div>
+      <span className="truncate text-rw-sub">{right}</span>
+    </div>
+  );
+};
+
+const ROLE_ORDER = ["Top", "Jungle", "Mid", "Bot", "Support"];
+
+const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blue: GamePlayer[]; red: GamePlayer[] }> = ({ g, blueName, redName, blue, red }) => {
+  const t = g.t?.blue;
+  // the team's XP lead: its five players' leads over their lane opponents add up to it
+  const xpAt = (key: "x10" | "x15" | "x20") => (blue.length === 5 && blue.every((p) => p[key] != null) ? blue.reduce((s, p) => s + (p[key] as number), 0) : null);
+  const gold = ([[10, t?.g10], [15, t?.g15], [20, t?.g20]] as [number, number | undefined][]).filter((x): x is [number, number] => x[1] != null);
+  const xp = ([[10, xpAt("x10")], [15, t?.x15 ?? xpAt("x15")], [20, xpAt("x20")]] as [number, number | null | undefined][]).filter(
+    (x): x is [number, number] => x[1] != null,
+  );
+  const lanes = ROLE_ORDER.map((r) => ({ r, b: blue.find((p) => p.r === r), o: red.find((p) => p.r === r) })).filter((x) => x.b?.g15 != null && x.o);
+  if (!gold.length && !lanes.length) return null;
+  const maxGold = Math.max(1000, ...gold.map((x) => Math.abs(x[1])));
+  const maxXp = Math.max(1000, ...xp.map((x) => Math.abs(x[1])));
+  const maxLane = Math.max(500, ...lanes.map((x) => Math.abs(x.b!.g15 as number)));
+  const head = (
+    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)] gap-2 text-[10px] uppercase tracking-wider font-bold">
+      <span className="truncate text-right" style={{ color: BLUE }}>
+        {blueName}
+      </span>
+      <span />
+      <span className="truncate" style={{ color: RED }}>
+        {redName}
+      </span>
+    </div>
+  );
+  return (
+    <div className="grid gap-3 lg:grid-cols-2">
+      {gold.length > 0 && (
+        <div className={`${card} space-y-1.5`}>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-rw-accent">{tl("Gold and XP lead")}</h3>
+          {head}
+          {gold.map(([m, v]) => (
+            <LeadBar key={`g${m}`} label={tl("{n} min", { n: m })} left={m === gold[0][0] ? tl("Gold") : undefined} v={v} max={maxGold}
+              tip={tl("Gold lead at {n} minutes: {lead}", { n: m, lead: `${v >= 0 ? blueName : redName} ${kfmt(Math.abs(v))}` })} />
+          ))}
+          {xp.map(([m, v]) => (
+            <LeadBar key={`x${m}`} label={tl("{n} min", { n: m })} left={m === xp[0][0] ? "XP" : undefined} v={v} max={maxXp}
+              tip={tl("XP lead at {n} minutes: {lead}", { n: m, lead: `${v >= 0 ? blueName : redName} ${kfmt(Math.abs(v))}` })} />
+          ))}
+          <OeCredit />
+        </div>
+      )}
+      {lanes.length > 0 && (
+        <div className={`${card} space-y-1.5`}>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-rw-accent">{tl("Gold lead in each lane at 15 minutes")}</h3>
+          {head}
+          {lanes.map(({ r, b, o }) => (
+            <LeadBar
+              key={r}
+              label={roleName(r)}
+              left={b!.n}
+              right={o!.n}
+              v={b!.g15 as number}
+              max={maxLane}
+              tip={tl("{role} at 15 minutes: {lead}", {
+                role: roleName(r),
+                lead: `${(b!.g15 as number) >= 0 ? b!.n : o!.n} ${kfmt(Math.abs(b!.g15 as number))}`,
+              })}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

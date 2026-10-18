@@ -521,7 +521,7 @@ const FinderBody: React.FC<{
                       <td className={`${td} text-rw-sub`} data-sort={g[0]}>
                         {g[14] ? (
                           <HubLink
-                            to={{ kind: "match", slug: g[14] }}
+                            to={{ kind: "match", slug: g[14], game: g[15] || undefined }}
                             className="hover:text-rw-accent hover:underline"
                           >
                             {fmtDate(g[0])}

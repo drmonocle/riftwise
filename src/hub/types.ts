@@ -153,6 +153,8 @@ export interface EventPlayer {
   dmg: number;
   /** minutes of the games with cs / gold / damage */
   min: number;
+  /** minutes of the games that recorded damage (builds from 2026-10-18 on; none before 2015) */
+  dm?: number;
   vis: number;
   vmin: number;
   c: string[];
@@ -215,8 +217,9 @@ export interface EventTeamStats {
   opl?: number;
 }
 
-/** [date, opponent, opponent slug, won, lost, event, event slug, series slug, stage, name played under] */
-export type TeamSeriesRow = [string, string, string | null, number, number, string, string, string | null, string, string];
+/** [date, opponent, opponent slug, won, lost, event, event slug, series slug, stage, name played under, series rating
+ *  (builds from 2026-10-18 on)] */
+export type TeamSeriesRow = [string, string, string | null, number, number, string, string, string | null, string, string, (number | null)?];
 /**
  * Oracle's Elixir's numbers for a player's game: [gd10, csd10, xpd10, gd15, csd15, xpd15, gd20, csd20, xpd20,
  * first blood (1 got the kill, 2 assisted, 3 died, 0 none), wards placed, wards killed, control wards bought]
@@ -225,14 +228,14 @@ export type TeamSeriesRow = [string, string, string | null, number, number, stri
 export type PlayerTimeline = (number | null)[];
 /**
  * [date, series slug, champion, k, d, a, won, team, opponent, event, role, event slug,
- *  cs, gold, damage, vision, minutes, team kills, team damage, team gold, team vision, timeline]
- * (cs .. team vision are in builds from 2026-10-16 on, the timeline from 2026-10-17; null when the game has no
- * full scoreboard / Oracle's Elixir doesn't have it)
+ *  cs, gold, damage, vision, minutes, team kills, team damage, team gold, team vision, timeline, game number, game rating]
+ * (cs .. team vision are in builds from 2026-10-16 on, the timeline from 2026-10-17, the game number from 2026-10-18;
+ * null when the game has no full scoreboard / Oracle's Elixir doesn't have it)
  */
 export type PlayerGameRow = [
   string, string, string, number, number, number, number, string, string, string, string, string,
   (number | null)?, (number | null)?, (number | null)?, (number | null)?, (number | null)?,
-  (number | null)?, (number | null)?, (number | null)?, (number | null)?, (PlayerTimeline | null)?,
+  (number | null)?, (number | null)?, (number | null)?, (number | null)?, (PlayerTimeline | null)?, number?, (number | null)?,
 ];
 /**
  * Oracle's Elixir's numbers for a team's game: [gd10, gd15, gd20, csd15, xpd15, first blood, first tower,
@@ -267,6 +270,10 @@ export interface SideStats {
   atakhan?: number;
   /** Oracle's Elixir: gold lead at 15 minutes, first blood / first tower (1/0), turret plates */
   g15?: number;
+  /** gold lead at 10 and 20 minutes, XP lead at 15 (builds from 2026-10-18 on) */
+  g10?: number;
+  g20?: number;
+  x15?: number;
   fb?: number;
   ft?: number;
   pl?: number;
@@ -296,6 +303,11 @@ export interface GamePlayer {
   g15?: number;
   c15?: number;
   x15?: number;
+  /** gold and XP leads at 10 and 20 minutes (builds from 2026-10-18 on) */
+  g10?: number;
+  x10?: number;
+  g20?: number;
+  x20?: number;
 }
 
 export interface HubGame {
@@ -347,11 +359,11 @@ export type BestGame = [
   number, string, number, string, string, string, string, string, string | null, string, string | null, 1 | 2,
   number | null, number | null, number | null, 0 | 1, string | null,
 ];
-/** A rated series: [rating (its best game's), slug, date, event, event slug, stage, a, a slug, b, b slug, games won a, b,
- * best game's number, games played, league slug] */
+/** A rated series: [rating, slug, date, event, event slug, stage, a, a slug, b, b slug, games won a, b,
+ * best game's number, games played, league slug, each game's rating in order (builds from 2026-10-18 on)] */
 export type BestSeries = [
   number, string, string, string, string, string, string, string | null, string, string | null, number, number, number, number,
-  string | null,
+  string | null, (number | null)[]?,
 ];
 export interface BestFile {
   g: BestGame[];
@@ -432,7 +444,7 @@ export interface HubTeam {
   deaths: number | null;
   obj: { dragons: number; barons: number; towers: number; heralds: number; golddiff: number } | null;
   years: { y: string; g: number; w: number; as: string }[];
-  recent: { date: string; g: string | null; opp: string; us: number; them: number; en: string; e: string }[];
+  recent: { date: string; g: string | null; opp: string; us: number; them: number; en: string; e: string; r?: number }[];
   opps: { n: string; u: string | null; g: number; w: number; last: string }[];
   champs: { c: string; g: number; w: number }[];
   bans: { c: string; g: number }[];
@@ -464,7 +476,8 @@ export interface HubPlayer {
   };
   /** Player of the Game awards (where Leaguepedia records them) */
   mvp?: number;
-  pentas?: { date: string; c: string; g: string | null; en: string; x: number }[];
+  /** gn: game number in the series (builds from 2026-10-18 on), here and below */
+  pentas?: { date: string; c: string; g: string | null; en: string; x: number; gn?: number }[];
   g: number;
   w: number;
   k: number;
@@ -482,8 +495,8 @@ export interface HubPlayer {
     e: string; en: string; date: string; t: string; tu: string | null; g: number; w: number;
     k: number; d: number; a: number; kda: number; csm: number | null; c: string[]; pl?: string; lu?: string;
   }[];
-  recent: { date: string; g: string | null; c: string; k: number; d: number; a: number; win: number; opp: string; en: string; team: string }[];
-  best: Record<string, { v: number; date: string; c: string; opp: string; en: string; g: string | null }>;
+  recent: { date: string; g: string | null; c: string; k: number; d: number; a: number; win: number; opp: string; en: string; team: string; gn?: number; r?: number }[];
+  best: Record<string, { v: number; date: string; c: string; opp: string; en: string; g: string | null; gn?: number }>;
   titles: { t: string; date: string; kind: string; e?: string | null }[];
 }
 
@@ -501,7 +514,7 @@ export interface HubChamp {
   players: { n: string; u: string | null; g: number; w: number; kda: number }[];
   recent: {
     date: string; g: string | null; n: string; u: string | null; team: string; opp: string; k: number; d: number; a: number; win: number; en: string;
-    it?: string[]; ks?: string; stt?: string; sp?: string[]; r?: string;
+    it?: string[]; ks?: string; stt?: string; sp?: string[]; r?: string; gn?: number;
   }[];
   /** [blue games, blue wins, red games, red wins] */
   side?: [number, number, number, number];
@@ -531,6 +544,7 @@ export interface HubGameRecord {
   min: number;
   score: string | null;
   g: string | null;
+  gn?: number;
   e: string | null;
   au: string | null;
   bu: string | null;
@@ -546,6 +560,7 @@ export interface HubPlayerRecord {
   t: string;
   kda: string;
   g: string | null;
+  gn?: number;
   e: string | null;
 }
 export interface HubCareerRecord {
@@ -565,12 +580,15 @@ export interface HubRecords {
   note: string;
   game: Record<"fastest" | "longest" | "bloodiest" | "comebacks", HubGameRecord[]>;
   player: Record<"kills" | "assists" | "dmg" | "cs" | "perfect", HubPlayerRecord[]>;
+  /** top leagues and international events */
   career: Record<"games" | "kills" | "assists" | "pool", HubCareerRecord[]>;
+  /** every pro game, like the player pages (builds from 2026-10-18 on) */
+  careerAll?: Record<"games" | "kills" | "assists" | "pool", HubCareerRecord[]>;
   team: Record<"streaks" | "titles", HubTeamRecord[]>;
   /** Every pentakill Leaguepedia's scoreboards record (builds from 2026-10-16 on) */
   pentas?: {
     total: number;
-    recent: { date: string; n: string; u: string | null; c: string; g: string | null; t: string; e: string | null; a: string; b: string; x: number }[];
+    recent: { date: string; n: string; u: string | null; c: string; g: string | null; t: string; e: string | null; a: string; b: string; x: number; gn?: number }[];
     most: { n: string; u: string | null; v: number }[];
   };
 }
@@ -593,6 +611,8 @@ export interface GameRef {
   a: string;
   b: string;
   v: number;
+  /** game number in the series (builds from 2026-10-18 on) */
+  n?: number;
 }
 
 export interface EventOverview {
@@ -607,8 +627,9 @@ export interface EventOverview {
   bloody: GameRef | null;
   /** the event's best-rated game (v = rating, n = game number) */
   best?: GameRef & { n: number };
-  farm: { v: number; n: string; u: string | null; c: string; cs: number; min: number; g: string | null } | null;
-  pentas: { n: string; u: string | null; c: string; g: string | null; x: number }[];
+  /** gn = game number in the series (builds from 2026-10-18 on) */
+  farm: { v: number; n: string; u: string | null; c: string; cs: number; min: number; g: string | null; gn?: number } | null;
+  pentas: { n: string; u: string | null; c: string; g: string | null; x: number; gn?: number }[];
   mvp: { n: string; u: string | null; v: number }[];
 }
 

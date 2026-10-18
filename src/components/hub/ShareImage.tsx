@@ -9,8 +9,9 @@ import { toBlob } from "html-to-image";
 import { tl } from "../../i18n";
 import { IS_WEB } from "../../platform";
 
-export async function capture(node: HTMLElement): Promise<Blob | null> {
+export async function capture(node: HTMLElement, wholePage = false): Promise<Blob | null> {
   node.classList.add("rw-capturing");
+  if (wholePage) node.classList.add("rw-capturing-page");
   try {
     return await toBlob(node, {
       // sharp, but a whole page stays under the browsers' picture size limits
@@ -22,15 +23,18 @@ export async function capture(node: HTMLElement): Promise<Blob | null> {
       filter: (n) => !(n instanceof HTMLElement && n.dataset.nocapture === "1"),
     });
   } finally {
-    node.classList.remove("rw-capturing");
+    node.classList.remove("rw-capturing", "rw-capturing-page");
   }
 }
 
 /** Shown only inside the picture. */
 export const CaptureFooter: React.FC = () => (
-  <div className="rw-capture-only items-center justify-between gap-3 pt-2 mt-1 border-t border-rw-border text-[10px] text-rw-muted">
-    <span className="font-bold text-rw-accent">RiftWise Pro Stats</span>
-    <span>riftwise.gg · {new Date().toISOString().slice(0, 10)}</span>
+  <div className="rw-capture-only items-center justify-between gap-3 pt-2.5 mt-1.5 border-t-2 border-rw-border">
+    <span className="text-sm font-extrabold text-rw-accent">RiftWise Pro Stats</span>
+    <span className="text-xs">
+      <span className="font-bold text-rw-text">riftwise.gg</span>
+      <span className="text-rw-muted"> · {new Date().toISOString().slice(0, 10)}</span>
+    </span>
   </div>
 );
 
@@ -48,7 +52,7 @@ export const CopyPageImage: React.FC<{ target: React.RefObject<HTMLElement | nul
     if (!target.current) return;
     flash("busy");
     try {
-      const blob = await capture(target.current);
+      const blob = await capture(target.current, true);
       if (!blob) throw new Error("no image");
       if (save) {
         const url = URL.createObjectURL(blob);

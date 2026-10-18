@@ -23,6 +23,7 @@ import {
   usePageTitle,
 } from "./ui";
 import { STable } from "../STable";
+import { navigateHub } from "../../hub/route";
 
 // ── Patches ───────────────────────────────────────────────────────────────
 
@@ -255,14 +256,18 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
   );
 };
 
-export const LeaguePage: React.FC<{ slug: string }> = ({ slug }) => {
+export const LeaguePage: React.FC<{ slug: string; year?: string }> = ({ slug, year }) => {
   const state = useLoad(() => loadLeague(slug), [slug]);
-  usePageTitle(state.data?.l);
-  return <Page state={state}>{(l) => <LeagueView l={l} />}</Page>;
+  usePageTitle(state.data ? (year ? `${state.data.l} ${year}` : state.data.l) : undefined);
+  return <Page state={state}>{(l) => <LeagueView l={l} year={year} />}</Page>;
 };
 
-const LeagueView: React.FC<{ l: HubLeague }> = ({ l }) => {
+const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
   const years = [...new Set(l.events.map((e) => e.y))];
+  // /league/<slug>/<year>: one season's tournaments (a year the league didn't play shows them all)
+  const season = year && years.includes(year) ? year : undefined;
+  const events = season ? l.events.filter((e) => e.y === season) : l.events;
+  const pick = (y?: string) => navigateHub({ kind: "league", slug: l.u, year: y }, { replace: true });
   return (
     <div className="space-y-3">
       <div className={card}>
@@ -308,7 +313,24 @@ const LeagueView: React.FC<{ l: HubLeague }> = ({ l }) => {
           </p>
         </Section>
       )}
-      <Section title={tl("Every tournament")}>
+      <Section title={season ? tl("{year} season", { year: season }) : tl("Every tournament")}>
+        {years.length > 1 && (
+          <div className="flex flex-wrap gap-1" role="group" aria-label={tl("Season")}>
+            {[undefined, ...years].map((y) => (
+              <button
+                key={y || "all"}
+                type="button"
+                onClick={() => pick(y)}
+                aria-pressed={season === y}
+                className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                  season === y ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
+                }`}
+              >
+                {y || tl("All seasons")}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="overflow-x-auto">
           <STable className="w-full text-xs">
             <thead>
@@ -319,7 +341,7 @@ const LeagueView: React.FC<{ l: HubLeague }> = ({ l }) => {
               </tr>
             </thead>
             <tbody>
-              {l.events.map((e) => (
+              {events.map((e) => (
                 <LeagueEventRow key={e.u} e={e} />
               ))}
             </tbody>

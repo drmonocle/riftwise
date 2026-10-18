@@ -154,7 +154,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
   }, [highlightMatchId]);
 
   const toggleTeamFollow = (code: string) => {
-    if (!onUpdateSettings || !code) return;
+    if (!onUpdateSettings || !code || code.toUpperCase() === "TBD") return;
     const isFollowed = settings.followedTeams.includes(code);
     const next = isFollowed
       ? settings.followedTeams.filter((t) => t !== code)

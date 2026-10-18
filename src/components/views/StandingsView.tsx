@@ -416,18 +416,19 @@ const RankBadge: React.FC<{ rank: number }> = ({ rank }) => {
   );
 };
 
-const TeamLogo: React.FC<{ code: string; image?: string; onClick: () => void; size?: string }> = ({ code, image, onClick, size = "w-7 h-7" }) =>
-  image ? (
-    <img src={image} alt="" className={`${size} object-contain rounded shrink-0 cursor-pointer`} onClick={onClick} />
-  ) : (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`${size} rounded bg-rw-bg border border-rw-border flex items-center justify-center font-bold text-[10px] text-rw-accent shrink-0 font-mono`}
-    >
+/** A team's logo (or its code in a box). Clickable on its own only with onClick: inside a button it is just a picture,
+ *  since a button inside a button is invalid HTML (and the click would fire twice). */
+const TeamLogo: React.FC<{ code: string; image?: string; onClick?: () => void; size?: string }> = ({ code, image, onClick, size = "w-7 h-7" }) => {
+  const box = `${size} rounded bg-rw-bg border border-rw-border flex items-center justify-center font-bold text-[10px] text-rw-accent shrink-0 font-mono`;
+  if (image) return <img src={image} alt="" className={`${size} object-contain rounded shrink-0 ${onClick ? "cursor-pointer" : ""}`} onClick={onClick} />;
+  return onClick ? (
+    <button type="button" onClick={onClick} className={box}>
       {code.slice(0, 3)}
     </button>
+  ) : (
+    <span className={box}>{code.slice(0, 3)}</span>
   );
+};
 
 const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectTeam: (code: string, name?: string) => void }> = ({
   match,
@@ -454,7 +455,7 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
               className={`flex items-center gap-2 min-w-0 ${won ? "text-rw-teal font-bold" : "text-rw-text"} disabled:text-rw-muted`}
               title={tbd ? undefined : tl("View {team} roster", { team: t.name })}
             >
-              <TeamLogo code={t.code} image={tbd ? undefined : t.image} onClick={() => !tbd && onSelectTeam(t.code, t.name)} size="w-5 h-5" />
+              <TeamLogo code={t.code} image={tbd ? undefined : t.image} size="w-5 h-5" />
               <span className="truncate">{t.code}</span>
             </button>
             <span className="font-mono font-bold">

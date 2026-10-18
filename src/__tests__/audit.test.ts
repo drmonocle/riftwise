@@ -119,3 +119,13 @@ describe("about page address", () => {
     expect(parseHubPath("/stats/about", "")).toEqual({ kind: "about" });
   });
 });
+
+describe("league season address", () => {
+  it("opens a league at one season: /league/<slug>/<year>", () => {
+    expect(parseHubPath("/league/lol-champions-korea/2025", "")).toEqual({ kind: "league", slug: "lol-champions-korea", year: "2025" });
+    expect(hubPath({ kind: "league", slug: "lol-champions-korea", year: "2025" })).toBe("/league/lol-champions-korea/2025");
+    expect(hubPath({ kind: "league", slug: "lol-champions-korea" })).toBe("/league/lol-champions-korea");
+    expect(parseHubPath("/league/lol-champions-korea/20x5", "")).toBeNull();
+    expect(parseHubPath("/team/t1/2025", "")).toBeNull();
+  });
+});

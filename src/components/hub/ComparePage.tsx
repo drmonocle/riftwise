@@ -4,7 +4,7 @@
  * (/stats/compare?teams=t1,gen-g&p=y2026) so it can be shared.
  */
 import React, { useEffect, useMemo, useState } from "react";
-import { tl, roleName } from "../../i18n";
+import { tl, tc, roleName } from "../../i18n";
 import { winRate } from "../../stats";
 import { HubHit, HubIndex, loadHubIndex, loadHubPlayer, loadHubTeam, loadPlayerGames, loadTeamGames, searchHub } from "../../hub/data";
 import type { HubPlayer, HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
@@ -17,6 +17,7 @@ import {
   periodOptions,
   playerAgg,
   playerHeadToHead,
+  playerMeetings,
   playerRowRef,
   teamAgg,
   teamHeadToHead,
@@ -24,9 +25,9 @@ import {
 } from "../../hub/period";
 import { HeadToHeadSeries } from "./Archives";
 import { PeriodPicker } from "./PeriodStats";
-import { DraftTendencies } from "./DraftTendencies";
-import { BroadcastCardButton, playerCardData, teamCardData } from "./BroadcastCard";
-import { card, ChampLink, fmtNum, HubLink, isFresh, OeCredit, RevealButton, Section, td, useHidden, usePageTitle } from "./ui";
+import { DraftTendencies, draftTendencies } from "./DraftTendencies";
+import { BroadcastCardButton, draftCard, playerCardData, teamCardData } from "./BroadcastCard";
+import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, isFresh, OeCredit, RevealButton, Section, td, useHidden, usePageTitle } from "./ui";
 import { STable } from "../STable";
 
 type Mode = "team" | "player";
@@ -171,6 +172,7 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
   const [hidden, reveal] = useHidden(`compare:${mode}:${a}:${b}:${period}`, freshDate);
 
   return (
+    <CaptureContext.Provider value={ready ? `${info.a!.name} vs ${info.b!.name} · ${periodLabel}` : null}>
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 text-xs">
         {(["team", "player"] as const).map((k) => (
@@ -231,7 +233,11 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
           <PlayerRows x={info.a as HubPlayer} y={info.b as HubPlayer} ra={selA as PlayerGameRow[]} rb={selB as PlayerGameRow[]} career={period === "all"} periodLabel={periodLabel} />
         ))}
       {mode === "team" && ready && <HeadToHeadSeries a={a!} b={b!} aName={info.a!.name} bName={info.b!.name} />}
+      {mode === "player" && ready && (
+        <PlayerHeadToHead a={logs.a as PlayerGameRow[]} b={logs.b as PlayerGameRow[]} aName={info.a!.name} bName={info.b!.name} spoilerKey={`h2hp:${a}:${b}`} />
+      )}
     </div>
+    </CaptureContext.Provider>
   );
 };
 
@@ -249,6 +255,7 @@ export const TeamRows: React.FC<{
   const A = useMemo(() => teamAgg(ra), [ra]);
   const B = useMemo(() => teamAgg(rb), [rb]);
   const h2h = useMemo(() => teamHeadToHead(ra, bSlug), [ra, bSlug]);
+  const drafts = useMemo(() => ({ A: draftTendencies(ra), B: draftTendencies(rb) }), [ra, rb]);
   const wr = (w: number, g: number) => (g ? w / g : null);
   return (
     <>
@@ -258,6 +265,13 @@ export const TeamRows: React.FC<{
           <span className="flex items-center gap-2">
             <span className="text-[11px] text-rw-sub">{periodLabel}</span>
             <BroadcastCardButton data={() => teamCardData(x, y, A, B, periodLabel, chance)} name={`${x.name}-vs-${y.name}`} />
+            {drafts.A.games >= 3 && drafts.B.games >= 3 && (
+              <BroadcastCardButton
+                data={() => draftCard({ aName: x.name, bName: y.name, A: drafts.A, B: drafts.B, period: periodLabel })}
+                name={`${x.name}-vs-${y.name}-drafts`}
+                label={tl("Draft card")}
+              />
+            )}
           </span>
         }
         share={`${x.name}-vs-${y.name}-${periodLabel}`}
@@ -475,5 +489,116 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
         </Section>
       )}
     </>
+  );
+};
+
+/**
+ * Every game two players played against each other (all time): the record, the lane gold lead at 15 minutes when
+ * they faced each other in lane, their most common champion matchups and the games themselves.
+ */
+const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName: string; bName: string; spoilerKey: string }> = ({
+  a,
+  b,
+  aName,
+  bName,
+  spoilerKey,
+}) => {
+  const meetings = useMemo(() => playerMeetings(a, b), [a, b]);
+  const [hidden, reveal] = useHidden(spoilerKey, meetings.find((m) => isFresh(m.a[0]))?.a[0]);
+  const [n, setN] = useState(10);
+  const shown = hidden ? meetings.filter((m) => !isFresh(m.a[0])) : meetings;
+  const s = useMemo(() => {
+    const w = shown.filter((m) => m.a[6]).length;
+    // lane leads only when they played the same role (then each one's lead is over the other)
+    const lane = shown.filter((m) => m.a[10] && m.a[10] === m.b[10] && m.a[21]?.[3] != null);
+    const gd15 = lane.length ? lane.reduce((t, m) => t + (m.a[21]![3] as number), 0) / lane.length : null;
+    const pairs = new Map<string, { ca: string; cb: string; g: number; w: number }>();
+    for (const m of shown) {
+      const k = `${m.a[2]}|${m.b[2]}`;
+      const x = pairs.get(k) || { ca: m.a[2], cb: m.b[2], g: 0, w: 0 };
+      x.g++;
+      x.w += m.a[6] ? 1 : 0;
+      pairs.set(k, x);
+    }
+    const series = new Map<string, number>();
+    for (const m of shown) series.set(m.a[1], (series.get(m.a[1]) || 0) + (m.a[6] ? 1 : -1));
+    const sw = [...series.values()].filter((v) => v > 0).length;
+    const sl = [...series.values()].filter((v) => v < 0).length;
+    return { w, l: shown.length - w, gd15, lane: lane.length, top: [...pairs.values()].sort((x, y) => y.g - x.g).slice(0, 5), sw, sl };
+  }, [shown]);
+  if (meetings.length === 0) return null;
+  return (
+    <Section title={tl("Head to head")} right={hidden ? <RevealButton onReveal={reveal} small /> : undefined}>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+        <div className={`${card} py-2`}>
+          <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Games")}</div>
+          <div className="font-bold text-rw-text tabular-nums">
+            {aName} {s.w} – {s.l} {bName}
+          </div>
+        </div>
+        <div className={`${card} py-2`}>
+          <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Series")}</div>
+          <div className="font-bold text-rw-text tabular-nums">
+            {s.sw} – {s.sl}
+          </div>
+        </div>
+        {s.gd15 != null && (
+          <div className={`${card} py-2`} title={tl("{name}'s gold lead over the other at 15 minutes, in the {n} games they faced each other in lane", { name: aName, n: s.lane })}>
+            <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Gold lead at 15 in lane")}</div>
+            <div className={`font-bold tabular-nums ${s.gd15 >= 0 ? "text-rw-teal" : "text-rw-red"}`}>
+              {s.gd15 >= 0 ? "+" : ""}
+              {fmtNum(Math.round(s.gd15))}
+            </div>
+          </div>
+        )}
+      </div>
+      {s.top.length > 0 && (
+        <div className="space-y-1">
+          <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted">{tl("Most common champion matchups")}</div>
+          <ul className="text-xs grid sm:grid-cols-2 gap-x-4 gap-y-1">
+            {s.top.map((p) => (
+              <li key={p.ca + p.cb} className="flex items-center gap-1.5 min-w-0">
+                <ChampIcon name={p.ca} size={18} />
+                <ChampIcon name={p.cb} size={18} />
+                <span className="truncate text-rw-sub">
+                  <ChampLink name={p.ca} /> vs <ChampLink name={p.cb} />
+                </span>
+                <span className="ml-auto tabular-nums text-rw-text">{p.w}–{p.g - p.w}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <ul className="text-xs space-y-1">
+        {shown.slice(0, n).map((m, i) => (
+          <li key={i} className="flex items-center justify-between gap-2 min-w-0">
+            <span className="flex items-center gap-1.5 min-w-0">
+              <span className={`w-3.5 shrink-0 font-bold ${m.a[6] ? "text-rw-teal" : "text-rw-red"}`}>
+                {m.a[6] ? tc("short result", "W") : tc("short result", "L")}
+              </span>
+              <ChampIcon name={m.a[2]} size={18} />
+              <span className="tabular-nums text-rw-text">{m.a[3]}/{m.a[4]}/{m.a[5]}</span>
+              <span className="text-rw-muted">vs</span>
+              <ChampIcon name={m.b[2]} size={18} />
+              <span className="tabular-nums text-rw-sub">{m.b[3]}/{m.b[4]}/{m.b[5]}</span>
+              <span className="truncate text-rw-muted">
+                · <EventLink name={m.a[9]} u={m.a[11]} className="text-rw-muted hover:text-rw-accent hover:underline" />
+              </span>
+            </span>
+            <span className="flex items-center gap-2 shrink-0 text-rw-muted">
+              {fmtDate(m.a[0])}
+              <HubLink to={{ kind: "match", slug: m.a[1], game: m.a[22] || undefined }} className="text-rw-teal hover:underline">
+                {tl("Details")}
+              </HubLink>
+            </span>
+          </li>
+        ))}
+      </ul>
+      {shown.length > n && (
+        <button type="button" onClick={() => setN((x) => x + 20)} className="text-[11px] text-rw-teal hover:underline">
+          {tl("Show more ({n} left)", { n: shown.length - n })}
+        </button>
+      )}
+    </Section>
   );
 };

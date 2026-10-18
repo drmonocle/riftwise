@@ -507,7 +507,8 @@ export function teamAgg(rows: TeamGameRow[]): TeamAgg {
  * fewer games either player had in it.
  */
 export function playerHeadToHead(a: PlayerGameRow[], b: PlayerGameRow[]): { g: number; w: number } {
-  const exact = (r: PlayerGameRow) => (r[16] != null ? `${r[1]}|${r[16]}` : null);
+  // the game number (builds from 2026-10-18 on) or the game's length tells the games of one series apart
+  const exact = (r: PlayerGameRow) => (r[22] != null ? `${r[1]}#${r[22]}` : r[16] != null ? `${r[1]}|${r[16]}` : null);
   const bGame = new Map<string, string>();
   const bLoose = new Map<string, { team: string; n: number }>();
   for (const r of b) {
@@ -539,6 +540,24 @@ export function playerHeadToHead(a: PlayerGameRow[], b: PlayerGameRow[]): { g: n
     }
   }
   return { g, w };
+}
+
+/** One game two players played against each other: a's row and b's row. */
+export interface Meeting {
+  a: PlayerGameRow;
+  b: PlayerGameRow;
+}
+
+/** The games two players played on opposite sides, newest first (needs the game number: builds from 2026-10-18 on). */
+export function playerMeetings(a: PlayerGameRow[], b: PlayerGameRow[]): Meeting[] {
+  const bGame = new Map<string, PlayerGameRow>();
+  for (const r of b) if (r[1] && r[22] != null) bGame.set(`${r[1]}#${r[22]}`, r);
+  const out: Meeting[] = [];
+  for (const r of a) {
+    const o = r[1] && r[22] != null ? bGame.get(`${r[1]}#${r[22]}`) : undefined;
+    if (o && o[7] !== r[7]) out.push({ a: r, b: o });
+  }
+  return out.sort((x, y) => (x.a[0] < y.a[0] ? 1 : x.a[0] > y.a[0] ? -1 : 0));
 }
 
 /** A team's games against one opponent (by the opponent's page slug). */

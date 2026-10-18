@@ -247,7 +247,7 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
         <span className="flex items-center gap-1.5 shrink-0">
           {hiddenBySpoiler && !hideResult && played && <RevealButton onReveal={reveal} small />}
           {!hidden && r.r != null && (
-            <span className={`tabular-nums font-semibold ${ratingTextClass(r.r)}`} title={tl("Series rating: its best game's")}>
+            <span className={`tabular-nums font-semibold ${ratingTextClass(r.r)}`} title={tl("Series rating: mostly its best game, then its other games")}>
               {r.r.toFixed(0)}
             </span>
           )}
@@ -344,10 +344,39 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
 const StageLists: React.FC<{ stages: Stage[] }> = ({ stages }) => {
   // Long leagues: one stage at a time, newest first
   const [i, setI] = useState(stages.length - 1);
+  const [byRating, setByRating] = useState(false);
+  const isHidden = useHiddenCheck();
   const st = stages[Math.min(i, stages.length - 1)];
+  // "Top rated": every stage's series, best first (results still hidden by spoiler mode stay out, so the order gives
+  // nothing away)
+  const rated = useMemo(
+    () =>
+      stages
+        .flatMap((s) => s.series)
+        .filter((r) => r.r != null && !isHidden(seriesKey(r), r.date))
+        .sort((a, b) => (b.r || 0) - (a.r || 0)),
+    [stages, isHidden],
+  );
+  const shown = byRating ? rated : st.series;
   return (
-    <Section title={tl("Matches")}>
-      {stages.length > 1 && (
+    <Section
+      title={tl("Matches")}
+      right={
+        rated.length > 1 ? (
+          <select
+            value={byRating ? "r" : "d"}
+            onChange={(e) => setByRating(e.target.value === "r")}
+            aria-label={tl("Order")}
+            className="bg-rw-bg border border-rw-border rounded px-1.5 py-0.5 text-[11px] text-rw-text"
+            data-nocapture="1"
+          >
+            <option value="d">{tl("By stage")}</option>
+            <option value="r">{tl("Top rated")}</option>
+          </select>
+        ) : undefined
+      }
+    >
+      {!byRating && stages.length > 1 && (
         <div className="flex flex-wrap gap-1">
           {stages.map((s, k) => (
             <button
@@ -364,7 +393,7 @@ const StageLists: React.FC<{ stages: Stage[] }> = ({ stages }) => {
         </div>
       )}
       <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
-        {st.series.map((r, k) => (
+        {shown.map((r, k) => (
           <SeriesBox key={k} r={r} />
         ))}
       </div>

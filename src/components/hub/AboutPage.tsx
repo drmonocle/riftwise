@@ -106,7 +106,7 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
           <Term t={tl("Comebacks")}>{tl("Up to 5 points: winning from far behind in gold, with less gold, or after losing inhibitors.")}</Term>
         </dl>
         <p className="text-rw-sub mt-2">
-          {tl("Tiers: S 90+, A 80+, B 70+, C 55+, D below. Only about 1 game in 2,000 reaches S. A series is rated by its best game.")}{" "}
+          {tl("Tiers: S 90+, A 80+, B 70+, C 55+, D below. Only about 1 game in 2,000 reaches S.")} {tl("A series counts its best game most, then its best three games and all of them; a 3-2 gets a little more, a sweep a little less.")}{" "}
           <HubLink to={{ kind: "best" }} className="text-rw-teal hover:underline font-semibold">
             {tl("Best games")}
           </HubLink>

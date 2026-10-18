@@ -11,25 +11,8 @@ import { PlayerGamesArchive } from "./Archives";
 import { PlayerPeriodStats } from "./PeriodStats";
 import { PlayerRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
-import {
-  card,
-  ChampIcon,
-  ChampLink,
-  EventLink,
-  fmtDate,
-  fmtNum,
-  HubLink,
-  Page,
-  RevealButton,
-  Section,
-  Stat,
-  td,
-  th,
-  TeamLink,
-  useHidden,
-  useLoad,
-  usePageTitle,
-} from "./ui";
+import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, Page, RevealButton, Section, Stat, td, TeamLink, th, useHidden, useLoad, usePageTitle } from "./ui";
+import { ratingTextClass } from "./BestPage";
 import { STable } from "../STable";
 
 const BEST_LABEL: Record<string, string> = {
@@ -48,7 +31,11 @@ export const PlayerPage: React.FC<{
   useDDragon();
   return (
     <Page state={state}>
-      {(p) => <PlayerView p={p} onOpenUrl={onOpenUrl} />}
+      {(p) => (
+        <CaptureContext.Provider value={p.name}>
+          <PlayerView p={p} onOpenUrl={onOpenUrl} />
+        </CaptureContext.Provider>
+      )}
     </Page>
   );
 };
@@ -397,7 +384,7 @@ const PlayerView: React.FC<{
                         {r.k}/{r.d}/{r.a}
                       </span>{" "}
                       {r.g ? (
-                        <HubLink to={{ kind: "match", slug: r.g }}>
+                        <HubLink to={{ kind: "match", slug: r.g, game: r.gn }}>
                           vs {r.opp}
                         </HubLink>
                       ) : (
@@ -405,7 +392,12 @@ const PlayerView: React.FC<{
                       )}
                     </span>
                   </span>
-                  <span className="text-rw-muted shrink-0">
+                  <span className="text-rw-muted shrink-0 flex items-center gap-2">
+                    {r.r != null && (
+                      <span className={`tabular-nums font-semibold ${ratingTextClass(r.r)}`} title={tl("Game rating")}>
+                        {r.r.toFixed(0)}
+                      </span>
+                    )}
                     {fmtDate(r.date, false)}
                   </span>
                 </li>
@@ -426,7 +418,7 @@ const PlayerView: React.FC<{
                     ({champName(b.c)} vs{" "}
                     {b.g ? (
                       <HubLink
-                        to={{ kind: "match", slug: b.g }}
+                        to={{ kind: "match", slug: b.g, game: b.gn }}
                         className="text-rw-muted hover:text-rw-accent hover:underline"
                       >
                         {b.opp}
@@ -463,7 +455,7 @@ const PlayerView: React.FC<{
                   {fmtDate(x.date)}
                   {x.g && (
                     <HubLink
-                      to={{ kind: "match", slug: x.g }}
+                      to={{ kind: "match", slug: x.g, game: x.gn }}
                       className="text-rw-teal hover:underline"
                     >
                       {tl("Details")}

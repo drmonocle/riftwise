@@ -5,6 +5,7 @@ import { tl, tn, tc, roleName, stageLabel } from "../../i18n";
 import { champName } from "../../champions";
 import { loadPlayerGames, loadTeamSeries } from "../../hub/data";
 import type { PlayerGameRow, TeamSeriesRow } from "../../hub/types";
+import { ratingTextClass } from "./BestPage";
 import { ChampIcon, EventLink, Failed, fmtDate, HubLink, isFresh, Loading, RevealButton, Section, TeamLink, useHidden, useLoad } from "./ui";
 
 const PAGE = 50;
@@ -62,6 +63,11 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; spoilerKey
                 </span>
               </span>
               <span className="flex items-center gap-2 shrink-0 text-rw-muted">
+                {!hide && r[10] != null && (
+                  <span className={`tabular-nums font-semibold ${ratingTextClass(r[10])}`} title={tl("Series rating")}>
+                    {r[10].toFixed(0)}
+                  </span>
+                )}
                 {fmtDate(r[0])}
                 {r[7] && (
                   <HubLink to={{ kind: "match", slug: r[7] }} className="text-rw-teal hover:underline">
@@ -86,6 +92,7 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
   const state = useLoad(() => loadTeamSeries(slug), [slug]);
   const [year, setYear] = useState("all");
   const [q, setQ] = useState("");
+  const [order, setOrder] = useState<"d" | "r">("d");
   const years = useMemo(() => [...new Set((state.data || []).map((r) => r[0].slice(0, 4)))], [state.data]);
   const rows = useMemo(() => {
     const qq = q.trim().toLowerCase();
@@ -93,6 +100,11 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
   }, [state.data, year, q]);
   // the same spoiler switch as the list below: while its fresh results are hidden, so is the count of wins
   const [seriesHidden] = useHidden(`teamseries:${slug}:${year}:${q}`, rows.find((r) => isFresh(r[0]))?.[0]);
+  // best-rated first; results still hidden by spoiler mode stay out so the order gives nothing away
+  const shown = useMemo(
+    () => (order === "r" ? rows.filter((r) => r[10] != null && !(seriesHidden && isFresh(r[0]))).sort((x, y) => (y[10] || 0) - (x[10] || 0)) : rows),
+    [rows, order, seriesHidden],
+  );
   if (state.loading) return <Loading />;
   if (state.error || !state.data) return <Failed missing={state.missing} />;
   const won = rows.filter((r) => r[3] > r[4]).length;
@@ -107,6 +119,10 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
             </option>
           ))}
         </select>
+        <select value={order} onChange={(e) => setOrder(e.target.value as "d" | "r")} aria-label={tl("Order")} className={select}>
+          <option value="d">{tl("Newest first")}</option>
+          <option value="r">{tl("Top rated")}</option>
+        </select>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -119,7 +135,7 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
           {!seriesHidden && <> · {tl("{w} won", { w: won })}</>}
         </span>
       </div>
-      <SeriesList rows={rows} teamName={teamName} spoilerKey={`teamseries:${slug}:${year}:${q}`} />
+      <SeriesList rows={shown} teamName={teamName} spoilerKey={`teamseries:${slug}:${year}:${q}`} />
     </div>
   );
 };
@@ -139,6 +155,8 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
   if (state.loading) return <Loading />;
   if (state.error) return null;
   const wa = rows.filter((r) => r[3] > r[4]).length;
+  const ga = rows.reduce((t, r) => t + r[3], 0);
+  const gb = rows.reduce((t, r) => t + r[4], 0);
   return (
     <Section title={tl("Every series between them")}>
       {rows.length === 0 ? (
@@ -147,6 +165,9 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
         <>
           <p className="text-sm font-bold text-rw-text">
             {hidden ? tn("{n} series", "{n} series", rows.length) : `${aName} ${wa} – ${rows.length - wa} ${bName}`}
+            {!hidden && (
+              <span className="ml-2 text-xs font-normal text-rw-sub tabular-nums">{tl("Games {a}–{b}", { a: ga, b: gb })}</span>
+            )}
           </p>
           <SeriesList rows={rows} teamName={aName} spoilerKey={`h2h:${a}:${b}`} showOpp={false} />
         </>
@@ -161,6 +182,7 @@ const PlayerGamesBody: React.FC<{ slug: string }> = ({ slug }) => {
   const state = useLoad(() => loadPlayerGames(slug), [slug]);
   const [year, setYear] = useState("all");
   const [champ, setChamp] = useState("all");
+  const [order, setOrder] = useState<"d" | "r">("d");
   const [n, setN] = useState(PAGE);
   const data = state.data || [];
   const years = useMemo(() => [...new Set(data.map((r) => r[0].slice(0, 4)))], [data]);
@@ -171,6 +193,10 @@ const PlayerGamesBody: React.FC<{ slug: string }> = ({ slug }) => {
   }, [data]);
   const rows = useMemo(() => data.filter((r: PlayerGameRow) => (year === "all" || r[0].startsWith(year)) && (champ === "all" || r[2] === champ)), [data, year, champ]);
   const [hidden, reveal] = useHidden(`playergames:${slug}:${year}:${champ}`, rows.find((r) => isFresh(r[0]))?.[0]);
+  const shown = useMemo(
+    () => (order === "r" ? rows.filter((r) => r[23] != null && !(hidden && isFresh(r[0]))).sort((x, y) => (y[23] || 0) - (x[23] || 0)) : rows),
+    [rows, order, hidden],
+  );
   if (state.loading) return <Loading />;
   if (state.error || !state.data) return <Failed missing={state.missing} />;
   const won = rows.filter((r) => r[6]).length;
@@ -196,6 +222,10 @@ const PlayerGamesBody: React.FC<{ slug: string }> = ({ slug }) => {
             </option>
           ))}
         </select>
+        <select value={order} onChange={(e) => setOrder(e.target.value as "d" | "r")} aria-label={tl("Order")} className={select}>
+          <option value="d">{tl("Newest first")}</option>
+          <option value="r">{tl("Top rated")}</option>
+        </select>
         <span className="text-[11px] text-rw-sub">
           {tn("{n} game", "{n} games", rows.length)}
           {!hidden && rows.length > 0 && <> · {tl("{pct} win rate", { pct: `${Math.round((won / rows.length) * 100)}%` })}</>}
@@ -204,7 +234,7 @@ const PlayerGamesBody: React.FC<{ slug: string }> = ({ slug }) => {
         {hidden && <RevealButton onReveal={reveal} small />}
       </div>
       <ul className="text-xs space-y-1">
-        {rows.slice(0, n).map((r, i) => {
+        {shown.slice(0, n).map((r, i) => {
           const hide = hidden && isFresh(r[0]);
           return (
             <li key={i} className="flex items-center justify-between gap-2 min-w-0">
@@ -225,9 +255,14 @@ const PlayerGamesBody: React.FC<{ slug: string }> = ({ slug }) => {
                 </span>
               </span>
               <span className="flex items-center gap-2 shrink-0 text-rw-muted">
+                {!hide && r[23] != null && (
+                  <span className={`tabular-nums font-semibold ${ratingTextClass(r[23])}`} title={tl("Game rating")}>
+                    {r[23].toFixed(0)}
+                  </span>
+                )}
                 {fmtDate(r[0])}
                 {r[1] && (
-                  <HubLink to={{ kind: "match", slug: r[1] }} className="text-rw-teal hover:underline">
+                  <HubLink to={{ kind: "match", slug: r[1], game: r[22] || undefined }} className="text-rw-teal hover:underline">
                     {tl("Details")}
                   </HubLink>
                 )}
@@ -236,9 +271,9 @@ const PlayerGamesBody: React.FC<{ slug: string }> = ({ slug }) => {
           );
         })}
       </ul>
-      {rows.length > n && (
+      {shown.length > n && (
         <button type="button" onClick={() => setN((x) => x + PAGE * 4)} className="text-[11px] text-rw-teal hover:underline">
-          {tl("Show more ({n} left)", { n: rows.length - n })}
+          {tl("Show more ({n} left)", { n: shown.length - n })}
         </button>
       )}
     </div>

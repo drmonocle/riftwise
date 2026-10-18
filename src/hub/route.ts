@@ -9,7 +9,7 @@
  *   /stats/compare?teams=t1,gen-g&p=y2026   a comparison (players=..., p = period: all, last20, y2026, e:<event>)
  *   /stats/champions?league=lck&year=2026&event=..&patch=26.18&side=b&role=Mid   champion stats with filters
  *   /about                      who makes RiftWise
- *   /player/<slug>              /team/<slug>  /tournament/<slug>  /match/<slug>[?g=<game>]  /champion/<slug>  /league/<slug>
+ *   /player/<slug>              /team/<slug>  /tournament/<slug>  /match/<slug>[?g=<game>]  /champion/<slug>  /league/<slug>[/<year>]
  *
  * The desktop app has no address bar, so it keeps its own back stack instead.
  */
@@ -25,7 +25,7 @@ export type HubEntity = "team" | "player" | "event" | "match" | "champ" | "leagu
 export type HubRoute =
   | { kind: "home" }
   | { kind: HubSection; year?: string; mode?: "team" | "player"; a?: string; b?: string; period?: string; query?: string }
-  | { kind: HubEntity; slug: string; game?: number };
+  | { kind: HubEntity; slug: string; game?: number; year?: string };
 
 export const HUB_HOME: HubRoute = { kind: "home" };
 /** The compare page with who is compared over which period (all in the address). */
@@ -73,6 +73,8 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
     return null;
   }
   const kind = PATH_ENTITY[parts[0]];
+  // a league page can open at one season: /league/lck/2025
+  if (kind === "league" && parts.length === 3 && /^\d{4}$/.test(parts[2])) return { kind, slug: parts[1].toLowerCase(), year: parts[2] };
   if (!kind || !parts[1] || parts.length !== 2) return null;
   // a match page can open at one of its games: /match/<slug>?g=5
   const game = kind === "match" ? Number(new URLSearchParams(search).get("g")) || undefined : undefined;
@@ -101,8 +103,9 @@ export function hubPath(r: HubRoute): string {
     const y = "year" in r && r.year ? `/${r.year}` : "";
     return `${BASE}stats/${r.kind}${y}`;
   }
-  const e = r as { slug: string; game?: number };
-  return `${BASE}${ENTITY_PATH[r.kind as HubEntity]}/${encodeURIComponent(e.slug)}${r.kind === "match" && e.game ? `?g=${e.game}` : ""}`;
+  const e = r as { slug: string; game?: number; year?: string };
+  const tail = r.kind === "match" && e.game ? `?g=${e.game}` : r.kind === "league" && e.year ? `/${e.year}` : "";
+  return `${BASE}${ENTITY_PATH[r.kind as HubEntity]}/${encodeURIComponent(e.slug)}${tail}`;
 }
 
 /** Full shareable web address of a hub page (the desktop app shares these too). */

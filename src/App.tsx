@@ -99,6 +99,9 @@ export default function App() {
     setActiveTab(tab);
   }, []);
   const [searchOpen, setSearchOpen] = useState(false);
+  // the header search closes when another page opens (the Stats home has its own search box)
+  useEffect(() => onHubRoute(() => setSearchOpen(false)), []);
+  useEffect(() => setSearchOpen(false), [activeTab]);
   // One-time note about the stats hub and features people were missing (closed for good with X)
   // One-time note for people who used the app before it was renamed (0.4.0): RiftWatch is now RiftWise
   const [renameNote, setRenameNote] = useState(() => {
@@ -170,6 +173,11 @@ export default function App() {
   const [updateInfo, setUpdateInfo] = useState<AppUpdateInfo | null>(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<{ code: string; name?: string } | null>(null);
+  // "TBD" is a placeholder for a team not decided yet: nothing to open or follow
+  const openTeam = (code: string, name?: string) => {
+    if (!code || code.toUpperCase() === "TBD" || name?.toUpperCase() === "TBD") return;
+    setSelectedTeam({ code, name });
+  };
   const [h2hDetail, setH2hDetail] = useState<OpenH2HDetail | null>(null);
   const [updateCheck, setUpdateCheck] = useState<{ at: number; error: string | null } | null>(null);
   // Set when Riot's API stops answering: "riot-down" (no response), "riot-key" (401/403), "offline".
@@ -922,7 +930,7 @@ export default function App() {
             onOpenUrl={handleOpenUrl}
             onSelectTab={selectTab}
             onUpdateSettings={handleUpdateSettings}
-            onSelectTeam={(code, name) => setSelectedTeam({ code, name })}
+            onSelectTeam={openTeam}
             highlightMatchId={highlightMatchId}
             isLoading={lastSync === null && !syncFailed}
             liveShows={liveShows}
@@ -935,7 +943,7 @@ export default function App() {
             catalog={catalog}
             onOpenUrl={handleOpenUrl}
             onUpdateSettings={handleUpdateSettings}
-            onSelectTeam={(code, name) => setSelectedTeam({ code, name })}
+            onSelectTeam={openTeam}
             highlightMatchId={highlightMatchId}
             isLoading={lastSync === null && !syncFailed}
           />
@@ -995,7 +1003,7 @@ export default function App() {
           onClose={() => setH2hDetail(null)}
           onSelectTeam={(code, name) => {
             setH2hDetail(null);
-            setSelectedTeam({ code, name });
+            openTeam(code, name);
           }}
         />
       )}

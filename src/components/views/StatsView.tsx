@@ -63,6 +63,48 @@ import {
 import { HubSearch } from "../hub/HubSearch";
 
 /** Every pro pentakill: the players with the most, and the newest (spoiler mode hides fresh ones). */
+/**
+ * Career totals with a choice of games: every pro game (what player pages and storylines count) or only the top leagues
+ * and international events (older builds have only those).
+ */
+const CareerRecords: React.FC<{
+  r: HubRecords;
+  list: (title: string, rows: HubRecords["career"]["games"]) => React.ReactNode;
+}> = ({ r, list }) => {
+  const [all, setAll] = useState(true);
+  const c = all && r.careerAll ? r.careerAll : r.career;
+  const pill = (on: boolean) =>
+    `px-2.5 py-1 rounded-full text-[11px] font-semibold border ${on ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"}`;
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-rw-accent">{tl("Career totals")}</h3>
+        {r.careerAll && (
+          <div className="flex gap-1" role="group" aria-label={tl("Games counted")}>
+            <button type="button" className={pill(all)} aria-pressed={all} onClick={() => setAll(true)}>
+              {tl("All pro games")}
+            </button>
+            <button type="button" className={pill(!all)} aria-pressed={!all} onClick={() => setAll(false)}>
+              {tl("Top leagues & internationals")}
+            </button>
+          </div>
+        )}
+      </div>
+      <p className="text-[11px] text-rw-muted">
+        {all && r.careerAll
+          ? tl("Every pro game except All-Star and show matches, like the player pages.")
+          : tl("Only top leagues and international events (Worlds, MSI, First Stand).")}
+      </p>
+      <div className="grid gap-3 md:grid-cols-2">
+        {list(tl("Most pro games"), c.games)}
+        {list(tl("Most career kills"), c.kills)}
+        {list(tl("Most career assists"), c.assists)}
+        {list(tl("Biggest champion pools"), c.pool)}
+      </div>
+    </div>
+  );
+};
+
 const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
   p,
 }) => {
@@ -125,7 +167,7 @@ const PentaRow: React.FC<{
               {x.x > 1 && <span className="text-rw-accent"> ×{x.x}</span>}{" "}
               {x.g ? (
                 <HubLink
-                  to={{ kind: "match", slug: x.g }}
+                  to={{ kind: "match", slug: x.g, game: x.gn }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {x.a} vs {x.b}
@@ -260,7 +302,7 @@ const RecordsPanel: React.FC = () => {
                       {fmt(g.v)}
                     </span>
                     {g.g ? (
-                      <HubLink to={{ kind: "match", slug: g.g }}>
+                      <HubLink to={{ kind: "match", slug: g.g, game: g.gn }}>
                         {tl("{w} beat {l}", {
                           w: g.w,
                           l: g.w === g.a ? g.b : g.a,
@@ -307,7 +349,7 @@ const RecordsPanel: React.FC = () => {
                       {champName(p.c)}{" "}
                       {p.g ? (
                         <HubLink
-                          to={{ kind: "match", slug: p.g }}
+                          to={{ kind: "match", slug: p.g, game: p.gn }}
                           className="text-rw-sub hover:text-rw-accent hover:underline"
                         >
                           {p.kda}
@@ -354,9 +396,7 @@ const RecordsPanel: React.FC = () => {
               {tl(
                 "Top leagues and international events only. Games shorter than 14 minutes are skipped, and a game only counts when its numbers agree across Leaguepedia's tables.",
               )}{" "}
-              {tl(
-                "Career totals count every pro game except All-Star and show matches. The top records were checked against Leaguepedia.",
-              )}
+              {tl("The top records were checked against Leaguepedia.")}
             </p>
             <div className="grid gap-3 md:grid-cols-2">
               {gameList(tl("Fastest wins"), r.game.fastest, mmss)}
@@ -416,11 +456,8 @@ const RecordsPanel: React.FC = () => {
                   ))}
                 </ol>
               </Section>
-              {careerList(tl("Most pro games"), r.career.games)}
-              {careerList(tl("Most career kills"), r.career.kills)}
-              {careerList(tl("Most career assists"), r.career.assists)}
-              {careerList(tl("Biggest champion pools"), r.career.pool)}
             </div>
+            <CareerRecords r={r} list={careerList} />
           </div>
         );
       }}
@@ -539,7 +576,12 @@ export const StatsView: React.FC<StatsViewProps> = ({
   const statsMeta = useLoad<StatsMeta>(loadStatsMeta, []);
   const hubMeta = useLoad(loadHubMeta, []);
   const scroller = useRef<HTMLDivElement>(null);
+  const lastRoute = useRef(route);
   useEffect(() => {
+    const prev = lastRoute.current;
+    lastRoute.current = route;
+    // switching games inside one series keeps the place on the page
+    if (prev.kind === "match" && route.kind === "match" && "slug" in prev && "slug" in route && prev.slug === route.slug) return;
     scroller.current?.scrollTo({ top: 0 });
   }, [route]);
 
@@ -628,7 +670,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
         )}
         {route.kind === "leagues" && <LeaguesPanel />}
         {route.kind === "patches" && <PatchesPanel />}
-        {route.kind === "league" && <LeaguePage slug={route.slug} />}
+        {route.kind === "league" && <LeaguePage slug={route.slug} year={"year" in route ? route.year : undefined} />}
         {route.kind === "champions" &&
           (statsMeta.data ? (
             <ChampionsPage meta={statsMeta.data} query={"query" in route ? route.query : undefined} />

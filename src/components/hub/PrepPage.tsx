@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { GitCompare, Printer } from "lucide-react";
+import { ClipboardCopy, GitCompare, Printer } from "lucide-react";
 import { tl, tc, roleName } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
@@ -13,15 +13,17 @@ import { loadHubPlayer, loadHubTeam, loadPlayerGames, loadRatings, loadTeamGames
 import { chanceContext, matchChance, pct, seriesChance } from "../../hub/winChance";
 import { Change } from "./RankingsPage";
 import type { HubPlayer, HubTeam, PlayerGameRow, TeamGameRow, TeamSeriesRow } from "../../hub/types";
-import { PrepRoute, navigateHub } from "../../hub/route";
+import { PrepRoute, hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
-import { PeriodKey, inPeriod, playerAgg, playerRowRef, teamRowRef } from "../../hub/period";
+import { PeriodKey, inPeriod, playerAgg, playerRowRef, teamAgg, teamRowRef } from "../../hub/period";
 import { HeadToHeadSeries } from "./Archives";
 import { ComparePick, TeamRows, bothOptions } from "./ComparePage";
 import { PeriodPicker, defaultPeriod } from "./PeriodStats";
 import { StoryLine, StoryList, noteText } from "./Storylines";
-import { card, ChampIcon, fmtDate, HubLink, isFresh, Loading, OeCredit, RevealButton, Section, useHidden, useLoad, usePageTitle } from "./ui";
-import { CopyPageImage } from "./ShareImage";
+import { CaptureContext, card, ChampIcon, fmtDate, HubLink, isFresh, Loading, OeCredit, RevealButton, Section, useHidden, useLoad, usePageTitle } from "./ui";
+import { CaptureFooter, CopyPageImage, ShareButtons } from "./ShareImage";
+import { BroadcastCardButton, CardData, PoolLine, fearlessCard, playerCardData, prepOverviewCard } from "./BroadcastCard";
+import type { HubRatings } from "../../hub/types";
 
 const sgn = (v: number | null) => (v == null ? "–" : `${v > 0 ? "+" : ""}${v}`);
 
@@ -106,23 +108,40 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
   return <PrepView a={sides.a} b={sides.b} route={route} set={set} />;
 };
 
-/** Chances from the power ratings for one game, a best-of-three and a best-of-five, and where each team ranks. */
-const WinChances: React.FC<{ a: HubTeam; b: HubTeam }> = ({ a, b }) => {
-  const ratings = useLoad(loadRatings, []);
-  if (!a.rating || !b.rating || !ratings.data) return null;
+/** a's chance to win one game, a best-of-three and a best-of-five (null when the two can't be compared). */
+function chancesOf(a: HubTeam, b: HubTeam, ratings: HubRatings | undefined | null): [string, number][] | null {
+  if (!a.rating || !b.rating || !ratings) return null;
   // second-tier leagues never meet the top ones: only compare teams on the same scale
   if ((a.rating.rank == null || b.rating.rank == null) && a.rating.league !== b.rating.league) return null;
-  const adjust = ratings.data.adjust;
-  const ctx = chanceContext(a.rating.rank != null, b.rating.rank != null, a.rating.league, b.rating.league);
-  const p = matchChance(a.rating.r, b.rating.r, ctx, adjust);
-  const rows: [string, number][] = [
+  const adjust = ratings.adjust;
+  const p = matchChance(a.rating.r, b.rating.r, chanceContext(a.rating.rank != null, b.rating.rank != null, a.rating.league, b.rating.league), adjust);
+  return [
     [tl("One game"), p],
     [tl("Best of 3"), seriesChance(p, 3, adjust)],
     [tl("Best of 5"), seriesChance(p, 5, adjust)],
   ];
+}
+
+/** "#3 worldwide · #2 in LCK" */
+const rankText = (t: HubTeam) =>
+  !t.rating
+    ? undefined
+    : t.rating.rank != null
+      ? tl("#{rank} worldwide · #{lrank} in {league}", { rank: t.rating.rank, lrank: t.rating.lrank, league: t.rating.league || "–" })
+      : tl("#{lrank} in {league}", { lrank: t.rating.lrank, league: t.rating.league || "–" });
+
+/** Chances from the power ratings for one game, a best-of-three and a best-of-five, and where each team ranks. */
+const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = ({ a, b, card: overview }) => {
+  const ratings = useLoad(loadRatings, []);
+  const rows = chancesOf(a, b, ratings.data);
+  if (!rows || !ratings.data) return null;
   const acc = ratings.data?.test.all;
   return (
-    <Section title={tl("Win chances")} share={`${a.u}-vs-${b.u}-win-chances`}>
+    <Section
+      title={tl("Win chances")}
+      share={`${a.u}-vs-${b.u}-win-chances`}
+      right={overview ? <BroadcastCardButton data={overview} name={`${a.name}-vs-${b.name}-match-prep`} label={tl("Overview card")} /> : undefined}
+    >
       <div className="flex items-center justify-between gap-2 text-xs font-bold">
         <span className="text-rw-teal truncate">{a.name}</span>
         <span className="text-rw-red truncate text-right">{b.name}</span>
@@ -222,9 +241,49 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
     const pa = Math.round(p * 100);
     return [pa, 100 - pa];
   }, [a.team.rating, b.team.rating, ratings.data]);
+  // the form squares, head-to-head and storylines show recent results: left out of the card and post while hidden
+  const lastTen = (s: Side) => [...s.series].sort((x, y) => (x[0] < y[0] ? 1 : -1)).slice(0, 10);
+  const formFresh = [...lastTen(a), ...lastTen(b)].map((r) => r[0]).find((d) => isFresh(d));
+  const [formHidden] = useHidden(`prep-form:${a.team.u}:${b.team.u}`, formFresh);
+  const meetings = a.series.filter((r) => r[2] === b.team.u);
+  const h2hWins = meetings.filter((r) => r[3] > r[4]).length;
+  // storylines as plain text (the ones written as text: all of them today) for the card and the post
+  const stories = useMemo(
+    () =>
+      prepLines(a, b)
+        // the series record has its own place on the card and in the post
+        .filter((l) => l.key !== "h2h" && (typeof l.text === "string" || typeof l.text === "number"))
+        .map((l) => (l.who ? `${l.who.name}: ${l.text}` : String(l.text))),
+    [a, b],
+  );
+  const pools = useMemo(() => fearlessPools(a, b, period), [a, b, period]);
+  const overview = (): CardData =>
+    prepOverviewCard({
+      a: { name: a.team.name, rank: rankText(a.team), chg: a.team.rating?.chg30, form: formHidden ? [] : lastTen(a).map((r) => r[3] > r[4]) },
+      b: { name: b.team.name, rank: rankText(b.team), chg: b.team.rating?.chg30, form: formHidden ? [] : lastTen(b).map((r) => r[3] > r[4]) },
+      chances: chancesOf(a.team, b.team, ratings.data) || [],
+      h2h: !formHidden && meetings.length ? [h2hWins, meetings.length - h2hWins] : null,
+      stories: formHidden ? [] : stories,
+      period: periodLabel,
+    });
+  // a ready-to-post summary for X: chances, early game, head-to-head, a storyline, the Fearless pinch point, the link
+  const postText = () => {
+    const lines = [`${a.team.name} vs ${b.team.name} — ${tl("Match prep")} (${periodLabel})`];
+    const ch = chancesOf(a.team, b.team, ratings.data);
+    // Bo1 55%-45% · Bo3 58%-42% · Bo5 60%-40%
+    if (ch) lines.push(`${tl("Win chances")}: ${ch.map(([, p], i) => `${tc("short best of", "Bo{n}", { n: [1, 3, 5][i] })} ${Math.round(p * 100)}%-${Math.round((1 - p) * 100)}%`).join(" · ")}`);
+    const ga = teamAgg(ra).tl?.gd15;
+    const gb = teamAgg(rb).tl?.gd15;
+    if (!hidden && (ga != null || gb != null)) lines.push(`${tl("Gold @15")}: ${a.team.name} ${sgn(ga ?? null)} · ${b.team.name} ${sgn(gb ?? null)}`);
+    if (!formHidden && meetings.length) lines.push(`${tl("Head to head (series)")}: ${a.team.name} ${h2hWins}-${meetings.length - h2hWins} ${b.team.name}`);
+    if (!formHidden && stories[0]) lines.push(stories[0]);
+    if (!hidden && pools.pinch) lines.push(`${tl("Fearless pinch point")}: ${pools.pinch.name} (${pools.pinch.team}, ${roleName(pools.pinch.role)}) · ${tl("{n} with 2+ games", { n: pools.pinch.deep })}`);
+    lines.push(hubShareUrl({ kind: "prep", a: a.team.u, b: b.team.u, period }));
+    return lines.join("\n");
+  };
   const body = (print: boolean) => (
     <>
-      <WinChances a={a.team} b={b.team} />
+      <WinChances a={a.team} b={b.team} card={print ? undefined : overview} />
       <PrepStorylines a={a} b={b} />
       <Form a={a} b={b} />
       <HeadToHeadSeries a={a.team.u} b={b.team.u} aName={a.team.name} bName={b.team.name} />
@@ -245,6 +304,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
   );
 
   return (
+    <CaptureContext.Provider value={`${title} · ${periodLabel}`}>
     <div className="space-y-3" ref={pageRef}>
       <div className={`${card} flex flex-wrap items-center justify-between gap-2`}>
         <div className="min-w-0">
@@ -279,6 +339,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
             {tl("Print sheet")}
           </button>
           <CopyPageImage target={pageRef} name={`${title} match prep`} />
+          <CopyPost text={postText} />
         </div>
       </div>
 
@@ -297,11 +358,33 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           document.body,
         )}
     </div>
+    </CaptureContext.Provider>
+  );
+};
+
+/** "Copy post": a ready-to-post summary of the matchup with its link, for X / Twitter or Discord. */
+const CopyPost: React.FC<{ text: () => string }> = ({ text }) => {
+  const [state, setState] = useState<"" | "copied" | "failed">("");
+  useEffect(() => {
+    if (!state) return;
+    const t = setTimeout(() => setState(""), 2200);
+    return () => clearTimeout(t);
+  }, [state]);
+  return (
+    <button
+      type="button"
+      onClick={() => navigator.clipboard.writeText(text()).then(() => setState("copied"), () => setState("failed"))}
+      className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-teal hover:underline"
+      title={tl("Copy a ready-to-post summary with the link, for X or Discord")}
+    >
+      <ClipboardCopy className="w-3.5 h-3.5" />
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
+    </button>
   );
 };
 
 /** Head-to-head facts plus both teams' and their starters' storylines. */
-const PrepStorylines: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
+function prepLines(a: Side, b: Side): StoryLine[] {
   const lines: StoryLine[] = [];
   const meetings = a.series.filter((r) => r[2] === b.team.u).sort((x, y) => (x[0] < y[0] ? 1 : -1));
   if (!meetings.length) {
@@ -332,8 +415,12 @@ const PrepStorylines: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
         for (const [i, nt] of pl.p.notes.list.entries())
           lines.push({ key: `${pl.p.u}-${i}`, who: { name: pl.p.name, to: { kind: "player", slug: pl.p.u } }, text: noteText(nt), asOf: pl.p.notes.asOf });
   }
-  return <StoryList lines={lines} spoilerKey={`prep-notes:${a.team.u}:${b.team.u}`} share={`${a.team.name}-vs-${b.team.name}-storylines`} />;
-};
+  return lines;
+}
+
+const PrepStorylines: React.FC<{ a: Side; b: Side }> = ({ a, b }) => (
+  <StoryList lines={prepLines(a, b)} spoilerKey={`prep-notes:${a.team.u}:${b.team.u}`} share={`${a.team.name}-vs-${b.team.name}-storylines`} />
+);
 
 /** Each team's last 10 series. */
 const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
@@ -390,6 +477,33 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
  * a team picks is gone for the rest of the series, so a role needs up to five; the shallowest pool (fewest
  * champions with 2+ games) is where the other team can squeeze in games 3-5.
  */
+/** Each starter's champions in the period (most played first), and the shallowest pool of all ten. */
+function fearlessPools(a: Side, b: Side, period: PeriodKey) {
+  const of = (pl: Side["players"][number]) => {
+    if (!pl) return null;
+    const m = new Map<string, [number, number]>();
+    for (const g of inPeriod(pl.log, period, playerRowRef)) {
+      if (!g[2]) continue;
+      const x = m.get(g[2]) || [0, 0];
+      x[0]++;
+      x[1] += g[6];
+      m.set(g[2], x);
+    }
+    const list = [...m.entries()].sort((p, q) => q[1][0] - p[1][0]);
+    return { name: pl.p.name, list, deep: list.filter(([, x]) => x[0] >= 2).length };
+  };
+  const pa = a.players.map(of);
+  const pb = b.players.map(of);
+  const all = [...pa, ...pb].filter((x): x is NonNullable<typeof x> => !!x && x.list.length > 0);
+  const minDeep = all.length ? Math.min(...all.map((x) => x.deep)) : 0;
+  let pinch: { name: string; team: string; role: string; deep: number } | null = null;
+  ROLES.forEach((role, i) => {
+    for (const [x, team] of [[pa[i], a.team.name], [pb[i], b.team.name]] as const)
+      if (!pinch && x && x.list.length > 0 && x.deep === minDeep) pinch = { name: x.name, team, role, deep: x.deep };
+  });
+  return { a: pa, b: pb, enough: all.length >= 4, minDeep, pinch: pinch as { name: string; team: string; role: string; deep: number } | null };
+}
+
 export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string; title: string }> = ({
   a,
   b,
@@ -397,25 +511,10 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
   periodLabel,
   title,
 }) => {
-  const pools = useMemo(() => {
-    const of = (pl: Side["players"][number]) => {
-      if (!pl) return null;
-      const m = new Map<string, [number, number]>();
-      for (const g of inPeriod(pl.log, period, playerRowRef)) {
-        if (!g[2]) continue;
-        const x = m.get(g[2]) || [0, 0];
-        x[0]++;
-        x[1] += g[6];
-        m.set(g[2], x);
-      }
-      const list = [...m.entries()].sort((p, q) => q[1][0] - p[1][0]);
-      return { name: pl.p.name, list, deep: list.filter(([, x]) => x[0] >= 2).length };
-    };
-    return { a: a.players.map(of), b: b.players.map(of) };
-  }, [a, b, period]);
-  const all = [...pools.a, ...pools.b].filter((x): x is NonNullable<typeof x> => !!x && x.list.length > 0);
-  if (all.length < 4) return null;
-  const minDeep = Math.min(...all.map((x) => x.deep));
+  const pools = useMemo(() => fearlessPools(a, b, period), [a, b, period]);
+  if (!pools.enough) return null;
+  const minDeep = pools.minDeep;
+  const line = (x: (typeof pools.a)[number]): PoolLine | null => (x ? { name: x.name, list: x.list.map(([c, [g]]) => [c, g]), deep: x.deep } : null);
   const cell = (x: (typeof pools.a)[number], right: boolean) =>
     !x ? (
       <span className="text-rw-muted">–</span>
@@ -437,7 +536,26 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
       </div>
     );
   return (
-    <Section title={tl("Fearless pool depth")} right={<span className="text-[11px] text-rw-sub">{periodLabel}</span>} share={`${title}-fearless-${periodLabel}`}>
+    <Section
+      title={tl("Fearless pool depth")}
+      right={
+        <span className="flex items-center gap-2">
+          <span className="text-[11px] text-rw-sub">{periodLabel}</span>
+          <BroadcastCardButton
+            data={() =>
+              fearlessCard({
+                aName: a.team.name,
+                bName: b.team.name,
+                rows: ROLES.map((role, i) => ({ role, a: line(pools.a[i]), b: line(pools.b[i]) })),
+                period: periodLabel,
+              })
+            }
+            name={`${title}-fearless`}
+          />
+        </span>
+      }
+      share={`${title}-fearless-${periodLabel}`}
+    >
       <ul className="divide-y divide-rw-border">
         {ROLES.map((r, i) => (
           <li key={r} className="grid grid-cols-[1fr_auto_1fr] items-start gap-3 py-2">
@@ -501,8 +619,16 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
         <span className="text-rw-muted">–</span>
       );
     const val = "tabular-nums text-[11px] py-0.5";
+    const laneCard = (): CardData | null =>
+      pa && pb && sa && sb
+        ? playerCardData({ name: pa.p.name, role: roleName(r), club: a.team.name }, sa, periodLabel, { name: pb.p.name, role: roleName(r), club: b.team.name }, sb)
+        : null;
     return (
-      <div className="py-2.5 max-w-lg mx-auto">
+      <LaneBlock
+        label={`${pa?.p.name || "–"} vs ${pb?.p.name || "–"} · ${roleName(r)}`}
+        name={`${title}-${r}-${periodLabel}`}
+        card={laneCard}
+      >
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className="min-w-0 flex justify-end">{name(pa, false)}</div>
           <span className="text-[10px] uppercase tracking-wider font-bold text-rw-accent text-center min-w-16 px-1 whitespace-nowrap">{roleName(r)}</span>
@@ -538,7 +664,7 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
           <span className="w-16" />
           {icons(sb, true) || <span />}
         </div>
-      </div>
+      </LaneBlock>
     );
   };
   return (
@@ -551,5 +677,25 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
       <p className="text-[10px] text-rw-muted">{tl("Starters: the players with the most games in each team's newest roster. The better number of each pair is highlighted; champions with games played.")}</p>
       <OeCredit />
     </Section>
+  );
+};
+
+/**
+ * One lane of "Lane by lane", with its own picture (just this 1v1, named on top) and 16:9 card, for posting about one
+ * matchup without the other four.
+ */
+const LaneBlock: React.FC<{ label: string; name: string; card: () => CardData | null; children: React.ReactNode }> = ({ label, name, card, children }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const data = card();
+  return (
+    <div ref={ref} className="relative py-2.5 max-w-lg mx-auto">
+      <div className="rw-capture-only rw-section-context text-sm font-extrabold text-rw-text pb-1">{label}</div>
+      <div className="absolute right-0 top-2 flex items-center gap-1" data-nocapture="1">
+        {data && <BroadcastCardButton data={() => card() as CardData} name={name} label={tl("Lane card")} compact />}
+        <ShareButtons target={ref} name={name} />
+      </div>
+      {children}
+      <CaptureFooter />
+    </div>
   );
 };
