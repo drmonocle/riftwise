@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { GitCompare, Printer } from "lucide-react";
-import { tl, roleName } from "../../i18n";
+import { tl, tc, roleName } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { loadHubPlayer, loadHubTeam, loadPlayerGames, loadRatings, loadTeamGames, loadTeamSeries } from "../../hub/data";
@@ -366,12 +366,12 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
                   return (
                     <span
                       key={`${r[0]}-${r[7]}-${r[1]}`}
-                      title={`${won ? "W" : "L"} ${r[3]}-${r[4]} vs ${r[1]} · ${r[5]} · ${fmtDate(r[0])}`}
+                      title={`${won ? tc("short result", "W") : tc("short result", "L")} ${r[3]}-${r[4]} vs ${r[1]} · ${r[5]} · ${fmtDate(r[0])}`}
                       className={`w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center ${
                         won ? "bg-rw-teal/20 text-rw-teal" : "bg-rw-red/20 text-rw-red"
                       }`}
                     >
-                      {won ? "W" : "L"}
+                      {won ? tc("short result", "W") : tc("short result", "L")}
                     </span>
                   );
                 })}
@@ -442,7 +442,7 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
         {ROLES.map((r, i) => (
           <li key={r} className="grid grid-cols-[1fr_auto_1fr] items-start gap-3 py-2">
             {cell(pools.a[i], false)}
-            <span className="text-[10px] uppercase tracking-wider font-bold text-rw-accent text-center w-14 pt-0.5">{roleName(r)}</span>
+            <span className="text-[10px] uppercase tracking-wider font-bold text-rw-accent text-center min-w-14 px-1 whitespace-nowrap pt-0.5">{roleName(r)}</span>
             {cell(pools.b[i], true)}
           </li>
         ))}
@@ -505,7 +505,7 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
       <div className="py-2.5 max-w-lg mx-auto">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className="min-w-0 flex justify-end">{name(pa, false)}</div>
-          <span className="text-[10px] uppercase tracking-wider font-bold text-rw-accent text-center w-16">{roleName(r)}</span>
+          <span className="text-[10px] uppercase tracking-wider font-bold text-rw-accent text-center min-w-16 px-1 whitespace-nowrap">{roleName(r)}</span>
           <div className="min-w-0 flex">{name(pb, true)}</div>
         </div>
         {sa || sb ? (

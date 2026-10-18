@@ -440,7 +440,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                         return (
                           <div key={`${p.teamSlug || p.teamCode}-${p.name}`} className="flex items-center justify-between text-[11px] py-0.5">
                             <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-mono px-1 rounded bg-rw-deep text-rw-teal w-12 text-center">
+                              <span className="text-[10px] font-mono px-1.5 rounded bg-rw-deep text-rw-teal min-w-12 text-center whitespace-nowrap shrink-0">
                                 {roleName(p.role)}
                               </span>
                               <span className="text-rw-text font-semibold">{p.name}</span>
@@ -492,7 +492,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-rw-deep border border-rw-border text-rw-teal w-14 text-center">
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-rw-deep border border-rw-border text-rw-teal min-w-14 text-center whitespace-nowrap shrink-0">
                       {roleName(player.role)}
                     </span>
                     <div>

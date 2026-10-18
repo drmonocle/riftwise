@@ -5,7 +5,7 @@ import { MissingFile } from "../../stats";
 import { tl, locale } from "../../i18n";
 import { champName } from "../../champions";
 import { HubRoute, hubPath, navigateHub } from "../../hub/route";
-import { champIcon, itemIcon, runeIcon, spellIcon } from "../../hub/ddragon";
+import { champIcon, itemIcon, itemName, runeIcon, runeName, spellIcon, spellName } from "../../hub/ddragon";
 import { prefetchHub, prettySlug } from "../../hub/data";
 import { IS_WEB } from "../../platform";
 import { CaptureFooter, ShareButtons } from "./ShareImage";
@@ -261,9 +261,9 @@ const Pic: React.FC<{ src: string | null; alt: string; size: number; round?: boo
 export const ChampIcon: React.FC<{ name?: string; size?: number; className?: string }> = ({ name, size = 22, className }) =>
   name ? <Pic src={champIcon(name)} alt={champName(name)} size={size} className={className} /> : null;
 
-export const ItemIcon: React.FC<{ name: string; size?: number }> = ({ name, size = 20 }) => <Pic src={itemIcon(name)} alt={name} size={size} />;
-export const SpellIcon: React.FC<{ name: string; size?: number }> = ({ name, size = 16 }) => <Pic src={spellIcon(name)} alt={name} size={size} />;
-export const RuneIcon: React.FC<{ name: string; size?: number }> = ({ name, size = 18 }) => <Pic src={runeIcon(name)} alt={name} size={size} round />;
+export const ItemIcon: React.FC<{ name: string; size?: number }> = ({ name, size = 20 }) => <Pic src={itemIcon(name)} alt={itemName(name)} size={size} />;
+export const SpellIcon: React.FC<{ name: string; size?: number }> = ({ name, size = 16 }) => <Pic src={spellIcon(name)} alt={spellName(name)} size={size} />;
+export const RuneIcon: React.FC<{ name: string; size?: number }> = ({ name, size = 18 }) => <Pic src={runeIcon(name)} alt={runeName(name)} size={size} round />;
 
 /** Champion picture + name, linked to the champion page. */
 export const ChampLink: React.FC<{ name: string; size?: number; showName?: boolean }> = ({ name, size = 20, showName = true }) => (

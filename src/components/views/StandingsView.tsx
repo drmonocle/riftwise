@@ -249,7 +249,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                     <tr>
                       <th className="py-2.5 px-3 w-10 text-center">#</th>
                       <th className="py-2.5 px-3">{tl("Team")}</th>
-                      <th className="py-2.5 px-3 text-center whitespace-nowrap">W – L</th>
+                      <th className="py-2.5 px-3 text-center whitespace-nowrap">{tc("short result", "W")} – {tc("short result", "L")}</th>
                       <th className="py-2.5 px-3 text-center hidden sm:table-cell">{tl("Win%")}</th>
                     </tr>
                   </thead>

@@ -177,7 +177,36 @@ const STAGE_ALIASES: Record<string, string> = {
   "play-ins knockouts": "Play-ins Knockouts",
   "play-ins finals": "Play-ins Finals",
   eliminations: "Elimination",
+  "elimination round": "Elimination",
+  "elimination rounds": "Elimination",
   tiebreakers: "Tiebreakers",
+  tiebreaker: "Tiebreakers",
+  "play-in": "Play-ins",
+  "play-in stage": "Play-ins",
+  "grand final": "Grand Finals",
+  final: "Finals",
+  "quarter finals": "Quarterfinals",
+  "quarter-finals": "Quarterfinals",
+  groups: "Group Stage",
+  knockouts: "Knockout Stage",
+  playoff: "Playoffs",
+  qualifier: "Qualifiers",
+  qual: "Qualifiers",
+  "qualification round": "Qualifying Round",
+  promo: "Promotion",
+  "winners finals": "Upper Bracket Final",
+  "winners final": "Upper Bracket Final",
+  "upper bracket final": "Upper Bracket Final",
+  "upper bracket finals": "Upper Bracket Final",
+  "losers finals": "Lower Bracket Final",
+  "losers final": "Lower Bracket Final",
+  "loser's finals": "Lower Bracket Final",
+  "lower bracket final": "Lower Bracket Final",
+  "lower bracket finals": "Lower Bracket Final",
+  "winner's bracket": "Upper Bracket",
+  "winners bracket": "Upper Bracket",
+  "loser's bracket": "Lower Bracket",
+  "losers bracket": "Lower Bracket",
 };
 
 /**
@@ -193,6 +222,42 @@ export function stageName(stage: string | undefined): string {
   if (m) return tc("stage", "Round {n}", { n: m[1] });
   m = /^Bracket Rounds (\S+)$/i.exec(s);
   if (m) return tc("stage", "Bracket Rounds {n}", { n: m[1] });
+  m = /^Bracket Round (\d+)$/i.exec(s);
+  if (m) return tc("stage", "Bracket Round {n}", { n: m[1] });
+  m = /^Playoffs Round (\d+)$/i.exec(s);
+  if (m) return tc("stage", "Playoffs Round {n}", { n: m[1] });
+  m = /^Round of (\d+)$/i.exec(s);
+  if (m) return tc("stage", "Round of {n}", { n: m[1] });
+  m = /^Stage (\d+)$/i.exec(s);
+  if (m) return tc("stage", "Stage {n}", { n: m[1] });
+  m = /^(?:Upper|Winners|Winner's) (?:Bracket )?Round (\d+)$/i.exec(s);
+  if (m) return tc("stage", "Upper Bracket Round {n}", { n: m[1] });
+  m = /^(?:Lower|Losers|Loser's) (?:Bracket )?Round (\d+)$/i.exec(s);
+  if (m) return tc("stage", "Lower Bracket Round {n}", { n: m[1] });
   const canon = STAGE_ALIASES[s.toLowerCase()] || s;
   return tc("stage", canon);
+}
+
+/**
+ * A tournament stage as Leaguepedia names it ("Week 3", "Group B", "Playoffs - Round 1", "Swiss Round 4"...), in the
+ * reader's language; a compound name is translated part by part.
+ */
+export function stageLabel(name: string | undefined): string {
+  const s = (name || "").trim();
+  if (!s) return "";
+  let m = /^Week (\d+)$/i.exec(s);
+  if (m) return tl("Week {n}", { n: m[1] });
+  m = /^Swiss Round (\d+)$/i.exec(s);
+  if (m) return stageName(`Round ${m[1]}`);
+  m = /^Group ([A-Z0-9]+)$/i.exec(s);
+  if (m) return tl("Group {name}", { name: m[1] });
+  if (/^(third|3rd)[- ]place match$/i.test(s)) return tl("Third-place match");
+  m = /^W(\d+)$/.exec(s);
+  if (m) return tl("Week {n}", { n: m[1] });
+  const parts = s.split(/\s+[·\-–]\s+/);
+  if (parts.length > 1) return parts.map(stageLabel).join(" · ");
+  m = /^(.+?)\s+(Week \d+|W\d+|Round \d+)$/i.exec(s); // "Group Stage Week 2", "Stage 2 Round 3"
+  if (m && !/^(Upper|Lower|Winners|Losers|Winner's|Loser's|Bracket|Playoffs)( Bracket)?$/i.test(m[1]))
+    return `${stageLabel(m[1])} · ${stageLabel(m[2])}`;
+  return stageName(s);
 }

@@ -6,7 +6,8 @@ import { Match, CatalogData } from "../types";
 import { computeHeadToHead, h2hKey, normalizeTeamCode, pickTeamByCode, recentMeetings, H2HMeeting } from "../helpers";
 import { fetchH2HSeries, H2HSeriesEntry } from "../api";
 import { H2HBar, T1_COLOR, T2_COLOR } from "./H2HMeter";
-import { tl } from "../i18n";
+import { fmtDate } from "./hub/ui";
+import { tl, tn } from "../i18n";
 
 interface H2HDetailsModalProps {
   team1Code: string;
@@ -51,7 +52,7 @@ const Split: React.FC<{ icon: React.ReactNode; label: string; wins: [number, num
           <span style={{ color: T1_COLOR }}>{c1} {wins[0]}</span>
           <span className="text-rw-muted"> – </span>
           <span style={{ color: T2_COLOR }}>{wins[1]} {c2}</span>
-          <span className="hidden sm:inline text-rw-muted font-normal"> · {tl("{n} games", { n: total })}</span>
+          <span className="hidden sm:inline text-rw-muted font-normal"> · {tn("{n} game", "{n} games", total)}</span>
         </span>
       </div>
       <H2HBar t1Pct={Math.round((wins[0] / total) * 100)} className="h-1" />
@@ -236,7 +237,7 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                     >
                       <div className="min-w-0">
                         <div className="text-rw-text truncate">{m.tournament}</div>
-                        <div className="text-[10px] text-rw-muted font-mono">{m.date}</div>
+                        <div className="text-[10px] text-rw-muted font-mono">{fmtDate(m.date)}</div>
                       </div>
                       {revealed ? (
                         <div className="font-mono font-bold shrink-0">

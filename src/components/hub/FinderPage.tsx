@@ -5,7 +5,7 @@
  * Filters live in the address: /stats/finder?league=lck&year=2026&team=T1&champ=Azir
  */
 import React, { useMemo, useRef, useState } from "react";
-import { tl, tn } from "../../i18n";
+import { tl, tn, tc } from "../../i18n";
 import { champName } from "../../champions";
 import { loadAliases, loadChampGames, loadChampIndex } from "../../hub/data";
 import type { ChampGame, ChampPick } from "../../hub/types";
@@ -525,7 +525,7 @@ const FinderBody: React.FC<{
                             className="hover:text-rw-accent hover:underline"
                           >
                             {fmtDate(g[0])}
-                            {g[15] ? ` · G${g[15]}` : ""}
+                            {g[15] ? ` · ${tc("short game", "G{n}", { n: g[15] })}` : ""}
                           </HubLink>
                         ) : (
                           fmtDate(g[0])

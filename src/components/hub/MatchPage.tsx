@@ -1,7 +1,7 @@
 /** One series (a "match": Bo1 to Bo5): every game's draft, scoreboard, builds, runes and objectives. */
 import React, { useState } from "react";
 import { PlayCircle, Swords, Clock, Crown } from "lucide-react";
-import { tl, tc, tk, roleName, locale } from "../../i18n";
+import { tl, tc, tk, roleName, locale, stageLabel } from "../../i18n";
 import { champName } from "../../champions";
 import { loadHubSeries } from "../../hub/data";
 import type { GamePlayer, HubGame, HubSeries, SideStats } from "../../hub/types";
@@ -58,7 +58,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
       <div className={card}>
         <div className="text-[11px] text-rw-muted flex flex-wrap gap-x-2">
           <EventLink name={s.en} u={s.e} className="text-rw-accent hover:underline" />
-          {s.stage && <span>· {s.stage}</span>}
+          {s.stage && <span>· {stageLabel(s.stage)}</span>}
           <span>· {fmtDate(s.date)}</span>
           <span>· {tc("series length", "Best of {n}", { n: s.bo })}</span>
           {!hidden && s.r != null && (

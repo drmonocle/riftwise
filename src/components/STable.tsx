@@ -9,6 +9,7 @@
  * The rows are reordered as React elements (by their keys), so anything inside keeps working. Each row element
  * must render exactly one <tr>; if not, the table simply doesn't sort.
  */
+import { locale } from "../i18n";
 import React, { useLayoutEffect, useRef, useState } from "react";
 
 type Val = number | string | null;
@@ -35,7 +36,7 @@ export function sortValue(cell: HTMLTableCellElement | undefined): Val {
   }
   const under = /^<\s*(\d+(?:\.\d+)?)\s*%$/.exec(t);
   if (under) return Number(under[1]) * 0.5;
-  const plain = t.replace(/[\s,]/g, "").replace(/^[+#]/, "").replace(/^[−–]/, "-").replace(/^\$/, "");
+  const plain = localPlain(t);
   const lead = /^(-?\d+(?:\.\d+)?)([kKmM]?)/.exec(plain);
   if (lead) return Number(lead[1]) * (/k/i.test(lead[2]) ? 1e3 : /m/i.test(lead[2]) ? 1e6 : 1);
   return t.toLocaleLowerCase();
@@ -43,7 +44,35 @@ export function sortValue(cell: HTMLTableCellElement | undefined): Val {
 
 function compare(x: Val, y: Val): number {
   if (typeof x === "number" && typeof y === "number") return x - y;
-  return String(x).localeCompare(String(y), undefined, { numeric: true });
+  return String(x).localeCompare(String(y), locale(), { numeric: true });
+}
+
+// The reader's number separators (1,234.5 / 1.234,5 / 1 234,5): numbers the app formats for the reader's
+// language (fmtNum, prize money) must sort as numbers, not as 1.234
+let seps: { loc: string; group: string; dec: string } | null = null;
+function separators() {
+  if (!seps || seps.loc !== locale()) {
+    const parts = new Intl.NumberFormat(locale()).formatToParts(12345.6);
+    seps = { loc: locale(), group: parts.find((p) => p.type === "group")?.value ?? ",", dec: parts.find((p) => p.type === "decimal")?.value ?? "." };
+  }
+  return seps;
+}
+const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** A cell's text as a plain number string: sign, currency ("US$", "R$", "€"...) and grouping taken out. */
+export function localPlain(t: string): string {
+  let p = t
+    .replace(/^[+#]/, "")
+    .replace(/^[−–]/, "-")
+    .replace(/^(?:[A-Z]{1,3})?[$€£¥₩](?:[A-Z]{1,3})?\s*/u, "")
+    .replace(/\s*(?:[A-Z]{1,3})?[$€£¥₩](?:[A-Z]{1,3})?$/u, "")
+    .replace(/[\s\u00a0\u202f]/g, "");
+  const { group, dec } = separators();
+  const g = group.replace(/[\s\u00a0\u202f]/g, "");
+  // grouped like the reader's language writes it (1.234.567 in German): drop the groups, keep the decimals
+  if (g && new RegExp(`^-?\\d{1,3}(?:${esc(g)}\\d{3})+(?:${esc(dec)}\\d+)?$`).test(p)) p = p.split(g).join("").replace(dec, ".");
+  else if (dec === "," && /^-?\d+,\d+$/.test(p)) p = p.replace(",", "."); // 3,5 in French
+  return p.replace(/,/g, "");
 }
 
 /** Children of a host element (thead / tbody / tr) as a flat list of elements with keys. */

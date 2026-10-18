@@ -1,7 +1,7 @@
 /** Full histories, loaded on demand: every series of a team, every game of a player, every meeting of two teams. */
 import React, { useMemo, useState } from "react";
 import { ListOrdered } from "lucide-react";
-import { tl, tn, tc, roleName } from "../../i18n";
+import { tl, tn, tc, roleName, stageLabel } from "../../i18n";
 import { champName } from "../../champions";
 import { loadPlayerGames, loadTeamSeries } from "../../hub/data";
 import type { PlayerGameRow, TeamSeriesRow } from "../../hub/types";
@@ -58,7 +58,7 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; spoilerKey
                 {r[9] !== teamName && <span className="text-rw-muted text-[10px]">({tl("as {name}", { name: r[9] })}) </span>}
                 <span className="text-rw-muted">
                   · <EventLink name={r[5]} u={r[6]} className="text-rw-muted hover:text-rw-accent hover:underline" />
-                  {r[8] ? ` · ${r[8]}` : ""}
+                  {r[8] ? ` · ${stageLabel(r[8])}` : ""}
                 </span>
               </span>
               <span className="flex items-center gap-2 shrink-0 text-rw-muted">

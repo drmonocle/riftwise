@@ -9,7 +9,8 @@ import { tl, locale } from "../../i18n";
 import { normalizeTeamCode, streamEventTitle } from "../../helpers";
 import { loadEventsOfYear, loadHubEvent } from "../../hub/data";
 import type { HubEvent, SeriesRow } from "../../hub/types";
-import { Bracket, SeriesBox, Standings, stageLabel } from "./EventPage";
+import { Bracket, SeriesBox, Standings } from "./EventPage";
+import { stageLabel } from "../../i18n";
 import { EventLink, HubLink } from "./ui";
 
 // the leagues a stream event can be in (MSI 2020 was replaced by the Mid-Season Cup)

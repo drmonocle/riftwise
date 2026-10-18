@@ -212,7 +212,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <>
                       <AlertTriangle className="w-4 h-4 text-rw-accent" />
                       <span className="font-semibold text-rw-text text-xs">
-                        Couldn't check for updates · you have v{APP_VERSION}
+                        {tl("Couldn't check for updates · you have v{version}", { version: APP_VERSION })}
                       </span>
                     </>
                   ) : (

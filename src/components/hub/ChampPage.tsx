@@ -28,6 +28,7 @@ import {
   useLoad,
   usePageTitle,
 } from "./ui";
+import { itemName, runeName, spellName } from "../../hub/ddragon";
 import { STable } from "../STable";
 
 export const ChampPage: React.FC<{ slug: string }> = ({ slug }) => {
@@ -129,7 +130,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 {items.map(([it, g, w]) => (
                   <li key={it} className="flex items-center gap-2 min-w-0">
                     <ItemIcon name={it} size={22} />
-                    <span className="truncate flex-1 text-rw-text">{it}</span>
+                    <span className="truncate flex-1 text-rw-text">{itemName(it)}</span>
                     <span className="text-rw-sub tabular-nums shrink-0">{pctOf(g, c.builds!.g)}</span>
                     <span className="text-rw-muted tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
                   </li>
@@ -142,7 +143,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 {c.builds.keys.map(([k, g, w]) => (
                   <li key={k} className="flex items-center gap-2 min-w-0">
                     <RuneIcon name={k} size={22} />
-                    <span className="truncate flex-1 text-rw-text">{k}</span>
+                    <span className="truncate flex-1 text-rw-text">{runeName(k)}</span>
                     <span className="text-rw-sub tabular-nums shrink-0">{pctOf(g, c.builds!.g)}</span>
                     <span className="text-rw-muted tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
                   </li>
@@ -159,7 +160,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                         <SpellIcon key={x} name={x} size={20} />
                       ))}
                     </span>
-                    <span className="truncate flex-1 text-rw-text">{sp}</span>
+                    <span className="truncate flex-1 text-rw-text">{sp.split(" + ").map(spellName).join(" + ")}</span>
                     <span className="text-rw-sub tabular-nums shrink-0">{pctOf(g, c.builds!.g)}</span>
                     <span className="text-rw-muted tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
                   </li>
@@ -189,7 +190,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                   >
                     {d == null ? "" : d === 0 ? "=" : `${d > 0 ? "+" : ""}${d}`}
                   </span>
-                  <span className="text-rw-sub tabular-nums text-right w-56 truncate">
+                  <span className="text-rw-sub tabular-nums text-right shrink-0 whitespace-nowrap min-w-56">
                     {tl("{pres} presence · {p} picks · {wr}", { pres: `${Math.round(pres * 100)}%`, p: p.pk, wr: p.pk ? pctOf(p.w, p.pk) : "–" })}
                   </span>
                 </div>
@@ -209,7 +210,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 <div className="bg-rw-teal/70" style={{ width: `${(y.p / maxYear) * 100}%` }} />
                 <div className="bg-rw-red/50" style={{ width: `${(y.b / maxYear) * 100}%` }} />
               </div>
-              <span className="text-rw-sub tabular-nums text-right w-44 truncate">
+              <span className="text-rw-sub tabular-nums text-right shrink-0 whitespace-nowrap min-w-44">
                 {tl("{p} picks · {b} bans · {wr}", { p: fmtNum(y.p), b: fmtNum(y.b), wr: y.p ? winRate(y.w, y.p) : "–" })}
               </span>
             </div>

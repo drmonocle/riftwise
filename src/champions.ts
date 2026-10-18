@@ -5,7 +5,7 @@ import { currentLang } from "./i18n";
  * Champion names in the reader's language (아지르, 阿兹尔, アジール, Ngộ Không...), from Riot's Data Dragon.
  * The stats use English names; until the list arrives (or if it can't load) names stay English.
  */
-const DD_LOCALE: Record<string, string> = {
+export const DD_LOCALE: Record<string, string> = {
   es: "es_ES", "pt-BR": "pt_BR", ko: "ko_KR", vi: "vi_VN", "zh-CN": "zh_CN", "zh-TW": "zh_TW",
   ja: "ja_JP", fr: "fr_FR", de: "de_DE", tr: "tr_TR",
 };
