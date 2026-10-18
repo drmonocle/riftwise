@@ -340,6 +340,9 @@ export function useHidden(key: string, date: string | undefined): [boolean, () =
   return [hidden, () => ctx.reveal(key)];
 }
 
+/** note next to a regular season's first-placed team: the playoffs decide the title */
+export const StandingsFirst: React.FC = () => <span className="text-[10px] text-rw-muted whitespace-nowrap">{tl("1st in standings")}</span>;
+
 export const RevealButton: React.FC<{ onReveal: () => void; small?: boolean }> = ({ onReveal, small }) => (
   <button
     type="button"
