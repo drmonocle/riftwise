@@ -334,6 +334,9 @@ def main() -> None:
     # programs, so keep what was read in memory (map the file, 2 GB page cache).
     con.execute("PRAGMA mmap_size = 8000000000")
     con.execute("PRAGMA cache_size = -2000000")
+    # games with a result but no scoreboard get Oracle's Elixir's (this build only; see oefill.py)
+    import oefill
+    checks["games given Oracle's Elixir's scoreboard (none in the catalog)"] = len(oefill.install(con))
 
     # -- Games -----------------------------------------------------------------
     levels = {op: lvl for op, lvl in con.execute("SELECT OverviewPage, TournamentLevel FROM lp_tournaments")}
@@ -632,7 +635,7 @@ def main() -> None:
     team_roles = defaultdict(dict)                            # team -> page -> role counter
     player_events = defaultdict(set)                          # page -> {(tournament, team)}
     players = defaultdict(lambda: {
-        "g": 0, "w": 0, "k": 0, "d": 0, "a": 0, "cs": 0, "gold": 0, "dmg": 0, "stat_min": 0.0,
+        "g": 0, "w": 0, "k": 0, "d": 0, "a": 0, "cs": 0, "gold": 0, "dmg": 0, "stat_min": 0.0, "dmg_min": 0.0,
         "roles": Counter(), "teams": {}, "years": {}, "champs": {}, "recent": [], "best": {},
         # top leagues and internationals only (the career records)
         "mg": 0, "mk": 0, "ma": 0, "mchamps": set(),
@@ -679,6 +682,9 @@ def main() -> None:
             p["gold"] += r["gold"]
             p["dmg"] += r["damage"] or 0
             p["stat_min"] += g["min"]
+            # damage was only recorded from 2015 on: per minute counts only the games that have it
+            if r["damage"]:
+                p["dmg_min"] += g["min"]
         p["roles"][r["role"] or "?"] += 1
         tm = p["teams"].setdefault(team, {"g": 0, "w": 0, "from": g["date"], "to": g["date"], "fid": fid})
         tm["g"] += 1
@@ -915,7 +921,7 @@ def main() -> None:
             "club": last_team, "clubTo": p["teams"][last_team]["to"] if last_team in p["teams"] else last_date,
             "g": p["g"], "w": p["w"], "k": p["k"], "d": p["d"], "a": p["a"], "kda": kda(p["k"], p["d"], p["a"]),
             "csm": r1(p["cs"] / sm) if sm else None, "gpm": round(p["gold"] / sm) if sm else None,
-            "dpm": round(p["dmg"] / sm) if sm else None,
+            "dpm": round(p["dmg"] / p["dmg_min"]) if p["dmg_min"] else None,
             "teams": [{"n": n, "s": tslug(v["fid"]), "g": v["g"], "w": v["w"], "from": v["from"], "to": v["to"]} for n, v in teams_sorted],
             "years": [{"y": y, "g": v["g"], "w": v["w"], "kda": kda(v["k"], v["d"], v["a"]),
                        "team": v["teams"].most_common(1)[0][0]} for y, v in sorted(p["years"].items(), reverse=True)],
@@ -1027,6 +1033,13 @@ def main() -> None:
             "kills": [{"v": p["mk"], "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(major_players, key=lambda kv: -kv[1]["mk"])[:10]],
             "assists": [{"v": p["ma"], "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(major_players, key=lambda kv: -kv[1]["ma"])[:10]],
             "pool": [{"v": len(p["mchamps"]), "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(major_players, key=lambda kv: -len(kv[1]["mchamps"]))[:10]],
+        },
+        # the same over every pro game (what player pages count), for the records page's "All pro games"
+        "careerAll": {
+            "games": [{"v": p["g"], "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(players.items(), key=lambda kv: -kv[1]["g"])[:10]],
+            "kills": [{"v": p["k"], "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(players.items(), key=lambda kv: -kv[1]["k"])[:10]],
+            "assists": [{"v": p["a"], "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(players.items(), key=lambda kv: -kv[1]["a"])[:10]],
+            "pool": [{"v": len(p["champs"]), "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(players.items(), key=lambda kv: -len(kv[1]["champs"]))[:10]],
         },
         "team": {
             "streaks": [{"v": n, "team": fr_name[f], "s": tslug(f), "date": d} for f, (n, d) in sorted(best_by_team.items(), key=lambda kv: -kv[1][0])[:10]],

@@ -123,16 +123,27 @@ export const OeCredit: React.FC<{ n?: number }> = ({ n }) => (
 );
 
 /** A titled card. With `share` (a file name) it gets Copy image / Save image buttons and a RiftWise footer in the picture. */
-export const Section: React.FC<{ title: string; children: React.ReactNode; right?: React.ReactNode; id?: string; share?: string }> = ({
-  title,
-  children,
-  right,
-  id,
-  share,
-}) => {
+/**
+ * What a page is about ("T1 vs Gen.G · 2026", "Faker"): a section's copied picture shows it on top, so a screenshot
+ * posted on its own still says whose numbers these are.
+ */
+export const CaptureContext = createContext<string | null>(null);
+
+export const Section: React.FC<{
+  title: string;
+  children: React.ReactNode;
+  right?: React.ReactNode;
+  id?: string;
+  share?: string;
+  /** overrides the page's CaptureContext for this section */
+  captureContext?: string;
+}> = ({ title, children, right, id, share, captureContext }) => {
   const ref = useRef<HTMLElement>(null);
+  const pageContext = useContext(CaptureContext);
+  const context = captureContext ?? pageContext;
   return (
     <section ref={ref} className={`${card} space-y-2 min-w-0`} id={id}>
+      {share && context && <div className="rw-capture-only rw-section-context text-sm font-extrabold text-rw-text">{context}</div>}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-xs font-bold uppercase tracking-wider text-rw-accent">{title}</h3>
         {(right || share) && (

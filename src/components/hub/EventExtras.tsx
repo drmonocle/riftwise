@@ -47,7 +47,7 @@ const GameLine: React.FC<{
       <span className="min-w-0 text-right">
         <span className="text-rw-accent font-bold">{value}</span>{" "}
         {r.g ? (
-          <HubLink to={{ kind: "match", slug: r.g }}>
+          <HubLink to={{ kind: "match", slug: r.g, game: r.n }}>
             {r.a} vs {r.b}
           </HubLink>
         ) : (
@@ -70,8 +70,8 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean }> = ({
     <Section title={tl("Tournament facts")} share="tournament-facts">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <Stat label={tl("Games")} value={fmtNum(o.g)} />
-        <Stat label={tl("Avg game")} value={mmss(o.min)} />
-        <Stat label={tl("Kills / game")} value={o.kills} />
+        <Stat label={tl("Avg game")} value={o.min ? mmss(o.min) : "–"} />
+        <Stat label={tl("Kills / game")} value={o.kills || "–"} />
         <Stat
           label={tl("Blue side wins")}
           value={
@@ -135,7 +135,7 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean }> = ({
                 </span>{" "}
                 {o.farm.g && (
                   <HubLink
-                    to={{ kind: "match", slug: o.farm.g }}
+                    to={{ kind: "match", slug: o.farm.g, game: o.farm.gn }}
                     className="text-rw-teal hover:underline"
                   >
                     {tl("Details")}
@@ -174,7 +174,7 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean }> = ({
                 {p.x > 1 && <span className="text-rw-accent">×{p.x}</span>}
                 {p.g && (
                   <HubLink
-                    to={{ kind: "match", slug: p.g }}
+                    to={{ kind: "match", slug: p.g, game: p.gn }}
                     className="text-rw-teal hover:underline ml-1"
                   >
                     {tl("Details")}

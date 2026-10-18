@@ -54,7 +54,8 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
   const rows = useMemo(
     () =>
       d.teams
-        .filter((r) => (league ? r[3] === league : r[9] === 1))
+        // "": top leagues of every region (one scale); "*": every team, academies and second tiers too
+        .filter((r) => (league === "*" ? true : league ? r[3] === league : r[9] === 1))
         .map((r, i) => ({ r, rank: i + 1 })),
     [d.teams, league],
   );
@@ -63,6 +64,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
   // one scale for the whole column, so a lower-rated team never shows a better chance than one above it
   const vs1 = (x: RatingRow) =>
     top ? matchChance(x[5], top[5], league ? chanceContext(x[9] === 1, top[9] === 1, x[3], top[3]) : chanceContext(true, true, top[3], top[3]), d.adjust) : null;
+  const oneLeague = league !== "" && league !== "*";
   const leagues = useMemo(() => {
     const tier = new Map(d.teams.map((r) => [r[3], r[9]]));
     return [...tier.keys()]
@@ -175,7 +177,15 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           {tl(
             "Up to {date} · {n} games rated · teams with a game in the last 120 days",
             { date: fmtDate(d.asof), n: fmtNum(d.games) },
-          )}
+          )}{" "}
+          <span
+            className="underline decoration-dotted cursor-help"
+            title={tl(
+              "The ratings learn from every game Leaguepedia lists, academy and second-tier leagues included, so this is more than the pro games counted on the stats pages.",
+            )}
+          >
+            {tl("Why more games?")}
+          </span>
         </p>
         {t.all.n > 0 && (
           <p className="text-rw-text">
@@ -194,7 +204,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
 
       <Section
         title={tl("Power rankings")}
-        share={`riftwise-power-rankings${league ? "-" + league : ""}`}
+        share={`riftwise-power-rankings${oneLeague ? "-" + league : league === "*" ? "-all" : ""}`}
         right={
           <span
             className="flex flex-wrap items-center gap-2 text-xs"
@@ -207,6 +217,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               className={sel}
             >
               <option value="">{tl("Top leagues, all regions")}</option>
+              <option value="*">{tl("All leagues (academies and second tiers too)")}</option>
               <optgroup label={tl("Top leagues")}>
                 {leagues
                   .filter((x) => x.tier === 1)
@@ -226,7 +237,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                   ))}
               </optgroup>
             </select>
-            {!league && (
+            {!oneLeague && (
               <select
                 value={limit}
                 onChange={(e) => setLimit(Number(e.target.value))}
@@ -247,10 +258,10 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           </span>
         }
       >
-        {league && (
+        {oneLeague && (
           <p className="rw-capture-only text-xs text-rw-sub">{league}</p>
         )}
-        {league && d.teams.find((r) => r[3] === league)?.[9] !== 1 && (
+        {oneLeague && d.teams.find((r) => r[3] === league)?.[9] !== 1 && (
           <p className="text-[11px] text-rw-muted">
             {tl(
               "Second-tier leagues never play the top leagues, so their teams are ranked within their league; each year the league's average is set below its region's top league.",
@@ -262,8 +273,8 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           columns={columns}
           initial={{ key: "rank", desc: false }}
           rowKey={(x) => x.r[0]}
-          limit={league ? undefined : limit}
-          copyName={`riftwise-power-rankings${league ? "-" + league : ""}`}
+          limit={oneLeague ? undefined : limit}
+          copyName={`riftwise-power-rankings${oneLeague ? "-" + league : league === "*" ? "-all" : ""}`}
         />
         {!league && (
           <p className="text-[11px] text-rw-muted" data-nocapture="1">

@@ -6,7 +6,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { PlayCircle } from "lucide-react";
-import { tl, tn, stageLabel } from "../../i18n";
+import { tl, tn, tc, stageLabel } from "../../i18n";
 import { loadAliases, loadBest, loadBestIndex, normText } from "../../hub/data";
 import type { BestGame, BestSeries } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
@@ -110,8 +110,8 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
         <h2 className="text-lg font-bold text-rw-text">{tl("Best games")}</h2>
         <p className="text-[11px] text-rw-sub mt-1 leading-relaxed">
           {tl(
-            "Every pro game since 2011 rated from 0 to 100: action and pace, how close it was, its length, what was at stake (a Worlds final counts most), the series drama (a deciding game 5), comebacks and rivalries. A series is rated by its best game.",
-          )}
+            "Every pro game since 2011 rated from 0 to 100: action and pace, how close it was, its length, what was at stake (a Worlds final counts most), the series drama (a deciding game 5), comebacks and rivalries.",
+          )} {tl("A series counts its best game most, then its best three games and all of them; a 3-2 gets a little more, a sweep a little less.")}
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
           <div className="flex gap-1.5" role="tablist">
@@ -264,7 +264,7 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
 };
 
 const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
-  const [rating, slug, date, en, eslug, stage, a, , b, , wa, wb, bestN, games] = r;
+  const [rating, slug, date, en, eslug, stage, a, , b, , wa, wb, bestN, games, , perGame] = r;
   return (
     <tr className="border-t border-rw-border/60 first:border-t-0 hover:bg-rw-raised/50">
       <td className="py-2 pr-2 text-rw-muted tabular-nums w-8 text-right">{rank}</td>
@@ -280,12 +280,31 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
           <EventLink name={en} u={eslug} className="hover:text-rw-accent hover:underline" />
           {stage ? ` · ${stageLabel(stage)}` : ""} · {fmtDate(date)}
         </div>
-        <div className="text-[10px] text-rw-muted mt-0.5">
-          {tn("{n} game", "{n} games", games)} ·{" "}
-          <HubLink to={{ kind: "match", slug, game: bestN }} className="hover:underline hover:text-rw-accent">
-            {tl("best: game {n}", { n: bestN })}
-          </HubLink>
-        </div>
+        {perGame && perGame.length > 1 ? (
+          // every game's rating: G1 89 · G2 91 · G3 97 (each opens that game; the best one is outlined)
+          <div className="mt-1 flex flex-wrap gap-1">
+            {perGame.map((v, i) => (
+              <HubLink
+                key={i}
+                to={{ kind: "match", slug, game: i + 1 }}
+                className={`px-1.5 py-0.5 rounded border text-[10px] tabular-nums hover:bg-rw-raised ${
+                  i + 1 === bestN ? "border-rw-accent" : "border-rw-border"
+                }`}
+                title={tl("Game {n}", { n: i + 1 })}
+              >
+                <span className="text-rw-muted">{tc("short game", "G{n}", { n: i + 1 })}</span>{" "}
+                <span className={`font-semibold ${v != null ? ratingTextClass(v) : "text-rw-muted"}`}>{v != null ? v : "–"}</span>
+              </HubLink>
+            ))}
+          </div>
+        ) : (
+          <div className="text-[10px] text-rw-muted mt-0.5">
+            {tn("{n} game", "{n} games", games)} ·{" "}
+            <HubLink to={{ kind: "match", slug, game: bestN }} className="hover:underline hover:text-rw-accent">
+              {tl("best: game {n}", { n: bestN })}
+            </HubLink>
+          </div>
+        )}
       </td>
       <td className="py-2 pr-3 min-w-[10rem] hidden sm:table-cell">
         <EventLink name={en} u={eslug} className="text-rw-sub hover:text-rw-accent hover:underline" />

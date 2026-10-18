@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	version  = "1.9.0"
+	version  = "1.10.0"
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -257,14 +257,14 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 			title = "Pro LoL tournaments in " + parts[2] + " | RiftWise"
 			desc = "Every professional League of Legends tournament in " + parts[2] + ": results, brackets, standings and stats."
 		}
-	case len(parts) == 2 && kinds[parts[0]] != "":
+	case (len(parts) == 2 || (len(parts) == 3 && parts[0] == "league" && isYear(parts[2]))) && kinds[parts[0]] != "":
 		kind, slug := kinds[parts[0]], strings.ToLower(parts[1])
 		s.mu.RLock()
 		e, ok := s.pages[kind][slug]
 		to := s.alias[kind][slug]
 		s.mu.RUnlock()
 		if !ok && to != "" && to != slug && (kind == "team" || kind == "league") {
-			http.Redirect(w, r, publicPath+parts[0]+"/"+to, http.StatusMovedPermanently)
+			http.Redirect(w, r, publicPath+parts[0]+"/"+to+yearSuffix(parts), http.StatusMovedPermanently)
 			return
 		}
 		if !ok {
@@ -272,6 +272,11 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		title, desc, index = e.title, e.desc, e.index
+		if len(parts) == 3 { // one season of a league: /league/lck/2025
+			title = strings.TrimSuffix(title, " | RiftWise") + " " + parts[2] + " | RiftWise"
+			desc = parts[2] + ": " + desc
+			index = false // the league page itself is the one to list
+		}
 	default:
 		http.NotFound(w, r)
 		return
@@ -408,4 +413,24 @@ func main() {
 	srv := &http.Server{Addr: *addr, Handler: mux, ReadHeaderTimeout: 10 * time.Second, WriteTimeout: 30 * time.Second}
 	log.Printf("riftwise-pages %s on %s, site %s, stats %s, public %s", version, *addr, *site, *stats, publicURL)
 	log.Fatal(srv.ListenAndServe())
+}
+
+func isYear(s string) bool {
+	if len(s) != 4 {
+		return false
+	}
+	for _, c := range s {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+// "/2025" for /league/<slug>/2025, so a renamed league's season address keeps its season
+func yearSuffix(parts []string) string {
+	if len(parts) == 3 {
+		return "/" + parts[2]
+	}
+	return ""
 }

@@ -151,6 +151,10 @@
 .rw-capturing .rw-capture-only {
   display: flex;
 }
+/* a whole page's picture names the page once at the top, not again over every section */
+.rw-capturing-page .rw-section-context {
+  display: none;
+}
 
 /* A tab's page scrolls across the full window width, so the scrollbar sits at the window's right edge;
    the content stays centred at a readable width (side padding instead of max-width + auto margins). */

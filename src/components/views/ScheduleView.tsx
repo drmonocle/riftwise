@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Match, AppSettings, CatalogData } from "../../types";
-import { Search, Calendar, Star, Trophy } from "lucide-react";
+import { Search, Calendar, Star, Trophy, BarChart3 } from "lucide-react";
 import { AddToCalendarMenu } from "../AddToCalendarMenu";
 import { MatchPrepButton } from "../MatchPrepButton";
 import { ShareMatchButton } from "../ShareMatchButton";
@@ -11,6 +11,8 @@ import { StandingsView } from "./StandingsView";
 import { tl, locale, clockOptions, tc } from "../../i18n";
 import { searchAlias } from "../../searchAliases";
 import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
+import { findSeriesSlug } from "../../hub/seriesLookup";
+import { navigateHub } from "../../hub/route";
 
 interface ScheduleViewProps {
   schedule: Match[];
@@ -52,6 +54,24 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
   // A shared link: show the filter the match lives in, then scroll to it.
   const [flashMatchId, setFlashMatchId] = useState<string | null>(null);
+  // a finished match opens its page in the stats hub (found by teams and day); "missing" until the nightly update has it
+  const [detail, setDetail] = useState<Record<string, "busy" | "missing">>({});
+  const openDetails = (m: Match) => {
+    if (detail[m.matchId] === "busy") return;
+    setDetail((d) => ({ ...d, [m.matchId]: "busy" }));
+    findSeriesSlug(m)
+      .then((slug) => {
+        if (slug) {
+          setDetail((d) => {
+            const rest = { ...d };
+            delete rest[m.matchId];
+            return rest;
+          });
+          navigateHub({ kind: "match", slug });
+        } else setDetail((d) => ({ ...d, [m.matchId]: "missing" }));
+      })
+      .catch(() => setDetail((d) => ({ ...d, [m.matchId]: "missing" })));
+  };
   useEffect(() => {
     if (!highlightMatchId) return;
     const m = schedule.find((x) => x.matchId === highlightMatchId);
@@ -74,7 +94,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   }, [highlightMatchId, schedule]);
 
   const toggleTeamFollow = (code: string) => {
-    if (!onUpdateSettings || !code) return;
+    if (!onUpdateSettings || !code || code.toUpperCase() === "TBD") return;
     const isFollowed = settings.followedTeams.includes(code);
     const next = isFollowed
       ? settings.followedTeams.filter((t) => t !== code)
@@ -257,7 +277,14 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                   )}
                   <div
                     id={`match-${m.matchId}`}
+                    onClick={(e) => {
+                      // a finished match's tile opens its stats page; its buttons and team names keep their own clicks
+                      if (m.state !== "completed" || (e.target as HTMLElement).closest("button, a, img, [role=button], input")) return;
+                      openDetails(m);
+                    }}
                     className={`flex flex-wrap sm:flex-nowrap items-center justify-between gap-y-1.5 bg-rw-surface border px-3 sm:px-4 py-2.5 rounded-lg transition-all ${
+                      m.state === "completed" ? "cursor-pointer " : ""
+                    }${
                       flashMatchId === m.matchId
                         ? "border-rw-teal ring-2 ring-rw-teal/40 shadow-lg shadow-rw-teal/10"
                         : "border-rw-border hover:border-rw-accent/80"
@@ -382,7 +409,16 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         {tc("short best of", "Bo{n}", { n: m.bestOf })}
                       </span>
                       {m.state === "completed" ? (
-                        <span className="text-[10px] text-rw-sub font-semibold">{tl("FINAL")}</span>
+                        <button
+                          type="button"
+                          onClick={() => openDetails(m)}
+                          disabled={detail[m.matchId] === "busy"}
+                          className="flex items-center gap-1 text-[10px] text-rw-teal font-semibold hover:underline disabled:opacity-60"
+                          title={detail[m.matchId] === "missing" ? tl("This match's stats arrive with the nightly update.") : tl("Open the match: every game's draft and stats")}
+                        >
+                          <BarChart3 className="w-3 h-3" />
+                          {detail[m.matchId] === "missing" ? tl("Stats tonight") : tl("Details")}
+                        </button>
                       ) : isLive ? (
                         <span className="flex items-center gap-1 text-[10px] text-rw-red font-bold">
                           <span className="w-1.5 h-1.5 rounded-full bg-rw-red animate-pulse" />

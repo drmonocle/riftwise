@@ -10,33 +10,23 @@ import { TeamSeriesArchive } from "./Archives";
 import { TeamPeriodStats } from "./PeriodStats";
 import { TeamRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
-import {
-  card,
-  ChampLink,
-  EventLink,
-  fmtDate,
-  fmtNum,
-  fmtUsd,
-  HubLink,
-  Page,
-  PlayerLink,
-  RevealButton,
-  Section,
-  Stat,
-  td,
-  th,
-  TeamLink,
-  useHidden,
-  useLoad,
-  usePageTitle,
-} from "./ui";
+import { CaptureContext, card, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, HubLink, Page, PlayerLink, RevealButton, Section, Stat, td, TeamLink, th, useHidden, useLoad, usePageTitle } from "./ui";
+import { ratingTextClass } from "./BestPage";
 import { STable } from "../STable";
 
 export const TeamPage: React.FC<{ slug: string }> = ({ slug }) => {
   const state = useLoad(() => loadHubTeam(slug), [slug]);
   usePageTitle(state.data?.name);
   useDDragon();
-  return <Page state={state}>{(t) => <TeamView t={t} />}</Page>;
+  return (
+    <Page state={state}>
+      {(t) => (
+        <CaptureContext.Provider value={t.name}>
+          <TeamView t={t} />
+        </CaptureContext.Provider>
+      )}
+    </Page>
+  );
 };
 
 const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
@@ -162,7 +152,14 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
                     )}
                     <span className="text-rw-muted"> · {r.en}</span>
                   </span>
-                  <span className="text-rw-muted shrink-0">{fmtDate(r.date, false)}</span>
+                  <span className="text-rw-muted shrink-0 flex items-center gap-2">
+                    {r.r != null && (
+                      <span className={`tabular-nums font-semibold ${ratingTextClass(r.r)}`} title={tl("Series rating")}>
+                        {r.r.toFixed(0)}
+                      </span>
+                    )}
+                    {fmtDate(r.date, false)}
+                  </span>
                 </li>
               ))}
             </ul>

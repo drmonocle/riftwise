@@ -399,7 +399,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                         {r.win ? tc("short result", "W") : tc("short result", "L")}
                       </span>
                       <PlayerLink name={r.n} u={r.u} /> <span className="text-rw-sub tabular-nums">{r.k}/{r.d}/{r.a}</span>{" "}
-                      {r.g ? <HubLink to={{ kind: "match", slug: r.g }}>vs {r.opp}</HubLink> : <span>vs {r.opp}</span>}
+                      {r.g ? <HubLink to={{ kind: "match", slug: r.g, game: r.gn }}>vs {r.opp}</HubLink> : <span>vs {r.opp}</span>}
                     </span>
                     <span className="text-rw-muted shrink-0">{fmtDate(r.date, false)}</span>
                   </div>

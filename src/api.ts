@@ -356,7 +356,8 @@ export async function fetchLiveCatalog(current?: CatalogData): Promise<CatalogDa
 async function fetchJson(url: string, init?: RequestInit, timeoutMs = 15000): Promise<any> {
   const res = await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return res.json();
+  // some older team logos come as http://static.lolesports.com (blocked or warned about on an https page)
+  return JSON.parse((await res.text()).replace(/http:(\\?\/\\?\/)static\.lolesports\.com/g, "https:$1static.lolesports.com"));
 }
 
 const riotHeaders = { "x-api-key": RIOT_API_KEY };

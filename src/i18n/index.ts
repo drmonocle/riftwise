@@ -98,7 +98,22 @@ export async function initI18n(setting: LangSetting | undefined): Promise<Lang> 
   } catch {
     pseudo = false;
   }
-  if (typeof document !== "undefined") document.documentElement.lang = lang;
+  if (typeof document !== "undefined") {
+    const html = document.documentElement;
+    html.lang = lang;
+    // A chosen language is already a translation: keep the browser's own translator from re-translating it
+    // (Chrome turned Korean item names into "Summon Kongkong"). English stays translatable for other languages.
+    if (lang !== "en") {
+      html.setAttribute("translate", "no");
+      html.classList.add("notranslate");
+      if (!document.querySelector('meta[name="google"]')) {
+        const m = document.createElement("meta");
+        m.name = "google";
+        m.content = "notranslate";
+        document.head.appendChild(m);
+      }
+    }
+  }
   return lang;
 }
 
