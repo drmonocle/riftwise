@@ -80,7 +80,7 @@ const PlayerView: React.FC<{
   ]);
   const events = allEvents ? p.events : p.events.slice(0, 12);
   return (
-    <div className="space-y-3">
+    <div className="rw-page">
       <div className={card}>
         <h2 className="text-lg font-bold text-rw-text">
           {p.name}

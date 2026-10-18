@@ -252,7 +252,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 : tl('No scheduled matches match your active filters. Try switching tabs or turning off "Followed only".')}
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2 rw-tiles">
               {filtered.map((m, idx) => {
                 const day = dayOf(m.startTimeUtc);
                 const newDay = filterRange !== "today" && (idx === 0 || dayOf(filtered[idx - 1].startTimeUtc) !== day);
@@ -270,7 +270,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 return (
                   <React.Fragment key={m.matchId}>
                   {newDay && (
-                    <div className="flex items-center gap-2 px-1 pt-2 text-[11px] font-bold uppercase tracking-wider text-rw-teal">
+                    <div className="rw-day flex items-center gap-2 px-1 pt-2 text-[11px] font-bold uppercase tracking-wider text-rw-teal">
                       {day}
                       <span className="flex-1 h-px bg-rw-border" />
                     </div>

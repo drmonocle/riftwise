@@ -642,6 +642,8 @@ def main() -> None:
     })
     champ_rows = defaultdict(lambda: defaultdict(lambda: {"p": 0, "w": 0, "k": 0, "d": 0, "a": 0, "roles": Counter()}))
     record_rows = {"kills": [], "assists": [], "dmg": [], "cs": [], "perfect": []}
+    # the same per year, for the records page's year picker
+    record_rows_y = defaultdict(lambda: {"kills": [], "assists": [], "dmg": [], "cs": [], "perfect": []})
     consistent = {}
     game_champs = defaultdict(list)
 
@@ -731,16 +733,21 @@ def main() -> None:
         if g["major"] and g["min"] >= RECORD_MIN_MINUTES and consistent[gid]:
             base = {"pl": pname(page), "ps": page, "pk": page, "gid": gid, "team": team, "opp": opp, "c": champ, "date": g["date"],
                     "t": g["t"], "kda": f"{k}/{d}/{a}"}
-            record_rows["kills"].append((k, base))
-            record_rows["assists"].append((a, base))
-            record_rows["dmg"].append((r["damage"] or 0, base))
-            record_rows["cs"].append((r["cs"] or 0, base))
+            ry = record_rows_y[g["year"]]
+            for rows_, key, val in ((record_rows, "kills", k), (ry, "kills", k), (record_rows, "assists", a), (ry, "assists", a),
+                                    (record_rows, "dmg", r["damage"] or 0), (ry, "dmg", r["damage"] or 0),
+                                    (record_rows, "cs", r["cs"] or 0), (ry, "cs", r["cs"] or 0)):
+                rows_[key].append((val, base))
             if d == 0:
                 record_rows["perfect"].append((k + a, base))
+                ry["perfect"].append((k + a, base))
             for key in record_rows:
                 if len(record_rows[key]) > 2000:
                     record_rows[key].sort(key=lambda x: x[0], reverse=True)
                     del record_rows[key][50:]
+                if len(ry[key]) > 500:
+                    ry[key].sort(key=lambda x: x[0], reverse=True)
+                    del ry[key][20:]
     print(f"players: {len(players)}  ({time.time() - t0:.0f}s)")
     checks["games failing the kills check (kept, but can't hold records)"] = sum(1 for v in consistent.values() if not v)
 
@@ -1051,6 +1058,24 @@ def main() -> None:
             x["ps"] = slug(x["ps"])
     records["game"]["bloodiest"] = [dict(x, v=x["v"] if x["v"] is not None else 0) for x in records["game"]["bloodiest"]]
     write(os.path.join(vdir, "records.json"), records)
+    # the same records for each year (game records and single-game player records; pentakills are added by hub.py)
+    records_by_year = {}
+    for year in sorted({g["date"][:4] for _gid, g in major_games if g["date"]}):
+        yg = [(gid, g) for gid, g in timed if g["date"][:4] == year]
+        yk = [(gid, g) for gid, g in killed if g["date"][:4] == year]
+        ry = record_rows_y.get(year) or {"kills": [], "assists": [], "dmg": [], "cs": [], "perfect": []}
+        records_by_year[year] = {
+            "game": {
+                "fastest": [game_row(gid, g, round(g["min"], 3)) for gid, g in sorted(yg, key=lambda x: x[1]["min"])[:10]],
+                "longest": [game_row(gid, g, round(g["min"], 3)) for gid, g in sorted(yg, key=lambda x: -x[1]["min"])[:10]],
+                "bloodiest": [dict(game_row(gid, g, g["tk"]), v=g["tk"] if g["tk"] is not None else 0)
+                              for gid, g in sorted(yk, key=lambda x: -(x[1]["k1"] + x[1]["k2"]))[:10]],
+                "comebacks": [game_row(gid, g, v) for v, gid, g in comebacks if g["date"][:4] == year][:10],
+            },
+            "player": {k: [dict(x, ps=slug(x["ps"])) for x in top(v)] for k, v in ry.items()},
+        }
+    records["years"] = sorted(records_by_year, reverse=True)
+    write(os.path.join(vdir, "records.json"), records)
     write(os.path.join(vdir, "titles.json"), [{k: v for k, v in x.items() if k != "fid"} for x in titles])
 
     search_teams.sort(key=lambda x: -x["g"])
@@ -1074,7 +1099,8 @@ def main() -> None:
                 team_series=team_series, series_list=series_list, titles=titles, titles_by_team=titles_by_team,
                 fr_name=fr_name, fr_eras=fr_eras, fr_games=fr_games, team_of=team_of, pname=pname,
                 team_shorts=team_shorts, team_players=team_players, team_roles=team_roles, player_events=player_events,
-                records=records, names=player_names, is_show=is_show, short_of=short_of, current_club=current_club,
+                records=records, records_by_year=records_by_year, out_root=args.out,
+                names=player_names, is_show=is_show, short_of=short_of, current_club=current_club,
             ))
         except Exception:
             # Leave the last good build in place rather than publish one without its hub

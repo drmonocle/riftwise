@@ -18,26 +18,27 @@ import { IS_WEB, SITE_URL } from "../platform";
 
 export type HubSection =
   | "tournaments" | "leagues" | "champions" | "patches" | "records" | "titles" | "compare" | "data" | "about" | "prep"
-  | "rankings" | "finder" | "draft" | "best"
+  | "rankings" | "finder" | "draft" | "best" | "counters"
   | "aboutme"; // riftwise.gg/about (not under /stats)
 export type HubEntity = "team" | "player" | "event" | "match" | "champ" | "league";
 
 export type HubRoute =
   | { kind: "home" }
-  | { kind: HubSection; year?: string; mode?: "team" | "player"; a?: string; b?: string; period?: string; query?: string }
+  | { kind: HubSection; year?: string; mode?: "team" | "player"; a?: string; b?: string; period?: string; query?: string; more?: string[] }
   | { kind: HubEntity; slug: string; game?: number; year?: string };
 
 export const HUB_HOME: HubRoute = { kind: "home" };
 /** The compare page with who is compared over which period (all in the address). */
-export type CompareRoute = { kind: "compare"; mode?: "team" | "player"; a?: string; b?: string; period?: string };
+/** Compare: two sides, or more (`more` = the third one on; /stats/compare?teams=t1,geng,hle,dk) */
+export type CompareRoute = { kind: "compare"; mode?: "team" | "player"; a?: string; b?: string; period?: string; more?: string[] };
 /** Match prep for two teams: /stats/prep?teams=t1,gen-g&p=y2026 */
 export type PrepRoute = { kind: "prep"; a?: string; b?: string; period?: string };
 const SECTIONS: HubSection[] = [
   "tournaments", "leagues", "champions", "patches", "records", "titles", "compare", "data", "about", "prep", "rankings", "finder", "draft",
-  "best",
+  "best", "counters",
 ];
 /** Pages that keep their filters in the address (?league=lck&year=2026...). */
-const QUERY_SECTIONS: HubSection[] = ["champions", "finder", "draft", "best"];
+const QUERY_SECTIONS: HubSection[] = ["champions", "finder", "draft", "best", "counters"];
 const ENTITY_PATH: Record<HubEntity, string> = {
   team: "team", player: "player", event: "tournament", match: "match", champ: "champion", league: "league",
 };
@@ -82,12 +83,13 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
 }
 
 /** ?teams=a,b&p=y2026 -> who is compared over which period */
-function parseCompare(search: string): { mode?: "team" | "player"; a?: string; b?: string; period?: string } {
+function parseCompare(search: string): { mode?: "team" | "player"; a?: string; b?: string; period?: string; more?: string[] } {
   const q = new URLSearchParams(search);
   const mode = q.has("players") ? "player" : q.has("teams") ? "team" : undefined;
   if (!mode) return {};
-  const [a, b] = (q.get(mode === "player" ? "players" : "teams") || "").split(",").map((x) => x.trim().toLowerCase());
-  return { mode, a: a || undefined, b: b || undefined, period: q.get("p") || undefined };
+  const [a, b, ...more] = (q.get(mode === "player" ? "players" : "teams") || "").split(",").map((x) => x.trim().toLowerCase());
+  const rest = more.filter(Boolean).slice(0, 6);
+  return { mode, a: a || undefined, b: b || undefined, period: q.get("p") || undefined, ...(rest.length ? { more: rest } : {}) };
 }
 
 export function hubPath(r: HubRoute): string {
@@ -95,7 +97,8 @@ export function hubPath(r: HubRoute): string {
   if (r.kind === "aboutme") return `${BASE}about`;
   if ((r.kind === "compare" || r.kind === "prep") && "a" in r && (r.a || r.b) && (r.kind === "prep" || ("mode" in r && r.mode))) {
     const players = r.kind === "compare" && "mode" in r && r.mode === "player";
-    const q = `${players ? "players" : "teams"}=${[r.a || "", r.b || ""].map(encodeURIComponent).join(",")}`;
+    const more = r.kind === "compare" && "more" in r && r.more ? r.more : [];
+    const q = `${players ? "players" : "teams"}=${[r.a || "", r.b || "", ...more].map(encodeURIComponent).join(",")}`;
     return `${BASE}stats/${r.kind}?${q}${r.period && r.period !== "all" ? `&p=${encodeURIComponent(r.period)}` : ""}`;
   }
   if (QUERY_SECTIONS.includes(r.kind as HubSection) && "query" in r && r.query) return `${BASE}stats/${r.kind}?${r.query}`;

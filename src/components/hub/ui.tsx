@@ -4,7 +4,8 @@ import { Check, Clock, Eye, Link2, SearchX } from "lucide-react";
 import { MissingFile } from "../../stats";
 import { tl, locale } from "../../i18n";
 import { champName } from "../../champions";
-import { HubRoute, hubPath, navigateHub } from "../../hub/route";
+import { HubRoute, currentHubRoute, hubPath, navigateHub } from "../../hub/route";
+import { rememberRecent } from "../../hub/recent";
 import { champIcon, itemIcon, itemName, runeIcon, runeName, spellIcon, spellName } from "../../hub/ddragon";
 import { prefetchHub, prettySlug } from "../../hub/data";
 import { IS_WEB } from "../../platform";
@@ -182,7 +183,9 @@ export const GRID_COLS = "grid md:grid-cols-2 xl:grid-cols-3 min-[1800px]:grid-c
 /** Sets the browser tab's title while a page is open. */
 export function usePageTitle(title: string | null | undefined): void {
   useEffect(() => {
-    if (!title || !IS_WEB) return;
+    if (!title) return;
+    rememberRecent(currentHubRoute(), title);
+    if (!IS_WEB) return;
     const before = document.title;
     document.title = `${title} | RiftWise`;
     return () => {
@@ -393,10 +396,18 @@ export const CopyLinkButton: React.FC<{ url: string }> = ({ url }) => {
  * A pro's photo from Riot (current pros only), else their initials. Left out of copied pictures: Riot's image server
  * doesn't allow that.
  */
-export const PlayerPhoto: React.FC<{ name: string; team?: string; size?: number; className?: string }> = ({ name, team, size = 56, className = "" }) => {
+export const PlayerPhoto: React.FC<{
+  name: string;
+  team?: string;
+  size?: number;
+  /** Tailwind size classes instead of a fixed size ("w-16 h-16 lg:w-24 lg:h-24"): the photo grows with the window */
+  sizeClass?: string;
+  className?: string;
+}> = ({ name, team, size = 56, sizeClass, className = "" }) => {
   const src = usePlayerPhoto(name, team);
   const [broken, setBroken] = useState(false);
-  const box = { width: size, height: size };
+  const box = sizeClass ? undefined : { width: size, height: size };
+  const sz = sizeClass || "";
   return src && !broken ? (
     <img
       src={src}
@@ -405,13 +416,13 @@ export const PlayerPhoto: React.FC<{ name: string; team?: string; size?: number;
       onError={() => setBroken(true)}
       data-nocapture="1"
       style={box}
-      className={`rounded-full object-cover object-top bg-rw-raised border border-rw-border shrink-0 ${className}`}
+      className={`rounded-full object-cover object-top bg-rw-raised border border-rw-border shrink-0 ${sz} ${className}`}
     />
   ) : (
     <span
       data-nocapture="1"
-      style={{ ...box, fontSize: size / 3 }}
-      className={`rounded-full bg-rw-raised border border-rw-border text-rw-muted font-bold flex items-center justify-center shrink-0 ${className}`}
+      style={{ ...box, fontSize: sizeClass ? undefined : size / 3 }}
+      className={`rounded-full bg-rw-raised border border-rw-border text-rw-muted font-bold flex items-center justify-center shrink-0 ${sz} ${sizeClass ? "text-base lg:text-xl" : ""} ${className}`}
     >
       {name.slice(0, 2).toUpperCase()}
     </span>
@@ -419,11 +430,19 @@ export const PlayerPhoto: React.FC<{ name: string; team?: string; size?: number;
 };
 
 /** A team's logo from Riot (teams in Riot's list), else nothing. Left out of copied pictures. */
-export const TeamLogo: React.FC<{ name: string; code?: string; size?: number; className?: string }> = ({ name, code, size = 40, className = "" }) => {
+export const TeamLogo: React.FC<{ name: string; code?: string; size?: number; sizeClass?: string; className?: string }> = ({ name, code, size = 40, sizeClass, className = "" }) => {
   const src = useTeamLogo(name, code);
   const [broken, setBroken] = useState(false);
   if (!src || broken) return null;
   return (
-    <img src={src} alt="" loading="lazy" onError={() => setBroken(true)} data-nocapture="1" style={{ width: size, height: size }} className={`object-contain shrink-0 ${className}`} />
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      onError={() => setBroken(true)}
+      data-nocapture="1"
+      style={sizeClass ? undefined : { width: size, height: size }}
+      className={`object-contain shrink-0 ${sizeClass || ""} ${className}`}
+    />
   );
 };

@@ -678,6 +678,8 @@ def build(ctx) -> dict:
     used_gslugs = set()
     # Game ratings (MEPI, 0-100, Antigravity's engine on the catalog: matches.mepi_rating) for the Best games page
     best_games, best_series = [], []
+    # champion -> (opponent champion, role) -> [games, wins, gold-lead-at-15 sum, games with it]: the counter-pick finder
+    lane_vs = defaultdict(lambda: defaultdict(lambda: [0, 0, 0, 0]))
     gid_slug = {}                      # catalog game id -> its series page
     gid_n = {}                         # catalog game id -> its game number in the series (links open that game)
     t_stage = time.time()
@@ -1466,6 +1468,22 @@ def build(ctx) -> dict:
                                                                        player_slug.get(r["page_key"]),
                                                                        *([gd15_of[(tname_c, ch)]] if (tname_c, ch) in gd15_of else [])])
                             picks_out.append(lst)
+                        if picks_out[0] and picks_out[1]:
+                            # lane matchups: the two champions with the same role, with the blue pick's gold lead at 15
+                            for rr in range(5):
+                                pa_ = next((x for x in picks_out[0] if x[1] == rr), None)
+                                pb_ = next((x for x in picks_out[1] if x[1] == rr), None)
+                                if not pa_ or not pb_ or pa_[0] == pb_[0]:
+                                    continue
+                                blue_won = 1 if g["w"] == g["t1"] else 0
+                                gd_a = pa_[10] if len(pa_) > 10 and pa_[10] is not None else None
+                                for ca_, cb_, won_, gd_ in ((pa_[0], pb_[0], blue_won, gd_a), (pb_[0], pa_[0], 1 - blue_won, -gd_a if gd_a is not None else None)):
+                                    mu = lane_vs[ca_][(cb_, rr)]
+                                    mu[0] += 1
+                                    mu[1] += won_
+                                    if gd_ is not None:
+                                        mu[2] += gd_
+                                        mu[3] += 1
                         if picks_out[0] or picks_out[1]:
                             cg = champ_games[(lu_c, (g["date"] or "0000")[:4])]
                             ei = cg["ev"].setdefault(eslug, (len(cg["ev"]), en))[0]
@@ -1829,6 +1847,7 @@ def build(ctx) -> dict:
                 team_earnings[ctx.team_of(r["Team"], date_r or "0000")] += r["Prize_USD"]
 
     # -- storylines: collected on the team and player pages, the best go to notes.json ---------
+    two_years_ago = (datetime.date.today() - datetime.timedelta(days=730)).isoformat()
     champ_top = {}  # champion -> (games, page) of the player with the most pro games on it
     for pg_, px_ in ctx.players.items():
         for c_, v_ in px_["champs"].items():
@@ -1948,6 +1967,34 @@ def build(ctx) -> dict:
                  "calibration": team_ratings.calibration(rating_tests)},
     })
     checks["hub: rated teams (active)"] = len(rank_rows)
+    # rating history: one point per team per day (kept across builds in <out>/ratings-history.json; only the newest
+    # point of a day is kept, and points older than 400 days go)
+    rating_hist = {}
+    hist_path = os.path.join(getattr(ctx, "out_root", "") or "", "ratings-history.json")
+    try:
+        with open(hist_path, encoding="utf-8") as f:
+            rating_hist = json.load(f)
+    except (OSError, ValueError):
+        rating_hist = {}
+    cutoff_h = (datetime.date.today() - datetime.timedelta(days=400)).isoformat()
+    rank_of = {row[0]: i + 1 for i, row in enumerate(r_ for r_ in rank_rows if r_[9] == 1)}
+    for row in rank_rows:
+        pts = [p for p in rating_hist.get(row[0], []) if p[0] >= cutoff_h and p[0] != today]
+        pts.append([today, row[5], rank_of.get(row[0])])
+        rating_hist[row[0]] = pts
+    if getattr(ctx, "out_root", None):
+        try:
+            tmp_h = hist_path + ".tmp"
+            with open(tmp_h, "w", encoding="utf-8") as f:
+                json.dump(rating_hist, f, separators=(",", ":"))
+            os.replace(tmp_h, hist_path)
+        except OSError as e:
+            checks["hub: rating history not saved"] = str(e)
+    # the rankings page's sparklines: top-league teams, last 120 days, ratings only
+    cut120 = (datetime.date.today() - datetime.timedelta(days=120)).isoformat()
+    out.json("ratings-history.json", {row[0]: [[p[0], p[1]] for p in rating_hist.get(row[0], []) if p[0] >= cut120]
+                                      for row in rank_rows if row[9] == 1})
+    checks["hub: teams with rating history"] = sum(1 for v in rating_hist.values() if len(v) > 1)
     checks["hub: rated teams in top leagues"] = n_top
     checks["hub: rating test accuracy"] = team_ratings.score(rating_tests).get("acc")
 
@@ -1996,6 +2043,8 @@ def build(ctx) -> dict:
                     x["pl"] = pp
         obj = {
             "name": name, "u": u, "region": lpt.get("Region"), "codes": codes, "rating": team_rating.get(fid),
+            # the team's rating over the last year, [date, rating] (builds from 2026-10-18 on)
+            **({"rh": [[p[0], p[1]] for p in rating_hist.get(u, [])]} if len(rating_hist.get(u, [])) > 1 else {}),
             "disbanded": 1 if lpt.get("IsDisbanded") else 0,
             "g": t["g"], "w": t["w"], "sg": len(ss), "sw": sw, "from": t["from"], "to": t["to"],
             "names": [{"n": e["n"], "from": e["from"], "to": e["to"], "g": e["g"]} for e in eras],
@@ -2190,6 +2239,10 @@ def build(ctx) -> dict:
         games = sorted(p_games.get(page, []), key=lambda r: r[0], reverse=True)
         if games:
             out.json(f"playergames/{u}.json", [list(r) for r in games])
+            # Match prep loads this smaller file first (the last two years) and the full log only for older periods
+            recent2 = [r for r in games if r[0] >= two_years_ago]
+            if len(games) > 200 and len(recent2) < len(games) * 0.8:
+                out.json(f"playergames2y/{u}.json", [list(r) for r in recent2])
         search_players.append([name, short_slug(name, u), club, p["g"], last_date[:4], (role or "")[:1],
                                " ".join(x for x in (bio.get("Name"), bio.get("NativeName")) if x) if p["g"] >= 50 else ""])
         seo["player"].append((u, f"{name} – pro stats, champions and career | {SITE}",
@@ -2270,6 +2323,10 @@ def build(ctx) -> dict:
                        for r in sorted(v["recent"], reverse=True)],
         }
         out.json(f"champ/{u}.json", obj)
+        vs_rows = sorted((([opp_, rr_, m_[0], m_[1], round(m_[2] / m_[3]) if m_[3] else None]) for (opp_, rr_), m_ in lane_vs.get(c, {}).items()),
+                         key=lambda x: -x[2])
+        if vs_rows:
+            out.json(f"matchups/{u}.json", {"c": c, "g": sum(x[2] for x in vs_rows), "vs": vs_rows[:400]})
         search_champs.append([c, short_slug(c, u), v["p"]])
         seo["champ"].append((u, f"{c} in pro play – win rate, players and games | {SITE}",
                              f"{c} in professional League of Legends: {v['p']:,} picks, {v['b']:,} bans, "
@@ -2314,6 +2371,36 @@ def build(ctx) -> dict:
         "most": [{"n": ctx.pname(pg), "u": player_slug.get(pg), "v": n} for pg, n in most_pentas.most_common(15)],
     }
     out.json("records.json", rec)
+    for year, ry in (getattr(ctx, "records_by_year", None) or {}).items():
+        ry = json.loads(json.dumps(ry, ensure_ascii=False))
+        for lst in ry["game"].values():
+            for x in lst:
+                gid = x.pop("gid", None)
+                x["g"] = gid_slug.get(gid)
+                x["gn"] = gid_n.get(gid)
+                x["e"] = tname_slug.get(x["t"])
+                x["au"] = team_ref(x["a"], x["date"])[1]
+                x["bu"] = team_ref(x["b"], x["date"])[1]
+        for lst in ry["player"].values():
+            for x in lst:
+                x["u"] = player_slug.get(x.pop("pk", None))
+                gid = x.pop("gid", None)
+                x["g"] = gid_slug.get(gid)
+                x["gn"] = gid_n.get(gid)
+                x["e"] = tname_slug.get(x["t"])
+                x.pop("ps", None)
+        py_ = [x for x in all_pentas if x[0][:4] == year]
+        most_y = Counter()
+        for x in py_:
+            most_y[x[1]] += x[8]
+        ry["pentas"] = {
+            "total": sum(x[8] for x in py_),
+            "recent": [{"date": d, "n": ctx.pname(pg), "u": player_slug.get(pg), "c": ch, "g": g_, "t": en_, "e": eu_, "a": a_, "b": b_, "x": x_,
+                        "gn": n_} for d, pg, ch, g_, en_, eu_, a_, b_, x_, _, n_ in sorted(py_, reverse=True)[:60]],
+            "most": [{"n": ctx.pname(pg), "u": player_slug.get(pg), "v": n} for pg, n in most_y.most_common(10)],
+        }
+        ry["year"] = year
+        out.json(f"records/{year}.json", ry)
     out.json("titles.json", [{**{k: v for k, v in x.items() if k not in ("fid", "s")}, "u": team_slug.get(x["fid"]), "e": tname_slug.get(x["t"])}
                              for x in ctx.titles])
 

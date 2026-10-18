@@ -3,9 +3,12 @@ import React, { useMemo, useState } from "react";
 import { HomeStorylines } from "./Storylines";
 import { AtStakeToday } from "./AtStake";
 import type { Match } from "../../types";
-import { Trophy, Swords, Medal, GitCompare, CalendarRange, Crown, Layers, History, ClipboardList, TrendingUp, Search, LayoutGrid, Flame } from "lucide-react";
+import { Trophy, Swords, Medal, GitCompare, CalendarRange, Crown, Layers, History, ClipboardList, TrendingUp, Search, LayoutGrid, Flame, Crosshair } from "lucide-react";
 import { tl, tn, tk, regionName } from "../../i18n";
-import { loadEventsOfYear, loadHubHome, loadHubMeta } from "../../hub/data";
+import { loadEventsOfYear, loadHubHome, loadHubMeta, loadPatches } from "../../hub/data";
+import { useRecentPages } from "../../hub/recent";
+import { champName } from "../../champions";
+import { ChampIcon } from "./ui";
 import type { EventListItem, HubMeta } from "../../hub/types";
 import { HubRoute } from "../../hub/route";
 import { HubSearch } from "./HubSearch";
@@ -25,6 +28,7 @@ const QUICK: { to: HubRoute; label: string; sub: string; icon: React.ReactNode }
   { to: { kind: "prep" }, label: tk("Match prep"), sub: tk("Everything before a broadcast"), icon: <ClipboardList className="w-4 h-4" /> },
   { to: { kind: "finder" }, label: tk("Game finder"), sub: tk("Any game by team, champion, player"), icon: <Search className="w-4 h-4" /> },
   { to: { kind: "draft" }, label: tk("Draft board"), sub: tk("Plan a draft with both teams' pools"), icon: <LayoutGrid className="w-4 h-4" /> },
+  { to: { kind: "counters" }, label: tk("Counter-picks"), sub: tk("Every pro lane matchup, by champion"), icon: <Crosshair className="w-4 h-4" /> },
 ];
 
 export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
@@ -63,8 +67,10 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
         ))}
       </div>
 
+      <RecentPages />
       {schedule && schedule.length > 0 && <AtStakeToday schedule={schedule} />}
       <HomeStorylines />
+      <PatchChanges />
 
       <Page state={home}>
         {(h) => (
@@ -115,6 +121,59 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
   );
 };
 
+/** The pages opened last on this device, as chips. */
+const RecentPages: React.FC = () => {
+  const recent = useRecentPages();
+  if (!recent.length) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+      <span className="text-rw-muted uppercase tracking-wider font-bold text-[10px] mr-1">{tl("Recently viewed")}</span>
+      {recent.slice(0, 8).map((r) => (
+        <HubLink key={hubPathOf(r.route)} to={r.route} className="px-2 py-0.5 rounded-full border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-line max-w-[14rem] truncate">
+          {r.title}
+        </HubLink>
+      ))}
+    </div>
+  );
+};
+const hubPathOf = (r: HubRoute) => JSON.stringify(r);
+
+/** One line on the newest patch: the champions that rose and fell the most against the patch before. */
+const PatchChanges: React.FC = () => {
+  const state = useLoad(loadPatches, []);
+  const p = (state.data || []).find((x) => (x.up && x.up.length) || (x.down && x.down.length));
+  if (!p) return null;
+  const list = (moves: NonNullable<typeof p.up>, up: boolean) =>
+    moves.slice(0, 4).map(([c, now, was]) => (
+      <span key={c} className="inline-flex items-center gap-1 mr-2 whitespace-nowrap">
+        <ChampIcon name={c} size={16} />
+        <span className="text-rw-text">{champName(c)}</span>
+        <span className={`tabular-nums ${up ? "text-rw-teal" : "text-rw-red"}`}>
+          {up ? "▲" : "▼"} {Math.round(Math.abs(now - was) * 100)}%
+        </span>
+      </span>
+    ));
+  return (
+    <Section title={tl("What changed on patch {patch}", { patch: p.p })} right={<HubLink to={{ kind: "patches" }} className="text-[11px] text-rw-teal hover:underline">{tl("Patches")}</HubLink>}>
+      <div className="text-xs space-y-1">
+        {p.up && p.up.length > 0 && (
+          <div className="flex flex-wrap items-center gap-y-1">
+            <span className="text-rw-muted mr-2">{tl("Up")}</span>
+            {list(p.up, true)}
+          </div>
+        )}
+        {p.down && p.down.length > 0 && (
+          <div className="flex flex-wrap items-center gap-y-1">
+            <span className="text-rw-muted mr-2">{tl("Down")}</span>
+            {list(p.down, false)}
+          </div>
+        )}
+        <p className="text-[10px] text-rw-muted">{tl("Pick-or-ban rate against patch {prev}", { prev: p.prev || "" })}</p>
+      </div>
+    </Section>
+  );
+};
+
 const LatestRow: React.FC<{ e: EventListItem }> = ({ e }) => {
   const [hidden, reveal] = useHidden(`event:${e.u}`, e.en);
   return (
@@ -144,7 +203,7 @@ export const EventsBrowse: React.FC<{ year?: string; meta: HubMeta | null; onYea
   const [scope, setScope] = useState<"main" | "all">("main");
   const [q, setQ] = useState("");
   return (
-    <div className="space-y-3">
+    <div className="rw-page">
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <select
           value={y}

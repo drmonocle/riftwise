@@ -424,6 +424,8 @@ export interface HubRatings {
 export interface HubTeam {
   /** active teams: who played the latest games in each role, [name, slug, role] */
   starters?: [string, string, string][];
+  /** power rating over the last year, [date, rating] (builds from 2026-10-18 on) */
+  rh?: [string, number][];
   /** storylines: milestones within reach, streaks, unbeaten runs */
   notes?: import("../components/hub/Storylines").Notes;
   name: string;
@@ -575,7 +577,22 @@ export interface HubTeamRecord {
   date?: string;
   worlds?: number;
 }
+/** hub/matchups/<champion>.json: [opponent, role 0-4 (-1 unknown), games, wins, avg gold lead at 15 or null] */
+export interface HubMatchups {
+  c: string;
+  g: number;
+  vs: [string, number, number, number, number | null][];
+}
+/** hub/records/<year>.json: one year's game and single-game player records, and its pentakills */
+export interface HubRecordsYear {
+  year: string;
+  game: HubRecords["game"];
+  player: HubRecords["player"];
+  pentas: NonNullable<HubRecords["pentas"]>;
+}
 export interface HubRecords {
+  /** years with their own records file (builds from 2026-10-18 on) */
+  years?: string[];
   built: string;
   note: string;
   game: Record<"fastest" | "longest" | "bloodiest" | "comebacks", HubGameRecord[]>;

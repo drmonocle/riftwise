@@ -5,7 +5,8 @@
  */
 import React, { useMemo, useState } from "react";
 import { tl, tn } from "../../i18n";
-import { loadRatings } from "../../hub/data";
+import { loadRatings, loadRatingsHistory } from "../../hub/data";
+import { Sparkline } from "./Sparkline";
 import type { HubRatings, RatingRow } from "../../hub/types";
 import { chanceContext, matchChance, pct, seriesChance } from "../../hub/winChance";
 import { SortTable, type Column } from "./SortTable";
@@ -50,6 +51,7 @@ export const RankingsPage: React.FC = () => {
 const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
   const [league, setLeague] = useState("");
   const [limit, setLimit] = useState(50);
+  const hist = useLoad(loadRatingsHistory, []);
   // all leagues: top-league teams on one scale; one league: its teams ranked within it
   const rows = useMemo(
     () =>
@@ -120,6 +122,20 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       label: tl("Rating"),
       value: (x) => x.r[5],
       className: "tabular-nums font-bold text-rw-accent",
+    },
+    {
+      key: "trend",
+      label: tl("Trend"),
+      title: tl("Rating over the last 120 days"),
+      value: (x) => {
+        const h = hist.data?.[x.r[0]];
+        return h && h.length > 1 ? h[h.length - 1][1] - h[0][1] : null;
+      },
+      render: (x) => {
+        const h = hist.data?.[x.r[0]];
+        return h && h.length > 1 ? <Sparkline points={h} width={80} height={20} /> : null;
+      },
+      className: "hidden md:table-cell",
     },
     {
       key: "chg",

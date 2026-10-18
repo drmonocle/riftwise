@@ -29,6 +29,7 @@ import {
   usePageTitle,
 } from "./ui";
 import { itemName, runeName, spellName } from "../../hub/ddragon";
+import { CountersLink } from "./CountersPage";
 import { STable } from "../STable";
 
 export const ChampPage: React.FC<{ slug: string }> = ({ slug }) => {
@@ -96,11 +97,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
   const items = useMemo(() => (c.builds?.items || []).filter(([it]) => isFinishedItem(it)).slice(0, 8), [c.builds, ddReady]); // eslint-disable-line react-hooks/exhaustive-deps
   const maxPatch = Math.max(1, ...(c.patches || []).map((p) => (p.pr ?? p.pk + p.b) / Math.max(p.g, 1)));
   return (
-    <div className="space-y-3">
+    <div className="rw-page">
       <div className={`${card} flex gap-3 items-start`}>
         <ChampIcon name={c.name} size={56} />
         <div className="min-w-0 flex-1">
           <h2 className="text-lg font-bold text-rw-text">{champName(c.name)}</h2>
+        <CountersLink slug={c.u} className="inline-block text-[11px] text-rw-teal hover:underline font-semibold" />
           <p className="text-[11px] text-rw-sub">
             {c.roles
               .filter((r) => r.p / totalRoles >= 0.05)

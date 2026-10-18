@@ -47,7 +47,7 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
   const bracket = stages.filter((s) => s.kind === "bracket");
   const lists = stages.filter((s) => s.kind === "list");
   return (
-    <div className="space-y-3">
+    <div className="rw-page">
       <div className={card}>
         {e.parent && (
           <p className="text-[11px] text-rw-muted mb-1">
