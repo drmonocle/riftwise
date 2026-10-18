@@ -12,6 +12,7 @@ import { TeamRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
 import { CaptureContext, card, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, HubLink, Page, PlayerLink, RevealButton, Section, Stat, td, TeamLink, th, useHidden, useLoad, usePageTitle } from "./ui";
 import { ratingTextClass } from "./BestPage";
+import { Sparkline } from "./Sparkline";
 import { STable } from "../STable";
 
 export const TeamPage: React.FC<{ slug: string }> = ({ slug }) => {
@@ -38,7 +39,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
   const [recentHidden, revealRecent] = useHidden(`team-recent:${t.u}`, t.recent[0]?.date);
   const events = allEvents ? t.events : t.events.slice(0, 15);
   return (
-    <div className="space-y-3">
+    <div className="rw-page">
       <div className={card}>
         <h2 className="text-lg font-bold text-rw-text">
           {t.name}
@@ -67,7 +68,12 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
           <Stat label={tl("Games")} value={`${fmtNum(t.w)}-${fmtNum(t.g - t.w)}`} sub={tl("{pct} win rate", { pct: winRate(t.w, t.g) })} />
           <Stat label={tl("Series")} value={`${t.sw}-${t.sg - t.sw}`} sub={tl("{pct} won", { pct: winRate(t.sw, t.sg) })} />
           {t.rating && (
-            <HubLink to={{ kind: "rankings" }} className="block hover:opacity-80">
+            <HubLink to={{ kind: "rankings" }} className="block hover:opacity-80 relative">
+              {t.rh && t.rh.length > 1 && (
+                <span className="absolute right-2 top-2" title={tl("Rating over the last year")}>
+                  <Sparkline points={t.rh} width={72} height={22} />
+                </span>
+              )}
               <Stat
                 label={tl("Power ranking")}
                 value={`#${t.rating.rank ?? t.rating.lrank}`}

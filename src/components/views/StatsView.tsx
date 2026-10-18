@@ -1,19 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  BarChart3,
-  Trophy,
-  Swords,
-  Medal,
-  ArrowLeft,
-  GitCompare,
-  Home,
-  CalendarRange,
-  Layers,
-  History,
-  Database,
-  TrendingUp,
-  Flame,
-} from "lucide-react";
+import { BarChart3, Trophy, Swords, Medal, ArrowLeft, GitCompare, Home, CalendarRange, Layers, History, Database, TrendingUp, Flame, Crosshair } from "lucide-react";
 import { AppSettings, Match, CatalogData } from "../../types";
 import { IS_WEB } from "../../platform";
 import {
@@ -23,7 +9,7 @@ import {
 } from "../../stats";
 import { tl, tk, tc, eventTitle } from "../../i18n";
 import { champName, useChampionNames } from "../../champions";
-import { loadHubMeta, loadHubRecords, loadHubTitles } from "../../hub/data";
+import { loadHubMeta, loadHubRecords, loadHubTitles, loadRecordsYear } from "../../hub/data";
 import type { HubRecords, HubTitle } from "../../hub/types";
 import {
   CompareRoute,
@@ -214,6 +200,7 @@ import { EventPage } from "../hub/EventPage";
 import { MatchPage } from "../hub/MatchPage";
 import { ChampPage } from "../hub/ChampPage";
 import { RiotCatalogContext } from "../../hub/riotCatalog";
+import { CountersPage } from "../hub/CountersPage";
 import { STable } from "../STable";
 
 interface StatsViewProps {
@@ -245,6 +232,11 @@ const SECTIONS: {
     kind: "rankings",
     label: tk("Rankings"),
     icon: <TrendingUp className="w-3.5 h-3.5" />,
+  },
+  {
+    kind: "counters",
+    label: tk("Counters"),
+    icon: <Crosshair className="w-3.5 h-3.5" />,
   },
   {
     kind: "best",
@@ -288,9 +280,29 @@ const SECTIONS: {
 const RecordsPanel: React.FC = () => {
   usePageTitle(tl("Records"));
   const state = useLoad<HubRecords>(loadHubRecords, []);
+  // all time, or one year (its own file; team streaks, titles and career totals are all-time only)
+  const [year, setYear] = useState("all");
+  const yearState = useLoad(() => (year === "all" ? Promise.resolve(null) : loadRecordsYear(year)), [year]);
   return (
     <Page state={state}>
-      {(r) => {
+      {(all) => {
+        const y = year !== "all" ? yearState.data : null;
+        const r: HubRecords = y ? { ...all, game: y.game, player: y.player, pentas: y.pentas } : all;
+        const yearPick = all.years && all.years.length > 0 && (
+          <select
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+            aria-label={tl("Year")}
+            className="bg-rw-bg border border-rw-border rounded px-2 py-1 text-xs text-rw-text"
+          >
+            <option value="all">{tl("All time")}</option>
+            {all.years.map((yy) => (
+              <option key={yy} value={yy}>
+                {yy}
+              </option>
+            ))}
+          </select>
+        );
         const gameList = (
           title: string,
           rows: HubRecords["game"]["fastest"],
@@ -395,6 +407,11 @@ const RecordsPanel: React.FC = () => {
         );
         return (
           <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-lg font-bold text-rw-text">{year === "all" ? tl("Records") : tl("{year} records", { year })}</h2>
+              {yearPick}
+            </div>
+            {year !== "all" && yearState.loading && <Loading />}
             <p className="text-[11px] text-rw-muted">
               {tl(
                 "Top leagues and international events only. Games shorter than 14 minutes are skipped, and a game only counts when its numbers agree across Leaguepedia's tables.",
@@ -423,6 +440,7 @@ const RecordsPanel: React.FC = () => {
               {r.pentas && r.pentas.recent.length > 0 && (
                 <PentakillRecords p={r.pentas} />
               )}
+              {year === "all" && (
               <Section title={tl("Longest win streaks")}>
                 <ol className="text-xs space-y-1.5">
                   {r.team.streaks.map((t, i) => (
@@ -438,6 +456,8 @@ const RecordsPanel: React.FC = () => {
                   ))}
                 </ol>
               </Section>
+              )}
+              {year === "all" && (
               <Section
                 title={tl(
                   "Most international titles (Worlds, MSI, First Stand)",
@@ -459,8 +479,9 @@ const RecordsPanel: React.FC = () => {
                   ))}
                 </ol>
               </Section>
+              )}
             </div>
-            <CareerRecords r={r} list={careerList} />
+            {year === "all" && <CareerRecords r={r} list={careerList} />}
           </div>
         );
       }}
@@ -692,6 +713,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
         {route.kind === "finder" && <FinderPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "draft" && <DraftPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "best" && <BestPage query={"query" in route ? route.query : undefined} />}
+        {route.kind === "counters" && <CountersPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "aboutme" && <AboutMePage onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
         {route.kind === "titles" && <TitlesPanel />}
         {route.kind === "compare" && <ComparePage route={route as CompareRoute} />}

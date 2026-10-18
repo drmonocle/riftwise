@@ -102,6 +102,18 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   // the header search closes when another page opens (the Stats home has its own search box)
   useEffect(() => onHubRoute(() => setSearchOpen(false)), []);
+  // "/" opens the search from anywhere (not while typing somewhere else)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      e.preventDefault();
+      setSearchOpen(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   useEffect(() => setSearchOpen(false), [activeTab]);
   // One-time note about the stats hub and features people were missing (closed for good with X)
   // One-time note for people who used the app before it was renamed (0.4.0): RiftWatch is now RiftWise

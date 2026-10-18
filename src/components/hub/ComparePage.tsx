@@ -13,6 +13,8 @@ import { useDDragon } from "../../hub/ddragon";
 import {
   PeriodKey,
   PeriodOption,
+  type PlayerAgg,
+  type TeamAgg,
   inPeriod,
   periodOptions,
   playerAgg,
@@ -27,7 +29,7 @@ import { HeadToHeadSeries } from "./Archives";
 import { PeriodPicker } from "./PeriodStats";
 import { DraftTendencies, draftTendencies } from "./DraftTendencies";
 import { BroadcastCardButton, draftCard, playerCardData, teamCardData } from "./BroadcastCard";
-import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, isFresh, OeCredit, PlayerPhoto, RevealButton, Section, td, TeamLogo, useHidden, usePageTitle } from "./ui";
+import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, td, TeamLogo, useHidden, usePageTitle } from "./ui";
 import { STable } from "../STable";
 
 type Mode = "team" | "player";
@@ -153,7 +155,10 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
   const mode: Mode = route.mode || "team";
   const a = route.a || null;
   const b = route.b || null;
-  const set = (patch: Partial<CompareRoute>) => navigateHub({ kind: "compare", mode, a: a || undefined, b: b || undefined, period: route.period, ...patch }, { replace: true });
+  const set = (patch: Partial<CompareRoute>) =>
+    navigateHub({ kind: "compare", mode, a: a || undefined, b: b || undefined, period: route.period, more: route.more, ...patch }, { replace: true });
+  // three or more: a table with a column each
+  if (route.more && route.more.length && a && b) return <MultiCompare mode={mode} slugs={[a, b, ...route.more]} period={route.period} set={set} />;
 
   const [info, setInfo] = useState<{ a: HubTeam | HubPlayer | null; b: HubTeam | HubPlayer | null }>({ a: null, b: null });
   const [logs, setLogs] = useState<{ a: (TeamGameRow | PlayerGameRow)[] | null; b: (TeamGameRow | PlayerGameRow)[] | null }>({ a: null, b: null });
@@ -193,7 +198,7 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
 
   return (
     <CaptureContext.Provider value={ready ? `${info.a!.name} vs ${info.b!.name} · ${periodLabel}` : null}>
-    <div className="space-y-3">
+    <div className="rw-page">
       <div className="flex flex-wrap items-center gap-2 text-xs">
         {(["team", "player"] as const).map((k) => (
           <button
@@ -242,6 +247,14 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
           </div>
         ))}
       </div>
+      {ready && (
+        <details className="text-xs">
+          <summary className="cursor-pointer text-rw-teal hover:underline">{tl("Compare a third one too")}</summary>
+          <div className={`${card} mt-2 max-w-md`}>
+            <ComparePick kind={mode} autoFocus onPick={(slug) => set({ more: [slug] })} />
+          </div>
+        </details>
+      )}
       {ready &&
         (hidden ? (
           <div className={`${card} py-4 text-center`}>
@@ -298,12 +311,12 @@ export const TeamRows: React.FC<{
       >
         <div className="flex items-center justify-between gap-3 text-sm font-bold">
           <span className="flex items-center gap-2 min-w-0">
-            <TeamLogo name={x.name} size={36} />
+            <TeamLogo name={x.name} sizeClass="w-9 h-9 lg:w-12 lg:h-12 2xl:w-16 2xl:h-16" />
             <span className="truncate">{x.name}</span>
           </span>
           <span className="flex items-center gap-2 min-w-0">
             <span className="truncate text-right">{y.name}</span>
-            <TeamLogo name={y.name} size={36} />
+            <TeamLogo name={y.name} sizeClass="w-9 h-9 lg:w-12 lg:h-12 2xl:w-16 2xl:h-16" />
           </span>
         </div>
         <table className="w-full text-xs">
@@ -433,12 +446,12 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
       >
         <div className="flex items-center justify-between gap-3 text-sm font-bold">
           <span className="flex items-center gap-2 min-w-0">
-            <PlayerPhoto name={x.name} team={x.club} size={44} />
+            <PlayerPhoto name={x.name} team={x.club} sizeClass="w-11 h-11 lg:w-16 lg:h-16 2xl:w-20 2xl:h-20" />
             <span className="truncate">{x.name}</span>
           </span>
           <span className="flex items-center gap-2 min-w-0">
             <span className="truncate text-right">{y.name}</span>
-            <PlayerPhoto name={y.name} team={y.club} size={44} />
+            <PlayerPhoto name={y.name} team={y.club} sizeClass="w-11 h-11 lg:w-16 lg:h-16 2xl:w-20 2xl:h-20" />
           </span>
         </div>
         <table className="w-full text-xs">
@@ -640,5 +653,159 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
         </button>
       )}
     </Section>
+  );
+};
+
+// ── Three or more side by side ────────────────────────────────────────────────────────────────────────────
+
+type Loaded = { slug: string; info: HubTeam | HubPlayer; log: (TeamGameRow | PlayerGameRow)[] };
+
+/** Up to eight teams or players in one table: one column each, the best number of every row lit up. */
+const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set: (p: Partial<CompareRoute>) => void }> = ({ mode, slugs, period: wanted, set }) => {
+  const [rows, setRows] = useState<Loaded[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    Promise.all(
+      slugs.map(async (slug) => {
+        try {
+          const info = await (mode === "team" ? loadHubTeam(slug) : loadHubPlayer(slug));
+          const log = await (mode === "team" ? loadTeamGames(slug) : loadPlayerGames(slug)).catch(() => [] as (TeamGameRow | PlayerGameRow)[]);
+          return { slug, info, log } as Loaded;
+        } catch {
+          return null;
+        }
+      }),
+    ).then((xs) => alive && setRows(xs.filter((x): x is Loaded => !!x)));
+    return () => {
+      alive = false;
+    };
+  }, [mode, slugs.join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
+  const refs = (log: (TeamGameRow | PlayerGameRow)[]) => (mode === "team" ? (log as TeamGameRow[]).map(teamRowRef) : (log as PlayerGameRow[]).map(playerRowRef));
+  // periods every column can show: all logs merged; "last N" only when each has that many games
+  const options = useMemo(() => {
+    if (!rows || !rows.length) return [];
+    const merged = rows.flatMap((r) => refs(r.log)).sort((x, y) => (x.date < y.date ? 1 : x.date > y.date ? -1 : 0));
+    const n = Math.min(...rows.map((r) => r.log.length));
+    return periodOptions(merged, 80).filter((o) => !/^last(\d+)$/.test(o.key) || Number(o.key.slice(4)) < n);
+  }, [rows]); // eslint-disable-line react-hooks/exhaustive-deps
+  const period: PeriodKey = wanted && options.some((o) => o.key === wanted) ? wanted : "all";
+  const opt = options.find((o) => o.key === period);
+  const periodLabel = !opt || opt.key === "all" ? tl("All time") : opt.group === "basic" ? tl("Last {n} games", { n: opt.label }) : opt.label;
+  const aggs = useMemo(
+    () =>
+      (rows || []).map((r) =>
+        mode === "team" ? teamAgg(inPeriod(r.log as TeamGameRow[], period, teamRowRef)) : playerAgg(inPeriod(r.log as PlayerGameRow[], period, playerRowRef)),
+      ),
+    [rows, period, mode],
+  );
+  const remove = (slug: string) => {
+    const left = slugs.filter((s) => s !== slug);
+    set({ a: left[0], b: left[1], more: left.slice(2).length ? left.slice(2) : undefined });
+  };
+  if (!rows) return <Loading />;
+  const wr = (w: number, g: number) => (g ? (w / g) * 100 : null);
+  // [label, value per column, lower is better]
+  const lines: [string, (number | null)[], boolean?][] =
+    mode === "team"
+      ? (() => {
+          const A = aggs as TeamAgg[];
+          return [
+            [tl("Games"), A.map((x) => x.g)],
+            [tl("Win rate"), A.map((x) => wr(x.w, x.g))],
+            [tl("Blue side wins"), A.map((x) => wr(x.blue[1], x.blue[0]))],
+            [tl("Red side wins"), A.map((x) => wr(x.red[1], x.red[0]))],
+            [tl("Avg game (min)"), A.map((x) => x.min)],
+            [tl("Kills / game"), A.map((x) => x.kills)],
+            [tl("Deaths / game"), A.map((x) => x.deaths), true],
+            [tl("Gold diff / game"), A.map((x) => x.gd)],
+            ["GD@15", A.map((x) => x.tl?.gd15 ?? null)],
+            [tl("First blood"), A.map((x) => x.tl?.fb ?? null)],
+            ["DRA%", A.map((x) => x.dragShare)],
+            [tl("Baron%"), A.map((x) => x.baronShare)],
+            [tl("Towers"), A.map((x) => x.towers)],
+            [tl("Champion pool"), A.map((x) => x.nPicks)],
+          ];
+        })()
+      : (() => {
+          const A = aggs as PlayerAgg[];
+          return [
+            [tl("Games"), A.map((x) => x.g)],
+            [tl("Win rate"), A.map((x) => wr(x.w, x.g))],
+            ["KDA", A.map((x) => x.kda)],
+            ["KP", A.map((x) => x.kp)],
+            [tl("CS / min"), A.map((x) => x.csm)],
+            [tl("Damage / min"), A.map((x) => x.dpm)],
+            ["DMG%", A.map((x) => x.dmgShare)],
+            ["GD@15", A.map((x) => x.tl?.gd15 ?? null)],
+            ["CSD@15", A.map((x) => x.tl?.csd15 ?? null)],
+            [tl("VS / min"), A.map((x) => x.vsm)],
+            [tl("Champion pool"), A.map((x) => x.champs.length)],
+          ];
+        })();
+  const pct = (label: string) => /rate|wins|%|blood|KP/.test(label);
+  const fmt = (label: string, v: number | null) =>
+    v == null ? "–" : pct(label) ? `${v.toFixed(1)}%` : /GD@15|Gold diff/.test(label) ? `${v > 0 ? "+" : ""}${fmtNum(Math.round(v))}` : /KDA|CS|VS|min\)/.test(label) ? String(Number(v.toFixed(2))) : fmtNum(Math.round(v));
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        {rows.map((r) => (
+          <span key={r.slug} className={`${card} py-1 px-2 flex items-center gap-2`}>
+            <HubLink to={{ kind: mode, slug: r.slug }} className="font-bold">
+              {r.info.name}
+            </HubLink>
+            <button type="button" onClick={() => remove(r.slug)} className="text-rw-muted hover:text-rw-red" aria-label={tl("Remove")} title={tl("Remove")}>
+              ×
+            </button>
+          </span>
+        ))}
+        {slugs.length < 8 && (
+          <details>
+            <summary className="cursor-pointer text-rw-teal hover:underline">{tl("Add another")}</summary>
+            <div className={`${card} mt-2 max-w-md`}>
+              <ComparePick kind={mode} autoFocus onPick={(slug) => set({ more: [...slugs.slice(2), slug] })} />
+            </div>
+          </details>
+        )}
+        <span className="ml-auto flex items-center gap-2">
+          <span className="text-rw-muted">{tl("Stats for")}</span>
+          <PeriodPicker options={options} value={period} onChange={(p) => set({ period: p })} />
+        </span>
+      </div>
+      <Section title={`${tl("Compare")} · ${periodLabel}`} share={`riftwise-compare-${slugs.join("-")}`}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr>
+                <th className="text-left py-1.5 pr-2 text-rw-muted font-semibold"></th>
+                {rows.map((r) => (
+                  <th key={r.slug} className="text-right py-1.5 px-2 font-bold text-rw-text whitespace-nowrap">
+                    {r.info.name}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {lines
+                .filter(([, vs]) => vs.some((v) => v != null))
+                .map(([label, vs, low]) => {
+                  const known = vs.filter((v): v is number => v != null);
+                  const best = known.length > 1 ? (low ? Math.min(...known) : Math.max(...known)) : null;
+                  return (
+                    <tr key={label} className="border-t border-rw-border">
+                      <td className="py-1.5 pr-2 text-rw-muted whitespace-nowrap">{label}</td>
+                      {vs.map((v, i) => (
+                        <td key={i} className={`py-1.5 px-2 text-right tabular-nums ${best != null && v === best ? "text-rw-teal font-bold" : "text-rw-text"}`}>
+                          {fmt(label, v)}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
+        </div>
+        {aggs.some((x) => x.tl) && <OeCredit />}
+      </Section>
+    </>
   );
 };

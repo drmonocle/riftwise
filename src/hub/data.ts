@@ -270,6 +270,12 @@ export function prefetchHub(r: import("./route").HubRoute): void {
   go[r.kind]?.(r.slug).catch(() => {});
 }
 export const loadBestIndex = () => load<import("./types").BestIndex>("hub/best/index.json");
+export const loadRecordsYear = (year: string) => load<import("./types").HubRecordsYear>(`hub/records/${year}.json`);
+export const loadMatchups = (slug: string) => load<import("./types").HubMatchups>(`hub/matchups/${slug}.json`);
+/** top-league teams' ratings over the last 120 days: slug -> [date, rating][] */
+export const loadRatingsHistory = () => load<Record<string, [string, number][]>>("hub/ratings-history.json");
+/** a player's last two years of games (smaller than the full log; not every player has one) */
+export const loadPlayerGames2y = (slug: string) => load<import("./types").PlayerGameRow[]>(`hub/playergames2y/${slug}.json`);
 /** The best-rated games and series: all time, a year, a league, or a league's year. */
 export const loadBest = (year?: string, league?: string) =>
   load<import("./types").BestFile>(

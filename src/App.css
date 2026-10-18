@@ -240,6 +240,49 @@
 .page-5xl {
   --page-w: 64rem;
 }
+/* Big screens: the page grows and its sections flow into two columns, then three (an ultrawide used to show one
+   narrow column in the middle). .rw-page replaces space-y-3 on page roots: the same gaps, but with margins below
+   each section, so a column's first section sits flush with the top. */
+.rw-page > * {
+  margin-bottom: 0.75rem;
+}
+@media (min-width: 1600px) {
+  .page-4xl,
+  .page-5xl {
+    --page-w: 100rem;
+  }
+  .rw-page {
+    column-count: 2;
+    column-gap: 0.75rem;
+  }
+  .rw-page > * {
+    break-inside: avoid;
+  }
+  /* match lists on Live / Schedule: two columns of tiles, a day's heading stays with its first tile */
+  .rw-tiles {
+    column-count: 2;
+    column-gap: 0.75rem;
+  }
+  .rw-tiles > * {
+    break-inside: avoid;
+    margin-bottom: 0.5rem;
+  }
+  .rw-tiles > .rw-day {
+    break-after: avoid;
+  }
+}
+@media (min-width: 2300px) {
+  .page-4xl,
+  .page-5xl {
+    --page-w: 140rem;
+  }
+  .rw-page {
+    column-count: 3;
+  }
+  .rw-tiles {
+    column-count: 3;
+  }
+}
 
 /* Caster sheet (Match prep -> Print sheet): a print-only copy of the page under <body>, black on white. */
 .rw-sheet {

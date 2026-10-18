@@ -269,7 +269,7 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
   const events = season ? l.events.filter((e) => e.y === season) : l.events;
   const pick = (y?: string) => navigateHub({ kind: "league", slug: l.u, year: y }, { replace: true });
   return (
-    <div className="space-y-3">
+    <div className="rw-page">
       <div className={card}>
         <h2 className="text-lg font-bold text-rw-text">
           {l.s && <span className="text-rw-accent mr-2">{l.s}</span>}

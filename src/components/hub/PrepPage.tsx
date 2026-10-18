@@ -9,7 +9,7 @@ import { ClipboardCopy, GitCompare, Printer } from "lucide-react";
 import { tl, tc, roleName } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { loadHubPlayer, loadHubTeam, loadPlayerGames, loadRatings, loadTeamGames, loadTeamSeries } from "../../hub/data";
+import { loadHubPlayer, loadHubTeam, loadPlayerGames, loadPlayerGames2y, loadRatings, loadTeamGames, loadTeamSeries } from "../../hub/data";
 import { chanceContext, matchChance, pct, seriesChance } from "../../hub/winChance";
 import { Change } from "./RankingsPage";
 import type { HubPlayer, HubTeam, PlayerGameRow, TeamGameRow, TeamSeriesRow } from "../../hub/types";
@@ -33,8 +33,32 @@ export interface Side {
   team: HubTeam;
   games: TeamGameRow[];
   series: TeamSeriesRow[];
-  /** current starters by role (most games in the newest roster year) */
-  players: ({ p: HubPlayer; log: PlayerGameRow[] } | null)[];
+  /** current starters by role (most games in the newest roster year); `full`: the whole career is loaded (not
+   *  just the last two years) */
+  players: ({ p: HubPlayer; log: PlayerGameRow[]; full: boolean } | null)[];
+}
+
+/** The last two years of a player's games (a smaller file) when the build made one, else the whole career. */
+async function loadLog(slug: string): Promise<{ log: PlayerGameRow[]; full: boolean }> {
+  try {
+    return { log: await loadPlayerGames2y(slug), full: false };
+  } catch {
+    return { log: await loadPlayerGames(slug).catch(() => [] as PlayerGameRow[]), full: true };
+  }
+}
+
+/** Does this period reach further back than the two-year logs? */
+export function needsFullLogs(period: PeriodKey, teamGames: TeamGameRow[]): boolean {
+  if (period === "all") return true;
+  const cutoff = new Date(Date.now() - 730 * 86400000).toISOString().slice(0, 10);
+  if (period.startsWith("y")) return period.slice(1) < cutoff.slice(0, 4);
+  if (period.startsWith("e:")) {
+    const first = teamGames.find((r) => r[2] === period.slice(2));
+    return !!first && first[0] < cutoff;
+  }
+  const last = /^last(\d+)$/.exec(period);
+  if (last) return Number(last[1]) > 80;
+  return false;
 }
 
 export async function loadSide(slug: string): Promise<Side> {
@@ -53,13 +77,21 @@ export async function loadSide(slug: string): Promise<Side> {
   const players = await Promise.all(
     starters.map((x) =>
       x && x.u
-        ? Promise.all([loadHubPlayer(x.u), loadPlayerGames(x.u).catch(() => [] as PlayerGameRow[])])
-            .then(([p, log]) => ({ p, log }))
+        ? Promise.all([loadHubPlayer(x.u), loadLog(x.u)])
+            .then(([p, l]) => ({ p, log: l.log, full: l.full }))
             .catch(() => null)
         : Promise.resolve(null),
     ),
   );
   return { team, games, series, players };
+}
+
+/** The same side with every player's whole career loaded. */
+async function loadFullLogs(s: Side): Promise<Side> {
+  const players = await Promise.all(
+    s.players.map(async (pl) => (!pl || pl.full ? pl : { ...pl, log: await loadPlayerGames(pl.p.u).catch(() => pl.log), full: true })),
+  );
+  return { ...s, players };
 }
 
 export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
@@ -105,7 +137,7 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
     );
   if (sides.failed) return <p className="text-xs text-rw-sub py-6 text-center">{tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>;
   if (!sides.a || !sides.b) return <Loading />;
-  return <PrepView a={sides.a} b={sides.b} route={route} set={set} />;
+  return <PrepView a={sides.a} b={sides.b} route={route} set={set} onFull={(x, y) => setSides({ a: x, b: y })} />;
 };
 
 /** a's chance to win one game, a best-of-three and a best-of-five (null when the two can't be compared). */
@@ -218,9 +250,25 @@ function usePrint(): { on: boolean; start: () => void } {
   };
 }
 
-const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<PrepRoute>) => void }> = ({ a, b, route, set }) => {
+const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<PrepRoute>) => void; onFull: (a: Side, b: Side) => void }> = ({
+  a,
+  b,
+  route,
+  set,
+  onFull,
+}) => {
   const options = useMemo(() => bothOptions(a.games.map(teamRowRef), b.games.map(teamRowRef)), [a.games, b.games]);
   const period: PeriodKey = route.period && options.some((o) => o.key === route.period) ? route.period : defaultPeriod(options);
+  // an older period needs the players' whole careers: fetch them once, then stay on them
+  const wantFull = needsFullLogs(period, [...a.games, ...b.games]) && [...a.players, ...b.players].some((p) => p && !p.full);
+  useEffect(() => {
+    if (!wantFull) return;
+    let alive = true;
+    Promise.all([loadFullLogs(a), loadFullLogs(b)]).then(([x, y]) => alive && onFull(x, y));
+    return () => {
+      alive = false;
+    };
+  }, [wantFull]); // eslint-disable-line react-hooks/exhaustive-deps
   const opt = options.find((o) => o.key === period);
   const periodLabel = !opt || opt.key === "all" ? tl("All time") : opt.group === "basic" ? tl("Last {n} games", { n: opt.label }) : opt.label;
   const ra = useMemo(() => inPeriod(a.games, period, teamRowRef), [a.games, period]);
@@ -305,7 +353,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
 
   return (
     <CaptureContext.Provider value={`${title} · ${periodLabel}`}>
-    <div className="space-y-3" ref={pageRef}>
+    <div className="rw-page" ref={pageRef}>
       <div className={`${card} flex flex-wrap items-center justify-between gap-2`}>
         <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-wider font-bold text-rw-accent">{tl("Match prep")}</div>
@@ -630,8 +678,8 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
         label={`${pa?.p.name || "–"} vs ${pb?.p.name || "–"} · ${roleName(r)}`}
         name={`${title}-${r}-${periodLabel}`}
         card={laneCard}
-        left={pa ? <PlayerPhoto name={pa.p.name} team={a.team.name} size={64} /> : null}
-        right={pb ? <PlayerPhoto name={pb.p.name} team={b.team.name} size={64} /> : null}
+        left={pa ? <PlayerPhoto name={pa.p.name} team={a.team.name} sizeClass="w-16 h-16 lg:w-24 lg:h-24 2xl:w-32 2xl:h-32" /> : null}
+        right={pb ? <PlayerPhoto name={pb.p.name} team={b.team.name} sizeClass="w-16 h-16 lg:w-24 lg:h-24 2xl:w-32 2xl:h-32" /> : null}
       >
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className="min-w-0 flex justify-end">{name(pa, false)}</div>
@@ -701,7 +749,7 @@ const LaneBlock: React.FC<{
   const data = card();
   return (
     <div className="flex items-center justify-center gap-6 lg:gap-12">
-      <div className="hidden md:flex w-16 justify-center">{left}</div>
+      <div className="hidden md:flex w-16 lg:w-24 2xl:w-32 justify-center">{left}</div>
       <div ref={ref} className="relative py-2.5 w-full max-w-lg">
         <div className="rw-capture-only rw-section-context text-sm font-extrabold text-rw-text pb-1">{label}</div>
         <div className="absolute right-0 top-2 flex items-center gap-1" data-nocapture="1">
@@ -711,7 +759,7 @@ const LaneBlock: React.FC<{
         {children}
         <CaptureFooter />
       </div>
-      <div className="hidden md:flex w-16 justify-center">{right}</div>
+      <div className="hidden md:flex w-16 lg:w-24 2xl:w-32 justify-center">{right}</div>
     </div>
   );
 };
