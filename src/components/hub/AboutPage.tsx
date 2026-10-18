@@ -3,7 +3,8 @@ import React from "react";
 import { tl } from "../../i18n";
 import { HubLink, Section, usePageTitle } from "./ui";
 
-export const REPORT_EMAIL = "kyle.l.hoover@gmail.com";
+export { FEEDBACK_EMAIL as REPORT_EMAIL } from "../../feedback";
+import { FEEDBACK_EMAIL as REPORT_EMAIL } from "../../feedback";
 
 /** mailto link for "Report a wrong stat", with the page it's about filled in. */
 export const reportUrl = (page: string) =>

@@ -42,7 +42,7 @@ export const CaptureFooter: React.FC = () => (
  * "Copy as image" for a whole page (Match prep): the button with its label, plus a save button on the web.
  * The page's buttons (data-nocapture) are left out, and rw-capture-only parts (title, date) show in the picture.
  */
-export const CopyPageImage: React.FC<{ target: React.RefObject<HTMLElement | null>; name: string }> = ({ target, name }) => {
+export const CopyPageImage: React.FC<{ target: React.RefObject<HTMLElement | null>; name: string; iconOnly?: boolean }> = ({ target, name, iconOnly }) => {
   const [state, setState] = useState<"" | "busy" | "copied" | "failed">("");
   const flash = (s: typeof state) => {
     setState(s);
@@ -78,9 +78,20 @@ export const CopyPageImage: React.FC<{ target: React.RefObject<HTMLElement | nul
         disabled={state === "busy"}
         className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-teal hover:underline disabled:opacity-50"
         title={tl("Copy this whole page as a picture, to paste into Discord, X or a broadcast graphic")}
+        aria-label={iconOnly ? tl("Copy as an image") : undefined}
       >
         <Images className="w-3.5 h-3.5" />
-        {state === "busy" ? tl("Making the image…") : state === "copied" ? tl("Copied") : tl("Copy as an image")}
+        {iconOnly
+          ? state === "busy"
+            ? "…"
+            : state === "copied"
+              ? tl("Copied")
+              : null
+          : state === "busy"
+            ? tl("Making the image…")
+            : state === "copied"
+              ? tl("Copied")
+              : tl("Copy as an image")}
       </button>
       {IS_WEB && (
         <button type="button" onClick={() => run(true)} disabled={state === "busy"} className="text-rw-teal hover:text-rw-text disabled:opacity-50" title={tl("Save as an image")} aria-label={tl("Save as an image")}>

@@ -20,7 +20,7 @@ import { HeadToHeadSeries } from "./Archives";
 import { ComparePick, TeamRows, bothOptions } from "./ComparePage";
 import { PeriodPicker, defaultPeriod } from "./PeriodStats";
 import { StoryLine, StoryList, noteText } from "./Storylines";
-import { CaptureContext, card, ChampIcon, fmtDate, HubLink, isFresh, Loading, OeCredit, RevealButton, Section, useHidden, useLoad, usePageTitle } from "./ui";
+import { CaptureContext, card, ChampIcon, fmtDate, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, useHidden, useLoad, usePageTitle } from "./ui";
 import { CaptureFooter, CopyPageImage, ShareButtons } from "./ShareImage";
 import { BroadcastCardButton, CardData, PoolLine, fearlessCard, playerCardData, prepOverviewCard } from "./BroadcastCard";
 import type { HubRatings } from "../../hub/types";
@@ -329,16 +329,17 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
             <GitCompare className="w-3.5 h-3.5" />
             {tl("Compare")}
           </HubLink>
+          {/* icons with their name on hover, to keep the bar short */}
           <button
             type="button"
             onClick={printing.start}
-            className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-teal hover:underline"
+            className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-teal hover:text-rw-text"
             title={tl("Print a caster sheet: everything on this page, on paper or as a PDF")}
+            aria-label={tl("Print sheet")}
           >
             <Printer className="w-3.5 h-3.5" />
-            {tl("Print sheet")}
           </button>
-          <CopyPageImage target={pageRef} name={`${title} match prep`} />
+          <CopyPageImage target={pageRef} name={`${title} match prep`} iconOnly />
           <CopyPost text={postText} />
         </div>
       </div>
@@ -374,11 +375,12 @@ const CopyPost: React.FC<{ text: () => string }> = ({ text }) => {
     <button
       type="button"
       onClick={() => navigator.clipboard.writeText(text()).then(() => setState("copied"), () => setState("failed"))}
-      className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-teal hover:underline"
-      title={tl("Copy a ready-to-post summary with the link, for X or Discord")}
+      className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-teal hover:text-rw-text"
+      title={`${tl("Copy post")}: ${tl("Copy a ready-to-post summary with the link, for X or Discord")}`}
+      aria-label={tl("Copy post")}
     >
       <ClipboardCopy className="w-3.5 h-3.5" />
-      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
+      {state === "copied" ? <span className="text-[11px]">{tl("Copied")}</span> : state === "failed" ? <span className="text-[11px]">{tl("Couldn't copy")}</span> : null}
     </button>
   );
 };
@@ -628,6 +630,8 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
         label={`${pa?.p.name || "–"} vs ${pb?.p.name || "–"} · ${roleName(r)}`}
         name={`${title}-${r}-${periodLabel}`}
         card={laneCard}
+        left={pa ? <PlayerPhoto name={pa.p.name} team={a.team.name} size={64} /> : null}
+        right={pb ? <PlayerPhoto name={pb.p.name} team={b.team.name} size={64} /> : null}
       >
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className="min-w-0 flex justify-end">{name(pa, false)}</div>
@@ -684,18 +688,30 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
  * One lane of "Lane by lane", with its own picture (just this 1v1, named on top) and 16:9 card, for posting about one
  * matchup without the other four.
  */
-const LaneBlock: React.FC<{ label: string; name: string; card: () => CardData | null; children: React.ReactNode }> = ({ label, name, card, children }) => {
+const LaneBlock: React.FC<{
+  label: string;
+  name: string;
+  card: () => CardData | null;
+  /** the two players' photos, on the outer sides (from a medium-wide window on) */
+  left?: React.ReactNode;
+  right?: React.ReactNode;
+  children: React.ReactNode;
+}> = ({ label, name, card, left, right, children }) => {
   const ref = useRef<HTMLDivElement>(null);
   const data = card();
   return (
-    <div ref={ref} className="relative py-2.5 max-w-lg mx-auto">
-      <div className="rw-capture-only rw-section-context text-sm font-extrabold text-rw-text pb-1">{label}</div>
-      <div className="absolute right-0 top-2 flex items-center gap-1" data-nocapture="1">
-        {data && <BroadcastCardButton data={() => card() as CardData} name={name} label={tl("Lane card")} compact />}
-        <ShareButtons target={ref} name={name} />
+    <div className="flex items-center justify-center gap-6 lg:gap-12">
+      <div className="hidden md:flex w-16 justify-center">{left}</div>
+      <div ref={ref} className="relative py-2.5 w-full max-w-lg">
+        <div className="rw-capture-only rw-section-context text-sm font-extrabold text-rw-text pb-1">{label}</div>
+        <div className="absolute right-0 top-2 flex items-center gap-1" data-nocapture="1">
+          {data && <BroadcastCardButton data={() => card() as CardData} name={name} label={tl("Lane card")} compact />}
+          <ShareButtons target={ref} name={name} />
+        </div>
+        {children}
+        <CaptureFooter />
       </div>
-      {children}
-      <CaptureFooter />
+      <div className="hidden md:flex w-16 justify-center">{right}</div>
     </div>
   );
 };

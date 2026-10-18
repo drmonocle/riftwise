@@ -19,6 +19,7 @@ import {
   EMPTY_CATALOG,
 } from "./api";
 import { APP_VERSION } from "./version";
+import { feedbackUrl } from "./feedback";
 
 // Read before the first render marks the app as launched (see the initial-tab logic below).
 const FIRST_DESKTOP_LAUNCH = (() => {
@@ -970,7 +971,7 @@ export default function App() {
         {activeTab === "stats" && (
           <PartBoundary>
             <React.Suspense fallback={lazyFallback}>
-              <StatsView settings={settings} onOpenUrl={handleOpenUrl} schedule={schedule} />
+              <StatsView settings={settings} onOpenUrl={handleOpenUrl} schedule={schedule} catalog={catalog} />
             </React.Suspense>
           </PartBoundary>
         )}
@@ -1060,6 +1061,20 @@ export default function App() {
             </span>
           )}
           {/* Narrow screens: make room for the spoiler notice so the footer stays on one line */}
+          <a
+            href={feedbackUrl(IS_WEB ? window.location.href : activeTab)}
+            onClick={(e) => {
+              // the desktop app opens the mail draft itself
+              if (!IS_WEB) {
+                e.preventDefault();
+                handleOpenUrl(feedbackUrl(activeTab));
+              }
+            }}
+            className={`hover:text-rw-accent whitespace-nowrap ${settings.spoilerMode ? "hidden sm:inline" : ""}`}
+            title={tl("Ideas or something to fix? Email Kyle: a good one gets an RP code as a thank-you.")}
+          >
+            {tl("Feedback")}
+          </a>
           <button
             type="button"
             onClick={() => navigateHub({ kind: "aboutme" })}

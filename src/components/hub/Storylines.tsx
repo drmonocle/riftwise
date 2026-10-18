@@ -7,19 +7,26 @@ import { Sparkles } from "lucide-react";
 import { tl, tn } from "../../i18n";
 import { champName } from "../../champions";
 import { load } from "../../stats";
-import { ChampIcon, HubLink, RevealButton, Section, fmtNum, useHidden, useLoad } from "./ui";
+import { ChampIcon, HubLink, RevealButton, Section, fmtNum, useHidden, useLoad, GRID_COLS, useColumns } from "./ui";
 
 export interface Note {
-  k: "ms" | "streak" | "side" | "champ";
+  /** ms milestone, streak (series), side (unbeaten on a side), champ (unbeaten on a champion), evunb (unbeaten at the
+   *  event on now), form (wins in the last n games), comeback (wins from 2,500+ gold down at 15), crec (most pro games
+   *  on a champion of any player), cms (close to a round number of games on a champion), penta (pentakills this year) */
+  k: "ms" | "streak" | "side" | "champ" | "evunb" | "form" | "comeback" | "crec" | "cms" | "penta";
   /** milestone kind */
   s?: "games" | "wins" | "kills" | "assists";
   n: number;
   left?: number;
-  /** streak: won (1) or lost (0) */
+  /** streak: won (1) or lost (0); form: games won */
   w?: number;
   side?: "b" | "r";
   c?: string;
   y?: string;
+  /** evunb: the event, and the games won / lost there */
+  e?: string;
+  gw?: number;
+  gl?: number;
 }
 export interface Notes {
   asOf: string;
@@ -47,6 +54,21 @@ export function noteText(nt: Note): React.ReactNode {
       return nt.side === "b"
         ? tl("Unbeaten on blue side in {year}: {n}-0", { n: nt.n, year: nt.y || "" })
         : tl("Unbeaten on red side in {year}: {n}-0", { n: nt.n, year: nt.y || "" });
+    case "evunb":
+      return tl("Unbeaten at {event}: {n}-0 in series, {gw}-{gl} in games", { event: nt.e || "", n: nt.n, gw: nt.gw ?? 0, gl: nt.gl ?? 0 });
+    case "form":
+      return tl("Won {w} of their last {n} games", { w: nt.w ?? 0, n: nt.n });
+    case "comeback":
+      return tl("{n} wins in {year} from 2,500+ gold down at 15 minutes", { n: nt.n, year: nt.y || "" });
+    case "crec":
+      return tl("The most pro games on {champ} of any player: {n}", { champ: champName(nt.c || ""), n: nt.n });
+    case "cms":
+      return tn("{n} game away from {total} pro games on {champ}", "{n} games away from {total} pro games on {champ}", nt.left || 0, {
+        total: fmtNum(nt.n),
+        champ: champName(nt.c || ""),
+      });
+    case "penta":
+      return tl("{n} pentakills in {year}", { n: nt.n, year: nt.y || "" });
     case "champ":
       return (
         <span className="inline-flex items-center gap-1 flex-wrap">
@@ -67,7 +89,7 @@ export interface StoryLine {
 }
 
 /** The lines themselves; with spoiler mode, hidden behind Reveal while any of them uses games from the last two weeks. */
-export const StoryBullets: React.FC<{ lines: StoryLine[]; spoilerKey: string }> = ({ lines, spoilerKey }) => {
+export const StoryBullets: React.FC<{ lines: StoryLine[]; spoilerKey: string; columns?: boolean }> = ({ lines, spoilerKey, columns }) => {
   const newest = lines.map((l) => l.asOf || "").sort().pop();
   const [hidden, reveal] = useHidden(spoilerKey, newest || undefined);
   if (hidden)
@@ -77,7 +99,7 @@ export const StoryBullets: React.FC<{ lines: StoryLine[]; spoilerKey: string }> 
       </div>
     );
   return (
-    <ul className="text-xs space-y-1.5">
+    <ul className={`text-xs ${columns ? `${GRID_COLS} gap-x-6 gap-y-1.5` : "space-y-1.5"}`}>
       {lines.map((l) => (
         <li key={l.key} className="flex items-start gap-2 min-w-0">
           <Sparkles className="w-3.5 h-3.5 text-rw-accent shrink-0 mt-0.5" />
@@ -99,16 +121,18 @@ export const StoryBullets: React.FC<{ lines: StoryLine[]; spoilerKey: string }> 
 };
 
 /** A titled card of storylines (nothing when there are none). */
-export const StoryList: React.FC<{ title?: string; lines: StoryLine[]; spoilerKey: string; share?: string; right?: React.ReactNode }> = ({
-  title,
-  lines,
-  spoilerKey,
-  share,
-  right,
-}) =>
+export const StoryList: React.FC<{
+  title?: string;
+  lines: StoryLine[];
+  spoilerKey: string;
+  share?: string;
+  right?: React.ReactNode;
+  /** side by side as the window gets wider */
+  columns?: boolean;
+}> = ({ title, lines, spoilerKey, share, right, columns }) =>
   lines.length ? (
     <Section title={title || tl("Storylines")} share={share} right={right}>
-      <StoryBullets lines={lines} spoilerKey={spoilerKey} />
+      <StoryBullets lines={lines} spoilerKey={spoilerKey} columns={columns} />
     </Section>
   ) : null;
 
@@ -121,12 +145,15 @@ export const OwnStorylines: React.FC<{ notes?: Notes; spoilerKey: string; share?
 /** Stats home: the most notable storylines of teams and players who played in the last 30 days. */
 export const HomeStorylines: React.FC = () => {
   const state = useLoad(() => load<GlobalNote[]>("hub/notes.json"), []);
-  const rows = (state.data || []).slice(0, 12);
+  // more of them as the window gets wider: 8 in one column, 6 more for each column after
+  const cols = useColumns();
+  const rows = (state.data || []).slice(0, 8 + (cols - 1) * 6);
   return (
     <StoryList
       title={tl("Storylines")}
       spoilerKey="home-notes"
       share="riftwise-storylines"
+      columns
       lines={rows.map((r, i) => ({ key: `${r.u}-${i}`, who: { name: r.name, to: { kind: r.t, slug: r.u } }, text: noteText(r), asOf: r.asOf }))}
     />
   );

@@ -220,6 +220,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
         </div>
       )}
       {!hidden && <Leads g={g} blueName={blueTeam.n} redName={redTeam.n} blue={blue} red={red} />}
+      {!hidden && <PlayerBars blueName={blueTeam.n} redName={redTeam.n} blue={blue} red={red} minutes={g.min ?? undefined} />}
       {g.st !== "f" && !g.p && (
         <p className="text-[11px] text-rw-muted text-center">
           {g.st === "r" ? tl("Only the result of this game is known.") : tl("No result or stats were recorded for this game.")}
@@ -275,6 +276,103 @@ const LeadBar: React.FC<{ label: React.ReactNode; left?: React.ReactNode; right?
 };
 
 const ROLE_ORDER = ["Top", "Jungle", "Mid", "Bot", "Support"];
+
+type BarMetric = "dm" | "gd" | "cs" | "v";
+
+/**
+ * Each lane's two players side by side for one number from the scoreboard (damage to champions, gold, CS, vision):
+ * blue's bar grows left, red's right, all on one scale. Needs only the scoreboard, so a game has it as soon as
+ * Leaguepedia does (the leads above need Oracle's Elixir, a day or two later).
+ */
+const PlayerBars: React.FC<{ blueName: string; redName: string; blue: GamePlayer[]; red: GamePlayer[]; minutes?: number }> = ({
+  blueName,
+  redName,
+  blue,
+  red,
+  minutes,
+}) => {
+  const [metric, setMetric] = useState<BarMetric>("dm");
+  const metrics: [BarMetric, string][] = [
+    ["dm", tl("Damage")],
+    ["gd", tl("Gold")],
+    ["cs", "CS"],
+    ["v", tl("Vision")],
+  ];
+  const have = metrics.filter(([k]) => [...blue, ...red].some((p) => p[k] != null));
+  const m = have.some(([k]) => k === metric) ? metric : have[0]?.[0];
+  if (!m || blue.length !== 5 || red.length !== 5) return null;
+  const rows = ROLE_ORDER.map((r, i) => ({ r, b: blue.find((p) => p.r === r) || blue[i], o: red.find((p) => p.r === r) || red[i] }));
+  const max = Math.max(1, ...rows.flatMap((x) => [x.b[m] || 0, x.o[m] || 0]));
+  const total = (list: GamePlayer[]) => list.reduce((t, p) => t + (p[m] || 0), 0);
+  const fmt = (v: number | undefined) => (v == null ? "–" : m === "dm" || m === "gd" ? fmtGold(v) : String(v));
+  const perMin = (v: number | undefined) => (v != null && minutes ? (m === "cs" ? (v / minutes).toFixed(1) : Math.round(v / minutes)) : null);
+  const side = (p: GamePlayer, right: boolean) => {
+    const v = p[m];
+    const w = v ? (v / max) * 100 : 0;
+    return (
+      <div className={`flex items-center gap-2 min-w-0 ${right ? "" : "flex-row-reverse"}`}>
+        <span className={`text-[11px] tabular-nums font-semibold text-rw-text w-11 shrink-0 ${right ? "" : "text-right"}`}>{fmt(v)}</span>
+        <div className={`flex-1 h-3 flex ${right ? "" : "justify-end"}`}>
+          <div className={right ? "rounded-r" : "rounded-l"} style={{ width: `${w}%`, background: right ? RED : BLUE }} />
+        </div>
+      </div>
+    );
+  };
+  return (
+    <div className={`${card} space-y-1.5`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-rw-accent">{tl("Player by player")}</h3>
+        <div className="flex gap-1" role="group" aria-label={tl("Show")}>
+          {have.map(([k, label]) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setMetric(k)}
+              aria-pressed={m === k}
+              className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                m === k ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-3 text-[10px] uppercase tracking-wider font-bold">
+        <span className="truncate text-right" style={{ color: BLUE }}>
+          {blueName} · {fmt(total(blue))}
+        </span>
+        <span />
+        <span className="truncate" style={{ color: RED }}>
+          {redName} · {fmt(total(red))}
+        </span>
+      </div>
+      {rows.map(({ r, b, o }) => (
+        <div
+          key={r}
+          className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3"
+          title={`${roleName(r)}: ${b.n} ${fmt(b[m])}${perMin(b[m]) != null ? ` (${perMin(b[m])}/min)` : ""} · ${o.n} ${fmt(o[m])}${
+            perMin(o[m]) != null ? ` (${perMin(o[m])}/min)` : ""
+          }`}
+        >
+          <div className="min-w-0">
+            <div className="text-[10px] text-rw-sub truncate text-right">
+              {b.c && <ChampIcon name={b.c} size={14} />} {b.n}
+            </div>
+            {side(b, false)}
+          </div>
+          <span className="text-[9px] uppercase tracking-wider text-rw-muted text-center w-12">{roleName(r)}</span>
+          <div className="min-w-0">
+            <div className="text-[10px] text-rw-sub truncate">
+              {o.n} {o.c && <ChampIcon name={o.c} size={14} />}
+            </div>
+            {side(o, true)}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blue: GamePlayer[]; red: GamePlayer[] }> = ({ g, blueName, redName, blue, red }) => {
   const t = g.t?.blue;

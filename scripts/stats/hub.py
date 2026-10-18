@@ -1829,15 +1829,34 @@ def build(ctx) -> dict:
                 team_earnings[ctx.team_of(r["Team"], date_r or "0000")] += r["Prize_USD"]
 
     # -- storylines: collected on the team and player pages, the best go to notes.json ---------
+    champ_top = {}  # champion -> (games, page) of the player with the most pro games on it
+    for pg_, px_ in ctx.players.items():
+        for c_, v_ in px_["champs"].items():
+            if v_["g"] > champ_top.get(c_, (0, None))[0]:
+                champ_top[c_] = (v_["g"], pg_)
     all_notes = []
     notes_cut = (datetime.date.today() - datetime.timedelta(days=30)).isoformat()
 
     def note_score(nt):
-        """How notable a note is (rough): big round numbers and long streaks first."""
-        if nt["k"] == "ms":
+        """How notable a note is (rough): an unbeaten run at the event on now, records and comebacks first, then big
+        round numbers and long streaks."""
+        k = nt["k"]
+        if k == "ms":
             return nt["n"] / {"games": 100, "wins": 80, "kills": 500, "assists": 1000}[nt["s"]] - nt["left"] * 0.05
-        if nt["k"] == "streak":
+        if k == "streak":
             return nt["n"] * 0.8
+        if k == "evunb":
+            return 2 + nt["n"] * 1.2
+        if k == "crec":
+            return 3 + nt["n"] / 50
+        if k == "comeback":
+            return nt["n"] * 1.5
+        if k == "penta":
+            return 1.5 + nt["n"] * 1.2
+        if k == "cms":
+            return nt["n"] / 40 - nt["left"] * 0.2
+        if k == "form":
+            return nt["w"] * 0.4
         return nt["n"] * 0.5
 
     # -- ratings: win chances and power rankings ---------------------------------------------
@@ -2009,7 +2028,27 @@ def build(ctx) -> dict:
                 n_streak += 1
             if n_streak >= 4:
                 notes.append({"k": "streak", "w": 1 if won_last else 0, "n": n_streak})
+            # unbeaten at the tournament it's playing now (its newest series in the last 10 days)
+            last_s = ss_sorted[-1]
+            if last_s["date"][:10] >= (datetime.date.today() - datetime.timedelta(days=10)).isoformat():
+                here = [x for x in ss_sorted if x["t"] == last_s["t"]]
+                won_here = [x for x in here if ((x["fa"] if x["w"] == x["a"] else x["fb"]) == fid)]
+                if len(here) >= 3 and len(won_here) == len(here):
+                    gw = sum(x["wa"] if x["fa"] == fid else x["wb"] for x in here)
+                    gl = sum(x["wb"] if x["fa"] == fid else x["wa"] for x in here)
+                    notes.append({"k": "evunb", "e": last_s["t"], "n": len(here), "gw": gw, "gl": gl})
         this_year = today[:4]
+        tg_sorted = sorted(t_games.get(fid, []), key=lambda r: r[0])
+        # form over the last 10 games (when the series streak doesn't already say it)
+        last10 = tg_sorted[-10:]
+        if len(last10) == 10 and not any(nt["k"] == "streak" for nt in notes):
+            w10 = sum(r[7] for r in last10)
+            if w10 >= 9:
+                notes.append({"k": "form", "w": w10, "n": 10})
+        # comebacks: games won this year from 2,500+ gold down at 15 minutes (Oracle's Elixir)
+        comebacks = sum(1 for r in tg_sorted if r[0][:4] == this_year and r[7] and r[23] and r[23][1] is not None and r[23][1] <= -2500)
+        if comebacks >= 2:
+            notes.append({"k": "comeback", "n": comebacks, "y": this_year})
         side_rec = {"b": [0, 0], "r": [0, 0]}
         for r in t_games.get(fid, []):
             if r[0][:4] == this_year:
@@ -2122,9 +2161,23 @@ def build(ctx) -> dict:
             if r[0][:4] == this_year and r[2]:
                 champ_rec[r[2]][0] += 1
                 champ_rec[r[2]][1] += r[6]
-        unbeaten = sorted(((g_c, c) for c, (g_c, w_c) in champ_rec.items() if g_c >= 5 and w_c == g_c), reverse=True)
+        # unbeaten on a champion this year: only a run long enough to mean something
+        unbeaten = sorted(((g_c, c) for c, (g_c, w_c) in champ_rec.items() if g_c >= 7 and w_c == g_c), reverse=True)
         if unbeaten:
             notes.append({"k": "champ", "c": unbeaten[0][1], "n": unbeaten[0][0], "y": this_year})
+        # the most pro games on a champion of any player
+        recs = sorted(((v["g"], c) for c, v in p["champs"].items() if v["g"] >= 40 and champ_top.get(c, (0, None))[1] == page), reverse=True)
+        if recs:
+            notes.append({"k": "crec", "c": recs[0][1], "n": recs[0][0]})
+        # close to a round number of games on one champion (50, 100, 150...)
+        near = sorted((((v["g"] // 50 + 1) * 50, (v["g"] // 50 + 1) * 50 - v["g"], c) for c, v in p["champs"].items()
+                       if v["g"] >= 40 and (v["g"] // 50 + 1) * 50 - v["g"] <= 3), reverse=True)
+        if near:
+            notes.append({"k": "cms", "c": near[0][2], "n": near[0][0], "left": near[0][1]})
+        # pentakills this year
+        pent_y = sum(x_ for d_, _c, _g, _e, x_, _n in p_pentas.get(page, []) if d_[:4] == this_year)
+        if pent_y >= 2:
+            notes.append({"k": "penta", "n": pent_y, "y": this_year})
         if notes:
             as_of = (last_date or "")[:10]
             obj["notes"] = {"asOf": as_of, "list": notes}
@@ -2425,7 +2478,15 @@ def build(ctx) -> dict:
     main_leagues = {l["u"] for l in leagues_out if l["pr"]}
     all_notes.sort(key=lambda x: -x[0])
     # national teams (Asian Games, KeSPA Cup guests) aren't what fans follow week to week
-    out.json("notes.json", [x[2] for x in all_notes if x[1] in main_leagues and "national team" not in x[2]["name"].lower()][:40])
+    # the stats home's list: the best first, but no more than 8 of one kind, so it isn't all milestones
+    picked, per_kind = [], Counter()
+    for _s, lu_n, nt in all_notes:
+        if lu_n in main_leagues and "national team" not in nt["name"].lower() and per_kind[nt["k"]] < 8:
+            picked.append(nt)
+            per_kind[nt["k"]] += 1
+        if len(picked) >= 40:
+            break
+    out.json("notes.json", picked)
 
     # -- champion game logs per league and year, and their index -----------------------------------
     cg_years = defaultdict(dict)
@@ -2515,9 +2576,13 @@ def build(ctx) -> dict:
     latest_major.sort(key=lambda x: x.get("en") or "", reverse=True)
     # Running now or starting within two weeks (main leagues and internationals, whole events not stages)
     soon = (datetime.date.today() + datetime.timedelta(days=14)).isoformat()
+    # top-level events, plus international invitationals Leaguepedia files as second-level (Demacia Cup), until the
+    # day after their last match (it's still that day in the Americas when the build runs)
+    yesterday = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
     current = [x for y in years[:2] for x in events_by_year[y]
-               if x.get("lv") == "Primary" and not x.get("q") and not x.get("p") and (x.get("st") or "9") <= soon
-               and (x.get("en") or "") >= today]
+               if (x.get("lv") == "Primary" or (x.get("lv") == "Secondary" and x.get("r") == "International"))
+               and not x.get("q") and not x.get("p") and (x.get("st") or "9") <= soon
+               and (x.get("en") or "") >= yesterday]
     current.sort(key=lambda x: (x.get("r") != "International", x.get("st") or ""))
     this_year = today[:4]
     busiest = sorted(((x, p) for x, p in ((ctx.players[pg], pg) for pg in ctx.players)

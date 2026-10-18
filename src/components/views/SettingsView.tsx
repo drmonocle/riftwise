@@ -376,11 +376,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {THEMES.map((th) => {
                 const on = (settings.theme || DEFAULT_THEME) === th.id;
-                const name = { rift: tl("Rift"), classic: tl("Classic"), midnight: tl("Midnight") }[th.id];
+                const name = {
+                  rift: tl("Rift"),
+                  classic: tl("Classic"),
+                  midnight: tl("Midnight"),
+                  // team names stay as they are in every language
+                  tsm: "TSM",
+                  flyquest: "FlyQuest",
+                  t1: "T1",
+                }[th.id];
                 const about = {
                   rift: tl("Deep indigo with a soft violet, like the Rift Herald"),
                   classic: tl("The original navy and Hextech gold"),
                   midnight: tl("Graphite with a cool blue"),
+                  tsm: tl("TSM's black and white, with a steel blue"),
+                  flyquest: tl("FlyQuest green on near-black"),
+                  t1: tl("T1 red on black, with championship gold"),
                 }[th.id];
                 return (
                   <button

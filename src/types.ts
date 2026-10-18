@@ -135,7 +135,7 @@ export interface AppSettings {
   minimizeToTrayOnClose: boolean;
   startWithWindows: boolean;
   /** Colour theme (src/theme.ts); older saves have none and get the default. */
-  theme?: "rift" | "classic" | "midnight";
+  theme?: "rift" | "classic" | "midnight" | "tsm" | "flyquest" | "t1";
   /** "auto" follows the browser / Windows language. */
   language: "auto" | "en" | "es" | "pt-BR" | "ko" | "vi" | "zh-CN" | "zh-TW" | "ja" | "fr" | "de" | "tr";
   followedTeams: string[];
