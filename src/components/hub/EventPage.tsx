@@ -3,7 +3,7 @@ import React, { useMemo, useState } from "react";
 import { Trophy, MapPin, CalendarDays, Coins, Download } from "lucide-react";
 import { downloadEventCsv, downloadStagesCsv } from "./DownloadsPage";
 import { BracketBoard, type BracketColumn } from "../BracketBoard";
-import { tl, tn, tk, regionName, stageName } from "../../i18n";
+import { tl, tn, tk, regionName, stageLabel } from "../../i18n";
 import { winRate } from "../../stats";
 import { loadHubEvent } from "../../hub/data";
 import type { HubEvent, SeriesRow, Stage, StandingRow } from "../../hub/types";
@@ -155,7 +155,7 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
                     <td className={td}>
                       <TeamLink name={r.t} u={r.u} />
                     </td>
-                    <td className={`${td} text-right text-rw-muted`}>{r.usd ? fmtUsd(r.usd) : ""}</td>
+                    <td className={`${td} text-right text-rw-muted`} data-sort={r.usd || 0}>{r.usd ? fmtUsd(r.usd) : ""}</td>
                   </tr>
                 ))}
               </tbody>
@@ -340,16 +340,6 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
 };
 
 /** Stage names from Leaguepedia ("Week 3", "Round 1", "Quarterfinals") in the reader's language where we can. */
-export function stageLabel(name: string): string {
-  let m = /^Week (\d+)$/i.exec(name);
-  if (m) return tl("Week {n}", { n: m[1] });
-  m = /^Swiss Round (\d+)$/i.exec(name);
-  if (m) return stageName(`Round ${m[1]}`);
-  m = /^Group ([A-Z0-9]+)$/i.exec(name);
-  if (m) return tl("Group {name}", { name: m[1] });
-  if (/^(third|3rd)[- ]place match$/i.test(name)) return tl("Third-place match");
-  return stageName(name);
-}
 
 const StageLists: React.FC<{ stages: Stage[] }> = ({ stages }) => {
   // Long leagues: one stage at a time, newest first

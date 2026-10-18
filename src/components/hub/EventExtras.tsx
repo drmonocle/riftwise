@@ -1,7 +1,7 @@
 /** Tournament page extras: quick facts, team rosters (with subs and coaches), records between regions. */
 import React, { useState } from "react";
 import { Flame, Crown, Timer, Swords } from "lucide-react";
-import { tl, tk, roleName } from "../../i18n";
+import { tl, tk, roleName, regionName } from "../../i18n";
 import type {
   EventOverview,
   EventRoster,
@@ -240,7 +240,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[] }> = ({
             <div className="font-semibold mb-1 truncate">
               <TeamLink name={t.t} u={t.u} />
               {t.r && (
-                <span className="text-rw-muted text-[10px] ml-1">{t.r}</span>
+                <span className="text-rw-muted text-[10px] ml-1">{regionName(t.r, t.r)}</span>
               )}
             </div>
             <ul className="space-y-0.5">
@@ -286,7 +286,7 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
           {e.regions.map((r) => (
             <tr key={r.a + r.b} className="border-t border-rw-border">
               <td className={`${td} text-rw-text`}>
-                {r.a} vs {r.b}
+                {regionName(r.a, r.a)} vs {regionName(r.b, r.b)}
               </td>
               <td className={`${td} tabular-nums`}>
                 <span

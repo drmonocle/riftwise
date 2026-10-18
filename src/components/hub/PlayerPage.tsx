@@ -1,7 +1,7 @@
 /** Player page: career numbers, bio, tournaments, teams, champion pool, recent games and bests. */
 import React, { useState } from "react";
 import { Trophy, ExternalLink } from "lucide-react";
-import { tl, tk, tc, roleName, eventTitle } from "../../i18n";
+import { tl, tk, tc, roleName, eventTitle, regionName } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { loadHubPlayer } from "../../hub/data";
@@ -126,7 +126,7 @@ const PlayerView: React.FC<{
               </>
             )}
             {p.bio.res && (
-              <> · {tl("Residency: {region}", { region: p.bio.res })}</>
+              <> · {tl("Residency: {region}", { region: regionName(p.bio.res, p.bio.res) })}</>
             )}
           </p>
         )}

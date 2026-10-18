@@ -1,5 +1,5 @@
 import { Match, StreamEvent, StreamStatus, AppSettings, League, PlayerEntry, CatalogTeam } from "./types";
-import { tl, eventName, stageName } from "./i18n";
+import { tl, eventName, stageName, tc } from "./i18n";
 
 // Current schedule codes folded into the code their franchise history is stored under in
 // all_time_h2h.json (keep in sync with CODE_ALIASES in h2h-refresh/assemble.py).
@@ -867,7 +867,7 @@ export function computeLeagueStandings(
         if (s.results[i] === last) count++;
         else break;
       }
-      streak = `${count}${last ? "W" : "L"}`;
+      streak = `${count}${last ? tc("short result", "W") : tc("short result", "L")}`;
     }
 
     return {

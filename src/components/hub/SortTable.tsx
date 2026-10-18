@@ -1,7 +1,7 @@
 /** A table whose columns sort when their header is clicked (gol.gg-style stat tables). */
 import React, { useMemo, useRef, useState } from "react";
 import { ClipboardCopy, Download } from "lucide-react";
-import { tl } from "../../i18n";
+import { tl, locale } from "../../i18n";
 import { IS_WEB } from "../../platform";
 import { td, th } from "./ui";
 
@@ -104,7 +104,7 @@ export function SortTable<T>({
       const y = col.value(b);
       if (x === null || x === undefined) return 1;
       if (y === null || y === undefined) return -1;
-      const c = typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y));
+      const c = typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y), locale());
       return sort.desc ? -c : c;
     });
     return limit ? list.slice(0, limit) : list;

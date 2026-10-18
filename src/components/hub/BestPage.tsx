@@ -6,7 +6,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { PlayCircle } from "lucide-react";
-import { tl, tn } from "../../i18n";
+import { tl, tn, stageLabel } from "../../i18n";
 import { loadAliases, loadBest, loadBestIndex, normText } from "../../hub/data";
 import type { BestGame, BestSeries } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
@@ -238,7 +238,7 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
         </HubLink>
         <div className="text-[10px] text-rw-muted mt-0.5 sm:hidden">
           <EventLink name={en} u={eslug} className="hover:text-rw-accent hover:underline" />
-          {stage ? ` · ${stage}` : ""} · {fmtDate(date)}
+          {stage ? ` · ${stageLabel(stage)}` : ""} · {fmtDate(date)}
         </div>
         <div className="text-[10px] text-rw-muted mt-0.5 flex flex-wrap gap-x-2">
           {ka != null && kb != null && <span className="tabular-nums">{tl("{a}–{b} kills", { a: ka, b: kb })}</span>}
@@ -256,7 +256,7 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
       </td>
       <td className="py-2 pr-3 min-w-[10rem] hidden sm:table-cell">
         <EventLink name={en} u={eslug} className="text-rw-sub hover:text-rw-accent hover:underline" />
-        {stage && <div className="text-[10px] text-rw-muted">{stage}</div>}
+        {stage && <div className="text-[10px] text-rw-muted">{stageLabel(stage)}</div>}
       </td>
       <td className="py-2 pr-1 text-rw-muted whitespace-nowrap text-right hidden sm:table-cell">{fmtDate(date)}</td>
     </tr>
@@ -278,7 +278,7 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
         </HubLink>
         <div className="text-[10px] text-rw-muted mt-0.5 sm:hidden">
           <EventLink name={en} u={eslug} className="hover:text-rw-accent hover:underline" />
-          {stage ? ` · ${stage}` : ""} · {fmtDate(date)}
+          {stage ? ` · ${stageLabel(stage)}` : ""} · {fmtDate(date)}
         </div>
         <div className="text-[10px] text-rw-muted mt-0.5">
           {tn("{n} game", "{n} games", games)} ·{" "}
@@ -289,7 +289,7 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
       </td>
       <td className="py-2 pr-3 min-w-[10rem] hidden sm:table-cell">
         <EventLink name={en} u={eslug} className="text-rw-sub hover:text-rw-accent hover:underline" />
-        {stage && <div className="text-[10px] text-rw-muted">{stage}</div>}
+        {stage && <div className="text-[10px] text-rw-muted">{stageLabel(stage)}</div>}
       </td>
       <td className="py-2 pr-1 text-rw-muted whitespace-nowrap text-right hidden sm:table-cell">{fmtDate(date)}</td>
     </tr>

@@ -1,7 +1,7 @@
 /** Team page: record, titles, tournaments with placements, roster by year, rivals and champions. */
 import React, { useState } from "react";
 import { Trophy } from "lucide-react";
-import { tl, roleName, regionName, eventTitle } from "../../i18n";
+import { tl, roleName, regionName, eventTitle, tc } from "../../i18n";
 import { winRate } from "../../stats";
 import { loadHubTeam } from "../../hub/data";
 import type { HubTeam } from "../../hub/types";
@@ -153,7 +153,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
                 <li key={i} className="flex justify-between gap-2 min-w-0">
                   <span className="truncate min-w-0">
                     <span className={r.us > r.them ? "text-rw-teal font-bold" : "text-rw-red font-bold"}>
-                      {r.us > r.them ? "W" : "L"} {r.us}-{r.them}
+                      {r.us > r.them ? tc("short result", "W") : tc("short result", "L")} {r.us}-{r.them}
                     </span>{" "}
                     {r.g ? (
                       <HubLink to={{ kind: "match", slug: r.g }}>vs {r.opp}</HubLink>
@@ -183,7 +183,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
                 <tr key={y.y} className="border-t border-rw-border">
                   <td className={`${td} text-rw-text`}>
                     {y.y}
-                    {y.as !== t.name && <span className="text-rw-muted text-[10px]"> as {y.as}</span>}
+                    {y.as !== t.name && <span className="text-rw-muted text-[10px]"> {tl("as {name}", { name: y.as })}</span>}
                   </td>
                   <td className={`${td} text-rw-sub`}>
                     {y.w}-{y.g - y.w}
@@ -329,7 +329,7 @@ const EventRow: React.FC<{ x: HubTeam["events"][number]; teamName: string }> = (
       </td>
       <td className={`${td} text-rw-sub`}>{hidden ? "–" : `${x.sw}-${x.sg - x.sw}`}</td>
       <td className={`${td} text-rw-sub`}>{hidden ? "–" : `${x.w}-${x.g - x.w}`}</td>
-      <td className={`${td} text-rw-muted`}>{x.usd && !hidden ? fmtUsd(x.usd) : ""}</td>
+      <td className={`${td} text-rw-muted`} data-sort={x.usd && !hidden ? x.usd : 0}>{x.usd && !hidden ? fmtUsd(x.usd) : ""}</td>
     </tr>
   );
 };

@@ -169,7 +169,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
             {status?.message && nextLine && <p className="text-xs text-rw-teal">{nextLine}</p>}
             {phase.lastAired && (
               <p className="text-[11px] text-rw-muted">
-                Last aired: {phase.lastAired.team1 && phase.lastAired.team2 ? `${phase.lastAired.team1} vs ${phase.lastAired.team2}, ` : ""}
+                {tl("Last aired:")} {phase.lastAired.team1 && phase.lastAired.team2 ? `${phase.lastAired.team1} vs ${phase.lastAired.team2}, ` : ""}
                 {streamEventTitle(phase.lastAired)}
                 {phase.lastAired.stage ? ` ${stageName(phase.lastAired.stage)}` : ""}
               </p>
@@ -188,7 +188,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
               onClick={() => onOpenUrl(YOUTUBE_CHANNEL_URL)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#cc0000] hover:bg-[#e60000] text-white font-bold text-xs"
             >
-              <Play className="w-3.5 h-3.5 fill-current" /> Full VODs on YouTube
+              <Play className="w-3.5 h-3.5 fill-current" /> {tl("Full VODs on YouTube")}
             </button>
             <button
               onClick={() => onOpenUrl(TWITCH_URL)}
@@ -249,7 +249,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
             </span>
             {current?.isBanger && (
               <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-[#ff4655] px-2 py-0.5 rounded">
-                <Flame className="w-3 h-3 fill-current" /> BANGER
+                <Flame className="w-3 h-3 fill-current" /> <span className="uppercase">{tl("Banger")}</span>
               </span>
             )}
           </div>

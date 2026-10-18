@@ -34,3 +34,28 @@ describe("sortable table values", () => {
     expect(sortValue(cell(""))).toBeNull();
   });
 });
+
+import { localPlain } from "../components/STable";
+import { setDictionaryForTests } from "../i18n";
+describe("numbers written the reader's way", () => {
+  it("German: 1.234 is a thousand, 3.69 a KDA, prize money in euros style", () => {
+    setDictionaryForTests("de", {});
+    expect(localPlain("1.234")).toBe("1234");
+    expect(localPlain("1.234.567")).toBe("1234567");
+    expect(localPlain("3.69")).toBe("3.69");
+    expect(localPlain("100.000 $")).toBe("100000");
+    expect(localPlain("3,5")).toBe("3.5");
+  });
+  it("Brazil and English", () => {
+    setDictionaryForTests("pt-BR", {});
+    expect(localPlain("US$ 100.000")).toBe("100000");
+    setDictionaryForTests("en", {});
+    expect(localPlain("$1,250,000")).toBe("1250000");
+    expect(localPlain("+218")).toBe("218");
+  });
+  it("French spaces", () => {
+    setDictionaryForTests("fr", {});
+    expect(localPlain("1\u202f234,5")).toBe("1234.5");
+    expect(localPlain("100\u202f000\u00a0$US")).toBe("100000");
+  });
+});

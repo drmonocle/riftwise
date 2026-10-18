@@ -3,7 +3,7 @@ import { CatalogData, Match, AppSettings, PlayerEntry } from "../types";
 import { X, Star, Calendar, Shield, ExternalLink, User, BarChart3 } from "lucide-react";
 import { computeHeadToHead, pickTeamByCode } from "../helpers";
 import { H2HMeter } from "./H2HMeter";
-import { tl, locale, roleName, regionName } from "../i18n";
+import { tl, locale, roleName, regionName, tc } from "../i18n";
 import { findHubTeam, loadHubIndex } from "../hub/data";
 import { navigateHub } from "../hub/route";
 
@@ -294,7 +294,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             vs <span className="text-rw-accent">{opp}</span> ({oppCode})
                           </div>
                           <div className="text-[10px] text-rw-sub">
-                            {m.leagueName} · Bo{m.bestOf}
+                            {m.leagueName} · {tc("short best of", "Bo{n}", { n: m.bestOf })}
                           </div>
                           {h2h && <H2HMeter team1Code={teamCode} team2Code={oppCode} h2h={h2h} matchId={m.matchId} />}
                         </div>
@@ -356,7 +356,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                               won ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"
                             }`}
                           >
-                            {won ? "WIN" : "LOSS"}
+                            <span className="uppercase">{won ? tl("Win") : tl("Loss")}</span>
                           </span>
                           <span className="font-semibold text-rw-text">vs {oppName}</span>
                         </div>

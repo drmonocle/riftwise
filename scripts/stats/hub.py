@@ -487,7 +487,7 @@ def build(ctx) -> dict:
             "mid": key[0], "n": key[1], "status": "full", "tname": r["tournament_name"], "date": (r["date_utc"] or "")[:16],
             "patch": r["patch"], "t1": r["team1"], "t2": r["team2"], "w": r["winner"] if r["winner"] in (r["team1"], r["team2"]) else None,
             "sa": None, "sb": None, "bo": r["best_of"], "remake": 0, "ff": 0, "vod": r["vod_url"],
-            "gid": r["game_id"] if r["game_id"] in ctx.games else None, "tab": r["stage_tab"], "mepi": r["mepi_rating"],
+            "gid": r["game_id"] if r["game_id"] in ctx.games else None, "tab": html.unescape(r["stage_tab"] or "") or None, "mepi": r["mepi_rating"],
             "m_min": r["duration_minutes"], "m_k": {r["team1"]: r["team1_kills"], r["team2"]: r["team2_kills"]},
         }
         added_new += 1
@@ -531,7 +531,7 @@ def build(ctx) -> dict:
                           Winner, DateTime_UTC, FF, IsTiebreaker FROM lp_match_schedule WHERE MatchId IS NOT NULL"""
             ):
                 s = {
-                    "mid": r[0], "op": r[1], "tab": r[2] or "", "ntab": num(r[3]), "n": num(r[4]), "bo": num(r[5]),
+                    "mid": r[0], "op": r[1], "tab": html.unescape(r[2] or ""), "ntab": num(r[3]), "n": num(r[4]), "bo": num(r[5]),
                     "a": clean(r[6]), "b": clean(r[7]), "sa": num(r[8]), "sb": num(r[9]), "w": str(r[10] or ""), "date": (r[11] or "")[:16],
                     "ff": r[12], "tb": r[13],
                 }

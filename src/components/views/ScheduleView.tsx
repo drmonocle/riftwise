@@ -8,7 +8,7 @@ import { isMatchFollowed, followedPlayerTeams, computeHeadToHead } from "../../h
 import { clickable } from "../../a11y";
 import { H2HMeter } from "../H2HMeter";
 import { StandingsView } from "./StandingsView";
-import { tl, locale, clockOptions } from "../../i18n";
+import { tl, locale, clockOptions, tc } from "../../i18n";
 import { searchAlias } from "../../searchAliases";
 import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 
@@ -379,7 +379,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     <div className="flex items-center gap-2 sm:w-32 justify-end shrink-0 ml-auto sm:ml-0 order-2 sm:order-3">
                       <ShareMatchButton match={m} />
                       <span className="text-[10px] text-rw-sub bg-rw-bg px-2 py-0.5 rounded border border-rw-border font-medium">
-                        Bo{m.bestOf}
+                        {tc("short best of", "Bo{n}", { n: m.bestOf })}
                       </span>
                       {m.state === "completed" ? (
                         <span className="text-[10px] text-rw-sub font-semibold">{tl("FINAL")}</span>

@@ -268,7 +268,7 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
           {ROLE_ORDER.map((role, i) => (
             <tr key={role} className="border-t border-rw-border/60">
               <PlayerCells p={l[i]} align="left" />
-              <td className="px-1 text-center text-[9px] uppercase text-rw-muted w-12">{roleName(ROLE_LABEL[role])}</td>
+              <td className="px-1 text-center text-[9px] uppercase text-rw-muted min-w-12 whitespace-nowrap">{roleName(ROLE_LABEL[role])}</td>
               <PlayerCells p={r[i]} align="right" />
             </tr>
           ))}

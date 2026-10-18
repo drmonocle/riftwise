@@ -568,7 +568,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
               >
                 <span className="w-2 h-2 rounded-full bg-rw-red animate-pulse" />
                 <span>
-                  <strong>{s.leagueName}</strong> broadcast is live
+                  {tl("{league} broadcast is live", { league: s.leagueName })}
                 </span>
               </button>
             ))}
@@ -882,7 +882,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   onClick={() => onSelectTab("schedule")}
                   className="text-rw-teal hover:underline text-[11px] font-medium"
                 >
-                  View all {unstarted.length} matches →
+                  {tl("View all {n} matches →", { n: unstarted.length })}
                 </button>
               </div>
               <div className="grid gap-2">

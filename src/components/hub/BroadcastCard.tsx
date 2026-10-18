@@ -7,7 +7,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MonitorPlay } from "lucide-react";
 import { toBlob } from "html-to-image";
-import { tl } from "../../i18n";
+import { tl, locale } from "../../i18n";
 import { IS_WEB } from "../../platform";
 import { ChampIcon } from "./ui";
 import type { PlayerAgg, TeamAgg } from "../../hub/period";
@@ -255,7 +255,7 @@ export const BroadcastCardButton: React.FC<{ data: () => CardData; name: string 
 
 const pc = (v: number | null | undefined) => (v == null ? "–" : `${v.toFixed(1)}%`);
 const wrOf = (w: number, g: number) => (g ? (w / g) * 100 : null);
-const sg = (v: number | null | undefined) => (v == null ? "–" : `${v > 0 ? "+" : ""}${Math.round(v).toLocaleString("en-US")}`);
+const sg = (v: number | null | undefined) => (v == null ? "–" : `${v > 0 ? "+" : ""}${Math.round(v).toLocaleString(locale())}`);
 const n1 = (v: number | null | undefined) => (v == null ? "–" : String(v));
 
 /** Two teams over a period: record, gold, objectives and (with Oracle's Elixir games) the early game. */
@@ -312,7 +312,7 @@ export function playerCardData(
     row(tl("KDA"), String(A.kda), A.kda, B && String(B.kda), B?.kda),
     row("KP", pc(A.kp), A.kp, B && pc(B.kp), B?.kp, A.kp),
     row(tl("CS / min"), n1(A.csm), A.csm, B && n1(B.csm), B?.csm),
-    row(tl("Damage / min"), A.dpm != null ? A.dpm.toLocaleString("en-US") : "–", A.dpm, B && (B.dpm != null ? B.dpm.toLocaleString("en-US") : "–"), B?.dpm),
+    row(tl("Damage / min"), A.dpm != null ? A.dpm.toLocaleString(locale()) : "–", A.dpm, B && (B.dpm != null ? B.dpm.toLocaleString(locale()) : "–"), B?.dpm),
     row(tl("DMG%"), pc(A.dmgShare), A.dmgShare, B && pc(B.dmgShare), B?.dmgShare),
   ];
   if (A.tl || B?.tl) {

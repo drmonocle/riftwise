@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { LANGUAGES, detectLanguage, tl, tn, tc, roleName, regionName, stageName, setDictionaryForTests } from "../i18n";
+import { LANGUAGES, detectLanguage, tl, tn, tc, roleName, regionName, stageName, stageLabel, setDictionaryForTests } from "../i18n";
 
 // The app's source files as text (tests excluded) and the language files.
 const SOURCES = import.meta.glob(["../**/*.ts", "../**/*.tsx", "!../**/*.test.ts", "!../__tests__/**", "!../i18n/index.ts"], {
@@ -17,6 +17,8 @@ const DATA_KEYS = [
   ...["Top", "Jungle", "Mid", "Bot", "Support"].map((r) => `role::${r}`),
   ...["Worlds", "MSI", "First Stand"].map((e) => `event::${e}`),
   "First Stand",
+  "Week {n}",
+  "Third-place match",
   "stage day::{stage} Day {n}",
   "stage day::Day {n}",
   ...[
@@ -38,6 +40,23 @@ const DATA_KEYS = [
     "Qualifier Series",
     "Last Chance Qualifier",
     "5th Place",
+    "Bracket Round {n}",
+    "Playoffs Round {n}",
+    "Round of {n}",
+    "Stage {n}",
+    "Upper Bracket Round {n}",
+    "Lower Bracket Round {n}",
+    "Playoffs",
+    "Knockout Stage",
+    "Bracket Stage",
+    "Regular Season",
+    "Main Event",
+    "Promotion",
+    "Qualifying Round",
+    "Upper Bracket",
+    "Lower Bracket",
+    "Upper Bracket Final",
+    "Lower Bracket Final",
   ].map((s) => `stage::${s}`),
   ...[
     "INTERNATIONAL",
@@ -152,6 +171,19 @@ describe("translations", () => {
     expect(tn("{n} match", "{n} matches", 0)).toBe("0 match"); // French: 0 is singular
     expect(tn("{n} match", "{n} matches", 5)).toBe("5 matchs");
     expect(tc("short tab", "Settings")).toBe("Settings");
+  });
+
+  it("translates Leaguepedia stage names piece by piece", () => {
+    setDictionaryForTests("ko", JSON.parse(JSON.stringify(LOCALE_FILES["../i18n/locales/ko.json"])));
+    expect(stageLabel("Week 3")).toBe("3주차");
+    expect(stageLabel("Round of 16")).toBe("16강");
+    expect(stageLabel("Playoffs - Round 1")).toBe("플레이오프 · 1라운드");
+    expect(stageLabel("Playoffs Round 2")).toBe("플레이오프 2라운드");
+    expect(stageLabel("Stage 2 Round 3")).toBe("스테이지 2 · 3라운드");
+    expect(stageLabel("Winners Finals")).toBe("승자조 결승");
+    expect(stageLabel("Loser's Round 1")).toBe("패자조 1라운드");
+    expect(stageLabel("Swiss Round 4")).toBe("4라운드");
+    expect(stageLabel("Something New")).toBe("Something New");
   });
 
   it("picks the language from the browser", () => {

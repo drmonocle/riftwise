@@ -2,13 +2,16 @@
  * Champion, item, summoner spell and rune pictures from Riot's Data Dragon (allowed for fan sites).
  * The stats name things in English ("Kai'Sa", "Rabadon's Deathcap", "Flash", "Conqueror"), so the
  * English lists are loaded once (cached a week) to turn names into picture addresses. Anything not
- * found (old items, renamed runes) is shown as text instead.
+ * found (old items, renamed runes) is shown as text instead. In another language, Riot's names in that language
+ * are loaded too, for itemName() / spellName() / runeName().
  */
 import { useEffect, useState } from "react";
+import { currentLang } from "../i18n";
+import { DD_LOCALE } from "../champions";
 
 const DD = "https://ddragon.leagueoflegends.com/cdn";
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-const KEY = "riftwatch_ddragon_maps_v4";
+const KEY = "riftwatch_ddragon_maps_v5";
 
 interface Maps {
   v: string;
@@ -18,6 +21,10 @@ interface Maps {
   rune: Record<string, string>; // normalized name -> icon path ("perk-images/Styles/...png")
   full: Record<string, 1>; // normalized names of finished items (not parts, starters or consumables)
   names: string[]; // every champion's English name ("Kai'Sa"), for the draft board
+  // the reader's language (empty in English): item id / spell image / rune icon -> name
+  locItem?: Record<string, string>;
+  locSpell?: Record<string, string>;
+  locRune?: Record<string, string>;
 }
 
 let maps: Maps | null = null;
@@ -30,9 +37,10 @@ function loadMaps(): Promise<void> {
   if (loading) return loading;
   loading = (async () => {
     try {
-      localStorage.removeItem("riftwatch_ddragon_maps_v2"); // older copy without the champion list
+      localStorage.removeItem("riftwatch_ddragon_maps_v2"); // older copies
+      localStorage.removeItem("riftwatch_ddragon_maps_v4");
       const cached = JSON.parse(localStorage.getItem(KEY) || "null");
-      if (cached && Date.now() - cached.at < WEEK_MS) {
+      if (cached && Date.now() - cached.at < WEEK_MS && cached.lang === currentLang()) {
         maps = cached.maps;
         return;
       }
@@ -67,9 +75,27 @@ function loadMaps(): Promise<void> {
         m.rune[norm(tree.name)] = tree.icon;
         for (const slot of tree.slots) for (const r of slot.runes) m.rune[norm(r.name)] = r.icon;
       }
+      const loc = DD_LOCALE[currentLang()];
+      if (loc) {
+        try {
+          const getL = (f: string) => fetch(`${DD}/${v}/data/${loc}/${f}`).then((r) => r.json());
+          const [li, ls, lr] = await Promise.all([getL("item.json"), getL("summoner.json"), getL("runesReforged.json")]);
+          m.locItem = {};
+          m.locSpell = {};
+          m.locRune = {};
+          for (const [id, it] of Object.entries<any>(li.data)) m.locItem[id] = it.name;
+          for (const s of Object.values<any>(ls.data)) m.locSpell[s.image.full] = s.name;
+          for (const tree of lr) {
+            m.locRune[tree.icon] = tree.name;
+            for (const slot of tree.slots) for (const r of slot.runes) m.locRune[r.icon] = r.name;
+          }
+        } catch {
+          /* English names, then */
+        }
+      }
       maps = m;
       try {
-        localStorage.setItem(KEY, JSON.stringify({ at: Date.now(), maps: m }));
+        localStorage.setItem(KEY, JSON.stringify({ at: Date.now(), lang: currentLang(), maps: m }));
       } catch {
         /* storage full: fine for this session */
       }
@@ -137,6 +163,24 @@ const RETIRED_RUNES: Record<string, string> = {
   kleptomancy: "perk-images/Styles/Inspiration/Kleptomancy/Kleptomancy.png",
   prototypeomnistone: "perk-images/Styles/Inspiration/MasterKey/MasterKey.png",
 };
+
+/** An item's name in the reader's language (the English name until the lists arrive, or for a removed item). */
+export function itemName(name: string): string {
+  const id = maps?.item[norm(name)];
+  return (id && maps?.locItem?.[id]) || name;
+}
+
+/** A summoner spell's name in the reader's language ("Flash" -> "Destello", "점멸"...). */
+export function spellName(name: string): string {
+  const f = maps?.spell[norm(name)];
+  return (f && maps?.locSpell?.[f]) || name;
+}
+
+/** A rune's name in the reader's language. */
+export function runeName(name: string): string {
+  const p = maps?.rune[norm(name)];
+  return (p && maps?.locRune?.[p]) || name;
+}
 
 export function runeIcon(name: string | undefined): string | null {
   if (!maps || !name) return null;
