@@ -25,9 +25,17 @@ if (IS_WEB && !leaving && "serviceWorker" in navigator) {
 
 // The language is loaded before the first render, so every screen can simply call tl().
 const startLanguage = loadSettings().language;
+// riftwise.gg/overlay: the stream overlay instead of the app (an OBS browser source)
+const overlay = IS_WEB && /^\/overlay\/?$/.test(window.location.pathname);
 if (!leaving) {
-  initI18n(startLanguage).finally(() => {
-    ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+  initI18n(startLanguage).finally(async () => {
+    const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
+    if (overlay) {
+      const { Overlay } = await import("./overlay/Overlay");
+      root.render(<Overlay />);
+      return;
+    }
+    root.render(
       <React.StrictMode>
         <App />
       </React.StrictMode>,

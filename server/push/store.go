@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,6 +19,7 @@ type Sub struct {
 	P256dh   string    `json:"p256dh"`
 	Auth     string    `json:"auth"`
 	Teams    []string  `json:"teams"`
+	Players  []string  `json:"players,omitempty"`
 	Lang     string    `json:"lang"`
 	Kickoff  bool      `json:"kickoff"`
 	Pregame  bool      `json:"pregame"`
@@ -26,6 +28,27 @@ type Sub struct {
 	Updated  time.Time `json:"updated"`
 	LastOK   time.Time `json:"lastOk,omitempty"`
 	Fails    int       `json:"fails,omitempty"`
+}
+
+// followsPlayer: the app sends the names it follows; matched without case or punctuation.
+func (s *Sub) followsPlayer(name string) bool {
+	n := normName(name)
+	for _, p := range s.Players {
+		if normName(p) == n {
+			return true
+		}
+	}
+	return false
+}
+
+func normName(s string) string {
+	var b []rune
+	for _, r := range strings.ToLower(s) {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r > 127 {
+			b = append(b, r)
+		}
+	}
+	return string(b)
 }
 
 func (s *Sub) follows(code string) bool {

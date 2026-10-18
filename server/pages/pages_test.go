@@ -76,7 +76,8 @@ func TestPageGetsItsOwnTags(t *testing.T) {
 		`<meta name="description" content="T1: 1,216-644 &amp; more &lt;b&gt;" />`,
 		`<link rel="canonical" href="https://riftwise.gg/team/t1" />`,
 		`<meta name="rw-stats" content="20261015000000" />`,
-		`<meta property="og:image" content="https://riftwise.gg/icon-512.png?v=2" />`,
+		`<meta property="og:image" content="https://riftwise.gg/og/team/t1.png" />`,
+		`<meta name="twitter:card" content="summary_large_image" />`,
 		`<meta name="twitter:title" content="T1 – stats | RiftWise" />`,
 		`<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage"`,
 		`<noscript><main><h1>T1 – stats | RiftWise</h1>`,
@@ -132,6 +133,18 @@ func TestUnknownAndOldNames(t *testing.T) {
 	}
 	if w := get(s, "/riftwise/about"); w.Code != 200 || !strings.Contains(w.Body.String(), "Dr. Monocle") {
 		t.Errorf("about: %d", w.Code)
+	}
+	if w := get(s, "/riftwise/og/team/t1.png"); w.Code != 200 || w.Header().Get("Content-Type") != "image/png" || w.Body.Len() < 2000 {
+		t.Errorf("og picture: %d %s %d bytes", w.Code, w.Header().Get("Content-Type"), w.Body.Len())
+	}
+	if w := get(s, "/riftwise/og/team/nobody.png"); w.Code != 404 {
+		t.Errorf("og picture of an unknown team: %d", w.Code)
+	}
+	if w := get(s, "/riftwise/og/stats/records.png"); w.Code != 200 {
+		t.Errorf("og picture of a section: %d", w.Code)
+	}
+	if w := get(s, "/riftwise/overlay"); w.Code != 200 || !strings.Contains(w.Body.String(), "noindex") {
+		t.Errorf("overlay page: %d", w.Code)
 	}
 	if w := get(s, "/riftwise/stats/best"); w.Code != 200 || !strings.Contains(w.Body.String(), "best pro LoL games") {
 		t.Errorf("best games: %d", w.Code)

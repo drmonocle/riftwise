@@ -49,6 +49,7 @@ function requestBody(sub: PushSubscription, s: AppSettings) {
     endpoint: j.endpoint,
     keys: j.keys,
     teams: s.followedTeams,
+    players: s.followedPlayers,
     lang: currentLang(),
     kickoff: s.notifyKickoff,
     pregame: s.notifyPregame,

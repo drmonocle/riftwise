@@ -1451,6 +1451,7 @@
   "Rating over the last year": "Điểm sức mạnh một năm qua",
   "Counters": "Counter",
   "{year} records": "Kỷ lục {year}",
+  "Add the two teams to the address: /overlay?teams=t1,geng": "Thêm hai đội vào địa chỉ: /overlay?teams=t1,geng",
   "now {team}": "nay là {team}",
   "title match::Final": "Chung kết",
   "title winner::Champion": "Nhà vô địch",

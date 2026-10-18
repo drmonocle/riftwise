@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	version  = "1.10.1"
+	version  = "1.11.0"
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -183,7 +183,7 @@ var noscriptLinks = [][2]string{
 }
 
 // page returns index.html with this page's title, description and preview tags.
-func (s *store) page(title, desc, canonical string, index bool) string {
+func (s *store) page(title, desc, canonical string, index bool, og string) string {
 	s.mu.RLock()
 	doc, ver := s.indexHTML, s.version
 	s.mu.RUnlock()
@@ -206,11 +206,18 @@ func (s *store) page(title, desc, canonical string, index bool) string {
 	tags.WriteString(`    <meta property="og:title" content="` + t + `" />` + "\n")
 	tags.WriteString(`    <meta property="og:description" content="` + d + `" />` + "\n")
 	tags.WriteString(`    <meta property="og:url" content="` + c + `" />` + "\n")
-	tags.WriteString(`    <meta property="og:image" content="` + publicURL + `icon-512.png?v=2" />` + "\n")
-	tags.WriteString(`    <meta name="twitter:card" content="summary" />` + "\n")
+	// the page's own preview picture (og.go), else the icon
+	img, card := publicURL+"icon-512.png?v=2", "summary"
+	if og != "" {
+		img, card = publicURL+og, "summary_large_image"
+		tags.WriteString(`    <meta property="og:image:width" content="1200" />` + "\n")
+		tags.WriteString(`    <meta property="og:image:height" content="630" />` + "\n")
+	}
+	tags.WriteString(`    <meta property="og:image" content="` + img + `" />` + "\n")
+	tags.WriteString(`    <meta name="twitter:card" content="` + card + `" />` + "\n")
 	tags.WriteString(`    <meta name="twitter:title" content="` + t + `" />` + "\n")
 	tags.WriteString(`    <meta name="twitter:description" content="` + d + `" />` + "\n")
-	tags.WriteString(`    <meta name="twitter:image" content="` + publicURL + `icon-512.png?v=2" />` + "\n")
+	tags.WriteString(`    <meta name="twitter:image" content="` + img + `" />` + "\n")
 	if !index {
 		tags.WriteString(`    <meta name="robots" content="noindex" />` + "\n")
 	} else if ld, err := json.Marshal(map[string]any{
@@ -237,12 +244,19 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	s.refresh()
 	rest := strings.TrimPrefix(r.URL.Path, basePath)
 	parts := strings.Split(strings.Trim(rest, "/"), "/")
-	status, title, desc, index := http.StatusOK, "", "", true
+	status, title, desc, index, og := http.StatusOK, "", "", true, ""
 
 	switch {
+	case parts[0] == "og":
+		s.serveOG(w, r)
+		return
 	case len(parts) == 1 && parts[0] == "about":
 		title = "About RiftWise: made by Kyle \"Dr. Monocle\" Hoover | RiftWise"
 		desc = "Who makes RiftWise, why, and its promises: free forever, no ads, no selling data, no account needed."
+		og = "og/home.png"
+	case len(parts) == 1 && parts[0] == "overlay":
+		// the stream overlay (OBS browser source): the app, not for search engines
+		title, desc, index = "RiftWise stream overlay", "Win chances, form and the live score of one matchup, for a stream.", false
 	case parts[0] == "stats":
 		sec := ""
 		if len(parts) > 1 {
@@ -254,6 +268,10 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		title, desc = info[0]+" | RiftWise", info[1]
+		og = "og/stats/" + sec + ".png"
+		if sec == "" {
+			og = "og/home.png"
+		}
 		if len(parts) == 3 {
 			title = "Pro LoL tournaments in " + parts[2] + " | RiftWise"
 			desc = "Every professional League of Legends tournament in " + parts[2] + ": results, brackets, standings and stats."
@@ -273,6 +291,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		title, desc, index = e.title, e.desc, e.index
+		og = "og/" + parts[0] + "/" + slug + ".png"
 		if len(parts) == 3 { // one season of a league: /league/lck/2025
 			name := strings.TrimSuffix(title, " | RiftWise")
 			if i := strings.Index(name, " – "); i > 0 {
@@ -288,7 +307,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	canonical := publicURL + rest
-	body := s.page(title, desc, canonical, index)
+	body := s.page(title, desc, canonical, index, og)
 	if body == "" {
 		http.Error(w, "RiftWise is starting, try again in a moment", http.StatusServiceUnavailable)
 		return

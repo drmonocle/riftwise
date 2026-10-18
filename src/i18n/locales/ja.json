@@ -1451,6 +1451,7 @@
   "Rating over the last year": "直近1年のレーティング",
   "Counters": "カウンター",
   "{year} records": "{year}年の記録",
+  "Add the two teams to the address: /overlay?teams=t1,geng": "アドレスに2チームを指定してください: /overlay?teams=t1,geng",
   "now {team}": "現 {team}",
   "title match::Final": "決勝",
   "title winner::Champion": "優勝",

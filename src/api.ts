@@ -1,6 +1,7 @@
 import { Match, LiveShow, StreamEvent, StreamStatus, AppSettings, Team, Region, League, PlayerEntry, AppUpdateInfo } from "./types";
 import type { H2HData } from "./helpers";
 import { tk, tc, currentLang, eventName } from "./i18n";
+import { IS_WEB } from "./platform";
 
 // Riot's own translations for league, stage and block names ("8강", "Cuartos de Final"...).
 const RIOT_HL: Record<string, string> = {
@@ -496,7 +497,24 @@ function scheduleEventsToMatches(rawEvents: any[]): Match[] {
  * We take the first page, then follow "newer" pages a couple of times so
  * "next match for a team you follow" can see further ahead.
  */
+/** The schedule riftwise.gg's push service keeps (one Riot caller instead of every visitor): events as Riot sends them. */
+const SCHEDULE_CACHE_URL = IS_WEB ? "/api/push/schedule" : "https://riftwise.gg/api/push/schedule";
+
 export async function fetchSchedule(extraNewerPages = 2): Promise<Match[]> {
+  // the server's copy first (fast, and kind to Riot's limits); Riot itself when it isn't there
+  try {
+    const cached = await fetchJson(SCHEDULE_CACHE_URL, undefined, 8000);
+    const events = cached?.events;
+    if (Array.isArray(events) && events.length > 0) {
+      const ms = scheduleEventsToMatches(events);
+      const seen = new Set<string>();
+      const unique = ms.filter((m) => (seen.has(m.matchId) ? false : (seen.add(m.matchId), true)));
+      unique.sort((a, b) => a.startTimeUtc.localeCompare(b.startTimeUtc));
+      return unique;
+    }
+  } catch {
+    /* Riot directly, below */
+  }
   const first = await fetchJson(`${RIOT_BASE}/getSchedule?hl=${riotHl()}`, { headers: riotHeaders });
   const all: Match[] = scheduleEventsToMatches(first?.data?.schedule?.events || []);
 

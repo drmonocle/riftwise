@@ -1451,6 +1451,7 @@
   "Rating over the last year": "Bewertung des letzten Jahres",
   "Counters": "Counter",
   "{year} records": "Rekorde {year}",
+  "Add the two teams to the address: /overlay?teams=t1,geng": "Häng die beiden Teams an die Adresse: /overlay?teams=t1,geng",
   "now {team}": "jetzt {team}",
   "title match::Final": "Finale",
   "title winner::Champion": "Sieger",
