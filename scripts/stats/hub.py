@@ -448,8 +448,11 @@ def build(ctx) -> dict:
     # -- every game: all_games (weekly, everything Leaguepedia knows) + matches (nightly, newest) --
     games_by_op = defaultdict(dict)  # op -> (match_id, n) -> game
     by_catalog_id = {}               # catalog game id -> (op, key) of the all_games row that already has it
+    # the catalog's columns change now and then (patch_inferred came and went): ask for the ones that exist
+    ag_cols = {r[1] for r in con.execute("PRAGMA table_info(all_games)")}
+    patch_inf = "patch_inferred" if "patch_inferred" in ag_cols else "NULL AS patch_inferred"
     for r in con.execute(
-        """SELECT match_id, game_number, status, tournament_name, overview_page, date_utc, patch, patch_inferred,
+        f"""SELECT match_id, game_number, status, tournament_name, overview_page, date_utc, patch, {patch_inf},
                   team1, team2, winner_side, winner, series_team1, series_team2, best_of, is_remake, ff, vod_url,
                   vod_game_start, vod_pb, catalog_game_id, has_stats, mvp FROM all_games WHERE overview_page IS NOT NULL"""
     ):
@@ -784,6 +787,30 @@ def build(ctx) -> dict:
             out_r.append({"p": str(r["Place"] or ""), "t": team_, "u": team_ref(team_, date or "")[1],
                           **({"usd": round(prize[team_])} if prize[team_] else {})})
         return out_r
+
+    final_tab = re.compile(r"\b(grand\s+)?finals?\b", re.I)
+
+    def final_winner(stages):
+        """(team, slug) of the side that won the final, read off the bracket when Leaguepedia's results table has
+        no first place yet (it lags the games by days; a qualifier's only lists who fell short). Only a sure thing
+        counts: a stage named as the final, or a last bracket stage of one series, with every series decided."""
+        brackets = [st for st in stages if st["kind"] == "bracket"]
+        if not brackets:
+            return None
+        finals = [st for st in brackets if final_tab.search(st["name"] or "")]
+        if finals:
+            grand = [st for st in finals if re.search(r"grand", st["name"], re.I)]
+            plain = [st for st in finals if not re.search(r"lower|upper|loser|winner|bracket", st["name"], re.I)]
+            stage = (grand or plain or finals)[-1]
+        else:
+            stage = brackets[-1]
+            if len(stage["series"]) != 1:
+                return None  # a round of several series (the semifinals) is not the final
+        decided = [r for r in stage["series"] if r["w"] in (1, 2) and r["a"] and r["b"]]
+        if not decided or len(decided) != len(stage["series"]):
+            return None
+        last = max(decided, key=lambda r: r["date"] or "")
+        return (last["a"], last["au"]) if last["w"] == 1 else (last["b"], last["bu"])
 
     def merge_stages(parts):
         """Sum the numbers kept for each stage of an event. A team that changed its name between stages ("BRION" ->
@@ -1761,10 +1788,18 @@ def build(ctx) -> dict:
                                   **({"lu": league_slug.get(lg_ev)} if lg_ev else {})})
 
         winner_row = next((r for r in res_out if r["p"] == "1"), None)
+        won = (winner_row["t"], winner_row["u"]) if winner_row and res_from == "this" else None
+        if not won and res_from == "this" and event["q"]:
+            # a qualifier's results say who went through ("Q"): one team through is its winner
+            q_rows = [r for r in res_out if r["p"] == "Q"]
+            if len(q_rows) == 1:
+                won = (q_rows[0]["t"], q_rows[0]["u"])
+        if not won and end and end <= today:
+            won = final_winner(stages)
         events_by_year[event["year"]].append({
             "n": en, "u": eslug, "l": lg_ev, "r": info.get("Region"), "lv": info.get("TournamentLevel"),
             "st": start, "en": end, "g": event["games"], "q": event["q"],
-            **({"w": winner_row["t"], "wu": winner_row["u"]} if winner_row and res_from == "this" else {}),
+            **({"w": won[0], "wu": won[1]} if won else {}),
             **({"p": event["parent"]["u"]} if event.get("parent") else {}),
         })
         recent = end and end >= recent_cut
@@ -2434,6 +2469,12 @@ def build(ctx) -> dict:
     # -- league history: every tournament of a league with its winner ----------------------------
     # A parent with its own results (Worlds 2025) stands for its stages; a bare grouping page
     # (NA LCS 2014 Season) is replaced by its stages (Spring Season, Spring Playoffs...).
+    # A regular season's first place is not the split's title (its playoffs decide that): kept, but marked
+    names_all = {x["n"] for lst in events_by_year.values() for x in lst}
+    for lst in events_by_year.values():
+        for x in lst:
+            if x.get("w") and f"{x['n']} Playoffs" in names_all:
+                x["rs"] = 1
     with_results = {x["u"] for lst in events_by_year.values() for x in lst if x.get("kids") and x.get("res")}
     league_events = defaultdict(list)
     for year, lst in events_by_year.items():
@@ -2631,12 +2672,6 @@ def build(ctx) -> dict:
     out.json("csv/index.json", dl_out)
 
     # -- browse, search, home, meta ----------------------------------------------------------
-    names_all = {x["n"] for lst in events_by_year.values() for x in lst}
-    for lst in events_by_year.values():
-        for x in lst:
-            if x.get("w") and f"{x['n']} Playoffs" in names_all:
-                x.pop("w", None)
-                x.pop("wu", None)
     search_events = []
     for year, lst in events_by_year.items():
         lst.sort(key=lambda x: (x.get("en") or "", x.get("st") or ""), reverse=True)

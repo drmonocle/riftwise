@@ -14,7 +14,8 @@ _SUFFIX_REGION = re.compile(r"\.(cn|na|eu|kr|cis|vn|br|jp|tw|lat|oce|tr)$")
 
 def team_key(name) -> str:
     """Loose form of a team name: lower case, without a "(...)" note or a ".CN"-style suffix, letters and digits only."""
-    s = (name or "").lower().strip()
+    # a name can arrive as a number from the catalog ("100" stored as an integer)
+    s = str(name if name is not None else "").lower().strip()
     s = _SUFFIX_NOTE.sub("", s)
     s = _SUFFIX_REGION.sub("", s)
     return re.sub(r"[^0-9a-z]+", "", s)

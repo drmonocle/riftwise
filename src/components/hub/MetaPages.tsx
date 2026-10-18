@@ -14,6 +14,7 @@ import {
   HubLink,
   Page,
   RevealButton,
+  StandingsFirst,
   Section,
   td,
   th,
@@ -374,8 +375,9 @@ const LeagueEventRow: React.FC<{ e: HubLeague["events"][number] }> = ({
             <RevealButton onReveal={reveal} small />
           ) : (
             <span className="flex items-center gap-1">
-              <Crown className="w-3 h-3 text-rw-accent shrink-0" />
+              {!e.rs && <Crown className="w-3 h-3 text-rw-accent shrink-0" />}
               <TeamLink name={e.w} u={e.wu} />
+              {e.rs ? <StandingsFirst /> : null}
             </span>
           )
         ) : (

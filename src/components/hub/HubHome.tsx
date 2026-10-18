@@ -12,7 +12,7 @@ import { ChampIcon } from "./ui";
 import type { EventListItem, HubMeta } from "../../hub/types";
 import { HubRoute } from "../../hub/route";
 import { HubSearch } from "./HubSearch";
-import { card, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerLink, RevealButton, Section, td, th, TeamLink, useHidden, useLoad, usePageTitle } from "./ui";
+import { card, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerLink, RevealButton, StandingsFirst, Section, td, th, TeamLink, useHidden, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
 
 const QUICK: { to: HubRoute; label: string; sub: string; icon: React.ReactNode }[] = [
@@ -184,8 +184,9 @@ const LatestRow: React.FC<{ e: EventListItem }> = ({ e }) => {
       </span>
       {e.w && (
         <span className="shrink-0 flex items-center gap-1 text-rw-accent">
-          <Crown className="w-3 h-3" />
+          {!e.rs && <Crown className="w-3 h-3" />}
           {hidden ? <RevealButton onReveal={reveal} small /> : <TeamLink name={e.w} u={e.wu} className="text-rw-accent hover:underline" />}
+          {e.rs ? <StandingsFirst /> : null}
         </span>
       )}
     </li>
@@ -286,7 +287,10 @@ const BrowseRow: React.FC<{ e: EventListItem }> = ({ e }) => {
         {e.en && e.en !== e.st ? ` – ${fmtDate(e.en, false)}` : ""}
       </td>
       <td className={`${td} text-rw-sub max-w-[8rem] truncate`}>{e.r ? regionName(e.r, e.r) : ""}</td>
-      <td className={`${td} max-w-[10rem] truncate`}>{e.w ? hidden ? <RevealButton onReveal={reveal} small /> : <TeamLink name={e.w} u={e.wu} /> : ""}</td>
+      <td className={`${td} max-w-[10rem] truncate`}>
+        {e.w ? hidden ? <RevealButton onReveal={reveal} small /> : <TeamLink name={e.w} u={e.wu} /> : ""}
+        {e.w && !hidden && e.rs ? <> <StandingsFirst /></> : null}
+      </td>
       <td className={`${td} text-rw-muted`}>{e.g || ""}</td>
     </tr>
   );

@@ -6,7 +6,7 @@
 import React, { useMemo } from "react";
 import { tl, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { loadHubIndex, loadMatchups } from "../../hub/data";
+import { loadHubIndex, loadMatchups, prettySlug } from "../../hub/data";
 import { ROLES } from "../../hub/champAgg";
 import type { HubMatchups } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
@@ -15,6 +15,9 @@ import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, Section, useLoa
 import { SortTable, type Column } from "./SortTable";
 
 type Row = { c: string; role: number; g: number; w: number; gd: number | null };
+
+/** a champion's page slug from the search index row (the stored slug, else one from the name) */
+const champSlug = (c: [string, string, number]) => c[1] || prettySlug(c[0]);
 
 export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   usePageTitle(tl("Counter-pick finder"));
@@ -77,7 +80,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
             defaultValue={data.data?.c || ""}
             onChange={(e) => {
               const hit = (index.data?.champs || []).find((c) => c[0].toLowerCase() === e.target.value.trim().toLowerCase());
-              if (hit) set({ champ: hit[1] });
+              if (hit) set({ champ: champSlug(hit) });
             }}
             className={`${sel} w-48`}
           />
@@ -107,7 +110,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
         <Section title={tl("Most played champions")}>
           <div className="flex flex-wrap gap-2">
             {index.data.champs.slice(0, 40).map((c) => (
-              <HubLink key={c[1]} to={{ kind: "counters", query: `champ=${c[1]}` }} className="flex items-center gap-1 px-2 py-1 rounded border border-rw-border text-xs hover:border-rw-accent">
+              <HubLink key={champSlug(c)} to={{ kind: "counters", query: `champ=${champSlug(c)}` }} className="flex items-center gap-1 px-2 py-1 rounded border border-rw-border text-xs hover:border-rw-accent">
                 <ChampIcon name={c[0]} size={18} /> {champName(c[0])}
               </HubLink>
             ))}
