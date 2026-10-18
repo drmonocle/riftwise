@@ -4,7 +4,7 @@
  * (/stats/compare?teams=t1,gen-g&p=y2026) so it can be shared.
  */
 import React, { useEffect, useMemo, useState } from "react";
-import { tl, tc, roleName } from "../../i18n";
+import { tl, tc, tn, roleName } from "../../i18n";
 import { winRate } from "../../stats";
 import { HubHit, HubIndex, loadHubIndex, loadHubPlayer, loadHubTeam, loadPlayerGames, loadTeamGames, searchHub } from "../../hub/data";
 import type { HubPlayer, HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
@@ -27,7 +27,7 @@ import { HeadToHeadSeries } from "./Archives";
 import { PeriodPicker } from "./PeriodStats";
 import { DraftTendencies, draftTendencies } from "./DraftTendencies";
 import { BroadcastCardButton, draftCard, playerCardData, teamCardData } from "./BroadcastCard";
-import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, isFresh, OeCredit, RevealButton, Section, td, useHidden, usePageTitle } from "./ui";
+import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, isFresh, OeCredit, PlayerPhoto, RevealButton, Section, td, TeamLogo, useHidden, usePageTitle } from "./ui";
 import { STable } from "../STable";
 
 type Mode = "team" | "player";
@@ -104,11 +104,31 @@ const Row: React.FC<{
 }> = ({ label, a, b, va, vb, better = "high" }) => {
   const win = va != null && vb != null && va !== vb ? ((va > vb) === (better === "high") ? "a" : "b") : null;
   const cls = (side: "a" | "b") => (win === side ? "text-rw-teal" : "text-rw-text");
+  // a bar from each number toward the outside, as long as its share of the pair (plain counts and rates only)
+  const bars = va != null && vb != null && va >= 0 && vb >= 0 && va + vb > 0;
+  const bar = (v: number, side: "a" | "b") => (
+    <span className={`flex-1 flex ${side === "a" ? "justify-end" : "justify-start"}`} aria-hidden="true">
+      <span
+        className={`h-1.5 ${side === "a" ? "rounded-l" : "rounded-r"} ${win === side ? "bg-rw-teal/70" : "bg-rw-line"}`}
+        style={{ width: `${(v / Math.max(va as number, vb as number)) * 100}%` }}
+      />
+    </span>
+  );
   return (
     <tr className="border-t border-rw-border">
-      <td className={`${td} text-right font-semibold w-2/5 tabular-nums ${cls("a")}`}>{a}</td>
-      <td className={`${td} text-center text-rw-muted text-[11px]`}>{label}</td>
-      <td className={`${td} font-semibold w-2/5 tabular-nums ${cls("b")}`}>{b}</td>
+      <td className={`${td} font-semibold w-2/5 tabular-nums ${cls("a")}`}>
+        <span className="flex items-center justify-end gap-3">
+          {bars && bar(va as number, "a")}
+          <span className="text-right">{a}</span>
+        </span>
+      </td>
+      <td className={`${td} text-center text-rw-muted text-[11px] whitespace-nowrap`}>{label}</td>
+      <td className={`${td} font-semibold w-2/5 tabular-nums ${cls("b")}`}>
+        <span className="flex items-center gap-3">
+          <span>{b}</span>
+          {bars && bar(vb as number, "b")}
+        </span>
+      </td>
     </tr>
   );
 };
@@ -276,6 +296,16 @@ export const TeamRows: React.FC<{
         }
         share={`${x.name}-vs-${y.name}-${periodLabel}`}
       >
+        <div className="flex items-center justify-between gap-3 text-sm font-bold">
+          <span className="flex items-center gap-2 min-w-0">
+            <TeamLogo name={x.name} size={36} />
+            <span className="truncate">{x.name}</span>
+          </span>
+          <span className="flex items-center gap-2 min-w-0">
+            <span className="truncate text-right">{y.name}</span>
+            <TeamLogo name={y.name} size={36} />
+          </span>
+        </div>
         <table className="w-full text-xs">
           <tbody>
             <Row label={career ? tl("Head to head (games)") : tl("Head to head this period (games)")} a={h2h.g ? h2h.w : "–"} b={h2h.g ? h2h.g - h2h.w : "–"} va={h2h.g ? h2h.w : null} vb={h2h.g ? h2h.g - h2h.w : null} />
@@ -343,12 +373,12 @@ export const TeamRows: React.FC<{
           { n: y.name, t: B, rows: rb },
         ].map((s) => (
           <Section key={s.n} title={tl("Most picked: {team}", { team: s.n })} share={`${s.n}-draft-${periodLabel}`}>
-            <ul className="text-xs grid grid-cols-2 gap-x-3 gap-y-1">
+            <ul className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
               {s.t.picks.slice(0, 10).map(([c, n, w]) => (
-                <li key={c} className="flex justify-between gap-1 min-w-0">
+                <li key={c} className="flex justify-between gap-2 min-w-0">
                   <ChampLink name={c} size={16} />
                   <span className="text-rw-muted shrink-0 tabular-nums">
-                    {n} · {winRate(w, n)}
+                    {tn("{n} game", "{n} games", n)} · {tl("{pct} win rate", { pct: winRate(w, n) })}
                   </span>
                 </li>
               ))}
@@ -401,6 +431,16 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
         }
         share={`${x.name}-vs-${y.name}-${periodLabel}`}
       >
+        <div className="flex items-center justify-between gap-3 text-sm font-bold">
+          <span className="flex items-center gap-2 min-w-0">
+            <PlayerPhoto name={x.name} team={x.club} size={44} />
+            <span className="truncate">{x.name}</span>
+          </span>
+          <span className="flex items-center gap-2 min-w-0">
+            <span className="truncate text-right">{y.name}</span>
+            <PlayerPhoto name={y.name} team={y.club} size={44} />
+          </span>
+        </div>
         <table className="w-full text-xs">
           <tbody>
             <Row label={tl("Role")} a={A.roles[0] ? roleName(A.roles[0]) : "–"} b={B.roles[0] ? roleName(B.roles[0]) : "–"} />

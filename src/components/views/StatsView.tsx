@@ -14,7 +14,7 @@ import {
   TrendingUp,
   Flame,
 } from "lucide-react";
-import { AppSettings, Match } from "../../types";
+import { AppSettings, Match, CatalogData } from "../../types";
 import { IS_WEB } from "../../platform";
 import {
   StatsMeta,
@@ -213,6 +213,7 @@ import { PlayerPage } from "../hub/PlayerPage";
 import { EventPage } from "../hub/EventPage";
 import { MatchPage } from "../hub/MatchPage";
 import { ChampPage } from "../hub/ChampPage";
+import { RiotCatalogContext } from "../../hub/riotCatalog";
 import { STable } from "../STable";
 
 interface StatsViewProps {
@@ -220,6 +221,8 @@ interface StatsViewProps {
   onOpenUrl: (url: string) => void;
   /** upcoming matches (for "On the line today" on the stats home) */
   schedule?: Match[];
+  /** Riot's team list: player photos and team logos (Match prep) */
+  catalog?: CatalogData | null;
 }
 
 const SECTIONS: {
@@ -569,6 +572,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
   settings,
   onOpenUrl,
   schedule,
+  catalog,
 }) => {
   useChampionNames();
   useDDragon();
@@ -591,6 +595,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
   };
 
   return (
+    <RiotCatalogContext.Provider value={catalog || null}>
     <SpoilerProvider on={settings.spoilerMode}>
       <div
         ref={scroller}
@@ -730,5 +735,6 @@ export const StatsView: React.FC<StatsViewProps> = ({
         </p>
       </div>
     </SpoilerProvider>
+    </RiotCatalogContext.Provider>
   );
 };

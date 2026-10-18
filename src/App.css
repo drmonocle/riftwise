@@ -84,6 +84,69 @@
     --rw-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(138, 180, 255, 0.03);
     --rw-on-accent: #0a0f1c;
   }
+  /* TSM: black and white with a steel blue */
+  :root[data-theme="tsm"] {
+    --rw-bg: #09090b;
+    --rw-deep: #050506;
+    --rw-surface: #121215;
+    --rw-raised: #1b1b20;
+    --rw-border: #26262d;
+    --rw-line: #3a3a44;
+    --rw-accent: #f2f2f2;
+    --rw-accent-2: #c9ccd3;
+    --rw-text: #f5f5f7;
+    --rw-sub: #c4c6cc;
+    --rw-muted: #8e9199;
+    --rw-teal: #5ab4f0;
+    --rw-red: #ff5c6c;
+    --rw-glow-1: rgba(255, 255, 255, 0.05);
+    --rw-glow-2: rgba(90, 180, 240, 0.06);
+    --rw-sheen: rgba(255, 255, 255, 0.035);
+    --rw-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.03);
+    --rw-on-accent: #0b0b0d;
+  }
+  /* FlyQuest: FlyQuest green on near-black */
+  :root[data-theme="flyquest"] {
+    --rw-bg: #06100a;
+    --rw-deep: #040a06;
+    --rw-surface: #0b1811;
+    --rw-raised: #122419;
+    --rw-border: #1b3224;
+    --rw-line: #284a35;
+    --rw-accent: #3ddc84;
+    --rw-accent-2: #1fb866;
+    --rw-text: #ecf7ef;
+    --rw-sub: #b2cdb9;
+    --rw-muted: #7f9a87;
+    --rw-teal: #7dd3fc;
+    --rw-red: #ff6b6b;
+    --rw-glow-1: rgba(61, 220, 132, 0.12);
+    --rw-glow-2: rgba(125, 211, 252, 0.05);
+    --rw-sheen: rgba(255, 255, 255, 0.03);
+    --rw-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(61, 220, 132, 0.04);
+    --rw-on-accent: #03140a;
+  }
+  /* T1: T1 red on black, with championship gold (gold marks wins, orange losses, so red stays T1's) */
+  :root[data-theme="t1"] {
+    --rw-bg: #0b0708;
+    --rw-deep: #070405;
+    --rw-surface: #150c0e;
+    --rw-raised: #201215;
+    --rw-border: #2f1b1f;
+    --rw-line: #47292f;
+    --rw-accent: #ff3b55;
+    --rw-accent-2: #e2012d;
+    --rw-text: #f8ecee;
+    --rw-sub: #d3b8bd;
+    --rw-muted: #a3878c;
+    --rw-teal: #e3c27a;
+    --rw-red: #fb923c;
+    --rw-glow-1: rgba(226, 1, 45, 0.14);
+    --rw-glow-2: rgba(227, 194, 122, 0.05);
+    --rw-sheen: rgba(255, 255, 255, 0.03);
+    --rw-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 59, 85, 0.04);
+    --rw-on-accent: #160306;
+  }
 
   html {
     font-size: 17.5px; /* Scales all rem-based typography up 1 full size (12px -> 13.5px, 14px -> 15.5px, 16px -> 17.5px) */

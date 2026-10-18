@@ -183,10 +183,15 @@ fn set_close_to_tray(enabled: bool) {
     CLOSE_TO_TRAY.store(enabled, Ordering::Relaxed);
 }
 
-/// Opens a web link in the user's default browser. Only plain http/https links are allowed.
+/// The only email address the app opens a mail draft to (Feedback, "Report a wrong stat").
+const FEEDBACK_MAILTO: &str = "mailto:kyle.l.hoover@gmail.com";
+
+/// Opens a web link in the user's default browser. Only plain http/https links are allowed, plus a mail draft
+/// to the feedback address.
 fn open_url_checked(app: &tauri::AppHandle, url: &str) -> bool {
     let lower = url.trim().to_ascii_lowercase();
-    if !(lower.starts_with("https://") || lower.starts_with("http://")) {
+    let feedback = lower == FEEDBACK_MAILTO || lower.starts_with(&format!("{FEEDBACK_MAILTO}?"));
+    if !(lower.starts_with("https://") || lower.starts_with("http://") || feedback) {
         return false;
     }
     app.opener().open_url(url.trim(), None::<&str>).is_ok()

@@ -9,6 +9,7 @@ import { champIcon, itemIcon, itemName, runeIcon, runeName, spellIcon, spellName
 import { prefetchHub, prettySlug } from "../../hub/data";
 import { IS_WEB } from "../../platform";
 import { CaptureFooter, ShareButtons } from "./ShareImage";
+import { usePlayerPhoto, useTeamLogo } from "../../hub/riotCatalog";
 import { allRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 
 export const card = "bg-rw-surface border border-rw-border rounded-xl p-4";
@@ -158,6 +159,25 @@ export const Section: React.FC<{
     </section>
   );
 };
+
+/**
+ * How many side-by-side columns the window has room for (1 on a phone, 2 from 768 px, 3 from 1280 px, 4 from
+ * 1800 px), matching the GRID_COLS classes below. Follows the window as it is resized.
+ */
+export function useColumns(): number {
+  const query = () =>
+    typeof window === "undefined" ? 1 : window.innerWidth >= 1800 ? 4 : window.innerWidth >= 1280 ? 3 : window.innerWidth >= 768 ? 2 : 1;
+  const [n, setN] = useState(query);
+  useEffect(() => {
+    const on = () => setN(query());
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, []);
+  return n;
+}
+
+/** The grid that goes with useColumns(). */
+export const GRID_COLS = "grid md:grid-cols-2 xl:grid-cols-3 min-[1800px]:grid-cols-4";
 
 /** Sets the browser tab's title while a page is open. */
 export function usePageTitle(title: string | null | undefined): void {
@@ -366,5 +386,44 @@ export const CopyLinkButton: React.FC<{ url: string }> = ({ url }) => {
       {copied ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
       {copied ? tl("Link copied") : tl("Copy link")}
     </button>
+  );
+};
+
+/**
+ * A pro's photo from Riot (current pros only), else their initials. Left out of copied pictures: Riot's image server
+ * doesn't allow that.
+ */
+export const PlayerPhoto: React.FC<{ name: string; team?: string; size?: number; className?: string }> = ({ name, team, size = 56, className = "" }) => {
+  const src = usePlayerPhoto(name, team);
+  const [broken, setBroken] = useState(false);
+  const box = { width: size, height: size };
+  return src && !broken ? (
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      onError={() => setBroken(true)}
+      data-nocapture="1"
+      style={box}
+      className={`rounded-full object-cover object-top bg-rw-raised border border-rw-border shrink-0 ${className}`}
+    />
+  ) : (
+    <span
+      data-nocapture="1"
+      style={{ ...box, fontSize: size / 3 }}
+      className={`rounded-full bg-rw-raised border border-rw-border text-rw-muted font-bold flex items-center justify-center shrink-0 ${className}`}
+    >
+      {name.slice(0, 2).toUpperCase()}
+    </span>
+  );
+};
+
+/** A team's logo from Riot (teams in Riot's list), else nothing. Left out of copied pictures. */
+export const TeamLogo: React.FC<{ name: string; code?: string; size?: number; className?: string }> = ({ name, code, size = 40, className = "" }) => {
+  const src = useTeamLogo(name, code);
+  const [broken, setBroken] = useState(false);
+  if (!src || broken) return null;
+  return (
+    <img src={src} alt="" loading="lazy" onError={() => setBroken(true)} data-nocapture="1" style={{ width: size, height: size }} className={`object-contain shrink-0 ${className}`} />
   );
 };

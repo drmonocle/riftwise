@@ -153,9 +153,11 @@ export function draftTendencies(rows: TeamGameRow[]) {
 const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boolean }> = ({ title, hint, list, showWr }) =>
   list.length ? (
     <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1" title={hint}>
+      <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted" title={hint}>
         {title}
       </div>
+      {/* what the numbers are: games (and win rate) */}
+      <div className="text-[10px] text-rw-muted mb-1">{showWr ? tl("games · win rate") : tl("games")}</div>
       <ul className="text-xs space-y-1">
         {list.map(([c, n, w]) => (
           <li key={c} className="flex justify-between gap-2 min-w-0">

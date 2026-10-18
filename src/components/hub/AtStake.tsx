@@ -14,7 +14,7 @@ import {
   StoryBullets,
   noteText,
 } from "./Storylines";
-import { Section } from "./ui";
+import { GRID_COLS, Section, useColumns } from "./ui";
 
 /** hub/stakes.json: team slug -> its storylines and its starters' (name, slug, role, as of, notes) */
 interface TeamStakes {
@@ -97,10 +97,13 @@ export const AtStakeToday: React.FC<{ schedule: Match[] }> = ({ schedule }) => {
       alive = false;
     };
   }, [wanted]);
+  const cols = useColumns();
   if (!data) return null;
+  // a phone shows the next four matches; each extra column of room shows four more
   const blocks = upcoming
     .map((m) => ({ m, lines: matchLines(m, data.index, data.stakes) }))
-    .filter((x) => x.lines.length);
+    .filter((x) => x.lines.length)
+    .slice(0, cols * 4);
   if (!blocks.length) return null;
   const time = (iso: string) =>
     new Date(iso).toLocaleTimeString(locale(), {
@@ -116,7 +119,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[] }> = ({ schedule }) => {
       <p className="text-[11px] text-rw-muted">
         {tl("Milestones and streaks for the matches in the next 24 hours.")}
       </p>
-      <div className="space-y-3">
+      <div className={`${GRID_COLS} gap-x-6 gap-y-3 items-start`}>
         {blocks.map(({ m, lines }) => (
           <div key={m.matchId} className="space-y-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs border-b border-rw-border pb-1">

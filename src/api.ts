@@ -184,7 +184,7 @@ export function loadSettings(): AppSettings {
       const merged = { ...DEFAULT_SETTINGS, ...parsed } as AppSettings;
       const oneOf = <T,>(v: unknown, allowed: readonly T[], dflt: T): T => (allowed.includes(v as T) ? (v as T) : dflt);
       merged.language = oneOf(merged.language, ["auto", "en", "es", "pt-BR", "ko", "vi", "zh-CN", "zh-TW", "ja", "fr", "de", "tr"] as const, "auto");
-      merged.theme = oneOf(merged.theme, ["rift", "classic", "midnight"] as const, "rift");
+      merged.theme = oneOf(merged.theme, ["rift", "classic", "midnight", "tsm", "flyquest", "t1"] as const, "rift");
       merged.defaultTab = oneOf(merged.defaultTab, ["live", "schedule", "stats", "stream", "watchlist", "news", "settings"] as const, DEFAULT_SETTINGS.defaultTab);
       // Settings for the removed ticker bar / desktop HUD (0.4.0) are dropped
       for (const old of ["tickerMode", "tickerTopmost", "tickerCycleSec"]) delete (merged as unknown as Record<string, unknown>)[old];
