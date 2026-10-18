@@ -68,6 +68,7 @@ type subRequest struct {
 		Auth   string `json:"auth"`
 	} `json:"keys"`
 	Teams   []string `json:"teams"`
+	Players []string `json:"players"`
 	Lang    string   `json:"lang"`
 	Kickoff *bool    `json:"kickoff"`
 	Pregame *bool    `json:"pregame"`
@@ -187,18 +188,42 @@ func (a *App) serveHTTP(addr string) error {
 				teams = append(teams, t)
 			}
 		}
+		players := []string{}
+		seenP := map[string]bool{}
+		for _, p := range req.Players {
+			p = strings.TrimSpace(p)
+			if p != "" && len(p) <= 40 && !seenP[normName(p)] && len(players) < 50 {
+				seenP[normName(p)] = true
+				players = append(players, p)
+			}
+		}
 		lang := req.Lang
 		if !langs[lang] {
 			lang = "en"
 		}
 		on := func(b *bool) bool { return b == nil || *b }
-		s := &Sub{Endpoint: req.Endpoint, P256dh: req.Keys.P256dh, Auth: req.Keys.Auth, Teams: teams, Lang: lang,
+		s := &Sub{Endpoint: req.Endpoint, P256dh: req.Keys.P256dh, Auth: req.Keys.Auth, Teams: teams, Players: players, Lang: lang,
 			Kickoff: on(req.Kickoff), Pregame: on(req.Pregame), Banger: on(req.Banger)}
 		if err := a.store.upsert(s); err != nil {
 			writeJSON(w, 500, map[string]string{"error": "could not save"})
 			return
 		}
 		writeJSON(w, 200, map[string]any{"ok": true, "teams": len(teams)})
+	})
+
+	// the schedule the app shows: Riot's, fetched here every poll (one caller instead of every visitor)
+	mux.HandleFunc(apiPrefix+"schedule", func(w http.ResponseWriter, r *http.Request) {
+		a.schedMu.Lock()
+		b, at := a.schedJSON, a.schedAt
+		a.schedMu.Unlock()
+		if len(b) == 0 || time.Since(at) > 10*time.Minute {
+			writeJSON(w, 503, map[string]string{"error": "no schedule yet"})
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Cache-Control", "public, max-age=30")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Write(b)
 	})
 
 	mux.HandleFunc(apiPrefix+"unsubscribe", func(w http.ResponseWriter, r *http.Request) {

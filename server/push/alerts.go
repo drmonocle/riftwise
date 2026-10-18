@@ -45,6 +45,24 @@ type App struct {
 	lastPoll    time.Time
 	lastErr     string
 	lastStream  time.Time
+
+	// the schedule for the app (api/push/schedule): Riot's first pages, raw, refreshed every poll
+	schedMu   sync.Mutex
+	schedJSON []byte
+	schedAt   time.Time
+
+	// "on the line" alerts: the stats build's storylines (hub/stakes.json under the stats folder)
+	statsDir string
+	stakesMu sync.Mutex
+	stakes   map[string]teamStakes
+	stakesAt time.Time
+}
+
+// teamStakes mirrors hub/stakes.json: a team's storylines and its starters' [name, slug, role, as of, notes]
+type teamStakes struct {
+	N string              `json:"n"`
+	L []json.RawMessage   `json:"l"`
+	P [][]json.RawMessage `json:"p"`
 }
 
 func newApp(dataDir string) (*App, error) {
@@ -283,6 +301,7 @@ func (a *App) alertLoop() {
 func (a *App) pollMatches() {
 	sched, err1 := a.riotEvents("/getSchedule?hl=en-US")
 	live, err2 := a.riotEvents("/getLive?hl=en-US")
+	a.refreshScheduleCache()
 	a.mu.Lock()
 	a.lastPoll = time.Now()
 	a.lastErr = ""
@@ -329,6 +348,10 @@ func (a *App) pollMatches() {
 			until := start.Sub(now)
 			if !start.IsZero() && until > 0 && until <= pregameWindow && a.sent.claim("pre:"+id) {
 				a.alertMatch("pregame", id, e, t1, t2, int(math.Ceil(until.Minutes())))
+			}
+			// an hour before: what's on the line for the teams and players people follow
+			if !start.IsZero() && until > 0 && until <= 60*time.Minute && a.sent.claim("stk:"+id) {
+				a.alertStakes(id, e, t1, t2)
 			}
 		case "inProgress":
 			a.mu.Lock()
@@ -483,4 +506,250 @@ func (a *App) testPayload(lang string) payload {
 		Body:  a.tr(lang, "Alerts work. You'll get one like this when a team you follow starts a match.", nil),
 		URL:   siteURL, Tag: "test",
 	}
+}
+
+// ---- The schedule for the app ----
+
+// refreshScheduleCache keeps Riot's schedule (the first page and the two after it, as the app fetched them itself)
+// as one JSON document: {"events": [...], "at": "..."}; the app reads /api/push/schedule instead of calling Riot.
+func (a *App) refreshScheduleCache() {
+	var events []json.RawMessage
+	token := ""
+	for i := 0; i < 3; i++ {
+		path := "/getSchedule?hl=en-US"
+		if token != "" {
+			path += "&pageToken=" + token
+		}
+		req, _ := http.NewRequest("GET", riotBase+path, nil)
+		req.Header.Set("x-api-key", riotKey)
+		resp, err := a.client.Do(req)
+		if err != nil {
+			return
+		}
+		var body struct {
+			Data struct {
+				Schedule struct {
+					Events []json.RawMessage `json:"events"`
+					Pages  struct {
+						Newer string `json:"newer"`
+					} `json:"pages"`
+				} `json:"schedule"`
+			} `json:"data"`
+		}
+		err = json.NewDecoder(io.LimitReader(resp.Body, 8<<20)).Decode(&body)
+		resp.Body.Close()
+		if err != nil || resp.StatusCode != 200 {
+			if i == 0 {
+				return
+			}
+			break
+		}
+		events = append(events, body.Data.Schedule.Events...)
+		token = body.Data.Schedule.Pages.Newer
+		if token == "" {
+			break
+		}
+	}
+	if len(events) == 0 {
+		return
+	}
+	b, err := json.Marshal(map[string]any{"events": events, "at": time.Now().UTC().Format(time.RFC3339)})
+	if err != nil {
+		return
+	}
+	a.schedMu.Lock()
+	a.schedJSON, a.schedAt = b, time.Now()
+	a.schedMu.Unlock()
+}
+
+// ---- "On the line" alerts ----
+
+// loadStakes reads hub/stakes.json of the newest stats build (at most every 10 minutes).
+func (a *App) loadStakes() map[string]teamStakes {
+	a.stakesMu.Lock()
+	defer a.stakesMu.Unlock()
+	if a.statsDir == "" {
+		return nil
+	}
+	if a.stakes != nil && time.Since(a.stakesAt) < 10*time.Minute {
+		return a.stakes
+	}
+	a.stakesAt = time.Now()
+	var latest struct {
+		Version string `json:"version"`
+	}
+	if b, err := os.ReadFile(filepath.Join(a.statsDir, "latest.json")); err != nil || json.Unmarshal(b, &latest) != nil || latest.Version == "" {
+		return a.stakes
+	}
+	b, err := os.ReadFile(filepath.Join(a.statsDir, latest.Version, "hub", "stakes.json"))
+	if err != nil {
+		return a.stakes
+	}
+	m := map[string]teamStakes{}
+	if json.Unmarshal(b, &m) == nil {
+		a.stakes = m
+	}
+	return a.stakes
+}
+
+// trn picks the singular or plural form of an "a|b" text the way the app's tn() does (1 = singular).
+func (a *App) trn(lang, one, other string, n int, vars map[string]string) string {
+	if vars == nil {
+		vars = map[string]string{}
+	}
+	vars["n"] = fmt.Sprint(n)
+	text := a.tr(lang, one+"|"+other, vars)
+	if parts := strings.Split(text, "|"); len(parts) > 1 {
+		if n == 1 {
+			return parts[0]
+		}
+		return parts[len(parts)-1]
+	}
+	if n == 1 {
+		return a.tr(lang, one, vars)
+	}
+	return a.tr(lang, other, vars)
+}
+
+// noteText writes a storyline as the app does (src/components/hub/Storylines.tsx), in the reader's language.
+func (a *App) noteText(lang string, raw json.RawMessage) string {
+	var nt struct {
+		K    string  `json:"k"`
+		S    string  `json:"s"`
+		N    float64 `json:"n"`
+		Left int     `json:"left"`
+		W    int     `json:"w"`
+		Side string  `json:"side"`
+		C    string  `json:"c"`
+		Y    string  `json:"y"`
+		E    string  `json:"e"`
+		GW   int     `json:"gw"`
+		GL   int     `json:"gl"`
+	}
+	if json.Unmarshal(raw, &nt) != nil {
+		return ""
+	}
+	n := fmt.Sprint(int(nt.N))
+	switch nt.K {
+	case "ms":
+		total := map[string]string{"total": n}
+		switch nt.S {
+		case "games":
+			return a.trn(lang, "{n} game away from {total} pro games", "{n} games away from {total} pro games", nt.Left, total)
+		case "wins":
+			return a.trn(lang, "{n} win away from {total} pro wins", "{n} wins away from {total} pro wins", nt.Left, total)
+		case "kills":
+			return a.trn(lang, "{n} kill away from {total} career kills", "{n} kills away from {total} career kills", nt.Left, total)
+		}
+		return a.trn(lang, "{n} assist away from {total} career assists", "{n} assists away from {total} career assists", nt.Left, total)
+	case "streak":
+		if nt.W == 1 {
+			return a.tr(lang, "Won their last {n} series", map[string]string{"n": n})
+		}
+		return a.tr(lang, "Lost their last {n} series", map[string]string{"n": n})
+	case "side":
+		if nt.Side == "b" {
+			return a.tr(lang, "Unbeaten on blue side in {year}: {n}-0", map[string]string{"n": n, "year": nt.Y})
+		}
+		return a.tr(lang, "Unbeaten on red side in {year}: {n}-0", map[string]string{"n": n, "year": nt.Y})
+	case "champ":
+		return a.tr(lang, "Unbeaten on {champ} in {year}: {n}-0", map[string]string{"champ": nt.C, "n": n, "year": nt.Y})
+	case "evunb":
+		return a.tr(lang, "Unbeaten at {event}: {n}-0 in series, {gw}-{gl} in games", map[string]string{"event": nt.E, "n": n, "gw": fmt.Sprint(nt.GW), "gl": fmt.Sprint(nt.GL)})
+	case "form":
+		return a.tr(lang, "Won {w} of their last {n} games", map[string]string{"w": fmt.Sprint(nt.W), "n": n})
+	case "comeback":
+		return a.tr(lang, "{n} wins in {year} from 2,500+ gold down at 15 minutes", map[string]string{"n": n, "year": nt.Y})
+	case "crec":
+		return a.tr(lang, "The most pro games on {champ} of any player: {n}", map[string]string{"champ": nt.C, "n": n})
+	case "cms":
+		return a.trn(lang, "{n} game away from {total} pro games on {champ}", "{n} games away from {total} pro games on {champ}", nt.Left, map[string]string{"total": n, "champ": nt.C})
+	case "penta":
+		return a.tr(lang, "{n} pentakills in {year}", map[string]string{"n": n, "year": nt.Y})
+	}
+	return ""
+}
+
+// alertStakes: about an hour before a match, the milestones and streaks of the teams in it and of their starters,
+// to everyone who follows one of the teams or one of those players (and has the "starting soon" alert on).
+func (a *App) alertStakes(id string, e riotEvent, t1, t2 string) {
+	stakes := a.loadStakes()
+	if len(stakes) == 0 {
+		return
+	}
+	type line struct {
+		who  string
+		team string // team code the line belongs to
+		raw  json.RawMessage
+	}
+	var lines []line
+	playerOf := map[string]string{} // normalized player name -> team code
+	for i, rt := range e.Match.Teams {
+		code := strings.ToUpper(rt.Code)
+		want := normName(rt.Name)
+		for _, ts := range stakes {
+			if normName(ts.N) != want {
+				continue
+			}
+			for _, nt := range ts.L {
+				lines = append(lines, line{who: ts.N, team: code, raw: nt})
+			}
+			for _, p := range ts.P {
+				if len(p) < 5 {
+					continue
+				}
+				var name string
+				var notes []json.RawMessage
+				if json.Unmarshal(p[0], &name) != nil || json.Unmarshal(p[4], &notes) != nil {
+					continue
+				}
+				playerOf[normName(name)] = code
+				for _, nt := range notes {
+					lines = append(lines, line{who: name, team: code, raw: nt})
+				}
+			}
+			break
+		}
+		_ = i
+	}
+	if len(lines) == 0 {
+		return
+	}
+	var subs []Sub
+	for _, s := range a.store.all() {
+		if !s.Pregame {
+			continue
+		}
+		if s.follows(t1) || s.follows(t2) {
+			subs = append(subs, s)
+			continue
+		}
+		for _, p := range s.Players {
+			if _, ok := playerOf[normName(p)]; ok {
+				subs = append(subs, s)
+				break
+			}
+		}
+	}
+	if len(subs) == 0 {
+		return
+	}
+	url := siteURL + "#match/" + id
+	ok := a.sendTo(subs, 3600, func(lang string) payload {
+		var parts []string
+		for _, l := range lines {
+			if t := a.noteText(lang, l.raw); t != "" {
+				parts = append(parts, l.who+": "+t)
+			}
+			if len(parts) == 3 {
+				break
+			}
+		}
+		return payload{
+			Title: "📋 " + a.tr(lang, "On the line today", nil) + ": " + t1 + " vs " + t2,
+			Body:  strings.Join(parts, " · "),
+			URL:   url, Tag: "stakes-" + id,
+		}
+	})
+	log.Printf("stakes %s vs %s: %d lines, sent %d/%d", t1, t2, len(lines), ok, len(subs))
 }

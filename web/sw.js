@@ -82,10 +82,47 @@ self.addEventListener("pushsubscriptionchange", (event) => {
   );
 });
 
+// ---- Stats files: cache first ----
+// A build's files (stats/<version>/...) never change, so a copy is as good as the server's: repeat visits are instant
+// and pages open on a bad connection. When a new build appears, the old build's copies are thrown out.
+const STATS_CACHE = "riftwise-stats-v1";
+const STATS_RE = /^\/stats\/(\d{14})\//;
+
+async function statsFromCache(request, version) {
+  const cache = await caches.open(STATS_CACHE);
+  const hit = await cache.match(request);
+  if (hit) return hit;
+  const res = await fetch(request);
+  if (res.ok) {
+    cache.put(request, res.clone()).catch(() => {});
+    pruneOldBuilds(cache, version);
+  }
+  return res;
+}
+
+let prunedFor = "";
+async function pruneOldBuilds(cache, version) {
+  if (prunedFor === version) return;
+  prunedFor = version;
+  for (const req of await cache.keys()) {
+    const m = STATS_RE.exec(new URL(req.url).pathname);
+    if (m && m[1] !== version) await cache.delete(req);
+  }
+}
+
 self.addEventListener("fetch", (event) => {
-  if (event.request.mode !== "navigate") return; // assets and APIs: plain network, no caching
+  const req = event.request;
+  if (req.method === "GET") {
+    const url = new URL(req.url);
+    const m = url.origin === self.location.origin ? STATS_RE.exec(url.pathname) : null;
+    if (m) {
+      event.respondWith(statsFromCache(req, m[1]).catch(() => fetch(req)));
+      return;
+    }
+  }
+  if (req.mode !== "navigate") return; // other assets and APIs: plain network, no caching
   event.respondWith(
-    fetch(event.request).catch(
+    fetch(req).catch(
       () => new Response(OFFLINE_HTML, { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } }),
     ),
   );

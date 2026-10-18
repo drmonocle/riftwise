@@ -37,12 +37,16 @@ func main() {
 	cmd := os.Args[1]
 	fs := flag.NewFlagSet(cmd, flag.ExitOnError)
 	dataDir := fs.String("data", `C:\Sites\riftwise-push-data`, "data folder (keys, subscriptions, locales, logs)")
+	statsDir := fs.String("stats", `C:\inetpub\wwwroot\riftwise\stats`, "the stats builds (latest.json, <version>/hub/stakes.json) for the on-the-line alerts")
 	addr := fs.String("addr", "127.0.0.1:8092", "listen address (serve)")
 	kind := fs.String("kind", "test", "sample: kickoff, pregame, banger or test")
 	team := fs.String("team", "T1", "sample: send to people following this team")
 	_ = fs.Parse(os.Args[2:])
 
 	app, err := newApp(*dataDir)
+	if err == nil {
+		app.statsDir = *statsDir
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
