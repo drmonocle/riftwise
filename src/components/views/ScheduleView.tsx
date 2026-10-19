@@ -236,6 +236,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 <input
                   type="text"
                   placeholder={tl("Search team or league…")}
+                  aria-label={tl("Search team or league…")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-rw-surface border border-rw-border rounded pl-8 pr-3 py-1 text-xs text-rw-text focus:outline-none focus:border-rw-accent"

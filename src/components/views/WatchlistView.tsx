@@ -346,6 +346,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           <input
             type="text"
             placeholder={searchPlaceholder}
+            aria-label={searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-rw-surface border border-rw-border rounded-lg pl-8 pr-3 py-1 text-xs text-rw-text focus:outline-none focus:border-rw-accent"
