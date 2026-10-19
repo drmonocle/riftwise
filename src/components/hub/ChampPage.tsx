@@ -192,7 +192,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                   >
                     {d == null ? "" : d === 0 ? "=" : `${d > 0 ? "+" : ""}${d}`}
                   </span>
-                  <span className="text-rw-sub tabular-nums text-right shrink-0 whitespace-nowrap min-w-56">
+                  <span className="text-rw-sub tabular-nums text-right leading-tight sm:whitespace-nowrap sm:min-w-56">
                     {tl("{pres} presence · {p} picks · {wr}", { pres: `${Math.round(pres * 100)}%`, p: p.pk, wr: p.pk ? pctOf(p.w, p.pk) : "–" })}
                   </span>
                 </div>

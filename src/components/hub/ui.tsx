@@ -11,6 +11,7 @@ import { prefetchHub, prettySlug } from "../../hub/data";
 import { IS_WEB } from "../../platform";
 import { CaptureFooter, ShareButtons } from "./ShareImage";
 import { usePlayerPicture, useTeamLogo } from "../../hub/riotCatalog";
+import { riotThumb } from "../../riotImage";
 import { allRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 
 export const card = "bg-rw-surface border border-rw-border rounded-xl p-4";
@@ -411,16 +412,17 @@ export const PlayerPhoto: React.FC<{
   className?: string;
 }> = ({ name, team, slug, size = 56, sizeClass, className = "" }) => {
   const pic = usePlayerPicture(name, team, slug);
-  const [broken, setBroken] = useState<string | null>(null); // the address that failed to load
+  const [broken, setBroken] = useState<string[]>([]); // addresses that failed to load
   const box = sizeClass ? undefined : { width: size, height: size };
   const sz = sizeClass || "";
-  const src = pic && pic.src !== broken ? pic.src : undefined;
+  // Riot's photo through Riot's resizer (a 13th of the download), the full picture if that fails, then initials
+  const src = pic ? [riotThumb(pic.src), pic.src].find((u) => !broken.includes(u)) : undefined;
   return src ? (
     <img
       src={src}
       alt=""
       loading="lazy"
-      onError={() => setBroken(src)}
+      onError={() => setBroken((b) => [...b, src])}
       // our own copy may go into copied pictures (the stats host allows cross-origin reads)
       {...(pic?.from === "riot" ? { "data-nocapture": "1" } : { crossOrigin: "anonymous" as const })}
       style={box}
