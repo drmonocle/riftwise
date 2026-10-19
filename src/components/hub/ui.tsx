@@ -11,7 +11,7 @@ import { prefetchHub, prettySlug } from "../../hub/data";
 import { IS_WEB } from "../../platform";
 import { CaptureFooter, ShareButtons } from "./ShareImage";
 import { usePlayerPicture, useTeamLogo } from "../../hub/riotCatalog";
-import { riotThumb } from "../../riotImage";
+import { ddragonThumb, riotThumb } from "../../riotImage";
 import { allRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 
 export const card = "bg-rw-surface border border-rw-border rounded-xl p-4";
@@ -289,11 +289,11 @@ const Pic: React.FC<{ src: string | null; alt: string; size: number; round?: boo
   fallback,
   className,
 }) => {
-  // the picture that failed (a new picture gets its own try)
-  const [failed, setFailed] = useState<string | null>(null);
-  const broken = !!src && failed === src;
+  // pictures that failed (a new picture gets its own try): the small resized icon first, then the full one
+  const [failed, setFailed] = useState<string[]>([]);
+  const shown = src ? [ddragonThumb(src, size), src].find((u) => !failed.includes(u)) : undefined;
   const style = { width: size, height: size };
-  if (!src || broken)
+  if (!src || !shown)
     return (
       <span
         style={style}
@@ -305,13 +305,14 @@ const Pic: React.FC<{ src: string | null; alt: string; size: number; round?: boo
     );
   return (
     <img
-      src={src}
+      src={shown}
+      data-full={shown !== src ? src : undefined}
       alt={alt}
       title={alt}
       width={size}
       height={size}
       loading="lazy"
-      onError={() => setFailed(src)}
+      onError={() => setFailed((f) => [...f, shown])}
       className={`inline-block shrink-0 ${round ? "rounded-full" : "rounded"} ${className || ""}`}
       style={style}
     />

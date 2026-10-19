@@ -8,12 +8,14 @@ import { ImageDown, Images } from "lucide-react";
 import { toBlob } from "html-to-image";
 import { tl } from "../../i18n";
 import { IS_WEB } from "../../platform";
+import { withFullImages } from "../../riotImage";
 
 export async function capture(node: HTMLElement, wholePage = false): Promise<Blob | null> {
   node.classList.add("rw-capturing");
   if (wholePage) node.classList.add("rw-capturing-page");
   try {
-    return await toBlob(node, {
+    // resized icons (no copying allowed by the resizer) are swapped for their full pictures for the shot
+    return await withFullImages(node, () => toBlob(node, {
       // sharp, but a whole page stays under the browsers' picture size limits
       pixelRatio: Math.max(1, Math.min(2, 16000 / Math.max(1, node.scrollHeight))),
       // the picture's background is the theme's card colour (html-to-image needs a real colour, not a variable)
@@ -21,7 +23,7 @@ export async function capture(node: HTMLElement, wholePage = false): Promise<Blo
       skipFonts: true,
       // leave the buttons themselves out of the picture
       filter: (n) => !(n instanceof HTMLElement && n.dataset.nocapture === "1"),
-    });
+    }));
   } finally {
     node.classList.remove("rw-capturing", "rw-capturing-page");
   }

@@ -187,7 +187,10 @@ export const BroadcastCardButton: React.FC<{ data: () => CardData; name: string;
         // (and don't wait more than a few seconds for a slow one)
         await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
         const imgs = [...(ref.current?.querySelectorAll("img") || [])];
-        for (const im of imgs) im.loading = "eager";
+        for (const im of imgs) {
+          im.loading = "eager";
+          if (im.dataset.full) im.src = im.dataset.full; // full icons: the resized ones can't be copied into a picture
+        }
         await Promise.race([
           Promise.all(imgs.map((im) => (im.complete ? null : new Promise((r) => ((im.onload = r), (im.onerror = r)))))),
           new Promise((r) => setTimeout(r, 4000)),
