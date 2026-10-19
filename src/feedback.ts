@@ -4,6 +4,12 @@ import { APP_VERSION } from "./version";
 
 export const FEEDBACK_EMAIL = "kyle.l.hoover@gmail.com";
 
+/** The stats pages' mailto link for "Report a wrong stat", with the page it's about filled in. */
+export const reportUrl = (page: string) =>
+  `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent("RiftWise stats: wrong number")}&body=${encodeURIComponent(
+    `Page: ${page}\n\nWhat looks wrong:\n\nWhat it should be (and where you saw it):\n`,
+  )}`;
+
 /** The footer's "Feedback": ideas and fixes, with the RP code thank-you. */
 export const feedbackUrl = (page: string): string =>
   `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent(tl("RiftWise feedback"))}&body=${encodeURIComponent(

@@ -11,6 +11,7 @@ import { autoMove, importMovedSettings } from "./move";
 import { STARTED_ON_HUB, currentHubRoute } from "./hub/route";
 import { prefetch } from "./stats";
 import { preloadDDragon } from "./hub/ddragon";
+import { preloadPageCode } from "./components/hub/pageCode";
 
 // Settings brought over from lolworlds.com/riftwise (#import=...) are saved before anything reads them;
 // a browser's first visit to riftwise.gg goes and fetches them (the page reloads, so nothing starts here).
@@ -35,6 +36,7 @@ let picturePage = false; // a page that shows champion pictures straight away
 if (IS_WEB && !leaving && STARTED_ON_HUB) {
   import("./components/views/StatsView").catch(() => {}); // a failure shows (and retries) where the page loads it
   const r = currentHubRoute();
+  preloadPageCode(r.kind); // each stats page is its own download (pageCode.ts)
   const dir = HUB_FILE_DIR[r.kind];
   prefetch(["meta.json", "hub/meta.json", ...(dir && "slug" in r ? [`hub/${dir}/${r.slug}.json`] : [])]);
   picturePage = !!dir;
