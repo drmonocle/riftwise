@@ -612,6 +612,13 @@ export const StatsView: React.FC<StatsViewProps> = ({
   const statsMeta = useLoad<StatsMeta>(loadStatsMeta, []);
   const hubMeta = useLoad(loadHubMeta, []);
   const scroller = useRef<HTMLDivElement>(null);
+  // the section menu is one sideways row on phones: keep the open section in view
+  const sectionRow = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const row = sectionRow.current;
+    const on = row?.querySelector<HTMLElement>(".bg-rw-accent");
+    if (row && on && row.scrollWidth > row.clientWidth) row.scrollLeft = on.offsetLeft - (row.clientWidth - on.offsetWidth) / 2;
+  }, [route.kind]);
   const lastRoute = useRef(route);
   useEffect(() => {
     const prev = lastRoute.current;
@@ -665,12 +672,17 @@ export const StatsView: React.FC<StatsViewProps> = ({
             </button>
           )}
           {!isSection && <CopyLinkButton url={hubShareUrl(route)} />}
-          <div className="flex flex-wrap gap-1.5" role="tablist">
+          {/* phones: one row that scrolls sideways, so the page itself starts near the top; wider screens: wrapped */}
+          <div
+            ref={sectionRow}
+            className="relative flex gap-1.5 overflow-x-auto [scrollbar-width:none] -mx-4 px-4 w-[calc(100%+2rem)] sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0 sm:w-auto"
+            role="tablist"
+          >
             {SECTIONS.map((s) => (
               <HubLink
                 key={s.kind}
                 to={{ kind: s.kind } as HubRoute}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors shrink-0 whitespace-nowrap ${
                   route.kind === s.kind
                     ? "bg-rw-accent text-rw-bg border-rw-accent"
                     : "border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50"

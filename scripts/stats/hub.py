@@ -1056,7 +1056,7 @@ def build(ctx) -> dict:
                 awarded = bool(s.get("ff"))
                 wa, wb = s["sa"], s["sb"]  # a forfeit, or games missing from the catalog (Worlds Season 1 final: 2-1)
             bo = (s and s["bo"]) or (glist and glist[0]["bo"]) or max(1, len(glist))
-            if bo != 2 and max(wa, wb) > bo // 2 + 1:
+            if max(wa, wb) > bo // 2 + 1:
                 bo = 2 * max(wa, wb) - 1  # Leaguepedia's best-of is sometimes off (a 3-1 marked Bo3): the score decides
             played = bool(glist) and any(g["w"] for g in glist) or (wa + wb > 0)
             winner = 1 if wa > wb else 2 if wb > wa else 0
