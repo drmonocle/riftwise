@@ -1488,6 +1488,7 @@
   "Fan-made projects we love. Not ours: all credit to their makers.": "Des projets de fans qu'on adore. Ce ne sont pas les nôtres : tout le mérite revient à leurs créateurs.",
   "Search Riot's LoL Esports event photos by who's in them: any player, any team, two players in the same shot. Made by Alessandra Ogawa, Gabriela Albuquerque and Pedro Fracassi, starting as a computer-vision class project at Insper. Photos belong to Riot Games.": "Cherchez les photos d'événements LoL Esports de Riot selon qui y figure : n'importe quel joueur, n'importe quelle équipe, deux joueurs sur la même photo. Créé par Alessandra Ogawa, Gabriela Albuquerque et Pedro Fracassi, à partir d'un projet de vision par ordinateur à l'Insper. Les photos appartiennent à Riot Games.",
   "Result awarded by forfeit, not by the games played.": "Résultat attribué par forfait, pas par les parties jouées.",
+  "We couldn't find one of these teams.": "Nous n'avons pas trouvé l'une de ces équipes.",
   "now {team}": "désormais {team}",
   "title match::Final": "Finale",
   "title winner::Champion": "Vainqueur",

@@ -1488,6 +1488,7 @@
   "Fan-made projects we love. Not ours: all credit to their makers.": "我们喜爱的粉丝作品。并非出自我们之手，功劳全归其作者。",
   "Search Riot's LoL Esports event photos by who's in them: any player, any team, two players in the same shot. Made by Alessandra Ogawa, Gabriela Albuquerque and Pedro Fracassi, starting as a computer-vision class project at Insper. Photos belong to Riot Games.": "按照片里的人搜索拳头的英雄联盟电竞赛事照片：任何选手、任何战队，甚至两名选手的同框照。由 Alessandra Ogawa、Gabriela Albuquerque 和 Pedro Fracassi 制作，最初是 Insper 大学的计算机视觉课程项目。照片版权归 Riot Games 所有。",
   "Result awarded by forfeit, not by the games played.": "结果由弃权判定，而非实际比赛结果。",
+  "We couldn't find one of these teams.": "找不到其中一支战队。",
   "now {team}": "现 {team}",
   "title match::Final": "决赛",
   "title winner::Champion": "冠军",

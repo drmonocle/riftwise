@@ -10,7 +10,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { RotateCcw, Undo2, ArrowLeftRight, ChevronsRight, Copy, Check, Lightbulb } from "lucide-react";
 import { tl, roleName, fmtN } from "../../i18n";
 import { champName } from "../../champions";
-import { winRate } from "../../stats";
+import { MissingFile, winRate } from "../../stats";
 import type { TeamGameRow } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
 import { championList, useDDragon } from "../../hub/ddragon";
@@ -218,14 +218,14 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
     }
     navigateHub({ kind: "draft", query: next.toString() }, { replace: true });
   };
-  const [sides, setSides] = useState<{ a: Side | null; b: Side | null; failed?: boolean }>({ a: null, b: null });
+  const [sides, setSides] = useState<{ a: Side | null; b: Side | null; failed?: boolean; missing?: boolean }>({ a: null, b: null });
   useEffect(() => {
     let alive = true;
     setSides({ a: null, b: null });
     if (!a || !b) return;
     Promise.all([loadSide(a), loadSide(b)])
       .then(([x, y]) => alive && setSides({ a: x, b: y }))
-      .catch(() => alive && setSides({ a: null, b: null, failed: true }));
+      .catch((e) => alive && setSides({ a: null, b: null, failed: true, missing: e instanceof MissingFile }));
     return () => {
       alive = false;
     };
@@ -266,7 +266,7 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
   if (sides.failed)
     return (
       <div className="text-xs text-rw-sub py-6 text-center space-y-2">
-        <p>{tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>
+        <p>{sides.missing ? tl("We couldn't find one of these teams.") : tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>
         <button type="button" onClick={() => set({ a: null, b: null, d: "", u: "", h: "" })} className="text-rw-teal hover:underline">
           {tl("Pick the teams again")}
         </button>

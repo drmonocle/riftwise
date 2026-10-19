@@ -1,9 +1,10 @@
 /** Team page: record, titles, tournaments with placements, roster by year, rivals and champions. */
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Trophy } from "lucide-react";
 import { tl, roleName, regionName, eventTitle, tc } from "../../i18n";
 import { winRate } from "../../stats";
 import { loadHubTeam } from "../../hub/data";
+import { navigateHub } from "../../hub/route";
 import type { HubTeam } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { TeamSeriesArchive } from "./Archives";
@@ -18,6 +19,10 @@ import { STable } from "../STable";
 export const TeamPage: React.FC<{ slug: string }> = ({ slug }) => {
   const state = useLoad(() => loadHubTeam(slug), [slug]);
   usePageTitle(state.data?.name);
+  // reached by an old or short address (/team/hle): show the team's own address
+  useEffect(() => {
+    if (state.data?.u && state.data.u !== slug) navigateHub({ kind: "team", slug: state.data.u }, { replace: true });
+  }, [state.data, slug]);
   useDDragon();
   return (
     <Page state={state}>
