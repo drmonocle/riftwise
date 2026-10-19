@@ -37,3 +37,9 @@ Thumbs.db
 # Per-machine cargo config
 src-tauri/.cargo/config.toml
 dist-web/
+
+# the photo fetch's records (scripts/stats/photos_lp.py), kept on the stats server
+scripts/stats/photos_lp.json
+scripts/stats/riot_players.json
+scripts/stats/team_renames.json
+scripts/stats/team_shorts.json

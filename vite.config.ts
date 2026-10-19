@@ -41,7 +41,7 @@ const localStats = {
     server.middlewares.use("/stats", (req: any, res: any, next: any) => {
       const file = path.join(dir, decodeURIComponent((req.url || "/").split("?")[0]));
       if (!file.startsWith(path.resolve(dir)) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) return next();
-      res.setHeader("Content-Type", file.endsWith(".json") ? "application/json; charset=utf-8" : "text/plain; charset=utf-8");
+      res.setHeader("Content-Type", file.endsWith(".json") ? "application/json; charset=utf-8" : file.endsWith(".webp") ? "image/webp" : "text/plain; charset=utf-8");
       fs.createReadStream(file).pipe(res);
     });
   },

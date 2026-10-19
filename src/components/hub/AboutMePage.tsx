@@ -126,6 +126,7 @@ export const AboutMePage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ o
           <p>{tl("I build RiftWise with the help of AI: Gemini (through Google's Antigravity) and Claude helped write parts of the site and brainstorm features.")}</p>
           <p>
             {tl("Stats come from Leaguepedia and Oracle's Elixir, and live scores from Riot's esports schedule.")}{" "}
+            {tl("Player photos come from Riot and Leaguepedia.")}{" "}
             <HubLink to={{ kind: "about" }} className={link}>
               {tl("How we count")}
             </HubLink>

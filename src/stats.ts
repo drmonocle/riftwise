@@ -195,6 +195,14 @@ export async function statsFileUrl(path: string): Promise<string> {
   return `${SITE_URL}stats/${v}/${path}`;
 }
 
+/**
+ * Address of a player's photo from Leaguepedia (fetched by scripts/stats/photos_lp.py into stats/photos/<slug>.webp),
+ * with its fetch date so a newer picture isn't hidden by a cached one. Same host as the stats files.
+ */
+export function statsPhotoUrl(slug: string, stamp: string): string {
+  return `${STATS_BASE}/photos/${encodeURIComponent(slug)}.webp${stamp ? `?v=${stamp}` : ""}`;
+}
+
 export const loadStatsMeta = () => load<StatsMeta>("meta.json");
 export const loadStatsSearch = () => load<StatsSearch>("search.json");
 // Split search lists: the Teams list is ~70 KB, players ~300 KB, so each loads only when needed.

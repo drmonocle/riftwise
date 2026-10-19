@@ -678,8 +678,8 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
         label={`${pa?.p.name || "–"} vs ${pb?.p.name || "–"} · ${roleName(r)}`}
         name={`${title}-${r}-${periodLabel}`}
         card={laneCard}
-        left={pa ? <PlayerPhoto name={pa.p.name} team={a.team.name} sizeClass="w-16 h-16 lg:w-24 lg:h-24 2xl:w-32 2xl:h-32" /> : null}
-        right={pb ? <PlayerPhoto name={pb.p.name} team={b.team.name} sizeClass="w-16 h-16 lg:w-24 lg:h-24 2xl:w-32 2xl:h-32" /> : null}
+        left={pa ? <PlayerPhoto name={pa.p.name} team={a.team.name} slug={pa.p.u} sizeClass="w-16 h-16 lg:w-24 lg:h-24 2xl:w-32 2xl:h-32" /> : null}
+        right={pb ? <PlayerPhoto name={pb.p.name} team={b.team.name} slug={pb.p.u} sizeClass="w-16 h-16 lg:w-24 lg:h-24 2xl:w-32 2xl:h-32" /> : null}
       >
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className="min-w-0 flex justify-end">{name(pa, false)}</div>

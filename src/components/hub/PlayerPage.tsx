@@ -11,7 +11,7 @@ import { PlayerGamesArchive } from "./Archives";
 import { PlayerPeriodStats } from "./PeriodStats";
 import { PlayerRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
-import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, Page, RevealButton, Section, Stat, td, TeamLink, th, useHidden, useLoad, usePageTitle } from "./ui";
+import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerPhoto, RevealButton, Section, Stat, td, TeamLink, th, useHidden, useLoad, usePageTitle } from "./ui";
 import { ratingTextClass } from "./BestPage";
 import { STable } from "../STable";
 
@@ -82,41 +82,46 @@ const PlayerView: React.FC<{
   return (
     <div className="rw-page">
       <div className={card}>
-        <h2 className="text-lg font-bold text-rw-text">
-          {p.name}
-          {p.bio.native && (
-            <span className="text-rw-sub text-sm font-semibold ml-2">
-              {p.bio.native}
-            </span>
-          )}
-        </h2>
-        <p className="text-[11px] text-rw-sub">
-          {[
-            roleName(p.role),
-            p.bio.real,
-            p.bio.country,
-            yrs != null ? tl("{n} years old", { n: yrs }) : null,
-            p.bio.retired ? tl("Retired") : null,
-          ]
-            .filter(Boolean)
-            .join(" · ")}
-        </p>
-        {p.club && (
-          <p className="text-[11px] text-rw-muted">
-            <TeamLink name={p.club} u={p.clubU} />{" "}
-            {tl("(last game {date})", { date: fmtDate(p.clubTo) })}
-            {p.bio.contract && (
-              <>
-                {" "}
-                ·{" "}
-                {tl("Contract until {date}", { date: fmtDate(p.bio.contract) })}
-              </>
+        <div className="flex items-start gap-3">
+          <PlayerPhoto name={p.name} team={p.club} slug={p.u} sizeClass="w-14 h-14 lg:w-20 lg:h-20 2xl:w-24 2xl:h-24" />
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg font-bold text-rw-text">
+              {p.name}
+              {p.bio.native && (
+                <span className="text-rw-sub text-sm font-semibold ml-2">
+                  {p.bio.native}
+                </span>
+              )}
+            </h2>
+            <p className="text-[11px] text-rw-sub">
+              {[
+                roleName(p.role),
+                p.bio.real,
+                p.bio.country,
+                yrs != null ? tl("{n} years old", { n: yrs }) : null,
+                p.bio.retired ? tl("Retired") : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+            {p.club && (
+              <p className="text-[11px] text-rw-muted">
+                <TeamLink name={p.club} u={p.clubU} />{" "}
+                {tl("(last game {date})", { date: fmtDate(p.clubTo) })}
+                {p.bio.contract && (
+                  <>
+                    {" "}
+                    ·{" "}
+                    {tl("Contract until {date}", { date: fmtDate(p.bio.contract) })}
+                  </>
+                )}
+                {p.bio.res && (
+                  <> · {tl("Residency: {region}", { region: regionName(p.bio.res, p.bio.res) })}</>
+                )}
+              </p>
             )}
-            {p.bio.res && (
-              <> · {tl("Residency: {region}", { region: regionName(p.bio.res, p.bio.res) })}</>
-            )}
-          </p>
-        )}
+          </div>
+        </div>
         {p.bio.fav && p.bio.fav.length > 0 && (
           <div className="flex flex-wrap items-center gap-1 mt-1 text-[11px] text-rw-muted">
             {tl("Favorite champions:")}

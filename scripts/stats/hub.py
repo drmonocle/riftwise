@@ -12,6 +12,7 @@ folder, so one latest.json switch publishes both:
   hub/search/champs.json            [name, slug, picks]
   hub/team/<slug>.json              team page
   hub/player/<slug>.json            player page
+  hub/photos.json                   {slug: "YYYYMMDD"} players with a Leaguepedia photo (photos_lp.py)
   hub/event/<slug>.json             tournament page: info, results, standings, stages and bracket, leaders
   hub/game/<slug>.json              one series: each game's draft, players, items, runes, objectives, VOD, rating
   hub/best/...                      the best-rated games and series (all time, by year, by league, by league and year)
@@ -2730,6 +2731,16 @@ def build(ctx) -> dict:
     })
     for kind, rows in seo.items():
         out.text(f"seo/{kind}.tsv", "".join(f"{tsv_cell(s)}\t{tsv_cell(t)}\t{tsv_cell(d)}\t{i}\n" for s, t, d, i in rows))
+    # Players with a Leaguepedia photo (fetched nightly by photos_lp.py into <out>/photos/<slug>.webp):
+    # {slug: "YYYYMMDD"}, so the app shows a picture where Riot has none
+    try:
+        import photos_lp
+        photos = photos_lp.photos_map(ctx.out_root, player_slug)
+    except Exception as e:  # noqa: BLE001 - photos are an extra; a build must not fail over them
+        print(f"hub: photos map skipped: {e}")
+        photos = {}
+    out.json("photos.json", photos)
+    checks["hub: player photos"] = len(photos)
     out.finish()
     stats = {"series pages": n_series_pages, "teams": len(search_teams), "players": len(search_players),
              "events": len(search_events), "champions": len(search_champs), "files written": out.written,

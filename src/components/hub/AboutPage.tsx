@@ -47,6 +47,7 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
             {tl("(oracleselixir.com) by Tim Sevenhuysen: the early game of most pro games since 2014 (gold, CS and XP leads at 10, 15 and 20 minutes, first blood, first tower, turret plates, void grubs, wards). Free for non-commercial use with credit; thank you, Tim.")}
           </li>
           <li>{tl("Riot's esports schedule: live scores and upcoming matches.")}</li>
+          <li>{tl("Player photos: Riot's team list for current pros, Leaguepedia (lol.fandom.com) for retired pros and old rosters.")}</li>
           <li>{tl("The stats are rebuilt whenever new games come in: results show up within a few hours of a series, full game stats (KDA, gold, items) overnight. The newest games can be missing details until then.")}</li>
         </ul>
       </Section>
