@@ -255,6 +255,10 @@
     column-count: 2;
     column-gap: 0.75rem;
   }
+  /* a wide table (an event's team or player stats) takes the whole width instead of one column */
+  .rw-page .rw-span {
+    column-span: all;
+  }
   .rw-page > * {
     break-inside: avoid;
   }
@@ -281,6 +285,20 @@
   }
   .rw-tiles {
     column-count: 3;
+  }
+  /* pages that are one big table (Tournaments, Rankings, Leagues...): a table 2,200 px wide is hard to read,
+     so they stay at the two-column width, centred */
+  .rw-capped {
+    max-width: 100rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  /* whole pages that are one list (Live, Schedule, Watchlist, Dispatch, Settings): the same cap, through the
+     page padding so the content stays centred */
+  .page-4xl.rw-capped,
+  .page-5xl.rw-capped {
+    --page-w: 100rem;
+    max-width: none;
   }
 }
 

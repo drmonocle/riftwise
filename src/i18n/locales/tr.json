@@ -1474,6 +1474,7 @@
   "{player} ({team}) plays it: {n} games, won {pct}": "{player} ({team}) oynuyor: {n} oyun, {pct} kazanılmış",
   "Gold lead at 15 · games won · who on either roster plays the answer": "15. dakikada altın farkı · kazanılan oyunlar · iki kadroda cevabı kim oynuyor",
   "Pick the teams again": "Takımları yeniden seç",
+  "All-time pro records": "Tüm zamanların pro rekorları",
   "now {team}": "şimdi: {team}",
   "title match::Final": "Final",
   "title winner::Champion": "Kazanan",

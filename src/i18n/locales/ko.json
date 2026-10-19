@@ -1474,6 +1474,7 @@
   "{player} ({team}) plays it: {n} games, won {pct}": "{player} ({team}) 사용: {n}경기, 승률 {pct}",
   "Gold lead at 15 · games won · who on either roster plays the answer": "15분 골드 격차 · 승리 경기 · 양 팀 로스터에서 해당 대응 챔피언을 쓰는 선수",
   "Pick the teams again": "팀 다시 고르기",
+  "All-time pro records": "역대 프로 기록",
   "now {team}": "현재 {team}",
   "title match::Final": "결승",
   "title winner::Champion": "우승팀",

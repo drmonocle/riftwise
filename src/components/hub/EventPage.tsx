@@ -185,8 +185,11 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
       {/* the leaders' game counts tell who went deep: hidden with the results */}
       {e.leaders && Object.keys(e.leaders).length > 0 && !resultsHidden && <Leaders e={e} />}
 
-      <EventPlayerStats e={e} hidden={resultsHidden} />
-      <EventTeamStatsTable e={e} hidden={resultsHidden} />
+      {/* wide tables: the whole page width on multi-column screens */}
+      <div className="rw-span space-y-3">
+        <EventPlayerStats e={e} hidden={resultsHidden} />
+        <EventTeamStatsTable e={e} hidden={resultsHidden} />
+      </div>
       <RegionalRecords e={e} hidden={resultsHidden} />
 
       <div className="grid gap-3 md:grid-cols-2">

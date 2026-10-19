@@ -42,7 +42,7 @@ export const RatingBadge: React.FC<{ r: number; className?: string }> = ({ r, cl
   );
 };
 
-const sel = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-xs text-rw-text";
+const sel = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-xs text-rw-text max-w-full";
 const tabBtn = (on: boolean) =>
   `px-3 py-1.5 rounded-lg text-xs font-semibold border ${on ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"}`;
 

@@ -218,7 +218,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
   // If pro matches are live right now
   if (matches.length > 0) {
     return (
-      <div className="p-4 space-y-4 page-4xl overflow-y-auto h-full">
+      <div className="p-4 space-y-4 page-4xl rw-capped overflow-y-auto h-full">
         <div className="flex items-center justify-between pb-1 border-b border-rw-border">
           <h2 className="text-xs font-bold text-rw-red uppercase tracking-wider flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-rw-red animate-ping" />
@@ -548,7 +548,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
 
   // IDLE STATE: No matches live right now -> Show Next Match Hero with Live Countdown
   return (
-    <div className="p-4 space-y-6 page-4xl overflow-y-auto h-full">
+    <div className="p-4 space-y-6 page-4xl rw-capped overflow-y-auto h-full">
       {/* Idle Notice Header */}
       <div className="text-center py-4 border-b border-rw-border">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rw-surface border border-rw-border text-rw-muted text-xs mb-1">

@@ -525,7 +525,7 @@ const Board: React.FC<{
                 ))}
               </span>
             </div>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(3.25rem,1fr))] gap-1 max-h-[22rem] overflow-y-auto pr-1">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(3.75rem,1fr))] gap-1 max-h-[22rem] overflow-y-auto pr-1">
               {shown.map((c) => {
                 const off = taken.has(c);
                 const pb = pools.b.picks.get(c)?.[0] || 0;

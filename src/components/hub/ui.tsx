@@ -109,7 +109,7 @@ export const Stat: React.FC<{ label: string; value: React.ReactNode; sub?: React
     <div className="text-[10px] uppercase tracking-wider text-rw-muted font-semibold truncate">{label}</div>
     <div className="text-base font-bold text-rw-text truncate">{value}</div>
     {sub && (
-      <div className="text-[10px] text-rw-sub truncate" title={typeof sub === "string" ? sub : undefined}>
+      <div className="text-[10px] text-rw-sub line-clamp-2" title={typeof sub === "string" ? sub : undefined}>
         {sub}
       </div>
     )}

@@ -390,8 +390,11 @@ export const TeamRows: React.FC<{
               {s.t.picks.slice(0, 10).map(([c, n, w]) => (
                 <li key={c} className="flex justify-between gap-2 min-w-0">
                   <ChampLink name={c} size={16} />
-                  <span className="text-rw-muted shrink-0 tabular-nums">
-                    {tn("{n} game", "{n} games", n)} · {tl("{pct} win rate", { pct: winRate(w, n) })}
+                  <span
+                    className="text-rw-muted shrink-0 tabular-nums"
+                    title={`${tn("{n} game", "{n} games", n)} · ${tl("{pct} win rate", { pct: winRate(w, n) })}`}
+                  >
+                    {n} · {winRate(w, n)}
                   </span>
                 </li>
               ))}

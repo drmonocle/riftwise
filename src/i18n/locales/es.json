@@ -1474,6 +1474,7 @@
   "{player} ({team}) plays it: {n} games, won {pct}": "{player} ({team}) lo juega: {n} partidas, {pct} ganadas",
   "Gold lead at 15 · games won · who on either roster plays the answer": "Ventaja de oro al 15 · partidas ganadas · quién de cada plantilla juega la respuesta",
   "Pick the teams again": "Volver a elegir los equipos",
+  "All-time pro records": "Récords de todos los tiempos",
   "now {team}": "ahora {team}",
   "title match::Final": "Final",
   "title winner::Champion": "Campeón",

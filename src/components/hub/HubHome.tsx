@@ -186,7 +186,7 @@ const LatestRow: React.FC<{ e: EventListItem }> = ({ e }) => {
         <span className="shrink-0 flex items-center gap-1 text-rw-accent">
           {!e.rs && <Crown className="w-3 h-3" />}
           {hidden ? <RevealButton onReveal={reveal} small /> : <TeamLink name={e.w} u={e.wu} className="text-rw-accent hover:underline" />}
-          {e.rs ? <StandingsFirst /> : null}
+          {e.rs ? <span className="hidden sm:inline"><StandingsFirst /></span> : null}
         </span>
       )}
     </li>
@@ -204,7 +204,7 @@ export const EventsBrowse: React.FC<{ year?: string; meta: HubMeta | null; onYea
   const [scope, setScope] = useState<"main" | "all">("main");
   const [q, setQ] = useState("");
   return (
-    <div className="rw-page">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <select
           value={y}
@@ -260,7 +260,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
           <tr>
             <th className={th}>{tl("Tournament")}</th>
             <th className={th}>{tl("Dates")}</th>
-            <th className={th}>{tl("Region")}</th>
+            <th className={`${th} hidden sm:table-cell`}>{tl("Region")}</th>
             <th className={th}>{tl("Winner")}</th>
             <th className={th}>{tl("Games")}</th>
           </tr>
@@ -286,8 +286,8 @@ const BrowseRow: React.FC<{ e: EventListItem }> = ({ e }) => {
         {fmtDate(e.st, false)}
         {e.en && e.en !== e.st ? ` – ${fmtDate(e.en, false)}` : ""}
       </td>
-      <td className={`${td} text-rw-sub max-w-[8rem] truncate`}>{e.r ? regionName(e.r, e.r) : ""}</td>
-      <td className={`${td} max-w-[10rem] truncate`}>
+      <td className={`${td} text-rw-sub max-w-[8rem] truncate hidden sm:table-cell`}>{e.r ? regionName(e.r, e.r) : ""}</td>
+      <td className={`${td} max-w-[18rem] truncate`}>
         {e.w ? hidden ? <RevealButton onReveal={reveal} small /> : <TeamLink name={e.w} u={e.wu} /> : ""}
         {e.w && !hidden && e.rs ? <> <StandingsFirst /></> : null}
       </td>

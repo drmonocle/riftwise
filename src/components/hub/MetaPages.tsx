@@ -369,7 +369,7 @@ const LeagueEventRow: React.FC<{ e: HubLeague["events"][number] }> = ({
         {fmtDate(e.st, false)}
         {e.en && e.en !== e.st ? ` – ${fmtDate(e.en)}` : ""}
       </td>
-      <td className={`${td} max-w-[10rem] truncate`}>
+      <td className={`${td} max-w-[18rem] truncate`}>
         {e.w ? (
           hidden ? (
             <RevealButton onReveal={reveal} small />

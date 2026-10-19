@@ -113,7 +113,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   return (
-    <div className="p-4 space-y-6 page-4xl overflow-y-auto h-full select-none text-xs">
+    <div className="p-4 space-y-6 page-4xl rw-capped overflow-y-auto h-full select-none text-xs">
       {/* 0. App Version & Software Updates (desktop app only) */}
       {IS_DESKTOP && (
       <section className="space-y-3">
