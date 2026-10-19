@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	version  = "1.11.0"
+	version  = "1.12.0"
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -183,7 +183,33 @@ var noscriptLinks = [][2]string{
 }
 
 // page returns index.html with this page's title, description and preview tags.
-func (s *store) page(title, desc, canonical string, index bool, og string) string {
+// What a stats page is about, for search engines (schema.org): a player is a Person, a team a SportsTeam, a
+// tournament or a match a SportsEvent, a league a SportsOrganization. nil for the rest.
+func aboutOf(kind, title string) map[string]any {
+	name := strings.TrimSuffix(title, " | RiftWise")
+	if i := strings.Index(name, " – "); i > 0 {
+		name = name[:i] // "Faker – pro stats, champions and career" -> "Faker"
+	}
+	types := map[string]string{"player": "Person", "team": "SportsTeam", "event": "SportsEvent", "game": "SportsEvent", "league": "SportsOrganization"}
+	t, ok := types[kind]
+	if !ok || name == "" {
+		return nil
+	}
+	about := map[string]any{"@type": t, "name": name}
+	if t != "Person" {
+		about["sport"] = "League of Legends esports"
+	}
+	return about
+}
+
+func withAbout(m map[string]any, about map[string]any) map[string]any {
+	if about != nil {
+		m["about"] = about
+	}
+	return m
+}
+
+func (s *store) page(title, desc, canonical string, index bool, og string, about map[string]any) string {
 	s.mu.RLock()
 	doc, ver := s.indexHTML, s.version
 	s.mu.RUnlock()
@@ -220,10 +246,10 @@ func (s *store) page(title, desc, canonical string, index bool, og string) strin
 	tags.WriteString(`    <meta name="twitter:image" content="` + img + `" />` + "\n")
 	if !index {
 		tags.WriteString(`    <meta name="robots" content="noindex" />` + "\n")
-	} else if ld, err := json.Marshal(map[string]any{
+	} else if ld, err := json.Marshal(withAbout(map[string]any{
 		"@context": "https://schema.org", "@type": "WebPage", "name": title, "description": desc, "url": canonical,
 		"isPartOf": map[string]any{"@type": "WebSite", "name": "RiftWise", "alternateName": []string{"RiftWise.gg", "RiftWise Pro LoL Stats"}, "url": publicURL},
-	}); err == nil {
+	}, about)); err == nil {
 		tags.WriteString(`    <script type="application/ld+json">` + string(ld) + `</script>` + "\n")
 	}
 	tags.WriteString("  </head>")
@@ -245,6 +271,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	rest := strings.TrimPrefix(r.URL.Path, basePath)
 	parts := strings.Split(strings.Trim(rest, "/"), "/")
 	status, title, desc, index, og := http.StatusOK, "", "", true, ""
+	var about map[string]any
 
 	switch {
 	case parts[0] == "og":
@@ -292,6 +319,9 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		}
 		title, desc, index = e.title, e.desc, e.index
 		og = "og/" + parts[0] + "/" + slug + ".png"
+		if len(parts) == 2 {
+			about = aboutOf(kind, title)
+		}
 		if len(parts) == 3 { // one season of a league: /league/lck/2025
 			name := strings.TrimSuffix(title, " | RiftWise")
 			if i := strings.Index(name, " – "); i > 0 {
@@ -307,7 +337,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	canonical := publicURL + rest
-	body := s.page(title, desc, canonical, index, og)
+	body := s.page(title, desc, canonical, index, og, about)
 	if body == "" {
 		http.Error(w, "RiftWise is starting, try again in a moment", http.StatusServiceUnavailable)
 		return
