@@ -375,6 +375,8 @@ export const loadMatchups = (slug: string) => load<import("./types").HubMatchups
 export const loadRatingsHistory = () => load<Record<string, [string, number][]>>("hub/ratings-history.json");
 /** a player's last two years of games (smaller than the full log; not every player has one) */
 export const loadPlayerGames2y = (slug: string) => load<import("./types").PlayerGameRow[]>(`hub/playergames2y/${slug}.json`);
+/** a team's last two years of games (only teams whose page says g2y have one) */
+export const loadTeamGames2y = (slug: string) => load<import("./types").TeamGameRow[]>(`hub/teamgames2y/${slug}.json`);
 /** The best-rated games and series: all time, a year, a league, or a league's year. */
 export const loadBest = (year?: string, league?: string) =>
   load<import("./types").BestFile>(

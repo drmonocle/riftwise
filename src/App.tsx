@@ -837,6 +837,17 @@ export default function App() {
 
   return (
     <div className="rw-app flex flex-col h-screen w-screen bg-rw-bg text-rw-text overflow-hidden select-none">
+      {/* Keyboard users: the first Tab offers a jump past the header and tabs straight to the page */}
+      <a
+        href="#rw-main"
+        onClick={(e) => {
+          e.preventDefault();
+          document.getElementById("rw-main")?.focus();
+        }}
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-3 focus:py-2 focus:rounded-lg focus:bg-rw-accent focus:text-rw-bg focus:font-semibold"
+      >
+        {tl("Skip to content")}
+      </a>
       {/* Header */}
       <Header
         settings={settings}
@@ -978,7 +989,7 @@ export default function App() {
       )}
 
       {/* Main Content View Container */}
-      <main className="flex-1 overflow-hidden relative">
+      <main id="rw-main" tabIndex={-1} className="flex-1 overflow-hidden relative outline-none">
         {activeTab === "live" && (
           <LiveView
             matches={liveMatches}

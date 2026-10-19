@@ -129,7 +129,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
       </div>
 
       <OwnStorylines notes={t.notes} spoilerKey={`notes:team:${t.u}`} share={`${t.u}-storylines`} />
-      <TeamPeriodStats slug={t.u} />
+      <TeamPeriodStats slug={t.u} has2y={!!t.g2y} />
       <TeamRanks slug={t.u} events={t.events} />
 
       {t.titles.length > 0 && (

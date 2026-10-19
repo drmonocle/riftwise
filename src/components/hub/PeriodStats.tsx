@@ -2,10 +2,10 @@
  * "Stats for": a player's or team's numbers for any period (all time, last N games, a year, one tournament),
  * worked out from their game log like gol.gg's season / split pages. Spoiler mode hides periods with fresh games.
  */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName, fmtDec, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
-import { loadPlayerGames, loadTeamGames } from "../../hub/data";
+import { loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y } from "../../hub/data";
 import type { PlayerGameRow, TeamGameRow } from "../../hub/types";
 import {
   PeriodKey,
@@ -249,11 +249,32 @@ export const defaultPeriod = (opts: PeriodOption[]): PeriodKey =>
 
 type Who = { name: string; role?: string; club?: string };
 
-export const PlayerPeriodStats: React.FC<{ slug: string; who?: Who }> = ({ slug, who }) => {
-  const state = useLoad(() => loadPlayerGames(slug), [slug]);
-  if (state.loading) return null;
-  if (!state.data || !state.data.length) return null;
-  return <PlayerPeriodView slug={slug} rows={state.data} who={who} />;
+/**
+ * A game log for the period picker: the last two years first when the build made that smaller file (has2y: the
+ * page opens on this season, which is all it needs), the whole log right after, for older periods.
+ */
+function useGameLog<T>(slug: string, has2y: boolean | undefined, recent: (s: string) => Promise<T[]>, full: (s: string) => Promise<T[]>) {
+  const first = useLoad(() => (has2y ? recent(slug) : full(slug)), [slug, has2y]);
+  const [all, setAll] = useState<{ slug: string; rows: T[] } | null>(null);
+  useEffect(() => {
+    if (!has2y || !first.data) return;
+    let alive = true;
+    full(slug)
+      .then((rows) => alive && setAll({ slug, rows }))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, has2y, first.data]);
+  return { loading: first.loading, rows: all && all.slug === slug ? all.rows : first.data };
+}
+
+export const PlayerPeriodStats: React.FC<{ slug: string; who?: Who; has2y?: boolean }> = ({ slug, who, has2y }) => {
+  const { loading, rows } = useGameLog(slug, has2y, loadPlayerGames2y, loadPlayerGames);
+  if (loading) return null;
+  if (!rows || !rows.length) return null;
+  return <PlayerPeriodView slug={slug} rows={rows} who={who} />;
 };
 
 const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Who }> = ({
@@ -436,11 +457,11 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
 
 // ── teams ─────────────────────────────────────────────────────────────────
 
-export const TeamPeriodStats: React.FC<{ slug: string }> = ({ slug }) => {
-  const state = useLoad(() => loadTeamGames(slug), [slug]);
-  if (state.loading) return <Loading />;
-  if (!state.data || !state.data.length) return null;
-  return <TeamPeriodView slug={slug} rows={state.data} />;
+export const TeamPeriodStats: React.FC<{ slug: string; has2y?: boolean }> = ({ slug, has2y }) => {
+  const { loading, rows } = useGameLog(slug, has2y, loadTeamGames2y, loadTeamGames);
+  if (loading) return <Loading />;
+  if (!rows || !rows.length) return null;
+  return <TeamPeriodView slug={slug} rows={rows} />;
 };
 
 const ChampCounts: React.FC<{ title: string; list: [string, number][] }> = ({

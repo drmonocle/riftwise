@@ -2110,8 +2110,14 @@ def build(ctx) -> dict:
         recent = sorted(t_recent.get(fid, []), reverse=True)
         tevents = sorted(t_events.get(fid, []), key=lambda x: x["date"] or "", reverse=True)
         tg_rows = sorted(t_games.get(fid, []), key=lambda r: (r[0], r[1]), reverse=True)
+        t_has2y = False
         if tg_rows:
             out.json(f"teamgames/{u}.json", tg_rows)
+            # the last two years first on the team page (T1's full log is ~160 KB compressed), the rest after
+            tg_recent = [r for r in tg_rows if r[0] >= two_years_ago]
+            if tg_recent and len(tg_rows) > 200 and len(tg_recent) < len(tg_rows) * 0.8:
+                out.json(f"teamgames2y/{u}.json", tg_recent)
+                t_has2y = True
         prize_shown = set()
         for x in tevents:  # newest first: the event's prize and placing go on the last stage this team played
             pe, pu, pp = x.pop("_pe", None), x.pop("_pu", None), x.pop("_pp", None)
@@ -2207,6 +2213,8 @@ def build(ctx) -> dict:
             stakes_team[u] = {"n": name, "a": obj["notes"]["asOf"] if notes else None, "l": notes or [], "p": starters}
         if starters:
             obj["starters"] = starters  # [name, slug, role]: who played the team's latest games, by role
+        if t_has2y:
+            obj["g2y"] = 1  # teamgames2y/<slug>.json exists
         out.json(f"team/{u}.json", obj)
         search_teams.append([name, short_slug(name, u), t["g"], t["to"][:4], " | ".join(e["n"] for e in eras if e["n"] != name), " | ".join(codes),
                              lpt.get("Region") or ""])
@@ -2317,13 +2325,17 @@ def build(ctx) -> dict:
                 for nt in notes:
                     all_notes.append((note_score(nt), lu_last, {**nt, "t": "player", "name": name, "u": u, "asOf": as_of}))
             stakes_player[u] = (as_of, notes)
-        out.json(f"player/{u}.json", obj)
         games = sorted(p_games.get(page, []), key=lambda r: r[0], reverse=True)
+        # Match prep and the player page load this smaller file first (the last two years) and the full log after;
+        # g2y says it exists, so the app never asks for one that isn't there
+        recent2 = [r for r in games if r[0] >= two_years_ago]
+        has2y = bool(recent2) and len(games) > 200 and len(recent2) < len(games) * 0.8
+        if has2y:
+            obj["g2y"] = 1
+        out.json(f"player/{u}.json", obj)
         if games:
             out.json(f"playergames/{u}.json", [list(r) for r in games])
-            # Match prep loads this smaller file first (the last two years) and the full log only for older periods
-            recent2 = [r for r in games if r[0] >= two_years_ago]
-            if len(games) > 200 and len(recent2) < len(games) * 0.8:
+            if has2y:
                 out.json(f"playergames2y/{u}.json", [list(r) for r in recent2])
         search_players.append([name, short_slug(name, u), club, p["g"], last_date[:4], (role or "")[:1],
                                " ".join(x for x in (bio.get("Name"), bio.get("NativeName")) if x) if p["g"] >= 50 else ""])
