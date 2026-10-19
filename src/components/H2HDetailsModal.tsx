@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { X, Swords, Eye, EyeOff, Globe, Home, ClipboardList } from "lucide-react";
 import { findHubTeam, loadHubIndex } from "../hub/data";
 import { navigateHub } from "../hub/route";
@@ -97,6 +97,13 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+  // keyboard and screen-reader users land in the dialog, and go back to where they were when it closes
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const before = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+    return () => before?.focus?.();
+  }, []);
 
   const h2h = computeHeadToHead(c1, c2, schedule, matchId, countThisMatch);
   const t1 = teamInfo(catalog, team1Code);
@@ -163,10 +170,11 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
             {tl("All-time head-to-head")}
           </div>
           <button
+            ref={closeRef}
             type="button"
             onClick={onClose}
             aria-label={tl("Close")}
-            className="p-1 rounded text-rw-muted hover:text-rw-text hover:bg-rw-border"
+            className="p-1.5 -m-0.5 rounded text-rw-muted hover:text-rw-text hover:bg-rw-border"
           >
             <X className="w-4 h-4" />
           </button>
