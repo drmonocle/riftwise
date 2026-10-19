@@ -273,7 +273,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </h2>
           <div className="p-4 rounded-lg border border-rw-border bg-rw-surface space-y-3">
             <p className="text-rw-sub text-xs leading-relaxed">
-              {tl("The desktop app adds a system tray icon, a global hotkey (Alt+Shift+L), kickoff notifications and automatic updates. It is free, about 4 MB, and needs no installer.")}
+              {tl("The desktop app adds a system tray icon, a global hotkey (Alt+Shift+L), kickoff notifications and automatic updates. It is free, about 5 MB, and needs no installer.")}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <a
@@ -485,7 +485,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <span>{tl("Kickoff Hextech Audio Chime")}</span>
               </div>
               <div className="text-[11px] text-rw-muted">
-                {tl("Synthesize a rich LoL-style hextech harmonic chime when a followed match begins. (0 KB assets)")}
+                {tl("Plays a short Hextech-style chime when a match you follow starts.")}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -669,7 +669,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-lg bg-rw-surface border border-rw-border">
           <div>
-            <div className="font-bold text-rw-text text-xs">{tl("Active Tracked Entities")}</div>
+            <div className="font-bold text-rw-text text-xs">{tl("What you follow")}</div>
             <div className="text-[11px] text-rw-accent mt-0.5">
               {tl("{teams} teams · {players} players · {regions} regions · {leagues} leagues", {
                 teams: settings.followedTeams.length,
