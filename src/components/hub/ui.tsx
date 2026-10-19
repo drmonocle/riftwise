@@ -10,7 +10,7 @@ import { champIcon, itemIcon, itemName, runeIcon, runeName, spellIcon, spellName
 import { prefetchHub, prettySlug } from "../../hub/data";
 import { IS_WEB } from "../../platform";
 import { CaptureFooter, ShareButtons } from "./ShareImage";
-import { usePlayerPhoto, useTeamLogo } from "../../hub/riotCatalog";
+import { usePlayerPicture, useTeamLogo } from "../../hub/riotCatalog";
 import { allRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 
 export const card = "bg-rw-surface border border-rw-border rounded-xl p-4";
@@ -396,28 +396,33 @@ export const CopyLinkButton: React.FC<{ url: string }> = ({ url }) => {
 };
 
 /**
- * A pro's photo from Riot (current pros only), else their initials. Left out of copied pictures: Riot's image server
+ * A pro's photo: Riot's for current pros, Leaguepedia's for the others (through the stats build, see
+ * hub/riotCatalog.ts), else their initials. Riot's pictures are left out of copied pictures: Riot's image server
  * doesn't allow that.
  */
 export const PlayerPhoto: React.FC<{
   name: string;
   team?: string;
+  /** the player's page slug: finds the Leaguepedia photo (without it, the slug made from the name is tried) */
+  slug?: string;
   size?: number;
   /** Tailwind size classes instead of a fixed size ("w-16 h-16 lg:w-24 lg:h-24"): the photo grows with the window */
   sizeClass?: string;
   className?: string;
-}> = ({ name, team, size = 56, sizeClass, className = "" }) => {
-  const src = usePlayerPhoto(name, team);
-  const [broken, setBroken] = useState(false);
+}> = ({ name, team, slug, size = 56, sizeClass, className = "" }) => {
+  const pic = usePlayerPicture(name, team, slug);
+  const [broken, setBroken] = useState<string | null>(null); // the address that failed to load
   const box = sizeClass ? undefined : { width: size, height: size };
   const sz = sizeClass || "";
-  return src && !broken ? (
+  const src = pic && pic.src !== broken ? pic.src : undefined;
+  return src ? (
     <img
       src={src}
       alt=""
       loading="lazy"
-      onError={() => setBroken(true)}
-      data-nocapture="1"
+      onError={() => setBroken(src)}
+      // our own copy may go into copied pictures (the stats host allows cross-origin reads)
+      {...(pic?.from === "riot" ? { "data-nocapture": "1" } : { crossOrigin: "anonymous" as const })}
       style={box}
       className={`rounded-full object-cover object-top bg-rw-raised border border-rw-border shrink-0 ${sz} ${className}`}
     />

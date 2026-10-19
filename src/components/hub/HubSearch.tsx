@@ -19,8 +19,15 @@ const GROUPS: { kind: HubSearchKind; label: string; icon: React.ReactNode }[] = 
   { kind: "champ", label: tk("Champions"), icon: <Swords className="w-3 h-3" /> },
 ];
 
-export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big?: boolean; placeholder?: string }> = ({ autoFocus, onDone, big, placeholder }) => {
-  const [q, setQ] = useState("");
+/** `initial`: a search to start with, typed in and open (riftwise.gg/stats?q=faker, where the 404 page's box lands). */
+export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big?: boolean; placeholder?: string; initial?: string }> = ({
+  autoFocus,
+  onDone,
+  big,
+  placeholder,
+  initial,
+}) => {
+  const [q, setQ] = useState(initial || "");
   const [index, setIndex] = useState<HubIndex | null>(null);
   const [failed, setFailed] = useState(false);
   const [active, setActive] = useState(0);
@@ -35,7 +42,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
         .catch(() => setFailed(true));
   };
   useEffect(() => {
-    if (autoFocus) start();
+    if (autoFocus || initial) start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {

@@ -449,12 +449,12 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
       >
         <div className="flex items-center justify-between gap-3 text-sm font-bold">
           <span className="flex items-center gap-2 min-w-0">
-            <PlayerPhoto name={x.name} team={x.club} sizeClass="w-11 h-11 lg:w-16 lg:h-16 2xl:w-20 2xl:h-20" />
+            <PlayerPhoto name={x.name} team={x.club} slug={x.u} sizeClass="w-11 h-11 lg:w-16 lg:h-16 2xl:w-20 2xl:h-20" />
             <span className="truncate">{x.name}</span>
           </span>
           <span className="flex items-center gap-2 min-w-0">
             <span className="truncate text-right">{y.name}</span>
-            <PlayerPhoto name={y.name} team={y.club} sizeClass="w-11 h-11 lg:w-16 lg:h-16 2xl:w-20 2xl:h-20" />
+            <PlayerPhoto name={y.name} team={y.club} slug={y.u} sizeClass="w-11 h-11 lg:w-16 lg:h-16 2xl:w-20 2xl:h-20" />
           </span>
         </div>
         <table className="w-full text-xs">
