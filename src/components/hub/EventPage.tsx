@@ -3,6 +3,7 @@ import React, { useMemo, useState } from "react";
 import { Trophy, MapPin, CalendarDays, Coins, Download } from "lucide-react";
 import { downloadEventCsv, downloadStagesCsv } from "./DownloadsPage";
 import { BracketBoard, type BracketColumn } from "../BracketBoard";
+import { localCountry } from "./CountryFlag";
 import { tl, tn, tk, regionName, stageLabel } from "../../i18n";
 import { winRate } from "../../stats";
 import { loadHubEvent } from "../../hub/data";
@@ -75,7 +76,7 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
           {(e.country || e.type) && (
             <span className="flex items-center gap-1">
               <MapPin className="w-3 h-3" />
-              {[e.country, e.type === "Online" ? tl("Online") : e.type === "Offline" ? tl("On stage") : e.type].filter(Boolean).join(" · ")}
+              {[localCountry(e.country), e.type === "Online" ? tl("Online") : e.type === "Offline" ? tl("On stage") : e.type].filter(Boolean).join(" · ")}
             </span>
           )}
           {e.prize && (
