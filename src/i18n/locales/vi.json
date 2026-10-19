@@ -1489,6 +1489,8 @@
   "Search Riot's LoL Esports event photos by who's in them: any player, any team, two players in the same shot. Made by Alessandra Ogawa, Gabriela Albuquerque and Pedro Fracassi, starting as a computer-vision class project at Insper. Photos belong to Riot Games.": "Tìm ảnh sự kiện LoL Esports của Riot theo người có trong ảnh: bất kỳ tuyển thủ, bất kỳ đội, hai tuyển thủ trong cùng một khung hình. Do Alessandra Ogawa, Gabriela Albuquerque và Pedro Fracassi làm, khởi đầu là đồ án thị giác máy tính tại Insper. Ảnh thuộc về Riot Games.",
   "Result awarded by forfeit, not by the games played.": "Kết quả được xử thắng do bỏ cuộc, không theo các ván đã đấu.",
   "We couldn't find one of these teams.": "Không tìm thấy một trong hai đội này.",
+  "Try again": "Thử lại",
+  "No exact match. Closest names:": "Không có kết quả khớp chính xác. Tên gần nhất:",
   "now {team}": "nay là {team}",
   "title match::Final": "Chung kết",
   "title winner::Champion": "Nhà vô địch",

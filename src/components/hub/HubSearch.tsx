@@ -4,7 +4,7 @@ import { Search, Users, User, Trophy, Swords, X, Flag } from "lucide-react";
 import { tl, tk, roleName } from "../../i18n";
 import { champName } from "../../champions";
 import { isNonLatin } from "../../searchAliases";
-import { HubHit, HubIndex, HubSearchKind, loadHubIndex, searchHub } from "../../hub/data";
+import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubIndex, searchHub } from "../../hub/data";
 import { HubRoute, navigateHub } from "../../hub/route";
 import { ChampIcon, fmtNum, HubLink } from "./ui";
 
@@ -54,7 +54,10 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
   }, []);
 
   const results = useMemo(() => (index && q.trim() ? searchHub(index, q, big ? 6 : 5) : null), [index, q, big]);
-  const flat = useMemo(() => (results ? GROUPS.flatMap((g) => results[g.kind]) : []), [results]);
+  // the group with the best match first (a champion called exactly that, a big tournament, ...)
+  const groups = useMemo(() => (results ? [...GROUPS].sort((a, b) => groupRank(results[a.kind]) - groupRank(results[b.kind])) : GROUPS), [results]);
+  const flat = useMemo(() => (results ? groups.flatMap((g) => results[g.kind]) : []), [results, groups]);
+  const fuzzy = flat.length > 0 && flat.every((h) => h.fuzzy);
   useEffect(() => setActive(0), [q]);
 
   const go = (h: HubHit) => {
@@ -115,7 +118,9 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
               {isNonLatin(q) ? " " + tl("Names here use English letters. Try the in-game name, like Faker or T1.") : ""}
             </p>
           ) : (
-            GROUPS.filter((g) => results![g.kind].length).map((g) => (
+            <>
+            {fuzzy && <p className="px-2 pt-1 text-rw-sub">{tl("No exact match. Closest names:")}</p>}
+            {groups.filter((g) => results![g.kind].length).map((g) => (
               <div key={g.kind} className="mb-1 last:mb-0">
                 <div className="px-2 pt-1 pb-0.5 text-[10px] uppercase tracking-wider font-bold text-rw-muted flex items-center gap-1">
                   {g.icon}
@@ -152,7 +157,8 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
                   );
                 })}
               </div>
-            ))
+            ))}
+            </>
           )}
         </div>
       )}

@@ -1489,6 +1489,8 @@
   "Search Riot's LoL Esports event photos by who's in them: any player, any team, two players in the same shot. Made by Alessandra Ogawa, Gabriela Albuquerque and Pedro Fracassi, starting as a computer-vision class project at Insper. Photos belong to Riot Games.": "라이엇의 LoL e스포츠 대회 사진을 나온 사람으로 검색해요: 어떤 선수든, 어떤 팀이든, 두 선수가 함께 나온 사진까지. Alessandra Ogawa, Gabriela Albuquerque, Pedro Fracassi가 Insper의 컴퓨터 비전 수업 프로젝트로 시작했어요. 사진의 저작권은 Riot Games에 있어요.",
   "Result awarded by forfeit, not by the games played.": "경기 결과가 아닌 몰수승으로 결과가 정해졌습니다.",
   "We couldn't find one of these teams.": "두 팀 중 한 팀을 찾을 수 없습니다.",
+  "Try again": "다시 시도",
+  "No exact match. Closest names:": "정확히 일치하는 결과가 없습니다. 비슷한 이름:",
   "now {team}": "현재 {team}",
   "title match::Final": "결승",
   "title winner::Champion": "우승팀",

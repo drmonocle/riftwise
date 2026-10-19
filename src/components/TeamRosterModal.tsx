@@ -6,6 +6,7 @@ import { H2HMeter } from "./H2HMeter";
 import { tl, locale, roleName, regionName, tc } from "../i18n";
 import { findHubTeam, loadHubIndex } from "../hub/data";
 import { navigateHub } from "../hub/route";
+import { riotThumb } from "../riotImage";
 
 interface TeamRosterModalProps {
   teamCode: string | null;
@@ -221,7 +222,10 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                       <div className="flex items-center gap-3 min-w-0">
                         {p.image ? (
                           <img
-                            src={p.image}
+                            src={riotThumb(p.image, 128)}
+                            onError={(e) => {
+                              if (e.currentTarget.src !== p.image) e.currentTarget.src = p.image!;
+                            }}
                             alt={p.name}
                             className="w-11 h-11 rounded-full object-cover bg-rw-surface border border-rw-border shrink-0"
                           />

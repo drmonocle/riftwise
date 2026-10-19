@@ -183,17 +183,20 @@ export const STable: React.FC<React.TableHTMLAttributes<HTMLTableElement> & { re
       ),
     );
 
+  // a wide table scrolls sideways in its own box instead of pushing a phone screen sideways
   return (
-    <table
-      ref={setRef}
-      {...rest}
-      onClick={(e) => {
-        const th = (e.target as HTMLElement).closest("th");
-        if (th && th.parentElement?.parentElement?.tagName === "THEAD" && !(e.target as HTMLElement).closest("a, button, input, select")) onHead(th);
-        rest.onClick?.(e);
-      }}
-    >
-      {parts.map((p) => (p.type === "thead" ? decorate(p) : p === body ? React.cloneElement(body, {}, shown) : p))}
-    </table>
+    <div className="overflow-x-auto max-w-full">
+      <table
+        ref={setRef}
+        {...rest}
+        onClick={(e) => {
+          const th = (e.target as HTMLElement).closest("th");
+          if (th && th.parentElement?.parentElement?.tagName === "THEAD" && !(e.target as HTMLElement).closest("a, button, input, select")) onHead(th);
+          rest.onClick?.(e);
+        }}
+      >
+        {parts.map((p) => (p.type === "thead" ? decorate(p) : p === body ? React.cloneElement(body, {}, shown) : p))}
+      </table>
+    </div>
   );
 };

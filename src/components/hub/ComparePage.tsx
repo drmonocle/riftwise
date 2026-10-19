@@ -124,7 +124,8 @@ const Row: React.FC<{
           <span className="text-right">{a}</span>
         </span>
       </td>
-      <td className={`${td} text-center text-rw-muted text-[11px] whitespace-nowrap`}>{label}</td>
+      {/* the label may wrap (long ones like "Win rate when behind at 15" would push a phone screen sideways) */}
+      <td className="py-1.5 px-1 text-center text-rw-muted text-[11px] leading-tight">{label}</td>
       <td className={`${td} font-semibold w-2/5 tabular-nums ${cls("b")}`}>
         <span className="flex items-center gap-3">
           <span>{b}</span>

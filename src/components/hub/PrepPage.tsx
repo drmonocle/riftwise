@@ -20,7 +20,7 @@ import { HeadToHeadSeries } from "./Archives";
 import { ComparePick, TeamRows, bothOptions } from "./ComparePage";
 import { PeriodPicker, defaultPeriod } from "./PeriodStats";
 import { StoryLine, StoryList, noteText } from "./Storylines";
-import { CaptureContext, card, ChampIcon, fmtDate, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, useHidden, useLoad, usePageTitle, PhotosLink, NERDFINDER_TOGETHER } from "./ui";
+import { CaptureContext, card, ChampIcon, fmtDate, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, useHidden, useLoad, usePageTitle, PhotosLink, NERDFINDER_TOGETHER, useRetryAttempt, retryFailedLoads } from "./ui";
 import { CaptureFooter, CopyPageImage, ShareButtons } from "./ShareImage";
 import { BroadcastCardButton, CardData, PoolLine, fearlessCard, playerCardData, prepOverviewCard } from "./BroadcastCard";
 import type { HubRatings } from "../../hub/types";
@@ -99,6 +99,7 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
   const a = route.a || null;
   const b = route.b || null;
   const [sides, setSides] = useState<{ a: Side | null; b: Side | null; failed?: boolean; missing?: boolean }>({ a: null, b: null });
+  const attempt = useRetryAttempt(!!sides.failed && !sides.missing);
   useEffect(() => {
     let alive = true;
     setSides({ a: null, b: null });
@@ -109,7 +110,7 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
     return () => {
       alive = false;
     };
-  }, [a, b]);
+  }, [a, b, attempt]);
   usePageTitle(sides.a && sides.b ? tl("{a} vs {b}: match prep", { a: sides.a.team.name, b: sides.b.team.name }) : tl("Match prep"));
   const set = (patch: Partial<PrepRoute>) => navigateHub({ kind: "prep", a: a || undefined, b: b || undefined, period: route.period, ...patch }, { replace: true });
 
@@ -139,6 +140,11 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
     return (
       <div className="text-xs text-rw-sub py-6 text-center space-y-2">
         <p>{sides.missing ? tl("We couldn't find one of these teams.") : tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>
+        {sides.missing ? null : (
+          <button type="button" onClick={retryFailedLoads} className="text-rw-teal hover:underline mr-4">
+            {tl("Try again")}
+          </button>
+        )}
         <button type="button" onClick={() => set({ a: undefined, b: undefined })} className="text-rw-teal hover:underline">
           {tl("Pick the teams again")}
         </button>

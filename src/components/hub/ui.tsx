@@ -1,6 +1,6 @@
 /** Building blocks shared by the stats hub pages. */
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
-import { Check, Clock, Eye, Link2, SearchX, Camera } from "lucide-react";
+import { Check, Clock, Eye, Link2, SearchX, Camera, RefreshCw } from "lucide-react";
 import { MissingFile } from "../../stats";
 import { tl, locale } from "../../i18n";
 import { champName } from "../../champions";
@@ -11,6 +11,7 @@ import { prefetchHub, prettySlug } from "../../hub/data";
 import { IS_WEB } from "../../platform";
 import { CaptureFooter, ShareButtons } from "./ShareImage";
 import { usePlayerPicture, useTeamLogo } from "../../hub/riotCatalog";
+import { riotThumb } from "../../riotImage";
 import { allRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 
 export const card = "bg-rw-surface border border-rw-border rounded-xl p-4";
@@ -38,8 +39,26 @@ export interface Loaded<T> {
   loading: boolean;
 }
 
+/** "Try again" on a failed page: every load that failed (and only those) runs again. */
+const RETRY_EVENT = "riftwise-stats-retry";
+export const retryFailedLoads = () => window.dispatchEvent(new Event(RETRY_EVENT));
+
+/** A number that goes up when "Try again" is pressed while `failed`: put it in a loader's dependencies. */
+export function useRetryAttempt(failed: boolean): number {
+  const [attempt, setAttempt] = useState(0);
+  const f = useRef(failed);
+  f.current = failed;
+  useEffect(() => {
+    const again = () => f.current && setAttempt((n) => n + 1);
+    window.addEventListener(RETRY_EVENT, again);
+    return () => window.removeEventListener(RETRY_EVENT, again);
+  }, []);
+  return attempt;
+}
+
 export function useLoad<T>(fn: () => Promise<T>, deps: React.DependencyList): Loaded<T> {
   const [state, setState] = useState<Loaded<T>>({ data: null, error: false, missing: false, loading: true });
+  const attempt = useRetryAttempt(state.error && !state.missing);
   useEffect(() => {
     let alive = true;
     setState({ data: null, error: false, missing: false, loading: true });
@@ -50,7 +69,7 @@ export function useLoad<T>(fn: () => Promise<T>, deps: React.DependencyList): Lo
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [...deps, attempt]);
   return state;
 }
 
@@ -90,8 +109,15 @@ export const Failed: React.FC<{ missing?: boolean }> = ({ missing }) =>
       </HubLink>
     </div>
   ) : (
-    <div className="py-10 text-center text-xs text-rw-red">
-      {tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}
+    <div className="py-10 text-center text-xs text-rw-red space-y-3">
+      <p>{tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>
+      <button
+        type="button"
+        onClick={retryFailedLoads}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rw-border text-rw-text hover:border-rw-accent/60 font-semibold"
+      >
+        <RefreshCw className="w-3.5 h-3.5" /> {tl("Try again")}
+      </button>
     </div>
   );
 
@@ -411,16 +437,17 @@ export const PlayerPhoto: React.FC<{
   className?: string;
 }> = ({ name, team, slug, size = 56, sizeClass, className = "" }) => {
   const pic = usePlayerPicture(name, team, slug);
-  const [broken, setBroken] = useState<string | null>(null); // the address that failed to load
+  const [broken, setBroken] = useState<string[]>([]); // addresses that failed to load
   const box = sizeClass ? undefined : { width: size, height: size };
   const sz = sizeClass || "";
-  const src = pic && pic.src !== broken ? pic.src : undefined;
+  // Riot's photo through Riot's resizer (a 13th of the download), the full picture if that fails, then initials
+  const src = pic ? [riotThumb(pic.src), pic.src].find((u) => !broken.includes(u)) : undefined;
   return src ? (
     <img
       src={src}
       alt=""
       loading="lazy"
-      onError={() => setBroken(src)}
+      onError={() => setBroken((b) => [...b, src])}
       // our own copy may go into copied pictures (the stats host allows cross-origin reads)
       {...(pic?.from === "riot" ? { "data-nocapture": "1" } : { crossOrigin: "anonymous" as const })}
       style={box}

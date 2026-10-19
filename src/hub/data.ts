@@ -111,6 +111,10 @@ export interface HubHit {
   matched?: string;
   role?: string;
   year?: string;
+  /** how well it matched: lower is better (0 exact ... 3 loose); the search box orders its groups by it */
+  score?: number;
+  /** a near miss of a misspelt search ("fakr" -> Faker) */
+  fuzzy?: boolean;
 }
 
 export interface HubIndex {
@@ -153,8 +157,31 @@ function score(name: string, q: string): number {
   const i = n.indexOf(q);
   if (i > 0) return /[\s\-.(]/.test(n[i - 1]) ? 1.5 : 2;
   const bq = bare(q);
-  if (bq && bare(n).includes(bq)) return bare(n) === bq ? 0.5 : 3;
-  return -1;
+  if (!bq) return -1;
+  if (bare(n) === bq) return 0.5;
+  // across words ("dplus kia" for "dpluskia") only for 4+ letters: "msi" isn't "TeaM SIngularity", "g2" isn't "RDAG 2022"
+  return bq.length >= 4 && bare(n).includes(bq) ? 3 : -1;
+}
+
+/** Edit distance with swaps (Damerau), stopping early once it passes `max`. */
+function editDistance(a: string, b: string, max: number): number {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev2: number[] = [];
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    let best = i;
+    for (let j = 1; j <= b.length; j++) {
+      let v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) v = Math.min(v, prev2[j - 2] + 1);
+      cur.push(v);
+      best = Math.min(best, v);
+    }
+    if (best > max) return max + 1;
+    prev2 = prev;
+    prev = cur;
+  }
+  return prev[b.length];
 }
 
 const ROLE: Record<string, string> = { T: "Top", J: "Jungle", M: "Mid", B: "Bot", S: "Support" };
@@ -175,23 +202,25 @@ export function searchHub(index: HubIndex, query: string, limit = 6): Record<Hub
       if (s) scored.push([s[0], weight(r), r, s[1]]);
     }
     scored.sort((a, b) => a[0] - b[0] || b[1] - a[1]);
-    return scored.slice(0, limit).map((x) => make(x[2], x[3]));
+    return scored.slice(0, limit).map((x) => ({ ...make(x[2], x[3]), score: x[0] }));
   };
 
   out.team = pick(
     index.teams,
     (t) => {
+      // the best of: the current name, a short name (SKT, C9) and an old name
+      const cands: [number, string | undefined][] = [];
       const s = score(t[0], q);
-      if (s >= 0) return [s, undefined];
-      if (t[5] && normText(t[5]).split(" | ").includes(q)) return [0.2, undefined];
+      if (s >= 0) cands.push([s, undefined]);
+      if (t[5] && normText(t[5]).split(" | ").includes(q)) cands.push([0.2, undefined]);
       if (t[4]) {
         const olds = t[4].split(" | ");
         const hit = olds.find((o) => score(o, q) >= 0 && score(o, q) <= 1.5) || olds.find((o) => score(o, q) >= 0);
         // an old name that starts with the query ("DWG" -> DWG KIA, "Samsung" -> Samsung Galaxy) ranks with the
         // current names that do, so the bigger team (Dplus Kia, Gen.G) comes before a small one named that way
-        if (hit) return [score(hit, q) <= 1.5 ? 1 : score(hit, q) + 1, hit];
+        if (hit) cands.push([score(hit, q) <= 1.5 ? 1 : score(hit, q) + 1, hit]);
       }
-      return null;
+      return cands.length ? cands.sort((a, b) => a[0] - b[0])[0] : null;
     },
     (t) => t[2],
     (t, m) => ({ kind: "team", name: t[0], slug: slugOf(t[0], t[1]), sub: [t[6], t[3]].filter(Boolean).join(" · "), games: t[2], matched: m, year: t[3] }),
@@ -248,7 +277,40 @@ export function searchHub(index: HubIndex, query: string, limit = 6): Record<Hub
     (c) => c[2],
     (c) => ({ kind: "champ", name: c[0], slug: slugOf(c[0], c[1]), sub: "", games: c[2] }),
   );
+  // Nothing at all: a misspelling? The nearest players, teams and champions ("fakr" -> Faker, "chovyy" -> Chovy),
+  // one letter off for short searches, two for long ones; the most-played first.
+  const bq = bare(q);
+  if (bq.length >= 4 && !Object.values(out).some((l) => l.length)) {
+    const max = bq.length >= 7 ? 2 : 1;
+    const near = <T>(rows: T[], name: (r: T) => string, weight: (r: T) => number) =>
+      rows
+        .map((r) => [editDistance(bare(normText(name(r))), bq, max), weight(r), r] as const)
+        .filter((x) => x[0] <= max)
+        .sort((a, b) => a[0] - b[0] || b[1] - a[1])
+        .slice(0, limit);
+    out.player = near(index.players, (p) => p[0], (p) => p[3]).map(([d, , p]) => ({
+      kind: "player" as const, name: p[0], slug: slugOf(p[0], p[1]), sub: p[2], games: p[3], role: ROLE[p[5]] || "", year: p[4], score: 4 + d, fuzzy: true,
+    }));
+    out.team = near(index.teams, (t) => t[0], (t) => t[2]).map(([d, , t]) => ({
+      kind: "team" as const, name: t[0], slug: slugOf(t[0], t[1]), sub: [t[6], t[3]].filter(Boolean).join(" · "), games: t[2], year: t[3], score: 4 + d, fuzzy: true,
+    }));
+    out.champ = near(index.champs, (c) => c[0], (c) => c[2]).map(([d, , c]) => ({
+      kind: "champ" as const, name: c[0], slug: slugOf(c[0], c[1]), sub: "", games: c[2], score: 4 + d, fuzzy: true,
+    }));
+  }
   return out;
+}
+
+/**
+ * The order of the result groups: the one with the best match first, a well-known name winning a near tie
+ * (Ahri the champion before a team called Ahriro, MSI the tournament before a team with "msi" in its name).
+ */
+export function groupRank(hits: HubHit[]): number {
+  const h = hits[0];
+  if (!h) return 99;
+  const bucket = (h.score ?? 2) < 0.6 ? 0 : (h.score ?? 2) < 2 ? 1 : 2;
+  const known = h.kind === "champ" || h.games >= 300 ? 0.6 : h.games >= 50 ? 0.3 : 0;
+  return bucket - known + (h.fuzzy ? 5 : 0);
 }
 
 export const loadHubRecords = () => load<import("./types").HubRecords>("hub/records.json");
