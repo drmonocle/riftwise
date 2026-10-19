@@ -126,6 +126,28 @@ export interface HubIndex {
 }
 
 let indexPromise: Promise<HubIndex> | null = null;
+let quickPromise: Promise<HubIndex> | null = null;
+
+/**
+ * The search lists without the big player list (~320 KB of the ~450 KB): teams, tournaments, champions and leagues
+ * can be found while the players are still on the way (a slow phone connection). `players` is empty.
+ */
+export function loadHubIndexQuick(): Promise<HubIndex> {
+  if (!quickPromise) {
+    quickPromise = Promise.all([
+      load<SearchTeamRow[]>("hub/search/teams.json"),
+      load<SearchEventRow[]>("hub/search/events.json"),
+      load<SearchChampRow[]>("hub/search/champs.json"),
+      load<import("./types").LeagueRow[]>("hub/leagues.json").catch(() => []),
+    ])
+      .then(([teams, events, champs, leagues]) => ({ teams, players: [] as SearchPlayerRow[], events, champs, leagues }))
+      .catch((e) => {
+        quickPromise = null;
+        throw e;
+      });
+  }
+  return quickPromise;
+}
 
 /** The search lists (about 600 KB compressed in all), loaded once when someone first searches. */
 export function loadHubIndex(): Promise<HubIndex> {

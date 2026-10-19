@@ -1492,6 +1492,7 @@
   "Try again": "다시 시도",
   "No exact match. Closest names:": "정확히 일치하는 결과가 없습니다. 비슷한 이름:",
   "Skip to content": "본문으로 건너뛰기",
+  "Players are still loading…": "선수 목록을 불러오는 중…",
   "now {team}": "현재 {team}",
   "title match::Final": "결승",
   "title winner::Champion": "우승팀",
