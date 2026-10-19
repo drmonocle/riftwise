@@ -515,6 +515,7 @@ const Board: React.FC<{
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={tl("Search champions…")}
+                aria-label={tl("Search champions…")}
                 className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text w-40"
               />
               <span className="flex flex-wrap gap-1">
