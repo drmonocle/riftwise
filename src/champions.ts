@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { currentLang } from "./i18n";
+import { load } from "./stats";
 
 /**
  * Champion names in the reader's language (아지르, 阿兹尔, アジール, Ngộ Không...), from Riot's Data Dragon.
@@ -47,6 +48,22 @@ export function loadChampionNames(): Promise<void> {
       }
     } catch {
       /* fetch below */
+    }
+    try {
+      // The stats build's copy (hub/dd/<language>.json, a few KB, shared with the item / rune names), else Riot's
+      // full champion list (about 35 KB)
+      names = (await load<{ champ: Record<string, string> }>(`hub/dd/${currentLang()}.json`)).champ;
+      if (names && Object.keys(names).length > 100) {
+        try {
+          localStorage.setItem(key, JSON.stringify({ at: Date.now(), names }));
+        } catch {
+          /* storage full: still fine for this session */
+        }
+        return;
+      }
+      names = null;
+    } catch {
+      names = null; // not in this build: Riot's list below
     }
     try {
       const versions = await (await fetch("https://ddragon.leagueoflegends.com/api/versions.json")).json();

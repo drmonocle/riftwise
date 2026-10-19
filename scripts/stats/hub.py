@@ -2822,6 +2822,14 @@ def build(ctx) -> dict:
         photos = {}
     out.json("photos.json", photos)
     checks["hub: player photos"] = len(photos)
+    # Riot's champion / item / spell / rune lists boiled down for the app (dd.json, dd/<language>.json): a few KB
+    # instead of Riot's full lists before the first champion picture shows
+    try:
+        import ddragon_maps
+        checks["hub: ddragon languages"] = ddragon_maps.write(out)
+    except Exception as e:  # noqa: BLE001 - the app falls back to Riot's own lists
+        print(f"hub: ddragon lists skipped: {e}")
+        checks["hub: ddragon languages"] = 0
     out.finish()
     stats = {"series pages": n_series_pages, "teams": len(search_teams), "players": len(search_players),
              "events": len(search_events), "champions": len(search_champs), "files written": out.written,

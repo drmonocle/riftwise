@@ -2,16 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/icon.png?v=2" />
+    <!-- A 48 px tab icon (2 KB); the 256 px icon.png was 100 KB and slowed the first visit on a phone connection. -->
+    <link rel="icon" type="image/png" sizes="48x48" href="/icon-48.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0c0a1d" />
     <meta
       name="description"
       content="RiftWise: live League of Legends esports scores, schedules, global power rankings, pro stats for every game since 2011, draft board, match prep, and the 24/7 classic tournament stream."
     />
-    <!-- Open the connections the first data fetches need while the script is still loading. -->
-    <link rel="preconnect" href="https://esports-api.lolesports.com" />
-    <link rel="preconnect" href="https://raw.githubusercontent.com" />
+    <!-- Open the connections the first data fetches need while the script is still loading. The data fetches are
+         CORS requests, which only reuse a connection opened with crossorigin. -->
+    <link rel="preconnect" href="https://esports-api.lolesports.com" crossorigin />
+    <link rel="preconnect" href="https://lolworlds.com" crossorigin />
+    <link rel="preconnect" href="https://am-a.akamaihd.net" />
     <!-- The desktop app finds its own window by this exact title (FindWindowW); keep it "RiftWise". -->
     <title>RiftWise</title>
     <!-- Site-wide link preview and search data (Antigravity's SEO pass, 2026-10-17). Stats pages get their own from

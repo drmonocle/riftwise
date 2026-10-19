@@ -4,10 +4,16 @@
  * English lists are loaded once (cached a week) to turn names into picture addresses. Anything not
  * found (old items, renamed runes) is shown as text instead. In another language, Riot's names in that language
  * are loaded too, for itemName() / spellName() / runeName().
+ *
+ * The lookups come worked out by the stats build (hub/dd.json and hub/dd/<language>.json, from
+ * scripts/stats/ddragon_maps.py): about 10 KB each, against Riot's full lists (about 150 KB, and as much again in
+ * another language) that had to arrive before the first champion picture could show on a phone. Riot's own lists
+ * are the fallback.
  */
 import { useEffect, useState } from "react";
 import { currentLang } from "../i18n";
 import { DD_LOCALE } from "../champions";
+import { load } from "../stats";
 
 const DD = "https://ddragon.leagueoflegends.com/cdn";
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -29,6 +35,19 @@ interface Maps {
 
 let maps: Maps | null = null;
 let loading: Promise<void> | null = null;
+
+/** The stats build's copy (see the top of this file); throws when this build has none. */
+async function fromStats(): Promise<Maps> {
+  const lang = currentLang();
+  const [m, loc] = await Promise.all([
+    load<Maps>("hub/dd.json"),
+    DD_LOCALE[lang]
+      ? load<{ item: Record<string, string>; spell: Record<string, string>; rune: Record<string, string> }>(`hub/dd/${lang}.json`)
+      : null,
+  ]);
+  if (!m?.v || !m.champ) throw new Error("no lists in this build");
+  return loc ? { ...m, locItem: loc.item, locSpell: loc.spell, locRune: loc.rune } : m;
+}
 const norm = (s: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 // Stat names whose Data Dragon id differs from the name
 const CHAMP_FIXES: Record<string, string> = { wukong: "MonkeyKing", nunuwillump: "Nunu", renataglasc: "Renata" };
@@ -46,6 +65,17 @@ function loadMaps(): Promise<void> {
       }
     } catch {
       /* fetch below */
+    }
+    try {
+      maps = await fromStats();
+      try {
+        localStorage.setItem(KEY, JSON.stringify({ at: Date.now(), lang: currentLang(), maps }));
+      } catch {
+        /* storage full: fine for this session */
+      }
+      return;
+    } catch {
+      /* not in this build: Riot's own lists below */
     }
     try {
       const v: string = (await (await fetch("https://ddragon.leagueoflegends.com/api/versions.json")).json())[0];
@@ -104,6 +134,11 @@ function loadMaps(): Promise<void> {
     }
   })();
   return loading;
+}
+
+/** Start on the picture lists before a page asks (a saved copy from the last week means nothing to fetch). */
+export function preloadDDragon(): void {
+  loadMaps();
 }
 
 /** Re-renders the caller once the picture lists are ready. */
