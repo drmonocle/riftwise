@@ -83,6 +83,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
     // Opened at a stats page address (riftwise.gg/player/faker): show it
     if (STARTED_ON_HUB) return "stats";
+    // riftwise.gg/#schedule or /#live (the 404 page links there) opens that tab
+    if (IS_WEB && (window.location.hash === "#schedule" || window.location.hash === "#live")) return window.location.hash.slice(1) as TabKey;
     try {
       const hasLaunched = localStorage.getItem("riftwatch_has_launched");
       if (!hasLaunched) {

@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0c0a1d">
+  <title>Page not found | RiftWise</title>
+  <link rel="icon" type="image/png" href="/icon.png?v=2">
+  <!-- IIS serves this file (web.config, httpErrors) for any address that doesn't exist, with the 404 status kept.
+       Self-contained on purpose: no script, no fonts, no app bundle, so it works even when the app is mid-deploy. -->
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      background: #0c0a1d;
+      background-image:
+        radial-gradient(60% 45% at 50% 0%, rgba(139, 92, 246, 0.22), transparent 70%),
+        radial-gradient(40% 40% at 100% 100%, rgba(45, 212, 191, 0.08), transparent 70%);
+      color: #efeaff;
+      font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+    header {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 10px 16px;
+      border-bottom: 1px solid #2a2452;
+      background: rgba(12, 10, 29, 0.82);
+    }
+    .logo {
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: 0.1em;
+      text-decoration: none;
+      background: linear-gradient(90deg, #efeaff, #b39dff 55%, #7f6bff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px 40px;
+    }
+    .card {
+      width: 100%;
+      max-width: 560px;
+      background: #151230;
+      border: 1px solid #2a2452;
+      border-radius: 16px;
+      padding: 28px 20px;
+      box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(179, 157, 255, 0.03);
+      text-align: center;
+    }
+    .code {
+      margin: 0 0 8px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #8c85b0;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(26px, 5vw, 36px);
+      line-height: 1.15;
+      font-weight: 800;
+    }
+    p {
+      margin: 0 0 22px;
+      color: #b9b0dc;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    form {
+      display: flex;
+      gap: 8px;
+      margin: 0 0 20px;
+    }
+    input {
+      flex: 1;
+      min-width: 0;
+      background: #0c0a1d;
+      color: #efeaff;
+      border: 1px solid #2a2452;
+      border-radius: 10px;
+      padding: 11px 13px;
+      font: inherit;
+      font-size: 15px;
+    }
+    input::placeholder { color: #8c85b0; }
+    input:focus { outline: none; border-color: rgba(179, 157, 255, 0.7); }
+    button {
+      background: linear-gradient(135deg, #b39dff, #7f6bff);
+      color: #120d2c;
+      font: inherit;
+      font-weight: 700;
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 16px;
+      cursor: pointer;
+    }
+    button:hover { filter: brightness(1.08); }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+    nav a {
+      color: #efeaff;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      background: #201b44;
+      border: 1px solid #2a2452;
+      border-radius: 999px;
+      padding: 8px 14px;
+    }
+    nav a:hover { border-color: rgba(179, 157, 255, 0.6); }
+    footer {
+      padding: 0 16px 20px;
+      text-align: center;
+      color: #8c85b0;
+      font-size: 12px;
+    }
+    footer a { color: #2dd4bf; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+    @media (min-width: 640px) {
+      .card { padding: 36px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <header><a class="logo" href="/">RIFTWISE</a></header>
+  <main>
+    <div class="card">
+      <p class="code">404 · Page not found</p>
+      <h1>That page isn't here</h1>
+      <p>The address may have a typo, or the page has moved. Search for a team, player, tournament or champion, or pick a place to start.</p>
+      <form action="/stats" method="get" role="search">
+        <input type="search" name="q" placeholder="Search pro stats…" aria-label="Search pro stats" autocomplete="off">
+        <button type="submit">Search</button>
+      </form>
+      <nav aria-label="RiftWise">
+        <a href="/stats">Stats home</a>
+        <a href="/">Live matches</a>
+        <a href="/#schedule">Schedule</a>
+        <a href="/stats/rankings">Power rankings</a>
+      </nav>
+    </div>
+  </main>
+  <footer>RiftWise is free, with no ads. <a href="/about">About RiftWise</a></footer>
+</body>
+</html>

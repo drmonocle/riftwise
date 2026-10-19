@@ -12,6 +12,7 @@ import { ChampIcon } from "./ui";
 import type { EventListItem, HubMeta } from "../../hub/types";
 import { HubRoute } from "../../hub/route";
 import { HubSearch } from "./HubSearch";
+import { IS_WEB } from "../../platform";
 import { card, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerLink, RevealButton, StandingsFirst, Section, td, th, TeamLink, useHidden, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
 
@@ -52,7 +53,7 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
             </HubLink>
           </p>
         )}
-        <HubSearch big />
+        <HubSearch big initial={IS_WEB ? new URLSearchParams(window.location.search).get("q") || "" : ""} />
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
