@@ -1489,6 +1489,7 @@
   "Search Riot's LoL Esports event photos by who's in them: any player, any team, two players in the same shot. Made by Alessandra Ogawa, Gabriela Albuquerque and Pedro Fracassi, starting as a computer-vision class project at Insper. Photos belong to Riot Games.": "依照片中的人物搜尋 Riot 的英雄聯盟電競賽事照片：任何選手、任何隊伍，甚至兩名選手的同框照。由 Alessandra Ogawa、Gabriela Albuquerque 與 Pedro Fracassi 製作，最初是 Insper 大學的電腦視覺課程專題。照片版權屬於 Riot Games。",
   "Result awarded by forfeit, not by the games played.": "結果由棄權判定，而非實際比賽結果。",
   "We couldn't find one of these teams.": "找不到其中一支戰隊。",
+  "Try again": "重試",
   "now {team}": "現為 {team}",
   "title match::Final": "決賽",
   "title winner::Champion": "冠軍",

@@ -1489,6 +1489,7 @@
   "Search Riot's LoL Esports event photos by who's in them: any player, any team, two players in the same shot. Made by Alessandra Ogawa, Gabriela Albuquerque and Pedro Fracassi, starting as a computer-vision class project at Insper. Photos belong to Riot Games.": "Riot'un LoL Esports etkinlik fotoğraflarını içindekilere göre ara: herhangi bir oyuncu, herhangi bir takım, aynı karede iki oyuncu. Alessandra Ogawa, Gabriela Albuquerque ve Pedro Fracassi tarafından, Insper'da bir bilgisayarlı görü dersi projesi olarak başladı. Fotoğraflar Riot Games'e aittir.",
   "Result awarded by forfeit, not by the games played.": "Sonuç oynanan oyunlarla değil, hükmen belirlendi.",
   "We couldn't find one of these teams.": "Bu takımlardan birini bulamadık.",
+  "Try again": "Tekrar dene",
   "now {team}": "şimdi: {team}",
   "title match::Final": "Final",
   "title winner::Champion": "Kazanan",

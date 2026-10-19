@@ -19,7 +19,7 @@ import { PeriodKey, inPeriod, kdaOf, playerRowRef, teamRowRef } from "../../hub/
 import { ComparePick, bothOptions } from "./ComparePage";
 import { PeriodPicker, defaultPeriod } from "./PeriodStats";
 import { FearlessDepth, Side, loadSide } from "./PrepPage";
-import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, Section, useLoad, usePageTitle } from "./ui";
+import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, Section, useLoad, usePageTitle, useRetryAttempt, retryFailedLoads } from "./ui";
 import { loadHubChamp, prettySlug } from "../../hub/data";
 import type { LaneLine } from "../../hub/types";
 
@@ -219,6 +219,7 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
     navigateHub({ kind: "draft", query: next.toString() }, { replace: true });
   };
   const [sides, setSides] = useState<{ a: Side | null; b: Side | null; failed?: boolean; missing?: boolean }>({ a: null, b: null });
+  const attempt = useRetryAttempt(!!sides.failed && !sides.missing);
   useEffect(() => {
     let alive = true;
     setSides({ a: null, b: null });
@@ -229,7 +230,7 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
     return () => {
       alive = false;
     };
-  }, [a, b]);
+  }, [a, b, attempt]);
   usePageTitle(
     sides.a && sides.b ? tl("{a} vs {b}: draft board", { a: sides.a.team.name, b: sides.b.team.name }) : tl("Draft board"),
   );
@@ -267,6 +268,11 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
     return (
       <div className="text-xs text-rw-sub py-6 text-center space-y-2">
         <p>{sides.missing ? tl("We couldn't find one of these teams.") : tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>
+        {sides.missing ? null : (
+          <button type="button" onClick={retryFailedLoads} className="text-rw-teal hover:underline mr-4">
+            {tl("Try again")}
+          </button>
+        )}
         <button type="button" onClick={() => set({ a: null, b: null, d: "", u: "", h: "" })} className="text-rw-teal hover:underline">
           {tl("Pick the teams again")}
         </button>

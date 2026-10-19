@@ -1,6 +1,6 @@
 /** Building blocks shared by the stats hub pages. */
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
-import { Check, Clock, Eye, Link2, SearchX, Camera } from "lucide-react";
+import { Check, Clock, Eye, Link2, SearchX, Camera, RefreshCw } from "lucide-react";
 import { MissingFile } from "../../stats";
 import { tl, locale } from "../../i18n";
 import { champName } from "../../champions";
@@ -39,8 +39,26 @@ export interface Loaded<T> {
   loading: boolean;
 }
 
+/** "Try again" on a failed page: every load that failed (and only those) runs again. */
+const RETRY_EVENT = "riftwise-stats-retry";
+export const retryFailedLoads = () => window.dispatchEvent(new Event(RETRY_EVENT));
+
+/** A number that goes up when "Try again" is pressed while `failed`: put it in a loader's dependencies. */
+export function useRetryAttempt(failed: boolean): number {
+  const [attempt, setAttempt] = useState(0);
+  const f = useRef(failed);
+  f.current = failed;
+  useEffect(() => {
+    const again = () => f.current && setAttempt((n) => n + 1);
+    window.addEventListener(RETRY_EVENT, again);
+    return () => window.removeEventListener(RETRY_EVENT, again);
+  }, []);
+  return attempt;
+}
+
 export function useLoad<T>(fn: () => Promise<T>, deps: React.DependencyList): Loaded<T> {
   const [state, setState] = useState<Loaded<T>>({ data: null, error: false, missing: false, loading: true });
+  const attempt = useRetryAttempt(state.error && !state.missing);
   useEffect(() => {
     let alive = true;
     setState({ data: null, error: false, missing: false, loading: true });
@@ -51,7 +69,7 @@ export function useLoad<T>(fn: () => Promise<T>, deps: React.DependencyList): Lo
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [...deps, attempt]);
   return state;
 }
 
@@ -91,8 +109,15 @@ export const Failed: React.FC<{ missing?: boolean }> = ({ missing }) =>
       </HubLink>
     </div>
   ) : (
-    <div className="py-10 text-center text-xs text-rw-red">
-      {tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}
+    <div className="py-10 text-center text-xs text-rw-red space-y-3">
+      <p>{tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>
+      <button
+        type="button"
+        onClick={retryFailedLoads}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rw-border text-rw-text hover:border-rw-accent/60 font-semibold"
+      >
+        <RefreshCw className="w-3.5 h-3.5" /> {tl("Try again")}
+      </button>
     </div>
   );
 
