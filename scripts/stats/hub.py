@@ -2698,6 +2698,21 @@ def build(ctx) -> dict:
     for full, short in leagues_info.SHORT.items():
         if full in league_slug and pretty(short) and pretty(short) != league_slug[full] and pretty(short) not in league_slug.values():
             league_alias.setdefault(pretty(short), league_slug[full])
+    # A team's short names ("hle", "skt") and its name with the dots as dashes ("gen-g") lead to it too, so typed
+    # addresses work (the page service 301s them, the app follows them). A shared short name goes to the team with the
+    # most games; a real team slug or an old slug always wins.
+    team_slugs_all = {r[1] or pretty(r[0]) for r in search_teams}
+    n_short = 0
+    for r in sorted(search_teams, key=lambda r: -r[2]):
+        u_t = r[1] or pretty(r[0])
+        keys = [pretty(c) for c in r[5].split(" | ") if c.strip()]
+        if "." in r[0]:
+            keys.append(pretty(r[0].replace(".", " ")))
+        for k in keys:
+            if k and k != u_t and k not in team_slugs_all and k not in alias:
+                alias[k] = u_t
+                n_short += 1
+    checks["hub: team short-name addresses"] = n_short
     out.json("alias.json", {"team": alias, "league": league_alias})
 
     years = sorted((y for y in events_by_year if y.isdigit()), reverse=True)
