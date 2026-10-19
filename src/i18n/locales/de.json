@@ -1490,6 +1490,7 @@
   "Result awarded by forfeit, not by the games played.": "Ergebnis per Forfeit gewertet, nicht nach den gespielten Spielen.",
   "We couldn't find one of these teams.": "Eines dieser Teams konnten wir nicht finden.",
   "Try again": "Erneut versuchen",
+  "No exact match. Closest names:": "Kein genauer Treffer. Ähnlichste Namen:",
   "now {team}": "jetzt {team}",
   "title match::Final": "Finale",
   "title winner::Champion": "Sieger",

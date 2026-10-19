@@ -1490,6 +1490,7 @@
   "Result awarded by forfeit, not by the games played.": "结果由弃权判定，而非实际比赛结果。",
   "We couldn't find one of these teams.": "找不到其中一支战队。",
   "Try again": "重试",
+  "No exact match. Closest names:": "没有完全匹配的结果。最接近的名称：",
   "now {team}": "现 {team}",
   "title match::Final": "决赛",
   "title winner::Champion": "冠军",

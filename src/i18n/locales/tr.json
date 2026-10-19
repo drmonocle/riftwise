@@ -1490,6 +1490,7 @@
   "Result awarded by forfeit, not by the games played.": "Sonuç oynanan oyunlarla değil, hükmen belirlendi.",
   "We couldn't find one of these teams.": "Bu takımlardan birini bulamadık.",
   "Try again": "Tekrar dene",
+  "No exact match. Closest names:": "Tam eşleşme yok. En yakın isimler:",
   "now {team}": "şimdi: {team}",
   "title match::Final": "Final",
   "title winner::Champion": "Kazanan",
