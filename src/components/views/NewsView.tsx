@@ -1,5 +1,5 @@
 import React from "react";
-import { Newspaper, ExternalLink } from "lucide-react";
+import { Newspaper, ExternalLink, Heart } from "lucide-react";
 import { tl, tk, currentLang, type Lang } from "../../i18n";
 
 interface NewsViewProps {
@@ -305,6 +305,26 @@ export const NewsView: React.FC<NewsViewProps> = ({ onOpenUrl }) => {
         {main.map((s) => (
           <Card key={s.name} s={s} text={tl(s.blurb)} onOpenUrl={onOpenUrl} />
         ))}
+      </div>
+
+      {/* fan-made tools worth knowing, with credit to the people behind them */}
+      <div className="pt-2 border-t border-rw-border space-y-3">
+        <div>
+          <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
+            <Heart className="w-3.5 h-3.5 text-rw-teal" />
+            {tl("Community picks")}
+          </h2>
+          <div className="text-[11px] text-rw-muted mt-0.5">{tl("Fan-made projects we love. Not ours: all credit to their makers.")}</div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Card
+            s={{ name: "NerdFinder", url: "https://nerdfinder.gg/", blurb: "" }}
+            text={tl(
+              "Search Riot's LoL Esports event photos by who's in them: any player, any team, two players in the same shot. Made by Alessandra Ogawa, Gabriela Albuquerque and Pedro Fracassi, starting as a computer-vision class project at Insper. Photos belong to Riot Games.",
+            )}
+            onOpenUrl={onOpenUrl}
+          />
+        </div>
       </div>
     </div>
   );

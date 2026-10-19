@@ -46,6 +46,7 @@ import {
   useLoad,
   usePageTitle,
   CaptureContext,
+  OpenUrlContext,
 } from "../hub/ui";
 import { HubSearch } from "../hub/HubSearch";
 
@@ -626,6 +627,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
   };
 
   return (
+    <OpenUrlContext.Provider value={onOpenUrl}>
     <RiotCatalogContext.Provider value={catalog || null}>
     <SpoilerProvider on={settings.spoilerMode}>
       <div
@@ -770,5 +772,6 @@ export const StatsView: React.FC<StatsViewProps> = ({
       </div>
     </SpoilerProvider>
     </RiotCatalogContext.Provider>
+    </OpenUrlContext.Provider>
   );
 };

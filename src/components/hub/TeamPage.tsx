@@ -10,7 +10,7 @@ import { TeamSeriesArchive } from "./Archives";
 import { TeamPeriodStats } from "./PeriodStats";
 import { TeamRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
-import { CaptureContext, card, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, HubLink, Page, PlayerLink, RevealButton, Section, Stat, td, TeamLink, th, useHidden, useLoad, usePageTitle } from "./ui";
+import { CaptureContext, card, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, HubLink, Page, PlayerLink, RevealButton, Section, Stat, td, TeamLink, th, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
 import { ratingTextClass } from "./BestPage";
 import { Sparkline } from "./Sparkline";
 import { STable } from "../STable";
@@ -50,6 +50,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
             .filter(Boolean)
             .join(" · ")}
         </p>
+        <PhotosLink q={t.name} className="mt-1 inline-flex items-center gap-1 text-[11px] text-rw-teal hover:underline" />
         {oldNames.length > 0 && (
           <p className="text-[11px] text-rw-sub mt-1">
             {tl("Also played as:")}{" "}

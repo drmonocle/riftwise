@@ -1,6 +1,6 @@
 /** Building blocks shared by the stats hub pages. */
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
-import { Check, Clock, Eye, Link2, SearchX } from "lucide-react";
+import { Check, Clock, Eye, Link2, SearchX, Camera } from "lucide-react";
 import { MissingFile } from "../../stats";
 import { tl, locale } from "../../i18n";
 import { champName } from "../../champions";
@@ -452,5 +452,48 @@ export const TeamLogo: React.FC<{ name: string; code?: string; size?: number; si
       style={sizeClass ? undefined : { width: size, height: size }}
       className={`object-contain shrink-0 ${sizeClass || ""} ${className}`}
     />
+  );
+};
+
+/** Opens an outside link (the desktop app hands it to the browser); StatsView provides it. */
+export const OpenUrlContext = createContext<((url: string) => void) | null>(null);
+
+/**
+ * NerdFinder (nerdfinder.gg, by Alessandra Ogawa, Gabriela Albuquerque and Pedro Fracassi): a search engine for Riot's
+ * LoL Esports event photos, by who is in them. A plain link to its search: nothing is loaded from it.
+ */
+export const nerdfinderSearch = (q: string) => `https://nerdfinder.gg/search?q=${encodeURIComponent(q)}`;
+export const NERDFINDER_TOGETHER = "https://nerdfinder.gg/together";
+
+export const PhotosLink: React.FC<{ q: string; url?: string; label?: string; title?: string; className?: string; iconOnly?: boolean }> = ({
+  q,
+  url,
+  label,
+  title,
+  className,
+  iconOnly,
+}) => {
+  const open = useContext(OpenUrlContext);
+  const href = url || nerdfinderSearch(q);
+  const text = label ?? tl("Photos");
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      data-nocapture="1"
+      onClick={(e) => {
+        if (!IS_WEB && open) {
+          e.preventDefault();
+          open(href);
+        }
+      }}
+      title={title || tl("Riot's event photos of {name} on NerdFinder", { name: q })}
+      aria-label={iconOnly ? title || tl("Riot's event photos of {name} on NerdFinder", { name: q }) : undefined}
+      className={className ?? "inline-flex items-center gap-1 text-[11px] text-rw-teal hover:underline"}
+    >
+      <Camera className="w-3.5 h-3.5 shrink-0" />
+      {!iconOnly && text}
+    </a>
   );
 };

@@ -11,7 +11,7 @@ import { PlayerGamesArchive } from "./Archives";
 import { PlayerPeriodStats } from "./PeriodStats";
 import { PlayerRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
-import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerPhoto, RevealButton, Section, Stat, td, TeamLink, th, useHidden, useLoad, usePageTitle } from "./ui";
+import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerPhoto, RevealButton, Section, Stat, td, TeamLink, th, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
 import { ratingTextClass } from "./BestPage";
 import { STable } from "../STable";
 
@@ -120,6 +120,7 @@ const PlayerView: React.FC<{
                 )}
               </p>
             )}
+            <PhotosLink q={p.name} className="mt-1 inline-flex items-center gap-1 text-[11px] text-rw-teal hover:underline" />
           </div>
         </div>
         {p.bio.fav && p.bio.fav.length > 0 && (

@@ -8,25 +8,7 @@ import type { GamePlayer, HubGame, HubSeries, SideStats } from "../../hub/types"
 import { useDDragon } from "../../hub/ddragon";
 import { RatingBadge } from "./BestPage";
 import { navigateHub } from "../../hub/route";
-import {
-  card,
-  ChampIcon,
-  EventLink,
-  fmtDate,
-  fmtNum,
-  HubLink,
-  ItemIcon,
-  OeCredit,
-  Page,
-  PlayerLink,
-  RevealButton,
-  RuneIcon,
-  SpellIcon,
-  TeamLink,
-  useHidden,
-  useLoad,
-  usePageTitle,
-} from "./ui";
+import { card, ChampIcon, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, OeCredit, Page, PlayerLink, RevealButton, RuneIcon, SpellIcon, TeamLink, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
 
 const fmtGold = (g?: number) => (g == null ? "–" : `${(g / 1000).toFixed(1)}k`);
 const fmtMin = (m?: number | null) => {
@@ -74,6 +56,15 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
           {s.stage && <span>· {stageLabel(s.stage)}</span>}
           <span>· {fmtDate(s.date)}</span>
           <span>· {tc("series length", "Best of {n}", { n: s.bo })}</span>
+          <span>
+            ·{" "}
+            <PhotosLink
+              q={s.en}
+              label={tl("Event photos")}
+              title={tl("Riot's photos from {event} on NerdFinder", { event: s.en })}
+              className="inline-flex items-center gap-1 text-rw-teal hover:underline"
+            />
+          </span>
           {!hidden && s.r != null && (
             <HubLink to={{ kind: "best", query: "view=series" }} className="ml-auto" title={tl("Series rating: mostly its best game, then its other games")}>
               <RatingBadge r={s.r} />

@@ -33,17 +33,10 @@ import { ArrowDownToLine, WifiOff, AlertTriangle, X } from "lucide-react";
 import { IS_DESKTOP, IS_WEB, matchIdFromHash } from "./platform";
 import { clearMovedNote, movedHere } from "./move";
 import { reconcileLiveAndSchedule, playKickoffChime, applyH2HData, loadBundledH2H } from "./helpers";
-import { H2HDetailsModal } from "./components/H2HDetailsModal";
 import { OPEN_H2H_EVENT, OpenH2HDetail } from "./components/H2HMeter";
 import { Header } from "./components/Header";
 import { Navigation, TabKey } from "./components/Navigation";
 import { LiveView } from "./components/views/LiveView";
-import { ScheduleView } from "./components/views/ScheduleView";
-import { StreamView } from "./components/views/StreamView";
-import { WatchlistView } from "./components/views/WatchlistView";
-import { NewsView } from "./components/views/NewsView";
-import { SettingsView } from "./components/views/SettingsView";
-import { TeamRosterModal } from "./components/TeamRosterModal";
 import { tl, locale } from "./i18n";
 import { statsUpdatedAt } from "./stats";
 import { syncPush } from "./push";
@@ -54,10 +47,25 @@ import { startSync, SYNC_EVENT } from "./sync";
 // The stats hub is big and most visits are for live scores, so its code loads when first opened.
 const StatsView = lazyPart(() => import("./components/views/StatsView").then((m) => m.StatsView));
 const HubSearch = lazyPart(() => import("./components/hub/HubSearch").then((m) => m.HubSearch));
+// tabs and pop-ups past the first screen: each loads when first opened (Live comes with the app)
+const ScheduleView = lazyPart(() => import("./components/views/ScheduleView").then((m) => m.ScheduleView));
+const StreamView = lazyPart(() => import("./components/views/StreamView").then((m) => m.StreamView));
+const WatchlistView = lazyPart(() => import("./components/views/WatchlistView").then((m) => m.WatchlistView));
+const NewsView = lazyPart(() => import("./components/views/NewsView").then((m) => m.NewsView));
+const SettingsView = lazyPart(() => import("./components/views/SettingsView").then((m) => m.SettingsView));
+const H2HDetailsModal = lazyPart(() => import("./components/H2HDetailsModal").then((m) => m.H2HDetailsModal));
+const TeamRosterModal = lazyPart(() => import("./components/TeamRosterModal").then((m) => m.TeamRosterModal));
 const lazyFallback = (
   <div className="py-10 text-center text-xs text-rw-sub" role="status">
     …
   </div>
+);
+
+/** A part loaded on first use: the usual loading line meanwhile (nothing for pop-ups), and a retry if it fails. */
+const LazyPart: React.FC<{ children: React.ReactNode; quiet?: boolean }> = ({ children, quiet }) => (
+  <PartBoundary>
+    <React.Suspense fallback={quiet ? null : lazyFallback}>{children}</React.Suspense>
+  </PartBoundary>
 );
 
 // How often each data source is re-fetched (ms)
@@ -255,10 +263,28 @@ export default function App() {
     streamEventsRef.current = streamEvents;
   }, [streamEvents]);
 
+  // Opened at a stats address on the web (a link to a player, a match prep): the page's own data comes first. The
+  // live-scores extras (the all-time H2H table, ~260 KB, and Riot's team list, ~460 KB, only Live / Schedule /
+  // rosters need them) wait until the visitor opens another tab, or until the page has settled; on a slow or
+  // data-saver connection only until another tab. Saved copies from earlier visits still load at once.
+  const [extrasWanted, setExtrasWanted] = useState(() => !(IS_WEB && STARTED_ON_HUB));
+  useEffect(() => {
+    if (extrasWanted) return;
+    if (activeTab !== "stats") {
+      setExtrasWanted(true);
+      return;
+    }
+    const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    if (conn && (conn.saveData || /2g|3g/.test(conn.effectiveType || ""))) return;
+    const t = window.setTimeout(() => setExtrasWanted(true), 12000);
+    return () => window.clearTimeout(t);
+  }, [activeTab, extrasWanted]);
+
   // All-time H2H table: the cached download if there is one (newest, instant), otherwise the copy
   // bundled with the app; then the latest download. Kept out of the startup bundle either way.
   const [, setH2hVersion] = useState(0);
   useEffect(() => {
+    if (!extrasWanted) return;
     const cached = loadCachedH2HData();
     if (cached && applyH2HData(cached)) setH2hVersion((v) => v + 1);
     else loadBundledH2H().then((loaded) => loaded && setH2hVersion((v) => v + 1)).catch(() => {});
@@ -271,7 +297,7 @@ export default function App() {
     refresh();
     const timer = window.setInterval(refresh, H2H_POLL_MS);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [extrasWanted]);
 
   // Sync settings across windows / browser tabs
   useEffect(() => {
@@ -700,7 +726,7 @@ export default function App() {
   // ---------------------------------------------------------------
   // First run: load the snapshot bundled with the app (kept out of the startup bundle).
   useEffect(() => {
-    if (catalog.teams.length > 0) return;
+    if (catalog.teams.length > 0 || !extrasWanted) return;
     const load = () =>
       loadBundledCatalog()
         .then((bundled) => setCatalog((prev) => (prev.teams.length > 0 ? prev : bundled)))
@@ -713,7 +739,7 @@ export default function App() {
     const timer = window.setTimeout(load, 1200);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [extrasWanted]);
 
   // Resolve a #match/<id> link once the live list or schedule contains it.
   useEffect(() => {
@@ -734,6 +760,7 @@ export default function App() {
 
   // Refresh from Riot in the background if the saved copy is older than 24 hours
   useEffect(() => {
+    if (!extrasWanted) return;
     const cached = loadCachedCatalog();
     const age = Date.now() - (cached?.updatedAt || 0);
     if (age > 24 * 60 * 60 * 1000) {
@@ -743,7 +770,7 @@ export default function App() {
         })
         .catch(() => {});
     }
-  }, []);
+  }, [extrasWanted]);
 
   const handleRefreshCatalog = async () => {
     setIsRefreshing(true);
@@ -952,6 +979,7 @@ export default function App() {
           />
         )}
         {activeTab === "schedule" && (
+<LazyPart>
           <ScheduleView
             schedule={schedule}
             settings={settings}
@@ -962,8 +990,10 @@ export default function App() {
             highlightMatchId={highlightMatchId}
             isLoading={lastSync === null && !syncFailed}
           />
+</LazyPart>
         )}
         {activeTab === "stream" && (
+<LazyPart>
           <StreamView
             events={streamEvents}
             status={streamStatus}
@@ -972,8 +1002,10 @@ export default function App() {
             onOpenUrl={handleOpenUrl}
             onSelectTab={selectTab}
           />
+</LazyPart>
         )}
         {activeTab === "watchlist" && (
+<LazyPart>
           <WatchlistView
             settings={settings}
             catalog={catalog}
@@ -981,6 +1013,7 @@ export default function App() {
             onRefreshCatalog={handleRefreshCatalog}
             isRefreshingCatalog={isRefreshing}
           />
+</LazyPart>
         )}
         {activeTab === "stats" && (
           <PartBoundary>
@@ -989,8 +1022,13 @@ export default function App() {
             </React.Suspense>
           </PartBoundary>
         )}
-        {activeTab === "news" && <NewsView onOpenUrl={handleOpenUrl} />}
+        {activeTab === "news" && (
+          <LazyPart>
+            <NewsView onOpenUrl={handleOpenUrl} />
+          </LazyPart>
+        )}
         {activeTab === "settings" && (
+<LazyPart>
           <SettingsView
             settings={settings}
             catalog={catalog}
@@ -1002,11 +1040,13 @@ export default function App() {
             isCheckingUpdate={isCheckingUpdate}
             lastUpdateCheck={updateCheck}
           />
+</LazyPart>
         )}
       </main>
 
       {/* All-time H2H details (opened from any H2H meter) */}
       {h2hDetail && (
+        <LazyPart quiet>
         <H2HDetailsModal
           team1Code={h2hDetail.team1Code}
           team2Code={h2hDetail.team2Code}
@@ -1021,6 +1061,7 @@ export default function App() {
             openTeam(code, name);
           }}
         />
+        </LazyPart>
       )}
 
       {toast && (
@@ -1034,6 +1075,7 @@ export default function App() {
 
       {/* Team Roster & Player Profiles Flyout Modal */}
       {selectedTeam && (
+        <LazyPart quiet>
         <TeamRosterModal
           teamCode={selectedTeam.code}
           teamName={selectedTeam.name}
@@ -1057,6 +1099,7 @@ export default function App() {
           }}
           onOpenUrl={handleOpenUrl}
         />
+        </LazyPart>
       )}
 
       {/* Minimal Status Footer */}

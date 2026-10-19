@@ -20,7 +20,7 @@ import { HeadToHeadSeries } from "./Archives";
 import { ComparePick, TeamRows, bothOptions } from "./ComparePage";
 import { PeriodPicker, defaultPeriod } from "./PeriodStats";
 import { StoryLine, StoryList, noteText } from "./Storylines";
-import { CaptureContext, card, ChampIcon, fmtDate, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, useHidden, useLoad, usePageTitle } from "./ui";
+import { CaptureContext, card, ChampIcon, fmtDate, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, useHidden, useLoad, usePageTitle, PhotosLink, NERDFINDER_TOGETHER } from "./ui";
 import { CaptureFooter, CopyPageImage, ShareButtons } from "./ShareImage";
 import { BroadcastCardButton, CardData, PoolLine, fearlessCard, playerCardData, prepOverviewCard } from "./BroadcastCard";
 import type { HubRatings } from "../../hub/types";
@@ -662,9 +662,12 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
       ) : null;
     const name = (pl: Side["players"][number], right: boolean) =>
       pl ? (
-        <HubLink to={{ kind: "player", slug: pl.p.u }} className={`text-sm font-bold text-rw-text hover:underline truncate ${right ? "" : "text-right"}`}>
-          {pl.p.name}
-        </HubLink>
+        <span className={`flex items-center gap-1.5 min-w-0 ${right ? "" : "flex-row-reverse"}`}>
+          <HubLink to={{ kind: "player", slug: pl.p.u }} className={`text-sm font-bold text-rw-text hover:underline truncate ${right ? "" : "text-right"}`}>
+            {pl.p.name}
+          </HubLink>
+          <PhotosLink q={pl.p.name} iconOnly className="text-rw-muted hover:text-rw-teal shrink-0" />
+        </span>
       ) : (
         <span className="text-rw-muted">–</span>
       );
@@ -727,6 +730,16 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
         ))}
       </ul>
       <p className="text-[10px] text-rw-muted">{tl("Starters: the players with the most games in each team's newest roster. The better number of each pair is highlighted; champions with games played.")}</p>
+      <p className="text-[10px] text-rw-muted" data-nocapture="1">
+        {tl("Photos: the camera by a name opens Riot's event photos of that player on NerdFinder.")}{" "}
+        <PhotosLink
+          q=""
+          url={NERDFINDER_TOGETHER}
+          label={tl("Find two players in the same photo")}
+          title={tl("NerdFinder's Together search: pick two players and see every photo they're both in")}
+          className="inline-flex items-center gap-1 text-rw-teal hover:underline"
+        />
+      </p>
       <OeCredit />
     </Section>
   );
