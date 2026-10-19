@@ -121,7 +121,13 @@ export function SortTable<T>({
         <thead>
           <tr>
             {columns.map((c) => (
-              <th key={c.key} className={`${th} ${c.className || ""}`} title={c.title}>
+              <th
+                key={c.key}
+                scope="col"
+                aria-sort={sort.key === c.key ? (sort.desc ? "descending" : "ascending") : undefined}
+                className={`${th} ${c.className || ""}`}
+                title={c.title}
+              >
                 <button
                   type="button"
                   onClick={() => setSort((s) => ({ key: c.key, desc: s.key === c.key ? !s.desc : true }))}
