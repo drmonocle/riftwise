@@ -11,6 +11,35 @@ export function riotThumb(url: string, width = 192): string {
   return RIOT_STATIC.test(url) ? `https://am-a.akamaihd.net/image?resize=${width}:&f=${encodeURIComponent(url.replace(/^http:/, "https:"))}` : url;
 }
 
+const DDRAGON_CHAMP = /^https:\/\/ddragon\.leagueoflegends\.com\/cdn\/[^/]+\/img\/champion\//;
+
+/**
+ * A Data Dragon champion icon (120 px, ~28 KB) at about 2.5x the size it's shown, through the same resizer (a 20 px
+ * icon: ~9 KB at 64 px). Items, spells and runes stay as they are: they're already small (64 px, ~7 KB) and resizing
+ * them saves little or even adds. The resizer doesn't allow pictures to be copied into "save as image", so
+ * the full icon goes in data-full and withFullImages() swaps it in before a picture is taken.
+ */
+export function ddragonThumb(url: string, shown: number): string {
+  if (!DDRAGON_CHAMP.test(url)) return url;
+  const w = shown <= 19 ? 48 : shown <= 26 ? 64 : shown <= 38 ? 96 : 0;
+  return w ? `https://am-a.akamaihd.net/image?resize=${w}:&f=${encodeURIComponent(url)}` : url;
+}
+
+/** Runs `take` (an html-to-image capture of `node`) with every resized icon in it swapped for its full picture. */
+export async function withFullImages<T>(node: HTMLElement, take: () => Promise<T>): Promise<T> {
+  const imgs = [...node.querySelectorAll<HTMLImageElement>("img[data-full]")].filter((i) => i.dataset.full && i.getAttribute("src") !== i.dataset.full);
+  const before = imgs.map((i) => i.getAttribute("src") || "");
+  for (const i of imgs) {
+    i.loading = "eager";
+    i.src = i.dataset.full!;
+  }
+  try {
+    return await take();
+  } finally {
+    imgs.forEach((i, k) => i.setAttribute("src", before[k]));
+  }
+}
+
 /** <img {...riotImg(logo, 96)} />: the resized picture, and the original if that one fails to load. */
 export function riotImg(url: string, width: number): { src: string; onError: (e: { currentTarget: HTMLImageElement }) => void } {
   const original = url.replace(/^http:\/\/static\.lolesports\.com\//, "https://static.lolesports.com/");
