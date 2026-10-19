@@ -1,7 +1,7 @@
 /** Player page: career numbers, bio, tournaments, teams, champion pool, recent games and bests. */
 import React, { useState } from "react";
 import { Trophy, ExternalLink } from "lucide-react";
-import { tl, tk, tc, roleName, eventTitle, regionName } from "../../i18n";
+import { tl, tk, tc, roleName, eventTitle, regionName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { loadHubPlayer } from "../../hub/data";
@@ -11,6 +11,7 @@ import { PlayerGamesArchive } from "./Archives";
 import { PlayerPeriodStats } from "./PeriodStats";
 import { PlayerRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
+import { countryName } from "./CountryFlag";
 import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerPhoto, RevealButton, Section, Stat, td, TeamLink, th, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
 import { ratingTextClass } from "./BestPage";
 import { STable } from "../STable";
@@ -97,7 +98,7 @@ const PlayerView: React.FC<{
               {[
                 roleName(p.role),
                 p.bio.real,
-                p.bio.country,
+                (p.bio.cc && countryName(p.bio.cc)) || p.bio.country,
                 yrs != null ? tl("{n} years old", { n: yrs }) : null,
                 p.bio.retired ? tl("Retired") : null,
               ]
@@ -139,7 +140,7 @@ const PlayerView: React.FC<{
           />
           <Stat
             label={tl("KDA")}
-            value={p.kda}
+            value={fmtN(p.kda)}
             sub={`${fmtNum(p.k)} / ${fmtNum(p.d)} / ${fmtNum(p.a)}`}
           />
           <Stat
@@ -156,7 +157,7 @@ const PlayerView: React.FC<{
             value={p.titles.length}
             sub={`${tl("{n} Worlds", { n: p.titles.filter((x) => x.kind === "Worlds").length })} · ${tl("{n} MSI", { n: p.titles.filter((x) => x.kind === "MSI").length })}`}
           />
-          {p.csm != null && <Stat label={tl("CS / min")} value={p.csm} />}
+          {p.csm != null && <Stat label={tl("CS / min")} value={fmtN(p.csm)} />}
           {p.gpm != null && (
             <Stat label={tl("Gold / min")} value={fmtNum(p.gpm)} />
           )}
@@ -300,7 +301,7 @@ const PlayerView: React.FC<{
                   <td className={`${td} text-rw-sub`}>
                     {y.w}-{y.g - y.w}
                   </td>
-                  <td className={`${td} text-rw-sub`}>{y.kda}</td>
+                  <td className={`${td} text-rw-sub`}>{fmtN(y.kda)}</td>
                 </tr>
               ))}
             </tbody>
@@ -345,7 +346,7 @@ const PlayerView: React.FC<{
                   <td className={`${td} text-rw-sub`}>
                     {winRate(c.w, c.g)}
                   </td>
-                  <td className={`${td} text-rw-sub`}>{c.kda}</td>
+                  <td className={`${td} text-rw-sub`}>{fmtN(c.kda)}</td>
                   <td className={`${td} text-rw-muted`}>
                     {c.k} / {c.d} / {c.a}
                   </td>
@@ -499,7 +500,7 @@ const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number] }> = ({
       <td className={`${td} text-rw-sub`}>
         {hidden ? x.g : `${x.w}-${x.g - x.w}`}
       </td>
-      <td className={`${td} text-rw-sub`}>{x.kda}</td>
+      <td className={`${td} text-rw-sub`}>{fmtN(x.kda)}</td>
       <td className={`${td} text-rw-sub`}>{x.csm ?? "–"}</td>
       <td className={td}>
         <span className="flex gap-0.5">

@@ -7,7 +7,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Castle, ChevronDown, ChevronUp, Crown, Shield, Swords } from "lucide-react";
 import type { Match } from "../types";
-import { tl, roleName } from "../i18n";
+import { tl, roleName, fmtDec } from "../i18n";
 import {
   LiveDetailsParticipant,
   LiveFrame,
@@ -34,7 +34,7 @@ const DRAGON_COLOR: Record<string, string> = {
   elder: "var(--rw-text)",
 };
 
-const k = (gold: number) => `${(gold / 1000).toFixed(1)}k`;
+const k = (gold: number) => `${fmtDec(gold / 1000)}k`;
 const clock = (ms: number) => {
   const s = Math.max(0, Math.floor(ms / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;

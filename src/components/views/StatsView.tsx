@@ -7,7 +7,7 @@ import {
   INTERNATIONAL_KINDS,
   loadStatsMeta,
 } from "../../stats";
-import { tl, tk, tc, eventTitle } from "../../i18n";
+import { tl, tk, tc, eventTitle, fmtDec } from "../../i18n";
 import { champName, useChampionNames } from "../../champions";
 import { loadHubMeta, loadHubRecords, loadHubTitles, loadRecordsYear } from "../../hub/data";
 import type { HubRecords, HubTitle } from "../../hub/types";
@@ -433,7 +433,7 @@ const RecordsPanel: React.FC = () => {
               {gameList(
                 tl("Won with the biggest gold deficit (end of game)"),
                 r.game.comebacks,
-                (v) => `${(v / 1000).toFixed(1)}k`,
+                (v) => `${fmtDec(v / 1000)}k`,
               )}
               {playerList(tl("Most kills by one player"), r.player.kills)}
               {playerList(tl("Most assists by one player"), r.player.assists)}

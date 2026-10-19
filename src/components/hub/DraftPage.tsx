@@ -8,7 +8,7 @@
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { RotateCcw, Undo2, ArrowLeftRight, ChevronsRight, Copy, Check, Lightbulb } from "lucide-react";
-import { tl, roleName } from "../../i18n";
+import { tl, roleName, fmtN } from "../../i18n";
 import { champName } from "../../champions";
 import { winRate } from "../../stats";
 import type { TeamGameRow } from "../../hub/types";
@@ -790,7 +790,7 @@ const PlayerPools: React.FC<{
                       `${x.g} · ${winRate(x.w, x.g)}`,
                       [
                         tl("{n} games, won {pct}", { n: x.g, pct: winRate(x.w, x.g) }),
-                        x.kda != null ? `${x.kda} KDA` : "",
+                        x.kda != null ? `${fmtN(x.kda)} KDA` : "",
                         x.gd15 != null ? `GD@15 ${x.gd15 > 0 ? "+" : ""}${x.gd15}` : "",
                       ]
                         .filter(Boolean)
@@ -922,7 +922,7 @@ const ChampInfo: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Side; 
                     {x.g ? (
                       <>
                         {tl("{n} games, won {pct}", { n: x.g, pct: winRate(x.w, x.g) })}
-                        {x.kda != null && ` · ${x.kda} KDA`}
+                        {x.kda != null && ` · ${fmtN(x.kda)} KDA`}
                         {x.gd15 != null && (
                           <span className="text-rw-sub" title={tl("Average lead over the lane opponent at 15 minutes")}>
                             {` · GD@15 ${x.gd15 > 0 ? "+" : ""}${x.gd15}`}

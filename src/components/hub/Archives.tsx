@@ -1,7 +1,7 @@
 /** Full histories, loaded on demand: every series of a team, every game of a player, every meeting of two teams. */
 import React, { useMemo, useState } from "react";
 import { ListOrdered } from "lucide-react";
-import { tl, tn, tc, roleName, stageLabel } from "../../i18n";
+import { tl, tn, tc, roleName, stageLabel, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
 import { loadPlayerGames, loadTeamSeries } from "../../hub/data";
 import type { PlayerGameRow, TeamSeriesRow } from "../../hub/types";
@@ -229,7 +229,7 @@ const PlayerGamesBody: React.FC<{ slug: string }> = ({ slug }) => {
         <span className="text-[11px] text-rw-sub">
           {tn("{n} game", "{n} games", rows.length)}
           {!hidden && rows.length > 0 && <> · {tl("{pct} win rate", { pct: `${Math.round((won / rows.length) * 100)}%` })}</>}
-          {!hidden && rows.length > 0 && <> · {tl("KDA {n}", { n: ((k + a) / Math.max(d, 1)).toFixed(2) })}</>}
+          {!hidden && rows.length > 0 && <> · {tl("KDA {n}", { n: fmtDec((k + a) / Math.max(d, 1), 2) })}</>}
         </span>
         {hidden && <RevealButton onReveal={reveal} small />}
       </div>

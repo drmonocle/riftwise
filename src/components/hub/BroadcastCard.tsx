@@ -7,7 +7,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MonitorPlay } from "lucide-react";
 import { toBlob } from "html-to-image";
-import { tl, tc, locale, roleName } from "../../i18n";
+import { tl, tc, locale, roleName, fmtDec } from "../../i18n";
 import { IS_WEB } from "../../platform";
 import { ChampIcon } from "./ui";
 import type { PlayerAgg, TeamAgg } from "../../hub/period";
@@ -268,7 +268,7 @@ export const BroadcastCardButton: React.FC<{ data: () => CardData; name: string;
 
 // ── what goes on the cards ────────────────────────────────────────────────
 
-const pc = (v: number | null | undefined) => (v == null ? "–" : `${v.toFixed(1)}%`);
+const pc = (v: number | null | undefined) => (v == null ? "–" : `${fmtDec(v)}%`);
 const wrOf = (w: number, g: number) => (g ? (w / g) * 100 : null);
 const sg = (v: number | null | undefined) => (v == null ? "–" : `${v > 0 ? "+" : ""}${Math.round(v).toLocaleString(locale())}`);
 const n1 = (v: number | null | undefined) => (v == null ? "–" : String(v));

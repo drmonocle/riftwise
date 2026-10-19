@@ -1487,6 +1487,7 @@
   "Community picks": "커뮤니티 추천",
   "Fan-made projects we love. Not ours: all credit to their makers.": "저희가 아끼는 팬 제작 프로젝트예요. 저희 것이 아니며, 모든 공은 만든 분들께 있어요.",
   "Search Riot's LoL Esports event photos by who's in them: any player, any team, two players in the same shot. Made by Alessandra Ogawa, Gabriela Albuquerque and Pedro Fracassi, starting as a computer-vision class project at Insper. Photos belong to Riot Games.": "라이엇의 LoL e스포츠 대회 사진을 나온 사람으로 검색해요: 어떤 선수든, 어떤 팀이든, 두 선수가 함께 나온 사진까지. Alessandra Ogawa, Gabriela Albuquerque, Pedro Fracassi가 Insper의 컴퓨터 비전 수업 프로젝트로 시작했어요. 사진의 저작권은 Riot Games에 있어요.",
+  "Result awarded by forfeit, not by the games played.": "경기 결과가 아닌 몰수승으로 결과가 정해졌습니다.",
   "now {team}": "현재 {team}",
   "title match::Final": "결승",
   "title winner::Champion": "우승팀",

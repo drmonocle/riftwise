@@ -5,10 +5,10 @@ const OFFLINE_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8"
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>RiftWise</title>
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#091428;color:#f0e6d2;
 font:15px/1.5 system-ui,sans-serif;text-align:center;padding:24px}h1{color:#c8aa6e;font-size:22px;margin:0 0 8px}
-p{color:#9bb3c9;margin:0 0 20px}button{background:#c8aa6e;color:#091428;border:0;border-radius:8px;
-padding:10px 18px;font-weight:700;font-size:14px}</style></head><body><div><h1>RiftWise is offline</h1>
+p{color:#9bb3c9;margin:0 0 20px}.b{background:#c8aa6e;color:#091428;border:0;border-radius:8px;
+padding:10px 18px;font-weight:700;font-size:14px;text-decoration:none;display:inline-block}</style></head><body><div><h1>RiftWise is offline</h1>
 <p>Live scores need a connection. Try again once you're back online.</p>
-<button onclick="location.reload()">Retry</button></div></body></html>`;
+<a class="b" href="">Retry</a></div></body></html>`;
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));

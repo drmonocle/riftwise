@@ -69,6 +69,16 @@ export function locale(): string {
   return current;
 }
 
+/** A number as the reader writes it (3.45 / 3,45; 1,234 / 1.234), or "–" when there is none. */
+export function fmtN(n: number | null | undefined): string {
+  return n == null ? "–" : n.toLocaleString(current);
+}
+
+/** A decimal number with exactly `digits` places, in the reader's style (1.5 in English, 1,5 in French). */
+export function fmtDec(n: number, digits = 1): string {
+  return n.toLocaleString(current, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
+
 /** Clock times: 2:00 PM / 下午2:00 where clocks are 12-hour, 02:00 where they are 24-hour. */
 export function clockOptions(): Intl.DateTimeFormatOptions {
   const h12 = new Intl.DateTimeFormat(current, { hour: "numeric" }).resolvedOptions().hour12;

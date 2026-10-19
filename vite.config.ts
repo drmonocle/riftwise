@@ -47,8 +47,22 @@ const localStats = {
   },
 };
 
+// `vite preview` only: send the site's real Content-Security-Policy (read from web/web.config), so a script or
+// style the live site would block is blocked here too.
+const liveCsp = {
+  name: "riftwise-live-csp",
+  configurePreviewServer(server: any) {
+    const m = fs.readFileSync(path.join(server.config.root, "web", "web.config"), "utf8").match(/name="Content-Security-Policy" value="([^"]+)"/);
+    if (!m) return;
+    server.middlewares.use((_req: any, res: any, next: any) => {
+      res.setHeader("Content-Security-Policy", m[1]);
+      next();
+    });
+  },
+};
+
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), tailwindcss(), ...(mode === "web" ? [webPlugin, localStats] : [])],
+  plugins: [react(), tailwindcss(), ...(mode === "web" ? [webPlugin, localStats, liveCsp] : [])],
 
   // `npm run build:web` builds the browser version served at riftwise.gg (the site root)
   base: "/",

@@ -5,7 +5,7 @@
  * can be shared: /stats/champions?league=lck&year=2026&patch=26.18&role=Mid
  */
 import React, { useMemo } from "react";
-import { tl, roleName } from "../../i18n";
+import { tl, roleName, fmtDec } from "../../i18n";
 import { ChampionStats, StatsMeta, loadChampionStats } from "../../stats";
 import { loadAliases, loadChampGames, loadChampIndex } from "../../hub/data";
 import { navigateHub } from "../../hub/route";
@@ -15,7 +15,7 @@ import { SortTable, type Column } from "./SortTable";
 import { card, ChampLink, Failed, fmtNum, HubLink, Loading, useLoad, usePageTitle } from "./ui";
 
 const sel = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text max-w-[14rem]";
-const pct = (v: number | null) => (v == null ? "–" : `${(v * 100).toFixed(1)}%`);
+const pct = (v: number | null) => (v == null ? "–" : `${fmtDec(v * 100)}%`);
 
 /** Change against the compared patch, in points: "+12.5 ▲" in teal, "-8.0 ▼" in red, "new" when it wasn't there. */
 interface Delta {
@@ -54,7 +54,7 @@ const Arrow: React.FC<{ v: number | null; isNew?: boolean }> = ({ v, isNew }) =>
     <span className="text-rw-muted">–</span>
   ) : (
     <span className={v > 0.0005 ? "text-rw-teal" : v < -0.0005 ? "text-rw-red" : "text-rw-muted"}>
-      {`${v > 0 ? "+" : ""}${(v * 100).toFixed(1)}`} {v > 0.0005 ? "▲" : v < -0.0005 ? "▼" : ""}
+      {`${v > 0 ? "+" : ""}${fmtDec(v * 100)}`} {v > 0.0005 ? "▲" : v < -0.0005 ? "▼" : ""}
     </span>
   );
 

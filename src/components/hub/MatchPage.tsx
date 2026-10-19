@@ -1,7 +1,7 @@
 /** One series (a "match": Bo1 to Bo5): every game's draft, scoreboard, builds, runes and objectives. */
 import React, { useEffect, useState } from "react";
 import { PlayCircle, Swords, Clock, Crown } from "lucide-react";
-import { tl, tc, tk, roleName, locale, stageLabel } from "../../i18n";
+import { tl, tc, tk, roleName, locale, stageLabel, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
 import { loadHubSeries } from "../../hub/data";
 import type { GamePlayer, HubGame, HubSeries, SideStats } from "../../hub/types";
@@ -10,7 +10,7 @@ import { RatingBadge } from "./BestPage";
 import { navigateHub } from "../../hub/route";
 import { card, ChampIcon, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, OeCredit, Page, PlayerLink, RevealButton, RuneIcon, SpellIcon, TeamLink, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
 
-const fmtGold = (g?: number) => (g == null ? "–" : `${(g / 1000).toFixed(1)}k`);
+const fmtGold = (g?: number) => (g == null ? "–" : `${fmtDec(g / 1000)}k`);
 const fmtMin = (m?: number | null) => {
   if (m == null) return "";
   const s = Math.round(m * 60);
@@ -87,6 +87,9 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
             <RevealButton onReveal={reveal} />
           </div>
         )}
+        {!hidden && s.ff ? (
+          <p className="mt-2 text-[11px] text-rw-muted text-center">{tl("Result awarded by forfeit, not by the games played.")}</p>
+        ) : null}
         {withStats.length === 0 && (
           <p className="mt-3 text-[11px] text-rw-muted text-center">{tl("Only the results of this series are known: no player stats were recorded for it.")}</p>
         )}
@@ -106,8 +109,8 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
               }`}
             >
               {tl("Game {n}", { n: g ? g.n : i + 1 })}
-              {!hidden && g?.w ? <span className="ml-1 opacity-70">({g.w === 1 ? s.a.c || s.a.n : s.b.c || s.b.n})</span> : null}
-              {!hidden && g?.r != null ? <span className="ml-1.5 tabular-nums opacity-80">· {g.r.toFixed(0)}</span> : null}
+              {!hidden && g?.w ? <span className="ml-1 opacity-90">({g.w === 1 ? s.a.c || s.a.n : s.b.c || s.b.n})</span> : null}
+              {!hidden && g?.r != null ? <span className="ml-1.5 tabular-nums opacity-90">· {g.r.toFixed(0)}</span> : null}
             </button>
           ))}
         </div>
@@ -225,7 +228,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
 
 const BLUE = "#4a9eff";
 const RED = "var(--rw-red)";
-const kfmt = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v) >= 1000 ? `${(Math.abs(v) / 1000).toFixed(1)}k` : Math.abs(v)}`;
+const kfmt = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v) >= 1000 ? `${fmtDec(Math.abs(v) / 1000)}k` : Math.abs(v)}`;
 
 /** One row: a bar from the middle toward the side that leads (blue left, red right), its size against `max`. */
 const LeadBar: React.FC<{ label: React.ReactNode; left?: React.ReactNode; right?: React.ReactNode; v: number; max: number; tip: string }> = ({
@@ -296,7 +299,7 @@ const PlayerBars: React.FC<{ blueName: string; redName: string; blue: GamePlayer
   const max = Math.max(1, ...rows.flatMap((x) => [x.b[m] || 0, x.o[m] || 0]));
   const total = (list: GamePlayer[]) => list.reduce((t, p) => t + (p[m] || 0), 0);
   const fmt = (v: number | undefined) => (v == null ? "–" : m === "dm" || m === "gd" ? fmtGold(v) : String(v));
-  const perMin = (v: number | undefined) => (v != null && minutes ? (m === "cs" ? (v / minutes).toFixed(1) : Math.round(v / minutes)) : null);
+  const perMin = (v: number | undefined) => (v != null && minutes ? (m === "cs" ? fmtDec(v / minutes) : Math.round(v / minutes)) : null);
   const side = (p: GamePlayer, right: boolean) => {
     const v = p[m];
     const w = v ? (v / max) * 100 : 0;
@@ -553,7 +556,7 @@ const PlayerRow: React.FC<{ p: GamePlayer; teamKills: number; teamDmg: number; t
   minutes,
 }) => {
   const kp = teamKills ? Math.round(((p.k + p.a) / teamKills) * 100) : null;
-  const csm = p.cs != null && minutes ? (p.cs / minutes).toFixed(1) : null;
+  const csm = p.cs != null && minutes ? fmtDec(p.cs / minutes) : null;
   return (
     <div className="border-t border-rw-border pt-2 first:border-0 first:pt-0 text-xs">
       <div className="flex items-center gap-2 min-w-0">
@@ -617,7 +620,7 @@ const PlayerRow: React.FC<{ p: GamePlayer; teamKills: number; teamDmg: number; t
       {(() => {
         const bits = [
           minutes && p.dm != null ? `${fmtNum(Math.round(p.dm / minutes))} ${tl("DPM")}` : null,
-          minutes && p.v != null ? `${(p.v / minutes).toFixed(2)} ${tl("VS/m")}` : null,
+          minutes && p.v != null ? `${fmtDec(p.v / minutes, 2)} ${tl("VS/m")}` : null,
           p.g15 != null ? `@15 ${sgn(p.g15)} ${tl("gold")} · ${sgn(p.c15)} CS · ${sgn(p.x15)} XP` : null,
         ].filter(Boolean);
         return bits.length ? (

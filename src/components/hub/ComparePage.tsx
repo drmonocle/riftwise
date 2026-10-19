@@ -4,7 +4,7 @@
  * (/stats/compare?teams=t1,gen-g&p=y2026) so it can be shared.
  */
 import React, { useEffect, useMemo, useState } from "react";
-import { tl, tc, tn, roleName } from "../../i18n";
+import { tl, tc, tn, roleName, fmtDec, locale, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { HubHit, HubIndex, loadHubIndex, loadHubPlayer, loadHubTeam, loadPlayerGames, loadTeamGames, searchHub } from "../../hub/data";
 import type { HubPlayer, HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
@@ -136,8 +136,8 @@ const Row: React.FC<{
 };
 
 /** a share in percent, one decimal like gol.gg ("61.0%") */
-const pct = (v: number | null | undefined) => (v == null ? "–" : `${v.toFixed(1)}%`);
-const d = (v: number | null | undefined, suffix = "") => (v == null ? "–" : `${v}${suffix}`);
+const pct = (v: number | null | undefined) => (v == null ? "–" : `${fmtDec(v)}%`);
+const d = (v: number | null | undefined, suffix = "") => (v == null ? "–" : `${fmtN(v)}${suffix}`);
 const sgn = (v: number | null) => (v == null ? "–" : `${v > 0 ? "+" : ""}${fmtNum(v)}`);
 const perGame = (n: number, g: number) => (g ? Number((n / g).toFixed(1)) : null);
 
@@ -463,7 +463,7 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
             {h2h.g > 0 && <Row label={career ? tl("Head to head (games)") : tl("Head to head this period (games)")} a={h2h.w} b={h2h.g - h2h.w} va={h2h.w} vb={h2h.g - h2h.w} />}
             <Row label={tl("Games won")} a={`${A.w}-${A.g - A.w}`} b={`${B.w}-${B.g - B.w}`} />
             <Row label={tl("Win rate")} a={winRate(A.w, A.g)} b={winRate(B.w, B.g)} va={wr(A.w, A.g)} vb={wr(B.w, B.g)} />
-            <Row label={tl("KDA")} a={A.kda} b={B.kda} va={A.kda} vb={B.kda} />
+            <Row label={tl("KDA")} a={fmtN(A.kda)} b={fmtN(B.kda)} va={A.kda} vb={B.kda} />
             <Row label="K / D / A" a={pg(A)} b={pg(B)} />
             <Row label="KP" a={pct(A.kp)} b={pct(B.kp)} va={A.kp} vb={B.kp} />
             <Row label={tl("CS / min")} a={d(A.csm)} b={d(B.csm)} va={A.csm} vb={B.csm} />
@@ -512,7 +512,7 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
                 <li key={c.c} className="flex justify-between gap-2 min-w-0">
                   <ChampLink name={c.c} size={16} />
                   <span className="text-rw-muted shrink-0 tabular-nums">
-                    {c.g} · {winRate(c.w, c.g)} · {c.kda} KDA
+                    {c.g} · {winRate(c.w, c.g)} · {fmtN(c.kda)} KDA
                   </span>
                 </li>
               ))}
@@ -527,7 +527,7 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
               {shared.map(({ c, o }) => (
                 <tr key={c.c} className="border-t border-rw-border">
                   <td className={`${td} text-right tabular-nums w-2/5`}>
-                    {c.g} · {winRate(c.w, c.g)} · {c.kda}
+                    {c.g} · {winRate(c.w, c.g)} · {fmtN(c.kda)}
                   </td>
                   <td className={`${td} text-center`}>
                     <span className="inline-flex justify-center">
@@ -535,7 +535,7 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
                     </span>
                   </td>
                   <td className={`${td} tabular-nums w-2/5`}>
-                    {o.g} · {winRate(o.w, o.g)} · {o.kda}
+                    {o.g} · {winRate(o.w, o.g)} · {fmtN(o.kda)}
                   </td>
                 </tr>
               ))}
@@ -747,7 +747,7 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
         })();
   const pct = (label: string) => /rate|wins|%|blood|KP/.test(label);
   const fmt = (label: string, v: number | null) =>
-    v == null ? "–" : pct(label) ? `${v.toFixed(1)}%` : /GD@15|Gold diff/.test(label) ? `${v > 0 ? "+" : ""}${fmtNum(Math.round(v))}` : /KDA|CS|VS|min\)/.test(label) ? String(Number(v.toFixed(2))) : fmtNum(Math.round(v));
+    v == null ? "–" : pct(label) ? `${fmtDec(v)}%` : /GD@15|Gold diff/.test(label) ? `${v > 0 ? "+" : ""}${fmtNum(Math.round(v))}` : /KDA|CS|VS|min\)/.test(label) ? Number(v.toFixed(2)).toLocaleString(locale()) : fmtNum(Math.round(v));
   return (
     <>
       <div className="flex flex-wrap items-center gap-2 text-xs">

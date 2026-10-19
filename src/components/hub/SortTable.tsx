@@ -5,6 +5,10 @@ import { tl, locale } from "../../i18n";
 import { IS_WEB } from "../../platform";
 import { td, th } from "./ui";
 
+/** A plain cell: a decimal in the reader's style (3.5 / 3,5); whole numbers (years, counts) and text as they are. */
+const cell = (v: React.ReactNode) =>
+  v == null ? "–" : typeof v === "number" && !Number.isInteger(v) ? v.toLocaleString(locale(), { maximumFractionDigits: 3, useGrouping: false }) : v;
+
 /** A cell as text, with champion / item pictures written as their names. */
 function cellText(el: Element): string {
   const parts: string[] = [];
@@ -135,7 +139,7 @@ export function SortTable<T>({
             <tr key={rowKey(r, i)} className="border-t border-rw-border">
               {columns.map((c) => (
                 <td key={c.key} className={`${td} ${c.className || ""}`}>
-                  {c.render ? c.render(r) : c.value(r) ?? "–"}
+                  {c.render ? c.render(r) : cell(c.value(r))}
                 </td>
               ))}
             </tr>

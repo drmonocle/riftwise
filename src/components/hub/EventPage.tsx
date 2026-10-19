@@ -422,7 +422,7 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
         <tbody>
           {rows.map((r, i) => (
             <tr key={r.t + i} className="border-t border-rw-border">
-              <td className={`${td} text-rw-muted`}>{hide ? "–" : r.pl ?? i + 1}</td>
+              <td className={`${td} text-rw-muted`}>{hide || r.pl === 0 ? "–" : r.pl ?? i + 1}</td>
               <td className={`${td} max-w-[11rem] truncate`}>
                 <TeamLink name={r.t} u={r.u} />
               </td>

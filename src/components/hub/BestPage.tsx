@@ -6,7 +6,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { PlayCircle } from "lucide-react";
-import { tl, tn, tc, stageLabel } from "../../i18n";
+import { tl, tn, tc, stageLabel, fmtDec } from "../../i18n";
 import { loadAliases, loadBest, loadBestIndex, normText } from "../../hub/data";
 import type { BestGame, BestSeries } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
@@ -34,10 +34,10 @@ export const RatingBadge: React.FC<{ r: number; className?: string }> = ({ r, cl
   return (
     <span
       className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] font-bold tabular-nums ${TIER_CLASS[t]} ${className}`}
-      title={tl("Game rating {r} of 100 (tier {t})", { r: r.toFixed(1), t })}
+      title={tl("Game rating {r} of 100 (tier {t})", { r: fmtDec(r), t })}
     >
-      {r.toFixed(1)}
-      <span className="opacity-70">{t}</span>
+      {fmtDec(r)}
+      <span className="font-semibold">{t}</span>
     </span>
   );
 };
