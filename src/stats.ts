@@ -91,7 +91,10 @@ const VERSION_MAX_AGE_MS = 60 * 60 * 1000;
 let versionPromise: Promise<string> | null = null;
 let versionCheckedAt = 0;
 let builtAt: string | null = null; // when the current build finished (latest.json "built")
-const cache = new Map<string, Promise<any>>(); // keyed by "<version>/<path>"
+const cache = new Map<string, Promise<any>>(); // keyed by "<version>/<path>", oldest use first
+// Files read in this visit stay in memory for instant back-and-forth, but not all of them: after a few hundred pages
+// a phone would run out of memory (a big team's game log is several MB once read). The least recently used go first.
+const CACHE_FILES = 80;
 
 // Stats pages come with the current build's version (<meta name="rw-stats">, from the page service), which saves
 // a round trip before the first file. A build replaced since then is caught by the missing-file retry in load().
@@ -146,7 +149,11 @@ export class MissingFile extends Error {}
 function fetchVersioned<T>(v: string, path: string): Promise<T> {
   const key = `${v}/${path}`;
   const hit = cache.get(key);
-  if (hit) return hit;
+  if (hit) {
+    cache.delete(key); // to the back of the line: used just now
+    cache.set(key, hit);
+    return hit;
+  }
   const p = fetch(`${STATS_BASE}/${key}`, { signal: AbortSignal.timeout(20000) })
     .then((r) => {
       if (r.status === 404) throw new MissingFile(key);
@@ -158,6 +165,7 @@ function fetchVersioned<T>(v: string, path: string): Promise<T> {
       throw e;
     });
   cache.set(key, p);
+  while (cache.size > CACHE_FILES) cache.delete(cache.keys().next().value as string);
   return p;
 }
 
