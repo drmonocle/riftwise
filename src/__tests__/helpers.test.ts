@@ -122,6 +122,9 @@ describe("isBigEvent", () => {
     expect(isBigEvent("ewc", "Esports World Cup")).toBe(false);
     expect(isBigEvent(undefined, "Americas Cup 2026")).toBe(false);
     expect(isBigEvent(undefined, "Worlds Qualifying Series 2025")).toBe(false);
+    // "World" on its own isn't Worlds
+    expect(isBigEvent(undefined, "World Star Challengers Invitational 2026")).toBe(false);
+    expect(isBigEvent(undefined, "Season 1 World Championship")).toBe(true);
     expect(isBigEvent("lcs", "LCS")).toBe(false);
   });
 

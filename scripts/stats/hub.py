@@ -911,7 +911,7 @@ def build(ctx) -> dict:
     INTL_RE = re.compile(r"world|msi|mid-season|first stand", re.I)
     # the H2H view's "Worlds · MSI · First Stand" line: only those three (not the Esports World Cup, the Americas
     # Cup or a Worlds qualifier); same test as scripts/h2h/refresh.py and isBigEvent in src/helpers.ts
-    BIG_EVENT_RE = re.compile(r"\bworlds?\b|world championship|\bmsi\b|mid-season invitational|first stand", re.I)
+    BIG_EVENT_RE = re.compile(r"\bworlds\b|world championship|\bmsi\b|mid-season invitational|first stand", re.I)
     NOT_BIG_RE = re.compile(r"world cup|qualif", re.I)
 
     def big_event(name):

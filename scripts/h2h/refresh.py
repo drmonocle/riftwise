@@ -29,7 +29,7 @@ BASE_SERIES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bas
 RECENT_N = 10
 # the H2H view's "Worlds · MSI · First Stand" line: only those three (not the Esports World Cup, the Americas Cup or
 # a Worlds qualifier); same test as big_event in scripts/stats/hub.py and isBigEvent in src/helpers.ts
-BIG_EVENT = re.compile(r"\bworlds?\b|world championship|\bmsi\b|mid-season invitational|first stand", re.I)
+BIG_EVENT = re.compile(r"\bworlds\b|world championship|\bmsi\b|mid-season invitational|first stand", re.I)
 NOT_BIG = re.compile(r"world cup|qualif", re.I)
 
 

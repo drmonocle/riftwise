@@ -629,7 +629,7 @@ export interface HeadToHeadStats {
 export function isBigEvent(leagueSlug?: string, leagueName?: string): boolean {
   if (/^(worlds|msi|first[-_]?stand)$/i.test(leagueSlug || "")) return true;
   const n = leagueName || "";
-  return /\bworlds?\b|world championship|\bmsi\b|mid-season invitational|first stand/i.test(n) && !/world cup|qualif/i.test(n);
+  return /\bworlds\b|world championship|\bmsi\b|mid-season invitational|first stand/i.test(n) && !/world cup|qualif/i.test(n);
 }
 
 /** User requirement: show the H2H whenever the teams have any recorded history. */
