@@ -137,7 +137,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-end gap-1.5 min-w-0 col-start-3">
+      <div className="flex items-center justify-end gap-1 sm:gap-1.5 min-w-0 col-start-3">
         <LanguageFlag onUpdateSettings={onUpdateSettings} />
         {onInstall && (
           <button

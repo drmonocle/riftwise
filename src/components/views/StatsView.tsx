@@ -45,6 +45,7 @@ import {
   useHidden,
   useLoad,
   usePageTitle,
+  CaptureContext,
 } from "../hub/ui";
 import { HubSearch } from "../hub/HubSearch";
 
@@ -91,13 +92,16 @@ const CareerRecords: React.FC<{
   );
 };
 
+/** file name of a records card: "records-fastest-wins" */
+const shareName = (title: string) => "records-" + title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
 const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
   p,
 }) => {
   const [n, setN] = useState(15);
   return (
     <>
-      <Section title={tl("Most pentakills")}>
+      <Section title={tl("Most pentakills")} share="records-most-pentakills">
         <ol className="text-xs space-y-1.5">
           {p.most.map((x, i) => (
             <li key={i} className="flex justify-between gap-2 min-w-0">
@@ -115,7 +119,7 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
           )}
         </p>
       </Section>
-      <Section title={tl("Latest pentakills")}>
+      <Section title={tl("Latest pentakills")} share="records-latest-pentakills">
         <ol className="text-xs space-y-1.5">
           {p.recent.slice(0, n).map((x, i) => (
             <PentaRow key={i} x={x} />
@@ -308,7 +312,7 @@ const RecordsPanel: React.FC = () => {
           rows: HubRecords["game"]["fastest"],
           fmt: (v: number) => string,
         ) => (
-          <Section title={title}>
+          <Section title={title} share={shareName(title)}>
             <ol className="text-xs space-y-1.5">
               {rows.map((g, i) => (
                 <li key={i} className="min-w-0">
@@ -350,7 +354,7 @@ const RecordsPanel: React.FC = () => {
           rows: HubRecords["player"]["kills"],
           fmt: (v: number) => string = fmtNum,
         ) => (
-          <Section title={title}>
+          <Section title={title} share={shareName(title)}>
             <ol className="text-xs space-y-1.5">
               {rows.map((p, i) => (
                 <li key={i} className="min-w-0">
@@ -392,7 +396,7 @@ const RecordsPanel: React.FC = () => {
           title: string,
           rows: HubRecords["career"]["games"],
         ) => (
-          <Section title={title}>
+          <Section title={title} share={shareName(title)}>
             <ol className="text-xs space-y-1.5">
               {rows.map((p, i) => (
                 <li key={i} className="flex justify-between gap-2 min-w-0">
@@ -406,6 +410,7 @@ const RecordsPanel: React.FC = () => {
           </Section>
         );
         return (
+          <CaptureContext.Provider value={year === "all" ? tl("All-time pro records") : tl("{year} records", { year })}>
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-lg font-bold text-rw-text">{year === "all" ? tl("Records") : tl("{year} records", { year })}</h2>
@@ -418,7 +423,7 @@ const RecordsPanel: React.FC = () => {
               )}{" "}
               {tl("The top records were checked against Leaguepedia.")}
             </p>
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-3 md:grid-cols-2 min-[2300px]:grid-cols-3">
               {gameList(tl("Fastest wins"), r.game.fastest, mmss)}
               {gameList(tl("Longest games"), r.game.longest, mmss)}
               {gameList(tl("Most kills in a game"), r.game.bloodiest, (v) =>
@@ -441,7 +446,7 @@ const RecordsPanel: React.FC = () => {
                 <PentakillRecords p={r.pentas} />
               )}
               {year === "all" && (
-              <Section title={tl("Longest win streaks")}>
+              <Section title={tl("Longest win streaks")} share="records-longest-win-streaks">
                 <ol className="text-xs space-y-1.5">
                   {r.team.streaks.map((t, i) => (
                     <li key={i} className="flex justify-between gap-2 min-w-0">
@@ -462,6 +467,7 @@ const RecordsPanel: React.FC = () => {
                 title={tl(
                   "Most international titles (Worlds, MSI, First Stand)",
                 )}
+                share="records-most-international-titles"
               >
                 <ol className="text-xs space-y-1.5">
                   {r.team.titles.map((t, i) => (
@@ -483,6 +489,7 @@ const RecordsPanel: React.FC = () => {
             </div>
             {year === "all" && <CareerRecords r={r} list={careerList} />}
           </div>
+          </CaptureContext.Provider>
         );
       }}
     </Page>
@@ -490,6 +497,9 @@ const RecordsPanel: React.FC = () => {
 };
 
 // ── Titles ────────────────────────────────────────────────────────────────
+
+/** pages that are one big table: kept at the two-column width on very wide screens (App.css .rw-capped) */
+const CAPPED_KINDS = new Set(["tournaments", "leagues", "rankings", "titles", "best", "champions", "patches", "data", "finder", "counters"]);
 
 const TITLE_FILTERS = [
   { key: "International", label: tk("Worlds, MSI & First Stand") },
@@ -684,6 +694,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
           </p>
         )}
 
+        <div className={CAPPED_KINDS.has(route.kind) ? "rw-capped" : undefined}>
         {route.kind === "home" && <HubHome schedule={schedule} />}
         {route.kind === "tournaments" && (
           <EventsBrowse
@@ -726,6 +737,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
           <MatchPage slug={route.slug} game={route.game} onOpenUrl={onOpenUrl} />
         )}
         {route.kind === "champ" && <ChampPage slug={route.slug} />}
+        </div>
 
         <p className="text-[10px] text-rw-muted text-center pt-2">
           {tl(

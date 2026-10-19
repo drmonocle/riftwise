@@ -1058,14 +1058,14 @@ export default function App() {
       )}
 
       {/* Minimal Status Footer */}
-      <footer className="bg-rw-deep border-t border-rw-border px-4 py-1 flex items-center justify-between text-[11px] text-rw-muted select-none">
-        <div className="flex items-center gap-2">
-          <span className={`w-1.5 h-1.5 rounded-full ${syncFailed ? "bg-rw-red" : "bg-rw-teal"}`} />
-          <span className="whitespace-nowrap" title={syncTitle || undefined}>
+      <footer className="bg-rw-deep border-t border-rw-border px-4 py-1 flex items-center justify-between gap-3 min-w-0 text-[11px] text-rw-muted select-none">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${syncFailed ? "bg-rw-red" : "bg-rw-teal"}`} />
+          <span className="truncate" title={syncTitle || undefined}>
             {syncLabel}
           </span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           {settings.spoilerMode && (
             <span className="text-rw-accent font-semibold whitespace-nowrap">
               <span className="hidden sm:inline">{tl("SPOILER MODE ACTIVE")}</span>
@@ -1096,7 +1096,7 @@ export default function App() {
           </button>
           <span
             onClick={() => handleOpenUrl("https://drmonocle.com")}
-            className={`hover:text-rw-accent cursor-pointer whitespace-nowrap ${settings.spoilerMode ? "hidden sm:inline" : ""}`}
+            className="hover:text-rw-accent cursor-pointer whitespace-nowrap hidden sm:inline"
           >
             {tl("Monocle Productions LLC")}
           </span>

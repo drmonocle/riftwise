@@ -156,7 +156,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   };
 
   return (
-    <div className="p-4 space-y-4 page-4xl overflow-y-auto h-full select-none">
+    <div className="p-4 space-y-4 page-4xl rw-capped overflow-y-auto h-full select-none">
       {/* Top Segmented Control: Schedule vs Standings */}
       <div className="flex items-center justify-between pb-2 border-b border-rw-border">
         <div className="flex items-center gap-1.5 bg-rw-deep p-1 rounded-lg border border-rw-border">

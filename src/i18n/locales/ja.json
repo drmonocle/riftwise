@@ -1474,6 +1474,7 @@
   "{player} ({team}) plays it: {n} games, won {pct}": "{player} ({team}) が使用: {n}試合、勝率{pct}",
   "Gold lead at 15 · games won · who on either roster plays the answer": "15分時点のゴールド差・勝利数・両ロスターでその対抗チャンピオンを使う選手",
   "Pick the teams again": "チームを選び直す",
+  "All-time pro records": "歴代プロ記録",
   "now {team}": "現 {team}",
   "title match::Final": "決勝",
   "title winner::Champion": "優勝",

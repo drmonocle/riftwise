@@ -2253,9 +2253,10 @@ def build(ctx) -> dict:
         recs = sorted(((v["g"], c) for c, v in p["champs"].items() if v["g"] >= 40 and champ_top.get(c, (0, None))[1] == page), reverse=True)
         if recs:
             notes.append({"k": "crec", "c": recs[0][1], "n": recs[0][0]})
-        # close to a round number of games on one champion (50, 100, 150...)
+        # one game from a round number of games on one champion (50, 100, 150...): under fearless rules a champion
+        # is played once per series, so only "one away" can happen in the next series
         near = sorted((((v["g"] // 50 + 1) * 50, (v["g"] // 50 + 1) * 50 - v["g"], c) for c, v in p["champs"].items()
-                       if v["g"] >= 40 and (v["g"] // 50 + 1) * 50 - v["g"] <= 3), reverse=True)
+                       if v["g"] >= 40 and (v["g"] // 50 + 1) * 50 - v["g"] <= 1), reverse=True)
         if near:
             notes.append({"k": "cms", "c": near[0][2], "n": near[0][0], "left": near[0][1]})
         # pentakills this year

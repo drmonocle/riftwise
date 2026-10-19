@@ -1,0 +1,136 @@
+[
+ {
+  "name": "live",
+  "path": "/"
+ },
+ {
+  "name": "schedule",
+  "path": "/",
+  "click": "Schedule"
+ },
+ {
+  "name": "stream",
+  "path": "/",
+  "click": "24/7 Stream"
+ },
+ {
+  "name": "watchlist",
+  "path": "/",
+  "click": "Watchlist"
+ },
+ {
+  "name": "dispatch",
+  "path": "/",
+  "click": "Dispatch"
+ },
+ {
+  "name": "settings",
+  "path": "/",
+  "click": "Settings"
+ },
+ {
+  "name": "stats-home",
+  "path": "/stats"
+ },
+ {
+  "name": "tournaments",
+  "path": "/stats/tournaments"
+ },
+ {
+  "name": "leagues",
+  "path": "/stats/leagues"
+ },
+ {
+  "name": "rankings",
+  "path": "/stats/rankings"
+ },
+ {
+  "name": "records",
+  "path": "/stats/records"
+ },
+ {
+  "name": "champions",
+  "path": "/stats/champions"
+ },
+ {
+  "name": "patches",
+  "path": "/stats/patches"
+ },
+ {
+  "name": "team",
+  "path": "/team/t1"
+ },
+ {
+  "name": "player",
+  "path": "/player/faker"
+ },
+ {
+  "name": "event",
+  "path": "/tournament/lcs-2026-summer-playoffs"
+ },
+ {
+  "name": "champ",
+  "path": "/champion/azir"
+ },
+ {
+  "name": "league",
+  "path": "/league/lol-champions-korea"
+ },
+ {
+  "name": "league-year",
+  "path": "/league/lol-champions-korea/2026"
+ },
+ {
+  "name": "match",
+  "path": "/match/lcs-2026-summer-playoffs-finals-1?g=1",
+  "wait": 6000
+ },
+ {
+  "name": "about",
+  "path": "/about"
+ },
+ {
+  "name": "counters",
+  "path": "/stats/counters?champ=rumble"
+ },
+ {
+  "name": "best",
+  "path": "/stats/best"
+ },
+ {
+  "name": "titles",
+  "path": "/stats/titles"
+ },
+ {
+  "name": "compare-teams",
+  "path": "/stats/compare?teams=t1,geng"
+ },
+ {
+  "name": "compare-players",
+  "path": "/stats/compare?players=faker,chovy"
+ },
+ {
+  "name": "data",
+  "path": "/stats/data"
+ },
+ {
+  "name": "prep",
+  "path": "/stats/prep?teams=t1,geng",
+  "wait": 8000
+ },
+ {
+  "name": "draft",
+  "path": "/stats/draft?teams=t1,geng",
+  "wait": 8000
+ },
+ {
+  "name": "finder",
+  "path": "/stats/finder?league=lol-champions-korea&year=2026",
+  "wait": 6000
+ },
+ {
+  "name": "overlay",
+  "path": "/overlay?teams=t1,geng",
+  "wait": 6000
+ }
+]

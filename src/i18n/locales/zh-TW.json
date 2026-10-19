@@ -1474,6 +1474,7 @@
   "{player} ({team}) plays it: {n} games, won {pct}": "{player}（{team}）會用：{n}場，勝率{pct}",
   "Gold lead at 15 · games won · who on either roster plays the answer": "15分鐘經濟差 · 勝場 · 雙方陣容中誰會用這個應對英雄",
   "Pick the teams again": "重新選擇隊伍",
+  "All-time pro records": "歷史職業紀錄",
   "now {team}": "現為 {team}",
   "title match::Final": "決賽",
   "title winner::Champion": "冠軍",
