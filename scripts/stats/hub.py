@@ -471,6 +471,23 @@ def build(ctx) -> dict:
         if r["catalog_game_id"]:
             by_catalog_id[r["catalog_game_id"]] = (r["overview_page"], (r["match_id"], r["game_number"]))
     added_new = 0
+    renumbered = 0
+    winner_fixed = 0
+    team_key = lambda t: re.sub(r"[^a-z0-9]", "", (t or "").lower())
+
+    def same_team(x, y):
+        a_, b_ = team_key(x), team_key(y)
+        return a_ == b_ or (len(a_) >= 4 and len(b_) >= 4 and (a_ in b_ or b_ in a_))
+
+    def same_pair(a1, a2, b1, b2):
+        return (same_team(a1, b1) and same_team(a2, b2)) or (same_team(a1, b2) and same_team(a2, b1))
+
+    def near_day(d1, d2):
+        try:
+            return abs((datetime.date.fromisoformat((d1 or "")[:10]) - datetime.date.fromisoformat((d2 or "")[:10])).days) <= 2
+        except ValueError:
+            return False
+
     linked_by_id = 0
     filled_new = 0
     tname_to_op = {}
@@ -486,6 +503,16 @@ def build(ctx) -> dict:
             tname_to_op.setdefault(r["tournament_name"], op)
         key = (r["match_id"] or r["game_id"], r["game_number"] or 1)
         g = games_by_op[op].get(key)
+        moved = False
+        if g is not None and g["t1"] and g["t2"] and r["team1"] and r["team2"] and not same_pair(g["t1"], g["t2"], r["team1"], r["team2"]):
+            # Leaguepedia renumbered the series (NA LCS 2013 Spring semifinals 1 and 2 are swapped between the two
+            # tables): this game belongs to the series with its teams, the same game number, within two days
+            g = next((x for x in games_by_op[op].values() if x["n"] == key[1] and x["t1"] and x["t2"]
+                      and same_pair(x["t1"], x["t2"], r["team1"], r["team2"]) and near_day(x["date"], r["date_utc"])), None)
+            if g is None:
+                continue  # not found: leave both alone rather than mix this game into the other series
+            renumbered += 1
+            moved = True
         if g is None and r["game_id"] in by_catalog_id:
             # the same game under another series id ("Season 1 World Championship_rebuilt_..." for "..._Bracket Stage_2",
             # "Third-Place Match" for "Third-Place match"): one game, not a second copy of it
@@ -497,8 +524,18 @@ def build(ctx) -> dict:
             g["m_min"], g["m_k"] = r["duration_minutes"], {r["team1"]: r["team1_kills"], r["team2"]: r["team2_kills"]}
             if not g["vod"] and r["vod_url"]:
                 g["vod"] = unesc(r["vod_url"])
-            if not g["gid"] and r["game_id"] in ctx.games:
+            if (moved or not g["gid"] or g["gid"] not in ctx.games) and r["game_id"] in ctx.games:
+                # (after a renumbering, all_games points each series at the other one's scoreboard: this game's wins)
                 g["gid"] = r["game_id"]
+            mw = r["winner"] if r["winner"] in (r["team1"], r["team2"]) else None
+            if mw and g["w"] and g["t1"] and g["t2"] and g["gid"] == r["game_id"] and not same_team(g["w"], mw):
+                # Leaguepedia's schedule and scoreboard name different winners (35 games): the scoreboard's is the
+                # team that took more towers and inhibitors in 26 of 27 that can be told, and the players' careers
+                # count it, so the series page and the game logs follow it too
+                to = g["t1"] if same_team(g["t1"], mw) else g["t2"] if same_team(g["t2"], mw) else None
+                if to:
+                    g["w"] = to
+                    winner_fixed += 1
             if not (g["t1"] and g["t2"]) and r["team1"] and r["team2"]:
                 # played in the last days: all_games has the slot, matches has who played and won
                 g.update({"t1": r["team1"], "t2": r["team2"], "date": (r["date_utc"] or g["date"])[:16],
@@ -515,6 +552,8 @@ def build(ctx) -> dict:
         }
         added_new += 1
     checks["hub: games newer than all_games (from matches)"] = added_new
+    checks["hub: matches games moved to their renumbered series"] = renumbered
+    checks["hub: game winners taken from the scoreboard (schedule disagreed)"] = winner_fixed
     checks["hub: matches games found in all_games by their catalog id (not added twice)"] = linked_by_id
     checks["hub: fresh games given teams from matches"] = filled_new
     placeholders = 0
