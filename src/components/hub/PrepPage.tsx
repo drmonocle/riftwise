@@ -40,13 +40,16 @@ export interface Side {
   players: ({ p: HubPlayer; log: PlayerGameRow[]; full: boolean } | null)[];
 }
 
-/** The last two years of a player's games (a smaller file) when the build made one, else the whole career. */
-async function loadLog(slug: string): Promise<{ log: PlayerGameRow[]; full: boolean }> {
-  try {
-    return { log: await loadPlayerGames2y(slug), full: false };
-  } catch {
-    return { log: await loadPlayerGames(slug).catch(() => [] as PlayerGameRow[]), full: true };
+/** The last two years of a player's games (a smaller file) when the build made one (g2y), else the whole career. */
+async function loadLog(slug: string, has2y: boolean): Promise<{ log: PlayerGameRow[]; full: boolean }> {
+  if (has2y) {
+    try {
+      return { log: await loadPlayerGames2y(slug), full: false };
+    } catch {
+      /* fall through to the whole career */
+    }
   }
+  return { log: await loadPlayerGames(slug).catch(() => [] as PlayerGameRow[]), full: true };
 }
 
 /** Does this period reach further back than the two-year logs? */
@@ -81,8 +84,11 @@ export async function loadSide(slug: string, recent = false): Promise<Side> {
     Promise.all(
       starters.map((x) =>
         x && x.u
-          ? Promise.all([loadHubPlayer(x.u), loadLog(x.u)])
-              .then(([p, l]) => ({ p, log: l.log, full: l.full }))
+          ? loadHubPlayer(x.u)
+              .then(async (p) => {
+                const l = await loadLog(p.u, !!p.g2y);
+                return { p, log: l.log, full: l.full };
+              })
               .catch(() => null)
           : Promise.resolve(null),
       ),
