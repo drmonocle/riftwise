@@ -15,6 +15,7 @@ import {
 } from "../../api";
 import { tl, tc, locale, regionName } from "../../i18n";
 import { STable } from "../STable";
+import { riotImg } from "../../riotImage";
 
 interface StandingsViewProps {
   schedule: Match[];
@@ -420,7 +421,7 @@ const RankBadge: React.FC<{ rank: number }> = ({ rank }) => {
  *  since a button inside a button is invalid HTML (and the click would fire twice). */
 const TeamLogo: React.FC<{ code: string; image?: string; onClick?: () => void; size?: string }> = ({ code, image, onClick, size = "w-7 h-7" }) => {
   const box = `${size} rounded bg-rw-bg border border-rw-border flex items-center justify-center font-bold text-[10px] text-rw-accent shrink-0 font-mono`;
-  if (image) return <img src={image} alt="" className={`${size} object-contain rounded shrink-0 ${onClick ? "cursor-pointer" : ""}`} onClick={onClick} />;
+  if (image) return <img {...riotImg(image, 96)} alt="" className={`${size} object-contain rounded shrink-0 ${onClick ? "cursor-pointer" : ""}`} onClick={onClick} />;
   return onClick ? (
     <button type="button" onClick={onClick} className={box}>
       {code.slice(0, 3)}

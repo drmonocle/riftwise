@@ -466,15 +466,17 @@ export const PlayerPhoto: React.FC<{
 
 /** A team's logo from Riot (teams in Riot's list), else nothing. Left out of copied pictures. */
 export const TeamLogo: React.FC<{ name: string; code?: string; size?: number; sizeClass?: string; className?: string }> = ({ name, code, size = 40, sizeClass, className = "" }) => {
-  const src = useTeamLogo(name, code);
-  const [broken, setBroken] = useState(false);
-  if (!src || broken) return null;
+  const logo = useTeamLogo(name, code);
+  const [broken, setBroken] = useState<string[]>([]); // addresses that failed to load
+  // Riot's logo through Riot's resizer (big enough for the largest size here), the original if that fails, then none
+  const src = logo ? [riotThumb(logo, 160), logo].find((u) => !broken.includes(u)) : undefined;
+  if (!src) return null;
   return (
     <img
       src={src}
       alt=""
       loading="lazy"
-      onError={() => setBroken(true)}
+      onError={() => setBroken((b) => [...b, src])}
       data-nocapture="1"
       style={sizeClass ? undefined : { width: size, height: size }}
       className={`object-contain shrink-0 ${sizeClass || ""} ${className}`}

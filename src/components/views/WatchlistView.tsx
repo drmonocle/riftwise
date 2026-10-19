@@ -7,6 +7,7 @@ import { IS_WEB } from "../../platform";
 import { PushAlertsBanner } from "../PushAlerts";
 import { searchAlias, isNonLatin } from "../../searchAliases";
 import { mainPlayerEntries } from "../../helpers";
+import { riotImg } from "../../riotImage";
 
 interface WatchlistViewProps {
   settings: AppSettings;
@@ -387,7 +388,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     <div className="flex items-center gap-3">
                       {team.image ? (
                         <img
-                          src={team.image}
+                          {...riotImg(team.image, 96)}
                           alt={team.code}
                           className="w-9 h-9 object-contain rounded bg-rw-deep p-0.5"
                           loading="lazy"
@@ -646,7 +647,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   <div className="flex items-center gap-3">
                     {league.image ? (
                       <img
-                        src={league.image}
+                        {...riotImg(league.image, 96)}
                         alt={league.name}
                         className="w-8 h-8 object-contain rounded bg-rw-deep p-0.5"
                         loading="lazy"
