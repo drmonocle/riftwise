@@ -3,14 +3,9 @@ import React from "react";
 import { tl } from "../../i18n";
 import { HubLink, Section, usePageTitle } from "./ui";
 
-export { FEEDBACK_EMAIL as REPORT_EMAIL } from "../../feedback";
-import { FEEDBACK_EMAIL as REPORT_EMAIL } from "../../feedback";
+export { FEEDBACK_EMAIL as REPORT_EMAIL, reportUrl } from "../../feedback";
+import { FEEDBACK_EMAIL as REPORT_EMAIL, reportUrl } from "../../feedback";
 
-/** mailto link for "Report a wrong stat", with the page it's about filled in. */
-export const reportUrl = (page: string) =>
-  `mailto:${REPORT_EMAIL}?subject=${encodeURIComponent("RiftWise stats: wrong number")}&body=${encodeURIComponent(
-    `Page: ${page}\n\nWhat looks wrong:\n\nWhat it should be (and where you saw it):\n`,
-  )}`;
 
 const Term: React.FC<{ t: string; children: React.ReactNode }> = ({ t, children }) => (
   <div className="grid sm:grid-cols-[9rem_1fr] gap-x-3 gap-y-0.5 py-1.5 border-t border-rw-border first:border-t-0">
