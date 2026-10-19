@@ -1491,6 +1491,7 @@
   "We couldn't find one of these teams.": "チームのどちらかが見つかりませんでした。",
   "Try again": "もう一度試す",
   "No exact match. Closest names:": "完全一致はありません。近い名前:",
+  "Skip to content": "本文へスキップ",
   "now {team}": "現 {team}",
   "title match::Final": "決勝",
   "title winner::Champion": "優勝",

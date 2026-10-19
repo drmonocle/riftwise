@@ -31,6 +31,7 @@ import {
   usePageTitle,
 } from "./ui";
 import { STable } from "../STable";
+import { csvSafe } from "../../helpers";
 
 const sel =
   "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text max-w-[12rem]";
@@ -702,7 +703,7 @@ const Cohort: React.FC<{ found: Found; sideCond: boolean; champ: string; player:
 /** Every game found as a CSV file (the table only holds the ones shown). */
 function downloadCohort(found: Found, events: [string, string][], name: string) {
   const esc = (v: string | number | null | undefined) => {
-    const t = v == null ? "" : String(v);
+    const t = v == null ? "" : csvSafe(String(v));
     return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
   };
   const champs = (pk: ChampPick[]) => pk.map((p) => p[0]).join(" / ");

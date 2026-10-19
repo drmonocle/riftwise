@@ -408,6 +408,15 @@ def tsv_cell(s) -> str:
     return re.sub(r"[\t\r\n]+", " ", str(s or "")).strip()
 
 
+CSV_FORMULA = re.compile(r"^[=+\-@\t\r]")
+CSV_NUMBER = re.compile(r"^[-+]?\d+(\.\d+)?$")
+
+
+def csv_safe(v):
+    """A spreadsheet reads text starting with = + - @ as a formula: such names (from a public wiki) get a leading '."""
+    return f"'{v}" if isinstance(v, str) and CSV_FORMULA.match(v) and not CSV_NUMBER.match(v) else v
+
+
 # ── the build ─────────────────────────────────────────────────────────────────
 
 def build(ctx) -> dict:
@@ -911,7 +920,7 @@ def build(ctx) -> dict:
     INTL_RE = re.compile(r"world|msi|mid-season|first stand", re.I)
     # the H2H view's "Worlds · MSI · First Stand" line: only those three (not the Esports World Cup, the Americas
     # Cup or a Worlds qualifier); same test as scripts/h2h/refresh.py and isBigEvent in src/helpers.ts
-    BIG_EVENT_RE = re.compile(r"\bworlds?\b|world championship|\bmsi\b|mid-season invitational|first stand", re.I)
+    BIG_EVENT_RE = re.compile(r"\bworlds\b|world championship|\bmsi\b|mid-season invitational|first stand", re.I)
     NOT_BIG_RE = re.compile(r"world cup|qualif", re.I)
 
     def big_event(name):
@@ -1804,7 +1813,7 @@ def build(ctx) -> dict:
             buf = io.StringIO()
             wcsv = csv.writer(buf, lineterminator="\n")
             wcsv.writerow(CSV_HEAD)
-            wcsv.writerows(csv_rows)
+            wcsv.writerows([csv_safe(c) for c in r] for r in csv_rows)
             out.text(f"csv/{eslug}.csv", buf.getvalue())
             n_games_csv = sum(1 for r in csv_rows if r[9] == "team") // 2
             dl_index[league_slug.get(lg_ev) or "other-events"][(start or end or "")[:4] or event["year"]].append([eslug, en, n_games_csv, start or ""])
@@ -2110,8 +2119,14 @@ def build(ctx) -> dict:
         recent = sorted(t_recent.get(fid, []), reverse=True)
         tevents = sorted(t_events.get(fid, []), key=lambda x: x["date"] or "", reverse=True)
         tg_rows = sorted(t_games.get(fid, []), key=lambda r: (r[0], r[1]), reverse=True)
+        t_has2y = False
         if tg_rows:
             out.json(f"teamgames/{u}.json", tg_rows)
+            # the last two years first on the team page (T1's full log is ~160 KB compressed), the rest after
+            tg_recent = [r for r in tg_rows if r[0] >= two_years_ago]
+            if tg_recent and len(tg_rows) > 200 and len(tg_recent) < len(tg_rows) * 0.8:
+                out.json(f"teamgames2y/{u}.json", tg_recent)
+                t_has2y = True
         prize_shown = set()
         for x in tevents:  # newest first: the event's prize and placing go on the last stage this team played
             pe, pu, pp = x.pop("_pe", None), x.pop("_pu", None), x.pop("_pp", None)
@@ -2207,6 +2222,8 @@ def build(ctx) -> dict:
             stakes_team[u] = {"n": name, "a": obj["notes"]["asOf"] if notes else None, "l": notes or [], "p": starters}
         if starters:
             obj["starters"] = starters  # [name, slug, role]: who played the team's latest games, by role
+        if t_has2y:
+            obj["g2y"] = 1  # teamgames2y/<slug>.json exists
         out.json(f"team/{u}.json", obj)
         search_teams.append([name, short_slug(name, u), t["g"], t["to"][:4], " | ".join(e["n"] for e in eras if e["n"] != name), " | ".join(codes),
                              lpt.get("Region") or ""])
@@ -2317,13 +2334,17 @@ def build(ctx) -> dict:
                 for nt in notes:
                     all_notes.append((note_score(nt), lu_last, {**nt, "t": "player", "name": name, "u": u, "asOf": as_of}))
             stakes_player[u] = (as_of, notes)
-        out.json(f"player/{u}.json", obj)
         games = sorted(p_games.get(page, []), key=lambda r: r[0], reverse=True)
+        # Match prep and the player page load this smaller file first (the last two years) and the full log after;
+        # g2y says it exists, so the app never asks for one that isn't there
+        recent2 = [r for r in games if r[0] >= two_years_ago]
+        has2y = bool(recent2) and len(games) > 200 and len(recent2) < len(games) * 0.8
+        if has2y:
+            obj["g2y"] = 1
+        out.json(f"player/{u}.json", obj)
         if games:
             out.json(f"playergames/{u}.json", [list(r) for r in games])
-            # Match prep loads this smaller file first (the last two years) and the full log only for older periods
-            recent2 = [r for r in games if r[0] >= two_years_ago]
-            if len(games) > 200 and len(recent2) < len(games) * 0.8:
+            if has2y:
                 out.json(f"playergames2y/{u}.json", [list(r) for r in recent2])
         search_players.append([name, short_slug(name, u), club, p["g"], last_date[:4], (role or "")[:1],
                                " ".join(x for x in (bio.get("Name"), bio.get("NativeName")) if x) if p["g"] >= 50 else ""])

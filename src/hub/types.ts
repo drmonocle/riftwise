@@ -426,6 +426,8 @@ export interface HubRatings {
 }
 
 export interface HubTeam {
+  /** 1: a smaller file with the last two years of games exists (teamgames2y / playergames2y) */
+  g2y?: 1;
   /** active teams: who played the latest games in each role, [name, slug, role] */
   starters?: [string, string, string][];
   /** power rating over the last year, [date, rating] (builds from 2026-10-18 on) */
@@ -466,6 +468,8 @@ export interface HubTeam {
 }
 
 export interface HubPlayer {
+  /** 1: a smaller file with the last two years of games exists (teamgames2y / playergames2y) */
+  g2y?: 1;
   /** storylines: milestones within reach, streaks, unbeaten runs */
   notes?: import("../components/hub/Storylines").Notes;
   name: string;

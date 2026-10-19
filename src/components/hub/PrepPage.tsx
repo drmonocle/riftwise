@@ -9,7 +9,7 @@ import { ClipboardCopy, GitCompare, Printer } from "lucide-react";
 import { tl, tc, roleName, fmtDec } from "../../i18n";
 import { MissingFile, winRate } from "../../stats";
 import { champName } from "../../champions";
-import { loadHubPlayer, loadHubTeam, loadPlayerGames, loadPlayerGames2y, loadRatings, loadTeamGames, loadTeamSeries } from "../../hub/data";
+import { loadHubPlayer, loadHubTeam, loadPlayerGames, loadPlayerGames2y, loadRatings, loadTeamGames, loadTeamGames2y, loadTeamSeries } from "../../hub/data";
 import { chanceContext, matchChance, pct, seriesChance } from "../../hub/winChance";
 import { Change } from "./RankingsPage";
 import type { HubPlayer, HubTeam, PlayerGameRow, TeamGameRow, TeamSeriesRow } from "../../hub/types";
@@ -32,6 +32,8 @@ const ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"];
 export interface Side {
   team: HubTeam;
   games: TeamGameRow[];
+  /** false: only the team's last two years of games so far (Match prep's quick start for big teams) */
+  gamesFull?: boolean;
   series: TeamSeriesRow[];
   /** current starters by role (most games in the newest roster year); `full`: the whole career is loaded (not
    *  just the last two years) */
@@ -61,12 +63,12 @@ export function needsFullLogs(period: PeriodKey, teamGames: TeamGameRow[]): bool
   return false;
 }
 
-export async function loadSide(slug: string): Promise<Side> {
-  const [team, games, series] = await Promise.all([
-    loadHubTeam(slug),
-    loadTeamGames(slug).catch(() => [] as TeamGameRow[]),
-    loadTeamSeries(slug).catch(() => [] as TeamSeriesRow[]),
-  ]);
+/** recent: a big team's last two years of games first (Match prep: it opens on this season); the draft board wants
+ *  the whole log */
+export async function loadSide(slug: string, recent = false): Promise<Side> {
+  const [team, series] = await Promise.all([loadHubTeam(slug), loadTeamSeries(slug).catch(() => [] as TeamSeriesRow[])]);
+  const short = recent && !!team.g2y;
+  const gamesP = (short ? loadTeamGames2y(team.u) : loadTeamGames(team.u)).catch(() => [] as TeamGameRow[]);
   // who played the team's latest games (the build's pick), else the most games in the newest roster year
   const latest = team.roster[0];
   const starters = ROLES.map((r) => {
@@ -74,24 +76,30 @@ export async function loadSide(slug: string): Promise<Side> {
     if (st) return { n: st[0], u: st[1], r, g: 0 };
     return (latest?.p || []).filter((x) => x.r === r && x.u).sort((a, b) => b.g - a.g)[0] || null;
   });
-  const players = await Promise.all(
-    starters.map((x) =>
-      x && x.u
-        ? Promise.all([loadHubPlayer(x.u), loadLog(x.u)])
-            .then(([p, l]) => ({ p, log: l.log, full: l.full }))
-            .catch(() => null)
-        : Promise.resolve(null),
+  const [games, players] = await Promise.all([
+    gamesP,
+    Promise.all(
+      starters.map((x) =>
+        x && x.u
+          ? Promise.all([loadHubPlayer(x.u), loadLog(x.u)])
+              .then(([p, l]) => ({ p, log: l.log, full: l.full }))
+              .catch(() => null)
+          : Promise.resolve(null),
+      ),
     ),
-  );
-  return { team, games, series, players };
+  ]);
+  return { team, games, gamesFull: !short, series, players };
 }
 
 /** The same side with every player's whole career loaded. */
 async function loadFullLogs(s: Side): Promise<Side> {
-  const players = await Promise.all(
-    s.players.map(async (pl) => (!pl || pl.full ? pl : { ...pl, log: await loadPlayerGames(pl.p.u).catch(() => pl.log), full: true })),
-  );
-  return { ...s, players };
+  const [games, players] = await Promise.all([
+    s.gamesFull === false ? loadTeamGames(s.team.u).catch(() => s.games) : Promise.resolve(s.games),
+    Promise.all(
+      s.players.map(async (pl) => (!pl || pl.full ? pl : { ...pl, log: await loadPlayerGames(pl.p.u).catch(() => pl.log), full: true })),
+    ),
+  ]);
+  return { ...s, games, gamesFull: true, players };
 }
 
 export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
@@ -104,7 +112,7 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
     let alive = true;
     setSides({ a: null, b: null });
     if (!a || !b) return;
-    Promise.all([loadSide(a), loadSide(b)])
+    Promise.all([loadSide(a, true), loadSide(b, true)])
       .then(([x, y]) => alive && setSides({ a: x, b: y }))
       .catch((e) => alive && setSides({ a: null, b: null, failed: true, missing: e instanceof MissingFile }));
     return () => {
@@ -274,7 +282,10 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
   const options = useMemo(() => bothOptions(a.games.map(teamRowRef), b.games.map(teamRowRef)), [a.games, b.games]);
   const period: PeriodKey = route.period && options.some((o) => o.key === route.period) ? route.period : defaultPeriod(options);
   // an older period needs the players' whole careers: fetch them once, then stay on them
-  const wantFull = needsFullLogs(period, [...a.games, ...b.games]) && [...a.players, ...b.players].some((p) => p && !p.full);
+  // (also a shared link to an older season, which the two-year lists don't offer yet)
+  const notFull = a.gamesFull === false || b.gamesFull === false || [...a.players, ...b.players].some((p) => p && !p.full);
+  const askedOlder = !!route.period && !options.some((o) => o.key === route.period);
+  const wantFull = notFull && (askedOlder || needsFullLogs(period, [...a.games, ...b.games]));
   useEffect(() => {
     if (!wantFull) return;
     let alive = true;

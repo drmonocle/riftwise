@@ -21,6 +21,7 @@ import {
   navigateHub,
   useHubRoute,
 } from "../../hub/route";
+import { PartBoundary } from "../PartBoundary";
 import { useDDragon } from "../../hub/ddragon";
 import { BestPage } from "../hub/BestPage";
 import { AboutMePage } from "../hub/AboutMePage";
@@ -709,6 +710,9 @@ export const StatsView: React.FC<StatsViewProps> = ({
         )}
 
         <div className={CAPPED_KINDS.has(route.kind) ? "rw-capped" : undefined}>
+        {/* one page's crash shows its own error; the next page starts fresh (the menu and search stay usable).
+            Keyed by the page, not its filters, so changing a period or a filter doesn't restart it. */}
+        <PartBoundary key={`${route.kind}:${"slug" in route ? route.slug : ""}`}>
         {route.kind === "home" && <HubHome schedule={schedule} />}
         {route.kind === "tournaments" && (
           <EventsBrowse
@@ -751,6 +755,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
           <MatchPage slug={route.slug} game={route.game} onOpenUrl={onOpenUrl} />
         )}
         {route.kind === "champ" && <ChampPage slug={route.slug} />}
+        </PartBoundary>
         </div>
 
         <p className="text-[10px] text-rw-muted text-center pt-2">

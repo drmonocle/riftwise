@@ -161,8 +161,11 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
   // three or more: a table with a column each
   if (route.more && route.more.length && a && b) return <MultiCompare mode={mode} slugs={[a, b, ...route.more]} period={route.period} set={set} />;
 
-  const [info, setInfo] = useState<{ a: HubTeam | HubPlayer | null; b: HubTeam | HubPlayer | null }>({ a: null, b: null });
-  const [logs, setLogs] = useState<{ a: (TeamGameRow | PlayerGameRow)[] | null; b: (TeamGameRow | PlayerGameRow)[] | null }>({ a: null, b: null });
+  // what the loaded files are for: switching players -> teams (or new names) mustn't read the old files as the new
+  // kind for a moment (player rows as team rows broke the page)
+  const forKey = `${mode}|${a}|${b}`;
+  const [info, setInfo] = useState<{ key: string; a: HubTeam | HubPlayer | null; b: HubTeam | HubPlayer | null }>({ key: "", a: null, b: null });
+  const [logs, setLogs] = useState<{ key: string; a: (TeamGameRow | PlayerGameRow)[] | null; b: (TeamGameRow | PlayerGameRow)[] | null }>({ key: "", a: null, b: null });
   useEffect(() => {
     let alive = true;
     const loadInfo = (s: string | null) => (s ? (mode === "team" ? loadHubTeam(s) : loadHubPlayer(s)).catch(() => null) : Promise.resolve(null));
@@ -170,15 +173,15 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
       s ? (mode === "team" ? loadTeamGames(s) : loadPlayerGames(s)).catch(() => [] as (TeamGameRow | PlayerGameRow)[]) : Promise.resolve(null);
     Promise.all([loadInfo(a), loadInfo(b), loadLog(a), loadLog(b)]).then(([ia, ib, la, lb]) => {
       if (!alive) return;
-      setInfo({ a: ia, b: ib });
-      setLogs({ a: la, b: lb });
+      setInfo({ key: forKey, a: ia, b: ib });
+      setLogs({ key: forKey, a: la, b: lb });
     });
     return () => {
       alive = false;
     };
   }, [mode, a, b]);
 
-  const ready = !!(a && b && info.a && info.b && logs.a && logs.b);
+  const ready = !!(a && b && info.key === forKey && logs.key === forKey && info.a && info.b && logs.a && logs.b);
   const refs = (rows: (TeamGameRow | PlayerGameRow)[]) =>
     mode === "team" ? (rows as TeamGameRow[]).map(teamRowRef) : (rows as PlayerGameRow[]).map(playerRowRef);
   const options = useMemo(() => (ready ? bothOptions(refs(logs.a!), refs(logs.b!)) : []), [ready, logs]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -228,8 +231,8 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
       <div className="grid grid-cols-2 gap-3">
         {(
           [
-            { s: a, i: info.a, key: "a" as const },
-            { s: b, i: info.b, key: "b" as const },
+            { s: a, i: info.key === forKey ? info.a : null, key: "a" as const },
+            { s: b, i: info.key === forKey ? info.b : null, key: "b" as const },
           ]
         ).map((side) => (
           <div key={side.key} className={`${card} space-y-1 min-w-0`}>
@@ -666,7 +669,10 @@ type Loaded = { slug: string; info: HubTeam | HubPlayer; log: (TeamGameRow | Pla
 
 /** Up to eight teams or players in one table: one column each, the best number of every row lit up. */
 const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set: (p: Partial<CompareRoute>) => void }> = ({ mode, slugs, period: wanted, set }) => {
-  const [rows, setRows] = useState<Loaded[] | null>(null);
+  // tagged with what they were loaded for (see ComparePage: old files mustn't be read as the new kind)
+  const forKey = `${mode}|${slugs.join(",")}`;
+  const [loaded, setLoaded] = useState<{ key: string; rows: Loaded[] } | null>(null);
+  const rows = loaded && loaded.key === forKey ? loaded.rows : null;
   useEffect(() => {
     let alive = true;
     Promise.all(
@@ -679,7 +685,7 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
           return null;
         }
       }),
-    ).then((xs) => alive && setRows(xs.filter((x): x is Loaded => !!x)));
+    ).then((xs) => alive && setLoaded({ key: forKey, rows: xs.filter((x): x is Loaded => !!x) }));
     return () => {
       alive = false;
     };

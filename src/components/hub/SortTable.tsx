@@ -4,6 +4,7 @@ import { ClipboardCopy, Download } from "lucide-react";
 import { tl, locale } from "../../i18n";
 import { IS_WEB } from "../../platform";
 import { td, th } from "./ui";
+import { csvSafe } from "../../helpers";
 
 /** A plain cell: a decimal in the reader's style (3.5 / 3,5); whole numbers (years, counts) and text as they are. */
 const cell = (v: React.ReactNode) =>
@@ -26,7 +27,10 @@ function tableRows(table: HTMLTableElement): string[][] {
   return [...table.rows].map((tr) => [...tr.cells].map(cellText));
 }
 
-const csvCell = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+const csvCell = (raw: string) => {
+  const v = csvSafe(raw); // a name starting with = + - @ isn't run as a formula
+  return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+};
 
 /** Copy (for pasting into a spreadsheet) and CSV download buttons for a table. */
 export const TableExport: React.FC<{ tableRef: React.RefObject<HTMLTableElement | null>; name: string }> = ({ tableRef, name }) => {
