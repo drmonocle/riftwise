@@ -1492,6 +1492,7 @@
   "Try again": "もう一度試す",
   "No exact match. Closest names:": "完全一致はありません。近い名前:",
   "Skip to content": "本文へスキップ",
+  "Players are still loading…": "選手を読み込み中…",
   "now {team}": "現 {team}",
   "title match::Final": "決勝",
   "title winner::Champion": "優勝",

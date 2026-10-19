@@ -79,7 +79,7 @@ func TestPageGetsItsOwnTags(t *testing.T) {
 		`<meta property="og:image" content="https://riftwise.gg/og/team/t1.png" />`,
 		`<meta name="twitter:card" content="summary_large_image" />`,
 		`<meta name="twitter:title" content="T1 – stats | RiftWise" />`,
-		`<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage"`,
+		`<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","about":{"@type":"SportsTeam","name":"T1","sport":"League of Legends esports"}`,
 		`<noscript><main><h1>T1 – stats | RiftWise</h1>`,
 		`<a href="/player/faker">Faker</a>`,
 		`<meta property="og:title" content="T1 – stats | RiftWise" />`,

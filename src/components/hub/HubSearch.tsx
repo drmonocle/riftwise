@@ -4,7 +4,7 @@ import { Search, Users, User, Trophy, Swords, X, Flag } from "lucide-react";
 import { tl, tk, roleName } from "../../i18n";
 import { champName } from "../../champions";
 import { isNonLatin } from "../../searchAliases";
-import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubIndex, searchHub } from "../../hub/data";
+import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubIndex, loadHubIndexQuick, searchHub } from "../../hub/data";
 import { HubRoute, navigateHub } from "../../hub/route";
 import { ChampIcon, fmtNum, HubLink } from "./ui";
 
@@ -29,6 +29,8 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
 }) => {
   const [q, setQ] = useState(initial || "");
   const [index, setIndex] = useState<HubIndex | null>(null);
+  // the small lists first (teams, tournaments, champions, leagues), the players when their bigger list arrives
+  const [partial, setPartial] = useState(false);
   const [failed, setFailed] = useState(false);
   const [active, setActive] = useState(0);
   const [open, setOpen] = useState(false);
@@ -36,10 +38,23 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
 
   const start = () => {
     setOpen(true);
-    if (!index && !failed)
+    if (!index && !failed) {
+      let full = false;
+      loadHubIndexQuick()
+        .then((q) => {
+          if (full) return;
+          setIndex(q);
+          setPartial(true);
+        })
+        .catch(() => {});
       loadHubIndex()
-        .then(setIndex)
+        .then((x) => {
+          full = true;
+          setIndex(x);
+          setPartial(false);
+        })
         .catch(() => setFailed(true));
+    }
   };
   useEffect(() => {
     if (autoFocus || initial) start();
@@ -110,7 +125,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
         <div className="absolute z-40 left-0 right-0 mt-1 bg-rw-surface border border-rw-accent/40 rounded-lg shadow-2xl max-h-[70vh] overflow-y-auto p-1.5 text-xs">
           {failed ? (
             <p className="p-3 text-rw-red">{tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>
-          ) : !index ? (
+          ) : !index || (partial && (flat.length === 0 || fuzzy)) ? (
             <p className="p-3 text-rw-sub">{tl("Loading…")}</p>
           ) : flat.length === 0 ? (
             <p className="p-3 text-rw-sub">
@@ -158,6 +173,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
                 })}
               </div>
             ))}
+            {partial && <p className="px-2 pb-1 text-[11px] text-rw-muted">{tl("Players are still loading…")}</p>}
             </>
           )}
         </div>

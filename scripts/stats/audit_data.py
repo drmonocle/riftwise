@@ -6,6 +6,7 @@ and known results (Worlds, MSI and First Stand winners). Read-only.
 
 Exit code 1 when a check that should never fail did (the build should not ship then).
 """
+import datetime
 import glob
 import json
 import os
@@ -65,6 +66,7 @@ def main():
 
     # -- series pages ---------------------------------------------------------------------------
     # ~100k small files: read them on 16 threads (the disk, not Python, is the slow part), checked in order
+    tomorrow = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
     order = sorted(games)
     pool = ThreadPoolExecutor(16)
     for slug, s in zip(order, pool.map(lambda x: load(os.path.join(hub, "game", x + ".json")), order)):
@@ -78,6 +80,10 @@ def main():
         sa, sb = s.get("sa"), s.get("sb")
         if s["a"].get("n") and s["a"].get("n") == s["b"].get("n"):
             bad("series against itself", where)
+        if not (s.get("date") or "")[:10]:
+            bad("series without a date", where)
+        elif played and s["date"][:10] > tomorrow:
+            bad("result dated in the future", f"{where}: {s['date'][:10]}")
         if sa is not None and sb is not None:
             checked["series with a score"] += 1
             bo = s.get("bo") or 0
