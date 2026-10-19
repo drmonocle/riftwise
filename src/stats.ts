@@ -184,6 +184,11 @@ export async function load<T>(path: string): Promise<T> {
   }
 }
 
+/** Start loading files a page is about to ask for; the page's own load() then picks them up from the cache. */
+export function prefetch(paths: string[]): void {
+  for (const p of paths) load(p).catch(() => {}); // a failure is retried (and shown) by the page's own load
+}
+
 /** A text file of the current stats build (the CSV downloads); not cached, they're fetched once per click. */
 export async function loadText(path: string): Promise<string> {
   const v = await getVersion();

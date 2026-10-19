@@ -417,6 +417,9 @@ export default function App() {
   const lastSchedule = useRef(0);
   const lastStream = useRef(0);
   const liveCount = useRef(0);
+  const streamInFlight = useRef(false);
+  const mainFailed = useRef(false);
+  const streamFailed = useRef(false);
 
   const refreshData = useCallback(async (force = false) => {
     if (inFlight.current) return;
@@ -431,10 +434,9 @@ export default function App() {
 
     try {
       // allSettled: one source failing must never wipe the data we already have
-      const [live, sched, stream] = await Promise.allSettled([
+      const [live, sched] = await Promise.allSettled([
         fetchLiveMatches(),
         wantSchedule ? fetchSchedule() : Promise.resolve(null),
-        wantStream ? fetchStreamSchedule() : Promise.resolve(null),
       ]);
 
       let nextLive = liveMatchesRef.current;
@@ -461,16 +463,9 @@ export default function App() {
         finalLive.filter((m) => m.state === "inProgress").length +
         (live.status === "fulfilled" ? live.value.shows.length : 0);
 
-      if (stream.status === "fulfilled" && stream.value && stream.value.length > 0) {
-        streamEventsRef.current = stream.value;
-        setStreamEvents(stream.value);
-        saveStreamSchedule(stream.value);
-        lastStream.current = now;
-      }
-
-      const anyFailed = [live, sched, stream].some((r) => r.status === "rejected");
-      setSyncFailed(anyFailed);
-      if (!anyFailed || live.status === "fulfilled") setLastSync(Date.now());
+      mainFailed.current = [live, sched].some((r) => r.status === "rejected");
+      setSyncFailed(mainFailed.current || streamFailed.current);
+      if (!mainFailed.current || live.status === "fulfilled") setLastSync(Date.now());
 
       // Riot outage banner: the live feed is polled every tick, so it is the signal. Only show it
       // once we have had no answer for a few minutes (or never), so a single blip stays quiet.
@@ -486,6 +481,33 @@ export default function App() {
     } finally {
       inFlight.current = false;
       setIsRefreshing(false);
+    }
+
+    // The 24/7 stream's schedule (~45 KB, only the header's stream line and the Stream tab use it) comes after
+    // the scores, and a moment later still unless the Stream tab is open: on a slow phone connection it used to
+    // hold up the whole page by several seconds. A saved copy from the last visit shows in the meantime.
+    if (wantStream && !streamInFlight.current) {
+      streamInFlight.current = true;
+      window.setTimeout(
+        () =>
+          fetchStreamSchedule()
+            .then((events) => {
+              streamFailed.current = false;
+              if (events.length === 0) return;
+              streamEventsRef.current = events;
+              setStreamEvents(events);
+              saveStreamSchedule(events);
+              lastStream.current = Date.now();
+            })
+            .catch(() => {
+              streamFailed.current = true;
+            })
+            .finally(() => {
+              streamInFlight.current = false;
+              setSyncFailed(mainFailed.current || streamFailed.current);
+            }),
+        force || activeTabRef.current === "stream" ? 0 : 2500,
+      );
     }
   }, []);
 
