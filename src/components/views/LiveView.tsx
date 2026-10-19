@@ -20,6 +20,7 @@ import { clickable } from "../../a11y";
 import { H2HMeter } from "../H2HMeter";
 import { tl, tc, locale } from "../../i18n";
 import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
+import { riotImg } from "../../riotImage";
 
 interface LiveViewProps {
   matches: Match[];
@@ -293,7 +294,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     </div>
                     {m.team1Image ? (
                       <img
-                        src={m.team1Image}
+                        {...riotImg(m.team1Image, 96)}
                         alt={m.team1Code}
                         className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 object-contain rounded cursor-pointer"
                         onClick={() => onSelectTeam?.(m.team1Code, m.team1Name)}
@@ -353,7 +354,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   <div className="col-span-2 min-w-0 flex items-center gap-2 sm:gap-3 text-left">
                     {m.team2Image ? (
                       <img
-                        src={m.team2Image}
+                        {...riotImg(m.team2Image, 96)}
                         alt={m.team2Code}
                         className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 object-contain rounded cursor-pointer"
                         onClick={() => onSelectTeam?.(m.team2Code, m.team2Name)}
@@ -608,7 +609,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 <div className="flex flex-col items-center flex-1 min-w-0 max-w-[180px]">
                   {nextMatch.team1Image ? (
                     <img
-                      src={nextMatch.team1Image}
+                      {...riotImg(nextMatch.team1Image, 160)}
                       alt={nextMatch.team1Code}
                       className="w-14 h-14 sm:w-16 sm:h-16 object-contain mb-2 drop-shadow-md cursor-pointer hover:scale-105 transition-transform"
                       onClick={() => onSelectTeam?.(nextMatch!.team1Code, nextMatch!.team1Name)}
@@ -681,7 +682,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 <div className="flex flex-col items-center flex-1 min-w-0 max-w-[180px]">
                   {nextMatch.team2Image ? (
                     <img
-                      src={nextMatch.team2Image}
+                      {...riotImg(nextMatch.team2Image, 160)}
                       alt={nextMatch.team2Code}
                       className="w-14 h-14 sm:w-16 sm:h-16 object-contain mb-2 drop-shadow-md cursor-pointer hover:scale-105 transition-transform"
                       onClick={() => onSelectTeam?.(nextMatch!.team2Code, nextMatch!.team2Name)}

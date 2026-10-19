@@ -8,6 +8,7 @@ import { fetchH2HSeries, H2HSeriesEntry } from "../api";
 import { H2HBar, T1_COLOR, T2_COLOR } from "./H2HMeter";
 import { fmtDate } from "./hub/ui";
 import { tl, tn } from "../i18n";
+import { riotImg } from "../riotImage";
 
 interface H2HDetailsModalProps {
   team1Code: string;
@@ -139,7 +140,7 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
       title={tl("View {team} roster", { team: info.name })}
     >
       {info.image ? (
-        <img src={info.image} alt="" className="w-9 h-9 object-contain shrink-0" />
+        <img {...riotImg(info.image, 96)} alt="" className="w-9 h-9 object-contain shrink-0" />
       ) : (
         <div className="w-9 h-9 rounded bg-rw-bg flex items-center justify-center font-mono text-[10px] text-rw-accent shrink-0">
           {code.slice(0, 3)}

@@ -13,6 +13,7 @@ import { searchAlias } from "../../searchAliases";
 import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 import { findSeriesSlug } from "../../hub/seriesLookup";
 import { navigateHub } from "../../hub/route";
+import { riotImg } from "../../riotImage";
 
 interface ScheduleViewProps {
   schedule: Match[];
@@ -236,6 +237,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 <input
                   type="text"
                   placeholder={tl("Search team or league…")}
+                  aria-label={tl("Search team or league…")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-rw-surface border border-rw-border rounded pl-8 pr-3 py-1 text-xs text-rw-text focus:outline-none focus:border-rw-accent"
@@ -325,7 +327,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         </span>
                         {m.team1Image && (
                           <img
-                            src={m.team1Image}
+                            {...riotImg(m.team1Image, 64)}
                             alt=""
                             className="w-5 h-5 object-contain cursor-pointer"
                             onClick={() => onSelectTeam?.(m.team1Code, m.team1Name)}
@@ -372,7 +374,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       <div className="flex items-center gap-1.5 flex-1 sm:flex-none sm:w-36 justify-start text-left min-w-0">
                         {m.team2Image && (
                           <img
-                            src={m.team2Image}
+                            {...riotImg(m.team2Image, 64)}
                             alt=""
                             className="w-5 h-5 object-contain cursor-pointer"
                             onClick={() => onSelectTeam?.(m.team2Code, m.team2Name)}
