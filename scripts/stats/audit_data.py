@@ -136,9 +136,27 @@ def main():
 
     # -- players ----------------------------------------------------------------------------------
     order = sorted(players)
-    for slug, p in zip(order, pool.map(lambda x: load(os.path.join(hub, "player", x + ".json")), order)):
+
+    def player_and_log(x):
+        try:
+            log = load(os.path.join(hub, "playergames", x + ".json"))
+        except FileNotFoundError:
+            log = None
+        return load(os.path.join(hub, "player", x + ".json")), log
+
+    for slug, (p, log) in zip(order, pool.map(player_and_log, order)):
         where = f"player/{slug}"
         g, w, k, d, a = p.get("g", 0), p.get("w", 0), p.get("k", 0), p.get("d", 0), p.get("a", 0)
+        # the career line and the game log are built separately: they must agree
+        # (row: date, series, champion, kills, deaths, assists, win 1/0, ...)
+        if log is not None:
+            checked["player game logs"] += 1
+            lg, lw = len(log), sum(1 for r in log if r[6] == 1)
+            lk, ld, la = (sum((r[i] or 0) for r in log) for i in (3, 4, 5))
+            if (lg, lw) != (g, w):
+                bad("player's game log doesn't match their games and wins", f"{where}: log {lg} games {lw} wins, page {g}/{w}")
+            elif (lk, ld, la) != (k, d, a):
+                bad("player's game log doesn't match their K/D/A", f"{where}: log {lk}/{ld}/{la}, page {k}/{d}/{a}")
         if w > g:
             bad("player with more wins than games", f"{where}: {w}/{g}")
         if g and p.get("kda") is not None:
