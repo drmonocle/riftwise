@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ClipboardCopy, GitCompare, Printer } from "lucide-react";
 import { tl, tc, roleName, fmtDec } from "../../i18n";
-import { winRate } from "../../stats";
+import { MissingFile, winRate } from "../../stats";
 import { champName } from "../../champions";
 import { loadHubPlayer, loadHubTeam, loadPlayerGames, loadPlayerGames2y, loadRatings, loadTeamGames, loadTeamSeries } from "../../hub/data";
 import { chanceContext, matchChance, pct, seriesChance } from "../../hub/winChance";
@@ -98,14 +98,14 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
   useDDragon();
   const a = route.a || null;
   const b = route.b || null;
-  const [sides, setSides] = useState<{ a: Side | null; b: Side | null; failed?: boolean }>({ a: null, b: null });
+  const [sides, setSides] = useState<{ a: Side | null; b: Side | null; failed?: boolean; missing?: boolean }>({ a: null, b: null });
   useEffect(() => {
     let alive = true;
     setSides({ a: null, b: null });
     if (!a || !b) return;
     Promise.all([loadSide(a), loadSide(b)])
       .then(([x, y]) => alive && setSides({ a: x, b: y }))
-      .catch(() => alive && setSides({ a: null, b: null, failed: true }));
+      .catch((e) => alive && setSides({ a: null, b: null, failed: true, missing: e instanceof MissingFile }));
     return () => {
       alive = false;
     };
@@ -135,7 +135,15 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
         </div>
       </div>
     );
-  if (sides.failed) return <p className="text-xs text-rw-sub py-6 text-center">{tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>;
+  if (sides.failed)
+    return (
+      <div className="text-xs text-rw-sub py-6 text-center space-y-2">
+        <p>{sides.missing ? tl("We couldn't find one of these teams.") : tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>
+        <button type="button" onClick={() => set({ a: undefined, b: undefined })} className="text-rw-teal hover:underline">
+          {tl("Pick the teams again")}
+        </button>
+      </div>
+    );
   if (!sides.a || !sides.b) return <Loading />;
   return <PrepView a={sides.a} b={sides.b} route={route} set={set} onFull={(x, y) => setSides({ a: x, b: y })} />;
 };

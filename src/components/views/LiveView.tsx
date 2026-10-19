@@ -774,7 +774,11 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="text-xl sm:text-2xl font-extrabold text-rw-teal font-mono tracking-tight animate-pulse">
+                  <div
+                    className={`${
+                      (countdown.formatted || "").length > 22 ? "text-base sm:text-xl" : "text-xl sm:text-2xl"
+                    } font-extrabold text-rw-teal font-mono tracking-tight animate-pulse`}
+                  >
                     {countdown.formatted || tl("Calculating…")}
                   </div>
                 )}

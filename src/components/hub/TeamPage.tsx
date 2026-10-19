@@ -4,6 +4,7 @@ import { Trophy } from "lucide-react";
 import { tl, roleName, regionName, eventTitle, tc } from "../../i18n";
 import { winRate } from "../../stats";
 import { loadHubTeam } from "../../hub/data";
+import { currentHubRoute, navigateHub } from "../../hub/route";
 import type { HubTeam } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { TeamSeriesArchive } from "./Archives";
@@ -16,7 +17,17 @@ import { Sparkline } from "./Sparkline";
 import { STable } from "../STable";
 
 export const TeamPage: React.FC<{ slug: string }> = ({ slug }) => {
-  const state = useLoad(() => loadHubTeam(slug), [slug]);
+  // reached by an old or short address (/team/hle): show the team's own address, once this team's file is in and
+  // only while its page is still the one open (moving to another team mustn't bounce back)
+  const state = useLoad(
+    () =>
+      loadHubTeam(slug).then((t) => {
+        const now = currentHubRoute();
+        if (t.u && t.u !== slug && now.kind === "team" && now.slug === slug) navigateHub({ kind: "team", slug: t.u }, { replace: true });
+        return t;
+      }),
+    [slug],
+  );
   usePageTitle(state.data?.name);
   useDDragon();
   return (

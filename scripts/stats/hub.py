@@ -1056,6 +1056,8 @@ def build(ctx) -> dict:
                 awarded = bool(s.get("ff"))
                 wa, wb = s["sa"], s["sb"]  # a forfeit, or games missing from the catalog (Worlds Season 1 final: 2-1)
             bo = (s and s["bo"]) or (glist and glist[0]["bo"]) or max(1, len(glist))
+            if max(wa, wb) > bo // 2 + 1:
+                bo = 2 * max(wa, wb) - 1  # Leaguepedia's best-of is sometimes off (a 3-1 marked Bo3): the score decides
             played = bool(glist) and any(g["w"] for g in glist) or (wa + wb > 0)
             winner = 1 if wa > wb else 2 if wb > wa else 0
             tab = (s and s["tab"]) or next((g.get("tab") for g in glist if g.get("tab")), None)
@@ -2696,6 +2698,21 @@ def build(ctx) -> dict:
     for full, short in leagues_info.SHORT.items():
         if full in league_slug and pretty(short) and pretty(short) != league_slug[full] and pretty(short) not in league_slug.values():
             league_alias.setdefault(pretty(short), league_slug[full])
+    # A team's short names ("hle", "skt") and its name with the dots as dashes ("gen-g") lead to it too, so typed
+    # addresses work (the page service 301s them, the app follows them). A shared short name goes to the team with the
+    # most games; a real team slug or an old slug always wins.
+    team_slugs_all = {r[1] or pretty(r[0]) for r in search_teams}
+    n_short = 0
+    for r in sorted(search_teams, key=lambda r: -r[2]):
+        u_t = r[1] or pretty(r[0])
+        keys = [pretty(c) for c in r[5].split(" | ") if c.strip()]
+        if "." in r[0]:
+            keys.append(pretty(r[0].replace(".", " ")))
+        for k in keys:
+            if k and k != u_t and k not in team_slugs_all and k not in alias:
+                alias[k] = u_t
+                n_short += 1
+    checks["hub: team short-name addresses"] = n_short
     out.json("alias.json", {"team": alias, "league": league_alias})
 
     years = sorted((y for y in events_by_year if y.isdigit()), reverse=True)

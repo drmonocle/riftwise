@@ -22,9 +22,25 @@ import { APP_VERSION } from "./version";
 import { feedbackUrl } from "./feedback";
 
 // Read before the first render marks the app as launched (see the initial-tab logic below).
-const FIRST_DESKTOP_LAUNCH = (() => {
+const LAUNCHED_BEFORE = (() => {
   try {
-    return IS_DESKTOP && !localStorage.getItem("riftwatch_has_launched");
+    return localStorage.getItem("riftwatch_has_launched") !== null;
+  } catch {
+    return false;
+  }
+})();
+const FIRST_DESKTOP_LAUNCH = IS_DESKTOP && !LAUNCHED_BEFORE;
+// The rename note (0.4.0, Oct 2026) is only for browsers that used the app before this check existed (0.7.1), so a
+// first visit never gets it; decided once and remembered. Old news by December.
+const RENAME_NOTE_UNTIL = Date.UTC(2026, 11, 1);
+const OLD_USER = (() => {
+  try {
+    let v = localStorage.getItem("riftwise_seen");
+    if (!v) {
+      v = LAUNCHED_BEFORE ? "pre" : "new";
+      localStorage.setItem("riftwise_seen", v);
+    }
+    return v === "pre";
   } catch {
     return false;
   }
@@ -129,7 +145,7 @@ export default function App() {
   // One-time note for people who used the app before it was renamed (0.4.0): RiftWatch is now RiftWise
   const [renameNote, setRenameNote] = useState(() => {
     try {
-      return localStorage.getItem("riftwatch_has_launched") !== null && localStorage.getItem("riftwatch_tip_rename_v1") !== "1";
+      return OLD_USER && Date.now() < RENAME_NOTE_UNTIL && localStorage.getItem("riftwatch_tip_rename_v1") !== "1";
     } catch {
       return false;
     }

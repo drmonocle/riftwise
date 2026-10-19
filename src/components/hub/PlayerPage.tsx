@@ -11,7 +11,7 @@ import { PlayerGamesArchive } from "./Archives";
 import { PlayerPeriodStats } from "./PeriodStats";
 import { PlayerRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
-import { countryName } from "./CountryFlag";
+import { localCountry } from "./CountryFlag";
 import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerPhoto, RevealButton, Section, Stat, td, TeamLink, th, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
 import { ratingTextClass } from "./BestPage";
 import { STable } from "../STable";
@@ -98,7 +98,7 @@ const PlayerView: React.FC<{
               {[
                 roleName(p.role),
                 p.bio.real,
-                (p.bio.cc && countryName(p.bio.cc)) || p.bio.country,
+                localCountry(p.bio.country, p.bio.cc),
                 yrs != null ? tl("{n} years old", { n: yrs }) : null,
                 p.bio.retired ? tl("Retired") : null,
               ]

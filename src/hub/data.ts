@@ -2,7 +2,7 @@
  * Stats hub data: page files and the search lists, from the stats build (rebuilt when the database changes) (stats/<version>/hub/).
  * Every page fetches only its own small file.
  */
-import { load } from "../stats";
+import { load, MissingFile } from "../stats";
 import { searchAlias } from "../searchAliases";
 import { normalizeTeamCode } from "../helpers";
 import type {
@@ -52,7 +52,44 @@ const withAlias =
       throw err;
     });
 
-export const loadHubTeam = withAlias<HubTeam>("team");
+/**
+ * The build's slug for a team address it doesn't have: an old team slug (alias.json), the name without its dashes
+ * ("gen-g" -> "geng"), or a short name ("hle", "skt"; the team with the most games). null when nothing fits.
+ */
+const resolvedTeams = new Map<string, Promise<string | null>>();
+export function resolveTeamSlug(slug: string): Promise<string | null> {
+  const s = slug.toLowerCase();
+  let p = resolvedTeams.get(s);
+  if (!p) {
+    p = (async () => {
+      const alias = (await loadAliases()).team[s];
+      if (alias) return alias;
+      const teams = await loadHubIndex()
+        .then((i) => i.teams)
+        .catch(() => [] as SearchTeamRow[]);
+      const bare = s.replace(/-/g, "");
+      if (bare !== s && teams.some((t) => slugOf(t[0], t[1]) === bare)) return bare;
+      const hit = teams.find((t) => t[5].split(" | ").some((c) => c.toLowerCase() === s));
+      return hit ? slugOf(hit[0], hit[1]) : null;
+    })();
+    resolvedTeams.set(s, p);
+  }
+  return p;
+}
+
+/** A team's file (team, teamgames, teamseries), also under an address the build doesn't have (resolveTeamSlug). */
+async function teamFile<T>(dir: string, slug: string): Promise<T> {
+  try {
+    return await load<T>(`hub/${dir}/${slug}.json`);
+  } catch (err) {
+    if (!(err instanceof MissingFile)) throw err;
+    const to = await resolveTeamSlug(slug);
+    if (to && to !== slug) return load<T>(`hub/${dir}/${to}.json`);
+    throw err;
+  }
+}
+
+export const loadHubTeam = (slug: string) => teamFile<HubTeam>("team", slug);
 export const loadHubPlayer = (slug: string) => load<HubPlayer>(`hub/player/${slug}.json`);
 export const loadHubEvent = (slug: string) => load<HubEvent>(`hub/event/${slug}.json`);
 export const loadHubSeries = (slug: string) => load<HubSeries>(`hub/game/${slug}.json`);
@@ -251,9 +288,9 @@ export function findHubTeam(index: HubIndex, name: string, code?: string): strin
   return best ? slugOf(best[0], best[1]) : null;
 }
 
-export const loadTeamSeries = (slug: string) => load<import("./types").TeamSeriesRow[]>(`hub/teamseries/${slug}.json`);
+export const loadTeamSeries = (slug: string) => teamFile<import("./types").TeamSeriesRow[]>("teamseries", slug);
 export const loadPlayerGames = (slug: string) => load<import("./types").PlayerGameRow[]>(`hub/playergames/${slug}.json`);
-export const loadTeamGames = (slug: string) => load<import("./types").TeamGameRow[]>(`hub/teamgames/${slug}.json`);
+export const loadTeamGames = (slug: string) => teamFile<import("./types").TeamGameRow[]>("teamgames", slug);
 export const loadLeagueSeason = (league: string, year: string) => load<import("./types").LeagueSeason>(`hub/leagueyear/${league}/${year}.json`);
 export const loadChampIndex = () => load<import("./types").ChampLeagueIndex[]>("hub/champgames/index.json");
 export const loadChampGames = (league: string, year: string) => load<import("./types").ChampGamesFile>(`hub/champgames/${league}/${year}.json`);

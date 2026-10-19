@@ -11,6 +11,7 @@ import json
 import os
 import sys
 from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor
 
 # Known champions of the big international events (title page and event results must agree)
 WORLDS = {"2011": "Fnatic", "2012": "Taipei Assassins", "2013": "SK Telecom T1", "2014": "Samsung White",
@@ -63,8 +64,10 @@ def main():
             bad(f"broken link to a {kind} page", f"{where} -> {slug}")
 
     # -- series pages ---------------------------------------------------------------------------
-    for slug in sorted(games):
-        s = load(os.path.join(hub, "game", slug + ".json"))
+    # ~100k small files: read them on 16 threads (the disk, not Python, is the slow part), checked in order
+    order = sorted(games)
+    pool = ThreadPoolExecutor(16)
+    for slug, s in zip(order, pool.map(lambda x: load(os.path.join(hub, "game", x + ".json")), order)):
         where = f"game/{slug}"
         link("event", s.get("e"), where)
         link("team", s["a"].get("u"), where)
@@ -132,10 +135,28 @@ def main():
                 bad("game rating outside 0-100", f"{gw}: {r}")
 
     # -- players ----------------------------------------------------------------------------------
-    for slug in sorted(players):
-        p = load(os.path.join(hub, "player", slug + ".json"))
+    order = sorted(players)
+
+    def player_and_log(x):
+        try:
+            log = load(os.path.join(hub, "playergames", x + ".json"))
+        except FileNotFoundError:
+            log = None
+        return load(os.path.join(hub, "player", x + ".json")), log
+
+    for slug, (p, log) in zip(order, pool.map(player_and_log, order)):
         where = f"player/{slug}"
         g, w, k, d, a = p.get("g", 0), p.get("w", 0), p.get("k", 0), p.get("d", 0), p.get("a", 0)
+        # the career line and the game log are built separately: they must agree
+        # (row: date, series, champion, kills, deaths, assists, win 1/0, ...)
+        if log is not None:
+            checked["player game logs"] += 1
+            lg, lw = len(log), sum(1 for r in log if r[6] == 1)
+            lk, ld, la = (sum((r[i] or 0) for r in log) for i in (3, 4, 5))
+            if (lg, lw) != (g, w):
+                bad("player's game log doesn't match their games and wins", f"{where}: log {lg} games {lw} wins, page {g}/{w}")
+            elif (lk, ld, la) != (k, d, a):
+                bad("player's game log doesn't match their K/D/A", f"{where}: log {lk}/{ld}/{la}, page {k}/{d}/{a}")
         if w > g:
             bad("player with more wins than games", f"{where}: {w}/{g}")
         if g and p.get("kda") is not None:
@@ -159,8 +180,8 @@ def main():
         for e in p.get("events") or []:
             link("event", e.get("e"), where)
     # -- teams -------------------------------------------------------------------------------------
-    for slug in sorted(teams):
-        t = load(os.path.join(hub, "team", slug + ".json"))
+    order = sorted(teams)
+    for slug, t in zip(order, pool.map(lambda x: load(os.path.join(hub, "team", x + ".json")), order)):
         where = f"team/{slug}"
         if t.get("w", 0) > t.get("g", 0):
             bad("team with more wins than games", where)
@@ -177,8 +198,8 @@ def main():
             for pl in ro.get("p") or []:
                 link("player", pl.get("u"), where)
     # -- events ------------------------------------------------------------------------------------
-    for slug in sorted(events):
-        e = load(os.path.join(hub, "event", slug + ".json"))
+    order = sorted(events)
+    for slug, e in zip(order, pool.map(lambda x: load(os.path.join(hub, "event", x + ".json")), order)):
         where = f"event/{slug}"
         o = e.get("overview") or {}
         if o and o.get("g") is not None and o.get("blue") is not None and o["g"] != o["blue"] + o.get("red", 0):

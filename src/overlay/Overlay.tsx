@@ -103,7 +103,7 @@ export const Overlay: React.FC = () => {
   const scoreB = live ? (swapped ? live.team1Score : live.team2Score) : null;
   const side = (t: HubTeam, right: boolean, color: string) => (
     <div style={{ flex: 1, minWidth: 0, textAlign: right ? "right" : "left" }}>
-      <div style={{ fontSize: 34, fontWeight: 800, color, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
+      <div style={{ fontSize: t.name.length > 16 ? 24 : t.name.length > 11 ? 28 : 34, fontWeight: 800, color, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
       {t.rating && (
         <div style={{ fontSize: 14, color: "var(--rw-sub)" }}>
           {t.rating.rank != null ? `#${t.rating.rank} · ` : ""}

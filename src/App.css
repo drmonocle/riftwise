@@ -207,6 +207,19 @@
   }
 }
 
+/* Reduced motion (an OS setting): no pulsing, sliding or smooth scrolling. Spinners keep turning, so a load
+   doesn't look frozen. */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.animate-spin),
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Phones zoom the page in when a text box with text smaller than 16px gets focus. */
 @media (max-width: 639px) {
   input,

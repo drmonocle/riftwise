@@ -20,6 +20,7 @@ import {
   th,
 } from "./ui";
 import { RatingBadge } from "./BestPage";
+import { localCountry } from "./CountryFlag";
 import { STable } from "../STable";
 
 const mmss = (m: number) => {
@@ -255,7 +256,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[] }> = ({
                         ? tl("Coach")
                         : roleName(role)
                       : ""}
-                    {flag ? ` · ${flag}` : ""}
+                    {flag ? ` · ${localCountry(flag)}` : ""}
                   </span>
                 </li>
               ))}
