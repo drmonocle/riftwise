@@ -37,7 +37,7 @@ export const RatingBadge: React.FC<{ r: number; className?: string }> = ({ r, cl
       title={tl("Game rating {r} of 100 (tier {t})", { r: fmtDec(r), t })}
     >
       {fmtDec(r)}
-      <span className="opacity-70">{t}</span>
+      <span className="font-semibold">{t}</span>
     </span>
   );
 };

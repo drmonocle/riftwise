@@ -109,8 +109,8 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
               }`}
             >
               {tl("Game {n}", { n: g ? g.n : i + 1 })}
-              {!hidden && g?.w ? <span className="ml-1 opacity-70">({g.w === 1 ? s.a.c || s.a.n : s.b.c || s.b.n})</span> : null}
-              {!hidden && g?.r != null ? <span className="ml-1.5 tabular-nums opacity-80">· {g.r.toFixed(0)}</span> : null}
+              {!hidden && g?.w ? <span className="ml-1 opacity-90">({g.w === 1 ? s.a.c || s.a.n : s.b.c || s.b.n})</span> : null}
+              {!hidden && g?.r != null ? <span className="ml-1.5 tabular-nums opacity-90">· {g.r.toFixed(0)}</span> : null}
             </button>
           ))}
         </div>

@@ -308,7 +308,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                             e.stopPropagation();
                             toggleTeamFollow(m.team1Code);
                           }}
-                          className={`p-0.5 rounded hover:bg-rw-border transition-colors shrink-0 ${
+                          className={`p-1.5 -m-1 rounded hover:bg-rw-border transition-colors shrink-0 ${
                             isT1Followed ? "text-rw-accent" : "text-rw-sub hover:text-rw-accent"
                           }`}
                           aria-label={isT1Followed ? tl("Unfollow {name}", { name: m.team1Code }) : tl("Follow {name}", { name: m.team1Code })}
@@ -391,7 +391,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                             e.stopPropagation();
                             toggleTeamFollow(m.team2Code);
                           }}
-                          className={`p-0.5 rounded hover:bg-rw-border transition-colors shrink-0 ${
+                          className={`p-1.5 -m-1 rounded hover:bg-rw-border transition-colors shrink-0 ${
                             isT2Followed ? "text-rw-accent" : "text-rw-sub hover:text-rw-accent"
                           }`}
                           aria-label={isT2Followed ? tl("Unfollow {name}", { name: m.team2Code }) : tl("Follow {name}", { name: m.team2Code })}

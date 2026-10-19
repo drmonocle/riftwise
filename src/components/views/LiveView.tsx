@@ -909,7 +909,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                             e.stopPropagation();
                             toggleTeamFollow(m.team1Code);
                           }}
-                          className={`p-0.5 rounded hover:bg-rw-border ${
+                          className={`p-1.5 -m-1 rounded hover:bg-rw-border ${
                             settings.followedTeams.includes(m.team1Code) ? "text-rw-accent" : "text-rw-sub"
                           }`}
                           aria-label={
@@ -943,7 +943,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                             e.stopPropagation();
                             toggleTeamFollow(m.team2Code);
                           }}
-                          className={`p-0.5 rounded hover:bg-rw-border ${
+                          className={`p-1.5 -m-1 rounded hover:bg-rw-border ${
                             settings.followedTeams.includes(m.team2Code) ? "text-rw-accent" : "text-rw-sub"
                           }`}
                           aria-label={
@@ -1030,7 +1030,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                         e.stopPropagation();
                         toggleTeamFollow(m.team1Code);
                       }}
-                      className={`p-0.5 rounded hover:bg-rw-border ${
+                      className={`p-1.5 -m-1 rounded hover:bg-rw-border ${
                         settings.followedTeams.includes(m.team1Code) ? "text-rw-accent" : "text-rw-sub"
                       }`}
                       aria-label={
@@ -1064,7 +1064,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                         e.stopPropagation();
                         toggleTeamFollow(m.team2Code);
                       }}
-                      className={`p-0.5 rounded hover:bg-rw-border ${
+                      className={`p-1.5 -m-1 rounded hover:bg-rw-border ${
                         settings.followedTeams.includes(m.team2Code) ? "text-rw-accent" : "text-rw-sub"
                       }`}
                       aria-label={
