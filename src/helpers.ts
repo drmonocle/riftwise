@@ -632,6 +632,14 @@ export function isBigEvent(leagueSlug?: string, leagueName?: string): boolean {
   return /\bworlds\b|world championship|\bmsi\b|mid-season invitational|first stand/i.test(n) && !/world cup|qualif/i.test(n);
 }
 
+/**
+ * A spreadsheet reads a cell that starts with = + - @ as a formula. Names come from a public wiki, so text like that
+ * gets a leading ' (shown as plain text); numbers (-0.6) stay numbers.
+ */
+export function csvSafe(v: string): string {
+  return /^[=+\-@\t\r]/.test(v) && !/^[-+]?\d+([.,]\d+)?%?$/.test(v) ? `'${v}` : v;
+}
+
 /** User requirement: show the H2H whenever the teams have any recorded history. */
 export const H2H_MIN_GAMES = 1;
 

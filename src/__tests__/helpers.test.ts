@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { isMatchCompleted, normalizeTeamCode, reconcileLiveAndSchedule, computeLeagueStandings, buildAllTimeH2H, computeHeadToHead, applyH2HData, loadBundledH2H, h2hKey, recentMeetings, minutesLate, formatLate, isUpcomingOrDelayed, pickTeamByCode, isBigEvent } from "../helpers";
+import { isMatchCompleted, normalizeTeamCode, reconcileLiveAndSchedule, computeLeagueStandings, buildAllTimeH2H, computeHeadToHead, applyH2HData, loadBundledH2H, h2hKey, recentMeetings, minutesLate, formatLate, isUpcomingOrDelayed, pickTeamByCode, isBigEvent, csvSafe } from "../helpers";
 import { matchIdFromHash, matchShareUrl } from "../platform";
 
 // The bundled table is loaded on demand now (kept out of the startup bundle).
@@ -272,5 +272,16 @@ describe("pickTeamByCode", () => {
     expect(pickTeamByCode(teams, "TL")?.name).toBe("Team Liquid Alienware");
     expect(pickTeamByCode(teams, "ONLY")?.name).toBe("Only Entry");
     expect(pickTeamByCode(teams, "NOPE")).toBeUndefined();
+  });
+});
+
+describe("csvSafe", () => {
+  it("keeps a spreadsheet from running a name as a formula, numbers stay numbers", () => {
+    expect(csvSafe("=HYPERLINK(1)")).toBe("'=HYPERLINK(1)");
+    expect(csvSafe("+Lane")).toBe("'+Lane");
+    expect(csvSafe("@everyone")).toBe("'@everyone");
+    expect(csvSafe("-0.6")).toBe("-0.6");
+    expect(csvSafe("-12")).toBe("-12");
+    expect(csvSafe("Faker")).toBe("Faker");
   });
 });

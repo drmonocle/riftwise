@@ -408,6 +408,15 @@ def tsv_cell(s) -> str:
     return re.sub(r"[\t\r\n]+", " ", str(s or "")).strip()
 
 
+CSV_FORMULA = re.compile(r"^[=+\-@\t\r]")
+CSV_NUMBER = re.compile(r"^[-+]?\d+(\.\d+)?$")
+
+
+def csv_safe(v):
+    """A spreadsheet reads text starting with = + - @ as a formula: such names (from a public wiki) get a leading '."""
+    return f"'{v}" if isinstance(v, str) and CSV_FORMULA.match(v) and not CSV_NUMBER.match(v) else v
+
+
 # ── the build ─────────────────────────────────────────────────────────────────
 
 def build(ctx) -> dict:
@@ -1804,7 +1813,7 @@ def build(ctx) -> dict:
             buf = io.StringIO()
             wcsv = csv.writer(buf, lineterminator="\n")
             wcsv.writerow(CSV_HEAD)
-            wcsv.writerows(csv_rows)
+            wcsv.writerows([csv_safe(c) for c in r] for r in csv_rows)
             out.text(f"csv/{eslug}.csv", buf.getvalue())
             n_games_csv = sum(1 for r in csv_rows if r[9] == "team") // 2
             dl_index[league_slug.get(lg_ev) or "other-events"][(start or end or "")[:4] or event["year"]].append([eslug, en, n_games_csv, start or ""])
