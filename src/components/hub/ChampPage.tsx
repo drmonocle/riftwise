@@ -1,6 +1,6 @@
 /** Champion page: pro picks, bans and wins by year and patch, builds, matchups, best players and the latest pro games. */
 import React, { useMemo, useState } from "react";
-import { tl, tc, roleName } from "../../i18n";
+import { tl, tc, roleName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { loadHubChamp } from "../../hub/data";
@@ -382,7 +382,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                   </td>
                   <td className={`${td} text-rw-sub`}>{p.g}</td>
                   <td className={`${td} text-rw-sub`}>{winRate(p.w, p.g)}</td>
-                  <td className={`${td} text-rw-sub`}>{p.kda}</td>
+                  <td className={`${td} text-rw-sub`}>{fmtN(p.kda)}</td>
                 </tr>
               ))}
             </tbody>

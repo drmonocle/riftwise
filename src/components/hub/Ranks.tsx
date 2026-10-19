@@ -4,7 +4,7 @@
  * Data: hub/leagueyear/<league>/<year>.json (every split and playoffs of the season summed).
  */
 import React, { useMemo, useState } from "react";
-import { tl, tk, roleName } from "../../i18n";
+import { tl, tk, roleName, fmtDec } from "../../i18n";
 import { loadLeagueSeason, loadLeagues } from "../../hub/data";
 import type { EventPlayer, EventTeamStats, LeagueRow } from "../../hub/types";
 import { isFresh, Loading, RevealButton, Section, useHidden, useLoad } from "./ui";
@@ -18,12 +18,12 @@ interface Metric<T> {
   low?: boolean;
 }
 
-const r1 = (v: number) => v.toFixed(1);
-const r2 = (v: number) => v.toFixed(2);
-const pc = (v: number) => `${(v * 100).toFixed(1)}%`;
+const r1 = (v: number) => fmtDec(v);
+const r2 = (v: number) => fmtDec(v, 2);
+const pc = (v: number) => `${fmtDec(v * 100)}%`;
 const int = (v: number) => String(Math.round(v));
 const sInt = (v: number) => `${v > 0 ? "+" : ""}${Math.round(v)}`;
-const sR1 = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`;
+const sR1 = (v: number) => `${v > 0 ? "+" : ""}${fmtDec(v)}`;
 const div = (a: number | undefined, b: number | undefined) =>
   a != null && b ? a / b : null;
 

@@ -3,7 +3,7 @@
  * worked out from their game log like gol.gg's season / split pages. Spoiler mode hides periods with fresh games.
  */
 import React, { useMemo, useState } from "react";
-import { tl, roleName } from "../../i18n";
+import { tl, roleName, fmtDec, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { loadPlayerGames, loadTeamGames } from "../../hub/data";
 import type { PlayerGameRow, TeamGameRow } from "../../hub/types";
@@ -38,7 +38,7 @@ import {
 
 /** a share in percent, one decimal like gol.gg ("61.0%") */
 const pct = (v: number | null | undefined) =>
-  v == null ? "–" : `${v.toFixed(1)}%`;
+  v == null ? "–" : `${fmtDec(v)}%`;
 const dash = (v: number | null | undefined, suffix = "") =>
   v == null ? "–" : `${v}${suffix}`;
 const signed = (v: number | null | undefined) =>
@@ -294,7 +294,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
       label: "K / D / A",
       value: (c) => c.k / c.g,
       render: (c) =>
-        `${(c.k / c.g).toFixed(1)} / ${(c.d / c.g).toFixed(1)} / ${(c.a / c.g).toFixed(1)}`,
+        `${fmtDec(c.k / c.g)} / ${fmtDec(c.d / c.g)} / ${fmtDec(c.a / c.g)}`,
     },
     ...(detail
       ? ([
@@ -362,8 +362,8 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
             />
             <Stat
               label={tl("KDA")}
-              value={agg.kda}
-              sub={`${(agg.k / Math.max(agg.g, 1)).toFixed(1)} / ${(agg.d / Math.max(agg.g, 1)).toFixed(1)} / ${(agg.a / Math.max(agg.g, 1)).toFixed(1)}`}
+              value={fmtN(agg.kda)}
+              sub={`${fmtDec(agg.k / Math.max(agg.g, 1))} / ${fmtDec(agg.d / Math.max(agg.g, 1))} / ${fmtDec(agg.a / Math.max(agg.g, 1))}`}
             />
             <Stat
               label="KP"
@@ -506,7 +506,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[] }> = ({
             />
             <Stat
               label={tl("Avg game")}
-              value={t.min != null ? tl("{n} min", { n: t.min }) : "–"}
+              value={t.min != null ? tl("{n} min", { n: fmtN(t.min) }) : "–"}
             />
             <Stat
               label={tl("Kills / game")}

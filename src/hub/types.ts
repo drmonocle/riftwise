@@ -351,6 +351,8 @@ export interface HubSeries {
   games: HubGame[];
   /** the series' rating: its best game's (0-100) */
   r?: number;
+  /** 1: the league gave the result by forfeit, so the score doesn't follow the games played */
+  ff?: 1;
 }
 
 /**
@@ -473,7 +475,7 @@ export interface HubPlayer {
   club?: string;
   clubU?: string | null;
   clubTo?: string;
-  bio: Partial<Record<"real" | "native" | "country" | "born" | "res" | "twitter" | "stream" | "youtube" | "contract", string>> & {
+  bio: Partial<Record<"real" | "native" | "country" | "cc" | "born" | "res" | "twitter" | "stream" | "youtube" | "contract", string>> & {
     retired?: number;
     fav?: string[];
     soloq?: string[];

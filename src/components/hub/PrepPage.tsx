@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ClipboardCopy, GitCompare, Printer } from "lucide-react";
-import { tl, tc, roleName } from "../../i18n";
+import { tl, tc, roleName, fmtDec } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { loadHubPlayer, loadHubTeam, loadPlayerGames, loadPlayerGames2y, loadRatings, loadTeamGames, loadTeamSeries } from "../../hub/data";
@@ -630,7 +630,7 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
     return rows.length ? playerAgg(rows) : null;
   };
   // one lane as a side-by-side table: a stat per row, the better number lit up
-  const fmt1 = (v: number) => v.toFixed(1);
+  const fmt1 = (v: number) => fmtDec(v);
   const lane = (r: string, pa: Side["players"][number], pb: Side["players"][number]) => {
     const sa = stats(pa);
     const sb = stats(pb);
@@ -639,7 +639,7 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
     const lines: Line[] = [
       [tl("Games"), sa?.g, sb?.g, (v) => String(v)],
       [tl("Win rate"), wr(sa), wr(sb), (v) => `${Math.round(v)}%`],
-      ["KDA", sa?.kda, sb?.kda, (v) => v.toFixed(2)],
+      ["KDA", sa?.kda, sb?.kda, (v) => fmtDec(v, 2)],
       ["KP", sa?.kp, sb?.kp, (v) => `${Math.round(v)}%`, tl("Kill participation")],
       [tl("CS/m"), sa?.csm, sb?.csm, fmt1],
       [tl("DPM"), sa?.dpm, sb?.dpm, (v) => String(Math.round(v))],

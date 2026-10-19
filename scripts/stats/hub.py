@@ -1050,8 +1050,10 @@ def build(ctx) -> dict:
             wb = sum(1 for g in glist if win_side(g) == 2)
             if not glist and s and s["sa"] is not None and s["sb"] is not None:
                 wa, wb = s["sa"], s["sb"]  # forfeits and series with no game list
-            elif s and s["sa"] is not None and s["sb"] is not None and (s["sa"], s["sb"]) != (wa, wb) and (
+            awarded = False  # the league's result differs from the games played: a win given by forfeit
+            if s and s["sa"] is not None and s["sb"] is not None and (s["sa"], s["sb"]) != (wa, wb) and glist and (
                     s.get("ff") or len(glist) < s["sa"] + s["sb"]):
+                awarded = bool(s.get("ff"))
                 wa, wb = s["sa"], s["sb"]  # a forfeit, or games missing from the catalog (Worlds Season 1 final: 2-1)
             bo = (s and s["bo"]) or (glist and glist[0]["bo"]) or max(1, len(glist))
             played = bool(glist) and any(g["w"] for g in glist) or (wa + wb > 0)
@@ -1573,6 +1575,7 @@ def build(ctx) -> dict:
                     "e": eslug, "en": en, "stage": stage_name, "date": date, "bo": bo,
                     "a": {"n": an, "u": au, "c": ac}, "b": {"n": bn, "u": bu, "c": bc},
                     "sa": wa, "sb": wb, "w": winner, "games": games_out, **({"r": s_rating} if s_rating is not None else {}),
+                    **({"ff": 1} if awarded else {}),
                 })
                 lu_b = league_slug.get(lg_ev)
                 region_b = (info or {}).get("Region") if not lu_b else None  # Regional Finals: the region's league (below)
@@ -2216,6 +2219,7 @@ def build(ctx) -> dict:
             "clubTo": p["teams"][club]["to"] if club in p["teams"] else last_date,
             "bio": {k: v for k, v in {
                 "real": bio.get("Name"), "native": bio.get("NativeName"), "country": bio.get("Country"),
+                "cc": country_code(bio.get("Country")),  # so the app can name the country in the reader's language
                 "born": bio.get("Birthdate"), "res": bio.get("Residency"), "retired": 1 if bio.get("IsRetired") else None,
                 "twitter": bio.get("Twitter"), "stream": bio.get("Stream"), "youtube": bio.get("Youtube"),
                 "contract": bio.get("Contract"), "fav": jlist(bio.get("FavChamps")) or None,

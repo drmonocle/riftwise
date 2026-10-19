@@ -5,7 +5,7 @@
  * Filters live in the address: /stats/finder?league=lck&year=2026&team=T1&champ=Azir
  */
 import React, { useMemo, useRef, useState } from "react";
-import { tl, tn, tc } from "../../i18n";
+import { tl, tn, tc, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
 import { loadAliases, loadChampGames, loadChampIndex } from "../../hub/data";
 import type { ChampGame, ChampPick } from "../../hub/types";
@@ -470,7 +470,7 @@ const FinderBody: React.FC<{
           {avg != null && (
             <span className="text-rw-sub">
               {" "}
-              · {tl("average {n} min", { n: avg.toFixed(1) })}
+              · {tl("average {n} min", { n: fmtDec(avg) })}
             </span>
           )}
         </p>
@@ -554,7 +554,7 @@ const FinderBody: React.FC<{
                       </td>
                       <td className={`${td} text-rw-sub`} data-sort={patchSort(g[1])}>{g[1]}</td>
                       <td className={`${td} text-rw-sub tabular-nums`}>
-                        {g[4] != null ? g[4].toFixed(1) : ""}
+                        {g[4] != null ? fmtDec(g[4]) : ""}
                       </td>
                       <Picks list={g[5]} />
                       <Picks list={g[6]} />
@@ -680,8 +680,8 @@ const Cohort: React.FC<{ found: Found; sideCond: boolean; champ: string; player:
     <div className="space-y-2 pb-2 border-b border-rw-border text-xs">
       <p className="text-rw-sub">
         {tl("Blue side won {p}", { p: `${Math.round((d.blueW / n) * 100)}%` })}
-        {d.kpg != null && ` · ${tl("{n} kills per game", { n: d.kpg.toFixed(1) })}`}
-        {d.ckpm != null && ` · ${tl("{n} kills per minute", { n: d.ckpm.toFixed(2) })}`}
+        {d.kpg != null && ` · ${tl("{n} kills per game", { n: fmtDec(d.kpg) })}`}
+        {d.ckpm != null && ` · ${tl("{n} kills per minute", { n: fmtDec(d.ckpm, 2) })}`}
         {d.gd15 != null && (
           <span title={tl("{n} games with timelines (Oracle's Elixir)", { n: d.gdn })}>
             {" · "}
