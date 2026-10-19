@@ -11,15 +11,16 @@ export function riotThumb(url: string, width = 192): string {
   return RIOT_STATIC.test(url) ? `https://am-a.akamaihd.net/image?resize=${width}:&f=${encodeURIComponent(url.replace(/^http:/, "https:"))}` : url;
 }
 
-const DDRAGON = /^https:\/\/ddragon\.leagueoflegends\.com\/cdn\//;
+const DDRAGON_CHAMP = /^https:\/\/ddragon\.leagueoflegends\.com\/cdn\/[^/]+\/img\/champion\//;
 
 /**
- * A Data Dragon icon (champion 120 px ~28 KB, item 64 px ~7 KB) at about 2.5x the size it's shown, through the same
- * resizer (a 20 px champion icon: ~5 KB). The resizer doesn't allow pictures to be copied into "save as image", so
+ * A Data Dragon champion icon (120 px, ~28 KB) at about 2.5x the size it's shown, through the same resizer (a 20 px
+ * icon: ~9 KB at 64 px). Items, spells and runes stay as they are: they're already small (64 px, ~7 KB) and resizing
+ * them saves little or even adds. The resizer doesn't allow pictures to be copied into "save as image", so
  * the full icon goes in data-full and withFullImages() swaps it in before a picture is taken.
  */
 export function ddragonThumb(url: string, shown: number): string {
-  if (!DDRAGON.test(url)) return url;
+  if (!DDRAGON_CHAMP.test(url)) return url;
   const w = shown <= 19 ? 48 : shown <= 26 ? 64 : shown <= 38 ? 96 : 0;
   return w ? `https://am-a.akamaihd.net/image?resize=${w}:&f=${encodeURIComponent(url)}` : url;
 }
