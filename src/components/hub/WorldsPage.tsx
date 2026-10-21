@@ -250,7 +250,7 @@ function teamsOf(main: HubEvent, ratings: HubRatings | null): WTeam[] {
     .filter((t) => t.u)
     .map((t) => {
       const r = rows.get(t.u as string);
-      return { u: t.u as string, n: t.t, c: codes.get(t.u as string) || r?.[2] || t.t.slice(0, 3).toUpperCase(), r: r?.[5] ?? 1500, league: r?.[3] || "" };
+      return { u: t.u as string, n: t.t, c: codes.get(t.u as string) || r?.[2] || t.t.slice(0, 3).toUpperCase(), r: r?.[5] ?? 1500, league: r?.[3] || "", img: t.img };
     });
 }
 
@@ -432,7 +432,7 @@ const TeamButton: React.FC<{ u: string; t?: WTeam; won: boolean; lost: boolean; 
       won ? "bg-rw-accent/15 text-rw-text font-semibold" : lost ? "text-rw-muted" : "text-rw-sub hover:bg-rw-surface hover:text-rw-text"
     } ${locked ? "cursor-default" : ""}`}
   >
-    <TeamLogo name={t?.n || u} code={t?.c} size={18} className="shrink-0" />
+    <TeamLogo name={t?.n || u} code={t?.c} src={t?.img} size={18} className="shrink-0" />
     <span className="truncate flex-1" title={t?.n}>
       {t?.c || u}
     </span>
@@ -490,7 +490,7 @@ const Bracket: React.FC<{ ko: ReturnType<typeof runKnockout>; byU: Map<string, W
         <h4 className="text-[11px] font-bold uppercase tracking-wider text-rw-sub">{tl("World champion")}</h4>
         {champ ? (
           <div className="rounded-lg border border-rw-accent/60 bg-rw-accent/10 p-3 flex items-center gap-2">
-            <TeamLogo name={champ.n} code={champ.c} size={32} />
+            <TeamLogo name={champ.n} code={champ.c} src={champ.img} size={32} />
             <TeamLink name={champ.n} u={champ.u} className="font-extrabold text-rw-text hover:text-rw-accent" />
           </div>
         ) : (
@@ -524,7 +524,7 @@ const OddsTable: React.FC<{ odds: Record<string, TeamOdds>; teams: WTeam[] }> = 
               <tr key={t.u} className="border-t border-rw-border">
                 <td className="px-2 py-1">
                   <span className="flex items-center gap-1.5 min-w-0">
-                    <TeamLogo name={t.n} code={t.c} size={16} className="shrink-0" />
+                    <TeamLogo name={t.n} code={t.c} src={t.img} size={16} className="shrink-0" />
                     <TeamLink name={t.n} u={t.u} className="truncate hover:text-rw-accent" />
                   </span>
                 </td>

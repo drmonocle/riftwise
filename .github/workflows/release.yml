@@ -27,11 +27,11 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
@@ -72,7 +72,7 @@ jobs:
 
       - name: Upload the unsigned exe
         id: upload-unsigned
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: RiftWise-unsigned
           path: unsigned/RiftWise.exe
@@ -109,7 +109,7 @@ jobs:
           Compress-Archive -Path release\RiftWise.exe -DestinationPath release\RiftWise-windows-x64.zip -Force
           "RiftWise.exe $([math]::Round((Get-Item release\RiftWise.exe).Length / 1MB, 2)) MB, sha256 $hash, signed=$env:SIGNING"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: RiftWise-windows
           path: |

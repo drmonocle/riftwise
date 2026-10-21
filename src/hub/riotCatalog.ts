@@ -77,22 +77,19 @@ export interface PlayerPicture {
  * A pro's picture: Riot's photo of the player on the given team, else Leaguepedia's (by the player's page slug, or
  * the slug made from the name when none is given), else Riot's when the name is unique in its list.
  */
-export function usePlayerPicture(name: string | undefined, teamName?: string, slug?: string): PlayerPicture | undefined {
+export function usePlayerPicture(name: string | undefined, teamName?: string, slug?: string, img?: string): PlayerPicture | undefined {
   const { photos } = useIndex();
   const hub = useHubPhotos();
   const list = photos.get(norm(name)) || [];
   const t = norm(teamName);
   const onTeam = t ? list.find((x) => x.team === t || x.team.includes(t) || t.includes(x.team))?.image : undefined;
   if (onTeam) return { src: onTeam, from: "riot" };
+  // the photo the stats build found in Riot's list: shows before (or without) the app's own copy of that list
+  if (img) return { src: img, from: "riot" };
   const key = slug || (name ? prettySlug(name) : "");
   const stamp = key && hub ? hub[key] : undefined;
   if (stamp !== undefined) return { src: statsPhotoUrl(key, stamp), from: "leaguepedia" };
   return list.length === 1 ? { src: list[0].image, from: "riot" } : undefined;
-}
-
-/** The address of a pro's photo (see usePlayerPicture). */
-export function usePlayerPhoto(name: string | undefined, teamName?: string, slug?: string): string | undefined {
-  return usePlayerPicture(name, teamName, slug)?.src;
 }
 
 export function useTeamLogo(name: string | undefined, code?: string): string | undefined {

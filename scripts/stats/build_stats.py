@@ -6,11 +6,9 @@ so the Stats tab never downloads or crunches the whole database:
 
   <out>/latest.json                    {"version": "...", "built": "..."}  (never cached)
   <out>/<version>/meta.json            totals, years, patches
-  <out>/<version>/search-teams.json    team names for the search box (search-players.json: players;
-                                       search.json: both, for app versions up to 0.3.24)
-  <out>/<version>/teams/<slug>.json    one team (all its names: SK Telecom T1 and T1 are one team)
-  <out>/<version>/players/<slug>.json  one player
+  <out>/<version>/hub/...              the stats pages' files (hub.py: players, teams, events, games, ...)
   <out>/<version>/champions/<key>.json pick/ban/win rates for all time, a year or a patch
+  (the old per-team / per-player files and search lists of the first Stats tab stopped 2026-10-21: no app read them)
   <out>/<version>/records.json         all-time records (top leagues)
   <out>/<version>/titles.json          tournament winners
   <out>/<version>/checks.json          data checks from this build (what was skipped and why)
@@ -879,37 +877,6 @@ def main() -> None:
                 codes.append(c)
         search_teams.append({"n": name, "s": s, "g": t["g"], "y": t["to"][:4],
                              **({"a": " | ".join(aka)} if aka else {}), **({"c": " | ".join(codes)} if codes else {})})
-        ss = team_series[fid]
-        sw = sum(1 for x in ss if (x["fa"] if x["w"] == x["a"] else x["fb"]) == fid)
-        roster = []
-        for year in sorted(team_players[fid], reverse=True)[:8]:
-            top = team_players[fid][year].most_common(8)
-            roster.append({"y": year, "p": [{"n": pname(pg), "s": slug(pg), "g": n,
-                                             "r": team_roles[fid][pg].most_common(1)[0][0]} for pg, n in top if n >= 3]})
-        og = t["obj_g"]
-        recent = []
-        for x in ss[-10:][::-1]:
-            us_a = x["fa"] == fid
-            recent.append({"date": x["date"], "opp": x["b"] if us_a else x["a"], "t": x["t"],
-                           "us": x["wa"] if us_a else x["wb"], "them": x["wb"] if us_a else x["wa"]})
-        write(os.path.join(vdir, "teams", f"{s}.json"), {
-            "name": name, "g": t["g"], "w": t["w"], "sg": len(ss), "sw": sw,
-            "from": t["from"], "to": t["to"],
-            "names": [{"n": e["n"], "from": e["from"], "to": e["to"], "g": e["g"]} for e in sorted(names, key=lambda e: e["from"], reverse=True)],
-            "avgMin": r1(t["min"] / t["g"]) if t["g"] else 0,
-            "kills": r1(t["kills"] / t["kg"]) if t["kg"] else None, "deaths": r1(t["deaths"] / t["kg"]) if t["kg"] else None,
-            "obj": {f: r2(t["obj"][f] / og) for f in ("dragons", "barons", "towers", "heralds", "golddiff")} if og else None,
-            "objGames": og,
-            "years": [{"y": y, "g": v["g"], "w": v["w"], "as": v["names"].most_common(1)[0][0]} for y, v in sorted(t["years"].items(), reverse=True)],
-            "recent": recent,
-            "opps": sorted(({"n": fr_name[o], "s": tslug(o), **v} for o, v in t["opps"].items()), key=lambda x: -x["g"])[:40],
-            "champs": [{"c": c, "g": n, "w": t["champ_w"][c]} for c, n in t["champs"].most_common(20)],
-            "bans": [{"c": c, "g": n} for c, n in t["bans_by"].most_common(10)],
-            "tourns": sorted(({"t": k, **v} for k, v in t["tourn"].items()), key=lambda x: x["date"], reverse=True)[:12],
-            "titles": [{k: v for k, v in x.items() if k != "fid"} for x in titles_by_team.get(fid, [])],
-            "bestStreak": {"n": t["best_streak"][0], "date": t["best_streak"][1]} if t["best_streak"] else None,
-            "roster": roster,
-        })
 
     for page, p in players.items():
         if p["g"] < MIN_SEARCH_GAMES:
@@ -919,28 +886,7 @@ def main() -> None:
         last_date = teams_sorted[0][1]["to"] if teams_sorted else ""
         last_team = current_club(teams_sorted) or ""
         search_players.append({"n": pname(page), "s": s, "t": last_team, "g": p["g"], "y": last_date[:4]})
-        sm = p["stat_min"]
-        p["recent"].sort(reverse=True)
-        my_titles = sorted({(t["t"], t["date"], t["kind"], t["w"]) for t in titles
-                            if (t["t"], t["fid"]) in player_events[page]}, key=lambda x: x[1], reverse=True)
-        write(os.path.join(vdir, "players", f"{s}.json"), {
-            "name": pname(page), "page": page, "role": p["roles"].most_common(1)[0][0],
-            "club": last_team, "clubTo": p["teams"][last_team]["to"] if last_team in p["teams"] else last_date,
-            "g": p["g"], "w": p["w"], "k": p["k"], "d": p["d"], "a": p["a"], "kda": kda(p["k"], p["d"], p["a"]),
-            "csm": r1(p["cs"] / sm) if sm else None, "gpm": round(p["gold"] / sm) if sm else None,
-            "dpm": round(p["dmg"] / p["dmg_min"]) if p["dmg_min"] else None,
-            "teams": [{"n": n, "s": tslug(v["fid"]), "g": v["g"], "w": v["w"], "from": v["from"], "to": v["to"]} for n, v in teams_sorted],
-            "years": [{"y": y, "g": v["g"], "w": v["w"], "kda": kda(v["k"], v["d"], v["a"]),
-                       "team": v["teams"].most_common(1)[0][0]} for y, v in sorted(p["years"].items(), reverse=True)],
-            "champs": sorted(({"c": c, **v, "kda": kda(v["k"], v["d"], v["a"])} for c, v in p["champs"].items()),
-                             key=lambda x: -x["g"])[:40],
-            "nChamps": len(p["champs"]),
-            "recent": [{"date": x[0], "team": x[2], "opp": x[3], "c": x[4], "k": x[5], "d": x[6], "a": x[7],
-                        "win": x[8], "t": x[9]} for x in p["recent"][:10]],
-            "best": {k: {"v": v[0], "date": v[1], "c": v[2], "opp": v[3], "t": v[4]} for k, v in p["best"].items()},
-            "titles": [list(x[:3]) for x in my_titles][:40],
-        })
-    print(f"wrote {len(search_teams)} teams, {len(search_players)} players  ({time.time() - t0:.0f}s)")
+    print(f"listed {len(search_teams)} teams, {len(search_players)} players  ({time.time() - t0:.0f}s)")
 
     # -- Champions ---------------------------------------------------------------------
     champ_index = []
@@ -1080,9 +1026,6 @@ def main() -> None:
 
     search_teams.sort(key=lambda x: -x["g"])
     search_players.sort(key=lambda x: -x["g"])
-    write(os.path.join(vdir, "search.json"), {"teams": search_teams, "players": search_players})  # app <= 0.3.24
-    write(os.path.join(vdir, "search-teams.json"), search_teams)      # small: loads with the Teams tab
-    write(os.path.join(vdir, "search-players.json"), search_players)  # larger: only for Players / Compare
     write(os.path.join(vdir, "meta.json"), {
         "version": version, "games": len(games), "series": len(series_list),
         "teams": len(search_teams), "players": len(search_players),

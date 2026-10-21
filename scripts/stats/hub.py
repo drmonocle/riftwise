@@ -925,6 +925,14 @@ def build(ctx) -> dict:
 
     def big_event(name):
         return bool(name and BIG_EVENT_RE.search(name) and not NOT_BIG_RE.search(name))
+
+    # Riot's team list once per build: logos for big events' team lists, photos for current pros' page files
+    try:
+        import photos_lp
+        riot = photos_lp.riot_index()
+    except Exception as e:  # noqa: BLE001 - an extra: the app still finds the pictures in Riot's list later
+        print(f"hub: Riot pictures skipped: {e}")
+        riot = {"p": {}, "n": {}, "c": {}}
     rating_games = []  # (date, league, international, fid a, fid b, a won, tier, region) for the ratings
     rating_extra = []  # per rating game: (a on blue side, gold a - gold b, minutes, players a, players b) or None
 
@@ -1051,6 +1059,8 @@ def build(ctx) -> dict:
         # Worlds / MSI / First Stand: every game's scoreboard in one small file (lines/<event>.json) for the Worlds
         # page's facts (most kills so far, a player's line in a series, 0-5 champions...), instead of one file per series
         ev_lines = {"s": [], "g": [], "p": []} if big_event(en) else None
+        # the teams' logos for the Worlds page's pickers (big events only: their pages show them)
+        ev_logos = big_event(en)
         first_date, last_date = None, None
 
         for mid, glist in series.items():
@@ -1805,6 +1815,11 @@ def build(ctx) -> dict:
                                      for pg, role, flag, _ in sorted(plist_r, key=lambda x: x[3])
                                      for pg_r in [ctx.names.resolve(pg) or pg]]})
         regions_out, champs_out, teams_out = so["regions"], so["champs"], so["teams"]
+        if ev_logos and riot["n"]:
+            for t_ in teams_out:
+                lg_ = photos_lp.riot_logo(riot, t_.get("t"))
+                if lg_:
+                    t_["img"] = lg_
 
         kids = sorted(children.get(op, []), key=lambda c: ((lp_tourn.get(c) or {}).get("DateStart") or "", c))
         parent = base_of(op)
@@ -2282,6 +2297,8 @@ def build(ctx) -> dict:
     titles_by_event = defaultdict(list)
     for x in ctx.titles:
         titles_by_event[x["t"]].append(x)
+    riot_pics = riot["p"]  # Riot's photo of current pros (matched by name and current team), in their own page file
+    n_riot_pics = 0
     for page, p in ctx.players.items():
         u = player_slug.get(page)
         if not u or p["g"] < 1:
@@ -2295,8 +2312,12 @@ def build(ctx) -> dict:
         my_titles = sorted({(x["t"], x["date"], x["kind"]) for x in ctx.titles if (x["t"], x["fid"]) in ctx.player_events[page]},
                            key=lambda x: x[1], reverse=True)
         role = p["roles"].most_common(1)[0][0]
+        tn_ = re.sub(r"[\W_]+", "", club.lower())
+        img = next((im for t_, im in riot_pics.get(re.sub(r"[\W_]+", "", (name or "").lower()), [])
+                    if t_ and tn_ and (t_ == tn_ or tn_ in t_ or t_ in tn_)), None)
+        n_riot_pics += 1 if img else 0
         obj = {
-            "name": name, "u": u, "page": page, "role": role,
+            "name": name, "u": u, "page": page, "role": role, **({"img": img} if img else {}),
             "club": club, "clubU": team_slug.get(p["teams"][club]["fid"]) if club in p["teams"] else None,
             "clubTo": p["teams"][club]["to"] if club in p["teams"] else last_date,
             "bio": {k: v for k, v in {
@@ -2846,6 +2867,7 @@ def build(ctx) -> dict:
         photos = {}
     out.json("photos.json", photos)
     checks["hub: player photos"] = len(photos)
+    checks["hub: players with a Riot photo in their file"] = n_riot_pics
     # Riot's champion / item / spell / rune lists boiled down for the app (dd.json, dd/<language>.json): a few KB
     # instead of Riot's full lists before the first champion picture shows
     try:

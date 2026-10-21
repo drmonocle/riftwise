@@ -17,6 +17,8 @@ export interface WTeam {
   /** power rating (top-league scale) */
   r: number;
   league: string;
+  /** logo from the stats files */
+  img?: string;
 }
 
 /** A played or scheduled series from the stats: winner 1 = a, 2 = b, 0 = not played yet. */

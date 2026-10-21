@@ -118,7 +118,8 @@ export interface HubEvent {
   resultsFrom?: "this" | "event";
   standings?: { name: string; rows: StandingRow[] }[];
   stages?: Stage[];
-  teams?: { t: string; u: string | null; g: number; w: number; sg: number; sw: number }[];
+  /** img: Riot's logo (Worlds / MSI / First Stand builds from 2026-10-21 on), for the Worlds page's pickers */
+  teams?: { t: string; u: string | null; g: number; w: number; sg: number; sw: number; img?: string }[];
   leaders?: Partial<Record<"kda" | "kills" | "csm" | "dpm" | "pool", LeaderRow[]>>;
   champs?: { c: string; p: number; w: number; b: number }[];
   statsGames?: number;
@@ -468,6 +469,8 @@ export interface HubTeam {
 }
 
 export interface HubPlayer {
+  /** Riot's photo of a current pro (matched by the stats build to their current team), so it shows without Riot's team list */
+  img?: string;
   /** 1: a smaller file with the last two years of games exists (teamgames2y / playergames2y) */
   g2y?: 1;
   /** storylines: milestones within reach, streaks, unbeaten runs */
