@@ -1,10 +1,10 @@
 /** Tournament page: results and prize money, standings, bracket, every series, leaders and champions. */
 import React, { useMemo, useState } from "react";
-import { Trophy, MapPin, CalendarDays, Coins, Download } from "lucide-react";
+import { Trophy, MapPin, CalendarDays, Coins, Download, Sparkles } from "lucide-react";
 import { downloadEventCsv, downloadStagesCsv } from "./DownloadsPage";
 import { BracketBoard, type BracketColumn } from "../BracketBoard";
 import { localCountry } from "./CountryFlag";
-import { tl, tn, tk, regionName, stageLabel } from "../../i18n";
+import { tl, tn, tk, regionName, stageLabel, eventTitle } from "../../i18n";
 import { winRate } from "../../stats";
 import { loadHubEvent } from "../../hub/data";
 import type { HubEvent, SeriesRow, Stage, StandingRow } from "../../hub/types";
@@ -40,6 +40,13 @@ export const EventPage: React.FC<{ slug: string; onOpenUrl?: (url: string) => vo
   usePageTitle(state.data?.n);
   useDDragon();
   return <Page state={state}>{(e) => <EventView e={e} onOpenUrl={onOpenUrl} />}</Page>;
+};
+
+/** Worlds, MSI and First Stand have a page of their own (facts, pickers): the league -> its section */
+const INTL_PAGE: Record<string, "worlds" | "msi" | "first-stand"> = {
+  "world-championship": "worlds",
+  "mid-season-invitational": "msi",
+  "first-stand": "first-stand",
 };
 
 const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = ({ e, onOpenUrl }) => {
@@ -100,6 +107,15 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
               </HubLink>
             ))}
           </div>
+        )}
+        {INTL_PAGE[e.lu || ""] && (
+          <HubLink
+            to={{ kind: INTL_PAGE[e.lu as string], year: e.year || undefined }}
+            className="mt-2 inline-flex items-center gap-1 text-xs text-rw-teal hover:underline"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            {tl("Facts and pickers for {event}", { event: eventTitle((e.parent?.n || e.n).replace(/ (Main Event|Play-In)$/, "")) })}
+          </HubLink>
         )}
         {(e.games || 0) > 0 && (
           <div className="grid grid-cols-3 gap-2 mt-3">

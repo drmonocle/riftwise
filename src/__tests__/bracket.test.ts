@@ -1,50 +1,53 @@
-import { describe, expect, it } from "vitest";
-import { bracketEdges, type BracketColumn } from "../components/BracketBoard";
+import { describe, it, expect } from "vitest";
+import { detectBracket, realOfStages, runBracket, simulateBracket } from "../hub/bracket";
+import { favourites, type WTeam } from "../hub/worlds";
+import events from "./fixtures/intl_brackets.json";
 
-const col = (key: string, items: [string, string, string?][]): BracketColumn => ({
-  key,
-  title: key,
-  items: items.map(([a, b, w], i) => ({ key: `${key}${i}`, teams: [a, b], winner: w ?? null, node: null })),
+// Real MSI 2023-2026 and First Stand 2025-2026 stages (the stats files, 2026-10-21): the brackets must replay exactly.
+type Ev = { winner: string | null; stages: { name: string; series: { au: string; bu: string; w: number; bo: number; sa: number; sb: number; date: string }[] }[] };
+const all = events as unknown as Record<string, Ev>;
+const teamsOf = (e: Ev): WTeam[] =>
+  [...new Set(e.stages.flatMap((s) => s.series.flatMap((x) => [x.au, x.bu])).filter(Boolean))].map((u, i) => ({ u, n: u, c: u, r: 1800 - i * 10, league: "" }));
+
+describe("MSI double elimination", () => {
+  for (const name of ["msi-2023", "msi-2024", "msi-2025", "msi-2026"]) {
+    it(`${name} replays from the real results to the real winner`, () => {
+      const e = all[name];
+      const br = detectBracket("msi", e.stages);
+      expect(br).not.toBeNull();
+      const r = runBracket(br!, teamsOf(e), realOfStages(e.stages, "msi"), {});
+      expect(r.matches).toHaveLength(14);
+      expect(r.matches.every((m) => m.from === "real")).toBe(true);
+      expect(r.champion).toBe(e.winner);
+    });
+  }
 });
 
-describe("bracket lines", () => {
-  it("joins each match to where its winner plays next, highlighted", () => {
-    const edges = bracketEdges([
-      col("QF", [["GEN", "HLE", "GEN"], ["KT", "CFO", "KT"], ["G2", "TES", "TES"], ["AL", "T1", "T1"]]),
-      col("SF", [["GEN", "KT", "KT"], ["T1", "TES", "T1"]]),
-      col("F", [["T1", "KT"]]),
-    ]);
-    expect(edges).toEqual([
-      { from: "0:0", to: "1:0", on: true },
-      { from: "0:1", to: "1:0", on: true },
-      { from: "0:2", to: "1:1", on: true },
-      { from: "0:3", to: "1:1", on: true },
-      { from: "1:0", to: "2:0", on: true },
-      { from: "1:1", to: "2:0", on: true },
-    ]);
+describe("First Stand groups and knockouts", () => {
+  it("2026 replays to the real winner", () => {
+    const e = all["first-stand-2026"];
+    const br = detectBracket("first-stand", e.stages);
+    expect(br).not.toBeNull();
+    const r = runBracket(br!, teamsOf(e), realOfStages(e.stages, "first-stand"), {});
+    expect(r.matches).toHaveLength(13);
+    expect(r.matches.every((m) => m.from === "real")).toBe(true);
+    expect(r.champion).toBe(e.winner);
   });
 
-  it("hidden or unplayed results: by the teams shown, else by halving, never highlighted", () => {
-    const edges = bracketEdges([
-      col("SF", [["A", "B"], ["C", "D"]]),
-      col("F", [["TBD", "TBD"]]),
-    ]);
-    expect(edges).toEqual([
-      { from: "0:0", to: "1:0", on: false },
-      { from: "0:1", to: "1:0", on: false },
-    ]);
+  it("2025 (a round robin) isn't taken for this format", () => {
+    expect(detectBracket("first-stand", all["first-stand-2025"].stages)).toBeNull();
   });
 
-  it("double elimination: an upper-bracket winner gets no line into the lower bracket; the last match feeds the final", () => {
-    const edges = bracketEdges([
-      col("UB final", [["KC", "MVK", "KC"]]),
-      col("LB semi", [["FUR", "C9", "FUR"]]),
-      col("LB final", [["MVK", "FUR"]]),
-      col("Final", [["TBD", "KC"]]),
-    ]);
-    expect(edges).toEqual([
-      { from: "1:0", to: "2:0", on: true },
-      { from: "2:0", to: "3:0", on: false },
-    ]);
+  it("an unplayed bracket fills and simulates", () => {
+    const e = all["first-stand-2026"];
+    const br = detectBracket("first-stand", e.stages)!;
+    const teams = teamsOf(e);
+    const r = runBracket(br, teams, [], {}, undefined, favourites);
+    expect(r.matches).toHaveLength(13);
+    expect(r.champion).toBe(teams[0].u);
+    const odds = simulateBracket(br, teams, [], undefined, 300);
+    const total = (k: number) => Object.values(odds).reduce((a, v) => a + v[k], 0);
+    expect(total(0)).toBeCloseTo(4); // semifinalists
+    expect(total(2)).toBeCloseTo(1); // one champion
   });
 });

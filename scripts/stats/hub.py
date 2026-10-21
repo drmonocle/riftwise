@@ -2879,6 +2879,13 @@ def build(ctx) -> dict:
         print(f"hub: ddragon lists skipped: {e}")
         checks["hub: ddragon languages"] = 0
     out.finish()
+    # search-engine summaries of the Worlds / MSI / First Stand pages, from the files just written (seo_pages.py)
+    try:
+        import seo_pages
+        checks["hub: search summaries"] = seo_pages.write(out.root)
+    except Exception as e:  # noqa: BLE001 - the pages work without them
+        print(f"hub: search summaries skipped: {e}")
+        checks["hub: search summaries"] = 0
     stats = {"series pages": n_series_pages, "teams": len(search_teams), "players": len(search_players),
              "events": len(search_events), "champions": len(search_champs), "files written": out.written,
              "files linked": out.linked, "MB written": round(out.bytes / 1e6, 1), "seconds": round(time.time() - t0)}

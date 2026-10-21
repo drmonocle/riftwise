@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { Check, Copy, Dice5, Eraser, Lock, RefreshCw, Shuffle, Sparkles, TrendingUp, Trophy } from "lucide-react";
-import { eventName, eventTitle, stageName, tl } from "../../i18n";
+import { eventName, eventTitle, stageName, tk, tl } from "../../i18n";
 import { loadEventLines, loadHubEvent, loadLeague, loadRatings } from "../../hub/data";
 import type { EventListItem, HubEvent, HubLeague, HubRatings } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
@@ -14,6 +14,7 @@ import {
   type Fill, type Picks, type RealSeries, type TeamOdds, type WMatch, type WTeam,
 } from "../../hub/worlds";
 import { eventFacts, factText, gamesOf, type Fact } from "../../hub/worldsFacts";
+import { detectBracket, realOfStages, runBracket, simulateBracket, type Bracket } from "../../hub/bracket";
 import { ChampIcon, Failed, HubLink, Loading, PlayerLink, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
 
 /** The three international events with a page of their own; Worlds has had a Swiss stage since 2023. */
@@ -39,7 +40,7 @@ interface Saved {
   swiss: Picks;
   ko: Picks;
 }
-const storeKey = (year: string) => `riftwatch_worlds_${year}`;
+const storeKey = (key: string) => `riftwatch_${key.includes("_") ? key : `worlds_${key}`}`;
 function loadSaved(year: string): Saved {
   try {
     const s = JSON.parse(localStorage.getItem(storeKey(year)) || "null");
@@ -65,7 +66,7 @@ function useSaved(year: string): [Saved, (s: Saved) => void] {
 
 // ── the page ──────────────────────────────────────────────────────────────
 
-type Tab = "facts" | "swiss" | "ko";
+type Tab = "facts" | "swiss" | "ko" | "bracket";
 
 /** One stage's games file, and the event it belongs to (for lists over every year). */
 interface StageRef {
@@ -120,7 +121,7 @@ async function loadIntl(kind: IntlKind, asked: string | undefined): Promise<Load
   const full = kids.length ? (await Promise.all(kids.map((k) => loadHubEvent(k.u).catch(() => null)))).filter((x): x is HubEvent => !!x) : [parent];
   const main = full.find((s) => /main/i.test(s.u)) || (kids.length ? null : parent);
   const swiss = def.swissFrom != null && Number(year) >= def.swissFrom;
-  const ratings = swiss ? await loadRatings().catch(() => null) : null;
+  const ratings = swiss || kind !== "worlds" ? await loadRatings().catch(() => null) : null;
   const stages = full.map((s) => ({ u: s.u, n: s.n, end: s.end || s.start, label: eventTitle(parent.n) }));
   return { name: eventTitle(parent.n), year, all: false, years, stages, parent, main, ratings, league };
 }
@@ -134,9 +135,11 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string }> = ({ kind 
   usePageTitle(title);
   const thisYear = String(new Date().getFullYear());
   const swissYear = !!d && !d.all && def.swissFrom != null && Number(d.year) >= def.swissFrom;
+  // MSI's double elimination and First Stand's groups: a picker when the year uses that format
+  const bracket = useMemo(() => (d && !d.all && kind !== "worlds" && d.main ? detectBracket(kind, d.main.stages || []) : null), [d, kind]);
   useEffect(() => {
-    if (!swissYear) setTab("facts");
-  }, [swissYear]);
+    if (!swissYear && !bracket) setTab("facts");
+  }, [swissYear, bracket]);
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -179,6 +182,12 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string }> = ({ kind 
             </button>
           </>
         )}
+        {bracket && (
+          <button type="button" role="tab" aria-selected={tab === "bracket"} className={pill(tab === "bracket")} onClick={() => setTab("bracket")}>
+            <Trophy className="w-3.5 h-3.5" />
+            {tl("Bracket picker")}
+          </button>
+        )}
         {d?.parent && (
           <HubLink to={{ kind: "event", slug: d.parent.u }} className={`${btn} ml-auto`}>
             {tl("Bracket, standings and every series")}
@@ -189,6 +198,8 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string }> = ({ kind 
         <p className="text-xs text-rw-sub">{tl("Not in the stats yet.")}</p>
       ) : !d ? (
         <Loading />
+      ) : tab === "bracket" && bracket && kind !== "worlds" ? (
+        <BracketPicker d={d} kind={kind} br={bracket} live={d.year === thisYear} />
       ) : tab === "facts" || !swissYear ? (
         <FactsTab d={d} kind={kind} />
       ) : (
@@ -611,6 +622,156 @@ const OddsTable: React.FC<{ odds: Record<string, TeamOdds>; teams: WTeam[] }> = 
           })}
         </tbody>
       </table>
+    </div>
+  );
+};
+
+// ── MSI and First Stand bracket picker ────────────────────────────────────
+
+const COL_LABELS: Record<string, string> = {
+  "Upper round 1": tk("Upper round 1"), "Lower round 1": tk("Lower round 1"), "Upper semifinals": tk("Upper semifinals"),
+  "Lower round 2": tk("Lower round 2"), "Lower round 3": tk("Lower round 3"), "Upper final": tk("Upper final"),
+  "Lower final": tk("Lower final"), "Grand final": tk("Grand final"), "Group A": tk("Group A"), "Group B": tk("Group B"),
+  Semifinals: tk("Semifinals"), Final: tk("Final"), Semifinal: tk("Semifinal"),
+};
+
+const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Bracket; live: boolean }> = ({ d, kind, br, live }) => {
+  const [saved, setSaved] = useSaved(`${kind}_${d.year}`);
+  const [odds, setOdds] = useState<Record<string, number[]> | null>(null);
+  const [running, setRunning] = useState(false);
+  const [keepPicks, setKeepPicks] = useState(false);
+  const main = d.main as HubEvent;
+  const teams = useMemo(() => teamsOf(main, d.ratings), [main, d.ratings]);
+  const byU = useMemo(() => new Map(teams.map((t) => [t.u, t])), [teams]);
+  const real = useMemo(() => realOfStages(main.stages || [], kind), [main, kind]);
+  const adjust = d.ratings?.adjust;
+  const res = useMemo(() => runBracket(br, teams, real, saved.ko, adjust), [br, teams, real, saved.ko, adjust]);
+  useEffect(() => setOdds(null), [saved, keepPicks]);
+  const pick = (m: WMatch, u: string) => {
+    if (m.from === "real") return;
+    const next = { ...saved.ko };
+    if (next[m.key] === u) delete next[m.key];
+    else next[m.key] = u;
+    setSaved({ ...saved, ko: next });
+  };
+  const fill = (fl: Fill) => {
+    const r = runBracket(br, teams, real, saved.ko, adjust, fl);
+    const picks = { ...saved.ko };
+    for (const m of r.matches) if (m.from === "fill") picks[m.key] = m.w === 1 ? m.a : m.b;
+    setSaved({ ...saved, ko: picks });
+  };
+  const seed = () => Math.floor(Math.random() * 2 ** 31);
+  const cols = [...new Set(br.nodes.map((n) => n.col))];
+  const champ = res.champion ? byU.get(res.champion) : null;
+  const runOdds = () => {
+    setRunning(true);
+    window.setTimeout(() => {
+      setOdds(simulateBracket(br, teams, real, adjust, 10000, keepPicks ? saved.ko : {}, Date.now() % 100000));
+      setRunning(false);
+    }, 30);
+  };
+  return (
+    <div className="space-y-4">
+      {!live && <p className="text-[11px] text-rw-muted">{tl("Chances use today's power ratings, not the ones from that year.")}</p>}
+      <Section title={tl("Bracket picker")} share={`${kind}-${d.year}-bracket`}>
+        <p className="text-[11px] text-rw-muted">
+          {kind === "msi"
+            ? tl("Double elimination: a team is out after its second loss; upper-bracket losers drop to the lower bracket. Every match is best of {n}.", { n: br.nodes[0].bo })
+            : tl("Two groups of four: the winners' match decides 1st, a decider between its loser and the losers' match winner decides 2nd. 1st of each group meets 2nd of the other. Every match is best of {n}.", { n: br.nodes[0].bo })}
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          <button type="button" className={btn} onClick={() => fill(favourites)} title={tl("Every open match goes to the team with the better chance")}>
+            <TrendingUp className="w-3.5 h-3.5" />
+            {tl("Favourites")}
+          </button>
+          <button type="button" className={btn} onClick={() => fill(roller(rng(seed())))} title={tl("Every open match is rolled by its chances: a 70% favourite wins 7 times in 10")}>
+            <Dice5 className="w-3.5 h-3.5" />
+            {tl("Roll by chances")}
+          </button>
+          <button type="button" className={btn} onClick={() => fill(coin(rng(seed())))}>
+            <Shuffle className="w-3.5 h-3.5" />
+            {tl("Coin flip")}
+          </button>
+          <button type="button" className={btn} onClick={() => setSaved({ ...saved, ko: {} })}>
+            <Eraser className="w-3.5 h-3.5" />
+            {tl("Clear my picks")}
+          </button>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 items-start">
+          {cols.map((c) => {
+            const ms = res.matches.filter((m) => m.col === c);
+            return (
+              <div key={c} className="space-y-2 min-w-0">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-rw-sub">{tl(COL_LABELS[c] || c)}</h4>
+                {ms.length ? (
+                  ms.map((m) => <MatchBox key={m.id} m={m} byU={byU} onPick={(u) => pick(m, u)} />)
+                ) : (
+                  <p className="text-[11px] text-rw-muted">{tl("Waiting on earlier picks.")}</p>
+                )}
+              </div>
+            );
+          })}
+          <div className="space-y-2">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-rw-sub">{tl("Champion")}</h4>
+            {champ ? (
+              <div className="rounded-lg border border-rw-accent/60 bg-rw-accent/10 p-3 flex items-center gap-2">
+                <TeamLogo name={champ.n} code={champ.c} src={champ.img} size={32} />
+                <TeamLink name={champ.n} u={champ.u} className="font-extrabold text-rw-text hover:text-rw-accent" />
+              </div>
+            ) : (
+              <p className="text-[11px] text-rw-muted">{tl("Pick the final to crown one.")}</p>
+            )}
+          </div>
+        </div>
+      </Section>
+      <Section title={tl("Chances from here")} share={`${kind}-${d.year}-chances`}>
+        <p className="text-[11px] text-rw-muted">{tl("Plays the rest of the event 10,000 times, each open match rolled by its chances, and counts how far each team gets.")}</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" className={pill(false)} onClick={runOdds} disabled={running}>
+            <Dice5 className={`w-3.5 h-3.5 ${running ? "animate-spin" : ""}`} />
+            {running ? tl("Playing it out…") : tl("Run 10,000 times")}
+          </button>
+          <label className="text-xs text-rw-sub flex items-center gap-1.5">
+            <input type="checkbox" checked={keepPicks} onChange={(e) => setKeepPicks(e.target.checked)} />
+            {tl("Keep my picks")}
+          </label>
+        </div>
+        {odds && (
+          <div className="overflow-x-auto max-w-full">
+            <table className="w-full text-xs">
+              <thead className="text-[10px] uppercase tracking-wider text-rw-muted">
+                <tr>
+                  <th className="px-2 py-1 text-left">{tl("Team")}</th>
+                  {br.reach.map(([l]) => (
+                    <th key={l} className="px-2 py-1 text-right">{tl(COL_LABELS[l] || l)}</th>
+                  ))}
+                  <th className="px-2 py-1 text-right">{tl("Wins")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {teams
+                  .filter((t) => odds[t.u] && odds[t.u].some((x) => x > 0))
+                  .sort((a, b) => odds[b.u][br.reach.length] - odds[a.u][br.reach.length])
+                  .map((t) => (
+                    <tr key={t.u} className="border-t border-rw-border">
+                      <td className="px-2 py-1">
+                        <span className="flex items-center gap-1.5 min-w-0">
+                          <TeamLogo name={t.n} code={t.c} src={t.img} size={16} className="shrink-0" />
+                          <TeamLink name={t.n} u={t.u} className="truncate hover:text-rw-accent" />
+                        </span>
+                      </td>
+                      {odds[t.u].map((x, k) => (
+                        <td key={k} className={`px-2 py-1 text-right tabular-nums ${k === br.reach.length ? "font-bold text-rw-accent" : ""}`}>
+                          {pctText(x)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Section>
     </div>
   );
 };
