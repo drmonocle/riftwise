@@ -55,11 +55,6 @@ let ALL_TIME_H2H: Record<string, [number, number]> = {};
 let H2H_CUTOFF_MS = new Date(BUNDLED_H2H_CUTOFF).getTime();
 let H2H_LOADED = false;
 
-/** True once any H2H table (bundled or downloaded) is in place. */
-export function isH2HLoaded(): boolean {
-  return H2H_LOADED;
-}
-
 /** Loads the table shipped inside the app, unless newer downloaded data is already applied. */
 export async function loadBundledH2H(): Promise<boolean> {
   if (H2H_LOADED) return false;
@@ -74,11 +69,6 @@ export async function loadBundledH2H(): Promise<boolean> {
 export function h2hKey(team1Code: string, team2Code: string): string {
   const [a, b] = [normalizeTeamCode(team1Code), normalizeTeamCode(team2Code)].sort();
   return `${a}__${b}`;
-}
-
-/** Start of the window the app fills from its own schedule (everything earlier is in the table). */
-export function h2hCutoffMs(): number {
-  return H2H_CUTOFF_MS;
 }
 
 /** Downloaded H2H data (see fetchH2HData). Only replaces the bundled table when it is newer. */
@@ -229,33 +219,6 @@ export function upcomingStreamMatches(events: StreamEvent[], now = Date.now()): 
   return events
     .filter((e) => e.type !== "special" && ts(e.utcIso) > now)
     .sort((a, b) => ts(a.utcIso) - ts(b.utcIso));
-}
-
-/**
- * The next few matches that haven't started yet.
- * Matches involving teams you follow come first, then the soonest remaining ones.
- */
-export function nextUpcomingMatches(
-  schedule: Match[],
-  followedTeams: string[],
-  limit = 3,
-  now = Date.now(),
-): Match[] {
-  // Allow matches a little past their start time (delayed kickoffs) that haven't gone live yet
-  const cutoff = now - 30 * 60 * 1000;
-  const future = schedule
-    .filter((m) => m.state === "unstarted" && ts(m.startTimeUtc) >= cutoff)
-    .sort((a, b) => ts(a.startTimeUtc) - ts(b.startTimeUtc));
-
-  const followed = new Set(followedTeams.map((c) => c.toUpperCase()));
-  const isFollowed = (m: Match) =>
-    followed.has(m.team1Code.toUpperCase()) || followed.has(m.team2Code.toUpperCase());
-
-  const mine = future.filter(isFollowed).slice(0, limit);
-  if (mine.length >= limit) return mine;
-  const mineIds = new Set(mine.map((m) => m.matchId));
-  const rest = future.filter((m) => !mineIds.has(m.matchId)).slice(0, limit - mine.length);
-  return [...mine, ...rest].sort((a, b) => ts(a.startTimeUtc) - ts(b.startTimeUtc));
 }
 
 export interface BroadcastStream {

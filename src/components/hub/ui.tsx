@@ -432,12 +432,14 @@ export const PlayerPhoto: React.FC<{
   team?: string;
   /** the player's page slug: finds the Leaguepedia photo (without it, the slug made from the name is tried) */
   slug?: string;
+  /** Riot's photo from the player's page file (HubPlayer.img) */
+  img?: string;
   size?: number;
   /** Tailwind size classes instead of a fixed size ("w-16 h-16 lg:w-24 lg:h-24"): the photo grows with the window */
   sizeClass?: string;
   className?: string;
-}> = ({ name, team, slug, size = 56, sizeClass, className = "" }) => {
-  const pic = usePlayerPicture(name, team, slug);
+}> = ({ name, team, slug, img, size = 56, sizeClass, className = "" }) => {
+  const pic = usePlayerPicture(name, team, slug, img);
   const [broken, setBroken] = useState<string[]>([]); // addresses that failed to load
   const box = sizeClass ? undefined : { width: size, height: size };
   const sz = sizeClass || "";
@@ -466,8 +468,9 @@ export const PlayerPhoto: React.FC<{
 };
 
 /** A team's logo from Riot (teams in Riot's list), else nothing. Left out of copied pictures. */
-export const TeamLogo: React.FC<{ name: string; code?: string; size?: number; sizeClass?: string; className?: string }> = ({ name, code, size = 40, sizeClass, className = "" }) => {
-  const logo = useTeamLogo(name, code);
+/** `src`: a logo the stats files already carry, used until (or unless) Riot's team list has one. */
+export const TeamLogo: React.FC<{ name: string; code?: string; src?: string; size?: number; sizeClass?: string; className?: string }> = ({ name, code, src: given, size = 40, sizeClass, className = "" }) => {
+  const logo = useTeamLogo(name, code) || given;
   const [broken, setBroken] = useState<string[]>([]); // addresses that failed to load
   // Riot's logo through Riot's resizer (big enough for the largest size here), the original if that fails, then none
   const src = logo ? [riotThumb(logo, 160), logo].find((u) => !broken.includes(u)) : undefined;

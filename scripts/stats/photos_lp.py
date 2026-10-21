@@ -127,6 +127,59 @@ class Fetcher:
 
 # -- who has a Riot photo ------------------------------------------------------------------------
 
+def riot_index(cache_path: str = None) -> dict:
+    """From Riot's team list, for hub.py to put Riot's pictures in the stats files (the app would otherwise wait for
+    Riot's whole team list, ~300 KB, before showing them): {"p": {normalised player name: [(normalised team name,
+    photo)]}, "n": {normalised team name: logo}, "c": {normalised team code: logo}} (active teams' names first).
+    The last good copy is kept next to this script for when Riot doesn't answer."""
+    cache_path = cache_path or os.path.join(os.path.dirname(os.path.abspath(__file__)), "riot_photos.json")
+    index = None
+    try:
+        req = urllib.request.Request(RIOT_TEAMS, headers={"User-Agent": UA_WIKI, "x-api-key": RIOT_KEY})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            data = json.load(r)
+        index = {"p": {}, "n": {}, "c": {}}
+        teams = sorted(data.get("data", {}).get("teams", []), key=lambda t: t.get("status") != "active")
+        for t in teams:
+            for p in t.get("players") or []:
+                if p.get("image") and p.get("summonerName") and not PLACEHOLDER.search(p["image"]):
+                    index["p"].setdefault(norm(p["summonerName"]), []).append((norm(t.get("name")), p["image"]))
+            if t.get("image"):
+                index["n"].setdefault(norm(t.get("name")), t["image"])
+                if t.get("code"):
+                    index["c"].setdefault(norm(t["code"]), t["image"])
+        if len(index["p"]) > 500:
+            with open(cache_path, "w", encoding="utf-8") as f:
+                json.dump(index, f)
+        else:
+            index = None
+    except Exception as e:  # noqa: BLE001 - any failure: the last copy
+        print(f"Riot team list not fetched ({e}); using the last copy", flush=True)
+    if index is None:
+        try:
+            with open(cache_path, encoding="utf-8") as f:
+                index = json.load(f)
+        except (OSError, ValueError):
+            index = {}
+    return {"p": index.get("p", {}), "n": index.get("n", {}), "c": index.get("c", {})}
+
+
+def riot_logo(index: dict, name: str, code: str = None):
+    """A team's logo from riot_index(): its name, else its code, else the one Riot name that starts like it."""
+    n = norm(name)
+    if n in index["n"]:
+        return index["n"][n]
+    if code and norm(code) in index["c"]:
+        return index["c"][norm(code)]
+    # names that start like it ("Gen.G" -> "Gen.G Esports", not also "Gen.G Global Academy"): the closest one,
+    # when only one is closest
+    near = sorted((len(k), v) for k, v in index["n"].items() if n and len(n) >= 3 and len(k) >= 3 and (k.startswith(n) or n.startswith(k)))
+    if not near:
+        return None
+    best = [v for ln, v in near if ln == near[0][0]]
+    return best[0] if len(set(best)) == 1 else None
+
+
 def riot_names_with_photo(fetcher: Fetcher, cache_path: str) -> set:
     """Normalised names of players with a real photo in Riot's team list (fresh when Riot answers,
     else the last copy; empty when there is neither, which only means a few needless downloads)."""

@@ -15,10 +15,6 @@ let STATS_BASE =
 let statsFallback: string | null = IS_WEB ? null : `${OLD_SITE_URL}stats`;
 
 /** a = other names the team has played under, c = short names (SKT, C9...), each joined by " | ". */
-export interface StatsSearchTeam { n: string; s: string; g: number; y: string; a?: string; c?: string }
-export interface StatsSearchPlayer { n: string; s: string; t: string; g: number; y: string }
-export interface StatsSearch { teams: StatsSearchTeam[]; players: StatsSearchPlayer[] }
-
 export interface StatsMeta {
   version: string;
   games: number;
@@ -35,54 +31,8 @@ export type TitleKind = "Worlds" | "MSI" | "First Stand" | "EWC" | "IEM" | "Regi
 export interface Title { t: string; date: string; kind: TitleKind; w: string; as: string; s: string | null; l: string; score: string }
 export const INTERNATIONAL_KINDS: TitleKind[] = ["Worlds", "MSI", "First Stand"];
 
-export interface TeamStats {
-  name: string;
-  g: number; w: number; sg: number; sw: number;
-  from: string; to: string;
-  names: { n: string; from: string; to: string; g: number }[];
-  avgMin: number; kills: number | null; deaths: number | null;
-  obj: { dragons: number; barons: number; towers: number; heralds: number; golddiff: number } | null;
-  years: { y: string; g: number; w: number; as: string }[];
-  recent: { date: string; opp: string; t: string; us: number; them: number }[];
-  opps: { n: string; s: string | null; g: number; w: number; last: string }[];
-  champs: { c: string; g: number; w: number }[];
-  bans: { c: string; g: number }[];
-  tourns: { t: string; g: number; w: number; date: string }[];
-  titles: Title[];
-  bestStreak: { n: number; date: string } | null;
-  roster: { y: string; p: { n: string; s: string; g: number; r: string }[] }[];
-}
-
-export interface PlayerStats {
-  name: string; page: string; role: string;
-  /** The club they play (or last played) for, ignoring one-off national-team games. */
-  club?: string; clubTo?: string;
-  g: number; w: number; k: number; d: number; a: number; kda: number;
-  csm: number | null; gpm: number | null; dpm: number | null;
-  teams: { n: string; s: string | null; g: number; w: number; from: string; to: string }[];
-  years: { y: string; g: number; w: number; kda: number; team: string }[];
-  champs: { c: string; g: number; w: number; k: number; d: number; a: number; kda: number }[];
-  nChamps: number;
-  recent: { date: string; team: string; opp: string; c: string; k: number; d: number; a: number; win: number; t: string }[];
-  best: Record<string, { v: number; date: string; c: string; opp: string; t: string }>;
-  titles: [string, string, string][];
-}
-
 export interface ChampRow { c: string; p: number; w: number; b: number; kda: number | null; role: string | null }
 export type ChampionStats = Partial<Record<"major" | "all", { games: number; champs: ChampRow[] }>>;
-
-export interface GameRecord { v: number; a: string; b: string; w: string; date: string; t: string; min: number; score: string | null }
-export interface PlayerRecord { v: number; pl: string; ps: string; team: string; opp: string; c: string; date: string; t: string; kda: string }
-export interface CareerRecord { v: number; pl: string; ps: string }
-export interface TeamRecord { v: number; team: string; s: string | null; date?: string; worlds?: number }
-export interface Records {
-  built: string;
-  note: string;
-  game: Record<"fastest" | "longest" | "bloodiest" | "comebacks", GameRecord[]>;
-  player: Record<"kills" | "assists" | "dmg" | "cs" | "perfect", PlayerRecord[]>;
-  career: Record<"games" | "kills" | "assists" | "pool", CareerRecord[]>;
-  team: Record<"streaks" | "titles", TeamRecord[]>;
-}
 
 // The server rebuilds the stats under a new version whenever the database changes (a few times a day)
 // and keeps the newest three. The desktop app can stay open in the tray for days, so the current version is
@@ -217,54 +167,8 @@ export function statsPhotoUrl(slug: string, stamp: string): string {
 }
 
 export const loadStatsMeta = () => load<StatsMeta>("meta.json");
-export const loadStatsSearch = () => load<StatsSearch>("search.json");
-// Split search lists: the Teams list is ~70 KB, players ~300 KB, so each loads only when needed.
-// Builds made before the split only have search.json, so fall back to it.
-export const loadTeamIndex = () =>
-  load<StatsSearchTeam[]>("search-teams.json").catch(() => loadStatsSearch().then((s) => s.teams));
-export const loadPlayerIndex = () =>
-  load<StatsSearchPlayer[]>("search-players.json").catch(() => loadStatsSearch().then((s) => s.players));
-export const loadTeamStats = (slug: string) => load<TeamStats>(`teams/${slug}.json`);
-export const loadPlayerStats = (slug: string) => load<PlayerStats>(`players/${slug}.json`);
 export const loadChampionStats = (key: string) => load<ChampionStats>(`champions/${key}.json`);
-export const loadRecords = () => load<Records>("records.json");
-export const loadTitles = () => load<Title[]>("titles.json");
 
 export function winRate(w: number, g: number): string {
   return g ? `${Math.round((w / g) * 100)}%` : "–";
-}
-
-/** Case- and accent-insensitive search. Exact and prefix matches first, then by games played. */
-export function searchByName<T extends { n: string; g: number; a?: string; c?: string }>(items: T[], query: string, limit = 30): T[] {
-  const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-  const q = norm(query.trim());
-  if (!q) return items.slice(0, limit);
-  const scored: [number, T][] = [];
-  for (const it of items) {
-    // Short names: "SKT", "C9", "HLE" find the team they stand for
-    if (it.c && norm(it.c).split(" | ").includes(q)) {
-      scored.push([0, it]);
-      continue;
-    }
-    const n = norm(it.n);
-    const i = n.indexOf(q);
-    if (i >= 0) {
-      scored.push([n === q ? 0 : i === 0 ? 1 : 2, it]);
-      continue;
-    }
-    // Ignore punctuation and spaces: "geng" finds Gen.G, "100thieves" finds 100 Thieves
-    const bare = (s: string) => s.replace(/[^a-z0-9]/g, "");
-    if (bare(q) && bare(n).includes(bare(q))) {
-      scored.push([bare(n) === bare(q) ? 0 : 2, it]);
-      continue;
-    }
-    // Old names (e.g. "SK Telecom T1" finds T1)
-    if (it.a) {
-      const olds = norm(it.a).split(" | ");
-      if (olds.some((o) => o === q)) scored.push([1, it]);
-      else if (olds.some((o) => o.includes(q))) scored.push([3, it]);
-    }
-  }
-  scored.sort((a, b) => a[0] - b[0] || b[1].g - a[1].g);
-  return scored.slice(0, limit).map((x) => x[1]);
 }

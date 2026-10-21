@@ -2,7 +2,7 @@
 # Upload BOTH RiftWise.exe and RiftWise.exe.sha256 to the GitHub release:
 # the in-app updater refuses to install a binary without a matching checksum.
 $ErrorActionPreference = "Stop"
-$root = $PSScriptRoot
+$root = Split-Path $PSScriptRoot -Parent  # the repo (this script is in scripts)
 $pkg = Get-Content (Join-Path $root "package.json") -Raw | ConvertFrom-Json
 $version = $pkg.version
 

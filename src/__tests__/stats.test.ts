@@ -25,27 +25,16 @@ describe("stats loader", () => {
 
   it("retries with the new build when the old one was removed", async () => {
     files["/v1/records.json"] = { built: "v1" };
-    const { loadRecords, loadTitles } = await import("../stats");
-    expect(await loadRecords()).toEqual({ built: "v1" });
+    const { load } = await import("../stats");
+    expect(await load("records.json")).toEqual({ built: "v1" });
 
     // Overnight: v2 is built and v1 deleted, while the app stays open.
     current = "v2";
     delete files["/v1/records.json"];
     files["/v2/titles.json"] = [{ t: "Worlds 2025" }];
-    expect(await loadTitles()).toEqual([{ t: "Worlds 2025" }]);
+    expect(await load("titles.json")).toEqual([{ t: "Worlds 2025" }]);
   });
 
-  it("finds teams by short name, old name and without punctuation", async () => {
-    const { searchByName } = await import("../stats");
-    const teams = [
-      { n: "T1", g: 1860, a: "SK Telecom T1", c: "SKT" },
-      { n: "Gen.G", g: 1631, a: "Samsung Galaxy", c: "GEN | SSG" },
-      { n: "SKTenis", g: 11 },
-    ];
-    expect(searchByName(teams, "skt")[0].n).toBe("T1");
-    expect(searchByName(teams, "geng")[0].n).toBe("Gen.G");
-    expect(searchByName(teams, "samsung")[0].n).toBe("Gen.G");
-  });
 
   it("re-checks the current build after an hour", async () => {
     files["/v1/meta.json"] = { version: "v1" };

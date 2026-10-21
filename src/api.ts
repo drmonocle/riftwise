@@ -79,29 +79,6 @@ export const DEFAULT_FOLLOWED_LEAGUES = [
   "cblol-brazil",
 ];
 
-export const POPULAR_TEAMS: Array<{ code: string; name: string; league: string; image?: string }> = [
-  { code: "T1", name: "T1", league: "LCK" },
-  { code: "GEN", name: "Gen.G Esports", league: "LCK" },
-  { code: "HLE", name: "Hanwha Life Esports", league: "LCK" },
-  { code: "DK", name: "Dplus KIA", league: "LCK" },
-  { code: "KT", name: "KT Rolster", league: "LCK" },
-  { code: "BLG", name: "Bilibili Gaming", league: "LPL" },
-  { code: "TES", name: "Top Esports", league: "LPL" },
-  { code: "WBG", name: "Weibo Gaming", league: "LPL" },
-  { code: "JDG", name: "JD Gaming", league: "LPL" },
-  { code: "LNG", name: "LNG Esports", league: "LPL" },
-  { code: "G2", name: "G2 Esports", league: "LEC" },
-  { code: "FNC", name: "Fnatic", league: "LEC" },
-  { code: "KC", name: "Karmine Corp", league: "LEC" },
-  { code: "MDK", name: "MAD Lions KOI", league: "LEC" },
-  { code: "FLY", name: "FlyQuest", league: "LCS" },
-  { code: "TL", name: "Team Liquid", league: "LCS" },
-  { code: "C9", name: "Cloud9", league: "LCS" },
-  { code: "100", name: "100 Thieves", league: "LCS" },
-  { code: "PNG", name: "paiN Gaming", league: "CBLOL" },
-  { code: "FUR", name: "FURIA", league: "CBLOL" },
-];
-
 export const POPULAR_PLAYERS: PlayerEntry[] = [
   { name: "Faker", role: "Mid", teamCode: "T1", teamName: "T1", realName: "Lee Sang-hyeok" },
   { name: "Chovy", role: "Mid", teamCode: "GEN", teamName: "Gen.G Esports", realName: "Jeong Ji-hoon" },
