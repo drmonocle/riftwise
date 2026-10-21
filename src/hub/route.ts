@@ -18,7 +18,7 @@ import { IS_WEB, SITE_URL } from "../platform";
 
 export type HubSection =
   | "tournaments" | "leagues" | "champions" | "patches" | "records" | "titles" | "compare" | "data" | "about" | "prep"
-  | "rankings" | "finder" | "draft" | "best" | "counters"
+  | "rankings" | "finder" | "draft" | "best" | "counters" | "worlds"
   | "aboutme"; // riftwise.gg/about (not under /stats)
 export type HubEntity = "team" | "player" | "event" | "match" | "champ" | "league";
 
@@ -35,7 +35,7 @@ export type CompareRoute = { kind: "compare"; mode?: "team" | "player"; a?: stri
 export type PrepRoute = { kind: "prep"; a?: string; b?: string; period?: string };
 const SECTIONS: HubSection[] = [
   "tournaments", "leagues", "champions", "patches", "records", "titles", "compare", "data", "about", "prep", "rankings", "finder", "draft",
-  "best", "counters",
+  "best", "counters", "worlds",
 ];
 /** Pages that keep their filters in the address (?league=lck&year=2026...). */
 const QUERY_SECTIONS: HubSection[] = ["champions", "finder", "draft", "best", "counters"];
@@ -69,7 +69,7 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
       }
       // these pages keep their filters in the address (?league=lck&year=2026&patch=26.18...)
       if (QUERY_SECTIONS.includes(kind) && search.replace(/^\?/, "")) return { kind, query: search.replace(/^\?/, "") };
-      return kind === "tournaments" && parts[2] && /^\d{4}$/.test(parts[2]) ? { kind, year: parts[2] } : { kind };
+      return (kind === "tournaments" || kind === "worlds") && parts[2] && /^\d{4}$/.test(parts[2]) ? { kind, year: parts[2] } : { kind };
     }
     return null;
   }

@@ -5,9 +5,12 @@
  * Three synced fields, each with the time it last changed: "follows", "settings", "revealed". A local change is
  * sent a moment later; other devices' changes are fetched on start, every 2 minutes, and when the window comes
  * back into view. For each field the newest change wins, except on a device's first sign-in: follows and reveals
- * are merged (nothing followed on either device is lost) and the account's settings are used.
+ * are merged (nothing followed on either device is lost) and the account's settings are used. A list a device never
+ * changed (still the starting T1 / Gen.G / Faker... follows) isn't merged in: the account's list is used as it is,
+ * so signing in on a new computer can't bring back follows removed elsewhere. Before sync changes what this device
+ * follows, the previous lists are kept (the last 5), and Settings -> Sync & account can put one back.
  */
-import { loadSettings, saveSettings } from "./api";
+import { DEFAULT_SETTINGS, loadSettings, saveSettings } from "./api";
 import type { AppSettings } from "./types";
 import { IS_WEB, WEB_APP_URL } from "./platform";
 import { allRevealed, replaceRevealed, REVEALED_EVENT } from "./revealed";
@@ -18,6 +21,7 @@ const TOKEN_KEY = "riftwatch_sync_token";
 const ACCOUNT_KEY = "riftwatch_sync_account";
 const STATE_KEY = "riftwatch_sync_state"; // {times: {field: ms}, snap: {field: json}, last: ms}
 const CODE_KEY = "riftwatch_sync_code"; // this account's sync code, kept on the device that made it (to show again)
+const BACKUP_KEY = "riftwatch_follow_backups"; // [{at, follows}], newest first: what was followed before sync changed it
 export const SYNC_EVENT = "riftwatch_sync_updated";
 
 export interface SyncAccount {
@@ -103,6 +107,40 @@ function localFields(s: AppSettings = loadSettings()): Record<string, unknown> {
   };
 }
 
+export interface Follows {
+  teams: string[];
+  players: string[];
+  leagues: string[];
+  regions: string[];
+}
+export interface FollowBackup {
+  at: number;
+  follows: Follows;
+}
+
+const strings = (x: unknown): string[] => (Array.isArray(x) ? x.filter((y): y is string => typeof y === "string") : []);
+const sameSet = (a: unknown, b: string[]) => {
+  const x = strings(a);
+  return x.length === b.length && b.every((v) => x.includes(v));
+};
+
+/** What this device followed before each of the last few sync changes, newest first. */
+export const followBackups = (): FollowBackup[] => read<FollowBackup[]>(BACKUP_KEY, []);
+
+function keepBackup(f: Follows) {
+  const list = followBackups().filter((b) => JSON.stringify(b.follows) !== JSON.stringify(f));
+  write(BACKUP_KEY, [{ at: Date.now(), follows: f }, ...list].slice(0, 5));
+}
+
+/** Put an earlier copy back (it then syncs to the account's other devices as a normal change). */
+export function restoreFollows(i: number) {
+  const b = followBackups()[i];
+  if (!b) return;
+  const cur = loadSettings();
+  keepBackup({ teams: cur.followedTeams, players: cur.followedPlayers, leagues: cur.followedLeagues, regions: cur.followedRegions });
+  saveSettings({ ...cur, followedTeams: b.follows.teams, followedPlayers: b.follows.players, followedLeagues: b.follows.leagues, followedRegions: b.follows.regions });
+}
+
 const uniq = (a: unknown, b: unknown) =>
   Array.from(new Set([...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])].filter((x): x is string => typeof x === "string")));
 
@@ -111,6 +149,9 @@ function applyField(name: string, v: unknown) {
     const f = v as Record<string, unknown>;
     const cur = loadSettings();
     const list = (x: unknown, dflt: string[]) => (Array.isArray(x) ? x.filter((y): y is string => typeof y === "string") : dflt);
+    const before: Follows = { teams: cur.followedTeams, players: cur.followedPlayers, leagues: cur.followedLeagues, regions: cur.followedRegions };
+    const after: Follows = { teams: list(f.teams, before.teams), players: list(f.players, before.players), leagues: list(f.leagues, before.leagues), regions: list(f.regions, before.regions) };
+    if (JSON.stringify(before) !== JSON.stringify(after)) keepBackup(before);
     saveSettings({
       ...cur,
       followedTeams: list(f.teams, cur.followedTeams),
@@ -156,12 +197,20 @@ export function syncNow(): Promise<void> {
         st.times[name] = st.times[name] || now;
         out[name] = { v: lv, t: st.times[name] };
       } else if (first && (name === "follows" || name === "revealed")) {
-        // first sign-in on this device: keep everything from both sides
+        // first sign-in on this device: keep everything from both sides, except lists this device never changed
+        // (the starting follows), which would otherwise come back on every account that removed them
         let merged: unknown;
         if (name === "follows") {
           const a = (lv || {}) as Record<string, unknown>;
           const b = (r.v || {}) as Record<string, unknown>;
-          merged = { teams: uniq(b.teams, a.teams), players: uniq(b.players, a.players), leagues: uniq(b.leagues, a.leagues), regions: uniq(b.regions, a.regions) };
+          const both = (k: "teams" | "players" | "leagues" | "regions", start: string[]) =>
+            sameSet(a[k], start) && Array.isArray(b[k]) ? strings(b[k]) : uniq(b[k], a[k]);
+          merged = {
+            teams: both("teams", DEFAULT_SETTINGS.followedTeams),
+            players: both("players", DEFAULT_SETTINGS.followedPlayers),
+            leagues: both("leagues", DEFAULT_SETTINGS.followedLeagues),
+            regions: both("regions", DEFAULT_SETTINGS.followedRegions),
+          };
         } else {
           merged = { ...(lv as object), ...(r.v as object) };
         }

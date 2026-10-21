@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	version  = "1.12.0"
+	version  = "1.13.0"
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -73,6 +73,7 @@ var sections = map[string][2]string{
 	"draft":       {"Pro LoL draft board", "Plan a League of Legends draft between two pro teams with their champion pools, first picks, bans and win rates in view."},
 	"counters":    {"LoL counter-pick finder: every pro lane matchup", "Pick a champion and see every lane opponent pro play has put against it, with its win rate and gold lead at 15 minutes in that matchup, from every pro game since 2011."},
 	"best":        {"The best pro LoL games ever, rated", "Every professional League of Legends game since 2011 rated 0 to 100 for action, closeness, stakes and drama: the best games and series of all time, by year and by league."},
+	"worlds":      {"LoL Worlds hub: facts, Swiss stage and bracket picker", "The League of Legends World Championship on one page: the standout stats from every game so far, a Swiss stage and knockout picker with each team's win chances, and the chances of every team to win Worlds."},
 	"about":       {"How RiftWise counts pro LoL stats", "Where RiftWise's pro League of Legends numbers come from and what every stat means: KDA, KP, DMG%, GD per minute, presence, blind picks and more."},
 }
 
@@ -290,7 +291,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 			sec = parts[1]
 		}
 		info, ok := sections[sec]
-		if !ok || len(parts) > 3 || (len(parts) == 3 && sec != "tournaments") {
+		if !ok || len(parts) > 3 || (len(parts) == 3 && ((sec != "tournaments" && sec != "worlds") || !isYear(parts[2]))) {
 			status, title, desc, index = http.StatusNotFound, "Page not found | RiftWise", sections[""][1], false
 			break
 		}
@@ -299,7 +300,10 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		if sec == "" {
 			og = "og/home.png"
 		}
-		if len(parts) == 3 {
+		if len(parts) == 3 && sec == "worlds" {
+			title = "LoL Worlds " + parts[2] + ": facts, Swiss stage and bracket picker | RiftWise"
+			desc = "The League of Legends World Championship " + parts[2] + " on one page: the standout stats from every game, the Swiss stage and the bracket, with each team's chances."
+		} else if len(parts) == 3 {
 			title = "Pro LoL tournaments in " + parts[2] + " | RiftWise"
 			desc = "Every professional League of Legends tournament in " + parts[2] + ": results, brackets, standings and stats."
 		}
