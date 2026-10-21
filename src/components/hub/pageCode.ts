@@ -27,6 +27,8 @@ export const pageCode = {
   match: () => import("./MatchPage"),
   champ: () => import("./ChampPage"),
   worlds: () => import("./WorldsPage"),
+  msi: () => import("./WorldsPage"),
+  "first-stand": () => import("./WorldsPage"),
 };
 
 /** Start downloading one page's code (a failure shows, and is retried, where the page loads it). */

@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	version  = "1.13.0"
+	version  = "1.14.0"
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -74,6 +74,8 @@ var sections = map[string][2]string{
 	"counters":    {"LoL counter-pick finder: every pro lane matchup", "Pick a champion and see every lane opponent pro play has put against it, with its win rate and gold lead at 15 minutes in that matchup, from every pro game since 2011."},
 	"best":        {"The best pro LoL games ever, rated", "Every professional League of Legends game since 2011 rated 0 to 100 for action, closeness, stakes and drama: the best games and series of all time, by year and by league."},
 	"worlds":      {"LoL Worlds hub: facts, Swiss stage and bracket picker", "The League of Legends World Championship on one page: the standout stats from every game so far, a Swiss stage and knockout picker with each team's win chances, and the chances of every team to win Worlds."},
+	"msi":         {"LoL MSI hub: every Mid-Season Invitational in numbers", "The League of Legends Mid-Season Invitational on one page: the standout stats from every game, for one year or every MSI together."},
+	"first-stand": {"LoL First Stand hub: facts from every game", "League of Legends First Stand on one page: the standout stats from every game, for one year or every First Stand together."},
 	"about":       {"How RiftWise counts pro LoL stats", "Where RiftWise's pro League of Legends numbers come from and what every stat means: KDA, KP, DMG%, GD per minute, presence, blind picks and more."},
 }
 
@@ -291,7 +293,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 			sec = parts[1]
 		}
 		info, ok := sections[sec]
-		if !ok || len(parts) > 3 || (len(parts) == 3 && ((sec != "tournaments" && sec != "worlds") || !isYear(parts[2]))) {
+		if !ok || len(parts) > 3 || (len(parts) == 3 && !sectionYear(sec, parts[2])) {
 			status, title, desc, index = http.StatusNotFound, "Page not found | RiftWise", sections[""][1], false
 			break
 		}
@@ -300,9 +302,19 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		if sec == "" {
 			og = "og/home.png"
 		}
-		if len(parts) == 3 && sec == "worlds" {
-			title = "LoL Worlds " + parts[2] + ": facts, Swiss stage and bracket picker | RiftWise"
-			desc = "The League of Legends World Championship " + parts[2] + " on one page: the standout stats from every game, the Swiss stage and the bracket, with each team's chances."
+		if len(parts) == 3 && intlNames[sec] != "" {
+			name := intlNames[sec]
+			if parts[2] == "all" {
+				title = "LoL " + name + ": every year in numbers | RiftWise"
+				desc = "Every League of Legends " + name + " together: most titles, kills, games played and appearances, the champions that keep winning or losing, and the biggest games."
+			} else {
+				title = "LoL " + name + " " + parts[2] + ": facts and stats | RiftWise"
+				desc = "League of Legends " + name + " " + parts[2] + " on one page: the standout stats from every game."
+				if sec == "worlds" {
+					title = "LoL Worlds " + parts[2] + ": facts, Swiss stage and bracket picker | RiftWise"
+					desc = "The League of Legends World Championship " + parts[2] + " on one page: the standout stats from every game, the Swiss stage and the bracket, with each team's chances."
+				}
+			}
 		} else if len(parts) == 3 {
 			title = "Pro LoL tournaments in " + parts[2] + " | RiftWise"
 			desc = "Every professional League of Legends tournament in " + parts[2] + ": results, brackets, standings and stats."
@@ -471,6 +483,17 @@ func main() {
 	srv := &http.Server{Addr: *addr, Handler: mux, ReadHeaderTimeout: 10 * time.Second, WriteTimeout: 30 * time.Second}
 	log.Printf("riftwise-pages %s on %s, site %s, stats %s, public %s", version, *addr, *site, *stats, publicURL)
 	log.Fatal(srv.ListenAndServe())
+}
+
+// intlNames: the international events with a page of their own (/stats/<section>[/<year>|/all]).
+var intlNames = map[string]string{"worlds": "Worlds", "msi": "MSI", "first-stand": "First Stand"}
+
+// sectionYear: what may follow a section in the address (a year for tournaments; a year or "all" for the events).
+func sectionYear(sec, part string) bool {
+	if intlNames[sec] != "" {
+		return isYear(part) || part == "all"
+	}
+	return sec == "tournaments" && isYear(part)
 }
 
 func isYear(s string) bool {

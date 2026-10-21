@@ -42,7 +42,9 @@ export interface EventListItem {
   /** 1 = first in the regular-season standings (the playoffs decide the title) */
   rs?: number;
   p?: string;
+  /** a whole event: how many stages it has, and their pages (builds from 2026-10-21 on) */
   kids?: number;
+  c?: string[];
 }
 
 export interface HubHome {

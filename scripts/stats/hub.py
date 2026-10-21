@@ -1952,6 +1952,8 @@ def build(ctx) -> dict:
         events_by_year[event["year"]].append({
             "n": event["n"], "u": eslug, "l": info.get("League"), "r": info.get("Region"), "lv": info.get("TournamentLevel"),
             "st": event["start"], "en": event["end"], "g": event["games"], "q": 0, "kids": len(event["children"]),
+            # its stages' pages (Worlds page "all years": each stage's lines file without loading every event)
+            "c": [c["u"] for c in event["children"]],
             **({"res": 1} if res_out else {}),
             **({"w": winner_row["t"], "wu": winner_row["u"]} if winner_row else {}),
         })

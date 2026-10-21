@@ -125,6 +125,18 @@ func TestUnknownAndOldNames(t *testing.T) {
 	if w := get(s, "/riftwise/stats/worlds/2025"); w.Code != 200 || !strings.Contains(w.Body.String(), "LoL Worlds 2025") {
 		t.Errorf("worlds of a year: %d", w.Code)
 	}
+	if w := get(s, "/riftwise/stats/worlds/all"); w.Code != 200 || !strings.Contains(w.Body.String(), "every year") {
+		t.Errorf("worlds every year: %d", w.Code)
+	}
+	if w := get(s, "/riftwise/stats/msi/2024"); w.Code != 200 || !strings.Contains(w.Body.String(), "LoL MSI 2024") {
+		t.Errorf("msi of a year: %d", w.Code)
+	}
+	if w := get(s, "/riftwise/stats/first-stand"); w.Code != 200 || !strings.Contains(w.Body.String(), "First Stand hub") {
+		t.Errorf("first stand: %d", w.Code)
+	}
+	if w := get(s, "/riftwise/stats/tournaments/all"); w.Code != 404 {
+		t.Errorf("tournaments with all: %d", w.Code)
+	}
 	if w := get(s, "/riftwise/stats/worlds/next"); w.Code != 404 {
 		t.Errorf("worlds with a word for a year: %d", w.Code)
 	}
