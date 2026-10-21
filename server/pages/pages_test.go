@@ -124,7 +124,7 @@ func TestUnknownAndOldNames(t *testing.T) {
 	if w := get(s, "/riftwise/stats/worlds"); w.Code != 200 || !strings.Contains(w.Body.String(), "Worlds hub") {
 		t.Errorf("worlds page: %d", w.Code)
 	}
-	if w := get(s, "/riftwise/stats/worlds/2025"); w.Code != 200 || !strings.Contains(w.Body.String(), "LoL Worlds 2025") {
+	if w := get(s, "/riftwise/stats/worlds/2024"); w.Code != 200 || !strings.Contains(w.Body.String(), "LoL Worlds 2024") {
 		t.Errorf("worlds of a year: %d", w.Code)
 	}
 	if w := get(s, "/riftwise/stats/worlds/all"); w.Code != 200 || !strings.Contains(w.Body.String(), "every year") {
