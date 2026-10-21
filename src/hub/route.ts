@@ -18,7 +18,7 @@ import { IS_WEB, SITE_URL } from "../platform";
 
 export type HubSection =
   | "tournaments" | "leagues" | "champions" | "patches" | "records" | "titles" | "compare" | "data" | "about" | "prep"
-  | "rankings" | "finder" | "draft" | "best" | "counters" | "worlds"
+  | "rankings" | "finder" | "draft" | "best" | "counters" | "worlds" | "msi" | "first-stand"
   | "aboutme"; // riftwise.gg/about (not under /stats)
 export type HubEntity = "team" | "player" | "event" | "match" | "champ" | "league";
 
@@ -35,9 +35,11 @@ export type CompareRoute = { kind: "compare"; mode?: "team" | "player"; a?: stri
 export type PrepRoute = { kind: "prep"; a?: string; b?: string; period?: string };
 const SECTIONS: HubSection[] = [
   "tournaments", "leagues", "champions", "patches", "records", "titles", "compare", "data", "about", "prep", "rankings", "finder", "draft",
-  "best", "counters", "worlds",
+  "best", "counters", "worlds", "msi", "first-stand",
 ];
 /** Pages that keep their filters in the address (?league=lck&year=2026...). */
+/** Worlds, MSI and First Stand: one page each, for a year or every year (/stats/msi/2024, /stats/worlds/all). */
+const INTL_SECTIONS: HubSection[] = ["worlds", "msi", "first-stand"];
 const QUERY_SECTIONS: HubSection[] = ["champions", "finder", "draft", "best", "counters"];
 const ENTITY_PATH: Record<HubEntity, string> = {
   team: "team", player: "player", event: "tournament", match: "match", champ: "champion", league: "league",
@@ -69,7 +71,10 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
       }
       // these pages keep their filters in the address (?league=lck&year=2026&patch=26.18...)
       if (QUERY_SECTIONS.includes(kind) && search.replace(/^\?/, "")) return { kind, query: search.replace(/^\?/, "") };
-      return (kind === "tournaments" || kind === "worlds") && parts[2] && /^\d{4}$/.test(parts[2]) ? { kind, year: parts[2] } : { kind };
+      // a year (tournaments, the international events), or "all" for every year of Worlds / MSI / First Stand
+      if (kind === "tournaments" && parts[2] && /^\d{4}$/.test(parts[2])) return { kind, year: parts[2] };
+      if (INTL_SECTIONS.includes(kind) && parts[2] && /^(\d{4}|all)$/.test(parts[2])) return { kind, year: parts[2] };
+      return { kind };
     }
     return null;
   }

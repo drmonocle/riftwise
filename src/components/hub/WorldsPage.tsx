@@ -1,13 +1,13 @@
 /**
- * The Worlds page: headline facts from every game so far, and pickers for the Swiss stage and the knockouts with
- * the power ratings' chances (pick by hand, fill with the favourites, roll by the chances or flip a coin, or play
- * the rest out thousands of times to see who gets how far). Picks stay on this device.
+ * The Worlds, MSI and First Stand pages: headline facts from every game (one year, or every year together), and for
+ * Worlds the Swiss stage and knockout pickers with the power ratings' chances (pick by hand, fill with the favourites,
+ * roll by the chances or flip a coin, or play the rest out thousands of times). Picks stay on this device.
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { Check, Copy, Dice5, Eraser, Lock, RefreshCw, Shuffle, Sparkles, TrendingUp, Trophy } from "lucide-react";
-import { eventTitle, stageName, tl } from "../../i18n";
-import { loadEventLines, loadHubEvent, loadRatings } from "../../hub/data";
-import type { HubEvent, HubRatings } from "../../hub/types";
+import { eventName, eventTitle, stageName, tl } from "../../i18n";
+import { loadEventLines, loadHubEvent, loadLeague, loadRatings } from "../../hub/data";
+import type { EventListItem, HubEvent, HubLeague, HubRatings } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import {
   coin, favourites, quarterPairs, rng, roller, runKnockout, runSwiss, simulate,
@@ -16,7 +16,14 @@ import {
 import { eventFacts, factText, gamesOf, type Fact } from "../../hub/worldsFacts";
 import { ChampIcon, Failed, HubLink, Loading, PlayerLink, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
 
-const FIRST_SWISS = 2023; // Worlds has had a Swiss stage since 2023
+/** The three international events with a page of their own; Worlds has had a Swiss stage since 2023. */
+export type IntlKind = "worlds" | "msi" | "first-stand";
+const INTL: Record<IntlKind, { league: string; name: string; swissFrom: number | null }> = {
+  worlds: { league: "world-championship", name: "Worlds", swissFrom: 2023 },
+  msi: { league: "mid-season-invitational", name: "MSI", swissFrom: null },
+  "first-stand": { league: "first-stand", name: "First Stand", swissFrom: null },
+};
+const ALL = "all";
 const pill = (on: boolean) =>
   `inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
     on ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50"
@@ -60,51 +67,100 @@ function useSaved(year: string): [Saved, (s: Saved) => void] {
 
 type Tab = "facts" | "swiss" | "ko";
 
+/** One stage's games file, and the event it belongs to (for lists over every year). */
+interface StageRef {
+  u: string;
+  n: string;
+  end?: string;
+  label: string;
+}
+
 interface Loaded {
-  parent: HubEvent;
-  stages: HubEvent[];
+  /** "Worlds 2025", or "Worlds" for every year together */
+  name: string;
+  year: string;
+  all: boolean;
+  years: string[];
+  stages: StageRef[];
+  /** one year: the whole event and its main stage (the pickers' data) */
+  parent: HubEvent | null;
   main: HubEvent | null;
   ratings: HubRatings | null;
+  league: HubLeague;
 }
 
-async function loadWorlds(year: string): Promise<Loaded> {
-  const parent = await loadHubEvent(`worlds-${year}`);
+const realEvents = (lg: HubLeague): (EventListItem & { y: string })[] =>
+  lg.events.filter((e) => !e.q && !e.p).sort((a, b) => b.y.localeCompare(a.y) || (b.st || "").localeCompare(a.st || ""));
+
+async function stagesOf(e: EventListItem): Promise<StageRef[]> {
+  const label = eventTitle(e.n);
+  if (e.c?.length) return e.c.map((u) => ({ u, n: u, end: e.en, label }));
+  // builds before the stage list (2026-10-21): the whole event's own file says whether it has stages
+  if (!e.c) {
+    const p = await loadHubEvent(e.u).catch(() => null);
+    if (p?.children?.length) return p.children.map((c) => ({ u: c.u, n: c.n, end: e.en, label }));
+  }
+  return [{ u: e.u, n: e.n, end: e.en, label }];
+}
+
+async function loadIntl(kind: IntlKind, asked: string | undefined): Promise<Loaded> {
+  const def = INTL[kind];
+  const league = await loadLeague(def.league);
+  const evs = realEvents(league);
+  const years = [...new Set(evs.map((e) => e.y))];
+  if (asked === ALL) {
+    const stages = (await Promise.all(evs.map(stagesOf))).flat();
+    return { name: eventName(def.name), year: ALL, all: true, years, stages, parent: null, main: null, ratings: null, league };
+  }
+  const year = asked && years.includes(asked) ? asked : years[0];
+  const ev = evs.find((e) => e.y === year);
+  if (!ev) throw new Error("no event");
+  const parent = await loadHubEvent(ev.u);
   const kids = parent.children?.length ? parent.children : [];
-  const stages = kids.length ? (await Promise.all(kids.map((k) => loadHubEvent(k.u).catch(() => null)))).filter((x): x is HubEvent => !!x) : [parent];
-  const main = stages.find((s) => /main/i.test(s.u)) || (kids.length ? null : parent);
-  const ratings = await loadRatings().catch(() => null);
-  return { parent, stages, main, ratings };
+  const full = kids.length ? (await Promise.all(kids.map((k) => loadHubEvent(k.u).catch(() => null)))).filter((x): x is HubEvent => !!x) : [parent];
+  const main = full.find((s) => /main/i.test(s.u)) || (kids.length ? null : parent);
+  const swiss = def.swissFrom != null && Number(year) >= def.swissFrom;
+  const ratings = swiss ? await loadRatings().catch(() => null) : null;
+  const stages = full.map((s) => ({ u: s.u, n: s.n, end: s.end || s.start, label: eventTitle(parent.n) }));
+  return { name: eventTitle(parent.n), year, all: false, years, stages, parent, main, ratings, league };
 }
 
-export const WorldsPage: React.FC<{ year?: string }> = ({ year: asked }) => {
-  const thisYear = String(new Date().getFullYear());
-  const year = asked || thisYear;
-  const state = useLoad(() => loadWorlds(year), [year]);
+export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string }> = ({ kind = "worlds", year: asked }) => {
+  const def = INTL[kind];
+  const state = useLoad(() => loadIntl(kind, asked), [kind, asked]);
   const [tab, setTab] = useState<Tab>("facts");
-  usePageTitle(tl("Worlds {year}", { year }));
-  const years = useMemo(() => Array.from({ length: Number(thisYear) - 2010 }, (_, i) => String(Number(thisYear) - i)), [thisYear]);
-  const swissYear = Number(year) >= FIRST_SWISS;
+  const d = state.data;
+  const title = d ? (d.all ? tl("{event}: every year", { event: d.name }) : d.name) : eventName(def.name);
+  usePageTitle(title);
+  const thisYear = String(new Date().getFullYear());
+  const swissYear = !!d && !d.all && def.swissFrom != null && Number(d.year) >= def.swissFrom;
+  useEffect(() => {
+    if (!swissYear) setTab("facts");
+  }, [swissYear]);
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-lg font-extrabold text-rw-text flex items-center gap-2 mr-auto">
           <Trophy className="w-5 h-5 text-rw-accent" />
-          {tl("Worlds {year}", { year })}
+          {title}
         </h2>
-        <label className="text-xs text-rw-sub flex items-center gap-1.5">
-          {tl("Year")}
-          <select
-            value={year}
-            onChange={(e) => navigateHub({ kind: "worlds", year: e.target.value === thisYear ? undefined : e.target.value }, { replace: true })}
-            className="bg-rw-surface border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text"
-          >
-            {years.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-        </label>
+        {d && (
+          <label className="text-xs text-rw-sub flex items-center gap-1.5">
+            {tl("Year")}
+            <select
+              value={d.year}
+              onChange={(e) => navigateHub({ kind, year: e.target.value === d.years[0] ? undefined : e.target.value }, { replace: true })}
+              className="bg-rw-surface border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text"
+            >
+              <option value={ALL}>{tl("All years")}</option>
+              {d.years.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
       <div className="flex flex-wrap gap-1.5" role="tablist">
         <button type="button" role="tab" aria-selected={tab === "facts"} className={pill(tab === "facts")} onClick={() => setTab("facts")}>
@@ -123,15 +179,20 @@ export const WorldsPage: React.FC<{ year?: string }> = ({ year: asked }) => {
             </button>
           </>
         )}
+        {d?.parent && (
+          <HubLink to={{ kind: "event", slug: d.parent.u }} className={`${btn} ml-auto`}>
+            {tl("Bracket, standings and every series")}
+          </HubLink>
+        )}
       </div>
       {state.error ? (
-        <p className="text-xs text-rw-sub">{tl("No Worlds {year} in the stats yet.", { year })}</p>
-      ) : !state.data ? (
+        <p className="text-xs text-rw-sub">{tl("Not in the stats yet.")}</p>
+      ) : !d ? (
         <Loading />
       ) : tab === "facts" || !swissYear ? (
-        <FactsTab d={state.data} year={year} />
+        <FactsTab d={d} kind={kind} />
       ) : (
-        <Pickers d={state.data} year={year} tab={tab} live={year === thisYear} />
+        <Pickers d={d} year={d.year} tab={tab} live={d.year === thisYear} />
       )}
     </div>
   );
@@ -139,16 +200,26 @@ export const WorldsPage: React.FC<{ year?: string }> = ({ year: asked }) => {
 
 // ── facts ─────────────────────────────────────────────────────────────────
 
-const FactsTab: React.FC<{ d: Loaded; year: string }> = ({ d, year }) => {
+const FactsTab: React.FC<{ d: Loaded; kind: IntlKind }> = ({ d, kind }) => {
   const [stage, setStage] = useState<string>("all");
+  useEffect(() => setStage("all"), [d]);
   const lines = useLoad(() => Promise.all(d.stages.map((s) => loadEventLines(s.u).catch(() => null))), [d.stages.map((s) => s.u).join()]);
-  const last = d.stages.map((s) => s.end || s.start || "").sort().pop();
-  const [hidden, reveal] = useHidden(`worlds-facts:${year}`, last);
+  const last = d.stages.map((s) => s.end || "").sort().pop();
+  const [hidden, reveal] = useHidden(`worlds-facts:${kind}:${d.year}`, last);
   const facts = useMemo<Fact[]>(() => {
     if (!lines.data) return [];
     const files = lines.data.map((f, i) => (stage === "all" || d.stages[i].u === stage ? f : null));
-    const name = eventTitle(stage === "all" ? d.parent.n : d.stages.find((s) => s.u === stage)?.n || d.parent.n);
-    return eventFacts(gamesOf(files), name);
+    const name = stage === "all" ? d.name : eventTitle(d.stages.find((s) => s.u === stage)?.n || d.name);
+    const out = eventFacts(gamesOf(files, d.all ? d.stages.map((s) => s.label) : []), name);
+    if (d.all && d.league.titles?.length) {
+      const t = d.league.titles.slice(0, 5);
+      out.unshift({
+        id: "titles", title: tl("Most titles"),
+        headline: tl("{team} has won {event} {n} times", { team: t[0].t, event: d.name, n: t[0].n }),
+        rows: t.map((x) => ({ label: x.t, team: x.u, value: String(x.n) })),
+      });
+    }
+    return out;
   }, [lines.data, stage, d]);
   if (lines.error) return <Failed />;
   if (!lines.data) return <Loading />;
@@ -158,26 +229,28 @@ const FactsTab: React.FC<{ d: Loaded; year: string }> = ({ d, year }) => {
         {tl("Hidden while spoiler mode is on.")} <RevealButton onReveal={reveal} />
       </p>
     );
+  const parentName = d.parent?.n || "";
   return (
     <div className="space-y-3">
-      {d.stages.length > 1 && (
+      {!d.all && d.stages.length > 1 && (
         <div className="flex flex-wrap gap-1.5">
           <button type="button" className={pill(stage === "all")} onClick={() => setStage("all")}>
             {tl("Whole event")}
           </button>
           {d.stages.map((s) => (
             <button key={s.u} type="button" className={pill(stage === s.u)} onClick={() => setStage(s.u)}>
-              {stageName(s.n.replace(d.parent.n, "").trim()) || eventTitle(s.n)}
+              {stageName(s.n.replace(parentName, "").trim()) || eventTitle(s.n)}
             </button>
           ))}
         </div>
       )}
+      {d.all && <p className="text-[11px] text-rw-muted">{tl("Every edition together, {from} to {to}.", { from: d.years[d.years.length - 1], to: d.years[0] })}</p>}
       {!facts.length ? (
         <p className="text-xs text-rw-sub">{tl("No games with full stats yet. Facts show up as soon as the first games are in.")}</p>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {facts.map((f) => (
-            <FactCard key={f.id} f={f} year={year} />
+            <FactCard key={f.id} f={f} kind={kind} year={d.year} />
           ))}
         </div>
       )}
@@ -185,11 +258,11 @@ const FactsTab: React.FC<{ d: Loaded; year: string }> = ({ d, year }) => {
   );
 };
 
-const FactCard: React.FC<{ f: Fact; year: string }> = ({ f, year }) => {
+const FactCard: React.FC<{ f: Fact; kind: IntlKind; year: string }> = ({ f, kind, year }) => {
   const [copied, setCopied] = useState(false);
   const copy = () => {
     navigator.clipboard
-      ?.writeText(factText(f, hubShareUrl({ kind: "worlds", year })))
+      ?.writeText(factText(f, hubShareUrl({ kind, year })))
       .then(() => {
         setCopied(true);
         window.setTimeout(() => setCopied(false), 1500);
@@ -199,7 +272,7 @@ const FactCard: React.FC<{ f: Fact; year: string }> = ({ f, year }) => {
   return (
     <Section
       title={f.title}
-      share={`worlds-${year}-${f.id}`}
+      share={`${kind}-${year}-${f.id}`}
       right={
         <button type="button" className={btn} onClick={copy} aria-label={tl("Copy as text")}>
           {copied ? <Check className="w-3.5 h-3.5 text-rw-teal" /> : <Copy className="w-3.5 h-3.5" />}

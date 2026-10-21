@@ -34,6 +34,8 @@ export interface Fact {
 }
 
 interface Game {
+  /** which event it was at ("Worlds 2016"), for lists over several years */
+  label?: string;
   series: string;
   stage: string;
   date: string;
@@ -60,14 +62,15 @@ interface Line {
   dmg: number | null;
 }
 
-/** All the events' games in one list (several stages: Play-In and Main Event). */
-export function gamesOf(files: (EventLines | null)[]): Game[] {
+/** All the events' games in one list (several stages, or several years with `labels`: the event of each file). */
+export function gamesOf(files: (EventLines | null)[], labels: (string | undefined)[] = []): Game[] {
   const out: Game[] = [];
-  for (const f of files) {
-    if (!f) continue;
+  files.forEach((f, fi) => {
+    if (!f) return;
     const games: Game[] = f.g.map((g) => {
       const s = f.s[g[0]];
       return {
+        label: labels[fi],
         series: s[0], stage: s[1], date: s[2], n: g[1], w: g[3], min: g[4],
         team: [
           { name: s[3], u: s[4], c: s[5], towers: g[5], kills: g[7], players: [] },
@@ -80,29 +83,35 @@ export function gamesOf(files: (EventLines | null)[]): Game[] {
       if (g) g.team[p[1] ? 1 : 0].players.push({ name: p[2], u: p[3], champ: p[5], k: p[6] || 0, d: p[7] || 0, a: p[8] || 0, dmg: p[10] });
     }
     out.push(...games);
-  }
+  });
   return out.sort((a, b) => a.date.localeCompare(b.date) || a.n - b.n);
 }
 
 const kdaOf = (k: number, d: number, a: number) => (k + a) / Math.max(1, d);
 const kdaText = (v: number) => (Math.round(v * 10) / 10).toFixed(1);
 const line = (k: number, d: number, a: number) => `${k}/${d}/${a}`;
-const who = (code: string, name: string) => (code ? `${code} ${name}` : name);
+
 
 export function eventFacts(games: Game[], event: string): Fact[] {
   const played = games.filter((g) => g.w === 1 || g.w === 2);
   if (!played.length) return [];
   const facts: Fact[] = [];
+  // over several years: say which event a game was at, and add the all-time lists
+  const allTime = new Set(played.map((g) => g.label)).size > 1;
+  const at = (g: Game) => (allTime && g.label ? `${g.label} · ` : "");
+  // "KC Caliste" for one event; over many years a player has had several teams, so just the name
+  const who = (code: string, name: string) => (code && !allTime ? `${code} ${name}` : name);
 
   // players over the event
-  type P = { name: string; u: string | null; c: string; t: string; g: number; k: number; d: number; a: number };
+  type P = { name: string; u: string | null; c: string; t: string; g: number; k: number; d: number; a: number; ev: Set<string> };
   const players = new Map<string, P>();
   for (const g of played)
     for (const side of g.team)
       for (const l of side.players) {
         const key = l.u || `${side.u}:${l.name}`;
-        const p = players.get(key) || { name: l.name, u: l.u, c: side.c, t: side.u, g: 0, k: 0, d: 0, a: 0 };
+        const p = players.get(key) || { name: l.name, u: l.u, c: side.c, t: side.u, g: 0, k: 0, d: 0, a: 0, ev: new Set<string>() };
         p.g++;
+        if (g.label) p.ev.add(g.label);
         p.k += l.k;
         p.d += l.d;
         p.a += l.a;
@@ -127,8 +136,22 @@ export function eventFacts(games: Game[], event: string): Fact[] {
       headline: tl("{who} has died the most at {event}: {n}", { who: who(deaths[0].c, deaths[0].name), event, n: deaths[0].d }),
       rows: deaths.map((p) => ({ label: who(p.c, p.name), player: p.u, team: p.t, value: String(p.d), sub: tl("{n} games", { n: p.g }) })),
     });
+  if (allTime) {
+    const games_ = top(plist, (p) => p.g * 1000 + p.ev.size);
+    facts.push({
+      id: "games-played", title: tl("Most games played"),
+      headline: tl("{who} has played the most games at {event}: {n}", { who: games_[0].name, event, n: games_[0].g }),
+      rows: games_.map((p) => ({ label: p.name, player: p.u, value: String(p.g), sub: tl("{n} events", { n: p.ev.size }) })),
+    });
+    const apps = top(plist, (p) => p.ev.size * 10000 + p.g);
+    facts.push({
+      id: "appearances", title: tl("Most appearances"),
+      headline: tl("{who} has played at {n} editions of {event}", { who: apps[0].name, n: apps[0].ev.size, event }),
+      rows: apps.map((p) => ({ label: p.name, player: p.u, value: String(p.ev.size), sub: tl("{n} games", { n: p.g }) })),
+    });
+  }
   const most = Math.max(...plist.map((p) => p.g));
-  const minG = Math.max(2, Math.ceil(most * 0.4));
+  const minG = allTime ? Math.min(20, Math.max(2, Math.ceil(most * 0.4))) : Math.max(2, Math.ceil(most * 0.4));
   const kda = top(plist.filter((p) => p.g >= minG), (p) => kdaOf(p.k, p.d, p.a));
   if (kda.length)
     facts.push({
@@ -150,7 +173,9 @@ export function eventFacts(games: Game[], event: string): Fact[] {
         champs.set(l.champ, c);
       }
     });
-  const clist = [...champs.entries()].filter(([c, x]) => c && x.g >= 3).map(([c, x]) => ({ c, ...x, rate: x.w / x.g }));
+  // at least 3 games, more over many years (1 in every 100 games played)
+  const minC = Math.max(3, Math.round(played.length / 100));
+  const clist = [...champs.entries()].filter(([c, x]) => c && x.g >= minC).map(([c, x]) => ({ c, ...x, rate: x.w / x.g }));
   const rec = (x: { w: number; g: number }) => `${x.w}-${x.g - x.w} (${Math.round((x.w / x.g) * 100)}%)`;
   const worst = clist.filter((x) => x.rate <= 0.35).sort((a, b) => a.rate - b.rate || b.g - a.g).slice(0, 5);
   if (worst.length) {
@@ -161,7 +186,7 @@ export function eventFacts(games: Game[], event: string): Fact[] {
         ? tl("{champ} has lost all {n} of its games at {event}", { champ: champName(w0.c), n: w0.g, event })
         : tl("{champ} is {rec} at {event}", { champ: champName(w0.c), rec: rec(w0), event }),
       rows: worst.map((x) => ({ label: champName(x.c), champ: x.c, value: rec(x) })),
-      note: tl("Champions with at least 3 games."),
+      note: tl("Champions with at least {n} games.", { n: minC }),
     });
   }
   const best = clist.filter((x) => x.rate >= 0.65).sort((a, b) => b.rate - a.rate || b.g - a.g).slice(0, 5);
@@ -173,7 +198,7 @@ export function eventFacts(games: Game[], event: string): Fact[] {
         ? tl("{champ} has won all {n} of its games at {event}", { champ: champName(b0.c), n: b0.g, event })
         : tl("{champ} is {rec} at {event}", { champ: champName(b0.c), rec: rec(b0), event }),
       rows: best.map((x) => ({ label: champName(x.c), champ: x.c, value: rec(x) })),
-      note: tl("Champions with at least 3 games."),
+      note: tl("Champions with at least {n} games.", { n: minC }),
     });
   }
 
@@ -184,7 +209,7 @@ export function eventFacts(games: Game[], event: string): Fact[] {
     g.team.forEach((side, i) => {
       for (const l of side.players) ones.push({ l, side, opp: g.team[1 - i], g, won: g.w === i + 1 });
     });
-  const gameSub = (o: One) => tl("Game {n} vs {opp}", { n: o.g.n, opp: o.opp.c || o.opp.name });
+  const gameSub = (o: One) => at(o.g) + tl("Game {n} vs {opp}", { n: o.g.n, opp: o.opp.c || o.opp.name });
   const big = top(ones, (o) => o.l.k * 100 + kdaOf(o.l.k, o.l.d, o.l.a));
   if (big.length) {
     const o = big[0];
@@ -239,7 +264,7 @@ export function eventFacts(games: Game[], event: string): Fact[] {
         const [k, d, a] = sum(s);
         return {
           label: who(s.c, s.name), player: s.u, value: line(k, d, a), match: { slug: s.series },
-          sub: s.games.map((o) => tl("G{n}: {line} on {champ}", { n: o.g.n, line: line(o.l.k, o.l.d, o.l.a), champ: champName(o.l.champ) })).join(" · "),
+          sub: at(s.games[0].g) + s.games.map((o) => tl("G{n}: {line} on {champ}", { n: o.g.n, line: line(o.l.k, o.l.d, o.l.a), champ: champName(o.l.champ) })).join(" · "),
         };
       }),
     });
@@ -252,7 +277,8 @@ export function eventFacts(games: Game[], event: string): Fact[] {
     facts.push({
       id: "towers", title: tl("Lost without a tower"),
       headline: tl("{team} lost Game {n} vs {opp} without destroying a single tower", { team: x.side.c || x.side.name, n: x.g.n, opp: x.opp.c || x.opp.name }),
-      rows: noTower.slice(0, 5).map((x) => ({ label: x.side.c || x.side.name, team: x.side.u, value: tl("Game {n} vs {opp}", { n: x.g.n, opp: x.opp.c || x.opp.name }), match: { slug: x.g.series, game: x.g.n } })),
+      rows: noTower.slice(0, 5).map((x) => ({ label: x.side.c || x.side.name, team: x.side.u, value: "", sub: at(x.g) + tl("Game {n} vs {opp}", { n: x.g.n, opp: x.opp.c || x.opp.name }), match: { slug: x.g.series, game: x.g.n } })),
+      ...(noTower.length > 5 ? { note: tl("{n} games in all.", { n: noTower.length }) } : {}),
     });
   }
 
@@ -267,7 +293,7 @@ export function eventFacts(games: Game[], event: string): Fact[] {
     facts.push({
       id: "fast", title: tl("Fastest wins"),
       headline: tl("{team} beat {opp} in {time}, the fastest win at {event}", { team: wname(s0), opp: lname(s0), time: mmss(s0.min || 0), event }),
-      rows: short.map((g) => ({ label: `${wname(g)} vs ${lname(g)}`, value: mmss(g.min || 0), sub: tl("Game {n}", { n: g.n }), match: { slug: g.series, game: g.n } })),
+      rows: short.map((g) => ({ label: `${wname(g)} vs ${lname(g)}`, value: mmss(g.min || 0), sub: at(g) + tl("Game {n}", { n: g.n }), match: { slug: g.series, game: g.n } })),
     });
   }
   return facts;
