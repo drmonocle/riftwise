@@ -26,6 +26,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -33,7 +34,7 @@ import (
 )
 
 const (
-	version  = "1.14.0"
+	version  = "1.15.0"
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -84,6 +85,15 @@ type entry struct {
 	index       bool
 }
 
+// intlPage: what the stats build wrote for one Worlds / MSI / First Stand page (seo_pages.py): its title and
+// description, a plain-HTML summary (winner, final, standings, leaders, every series) and schema.org data.
+type intlPage struct {
+	Title string            `json:"title"`
+	Desc  string            `json:"desc"`
+	HTML  string            `json:"html"`
+	LD    []json.RawMessage `json:"ld"`
+}
+
 type store struct {
 	mu        sync.RWMutex
 	site      string // the web build (index.html)
@@ -92,6 +102,7 @@ type store struct {
 	pages     map[string]map[string]entry  // kind -> slug -> entry
 	order     map[string][]string          // kind -> slugs in file order (for sitemaps)
 	alias     map[string]map[string]string // kind -> old slug or short name -> current (team: "sk-telecom-t1", league: "lck")
+	intl      map[string]intlPage          // "worlds", "worlds/2025", "msi/all"... -> the page's summary (hub/seo/pages)
 	failed    string                       // a build without hub files (logged once, not retried)
 	indexHTML string
 	indexMod  time.Time
@@ -162,7 +173,17 @@ func (s *store) refresh() {
 	if b, err := os.ReadFile(filepath.Join(hub, "alias.json")); err == nil && json.Unmarshal(b, &a) == nil {
 		alias["team"], alias["league"] = a.Team, a.League
 	}
-	s.pages, s.order, s.alias, s.version = pages, order, alias, latest.Version
+	// worlds.json, worlds.2025.json, msi.all.json... -> "worlds", "worlds/2025", "msi/all"
+	intl := map[string]intlPage{}
+	if files, err := filepath.Glob(filepath.Join(hub, "seo", "pages", "*.json")); err == nil {
+		for _, f := range files {
+			var ip intlPage
+			if b, err := os.ReadFile(f); err == nil && json.Unmarshal(b, &ip) == nil && ip.Title != "" {
+				intl[strings.Replace(strings.TrimSuffix(filepath.Base(f), ".json"), ".", "/", 1)] = ip
+			}
+		}
+	}
+	s.pages, s.order, s.alias, s.version, s.intl = pages, order, alias, latest.Version, intl
 	log.Printf("stats %s loaded: %d teams, %d players, %d events, %d matches, %d champions, %d leagues",
 		latest.Version, len(pages["team"]), len(pages["player"]), len(pages["event"]), len(pages["game"]), len(pages["champ"]), len(pages["league"]))
 }
@@ -177,7 +198,8 @@ var (
 
 // Links in every page's <noscript> summary (paths under the site's root)
 var noscriptLinks = [][2]string{
-	{"", "RiftWise"}, {"stats", "Pro Stats"}, {"stats/rankings", "Power Rankings"}, {"stats/best", "Best games"}, {"stats/tournaments", "Tournaments"},
+	{"", "RiftWise"}, {"stats", "Pro Stats"}, {"stats/worlds", "Worlds"}, {"stats/worlds/all", "Every Worlds winner"}, {"stats/msi", "MSI"},
+	{"stats/first-stand", "First Stand"}, {"stats/rankings", "Power Rankings"}, {"stats/best", "Best games"}, {"stats/tournaments", "Tournaments"},
 	{"stats/leagues", "Leagues"}, {"stats/champions", "Champions"}, {"stats/patches", "Patches"}, {"stats/records", "Records"},
 	{"stats/titles", "Title winners"}, {"stats/compare", "Compare"}, {"stats/prep", "Match prep"}, {"stats/draft", "Draft board"},
 	{"stats/finder", "Game finder"}, {"stats/data", "CSV data"}, {"team/t1", "T1"}, {"team/geng", "Gen.G"},
@@ -212,7 +234,7 @@ func withAbout(m map[string]any, about map[string]any) map[string]any {
 	return m
 }
 
-func (s *store) page(title, desc, canonical string, index bool, og string, about map[string]any) string {
+func (s *store) page(title, desc, canonical string, index bool, og string, about map[string]any, extra *intlPage) string {
 	s.mu.RLock()
 	doc, ver := s.indexHTML, s.version
 	s.mu.RUnlock()
@@ -254,11 +276,20 @@ func (s *store) page(title, desc, canonical string, index bool, og string, about
 		"isPartOf": map[string]any{"@type": "WebSite", "name": "RiftWise", "alternateName": []string{"RiftWise.gg", "RiftWise Pro LoL Stats"}, "url": publicURL},
 	}, about)); err == nil {
 		tags.WriteString(`    <script type="application/ld+json">` + string(ld) + `</script>` + "\n")
+		if extra != nil {
+			for _, x := range extra.LD {
+				tags.WriteString(`    <script type="application/ld+json">` + string(x) + `</script>` + "\n")
+			}
+		}
 	}
 	tags.WriteString("  </head>")
 	doc = strings.Replace(doc, "</head>", tags.String(), 1)
 	var ns strings.Builder
-	ns.WriteString(`<div id="root"></div><noscript><main><h1>` + t + `</h1><p>` + d + `</p><nav aria-label="RiftWise">`)
+	ns.WriteString(`<div id="root"></div><noscript><main><h1>` + t + `</h1><p>` + d + `</p>`)
+	if extra != nil {
+		ns.WriteString(extra.HTML) // built and escaped by the stats build
+	}
+	ns.WriteString(`<nav aria-label="RiftWise">`)
 	for i, l := range noscriptLinks {
 		if i > 0 {
 			ns.WriteString(" · ")
@@ -275,6 +306,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(strings.Trim(rest, "/"), "/")
 	status, title, desc, index, og := http.StatusOK, "", "", true, ""
 	var about map[string]any
+	var extra *intlPage
 
 	switch {
 	case parts[0] == "og":
@@ -319,6 +351,14 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 			title = "Pro LoL tournaments in " + parts[2] + " | RiftWise"
 			desc = "Every professional League of Legends tournament in " + parts[2] + ": results, brackets, standings and stats."
 		}
+		if intlNames[sec] != "" {
+			s.mu.RLock()
+			ip, ok := s.intl[strings.Join(parts[1:], "/")]
+			s.mu.RUnlock()
+			if ok {
+				title, desc, extra = ip.Title, ip.Desc, &ip
+			}
+		}
 	case (len(parts) == 2 || (len(parts) == 3 && parts[0] == "league" && isYear(parts[2]))) && kinds[parts[0]] != "":
 		kind, slug := kinds[parts[0]], strings.ToLower(parts[1])
 		s.mu.RLock()
@@ -353,7 +393,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	canonical := publicURL + rest
-	body := s.page(title, desc, canonical, index, og, about)
+	body := s.page(title, desc, canonical, index, og, about, extra)
 	if body == "" {
 		http.Error(w, "RiftWise is starting, try again in a moment", http.StatusServiceUnavailable)
 		return
@@ -409,6 +449,17 @@ func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 	if p[0] == "sections" {
 		for sec := range sections {
 			fmt.Fprintf(w, "<url><loc>%sstats%s</loc></url>\n", publicURL, map[bool]string{true: "", false: "/" + sec}[sec == ""])
+		}
+		// every year (and every year together) of Worlds, MSI and First Stand
+		keys := make([]string, 0, len(s.intl))
+		for k := range s.intl {
+			if strings.Contains(k, "/") {
+				keys = append(keys, k)
+			}
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			fmt.Fprintf(w, "<url><loc>%sstats/%s</loc></url>\n", publicURL, k)
 		}
 		fmt.Fprintf(w, "<url><loc>%sabout</loc></url>\n", publicURL)
 	} else if _, ok := s.pages[p[0]]; ok {

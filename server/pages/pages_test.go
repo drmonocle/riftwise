@@ -47,6 +47,8 @@ func testSite(t *testing.T) *store {
 	for k, v := range files {
 		must(os.WriteFile(filepath.Join(hub, "seo", k+".tsv"), []byte(v), 0o644))
 	}
+	must(os.MkdirAll(filepath.Join(hub, "seo", "pages"), 0o755))
+	must(os.WriteFile(filepath.Join(hub, "seo", "pages", "worlds.2025.json"), []byte(`{"title": "Worlds 2025: results | RiftWise", "desc": "T1 won Worlds 2025.", "html": "<h2>Final standings</h2><ol><li>T1</li></ol>", "ld": [{"@type": "SportsEvent", "name": "League of Legends World Championship 2025"}]}`), 0o644))
 	must(os.WriteFile(filepath.Join(hub, "alias.json"), []byte(`{"team": {"sk-telecom-t1": "t1"}, "league": {"worlds": "world-championship"}}`), 0o644))
 	s := &store{site: dir, stats: filepath.Join(dir, "stats")}
 	s.refresh()
@@ -122,7 +124,7 @@ func TestUnknownAndOldNames(t *testing.T) {
 	if w := get(s, "/riftwise/stats/worlds"); w.Code != 200 || !strings.Contains(w.Body.String(), "Worlds hub") {
 		t.Errorf("worlds page: %d", w.Code)
 	}
-	if w := get(s, "/riftwise/stats/worlds/2025"); w.Code != 200 || !strings.Contains(w.Body.String(), "LoL Worlds 2025") {
+	if w := get(s, "/riftwise/stats/worlds/2024"); w.Code != 200 || !strings.Contains(w.Body.String(), "LoL Worlds 2024") {
 		t.Errorf("worlds of a year: %d", w.Code)
 	}
 	if w := get(s, "/riftwise/stats/worlds/all"); w.Code != 200 || !strings.Contains(w.Body.String(), "every year") {
@@ -178,6 +180,23 @@ func TestUnknownAndOldNames(t *testing.T) {
 	}
 	if w := get(s, "/riftwise/stats/nope"); w.Code != 404 {
 		t.Errorf("unknown section: %d", w.Code)
+	}
+}
+
+// Worlds / MSI / First Stand pages carry the build's summary: title, description, the plain-HTML facts and schema.org data.
+func TestIntlSummaries(t *testing.T) {
+	s := testSite(t)
+	body := get(s, "/riftwise/stats/worlds/2025").Body.String()
+	for _, want := range []string{"<title>Worlds 2025: results | RiftWise</title>", "T1 won Worlds 2025.", "<h2>Final standings</h2>", `"SportsEvent"`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("worlds 2025 page lacks %q", want)
+		}
+	}
+	if strings.Contains(get(s, "/riftwise/stats/worlds/2024").Body.String(), "Final standings") {
+		t.Error("a year without a summary got one")
+	}
+	if !strings.Contains(get(s, "/riftwise/sitemap-sections-1.xml").Body.String(), "<loc>https://riftwise.gg/stats/worlds/2025</loc>") {
+		t.Error("worlds 2025 not in the sitemap")
 	}
 }
 
