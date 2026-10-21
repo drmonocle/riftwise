@@ -164,6 +164,15 @@ def riot_index(cache_path: str = None) -> dict:
     return {"p": index.get("p", {}), "n": index.get("n", {}), "c": index.get("c", {})}
 
 
+_FOLD = str.maketrans({"ø": "o", "æ": "ae", "œ": "oe", "ß": "ss", "đ": "d", "ł": "l", "þ": "th", "ı": "i"})
+
+
+def fold(s: str) -> str:
+    """Accents and special letters to plain ones ("løs" -> "los", "é" -> "e")."""
+    s = unicodedata.normalize("NFKD", (s or "").translate(_FOLD))
+    return "".join(ch for ch in s if not unicodedata.combining(ch))
+
+
 def riot_logo(index: dict, name: str, code: str = None):
     """A team's logo from riot_index(): its name, else its code, else the one Riot name that starts like it."""
     n = norm(name)
@@ -171,6 +180,10 @@ def riot_logo(index: dict, name: str, code: str = None):
         return index["n"][n]
     if code and norm(code) in index["c"]:
         return index["c"][norm(code)]
+    # letters Riot writes plainly: "LØS" is "LOS" in Riot's list
+    folded = {fold(k): v for k, v in index["n"].items()}
+    if fold(n) in folded:
+        return folded[fold(n)]
     # names that start like it ("Gen.G" -> "Gen.G Esports", not also "Gen.G Global Academy"): the closest one,
     # when only one is closest
     near = sorted((len(k), v) for k, v in index["n"].items() if n and len(n) >= 3 and len(k) >= 3 and (k.startswith(n) or n.startswith(k)))
