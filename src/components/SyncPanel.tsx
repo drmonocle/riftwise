@@ -4,7 +4,7 @@
  * recovery code, sync code, download, sign out (everywhere), delete.
  */
 import React, { useEffect, useState } from "react";
-import { Cloud, KeyRound, LogIn, UserPlus, Hash, RefreshCw, Download, LogOut, Trash2, X, Copy, Check, ShieldCheck, QrCode as QrIcon } from "lucide-react";
+import { Cloud, KeyRound, LogIn, UserPlus, Hash, RefreshCw, Download, LogOut, Trash2, X, Copy, Check, ShieldCheck, QrCode as QrIcon, History } from "lucide-react";
 import { QrCode } from "./QrCode";
 import { tl, locale } from "../i18n";
 import { IS_WEB } from "../platform";
@@ -16,6 +16,8 @@ import {
   exportData,
   getConfig,
   lastSynced,
+  followBackups,
+  restoreFollows,
   login,
   loginWithCode,
   newRecoveryCode,
@@ -177,12 +179,14 @@ export const SyncPanel: React.FC<{ onOpenUrl: (url: string) => void }> = ({ onOp
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [last, setLast] = useState(lastSynced());
+  const [backups, setBackups] = useState(followBackups());
 
   useEffect(() => {
     getConfig().then(setConfig, () => {});
     const on = (e: Event) => {
       setAccount(syncAccount());
       setLast(lastSynced());
+      setBackups(followBackups());
       const d = (e as CustomEvent<{ error?: string }>).detail;
       if (d && d.error !== undefined) setError(d.error ? errorText(d.error) : "");
     };
@@ -334,6 +338,34 @@ export const SyncPanel: React.FC<{ onOpenUrl: (url: string) => void }> = ({ onOp
                 );
               })}
             </div>
+
+            {/* what this device followed before sync last changed it: one tap puts a list back */}
+            {backups.length > 0 && (
+              <details className="border-t border-rw-border pt-2">
+                <summary className="cursor-pointer text-rw-sub">
+                  <History className="w-3.5 h-3.5 inline mr-1.5" />
+                  {tl("Earlier copies of what you follow")}
+                </summary>
+                <p className="text-[11px] text-rw-muted mt-1.5">
+                  {tl("When sync changes what this device follows, the list from before is kept here, in case something you removed came back.")}
+                </p>
+                <ul className="mt-1.5 space-y-1">
+                  {backups.map((b, i) => (
+                    <li key={b.at} className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-rw-sub">
+                        {new Date(b.at).toLocaleString(locale(), { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                        {" · "}
+                        {tl("{teams} teams, {players} players", { teams: b.follows.teams.length, players: b.follows.players.length })}
+                        <span className="text-rw-muted"> ({[...b.follows.teams, ...b.follows.players].slice(0, 6).join(", ")}{b.follows.teams.length + b.follows.players.length > 6 ? "…" : ""})</span>
+                      </span>
+                      <button type="button" className={plain} onClick={() => { restoreFollows(i); setBackups(followBackups()); }}>
+                        {tl("Put this back")}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
 
             <div className="flex flex-wrap gap-2 pt-1">
               {IS_WEB && (

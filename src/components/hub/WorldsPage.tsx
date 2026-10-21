@@ -1,0 +1,543 @@
+/**
+ * The Worlds page: headline facts from every game so far, and pickers for the Swiss stage and the knockouts with
+ * the power ratings' chances (pick by hand, fill with the favourites, roll by the chances or flip a coin, or play
+ * the rest out thousands of times to see who gets how far). Picks stay on this device.
+ */
+import React, { useEffect, useMemo, useState } from "react";
+import { Check, Copy, Dice5, Eraser, Lock, RefreshCw, Shuffle, Sparkles, TrendingUp, Trophy } from "lucide-react";
+import { eventTitle, stageName, tl } from "../../i18n";
+import { loadEventLines, loadHubEvent, loadRatings } from "../../hub/data";
+import type { HubEvent, HubRatings } from "../../hub/types";
+import { hubShareUrl, navigateHub } from "../../hub/route";
+import {
+  coin, favourites, quarterPairs, rng, roller, runKnockout, runSwiss, simulate,
+  type Fill, type Picks, type RealSeries, type TeamOdds, type WMatch, type WTeam,
+} from "../../hub/worlds";
+import { eventFacts, factText, gamesOf, type Fact } from "../../hub/worldsFacts";
+import { ChampIcon, Failed, HubLink, Loading, PlayerLink, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
+
+const FIRST_SWISS = 2023; // Worlds has had a Swiss stage since 2023
+const pill = (on: boolean) =>
+  `inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+    on ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50"
+  }`;
+const btn = "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50 disabled:opacity-50";
+const pctText = (p: number) => (p > 0 && p < 0.005 ? "<1%" : `${Math.round(p * 100)}%`);
+
+// ── saved picks (this device) ─────────────────────────────────────────────
+
+interface Saved {
+  seed: number;
+  koSeed: number;
+  swiss: Picks;
+  ko: Picks;
+}
+const storeKey = (year: string) => `riftwatch_worlds_${year}`;
+function loadSaved(year: string): Saved {
+  try {
+    const s = JSON.parse(localStorage.getItem(storeKey(year)) || "null");
+    if (s && typeof s.seed === "number") return { seed: s.seed, koSeed: s.koSeed || 1, swiss: s.swiss || {}, ko: s.ko || {} };
+  } catch {
+    /* fresh */
+  }
+  return { seed: 1, koSeed: 1, swiss: {}, ko: {} };
+}
+function useSaved(year: string): [Saved, (s: Saved) => void] {
+  const [saved, setSaved] = useState(() => loadSaved(year));
+  useEffect(() => setSaved(loadSaved(year)), [year]);
+  const put = (s: Saved) => {
+    setSaved(s);
+    try {
+      localStorage.setItem(storeKey(year), JSON.stringify(s));
+    } catch {
+      /* storage full: picks last this visit */
+    }
+  };
+  return [saved, put];
+}
+
+// ── the page ──────────────────────────────────────────────────────────────
+
+type Tab = "facts" | "swiss" | "ko";
+
+interface Loaded {
+  parent: HubEvent;
+  stages: HubEvent[];
+  main: HubEvent | null;
+  ratings: HubRatings | null;
+}
+
+async function loadWorlds(year: string): Promise<Loaded> {
+  const parent = await loadHubEvent(`worlds-${year}`);
+  const kids = parent.children?.length ? parent.children : [];
+  const stages = kids.length ? (await Promise.all(kids.map((k) => loadHubEvent(k.u).catch(() => null)))).filter((x): x is HubEvent => !!x) : [parent];
+  const main = stages.find((s) => /main/i.test(s.u)) || (kids.length ? null : parent);
+  const ratings = await loadRatings().catch(() => null);
+  return { parent, stages, main, ratings };
+}
+
+export const WorldsPage: React.FC<{ year?: string }> = ({ year: asked }) => {
+  const thisYear = String(new Date().getFullYear());
+  const year = asked || thisYear;
+  const state = useLoad(() => loadWorlds(year), [year]);
+  const [tab, setTab] = useState<Tab>("facts");
+  usePageTitle(tl("Worlds {year}", { year }));
+  const years = useMemo(() => Array.from({ length: Number(thisYear) - 2010 }, (_, i) => String(Number(thisYear) - i)), [thisYear]);
+  const swissYear = Number(year) >= FIRST_SWISS;
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="text-lg font-extrabold text-rw-text flex items-center gap-2 mr-auto">
+          <Trophy className="w-5 h-5 text-rw-accent" />
+          {tl("Worlds {year}", { year })}
+        </h2>
+        <label className="text-xs text-rw-sub flex items-center gap-1.5">
+          {tl("Year")}
+          <select
+            value={year}
+            onChange={(e) => navigateHub({ kind: "worlds", year: e.target.value === thisYear ? undefined : e.target.value }, { replace: true })}
+            className="bg-rw-surface border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text"
+          >
+            {years.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <div className="flex flex-wrap gap-1.5" role="tablist">
+        <button type="button" role="tab" aria-selected={tab === "facts"} className={pill(tab === "facts")} onClick={() => setTab("facts")}>
+          <Sparkles className="w-3.5 h-3.5" />
+          {tl("Facts")}
+        </button>
+        {swissYear && (
+          <>
+            <button type="button" role="tab" aria-selected={tab === "swiss"} className={pill(tab === "swiss")} onClick={() => setTab("swiss")}>
+              <Shuffle className="w-3.5 h-3.5" />
+              {tl("Swiss stage picker")}
+            </button>
+            <button type="button" role="tab" aria-selected={tab === "ko"} className={pill(tab === "ko")} onClick={() => setTab("ko")}>
+              <Trophy className="w-3.5 h-3.5" />
+              {tl("Knockout picker")}
+            </button>
+          </>
+        )}
+      </div>
+      {state.error ? (
+        <p className="text-xs text-rw-sub">{tl("No Worlds {year} in the stats yet.", { year })}</p>
+      ) : !state.data ? (
+        <Loading />
+      ) : tab === "facts" || !swissYear ? (
+        <FactsTab d={state.data} year={year} />
+      ) : (
+        <Pickers d={state.data} year={year} tab={tab} live={year === thisYear} />
+      )}
+    </div>
+  );
+};
+
+// ── facts ─────────────────────────────────────────────────────────────────
+
+const FactsTab: React.FC<{ d: Loaded; year: string }> = ({ d, year }) => {
+  const [stage, setStage] = useState<string>("all");
+  const lines = useLoad(() => Promise.all(d.stages.map((s) => loadEventLines(s.u).catch(() => null))), [d.stages.map((s) => s.u).join()]);
+  const last = d.stages.map((s) => s.end || s.start || "").sort().pop();
+  const [hidden, reveal] = useHidden(`worlds-facts:${year}`, last);
+  const facts = useMemo<Fact[]>(() => {
+    if (!lines.data) return [];
+    const files = lines.data.map((f, i) => (stage === "all" || d.stages[i].u === stage ? f : null));
+    const name = eventTitle(stage === "all" ? d.parent.n : d.stages.find((s) => s.u === stage)?.n || d.parent.n);
+    return eventFacts(gamesOf(files), name);
+  }, [lines.data, stage, d]);
+  if (lines.error) return <Failed />;
+  if (!lines.data) return <Loading />;
+  if (hidden)
+    return (
+      <p className="text-xs text-rw-sub flex items-center gap-2">
+        {tl("Hidden while spoiler mode is on.")} <RevealButton onReveal={reveal} />
+      </p>
+    );
+  return (
+    <div className="space-y-3">
+      {d.stages.length > 1 && (
+        <div className="flex flex-wrap gap-1.5">
+          <button type="button" className={pill(stage === "all")} onClick={() => setStage("all")}>
+            {tl("Whole event")}
+          </button>
+          {d.stages.map((s) => (
+            <button key={s.u} type="button" className={pill(stage === s.u)} onClick={() => setStage(s.u)}>
+              {stageName(s.n.replace(d.parent.n, "").trim()) || eventTitle(s.n)}
+            </button>
+          ))}
+        </div>
+      )}
+      {!facts.length ? (
+        <p className="text-xs text-rw-sub">{tl("No games with full stats yet. Facts show up as soon as the first games are in.")}</p>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2">
+          {facts.map((f) => (
+            <FactCard key={f.id} f={f} year={year} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const FactCard: React.FC<{ f: Fact; year: string }> = ({ f, year }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard
+      ?.writeText(factText(f, hubShareUrl({ kind: "worlds", year })))
+      .then(() => {
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1500);
+      })
+      .catch(() => {});
+  };
+  return (
+    <Section
+      title={f.title}
+      share={`worlds-${year}-${f.id}`}
+      right={
+        <button type="button" className={btn} onClick={copy} aria-label={tl("Copy as text")}>
+          {copied ? <Check className="w-3.5 h-3.5 text-rw-teal" /> : <Copy className="w-3.5 h-3.5" />}
+          {tl("Text")}
+        </button>
+      }
+    >
+      <p className="text-sm font-semibold text-rw-text leading-snug">{f.headline}</p>
+      <ol className="text-xs space-y-1.5">
+        {f.rows.map((r, i) => (
+          <li key={i} className="flex items-start gap-2 min-w-0">
+            <span className="w-4 text-rw-muted text-right shrink-0">{i + 1}.</span>
+            {r.champ && <ChampIcon name={r.champ} size={18} className="shrink-0" />}
+            <span className="min-w-0 flex-1">
+              {r.player ? (
+                <PlayerLink name={r.label} u={r.player} />
+              ) : r.team ? (
+                <TeamLink name={r.label} u={r.team} />
+              ) : r.match ? (
+                <HubLink to={{ kind: "match", slug: r.match.slug, game: r.match.game }} className="hover:text-rw-accent hover:underline">
+                  {r.label}
+                </HubLink>
+              ) : (
+                <span>{r.label}</span>
+              )}
+              {r.sub && <span className="block text-[11px] text-rw-muted break-words">{r.sub}</span>}
+            </span>
+            <span className="font-bold text-rw-accent shrink-0">{r.value}</span>
+          </li>
+        ))}
+      </ol>
+      {f.note && <p className="text-[10px] text-rw-muted">{f.note}</p>}
+    </Section>
+  );
+};
+
+// ── pickers ───────────────────────────────────────────────────────────────
+
+function teamsOf(main: HubEvent, ratings: HubRatings | null): WTeam[] {
+  const rows = new Map((ratings?.teams || []).map((r) => [r[0], r]));
+  const codes = new Map<string, string>();
+  for (const st of main.stages || [])
+    for (const s of st.series || []) {
+      if (s.au && s.ac) codes.set(s.au, s.ac);
+      if (s.bu && s.bc) codes.set(s.bu, s.bc);
+    }
+  return (main.teams || [])
+    .filter((t) => t.u)
+    .map((t) => {
+      const r = rows.get(t.u as string);
+      return { u: t.u as string, n: t.t, c: codes.get(t.u as string) || r?.[2] || t.t.slice(0, 3).toUpperCase(), r: r?.[5] ?? 1500, league: r?.[3] || "" };
+    });
+}
+
+function realOf(main: HubEvent, re: RegExp, round: (name: string) => number): RealSeries[] {
+  return (main.stages || [])
+    .filter((st) => re.test(st.name || ""))
+    .flatMap((st) =>
+      (st.series || [])
+        .filter((s) => s.au && s.bu)
+        .map((s) => ({ round: round(st.name || ""), a: s.au as string, b: s.bu as string, bo: s.bo || 1, w: s.w || 0, sa: s.sa, sb: s.sb, date: s.date })),
+    );
+}
+
+const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean }> = ({ d, year, tab, live }) => {
+  const [saved, setSaved] = useSaved(year);
+  const [odds, setOdds] = useState<Record<string, TeamOdds> | null>(null);
+  const [running, setRunning] = useState(false);
+  const [keepPicks, setKeepPicks] = useState(false);
+  const main = d.main;
+  const teams = useMemo(() => (main ? teamsOf(main, d.ratings) : []), [main, d.ratings]);
+  const real = useMemo(() => (main ? realOf(main, /^round \d/i, (n) => Number(/\d+/.exec(n)?.[0] || 0)) : []), [main]);
+  const realKo = useMemo(
+    () => (main ? realOf(main, /quarter|semi|final/i, (n) => (/quarter/i.test(n) ? 1 : /semi/i.test(n) ? 2 : 3)) : []),
+    [main],
+  );
+  const adjust = d.ratings?.adjust;
+  const swiss = useMemo(() => runSwiss(teams, real, saved.swiss, saved.seed, adjust), [teams, real, saved.swiss, saved.seed, adjust]);
+  const pairs = useMemo(() => (swiss.done ? quarterPairs(swiss.rec, saved.koSeed, realKo.filter((s) => s.round === 1)) : []), [swiss, saved.koSeed, realKo]);
+  const ko = useMemo(() => (pairs.length === 4 ? runKnockout(teams, pairs, realKo, saved.ko, adjust) : null), [teams, pairs, realKo, saved.ko, adjust]);
+  const byU = useMemo(() => new Map(teams.map((t) => [t.u, t])), [teams]);
+  useEffect(() => setOdds(null), [year, keepPicks, saved]);
+
+  if (!main || teams.length < 16 || !real.some((s) => s.round === 1))
+    return <p className="text-xs text-rw-sub">{tl("The Swiss stage draw isn't in the stats yet. The picker opens once Round 1 is drawn.")}</p>;
+
+  const pickSwiss = (m: WMatch, u: string) => {
+    if (m.from === "real") return;
+    const next = { ...saved.swiss };
+    if (next[m.key] === u) delete next[m.key];
+    else next[m.key] = u;
+    setSaved({ ...saved, swiss: next });
+  };
+  const pickKo = (m: WMatch, u: string) => {
+    if (m.from === "real") return;
+    const next = { ...saved.ko };
+    if (next[m.key] === u) delete next[m.key];
+    else next[m.key] = u;
+    setSaved({ ...saved, ko: next });
+  };
+  // fill every open match (later rounds are drawn as the earlier ones fill), then keep those as picks
+  const fillSwiss = (fill: Fill) => {
+    const s = runSwiss(teams, real, saved.swiss, saved.seed, adjust, fill);
+    const picks = { ...saved.swiss };
+    for (const m of s.rounds.flat()) if (m.from === "fill") picks[m.key] = m.w === 1 ? m.a : m.b;
+    setSaved({ ...saved, swiss: picks });
+  };
+  const fillKo = (fill: Fill) => {
+    if (pairs.length !== 4) return;
+    const k = runKnockout(teams, pairs, realKo, saved.ko, adjust, fill);
+    const picks = { ...saved.ko };
+    for (const m of [...k.qf, ...k.sf, ...(k.final ? [k.final] : [])]) if (m.from === "fill") picks[m.key] = m.w === 1 ? m.a : m.b;
+    setSaved({ ...saved, ko: picks });
+  };
+  const runOdds = () => {
+    setRunning(true);
+    window.setTimeout(() => {
+      setOdds(simulate(teams, real, realKo, adjust, 10000, keepPicks ? { ...saved.swiss, ...saved.ko } : {}, Date.now() % 100000));
+      setRunning(false);
+    }, 30);
+  };
+  const seed = () => Math.floor(Math.random() * 2 ** 31);
+  const fills = (onFill: (f: Fill) => void, clear: () => void, redraw: (() => void) | null) => (
+    <div className="flex flex-wrap gap-1.5">
+      <button type="button" className={btn} onClick={() => onFill(favourites)} title={tl("Every open match goes to the team with the better chance")}>
+        <TrendingUp className="w-3.5 h-3.5" />
+        {tl("Favourites")}
+      </button>
+      <button type="button" className={btn} onClick={() => onFill(roller(rng(seed())))} title={tl("Every open match is rolled by its chances: a 70% favourite wins 7 times in 10")}>
+        <Dice5 className="w-3.5 h-3.5" />
+        {tl("Roll by chances")}
+      </button>
+      <button type="button" className={btn} onClick={() => onFill(coin(rng(seed())))}>
+        <Shuffle className="w-3.5 h-3.5" />
+        {tl("Coin flip")}
+      </button>
+      {redraw && (
+        <button type="button" className={btn} onClick={redraw} title={tl("A new random draw for the rounds Riot hasn't drawn yet")}>
+          <RefreshCw className="w-3.5 h-3.5" />
+          {tl("Redraw")}
+        </button>
+      )}
+      <button type="button" className={btn} onClick={clear}>
+        <Eraser className="w-3.5 h-3.5" />
+        {tl("Clear my picks")}
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {!live && <p className="text-[11px] text-rw-muted">{tl("Chances use today's power ratings, not the ones from that year.")}</p>}
+      {tab === "swiss" ? (
+        <>
+          <Section title={tl("Swiss stage")} share={`worlds-${year}-swiss`}>
+            <p className="text-[11px] text-rw-muted">
+              {tl("Tap a team to pick it. Played matches are locked in. 3 wins goes through, 3 losses goes out; matches that decide either are best of 3.")}
+            </p>
+            {fills(fillSwiss, () => setSaved({ ...saved, swiss: {} }), () => setSaved({ ...saved, seed: seed() }))}
+            <div className="grid gap-3 lg:grid-cols-5 sm:grid-cols-2">
+              {swiss.rounds.map((r, i) => (
+                <div key={i} className="space-y-1.5 min-w-0">
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-rw-sub">{tl("Round {n}", { n: i + 1 })}</h4>
+                  {/* phones: two matches side by side */}
+                  <div className="grid grid-cols-2 sm:grid-cols-1 gap-1.5">
+                    {r.map((m) => (
+                      <MatchBox key={m.key} m={m} byU={byU} onPick={(u) => pickSwiss(m, u)} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {swiss.waiting > 0 && (
+                <p className="text-[11px] text-rw-muted self-start">{tl("Pick every match of round {n} to draw the next one.", { n: swiss.waiting - 1 })}</p>
+              )}
+            </div>
+            <Records rec={swiss.rec} byU={byU} />
+          </Section>
+        </>
+      ) : (
+        <Section title={tl("Knockouts")} share={`worlds-${year}-knockouts`}>
+          {!swiss.done ? (
+            <p className="text-xs text-rw-sub">
+              {tl("Finish the Swiss stage first: pick every match, or use Favourites or Roll by chances there.")}{" "}
+              <button type="button" className="text-rw-teal hover:underline" onClick={() => fillSwiss(favourites)}>
+                {tl("Fill the Swiss stage with the favourites")}
+              </button>
+            </p>
+          ) : (
+            <>
+              <p className="text-[11px] text-rw-muted">{tl("The two 3-0 teams draw 3-2 teams; the other four are paired at random. Every match is best of 5.")}</p>
+              {fills(
+                fillKo,
+                () => setSaved({ ...saved, ko: {} }),
+                realKo.some((s) => s.round === 1) ? null : () => setSaved({ ...saved, koSeed: seed(), ko: {} }),
+              )}
+              {ko && <Bracket ko={ko} byU={byU} onPick={pickKo} />}
+            </>
+          )}
+        </Section>
+      )}
+      <Section title={tl("Chances from here")} share={`worlds-${year}-chances`}>
+        <p className="text-[11px] text-rw-muted">
+          {tl("Plays the rest of Worlds 10,000 times, each open match rolled by its chances, and counts how far each team gets.")}
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" className={pill(false)} onClick={runOdds} disabled={running}>
+            <Dice5 className={`w-3.5 h-3.5 ${running ? "animate-spin" : ""}`} />
+            {running ? tl("Playing it out…") : tl("Run 10,000 times")}
+          </button>
+          <label className="text-xs text-rw-sub flex items-center gap-1.5">
+            <input type="checkbox" checked={keepPicks} onChange={(e) => setKeepPicks(e.target.checked)} />
+            {tl("Keep my picks")}
+          </label>
+        </div>
+        {odds && <OddsTable odds={odds} teams={teams} />}
+      </Section>
+    </div>
+  );
+};
+
+const TeamButton: React.FC<{ u: string; t?: WTeam; won: boolean; lost: boolean; p: number; locked: boolean; score?: number | null; onPick: () => void }> = ({
+  u, t, won, lost, p, locked, score, onPick,
+}) => (
+  <button
+    type="button"
+    disabled={locked}
+    onClick={onPick}
+    aria-pressed={won}
+    className={`w-full flex items-center gap-1.5 px-1.5 py-1 rounded-md text-left min-w-0 ${
+      won ? "bg-rw-accent/15 text-rw-text font-semibold" : lost ? "text-rw-muted" : "text-rw-sub hover:bg-rw-surface hover:text-rw-text"
+    } ${locked ? "cursor-default" : ""}`}
+  >
+    <TeamLogo name={t?.n || u} code={t?.c} size={18} className="shrink-0" />
+    <span className="truncate flex-1" title={t?.n}>
+      {t?.c || u}
+    </span>
+    {score != null ? <span className="font-bold">{score}</span> : <span className="text-[10px] text-rw-muted">{pctText(p)}</span>}
+  </button>
+);
+
+const MatchBox: React.FC<{ m: WMatch; byU: Map<string, WTeam>; onPick: (u: string) => void }> = ({ m, byU, onPick }) => {
+  const locked = m.from === "real";
+  return (
+    <div className={`rounded-lg border ${m.from === "pick" ? "border-rw-accent/50" : "border-rw-border"} bg-rw-deep/40 p-1 space-y-0.5`}>
+      <div className="flex items-center justify-between px-1 text-[10px] text-rw-muted">
+        <span>{tl("Best of {n}", { n: m.bo })}</span>
+        {locked ? <Lock className="w-3 h-3" aria-label={tl("Played")} /> : m.drawn ? <span>{tl("drawn here")}</span> : null}
+      </div>
+      <TeamButton u={m.a} t={byU.get(m.a)} won={m.w === 1} lost={m.w === 2} p={m.p} locked={locked} score={locked ? m.sa : undefined} onPick={() => onPick(m.a)} />
+      <TeamButton u={m.b} t={byU.get(m.b)} won={m.w === 2} lost={m.w === 1} p={1 - m.p} locked={locked} score={locked ? m.sb : undefined} onPick={() => onPick(m.b)} />
+    </div>
+  );
+};
+
+const Records: React.FC<{ rec: Record<string, [number, number]>; byU: Map<string, WTeam> }> = ({ rec, byU }) => {
+  const groups = ["3-0", "3-1", "3-2", "2-3", "1-3", "0-3"].map((k) => ({ k, us: Object.keys(rec).filter((u) => rec[u].join("-") === k) })).filter((g) => g.us.length);
+  if (!groups.length) return null;
+  return (
+    <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6 pt-1">
+      {groups.map((g) => (
+        <div key={g.k} className="min-w-0">
+          <div className={`text-[11px] font-bold ${g.k.startsWith("3") ? "text-rw-teal" : "text-rw-red"}`}>
+            {g.k} {g.k.startsWith("3") ? tl("through") : tl("out")}
+          </div>
+          <div className="text-xs text-rw-sub">{g.us.map((u) => byU.get(u)?.c || u).join(", ")}</div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const Bracket: React.FC<{ ko: ReturnType<typeof runKnockout>; byU: Map<string, WTeam>; onPick: (m: WMatch, u: string) => void }> = ({ ko, byU, onPick }) => {
+  const col = (title: string, ms: WMatch[]) => (
+    <div className="space-y-2 min-w-0">
+      <h4 className="text-[11px] font-bold uppercase tracking-wider text-rw-sub">{title}</h4>
+      {ms.map((m) => (
+        <MatchBox key={m.key} m={m} byU={byU} onPick={(u) => onPick(m, u)} />
+      ))}
+    </div>
+  );
+  const champ = ko.champion ? byU.get(ko.champion) : null;
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 items-start">
+      {col(tl("Quarterfinals"), ko.qf)}
+      {col(tl("Semifinals"), ko.sf)}
+      {col(tl("Final"), ko.final ? [ko.final] : [])}
+      <div className="space-y-2">
+        <h4 className="text-[11px] font-bold uppercase tracking-wider text-rw-sub">{tl("World champion")}</h4>
+        {champ ? (
+          <div className="rounded-lg border border-rw-accent/60 bg-rw-accent/10 p-3 flex items-center gap-2">
+            <TeamLogo name={champ.n} code={champ.c} size={32} />
+            <TeamLink name={champ.n} u={champ.u} className="font-extrabold text-rw-text hover:text-rw-accent" />
+          </div>
+        ) : (
+          <p className="text-[11px] text-rw-muted">{tl("Pick the final to crown one.")}</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const OddsTable: React.FC<{ odds: Record<string, TeamOdds>; teams: WTeam[] }> = ({ odds, teams }) => {
+  const rows = teams.slice().sort((a, b) => odds[b.u].win - odds[a.u].win || odds[b.u].adv - odds[a.u].adv);
+  const cell = "px-2 py-1 text-right tabular-nums";
+  return (
+    <div className="overflow-x-auto max-w-full">
+      <table className="w-full text-xs">
+        <thead className="text-[10px] uppercase tracking-wider text-rw-muted">
+          <tr>
+            <th className="px-2 py-1 text-left">{tl("Team")}</th>
+            <th className={cell}>3-0</th>
+            <th className={cell}>{tl("Through")}</th>
+            <th className={cell}>{tl("Semifinal")}</th>
+            <th className={cell}>{tl("Final")}</th>
+            <th className={cell}>{tl("Wins Worlds")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((t) => {
+            const o = odds[t.u];
+            return (
+              <tr key={t.u} className="border-t border-rw-border">
+                <td className="px-2 py-1">
+                  <span className="flex items-center gap-1.5 min-w-0">
+                    <TeamLogo name={t.n} code={t.c} size={16} className="shrink-0" />
+                    <TeamLink name={t.n} u={t.u} className="truncate hover:text-rw-accent" />
+                  </span>
+                </td>
+                <td className={cell}>{pctText(o.r30)}</td>
+                <td className={cell}>{pctText(o.adv)}</td>
+                <td className={cell}>{pctText(o.sf)}</td>
+                <td className={cell}>{pctText(o.final)}</td>
+                <td className={`${cell} font-bold text-rw-accent`}>{pctText(o.win)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+};

@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect, useRef, useState } from "react";
-import { BarChart3, Trophy, Swords, Medal, ArrowLeft, GitCompare, Home, CalendarRange, Layers, History, Database, TrendingUp, Flame, Crosshair } from "lucide-react";
+import { BarChart3, Trophy, Swords, Medal, ArrowLeft, GitCompare, Home, CalendarRange, Layers, History, Database, TrendingUp, Flame, Crosshair, Globe } from "lucide-react";
 import { AppSettings, Match, CatalogData } from "../../types";
 import { IS_WEB } from "../../platform";
 import {
@@ -81,6 +81,7 @@ const PlayerPage = lazyPart(() => pageCode.player().then((m) => m.PlayerPage));
 const EventPage = lazyPart(() => pageCode.event().then((m) => m.EventPage));
 const MatchPage = lazyPart(() => pageCode.match().then((m) => m.MatchPage));
 const ChampPage = lazyPart(() => pageCode.champ().then((m) => m.ChampPage));
+const WorldsPage = lazyPart(() => pageCode.worlds().then((m) => m.WorldsPage));
 
 interface StatsViewProps {
   settings: AppSettings;
@@ -97,6 +98,7 @@ const SECTIONS: {
   icon: React.ReactNode;
 }[] = [
   { kind: "home", label: tk("Home"), icon: <Home className="w-3.5 h-3.5" /> },
+  { kind: "worlds", label: tk("Worlds"), icon: <Globe className="w-3.5 h-3.5" /> },
   {
     kind: "tournaments",
     label: tk("Tournaments"),
@@ -317,6 +319,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
           <MatchPage slug={route.slug} game={route.game} onOpenUrl={onOpenUrl} />
         )}
         {route.kind === "champ" && <ChampPage slug={route.slug} />}
+        {route.kind === "worlds" && <WorldsPage year={"year" in route ? route.year : undefined} />}
         </Suspense>
         </PartBoundary>
         </div>

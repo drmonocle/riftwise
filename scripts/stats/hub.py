@@ -1048,6 +1048,9 @@ def build(ctx) -> dict:
         stage_rows = defaultdict(list)
         n_stats_games = 0
         csv_rows = []
+        # Worlds / MSI / First Stand: every game's scoreboard in one small file (lines/<event>.json) for the Worlds
+        # page's facts (most kills so far, a player's line in a series, 0-5 champions...), instead of one file per series
+        ev_lines = {"s": [], "g": [], "p": []} if big_event(en) else None
         first_date, last_date = None, None
 
         for mid, glist in series.items():
@@ -1627,6 +1630,24 @@ def build(ctx) -> dict:
                     "sa": wa, "sb": wb, "w": winner, "games": games_out, **({"r": s_rating} if s_rating is not None else {}),
                     **({"ff": 1} if awarded else {}),
                 })
+                if ev_lines is not None and an and bn:
+                    si = len(ev_lines["s"])
+                    ev_lines["s"].append([gslug, stage_name, date, an, au, ac, bn, bu, bc, wa, wb, bo])
+                    for x in games_out:
+                        if x.get("remake") or not x.get("p"):
+                            continue
+                        a_blue = x.get("blue") == "a"
+                        sides_ = x.get("t") or {}
+                        ta, tb_ = (sides_.get("blue") or {}, sides_.get("red") or {}) if a_blue else (sides_.get("red") or {}, sides_.get("blue") or {})
+                        gi = len(ev_lines["g"])
+                        # series, game, a on blue, winner side (1 a, 2 b, 0 not known), minutes, towers / kills / gold a and b
+                        ev_lines["g"].append([si, x["n"], 1 if a_blue else 0, x.get("w") or 0, x.get("min"),
+                                              ta.get("towers"), tb_.get("towers"), ta.get("k"), tb_.get("k"), ta.get("gold"), tb_.get("gold")])
+                        for p_ in x["p"]:
+                            side_b = 0 if (p_.get("s") == 1) == a_blue else 1
+                            # game, side (0 a, 1 b), player, page, role, champion, kills, deaths, assists, cs, damage
+                            ev_lines["p"].append([gi, side_b, p_.get("n"), p_.get("u"), p_.get("r"), p_.get("c"), p_.get("k"), p_.get("d"),
+                                                  p_.get("a"), p_.get("cs"), p_.get("dm")])
                 lu_b = league_slug.get(lg_ev)
                 region_b = (info or {}).get("Region") if not lu_b else None  # Regional Finals: the region's league (below)
                 g_by_n = {g["n"]: g for g in glist}
@@ -1809,6 +1830,9 @@ def build(ctx) -> dict:
         kept[op] = {"tp": tp, "tts": tts, "tc": tc, "facts": facts, "mvp": ev_mvp, "tteam": tteam, "regions": regions,
                     "last": last_date, "stats": n_stats_games, "rosters": roster_out, "series": event["series"],
                     "lu": league_slug.get(lg_ev), "y": event["year"], "en": en, "eslug": eslug}
+        if ev_lines and ev_lines["g"]:
+            out.json(f"lines/{eslug}.json", ev_lines)
+            checks["hub: event line files"] = checks.get("hub: event line files", 0) + 1
         if csv_rows:
             buf = io.StringIO()
             wcsv = csv.writer(buf, lineterminator="\n")

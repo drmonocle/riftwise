@@ -94,6 +94,8 @@ export const loadHubPlayer = (slug: string) => load<HubPlayer>(`hub/player/${slu
 export const loadHubEvent = (slug: string) => load<HubEvent>(`hub/event/${slug}.json`);
 export const loadHubSeries = (slug: string) => load<HubSeries>(`hub/game/${slug}.json`);
 export const loadHubChamp = (slug: string) => load<HubChamp>(`hub/champ/${slug}.json`);
+/** Every game scoreboard of a Worlds / MSI / First Stand event in one file (Worlds page facts). */
+export const loadEventLines = (slug: string) => load<import("./worldsFacts").EventLines>(`hub/lines/${slug}.json`);
 export const loadEventsOfYear = (year: string) => load<EventListItem[]>(`hub/events/${year}.json`);
 
 // ── Search ────────────────────────────────────────────────────────────────
