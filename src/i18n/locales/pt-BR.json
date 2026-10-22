@@ -1592,6 +1592,7 @@
   "Waiting on earlier picks.": "Esperando as partidas anteriores.",
   "Plays the rest of the event 10,000 times, each open match rolled by its chances, and counts how far each team gets.": "Joga o resto do torneio 10.000 vezes, sorteando cada partida aberta pelas chances, e conta até onde cada time chega.",
   "Wins": "Vence",
+  "Riot isn't sharing live stats for this game. Here is the draft.": "A Riot não está mostrando estatísticas ao vivo deste jogo. Aqui está o draft.",
   "now {team}": "agora {team}",
   "title match::Final": "Final",
   "title winner::Champion": "Campeão",

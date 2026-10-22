@@ -1592,6 +1592,7 @@
   "Waiting on earlier picks.": "等待前面的比賽。",
   "Plays the rest of the event 10,000 times, each open match rolled by its chances, and counts how far each team gets.": "把剩下的賽事打 10,000 次，每場未定的比賽依勝率擲骰，統計每支隊伍能走多遠。",
   "Wins": "奪冠",
+  "Riot isn't sharing live stats for this game. Here is the draft.": "Riot 沒有公開這局的即時數據，這裡是雙方陣容。",
   "now {team}": "現為 {team}",
   "title match::Final": "決賽",
   "title winner::Champion": "冠軍",

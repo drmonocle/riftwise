@@ -159,6 +159,12 @@ export function championList(): string[] {
   return maps?.names || [];
 }
 
+/** A champion's English name from its Data Dragon id (the live feed sends ids: "MonkeyKing" -> "Wukong"). */
+export function champNameById(id: string): string {
+  if (!maps || !id) return id;
+  return maps.names.find((n) => maps!.champ[norm(n)] === id) || id;
+}
+
 export function champIcon(name: string | undefined): string | null {
   if (!maps || !name) return null;
   const k = norm(name);

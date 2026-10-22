@@ -1592,6 +1592,7 @@
   "Waiting on earlier picks.": "前の試合を選ぶと表示されます。",
   "Plays the rest of the event 10,000 times, each open match rolled by its chances, and counts how far each team gets.": "残りの大会を10,000回行い、残りの試合を勝率どおりに抽選して、各チームがどこまで行くかを数えます。",
   "Wins": "優勝",
+  "Riot isn't sharing live stats for this game. Here is the draft.": "この試合のライブデータは Riot が公開していません。ピック構成を表示しています。",
   "now {team}": "現 {team}",
   "title match::Final": "決勝",
   "title winner::Champion": "優勝",
