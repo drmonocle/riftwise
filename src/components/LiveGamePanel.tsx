@@ -18,7 +18,7 @@ import {
   fetchLiveStart,
   fetchLiveWindow,
 } from "../liveGame";
-import { champIcon, itemIconById, useDDragon } from "../hub/ddragon";
+import { champIcon, champNameById, itemIconById, useDDragon } from "../hub/ddragon";
 import { champName } from "../champions";
 
 const POLL_MS = 15_000;
@@ -75,10 +75,14 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean }> = ({ 
   const [open, setOpen] = useState(false);
   const [history, setHistory] = useState<[number, number][] | null>(null);
   const startRef = useRef<Record<string, number>>({});
+  // the game's first frames (who plays what): all there is when Riot switches a game's live stats off
+  const firstRef = useRef<Record<string, LiveWindow>>({});
+  const [draft, setDraft] = useState<LiveWindow | null>(null);
   // the next game of the series starts with a clean slate (not game 1's numbers and gold graph)
   useEffect(() => {
     setState(null);
     setHistory(null);
+    setDraft(null);
   }, [game?.id]);
 
   useEffect(() => {
@@ -91,6 +95,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean }> = ({ 
           const first = await fetchLiveStart(game.id);
           const t = first?.frames?.[0]?.rfc460Timestamp;
           if (t) startRef.current[game.id] = Date.parse(t);
+          if (first?.gameMetadata) firstRef.current[game.id] = first;
         }
         // a finished game: ask well past its end, the feed answers with its last frames
         const w = await fetchLiveWindow(game.id, live ? undefined : Date.now() - 60_000);
@@ -98,7 +103,12 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean }> = ({ 
         if (!alive) return;
         if (!w || !frame) {
           setState(null);
+          // the game has started (it has a first frame) but the feed won't give later ones: Riot has switched this
+          // game's live stats off (EMEA Masters and other events do). The draft is still worth showing.
+          const first = firstRef.current[game.id];
+          setDraft(first && startRef.current[game.id] != null ? first : null);
         } else {
+          setDraft(null);
           const det = open ? await fetchLiveDetails(game.id, live ? undefined : Date.now() - 60_000).catch(() => null) : null;
           if (!alive) return;
           const players = det?.frames?.[det.frames.length - 1]?.participants ?? null;
@@ -139,6 +149,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean }> = ({ 
   if (!game) return null;
   if (!showStats)
     return <p className="text-[11px] text-rw-muted text-center py-1">{tl("Live game stats are hidden while spoiler mode is on.")}</p>;
+  if (!state && draft) return <DraftOnly match={match} win={draft} number={game.number} startMs={startRef.current[game.id] ?? null} live={live} />;
   if (!state)
     return (
       <p className="text-[11px] text-rw-muted text-center pt-2">
@@ -291,7 +302,7 @@ const PlayerCells: React.FC<{ p: PlayerRow; align: "left" | "right" }> = ({ p, a
       <div className={`flex items-start gap-2 ${right ? "flex-row-reverse text-right" : ""}`}>
         <div className="relative shrink-0">
           {icon ? (
-            <img src={icon} alt={champName(p.meta.championId)} title={champName(p.meta.championId)} width={28} height={28} className="rounded" />
+            <img src={icon} alt={champName(champNameById(p.meta.championId))} title={champName(champNameById(p.meta.championId))} width={28} height={28} className="rounded" />
           ) : (
             <span className="w-7 h-7 inline-block rounded bg-rw-border" />
           )}
@@ -357,6 +368,65 @@ const GoldGraph: React.FC<{ points: [number, number][]; blueIsLeft: boolean }> =
       <div className="flex justify-between text-[9px] text-rw-muted">
         <span>0:00</span>
         <span>{clock(maxT * 60_000)}</span>
+      </div>
+    </div>
+  );
+};
+
+/** A game whose live stats Riot doesn't publish: how long it has been on and who plays what (its first frames). */
+const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; startMs: number | null; live: boolean }> = ({ match, win, number, startMs, live }) => {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!live) return;
+    const t = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, [live]);
+  const meta = win.gameMetadata;
+  const blueIsTeam1 = match.team1Id
+    ? meta.blueTeamMetadata.esportsTeamId === match.team1Id
+    : (meta.blueTeamMetadata.participantMetadata[0]?.summonerName || "").toUpperCase().startsWith(match.team1Code.toUpperCase() + " ");
+  const blue = { code: blueIsTeam1 ? match.team1Code : match.team2Code, meta: meta.blueTeamMetadata.participantMetadata };
+  const red = { code: blueIsTeam1 ? match.team2Code : match.team1Code, meta: meta.redTeamMetadata.participantMetadata };
+  const [left, right] = blueIsTeam1 ? [blue, red] : [red, blue];
+  const byRole = (m: LiveParticipantMeta[]) => [...m].sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role));
+  const l = byRole(left.meta);
+  const r = byRole(right.meta);
+  return (
+    <div className="mt-3 pt-3 border-t border-rw-border/60 space-y-2 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-bold uppercase tracking-wider text-[10px] text-rw-accent">
+          {tl("Game {n} · live", { n: number })}
+          {live && startMs != null && <span className="ml-2 font-mono text-rw-text">{clock(now - startMs)}</span>}
+        </span>
+        <span className="text-[10px] text-rw-muted">{tl("Riot isn't sharing live stats for this game. Here is the draft.")}</span>
+      </div>
+      <div className="grid grid-cols-[1fr_auto_1fr] gap-x-2 gap-y-1 items-center">
+        <span className="font-bold text-rw-text">{left.code}</span>
+        <span />
+        <span className="font-bold text-rw-text text-right">{right.code}</span>
+        {l.map((p, i) => {
+          const q = r[i];
+          const cell = (x: LiveParticipantMeta | undefined, right: boolean) => {
+            if (!x) return <span />;
+            const icon = champIcon(x.championId);
+            return (
+              <span className={`flex items-center gap-1.5 min-w-0 ${right ? "flex-row-reverse text-right" : ""}`}>
+                {icon && <img src={icon} alt="" width={24} height={24} className="rounded shrink-0" />}
+                <span className="min-w-0">
+                  <span className="block truncate text-rw-text">{champName(champNameById(x.championId))}</span>
+                  <span className="block truncate text-[10px] text-rw-muted">{playerName(x.summonerName)}</span>
+                </span>
+              </span>
+            );
+          };
+          return (
+            <React.Fragment key={i}>
+              {cell(p, false)}
+              <span className="text-[10px] text-rw-muted text-center w-12">{roleName(ROLE_LABEL[p.role] || p.role)}</span>
+              {cell(q, true)}
+            </React.Fragment>
+          );
+        })}
       </div>
     </div>
   );

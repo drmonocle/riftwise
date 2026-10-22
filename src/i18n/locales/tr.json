@@ -1592,6 +1592,7 @@
   "Waiting on earlier picks.": "Önceki maçlar bekleniyor.",
   "Plays the rest of the event 10,000 times, each open match rolled by its chances, and counts how far each team gets.": "Turnuvanın kalanını 10.000 kez oynar, kalan her maçı şansına göre zarla belirler ve her takımın ne kadar ilerlediğini sayar.",
   "Wins": "Kazanır",
+  "Riot isn't sharing live stats for this game. Here is the draft.": "Riot bu oyunun canlı istatistiklerini paylaşmıyor. İşte seçimler.",
   "now {team}": "şimdi: {team}",
   "title match::Final": "Final",
   "title winner::Champion": "Kazanan",
