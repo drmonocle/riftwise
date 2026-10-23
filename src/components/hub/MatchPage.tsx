@@ -9,6 +9,8 @@ import { useDDragon } from "../../hub/ddragon";
 import { RatingBadge } from "./BestPage";
 import { navigateHub } from "../../hub/route";
 import { BroadcastCardButton, gameCardData, seriesCardData } from "./BroadcastCard";
+import { RiotGamesFor, RiotMatchPage } from "./RiotMatch";
+import { RIOT_PREFIX } from "../../hub/riotMatch";
 import { card, ChampIcon, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, OeCredit, Page, PlayerLink, RevealButton, RuneIcon, SpellIcon, TeamLink, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
 
 const fmtGold = (g?: number) => (g == null ? "–" : `${fmtDec(g / 1000)}k`);
@@ -21,7 +23,11 @@ const DRAKE_LABEL: Record<string, string> = {
   infernal: tk("Infernal"), mountain: tk("Mountain"), ocean: tk("Ocean"), cloud: tk("Cloud"), hextech: tk("Hextech"), chemtech: tk("Chemtech"),
 };
 
-export const MatchPage: React.FC<{ slug: string; game?: number; onOpenUrl: (url: string) => void }> = ({ slug, game, onOpenUrl }) => {
+export const MatchPage: React.FC<{ slug: string; game?: number; onOpenUrl: (url: string) => void }> = ({ slug, game, onOpenUrl }) =>
+  // a match the stats hub doesn't have yet: from Riot's feeds
+  slug.startsWith(RIOT_PREFIX) ? <RiotMatchPage matchId={slug.slice(RIOT_PREFIX.length)} /> : <HubMatchPage slug={slug} game={game} onOpenUrl={onOpenUrl} />;
+
+const HubMatchPage: React.FC<{ slug: string; game?: number; onOpenUrl: (url: string) => void }> = ({ slug, game, onOpenUrl }) => {
   const state = useLoad(() => loadHubSeries(slug), [slug]);
   usePageTitle(state.data ? `${state.data.a.n} vs ${state.data.b.n} – ${state.data.en}` : null);
   useDDragon();
@@ -96,11 +102,40 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
         {!hidden && s.ff ? (
           <p className="mt-2 text-[11px] text-rw-muted text-center">{tl("Result awarded by forfeit, not by the games played.")}</p>
         ) : null}
-        {withStats.length === 0 && (
-          <p className="mt-3 text-[11px] text-rw-muted text-center">{tl("Only the results of this series are known: no player stats were recorded for it.")}</p>
-        )}
       </div>
 
+      {/* no stats in the hub yet (a match from today): every game from Riot's live stats feed instead */}
+      {withStats.length === 0 ? (
+        <RiotGamesFor
+          s={s}
+          showStats={!hidden}
+          fallback={
+            <>
+              <p className="text-[11px] text-rw-muted text-center">{tl("Only the results of this series are known: no player stats were recorded for it.")}</p>
+              <SeriesGames s={s} tabs={tabs} gi={gi} pick={pick} hidden={hidden} game={game} reveal={reveal} onOpenUrl={onOpenUrl} />
+            </>
+          }
+        />
+      ) : (
+        <SeriesGames s={s} tabs={tabs} gi={gi} pick={pick} hidden={hidden} game={game} reveal={reveal} onOpenUrl={onOpenUrl} />
+      )}
+    </div>
+  );
+};
+
+/** The game tabs and the game on screen. */
+const SeriesGames: React.FC<{
+  s: HubSeries;
+  tabs: number;
+  gi: number;
+  pick: (i: number) => void;
+  hidden: boolean;
+  game: HubGame | undefined;
+  reveal: () => void;
+  onOpenUrl: (url: string) => void;
+}> = ({ s, tabs, gi, pick, hidden, game, reveal, onOpenUrl }) => {
+  return (
+    <>
       {tabs > 1 && (
         <div className="flex flex-wrap gap-1.5" role="tablist">
           {Array.from({ length: tabs }, (_, i) => s.games[i]).map((g, i) => (
@@ -132,7 +167,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
           </div>
         )
       )}
-    </div>
+    </>
   );
 };
 

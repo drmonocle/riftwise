@@ -9,11 +9,11 @@ import type { HubPlayer } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { PlayerGamesArchive } from "./Archives";
 import { PlayerPeriodStats } from "./PeriodStats";
-import { BroadcastCardButton, playerCareerCardData } from "./BroadcastCard";
+import { BroadcastCardButton, SectionCard, playerCareerCardData } from "./BroadcastCard";
 import { PlayerRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
 import { localCountry } from "./CountryFlag";
-import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerPhoto, RevealButton, Section, Stat, td, TeamLink, th, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
+import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerPhoto, RevealButton, Section, Stat, td, TeamLink, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink } from "./ui";
 import { ratingTextClass } from "./BestPage";
 import { STable } from "../STable";
 
@@ -81,6 +81,9 @@ const PlayerView: React.FC<{
     `https://lol.fandom.com/wiki/${encodeURIComponent(p.page.replace(/ /g, "_"))}`,
   ]);
   const events = allEvents ? p.events : p.events.slice(0, 12);
+  // the section cards leave out what spoiler mode hides
+  const hiddenCheck = useHiddenCheck();
+  const cardSub = [p.role ? roleName(p.role) : null, p.club].filter(Boolean).join(" · ") || undefined;
   return (
     <div className="rw-page">
       <div className={card}>
@@ -211,7 +214,10 @@ const PlayerView: React.FC<{
       <PlayerRanks slug={p.u} events={p.events} />
 
       {p.titles.length > 0 && (
-        <Section title={tl("Titles")}>
+        <Section
+          title={tl("Titles")}
+          right={<SectionCard section={tl("Titles")} name={p.name} sub={tl("{n} titles", { n: p.titles.length })} rows={() => p.titles.map((x) => ({ label: eventTitle(x.t), value: x.date.slice(0, 4) }))} />}
+        >
           <ul className="text-xs space-y-1">
             {p.titles.map((x) => (
               <li key={x.t + x.date} className="flex justify-between gap-2">
@@ -234,17 +240,29 @@ const PlayerView: React.FC<{
         <Section
           title={tl("Tournaments")}
           right={
-            p.events.length > 12 ? (
-              <button
-                type="button"
-                onClick={() => setAllEvents((v) => !v)}
-                className="text-[11px] text-rw-teal hover:underline"
-              >
-                {allEvents
-                  ? tl("Show fewer")
-                  : tl("Show all {n}", { n: p.events.length })}
-              </button>
-            ) : undefined
+            <span className="flex items-center gap-2">
+              {p.events.length > 12 && (
+                <button
+                  type="button"
+                  onClick={() => setAllEvents((v) => !v)}
+                  className="text-[11px] text-rw-teal hover:underline"
+                >
+                  {allEvents
+                    ? tl("Show fewer")
+                    : tl("Show all {n}", { n: p.events.length })}
+                </button>
+              )}
+              <SectionCard
+                section={tl("Tournaments")}
+                name={p.name}
+                sub={cardSub}
+                rows={() =>
+                  p.events
+                    .filter((x) => !hiddenCheck(`player-event:${x.e}`, x.date))
+                    .map((x) => ({ label: x.en, sub: `${x.t} · ${x.w}-${x.g - x.w} · KDA ${fmtN(x.kda)}`, value: x.pl ? tl("Place {p}", { p: x.pl }) : undefined }))
+                }
+              />
+            </span>
           }
         >
           <div className="overflow-x-auto">
@@ -271,7 +289,10 @@ const PlayerView: React.FC<{
       )}
 
       <div className="grid gap-3 md:grid-cols-2">
-        <Section title={tl("Teams")}>
+        <Section
+          title={tl("Teams")}
+          right={<SectionCard section={tl("Teams")} name={p.name} sub={cardSub} rows={() => p.teams.map((x) => ({ label: x.n, sub: `${x.from.slice(0, 4)}–${x.to.slice(0, 4)}`, value: `${x.w}-${x.g - x.w}` }))} />}
+        >
           <ul className="text-xs space-y-1">
             {p.teams.map((t) => (
               <li key={t.n} className="flex justify-between gap-2 min-w-0">
@@ -285,7 +306,17 @@ const PlayerView: React.FC<{
             ))}
           </ul>
         </Section>
-        <Section title={tl("By year")}>
+        <Section
+          title={tl("By year")}
+          right={
+            <SectionCard
+              section={tl("By year")}
+              name={p.name}
+              sub={cardSub}
+              rows={() => [...p.years].reverse().map((y) => ({ label: y.y, sub: `${y.team} · ${y.w}-${y.g - y.w}`, value: `KDA ${fmtN(y.kda)}` }))}
+            />
+          }
+        >
           <STable className="w-full text-xs">
             <thead>
               <tr>
@@ -316,17 +347,25 @@ const PlayerView: React.FC<{
       <Section
         title={tl("Champion pool")}
         right={
-          p.champs.length > 15 ? (
-            <button
-              type="button"
-              onClick={() => setAllChamps((v) => !v)}
-              className="text-[11px] text-rw-teal hover:underline"
-            >
-              {allChamps
-                ? tl("Show fewer")
-                : tl("Show all {n}", { n: p.champs.length })}
-            </button>
-          ) : undefined
+          <span className="flex items-center gap-2">
+            {p.champs.length > 15 && (
+              <button
+                type="button"
+                onClick={() => setAllChamps((v) => !v)}
+                className="text-[11px] text-rw-teal hover:underline"
+              >
+                {allChamps
+                  ? tl("Show fewer")
+                  : tl("Show all {n}", { n: p.champs.length })}
+              </button>
+            )}
+            <SectionCard
+              section={tl("Champion pool")}
+              name={p.name}
+              sub={tl("{n} champions played", { n: p.nChamps })}
+              rows={() => p.champs.map((c) => ({ champ: c.c, label: champName(c.c), sub: tl("{g} games · {wr}", { g: c.g, wr: winRate(c.w, c.g) }), value: `KDA ${fmtN(c.kda)}` }))}
+            />
+          </span>
         }
       >
         <div className="overflow-x-auto">
@@ -367,7 +406,14 @@ const PlayerView: React.FC<{
           right={
             recentHidden ? (
               <RevealButton onReveal={revealRecent} small />
-            ) : undefined
+            ) : (
+              <SectionCard
+                section={tl("Recent games")}
+                name={p.name}
+                sub={cardSub}
+                rows={() => p.recent.map((r) => ({ win: !!r.win, champ: r.c, label: `${r.k}/${r.d}/${r.a} vs ${r.opp}`, sub: r.en, value: fmtDate(r.date, false) }))}
+              />
+            )
           }
         >
           {recentHidden ? (
@@ -416,7 +462,17 @@ const PlayerView: React.FC<{
             </ul>
           )}
         </Section>
-        <Section title={tl("Career bests")}>
+        <Section
+          title={tl("Career bests")}
+          right={
+            <SectionCard
+              section={tl("Career bests")}
+              name={p.name}
+              sub={cardSub}
+              rows={() => Object.entries(p.best).map(([k, b]) => ({ champ: b.c, label: BEST_LABEL[k] ? tl(BEST_LABEL[k]) : k, sub: `${champName(b.c)} vs ${b.opp}, ${b.date.slice(0, 4)}`, value: fmtNum(b.v) }))}
+            />
+          }
+        >
           <ul className="text-xs space-y-1">
             {Object.entries(p.best).map(([k, b]) => (
               <li key={k} className="flex justify-between gap-2 min-w-0">
@@ -447,7 +503,10 @@ const PlayerView: React.FC<{
       </div>
 
       {p.pentas && p.pentas.length > 0 && (
-        <Section title={tl("Pentakills")}>
+        <Section
+          title={tl("Pentakills")}
+          right={<SectionCard section={tl("Pentakills")} name={p.name} sub={cardSub} rows={() => p.pentas!.map((x) => ({ champ: x.c, label: x.x > 1 ? `${champName(x.c)} ×${x.x}` : champName(x.c), sub: x.en, value: x.date.slice(0, 4) }))} />}
+        >
           <ul className="text-xs space-y-1">
             {p.pentas.map((x, i) => (
               <li

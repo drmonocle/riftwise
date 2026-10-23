@@ -11,10 +11,12 @@ import { TeamSeriesArchive } from "./Archives";
 import { TeamPeriodStats } from "./PeriodStats";
 import { TeamRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
-import { CaptureContext, card, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, HubLink, Page, PlayerLink, RevealButton, Section, Stat, td, TeamLink, th, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
+import { CaptureContext, card, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, HubLink, Page, PlayerLink, RevealButton, Section, Stat, td, TeamLink, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink } from "./ui";
 import { ratingTextClass } from "./BestPage";
 import { Sparkline } from "./Sparkline";
 import { STable } from "../STable";
+import { SectionCard } from "./BroadcastCard";
+import { champName } from "../../champions";
 
 export const TeamPage: React.FC<{ slug: string }> = ({ slug }) => {
   // reached by an old or short address (/team/hle): show the team's own address, once this team's file is in and
@@ -49,6 +51,9 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
   const [allEvents, setAllEvents] = useState(false);
   const [recentHidden, revealRecent] = useHidden(`team-recent:${t.u}`, t.recent[0]?.date);
   const events = allEvents ? t.events : t.events.slice(0, 15);
+  // the section cards leave out what spoiler mode hides
+  const hiddenCheck = useHiddenCheck();
+  const cardSub = t.region ? regionName(t.region) : undefined;
   return (
     <div className="rw-page">
       <div className={card}>
@@ -133,7 +138,10 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
       <TeamRanks slug={t.u} events={t.events} />
 
       {t.titles.length > 0 && (
-        <Section title={tl("Titles")}>
+        <Section
+          title={tl("Titles")}
+          right={<SectionCard section={tl("Titles")} name={t.name} sub={tl("{n} titles", { n: t.titles.length })} rows={() => t.titles.map((x) => ({ label: eventTitle(x.t), sub: `${x.score} vs ${x.l}`, value: x.date.slice(0, 4) }))} />}
+        >
           <ul className="text-xs space-y-1">
             {t.titles.map((x) => (
               <li key={x.t + x.date} className="flex justify-between gap-2">
@@ -152,7 +160,20 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
       )}
 
       <div className="grid gap-3 md:grid-cols-2">
-        <Section title={tl("Recent series")} right={recentHidden ? <RevealButton onReveal={revealRecent} small /> : undefined}>
+        <Section
+          title={tl("Recent series")}
+          right={
+            recentHidden ? (
+              <RevealButton onReveal={revealRecent} small />
+            ) : (
+              <SectionCard
+                section={tl("Recent series")}
+                name={t.name}
+                rows={() => t.recent.map((r) => ({ win: r.us > r.them, label: `${r.us}-${r.them} vs ${r.opp}`, sub: r.en, value: fmtDate(r.date, false) }))}
+              />
+            )
+          }
+        >
           {recentHidden ? (
             <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
           ) : (
@@ -184,7 +205,17 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
           )}
         </Section>
 
-        <Section title={tl("By year")}>
+        <Section
+          title={tl("By year")}
+          right={
+            <SectionCard
+              section={tl("By year")}
+              name={t.name}
+              sub={cardSub}
+              rows={() => [...t.years].reverse().map((y) => ({ label: y.as !== t.name ? `${y.y} · ${y.as}` : y.y, sub: `${y.w}-${y.g - y.w}`, value: winRate(y.w, y.g) }))}
+            />
+          }
+        >
           <STable className="w-full text-xs">
             <thead>
               <tr>
@@ -215,11 +246,22 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
         <Section
           title={tl("Tournaments")}
           right={
-            t.events.length > 15 ? (
-              <button type="button" onClick={() => setAllEvents((v) => !v)} className="text-[11px] text-rw-teal hover:underline">
-                {allEvents ? tl("Show fewer") : tl("Show all {n}", { n: t.events.length })}
-              </button>
-            ) : undefined
+            <span className="flex items-center gap-2">
+              {t.events.length > 15 && (
+                <button type="button" onClick={() => setAllEvents((v) => !v)} className="text-[11px] text-rw-teal hover:underline">
+                  {allEvents ? tl("Show fewer") : tl("Show all {n}", { n: t.events.length })}
+                </button>
+              )}
+              <SectionCard
+                section={tl("Tournaments")}
+                name={t.name}
+                rows={() =>
+                  t.events
+                    .filter((x) => !hiddenCheck(`team-event:${x.e}`, x.date))
+                    .map((x) => ({ label: x.en, sub: tl("Series {s} · games {g}", { s: `${x.sw}-${x.sg - x.sw}`, g: `${x.w}-${x.g - x.w}` }), value: x.pl ? tl("Place {p}", { p: x.pl }) : undefined }))
+                }
+              />
+            </span>
           }
         >
           <div className="overflow-x-auto">
@@ -245,7 +287,19 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
 
       <TeamSeriesArchive slug={t.u} teamName={t.name} />
 
-      <Section title={tl("Roster")}>
+      <Section
+        title={tl("Roster")}
+        right={
+          t.roster[0] ? (
+            <SectionCard
+              section={tl("Roster")}
+              name={t.name}
+              sub={t.roster[0].y}
+              rows={() => t.roster[0].p.map((x) => ({ label: x.n, sub: roleName(x.r), value: tl("{n} games", { n: x.g }) }))}
+            />
+          ) : undefined
+        }
+      >
         <div className="space-y-2">
           {t.roster.map((yr) => (
             <div key={yr.y} className="text-xs">
@@ -262,7 +316,17 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
         </div>
       </Section>
 
-      <Section title={tl("Against other teams")}>
+      <Section
+        title={tl("Against other teams")}
+        right={
+          <SectionCard
+            section={tl("Against other teams")}
+            name={t.name}
+            sub={tl("Most games against")}
+            rows={() => [...t.opps].sort((a, b) => b.g - a.g).map((o) => ({ label: o.n, sub: `${o.w}-${o.g - o.w}`, value: winRate(o.w, o.g) }))}
+          />
+        }
+      >
         <div className="overflow-x-auto max-h-96">
           <STable className="w-full text-xs">
             <thead>
@@ -292,7 +356,10 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
       </Section>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <Section title={tl("Most picked champions")}>
+        <Section
+          title={tl("Most picked champions")}
+          right={<SectionCard section={tl("Most picked champions")} name={t.name} rows={() => t.champs.map((c) => ({ champ: c.c, label: champName(c.c), sub: tl("{n} games", { n: c.g }), value: winRate(c.w, c.g) }))} />}
+        >
           <ul className="text-xs grid grid-cols-2 gap-x-3 gap-y-1">
             {t.champs.map((c) => (
               <li key={c.c} className="flex justify-between gap-1 min-w-0">
@@ -304,7 +371,10 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
             ))}
           </ul>
         </Section>
-        <Section title={tl("Most banned by them")}>
+        <Section
+          title={tl("Most banned by them")}
+          right={<SectionCard section={tl("Most banned by them")} name={t.name} rows={() => t.bans.map((c) => ({ champ: c.c, label: champName(c.c), value: String(c.g) }))} />}
+        >
           <ul className="text-xs grid grid-cols-2 gap-x-3 gap-y-1">
             {t.bans.map((c) => (
               <li key={c.c} className="flex justify-between gap-1 min-w-0">
@@ -315,7 +385,10 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
           </ul>
         </Section>
         {t.bansVs && t.bansVs.length > 0 && (
-          <Section title={tl("Most banned against them")}>
+          <Section
+            title={tl("Most banned against them")}
+            right={<SectionCard section={tl("Most banned against them")} name={t.name} rows={() => (t.bansVs || []).map((c) => ({ champ: c.c, label: champName(c.c), value: String(c.g) }))} />}
+          >
             <ul className="text-xs grid grid-cols-2 gap-x-3 gap-y-1">
               {t.bansVs.map((c) => (
                 <li key={c.c} className="flex justify-between gap-1 min-w-0">

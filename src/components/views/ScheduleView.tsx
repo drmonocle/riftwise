@@ -13,8 +13,7 @@ import { tl, locale, clockOptions, tc } from "../../i18n";
 import { searchAlias } from "../../searchAliases";
 import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 import { findSeriesSlug } from "../../hub/seriesLookup";
-import { fetchMatchGames } from "../../api";
-import { LiveGamePanel } from "../LiveGamePanel";
+import { RIOT_PREFIX } from "../../hub/riotMatch";
 import { navigateHub } from "../../hub/route";
 import { riotImg } from "../../riotImage";
 
@@ -58,45 +57,17 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
   // A shared link: show the filter the match lives in, then scroll to it.
   const [flashMatchId, setFlashMatchId] = useState<string | null>(null);
-  // a finished match opens its page in the stats hub (found by teams and day); "missing" until the nightly update has it
-  const [detail, setDetail] = useState<Record<string, "busy" | "missing">>({});
-  // until then, its games' final numbers from Riot's live stats feed, shown under the match (available as it ends)
-  const [finals, setFinals] = useState<Record<string, Match | null>>({});
-  const showFinals = (m: Match) => {
-    if (finals[m.matchId] !== undefined) {
-      setFinals((f) => {
-        const rest = { ...f };
-        delete rest[m.matchId];
-        return rest;
-      });
-      return;
-    }
-    setFinals((f) => ({ ...f, [m.matchId]: null }));
-    fetchMatchGames(m)
-      .then((full) => setFinals((f) => (m.matchId in f ? { ...f, [m.matchId]: full } : f)))
-      .catch(() => setFinals((f) => (m.matchId in f ? { ...f, [m.matchId]: { ...m, games: [] } } : f)));
-  };
+  // a finished match opens its page in the stats hub (found by teams and day); one the hub doesn't have yet (today's)
+  // opens a match page made from Riot's feeds, with every game's numbers as soon as it ends
+  const [busy, setBusy] = useState<string | null>(null);
   const openDetails = (m: Match) => {
-    if (detail[m.matchId] === "busy") return;
-    if (detail[m.matchId] === "missing") return showFinals(m);
-    setDetail((d) => ({ ...d, [m.matchId]: "busy" }));
+    if (busy === m.matchId) return;
+    setBusy(m.matchId);
     findSeriesSlug(m)
+      .catch(() => null)
       .then((slug) => {
-        if (slug) {
-          setDetail((d) => {
-            const rest = { ...d };
-            delete rest[m.matchId];
-            return rest;
-          });
-          navigateHub({ kind: "match", slug });
-        } else {
-          setDetail((d) => ({ ...d, [m.matchId]: "missing" }));
-          showFinals(m);
-        }
-      })
-      .catch(() => {
-        setDetail((d) => ({ ...d, [m.matchId]: "missing" }));
-        showFinals(m);
+        setBusy(null);
+        navigateHub({ kind: "match", slug: slug || RIOT_PREFIX + m.matchId });
       });
   };
   useEffect(() => {
@@ -441,12 +412,12 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         <button
                           type="button"
                           onClick={() => openDetails(m)}
-                          disabled={detail[m.matchId] === "busy"}
+                          disabled={busy === m.matchId}
                           className="flex items-center gap-1 text-[10px] text-rw-teal font-semibold hover:underline disabled:opacity-60"
-                          title={detail[m.matchId] === "missing" ? tl("Final numbers from Riot's live stats feed. The full stats page comes with the next stats update.") : tl("Open the match: every game's draft and stats")}
+                          title={tl("Open the match: every game's draft and stats")}
                         >
                           <BarChart3 className="w-3 h-3" />
-                          {detail[m.matchId] === "missing" ? (finals[m.matchId] !== undefined ? tl("Hide stats") : tl("Game stats")) : tl("Details")}
+                          {tl("Details")}
                         </button>
                       ) : isLive ? (
                         <span className="flex items-center gap-1 text-[10px] text-rw-red font-bold">
@@ -458,7 +429,6 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       )}
                     </div>
                   </div>
-                  {finals[m.matchId] !== undefined && <FinalStats match={finals[m.matchId]} showStats={showScore} />}
                   </React.Fragment>
                 );
               })}
@@ -471,19 +441,3 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 };
 
 
-/** A finished match's games, final numbers from Riot's live stats feed (null: still asking Riot for its games). */
-const FinalStats: React.FC<{ match: Match | null; showStats: boolean }> = ({ match, showStats }) => {
-  const games = (match?.games || []).filter((g) => g.state === "completed");
-  return (
-    <div className="bg-rw-surface border border-rw-border rounded-lg px-3 sm:px-4 pb-3 -mt-1">
-      {!match ? (
-        <p className="text-[11px] text-rw-muted text-center pt-3">{tl("Loading…")}</p>
-      ) : games.length === 0 ? (
-        <p className="text-[11px] text-rw-muted text-center pt-3">{tl("Live game stats aren't available right now.")}</p>
-      ) : (
-        games.map((g) => <LiveGamePanel key={g.id} match={match} only={g} showStats={showStats} startOpen={games.length === 1} />)
-      )}
-      <p className="text-[10px] text-rw-muted pt-2">{tl("The full stats page for this match comes with the next stats update.")}</p>
-    </div>
-  );
-};

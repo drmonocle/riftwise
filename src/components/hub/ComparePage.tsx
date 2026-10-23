@@ -301,7 +301,7 @@ export const TeamRows: React.FC<{
         right={
           <span className="flex items-center gap-2">
             <span className="text-[11px] text-rw-sub">{periodLabel}</span>
-            <BroadcastCardButton data={() => teamCardData(x, y, A, B, periodLabel, chance)} name={`${x.name}-vs-${y.name}`} />
+            <BroadcastCardButton data={() => teamCardData(x, y, A, B, periodLabel, chance)} name={`${x.name}-vs-${y.name}`} label={tl("Overview card")} />
             {drafts.A.games >= 3 && drafts.B.games >= 3 && (
               <BroadcastCardButton
                 data={() => draftCard({ aName: x.name, bName: y.name, A: drafts.A, B: drafts.B, period: periodLabel })}
@@ -446,6 +446,7 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
                 )
               }
               name={`${x.name}-vs-${y.name}`}
+              label={tl("Overview card")}
             />
           </span>
         }
