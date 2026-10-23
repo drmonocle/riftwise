@@ -6,7 +6,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Castle, ChevronDown, ChevronUp, Crown, Shield, Swords } from "lucide-react";
-import type { Match } from "../types";
+import type { Game, Match } from "../types";
 import { tl, roleName, fmtDec } from "../i18n";
 import {
   LiveDetailsParticipant,
@@ -62,17 +62,19 @@ interface GameState {
   details: LiveDetailsParticipant[] | null;
 }
 
-export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean }> = ({ match, showStats }) => {
+/** `only`: show that game (a finished match's games on the schedule); `startOpen`: players and items shown at once. */
+export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: Game; startOpen?: boolean }> = ({ match, showStats, only, startOpen }) => {
   useDDragon();
   // The game in progress, or between games the one that just ended
   const game = useMemo(() => {
+    if (only) return only;
     const games = match.games || [];
     return games.find((g) => g.state === "inProgress") || [...games].reverse().find((g) => g.state === "completed") || null;
-  }, [match.games]);
+  }, [match.games, only]);
   const live = game?.state === "inProgress";
   const [state, setState] = useState<GameState | null>(null);
   const [failed, setFailed] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!!startOpen);
   const [history, setHistory] = useState<[number, number][] | null>(null);
   const startRef = useRef<Record<string, number>>({});
   // the game's first frames (who plays what): all there is when Riot switches a game's live stats off
@@ -220,7 +222,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean }> = ({ 
         <div className="space-y-3">
           <Players left={left} right={right} details={state.details} />
           {history && history.length > 1 && <GoldGraph points={history} blueIsLeft={blueIsTeam1} />}
-          <p className="text-[10px] text-rw-muted">{tl("From Riot's live stats feed, about a minute behind the broadcast.")}</p>
+          {!finished && <p className="text-[10px] text-rw-muted">{tl("From Riot's live stats feed, about a minute behind the broadcast.")}</p>}
         </div>
       )}
     </div>
@@ -274,7 +276,12 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
   const r = byRole(right);
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-[11px] min-w-[28rem] table-fixed">
+      <table className="w-full text-[11px] min-w-[20rem] table-fixed">
+        <colgroup>
+          <col />
+          <col className="w-12" />
+          <col />
+        </colgroup>
         <tbody>
           {ROLE_ORDER.map((role, i) => (
             <tr key={role} className="border-t border-rw-border/60">
@@ -318,17 +325,20 @@ const PlayerCells: React.FC<{ p: PlayerRow; align: "left" | "right" }> = ({ p, a
               {p.frame.kills}/{p.frame.deaths}/{p.frame.assists}
             </span>
           </div>
-          <div className="text-[10px] text-rw-sub font-mono whitespace-nowrap">
-            {p.frame.creepScore} CS · {k(p.frame.totalGold)}
+          <div className="text-[10px] text-rw-sub font-mono">
+            <span className="whitespace-nowrap">
+              {p.frame.creepScore} CS · {k(p.frame.totalGold)}
+            </span>
             {p.det && (
-              <span className="text-rw-muted">
+              <>
                 {" "}
-                · KP {Math.round(p.det.killParticipation * 100)}% · DMG {Math.round(p.det.championDamageShare * 100)}%
-              </span>
+                <span className="text-rw-muted whitespace-nowrap">· KP {Math.round(p.det.killParticipation * 100)}%</span>{" "}
+                <span className="text-rw-muted whitespace-nowrap">· DMG {Math.round(p.det.championDamageShare * 100)}%</span>
+              </>
             )}
           </div>
           {items.length > 0 && (
-            <div className={`flex gap-0.5 ${right ? "justify-end" : ""}`}>
+            <div className={`flex flex-wrap gap-0.5 ${right ? "justify-end" : ""}`}>
               {items.map((id, i) => {
                 const src = itemIconById(id);
                 return src ? <img key={`${id}-${i}`} src={src} alt="" width={18} height={18} className="rounded" /> : null;

@@ -436,6 +436,22 @@ export async function fetchLiveMatches(): Promise<{
   return { matches, shows };
 }
 
+/**
+ * A finished match's games and Riot team ids (the schedule has neither), so its games' final numbers can come
+ * from the live stats feed right after it ends, before the stats hub has it.
+ */
+export async function fetchMatchGames(match: Match): Promise<Match> {
+  const data = await fetchJson(`${RIOT_BASE}/getEventDetails?hl=${riotHl()}&id=${encodeURIComponent(match.matchId)}`, { headers: riotHeaders });
+  const m = data?.data?.event?.match;
+  const id = (code: string) => (m?.teams || []).find((t: any) => t.code === code)?.id;
+  return {
+    ...match,
+    team1Id: match.team1Id || id(match.team1Code),
+    team2Id: match.team2Id || id(match.team2Code),
+    games: (m?.games || []).map((g: any) => ({ id: g.id, number: g.number, state: g.state })),
+  };
+}
+
 function scheduleEventsToMatches(rawEvents: any[]): Match[] {
   const matches: Match[] = [];
   for (const ev of rawEvents) {
