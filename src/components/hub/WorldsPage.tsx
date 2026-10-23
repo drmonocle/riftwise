@@ -11,8 +11,10 @@ import type { EventListItem, HubEvent, HubLeague, HubRatings } from "../../hub/t
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import {
   coin, favourites, quarterPairs, rng, roller, runKnockout, runSwiss, simulate,
-  type Fill, type Picks, type RealSeries, type TeamOdds, type WMatch, type WTeam,
+  withLive, withLiveKo,
+  type Fill, type LiveResult, type Picks, type RealSeries, type TeamOdds, type WMatch, type WTeam,
 } from "../../hub/worlds";
+import type { Match } from "../../types";
 import { eventFacts, factText, gamesOf, type Fact } from "../../hub/worldsFacts";
 import { detectBracket, realOfStages, runBracket, simulateBracket, type Bracket } from "../../hub/bracket";
 import { ChampIcon, Failed, HubLink, Loading, PlayerLink, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
@@ -126,7 +128,24 @@ async function loadIntl(kind: IntlKind, asked: string | undefined): Promise<Load
   return { name: eventTitle(parent.n), year, all: false, years, stages, parent, main, ratings, league };
 }
 
-export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string }> = ({ kind = "worlds", year: asked }) => {
+/** Riot's schedule for this event, with the stats' team pages (matched by code or name). */
+function liveResults(schedule: Match[] | undefined, leagueSlug: string, teams: WTeam[]): LiveResult[] {
+  const norm = (s: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const find = (code: string, name: string) =>
+    teams.find((t) => norm(t.c) === norm(code))?.u || teams.find((t) => norm(t.n) === norm(name))?.u || null;
+  const out: LiveResult[] = [];
+  for (const m of schedule || []) {
+    if (m.leagueSlug !== leagueSlug) continue;
+    const a = find(m.team1Code, m.team1Name);
+    const b = find(m.team2Code, m.team2Name);
+    if (!a || !b || a === b) continue;
+    const done = m.state === "completed" && m.team1Score !== m.team2Score;
+    out.push({ a, b, w: done ? (m.team1Score > m.team2Score ? 1 : 2) : 0, sa: done ? m.team1Score : undefined, sb: done ? m.team2Score : undefined, bo: m.bestOf || 1, block: m.blockName || "", date: m.startTimeUtc });
+  }
+  return out;
+}
+
+export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: Match[] }> = ({ kind = "worlds", year: asked, schedule }) => {
   const def = INTL[kind];
   const state = useLoad(() => loadIntl(kind, asked), [kind, asked]);
   const [tab, setTab] = useState<Tab>("facts");
@@ -140,6 +159,10 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string }> = ({ kind 
   useEffect(() => {
     if (!swissYear && !bracket) setTab("facts");
   }, [swissYear, bracket]);
+  // this year's Worlds opens on the Swiss picker (the stage being played); other years on the facts
+  useEffect(() => {
+    if (swissYear && d?.year === thisYear) setTab("swiss");
+  }, [swissYear, d?.year, thisYear]);
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -203,7 +226,7 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string }> = ({ kind 
       ) : tab === "facts" || !swissYear ? (
         <FactsTab d={d} kind={kind} />
       ) : (
-        <Pickers d={d} year={d.year} tab={tab} live={d.year === thisYear} />
+        <Pickers d={d} year={d.year} tab={tab} live={d.year === thisYear} schedule={d.year === thisYear ? schedule : undefined} />
       )}
     </div>
   );
@@ -348,17 +371,19 @@ function realOf(main: HubEvent, re: RegExp, round: (name: string) => number): Re
     );
 }
 
-const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean }> = ({ d, year, tab, live }) => {
+const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; schedule?: Match[] }> = ({ d, year, tab, live, schedule }) => {
   const [saved, setSaved] = useSaved(year);
   const [odds, setOdds] = useState<Record<string, TeamOdds> | null>(null);
   const [running, setRunning] = useState(false);
   const [keepPicks, setKeepPicks] = useState(false);
   const main = d.main;
   const teams = useMemo(() => (main ? teamsOf(main, d.ratings) : []), [main, d.ratings]);
-  const real = useMemo(() => (main ? realOf(main, /^round \d/i, (n) => Number(/\d+/.exec(n)?.[0] || 0)) : []), [main]);
+  // Riot's live schedule on top of the stats: results within a minute or so of the end, and Riot's next-round draw
+  const riot = useMemo(() => liveResults(schedule, "worlds", teams), [schedule, teams]);
+  const real = useMemo(() => withLive(main ? realOf(main, /^round \d/i, (n) => Number(/\d+/.exec(n)?.[0] || 0)) : [], riot), [main, riot]);
   const realKo = useMemo(
-    () => (main ? realOf(main, /quarter|semi|final/i, (n) => (/quarter/i.test(n) ? 1 : /semi/i.test(n) ? 2 : 3)) : []),
-    [main],
+    () => withLiveKo(main ? realOf(main, /quarter|semi|final/i, (n) => (/quarter/i.test(n) ? 1 : /semi/i.test(n) ? 2 : 3)) : [], riot),
+    [main, riot],
   );
   const adjust = d.ratings?.adjust;
   const swiss = useMemo(() => runSwiss(teams, real, saved.swiss, saved.seed, adjust), [teams, real, saved.swiss, saved.seed, adjust]);

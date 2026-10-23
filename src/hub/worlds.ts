@@ -294,3 +294,54 @@ export function simulate(teams: WTeam[], real: RealSeries[], realKo: RealSeries[
   for (const o of Object.values(odds)) for (const key of Object.keys(o) as (keyof TeamOdds)[]) o[key] /= runs;
   return odds;
 }
+
+/** A match from Riot's live schedule, with the stats' team pages: w 1 = a won, 2 = b won, 0 = not finished. */
+export interface LiveResult {
+  a: string;
+  b: string;
+  w: number;
+  sa?: number;
+  sb?: number;
+  bo: number;
+  /** Riot's round name: "Swiss", "Quarterfinals", "Semifinals", "Finals" */
+  block: string;
+  date: string;
+}
+
+const samePair = (s: RealSeries, a: string, b: string) => (s.a === a && s.b === b) || (s.a === b && s.b === a);
+function merge(list: RealSeries[], m: LiveResult, round: () => number): RealSeries[] {
+  const i = list.findIndex((s) => samePair(s, m.a, m.b) && !(s.w === 1 || s.w === 2));
+  const done = list.some((s) => samePair(s, m.a, m.b) && (s.w === 1 || s.w === 2));
+  if (done) return list; // the stats have it already
+  const flip = (r: RealSeries) => r.a !== m.a;
+  if (i >= 0) {
+    const r = list[i];
+    const w = !m.w ? 0 : flip(r) ? 3 - m.w : m.w;
+    const [sa, sb] = flip(r) ? [m.sb, m.sa] : [m.sa, m.sb];
+    return list.map((s, k) => (k === i ? { ...s, w, sa: m.w ? sa : s.sa, sb: m.w ? sb : s.sb } : s));
+  }
+  return [...list, { round: round(), a: m.a, b: m.b, bo: m.bo, w: m.w, sa: m.sa, sb: m.sb, date: m.date }];
+}
+
+/**
+ * The Swiss series from the stats plus Riot's live schedule: results the next stats build hasn't taken in yet (it
+ * lands 30-60 minutes after a game), and the next round's pairings as soon as Riot draws them.
+ */
+export function withLive(real: RealSeries[], live: LiveResult[]): RealSeries[] {
+  let out = real;
+  for (const m of live.filter((x) => /swiss/i.test(x.block)).sort((x, y) => x.date.localeCompare(y.date))) {
+    // a team's next Swiss round is one more than the rounds it has a series in
+    out = merge(out, m, () => 1 + out.filter((s) => s.a === m.a || s.b === m.a).length);
+  }
+  return out;
+}
+
+/** The same for the knockouts (quarterfinals round 1, semifinals 2, final 3). */
+export function withLiveKo(real: RealSeries[], live: LiveResult[]): RealSeries[] {
+  let out = real;
+  for (const m of live.sort((x, y) => x.date.localeCompare(y.date))) {
+    const round = /quarter/i.test(m.block) ? 1 : /semi/i.test(m.block) ? 2 : /^finals?$/i.test(m.block.trim()) ? 3 : 0;
+    if (round) out = merge(out, m, () => round);
+  }
+  return out;
+}

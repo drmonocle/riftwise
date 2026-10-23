@@ -52,7 +52,7 @@ import { reconcileLiveAndSchedule, playKickoffChime, applyH2HData, loadBundledH2
 import { OPEN_H2H_EVENT, OpenH2HDetail } from "./components/H2HMeter";
 import { Header } from "./components/Header";
 import { Navigation, TabKey } from "./components/Navigation";
-import { LiveView } from "./components/views/LiveView";
+import { LiveView, intlMatchNow } from "./components/views/LiveView";
 import { tl, locale } from "./i18n";
 import { statsUpdatedAt } from "./stats";
 import { syncPush } from "./push";
@@ -984,7 +984,8 @@ export default function App() {
         </div>
       )}
 
-      {hubTip && !showWelcome && !renameNote && !moveNote && activeTab !== "stats" && (
+      {/* while Worlds/MSI/First Stand is on, the Live tab's event banner points at the stats instead */}
+      {hubTip && !showWelcome && !renameNote && !moveNote && activeTab !== "stats" && !intlMatchNow(schedule) && (
         <div className="bg-rw-surface border-b border-rw-accent/40 px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs" role="status">
           <div className="flex-1 min-w-[14rem] text-rw-sub leading-relaxed">
             <strong className="text-rw-accent">{tl("New: Pro Stats for every game since 2011.")}</strong>{" "}

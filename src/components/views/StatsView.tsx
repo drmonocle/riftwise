@@ -329,7 +329,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
         )}
         {route.kind === "champ" && <ChampPage slug={route.slug} />}
         {(route.kind === "worlds" || route.kind === "msi" || route.kind === "first-stand") && (
-          <WorldsPage key={route.kind} kind={route.kind} year={"year" in route ? route.year : undefined} />
+          <WorldsPage key={route.kind} kind={route.kind} year={"year" in route ? route.year : undefined} schedule={schedule} />
         )}
         </Suspense>
         </PartBoundary>

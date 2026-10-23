@@ -69,3 +69,20 @@ describe("knockouts", () => {
     expect(o.t0.win).toBeGreaterThan(o.t15.win);
   });
 });
+
+describe("Riot's live schedule", () => {
+  it("locks results before the stats have them and adds Riot's next-round draw", async () => {
+    const { withLive } = await import("../hub/worlds");
+    const live = [
+      { a: "t15", b: "t0", w: 1, sa: 1, sb: 0, bo: 1, block: "Swiss", date: "2026-10-23 17:00" }, // upset, sides flipped
+      { a: "t1", b: "t3", w: 0, bo: 1, block: "Swiss", date: "2026-10-24 17:00" }, // made-up round 2 pairing
+    ];
+    const real = withLive(round1, live);
+    const r1 = real.find((s) => s.a === "t0");
+    expect(r1?.w).toBe(2); // t15 won: b in the stats' order
+    expect(r1?.sb).toBe(1);
+    expect(real.find((s) => s.a === "t1" && s.b === "t3")?.round).toBe(2);
+    const s = runSwiss(teams, real, {}, 1);
+    expect(s.rounds[0].find((m) => m.a === "t0")?.from).toBe("real");
+  });
+});
