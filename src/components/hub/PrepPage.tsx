@@ -169,7 +169,7 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
 };
 
 /** a's chance to win one game, a best-of-three and a best-of-five (null when the two can't be compared). */
-function chancesOf(a: HubTeam, b: HubTeam, ratings: HubRatings | undefined | null): [string, number][] | null {
+export function chancesOf(a: HubTeam, b: HubTeam, ratings: HubRatings | undefined | null): [string, number][] | null {
   if (!a.rating || !b.rating || !ratings) return null;
   // second-tier leagues never meet the top ones: only compare teams on the same scale
   if ((a.rating.rank == null || b.rating.rank == null) && a.rating.league !== b.rating.league) return null;
@@ -183,7 +183,7 @@ function chancesOf(a: HubTeam, b: HubTeam, ratings: HubRatings | undefined | nul
 }
 
 /** "#3 worldwide · #2 in LCK" */
-const rankText = (t: HubTeam) =>
+export const rankText = (t: HubTeam) =>
   !t.rating
     ? undefined
     : t.rating.rank != null
@@ -465,7 +465,7 @@ const CopyPost: React.FC<{ text: () => string }> = ({ text }) => {
 };
 
 /** Head-to-head facts plus both teams' and their starters' storylines. */
-function prepLines(a: Side, b: Side): StoryLine[] {
+export function prepLines(a: Side, b: Side): StoryLine[] {
   const lines: StoryLine[] = [];
   const meetings = a.series.filter((r) => r[2] === b.team.u).sort((x, y) => (x[0] < y[0] ? 1 : -1));
   if (!meetings.length) {

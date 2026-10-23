@@ -603,3 +603,176 @@ export function draftCard(d: { aName: string; bName: string; A: Draft; B: Draft;
     ),
   };
 }
+
+// ── more overview cards: one team, a tournament, the power rankings, a chances table, a champion ─────────────
+
+const mmss = (m: number) => {
+  const s = Math.round(m * 60);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+};
+
+/** One team over a period: record, sides, gold, objectives and (with Oracle's Elixir games) the early game. */
+export function teamSoloCardData(t: { name: string; sub?: string }, A: TeamAgg, period: string): CardData {
+  const rows: CardRow[] = [
+    { label: tl("Games won"), a: `${A.w}-${A.g - A.w}`, pct: wrOf(A.w, A.g) },
+    { label: tl("Win rate"), a: pc(wrOf(A.w, A.g)), pct: wrOf(A.w, A.g) },
+    { label: tl("Blue side"), a: `${A.blue[1]}-${A.blue[0] - A.blue[1]}`, pct: wrOf(A.blue[1], A.blue[0]) },
+    { label: tl("Red side"), a: `${A.red[1]}-${A.red[0] - A.red[1]}`, pct: wrOf(A.red[1], A.red[0]) },
+  ];
+  if (A.tl) {
+    rows.push({ label: "GD@15", a: sg(A.tl.gd15) });
+    rows.push({ label: tl("Ahead at 15"), a: pc(A.tl.lead15), pct: A.tl.lead15 });
+  } else rows.push({ label: tl("Gold diff / game"), a: sg(A.gd) });
+  rows.push(
+    { label: tl("Kills / game"), a: n1(A.kills) },
+    { label: tl("DRA%"), a: pc(A.dragShare), pct: A.dragShare },
+    { label: tl("Baron%"), a: pc(A.baronShare), pct: A.baronShare },
+    { label: tl("Avg game"), a: A.min ? mmss(A.min) : "–" },
+  );
+  return {
+    title: tl("Team card"),
+    subtitle: period,
+    a: { name: t.name, sub: t.sub, champs: A.picks.slice(0, 5).map((p) => p[0]) },
+    rows,
+    note: A.tl ? tl("Early game: Oracle's Elixir") : undefined,
+  };
+}
+
+/** A tournament: winner and podium, games, length, kills, sides, Player of the Game, its best and shortest games. */
+export function eventCardData(d: {
+  name: string;
+  when?: string;
+  podium: string[];
+  o: import("../../hub/types").EventOverview;
+}): CardData {
+  const { o } = d;
+  const sides = o.blue + o.red;
+  const rows: (CardRow & { sub?: string })[] = [
+    { label: tl("Games"), a: o.g.toLocaleString(locale()) },
+    { label: tl("Avg game"), a: o.min ? mmss(o.min) : "–" },
+    { label: tl("Kills / game"), a: n1(o.kills || null) },
+    { label: tl("Blue side wins"), a: sides ? `${Math.round((o.blue / sides) * 100)}%` : "–", pct: sides ? (o.blue / sides) * 100 : null },
+  ];
+  if (o.mvp[0]) rows.push({ label: tl("Most Player of the Game"), a: `${o.mvp[0].n} · ${o.mvp[0].v}` });
+  if (o.short) rows.push({ label: tl("Shortest game"), a: mmss(o.short.v), sub: `${o.short.a} vs ${o.short.b}` });
+  if (o.bloody) rows.push({ label: tl("Bloodiest game"), a: String(o.bloody.v), sub: `${o.bloody.a} vs ${o.bloody.b}` });
+  if (o.pentas.length) rows.push({ label: tl("Pentakills"), a: o.pentas.map((p) => p.n).slice(0, 3).join(", ") });
+  const medal = ["var(--rw-accent)", "var(--rw-text)", "var(--rw-sub)"];
+  return {
+    title: tl("Tournament overview"),
+    subtitle: d.when,
+    a: { name: d.name },
+    rows: [],
+    body: (
+      <>
+        <div style={{ fontSize: 56, fontWeight: 800, lineHeight: 1.05, marginTop: 18, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.name}</div>
+        {d.podium.length > 0 && (
+          <div style={{ display: "flex", gap: 40, marginTop: 14, alignItems: "baseline", flexWrap: "wrap" }}>
+            {d.podium.slice(0, 3).map((t, i) => (
+              <span key={i} style={{ fontSize: i === 0 ? 40 : 28, fontWeight: 800, color: medal[i] }}>
+                {i === 0 ? "🏆 " : `${i + 1}. `}
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+        <div style={{ marginTop: 26, display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "18px 48px", alignContent: "start" }}>
+          {rows.map((r) => (
+            <div key={r.label}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16, fontVariantNumeric: "tabular-nums" }}>
+                <span style={{ ...caption, fontSize: 20, whiteSpace: "nowrap" }}>{r.label}</span>
+                <span style={{ fontSize: 30, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{r.a}</span>
+              </div>
+              {r.sub && <div style={{ fontSize: 20, color: "var(--rw-sub)", textAlign: "right", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.sub}</div>}
+              {r.pct != null && (
+                <div style={{ height: 8, borderRadius: 4, background: "var(--rw-bg)", marginTop: 6, overflow: "hidden" }}>
+                  <div style={{ width: `${r.pct}%`, height: "100%", background: "var(--rw-accent)" }} />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </>
+    ),
+  };
+}
+
+/** A ranked list (power rankings): rank, name, league, rating and its 30-day change. */
+export function rankingsCard(d: { title: string; subtitle: string; rows: { name: string; league?: string; r: number; chg?: number | null }[] }): CardData {
+  const rows = d.rows.slice(0, 10);
+  return {
+    title: d.title,
+    subtitle: d.subtitle,
+    a: { name: d.title },
+    rows: [],
+    body: (
+      <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "1fr 1fr", gridAutoFlow: "column", gridTemplateRows: `repeat(${Math.ceil(rows.length / 2)}, auto)`, gap: "10px 56px", alignContent: "start" }}>
+        {rows.map((x, i) => (
+          <div key={i} style={{ display: "grid", gridTemplateColumns: "64px 1fr auto auto", gap: 18, alignItems: "baseline", borderTop: "1px solid var(--rw-border)", padding: "12px 0", fontVariantNumeric: "tabular-nums" }}>
+            <span style={{ fontSize: 34, fontWeight: 800, color: i === 0 ? "var(--rw-accent)" : "var(--rw-muted)" }}>{i + 1}</span>
+            <span style={{ minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: 34, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.name}</span>
+              {x.league && <span style={{ display: "block", fontSize: 18, color: "var(--rw-sub)" }}>{x.league}</span>}
+            </span>
+            <span style={{ fontSize: 30, fontWeight: 800, color: "var(--rw-accent)" }}>{x.r}</span>
+            <span style={{ fontSize: 22, minWidth: 64, textAlign: "right", color: !x.chg ? "var(--rw-muted)" : x.chg > 0 ? "var(--rw-teal)" : "var(--rw-red)" }}>
+              {!x.chg ? "–" : `${x.chg > 0 ? "▲" : "▼"}${Math.abs(x.chg)}`}
+            </span>
+          </div>
+        ))}
+      </div>
+    ),
+  };
+}
+
+/** A chances table (Worlds and bracket pickers): one row per team, the last column the title. */
+export function chancesCard(d: { title: string; subtitle: string; cols: string[]; rows: { name: string; v: string[] }[]; note?: string }): CardData {
+  const rows = d.rows.slice(0, 10);
+  const grid = `1fr ${d.cols.map(() => "170px").join(" ")}`;
+  return {
+    title: d.title,
+    subtitle: d.subtitle,
+    a: { name: d.title },
+    rows: [],
+    note: d.note,
+    body: (
+      <div style={{ marginTop: 16, display: "grid", gap: 0, alignContent: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: grid, gap: 12, padding: "0 0 8px" }}>
+          <span style={caption}>{tl("Team")}</span>
+          {d.cols.map((c, i) => (
+            <span key={c} style={{ ...caption, textAlign: "right", color: i === d.cols.length - 1 ? "var(--rw-accent)" : "var(--rw-sub)" }}>{c}</span>
+          ))}
+        </div>
+        {rows.map((r, i) => (
+          <div key={i} style={{ display: "grid", gridTemplateColumns: grid, gap: 12, alignItems: "baseline", borderTop: "1px solid var(--rw-border)", padding: "6px 0", fontVariantNumeric: "tabular-nums" }}>
+            <span style={{ fontSize: 28, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</span>
+            {r.v.map((x, j) => (
+              <span key={j} style={{ fontSize: j === r.v.length - 1 ? 32 : 26, fontWeight: j === r.v.length - 1 ? 800 : 600, textAlign: "right", color: j === r.v.length - 1 ? "var(--rw-accent)" : "var(--rw-text)" }}>{x}</span>
+            ))}
+          </div>
+        ))}
+      </div>
+    ),
+  };
+}
+
+/** A champion in pro play: this year and all time, its roles and the players with the most games on it. */
+export function champCardData(c: import("../../hub/types").HubChamp, label: string): CardData {
+  const year = c.years.find((y) => y.y === String(new Date().getFullYear())) || c.years[c.years.length - 1];
+  const rows: CardRow[] = [];
+  if (year) {
+    rows.push({ label: tl("Games in {year}", { year: year.y }), a: year.p.toLocaleString(locale()) });
+    rows.push({ label: tl("Win rate in {year}", { year: year.y }), a: pc(wrOf(year.w, year.p)), pct: wrOf(year.w, year.p) });
+    rows.push({ label: tl("Bans in {year}", { year: year.y }), a: year.b.toLocaleString(locale()) });
+  }
+  rows.push({ label: tl("Games, all time"), a: c.p.toLocaleString(locale()) });
+  rows.push({ label: tl("Win rate, all time"), a: pc(wrOf(c.w, c.p)), pct: wrOf(c.w, c.p) });
+  const roles = c.roles.slice(0, 2).map((r) => roleName(r.r)).join(" · ");
+  if (roles) rows.push({ label: tl("Main roles"), a: roles });
+  for (const p of c.players.slice(0, 4)) rows.push({ label: p.n, a: tl("{g} games · {wr}", { g: p.g, wr: pc(wrOf(p.w, p.g)) }) });
+  return {
+    title: tl("Champion card"),
+    a: { name: label, sub: tl("Pro play since 2011"), champs: [c.name] },
+    rows,
+  };
+}

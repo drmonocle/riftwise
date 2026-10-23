@@ -11,6 +11,7 @@ import type { HubEvent, SeriesRow, Stage, StandingRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { EventPlayerStats, EventTeamStatsTable } from "./EventTables";
 import { EventFacts, EventRosters, RegionalRecords } from "./EventExtras";
+import { eventCardData } from "./BroadcastCard";
 import {
   card,
   ChampLink,
@@ -181,7 +182,23 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
         </Section>
       )}
 
-      {e.overview && <EventFacts o={e.overview} hidden={resultsHidden} />}
+      {e.overview && (
+        <EventFacts
+          o={e.overview}
+          hidden={resultsHidden}
+          card={{
+            name: `${e.u}-overview`,
+            data: () =>
+              eventCardData({
+                name: eventTitle(e.n),
+                when: [e.start && fmtDate(e.start), e.end && e.end !== e.start && fmtDate(e.end)].filter(Boolean).join(" – ") || undefined,
+                // the podium: the final standings' top three (one team per place)
+                podium: (e.results || []).filter((r) => ["1", "2", "3"].includes(r.p)).sort((x, y) => Number(x.p) - Number(y.p)).map((r) => r.t).slice(0, 3),
+                o: e.overview!,
+              }),
+          }}
+        />
+      )}
 
       {bracket.length > 0 && <Bracket stages={bracket} />}
 

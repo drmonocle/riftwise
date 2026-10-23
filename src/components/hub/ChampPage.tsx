@@ -30,7 +30,8 @@ import {
 } from "./ui";
 import { itemName, runeName, spellName } from "../../hub/ddragon";
 import { CountersLink } from "./CountersPage";
-import { STable } from "../STable";
+import { STable } from "../STable";
+import { BroadcastCardButton, champCardData } from "./BroadcastCard";
 
 export const ChampPage: React.FC<{ slug: string }> = ({ slug }) => {
   const state = useLoad(() => loadHubChamp(slug), [slug]);
@@ -203,7 +204,10 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         </Section>
       )}
 
-      <Section title={tl("By year")}>
+      <Section
+        title={tl("By year")}
+        right={<BroadcastCardButton data={() => champCardData(c, champName(c.name))} name={`${c.u}-pro-play`} label={tl("Overview card")} />}
+      >
         <div className="space-y-1">
           {c.years.map((y) => (
             <div key={y.y} className="grid grid-cols-[3rem_1fr_auto] items-center gap-2 text-xs">
