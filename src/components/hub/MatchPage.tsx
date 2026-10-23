@@ -8,6 +8,7 @@ import type { GamePlayer, HubGame, HubSeries, SideStats } from "../../hub/types"
 import { useDDragon } from "../../hub/ddragon";
 import { RatingBadge } from "./BestPage";
 import { navigateHub } from "../../hub/route";
+import { BroadcastCardButton, gameCardData, seriesCardData } from "./BroadcastCard";
 import { card, ChampIcon, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, OeCredit, Page, PlayerLink, RevealButton, RuneIcon, SpellIcon, TeamLink, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
 
 const fmtGold = (g?: number) => (g == null ? "–" : `${fmtDec(g / 1000)}k`);
@@ -87,6 +88,11 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
             <RevealButton onReveal={reveal} />
           </div>
         )}
+        {!hidden && s.games.some((g) => g.w) && (
+          <div className="mt-3 flex justify-center">
+            <BroadcastCardButton data={() => seriesCardData(s)} name={`${s.a.n}-vs-${s.b.n}-series`} label={tl("Overview card")} />
+          </div>
+        )}
         {!hidden && s.ff ? (
           <p className="mt-2 text-[11px] text-rw-muted text-center">{tl("Result awarded by forfeit, not by the games played.")}</p>
         ) : null}
@@ -164,6 +170,9 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
               </span>
             )}
           </span>
+          {!hidden && g.t && (
+            <BroadcastCardButton data={() => gameCardData(s, g)} name={`${s.a.n}-vs-${s.b.n}-game-${g.n}`} label={tl("Game card")} />
+          )}
           {(g.vod || g.vpb || g.vgs) && (
             <span className="flex flex-wrap items-center gap-1.5">
               {(
