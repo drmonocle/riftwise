@@ -10,6 +10,7 @@ import { toBlob } from "html-to-image";
 import { tl, tc, locale, roleName, fmtDec, stageLabel, eventTitle } from "../../i18n";
 import { IS_WEB } from "../../platform";
 import { ChampIcon } from "./ui";
+import { champName } from "../../champions";
 import type { PlayerAgg, TeamAgg } from "../../hub/period";
 import { ROLES } from "../../hub/champAgg";
 import type { draftTendencies } from "./DraftTendencies";
@@ -896,3 +897,127 @@ const fmtDay = (d: string) => {
   const t = Date.parse(d.length <= 10 ? `${d}T12:00:00Z` : d.replace(" ", "T"));
   return Number.isNaN(t) ? d : new Date(t).toLocaleDateString(locale(), { dateStyle: "medium" });
 };
+
+// ── the draft board ──────────────────────────────────────────────────────
+
+export interface BoardSide {
+  name: string;
+  bans: string[];
+  /** in pick order: champion, its likely role and the player who plays it */
+  picks: { c: string; role?: string; player?: string }[];
+}
+
+/** The draft on the Draft board: both teams' bans and picks (role and player), and earlier Fearless games. */
+export function draftBoardCard(d: { blue: BoardSide; red: BoardSide; period: string; earlier: { blue: string[]; red: string[] }[] }): CardData {
+  const side = (s: BoardSide, color: string, sideName: string, right: boolean) => (
+    <div style={{ minWidth: 0, textAlign: right ? "right" : "left" }}>
+      <div style={{ fontSize: 46, fontWeight: 800, color, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
+      <div style={{ ...caption, marginTop: 2 }}>{sideName}</div>
+      <div style={{ display: "flex", gap: 6, marginTop: 12, alignItems: "center", justifyContent: right ? "flex-end" : "flex-start" }}>
+        <span style={{ ...caption, fontSize: 16, marginRight: 6 }}>{tl("Bans")}</span>
+        {s.bans.length ? s.bans.map((c) => <span key={c} style={{ opacity: 0.55, filter: "grayscale(0.7)" }}><ChampIcon name={c} size={40} /></span>) : none}
+      </div>
+      <div style={{ display: "grid", gap: 8, marginTop: 14 }}>
+        {s.picks.map((p) => (
+          <div key={p.c} style={{ display: "flex", alignItems: "center", gap: 14, flexDirection: right ? "row-reverse" : "row" }}>
+            <ChampIcon name={p.c} size={64} />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 28, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{champName(p.c)}</div>
+              {(p.role || p.player) && <div style={{ fontSize: 20, color: "var(--rw-sub)" }}>{[p.role, p.player].filter(Boolean).join(" · ")}</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+  return {
+    title: tl("Draft board"),
+    subtitle: d.period ? tl("Pools from {period}", { period: d.period }) : undefined,
+    a: { name: d.blue.name },
+    rows: [],
+    body: (
+      <>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, marginTop: 14, flex: 1, minHeight: 0 }}>
+          {side(d.blue, "#4a9eff", tl("Blue side"), false)}
+          {side(d.red, "var(--rw-red)", tl("Red side"), true)}
+        </div>
+        {d.earlier.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 28px", alignItems: "center", borderTop: "1px solid var(--rw-border)", paddingTop: 10 }}>
+            <span style={caption}>{tl("Fearless: earlier games")}</span>
+            {d.earlier.map((g, i) => (
+              <span key={i} style={{ display: "inline-flex", gap: 4, alignItems: "center", fontSize: 18, color: "var(--rw-sub)" }}>
+                {tl("Game {n}", { n: i + 1 })}
+                {[...g.blue, ...g.red].map((c, k) => (
+                  <ChampIcon key={k} name={c} size={28} />
+                ))}
+              </span>
+            ))}
+          </div>
+        )}
+      </>
+    ),
+  };
+}
+
+// ── a section as a card: any list on a team or player page ─────────────────
+
+export interface ListRow {
+  label: string;
+  /** the number on the right */
+  value?: string;
+  /** a smaller line under the label */
+  sub?: string;
+  /** a champion icon before the label */
+  champ?: string;
+  /** a won / lost mark before the label */
+  win?: boolean | null;
+}
+
+/** One section of a page (titles, by year, champion pool...) as a card: who it is about, then the list. */
+export function listCard(d: { section: string; name: string; sub?: string; rows: ListRow[] }): CardData {
+  const two = d.rows.length > 6;
+  const rows = d.rows.slice(0, two ? 12 : 6);
+  return {
+    title: d.section,
+    subtitle: d.sub,
+    a: { name: d.name },
+    rows: [],
+    body: (
+      <>
+        <div style={{ fontSize: 52, fontWeight: 800, lineHeight: 1.05, marginTop: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.name}</div>
+        <div
+          style={{
+            marginTop: 20,
+            display: "grid",
+            gridTemplateColumns: two ? "minmax(0, 1fr) minmax(0, 1fr)" : "minmax(0, 1fr)",
+            gridAutoFlow: two ? "column" : "row",
+            gridTemplateRows: two ? `repeat(${Math.ceil(rows.length / 2)}, auto)` : undefined,
+            gap: "0 56px",
+            alignContent: "start",
+          }}
+        >
+          {rows.map((r, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, borderTop: "1px solid var(--rw-border)", padding: "10px 0", minWidth: 0 }}>
+              {r.win != null && (
+                <span style={{ fontSize: 24, fontWeight: 900, width: 28, color: r.win ? "var(--rw-teal)" : "var(--rw-red)" }}>
+                  {r.win ? tc("short result", "W") : tc("short result", "L")}
+                </span>
+              )}
+              {r.champ && <ChampIcon name={r.champ} size={46} />}
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 28, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.label}</div>
+                {r.sub && <div style={{ fontSize: 19, color: "var(--rw-sub)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.sub}</div>}
+              </div>
+              {r.value && <div style={{ fontSize: 28, fontWeight: 800, color: "var(--rw-accent)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{r.value}</div>}
+            </div>
+          ))}
+        </div>
+      </>
+    ),
+  };
+}
+
+/** The small card button in a section's header: the section's list as a 16:9 card. */
+export const SectionCard: React.FC<{ section: string; name: string; sub?: string; rows: () => ListRow[] }> = ({ section, name, sub, rows }) => (
+  <BroadcastCardButton compact data={() => listCard({ section, name, sub, rows: rows() })} name={`${name}-${section}`} label={tl("Overview card")} />
+);

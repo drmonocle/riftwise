@@ -21,6 +21,7 @@ import { PeriodPicker, defaultPeriod } from "./PeriodStats";
 import { FearlessDepth, Side, loadSide } from "./PrepPage";
 import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, Section, useLoad, usePageTitle, useRetryAttempt, retryFailedLoads } from "./ui";
 import { loadHubChamp, prettySlug } from "../../hub/data";
+import { BroadcastCardButton, draftBoardCard, type BoardSide } from "./BroadcastCard";
 import type { LaneLine } from "../../hub/types";
 
 type Who = "b" | "r";
@@ -423,6 +424,30 @@ const Board: React.FC<{
             {tl("Swap sides")}
           </button>
           <CopyDraft text={draftText} />
+          {slots.some((s) => s) && (
+            <BroadcastCardButton
+              data={() => {
+                // each pick with the role it most likely fills and the player on the roster who plays it
+                const sideOf = (w: Who): BoardSide => ({
+                  name: team(w).team.name,
+                  bans: bansOf(w),
+                  picks: picksOf(w).map((c) => {
+                    const r = roleOf(c, pools[w]);
+                    return { c, role: r == null ? undefined : roleName(ROLES[r]), player: champOf(c, pools[w])?.name };
+                  }),
+                });
+                const pk = (g: PastGame, w: Who) => ORDER.map((o, k) => (o.side === w && !o.ban ? g.slots[k] : null)).filter((c): c is string => !!c);
+                return draftBoardCard({
+                  blue: sideOf("b"),
+                  red: sideOf("r"),
+                  period: options.find((o) => o.key === period)?.label || "",
+                  earlier: fearless ? history.map((g) => ({ blue: pk(g, "b"), red: pk(g, "r") })) : [],
+                });
+              }}
+              name={`${blue.team.name}-vs-${red.team.name}-draft`}
+              label={tl("Overview card")}
+            />
+          )}
           <HubLink to={{ kind: "prep", a: blue.team.u, b: red.team.u, period }} className="text-rw-teal hover:underline">
             {tl("Match prep")}
           </HubLink>

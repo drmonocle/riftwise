@@ -443,11 +443,16 @@ export async function fetchLiveMatches(): Promise<{
 export async function fetchMatchGames(match: Match): Promise<Match> {
   const data = await fetchJson(`${RIOT_BASE}/getEventDetails?hl=${riotHl()}&id=${encodeURIComponent(match.matchId)}`, { headers: riotHeaders });
   const m = data?.data?.event?.match;
-  const id = (code: string) => (m?.teams || []).find((t: any) => t.code === code)?.id;
+  const team = (code: string) => (m?.teams || []).find((t: any) => t.code === code);
+  const id = (code: string) => team(code)?.id;
+  // the event's own score: newer than the schedule's copy while a series is on
+  const wins = (code: string, fallback: number) => team(code)?.result?.gameWins ?? fallback;
   return {
     ...match,
     team1Id: match.team1Id || id(match.team1Code),
     team2Id: match.team2Id || id(match.team2Code),
+    team1Score: wins(match.team1Code, match.team1Score),
+    team2Score: wins(match.team2Code, match.team2Score),
     games: (m?.games || []).map((g: any) => ({ id: g.id, number: g.number, state: g.state })),
   };
 }
