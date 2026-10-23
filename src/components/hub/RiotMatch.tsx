@@ -21,14 +21,23 @@ function useRiotMatch(find: () => Promise<Match | null>, key: string): Match | n
   useEffect(() => {
     let alive = true;
     let timer: number | undefined;
+    // not found or a failed request (a slow schedule, a hiccup at Riot): ask again a few times before giving up
+    let misses = 0;
+    const missed = () => {
+      if (!alive) return;
+      if (++misses <= 3) timer = window.setTimeout(load, 5_000 * misses);
+      else setM((prev) => (prev === undefined ? null : prev));
+    };
     const load = () =>
       find()
         .then((x) => {
           if (!alive) return;
+          if (!x || !x.games.length) return missed();
+          misses = 0;
           setM(x);
-          if (x && (x.state !== "completed" || x.games.some((g) => g.state === "inProgress"))) timer = window.setTimeout(load, REFRESH_MS);
+          if (x.state !== "completed" || x.games.some((g) => g.state === "inProgress")) timer = window.setTimeout(load, REFRESH_MS);
         })
-        .catch(() => alive && setM((prev) => (prev === undefined ? null : prev)));
+        .catch(missed);
     load();
     return () => {
       alive = false;
