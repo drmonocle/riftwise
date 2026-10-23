@@ -18,6 +18,7 @@ import type { Match } from "../../types";
 import { normalizeTeamCode } from "../../helpers";
 import { eventFacts, factText, gamesOf, type Fact } from "../../hub/worldsFacts";
 import { detectBracket, realOfStages, runBracket, simulateBracket, type Bracket } from "../../hub/bracket";
+import { BroadcastCardButton, chancesCard } from "./BroadcastCard";
 import { ChampIcon, Failed, HubLink, Loading, PlayerLink, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
 
 /** The three international events with a page of their own; Worlds has had a Swiss stage since 2023. */
@@ -520,7 +521,30 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
           )}
         </Section>
       )}
-      <Section title={tl("Chances from here")} share={`worlds-${year}-chances`}>
+      <Section
+        title={tl("Chances from here")}
+        share={`worlds-${year}-chances`}
+        right={
+          odds ? (
+            <BroadcastCardButton
+              data={() =>
+                chancesCard({
+                  title: tl("Chances from here"),
+                  subtitle: d.name,
+                  cols: ["3-0", tl("Through"), tl("Semifinal"), tl("Final"), tl("Wins Worlds")],
+                  rows: teams
+                    .slice()
+                    .sort((a, b) => odds[b.u].win - odds[a.u].win || odds[b.u].adv - odds[a.u].adv)
+                    .map((t) => ({ name: t.n, v: [odds[t.u].r30, odds[t.u].adv, odds[t.u].sf, odds[t.u].final, odds[t.u].win].map(pctText) })),
+                  note: tl("10,000 runs"),
+                })
+              }
+              name={`worlds-${year}-chances`}
+              label={tl("Overview card")}
+            />
+          ) : undefined
+        }
+      >
         <p className="text-[11px] text-rw-muted">
           {tl("Plays the rest of Worlds 10,000 times, each open match rolled by its chances, and counts how far each team gets.")}
         </p>
@@ -760,7 +784,30 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
           </div>
         </div>
       </Section>
-      <Section title={tl("Chances from here")} share={`${kind}-${d.year}-chances`}>
+      <Section
+        title={tl("Chances from here")}
+        share={`${kind}-${d.year}-chances`}
+        right={
+          odds ? (
+            <BroadcastCardButton
+              data={() =>
+                chancesCard({
+                  title: tl("Chances from here"),
+                  subtitle: d.name,
+                  cols: [...br.reach.map(([l]) => tl(COL_LABELS[l] || l)), tl("Wins")],
+                  rows: teams
+                    .filter((t) => odds[t.u] && odds[t.u].some((x) => x > 0))
+                    .sort((a, b) => odds[b.u][br.reach.length] - odds[a.u][br.reach.length])
+                    .map((t) => ({ name: t.n, v: odds[t.u].map(pctText) })),
+                  note: tl("10,000 runs"),
+                })
+              }
+              name={`${kind}-${d.year}-chances`}
+              label={tl("Overview card")}
+            />
+          ) : undefined
+        }
+      >
         <p className="text-[11px] text-rw-muted">{tl("Plays the rest of the event 10,000 times, each open match rolled by its chances, and counts how far each team gets.")}</p>
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" className={pill(false)} onClick={runOdds} disabled={running}>

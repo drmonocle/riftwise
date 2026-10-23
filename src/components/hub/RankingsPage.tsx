@@ -25,6 +25,7 @@ import {
 } from "./ui";
 import { CountryFlag, countryName } from "./CountryFlag";
 import { STable } from "../STable";
+import { BroadcastCardButton, rankingsCard } from "./BroadcastCard";
 
 const sel =
   "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text max-w-[14rem]";
@@ -271,6 +272,17 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                 <option value={1000}>{tl("All {n} teams", { n: rows.length })}</option>
               </select>
             )}
+            <BroadcastCardButton
+              data={() =>
+                rankingsCard({
+                  title: tl("Power rankings"),
+                  subtitle: oneLeague ? league : league === "*" ? tl("All leagues") : tl("Top leagues, all regions"),
+                  rows: rows.slice(0, 10).map(({ r }) => ({ name: r[1], league: r[10] || r[3], r: r[5], chg: r[6] })),
+                })
+              }
+              name={`riftwise-power-rankings${oneLeague ? "-" + league : ""}`}
+              label={tl("Overview card")}
+            />
           </span>
         }
       >

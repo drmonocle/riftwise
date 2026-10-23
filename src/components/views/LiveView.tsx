@@ -3,6 +3,7 @@ import { Match, AppSettings, CatalogData, LiveShow } from "../../types";
 import { Tv, ExternalLink, Calendar, Clock, ChevronRight, Star, Swords } from "lucide-react";
 import { AddToCalendarMenu } from "../AddToCalendarMenu";
 import { MatchPrepButton } from "../MatchPrepButton";
+import { MatchOverviewButton } from "../MatchOverviewButton";
 import { LiveGamePanel } from "../LiveGamePanel";
 import { WinChanceLine } from "../WinChanceLine";
 import { ShareMatchButton } from "../ShareMatchButton";
@@ -476,6 +477,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
 
                   <span className="flex flex-wrap items-center justify-end gap-2">
                     <MatchPrepButton match={m} />
+                    <MatchOverviewButton match={m} />
                     <button
                       onClick={() => onOpenUrl(m.streamUrl || "https://lolesports.com")}
                       className="flex items-center gap-1.5 px-3 py-1 rounded bg-rw-teal hover:bg-rw-teal/80 text-rw-bg font-bold text-xs transition-colors"
@@ -795,6 +797,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 <div className="mt-3.5 flex items-center justify-center gap-2">
                   <AddToCalendarMenu match={nextMatch} onOpenUrl={onOpenUrl} />
                   <MatchPrepButton match={nextMatch} />
+                  <MatchOverviewButton match={nextMatch} />
                   <ShareMatchButton match={nextMatch} className="border border-rw-border bg-rw-bg p-1.5" />
                 </div>
 
@@ -978,6 +981,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       <RowH2H m={m} schedule={schedule} />
                       <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />
                       <MatchPrepButton match={m} compact />
+                      <MatchOverviewButton match={m} compact />
                       <div className="text-rw-sub font-mono text-[11px] font-medium">
                         {formatMatchTime(m.startTimeUtc)}
                       </div>
@@ -1099,6 +1103,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   <RowH2H m={m} schedule={schedule} />
                   <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />
                   <MatchPrepButton match={m} compact />
+                  <MatchOverviewButton match={m} compact />
                   <div className="text-rw-sub font-mono text-[11px] font-medium">
                     {formatMatchTime(m.startTimeUtc)}
                   </div>

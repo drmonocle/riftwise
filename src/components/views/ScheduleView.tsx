@@ -3,6 +3,7 @@ import { Match, AppSettings, CatalogData } from "../../types";
 import { Search, Calendar, Star, Trophy, BarChart3 } from "lucide-react";
 import { AddToCalendarMenu } from "../AddToCalendarMenu";
 import { MatchPrepButton } from "../MatchPrepButton";
+import { MatchOverviewButton } from "../MatchOverviewButton";
 import { ShareMatchButton } from "../ShareMatchButton";
 import { isMatchFollowed, followedPlayerTeams, computeHeadToHead } from "../../helpers";
 import { clickable } from "../../a11y";
@@ -322,6 +323,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       <span className="font-mono text-xs text-rw-teal font-bold shrink-0">{timeStr}</span>
                       {m.state === "unstarted" && <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />}
                       {m.state !== "completed" && <MatchPrepButton match={m} compact />}
+                      {m.state !== "completed" && <MatchOverviewButton match={m} compact />}
                       <span className="text-[11px] text-rw-sub truncate font-medium">{m.leagueName}</span>
                     </div>
 

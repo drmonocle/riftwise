@@ -22,6 +22,7 @@ import {
 import { RatingBadge } from "./BestPage";
 import { localCountry } from "./CountryFlag";
 import { STable } from "../STable";
+import { BroadcastCardButton, type CardData } from "./BroadcastCard";
 
 const mmss = (m: number) => {
   const s = Math.round(m * 60);
@@ -61,14 +62,19 @@ const GameLine: React.FC<{
   ) : null;
 
 /** gol.gg-style "tournament data": averages, side wins, dragons, notable games, pentakills, Player of the Game. */
-export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean }> = ({
+export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean; card?: { data: () => CardData; name: string } }> = ({
   o,
   hidden,
+  card,
 }) => {
   const sideTotal = o.blue + o.red;
   const drakes = Object.entries(o.drakes).sort((a, b) => b[1] - a[1]);
   return (
-    <Section title={tl("Tournament facts")} share="tournament-facts">
+    <Section
+      title={tl("Tournament facts")}
+      share="tournament-facts"
+      right={card && !hidden ? <BroadcastCardButton data={card.data} name={card.name} label={tl("Overview card")} /> : undefined}
+    >
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <Stat label={tl("Games")} value={fmtNum(o.g)} />
         <Stat label={tl("Avg game")} value={o.min ? mmss(o.min) : "–"} />

@@ -22,7 +22,7 @@ import {
 import { useDDragon } from "../../hub/ddragon";
 import { SortTable, type Column } from "./SortTable";
 import { DraftTendencies } from "./DraftTendencies";
-import { BroadcastCardButton, playerCardData } from "./BroadcastCard";
+import { BroadcastCardButton, playerCardData, teamSoloCardData } from "./BroadcastCard";
 import {
   ChampLink,
   Loading,
@@ -457,11 +457,11 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
 
 // ── teams ─────────────────────────────────────────────────────────────────
 
-export const TeamPeriodStats: React.FC<{ slug: string; has2y?: boolean }> = ({ slug, has2y }) => {
+export const TeamPeriodStats: React.FC<{ slug: string; has2y?: boolean; who?: { name: string; sub?: string } }> = ({ slug, has2y, who }) => {
   const { loading, rows } = useGameLog(slug, has2y, loadTeamGames2y, loadTeamGames);
   if (loading) return <Loading />;
   if (!rows || !rows.length) return null;
-  return <TeamPeriodView slug={slug} rows={rows} />;
+  return <TeamPeriodView slug={slug} rows={rows} who={who} />;
 };
 
 const ChampCounts: React.FC<{ title: string; list: [string, number][] }> = ({
@@ -484,9 +484,10 @@ const ChampCounts: React.FC<{ title: string; list: [string, number][] }> = ({
     </div>
   ) : null;
 
-const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[] }> = ({
+const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: { name: string; sub?: string } }> = ({
   slug,
   rows,
+  who,
 }) => {
   useDDragon();
   const options = useMemo(() => periodOptions(rows.map(teamRowRef)), [rows]);
@@ -501,7 +502,20 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[] }> = ({
     <Section
       title={tl("Stats for")}
       right={
-        <PeriodPicker options={options} value={period} onChange={setPeriod} />
+        <>
+          <PeriodPicker options={options} value={period} onChange={setPeriod} />
+          {who && !hidden && (
+            <BroadcastCardButton
+              data={() => {
+                const o = options.find((x) => x.key === period);
+                const label = !o || o.key === "all" ? tl("All time") : o.group === "basic" ? tl("Last {n} games", { n: o.label }) : o.label;
+                return teamSoloCardData(who, t, label);
+              }}
+              name={`${who.name}-${period}`}
+              label={tl("Overview card")}
+            />
+          )}
+        </>
       }
       share={`${slug}-${period}`}
     >
