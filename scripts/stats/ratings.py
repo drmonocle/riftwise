@@ -92,7 +92,7 @@ def _days(a, b):
     return _ordinal[b] - _ordinal[a]
 
 
-def run(games, test_from=TEST_FROM, series_out=None, **kw):
+def run(games, test_from=TEST_FROM, series_out=None, chances_out=None, **kw):
     """games: iterable of (date "YYYY-MM-DD[...]", league, international 0/1, team a, team b, a won 0/1,
     tier 1/2 (top league or not), region) and optionally (a on blue side 1/0/None, gold a - gold b or None,
     minutes or None, players of a, players of b).
@@ -102,7 +102,9 @@ def run(games, test_from=TEST_FROM, series_out=None, **kw):
     (tier of each team's home league: 1 top, 2 second tier, 0 none yet),
     leagues = {league: (tier, region)} as last seen.
     series_out (a list) gets every best-of-3 and best-of-5 from test_from on (games of the same two teams on the same
-    day): (date, chance given to team a to win it, best of, a won it, context "top"/"intl"/"other")."""
+    day): (date, chance given to team a to win it, best of, a won it, context "top"/"intl"/"other").
+    chances_out (a dict) gets, for every game that carries a tag (a 14th item), tag -> the chance team a was given
+    before it (the same calibrated chance the tests use)."""
     p = dict(K=K, K_NEW=K_NEW, NEW_GAMES=NEW_GAMES, K_INTL=K_INTL, NEW_OFFSET=NEW_OFFSET, UNKNOWN_REL=UNKNOWN_REL,
              NEW_UNKNOWN=NEW_UNKNOWN, YEAR_REGRESS=YEAR_REGRESS, TIER2_GAP=TIER2_GAP, PROMOTE=PROMOTE,
              K_CROSS_TOP=K_CROSS_TOP, BLUE=BLUE, MOV_X=MOV_X, PW=PW, KP=KP, KP_NEW=KP_NEW, P_NEW=P_NEW,
@@ -253,6 +255,11 @@ def run(games, test_from=TEST_FROM, series_out=None, **kw):
         sb = xb["r"] if qb is None else (1 - pw) * xb["r"] + pw * sum(q["r"] for q in qb) / len(qb)
         side = p["BLUE"] if blue == 1 else -p["BLUE"] if blue == 0 else 0.0
         e = raw_chance(sa - sb + side)
+        if chances_out is not None and len(row) >= 14 and row[13] is not None:
+            tca = league_info.get(xa["league"], (0, None))[0]
+            tcb = league_info.get(xb["league"], (0, None))[0]
+            cf = p["CONF_INTL"] if intl else p["CONF_TOP"] if tca == 1 and tcb == 1 else p["CONF_OTHER"]
+            chances_out[row[13]] = raw_chance(cf * (sa - sb + side))
         if day >= test_from:
             ta = league_info.get(xa["league"], (0, None))[0]
             tb = league_info.get(xb["league"], (0, None))[0]

@@ -20,6 +20,7 @@ import { eventFacts, factText, gamesOf, type Fact } from "../../hub/worldsFacts"
 import { detectBracket, realOfStages, runBracket, simulateBracket, type Bracket } from "../../hub/bracket";
 import { BroadcastCardButton, SectionCard, chancesCard } from "./BroadcastCard";
 import { RegionStats } from "./RegionStats";
+import { IntlInsights } from "./IntlInsights";
 import { ChampIcon, Failed, HubLink, Loading, PlayerLink, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
 
 /** The three international events with a page of their own; Worlds has had a Swiss stage since 2023. */
@@ -265,6 +266,7 @@ const FactsTab: React.FC<{ d: Loaded; kind: IntlKind }> = ({ d, kind }) => {
   // the region table follows the stage picked, like the facts
   const shownFiles = useMemo(() => (lines.data || []).map((f, i) => (stage === "all" || d.stages[i].u === stage ? f : null)), [lines.data, stage, d]);
   const years = useMemo(() => d.stages.map((s) => s.label), [d]);
+  const stageSlugs = useMemo(() => d.stages.map((s) => s.u), [d]);
   if (lines.error) return <Failed />;
   if (!lines.data) return <Loading />;
   if (hidden)
@@ -300,6 +302,7 @@ const FactsTab: React.FC<{ d: Loaded; kind: IntlKind }> = ({ d, kind }) => {
         </div>
       )}
       <RegionStats files={shownFiles} years={years} all={d.all} name={d.name} />
+      <IntlInsights files={shownFiles} years={years} stages={stageSlugs} all={d.all} name={d.name} />
       {!d.all && <Winners kind={kind} name={eventName(INTL[kind].name)} current={d.year} />}
     </div>
   );

@@ -935,6 +935,9 @@ def build(ctx) -> dict:
         riot = {"p": {}, "n": {}, "c": {}}
     rating_games = []  # (date, league, international, fid a, fid b, a won, tier, region) for the ratings
     rating_extra = []  # per rating game: (a on blue side, gold a - gold b, minutes, players a, players b) or None
+    rating_tags = []   # per rating game: a lines-file game (Worlds / MSI / First Stand) to get its pre-game chance, or None
+    lines_tagged = {}  # tag -> (lines file, game index in it)
+    lines_pending = []  # (event slug, lines file): written once the ratings are known
 
     def fid_on(name, day):
         try:
@@ -1650,9 +1653,13 @@ def build(ctx) -> dict:
                         sides_ = x.get("t") or {}
                         ta, tb_ = (sides_.get("blue") or {}, sides_.get("red") or {}) if a_blue else (sides_.get("red") or {}, sides_.get("blue") or {})
                         gi = len(ev_lines["g"])
-                        # series, game, a on blue, winner side (1 a, 2 b, 0 not known), minutes, towers / kills / gold a and b
+                        # series, game, a on blue, winner side (1 a, 2 b, 0 not known), minutes, towers / kills / gold a and b,
+                        # then a's pre-game chance in % (filled in after the ratings) and a's gold lead at 15 (Oracle's Elixir)
+                        g15_a = ta.get("g15")
                         ev_lines["g"].append([si, x["n"], 1 if a_blue else 0, x.get("w") or 0, x.get("min"),
-                                              ta.get("towers"), tb_.get("towers"), ta.get("k"), tb_.get("k"), ta.get("gold"), tb_.get("gold")])
+                                              ta.get("towers"), tb_.get("towers"), ta.get("k"), tb_.get("k"), ta.get("gold"), tb_.get("gold"),
+                                              None, g15_a])
+                        ev_lines.setdefault("_gi", {})[(gslug, x["n"])] = gi
                         for p_ in x["p"]:
                             side_b = 0 if (p_.get("s") == 1) == a_blue else 1
                             # game, side (0 a, 1 b), player, page, role, champion, kills, deaths, assists, cs, damage
@@ -1733,6 +1740,11 @@ def build(ctx) -> dict:
                     for g in glist:
                         if g["w"] in (a, b):
                             gd = (g["date"] or date)[:10]
+                            tag_r = None
+                            if ev_lines is not None and (gslug, g.get("n")) in ev_lines.get("_gi", {}):
+                                tag_r = len(rating_games)
+                                lines_tagged[tag_r] = (ev_lines, ev_lines["_gi"][(gslug, g.get("n"))])
+                            rating_tags.append(tag_r)
                             rating_games.append((gd, lg_r, intl_r, fid_on(a, gd), fid_on(b, gd), 1 if g["w"] == a else 0, tier_r, reg_r))
                             gid_r = g["gid"]
                             blue_r = (1 if g["t1"] == a else 0) if g["t1"] in (a, b) else None
@@ -1751,6 +1763,7 @@ def build(ctx) -> dict:
                     rating_games += ([(date[:10], lg_r, intl_r, fa_r, fb_r, 1, tier_r, reg_r)] * wa
                                      + [(date[:10], lg_r, intl_r, fa_r, fb_r, 0, tier_r, reg_r)] * wb)
                     rating_extra += [None] * (wa + wb)
+                    rating_tags += [None] * (wa + wb)
             if played and winner:
                 ra, rb = roster_region.get((op, a)), roster_region.get((op, b))
                 if ra and rb and ra != rb:
@@ -1849,7 +1862,9 @@ def build(ctx) -> dict:
             # each team's region and final place, for the Worlds page's region table (every year and all years)
             ev_lines["rg"] = {t_["u"]: t_["r"] for t_ in roster_out if t_.get("u") and t_.get("r")}
             ev_lines["pl"] = {r_["u"]: r_["p"] for r_ in res_out if r_.get("u") and r_.get("p")}
-            out.json(f"lines/{eslug}.json", ev_lines)
+            if info.get("Country"):
+                ev_lines["host"] = info.get("Country")
+            lines_pending.append((eslug, ev_lines))  # written after the ratings (each game's pre-game chance)
             checks["hub: event line files"] = checks.get("hub: event line files", 0) + 1
         if csv_rows:
             buf = io.StringIO()
@@ -2020,8 +2035,19 @@ def build(ctx) -> dict:
     if len(rating_extra) != len(rating_games):  # never mismatch games and details: drop the details instead
         rating_extra = [None] * len(rating_games)
     rating_series = []
-    rated, rating_tests, rated_leagues = team_ratings.run([g + tuple(x) if x else g for g, x in zip(rating_games, rating_extra)],
-                                                          series_out=rating_series)
+    rating_chances = {}
+    if len(rating_tags) != len(rating_games):
+        rating_tags = [None] * len(rating_games)
+    rated, rating_tests, rated_leagues = team_ratings.run(
+        [g + (tuple(x) if x else (None, None, None, [], [])) + (t,) for g, x, t in zip(rating_games, rating_extra, rating_tags)],
+        series_out=rating_series, chances_out=rating_chances)
+    # the Worlds / MSI / First Stand lines files: each game's pre-game chance, then out they go
+    for tag_c, (lines_c, gi_c) in lines_tagged.items():
+        if tag_c in rating_chances:
+            lines_c["g"][gi_c][11] = round(rating_chances[tag_c] * 100)
+    for eslug_c, lines_c in lines_pending:
+        lines_c.pop("_gi", None)
+        out.json(f"lines/{eslug_c}.json", lines_c)
     # TIER2_GAP pulls every rating down a few hundred points; shift them all by one number so the average active
     # top-league team is 1500 (only differences matter for rankings, win chances and the backtest)
     newest_r0 = max((x["last"] for x in rated.values()), default="0000-00-00")

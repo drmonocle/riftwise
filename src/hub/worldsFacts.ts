@@ -10,13 +10,16 @@ import { champName } from "../champions";
 export interface EventLines {
   /** [series page, stage, date, team a, page, code, team b, page, code, wins a, wins b, best of] */
   s: [string, string, string, string, string, string, string, string, string, number | null, number | null, number][];
-  /** [series, game, a on blue, winner (1 a, 2 b, 0), minutes, towers a, towers b, kills a, kills b, gold a, gold b] */
-  g: [number, number, number, number, number | null, number | null, number | null, number | null, number | null, number | null, number | null][];
+  /** [series, game, a on blue, winner (1 a, 2 b, 0), minutes, towers a, towers b, kills a, kills b, gold a, gold b,
+   *  a's pre-game chance in %, a's gold lead at 15] (the last two from builds of 2026-10-23 on) */
+  g: [number, number, number, number, number | null, number | null, number | null, number | null, number | null, number | null, number | null, (number | null)?, (number | null)?][];
   /** [game, side (0 a, 1 b), player, page, role, champion, kills, deaths, assists, cs, damage] */
   p: [number, number, string, string | null, string | null, string, number | null, number | null, number | null, number | null, number | null][];
   /** team page -> region code, and -> final place ("1", "3-4"), builds from 2026-10-23 on */
   rg?: Record<string, string>;
   pl?: Record<string, string>;
+  /** the host country (Leaguepedia's), builds from 2026-10-23 on */
+  host?: string;
 }
 
 export interface FactRow {
