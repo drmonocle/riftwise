@@ -523,6 +523,11 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     <div className="text-rw-sub font-mono text-[11px] font-medium shrink-0">
                       {formatMatchTime(m.startTimeUtc)}
                     </div>
+                    <span className="flex items-center gap-0.5 shrink-0">
+                      <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />
+                      <MatchPrepButton match={m} compact />
+                      <MatchOverviewButton match={m} compact />
+                    </span>
                   </div>
                 ))}
               </div>

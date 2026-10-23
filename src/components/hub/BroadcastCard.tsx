@@ -7,7 +7,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MonitorPlay } from "lucide-react";
 import { toBlob } from "html-to-image";
-import { tl, tc, locale, roleName, fmtDec } from "../../i18n";
+import { tl, tc, locale, roleName, fmtDec, stageLabel, eventTitle } from "../../i18n";
 import { IS_WEB } from "../../platform";
 import { ChampIcon } from "./ui";
 import type { PlayerAgg, TeamAgg } from "../../hub/period";
@@ -776,3 +776,123 @@ export function champCardData(c: import("../../hub/types").HubChamp, label: stri
     rows,
   };
 }
+
+// ── player career, series and game cards ─────────────────────────────────
+
+/** A player's whole pro career: record, KDA, farm and damage, titles, Player of the Game, champions. */
+export function playerCareerCardData(p: import("../../hub/types").HubPlayer): CardData {
+  const per = (v: number) => (p.g ? fmtDec(v / p.g) : "–");
+  const rows: CardRow[] = [
+    { label: tl("Games won"), a: `${p.w.toLocaleString(locale())}-${(p.g - p.w).toLocaleString(locale())}`, pct: wrOf(p.w, p.g) },
+    { label: tl("Win rate"), a: pc(wrOf(p.w, p.g)), pct: wrOf(p.w, p.g) },
+    { label: tl("KDA"), a: String(p.kda) },
+    { label: tl("K / D / A per game"), a: `${per(p.k)} / ${per(p.d)} / ${per(p.a)}` },
+    { label: tl("CS / min"), a: n1(p.csm) },
+    { label: tl("Damage / min"), a: p.dpm != null ? p.dpm.toLocaleString(locale()) : "–" },
+    { label: tl("Titles"), a: String(p.titles.length) },
+    { label: tl("Player of the Game"), a: p.mvp != null ? String(p.mvp) : "–" },
+    { label: tl("Tournaments"), a: String(p.events.length) },
+    { label: tl("Champions played"), a: String(p.nChamps) },
+  ];
+  const sub = [p.role ? roleName(p.role) : null, p.club, p.bio.country].filter(Boolean).join(" · ");
+  const ys = p.years.map((y) => y.y).sort();
+  const years = ys.length ? (ys[0] === ys[ys.length - 1] ? ys[0] : `${ys[0]}–${ys[ys.length - 1]}`) : undefined;
+  return {
+    title: tl("Career card"),
+    subtitle: years,
+    a: { name: p.name, sub, champs: p.champs.slice(0, 5).map((c) => c.c) },
+    rows,
+  };
+}
+
+/** A series: the score, then each game's winner, length, kills, gold, Player of the Game and both drafts. */
+export function seriesCardData(s: import("../../hub/types").HubSeries): CardData {
+  const nameA = s.a.c || s.a.n;
+  const nameB = s.b.c || s.b.n;
+  const games = s.games.filter((g) => g.w).slice(0, 5);
+  const big = games.length <= 3;
+  return {
+    title: eventTitle(s.en),
+    subtitle: [s.stage ? stageLabel(s.stage) : null, fmtDay(s.date)].filter(Boolean).join(" · "),
+    a: { name: s.a.n },
+    rows: [],
+    body: (
+      <>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 32, marginTop: 18 }}>
+          <div style={{ fontSize: 52, fontWeight: 800, color: s.w === 1 ? A_COLOR : "var(--rw-text)", textAlign: "right", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.a.n}</div>
+          <div style={{ fontSize: 72, fontWeight: 900, fontVariantNumeric: "tabular-nums" }}>
+            {s.sa}
+            <span style={{ color: "var(--rw-muted)" }}> – </span>
+            {s.sb}
+          </div>
+          <div style={{ fontSize: 52, fontWeight: 800, color: s.w === 2 ? A_COLOR : "var(--rw-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.b.n}</div>
+        </div>
+        <div style={{ marginTop: 18, display: "grid", gap: big ? 14 : 8, alignContent: "start" }}>
+          {games.map((g) => {
+            const ta = g.t ? (g.blue === "a" ? g.t.blue : g.t.red) : undefined;
+            const tb = g.t ? (g.blue === "a" ? g.t.red : g.t.blue) : undefined;
+            const picks = (x: typeof ta, right: boolean) => (
+              <div style={{ display: "flex", gap: 6, justifyContent: right ? "flex-start" : "flex-end" }}>
+                {(x?.picks || []).slice(0, 5).map((c) => (
+                  <ChampIcon key={c} name={c} size={big ? 46 : 36} />
+                ))}
+              </div>
+            );
+            return (
+              <div key={g.n} style={{ display: "grid", gridTemplateColumns: "1fr 380px 1fr", alignItems: "center", gap: 20, borderTop: "1px solid var(--rw-border)", paddingTop: big ? 12 : 8 }}>
+                {picks(ta, false)}
+                <div style={{ textAlign: "center", fontVariantNumeric: "tabular-nums" }}>
+                  <div style={{ fontSize: big ? 28 : 24, fontWeight: 800 }}>
+                    {tl("Game {n}", { n: g.n })}: <span style={{ color: A_COLOR }}>{g.w === 1 ? nameA : nameB}</span>
+                  </div>
+                  <div style={{ fontSize: 20, color: "var(--rw-sub)" }}>
+                    {[g.min ? mmss(g.min) : null, ta?.k != null && tb?.k != null ? tl("{a}-{b} kills", { a: ta.k, b: tb.k }) : null, g.mvp ? `👑 ${g.mvp.n}` : null]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </div>
+                </div>
+                {picks(tb, true)}
+              </div>
+            );
+          })}
+        </div>
+      </>
+    ),
+  };
+}
+
+/** One game: both teams' kills, gold and objectives with bars, their drafts, and the Player of the Game. */
+export function gameCardData(s: import("../../hub/types").HubSeries, g: import("../../hub/types").HubGame): CardData {
+  const blueTeam = g.blue === "a" ? s.a : s.b;
+  const redTeam = g.blue === "a" ? s.b : s.a;
+  const B = g.t?.blue || {};
+  const R = g.t?.red || {};
+  const blueWon = (g.w === 1 && g.blue === "a") || (g.w === 2 && g.blue === "b");
+  const row = (label: string, a?: number, b?: number, fmt: (v: number) => string = String): CardRow | null =>
+    a == null && b == null ? null : { label, a: a == null ? "–" : fmt(a), b: b == null ? "–" : fmt(b), va: a ?? null, vb: b ?? null };
+  const k = (v: number) => `${fmtDec(v / 1000)}k`;
+  const rows = [
+    row(tl("Kills"), B.k, R.k),
+    row(tl("Gold"), B.gold, R.gold, k),
+    row(tl("Towers"), B.towers, R.towers),
+    row(tl("Dragons"), B.drag, R.drag),
+    row(tl("Barons"), B.barons, R.barons),
+    row(tl("Voidgrubs"), B.grubs, R.grubs),
+    B.g15 != null ? { label: "GD@15", a: sg(B.g15), b: sg(-B.g15), va: B.g15, vb: -B.g15 } : null,
+  ].filter((r): r is CardRow => !!r);
+  if (g.mvp) rows.push({ label: tl("Player of the Game"), a: blueWon ? g.mvp.n : "", b: blueWon ? "" : g.mvp.n });
+  const won = tl("Won");
+  return {
+    title: tl("{event} · Game {n}", { event: eventTitle(s.en), n: g.n }),
+    subtitle: [g.min ? mmss(g.min) : null, g.patch ? tl("Patch {patch}", { patch: g.patch }) : null].filter(Boolean).join(" · "),
+    a: { name: blueTeam.n, sub: `${tl("Blue side")}${blueWon ? ` · ${won}` : ""}`, champs: B.picks },
+    b: { name: redTeam.n, sub: `${tl("Red side")}${!blueWon && g.w ? ` · ${won}` : ""}`, champs: R.picks },
+    rows,
+    note: B.g15 != null ? tl("Early game: Oracle's Elixir") : undefined,
+  };
+}
+
+const fmtDay = (d: string) => {
+  const t = Date.parse(d.length <= 10 ? `${d}T12:00:00Z` : d.replace(" ", "T"));
+  return Number.isNaN(t) ? d : new Date(t).toLocaleDateString(locale(), { dateStyle: "medium" });
+};

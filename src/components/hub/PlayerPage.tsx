@@ -9,6 +9,7 @@ import type { HubPlayer } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { PlayerGamesArchive } from "./Archives";
 import { PlayerPeriodStats } from "./PeriodStats";
+import { BroadcastCardButton, playerCareerCardData } from "./BroadcastCard";
 import { PlayerRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
 import { localCountry } from "./CountryFlag";
@@ -191,6 +192,9 @@ const PlayerView: React.FC<{
               {label}
             </button>
           ))}
+        </div>
+        <div className="mt-2">
+          <BroadcastCardButton data={() => playerCareerCardData(p)} name={`${p.name}-career`} label={tl("Overview card")} />
         </div>
         {p.bio.soloq && p.bio.soloq.length > 0 && (
           <p className="text-[10px] text-rw-muted mt-2">
