@@ -1846,6 +1846,9 @@ def build(ctx) -> dict:
                     "last": last_date, "stats": n_stats_games, "rosters": roster_out, "series": event["series"],
                     "lu": league_slug.get(lg_ev), "y": event["year"], "en": en, "eslug": eslug}
         if ev_lines and ev_lines["g"]:
+            # each team's region and final place, for the Worlds page's region table (every year and all years)
+            ev_lines["rg"] = {t_["u"]: t_["r"] for t_ in roster_out if t_.get("u") and t_.get("r")}
+            ev_lines["pl"] = {r_["u"]: r_["p"] for r_ in res_out if r_.get("u") and r_.get("p")}
             out.json(f"lines/{eslug}.json", ev_lines)
             checks["hub: event line files"] = checks.get("hub: event line files", 0) + 1
         if csv_rows:

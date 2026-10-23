@@ -14,6 +14,9 @@ export interface EventLines {
   g: [number, number, number, number, number | null, number | null, number | null, number | null, number | null, number | null, number | null][];
   /** [game, side (0 a, 1 b), player, page, role, champion, kills, deaths, assists, cs, damage] */
   p: [number, number, string, string | null, string | null, string, number | null, number | null, number | null, number | null, number | null][];
+  /** team page -> region code, and -> final place ("1", "3-4"), builds from 2026-10-23 on */
+  rg?: Record<string, string>;
+  pl?: Record<string, string>;
 }
 
 export interface FactRow {
