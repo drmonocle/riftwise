@@ -15,6 +15,7 @@ import {
   type Fill, type LiveResult, type Picks, type RealSeries, type TeamOdds, type WMatch, type WTeam,
 } from "../../hub/worlds";
 import type { Match } from "../../types";
+import { normalizeTeamCode } from "../../helpers";
 import { eventFacts, factText, gamesOf, type Fact } from "../../hub/worldsFacts";
 import { detectBracket, realOfStages, runBracket, simulateBracket, type Bracket } from "../../hub/bracket";
 import { ChampIcon, Failed, HubLink, Loading, PlayerLink, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
@@ -131,8 +132,12 @@ async function loadIntl(kind: IntlKind, asked: string | undefined): Promise<Load
 /** Riot's schedule for this event, with the stats' team pages (matched by code or name). */
 function liveResults(schedule: Match[] | undefined, leagueSlug: string, teams: WTeam[]): LiveResult[] {
   const norm = (s: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const find = (code: string, name: string) =>
-    teams.find((t) => norm(t.c) === norm(code))?.u || teams.find((t) => norm(t.n) === norm(name))?.u || null;
+  const code = (c: string) => norm(normalizeTeamCode(c));
+  // the code (TLAW = TL), the name, else the one team whose name starts Riot's ("Team Liquid Alienware")
+  const find = (c: string, name: string) => {
+    const lead = teams.filter((t) => norm(t.n).length >= 3 && norm(name).startsWith(norm(t.n)));
+    return teams.find((t) => code(t.c) === code(c))?.u || teams.find((t) => norm(t.n) === norm(name))?.u || (lead.length === 1 ? lead[0].u : null);
+  };
   const out: LiveResult[] = [];
   for (const m of schedule || []) {
     if (m.leagueSlug !== leagueSlug) continue;
@@ -353,11 +358,17 @@ function teamsOf(main: HubEvent, ratings: HubRatings | null): WTeam[] {
       if (s.au && s.ac) codes.set(s.au, s.ac);
       if (s.bu && s.bc) codes.set(s.bu, s.bc);
     }
-  return (main.teams || [])
-    .filter((t) => t.u)
+  const list = (main.teams || []).filter((t) => t.u);
+  // Leaguepedia's notes ("LYON (2024 American Team)") tell teams apart across all of LoL; within one event the bare
+  // name is enough, unless two of its teams would then share it
+  const bare = (n: string) => n.replace(/\s*\([^)]*\)\s*$/, "");
+  const count = new Map<string, number>();
+  for (const t of list) count.set(bare(t.t), (count.get(bare(t.t)) || 0) + 1);
+  const nameOf = (n: string) => (count.get(bare(n)) === 1 ? bare(n) : n);
+  return list
     .map((t) => {
       const r = rows.get(t.u as string);
-      return { u: t.u as string, n: t.t, c: codes.get(t.u as string) || r?.[2] || t.t.slice(0, 3).toUpperCase(), r: r?.[5] ?? 1500, league: r?.[3] || "", img: t.img };
+      return { u: t.u as string, n: nameOf(t.t), c: codes.get(t.u as string) || r?.[2] || t.t.slice(0, 3).toUpperCase(), r: r?.[5] ?? 1500, league: r?.[3] || "", img: t.img };
     });
 }
 
