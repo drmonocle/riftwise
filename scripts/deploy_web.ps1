@@ -12,8 +12,14 @@ if ($LASTEXITCODE -ne 0) { Pop-Location; throw "Web build failed" }
 Pop-Location
 
 New-Item -ItemType Directory -Force -Path $target | Out-Null
-# Old hashed bundles are no longer referenced by index.html; clear them so the folder doesn't grow forever.
-if (Test-Path "$target\assets") { Remove-Item "$target\assets" -Recurse -Force }
-Copy-Item "$root\dist-web\*" $target -Recurse -Force   # includes web\* (sw.js, manifest, icons, web.config)
+# New hashed bundles go in next to the old ones, and index.html last, so a page that is loading or already open
+# (it asks for its parts later, as they are shown) never asks for a file that is gone. Deleting the old bundles
+# first made those pages fail and reload during every deploy.
+Copy-Item "$root\dist-web\*" $target -Recurse -Force -Exclude "index.html"   # includes web\* (sw.js, manifest, icons, web.config)
+Copy-Item "$root\dist-web\index.html" $target -Force
+# Old bundles no current page uses: gone after a week, so the folder doesn't grow forever.
+$keep = @{}
+Get-ChildItem "$root\dist-web\assets" -File | ForEach-Object { $keep[$_.Name] = $true }
+Get-ChildItem "$target\assets" -File | Where-Object { -not $keep[$_.Name] -and $_.LastWriteTime -lt (Get-Date).AddDays(-7) } | Remove-Item -Force
 
 Write-Host "Deployed to $target. Check https://riftwise.gg/"
