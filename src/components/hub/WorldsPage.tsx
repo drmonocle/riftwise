@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Check, Copy, Dice5, Eraser, Lock, RefreshCw, Shuffle, Sparkles, TrendingUp, Trophy } from "lucide-react";
 import { eventName, eventTitle, stageName, tk, tl } from "../../i18n";
-import { loadEventLines, loadHubEvent, loadLeague, loadRatings } from "../../hub/data";
+import { loadEventLines, loadHubEvent, loadHubTitles, loadLeague, loadRatings } from "../../hub/data";
 import type { EventListItem, HubEvent, HubLeague, HubRatings } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import {
@@ -18,7 +18,7 @@ import type { Match } from "../../types";
 import { normalizeTeamCode } from "../../helpers";
 import { eventFacts, factText, gamesOf, type Fact } from "../../hub/worldsFacts";
 import { detectBracket, realOfStages, runBracket, simulateBracket, type Bracket } from "../../hub/bracket";
-import { BroadcastCardButton, chancesCard } from "./BroadcastCard";
+import { BroadcastCardButton, SectionCard, chancesCard } from "./BroadcastCard";
 import { ChampIcon, Failed, HubLink, Loading, PlayerLink, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
 
 /** The three international events with a page of their own; Worlds has had a Swiss stage since 2023. */
@@ -285,6 +285,7 @@ const FactsTab: React.FC<{ d: Loaded; kind: IntlKind }> = ({ d, kind }) => {
         </div>
       )}
       {d.all && <p className="text-[11px] text-rw-muted">{tl("Every edition together, {from} to {to}.", { from: d.years[d.years.length - 1], to: d.years[0] })}</p>}
+      {d.all && <Winners kind={kind} name={d.name} />}
       {!facts.length ? (
         <p className="text-xs text-rw-sub">{tl("No games with full stats yet. Facts show up as soon as the first games are in.")}</p>
       ) : (
@@ -294,9 +295,102 @@ const FactsTab: React.FC<{ d: Loaded; kind: IntlKind }> = ({ d, kind }) => {
           ))}
         </div>
       )}
+      {!d.all && <Winners kind={kind} name={eventName(INTL[kind].name)} current={d.year} />}
     </div>
   );
 };
+
+/** Every edition's champion in order: the final's score, the runner-up, and the teams that won it back to back. */
+const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({ kind, name, current }) => {
+  const titles = useLoad(loadHubTitles, []);
+  const list = useMemo(
+    () =>
+      (titles.data || [])
+        // event pages are named worlds-…, msi-…, first-stand-…
+        .filter((x) => (x.e || "").startsWith(`${kind}-`))
+        .map((x) => ({ ...x, y: x.date.slice(0, 4) }))
+        .sort((a, b) => b.y.localeCompare(a.y)),
+    [titles.data, kind],
+  );
+  // a title that's still a spoiler (spoiler mode, the event just ended) stays out until revealed
+  const [hidden, reveal] = useHidden(`worlds-facts:${kind}:${list[0]?.y || ""}`, list[0]?.date);
+  if (!list.length) return null;
+  const shown = hidden ? list.slice(1) : list;
+  // back-to-back and longer runs by the same organisation (its stats page, whatever it was called then)
+  const runs: { team: string; from: string; to: string; n: number }[] = [];
+  const old = [...shown].reverse();
+  for (let i = 0; i < old.length; ) {
+    let j = i;
+    while (j + 1 < old.length && old[j + 1].u && old[j + 1].u === old[i].u && Number(old[j + 1].y) - Number(old[j].y) <= 2) j++;
+    if (j > i) runs.push({ team: old[j].as, from: old[i].y, to: old[j].y, n: j - i + 1 });
+    i = j + 1;
+  }
+  return (
+    <Section
+      title={tl("Champions")}
+      share={`${kind}-champions`}
+      right={
+        <SectionCard
+          section={tl("Champions")}
+          name={name}
+          rows={() => shown.map((x) => ({ label: `${x.y} · ${x.as}`, sub: tl("{score} vs {team}", { score: x.score, team: x.l }) }))}
+        />
+      }
+    >
+      {hidden && (
+        <p className="text-[11px] text-rw-muted flex items-center gap-2">
+          {tl("The newest winner is hidden while spoiler mode is on.")} <RevealButton onReveal={reveal} small />
+        </p>
+      )}
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead className="text-[10px] uppercase tracking-wider text-rw-muted">
+            <tr>
+              <th className="px-2 py-1 text-left">{tl("Year")}</th>
+              <th className="px-2 py-1 text-left">{tl("Champion")}</th>
+              <th className="px-2 py-1 text-center">{tl("Final")}</th>
+              <th className="px-2 py-1 text-left">{tl("Runner-up")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((x) => (
+              <tr key={x.e || x.y} className={`border-t border-rw-border ${x.y === current ? "bg-rw-accent/10" : ""}`}>
+                <td className="px-2 py-1 tabular-nums">
+                  {x.e ? (
+                    <HubLink to={{ kind: "event", slug: x.e }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                      {x.y}
+                    </HubLink>
+                  ) : (
+                    x.y
+                  )}
+                </td>
+                <td className="px-2 py-1">
+                  <span className="flex items-center gap-1.5 min-w-0">
+                    <Trophy className="w-3 h-3 text-rw-accent shrink-0" />
+                    <TeamLink name={x.as} u={x.u} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
+                  </span>
+                </td>
+                <td className="px-2 py-1 text-center tabular-nums font-bold">{x.score}</td>
+                <td className="px-2 py-1 text-rw-sub">{x.l}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {runs.length > 0 && (
+        <p className="text-[11px] text-rw-sub">
+          {tl("Won it in a row:")}{" "}
+          {runs
+            .slice()
+            .reverse()
+            .map((r) => `${r.team} (${r.from}–${r.to}, ${r.n})`)
+            .join(" · ")}
+        </p>
+      )}
+    </Section>
+  );
+};
+
 
 const FactCard: React.FC<{ f: Fact; kind: IntlKind; year: string }> = ({ f, kind, year }) => {
   const [copied, setCopied] = useState(false);
