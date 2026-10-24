@@ -137,6 +137,9 @@ function loadMaps(): Promise<void> {
 }
 
 /** Start on the picture lists before a page asks (a saved copy from the last week means nothing to fetch). */
+/** Champion names and icons, once loaded (for code outside React that needs champNameById). */
+export const ddragonReady = (): Promise<void> => loadMaps();
+
 export function preloadDDragon(): void {
   loadMaps();
 }

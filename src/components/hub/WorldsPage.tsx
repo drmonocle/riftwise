@@ -21,6 +21,8 @@ import { detectBracket, realOfStages, runBracket, simulateBracket, type Bracket 
 import { BroadcastCardButton, SectionCard, chancesCard } from "./BroadcastCard";
 import { RegionStats } from "./RegionStats";
 import { IntlInsights } from "./IntlInsights";
+import { liveLines } from "../../hub/liveLines";
+import type { EventLines } from "../../hub/worldsFacts";
 import { ChampIcon, Failed, HubLink, Loading, PlayerLink, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
 
 /** The three international events with a page of their own; Worlds has had a Swiss stage since 2023. */
@@ -242,17 +244,57 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
 
 // ── facts ─────────────────────────────────────────────────────────────────
 
+/** Riot's league for each event (its schedule) */
+const RIOT_LEAGUE: Record<IntlKind, string> = { worlds: "worlds", msi: "msi", "first-stand": "first_stand" };
+
+/** The current edition's games the build's lines files don't have yet (today's), from Riot's feed, filed under its main
+ *  stage; null for past editions or when there is nothing new. */
+async function liveFileOf(d: Loaded, kind: IntlKind, files: (EventLines | null)[]): Promise<{ f: EventLines; u: string; label: string } | null> {
+  const year = d.all ? d.years[0] : d.year;
+  if (year !== String(new Date().getFullYear()) || d.years[0] !== year) return null;
+  const mine = d.stages.map((s, i) => ({ s, f: files[i] })).filter((x) => x.s.u.startsWith(`${kind}-${year}`));
+  if (!mine.length) return null;
+  const mainStage = mine.find((x) => /main/.test(x.s.u))?.s || mine[mine.length - 1].s;
+  const main = d.main || (await loadHubEvent(mainStage.u).catch(() => null));
+  const since = (d.parent?.start || main?.start || `${year}-01-01`).slice(0, 10);
+  const f = await liveLines(RIOT_LEAGUE[kind], mine.map((x) => x.f), main, since);
+  return f ? { f, u: mainStage.u, label: mainStage.label } : null;
+}
+
 const FactsTab: React.FC<{ d: Loaded; kind: IntlKind }> = ({ d, kind }) => {
   const [stage, setStage] = useState<string>("all");
   useEffect(() => setStage("all"), [d]);
-  const lines = useLoad(() => Promise.all(d.stages.map((s) => loadEventLines(s.u).catch(() => null))), [d.stages.map((s) => s.u).join()]);
+  // the build's lines files first; then the current edition's games from today (Riot's feed, until the build has them)
+  // join in when they arrive, so the facts never wait for Riot
+  const built = useLoad(() => Promise.all(d.stages.map((s) => loadEventLines(s.u).catch(() => null))), [d.stages.map((s) => s.u).join()]);
+  const [live, setLive] = useState<{ f: EventLines; u: string; label: string } | null>(null);
+  useEffect(() => {
+    setLive(null);
+    if (!built.data) return;
+    let alive = true;
+    liveFileOf(d, kind, built.data)
+      .then((x) => alive && setLive(x))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [built.data, d, kind]);
+  const lines = useMemo(() => {
+    if (!built.data) return { data: null, error: built.error };
+    const stages = d.stages.map((s) => ({ u: s.u, label: s.label }));
+    return {
+      data: live ? { files: [...built.data, live.f], stages: [...stages, { u: live.u, label: live.label }] } : { files: built.data, stages },
+      error: built.error,
+    };
+  }, [built.data, built.error, live, d]);
   const last = d.stages.map((s) => s.end || "").sort().pop();
   const [hidden, reveal] = useHidden(`worlds-facts:${kind}:${d.year}`, last);
   const facts = useMemo<Fact[]>(() => {
     if (!lines.data) return [];
-    const files = lines.data.map((f, i) => (stage === "all" || d.stages[i].u === stage ? f : null));
+    const { files: all, stages } = lines.data;
+    const files = all.map((f, i) => (stage === "all" || stages[i].u === stage ? f : null));
     const name = stage === "all" ? d.name : eventTitle(d.stages.find((s) => s.u === stage)?.n || d.name);
-    const out = eventFacts(gamesOf(files, d.all ? d.stages.map((s) => s.label) : []), name);
+    const out = eventFacts(gamesOf(files, d.all ? stages.map((s) => s.label) : []), name);
     if (d.all && d.league.titles?.length) {
       const t = d.league.titles.slice(0, 5);
       out.unshift({
@@ -264,9 +306,9 @@ const FactsTab: React.FC<{ d: Loaded; kind: IntlKind }> = ({ d, kind }) => {
     return out;
   }, [lines.data, stage, d]);
   // the region table follows the stage picked, like the facts
-  const shownFiles = useMemo(() => (lines.data || []).map((f, i) => (stage === "all" || d.stages[i].u === stage ? f : null)), [lines.data, stage, d]);
-  const years = useMemo(() => d.stages.map((s) => s.label), [d]);
-  const stageSlugs = useMemo(() => d.stages.map((s) => s.u), [d]);
+  const shownFiles = useMemo(() => (lines.data?.files || []).map((f, i) => (stage === "all" || lines.data!.stages[i].u === stage ? f : null)), [lines.data, stage]);
+  const years = useMemo(() => (lines.data?.stages || []).map((s) => s.label), [lines.data]);
+  const stageSlugs = useMemo(() => (lines.data?.stages || []).map((s) => s.u), [lines.data]);
   if (lines.error) return <Failed />;
   if (!lines.data) return <Loading />;
   if (hidden)

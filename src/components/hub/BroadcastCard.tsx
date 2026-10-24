@@ -239,7 +239,7 @@ export const BroadcastCardButton: React.FC<{ data: () => CardData; name: string;
         onClick={() => start(false)}
         disabled={state === "busy"}
         className={`flex items-center gap-1 rounded border border-rw-border text-rw-teal hover:border-rw-accent disabled:opacity-50 text-[11px] ${
-          compact ? "p-1 pointer-coarse:min-h-8 pointer-coarse:min-w-8" : "px-2 py-1.5 min-h-8"
+          compact ? "p-1 pointer-coarse:min-h-8 pointer-coarse:min-w-8" : "px-2 py-1.5 min-h-8 whitespace-nowrap"
         }`}
         title={`${label ? `${label}: ` : ""}${tl("Copy a 1600×900 card for a broadcast, X or Discord")}`}
         aria-label={compact ? `${label || tl("16:9 card")}: ${tl("Copy a 1600×900 card for a broadcast, X or Discord")}` : undefined}
