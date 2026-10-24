@@ -25,6 +25,7 @@ import {
 } from "./ui";
 import { STable } from "../STable";
 import { navigateHub } from "../../hub/route";
+import { LeagueSeasonPanel } from "./LeagueSeasonPanel";
 
 // ── Patches ───────────────────────────────────────────────────────────────
 
@@ -295,6 +296,8 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
           </div>
         )}
       </div>
+      {/* the chosen season, else the newest one */}
+      {years[0] && <LeagueSeasonPanel league={l.u} year={season || years[0]} name={l.s || l.l} />}
       {l.titles.length > 0 && (
         <Section title={tl("Most titles")}>
           <ul className="text-xs grid sm:grid-cols-2 gap-x-4 gap-y-1">
