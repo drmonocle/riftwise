@@ -103,7 +103,8 @@ def year_page(hub, sec, ev):
         score = f"{fin.get('a')} {fin.get('sa')}–{fin.get('sb')} {fin.get('b')}"
         h.append(f"<p>{link('match/' + fin['g'], score) if fin.get('g') else e(score)}</p>")
     if res:
-        h.append("<h3>Final standings</h3><table><tr><th>Place</th><th>Team</th><th>Prize</th></tr>")
+        # an event still under way (no winner yet) has standings so far, not final ones
+        h.append(f"<h3>{'Final standings' if winner else 'Standings so far'}</h3><table><tr><th>Place</th><th>Team</th><th>Prize</th></tr>")
         for r in res[:16]:
             team = link("team/" + r["u"], r["t"]) if r.get("u") else e(r.get("t") or "")
             prize = f"${r['usd']:,}" if isinstance(r.get("usd"), int) and r["usd"] else ""

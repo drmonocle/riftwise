@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Match, AppSettings, CatalogData } from "../../types";
-import { Search, Calendar, Star, Trophy, BarChart3 } from "lucide-react";
+import { Search, Calendar, Star, Trophy, BarChart3, X } from "lucide-react";
 import { AddToCalendarMenu } from "../AddToCalendarMenu";
 import { MatchPrepButton } from "../MatchPrepButton";
 import { MatchOverviewButton } from "../MatchOverviewButton";
@@ -14,7 +14,7 @@ import { searchAlias } from "../../searchAliases";
 import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 import { findSeriesSlug } from "../../hub/seriesLookup";
 import { RIOT_PREFIX } from "../../hub/riotMatch";
-import { navigateHub } from "../../hub/route";
+import { navigateHub, scheduleOfPath, setScheduleAddress } from "../../hub/route";
 import { riotImg } from "../../riotImage";
 
 interface ScheduleViewProps {
@@ -41,7 +41,12 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   isLoading,
 }) => {
   const [mainSubTab, setMainSubTab] = useState<"matches" | "standings">("matches");
+  // riftwise.gg/results and /schedule/<league> (or /results/<league>) open on that list and league
+  const [fromPath] = useState(() => scheduleOfPath());
+  const [league, setLeague] = useState<string | null>(fromPath.league);
   const [filterRange, setFilterRange] = useState<"today" | "upcoming" | "results">(() => {
+    if (fromPath.results) return "results";
+    if (fromPath.league) return "upcoming";
     const today = new Date().toDateString();
     const hasTodayMatches = schedule.some((m) => {
       if (!m.startTimeUtc) return false;
@@ -50,6 +55,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     return hasTodayMatches ? "today" : "upcoming";
   });
   const [followedOnly, setFollowedOnly] = useState(false);
+  // the address follows the list and league, so what's on screen can be linked
+  useEffect(() => setScheduleAddress(filterRange === "results", league), [filterRange, league]);
   const [searchQuery, setSearchQuery] = useState("");
   // revealed scores are remembered on this device (src/revealed.ts) and synced with cloud sync
   useRevealedVersion();
@@ -126,6 +133,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     } else if (filterRange === "results") {
       if (m.state !== "completed") return false;
     }
+
+    if (league && m.leagueSlug !== league) return false;
 
     // Followed only
     if (followedOnly) {
@@ -248,6 +257,17 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
             {/* Search & Followed Toggle */}
             <div className="flex items-center gap-2 flex-1 max-w-xs justify-end">
+              {league && (
+                <button
+                  type="button"
+                  onClick={() => setLeague(null)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded text-xs border bg-rw-accent/20 border-rw-accent text-rw-accent whitespace-nowrap"
+                  title={tl("Show every league")}
+                >
+                  {schedule.find((m) => m.leagueSlug === league)?.leagueName || league}
+                  <X className="w-3 h-3" />
+                </button>
+              )}
               <button
                 onClick={() => setFollowedOnly(!followedOnly)}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs border transition-colors ${
@@ -338,7 +358,12 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         className={`text-[11px] text-rw-sub truncate font-medium ${oneLeague ? "max-sm:hidden" : ""}`}
                         title={m.blockName ? `${m.leagueName} · ${m.blockName}` : m.leagueName}
                       >
-                        {m.leagueName}
+                        <span
+                          {...clickable(() => setLeague(m.leagueSlug))}
+                          className="hover:text-rw-accent cursor-pointer"
+                        >
+                          {m.leagueName}
+                        </span>
                         {m.blockName && <span className="hidden lg:inline text-rw-muted"> · {m.blockName}</span>}
                       </span>
                     </div>

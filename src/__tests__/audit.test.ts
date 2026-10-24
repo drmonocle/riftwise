@@ -129,3 +129,18 @@ describe("league season address", () => {
     expect(parseHubPath("/team/t1/2025", "")).toBeNull();
   });
 });
+
+import { scheduleOfPath, tabOfPath } from "../hub/route";
+describe("tab addresses", () => {
+  it("each tab has its own address, the schedule a list and a league", () => {
+    expect(tabOfPath("/schedule")).toBe("schedule");
+    expect(tabOfPath("/results/lck")).toBe("schedule");
+    expect(tabOfPath("/news/")).toBe("news");
+    expect(tabOfPath("/")).toBe("live");
+    expect(tabOfPath("/team/t1")).toBeNull();
+    expect(tabOfPath("/stats")).toBeNull();
+    expect(scheduleOfPath("/results/worlds")).toEqual({ results: true, league: "worlds" });
+    expect(scheduleOfPath("/schedule")).toEqual({ results: false, league: null });
+    expect(parseHubPath("/schedule", "")).toBeNull();
+  });
+});

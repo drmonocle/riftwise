@@ -197,19 +197,44 @@ export function syncFromLocation(): HubRoute | null {
   return r;
 }
 
+// ── The other tabs' addresses ─────────────────────────────────────────────
+
+/** Each tab's own address on the web (riftwise.gg/schedule); the Live tab is the site's home (/). The schedule
+ *  also has /results (its Results list) and /schedule/<league> (one league's matches, Riot's league slug). */
+const TAB_PATHS: Record<string, string> = { live: "", schedule: "schedule", stream: "stream", watchlist: "watchlist", news: "news", settings: "settings" };
+
+/** The tab an address belongs to (null: not a tab's address, e.g. a stats page). */
+export function tabOfPath(path: string = IS_WEB ? window.location.pathname : ""): string | null {
+  if (!path.startsWith(BASE)) return null;
+  const first = path.slice(BASE.length).replace(/\/+$/, "").split("/")[0];
+  if (first === "results") return "schedule";
+  const tab = Object.keys(TAB_PATHS).find((k) => TAB_PATHS[k] === first);
+  return tab ?? null;
+}
+
+/** What the schedule's address asks for: the Results list, and one league (/schedule/worlds, /results/lck). */
+export function scheduleOfPath(path: string = IS_WEB ? window.location.pathname : ""): { results: boolean; league: string | null } {
+  const [first, league] = path.slice(BASE.length).replace(/\/+$/, "").split("/");
+  return { results: first === "results", league: (first === "schedule" || first === "results") && league ? decodeURIComponent(league) : null };
+}
+
+/** The schedule's address for a list and league, so a filtered schedule can be linked. */
+export function setScheduleAddress(results: boolean, league: string | null): void {
+  if (!IS_WEB || tabOfPath() !== "schedule") return;
+  const path = `${BASE}${results ? "results" : "schedule"}${league ? `/${encodeURIComponent(league)}` : ""}`;
+  if (path !== window.location.pathname) window.history.replaceState({ ...(window.history.state || {}), tab: "schedule" }, "", path);
+}
+
 /**
- * Keeps the address bar in step with the main tabs on the web: the Stats tab shows its page's
- * address, any other tab the plain site address (/). Moving into or out of the Stats tab adds a
- * history entry (so Back returns to where you were); switching between other tabs doesn't.
+ * Keeps the address bar in step with the main tabs on the web: the Stats tab shows its page's address, each other
+ * tab its own (/, /schedule, /stream...). Every switch adds a history entry, so Back steps through the tabs.
  */
 export function syncTabAddress(prevTab: string, nextTab: string): void {
   if (!IS_WEB || prevTab === nextTab) return;
-  const onHub = parseHubPath(window.location.pathname) !== null;
   if (nextTab === "stats") {
-    if (!onHub) window.history.pushState({ hub: true, tab: "stats" }, "", hubPath(current));
-  } else if (onHub) {
-    window.history.pushState({ tab: nextTab }, "", BASE + window.location.hash);
-  } else {
-    window.history.replaceState({ ...(window.history.state || {}), tab: nextTab }, "", window.location.href);
+    if (parseHubPath(window.location.pathname) === null) window.history.pushState({ hub: true, tab: "stats" }, "", hubPath(current));
+    return;
   }
+  const path = BASE + (TAB_PATHS[nextTab] ?? "");
+  if (tabOfPath() !== nextTab || parseHubPath(window.location.pathname) !== null) window.history.pushState({ tab: nextTab }, "", path);
 }
