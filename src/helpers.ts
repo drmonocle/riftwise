@@ -898,3 +898,15 @@ export function playKickoffChime(): void {
 }
 
 
+
+/**
+ * What a Swiss match decides (3 wins go through, 3 losses go home, as at Worlds): "both" when the winner goes
+ * through and the loser goes home (2-2), "advance" when the winner goes through (2-0, 2-1), "out" when the loser
+ * goes home (0-2, 1-2), null otherwise or outside a Swiss stage.
+ */
+export function swissStakes(m: Match): "both" | "advance" | "out" | null {
+  if (m.state !== "unstarted" || !/swiss/i.test(m.blockName) || !m.team1Record || !m.team2Record) return null;
+  const win = m.team1Record[0] === 2 && m.team2Record[0] === 2;
+  const lose = m.team1Record[1] === 2 && m.team2Record[1] === 2;
+  return win && lose ? "both" : win ? "advance" : lose ? "out" : null;
+}

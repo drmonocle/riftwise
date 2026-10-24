@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "1.18.0"
+	version  = "1.19.0"
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -74,6 +74,8 @@ var sections = map[string][2]string{
 	"rankings":    {"LoL power rankings: every pro team, every region", "Power rankings for every active professional League of Legends team on one scale across all regions, with win chances, league strength and how accurate they have been."},
 	"finder":      {"Pro LoL game finder", "Find any professional League of Legends game: filter by league, year, patch, team, champion, side and result, then download the list."},
 	"draft":       {"Pro LoL draft board", "Plan a League of Legends draft between two pro teams with their champion pools, first picks, bans and win rates in view."},
+	"leaders":     {"Pro LoL player leaderboards: every stat, every league", "Rank every player of a League of Legends league season or tournament on any stat: KDA, damage, gold, CS, vision, laning leads at 15 minutes and more, by role, with a minimum number of games."},
+	"tiers":       {"Pro LoL tier list by role and patch", "What pro League of Legends teams actually pick and ban on each patch, by role: every champion placed in a tier by its presence and win rate in pro games."},
 	"counters":    {"LoL counter-pick finder: every pro lane matchup", "Pick a champion and see every lane opponent pro play has put against it, with its win rate and gold lead at 15 minutes in that matchup, from every pro game since 2011."},
 	"best":        {"The best pro LoL games ever, rated", "Every professional League of Legends game since 2011 rated 0 to 100 for action, closeness, stakes and drama: the best games and series of all time, by year and by league."},
 	"worlds":      {"LoL Worlds hub: facts, Swiss stage and bracket picker", "The League of Legends World Championship on one page: the standout stats from every game so far, a Swiss stage and knockout picker with each team's win chances, and the chances of every team to win Worlds."},
@@ -712,6 +714,10 @@ func main() {
 	mux.HandleFunc(basePath, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path == basePath+"calendar.ics" {
+			serveCalendar(w, r) // calendar.go
 			return
 		}
 		if strings.HasPrefix(r.URL.Path, basePath+"sitemap") && strings.HasSuffix(r.URL.Path, ".xml") {

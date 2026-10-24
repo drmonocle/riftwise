@@ -383,6 +383,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   rift: tl("Rift"),
                   classic: tl("Classic"),
                   midnight: tl("Midnight"),
+                  light: tl("Light"),
                   // team names stay as they are in every language
                   tsm: "TSM",
                   flyquest: "FlyQuest",
@@ -392,6 +393,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   rift: tl("Deep indigo with a soft violet, like the Rift Herald"),
                   classic: tl("The original navy and Hextech gold"),
                   midnight: tl("Graphite with a cool blue"),
+                  light: tl("A pale background with deep violet, for daylight and printing"),
                   tsm: tl("TSM's black and white, with a steel blue"),
                   flyquest: tl("FlyQuest green on near-black"),
                   t1: tl("T1 red on black, with championship gold"),
@@ -402,7 +404,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     type="button"
                     onClick={() => onUpdateSettings({ theme: th.id })}
                     aria-pressed={on}
-                    className={`text-left rounded-lg border p-2.5 transition-all ${
+                    className={`text-left rounded-lg border p-2.5 transition-all ${th.id === "light" ? "[&_*]:!text-[#17142b]" : ""} ${
                       on ? "border-rw-accent ring-1 ring-rw-accent/50" : "border-rw-border hover:border-rw-line"
                     }`}
                     style={{ background: `linear-gradient(135deg, ${th.swatch[0]}, ${th.swatch[0]} 55%, ${th.swatch[1]}33)` }}

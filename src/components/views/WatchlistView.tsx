@@ -5,6 +5,7 @@ import { Search, Check, Plus, X, Globe, User, Shield, Trophy, RefreshCw } from "
 import { tl, tn, regionName, roleName } from "../../i18n";
 import { IS_WEB } from "../../platform";
 import { PushAlertsBanner } from "../PushAlerts";
+import { CalendarFeed } from "../CalendarFeed";
 import { searchAlias, isNonLatin } from "../../searchAliases";
 import { mainPlayerEntries } from "../../helpers";
 import { riotImg } from "../../riotImage";
@@ -15,6 +16,8 @@ interface WatchlistViewProps {
   onUpdateSettings: (s: Partial<AppSettings>) => void;
   onRefreshCatalog?: () => Promise<void>;
   isRefreshingCatalog?: boolean;
+  /** the desktop app opens links itself */
+  onOpenUrl?: (url: string) => void;
 }
 
 type WatchlistSubTab = "teams" | "players" | "regions" | "leagues";
@@ -41,6 +44,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
   onUpdateSettings,
   onRefreshCatalog,
   isRefreshingCatalog = false,
+  onOpenUrl,
 }) => {
   const [tab, setTab] = useState<WatchlistSubTab>("teams");
   // With dozens of follows the quick-remove chips filled a phone screen; show a few until asked
@@ -296,6 +300,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
       </div>
 
       {IS_WEB && <PushAlertsBanner settings={settings} />}
+      <CalendarFeed settings={settings} onOpenUrl={IS_WEB ? undefined : onOpenUrl} />
 
       {/* Sub-tab Navigation & Search */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-rw-border">

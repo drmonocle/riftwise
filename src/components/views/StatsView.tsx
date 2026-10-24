@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect, useRef, useState } from "react";
-import { BarChart3, Trophy, Swords, Medal, ArrowLeft, GitCompare, Home, CalendarRange, Layers, History, Database, TrendingUp, Flame, Crosshair, Globe, Flag, Wrench, ClipboardList, LayoutGrid, Search } from "lucide-react";
+import { BarChart3, Trophy, Swords, Medal, ArrowLeft, GitCompare, Home, CalendarRange, Layers, History, Database, TrendingUp, Flame, Crosshair, Globe, Flag, Wrench, ClipboardList, LayoutGrid, Search, ListOrdered, Rows3 } from "lucide-react";
 import { AppSettings, Match, CatalogData } from "../../types";
 import { IS_WEB } from "../../platform";
 import {
@@ -74,6 +74,8 @@ const FinderPage = lazyPart(() => pageCode.finder().then((m) => m.FinderPage));
 const DraftPage = lazyPart(() => pageCode.draft().then((m) => m.DraftPage));
 const BestPage = lazyPart(() => pageCode.best().then((m) => m.BestPage));
 const CountersPage = lazyPart(() => pageCode.counters().then((m) => m.CountersPage));
+const LeadersPage = lazyPart(() => pageCode.leaders().then((m) => m.LeadersPage));
+const TiersPage = lazyPart(() => pageCode.tiers().then((m) => m.TiersPage));
 const AboutMePage = lazyPart(() => pageCode.aboutme().then((m) => m.AboutMePage));
 const ComparePage = lazyPart(() => pageCode.compare().then((m) => m.ComparePage));
 const TeamPage = lazyPart(() => pageCode.team().then((m) => m.TeamPage));
@@ -100,7 +102,7 @@ interface MenuItem {
 }
 /** The stats menu: groups on the first row, the open group's pages on the second. */
 /** pages whose own title is their <h1> (the others get the "Pro stats" header as theirs) */
-const OWN_H1 = new Set(["home", "worlds", "msi", "first-stand", "rankings", "records", "prep", "draft", "finder", "best", "counters", "team", "player", "event", "champ", "league", "match", "aboutme"]);
+const OWN_H1 = new Set(["home", "worlds", "msi", "first-stand", "rankings", "records", "prep", "draft", "finder", "best", "counters", "leaders", "tiers", "team", "player", "event", "champ", "league", "match", "aboutme"]);
 
 const GROUPS: { label: string; icon: React.ReactNode; items: MenuItem[] }[] = [
   { label: tk("Home"), icon: <Home className="w-3.5 h-3.5" />, items: [{ kind: "home", label: tk("Home"), icon: <Home className="w-3.5 h-3.5" /> }] },
@@ -127,6 +129,7 @@ const GROUPS: { label: string; icon: React.ReactNode; items: MenuItem[] }[] = [
     icon: <TrendingUp className="w-3.5 h-3.5" />,
     items: [
       { kind: "rankings", label: tk("Rankings"), icon: <TrendingUp className="w-3.5 h-3.5" /> },
+      { kind: "leaders", label: tk("Leaderboards"), icon: <ListOrdered className="w-3.5 h-3.5" /> },
       { kind: "compare", label: tk("Compare"), icon: <GitCompare className="w-3.5 h-3.5" /> },
       { kind: "records", label: tk("Records"), icon: <Medal className="w-3.5 h-3.5" /> },
     ],
@@ -137,6 +140,7 @@ const GROUPS: { label: string; icon: React.ReactNode; items: MenuItem[] }[] = [
     items: [
       { kind: "champions", label: tk("Champions"), icon: <Swords className="w-3.5 h-3.5" /> },
       { kind: "counters", label: tk("Counters"), icon: <Crosshair className="w-3.5 h-3.5" /> },
+      { kind: "tiers", label: tk("Tier list"), icon: <Rows3 className="w-3.5 h-3.5" /> },
       { kind: "patches", label: tk("Patches"), icon: <History className="w-3.5 h-3.5" /> },
     ],
   },
@@ -154,10 +158,10 @@ const GROUPS: { label: string; icon: React.ReactNode; items: MenuItem[] }[] = [
 ];
 const SECTIONS: MenuItem[] = GROUPS.flatMap((g) => g.items);
 /** pages whose address carries what they show (teams, filters): their link is worth copying */
-const LINKABLE = new Set<SectionKind>(["prep", "draft", "finder", "compare", "best", "champions", "counters"]);
+const LINKABLE = new Set<SectionKind>(["prep", "draft", "finder", "compare", "best", "champions", "counters", "leaders", "tiers"]);
 
 /** pages that are one big table: kept at the two-column width on very wide screens (App.css .rw-capped) */
-const CAPPED_KINDS = new Set(["tournaments", "leagues", "rankings", "titles", "best", "champions", "patches", "data", "finder", "counters"]);
+const CAPPED_KINDS = new Set(["tournaments", "leagues", "rankings", "titles", "best", "champions", "patches", "data", "finder", "counters", "leaders"]);
 
 // ── Compare ───────────────────────────────────────────────────────────────
 
@@ -329,6 +333,9 @@ export const StatsView: React.FC<StatsViewProps> = ({
         {route.kind === "draft" && <DraftPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "best" && <BestPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "counters" && <CountersPage query={"query" in route ? route.query : undefined} />}
+        {route.kind === "leaders" && <LeadersPage query={"query" in route ? route.query : undefined} />}
+        {route.kind === "tiers" &&
+          (statsMeta.data ? <TiersPage meta={statsMeta.data} query={"query" in route ? route.query : undefined} /> : statsMeta.error ? <Failed /> : <Loading />)}
         {route.kind === "aboutme" && <AboutMePage onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
         {route.kind === "titles" && <TitlesPanel />}
         {route.kind === "compare" && <ComparePage route={route as CompareRoute} />}
