@@ -156,7 +156,7 @@ export const TeamEarly: React.FC<{ t: TeamAgg }> = ({ t: agg }) => {
         {t.grubs != null && (
           <Stat
             label={tl("Void grubs")}
-            value={dash(t.grubs)}
+            value={t.grubs == null ? "–" : fmtDec(t.grubs)}
             sub={tl("{p} of all grubs", { p: pct(t.grubShare) })}
           />
         )}
@@ -175,7 +175,7 @@ export const TeamEarly: React.FC<{ t: TeamAgg }> = ({ t: agg }) => {
         />
         <Stat
           label="CKPM"
-          value={dash(agg.ckpm)}
+          value={agg.ckpm == null ? "–" : fmtDec(agg.ckpm, 2)}
           sub={tl("Kills per minute, both teams")}
         />
       </div>
@@ -542,6 +542,11 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: { name
             <Stat
               label={tl("Avg game")}
               value={t.min != null ? tl("{n} min", { n: fmtN(t.min) }) : "–"}
+              sub={
+                t.minWin != null && t.minLoss != null
+                  ? tl("Wins {a} · losses {b} min", { a: fmtDec(t.minWin), b: fmtDec(t.minLoss) })
+                  : undefined
+              }
             />
             <Stat
               label={tl("Kills / game")}

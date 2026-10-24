@@ -189,7 +189,8 @@ export const eventName = (event: string): string => tc("event", event);
 /** Title names from the stats ("Worlds 2025 Main Event", "First Stand 2026") with the event in the reader's wording. */
 export function eventTitle(title: string): string {
   const m = /^(Worlds|MSI|First Stand)\b(.*?)(?: Main Event)?$/.exec(title || "");
-  if (m) return eventName(m[1]) + m[2];
+  // the first three Worlds are "Worlds Season 1-3" in the data: the rest of the site calls them Worlds 2011-2013
+  if (m) return eventName(m[1]) + (m[1] === "Worlds" ? m[2].replace(/^ Season ([123])$/, (_, n) => ` ${2010 + Number(n)}`) : m[2]);
   return /^Demacia Cup\b/.test(title || "") ? tc("league", "Demacia Cup") + title.slice(11) : title;
 }
 

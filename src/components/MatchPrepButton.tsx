@@ -36,7 +36,7 @@ export const MatchPrepButton: React.FC<{ match: Match; compact?: boolean; onDone
       disabled={state === "busy"}
       title={tl("Match prep: form, drafts, lanes and storylines")}
       aria-label={label}
-      className="p-1 rounded text-rw-sub hover:text-rw-accent hover:bg-rw-bg disabled:opacity-50 shrink-0"
+      className="p-1 max-sm:min-w-9 max-sm:min-h-9 pointer-coarse:min-w-9 pointer-coarse:min-h-9 flex items-center justify-center rounded text-rw-sub hover:text-rw-accent hover:bg-rw-bg disabled:opacity-50 shrink-0"
     >
       <ClipboardList className="w-3.5 h-3.5" />
     </button>

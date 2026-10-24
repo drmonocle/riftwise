@@ -27,6 +27,7 @@ describe("title names", () => {
     expect(eventTitle("LCK 2024 Summer")).toBe("LCK 2024 Summer");
     setDictionaryForTests("en", {});
     expect(eventTitle("Worlds 2016")).toBe("Worlds 2016");
+    expect(eventTitle("Worlds Season 2")).toBe("Worlds 2012");
   });
 });
 

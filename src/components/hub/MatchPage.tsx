@@ -275,7 +275,8 @@ const BLUE = "#4a9eff";
 const RED = "var(--rw-red)";
 const kfmt = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v) >= 1000 ? `${fmtDec(Math.abs(v) / 1000)}k` : Math.abs(v)}`;
 
-/** One row: a bar from the middle toward the side that leads (blue left, red right), its size against `max`. */
+/** One row: a bar from the middle toward the side that leads (blue left, red right), its size against `max`. The row's
+ *  label (the minute, the lane) sits on its own line above the bar, so it never lands on the bar or its number. */
 const LeadBar: React.FC<{ label: React.ReactNode; left?: React.ReactNode; right?: React.ReactNode; v: number; max: number; tip: string }> = ({
   label,
   left,
@@ -286,30 +287,34 @@ const LeadBar: React.FC<{ label: React.ReactNode; left?: React.ReactNode; right?
 }) => {
   const w = max ? Math.min(50, (Math.abs(v) / max) * 50) : 0;
   const blueAhead = v > 0;
+  // a long bar carries its number inside, so the number never runs into the names beside the chart
+  const inside = w > 30;
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)] items-center gap-2 text-[11px]" title={tip}>
-      <span className="truncate text-right text-rw-sub">{left}</span>
-      <div className="relative h-5">
-        <div className="absolute inset-y-0 left-1/2 w-px bg-rw-line" />
-        {v !== 0 && (
-          <div
-            className="absolute top-1 bottom-1"
-            style={{
-              background: blueAhead ? BLUE : RED,
-              width: `${w}%`,
-              ...(blueAhead ? { right: "50%", borderRadius: "4px 0 0 4px" } : { left: "50%", borderRadius: "0 4px 4px 0" }),
-            }}
-          />
-        )}
-        <span
-          className="absolute inset-y-0 flex items-center tabular-nums font-semibold text-rw-text"
-          style={blueAhead ? { right: `calc(50% + ${w}% + 4px)` } : { left: `calc(50% + ${w}% + 4px)` }}
-        >
-          {v === 0 ? "0" : kfmt(Math.abs(v))}
-        </span>
-        <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 text-[9px] text-rw-muted">{label}</span>
+    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)] items-end gap-2 text-[11px]" title={tip}>
+      <span className="truncate text-right text-rw-sub leading-5">{left}</span>
+      <div>
+        <div className="text-center text-[9px] leading-3 text-rw-muted truncate">{label}</div>
+        <div className="relative h-5">
+          <div className="absolute inset-y-0 left-1/2 w-px bg-rw-line" />
+          {v !== 0 && (
+            <div
+              className="absolute top-1 bottom-1"
+              style={{
+                background: blueAhead ? BLUE : RED,
+                width: `${w}%`,
+                ...(blueAhead ? { right: "50%", borderRadius: "4px 0 0 4px" } : { left: "50%", borderRadius: "0 4px 4px 0" }),
+              }}
+            />
+          )}
+          <span
+            className={`absolute inset-y-0 flex items-center tabular-nums font-semibold ${inside ? "text-white" : "text-rw-text"}`}
+            style={inside ? (blueAhead ? { right: "calc(50% + 6px)" } : { left: "calc(50% + 6px)" }) : blueAhead ? { right: `calc(50% + ${w}% + 4px)` } : { left: `calc(50% + ${w}% + 4px)` }}
+          >
+            {v === 0 ? "0" : kfmt(Math.abs(v))}
+          </span>
+        </div>
       </div>
-      <span className="truncate text-rw-sub">{right}</span>
+      <span className="truncate text-rw-sub leading-5">{right}</span>
     </div>
   );
 };

@@ -398,8 +398,8 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
             <tr>
               <th className="px-2 py-1 text-left">{tl("Year")}</th>
               <th className="px-2 py-1 text-left">{tl("Champion")}</th>
-              <th className="px-2 py-1 text-center">{tl("Final")}</th>
-              <th className="px-2 py-1 text-left">{tl("Runner-up")}</th>
+              <th className="px-2 py-1 text-center max-sm:hidden">{tl("Final")}</th>
+              <th className="px-2 py-1 text-left max-sm:hidden">{tl("Runner-up")}</th>
             </tr>
           </thead>
           <tbody>
@@ -419,9 +419,15 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                     <Trophy className="w-3 h-3 text-rw-accent shrink-0" />
                     <TeamLink name={x.as} u={x.u} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
                   </span>
+                  {/* phones: the final and the runner-up under the champion instead of two more columns */}
+                  {x.l && (
+                    <span className="sm:hidden block pl-[18px] text-[10px] text-rw-sub tabular-nums">
+                      {x.score} {tl("vs")} {x.l}
+                    </span>
+                  )}
                 </td>
-                <td className="px-2 py-1 text-center tabular-nums font-bold">{x.score}</td>
-                <td className="px-2 py-1 text-rw-sub">{x.l}</td>
+                <td className="px-2 py-1 text-center tabular-nums font-bold max-sm:hidden">{x.score}</td>
+                <td className="px-2 py-1 text-rw-sub max-sm:hidden">{x.l}</td>
               </tr>
             ))}
           </tbody>

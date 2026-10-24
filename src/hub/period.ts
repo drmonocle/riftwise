@@ -287,6 +287,9 @@ export interface TeamAgg {
   /** games with a scoreboard (kills, gold, objectives) */
   sg: number;
   min: number | null;
+  /** average length of its wins and of its losses, minutes */
+  minWin: number | null;
+  minLoss: number | null;
   kills: number | null;
   deaths: number | null;
   gpm: number | null;
@@ -425,6 +428,7 @@ const top = (m: Map<string, number>, n: number): [string, number][] => [...m.ent
 export function teamAgg(rows: TeamGameRow[]): TeamAgg {
   let g = 0, w = 0, sg = 0, min = 0, minG = 0, kills = 0, deaths = 0, gold = 0, gd = 0, goldMin = 0, goldGames = 0;
   let drag = 0, odrag = 0, bar = 0, obar = 0, tow = 0, otow = 0, towG = 0, ck = 0, ckMin = 0;
+  const winMin = new Avg(), lossMin = new Avg();
   const blue: [number, number] = [0, 0];
   const red: [number, number] = [0, 0];
   const picks = new Map<string, [number, number]>();
@@ -440,6 +444,7 @@ export function teamAgg(rows: TeamGameRow[]): TeamAgg {
     if (rmin) {
       min += rmin;
       minG++;
+      (won ? winMin : lossMin).add(rmin);
     }
     if (k != null && ok != null) {
       sg++;
@@ -481,6 +486,8 @@ export function teamAgg(rows: TeamGameRow[]): TeamAgg {
     red,
     sg,
     min: minG ? Number((min / minG).toFixed(1)) : null,
+    minWin: winMin.get(1),
+    minLoss: lossMin.get(1),
     kills: ratio(kills, sg),
     deaths: ratio(deaths, sg),
     gpm: ratio(gold, goldMin, 0),

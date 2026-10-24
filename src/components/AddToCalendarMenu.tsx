@@ -124,7 +124,7 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
             e.stopPropagation();
             setIsOpen((prev) => !prev);
           }}
-          className={`p-1 rounded transition-colors ${
+          className={`p-1 max-sm:min-w-9 max-sm:min-h-9 pointer-coarse:min-w-9 pointer-coarse:min-h-9 flex items-center justify-center rounded transition-colors ${
             isOpen
               ? "bg-rw-accent/20 text-rw-accent"
               : "text-rw-sub hover:text-rw-accent hover:bg-rw-border"

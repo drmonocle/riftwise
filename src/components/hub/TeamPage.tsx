@@ -159,7 +159,8 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
         </Section>
       )}
 
-      <div className="grid gap-3 md:grid-cols-2">
+      {/* side by side, each only as tall as it needs; a long recent list scrolls instead of leaving a gap beside By year */}
+      <div className="grid gap-3 md:grid-cols-2 md:items-start">
         <Section
           title={tl("Recent series")}
           right={
@@ -177,7 +178,13 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
           {recentHidden ? (
             <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
           ) : (
-            <ul className="text-xs space-y-1">
+            <>
+            {t.recent.some((r) => r.r != null) && (
+              <div className="flex justify-end text-[10px] uppercase tracking-wider text-rw-muted pr-[4.5rem]" title={tl("Series rating: mostly its best game, then its other games")}>
+                {tl("Series rating")}
+              </div>
+            )}
+            <ul className="text-xs space-y-1 md:max-h-[24rem] md:overflow-y-auto md:pr-1">
               {t.recent.map((r, i) => (
                 <li key={i} className="flex justify-between gap-2 min-w-0">
                   <span className="truncate min-w-0">
@@ -202,6 +209,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
                 </li>
               ))}
             </ul>
+            </>
           )}
         </Section>
 

@@ -1,6 +1,7 @@
 /** About RiftWise (riftwise.gg/about): who makes it, why, and what it promises. In Kyle's own words. */
 import React from "react";
 import { tl, tk } from "../../i18n";
+import { dedication } from "../../dedication";
 import { card, HubLink, Section, usePageTitle } from "./ui";
 
 const LINKS: [string, string][] = [
@@ -43,6 +44,7 @@ export const AboutMePage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ o
             <p className="text-rw-sub">
               {tl("I'm Kyle Hoover, also known as Dr. Monocle (in game: Dr Monocle#DOC), from Columbus, Ohio. I made RiftWise.")}
             </p>
+            <p className="text-rw-sub italic">{dedication()}</p>
             <div className="flex flex-wrap gap-1.5 pt-1">
               {LINKS.map(([url, label]) => (
                 <a

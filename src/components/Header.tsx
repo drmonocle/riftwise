@@ -79,7 +79,7 @@ interface HeaderProps {
 }
 
 // Shared look for the small header controls: one line, never wrapping.
-const pill = "flex items-center gap-1.5 h-7 px-2.5 rounded text-xs whitespace-nowrap border transition-colors";
+const pill = "flex items-center gap-1.5 h-7 max-sm:h-9 px-2.5 rounded text-xs whitespace-nowrap border transition-colors";
 const iconBtn = "flex items-center justify-center h-7 w-7 rounded border transition-colors";
 
 export const Header: React.FC<HeaderProps> = ({
