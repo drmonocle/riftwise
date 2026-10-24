@@ -122,7 +122,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
         )}
       </label>
       {open && q.trim() && (
-        <div className="absolute z-40 left-0 right-0 mt-1 bg-rw-surface border border-rw-accent/40 rounded-lg shadow-2xl max-h-[70vh] overflow-y-auto p-1.5 text-xs">
+        <div className="absolute z-40 left-0 right-0 min-w-[min(18rem,calc(100vw-1.5rem))] mt-1 bg-rw-surface border border-rw-accent/40 rounded-lg shadow-2xl max-h-[70vh] overflow-y-auto p-1.5 text-xs">
           {failed ? (
             <p className="p-3 text-rw-red">{tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>
           ) : !index || (partial && (flat.length === 0 || fuzzy)) ? (

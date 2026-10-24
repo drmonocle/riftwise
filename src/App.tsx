@@ -135,7 +135,10 @@ export default function App() {
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
       e.preventDefault();
-      setSearchOpen(true);
+      // the header's own search box when it has room for one, else the search under the header
+      const box = document.querySelector<HTMLInputElement>('[data-header-search="box"] input');
+      if (box) box.focus();
+      else setSearchOpen(true);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
