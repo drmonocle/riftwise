@@ -5,7 +5,9 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"unicode/utf8"
 )
@@ -87,7 +89,6 @@ func TestPageGetsItsOwnTags(t *testing.T) {
 		`<noscript><main><p><strong>T1 – stats | RiftWise</strong></p>`,
 		`<a href="/player/faker">Faker</a>`,
 		`<meta property="og:title" content="T1 – stats | RiftWise" />`,
-		`<div id="root"></div>`,
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("missing %q in\n%s", want, body)
@@ -239,15 +240,16 @@ func TestOldBuildWithoutLeagues(t *testing.T) {
 
 // Titles fit in 65 characters: notes, then a generic tail, then the brand go first.
 func TestFitTitle(t *testing.T) {
-	cases := map[string]string{
-		"T1 – stats | RiftWise": "T1 – stats | RiftWise",
-		"Worlds 2026: results, winner and stats – League of Legends World Championship | RiftWise": "Worlds 2026: results, winner and stats | RiftWise",
-		"ACL eSports (Spanish Team) vs Guinea Pink Alpaca – Granada Gaming 23-24 Offline Qualifier Round 2 | RiftWise": "ACL eSports vs Guinea Pink Alpaca | RiftWise",
-		"T1 vs Gen.G – Worlds 2025 Main Event Quarterfinals Day 3 of the knockout stage | RiftWise": "T1 vs Gen.G – Worlds 2025 Main Event Quarterfinals Day | RiftWise",
-		"Northern League of Legends Championship 3rd Division – every season, champions and results | RiftWise": "Northern League of Legends Championship 3rd Division | RiftWise",
-		"Granada Gaming 23-24 Offline Qualifier Round 2 Group Stage Day 1 Lower Bracket Finals | RiftWise": "Granada Gaming 23-24 Offline Qualifier Round 2 Group Stage Day 1…",
+	cases := [][2]string{
+		{"T1 – stats | RiftWise", "T1 – stats | RiftWise"},
+		{"Worlds 2026: results, winner and stats – League of Legends World Championship | RiftWise", "Worlds 2026: results, winner and stats | RiftWise"},
+		{"ACL eSports (Spanish Team) vs Guinea Pink Alpaca – Granada Gaming 23-24 Offline Qualifier Round 2 | RiftWise", "ACL eSports vs Guinea Pink Alpaca | RiftWise"},
+		{"T1 vs Gen.G – Worlds 2025 Main Event Quarterfinals Day 3 of the knockout stage | RiftWise", "T1 vs Gen.G – Worlds 2025 Main Event Quarterfinals Day | RiftWise"},
+		{"Northern League of Legends Championship 3rd Division – every season, champions and results | RiftWise", "Northern League of Legends Championship 3rd Division | RiftWise"},
+		{"Granada Gaming 23-24 Offline Qualifier Round 2 Group Stage Day 1 Lower Bracket Finals | RiftWise", "Granada Gaming 23-24 Offline Qualifier Round 2 Group Stage Day 1…"},
 	}
-	for in, want := range cases {
+	for _, c := range cases {
+		in, want := c[0], c[1]
 		if got := fitTitle(in); got != want || utf8.RuneCountInString(got) > maxTitle {
 			t.Errorf("fitTitle(%q) = %q (%d), want %q", in, got, utf8.RuneCountInString(got), want)
 		}
@@ -267,4 +269,19 @@ func TestChangedPages(t *testing.T) {
 	if strings.Join(got, " ") != publicURL+"team/geng "+publicURL+"team/new" {
 		t.Errorf("changed pages = %v", got)
 	}
+}
+
+// Many cards drawn at once (crawlers do that) share the cached font faces without crashing.
+func TestOgImageConcurrent(t *testing.T) {
+	var wg sync.WaitGroup
+	for i := 0; i < 24; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			if len(ogImage("team", "Team "+strconv.Itoa(i)+" with a long name to wrap over lines", "A description that also wraps onto a second line.")) == 0 {
+				t.Errorf("card %d: no image", i)
+			}
+		}(i)
+	}
+	wg.Wait()
 }

@@ -31,6 +31,10 @@ var (
 	ogFaces   = map[string]font.Face{}
 	ogFaceMu  sync.Mutex
 
+	// ogDrawMu: one card is drawn at a time. A font face keeps its glyph buffer between calls, so two requests
+	// drawing with the same cached face at once crashed (crawlers fetch many cards together).
+	ogDrawMu sync.Mutex
+
 	ogCacheMu sync.Mutex
 	ogCache   = map[string][]byte{}
 	ogCacheV  string
@@ -131,6 +135,8 @@ func drawText(img *image.RGBA, face font.Face, x, y int, c color.Color, text str
 
 // ogImage draws the card: brand line, the title big, the description, the address at the bottom.
 func ogImage(kind, title, desc string) []byte {
+	ogDrawMu.Lock()
+	defer ogDrawMu.Unlock()
 	img := image.NewRGBA(image.Rect(0, 0, ogW, ogH))
 	top, bottom := ogRGB("#151230"), ogRGB("#0c0a1d")
 	for y := 0; y < ogH; y++ {
