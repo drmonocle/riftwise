@@ -320,7 +320,7 @@ const ChildStages: React.FC<{ kids: { n: string; u: string }[] }> = ({ kids }) =
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-        <span className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mr-1">{tl("Stages")}</span>
+        <span className="text-[10px] font-semibold text-rw-muted mr-1">{tl("Stages")}</span>
         {loaded.map((k, j) => (
           <button
             key={k.u}

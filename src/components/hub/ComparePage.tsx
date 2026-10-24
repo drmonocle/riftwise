@@ -627,20 +627,20 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
     <Section title={tl("Head to head")} right={hidden ? <RevealButton onReveal={reveal} small /> : undefined}>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
         <div className={`${card} py-2`}>
-          <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Games")}</div>
+          <div className="text-[10px] text-rw-muted">{tl("Games")}</div>
           <div className="font-bold text-rw-text tabular-nums">
             {aName} {s.w} – {s.l} {bName}
           </div>
         </div>
         <div className={`${card} py-2`}>
-          <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Series")}</div>
+          <div className="text-[10px] text-rw-muted">{tl("Series")}</div>
           <div className="font-bold text-rw-text tabular-nums">
             {s.sw} – {s.sl}
           </div>
         </div>
         {s.gd15 != null && (
           <div className={`${card} py-2`} title={tl("{name}'s gold lead over the other at 15 minutes, in the {n} games they faced each other in lane", { name: aName, n: s.lane })}>
-            <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Gold lead at 15 in lane")}</div>
+            <div className="text-[10px] text-rw-muted">{tl("Gold lead at 15 in lane")}</div>
             <div className={`font-bold tabular-nums ${s.gd15 >= 0 ? "text-rw-teal" : "text-rw-red"}`}>
               {s.gd15 >= 0 ? "+" : ""}
               {fmtNum(Math.round(s.gd15))}
@@ -650,7 +650,7 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
       </div>
       {s.top.length > 0 && (
         <div className="space-y-1">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted">{tl("Most common champion matchups")}</div>
+          <div className="text-[10px] font-semibold text-rw-muted">{tl("Most common champion matchups")}</div>
           <ul className="text-xs grid sm:grid-cols-2 gap-x-4 gap-y-1">
             {s.top.map((p) => (
               <li key={p.ca + p.cb} className="flex items-center gap-1.5 min-w-0">

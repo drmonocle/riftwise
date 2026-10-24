@@ -132,7 +132,7 @@ export function Page<T>({ state, children }: { state: Loaded<T>; children: (data
 
 export const Stat: React.FC<{ label: string; value: React.ReactNode; sub?: React.ReactNode }> = ({ label, value, sub }) => (
   <div className="bg-rw-bg border border-rw-border rounded-lg px-3 py-2 min-w-0">
-    <div className="text-[10px] uppercase tracking-wider text-rw-muted font-semibold truncate">{label}</div>
+    <div className="text-[10px] text-rw-muted font-semibold truncate">{label}</div>
     <div className="text-base font-bold text-rw-text truncate">{value}</div>
     {sub && (
       <div className="text-[10px] text-rw-sub line-clamp-2" title={typeof sub === "string" ? sub : undefined}>
@@ -170,10 +170,11 @@ export const Section: React.FC<{
   const pageContext = useContext(CaptureContext);
   const context = captureContext ?? pageContext;
   return (
-    <section ref={ref} className={`${card} space-y-2 min-w-0`} id={id}>
-      {share && context && <div className="rw-capture-only rw-section-context text-sm font-extrabold text-rw-text">{context}</div>}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-rw-accent">{title}</h3>
+    <section ref={ref} className="bg-rw-surface border border-rw-border rounded-lg min-w-0" id={id}>
+      {share && context && <div className="rw-capture-only rw-section-context px-3 pt-2 text-sm font-extrabold text-rw-text">{context}</div>}
+      {/* a flat panel: the header strip (title left, the section's controls and tools right) over a hairline */}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-rw-border">
+        <h3 className={sectionTitle}>{title}</h3>
         {(right || share) && (
           <span className="flex flex-wrap items-center justify-end gap-2 min-w-0 ml-auto">
             {right}
@@ -181,11 +182,16 @@ export const Section: React.FC<{
           </span>
         )}
       </div>
-      {children}
-      {share && <CaptureFooter />}
+      <div className="p-3 space-y-2 min-w-0">
+        {children}
+        {share && <CaptureFooter />}
+      </div>
     </section>
   );
 };
+
+/** A section title: small condensed capitals in the text colour, no icon (every section heading looks the same). */
+export const sectionTitle = "font-head text-xs font-semibold uppercase tracking-wider text-rw-text";
 
 /**
  * How many side-by-side columns the window has room for (1 on a phone, 2 from 768 px, 3 from 1280 px, 4 from

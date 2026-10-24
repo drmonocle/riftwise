@@ -50,7 +50,7 @@ export const TrendChart: React.FC<{ games: { date: string; won: number }[] }> = 
   }
   return (
     <div className="space-y-1">
-      <div className="flex items-center justify-between text-[10px] uppercase tracking-wider font-bold text-rw-muted">
+      <div className="flex items-center justify-between text-[10px] font-semibold text-rw-muted">
         <span>{tl("Form over time")}</span>
         <span className="normal-case tracking-normal font-normal flex items-center gap-3">
           <span className="flex items-center gap-1">

@@ -113,7 +113,9 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
           }}
           placeholder={placeholder || tl("Search teams, players, tournaments, champions…")}
           aria-label={tl("Search pro stats")}
-          className={`bg-transparent outline-none text-rw-text placeholder-rw-muted flex-1 min-w-0 ${big ? "text-sm" : "text-xs"}`}
+          // w-full: a text box otherwise keeps a minimum width of its own, and in the header that pushed the buttons
+          // on its right off a phone screen
+          className={`bg-transparent outline-none text-rw-text placeholder-rw-muted flex-1 min-w-0 w-full ${big ? "text-sm" : "text-xs"}`}
         />
         {q && (
           <button type="button" onClick={() => setQ("")} aria-label={tl("Clear")} className="text-rw-muted hover:text-rw-text">
@@ -137,7 +139,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
             {fuzzy && <p className="px-2 pt-1 text-rw-sub">{tl("No exact match. Closest names:")}</p>}
             {groups.filter((g) => results![g.kind].length).map((g) => (
               <div key={g.kind} className="mb-1 last:mb-0">
-                <div className="px-2 pt-1 pb-0.5 text-[10px] uppercase tracking-wider font-bold text-rw-muted flex items-center gap-1">
+                <div className="px-2 pt-1 pb-0.5 text-[10px] font-semibold text-rw-muted flex items-center gap-1">
                   {g.icon}
                   {tl(g.label)}
                 </div>

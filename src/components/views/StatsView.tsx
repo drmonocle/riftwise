@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect, useRef, useState } from "react";
-import { BarChart3, Trophy, Swords, Medal, ArrowLeft, GitCompare, Home, CalendarRange, Layers, History, Database, TrendingUp, Flame, Crosshair, Globe, Flag, Wrench, ClipboardList, LayoutGrid, Search, ListOrdered, Rows3 } from "lucide-react";
+import { Trophy, Swords, Medal, ArrowLeft, GitCompare, Home, CalendarRange, Layers, History, Database, TrendingUp, Flame, Crosshair, Globe, Flag, Wrench, ClipboardList, LayoutGrid, Search, ListOrdered, Rows3 } from "lucide-react";
 import { AppSettings, Match, CatalogData } from "../../types";
 import { IS_WEB } from "../../platform";
 import {
@@ -219,13 +219,13 @@ export const StatsView: React.FC<StatsViewProps> = ({
       >
         <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-rw-border">
           {ownTitle ? (
-            <h1 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" /> {tl("Pro Stats")}
+            <h1 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-2">
+              {tl("Pro Stats")}
               {sectionName && <span className="text-rw-text">· {tl(sectionName)}</span>}
             </h1>
           ) : (
-            <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" /> {tl("Pro Stats")}
+            <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-2">
+              {tl("Pro Stats")}
             </h2>
           )}
           {hubMeta.data && (

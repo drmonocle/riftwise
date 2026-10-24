@@ -465,7 +465,7 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
           </div>
         );
       })}
-      <div className="text-[9px] uppercase tracking-wider text-rw-muted pt-0.5">
+      <div className="text-[9px] text-rw-muted pt-0.5">
         {match.state === "inProgress" ? <span className="text-rw-red">{tl("Live")}</span> : match.state === "completed" ? (masked ? tl("Final · hidden") : tl("Final")) : tl("Upcoming")}
       </div>
     </div>

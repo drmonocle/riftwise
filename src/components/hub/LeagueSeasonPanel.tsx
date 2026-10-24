@@ -38,7 +38,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
       <div className="grid gap-4 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
         {teams.length > 0 && (
           <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">{tl("Teams by record")}</div>
+            <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Teams by record")}</div>
             <ol className="text-xs space-y-0.5">
               {teams.slice(0, 12).map((t, i) => (
                 <li key={t.u || t.t} className="flex justify-between gap-2 min-w-0">
@@ -57,7 +57,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
         )}
         {regular.length > 0 && (
           <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">{tl("Standout players")}</div>
+            <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Standout players")}</div>
             <div className="grid gap-x-4 gap-y-2 sm:grid-cols-2 xl:grid-cols-3">
               {PLAYER_METRICS.filter((m) => STANDOUT.includes(m.key)).map((m) => {
                 const top = regular

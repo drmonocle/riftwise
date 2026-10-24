@@ -1,6 +1,6 @@
 /** One series (a "match": Bo1 to Bo5): every game's draft, scoreboard, builds, runes and objectives. */
 import React, { useEffect, useState } from "react";
-import { PlayCircle, Swords, Clock, Crown } from "lucide-react";
+import { PlayCircle, Clock, Crown } from "lucide-react";
 import { tl, tc, tk, roleName, locale, stageLabel, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
 import { loadHubSeries } from "../../hub/data";
@@ -365,7 +365,7 @@ const PlayerBars: React.FC<{ blueName: string; redName: string; blue: GamePlayer
   return (
     <div className={`${card} space-y-1.5`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-rw-accent">{tl("Player by player")}</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Player by player")}</h3>
         <div className="flex gap-1" role="group" aria-label={tl("Show")}>
           {have.map(([k, label]) => (
             <button
@@ -405,7 +405,7 @@ const PlayerBars: React.FC<{ blueName: string; redName: string; blue: GamePlayer
             </div>
             {side(b, false)}
           </div>
-          <span className="text-[9px] uppercase tracking-wider text-rw-muted text-center w-12">{roleName(r)}</span>
+          <span className="text-[9px] text-rw-muted text-center w-12">{roleName(r)}</span>
           <div className="min-w-0">
             <div className="text-[10px] text-rw-sub truncate">
               {o.n} {o.c && <ChampIcon name={o.c} size={14} />}
@@ -446,7 +446,7 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blue: Gam
     <div className="grid gap-3 lg:grid-cols-2">
       {gold.length > 0 && (
         <div className={`${card} space-y-1.5`}>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-rw-accent">{tl("Gold and XP lead")}</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Gold and XP lead")}</h3>
           {head}
           {gold.map(([m, v]) => (
             <LeadBar key={`g${m}`} label={tl("{n} min", { n: m })} left={m === gold[0][0] ? tl("Gold") : undefined} v={v} max={maxGold}
@@ -461,7 +461,7 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blue: Gam
       )}
       {lanes.length > 0 && (
         <div className={`${card} space-y-1.5`}>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-rw-accent">{tl("Gold lead in each lane at 15 minutes")}</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Gold lead in each lane at 15 minutes")}</h3>
           {head}
           {lanes.map(({ r, b, o }) => (
             <LeadBar
@@ -585,7 +585,7 @@ const Scoreboard: React.FC<{ name: string; side: "blue" | "red"; players: GamePl
   return (
     <section className={`${card} p-3 min-w-0`} style={{ borderTopColor: color, borderTopWidth: 2 }}>
       <h3 className="text-xs font-bold text-rw-text mb-2 flex items-center gap-2">
-        <Swords className="w-3.5 h-3.5" style={{ color }} />
+        <span className="w-1 h-3.5 rounded-sm shrink-0" style={{ background: color }} aria-hidden="true" />
         {name}
         {!hidden && won && <span className="text-[10px] text-rw-teal">{tl("Victory")}</span>}
       </h3>

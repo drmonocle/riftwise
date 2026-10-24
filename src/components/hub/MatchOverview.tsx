@@ -58,7 +58,7 @@ export const MatchOverview: React.FC<{ match: Match; a: string; b: string; onClo
         className="w-full max-w-lg max-h-[85vh] overflow-y-auto bg-rw-surface border border-rw-border rounded-xl p-4 space-y-3 text-xs"
       >
         <div className="flex items-center justify-between gap-2">
-          <h3 className="text-[11px] font-bold uppercase tracking-wider text-rw-accent">
+          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-rw-text">
             {tl("Match overview")} · {match.leagueName} · {tc("short best of", "Bo{n}", { n: match.bestOf })}
           </h3>
           <button type="button" onClick={onClose} aria-label={tl("Close")} className="p-1 text-rw-muted hover:text-rw-text">

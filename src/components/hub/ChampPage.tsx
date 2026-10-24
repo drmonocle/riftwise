@@ -144,7 +144,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
           </p>
           <div className="grid gap-3 md:grid-cols-3">
             <div>
-              <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">{tl("Items")}</div>
+              <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Items")}</div>
               <ul className="space-y-1 text-xs">
                 {items.map(([it, g, w]) => (
                   <li key={it}>
@@ -159,7 +159,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               </ul>
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">{tl("Keystones")}</div>
+              <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Keystones")}</div>
               <ul className="space-y-1 text-xs">
                 {c.builds.keys.map(([k, g, w]) => (
                   <li key={k}>
@@ -174,7 +174,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               </ul>
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">{tl("Summoner spells")}</div>
+              <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Summoner spells")}</div>
               <ul className="space-y-1 text-xs">
                 {c.builds.spells.map(([sp, g, w]) => (
                   <li key={sp}>

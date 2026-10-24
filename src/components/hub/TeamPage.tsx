@@ -180,7 +180,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
           ) : (
             <>
             {t.recent.some((r) => r.r != null) && (
-              <div className="flex justify-end text-[10px] uppercase tracking-wider text-rw-muted pr-[4.5rem]" title={tl("Series rating: mostly its best game, then its other games")}>
+              <div className="flex justify-end text-[10px] text-rw-muted pr-[4.5rem]" title={tl("Series rating: mostly its best game, then its other games")}>
                 {tl("Series rating")}
               </div>
             )}

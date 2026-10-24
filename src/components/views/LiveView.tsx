@@ -924,7 +924,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
       {/* Coming Up Next (followed upcoming matches) */}
       {comingUp.length > 0 && (
         <section className="space-y-2">
-          <h3 className="text-xs font-bold text-rw-accent uppercase tracking-wider">
+          <h3 className="text-xs font-semibold text-rw-text uppercase tracking-wider">
             {tl("Coming Up Next")}
           </h3>
           <UpNextTable

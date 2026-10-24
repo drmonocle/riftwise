@@ -1,5 +1,5 @@
 import React from "react";
-import { Newspaper, ExternalLink, Heart } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { tl, tk, currentLang, type Lang } from "../../i18n";
 import { RosterMoves } from "../hub/RosterMoves";
 
@@ -277,8 +277,7 @@ export const NewsView: React.FC<NewsViewProps> = ({ onOpenUrl }) => {
     <div className="p-4 space-y-4 page-5xl rw-capped overflow-y-auto h-full select-none">
       <RosterMoves />
       <div className="pb-1 border-b border-rw-border">
-        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
-          <Newspaper className="w-3.5 h-3.5 text-rw-teal" />
+        <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
           {tl("News Sources")}
         </h2>
         <div className="text-[11px] text-rw-muted mt-0.5">
@@ -312,8 +311,7 @@ export const NewsView: React.FC<NewsViewProps> = ({ onOpenUrl }) => {
       {/* fan-made tools worth knowing, with credit to the people behind them */}
       <div className="pt-2 border-t border-rw-border space-y-3">
         <div>
-          <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
-            <Heart className="w-3.5 h-3.5 text-rw-teal" />
+          <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
             {tl("Community picks")}
           </h2>
           <div className="text-[11px] text-rw-muted mt-0.5">{tl("Fan-made projects we love. Not ours: all credit to their makers.")}</div>

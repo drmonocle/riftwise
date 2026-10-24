@@ -140,20 +140,22 @@ export const ShareButtons: React.FC<{ target: React.RefObject<HTMLElement | null
       flash("failed");
     }
   };
-  // bigger on touch screens and phones (36 px for a finger), compact with a mouse
-  const btn = "p-1 pointer-coarse:min-h-9 pointer-coarse:min-w-9 max-sm:min-h-9 max-sm:min-w-9 flex items-center justify-center rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-line disabled:opacity-50";
+  // bigger on touch screens and phones (36 px for a finger), compact with a mouse; joined into one small toolbar
+  const btn = "p-1 pointer-coarse:min-h-9 pointer-coarse:min-w-9 max-sm:min-h-9 max-sm:min-w-9 flex items-center justify-center text-rw-sub hover:text-rw-text hover:bg-rw-raised disabled:opacity-50";
   return (
     <span data-nocapture="1" className="flex items-center gap-1 max-sm:gap-2 shrink-0">
       {state === "copied" && <span className="text-[10px] text-rw-teal">{tl("Copied")}</span>}
       {state === "failed" && <span className="text-[10px] text-rw-red">{tl("Couldn't make the image")}</span>}
-      <button type="button" onClick={copy} disabled={state === "busy"} className={btn} title={tl("Copy as an image")} aria-label={tl("Copy as an image")}>
-        <Images className="w-3.5 h-3.5" />
-      </button>
-      {IS_WEB && (
-        <button type="button" onClick={save} disabled={state === "busy"} className={btn} title={tl("Save as an image")} aria-label={tl("Save as an image")}>
-          <ImageDown className="w-3.5 h-3.5" />
+      <span className="flex rounded border border-rw-border divide-x divide-rw-border overflow-hidden">
+        <button type="button" onClick={copy} disabled={state === "busy"} className={btn} title={tl("Copy as an image")} aria-label={tl("Copy as an image")}>
+          <Images className="w-3.5 h-3.5" />
         </button>
-      )}
+        {IS_WEB && (
+          <button type="button" onClick={save} disabled={state === "busy"} className={btn} title={tl("Save as an image")} aria-label={tl("Save as an image")}>
+            <ImageDown className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </span>
     </span>
   );
 };

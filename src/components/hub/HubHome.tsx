@@ -158,7 +158,7 @@ const RecentPages: React.FC = () => {
   if (!recent.length) return null;
   return (
     <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-      <span className="text-rw-muted uppercase tracking-wider font-bold text-[10px] mr-1">{tl("Recently viewed")}</span>
+      <span className="text-rw-muted font-semibold text-[10px] mr-1">{tl("Recently viewed")}</span>
       {recent.slice(0, 8).map((r) => (
         <HubLink key={hubPathOf(r.route)} to={r.route} className="px-2 py-0.5 rounded-full border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-line max-w-[14rem] truncate">
           {r.title}
