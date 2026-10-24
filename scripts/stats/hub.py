@@ -1863,7 +1863,8 @@ def build(ctx) -> dict:
             "players": players_out, "teamStats": team_stats_out, "overview": overview, "rosters": roster_out,
             "regions": regions_out,
             "games": sum(len(v) for v in series.values()), "series": sum(1 for st in stages for _ in st["series"]),
-            "played": sum(1 for st in stages for s_ in st["series"] if s_.get("w")),
+            # series with at least one game, from the same list as "games" (the stage tables can miss some series)
+            "played": sum(1 for v in series.values() if v),
         }
         out.json(f"event/{eslug}.json", {k: v for k, v in event.items() if v not in (None, [], {})})
         kept[op] = {"tp": tp, "tts": tts, "tc": tc, "facts": facts, "mvp": ev_mvp, "tteam": tteam, "regions": regions,
