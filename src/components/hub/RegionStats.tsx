@@ -8,6 +8,7 @@ import { tl, regionName } from "../../i18n";
 import type { EventLines } from "../../hub/worldsFacts";
 import { Section } from "./ui";
 import { SectionCard } from "./BroadcastCard";
+import { chanceShade } from "../SwissStandings";
 
 /** A region as fans know it today: renamed leagues count as one (EU is EMEA, LMS became PCS, LAN and LAS became LAT). */
 const MERGE: Record<string, string> = { EU: "EMEA", LMS: "PCS", LAN: "LAT", LAS: "LAT" };
@@ -126,6 +127,87 @@ export function regionStats(files: (EventLines | null)[], years: string[]) {
   return { list, pairs: pairList };
 }
 
+/**
+ * Region strength over time (every edition together): each region's series record against teams from other
+ * regions, edition by edition, as shaded percentages (teal above 50%, red below; the record on hover). Regions in at
+ * least three editions, the most series against other regions first.
+ */
+const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[] }> = ({ files, years }) => {
+  const t = useMemo(() => {
+    // an edition has several stage files: group them by year
+    const byYear = new Map<string, number[]>();
+    years.forEach((y, i) => {
+      const yy = /\d{4}/.exec(y)?.[0];
+      if (!yy || !files[i]) return;
+      if (!byYear.has(yy)) byYear.set(yy, []);
+      byYear.get(yy)!.push(i);
+    });
+    const cols = [...byYear.keys()].sort();
+    const cells = new Map<string, Map<string, [number, number]>>();
+    for (const y of cols) {
+      const idx = byYear.get(y)!;
+      for (const r of regionStats(idx.map((i) => files[i]), idx.map((i) => years[i])).list) {
+        if (r.ow + r.ol === 0) continue;
+        if (!cells.has(r.code)) cells.set(r.code, new Map());
+        cells.get(r.code)!.set(y, [r.ow, r.ol]);
+      }
+    }
+    const total = (c: string) => [...cells.get(c)!.values()].reduce((n, [w, l]) => n + w + l, 0);
+    const rows = [...cells.keys()].filter((c) => cells.get(c)!.size >= 3).sort((a, b) => total(b) - total(a));
+    return { cols, rows, cells };
+  }, [files, years]);
+  if (t.cols.length < 3 || !t.rows.length) return null;
+  return (
+    <Section title={tl("Region strength over time")}>
+      <div className="overflow-x-auto">
+        <table className="text-xs">
+          <thead className="text-[10px] text-rw-muted">
+            <tr>
+              <th className="px-2 py-1 text-left font-normal">{tl("Region")}</th>
+              {t.cols.map((y) => (
+                <th key={y} className="px-0.5 py-1 text-center font-normal tabular-nums">
+                  {y}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {t.rows.map((c) => (
+              <tr key={c} className="border-t border-rw-border">
+                <td className="px-2 py-1">
+                  <span className="flex items-center gap-1.5 whitespace-nowrap">
+                    <RegionFlag code={c} />
+                    <span className="text-rw-text font-semibold">{regionLabel(c)}</span>
+                  </span>
+                </td>
+                {t.cols.map((y) => {
+                  const wl = t.cells.get(c)!.get(y);
+                  if (!wl) return <td key={y} className="px-0.5 py-1 text-center text-rw-muted">–</td>;
+                  const p = wl[0] / (wl[0] + wl[1]);
+                  return (
+                    <td key={y} className="px-0.5 py-0.5 text-center">
+                      <span
+                        className={`block min-w-[2.5rem] rounded-sm px-1 py-0.5 tabular-nums text-rw-text ${wl[0] + wl[1] < 3 ? "opacity-45" : ""}`}
+                        style={chanceShade(p)}
+                        title={tl("{region} {year}: {w}-{l} in series against other regions", { region: regionLabel(c), year: y, w: wl[0], l: wl[1] })}
+                      >
+                        {Math.round(p * 100)}
+                      </span>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[10px] text-rw-muted">
+        {tl("Each edition: the share of series a region's teams won against teams from other regions (hover for the record). Teal above 50%, red below; faded when fewer than 3 series.")}
+      </p>
+    </Section>
+  );
+};
+
 const bestText = (p: number | null) => (p == null ? "–" : p === 1 ? tl("Won it") : p === 2 ? tl("Final") : p <= 4 ? tl("Semifinal") : p <= 8 ? tl("Quarterfinal") : tl("Top {n}", { n: p }));
 
 export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string[]; all: boolean; name: string }> = ({ files, years, all, name }) => {
@@ -133,6 +215,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
   if (!list.length) return null;
   const cell = "px-2 py-1 text-right tabular-nums whitespace-nowrap";
   return (
+    <>
     <div className="grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <Section
         title={tl("Regions")}
@@ -232,5 +315,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
         </Section>
       )}
     </div>
+    {all && <RegionTrend files={files} years={years} />}
+    </>
   );
 };
