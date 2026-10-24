@@ -39,7 +39,7 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
   return (
     <div className="space-y-4">
       <div className={`${card} space-y-3`}>
-        <h2 className="text-base font-bold text-rw-text">{tl("Every pro League of Legends game, in one place")}</h2>
+        <h1 className="text-base font-bold text-rw-text">{tl("Every pro League of Legends game, in one place")}</h1>
         {meta.data && (
           <p className="text-[11px] text-rw-sub">
             {tl("{games} games · {events} tournaments · {players} players · {teams} teams · 2011 to today", {

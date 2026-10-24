@@ -57,10 +57,10 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
   return (
     <div className="rw-page">
       <div className={card}>
-        <h2 className="text-lg font-bold text-rw-text">
+        <h1 className="text-lg font-bold text-rw-text">
           {t.name}
           {t.codes.length > 0 && <span className="text-rw-muted text-sm font-semibold ml-2">{t.codes.slice(0, 3).join(" · ")}</span>}
-        </h2>
+        </h1>
         <p className="text-[11px] text-rw-muted">
           {[t.region ? regionName(t.region, t.region) : null, tl("Pro games from {from} to {to}", { from: fmtDate(t.from), to: fmtDate(t.to) }), t.disbanded ? tl("Disbanded") : null]
             .filter(Boolean)

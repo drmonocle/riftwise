@@ -322,7 +322,7 @@ export const RecordsPanel: React.FC = () => {
           <CaptureContext.Provider value={year === "all" ? tl("All-time pro records") : tl("{year} records", { year })}>
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-lg font-bold text-rw-text">{year === "all" ? tl("Records") : tl("{year} records", { year })}</h2>
+              <h1 className="text-lg font-bold text-rw-text">{year === "all" ? tl("Records") : tl("{year} records", { year })}</h1>
               {yearPick}
             </div>
             {year !== "all" && yearState.loading && <Loading />}

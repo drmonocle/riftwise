@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 const indexHTML = `<!doctype html>
@@ -82,7 +83,8 @@ func TestPageGetsItsOwnTags(t *testing.T) {
 		`<meta name="twitter:card" content="summary_large_image" />`,
 		`<meta name="twitter:title" content="T1 – stats | RiftWise" />`,
 		`<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","about":{"@type":"SportsTeam","name":"T1","sport":"League of Legends esports"}`,
-		`<noscript><main><h1>T1 – stats | RiftWise</h1>`,
+		`<div id="root"><h1 style="font:600 16px system-ui,sans-serif;color:#c8aa6e;margin:16px">T1 – stats</h1></div>`,
+		`<noscript><main><p><strong>T1 – stats | RiftWise</strong></p>`,
 		`<a href="/player/faker">Faker</a>`,
 		`<meta property="og:title" content="T1 – stats | RiftWise" />`,
 		`<div id="root"></div>`,
@@ -232,5 +234,37 @@ func TestOldBuildWithoutLeagues(t *testing.T) {
 	}
 	if w := get(s2, "/riftwise/league/lck"); w.Code != 404 {
 		t.Errorf("league page without data: %d", w.Code)
+	}
+}
+
+// Titles fit in 65 characters: notes, then a generic tail, then the brand go first.
+func TestFitTitle(t *testing.T) {
+	cases := map[string]string{
+		"T1 – stats | RiftWise": "T1 – stats | RiftWise",
+		"Worlds 2026: results, winner and stats – League of Legends World Championship | RiftWise": "Worlds 2026: results, winner and stats | RiftWise",
+		"ACL eSports (Spanish Team) vs Guinea Pink Alpaca – Granada Gaming 23-24 Offline Qualifier Round 2 | RiftWise": "ACL eSports vs Guinea Pink Alpaca | RiftWise",
+		"T1 vs Gen.G – Worlds 2025 Main Event Quarterfinals Day 3 of the knockout stage | RiftWise": "T1 vs Gen.G – Worlds 2025 Main Event Quarterfinals Day | RiftWise",
+		"Northern League of Legends Championship 3rd Division – every season, champions and results | RiftWise": "Northern League of Legends Championship 3rd Division | RiftWise",
+		"Granada Gaming 23-24 Offline Qualifier Round 2 Group Stage Day 1 Lower Bracket Finals | RiftWise": "Granada Gaming 23-24 Offline Qualifier Round 2 Group Stage Day 1…",
+	}
+	for in, want := range cases {
+		if got := fitTitle(in); got != want || utf8.RuneCountInString(got) > maxTitle {
+			t.Errorf("fitTitle(%q) = %q (%d), want %q", in, got, utf8.RuneCountInString(got), want)
+		}
+	}
+}
+
+// IndexNow gets the pages a build added or changed (the sections after a restart).
+func TestChangedPages(t *testing.T) {
+	s := &store{}
+	if got := s.changedPages(nil, nil); len(got) != len(sections) {
+		t.Fatalf("first load: %d pages, want the %d sections", len(got), len(sections))
+	}
+	s.version = "1"
+	s.pages = map[string]map[string]entry{"team": {"t1": {title: "T1", desc: "a", index: true}, "geng": {title: "Gen.G", desc: "b", index: true}}}
+	next := map[string]map[string]entry{"team": {"t1": {title: "T1", desc: "a", index: true}, "geng": {title: "Gen.G", desc: "c", index: true}, "new": {title: "New", desc: "d", index: true}, "hidden": {title: "H", desc: "e"}}}
+	got := s.changedPages(next, nil)
+	if strings.Join(got, " ") != publicURL+"team/geng "+publicURL+"team/new" {
+		t.Errorf("changed pages = %v", got)
 	}
 }

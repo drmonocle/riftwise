@@ -39,7 +39,7 @@ export const AboutMePage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ o
             className="w-44 sm:w-52 h-auto rounded-xl self-center sm:self-start shrink-0"
           />
           <div className="space-y-2 min-w-0">
-            <h2 className="text-lg font-bold text-rw-text">{tl("Hi, I'm Kyle")}</h2>
+            <h1 className="text-lg font-bold text-rw-text">{tl("Hi, I'm Kyle")}</h1>
             <p className="text-rw-sub">
               {tl("I'm Kyle Hoover, also known as Dr. Monocle (in game: Dr Monocle#DOC), from Columbus, Ohio. I made RiftWise.")}
             </p>

@@ -272,10 +272,10 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
   return (
     <div className="rw-page">
       <div className={card}>
-        <h2 className="text-lg font-bold text-rw-text">
+        <h1 className="text-lg font-bold text-rw-text">
           {l.s && <span className="text-rw-accent mr-2">{l.s}</span>}
           {l.l}
-        </h2>
+        </h1>
         <p className="text-[11px] text-rw-sub">
           {[
             l.region ? regionName(l.region, l.region) : null,
