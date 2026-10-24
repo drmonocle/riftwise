@@ -16,7 +16,7 @@ export const RIOT_PREFIX = "riot-";
 let schedule: Promise<Match[]> | null = null;
 let scheduleAt = 0;
 /** the schedule, asked again after a minute (a series that just ended changes state) */
-function recentSchedule(): Promise<Match[]> {
+export function recentSchedule(): Promise<Match[]> {
   if (!schedule || Date.now() - scheduleAt > 60_000) {
     scheduleAt = Date.now();
     schedule = fetchSchedule(0).catch((e) => {

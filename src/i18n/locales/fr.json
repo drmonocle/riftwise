@@ -1677,6 +1677,7 @@
   "{t} teams · {p} players": "{t} équipes · {p} joueurs",
   "Regions year by year": "Régions année par année",
   "Each region's series win rate against other regions.": "Taux de séries gagnées par chaque région contre les autres régions.",
+  "Includes {n} games played since the last stats update, added the moment they ended.": "Inclut {n} games jouées depuis la dernière mise à jour, ajoutées dès leur fin.",
   "now {team}": "désormais {team}",
   "title match::Final": "Finale",
   "title winner::Champion": "Vainqueur",

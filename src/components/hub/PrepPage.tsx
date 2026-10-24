@@ -11,6 +11,7 @@ import { MissingFile, winRate } from "../../stats";
 import { champName } from "../../champions";
 import { loadHubPlayer, loadHubTeam, loadPlayerGames, loadPlayerGames2y, loadRatings, loadTeamGames, loadTeamGames2y, loadTeamSeries } from "../../hub/data";
 import { chanceContext, matchChance, pct, seriesChance } from "../../hub/winChance";
+import { liveRating } from "../../hub/liveRatings";
 import { Change } from "./RankingsPage";
 import type { HubPlayer, HubTeam, PlayerGameRow, TeamGameRow, TeamSeriesRow } from "../../hub/types";
 import { PrepRoute, hubShareUrl, navigateHub } from "../../hub/route";
@@ -174,7 +175,10 @@ export function chancesOf(a: HubTeam, b: HubTeam, ratings: HubRatings | undefine
   // second-tier leagues never meet the top ones: only compare teams on the same scale
   if ((a.rating.rank == null || b.rating.rank == null) && a.rating.league !== b.rating.league) return null;
   const adjust = ratings.adjust;
-  const p = matchChance(a.rating.r, b.rating.r, chanceContext(a.rating.rank != null, b.rating.rank != null, a.rating.league, b.rating.league), adjust);
+  // the ratings with today's results (the team pages' own copy waits for the next stats build)
+  const ra = liveRating(ratings, a.u, a.rating.r);
+  const rb = liveRating(ratings, b.u, b.rating.r);
+  const p = matchChance(ra, rb, chanceContext(a.rating.rank != null, b.rating.rank != null, a.rating.league, b.rating.league), adjust);
   return [
     [tl("One game"), p],
     [tl("Best of 3"), seriesChance(p, 3, adjust)],
@@ -316,7 +320,12 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
     const y = b.team.rating;
     if (!x || !y || !ratings.data) return null;
     if ((x.rank == null || y.rank == null) && x.league !== y.league) return null;
-    const p = matchChance(x.r, y.r, chanceContext(x.rank != null, y.rank != null, x.league, y.league), ratings.data.adjust);
+    const p = matchChance(
+      liveRating(ratings.data, a.team.u, x.r),
+      liveRating(ratings.data, b.team.u, y.r),
+      chanceContext(x.rank != null, y.rank != null, x.league, y.league),
+      ratings.data.adjust,
+    );
     const pa = Math.round(p * 100);
     return [pa, 100 - pa];
   }, [a.team.rating, b.team.rating, ratings.data]);

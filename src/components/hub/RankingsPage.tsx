@@ -190,6 +190,11 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           )}{" "}
           {tl("A team's rating mostly follows the five players it fields, so a roster change counts right away.")}
         </p>
+        {d.live && (
+          <p className="text-rw-teal">
+            {tl("Includes {n} games played since the last stats update, added the moment they ended.", { n: d.live.games })}
+          </p>
+        )}
         <p className="text-rw-muted">
           {tl(
             "Up to {date} · {n} games rated · teams with a game in the last 120 days",

@@ -1677,6 +1677,7 @@
   "{t} teams · {p} players": "{t} 支队伍 · {p} 名选手",
   "Regions year by year": "各赛区逐年",
   "Each region's series win rate against other regions.": "各赛区对其他赛区的系列赛胜率。",
+  "Includes {n} games played since the last stats update, added the moment they ended.": "已计入上次数据更新后的 {n} 局比赛，比赛一结束就会加入。",
   "now {team}": "现 {team}",
   "title match::Final": "决赛",
   "title winner::Champion": "冠军",
