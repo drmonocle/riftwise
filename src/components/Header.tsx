@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
 import { AppSettings, Match, StreamEvent, StreamStatus, AppUpdateInfo, LiveShow } from "../types";
 import { Radio, RefreshCw, Eye, EyeOff, Heart, Sparkles, Minimize2, Maximize2, Download, Smartphone, Search } from "lucide-react";
 import { formatStreamHeaderTitle, streamPhase } from "../helpers";
@@ -6,6 +6,58 @@ import { APP_VERSION } from "../version";
 import { IS_DESKTOP, IS_WEB, IS_WINDOWS_BROWSER, DESKTOP_DOWNLOAD_URL } from "../platform";
 import { tl, tn } from "../i18n";
 import { LanguageFlag } from "./LanguageFlag";
+import { lazyPart } from "../lazyPart";
+
+// the stats search box (loaded with the stats code; a look-alike box stands in until then)
+const HubSearch = lazyPart(() => import("./hub/HubSearch").then((m) => m.HubSearch));
+
+/** The header's search: a real search box as wide as the room left, its hint shortening as it narrows, and below
+ *  SEARCH_MIN pixels a search button that opens the full-width search under the header instead. */
+const SEARCH_MIN = 120;
+const HeaderSearch: React.FC<{ onOpen?: () => void }> = ({ onOpen }) => {
+  const slot = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  // a new box after each pick, so it starts empty again
+  const [round, setRound] = useState(0);
+  useEffect(() => {
+    const el = slot.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
+    ro.observe(el);
+    setWidth(el.clientWidth);
+    return () => ro.disconnect();
+  }, []);
+  const hint = width >= 330 ? tl("Search teams, players, tournaments, champions…") : width >= 210 ? tl("Search teams, players…") : tl("Search…");
+  return (
+    <div ref={slot} className="flex-1 min-w-0" data-header-search={width >= SEARCH_MIN ? "box" : "button"}>
+      {width >= SEARCH_MIN ? (
+        <div className="max-w-xl">
+          <Suspense
+            fallback={
+              <div className="flex items-center gap-2 h-7 px-2.5 rounded-lg bg-rw-bg border border-rw-border text-xs text-rw-muted">
+                <Search className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{hint}</span>
+              </div>
+            }
+          >
+            <HubSearch key={round} placeholder={hint} onDone={() => setRound((r) => r + 1)} />
+          </Suspense>
+        </div>
+      ) : (
+        onOpen && (
+          <button
+            onClick={onOpen}
+            className={`${pill} bg-rw-surface border-rw-border text-rw-text hover:bg-rw-raised hover:border-rw-accent/60`}
+            aria-label={tl("Search teams, players and tournaments")}
+            title={tl("Search teams, players and tournaments")}
+          >
+            <Search className="w-3.5 h-3.5" />
+          </button>
+        )
+      )}
+    </div>
+  );
+};
 
 interface HeaderProps {
   settings: AppSettings;
@@ -56,30 +108,21 @@ export const Header: React.FC<HeaderProps> = ({
   const extraLive = liveMatches.length > 1 ? ` +${liveMatches.length - 1}` : "";
 
   return (
-    // Three columns: brand + support on the left, the status pills centred, the actions on the right. The side
-    // columns share the leftover space equally, so the pills sit in the middle of the window when there's room.
-    <header className="rw-header px-3 sm:px-4 py-2 grid grid-cols-[minmax(max-content,1fr)_minmax(0,auto)_minmax(max-content,1fr)] items-center gap-x-1 min-[400px]:gap-x-3 gap-y-3 select-none">
-      <div className="flex items-center gap-1.5 min-[360px]:gap-2.5 min-w-0">
+    // One row: the brand, the search box taking all the room that's left, the status pills, the actions. The search
+    // gives way first (down to a button); the pills only shrink once it has.
+    <header className="rw-header px-3 sm:px-4 py-2 flex items-center gap-x-1.5 min-[400px]:gap-x-3 select-none">
+      <div className="flex items-center gap-1.5 min-[360px]:gap-2.5 flex-1 min-w-auto">
         {/* Brand */}
         <div className="flex items-baseline gap-1.5 cursor-pointer flex-shrink-0" onClick={() => onSelectTab("live")}>
           <span className="rw-logo font-extrabold text-base min-[360px]:text-lg tracking-wider">RIFTWISE</span>
           <span className="hidden sm:inline text-rw-muted text-[10px]">v{APP_VERSION}</span>
         </div>
 
-        {/* Support (Ko-fi): "Support ♥", just the heart when space is short */}
-        <button
-          onClick={() => onOpenUrl("https://ko-fi.com/monocle")}
-          className={`${pill} flex-shrink-0 font-semibold bg-[#720e9e] border-[#720e9e] hover:bg-[#8c19bd] text-white`}
-          aria-label={tl("Support RiftWise on Ko-fi")}
-          title={tl("Support RiftWise development on Ko-fi")}
-        >
-          <span className="hidden lg:inline">{tl("Support")}</span>
-          <Heart className="w-3.5 h-3.5 fill-current" />
-        </button>
+        <HeaderSearch onOpen={onSearch} />
       </div>
 
-      {/* Status pills, centred: these shrink and truncate instead of wrapping; on phones the Live tab shows the live count */}
-      <div className="hidden sm:flex items-center justify-center gap-2 min-w-0 overflow-hidden">
+      {/* Status pills: these shrink and truncate instead of wrapping; on phones the Live tab shows the live count */}
+      <div className="hidden sm:flex items-center justify-center gap-2 min-w-0 overflow-hidden flex-[0_1_auto]">
         {updateInfo?.hasUpdate && (
           <button
             onClick={() => onSelectTab("settings")}
@@ -137,8 +180,8 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Actions */}
-      {/* narrow phones (320 px): the gaps, the logo and the column gaps above shrink so every button fits */}
-      <div className="flex items-center justify-end gap-0.5 min-[360px]:gap-1 sm:gap-1.5 min-w-0 col-start-3">
+      {/* narrow phones (320 px): the gaps and the logo shrink so every button fits */}
+      <div className="flex items-center justify-end gap-0.5 min-[360px]:gap-1 sm:gap-1.5 shrink-0">
         <LanguageFlag onUpdateSettings={onUpdateSettings} />
         {onInstall && (
           <button
@@ -160,21 +203,19 @@ export const Header: React.FC<HeaderProps> = ({
             title={tl("Download RiftWise for Windows (free, about 4 MB, no installer)")}
           >
             <Download className="w-3.5 h-3.5" />
-            <span className="hidden lg:inline 2xl:hidden">{tl("Windows app")}</span>
-            <span className="hidden 2xl:inline">{tl("Download the Windows app")}</span>
+            <span className="hidden lg:inline">{tl("Windows app")}</span>
           </a>
         )}
-        {onSearch && (
-          <button
-            onClick={onSearch}
-            className={`${pill} bg-rw-surface border-rw-border text-rw-text hover:bg-rw-raised hover:border-rw-accent/60`}
-            aria-label={tl("Search teams, players and tournaments")}
-            title={tl("Search teams, players and tournaments")}
-          >
-            <Search className="w-3.5 h-3.5" />
-            <span className="hidden lg:inline">{tl("Search")}</span>
-          </button>
-        )}
+        {/* Support (Ko-fi): "Support ♥", just the heart when space is short */}
+        <button
+          onClick={() => onOpenUrl("https://ko-fi.com/monocle")}
+          className={`${pill} flex-shrink-0 font-semibold bg-[#720e9e] border-[#720e9e] hover:bg-[#8c19bd] text-white`}
+          aria-label={tl("Support RiftWise on Ko-fi")}
+          title={tl("Support RiftWise development on Ko-fi")}
+        >
+          <span className="hidden lg:inline">{tl("Support")}</span>
+          <Heart className="w-3.5 h-3.5 fill-current" />
+        </button>
         <button
           onClick={() => onUpdateSettings({ spoilerMode: !settings.spoilerMode })}
           className={`${pill} font-medium ${
