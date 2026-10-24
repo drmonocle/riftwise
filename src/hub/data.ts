@@ -406,4 +406,15 @@ export const loadBest = (year?: string, league?: string) =>
   load<import("./types").BestFile>(
     league ? `hub/best/l/${league}${year ? `/${year}` : ""}.json` : year ? `hub/best/${year}.json` : "hub/best/all.json",
   );
-export const loadRatings = () => load<import("./types").HubRatings>("hub/ratings.json");
+const loadRatingsBuilt = () => load<import("./types").HubRatings>("hub/ratings.json");
+/** The power ratings with every result Riot has that the last build doesn't (src/hub/liveRatings.ts), asked again every
+ *  two minutes so a game that just ended counts. */
+let ratingsLive: { at: number; p: Promise<import("./types").HubRatings> } | null = null;
+export const loadRatings = (): Promise<import("./types").HubRatings> => {
+  if (!ratingsLive || Date.now() - ratingsLive.at > 120_000) {
+    const p = loadRatingsBuilt().then((r) => import("./liveRatings").then((m) => m.withLiveResults(r)));
+    ratingsLive = { at: Date.now(), p };
+    p.catch(() => (ratingsLive = null));
+  }
+  return ratingsLive.p;
+};

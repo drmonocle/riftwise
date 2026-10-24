@@ -1677,6 +1677,7 @@
   "{t} teams · {p} players": "{t} チーム · {p} 人",
   "Regions year by year": "地域別・年ごと",
   "Each region's series win rate against other regions.": "各地域の他地域に対するシリーズ勝率です。",
+  "Includes {n} games played since the last stats update, added the moment they ended.": "前回のスタッツ更新以降の {n} 試合を、試合が終わった時点で反映しています。",
   "now {team}": "現 {team}",
   "title match::Final": "決勝",
   "title winner::Champion": "優勝",

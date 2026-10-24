@@ -2110,8 +2110,16 @@ def build(ctx) -> dict:
             by_league_r[row[3]].append(row[5])
     league_rows = sorted(([lg_r, league_slug.get(lg_r), round(sum(sorted(v, reverse=True)[:4]) / min(4, len(v))), len(v)]
                           for lg_r, v in by_league_r.items() if lg_r and len(v) >= 4), key=lambda r: -r[2])
+    # the last few days' rated series ("date|team|team", slugs in order), so the app adds only results that came in
+    # after this build (from Riot's schedule) and never counts one twice; and the published points a game moves
+    rated_cut = (datetime.date.fromisoformat(newest_r) - datetime.timedelta(days=4)).isoformat() if newest_r[0] != "0" else "9"
+    rated_recent = sorted({f"{gd_}|{'|'.join(sorted((team_slug.get(fa_) or '', team_slug.get(fb_) or '')))}"
+                           for gd_, _lg, _in, fa_, fb_, *_ in rating_games if gd_ >= rated_cut and team_slug.get(fa_) and team_slug.get(fb_)})
     out.json("ratings.json", {
         "asof": newest_r, "games": len(rating_games),
+        "rated": rated_recent,
+        "k": {"top": round(team_ratings.CONF_TOP * team_ratings.K, 1),
+              "intl": round(team_ratings.CONF_TOP * team_ratings.K * team_ratings.K_INTL, 1)},
         "teams": rank_rows, "leagues": league_rows,
         # ratings are on the top-league scale; the app multiplies a difference by "intl" for two teams from different
         # leagues and by "other" below the top leagues, and scales a series' per-game edge by series[best of]

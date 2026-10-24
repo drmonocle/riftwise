@@ -408,6 +408,12 @@ export interface RatingScore {
 export interface HubRatings {
   asof: string;
   games: number;
+  /** the last days' rated series, "date|slug|slug" (builds from 2026-10-23 on): the app adds only newer results */
+  rated?: string[];
+  /** published points one game moves: top-league and international games */
+  k?: { top: number; intl: number };
+  /** added in the app from Riot's schedule since the build (src/hub/liveRatings.ts) */
+  live?: { series: number; games: number };
   teams: RatingRow[];
   /** top leagues: league, league slug, average rating of its best four teams, active teams */
   leagues: [string, string | null, number, number][];

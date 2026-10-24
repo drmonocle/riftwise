@@ -10,6 +10,7 @@ import { loadHubTeam, loadRatings, loadTeamSeries } from "../hub/data";
 import type { HubRatings, HubTeam, TeamSeriesRow } from "../hub/types";
 import type { Match } from "../types";
 import { chanceContext, matchChance, seriesChance } from "../hub/winChance";
+import { liveRating } from "../hub/liveRatings";
 
 const q = new URLSearchParams(window.location.search);
 const SLUGS = (q.get("teams") || "").split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
@@ -79,7 +80,7 @@ export const Overlay: React.FC = () => {
   const chances = useMemo(() => {
     if (!a?.rating || !b?.rating || !ratings) return null;
     if ((a.rating.rank == null || b.rating.rank == null) && a.rating.league !== b.rating.league) return null;
-    const p = matchChance(a.rating.r, b.rating.r, chanceContext(a.rating.rank != null, b.rating.rank != null, a.rating.league, b.rating.league), ratings.adjust);
+    const p = matchChance(liveRating(ratings, a.u, a.rating.r), liveRating(ratings, b.u, b.rating.r), chanceContext(a.rating.rank != null, b.rating.rank != null, a.rating.league, b.rating.league), ratings.adjust);
     return [
       [tc("short best of", "Bo{n}", { n: 1 }), p],
       [tc("short best of", "Bo{n}", { n: 3 }), seriesChance(p, 3, ratings.adjust)],

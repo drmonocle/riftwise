@@ -1677,6 +1677,7 @@
   "{t} teams · {p} players": "{t}팀 · {p}명",
   "Regions year by year": "연도별 지역",
   "Each region's series win rate against other regions.": "각 지역의 타 지역 상대 매치 승률입니다.",
+  "Includes {n} games played since the last stats update, added the moment they ended.": "마지막 통계 업데이트 이후 치러진 {n}경기를 끝나는 즉시 반영했습니다.",
   "now {team}": "현재 {team}",
   "title match::Final": "결승",
   "title winner::Champion": "우승팀",
