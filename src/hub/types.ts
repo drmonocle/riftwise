@@ -539,6 +539,8 @@ export interface HubChamp {
   }[];
   /** [blue games, blue wins, red games, red wins] */
   side?: [number, number, number, number];
+  /** draft pick slot (B1, B2-3, B4-5, R1-2, R3, R4, R5) -> [games, wins], games with the pick order known (builds from 2026-10-24 on) */
+  slots?: Record<string, [number, number]> | null;
   /** builds in the last 12 months: [name, games, wins] */
   builds?: { since: string; g: number; items: [string, number, number][]; keys: [string, number, number][]; spells: [string, number, number][] } | null;
   /** role -> [opponent champion, games, wins, then from Oracle's Elixir games: games with lane leads, average
@@ -754,4 +756,10 @@ export interface LeagueSeason {
   statsGames: number;
   players: EventPlayer[];
   teamStats: EventTeamStats[];
+}
+
+/** hub/moves.json: players who started at a new club recently (d: first game there), newest first */
+export interface RosterMovesFile {
+  since: string;
+  list: { d: string; n: string; u: string; r: string; from: { n: string; u: string; to: string }; to: { n: string; u: string; g: number }; g: number; lu: string | null }[];
 }

@@ -14,6 +14,7 @@ import {
   LiveParticipantMeta,
   LiveWindow,
   fetchGoldHistory,
+  winChanceFromGold,
   fetchLiveDetails,
   fetchLiveStart,
   fetchLiveWindow,
@@ -221,7 +222,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
       {open && (
         <div className="space-y-3">
           <Players left={left} right={right} details={state.details} />
-          {history && history.length > 1 && <GoldGraph points={history} blueIsLeft={blueIsTeam1} />}
+          {history && history.length > 1 && <GoldGraph points={history} blueIsLeft={blueIsTeam1} leftCode={left.code} />}
           {!finished && <p className="text-[10px] text-rw-muted">{tl("From Riot's live stats feed, about a minute behind the broadcast.")}</p>}
         </div>
       )}
@@ -351,24 +352,47 @@ const PlayerCells: React.FC<{ p: PlayerRow; align: "left" | "right" }> = ({ p, a
   );
 };
 
-/** Gold lead over the game: above the line = the team on the left is ahead. */
-const GoldGraph: React.FC<{ points: [number, number][]; blueIsLeft: boolean }> = ({ points, blueIsLeft }) => {
+/** Gold lead over the game, or the win chance it gives (liveGame.ts winChanceFromGold): above the line = the team
+ *  on the left is ahead. */
+const GoldGraph: React.FC<{ points: [number, number][]; blueIsLeft: boolean; leftCode: string }> = ({ points, blueIsLeft, leftCode }) => {
+  const [mode, setMode] = useState<"gold" | "chance">("gold");
   const W = 600;
   const H = 120;
-  const pts = points.map(([t, d]) => [t, blueIsLeft ? d : -d] as [number, number]);
+  const gold = points.map(([t, d]) => [t, blueIsLeft ? d : -d] as [number, number]);
+  // win chance as a lead over 50%, on the same "above the line" scale
+  const pts = mode === "gold" ? gold : gold.map(([t, d]) => [t, winChanceFromGold(t, d) - 0.5] as [number, number]);
   const maxT = Math.max(...pts.map((p) => p[0]), 1);
-  const maxAbs = Math.max(1000, ...pts.map((p) => Math.abs(p[1])));
+  const maxAbs = mode === "gold" ? Math.max(1000, ...pts.map((p) => Math.abs(p[1]))) : 0.5;
   const x = (t: number) => (t / maxT) * W;
   const y = (d: number) => H / 2 - (d / maxAbs) * (H / 2 - 6);
   const path = pts.map((p, i) => `${i ? "L" : "M"}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join(" ");
   const last = pts[pts.length - 1];
+  const tab = (m: "gold" | "chance", label: string) => (
+    <button
+      type="button"
+      onClick={() => setMode(m)}
+      aria-pressed={mode === m}
+      className={`px-1.5 rounded ${mode === m ? "text-rw-accent font-semibold" : "hover:text-rw-text"}`}
+    >
+      {label}
+    </button>
+  );
   return (
     <div>
       <div className="flex justify-between text-[10px] text-rw-muted mb-0.5">
-        <span>{tl("Gold lead")}</span>
-        <span className="font-mono">
-          {last[1] > 0 ? "+" : ""}
-          {k(last[1])}
+        <span className="flex gap-1" role="group" aria-label={tl("Graph")}>
+          {tab("gold", tl("Gold lead"))}
+          {tab("chance", tl("Win chance"))}
+        </span>
+        <span className="font-mono" title={mode === "chance" ? tl("From the gold lead only, as in pro games since 2023") : undefined}>
+          {mode === "gold" ? (
+            <>
+              {last[1] > 0 ? "+" : ""}
+              {k(last[1])}
+            </>
+          ) : (
+            `${leftCode} ${Math.round((last[1] + 0.5) * 100)}%`
+          )}
         </span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-24" preserveAspectRatio="none" role="img" aria-label={tl("Gold lead over the game")}>

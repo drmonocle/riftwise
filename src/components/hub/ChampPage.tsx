@@ -96,6 +96,22 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
   const laneNow = (muRecent ? c.lane12 : c.lane)?.[muRole];
   const showDuos = mainRoles.some((r) => r === "Bot" || r === "Support") && (c.duos || []).length > 0;
   const items = useMemo(() => (c.builds?.items || []).filter(([it]) => isFinishedItem(it)).slice(0, 8), [c.builds, ddReady]); // eslint-disable-line react-hooks/exhaustive-deps
+  // a build part picked in "Pro builds": the latest games narrow to the ones that used it
+  const [usedOnly, setUsed] = useState<{ kind: "item" | "key" | "spells"; v: string } | null>(null);
+  const pickUsed = (kind: "item" | "key" | "spells", v: string) => {
+    setUsed((u) => (u && u.kind === kind && u.v === v ? null : { kind, v }));
+    window.setTimeout(() => document.getElementById("champ-latest")?.scrollIntoView({ block: "start", behavior: "smooth" }), 50);
+  };
+  const usedIn = (r: (typeof c.recent)[number]) =>
+    !usedOnly ||
+    (usedOnly.kind === "item"
+      ? (r.it || []).includes(usedOnly.v)
+      : usedOnly.kind === "key"
+        ? r.ks === usedOnly.v
+        : [...(r.sp || [])].sort().join(" + ") === usedOnly.v.split(" + ").sort().join(" + "));
+  const usedName = usedOnly ? (usedOnly.kind === "item" ? itemName(usedOnly.v) : usedOnly.kind === "key" ? runeName(usedOnly.v) : usedOnly.v.split(" + ").map(spellName).join(" + ")) : "";
+  const pickRow = (on: boolean) =>
+    `flex items-center gap-2 min-w-0 w-full text-left rounded px-1 -mx-1 hover:bg-rw-raised ${on ? "ring-1 ring-rw-accent bg-rw-accent/10" : ""}`;
   const maxPatch = Math.max(1, ...(c.patches || []).map((p) => (p.pr ?? p.pk + p.b) / Math.max(p.g, 1)));
   return (
     <div className="rw-page">
@@ -131,11 +147,13 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">{tl("Items")}</div>
               <ul className="space-y-1 text-xs">
                 {items.map(([it, g, w]) => (
-                  <li key={it} className="flex items-center gap-2 min-w-0">
+                  <li key={it}>
+                    <button type="button" onClick={() => pickUsed("item", it)} className={pickRow(usedOnly?.kind === "item" && usedOnly.v === it)} title={tl("Show the latest pro games with it")}>
                     <ItemIcon name={it} size={22} />
                     <span className="truncate flex-1 text-rw-text">{itemName(it)}</span>
                     <span className="text-rw-sub tabular-nums shrink-0">{pctOf(g, c.builds!.g)}</span>
                     <span className="text-rw-muted tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -144,11 +162,13 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">{tl("Keystones")}</div>
               <ul className="space-y-1 text-xs">
                 {c.builds.keys.map(([k, g, w]) => (
-                  <li key={k} className="flex items-center gap-2 min-w-0">
+                  <li key={k}>
+                    <button type="button" onClick={() => pickUsed("key", k)} className={pickRow(usedOnly?.kind === "key" && usedOnly.v === k)} title={tl("Show the latest pro games with it")}>
                     <RuneIcon name={k} size={22} />
                     <span className="truncate flex-1 text-rw-text">{runeName(k)}</span>
                     <span className="text-rw-sub tabular-nums shrink-0">{pctOf(g, c.builds!.g)}</span>
                     <span className="text-rw-muted tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -157,7 +177,8 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">{tl("Summoner spells")}</div>
               <ul className="space-y-1 text-xs">
                 {c.builds.spells.map(([sp, g, w]) => (
-                  <li key={sp} className="flex items-center gap-2 min-w-0">
+                  <li key={sp}>
+                    <button type="button" onClick={() => pickUsed("spells", sp)} className={pickRow(usedOnly?.kind === "spells" && usedOnly.v === sp)} title={tl("Show the latest pro games with it")}>
                     <span className="flex gap-0.5">
                       {sp.split(" + ").map((x) => (
                         <SpellIcon key={x} name={x} size={20} />
@@ -166,10 +187,27 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     <span className="truncate flex-1 text-rw-text">{sp.split(" + ").map(spellName).join(" + ")}</span>
                     <span className="text-rw-sub tabular-nums shrink-0">{pctOf(g, c.builds!.g)}</span>
                     <span className="text-rw-muted tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
+                    </button>
                   </li>
                 ))}
               </ul>
             </div>
+          </div>
+          <p className="text-[10px] text-rw-muted">{tl("Click an item, keystone or spell pair to see the latest pro games that used it.")}</p>
+        </Section>
+      )}
+
+      {c.slots && Object.keys(c.slots).length > 0 && (
+        <Section title={tl("By pick order")}>
+          <p className="text-[11px] text-rw-muted">{tl("Games and win rate by where it was picked in the draft (B = blue side, R = red side), every pro game with the pick order known.")}</p>
+          <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+            {Object.entries(c.slots).map(([slot, [g, w]]) => (
+              <div key={slot} className="rounded-lg border border-rw-border bg-rw-bg px-2 py-1.5 text-center">
+                <div className={`text-xs font-bold ${slot.startsWith("B") ? "text-[#4a9eff]" : "text-rw-red"}`}>{slot}</div>
+                <div className="text-sm font-semibold text-rw-text tabular-nums">{g >= 5 ? pctOf(w, g) : "–"}</div>
+                <div className="text-[10px] text-rw-muted">{tl("{n} games", { n: fmtNum(g) })}</div>
+              </div>
+            ))}
           </div>
         </Section>
       )}
@@ -392,12 +430,25 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
             </tbody>
           </STable>
         </Section>
-        <Section title={tl("Latest pro games")} right={recentHidden ? <RevealButton onReveal={revealRecent} small /> : undefined}>
+        <Section
+          title={tl("Latest pro games")}
+          right={
+            recentHidden ? (
+              <RevealButton onReveal={revealRecent} small />
+            ) : usedOnly ? (
+              <button type="button" onClick={() => setUsed(null)} className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-rw-accent text-rw-accent text-[11px]" title={tl("Show every game")}>
+                {tl("With {name}", { name: usedName })} ✕
+              </button>
+            ) : undefined
+          }
+        >
+          <span id="champ-latest" />
           {recentHidden ? (
             <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
           ) : (
             <ul className="text-xs space-y-2">
-              {c.recent.map((r, i) => (
+              {usedOnly && !c.recent.some(usedIn) && <li className="text-rw-muted">{tl("None of the latest games used it.")}</li>}
+              {c.recent.filter(usedIn).map((r, i) => (
                 <li key={i} className="min-w-0">
                   <div className="flex items-center justify-between gap-2 min-w-0">
                     <span className="truncate min-w-0">

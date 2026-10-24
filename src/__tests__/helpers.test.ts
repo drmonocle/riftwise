@@ -298,3 +298,13 @@ describe("Swiss stakes", () => {
     expect(swissStakes(m([2, 0], [2, 0], "Groups"))).toBeNull();
   });
 });
+
+import { winChanceFromGold } from "../liveGame";
+describe("live win chance from gold", () => {
+  it("matches the fitted pro numbers and is even at no lead", () => {
+    expect(winChanceFromGold(15, 0)).toBe(0.5);
+    expect(Math.round(winChanceFromGold(10, 1000) * 100)).toBe(69);
+    expect(Math.round(winChanceFromGold(20, 1000) * 100)).toBe(61);
+    expect(winChanceFromGold(15, -3000)).toBeLessThan(0.2);
+  });
+});

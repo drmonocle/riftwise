@@ -18,7 +18,7 @@ import type { Match } from "../../types";
 import { normalizeTeamCode } from "../../helpers";
 import { eventFacts, factText, gamesOf, type Fact } from "../../hub/worldsFacts";
 import { detectBracket, realOfStages, runBracket, simulateBracket, type Bracket } from "../../hub/bracket";
-import { BroadcastCardButton, SectionCard, chancesCard } from "./BroadcastCard";
+import { BroadcastCardButton, SectionCard, chancesCard, listCard } from "./BroadcastCard";
 import { RegionStats } from "./RegionStats";
 import { IntlInsights } from "./IntlInsights";
 import { liveLines } from "../../hub/liveLines";
@@ -625,7 +625,15 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
       {!live && <p className="text-[11px] text-rw-muted">{tl("Chances use today's power ratings, not the ones from that year.")}</p>}
       {tab === "swiss" ? (
         <>
-          <Section title={tl("Swiss stage")} share={`worlds-${year}-swiss`}>
+          <Section
+            title={tl("Swiss stage")}
+            share={`worlds-${year}-swiss`}
+            right={
+              Object.keys(swiss.rec).length > 0 ? (
+                <BroadcastCardButton data={() => swissPicksCard(swiss.rec, byU, d.name)} name={`worlds-${year}-my-swiss`} label={tl("Overview card")} />
+              ) : undefined
+            }
+          >
             <p className="text-[11px] text-rw-muted">
               {tl("Tap a team to pick it. Played matches are locked in. 3 wins goes through, 3 losses goes out; matches that decide either are best of 3.")}
             </p>
@@ -650,7 +658,15 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
           </Section>
         </>
       ) : (
-        <Section title={tl("Knockouts")} share={`worlds-${year}-knockouts`}>
+        <Section
+          title={tl("Knockouts")}
+          share={`worlds-${year}-knockouts`}
+          right={
+            swiss.done && ko && ko.qf.some((m) => m.w) ? (
+              <BroadcastCardButton data={() => bracketPicksCard(ko, byU, d.name)} name={`worlds-${year}-my-bracket`} label={tl("Overview card")} />
+            ) : undefined
+          }
+        >
           {!swiss.done ? (
             <p className="text-xs text-rw-sub">
               {tl("Finish the Swiss stage first: pick every match, or use Favourites or Roll by chances there.")}{" "}
@@ -747,6 +763,38 @@ const MatchBox: React.FC<{ m: WMatch; byU: Map<string, WTeam>; onPick: (u: strin
     </div>
   );
 };
+
+// ── Pick'Em cards: the picks as a 16:9 picture to share ──────────────────
+
+/** The Swiss stage as picked: each record's teams, through first. */
+function swissPicksCard(rec: Record<string, [number, number]>, byU: Map<string, WTeam>, event: string) {
+  const rows = ["3-0", "3-1", "3-2", "2-3", "1-3", "0-3"]
+    .map((k) => ({ k, us: Object.keys(rec).filter((u) => rec[u].join("-") === k) }))
+    .filter((g) => g.us.length)
+    .map((g) => ({
+      label: g.us.map((u) => byU.get(u)?.c || u).join(" · "),
+      sub: `${g.k} · ${g.k.startsWith("3") ? tl("through") : tl("out")}`,
+      win: g.k.startsWith("3"),
+    }));
+  return listCard({ section: tl("My Swiss stage picks"), name: event, sub: "riftwise.gg/stats/worlds", rows });
+}
+
+/** The knockouts as picked: the champion, then the final, semifinals and quarterfinals. */
+function bracketPicksCard(ko: ReturnType<typeof runKnockout>, byU: Map<string, WTeam>, event: string) {
+  const code = (u: string) => byU.get(u)?.c || u;
+  const row = (stage: string, m: WMatch) => ({
+    label: `${code(m.a)} vs ${code(m.b)}`,
+    sub: stage,
+    value: m.w ? code(m.w === 1 ? m.a : m.b) : "?",
+  });
+  const rows = [
+    ...(ko.champion ? [{ label: byU.get(ko.champion)?.n || ko.champion, sub: tl("World champion"), value: "🏆" }] : []),
+    ...(ko.final ? [row(tl("Final"), ko.final)] : []),
+    ...ko.sf.map((m) => row(tl("Semifinals"), m)),
+    ...ko.qf.map((m) => row(tl("Quarterfinals"), m)),
+  ];
+  return listCard({ section: tl("My Worlds bracket"), name: event, sub: "riftwise.gg/stats/worlds", rows });
+}
 
 const Records: React.FC<{ rec: Record<string, [number, number]>; byU: Map<string, WTeam> }> = ({ rec, byU }) => {
   const groups = ["3-0", "3-1", "3-2", "2-3", "1-3", "0-3"].map((k) => ({ k, us: Object.keys(rec).filter((u) => rec[u].join("-") === k) })).filter((g) => g.us.length);

@@ -19,7 +19,8 @@ import { useDDragon } from "../../hub/ddragon";
 import { PeriodKey, inPeriod, playerAgg, playerRowRef, teamAgg, teamRowRef } from "../../hub/period";
 import { HeadToHeadSeries } from "./Archives";
 import { ComparePick, TeamRows, bothOptions } from "./ComparePage";
-import { PeriodPicker, defaultPeriod } from "./PeriodStats";
+import { PeriodPicker, Playstyle, TeamEarly, defaultPeriod } from "./PeriodStats";
+import { DraftTendencies } from "./DraftTendencies";
 import { StoryLine, StoryList, noteText } from "./Storylines";
 import { CaptureContext, card, ChampIcon, fmtDate, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, useHidden, useLoad, usePageTitle, PhotosLink, NERDFINDER_TOGETHER, useRetryAttempt, retryFailedLoads } from "./ui";
 import { CaptureFooter, CopyPageImage, ShareButtons } from "./ShareImage";
@@ -386,6 +387,8 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           <TeamRows x={a.team} y={b.team} ra={ra} rb={rb} bSlug={b.team.u} career={period === "all"} periodLabel={periodLabel} chance={chance} />
           <Lanes a={a} b={b} period={period} periodLabel={periodLabel} title={title} />
           <FearlessDepth a={a} b={b} period={period} periodLabel={periodLabel} title={title} />
+          <Tendencies side={a} rows={ra} periodLabel={periodLabel} />
+          <Tendencies side={b} rows={rb} periodLabel={periodLabel} />
         </>
       )}
     </>
@@ -448,6 +451,20 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
         )}
     </div>
     </CaptureContext.Provider>
+  );
+};
+
+/** A scouting report's tendencies for one team over the chosen period: its early game (Oracle's Elixir) and how it
+ *  drafts (first picks, bans by phase, which role it locks first or keeps for last, pairs, flex picks). */
+const Tendencies: React.FC<{ side: Side; rows: TeamGameRow[]; periodLabel: string }> = ({ side, rows, periodLabel }) => {
+  const t = useMemo(() => teamAgg(rows), [rows]);
+  if (!rows.length) return null;
+  return (
+    <Section title={tl("{team}: tendencies", { team: side.team.name })} right={<span className="text-[11px] text-rw-sub">{periodLabel}</span>} share={`${side.team.u}-tendencies-${periodLabel}`}>
+      <Playstyle t={t} />
+      <TeamEarly t={t} />
+      <DraftTendencies rows={rows} />
+    </Section>
   );
 };
 

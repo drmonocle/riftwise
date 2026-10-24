@@ -185,6 +185,64 @@ export const TeamEarly: React.FC<{ t: TeamAgg }> = ({ t: agg }) => {
   );
 };
 
+/**
+ * How a team plays, in words: a label where it is among the top or bottom fifth of pro team seasons since 2024
+ * (1,292 seasons of 20+ games: gold lead at 15, game length, kills per minute, dragon share, first towers), plus
+ * comebacks and closing speed. Needs 15+ games.
+ */
+export function playstyleTags(t: TeamAgg): { tag: string; why: string; good?: boolean }[] {
+  if (t.g < 15) return [];
+  const out: { tag: string; why: string; good?: boolean }[] = [];
+  const e = t.tl;
+  if (e?.gd15 != null && e.n >= 10) {
+    if (e.gd15 >= 630) out.push({ tag: tl("Strong early game"), why: tl("{n} gold ahead at 15 minutes on average", { n: `+${fmtNum(e.gd15)}` }), good: true });
+    else if (e.gd15 <= -810) out.push({ tag: tl("Slow starters"), why: tl("{n} gold behind at 15 minutes on average", { n: fmtNum(-e.gd15) }), good: false });
+  }
+  // the top fifth of team seasons won 37.5%+ of the games they were behind in at 15 (the middle one 25%)
+  if (e && e.behind[0] >= 8 && e.behind[1] / e.behind[0] >= 0.375)
+    out.push({ tag: tl("Comes back from behind"), why: tl("Won {p} of games while behind at 15", { p: winRate(e.behind[1], e.behind[0]) }), good: true });
+  if (t.min != null) {
+    if (t.min >= 32.8) out.push({ tag: tl("Long games"), why: tl("{n} min on average", { n: fmtN(t.min) }) });
+    else if (t.min <= 30.3) out.push({ tag: tl("Short games"), why: tl("{n} min on average", { n: fmtN(t.min) }) });
+  }
+  if (t.minWin != null && t.minLoss != null && t.minLoss - t.minWin >= 3)
+    out.push({ tag: tl("Closes fast"), why: tl("Wins last {a} min, losses {b} min", { a: fmtDec(t.minWin), b: fmtDec(t.minLoss) }), good: true });
+  if (t.ckpm != null) {
+    if (t.ckpm >= 1.23) out.push({ tag: tl("Bloody games"), why: tl("{n} kills a minute, both teams", { n: fmtDec(t.ckpm, 2) }) });
+    else if (t.ckpm <= 0.92) out.push({ tag: tl("Low-kill games"), why: tl("{n} kills a minute, both teams", { n: fmtDec(t.ckpm, 2) }) });
+  }
+  if (t.dragShare != null) {
+    if (t.dragShare >= 56) out.push({ tag: tl("Dragon-focused"), why: tl("Takes {p} of the dragons", { p: `${fmtDec(t.dragShare)}%` }), good: true });
+    else if (t.dragShare <= 43) out.push({ tag: tl("Gives up dragons"), why: tl("Takes {p} of the dragons", { p: `${fmtDec(t.dragShare)}%` }), good: false });
+  }
+  if (e?.ft != null && e.ft >= 59) out.push({ tag: tl("Early towers"), why: tl("First tower in {p} of games", { p: `${fmtDec(e.ft)}%` }), good: true });
+  return out;
+}
+
+export const Playstyle: React.FC<{ t: TeamAgg }> = ({ t }) => {
+  const tags = playstyleTags(t);
+  if (!tags.length) return null;
+  return (
+    <div className="space-y-1">
+      <Sub>{tl("Playstyle")}</Sub>
+      <div className="flex flex-wrap gap-1.5">
+        {tags.map((x) => (
+          <span
+            key={x.tag}
+            title={x.why}
+            className={`px-2 py-1 rounded-full border text-[11px] ${
+              x.good === true ? "border-rw-teal/60 text-rw-teal" : x.good === false ? "border-rw-red/60 text-rw-red" : "border-rw-border text-rw-sub"
+            }`}
+          >
+            <span className="font-semibold">{x.tag}</span> <span className="text-rw-muted">· {x.why}</span>
+          </span>
+        ))}
+      </div>
+      <p className="text-[10px] text-rw-muted">{tl("Compared with every pro team season since 2024: a label means the top or bottom fifth.")}</p>
+    </div>
+  );
+};
+
 /** The period select (shared with Compare). */
 export const PeriodPicker: React.FC<{
   options: PeriodOption[];
@@ -630,6 +688,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: { name
             />
           </div>
           <TeamEarly t={t} />
+          <Playstyle t={t} />
           <div className="grid sm:grid-cols-3 gap-4">
             {t.picks.length > 0 && (
               <div className="min-w-0">

@@ -382,6 +382,8 @@ export const loadChampIndex = () => load<import("./types").ChampLeagueIndex[]>("
 export const loadChampGames = (league: string, year: string) => load<import("./types").ChampGamesFile>(`hub/champgames/${league}/${year}.json`);
 export const loadPatches = () => load<import("./types").PatchRow[]>("hub/patches.json");
 export const loadLeagues = () => load<import("./types").LeagueRow[]>("hub/leagues.json");
+/** roster moves of the last five months (builds from 2026-10-24 on; older builds have none) */
+export const loadMoves = () => load<import("./types").RosterMovesFile>("hub/moves.json");
 export const loadLeague = withAlias<import("./types").HubLeague>("league");
 
 /** Starts loading a hub page's file before it's opened (pointer on its link); the page then finds it ready. */
