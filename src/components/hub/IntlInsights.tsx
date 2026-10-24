@@ -342,7 +342,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         >
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
-              <thead className="text-[10px] uppercase tracking-wider text-rw-muted">
+              <thead className="text-[10px] text-rw-muted">
                 <tr>
                   <th className="px-2 py-1 text-left">{tl("Year")}</th>
                   <th className="px-2 py-1 text-right">{tl("Games")}</th>

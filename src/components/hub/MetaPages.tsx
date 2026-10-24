@@ -218,7 +218,7 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
   const list = n ? rows.slice(0, n) : rows;
   return (
     <div className={`${card} overflow-x-auto space-y-2`}>
-      {title && <h3 className="text-xs font-bold uppercase tracking-wider text-rw-accent">{title}</h3>}
+      {title && <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{title}</h3>}
       <STable className="w-full text-xs">
         <thead>
           <tr>
@@ -291,7 +291,7 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
         </HubLink>
         {l.history && l.history.length > 1 && (
           <div className="mt-2 space-y-0.5">
-            <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted">{tl("History")}</div>
+            <div className="text-[10px] font-semibold text-rw-muted">{tl("History")}</div>
             <HistoryChain steps={l.history} current={l.u} />
           </div>
         )}

@@ -177,27 +177,28 @@ const Bars: React.FC<{
     pct: number;
   }[];
 }> = ({ rows }) => (
-  // long names ("Gold lead over the lane opponent at 15 minutes") wrap onto a second line instead of being cut
-  <ul className="space-y-1.5 text-xs">
+  // Percentile dots: a hairline track per stat with a dot at its percentile (the number in it), red at the bottom of
+  // the league, plain in the middle, teal at the top. Long names ("Gold lead over the lane opponent at 15 minutes")
+  // wrap instead of being cut; on phones the track gets its own line under the name and the value.
+  <ul className="space-y-1 text-xs">
     {rows.map((r) => (
       <li
         key={r.label}
-        className="grid grid-cols-[minmax(7rem,14rem)_1fr_auto] items-center gap-2 min-w-0"
+        className="grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(7rem,14rem)_minmax(6rem,1fr)_auto] items-center gap-x-3 min-w-0"
       >
-        <span className="text-rw-sub leading-tight break-words min-w-0" title={r.label}>
+        <span className="order-1 text-rw-sub leading-tight break-words min-w-0" title={r.label}>
           {r.label}
         </span>
-        <span className="h-2 rounded bg-rw-border overflow-hidden">
+        <span className="order-3 col-span-2 sm:order-2 sm:col-span-1 relative h-6" title={tl("Percentile {p} (100 = the best)", { p: r.pct })}>
+          <span className="absolute inset-x-3 top-1/2 h-px bg-rw-line" />
           <span
-            className="block h-full rounded"
-            style={{
-              width: `${Math.max(r.pct, 3)}%`,
-              background:
-                r.pct >= 75 ? "var(--rw-teal)" : r.pct >= 40 ? "var(--rw-accent)" : "var(--rw-red)",
-            }}
-          />
+            className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full grid place-items-center text-[10px] font-semibold tabular-nums text-rw-bg"
+            style={{ left: `calc(0.75rem + (100% - 1.5rem) * ${r.pct / 100})`, background: pctShade(r.pct) }}
+          >
+            {r.pct}
+          </span>
         </span>
-        <span className="tabular-nums text-rw-text whitespace-nowrap">
+        <span className="order-2 sm:order-3 tabular-nums text-rw-text whitespace-nowrap text-right">
           {r.text}{" "}
           <span className="text-rw-muted">
             · {tl("{n} of {m}", { n: r.rank, m: r.of })}
@@ -207,6 +208,12 @@ const Bars: React.FC<{
     ))}
   </ul>
 );
+
+/** A percentile's colour: the theme's red at 0, its muted grey at 50, its teal at 100. */
+const pctShade = (p: number) =>
+  p >= 50
+    ? `color-mix(in srgb, var(--rw-teal) ${Math.round((p - 50) * 2)}%, var(--rw-muted))`
+    : `color-mix(in srgb, var(--rw-red) ${Math.round((50 - p) * 2)}%, var(--rw-muted))`;
 
 /** The league seasons someone played: [league slug, year, games], most games last year first. */
 function seasonsOf(

@@ -177,7 +177,6 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="text-lg font-extrabold text-rw-text flex items-center gap-2 mr-auto">
-          <Trophy className="w-5 h-5 text-rw-accent" />
           {title}
         </h1>
         {d && (
@@ -394,7 +393,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
       )}
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
-          <thead className="text-[10px] uppercase tracking-wider text-rw-muted">
+          <thead className="text-[10px] text-rw-muted">
             <tr>
               <th className="px-2 py-1 text-left">{tl("Year")}</th>
               <th className="px-2 py-1 text-left">{tl("Champion")}</th>
@@ -849,7 +848,7 @@ const OddsTable: React.FC<{ odds: Record<string, TeamOdds>; teams: WTeam[] }> = 
   return (
     <div className="overflow-x-auto max-w-full">
       <table className="w-full text-xs">
-        <thead className="text-[10px] uppercase tracking-wider text-rw-muted">
+        <thead className="text-[10px] text-rw-muted">
           <tr>
             <th className="px-2 py-1 text-left">{tl("Team")}</th>
             <th className={cell}>3-0</th>
@@ -1020,7 +1019,7 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
         {odds && (
           <div className="overflow-x-auto max-w-full">
             <table className="w-full text-xs">
-              <thead className="text-[10px] uppercase tracking-wider text-rw-muted">
+              <thead className="text-[10px] text-rw-muted">
                 <tr>
                   <th className="px-2 py-1 text-left">{tl("Team")}</th>
                   {br.reach.map(([l]) => (

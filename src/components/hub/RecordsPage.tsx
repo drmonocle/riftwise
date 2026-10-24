@@ -65,7 +65,7 @@ const CareerRecords: React.FC<{
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-rw-accent">{tl("Career totals")}</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Career totals")}</h3>
         {r.careerAll && (
           <div className="flex gap-1" role="group" aria-label={tl("Games counted")}>
             <button type="button" className={pill(all)} aria-pressed={all} onClick={() => setAll(true)}>

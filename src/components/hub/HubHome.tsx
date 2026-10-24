@@ -43,11 +43,15 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
   const home = useLoad(loadHubHome, []);
   return (
     <div className="space-y-4">
-      <div className={`${card} space-y-3`}>
-        <h1 className="text-base font-bold text-rw-text">{tl("Every pro League of Legends game, in one place")}</h1>
-        {meta.data && (
-          <div className="space-y-1">
-            <dl className="grid grid-cols-2 min-[480px]:grid-cols-5 gap-x-5 gap-y-2">
+      {/* the title and the search, with the numbers beside them on wide screens (under them on phones) */}
+      <div className={`${card} space-y-2`}>
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
+          <div className="flex-1 min-w-[min(100%,18rem)] space-y-2">
+            <h1 className="text-lg font-semibold text-rw-text leading-tight">{tl("Every pro League of Legends game, in one place")}</h1>
+            <HubSearch big initial={IS_WEB ? new URLSearchParams(window.location.search).get("q") || "" : ""} />
+          </div>
+          {meta.data && (
+            <dl className="grid grid-cols-3 min-[480px]:grid-cols-5 gap-x-5 gap-y-2">
               {[
                 [fmtNum(meta.data.games), tl("games")],
                 [fmtNum(meta.data.events), tl("tournaments")],
@@ -61,19 +65,21 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
                 </div>
               ))}
             </dl>
-            <HubLink to={{ kind: "about" }} className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline">
-              {tl("(games with a result; players and teams with full scoreboards)")}
-            </HubLink>
-          </div>
+          )}
+        </div>
+        {meta.data && (
+          <HubLink to={{ kind: "about" }} className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline">
+            {tl("(games with a result; players and teams with full scoreboards)")}
+          </HubLink>
         )}
-        <HubSearch big initial={IS_WEB ? new URLSearchParams(window.location.search).get("q") || "" : ""} />
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      {/* the shortcuts: one flush grid, hairlines between the tiles (the gap shows the border colour) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-rw-border border border-rw-border rounded-lg overflow-hidden">
         {QUICK.map((q) => (
-          <HubLink key={q.label} to={q.to} className={`${card} p-3 hover:border-rw-accent/60 transition-colors block`}>
-            <div className="flex items-center gap-1.5 text-rw-accent font-bold text-xs">
-              {q.icon}
+          <HubLink key={q.label} to={q.to} className="bg-rw-surface hover:bg-rw-raised p-3 transition-colors block min-w-0">
+            <div className="flex items-center gap-1.5 text-rw-text font-semibold text-xs">
+              <span className="text-rw-accent shrink-0">{q.icon}</span>
               {tl(q.label)}
             </div>
             <div className="text-[10px] text-rw-muted mt-0.5">{tl(q.sub)}</div>
@@ -158,7 +164,7 @@ const RecentPages: React.FC = () => {
   if (!recent.length) return null;
   return (
     <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-      <span className="text-rw-muted uppercase tracking-wider font-bold text-[10px] mr-1">{tl("Recently viewed")}</span>
+      <span className="text-rw-muted font-semibold text-[10px] mr-1">{tl("Recently viewed")}</span>
       {recent.slice(0, 8).map((r) => (
         <HubLink key={hubPathOf(r.route)} to={r.route} className="px-2 py-0.5 rounded-full border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-line max-w-[14rem] truncate">
           {r.title}

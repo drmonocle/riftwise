@@ -900,7 +900,7 @@ const LaneCounters: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Sid
   };
   return (
     <div className="space-y-2 pt-2 border-t border-rw-border text-xs">
-      <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted">
+      <div className="text-[10px] font-semibold text-rw-muted">
         {tl("{champion} in lane ({role}, {when})", {
           champion: champName(c),
           role: roleName(role),
@@ -1036,15 +1036,15 @@ const Priorities: React.FC<{
     <Section title={side.team.name} right={<span className={`text-[11px] ${color}`}>{tl("{n} games in this period", { n: p.games })}</span>}>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">{tl("Most picked, still open")}</div>
+          <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Most picked, still open")}</div>
           {list(open.map(([c, [g, w]]) => [c, `${g} · ${winRate(w, g)}`]))}
         </div>
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">{tl("Their usual bans")}</div>
+          <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Their usual bans")}</div>
           {list(bans.map(([c, n]) => [c, String(n)]))}
         </div>
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">{tl("Banned against them")}</div>
+          <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Banned against them")}</div>
           {list(vs.map(([c, n]) => [c, String(n)]))}
         </div>
       </div>

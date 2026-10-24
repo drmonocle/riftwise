@@ -2,21 +2,12 @@ import React, { useState } from "react";
 import { THEMES, DEFAULT_THEME } from "../../theme";
 import { AppSettings, CatalogData, AppUpdateInfo } from "../../types";
 import {
-  Monitor,
-  Bell,
-  Minimize2,
   Trash2,
   RefreshCw,
   ExternalLink,
-  ShieldAlert,
-  FolderOpen,
   Heart,
   Check,
   AlertTriangle,
-  Languages,
-  Globe,
-  Radio,
-  Database,
   Sparkles,
   Download,
   Volume2,
@@ -118,7 +109,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* 0. App Version & Software Updates (desktop app only) */}
       {IS_DESKTOP && (
       <section className="space-y-3">
-        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center justify-between">
+        <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center justify-between">
           <span className="flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-rw-teal" />
             {tl("Software Updates")}
@@ -268,8 +259,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* 0b. Web version: offer the Windows app (served by GitHub, not this server) */}
       {IS_WEB && (
         <section className="space-y-3">
-          <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
-            <Download className="w-3.5 h-3.5 text-rw-teal" />
+          <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
             {tl("RiftWise for Windows")}
           </h2>
           <div className="p-4 rounded-lg border border-rw-border bg-rw-surface space-y-3">
@@ -315,8 +305,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       )}
       {/* Language: names in their own language; the help line is in the language now on screen */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
-          <Languages className="w-3.5 h-3.5 text-rw-teal" />
+        <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
           {tl("Language")}
         </h2>
         <div className="p-3 rounded-lg bg-rw-surface border border-rw-border space-y-2">
@@ -364,8 +353,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* 1. Display */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
-          <Monitor className="w-3.5 h-3.5 text-rw-teal" />
+        <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
           {tl("Display")}
         </h2>
 
@@ -475,8 +463,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* 2. Desktop Notifications & Sound Alerts */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
-          <Bell className="w-3.5 h-3.5 text-rw-teal" />
+        <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
           {IS_DESKTOP ? tl("Desktop Notifications & Sound Alerts") : tl("Alerts & Sound")}
         </h2>
 
@@ -586,8 +573,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* 3. System Tray, Ergonomics & Startup (desktop app only) */}
       {IS_DESKTOP && (
       <section className="space-y-3">
-        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
-          <Minimize2 className="w-3.5 h-3.5 text-rw-teal" />
+        <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
           {tl("System Tray, Ergonomics & Hotkeys")}
         </h2>
 
@@ -667,8 +653,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* 4. Watchlist Management */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
-          <Globe className="w-3.5 h-3.5 text-rw-accent" />
+        <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
           {tl("Watchlist & Following Status")}
         </h2>
 
@@ -695,8 +680,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* 5. 24/7 Stream Rebroadcasts */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
-          <Radio className="w-3.5 h-3.5 text-rw-teal" />
+        <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
           {tl("24/7 Stream Rebroadcasts (Twitch & YouTube)")}
         </h2>
 
@@ -736,8 +720,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* 6. Data Sources & Storage Diagnostics */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
-          <RefreshCw className="w-3.5 h-3.5 text-rw-teal" />
+        <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
           {tl("Data Sources & Diagnostics")}
         </h2>
 

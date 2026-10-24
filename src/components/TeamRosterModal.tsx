@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { CatalogData, Match, AppSettings, PlayerEntry } from "../types";
-import { X, Star, Calendar, Shield, ExternalLink, User, BarChart3 } from "lucide-react";
+import { X, Star, ExternalLink, User, BarChart3 } from "lucide-react";
 import { computeHeadToHead, pickTeamByCode } from "../helpers";
 import { H2HMeter } from "./H2HMeter";
 import { tl, locale, roleName, regionName, tc } from "../i18n";
@@ -201,8 +201,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
           {/* Active 5-Man Lineup */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-2">
-                <Shield className="w-3.5 h-3.5 text-rw-teal" />
+              <h3 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-2">
                 <span>{tl("Active Roster ({n})", { n: players.length })}</span>
               </h3>
               <span className="text-[11px] text-rw-sub">{tl("Click star to follow player")}</span>
@@ -278,7 +277,6 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
             {/* Upcoming Matches */}
             <section className="space-y-2">
               <h3 className="text-xs font-bold text-rw-teal uppercase tracking-wider flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5" />
                 <span>{tl("Next Scheduled Matches")}</span>
               </h3>
               {upcomingMatches.length > 0 ? (
@@ -325,7 +323,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
 
             {/* Recent Results */}
             <section className="space-y-2">
-              <h3 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
+              <h3 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
                 <span>{tl("Recent Series Results")}</span>
               </h3>
               {completedMatches.length > 0 ? (

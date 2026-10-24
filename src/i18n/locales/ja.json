@@ -1839,6 +1839,7 @@
   "{n} of {m} series played": "{m} シリーズ中 {n} 消化",
   "Swiss picker →": "スイス予想 →",
   "Chance to make the top 8: the rest of the stage played {n} times, each match rolled by the power ratings (3 wins go through, 3 losses go home).": "トップ 8 進出の確率：残りのステージを {n} 回シミュレーション、各試合はパワーレーティングで決定（3 勝で突破、3 敗で敗退）。",
+  "Percentile {p} (100 = the best)": "パーセンタイル {p}（100 = 最高）",
   "now {team}": "現 {team}",
   "title match::Final": "決勝",
   "title winner::Champion": "優勝",

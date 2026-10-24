@@ -1839,6 +1839,7 @@
   "{n} of {m} series played": "{m}시리즈 중 {n}시리즈 진행",
   "Swiss picker →": "스위스 예측 →",
   "Chance to make the top 8: the rest of the stage played {n} times, each match rolled by the power ratings (3 wins go through, 3 losses go home).": "8강 진출 확률: 남은 스테이지를 {n}번 진행, 각 경기는 레이팅으로 결정(3승 진출, 3패 탈락).",
+  "Percentile {p} (100 = the best)": "백분위 {p} (100 = 최고)",
   "now {team}": "현재 {team}",
   "title match::Final": "결승",
   "title winner::Champion": "우승팀",

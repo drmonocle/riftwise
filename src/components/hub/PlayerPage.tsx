@@ -136,7 +136,7 @@ const PlayerView: React.FC<{
             ))}
           </div>
         )}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 rw-stats mt-3">
           <Stat
             label={tl("Games")}
             value={`${fmtNum(p.w)}-${fmtNum(p.g - p.w)}`}

@@ -5,7 +5,7 @@
  * new club, so announced transfers show up with their first game.
  */
 import React, { useMemo, useState } from "react";
-import { ArrowRight, Shuffle } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { tl, roleName } from "../../i18n";
 import { loadLeagues, loadMoves } from "../../hub/data";
 import { fmtDate, PlayerLink, TeamLink, useLoad } from "./ui";
@@ -22,8 +22,7 @@ export const RosterMoves: React.FC = () => {
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-rw-border">
-        <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
-          <Shuffle className="w-3.5 h-3.5 text-rw-teal" />
+        <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
           {tl("Roster moves")}
         </h2>
         <div className="flex gap-1 text-[11px]" role="group" aria-label={tl("Leagues")}>

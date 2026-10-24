@@ -439,7 +439,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   {/* Expanded Registered Roster */}
                   {isExpanded && roster.length > 0 && (
                     <div className="mt-2.5 pt-2.5 border-t border-rw-border space-y-1">
-                      <div className="text-[10px] text-rw-muted uppercase tracking-wider mb-1">
+                      <div className="text-[10px] text-rw-muted mb-1">
                         {tn("Active roster ({n} player)", "Active roster ({n} players)", roster.length)}
                       </div>
                       {roster.map((p) => {

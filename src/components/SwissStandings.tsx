@@ -14,7 +14,8 @@ export const chanceShade = (p: number) =>
     ? { background: `color-mix(in srgb, var(--rw-teal) ${Math.round(20 + (p - 0.5) * 120)}%, transparent)` }
     : { background: `color-mix(in srgb, var(--rw-red) ${Math.round(20 + (0.5 - p) * 120)}%, transparent)` };
 
-export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void }> = ({ schedule, onOpen }) => {
+/** `narrow`: two columns at every width (the Live tab's side column). */
+export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; narrow?: boolean }> = ({ schedule, onOpen, narrow }) => {
   const [d, setD] = useState<SwissNow | null>(null);
   // the finished matches decide the table: recompute when one ends, not on every schedule refresh
   const key = schedule
@@ -39,7 +40,7 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void }>
   return (
     <section className="rounded-lg border border-rw-border bg-rw-surface text-xs">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-3 py-2 border-b border-rw-border">
-        <h2 className="font-bold text-rw-text">{tl("Worlds Swiss stage: standings")}</h2>
+        <h2 className="font-head text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Worlds Swiss stage: standings")}</h2>
         <span className="text-[11px] text-rw-muted font-mono tabular-nums">{tl("{n} of {m} series played", { n: d.played, m: d.total })}</span>
         <button
           type="button"
@@ -52,7 +53,7 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void }>
           {tl("Swiss picker →")}
         </button>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 px-3 py-2">
+      <div className={`grid grid-cols-2 ${narrow ? "" : "sm:grid-cols-4"} gap-x-4 px-3 py-2`}>
         {d.rows.map((r) => (
           <div key={r.u} className="flex items-center gap-2 py-0.5 border-b border-rw-border/40 min-w-0" title={r.name}>
             <span className="font-semibold text-rw-text truncate flex-1 min-w-0">{r.code}</span>

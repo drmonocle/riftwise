@@ -1839,6 +1839,7 @@
   "{n} of {m} series played": "{n} de {m} series jugadas",
   "Swiss picker →": "Pronóstico suizo →",
   "Chance to make the top 8: the rest of the stage played {n} times, each match rolled by the power ratings (3 wins go through, 3 losses go home).": "Probabilidad de entrar en el top 8: el resto de la fase jugado {n} veces, cada partido sorteado según el rating (3 victorias clasifican, 3 derrotas eliminan).",
+  "Percentile {p} (100 = the best)": "Percentil {p} (100 = el mejor)",
   "now {team}": "ahora {team}",
   "title match::Final": "Final",
   "title winner::Champion": "Campeón",

@@ -1839,6 +1839,7 @@
   "{n} of {m} series played": "已進行 {n}/{m} 個系列賽",
   "Swiss picker →": "瑞士輪預測 →",
   "Chance to make the top 8: the rest of the stage played {n} times, each match rolled by the power ratings (3 wins go through, 3 losses go home).": "進入八強的機率：剩餘賽程模擬 {n} 次，每場依實力評分決定（3 勝晉級，3 敗淘汰）。",
+  "Percentile {p} (100 = the best)": "百分位 {p}（100 = 最佳）",
   "now {team}": "現為 {team}",
   "title match::Final": "決賽",
   "title winner::Champion": "冠軍",

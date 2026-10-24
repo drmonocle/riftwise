@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect, useRef, useState } from "react";
-import { BarChart3, Trophy, Swords, Medal, ArrowLeft, GitCompare, Home, CalendarRange, Layers, History, Database, TrendingUp, Flame, Crosshair, Globe, Flag, Wrench, ClipboardList, LayoutGrid, Search, ListOrdered, Rows3 } from "lucide-react";
+import { Trophy, Swords, Medal, ArrowLeft, GitCompare, Home, CalendarRange, Layers, History, Database, TrendingUp, Flame, Crosshair, Globe, Flag, Wrench, ClipboardList, LayoutGrid, Search, ListOrdered, Rows3 } from "lucide-react";
 import { AppSettings, Match, CatalogData } from "../../types";
 import { IS_WEB } from "../../platform";
 import {
@@ -203,7 +203,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
   const group = GROUPS.find((g) => g.items.some((i) => i.kind === route.kind));
   const pillClass = (on: boolean) =>
     `flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors shrink-0 whitespace-nowrap ${
-      on ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50"
+      on ? "bg-rw-accent/10 text-rw-accent border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50"
     }`;
   const back = () => {
     if (!hubBack()) navigateHub({ kind: "home" });
@@ -219,13 +219,13 @@ export const StatsView: React.FC<StatsViewProps> = ({
       >
         <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-rw-border">
           {ownTitle ? (
-            <h1 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" /> {tl("Pro Stats")}
+            <h1 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-2">
+              {tl("Pro Stats")}
               {sectionName && <span className="text-rw-text">· {tl(sectionName)}</span>}
             </h1>
           ) : (
-            <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" /> {tl("Pro Stats")}
+            <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-2">
+              {tl("Pro Stats")}
             </h2>
           )}
           {hubMeta.data && (
@@ -276,7 +276,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
               aria-label={tl(group.label)}
             >
               {group.items.map((i) => (
-                <HubLink key={i.kind} to={{ kind: i.kind } as HubRoute} className={pillClass(route.kind === i.kind).replace("bg-rw-accent text-rw-bg border-rw-accent", "bg-rw-accent/15 text-rw-text border-rw-accent")}>
+                <HubLink key={i.kind} to={{ kind: i.kind } as HubRoute} className={pillClass(route.kind === i.kind).replace("bg-rw-accent/10 text-rw-accent border-rw-accent", "bg-rw-raised text-rw-text border-rw-line")}>
                   {i.icon}
                   {tl(i.label)}
                 </HubLink>

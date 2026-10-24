@@ -322,7 +322,7 @@ const KeyStats: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[
   const cell = (side: Side, X: ReturnType<typeof teamAgg>, other: Side, c: (typeof cols)[number]) =>
     (c[3] === "period" && hidden) || (c[3] === "form" && formHidden) ? "?" : c[2](side, X, other);
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto bg-rw-surface border border-rw-border rounded-lg px-1 py-1">
       <table className="w-full text-xs min-w-[34rem]">
         <thead>
           <tr className="text-[10px] text-rw-muted">
@@ -559,19 +559,29 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
     <>
       <KeyStats a={a} b={b} ra={ra} rb={rb} ratings={ratings.data} hidden={hidden} formHidden={formHidden} />
       <WinChances a={a.team} b={b.team} card={print ? undefined : overview} />
-      <PrepStorylines a={a} b={b} />
-      <Form a={a} b={b} />
+      {/* the side-by-side table, with the storylines, form and calculated numbers beside it on wide screens (under
+          it on smaller ones) */}
+      <div className="rw-span grid gap-3 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] items-start">
+        <div className="space-y-3 min-w-0">
+          {hidden ? (
+            !print && (
+              <div className={`${card} py-4 text-center`}>
+                <RevealButton onReveal={reveal} />
+              </div>
+            )
+          ) : (
+            <TeamRows x={a.team} y={b.team} ra={ra} rb={rb} bSlug={b.team.u} career={period === "all"} periodLabel={periodLabel} chance={chance} />
+          )}
+        </div>
+        <div className="space-y-3 min-w-0">
+          <PrepStorylines a={a} b={b} />
+          <Form a={a} b={b} />
+          {!hidden && <Calculated a={a} b={b} ra={ra} rb={rb} ratings={ratings.data} />}
+        </div>
+      </div>
       <HeadToHeadSeries a={a.team.u} b={b.team.u} aName={a.team.name} bName={b.team.name} />
-      {hidden ? (
-        !print && (
-          <div className={`${card} py-4 text-center`}>
-            <RevealButton onReveal={reveal} />
-          </div>
-        )
-      ) : (
+      {!hidden && (
         <>
-          <TeamRows x={a.team} y={b.team} ra={ra} rb={rb} bSlug={b.team.u} career={period === "all"} periodLabel={periodLabel} chance={chance} />
-          <Calculated a={a} b={b} ra={ra} rb={rb} ratings={ratings.data} />
           <Lanes a={a} b={b} period={period} periodLabel={periodLabel} title={title} />
           <FearlessDepth a={a} b={b} period={period} periodLabel={periodLabel} title={title} />
           <Tendencies side={a} rows={ra} periodLabel={periodLabel} />
@@ -584,10 +594,11 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
   return (
     <CaptureContext.Provider value={`${title} · ${periodLabel}`}>
     <div className="rw-page" ref={pageRef}>
-      <div className={`${card} flex flex-wrap items-center justify-between gap-2`}>
+      {/* the title panel: a thin accent bar on its left, the two teams big, the period and tools on the right */}
+      <div className={`${card} border-l-[3px] border-l-rw-accent flex flex-wrap items-center justify-between gap-2`}>
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-rw-accent">{tl("Match prep")}</div>
-          <h1 className="text-lg font-bold text-rw-text truncate">
+          <div className="font-head text-[10px] uppercase tracking-wider font-semibold text-rw-accent">{tl("Match prep")}</div>
+          <h1 className="text-xl sm:text-2xl font-semibold text-rw-text truncate">
             <HubLink to={{ kind: "team", slug: a.team.u }}>{a.team.name}</HubLink>
             <span className="text-rw-muted font-normal"> vs </span>
             <HubLink to={{ kind: "team", slug: b.team.u }}>{b.team.name}</HubLink>
@@ -737,25 +748,28 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
           ].map(({ s, rows }) => {
             const w = rows.filter((r) => r[3] > r[4]).length;
             return (
-              <div key={s.team.u} className="flex flex-wrap items-center gap-1.5 text-xs">
-                <span className="w-32 truncate font-semibold text-rw-text">{s.team.name}</span>
+              // the ten squares stay together: one line beside the name in a side column, their own line on a phone
+              <div key={s.team.u} className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
+                <span className="w-24 truncate font-semibold text-rw-text" title={s.team.name}>{s.team.name}</span>
                 <span className="text-rw-sub w-10 tabular-nums">
                   {w}-{rows.length - w}
                 </span>
-                {rows.map((r) => {
-                  const won = r[3] > r[4];
-                  return (
-                    <span
-                      key={`${r[0]}-${r[7]}-${r[1]}`}
-                      title={`${won ? tc("short result", "W") : tc("short result", "L")} ${r[3]}-${r[4]} vs ${r[1]} · ${r[5]} · ${fmtDate(r[0])}`}
-                      className={`w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center ${
-                        won ? "bg-rw-teal/20 text-rw-teal" : "bg-rw-red/20 text-rw-red"
-                      }`}
-                    >
-                      {won ? tc("short result", "W") : tc("short result", "L")}
-                    </span>
-                  );
-                })}
+                <span className="flex gap-0.5">
+                  {rows.map((r) => {
+                    const won = r[3] > r[4];
+                    return (
+                      <span
+                        key={`${r[0]}-${r[7]}-${r[1]}`}
+                        title={`${won ? tc("short result", "W") : tc("short result", "L")} ${r[3]}-${r[4]} vs ${r[1]} · ${r[5]} · ${fmtDate(r[0])}`}
+                        className={`w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center ${
+                          won ? "bg-rw-teal/20 text-rw-teal" : "bg-rw-red/20 text-rw-red"
+                        }`}
+                      >
+                        {won ? tc("short result", "W") : tc("short result", "L")}
+                      </span>
+                    );
+                  })}
+                </span>
               </div>
             );
           })}

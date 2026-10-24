@@ -81,7 +81,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
             {tl("All of it counts here.")}
           </p>
         )}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 rw-stats mt-3">
           <Stat label={tl("Games")} value={`${fmtNum(t.w)}-${fmtNum(t.g - t.w)}`} sub={tl("{pct} win rate", { pct: winRate(t.w, t.g) })} />
           <Stat label={tl("Series")} value={`${t.sw}-${t.sg - t.sw}`} sub={tl("{pct} won", { pct: winRate(t.sw, t.sg) })} />
           {t.rating && (
@@ -180,7 +180,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
           ) : (
             <>
             {t.recent.some((r) => r.r != null) && (
-              <div className="flex justify-end text-[10px] uppercase tracking-wider text-rw-muted pr-[4.5rem]" title={tl("Series rating: mostly its best game, then its other games")}>
+              <div className="flex justify-end text-[10px] text-rw-muted pr-[4.5rem]" title={tl("Series rating: mostly its best game, then its other games")}>
                 {tl("Series rating")}
               </div>
             )}

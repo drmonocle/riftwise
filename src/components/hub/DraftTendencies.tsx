@@ -153,7 +153,7 @@ export function draftTendencies(rows: TeamGameRow[]) {
 const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boolean }> = ({ title, hint, list, showWr }) =>
   list.length ? (
     <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted" title={hint}>
+      <div className="text-[10px] font-semibold text-rw-muted" title={hint}>
         {title}
       </div>
       {/* what the numbers are: games (and win rate) */}
@@ -175,7 +175,7 @@ const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boo
 const RoleLine: React.FC<{ title: string; shares: [number, number][] }> = ({ title, shares }) =>
   shares.length ? (
     <>
-      <dt className="text-[10px] uppercase tracking-wider font-bold text-rw-muted self-center">{title}</dt>
+      <dt className="text-[10px] font-semibold text-rw-muted self-center">{title}</dt>
       <dd className="text-xs text-rw-text flex flex-wrap gap-x-3">
         {shares.slice(0, 3).map(([r, v]) => (
           <span key={r} className="whitespace-nowrap">
@@ -192,7 +192,7 @@ type Pair = [string, string, number, number, number | null];
 const Pairs: React.FC<{ title: string; hint?: string; list: Pair[] }> = ({ title, hint, list }) =>
   list.length ? (
     <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1" title={hint}>
+      <div className="text-[10px] font-semibold text-rw-muted mb-1" title={hint}>
         {title}
       </div>
       <ul className="text-xs space-y-1">
@@ -223,7 +223,7 @@ export const DraftTendencies: React.FC<{ rows: TeamGameRow[] }> = ({ rows }) => 
   return (
     <div className="@container space-y-2 pt-2 border-t border-rw-border">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-rw-accent">{tl("Draft tendencies")}</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Draft tendencies")}</h4>
         <span className="text-[10px] text-rw-muted">{tl("{n} games with the draft order", { n: d.games })}</span>
       </div>
       <div className="grid grid-cols-2 @3xl:grid-cols-4 gap-x-6 gap-y-3">
@@ -252,7 +252,7 @@ export const DraftTendencies: React.FC<{ rows: TeamGameRow[] }> = ({ rows }) => 
         </div>
       )}
       <div className="text-xs" title={tl("Champions each role played in this period (in brackets: 2+ games). In Fearless, a Bo5 needs up to five per role.")}>
-        <span className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mr-2">{tl("Pool depth")}</span>
+        <span className="text-[10px] font-semibold text-rw-muted mr-2">{tl("Pool depth")}</span>
         <span className="text-rw-text">
           {d.depth.map(([n, two], i) => (
             <span key={i} className={n < 5 ? "text-rw-red" : ""}>
@@ -264,7 +264,7 @@ export const DraftTendencies: React.FC<{ rows: TeamGameRow[] }> = ({ rows }) => 
       </div>
       {d.flex.length > 0 && (
         <div className="text-xs flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="text-[10px] uppercase tracking-wider font-bold text-rw-muted">{tl("Flex picks")}</span>
+          <span className="text-[10px] font-semibold text-rw-muted">{tl("Flex picks")}</span>
           {d.flex.map(([c, roles]) => (
             <span key={c} className="flex items-center gap-1">
               <ChampLink name={c} size={16} />

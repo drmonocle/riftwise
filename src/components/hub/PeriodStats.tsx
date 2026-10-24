@@ -46,7 +46,7 @@ const signed = (v: number | null | undefined) =>
 
 /** A small heading inside a section. */
 const Sub: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted">
+  <div className="text-[10px] font-semibold text-rw-muted">
     {children}
   </div>
 );
@@ -66,7 +66,7 @@ export const PlayerEarly: React.FC<{
   return (
     <div className="space-y-1">
       <Sub>{tl("Early game")}</Sub>
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-5 rw-stats">
         <Stat
           label="GD@10"
           value={signed(t.gd10)}
@@ -115,7 +115,7 @@ export const TeamEarly: React.FC<{ t: TeamAgg }> = ({ t: agg }) => {
   return (
     <div className="space-y-1">
       <Sub>{tl("Early game")}</Sub>
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-5 rw-stats">
         <Stat
           label="GD@15"
           value={signed(t.gd15)}
@@ -530,7 +530,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-5 rw-stats">
             <Stat
               label={tl("Games")}
               value={`${agg.w}-${agg.g - agg.w}`}
@@ -626,7 +626,7 @@ const ChampCounts: React.FC<{ title: string; list: [string, number][] }> = ({
 }) =>
   list.length ? (
     <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">
+      <div className="text-[10px] font-semibold text-rw-muted mb-1">
         {title}
       </div>
       <ul className="text-xs space-y-1">
@@ -689,7 +689,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: { name
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-5 rw-stats">
             <Stat
               label={tl("Games")}
               value={`${t.w}-${t.g - t.w}`}
@@ -764,7 +764,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: { name
           <div className="grid sm:grid-cols-3 gap-4">
             {t.picks.length > 0 && (
               <div className="min-w-0">
-                <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">
+                <div className="text-[10px] font-semibold text-rw-muted mb-1">
                   {tl("Most picked champions")}
                 </div>
                 <ul className="text-xs space-y-1">

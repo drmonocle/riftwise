@@ -4,7 +4,7 @@
  * recovery code, sync code, download, sign out (everywhere), delete.
  */
 import React, { useEffect, useState } from "react";
-import { Cloud, KeyRound, LogIn, UserPlus, Hash, RefreshCw, Download, LogOut, Trash2, X, Copy, Check, ShieldCheck, QrCode as QrIcon, History } from "lucide-react";
+import { KeyRound, LogIn, UserPlus, Hash, RefreshCw, Download, LogOut, Trash2, X, Copy, Check, ShieldCheck, QrCode as QrIcon, History } from "lucide-react";
 import { QrCode } from "./QrCode";
 import { tl, locale } from "../i18n";
 import { IS_WEB } from "../platform";
@@ -214,8 +214,7 @@ export const SyncPanel: React.FC<{ onOpenUrl: (url: string) => void }> = ({ onOp
 
   return (
     <section className="space-y-3">
-      <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
-        <Cloud className="w-3.5 h-3.5 text-rw-teal" />
+      <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
         {tl("Sync & account")}
       </h2>
       <div className="p-3 rounded-lg bg-rw-surface border border-rw-border space-y-3 text-xs">

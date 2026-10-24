@@ -660,7 +660,7 @@ const Cohort: React.FC<{ found: Found; sideCond: boolean; champ: string; player:
   const list = (title: string, rows: [string, [number, number]][], wr: boolean) =>
     rows.length ? (
       <div className="min-w-0">
-        <div className="text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1">{title}</div>
+        <div className="text-[10px] font-semibold text-rw-muted mb-1">{title}</div>
         <ul className="grid grid-cols-2 gap-x-3 gap-y-1">
           {rows.map(([c, [g, w]]) => (
             <li key={c} className="flex items-center justify-between gap-1 min-w-0">
