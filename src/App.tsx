@@ -769,20 +769,16 @@ export default function App() {
   // ---------------------------------------------------------------
   // Catalog (teams / players / leagues)
   // ---------------------------------------------------------------
-  // First run: load the snapshot bundled with the app (kept out of the startup bundle).
+  const loadBundled = () =>
+    loadBundledCatalog()
+      .then((bundled) => setCatalog((prev) => (prev.teams.length > 0 ? prev : bundled)))
+      .catch((e) => console.warn("Failed to load bundled catalog:", e));
+
+  // First run of the desktop app: the snapshot bundled with it (kept out of the startup bundle). The web asks Riot
+  // instead (the refresh below): Riot's list is about half the size of the 1 MB snapshot, which loads only if Riot fails.
   useEffect(() => {
-    if (catalog.teams.length > 0 || !extrasWanted) return;
-    const load = () =>
-      loadBundledCatalog()
-        .then((bundled) => setCatalog((prev) => (prev.teams.length > 0 ? prev : bundled)))
-        .catch((e) => console.warn("Failed to load bundled catalog:", e));
-    if (IS_DESKTOP) {
-      load();
-      return;
-    }
-    // Web: the 1 MB team directory can wait until the live data is on screen.
-    const timer = window.setTimeout(load, 1200);
-    return () => window.clearTimeout(timer);
+    if (catalog.teams.length > 0 || !extrasWanted || !IS_DESKTOP) return;
+    loadBundled();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [extrasWanted]);
 
@@ -812,9 +808,13 @@ export default function App() {
       fetchLiveCatalog(cached ?? undefined)
         .then((updated) => {
           if (updated) setCatalog(updated);
+          else if (IS_WEB && !cached) loadBundled();
         })
-        .catch(() => {});
+        .catch(() => {
+          if (IS_WEB && !cached) loadBundled();
+        });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [extrasWanted]);
 
   const handleRefreshCatalog = async () => {

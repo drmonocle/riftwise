@@ -8,7 +8,7 @@ import { initI18n } from "./i18n";
 import { installWheelSideScroll } from "./wheelScroll";
 import { applyTheme } from "./theme";
 import { autoMove, importMovedSettings } from "./move";
-import { STARTED_ON_HUB, currentHubRoute } from "./hub/route";
+import { STARTED_ON_HUB, URL_LANG, currentHubRoute } from "./hub/route";
 import { prefetch } from "./stats";
 import { preloadDDragon } from "./hub/ddragon";
 import { preloadPageCode } from "./components/hub/pageCode";
@@ -43,7 +43,8 @@ if (IS_WEB && !leaving && STARTED_ON_HUB) {
 }
 
 // The language is loaded before the first render, so every screen can simply call tl().
-const startLanguage = loadSettings().language;
+// A language's address (riftwise.gg/ko/...) shows that language, whatever was picked before
+const startLanguage = (URL_LANG as ReturnType<typeof loadSettings>["language"] | null) || loadSettings().language;
 // riftwise.gg/overlay: the stream overlay instead of the app (an OBS browser source)
 const overlay = IS_WEB && /^\/overlay\/?$/.test(window.location.pathname);
 if (!leaving) {

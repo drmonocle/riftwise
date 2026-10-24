@@ -354,3 +354,33 @@ func TestOgImageConcurrent(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+// riftwise.gg/<lang>/...: the page in that language, with hreflang links between every language's address.
+func TestLanguagePages(t *testing.T) {
+	s := testSite(t)
+	b := get(s, "/riftwise/ko/player/faker").Body.String()
+	for _, want := range []string{`<html lang="ko">`, "<title>Faker – 프로 통계, 챔피언, 커리어 | RiftWise</title>", `<link rel="canonical" href="https://riftwise.gg/ko/player/faker" />`,
+		`hreflang="en" href="https://riftwise.gg/player/faker"`, `hreflang="pt-BR" href="https://riftwise.gg/pt-br/player/faker"`, `hreflang="x-default"`, `"inLanguage":"ko"`, `href="/ko/stats"`} {
+		if !strings.Contains(b, want) {
+			t.Errorf("ko player: no %q", want)
+		}
+	}
+	if en := get(s, "/riftwise/player/faker").Body.String(); !strings.Contains(en, `hreflang="ko" href="https://riftwise.gg/ko/player/faker"`) || !strings.Contains(en, `<html lang="en">`) {
+		t.Error("the English page has no link to the Korean one")
+	}
+	if b := get(s, "/riftwise/ja/stats/rankings").Body.String(); !strings.Contains(b, "<title>") || strings.Contains(b, "<title>Power") {
+		t.Errorf("ja rankings title: %s", b[:300])
+	}
+	if w := get(s, "/riftwise/de/"); w.Code != 200 || !strings.Contains(w.Body.String(), "Liveergebnisse") {
+		t.Errorf("de home %d", w.Code)
+	}
+	if b := get(s, "/riftwise/fr/schedule/worlds").Body.String(); !strings.Contains(b, "<title>Worlds – Calendrier LoL Esports") {
+		t.Errorf("fr worlds schedule: %s", b[:400])
+	}
+	if w := get(s, "/riftwise/xx/player/faker"); w.Code != http.StatusNotFound {
+		t.Errorf("unknown language prefix: %d", w.Code)
+	}
+	if b := get(s, "/riftwise/ko/team/small-team").Body.String(); strings.Contains(b, "hreflang") {
+		t.Error("hreflang on a noindex page")
+	}
+}
