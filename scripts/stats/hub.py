@@ -718,6 +718,8 @@ def build(ctx) -> dict:
     champ = defaultdict(lambda: {"years": defaultdict(lambda: [0, 0, 0]), "roles": Counter(),
                                  "players": defaultdict(lambda: [0, 0, 0, 0, 0]), "recent": [], "p": 0, "w": 0, "b": 0,
                                  "best": None, "side": [0, 0, 0, 0], "items": Counter(), "items_w": Counter(), "bg": 0,
+                                 # pick slot in the draft (B1, B2-3, B4-5, R1-2, R3, R4, R5) -> [games, wins], when the order is known
+                                 "slots": defaultdict(lambda: [0, 0]),
                                  "keys": Counter(), "keys_w": Counter(), "spells": Counter(), "spells_w": Counter(),
                                  # matchups (all time, last 12 months): [games, wins, games with lane leads at 15,
                                  # sum of gold / CS / XP lead at 15, games ahead in gold at 15]; lane: the same per role
@@ -1485,6 +1487,12 @@ def build(ctx) -> dict:
                                 is_blue = r["team"] == g["t1"]
                                 c["side"][0 if is_blue else 2] += 1
                                 c["side"][1 if is_blue else 3] += won
+                                order_c = (sides.get("blue" if is_blue else "red") or {}).get("picks") or []
+                                if r["champion"] in order_c and order_c.index(r["champion"]) < 5:
+                                    ix_c = order_c.index(r["champion"])
+                                    slot_c = ("B1", "B2-3", "B2-3", "B4-5", "B4-5")[ix_c] if is_blue else ("R1-2", "R1-2", "R3", "R4", "R5")[ix_c]
+                                    c["slots"][slot_c][0] += 1
+                                    c["slots"][slot_c][1] += won
                                 if gpatch:
                                     patch_stats[gpatch]["p"][r["champion"]] += 1
                                     patch_stats[gpatch]["w"][r["champion"]] += won
@@ -2333,6 +2341,9 @@ def build(ctx) -> dict:
         return evs
 
     search_players = []
+    # roster moves (hub/moves.json): players who started at a new club in the last 150 days, newest first
+    moves = []
+    moves_cut = (datetime.date.today() - datetime.timedelta(days=150)).isoformat()
     titles_by_event = defaultdict(list)
     for x in ctx.titles:
         titles_by_event[x["t"]].append(x)
@@ -2425,6 +2436,18 @@ def build(ctx) -> dict:
         has2y = bool(recent2) and len(games) > 200 and len(recent2) < len(games) * 0.8
         if has2y:
             obj["g2y"] = 1
+        # a move: the newest club stint began recently and the one before was another club (national teams and
+        # renames of the same club don't count)
+        clubs = sorted((t for t in obj.get("teams") or [] if t.get("u") and "national team" not in (t.get("n") or "").lower()),
+                       key=lambda t: t.get("from") or "", reverse=True)
+        if p["g"] >= 30 and len(clubs) >= 2 and (clubs[0].get("from") or "") >= moves_cut:
+            prev = next((t for t in clubs[1:] if t["u"] != clubs[0]["u"]), None)
+            if prev and (prev.get("to") or "") >= (datetime.date.fromisoformat(clubs[0]["from"][:10]) - datetime.timedelta(days=400)).isoformat():
+                moves.append({"d": clubs[0]["from"][:10], "n": name, "u": u, "r": role or "",
+                              "from": {"n": prev["n"], "u": prev["u"], "to": (prev.get("to") or "")[:10]},
+                              "to": {"n": clubs[0]["n"], "u": clubs[0]["u"], "g": clubs[0]["g"]}, "g": p["g"],
+                              # the league the new club plays in (its newest event), so the app can show top leagues only
+                              "lu": next((e.get("lu") for e in obj.get("events") or [] if e.get("tu") == clubs[0]["u"] and e.get("lu")), None)})
         out.json(f"player/{u}.json", obj)
         if games:
             out.json(f"playergames/{u}.json", [list(r) for r in games])
@@ -2489,6 +2512,7 @@ def build(ctx) -> dict:
         obj = {
             "name": c, "u": u, "p": v["p"], "w": v["w"], "b": v["b"],
             "side": v["side"],
+            "slots": {k_s: v["slots"][k_s] for k_s in ("B1", "B2-3", "B4-5", "R1-2", "R3", "R4", "R5") if k_s in v["slots"]} or None,
             "builds": {"since": build_cut, "g": v["bg"], "items": top_counts(v["items"], v["items_w"], 40, 2),
                        "keys": top_counts(v["keys"], v["keys_w"], 6, 2), "spells": top_counts(v["spells"], v["spells_w"], 5, 2)}
             if v["bg"] else None,
@@ -2834,6 +2858,8 @@ def build(ctx) -> dict:
             search_events.append([x["n"], short_slug(x["n"], x["u"]), year, x.get("l") or "", (x.get("lv") or "")[:1],
                                   x.get("en") or "", x.get("g") or 0])
     search_events.sort(key=lambda x: (x[5] or "", x[6]), reverse=True)
+    moves.sort(key=lambda m: (m["d"], m["g"]), reverse=True)
+    out.json("moves.json", {"since": moves_cut, "list": moves[:1000]})
     out.json("search/teams.json", search_teams)
     out.json("search/players.json", search_players)
     out.json("search/events.json", search_events)

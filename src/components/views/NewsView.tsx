@@ -1,6 +1,7 @@
 import React from "react";
 import { Newspaper, ExternalLink, Heart } from "lucide-react";
 import { tl, tk, currentLang, type Lang } from "../../i18n";
+import { RosterMoves } from "../hub/RosterMoves";
 
 interface NewsViewProps {
   onOpenUrl: (url: string) => void;
@@ -274,6 +275,7 @@ export const NewsView: React.FC<NewsViewProps> = ({ onOpenUrl }) => {
   );
   return (
     <div className="p-4 space-y-4 page-5xl rw-capped overflow-y-auto h-full select-none">
+      <RosterMoves />
       <div className="pb-1 border-b border-rw-border">
         <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
           <Newspaper className="w-3.5 h-3.5 text-rw-teal" />
