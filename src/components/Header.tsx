@@ -58,11 +58,11 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     // Three columns: brand + support on the left, the status pills centred, the actions on the right. The side
     // columns share the leftover space equally, so the pills sit in the middle of the window when there's room.
-    <header className="rw-header px-3 sm:px-4 py-2 grid grid-cols-[minmax(max-content,1fr)_minmax(0,auto)_minmax(max-content,1fr)] items-center gap-3 select-none">
-      <div className="flex items-center gap-2.5 min-w-0">
+    <header className="rw-header px-3 sm:px-4 py-2 grid grid-cols-[minmax(max-content,1fr)_minmax(0,auto)_minmax(max-content,1fr)] items-center gap-x-1 min-[400px]:gap-x-3 gap-y-3 select-none">
+      <div className="flex items-center gap-1.5 min-[360px]:gap-2.5 min-w-0">
         {/* Brand */}
         <div className="flex items-baseline gap-1.5 cursor-pointer flex-shrink-0" onClick={() => onSelectTab("live")}>
-          <span className="rw-logo font-extrabold text-lg tracking-wider">RIFTWISE</span>
+          <span className="rw-logo font-extrabold text-base min-[360px]:text-lg tracking-wider">RIFTWISE</span>
           <span className="hidden sm:inline text-rw-muted text-[10px]">v{APP_VERSION}</span>
         </div>
 
@@ -137,7 +137,8 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-end gap-1 sm:gap-1.5 min-w-0 col-start-3">
+      {/* narrow phones (320 px): the gaps, the logo and the column gaps above shrink so every button fits */}
+      <div className="flex items-center justify-end gap-0.5 min-[360px]:gap-1 sm:gap-1.5 min-w-0 col-start-3">
         <LanguageFlag onUpdateSettings={onUpdateSettings} />
         {onInstall && (
           <button
@@ -204,10 +205,11 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
+        {/* phones: the data refreshes by itself (and pull-to-refresh works); the header has no room for it */}
         <button
           onClick={onRefresh}
           disabled={isRefreshing}
-          className={`${iconBtn} bg-rw-surface border-rw-border text-rw-text hover:bg-rw-raised`}
+          className={`${iconBtn} max-sm:hidden bg-rw-surface border-rw-border text-rw-text hover:bg-rw-raised`}
           aria-label={tl("Refresh match data")}
           title={tl("Refresh match data")}
         >

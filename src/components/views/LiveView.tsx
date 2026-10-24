@@ -637,7 +637,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   <div className="flex items-center justify-center gap-1.5 w-full">
                     <span
                       {...clickable(() => onSelectTeam?.(nextMatch!.team1Code, nextMatch!.team1Name))}
-                      className="font-bold text-base sm:text-lg text-rw-text hover:text-rw-accent cursor-pointer truncate transition-colors"
+                      className="font-bold text-sm min-[400px]:text-base sm:text-lg leading-tight text-rw-text hover:text-rw-accent cursor-pointer line-clamp-2 break-words text-center min-w-0 transition-colors"
                       title={tl("View {team} roster", { team: nextMatch.team1Name })}
                     >
                       {nextMatch.team1Name}
@@ -648,7 +648,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                         e.stopPropagation();
                         toggleTeamFollow(nextMatch!.team1Code);
                       }}
-                      className={`p-1 rounded hover:bg-rw-border transition-colors shrink-0 ${
+                      className={`p-1 rounded hover:bg-rw-border transition-colors shrink-0 max-[359px]:hidden ${
                         settings.followedTeams.includes(nextMatch.team1Code)
                           ? "text-rw-accent"
                           : "text-rw-sub hover:text-rw-accent"
@@ -710,7 +710,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   <div className="flex items-center justify-center gap-1.5 w-full">
                     <span
                       {...clickable(() => onSelectTeam?.(nextMatch!.team2Code, nextMatch!.team2Name))}
-                      className="font-bold text-base sm:text-lg text-rw-text hover:text-rw-accent cursor-pointer truncate transition-colors"
+                      className="font-bold text-sm min-[400px]:text-base sm:text-lg leading-tight text-rw-text hover:text-rw-accent cursor-pointer line-clamp-2 break-words text-center min-w-0 transition-colors"
                       title={tl("View {team} roster", { team: nextMatch.team2Name })}
                     >
                       {nextMatch.team2Name}
@@ -721,7 +721,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                         e.stopPropagation();
                         toggleTeamFollow(nextMatch!.team2Code);
                       }}
-                      className={`p-1 rounded hover:bg-rw-border transition-colors shrink-0 ${
+                      className={`p-1 rounded hover:bg-rw-border transition-colors shrink-0 max-[359px]:hidden ${
                         settings.followedTeams.includes(nextMatch.team2Code)
                           ? "text-rw-accent"
                           : "text-rw-sub hover:text-rw-accent"
@@ -799,7 +799,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 </div>
 
                 {/* Calendar Integration Button */}
-                <div className="mt-3.5 flex items-center justify-center gap-2">
+                <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2">
                   <AddToCalendarMenu match={nextMatch} onOpenUrl={onOpenUrl} />
                   <MatchPrepButton match={nextMatch} />
                   <MatchOverviewButton match={nextMatch} />
