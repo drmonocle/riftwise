@@ -21,6 +21,7 @@ import {
 } from "../../hub/period";
 import { useDDragon } from "../../hub/ddragon";
 import { SortTable, type Column } from "./SortTable";
+import { TrendChart } from "./TrendChart";
 import { DraftTendencies } from "./DraftTendencies";
 import { BroadcastCardButton, playerCardData, teamSoloCardData } from "./BroadcastCard";
 import {
@@ -457,6 +458,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 .join(" · ")}
             />
           </div>
+          <TrendChart games={sel.map((r) => ({ date: r[0], won: r[6] }))} />
           {agg.tl && (
             <PlayerEarly
               t={agg.tl}
@@ -656,6 +658,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: { name
             />
           </div>
           <DraftTendencies rows={sel} />
+          <TrendChart games={sel.map((r) => ({ date: r[0], won: r[7] }))} />
           {t.sg < t.g && (
             <p className="text-[10px] text-rw-muted">
               {tl(
