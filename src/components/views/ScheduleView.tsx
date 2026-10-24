@@ -344,7 +344,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       m.state === "completed" ? "cursor-pointer " : ""
                     }${
                       flashMatchId === m.matchId
-                        ? "border-rw-teal ring-2 ring-rw-teal/40 shadow-lg shadow-rw-teal/10"
+                        ? "border-rw-teal ring-2 ring-rw-teal/40"
                         : "border-rw-border hover:border-rw-accent/80"
                     }`}
                   >

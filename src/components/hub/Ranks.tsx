@@ -143,12 +143,12 @@ const TEAM_METRICS: Metric<EventTeamStats>[] = [
   { key: "pl", label: tk("Turret plates taken per game"), value: (t) => (t.pln ? div(t.pl, t.pln) : null), fmt: r1 },
 ];
 
-/** Rank and "better than X%" of `me` among `peers` for one metric. */
+/** Rank, "better than X%" and the peers' average of `me` among `peers` for one metric. */
 function place<T>(
   m: Metric<T>,
   me: T,
   peers: T[],
-): { v: number; rank: number; of: number; pct: number } | null {
+): { v: number; rank: number; of: number; pct: number; avg: number } | null {
   const v = m.value(me);
   if (v == null || !isFinite(v)) return null;
   const vals = peers
@@ -165,31 +165,62 @@ function place<T>(
     pct: Math.round(
       ((worse + Math.max(ties, 0) / 2) / Math.max(vals.length - 1, 1)) * 100,
     ),
+    avg: vals.reduce((t, x) => t + x, 0) / vals.length,
   };
 }
 
-const Bars: React.FC<{
-  rows: {
-    label: string;
-    text: string;
-    rank: number;
-    of: number;
-    pct: number;
-  }[];
-}> = ({ rows }) => (
+interface RankRow {
+  label: string;
+  text: string;
+  rank: number;
+  of: number;
+  pct: number;
+  /** the league's average, and our value minus it ("+" better, "−" worse, whatever the metric's direction) */
+  avg: string;
+  diff: string;
+  better: boolean | null;
+}
+
+/** A League ranks row from a metric's place: the value, the league average and the difference, formatted. */
+function rankRow<T>(m: Metric<T>, r: NonNullable<ReturnType<typeof place<T>>>): RankRow {
+  const d = r.v - r.avg;
+  // the metric's own format, without a sign it may add (+63), then the difference's sign
+  const abs = m.fmt(Math.abs(d)).replace(/^[+−-]/, "");
+  const zero = abs === m.fmt(0).replace(/^[+−-]/, "");
+  return {
+    label: tl(m.label),
+    text: m.fmt(r.v),
+    rank: r.rank,
+    of: r.of,
+    pct: r.pct,
+    avg: m.fmt(r.avg),
+    diff: zero ? "±0" : `${d > 0 ? "+" : "−"}${abs}`,
+    better: zero ? null : m.low ? d < 0 : d > 0,
+  };
+}
+
+// stat | percentile dot | value · rank | league average | difference
+const RANK_COLS = "sm:grid-cols-[minmax(7rem,14rem)_minmax(6rem,1fr)_auto_4.5rem_4.5rem]";
+
+const Bars: React.FC<{ rows: RankRow[] }> = ({ rows }) => (
   // Percentile dots: a hairline track per stat with a dot at its percentile (the number in it), red at the bottom of
-  // the league, plain in the middle, teal at the top. Long names ("Gold lead over the lane opponent at 15 minutes")
-  // wrap instead of being cut; on phones the track gets its own line under the name and the value.
+  // the league, plain in the middle, teal at the top; then the value and rank, the league's average and the
+  // difference. Long names ("Gold lead over the lane opponent at 15 minutes") wrap instead of being cut; on phones
+  // two lines a stat: name and value, then the track with the average and difference beside it.
   <ul className="space-y-1 text-xs">
+    <li className={`hidden sm:grid ${RANK_COLS} gap-x-3 text-[10px] text-rw-muted`}>
+      <span />
+      <span className="text-center">{tl("Percentile")}</span>
+      <span className="text-right">{tl("Value · rank")}</span>
+      <span className="text-right">{tl("League avg")}</span>
+      <span className="text-right">{tl("Diff")}</span>
+    </li>
     {rows.map((r) => (
-      <li
-        key={r.label}
-        className="grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(7rem,14rem)_minmax(6rem,1fr)_auto] items-center gap-x-3 min-w-0"
-      >
+      <li key={r.label} className={`grid grid-cols-[minmax(0,1fr)_auto] ${RANK_COLS} items-center gap-x-3 min-w-0`}>
         <span className="order-1 text-rw-sub leading-tight break-words min-w-0" title={r.label}>
           {r.label}
         </span>
-        <span className="order-3 col-span-2 sm:order-2 sm:col-span-1 relative h-6" title={tl("Percentile {p} (100 = the best)", { p: r.pct })}>
+        <span className="order-3 sm:order-2 relative h-6" title={tl("Percentile {p} (100 = the best)", { p: r.pct })}>
           <span className="absolute inset-x-3 top-1/2 h-px bg-rw-line" />
           <span
             className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full grid place-items-center text-[10px] font-semibold tabular-nums text-rw-bg"
@@ -203,6 +234,13 @@ const Bars: React.FC<{
           <span className="text-rw-muted">
             · {tl("{n} of {m}", { n: r.rank, m: r.of })}
           </span>
+        </span>
+        <span className="order-4 flex justify-end gap-2 sm:contents tabular-nums whitespace-nowrap">
+          <span className="text-rw-sub sm:order-4 sm:text-right">
+            <span className="sm:hidden text-rw-muted">{tl("avg")} </span>
+            {r.avg}
+          </span>
+          <span className={`sm:order-5 sm:text-right ${r.better == null ? "text-rw-muted" : r.better ? "text-rw-teal" : "text-rw-red"}`}>{r.diff}</span>
         </span>
       </li>
     ))}
@@ -315,16 +353,8 @@ export const PlayerRanks: React.FC<{
     const peers = same.filter((p) => p.g >= minG || p.u === slug);
     const rows = PLAYER_METRICS.map((m) => {
       const r = place(m, me, peers);
-      return (
-        r && {
-          label: tl(m.label),
-          text: m.fmt(r.v),
-          rank: r.rank,
-          of: r.of,
-          pct: r.pct,
-        }
-      );
-    }).filter((x): x is NonNullable<typeof x> => !!x);
+      return r && rankRow(m, r);
+    }).filter((x): x is RankRow => !!x);
     body =
       me.g < minG ? (
         <p className="text-xs text-rw-muted">
@@ -420,16 +450,8 @@ export const TeamRanks: React.FC<{
     );
     const rows = TEAM_METRICS.map((m) => {
       const r = place(m, me, peers);
-      return (
-        r && {
-          label: tl(m.label),
-          text: m.fmt(r.v),
-          rank: r.rank,
-          of: r.of,
-          pct: r.pct,
-        }
-      );
-    }).filter((x): x is NonNullable<typeof x> => !!x);
+      return r && rankRow(m, r);
+    }).filter((x): x is RankRow => !!x);
     body = (
       <>
         <Bars rows={rows} />

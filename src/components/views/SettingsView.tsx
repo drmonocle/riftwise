@@ -120,7 +120,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div
           className={`p-4 rounded-lg border transition-all ${
             updateInfo?.hasUpdate
-              ? "bg-rw-surface border-rw-teal shadow-lg shadow-rw-teal/10"
+              ? "bg-rw-surface border-rw-teal"
               : "bg-rw-surface border-rw-border"
           }`}
         >
@@ -581,7 +581,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
         <div className="space-y-2">
           {/* Global Summon Hotkey */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-surface border border-rw-teal/40 shadow-sm">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-surface border border-rw-teal/40">
             <div>
               <div className="font-semibold text-rw-text flex items-center gap-1.5">
                 <Keyboard className="w-3.5 h-3.5 text-rw-teal" />

@@ -136,7 +136,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
               onClick={() => setSelectedLeague(l.slug)}
               className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all whitespace-nowrap ${
                 activeLeague === l.slug
-                  ? "bg-rw-accent text-rw-bg font-bold shadow-md shadow-rw-accent/10"
+                  ? "bg-rw-accent text-rw-bg font-bold"
                   : "bg-rw-surface text-rw-sub hover:text-rw-text hover:bg-rw-raised border border-rw-border"
               }`}
             >
@@ -239,7 +239,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
         <div className="space-y-4">
           {stage.sections.map((sec, si) =>
             sec.type === "group" ? (
-              <div key={si} className="bg-rw-surface border border-rw-border rounded-xl overflow-hidden shadow-lg">
+              <div key={si} className="bg-rw-surface border border-rw-border rounded-xl overflow-hidden">
                 {(stage.sections.length > 1 || sec.name !== stage.name) && sec.name && (
                   <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-rw-accent border-b border-rw-border bg-rw-bg">
                     {sec.name}
@@ -316,7 +316,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                 </STable>
               </div>
             ) : (
-              <div key={si} className="bg-rw-surface border border-rw-border rounded-xl shadow-lg overflow-hidden">
+              <div key={si} className="bg-rw-surface border border-rw-border rounded-xl overflow-hidden">
                 {(stage.sections.length > 1 || sec.name !== stage.name) && sec.name && (
                   <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-rw-accent border-b border-rw-border bg-rw-bg">
                     {sec.name}

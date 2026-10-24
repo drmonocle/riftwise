@@ -149,7 +149,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Bar */}
-        <div className="p-5 border-b border-rw-border bg-gradient-to-r from-rw-bg via-rw-surface to-rw-bg flex items-center justify-between">
+        <div className="p-5 border-b border-rw-border bg-rw-surface flex items-center justify-between">
           <div className="flex items-center gap-4">
             {teamImage ? (
               <img {...riotImg(teamImage, 160)} alt={upperCode} className="w-14 h-14 object-contain rounded-lg drop-shadow" />
