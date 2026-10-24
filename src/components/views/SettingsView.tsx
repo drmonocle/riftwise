@@ -34,6 +34,7 @@ import {
   DESKTOP_CHECKSUM_URL,
 } from "../../platform";
 import { tl, locale, LANGUAGES, TRANSLATION_EMAIL, TRANSLATION_MAILTO, detectLanguage } from "../../i18n";
+import { langAddress } from "../../hub/route";
 import { PushAlertsCard } from "../PushAlerts";
 import { SyncPanel } from "../SyncPanel";
 
@@ -323,8 +324,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             value={settings.language}
             onChange={(e) => {
               onUpdateSettings({ language: e.target.value as AppSettings["language"] });
-              // Every screen reads its text once, so load the new language with a quick reload
-              window.setTimeout(() => window.location.reload(), 150);
+              // Every screen reads its text once, so load the new language with a quick reload (on the web at the page's
+              // address in that language: riftwise.gg/ko/...; Automatic goes back to the plain address)
+              const code = e.target.value;
+              window.setTimeout(() => (IS_WEB ? window.location.assign(langAddress(code)) : window.location.reload()), 150);
             }}
             aria-label={tl("Language")}
             className="w-full sm:w-auto bg-rw-bg border border-rw-border rounded-lg px-3 py-2 text-sm text-rw-text"

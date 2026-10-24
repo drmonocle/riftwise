@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "1.17.0"
+	version  = "1.18.0"
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -258,7 +258,7 @@ var (
 	reTitle = regexp.MustCompile(`(?s)<title>.*?</title>`)
 	reDesc  = regexp.MustCompile(`(?s)<meta\s+name="description"\s+content="[^"]*"\s*/?>`)
 	// the site-wide versions of these in index.html make way for the page's own
-	reSiteTags = regexp.MustCompile(`(?is)\s*(<link\s+rel="canonical"[^>]*>|<meta\s+(property="og:|name="twitter:)[^>]*>|<script\s+type="application/ld\+json">.*?</script>)`)
+	reSiteTags = regexp.MustCompile(`(?is)\s*(<link\s+rel="canonical"[^>]*>|<link\s+rel="alternate"\s+hreflang=[^>]*>|<meta\s+(property="og:|name="twitter:)[^>]*>|<script\s+type="application/ld\+json">.*?</script>)`)
 	reNoscript = regexp.MustCompile(`(?is)\s*<noscript>.*?</noscript>`)
 )
 
@@ -364,7 +364,13 @@ func cutWords(s string, max int) string {
 	return strings.TrimRight(cut, " –-:,·")
 }
 
-func (s *store) page(title, desc, canonical string, index bool, og string, about map[string]any, extra *intlPage) string {
+// pageLang: the page's language (riftwise.gg/<seg>/...; empty for English) and every language's address of it.
+type pageLang struct {
+	lang, seg string
+	alts      [][2]string
+}
+
+func (s *store) page(title, desc, canonical string, index bool, og string, about map[string]any, extra *intlPage, pl pageLang) string {
 	s.mu.RLock()
 	doc, ver := s.indexHTML, s.version
 	s.mu.RUnlock()
@@ -377,8 +383,16 @@ func (s *store) page(title, desc, canonical string, index bool, og string, about
 	doc = reDesc.ReplaceAllLiteralString(doc, `<meta name="description" content="`+d+`" />`)
 	doc = reSiteTags.ReplaceAllLiteralString(doc, "")
 	doc = reNoscript.ReplaceAllLiteralString(doc, "")
+	if pl.lang != "" {
+		doc = strings.Replace(doc, `<html lang="en">`, `<html lang="`+pl.lang+`">`, 1)
+	}
 	var tags strings.Builder
 	tags.WriteString(`<link rel="canonical" href="` + c + `" />` + "\n")
+	if index {
+		for _, a := range pl.alts {
+			tags.WriteString(`    <link rel="alternate" hreflang="` + a[0] + `" href="` + html.EscapeString(a[1]) + `" />` + "\n")
+		}
+	}
 	if v := ver; v != "" {
 		// the app starts loading this build's files without asking for stats/latest.json first
 		tags.WriteString(`    <meta name="rw-stats" content="` + html.EscapeString(v) + `" />` + "\n")
@@ -403,7 +417,7 @@ func (s *store) page(title, desc, canonical string, index bool, og string, about
 	if !index {
 		tags.WriteString(`    <meta name="robots" content="noindex" />` + "\n")
 	} else if ld, err := json.Marshal(withAbout(map[string]any{
-		"@context": "https://schema.org", "@type": "WebPage", "name": title, "description": desc, "url": canonical,
+		"@context": "https://schema.org", "@type": "WebPage", "name": title, "description": desc, "url": canonical, "inLanguage": map[bool]string{true: pl.lang, false: "en"}[pl.lang != ""],
 		"isPartOf": map[string]any{"@type": "WebSite", "name": "RiftWise", "alternateName": []string{"RiftWise.gg", "RiftWise Pro LoL Stats"}, "url": publicURL},
 	}, about)); err == nil {
 		tags.WriteString(`    <script type="application/ld+json">` + string(ld) + `</script>` + "\n")
@@ -428,7 +442,7 @@ func (s *store) page(title, desc, canonical string, index bool, og string, about
 		if i > 0 {
 			ns.WriteString(" · ")
 		}
-		ns.WriteString(`<a href="` + publicPath + l[0] + `">` + l[1] + `</a>`)
+		ns.WriteString(`<a href="` + publicPath + map[bool]string{true: pl.seg + "/", false: ""}[pl.seg != ""] + l[0] + `">` + l[1] + `</a>`)
 	}
 	ns.WriteString(` · <a href="https://lolworlds.com/">LoL Worlds 24/7 stream</a></nav></main></noscript>`)
 	return strings.Replace(doc, `<div id="root"></div>`, ns.String(), 1)
@@ -437,12 +451,17 @@ func (s *store) page(title, desc, canonical string, index bool, og string, about
 func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	s.refresh()
 	rest := strings.TrimPrefix(r.URL.Path, basePath)
+	// riftwise.gg/<lang>/...: the same page in another language (i18n.go)
+	seg, lang, rest := splitLang(rest)
 	parts := strings.Split(strings.Trim(rest, "/"), "/")
 	status, title, desc, index, og := http.StatusOK, "", "", true, ""
 	var about map[string]any
 	var extra *intlPage
 
 	switch {
+	case lang != "" && parts[0] == "":
+		// a language's home page (riftwise.gg/ko/): the Live tab; English's (/) is the plain index.html
+		title, desc, og = "RiftWise", sections[""][1], "og/home.png"
 	case parts[0] == "og":
 		s.serveOG(w, r)
 		return
@@ -542,8 +561,19 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	canonical := publicURL + rest
-	body := s.page(title, desc, canonical, index, og, about, extra)
+	pl := pageLang{lang: lang, seg: seg}
+	path := strings.Trim(rest, "/")
+	canonical := publicURL + path
+	if seg != "" {
+		canonical = publicURL + seg + "/" + path
+	}
+	if status == http.StatusOK {
+		if lang != "" {
+			title, desc = localize(lang, parts, title, desc)
+		}
+		pl.alts = alternates(path)
+	}
+	body := s.page(title, desc, canonical, index, og, about, extra, pl)
 	if body == "" {
 		http.Error(w, "RiftWise is starting, try again in a moment", http.StatusServiceUnavailable)
 		return

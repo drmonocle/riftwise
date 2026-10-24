@@ -7,6 +7,8 @@ import { Check } from "lucide-react";
 import { AppSettings } from "../types";
 import { LANGUAGES, currentLang, tl, type Lang } from "../i18n";
 import { Flag } from "./Flags";
+import { IS_WEB } from "../platform";
+import { langAddress } from "../hub/route";
 
 export const LanguageFlag: React.FC<{ onUpdateSettings: (s: Partial<AppSettings>) => void }> = ({ onUpdateSettings }) => {
   const [open, setOpen] = useState(false);
@@ -30,8 +32,9 @@ export const LanguageFlag: React.FC<{ onUpdateSettings: (s: Partial<AppSettings>
     setOpen(false);
     if (code === lang) return;
     onUpdateSettings({ language: code });
-    // Every screen reads its text once, so load the new language with a quick reload
-    window.setTimeout(() => window.location.reload(), 150);
+    // Every screen reads its text once, so load the new language with a quick reload; on the web, at the same page's
+    // address in that language (riftwise.gg/ko/...), so a link shared from it opens in it too
+    window.setTimeout(() => (IS_WEB ? window.location.assign(langAddress(code)) : window.location.reload()), 150);
   };
 
   return (

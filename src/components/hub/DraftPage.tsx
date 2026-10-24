@@ -454,9 +454,10 @@ const Board: React.FC<{
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_minmax(0,15rem)]">
+      {/* phones and tablets: both boards side by side, the champion picker under them (so a pick shows on the board) */}
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_minmax(0,15rem)]">
         <TeamColumn who="b" side={blue} pool={pools.b} slots={slots} step={step} onSlot={clearSlot} onPick={setCursor} />
-        <div className="space-y-3 min-w-0 order-first lg:order-none">
+        <div className="space-y-3 min-w-0 col-span-2 order-last lg:col-span-1 lg:order-none">
           <div className={`${card} space-y-2`}>
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className={`font-bold ${now ? (now.side === "b" ? "text-rw-teal" : "text-rw-red") : "text-rw-accent"}`}>
@@ -541,7 +542,7 @@ const Board: React.FC<{
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={tl("Search champions…")}
                 aria-label={tl("Search champions…")}
-                className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text w-40"
+                className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text w-full sm:w-40"
               />
               <span className="flex flex-wrap gap-1">
                 {[null, 0, 1, 2, 3, 4].map((r) => (
@@ -557,7 +558,7 @@ const Board: React.FC<{
                 ))}
               </span>
             </div>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(3.75rem,1fr))] gap-1 max-h-[22rem] overflow-y-auto pr-1">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(3.75rem,1fr))] gap-1 max-h-[22rem] max-sm:max-h-[55vh] overflow-y-auto pr-1">
               {shown.map((c) => {
                 const off = taken.has(c);
                 const pb = pools.b.picks.get(c)?.[0] || 0;
@@ -726,6 +727,7 @@ const TeamColumn: React.FC<{
         onClick={() => (c ? onSlot(i) : onPick(i))}
         className={`flex items-center gap-2 rounded border ${big ? "p-1.5 w-full" : "p-0.5"} ${active ? "border-rw-accent" : "border-rw-border"} bg-rw-bg`}
         title={c ? tl("Click to change") : undefined}
+        aria-label={c ? `${champName(c)}: ${tl("Click to change")}` : tl("Empty slot")}
       >
         {c ? <ChampIcon name={c} size={big ? 32 : 24} className={big ? "" : "grayscale"} /> : <span className={`${big ? "w-8 h-8" : "w-6 h-6"} rounded bg-rw-border`} />}
         {big && (
@@ -747,7 +749,7 @@ const TeamColumn: React.FC<{
       <div className="text-xs font-bold truncate" style={{ color }}>
         {who === "b" ? tl("Blue side") : tl("Red side")}: {side.team.name}
       </div>
-      <div className="flex gap-1">{bans.map((o) => slot(o.i, false))}</div>
+      <div className="flex flex-wrap gap-1">{bans.map((o) => slot(o.i, false))}</div>
       <div className="space-y-1">{picks.map((o) => slot(o.i, true))}</div>
       {picked.length >= 2 && (
         <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px]" title={tl("Roles the picks so far cover")}>

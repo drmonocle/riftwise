@@ -46,8 +46,28 @@ const ENTITY_PATH: Record<HubEntity, string> = {
 };
 const PATH_ENTITY: Record<string, HubEntity> = Object.fromEntries(Object.entries(ENTITY_PATH).map(([k, v]) => [v, k as HubEntity]));
 
-/** "/" (riftwise.gg is the site root; the desktop app has no address). */
-export const BASE: string = (import.meta.env.BASE_URL || "/").replace(/\/?$/, "/");
+const ROOT: string = (import.meta.env.BASE_URL || "/").replace(/\/?$/, "/");
+
+/** The app's languages in addresses (riftwise.gg/ko/player/faker), lower case -> the language's code. English has
+ *  no prefix. The page service gives these addresses their own titles (server/pages/i18n.go). */
+const URL_LANGS: Record<string, string> = {
+  es: "es", "pt-br": "pt-BR", ko: "ko", vi: "vi", "zh-cn": "zh-CN", "zh-tw": "zh-TW", ja: "ja", fr: "fr", de: "de", tr: "tr",
+};
+const startSeg =
+  IS_WEB && typeof window !== "undefined" ? (new RegExp(`^${ROOT}([A-Za-z-]+)(?:/|$)`).exec(window.location.pathname)?.[1] || "").toLowerCase() : "";
+/** The language the address asks for (null: none, or the desktop app). */
+export const URL_LANG: string | null = URL_LANGS[startSeg] || null;
+
+/** "/", or "/ko/" when the page was opened at a language's address: every page address and link then keeps it.
+ *  (riftwise.gg is the site root; the desktop app has no address.) */
+export const BASE: string = URL_LANG ? `${ROOT}${startSeg}/` : ROOT;
+
+/** This page's address in another language (English: no prefix), for the language pickers. */
+export function langAddress(code: string): string {
+  const seg = Object.keys(URL_LANGS).find((k) => URL_LANGS[k] === code);
+  const tail = window.location.pathname.slice(BASE.length) + window.location.search + window.location.hash;
+  return `${ROOT}${seg ? `${seg}/` : ""}${tail}`;
+}
 
 /** The hub page an address points at, or null when it isn't one (the live scores page, say). */
 export function parseHubPath(pathname: string, search = ""): HubRoute | null {
