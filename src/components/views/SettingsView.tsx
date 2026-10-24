@@ -371,6 +371,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   rift: tl("Rift"),
                   classic: tl("Classic"),
                   midnight: tl("Midnight"),
+                  scoreboard: tl("Scoreboard"),
                   light: tl("Light"),
                   // team names stay as they are in every language
                   tsm: "TSM",
@@ -381,6 +382,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   rift: tl("Deep indigo with a soft violet, like the Rift Herald"),
                   classic: tl("The original navy and Hextech gold"),
                   midnight: tl("Graphite with a cool blue"),
+                  scoreboard: tl("Near-black and grey with one teal accent, like a broadcast scoreboard"),
                   light: tl("A pale background with deep violet, for daylight and printing"),
                   tsm: tl("TSM's black and white, with a steel blue"),
                   flyquest: tl("FlyQuest green on near-black"),

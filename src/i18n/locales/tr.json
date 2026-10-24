@@ -1840,6 +1840,8 @@
   "Swiss picker →": "İsviçre aşaması tahmini →",
   "Chance to make the top 8: the rest of the stage played {n} times, each match rolled by the power ratings (3 wins go through, 3 losses go home).": "İlk 8'e girme şansı: aşamanın geri kalanı {n} kez oynandı, her maç güç puanlarına göre belirlendi (3 galibiyet geçer, 3 mağlubiyet elenir).",
   "Percentile {p} (100 = the best)": "Yüzdelik {p} (100 = en iyi)",
+  "Scoreboard": "Skor tabelası",
+  "Near-black and grey with one teal accent, like a broadcast scoreboard": "Siyaha yakın ve gri, tek bir camgöbeği vurguyla, yayın skor tabelası gibi",
   "now {team}": "şimdi: {team}",
   "title match::Final": "Final",
   "title winner::Champion": "Kazanan",

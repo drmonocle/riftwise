@@ -1840,6 +1840,8 @@
   "Swiss picker →": "瑞士轮预测 →",
   "Chance to make the top 8: the rest of the stage played {n} times, each match rolled by the power ratings (3 wins go through, 3 losses go home).": "进入八强的概率：剩余赛程模拟 {n} 次，每场按实力评分决定（3 胜晋级，3 负淘汰）。",
   "Percentile {p} (100 = the best)": "百分位 {p}（100 = 最佳）",
+  "Scoreboard": "记分牌",
+  "Near-black and grey with one teal accent, like a broadcast scoreboard": "近黑与灰色，只用一种青绿色点缀，像直播记分牌",
   "now {team}": "现 {team}",
   "title match::Final": "决赛",
   "title winner::Champion": "冠军",

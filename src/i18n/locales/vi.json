@@ -1840,6 +1840,8 @@
   "Swiss picker →": "Dự đoán vòng Thụy Sĩ →",
   "Chance to make the top 8: the rest of the stage played {n} times, each match rolled by the power ratings (3 wins go through, 3 losses go home).": "Xác suất vào top 8: phần còn lại của vòng đấu được mô phỏng {n} lần, mỗi trận quyết định theo điểm sức mạnh (3 thắng đi tiếp, 3 thua bị loại).",
   "Percentile {p} (100 = the best)": "Bách phân vị {p} (100 = tốt nhất)",
+  "Scoreboard": "Bảng điểm",
+  "Near-black and grey with one teal accent, like a broadcast scoreboard": "Gần đen và xám với một điểm nhấn xanh mòng két, như bảng điểm trên sóng",
   "now {team}": "nay là {team}",
   "title match::Final": "Chung kết",
   "title winner::Champion": "Nhà vô địch",
