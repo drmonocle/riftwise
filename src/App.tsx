@@ -56,7 +56,7 @@ import { LiveView, intlMatchNow } from "./components/views/LiveView";
 import { tl, locale } from "./i18n";
 import { statsUpdatedAt } from "./stats";
 import { syncPush } from "./push";
-import { STARTED_ON_HUB, navigateHub, onHubRoute, syncFromLocation, syncTabAddress } from "./hub/route";
+import { STARTED_ON_HUB, navigateHub, onHubRoute, syncFromLocation, syncTabAddress, tabOfPath, BASE } from "./hub/route";
 import { dedication } from "./dedication";
 import { lazyPart } from "./lazyPart";
 import { PartBoundary } from "./components/PartBoundary";
@@ -108,6 +108,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
     // Opened at a stats page address (riftwise.gg/player/faker): show it
     if (STARTED_ON_HUB) return "stats";
+    // a tab's own address (riftwise.gg/schedule, /results, /news...) opens that tab
+    const fromPath = IS_WEB && window.location.pathname !== BASE ? (tabOfPath() as TabKey | null) : null;
+    if (fromPath) return fromPath;
     // riftwise.gg/#schedule or /#live (the 404 page links there) opens that tab
     if (IS_WEB && (window.location.hash === "#schedule" || window.location.hash === "#live")) return window.location.hash.slice(1) as TabKey;
     try {
@@ -192,7 +195,7 @@ export default function App() {
     });
     const onPop = () => {
       const r = syncFromLocation();
-      const tab: TabKey = r ? "stats" : activeTabRef.current === "stats" ? (window.history.state?.tab as TabKey) || "live" : activeTabRef.current;
+      const tab: TabKey = r ? "stats" : (tabOfPath() as TabKey | null) || (window.history.state?.tab as TabKey) || "live";
       activeTabRef.current = tab;
       setActiveTab(tab);
     };

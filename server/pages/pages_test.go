@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 	"unicode/utf8"
 )
 
@@ -53,9 +54,77 @@ func testSite(t *testing.T) *store {
 	must(os.MkdirAll(filepath.Join(hub, "seo", "pages"), 0o755))
 	must(os.WriteFile(filepath.Join(hub, "seo", "pages", "worlds.2025.json"), []byte(`{"title": "Worlds 2025: results | RiftWise", "desc": "T1 won Worlds 2025.", "html": "<h2>Final standings</h2><ol><li>T1</li></ol>", "ld": [{"@type": "SportsEvent", "name": "League of Legends World Championship 2025"}]}`), 0o644))
 	must(os.WriteFile(filepath.Join(hub, "alias.json"), []byte(`{"team": {"sk-telecom-t1": "t1"}, "league": {"worlds": "world-championship"}}`), 0o644))
+	// the push service's schedule: one finished and one coming Worlds match, one LCK match, a show without teams
+	sched := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(testSchedule))
+	}))
+	t.Cleanup(sched.Close)
+	scheduleURL = sched.URL
+	schedCache.mu.Lock()
+	schedCache.at, schedCache.events = time.Time{}, nil
+	schedCache.mu.Unlock()
 	s := &store{site: dir, stats: filepath.Join(dir, "stats")}
 	s.refresh()
 	return s
+}
+
+const testSchedule = `{"events": [
+ {"startTime": "2026-10-24T13:00:00Z", "state": "completed", "type": "match", "blockName": "Swiss", "league": {"name": "Worlds", "slug": "worlds"},
+  "match": {"teams": [{"name": "T1", "code": "T1", "result": {"gameWins": 1}}, {"name": "Dplus KIA", "code": "DK", "result": {"gameWins": 0}}], "strategy": {"count": 1}}},
+ {"startTime": "2026-10-25T13:00:00Z", "state": "unstarted", "type": "match", "blockName": "Swiss", "league": {"name": "Worlds", "slug": "worlds"},
+  "match": {"teams": [{"name": "Gen.G", "code": "GEN"}, {"name": "G2 Esports", "code": "G2"}], "strategy": {"count": 3}}},
+ {"startTime": "2026-10-26T09:00:00Z", "state": "unstarted", "type": "match", "blockName": "Week 1", "league": {"name": "LCK", "slug": "lck"},
+  "match": {"teams": [{"name": "Hanwha Life Esports", "code": "HLE"}, {"name": "KT Rolster", "code": "KT"}], "strategy": {"count": 3}}},
+ {"startTime": "2026-10-25T12:00:00Z", "state": "inProgress", "type": "show", "league": {"name": "Worlds", "slug": "worlds"}, "match": {"teams": []}}
+]}`
+
+// The app's other tabs have pages of their own; the schedule and results carry the matches.
+func TestTabPages(t *testing.T) {
+	s := testSite(t)
+	sch := get(s, "/riftwise/schedule").Body.String()
+	for _, want := range []string{"<title>LoL esports schedule: today", "Gen.G vs G2 Esports (Bo3)", "Hanwha Life Esports vs KT Rolster", `"SportsEvent"`, `"BreadcrumbList"`, `<link rel="canonical" href="https://riftwise.gg/schedule" />`} {
+		if !strings.Contains(sch, want) {
+			t.Errorf("schedule: no %q", want)
+		}
+	}
+	if strings.Contains(sch, "T1 1–0") {
+		t.Error("schedule shows a result")
+	}
+	res := get(s, "/riftwise/results").Body.String()
+	if !strings.Contains(res, "T1 1–0 Dplus KIA") || strings.Contains(res, "Gen.G vs") {
+		t.Errorf("results: %s", res)
+	}
+	w := get(s, "/riftwise/schedule/worlds")
+	if b := w.Body.String(); w.Code != 200 || !strings.Contains(b, "Worlds schedule: upcoming matches") || strings.Contains(b, "KT Rolster") {
+		t.Errorf("worlds schedule %d: %s", w.Code, b)
+	}
+	if b := get(s, "/riftwise/schedule/nowhere").Body.String(); !strings.Contains(b, `content="noindex"`) {
+		t.Error("a league with nothing on the schedule is indexed")
+	}
+	if b := get(s, "/riftwise/settings").Body.String(); !strings.Contains(b, `content="noindex"`) {
+		t.Error("settings is indexed")
+	}
+	if w := get(s, "/riftwise/news/extra"); w.Code != http.StatusNotFound {
+		t.Errorf("/news/extra: %d", w.Code)
+	}
+	if !strings.Contains(get(s, "/riftwise/sitemap-sections-1.xml").Body.String(), "<loc>https://riftwise.gg/schedule/lck</loc>") {
+		t.Error("sitemap: no /schedule/lck")
+	}
+}
+
+// Stats pages say where they sit (schema.org BreadcrumbList).
+func TestBreadcrumbs(t *testing.T) {
+	s := testSite(t)
+	ev := get(s, "/riftwise/tournament/worlds-2025").Body.String()
+	if !strings.Contains(ev, `"BreadcrumbList"`) || !strings.Contains(ev, `"name":"Tournaments"`) || !strings.Contains(ev, `"item":"https://riftwise.gg/tournament/worlds-2025"`) {
+		t.Errorf("tournament crumbs: %s", ev)
+	}
+	if b := get(s, "/riftwise/stats/records").Body.String(); !strings.Contains(b, `"BreadcrumbList"`) {
+		t.Error("section crumbs")
+	}
+	if b := get(s, "/riftwise/team/small-team").Body.String(); strings.Contains(b, "BreadcrumbList") {
+		t.Error("crumbs on a noindex page")
+	}
 }
 
 func get(s *store, path string) *httptest.ResponseRecorder {

@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "1.16.1"
+	version  = "1.17.0"
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -268,7 +268,7 @@ var noscriptLinks = [][2]string{
 	{"stats/first-stand", "First Stand"}, {"stats/rankings", "Power Rankings"}, {"stats/best", "Best games"}, {"stats/tournaments", "Tournaments"},
 	{"stats/leagues", "Leagues"}, {"stats/champions", "Champions"}, {"stats/patches", "Patches"}, {"stats/records", "Records"},
 	{"stats/titles", "Title winners"}, {"stats/compare", "Compare"}, {"stats/prep", "Match prep"}, {"stats/draft", "Draft board"},
-	{"stats/finder", "Game finder"}, {"stats/data", "CSV data"}, {"team/t1", "T1"}, {"team/geng", "Gen.G"},
+	{"stats/finder", "Game finder"}, {"schedule", "Schedule"}, {"results", "Results"}, {"stats/data", "CSV data"}, {"team/t1", "T1"}, {"team/geng", "Gen.G"},
 	{"team/bilibili-gaming", "BLG"}, {"team/g2-esports", "G2"}, {"team/fnatic", "Fnatic"}, {"player/faker", "Faker"},
 	{"player/chovy", "Chovy"}, {"player/caps", "Caps"}, {"player/keria", "Keria"}, {"player/ruler", "Ruler"},
 }
@@ -450,6 +450,14 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		title = "About RiftWise: made by Kyle \"Dr. Monocle\" Hoover | RiftWise"
 		desc = "Who makes RiftWise, why, and its promises: free forever, no ads, no selling data, no account needed."
 		og = "og/home.png"
+	case tabPages[parts[0]].name != "":
+		// the app's other tabs (tabs.go): /schedule, /schedule/<league>, /results, /stream, /news, ...
+		info, tx, ok := tabPage(parts)
+		if !ok {
+			status, title, desc, index = http.StatusNotFound, "Page not found | RiftWise", sections[""][1], false
+			break
+		}
+		title, desc, index, extra, og = info.title, info.desc, info.index, tx, "og/home.png"
 	case len(parts) == 1 && parts[0] == "overlay":
 		// the stream overlay (OBS browser source): the app, not for search engines
 		title, desc, index = "RiftWise stream overlay", "Win chances, form and the live score of one matchup, for a stream.", false
@@ -493,6 +501,13 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 				title, desc, extra = ip.Title, ip.Desc, &ip
 			}
 		}
+		if extra == nil && sec != "" {
+			crumbs := [][2]string{{"Pro Stats", publicURL + "stats"}, {strings.TrimSuffix(info[0], brand), publicURL + "stats/" + sec}}
+			if len(parts) == 3 {
+				crumbs = append(crumbs, [2]string{parts[2], publicURL + strings.Join(parts, "/")})
+			}
+			extra = &intlPage{LD: []json.RawMessage{breadcrumbs(crumbs)}}
+		}
 	case (len(parts) == 2 || (len(parts) == 3 && parts[0] == "league" && isYear(parts[2]))) && kinds[parts[0]] != "":
 		kind, slug := kinds[parts[0]], strings.ToLower(parts[1])
 		s.mu.RLock()
@@ -511,6 +526,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		og = "og/" + parts[0] + "/" + slug + ".png"
 		if len(parts) == 2 {
 			about = aboutOf(kind, title)
+			extra = &intlPage{LD: []json.RawMessage{entityCrumbs(kind, title, publicURL+rest)}}
 		}
 		if len(parts) == 3 { // one season of a league: /league/lck/2025
 			name := strings.TrimSuffix(title, " | RiftWise")
@@ -584,6 +600,13 @@ func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 		for sec := range sections {
 			fmt.Fprintf(w, "<url><loc>%sstats%s</loc></url>\n", publicURL, map[bool]string{true: "", false: "/" + sec}[sec == ""])
 		}
+		// the tabs with a page worth finding, and each league on the schedule now
+		for _, tab := range []string{"schedule", "results", "stream", "news"} {
+			fmt.Fprintf(w, "<url><loc>%s%s</loc></url>\n", publicURL, tab)
+		}
+		for _, lg := range scheduleLeagues() {
+			fmt.Fprintf(w, "<url><loc>%sschedule/%s</loc></url>\n", publicURL, lg)
+		}
 		// every year (and every year together) of Worlds, MSI and First Stand
 		keys := make([]string, 0, len(s.intl))
 		for k := range s.intl {
@@ -624,6 +647,7 @@ func main() {
 	public := flag.String("public", "https://riftwise.gg/", "the site's public address")
 	addr := flag.String("addr", "127.0.0.1:8093", "listen address (IIS forwards to it)")
 	logDir := flag.String("logs", "", "folder for pages.log (default: log to the console)")
+	flag.StringVar(&scheduleURL, "schedule", scheduleURL, "the push service's schedule (for the /schedule and /results pages)")
 	flag.BoolVar(&indexNowOn, "indexnow", true, "report new and changed pages to IndexNow after each stats build")
 	flag.Parse()
 	if *logDir != "" {
