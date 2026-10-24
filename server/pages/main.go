@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "1.16.0"
+	version  = "1.16.1"
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
