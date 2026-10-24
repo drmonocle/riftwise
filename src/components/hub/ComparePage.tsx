@@ -30,6 +30,7 @@ import { PeriodPicker } from "./PeriodStats";
 import { DraftTendencies, draftTendencies } from "./DraftTendencies";
 import { BroadcastCardButton, draftCard, playerCardData, teamCardData } from "./BroadcastCard";
 import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, td, TeamLogo, useHidden, usePageTitle } from "./ui";
+import { useTeamPercentiles } from "./Ranks";
 import { STable } from "../STable";
 
 type Mode = "team" | "player";
@@ -96,6 +97,23 @@ export const ComparePick: React.FC<{ kind: Mode; onPick: (slug: string) => void;
 };
 
 /** One compared number; "better" says which side to highlight (higher or lower is better). */
+/** A percentile (0-100, 100 = best of its league season) as a small chip shaded from red to teal. */
+const PctChip: React.FC<{ p: number | null | undefined }> = ({ p }) =>
+  p == null ? null : (
+    <span
+      className="inline-block min-w-[1.75rem] px-0.5 rounded-sm text-center font-mono tabular-nums text-[10px] text-rw-text"
+      style={{
+        background:
+          p >= 50
+            ? `color-mix(in srgb, var(--rw-teal) ${Math.round(15 + (p - 50) * 1.1)}%, transparent)`
+            : `color-mix(in srgb, var(--rw-red) ${Math.round(15 + (50 - p) * 1.1)}%, transparent)`,
+      }}
+      title={tl("Percentile in its league season: better than {p}% of the league's teams", { p })}
+    >
+      {p}
+    </span>
+  );
+
 const Row: React.FC<{
   label: string;
   a: React.ReactNode;
@@ -103,7 +121,10 @@ const Row: React.FC<{
   va?: number | null;
   vb?: number | null;
   better?: "high" | "low";
-}> = ({ label, a, b, va, vb, better = "high" }) => {
+  /** each team's percentile on this stat in its league season */
+  pa?: number | null;
+  pb?: number | null;
+}> = ({ label, a, b, va, vb, better = "high", pa, pb }) => {
   const win = va != null && vb != null && va !== vb ? ((va > vb) === (better === "high") ? "a" : "b") : null;
   const cls = (side: "a" | "b") => (win === side ? "text-rw-teal" : "text-rw-text");
   // a bar from each number toward the outside, as long as its share of the pair (plain counts and rates only)
@@ -122,12 +143,14 @@ const Row: React.FC<{
         <span className="flex items-center justify-end gap-3">
           {bars && bar(va as number, "a")}
           <span className="text-right">{a}</span>
+          <PctChip p={pa} />
         </span>
       </td>
       {/* the label may wrap (long ones like "Win rate when behind at 15" would push a phone screen sideways) */}
       <td className="py-1.5 px-1 text-center text-rw-muted text-[11px] leading-tight">{label}</td>
       <td className={`${td} font-semibold w-2/5 tabular-nums ${cls("b")}`}>
         <span className="flex items-center gap-3">
+          <PctChip p={pb} />
           <span>{b}</span>
           {bars && bar(vb as number, "b")}
         </span>
@@ -292,6 +315,9 @@ export const TeamRows: React.FC<{
   const A = useMemo(() => teamAgg(ra), [ra]);
   const B = useMemo(() => teamAgg(rb), [rb]);
   const h2h = useMemo(() => teamHeadToHead(ra, bSlug), [ra, bSlug]);
+  const PX = useTeamPercentiles(x.u, x.events);
+  const PY = useTeamPercentiles(y.u, y.events);
+  const pc = (key: string) => ({ pa: PX?.pct[key] ?? null, pb: PY?.pct[key] ?? null });
   const drafts = useMemo(() => ({ A: draftTendencies(ra), B: draftTendencies(rb) }), [ra, rb]);
   const wr = (w: number, g: number) => (g ? w / g : null);
   return (
@@ -323,28 +349,37 @@ export const TeamRows: React.FC<{
             <TeamLogo name={y.name} sizeClass="w-9 h-9 lg:w-12 lg:h-12 2xl:w-16 2xl:h-16" />
           </span>
         </div>
+        {(PX || PY) && (
+          <p className="text-[10px] text-rw-muted">
+            {tl("Shaded numbers: percentile among their league's teams that season (100 = best; {list}).", {
+              list: [PX && `${x.name}: ${PX.league} ${PX.year}, ${PX.n} ${tl("teams")}`, PY && `${y.name}: ${PY.league} ${PY.year}, ${PY.n} ${tl("teams")}`]
+                .filter(Boolean)
+                .join("; "),
+            })}
+          </p>
+        )}
         <table className="w-full text-xs">
           <tbody>
             <Row label={career ? tl("Head to head (games)") : tl("Head to head this period (games)")} a={h2h.g ? h2h.w : "–"} b={h2h.g ? h2h.g - h2h.w : "–"} va={h2h.g ? h2h.w : null} vb={h2h.g ? h2h.g - h2h.w : null} />
             <Row label={tl("Games won")} a={`${A.w}-${A.g - A.w}`} b={`${B.w}-${B.g - B.w}`} />
-            <Row label={tl("Win rate")} a={winRate(A.w, A.g)} b={winRate(B.w, B.g)} va={wr(A.w, A.g)} vb={wr(B.w, B.g)} />
+            <Row label={tl("Win rate")} a={winRate(A.w, A.g)} b={winRate(B.w, B.g)} va={wr(A.w, A.g)} vb={wr(B.w, B.g)} {...pc("wr")} />
             <Row label={tl("Blue side wins")} a={`${winRate(A.blue[1], A.blue[0])} (${A.blue[0]})`} b={`${winRate(B.blue[1], B.blue[0])} (${B.blue[0]})`} va={wr(A.blue[1], A.blue[0])} vb={wr(B.blue[1], B.blue[0])} />
             <Row label={tl("Red side wins")} a={`${winRate(A.red[1], A.red[0])} (${A.red[0]})`} b={`${winRate(B.red[1], B.red[0])} (${B.red[0]})`} va={wr(A.red[1], A.red[0])} vb={wr(B.red[1], B.red[0])} />
             <Row label={tl("Avg game (min)")} a={d(A.min)} b={d(B.min)} />
-            <Row label={tl("Kills / game")} a={d(A.kills)} b={d(B.kills)} va={A.kills} vb={B.kills} />
+            <Row label={tl("Kills / game")} a={d(A.kills)} b={d(B.kills)} va={A.kills} vb={B.kills} {...pc("k")} />
             <Row label={tl("Deaths / game")} a={d(A.deaths)} b={d(B.deaths)} va={A.deaths} vb={B.deaths} better="low" />
             <Row label={tl("Gold diff / game")} a={sgn(A.gd)} b={sgn(B.gd)} va={A.gd} vb={B.gd} />
-            <Row label={tl("GD/m")} a={sgn(A.gdm)} b={sgn(B.gdm)} va={A.gdm} vb={B.gdm} />
-            <Row label={tl("GPM")} a={A.gpm != null ? fmtNum(A.gpm) : "–"} b={B.gpm != null ? fmtNum(B.gpm) : "–"} va={A.gpm} vb={B.gpm} />
-            <Row label={tl("DRA%")} a={pct(A.dragShare)} b={pct(B.dragShare)} va={A.dragShare} vb={B.dragShare} />
-            <Row label={tl("Baron%")} a={pct(A.baronShare)} b={pct(B.baronShare)} va={A.baronShare} vb={B.baronShare} />
-            <Row label={tl("Towers")} a={d(A.towers)} b={d(B.towers)} va={A.towers} vb={B.towers} />
-            <Row label={tl("Towers lost per game")} a={d(A.towersLost)} b={d(B.towersLost)} va={A.towersLost} vb={B.towersLost} better="low" />
+            <Row label={tl("GD/m")} a={sgn(A.gdm)} b={sgn(B.gdm)} va={A.gdm} vb={B.gdm} {...pc("gdm")} />
+            <Row label={tl("GPM")} a={A.gpm != null ? fmtNum(A.gpm) : "–"} b={B.gpm != null ? fmtNum(B.gpm) : "–"} va={A.gpm} vb={B.gpm} {...pc("gpm")} />
+            <Row label={tl("DRA%")} a={pct(A.dragShare)} b={pct(B.dragShare)} va={A.dragShare} vb={B.dragShare} {...pc("drap")} />
+            <Row label={tl("Baron%")} a={pct(A.baronShare)} b={pct(B.baronShare)} va={A.baronShare} vb={B.baronShare} {...pc("barp")} />
+            <Row label={tl("Towers")} a={d(A.towers)} b={d(B.towers)} va={A.towers} vb={B.towers} {...pc("tow")} />
+            <Row label={tl("Towers lost per game")} a={d(A.towersLost)} b={d(B.towersLost)} va={A.towersLost} vb={B.towersLost} better="low" {...pc("tl")} />
             <Row label="CKPM" a={d(A.ckpm)} b={d(B.ckpm)} />
             {(A.tl || B.tl) && (
               <>
                 <Row label="GD@10" a={sgn(A.tl?.gd10 ?? null)} b={sgn(B.tl?.gd10 ?? null)} va={A.tl?.gd10 ?? null} vb={B.tl?.gd10 ?? null} />
-                <Row label="GD@15" a={sgn(A.tl?.gd15 ?? null)} b={sgn(B.tl?.gd15 ?? null)} va={A.tl?.gd15 ?? null} vb={B.tl?.gd15 ?? null} />
+                <Row label="GD@15" a={sgn(A.tl?.gd15 ?? null)} b={sgn(B.tl?.gd15 ?? null)} va={A.tl?.gd15 ?? null} vb={B.tl?.gd15 ?? null} {...pc("g15")} />
                 <Row label={tl("Ahead at 15")} a={pct(A.tl?.lead15 ?? null)} b={pct(B.tl?.lead15 ?? null)} va={A.tl?.lead15 ?? null} vb={B.tl?.lead15 ?? null} />
                 <Row
                   label={tl("Win rate when ahead at 15")}
@@ -360,10 +395,10 @@ export const TeamRows: React.FC<{
                   va={A.tl ? wr(A.tl.behind[1], A.tl.behind[0]) : null}
                   vb={B.tl ? wr(B.tl.behind[1], B.tl.behind[0]) : null}
                 />
-                <Row label={tl("First blood")} a={pct(A.tl?.fb ?? null)} b={pct(B.tl?.fb ?? null)} va={A.tl?.fb ?? null} vb={B.tl?.fb ?? null} />
-                <Row label={tl("First tower")} a={pct(A.tl?.ft ?? null)} b={pct(B.tl?.ft ?? null)} va={A.tl?.ft ?? null} vb={B.tl?.ft ?? null} />
+                <Row label={tl("First blood")} a={pct(A.tl?.fb ?? null)} b={pct(B.tl?.fb ?? null)} va={A.tl?.fb ?? null} vb={B.tl?.fb ?? null} {...pc("fb")} />
+                <Row label={tl("First tower")} a={pct(A.tl?.ft ?? null)} b={pct(B.tl?.ft ?? null)} va={A.tl?.ft ?? null} vb={B.tl?.ft ?? null} {...pc("ft")} />
                 <Row label={tl("First dragon")} a={pct(A.tl?.fd ?? null)} b={pct(B.tl?.fd ?? null)} va={A.tl?.fd ?? null} vb={B.tl?.fd ?? null} />
-                <Row label={tl("Turret plates")} a={d(A.tl?.plates ?? null)} b={d(B.tl?.plates ?? null)} va={A.tl?.plates ?? null} vb={B.tl?.plates ?? null} />
+                <Row label={tl("Turret plates")} a={d(A.tl?.plates ?? null)} b={d(B.tl?.plates ?? null)} va={A.tl?.plates ?? null} vb={B.tl?.plates ?? null} {...pc("pl")} />
                 {(A.tl?.grubs != null || B.tl?.grubs != null) && (
                   <Row label={tl("Void grubs")} a={d(A.tl?.grubs ?? null)} b={d(B.tl?.grubs ?? null)} va={A.tl?.grubs ?? null} vb={B.tl?.grubs ?? null} />
                 )}

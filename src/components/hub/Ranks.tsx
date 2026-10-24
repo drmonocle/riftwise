@@ -462,3 +462,34 @@ export const TeamRanks: React.FC<{
     </Section>
   );
 };
+
+/**
+ * A team's percentile on each team stat in its latest league season (the season League ranks opens on): metric key
+ * -> 0-100 (100 = the best of the league's regular teams), with the league, year and how many teams it is among.
+ * Used for the percentile chips in the Compare and Match prep tables.
+ */
+export function useTeamPercentiles(
+  slug: string,
+  events: { lu?: string; date: string; g: number }[],
+): { league: string; year: string; n: number; pct: Record<string, number> } | null {
+  const pick = useMemo(() => seasonsOf(events).filter((s) => s[2] >= 5)[0] || null, [events]);
+  const names = useLeagueNames();
+  const state = useLoad(
+    () => (pick ? loadLeagueSeason(pick[0], pick[1]) : Promise.reject(new Error("none"))),
+    [pick?.[0], pick?.[1]],
+  );
+  return useMemo(() => {
+    const season = state.data;
+    if (!pick || !season) return null;
+    const me = season.teamStats.find((t) => t.u === slug);
+    if (!me) return null;
+    const maxG = Math.max(...season.teamStats.map((t) => t.g));
+    const peers = season.teamStats.filter((t) => t.g >= Math.max(3, Math.ceil(maxG * 0.3)) || t.u === slug);
+    const pct: Record<string, number> = {};
+    for (const m of TEAM_METRICS) {
+      const r = place(m, me, peers);
+      if (r) pct[m.key] = r.pct;
+    }
+    return { league: (names.get(pick[0]) || pick[0]).replace(/\s\d{4}$/, ""), year: pick[1], n: peers.length, pct };
+  }, [state.data, pick, slug, names]);
+}

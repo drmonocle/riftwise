@@ -1207,6 +1207,7 @@ def build(ctx) -> dict:
                     sb = sbg.get((mid, g["n"]))
                     dr = drafts.get((mid, g["n"]))
                     sides = {}
+                    draft_order = {}  # side -> its picks in pick order (only the draft table has it; the team table is in role order)
                     t_pre = dict(zip(("blue", "red"), blue_red(t["team1"], t["team2"], g["t1"], g["t2"]))) if t is not None else {}
                     d_pre = dict(zip(("blue", "red"), blue_red(dr["team1"], dr["team2"], g["t1"], g["t2"]))) if dr is not None else {}
                     s_pre = dict(zip(("blue", "red"), blue_red(sb["Team1"], sb["Team2"], g["t1"], g["t2"]))) if sb is not None else {}
@@ -1244,6 +1245,7 @@ def build(ctx) -> dict:
                                 sd["bans"] = bans
                             if picks:
                                 sd["picks"] = picks
+                                draft_order[side] = picks
                         sides[side] = sd
                     g_rows = prow.get(gid, []) if gid else []
                     for side, name in (("blue", g["t1"]), ("red", g["t2"])):
@@ -1487,7 +1489,7 @@ def build(ctx) -> dict:
                                 is_blue = r["team"] == g["t1"]
                                 c["side"][0 if is_blue else 2] += 1
                                 c["side"][1 if is_blue else 3] += won
-                                order_c = (sides.get("blue" if is_blue else "red") or {}).get("picks") or []
+                                order_c = draft_order.get("blue" if is_blue else "red") or []
                                 if r["champion"] in order_c and order_c.index(r["champion"]) < 5:
                                     ix_c = order_c.index(r["champion"])
                                     slot_c = ("B1", "B2-3", "B2-3", "B4-5", "B4-5")[ix_c] if is_blue else ("R1-2", "R1-2", "R3", "R4", "R5")[ix_c]
@@ -1861,10 +1863,11 @@ def build(ctx) -> dict:
             "players": players_out, "teamStats": team_stats_out, "overview": overview, "rosters": roster_out,
             "regions": regions_out,
             "games": sum(len(v) for v in series.values()), "series": sum(1 for st in stages for _ in st["series"]),
+            "played": sum(1 for st in stages for s_ in st["series"] if s_.get("w")),
         }
         out.json(f"event/{eslug}.json", {k: v for k, v in event.items() if v not in (None, [], {})})
         kept[op] = {"tp": tp, "tts": tts, "tc": tc, "facts": facts, "mvp": ev_mvp, "tteam": tteam, "regions": regions,
-                    "last": last_date, "stats": n_stats_games, "rosters": roster_out, "series": event["series"],
+                    "last": last_date, "stats": n_stats_games, "rosters": roster_out, "series": event["series"], "played": event["played"],
                     "lu": league_slug.get(lg_ev), "y": event["year"], "en": en, "eslug": eslug}
         if ev_lines and ev_lines["g"]:
             # each team's region and final place, for the Worlds page's region table (every year and all years)
@@ -1917,7 +1920,8 @@ def build(ctx) -> dict:
             won = final_winner(stages)
         events_by_year[event["year"]].append({
             "n": en, "u": eslug, "l": lg_ev, "r": info.get("Region"), "lv": info.get("TournamentLevel"),
-            "st": start, "en": end, "g": event["games"], "q": event["q"],
+            "st": start, "en": end, "g": event["games"], "q": event["q"], "sp": event["played"],
+            **({"m": overview["min"]} if overview and overview.get("min") else {}),
             **({"w": won[0], "wu": won[1]} if won else {}),
             **({"p": event["parent"]["u"]} if event.get("parent") else {}),
         })
@@ -1978,6 +1982,8 @@ def build(ctx) -> dict:
         events_by_year[event["year"]].append({
             "n": event["n"], "u": eslug, "l": info.get("League"), "r": info.get("Region"), "lv": info.get("TournamentLevel"),
             "st": event["start"], "en": event["end"], "g": event["games"], "q": 0, "kids": len(event["children"]),
+            "sp": sum(kept[c].get("played", 0) for c in kids if c in kept),
+            **({"m": event["overview"]["min"]} if (event.get("overview") or {}).get("min") else {}),
             # its stages' pages (Worlds page "all years": each stage's lines file without loading every event)
             "c": [c["u"] for c in event["children"]],
             **({"res": 1} if res_out else {}),
@@ -2341,9 +2347,11 @@ def build(ctx) -> dict:
         return evs
 
     search_players = []
-    # roster moves (hub/moves.json): players who started at a new club in the last 150 days, newest first
-    moves = []
+    # roster moves (hub/moves.json): players who started at a new club in the last 150 days, newest first (not
+    # "moves": the patch notes below use that name for champions moving up and down)
+    roster_moves = []
     moves_cut = (datetime.date.today() - datetime.timedelta(days=150)).isoformat()
+    club_of = {}  # page -> (current club, its slug)
     titles_by_event = defaultdict(list)
     for x in ctx.titles:
         titles_by_event[x["t"]].append(x)
@@ -2443,11 +2451,12 @@ def build(ctx) -> dict:
         if p["g"] >= 30 and len(clubs) >= 2 and (clubs[0].get("from") or "") >= moves_cut:
             prev = next((t for t in clubs[1:] if t["u"] != clubs[0]["u"]), None)
             if prev and (prev.get("to") or "") >= (datetime.date.fromisoformat(clubs[0]["from"][:10]) - datetime.timedelta(days=400)).isoformat():
-                moves.append({"d": clubs[0]["from"][:10], "n": name, "u": u, "r": role or "",
+                roster_moves.append({"d": clubs[0]["from"][:10], "n": name, "u": u, "r": role or "",
                               "from": {"n": prev["n"], "u": prev["u"], "to": (prev.get("to") or "")[:10]},
                               "to": {"n": clubs[0]["n"], "u": clubs[0]["u"], "g": clubs[0]["g"]}, "g": p["g"],
                               # the league the new club plays in (its newest event), so the app can show top leagues only
                               "lu": next((e.get("lu") for e in obj.get("events") or [] if e.get("tu") == clubs[0]["u"] and e.get("lu")), None)})
+        club_of[page] = (obj.get("club") or "", obj.get("clubU"))
         out.json(f"player/{u}.json", obj)
         if games:
             out.json(f"playergames/{u}.json", [list(r) for r in games])
@@ -2858,8 +2867,8 @@ def build(ctx) -> dict:
             search_events.append([x["n"], short_slug(x["n"], x["u"]), year, x.get("l") or "", (x.get("lv") or "")[:1],
                                   x.get("en") or "", x.get("g") or 0])
     search_events.sort(key=lambda x: (x[5] or "", x[6]), reverse=True)
-    moves.sort(key=lambda m: (m["d"], m["g"]), reverse=True)
-    out.json("moves.json", {"since": moves_cut, "list": moves[:1000]})
+    roster_moves.sort(key=lambda m: (m["d"], m["g"]), reverse=True)
+    out.json("moves.json", {"since": moves_cut, "list": roster_moves[:1000]})
     out.json("search/teams.json", search_teams)
     out.json("search/players.json", search_players)
     out.json("search/events.json", search_events)
@@ -2907,7 +2916,8 @@ def build(ctx) -> dict:
         "latest": latest_major[:12],
         "now": [{k: v for k, v in x.items() if k not in ("w", "wu")} for x in current[:12]],
         "busiest": [{"n": ctx.pname(pg), "u": player_slug.get(pg), "g": x["years"][this_year]["g"], "w": x["years"][this_year]["w"],
-                     "kda": kda(x["years"][this_year]["k"], x["years"][this_year]["d"], x["years"][this_year]["a"])} for x, pg in busiest],
+                     "kda": kda(x["years"][this_year]["k"], x["years"][this_year]["d"], x["years"][this_year]["a"]),
+                     "t": club_of.get(pg, ("", None))[0], "tu": club_of.get(pg, ("", None))[1]} for x, pg in busiest],
         "year": this_year,
     }
     out.json("home.json", home)

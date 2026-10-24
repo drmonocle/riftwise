@@ -22,7 +22,7 @@ import { ComparePick, TeamRows, bothOptions } from "./ComparePage";
 import { PeriodPicker, Playstyle, TeamEarly, defaultPeriod } from "./PeriodStats";
 import { DraftTendencies } from "./DraftTendencies";
 import { StoryLine, StoryList, noteText } from "./Storylines";
-import { CaptureContext, card, ChampIcon, fmtDate, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, useHidden, useLoad, usePageTitle, PhotosLink, NERDFINDER_TOGETHER, useRetryAttempt, retryFailedLoads } from "./ui";
+import { CaptureContext, card, ChampIcon, fmtDate, fmtNum, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, useHidden, useLoad, usePageTitle, PhotosLink, NERDFINDER_TOGETHER, useRetryAttempt, retryFailedLoads } from "./ui";
 import { CaptureFooter, CopyPageImage, ShareButtons } from "./ShareImage";
 import { BroadcastCardButton, CardData, PoolLine, fearlessCard, playerCardData, prepOverviewCard } from "./BroadcastCard";
 import type { HubRatings } from "../../hub/types";
@@ -233,13 +233,14 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
                   of: t.rating!.of,
                   lrank: t.rating!.lrank,
                   league: t.rating!.league || "–",
-                  r: t.rating!.r,
+                  r: Math.round(liveRating(ratings.data!, t.u, t.rating!.r)),
                 })
-              : tl("#{lrank} in {league} · rating {r}", { lrank: t.rating!.lrank, league: t.rating!.league || "–", r: t.rating!.r })}{" "}
+              : tl("#{lrank} in {league} · rating {r}", { lrank: t.rating!.lrank, league: t.rating!.league || "–", r: Math.round(liveRating(ratings.data!, t.u, t.rating!.r)) })}{" "}
             (<Change v={t.rating!.chg30} /> {tl("in 30 days")})
           </p>
         ))}
       </div>
+      <EloFormula a={a} b={b} ratings={ratings.data} p={rows[0][1]} />
       <p className="text-[10px] text-rw-muted">
         {acc && acc.n > 0
           ? tl("From the power rankings (every pro game since 2011). Since {year}, the higher-rated team won {acc} of games.", {
@@ -251,6 +252,190 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
           {tl("Power rankings")}
         </HubLink>
       </p>
+    </Section>
+  );
+};
+
+/** How the one-game chance comes out of the two ratings (Elo), with this match's numbers. */
+const EloFormula: React.FC<{ a: HubTeam; b: HubTeam; ratings: HubRatings; p: number }> = ({ a, b, ratings, p }) => {
+  const ra = liveRating(ratings, a.u, a.rating!.r);
+  const rb = liveRating(ratings, b.u, b.rating!.r);
+  const ctx = chanceContext(a.rating!.rank != null, b.rating!.rank != null, a.rating!.league, b.rating!.league);
+  const scale = ctx === "top" ? 1 : (ratings.adjust?.[ctx] ?? 1);
+  const s3 = ratings.adjust?.series?.["3"];
+  const s5 = ratings.adjust?.series?.["5"];
+  return (
+    <div className="rounded border border-rw-border bg-rw-bg px-2.5 py-1.5 space-y-0.5">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-[11px]">
+        <span className="text-rw-sub">{tl("How it is calculated")}</span>
+        <span className="font-mono text-rw-muted">{ratings.k ? tl("Elo, K = {k} (top leagues)", { k: ratings.k.top }) : "Elo"}</span>
+      </div>
+      <div className="font-mono text-[10px] text-rw-muted break-words">
+        P({a.name}) = 1 / (1 + 10^(({Math.round(rb)} − {Math.round(ra)}){scale !== 1 ? ` × ${fmtDec(scale, 2)}` : ""} / 400)) = {pct(p)}
+      </div>
+      <div className="text-[10px] text-rw-muted">
+        {scale !== 1
+          ? tl("× {s}: how much a rating gap counts between these leagues (calibrated on past games).", { s: fmtDec(scale, 2) })
+          : null}{" "}
+        {tl("Best of 3 and best of 5 play the one-game chance out over the series{note}.", {
+          note: s3 && s5 ? tl(" (its edge over 50% × {a} for Bo3, × {b} for Bo5, calibrated on past series)", { a: fmtDec(s3, 2), b: fmtDec(s5, 2) }) : "",
+        })}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * The matchup at a glance, one row a team: win rate and record this period, power rank and rating, gold difference
+ * per game, average game length, the series between them and the last ten series.
+ */
+const KeyStats: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[]; ratings: HubRatings | null | undefined; hidden: boolean; formHidden: boolean }> = ({
+  a,
+  b,
+  ra,
+  rb,
+  ratings,
+  hidden,
+  formHidden,
+}) => {
+  const A = useMemo(() => teamAgg(ra), [ra]);
+  const B = useMemo(() => teamAgg(rb), [rb]);
+  const meet = (x: Side, y: Side) => x.series.filter((r) => r[2] === y.team.u);
+  const last10 = (x: Side) => [...x.series].sort((p, q) => (p[0] < q[0] ? 1 : -1)).slice(0, 10);
+  const wl = (rows: TeamSeriesRow[]) => {
+    const w = rows.filter((r) => r[3] > r[4]).length;
+    return `${w}–${rows.length - w}`;
+  };
+  const rank = (t: HubTeam) => {
+    if (!t.rating) return "–";
+    const r = ratings ? Math.round(liveRating(ratings, t.u, t.rating.r)) : t.rating.r;
+    return `#${t.rating.rank ?? t.rating.lrank} · ${r}`;
+  };
+  const cols: [string, string, (x: Side, X: ReturnType<typeof teamAgg>, y: Side) => string, "period" | "form" | "always"][] = [
+    [tl("Win rate"), tl("Games won and lost this period"), (_x, X) => (X.g ? `${Math.round((X.w / X.g) * 100)}% · ${X.w}–${X.g - X.w}` : "–"), "period"],
+    [tl("Power rank"), tl("Rank (worldwide among top-league teams, else in its league) and power rating"), (x) => rank(x.team), "always"],
+    [tl("Gold diff / game"), tl("Average gold difference at the end of the game"), (_x, X) => (X.gd != null ? `${X.gd > 0 ? "+" : ""}${fmtNum(X.gd)}` : "–"), "period"],
+    [tl("Avg game"), tl("Average game length, minutes"), (_x, X) => (X.min != null ? fmtDec(X.min) : "–"), "period"],
+    [tl("Head to head (series)"), tl("Every series between them, all time"), (x, _X, y) => wl(meet(x, y)), "form"],
+    [tl("Last 10 series"), tl("Series won and lost, the last ten"), (x) => wl(last10(x)), "form"],
+  ];
+  const cell = (side: Side, X: ReturnType<typeof teamAgg>, other: Side, c: (typeof cols)[number]) =>
+    (c[3] === "period" && hidden) || (c[3] === "form" && formHidden) ? "?" : c[2](side, X, other);
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs min-w-[34rem]">
+        <thead>
+          <tr className="text-[10px] text-rw-muted">
+            <th className="px-2 py-1 text-left font-normal" />
+            {cols.map((c) => (
+              <th key={c[0]} className="px-2 py-1 text-right font-normal whitespace-nowrap" title={c[1]}>
+                {c[0]}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {[
+            [a, A, b],
+            [b, B, a],
+          ].map(([side, X, other]) => (
+            <tr key={(side as Side).team.u} className="border-t border-rw-border">
+              <td className="px-2 py-1 font-semibold text-rw-text whitespace-nowrap">{(side as Side).team.name}</td>
+              {cols.map((c) => (
+                <td key={c[0]} className="px-2 py-1 text-right font-mono tabular-nums text-rw-text whitespace-nowrap">
+                  {cell(side as Side, X as ReturnType<typeof teamAgg>, other as Side, c)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+/**
+ * Calculated: numbers worked out from the period's games, each with its formula and how many games it rests on.
+ * Pythagorean win rate (from kills for and against), luck (actual minus Pythagorean), strength of schedule (the
+ * opponents' current power rating), gold lead per kill of lead, and the edge by phase against the other team.
+ */
+const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[]; ratings: HubRatings | null | undefined }> = ({ a, b, ra, rb, ratings }) => {
+  const A = useMemo(() => teamAgg(ra), [ra]);
+  const B = useMemo(() => teamAgg(rb), [rb]);
+  const pyth = (X: ReturnType<typeof teamAgg>) => (X.kills != null && X.deaths != null && X.kills + X.deaths > 0 ? X.kills ** 2 / (X.kills ** 2 + X.deaths ** 2) : null);
+  const sos = (rows: TeamGameRow[]) => {
+    if (!ratings) return null;
+    const by = new Map(ratings.teams.map((t) => [t[0], t[5]]));
+    const known = rows.map((r) => (r[5] ? by.get(r[5]) : undefined)).filter((v): v is number => v != null);
+    return known.length ? { v: Math.round(known.reduce((t, v) => t + v, 0) / known.length), n: known.length } : null;
+  };
+  const perKill = (X: ReturnType<typeof teamAgg>) => {
+    const kd = X.kills != null && X.deaths != null ? X.kills - X.deaths : null;
+    return kd != null && X.gd != null && Math.abs(kd) >= 1 ? Math.round(X.gd / kd) : null;
+  };
+  const pa = pyth(A);
+  const pb = pyth(B);
+  const sa = sos(ra);
+  const sb = sos(rb);
+  const edge = (k: "gd10" | "gd15" | "gd20") => (A.tl?.[k] != null && B.tl?.[k] != null ? (A.tl[k] as number) - (B.tl[k] as number) : null);
+  const signed = (v: number | null) => (v == null ? "–" : `${v > 0 ? "+" : v < 0 ? "−" : "±"}${fmtNum(Math.abs(v))}`);
+  const tone = (v: number | null) => (v == null ? "text-rw-muted" : v > 0 ? "text-rw-teal" : v < 0 ? "text-rw-red" : "text-rw-sub");
+  const rows: { label: string; value: React.ReactNode; how: string }[] = [
+    {
+      label: tl("Pythagorean win rate"),
+      value: `${a.team.name} ${pa != null ? fmtDec(pa * 100) + "%" : "–"} · ${b.team.name} ${pb != null ? fmtDec(pb * 100) + "%" : "–"}`,
+      how: tl("K² / (K² + D²), kills for and against per game · {a} and {b} games with a full scoreboard", { a: A.sg, b: B.sg }),
+    },
+    {
+      label: tl("Luck (actual − expected)"),
+      value: (
+        <>
+          <span className={tone(pa != null && A.g ? A.w / A.g - pa : null)}>{pa != null && A.g ? signed(Math.round((A.w / A.g - pa) * 1000) / 10) : "–"}</span>
+          {" · "}
+          <span className={tone(pb != null && B.g ? B.w / B.g - pb : null)}>{pb != null && B.g ? signed(Math.round((B.w / B.g - pb) * 1000) / 10) : "–"}</span>
+        </>
+      ),
+      how: tl("actual win rate minus the Pythagorean one, in points (above 0: won more than their kills suggest)"),
+    },
+    {
+      label: tl("Strength of schedule"),
+      value: `${sa ? sa.v : "–"} · ${sb ? sb.v : "–"}`,
+      how: tl("average current power rating of the opponents they played this period · {a} and {b} games against rated teams", { a: sa?.n ?? 0, b: sb?.n ?? 0 }),
+    },
+    {
+      label: tl("Gold lead per kill of lead"),
+      value: `${a.team.name} ${perKill(A) ?? "–"} · ${b.team.name} ${perKill(B) ?? "–"}`,
+      how: tl("gold difference per game ÷ (kills − deaths) per game: how much gold each kill of advantage turns into"),
+    },
+    {
+      label: tl("Edge by phase ({team})", { team: a.team.name }),
+      value: (
+        <>
+          <span className={tone(edge("gd10"))}>{tl("early")} {signed(edge("gd10"))}</span>
+          {" · "}
+          <span className={tone(edge("gd15"))}>{tl("mid")} {signed(edge("gd15"))}</span>
+          {" · "}
+          <span className={tone(edge("gd20"))}>{tl("late")} {signed(edge("gd20"))}</span>
+        </>
+      ),
+      how: tl("their average gold lead at 10, 15 and 20 minutes minus {team}'s · {a} and {b} games with timelines (Oracle's Elixir)", {
+        team: b.team.name,
+        a: A.tl?.n ?? 0,
+        b: B.tl?.n ?? 0,
+      }),
+    },
+  ];
+  return (
+    <Section title={tl("Calculated")} share={`${a.team.u}-vs-${b.team.u}-calculated`}>
+      <dl className="divide-y divide-rw-border/70 text-xs">
+        {rows.map((r) => (
+          <div key={r.label} className="py-1.5 grid grid-cols-[minmax(0,1fr)_auto] gap-x-3">
+            <dt className="text-rw-text">{r.label}</dt>
+            <dd className="font-mono tabular-nums text-right text-rw-text">{r.value}</dd>
+            <dd className="col-span-2 font-mono text-[10px] text-rw-muted">{r.how}</dd>
+          </div>
+        ))}
+      </dl>
     </Section>
   );
 };
@@ -372,6 +557,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
   };
   const body = (print: boolean) => (
     <>
+      <KeyStats a={a} b={b} ra={ra} rb={rb} ratings={ratings.data} hidden={hidden} formHidden={formHidden} />
       <WinChances a={a.team} b={b.team} card={print ? undefined : overview} />
       <PrepStorylines a={a} b={b} />
       <Form a={a} b={b} />
@@ -385,6 +571,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
       ) : (
         <>
           <TeamRows x={a.team} y={b.team} ra={ra} rb={rb} bSlug={b.team.u} career={period === "all"} periodLabel={periodLabel} chance={chance} />
+          <Calculated a={a} b={b} ra={ra} rb={rb} ratings={ratings.data} />
           <Lanes a={a} b={b} period={period} periodLabel={periodLabel} title={title} />
           <FearlessDepth a={a} b={b} period={period} periodLabel={periodLabel} title={title} />
           <Tendencies side={a} rows={ra} periodLabel={periodLabel} />

@@ -17,8 +17,7 @@ import {
   playerAgg,
   playerRowRef,
   teamAgg,
-  teamRowRef,
-} from "../../hub/period";
+  teamRowRef, winWhen } from "../../hub/period";
 import { useDDragon } from "../../hub/ddragon";
 import { SortTable, type Column } from "./SortTable";
 import { TrendChart } from "./TrendChart";
@@ -239,6 +238,78 @@ export const Playstyle: React.FC<{ t: TeamAgg }> = ({ t }) => {
         ))}
       </div>
       <p className="text-[10px] text-rw-muted">{tl("Compared with every pro team season since 2024: a label means the top or bottom fifth.")}</p>
+    </div>
+  );
+};
+
+/** Win rate by what happened early: each first objective got or given up, and the gold lead at 15 in four bands. */
+export const WinWhen: React.FC<{ rows: TeamGameRow[] }> = ({ rows }) => {
+  const d = useMemo(() => winWhen(rows), [rows]);
+  if (d.n < 10) return null;
+  const label: Record<string, string> = {
+    fb: tl("First blood"),
+    ft: tl("First tower"),
+    f3t: tl("First to 3 towers"),
+    fd: tl("First dragon"),
+    fh: tl("First herald"),
+    fbaron: tl("First baron"),
+    a2: tl("2,000+ gold ahead"),
+    a0: tl("Ahead, under 2,000"),
+    b0: tl("Behind, under 2,000"),
+    b2: tl("2,000+ gold behind"),
+  };
+  const wrCell = ([g, w]: [number, number]) =>
+    g ? (
+      <span className="font-mono tabular-nums">
+        <span className={w / g >= 0.5 ? "text-rw-teal" : "text-rw-red"}>{Math.round((w / g) * 100)}%</span>
+        <span className="text-rw-muted text-[10px]"> ({g})</span>
+      </span>
+    ) : (
+      <span className="text-rw-muted">–</span>
+    );
+  const th = "px-2 py-1 font-normal text-right text-[10px] text-rw-muted";
+  return (
+    <div className="space-y-1">
+      <Sub>{tl("Win rate when…")}</Sub>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <table className="w-full text-xs">
+          <thead>
+            <tr>
+              <th className={`${th} text-left`} />
+              <th className={th}>{tl("They got it")}</th>
+              <th className={th}>{tl("Opponent got it")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {d.firsts.map((x) => (
+              <tr key={x.key} className="border-t border-rw-border/60">
+                <td className="px-2 py-1 text-rw-sub">{label[x.key]}</td>
+                <td className="px-2 py-1 text-right">{wrCell(x.got)}</td>
+                <td className="px-2 py-1 text-right">{wrCell(x.lost)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <table className="w-full text-xs">
+          <thead>
+            <tr>
+              <th className={`${th} text-left`}>{tl("Gold at 15 minutes")}</th>
+              <th className={th}>{tl("Win rate")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {d.gold.map((x) => (
+              <tr key={x.key} className="border-t border-rw-border/60">
+                <td className="px-2 py-1 text-rw-sub">{label[x.key]}</td>
+                <td className="px-2 py-1 text-right">{wrCell([x.g, x.w])}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[10px] text-rw-muted">
+        {tl("Win rate (games in brackets) over the {n} games of this period with timelines (Oracle's Elixir). From 2,000+ behind at 15 is their comeback rate.", { n: d.n })}
+      </p>
     </div>
   );
 };
@@ -689,6 +760,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: { name
           </div>
           <TeamEarly t={t} />
           <Playstyle t={t} />
+          <WinWhen rows={sel} />
           <div className="grid sm:grid-cols-3 gap-4">
             {t.picks.length > 0 && (
               <div className="min-w-0">

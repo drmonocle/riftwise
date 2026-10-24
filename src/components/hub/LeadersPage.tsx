@@ -48,6 +48,33 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
   const autoMin = Math.max(1, Math.ceil(Math.max(0, ...inRole.map((p) => p.g)) * 0.3));
   const minG = q.has("min") ? Math.max(1, Number(q.get("min")) || 1) : autoMin;
   const rows = useMemo(() => inRole.filter((p) => p.g >= minG), [inRole, minG]);
+  // z-scores: each stat against the average of the player's own role in this list (support vision next to mid CS)
+  const zMode = q.get("show") === "z";
+  const roleStats = useMemo(() => {
+    const out = new Map<string, Map<string, { mean: number; sd: number }>>();
+    for (const m of PLAYER_METRICS) {
+      const byRole = new Map<string, number[]>();
+      for (const p of rows) {
+        const v = m.value(p);
+        if (v == null || !isFinite(v)) continue;
+        if (!byRole.has(p.r)) byRole.set(p.r, []);
+        byRole.get(p.r)!.push(v);
+      }
+      const per = new Map<string, { mean: number; sd: number }>();
+      for (const [r, vs] of byRole) {
+        if (vs.length < 3) continue;
+        const mean = vs.reduce((t, v) => t + v, 0) / vs.length;
+        const sd = Math.sqrt(vs.reduce((t, v) => t + (v - mean) ** 2, 0) / (vs.length - 1));
+        if (sd > 0) per.set(r, { mean, sd });
+      }
+      out.set(m.key, per);
+    }
+    return out;
+  }, [rows]);
+  const zOf = (key: string, p: EventPlayer, v: number | null) => {
+    const st = roleStats.get(key)?.get(p.r);
+    return v == null || !st ? null : (v - st.mean) / st.sd;
+  };
 
   const columns: Column<EventPlayer>[] = [
     {
@@ -66,13 +93,23 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
     ...PLAYER_METRICS.map<Column<EventPlayer>>((m) => ({
       key: m.key,
       label: m.short || m.label,
-      title: m.label,
-      value: (p) => m.value(p),
+      title: zMode ? `${m.label}: ${tl("standard deviations from the average of the player's role in this list")}` : m.label,
+      // lower is better (deaths): a negative z is the good one, so it is flipped for sorting and colour
+      value: (p) => (zMode ? (z => (z == null ? null : m.low ? -z : z))(zOf(m.key, p, m.value(p))) : m.value(p)),
       render: (p) => {
         const v = m.value(p);
-        return v == null ? "–" : m.fmt(v);
+        if (!zMode) return v == null ? "–" : m.fmt(v);
+        const z = zOf(m.key, p, v);
+        if (z == null) return "–";
+        const good = m.low ? -z : z;
+        return (
+          <span className={good >= 1 ? "text-rw-teal font-semibold" : good <= -1 ? "text-rw-red" : ""} title={v != null ? m.fmt(v) : undefined}>
+            {z > 0 ? "+" : z < 0 ? "−" : ""}
+            {Math.abs(z).toFixed(1)}
+          </span>
+        );
       },
-      className: "tabular-nums",
+      className: "tabular-nums font-mono",
     })),
   ];
 
@@ -130,6 +167,20 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
               </option>
             ))}
           </select>
+          <span className="flex rounded border border-rw-border overflow-hidden" role="group" aria-label={tl("Show")}>
+            {(["", "z"] as const).map((v) => (
+              <button
+                key={v || "values"}
+                type="button"
+                onClick={() => set({ show: v || undefined })}
+                aria-pressed={(v === "z") === zMode}
+                className={`px-2 py-1 text-xs ${(v === "z") === zMode ? "bg-rw-accent text-rw-bg" : "text-rw-sub hover:text-rw-text"}`}
+                title={v === "z" ? tl("Each stat as standard deviations from the average of the player's role in this list: compares roles on one scale") : undefined}
+              >
+                {v === "z" ? tl("z-scores by role") : tl("Values")}
+              </button>
+            ))}
+          </span>
           <select value={q.has("min") ? String(minG) : ""} onChange={(e) => set({ min: e.target.value || undefined })} aria-label={tl("At least")} className={sel}>
             <option value="">{tl("{n}+ games", { n: autoMin })}</option>
             {[1, 3, 5, 10, 20, 30, 50].filter((n) => n !== autoMin).map((n) => (
@@ -144,6 +195,11 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
       {!loading && failed && <p className="text-xs text-rw-sub">{tl("No player numbers for this season yet.")}</p>}
       {!loading && !failed && (
         <Section title={tl("{scope}: {n} players", { scope, n: rows.length })} share={`riftwise-leaders-${league}-${year}${event ? `-${event}` : ""}${role ? `-${role}` : ""}`}>
+          {zMode && (
+            <p className="text-[11px] text-rw-muted">
+              {tl("z = (value − role average) ÷ role standard deviation, over the {n} players listed. +1.0 is one standard deviation better than the role's average (for deaths, fewer is better). Hover a number for the stat itself.", { n: rows.length })}
+            </p>
+          )}
           {rows.length ? (
             <SortTable rows={rows} columns={columns} initial={{ key: "kda", desc: true }} rowKey={(p) => `${p.u || p.n}-${p.t}-${p.r}`} copyName={`riftwise-leaders-${league}-${year}`} />
           ) : (

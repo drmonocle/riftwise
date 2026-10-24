@@ -4,7 +4,7 @@ import { HomeStorylines } from "./Storylines";
 import { AtStakeToday } from "./AtStake";
 import type { Match } from "../../types";
 import { Trophy, Swords, Medal, GitCompare, CalendarRange, Crown, Layers, History, ClipboardList, TrendingUp, Search, LayoutGrid, Flame, Crosshair, Globe, ListOrdered, Rows3 } from "lucide-react";
-import { tl, tn, tk, regionName } from "../../i18n";
+import { tl, tn, tk, regionName, fmtDec } from "../../i18n";
 import { loadEventsOfYear, loadHubHome, loadHubMeta, loadPatches } from "../../hub/data";
 import { useRecentPages } from "../../hub/recent";
 import { champName } from "../../champions";
@@ -15,6 +15,8 @@ import { HubSearch } from "./HubSearch";
 import { IS_WEB } from "../../platform";
 import { card, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerLink, RevealButton, StandingsFirst, Section, td, th, TeamLink, useHidden, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
+import { SortTable, type Column } from "./SortTable";
+import type { HubHome as HubHomeData, PatchMove, PatchRow } from "../../hub/types";
 
 const QUICK: { to: HubRoute; label: string; sub: string; icon: React.ReactNode }[] = [
   { to: { kind: "rankings" }, label: tk("Power rankings"), sub: tk("Every team, every region, one scale"), icon: <TrendingUp className="w-4 h-4" /> },
@@ -44,17 +46,25 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
       <div className={`${card} space-y-3`}>
         <h1 className="text-base font-bold text-rw-text">{tl("Every pro League of Legends game, in one place")}</h1>
         {meta.data && (
-          <p className="text-[11px] text-rw-sub">
-            {tl("{games} games · {events} tournaments · {players} players · {teams} teams · 2011 to today", {
-              games: fmtNum(meta.data.games),
-              events: fmtNum(meta.data.events),
-              players: fmtNum(meta.data.players),
-              teams: fmtNum(meta.data.teams),
-            })}{" "}
-            <HubLink to={{ kind: "about" }} className="text-rw-muted hover:text-rw-accent hover:underline">
+          <div className="space-y-1">
+            <dl className="grid grid-cols-2 min-[480px]:grid-cols-5 gap-x-5 gap-y-2">
+              {[
+                [fmtNum(meta.data.games), tl("games")],
+                [fmtNum(meta.data.events), tl("tournaments")],
+                [fmtNum(meta.data.players), tl("players")],
+                [fmtNum(meta.data.teams), tl("teams")],
+                ["2011→", tl("to today")],
+              ].map(([v, label]) => (
+                <div key={label}>
+                  <dd className="font-mono tabular-nums text-xl text-rw-text leading-tight">{v}</dd>
+                  <dt className="text-[11px] text-rw-sub">{label}</dt>
+                </div>
+              ))}
+            </dl>
+            <HubLink to={{ kind: "about" }} className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline">
               {tl("(games with a result; players and teams with full scoreboards)")}
             </HubLink>
-          </p>
+          </div>
         )}
         <HubSearch big initial={IS_WEB ? new URLSearchParams(window.location.search).get("q") || "" : ""} />
       </div>
@@ -83,11 +93,24 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
               <Section title={tl("Happening now")}>
                 <ul className="text-xs space-y-1.5">
                   {h.now.map((e) => (
-                    <li key={e.u} className="flex items-center justify-between gap-2 min-w-0">
-                      <EventLink name={e.n} u={e.u} />
-                      <span className="text-rw-muted shrink-0">
-                        {fmtDate(e.st, false)} – {fmtDate(e.en, false)}
-                      </span>
+                    <li key={e.u} className="min-w-0">
+                      <div className="flex items-center justify-between gap-2 min-w-0">
+                        <EventLink name={e.n} u={e.u} />
+                        <span className="text-rw-muted shrink-0">
+                          {fmtDate(e.st, false)} – {fmtDate(e.en, false)}
+                        </span>
+                      </div>
+                      {(e.sp != null || !!e.g) && (
+                        <div className="text-[11px] text-rw-muted font-mono tabular-nums">
+                          {[
+                            e.sp != null ? tn("{n} series played", "{n} series played", e.sp) : null,
+                            e.g ? tn("{n} game", "{n} games", e.g) : null,
+                            e.m ? tl("{t} average game", { t: mmss(e.m) }) : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -101,19 +124,7 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
               </ul>
             </Section>
             <Section title={tl("Most games in {year}", { year: h.year })}>
-              <STable className="w-full text-xs">
-                <tbody>
-                  {h.busiest.map((p, i) => (
-                    <tr key={p.n + i} className="border-t border-rw-border first:border-0">
-                      <td className={td}>
-                        <PlayerLink name={p.n} u={p.u} />
-                      </td>
-                      <td className={`${td} text-rw-sub`}>{tn("{n} game", "{n} games", p.g)}</td>
-                      <td className={`${td} text-rw-muted`}>{tl("KDA {n}", { n: p.kda })}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </STable>
+              <BusiestTable rows={h.busiest} />
             </Section>
           </div>
         )}
@@ -123,6 +134,22 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
       </p>
     </div>
   );
+};
+
+/** m.ss from minutes (32.2 -> 32:12) */
+const mmss = (min: number) => `${Math.floor(min)}:${String(Math.round((min % 1) * 60)).padStart(2, "0")}`;
+
+/** The year's busiest players: games, wins, win rate, KDA and team, sortable. */
+const BusiestTable: React.FC<{ rows: HubHomeData["busiest"] }> = ({ rows }) => {
+  type Row = HubHomeData["busiest"][number];
+  const columns: Column<Row>[] = [
+    { key: "n", label: tl("Player"), value: (p) => p.n, render: (p) => <PlayerLink name={p.n} u={p.u} /> },
+    { key: "t", label: tl("Team"), value: (p) => p.t || "", render: (p) => (p.t ? <TeamLink name={p.t} u={p.tu} className="text-rw-sub hover:text-rw-accent" /> : <span className="text-rw-muted">–</span>) },
+    { key: "g", label: tl("Games"), value: (p) => p.g, className: "tabular-nums" },
+    { key: "wr", label: tl("Win %"), title: tl("Wins and games this year"), value: (p) => (p.g ? p.w / p.g : null), render: (p) => (p.g ? `${Math.round((p.w / p.g) * 100)}%` : "–"), className: "tabular-nums" },
+    { key: "kda", label: "KDA", value: (p) => p.kda, className: "tabular-nums text-rw-sub" },
+  ];
+  return <SortTable rows={rows} columns={columns} initial={{ key: "g", desc: true }} rowKey={(p, i) => `${p.n}-${i}`} />;
 };
 
 /** The pages opened last on this device, as chips. */
@@ -147,16 +174,26 @@ const PatchChanges: React.FC = () => {
   const state = useLoad(loadPatches, []);
   const p = (state.data || []).find((x) => (x.up && x.up.length) || (x.down && x.down.length));
   if (!p) return null;
+  const before = (state.data || []).find((x) => x.p === p.prev);
   const list = (moves: NonNullable<typeof p.up>, up: boolean) =>
-    moves.slice(0, 4).map(([c, now, was]) => (
-      <span key={c} className="inline-flex items-center gap-1 mr-2 whitespace-nowrap">
-        <ChampIcon name={c} size={16} />
-        <span className="text-rw-text">{champName(c)}</span>
-        <span className={`tabular-nums ${up ? "text-rw-teal" : "text-rw-red"}`}>
-          {up ? "▲" : "▼"} {Math.round(Math.abs(now - was) * 100)}%
+    moves.slice(0, 4).map((m) => {
+      const [c, now, was] = m;
+      const wr = winChange(m, before);
+      return (
+        <span key={c} className="inline-flex items-center gap-1 mr-3 whitespace-nowrap">
+          <ChampIcon name={c} size={16} />
+          <span className="text-rw-text">{champName(c)}</span>
+          <span className={`tabular-nums ${up ? "text-rw-teal" : "text-rw-red"}`}>
+            {up ? "▲" : "▼"} {Math.round(Math.abs(now - was) * 100)}%
+          </span>
+          <span className="font-mono tabular-nums text-[10px] text-rw-muted" title={tl("Win rate on this patch (change against {prev}) and games picked", { prev: p.prev || "" })}>
+            {wr.now != null ? `${tl("WR")} ${Math.round(wr.now * 100)}%` : ""}
+            {wr.change != null ? ` (${wr.change > 0 ? "+" : wr.change < 0 ? "−" : "±"}${Math.abs(Math.round(wr.change * 100))})` : ""}
+            {` · ${tn("{n} game", "{n} games", m[4] || 0)}`}
+          </span>
         </span>
-      </span>
-    ));
+      );
+    });
   return (
     <Section title={tl("What changed on patch {patch}", { patch: p.p })} right={<HubLink to={{ kind: "patches" }} className="text-[11px] text-rw-teal hover:underline">{tl("Patches")}</HubLink>}>
       <div className="text-xs space-y-1">
@@ -172,11 +209,22 @@ const PatchChanges: React.FC = () => {
             {list(p.down, false)}
           </div>
         )}
-        <p className="text-[10px] text-rw-muted">{tl("Pick-or-ban rate against patch {prev}", { prev: p.prev || "" })}</p>
+        <p className="text-[10px] text-rw-muted">
+          {tl("Pick-or-ban rate against patch {prev}", { prev: p.prev || "" })} · {tl("WR: win rate when picked (change in points against {prev}); games: times picked on this patch.", { prev: p.prev || "" })}
+        </p>
       </div>
     </Section>
   );
 };
+
+/** A patch mover's win rate when picked, and its change against the patch before (null when either is unknown). */
+function winChange(m: PatchMove, before: PatchRow | undefined): { now: number | null; change: number | null } {
+  const [c, , , wins, picks] = m;
+  const now = picks ? wins / picks : null;
+  const b = before?.c.find((x) => x[0] === c);
+  const was = b && b[1] ? b[3] / b[1] : null;
+  return { now, change: now != null && was != null && picks >= 5 && (b?.[1] || 0) >= 5 ? now - was : null };
+}
 
 const LatestRow: React.FC<{ e: EventListItem }> = ({ e }) => {
   const [hidden, reveal] = useHidden(`event:${e.u}`, e.en);

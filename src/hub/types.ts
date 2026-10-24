@@ -45,13 +45,17 @@ export interface EventListItem {
   /** a whole event: how many stages it has, and their pages (builds from 2026-10-21 on) */
   kids?: number;
   c?: string[];
+  /** series played so far (with a winner) and the average game length in minutes (builds from 2026-10-25 on) */
+  sp?: number;
+  m?: number;
 }
 
 export interface HubHome {
   latest: EventListItem[];
   /** running now or starting within two weeks (builds from 2026-10-15 on) */
   now?: EventListItem[];
-  busiest: { n: string; u: string | null; g: number; w: number; kda: number }[];
+  /** the year's busiest players; t / tu: their current club (builds from 2026-10-25 on) */
+  busiest: { n: string; u: string | null; g: number; w: number; kda: number; t?: string; tu?: string | null }[];
   year: string;
 }
 

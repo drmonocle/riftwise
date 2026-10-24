@@ -5,7 +5,9 @@ import { AddToCalendarMenu } from "../AddToCalendarMenu";
 import { MatchPrepButton } from "../MatchPrepButton";
 import { MatchOverviewButton } from "../MatchOverviewButton";
 import { LiveGamePanel } from "../LiveGamePanel";
-import { WinChanceLine } from "../WinChanceLine";
+import { TeamRatingSub, WinChanceLine } from "../WinChanceLine";
+import { UpNextTable } from "../UpNextTable";
+import { SwissStandings } from "../SwissStandings";
 import { ShareMatchButton } from "../ShareMatchButton";
 import {
   getLeagueBroadcastStreams,
@@ -294,7 +296,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                           {m.team1Name}
                         </span>
                       </div>
-                      <div className="text-[11px] text-rw-sub font-mono font-medium">{m.team1Code}</div>
+                      <TeamRatingSub match={m} side="a" align="right" />
                     </div>
                     {m.team1Image ? (
                       <img
@@ -395,7 +397,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                           <Star className={`w-3.5 h-3.5 ${isT2Followed ? "fill-rw-accent" : ""}`} />
                         </button>
                       </div>
-                      <div className="text-[11px] text-rw-sub font-mono font-medium">{m.team2Code}</div>
+                      <TeamRatingSub match={m} side="b" />
                     </div>
                   </div>
                 </div>
@@ -441,11 +443,12 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   </div>
                 )}
 
-                {/* The game being played: gold, objectives, players (spoiler mode hides it like the score) */}
-                <LiveGamePanel match={m} showStats={showScore} />
+                {/* Before the series (power rankings), then the game being played: gold, objectives, the chance right
+                    now, players (spoiler mode hides the game like the score) */}
                 <div className="mt-2">
                   <WinChanceLine match={m} />
                 </div>
+                <LiveGamePanel match={m} showStats={showScore} />
 
                 {/* Action Footer */}
                 <div className="flex items-center justify-between pt-3 mt-2 border-t border-rw-border/60 text-xs">
@@ -493,6 +496,9 @@ export const LiveView: React.FC<LiveViewProps> = ({
           })}
         </div>
 
+        {/* the Swiss stage in progress: records and the chance to make the top 8 (hidden in spoiler mode: records are results) */}
+        {!settings.spoilerMode && <SwissStandings schedule={schedule} onOpen={() => onSelectTab("stats")} />}
+
         {/* Up next: keeps the page useful when only one or two matches are live */}
         {(() => {
           const pool = hasWatchlist ? unstarted.filter(isFollowed) : unstarted;
@@ -509,29 +515,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   {tl("Full schedule →")}
                 </button>
               </div>
-              <div className="grid gap-2">
-                {upNext.map((m) => (
-                  <div
-                    key={m.matchId}
-                    className="flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-1 p-3 rounded-lg bg-rw-surface border border-rw-border text-xs"
-                  >
-                    {/* Phones: league, Bo and time on the first line, the teams on the second */}
-                    <span className="font-bold text-rw-teal text-[11px] flex-1 sm:flex-none sm:w-24 truncate min-w-0">{m.leagueName}</span>
-                    <span className="order-last sm:order-none basis-full sm:basis-auto sm:flex-1 text-rw-text font-semibold truncate min-w-0">
-                      {m.team1Name} <span className="text-rw-sub mx-1 shrink-0">{tl("vs")}</span> {m.team2Name}
-                    </span>
-                    <span className="text-rw-sub text-[11px] font-medium shrink-0">{tc("short best of", "Bo{n}", { n: m.bestOf })}</span>
-                    <div className="text-rw-sub font-mono text-[11px] font-medium shrink-0">
-                      {formatMatchTime(m.startTimeUtc)}
-                    </div>
-                    <span className="flex items-center gap-0.5 shrink-0">
-                      <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />
-                      <MatchPrepButton match={m} compact />
-                      <MatchOverviewButton match={m} compact />
-                    </span>
-                  </div>
-                ))}
-              </div>
+              <UpNextTable matches={upNext} schedule={schedule} settings={settings} onOpenUrl={onOpenUrl} onSelectTeam={onSelectTeam} timeOf={formatMatchTime} />
               <p className="text-[11px] text-rw-muted text-center pt-1">
                 {tl("Want fewer leagues or only your teams? Pick them in the Watchlist tab.")}{" "}
                 <button onClick={() => onSelectTab("watchlist")} className="text-rw-accent hover:underline">
@@ -903,99 +887,15 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   {tl("View all {n} matches →", { n: unstarted.length })}
                 </button>
               </div>
-              <div className="grid gap-2">
-                {unstarted.slice(0, 4).map((m) => (
-                  <div
-                    key={m.matchId}
-                    className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 p-3 rounded-lg bg-rw-surface border border-rw-border hover:border-rw-accent/60 transition-all text-xs"
-                  >
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
-                      <span className="font-bold text-rw-teal text-[11px] w-20 truncate">
-                        {m.leagueName}
-                      </span>
-                      <div className="flex items-center gap-1 text-rw-text font-semibold">
-                        <span
-                          {...clickable(() => onSelectTeam?.(m.team1Code, m.team1Name))}
-                          className="hover:text-rw-accent cursor-pointer transition-colors"
-                          title={tl("View {team} roster", { team: m.team1Name })}
-                        >
-                          {m.team1Name}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleTeamFollow(m.team1Code);
-                          }}
-                          className={`p-1.5 -m-1 rounded hover:bg-rw-border shrink-0 ${
-                            settings.followedTeams.includes(m.team1Code) ? "text-rw-accent" : "text-rw-sub"
-                          }`}
-                          aria-label={
-                            settings.followedTeams.includes(m.team1Code)
-                              ? tl("Unfollow {name}", { name: m.team1Code })
-                              : tl("Follow {name}", { name: m.team1Code })
-                          }
-                          title={
-                            settings.followedTeams.includes(m.team1Code)
-                              ? tl("Unfollow {name}", { name: m.team1Code })
-                              : tl("Follow {name}", { name: m.team1Code })
-                          }
-                        >
-                          <Star
-                            className={`w-3 h-3 ${
-                              settings.followedTeams.includes(m.team1Code) ? "fill-rw-accent" : ""
-                            }`}
-                          />
-                        </button>
-                        <span className="text-rw-sub mx-1">{tl("vs")}</span>
-                        <span
-                          {...clickable(() => onSelectTeam?.(m.team2Code, m.team2Name))}
-                          className="hover:text-rw-accent cursor-pointer transition-colors"
-                          title={tl("View {team} roster", { team: m.team2Name })}
-                        >
-                          {m.team2Name}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleTeamFollow(m.team2Code);
-                          }}
-                          className={`p-1.5 -m-1 rounded hover:bg-rw-border shrink-0 ${
-                            settings.followedTeams.includes(m.team2Code) ? "text-rw-accent" : "text-rw-sub"
-                          }`}
-                          aria-label={
-                            settings.followedTeams.includes(m.team2Code)
-                              ? tl("Unfollow {name}", { name: m.team2Code })
-                              : tl("Follow {name}", { name: m.team2Code })
-                          }
-                          title={
-                            settings.followedTeams.includes(m.team2Code)
-                              ? tl("Unfollow {name}", { name: m.team2Code })
-                              : tl("Follow {name}", { name: m.team2Code })
-                          }
-                        >
-                          <Star
-                            className={`w-3 h-3 ${
-                              settings.followedTeams.includes(m.team2Code) ? "fill-rw-accent" : ""
-                            }`}
-                          />
-                        </button>
-                      </div>
-                      <span className="text-rw-sub text-[11px] font-medium">{tc("short best of", "Bo{n}", { n: m.bestOf })}</span>
-                    </div>
-                    <div className="flex items-center gap-2 ml-auto">
-                      <RowH2H m={m} schedule={schedule} />
-                      <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />
-                      <MatchPrepButton match={m} compact />
-                      <MatchOverviewButton match={m} compact />
-                      <div className="text-rw-sub font-mono text-[11px] font-medium">
-                        {formatMatchTime(m.startTimeUtc)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <UpNextTable
+                matches={unstarted.slice(0, 4)}
+                schedule={schedule}
+                settings={settings}
+                onOpenUrl={onOpenUrl}
+                onSelectTeam={onSelectTeam}
+                onToggleFollow={toggleTeamFollow}
+                timeOf={formatMatchTime}
+              />
             </section>
           )}
         </div>
@@ -1019,107 +919,23 @@ export const LiveView: React.FC<LiveViewProps> = ({
         </div>
       )}
 
+      {!settings.spoilerMode && <SwissStandings schedule={schedule} onOpen={() => onSelectTab("stats")} />}
+
       {/* Coming Up Next (followed upcoming matches) */}
       {comingUp.length > 0 && (
         <section className="space-y-2">
           <h3 className="text-xs font-bold text-rw-accent uppercase tracking-wider">
             {tl("Coming Up Next")}
           </h3>
-          <div className="grid gap-2">
-            {comingUp.map((m) => (
-              <div
-                key={m.matchId}
-                className="grid grid-cols-[4.5rem_minmax(0,1fr)] sm:grid-cols-[5.5rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 p-3 rounded-lg bg-rw-surface border border-rw-border hover:border-rw-accent/60 transition-all text-xs"
-              >
-                  <div className="flex flex-col min-w-0 leading-tight">
-                    <span className="font-bold text-rw-teal text-[11px] truncate" title={m.leagueName}>
-                      {m.leagueName}
-                    </span>
-                    <span className="text-rw-sub text-[11px] font-medium whitespace-nowrap">{tc("short best of", "Bo{n}", { n: m.bestOf })}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-rw-text font-semibold min-w-0">
-                    <span
-                      {...clickable(() => onSelectTeam?.(m.team1Code, m.team1Name))}
-                      className="hover:text-rw-accent cursor-pointer transition-colors truncate"
-                      title={tl("View {team} roster", { team: m.team1Name })}
-                    >
-                      <span className="sm:hidden">{m.team1Code}</span>
-                      <span className="max-sm:hidden">{m.team1Name}</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleTeamFollow(m.team1Code);
-                      }}
-                      className={`p-1.5 -m-1 rounded hover:bg-rw-border shrink-0 ${
-                        settings.followedTeams.includes(m.team1Code) ? "text-rw-accent" : "text-rw-sub"
-                      }`}
-                      aria-label={
-                        settings.followedTeams.includes(m.team1Code)
-                          ? tl("Unfollow {name}", { name: m.team1Code })
-                          : tl("Follow {name}", { name: m.team1Code })
-                      }
-                      title={
-                        settings.followedTeams.includes(m.team1Code)
-                          ? tl("Unfollow {name}", { name: m.team1Code })
-                          : tl("Follow {name}", { name: m.team1Code })
-                      }
-                    >
-                      <Star
-                        className={`w-3 h-3 ${
-                          settings.followedTeams.includes(m.team1Code) ? "fill-rw-accent" : ""
-                        }`}
-                      />
-                    </button>
-                    <span className="text-rw-sub mx-1">{tl("vs")}</span>
-                    <span
-                      {...clickable(() => onSelectTeam?.(m.team2Code, m.team2Name))}
-                      className="hover:text-rw-accent cursor-pointer transition-colors truncate"
-                      title={tl("View {team} roster", { team: m.team2Name })}
-                    >
-                      <span className="sm:hidden">{m.team2Code}</span>
-                      <span className="max-sm:hidden">{m.team2Name}</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleTeamFollow(m.team2Code);
-                      }}
-                      className={`p-1.5 -m-1 rounded hover:bg-rw-border shrink-0 ${
-                        settings.followedTeams.includes(m.team2Code) ? "text-rw-accent" : "text-rw-sub"
-                      }`}
-                      aria-label={
-                        settings.followedTeams.includes(m.team2Code)
-                          ? tl("Unfollow {name}", { name: m.team2Code })
-                          : tl("Follow {name}", { name: m.team2Code })
-                      }
-                      title={
-                        settings.followedTeams.includes(m.team2Code)
-                          ? tl("Unfollow {name}", { name: m.team2Code })
-                          : tl("Follow {name}", { name: m.team2Code })
-                      }
-                    >
-                      <Star
-                        className={`w-3 h-3 ${
-                          settings.followedTeams.includes(m.team2Code) ? "fill-rw-accent" : ""
-                        }`}
-                      />
-                    </button>
-                  </div>
-                <div className="flex items-center gap-2 justify-end col-span-2 sm:col-span-1">
-                  <RowH2H m={m} schedule={schedule} />
-                  <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />
-                  <MatchPrepButton match={m} compact />
-                  <MatchOverviewButton match={m} compact />
-                  <div className="text-rw-sub font-mono text-[11px] font-medium">
-                    {formatMatchTime(m.startTimeUtc)}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <UpNextTable
+            matches={comingUp}
+            schedule={schedule}
+            settings={settings}
+            onOpenUrl={onOpenUrl}
+            onSelectTeam={onSelectTeam}
+            onToggleFollow={toggleTeamFollow}
+            timeOf={formatMatchTime}
+          />
         </section>
       )}
 
@@ -1180,9 +996,4 @@ const IntlBanner: React.FC<{ schedule: Match[]; onSelectTab: (tab: "stats") => v
       <span className="text-xs font-semibold text-rw-accent whitespace-nowrap">{tl("Open →")}</span>
     </button>
   );
-};
-
-const RowH2H: React.FC<{ m: Match; schedule: Match[] }> = ({ m, schedule }) => {
-  const h2h = computeHeadToHead(m.team1Code, m.team2Code, schedule, m.matchId);
-  return h2h ? <H2HMeter team1Code={m.team1Code} team2Code={m.team2Code} h2h={h2h} matchId={m.matchId} /> : null;
 };
