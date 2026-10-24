@@ -203,7 +203,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
   const group = GROUPS.find((g) => g.items.some((i) => i.kind === route.kind));
   const pillClass = (on: boolean) =>
     `flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors shrink-0 whitespace-nowrap ${
-      on ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50"
+      on ? "bg-rw-accent/10 text-rw-accent border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50"
     }`;
   const back = () => {
     if (!hubBack()) navigateHub({ kind: "home" });
@@ -276,7 +276,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
               aria-label={tl(group.label)}
             >
               {group.items.map((i) => (
-                <HubLink key={i.kind} to={{ kind: i.kind } as HubRoute} className={pillClass(route.kind === i.kind).replace("bg-rw-accent text-rw-bg border-rw-accent", "bg-rw-accent/15 text-rw-text border-rw-accent")}>
+                <HubLink key={i.kind} to={{ kind: i.kind } as HubRoute} className={pillClass(route.kind === i.kind).replace("bg-rw-accent/10 text-rw-accent border-rw-accent", "bg-rw-raised text-rw-text border-rw-line")}>
                   {i.icon}
                   {tl(i.label)}
                 </HubLink>

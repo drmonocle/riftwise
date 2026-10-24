@@ -119,7 +119,7 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
           </HubLink>
         )}
         {(e.games || 0) > 0 && (
-          <div className="grid grid-cols-3 gap-2 mt-3">
+          <div className="grid grid-cols-3 rw-stats mt-3">
             <Stat label={tl("Games")} value={fmtNum(e.games || 0)} sub={e.statsGames ? tl("{n} with full stats", { n: fmtNum(e.statsGames) }) : undefined} />
             <Stat label={tl("Series")} value={fmtNum(e.series || 0)} />
             <Stat label={tl("Teams")} value={e.teams?.length || "–"} />

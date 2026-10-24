@@ -75,7 +75,7 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean; card?: {
       share="tournament-facts"
       right={card && !hidden ? <BroadcastCardButton data={card.data} name={card.name} label={tl("Overview card")} /> : undefined}
     >
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 rw-stats">
         <Stat label={tl("Games")} value={fmtNum(o.g)} />
         <Stat label={tl("Avg game")} value={o.min ? mmss(o.min) : "–"} />
         <Stat label={tl("Kills / game")} value={o.kills || "–"} />

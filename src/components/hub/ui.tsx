@@ -133,7 +133,7 @@ export function Page<T>({ state, children }: { state: Loaded<T>; children: (data
 export const Stat: React.FC<{ label: string; value: React.ReactNode; sub?: React.ReactNode }> = ({ label, value, sub }) => (
   <div className="bg-rw-bg border border-rw-border rounded-lg px-3 py-2 min-w-0">
     <div className="text-[10px] text-rw-muted font-semibold truncate">{label}</div>
-    <div className="text-base font-bold text-rw-text truncate">{value}</div>
+    <div className="text-base font-bold text-rw-text truncate tabular-nums">{value}</div>
     {sub && (
       <div className="text-[10px] text-rw-sub line-clamp-2" title={typeof sub === "string" ? sub : undefined}>
         {sub}

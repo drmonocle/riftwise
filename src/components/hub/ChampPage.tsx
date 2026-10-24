@@ -126,7 +126,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               .map((r) => `${roleName(r.r)} ${Math.round((r.p / totalRoles) * 100)}%`)
               .join(" · ")}
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 rw-stats mt-3">
             <Stat label={tl("Picks")} value={fmtNum(c.p)} />
             <Stat label={tl("Bans")} value={fmtNum(c.b)} />
             <Stat label={tl("Win %")} value={winRate(c.w, c.p)} />

@@ -66,7 +66,7 @@ export const PlayerEarly: React.FC<{
   return (
     <div className="space-y-1">
       <Sub>{tl("Early game")}</Sub>
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-5 rw-stats">
         <Stat
           label="GD@10"
           value={signed(t.gd10)}
@@ -115,7 +115,7 @@ export const TeamEarly: React.FC<{ t: TeamAgg }> = ({ t: agg }) => {
   return (
     <div className="space-y-1">
       <Sub>{tl("Early game")}</Sub>
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-5 rw-stats">
         <Stat
           label="GD@15"
           value={signed(t.gd15)}
@@ -530,7 +530,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-5 rw-stats">
             <Stat
               label={tl("Games")}
               value={`${agg.w}-${agg.g - agg.w}`}
@@ -689,7 +689,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: { name
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-5 rw-stats">
             <Stat
               label={tl("Games")}
               value={`${t.w}-${t.g - t.w}`}

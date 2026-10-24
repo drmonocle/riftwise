@@ -409,6 +409,21 @@
     font-family: var(--font-head);
   }
 }
+/* a grid of headline numbers (Stat tiles): one flush block with hairlines between the tiles, not separate boxes
+   (a lone tile keeps its own border) */
+.rw-stats {
+  gap: 0;
+  border-left: 1px solid var(--rw-border);
+  border-top: 1px solid var(--rw-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.rw-stats > * {
+  border: 0;
+  border-right: 1px solid var(--rw-border);
+  border-bottom: 1px solid var(--rw-border);
+  border-radius: 0;
+}
 /* numbers that line up (tables, scores, stats) in the monospace face */
 .tabular-nums {
   font-family: var(--font-num);
