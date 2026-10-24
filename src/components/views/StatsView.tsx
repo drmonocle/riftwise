@@ -99,6 +99,9 @@ interface MenuItem {
   icon: React.ReactNode;
 }
 /** The stats menu: groups on the first row, the open group's pages on the second. */
+/** pages whose own title is their <h1> (the others get the "Pro stats" header as theirs) */
+const OWN_H1 = new Set(["home", "worlds", "msi", "first-stand", "rankings", "records", "prep", "draft", "finder", "best", "counters", "team", "player", "event", "champ", "league", "match", "aboutme"]);
+
 const GROUPS: { label: string; icon: React.ReactNode; items: MenuItem[] }[] = [
   { label: tk("Home"), icon: <Home className="w-3.5 h-3.5" />, items: [{ kind: "home", label: tk("Home"), icon: <Home className="w-3.5 h-3.5" /> }] },
   {
@@ -190,6 +193,9 @@ export const StatsView: React.FC<StatsViewProps> = ({
   }, [route]);
 
   const isSection = SECTIONS.some((s) => s.kind === route.kind);
+  // pages without a title heading of their own: the "Pro stats" header is their <h1>, with the page's name
+  const ownTitle = !OWN_H1.has(route.kind);
+  const sectionName = GROUPS.flatMap((g) => g.items).find((it) => it.kind === route.kind)?.label || (route.kind === "about" ? tk("About") : "");
   const group = GROUPS.find((g) => g.items.some((i) => i.kind === route.kind));
   const pillClass = (on: boolean) =>
     `flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors shrink-0 whitespace-nowrap ${
@@ -208,9 +214,16 @@ export const StatsView: React.FC<StatsViewProps> = ({
         className="p-4 space-y-4 page-5xl overflow-y-auto h-full"
       >
         <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-rw-border">
-          <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-2">
-            <BarChart3 className="w-4 h-4" /> {tl("Pro Stats")}
-          </h2>
+          {ownTitle ? (
+            <h1 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" /> {tl("Pro Stats")}
+              {sectionName && <span className="text-rw-text">· {tl(sectionName)}</span>}
+            </h1>
+          ) : (
+            <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" /> {tl("Pro Stats")}
+            </h2>
+          )}
           {hubMeta.data && (
             <span className="text-[11px] text-rw-muted">
               {tl("{n} pro games · {from}–{to} · updated through the day", {

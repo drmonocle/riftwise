@@ -406,7 +406,7 @@ const Board: React.FC<{
       <div className={`${card} flex flex-wrap items-center justify-between gap-2`}>
         <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-wider font-bold text-rw-accent">{tl("Draft board")}</div>
-          <h2 className="text-lg font-bold truncate">
+          <h1 className="text-lg font-bold truncate">
             <HubLink to={{ kind: "team", slug: blue.team.u }} className="text-rw-teal">
               {blue.team.name}
             </HubLink>
@@ -414,7 +414,7 @@ const Board: React.FC<{
             <HubLink to={{ kind: "team", slug: red.team.u }} className="text-rw-red">
               {red.team.name}
             </HubLink>
-          </h2>
+          </h1>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-rw-muted">{tl("Pools from")}</span>

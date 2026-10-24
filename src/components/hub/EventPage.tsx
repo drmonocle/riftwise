@@ -63,7 +63,7 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
             {tl("Part of")} <EventLink name={e.parent.n} u={e.parent.u} className="text-rw-accent hover:underline" />
           </p>
         )}
-        <h2 className="text-lg font-bold text-rw-text">{e.n}</h2>
+        <h1 className="text-lg font-bold text-rw-text">{e.n}</h1>
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-rw-sub mt-1">
           {(e.start || e.end) && (
             <span className="flex items-center gap-1">

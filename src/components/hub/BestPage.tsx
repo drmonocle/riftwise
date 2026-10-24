@@ -107,7 +107,7 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
   return (
     <div className="space-y-3">
       <div className={card}>
-        <h2 className="text-lg font-bold text-rw-text">{tl("Best games")}</h2>
+        <h1 className="text-lg font-bold text-rw-text">{tl("Best games")}</h1>
         <p className="text-[11px] text-rw-sub mt-1 leading-relaxed">
           {tl(
             "Every pro game since 2011 rated from 0 to 100: action and pace, how close it was, its length, what was at stake (a Worlds final counts most), the series drama (a deciding game 5), comebacks and rivalries.",

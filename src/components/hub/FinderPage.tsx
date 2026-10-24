@@ -130,9 +130,9 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
   return (
     <div className="space-y-3">
       <div className={`${card} space-y-2 text-xs`}>
-        <h2 className="text-base font-bold text-rw-text">
+        <h1 className="text-base font-bold text-rw-text">
           {tl("Game finder")}
-        </h2>
+        </h1>
         <p className="text-rw-sub">
           {tl(
             'Find games by team, champion, player, side, result, patch and length. Conditions are about one team in the game: "T1 on red with Azir, against Orianna, lost".',

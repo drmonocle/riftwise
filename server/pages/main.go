@@ -17,6 +17,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -31,10 +32,11 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 const (
-	version  = "1.15.0"
+	version  = "1.16.0"
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -107,6 +109,69 @@ type store struct {
 	indexHTML string
 	indexMod  time.Time
 	checked   time.Time
+}
+
+// IndexNow: after a new stats build, the pages that are new or changed are reported to the search engines that take
+// it (Bing, Yandex, Naver, Seznam; DuckDuckGo, Yahoo and Ecosia show Bing's index) instead of waiting for their
+// crawlers. The key is public by design: the site serves it as <publicURL><indexNowKey>.txt (web/ in the app).
+const indexNowKey = "8857f591ec7075047cd40b758014ae0c"
+
+// indexNowOn: set by main (-indexnow); off in tests, so they never call out.
+var indexNowOn bool
+
+func indexNow(urls []string) {
+	if !indexNowOn || len(urls) == 0 {
+		return
+	}
+	if len(urls) > 10000 { // the most one request takes
+		urls = urls[:10000]
+	}
+	host := strings.TrimSuffix(publicURL[strings.Index(publicURL, "://")+3:], publicPath)
+	body, err := json.Marshal(map[string]any{"host": host, "key": indexNowKey, "keyLocation": publicURL + indexNowKey + ".txt", "urlList": urls})
+	if err != nil {
+		return
+	}
+	go func() {
+		c := &http.Client{Timeout: 30 * time.Second}
+		resp, err := c.Post("https://api.indexnow.org/indexnow", "application/json; charset=utf-8", bytes.NewReader(body))
+		if err != nil {
+			log.Printf("indexnow: %v", err)
+			return
+		}
+		resp.Body.Close()
+		log.Printf("indexnow: %d pages sent, answer %d", len(urls), resp.StatusCode)
+	}()
+}
+
+// changedPages: the addresses of pages that are new or whose title / description / summary changed since the last
+// build this service loaded (the sections when it has none yet, after a restart).
+func (s *store) changedPages(pages map[string]map[string]entry, intl map[string]intlPage) []string {
+	var out []string
+	if s.version == "" {
+		for sec := range sections {
+			if sec == "" {
+				out = append(out, publicURL+"stats")
+			} else {
+				out = append(out, publicURL+"stats/"+sec)
+			}
+		}
+	} else {
+		for kind, m := range pages {
+			old := s.pages[kind]
+			for slug, e := range m {
+				if o, ok := old[slug]; e.index && (!ok || o != e) {
+					out = append(out, publicURL+kindPath[kind]+"/"+slug)
+				}
+			}
+		}
+		for k, ip := range intl {
+			if o, ok := s.intl[k]; !ok || o.Title != ip.Title || o.Desc != ip.Desc || o.HTML != ip.HTML {
+				out = append(out, publicURL+"stats/"+k)
+			}
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 func (s *store) refresh() {
@@ -183,6 +248,7 @@ func (s *store) refresh() {
 			}
 		}
 	}
+	indexNow(s.changedPages(pages, intl))
 	s.pages, s.order, s.alias, s.version, s.intl = pages, order, alias, latest.Version, intl
 	log.Printf("stats %s loaded: %d teams, %d players, %d events, %d matches, %d champions, %d leagues",
 		latest.Version, len(pages["team"]), len(pages["player"]), len(pages["event"]), len(pages["game"]), len(pages["champ"]), len(pages["league"]))
@@ -234,6 +300,70 @@ func withAbout(m map[string]any, about map[string]any) map[string]any {
 	return m
 }
 
+// maxTitle: search results cut longer titles, and Bing's site scan flags them.
+const maxTitle = 65
+
+const brand = " | RiftWise"
+
+var reNote = regexp.MustCompile(`\s*\([^()]*\)`)
+
+// fitTitle keeps a page title within maxTitle characters, losing the least useful part first: Leaguepedia's notes
+// ("ACL eSports (Spanish Team)"), then the part after " – " when what comes before it says enough (else the end of
+// that part, cut at a word), then the brand, and as a last resort the end of the title.
+func fitTitle(title string) string {
+	n := utf8.RuneCountInString
+	if n(title) <= maxTitle {
+		return title
+	}
+	body := strings.TrimSuffix(title, brand)
+	hasBrand := body != title
+	body = strings.TrimSpace(reNote.ReplaceAllString(body, ""))
+	room := maxTitle
+	if hasBrand {
+		room -= n(brand)
+	}
+	if n(body) > room {
+		if i := strings.Index(body, " – "); i > 0 {
+			head, tail := body[:i], body[i+len(" – "):]
+			body = head
+			if n(head) < 30 {
+				if t := cutWords(tail, room-n(head)-3); t != "" {
+					body = head + " – " + t
+				}
+			}
+		}
+	}
+	if n(body) > room && hasBrand {
+		hasBrand, room = false, maxTitle
+	}
+	if n(body) > room {
+		body = cutWords(body, room-1) + "…"
+	}
+	if hasBrand {
+		return body + brand
+	}
+	return body
+}
+
+// cutWords shortens s to at most max characters at a word break (and drops a dangling separator).
+func cutWords(s string, max int) string {
+	r := []rune(s)
+	if max <= 0 {
+		return ""
+	}
+	if len(r) <= max {
+		return s
+	}
+	cut := string(r[:max])
+	if r[max] == ' ' {
+		return strings.TrimRight(cut, " –-:,·")
+	}
+	if i := strings.LastIndex(cut, " "); i > 0 {
+		cut = cut[:i]
+	}
+	return strings.TrimRight(cut, " –-:,·")
+}
+
 func (s *store) page(title, desc, canonical string, index bool, og string, about map[string]any, extra *intlPage) string {
 	s.mu.RLock()
 	doc, ver := s.indexHTML, s.version
@@ -242,7 +372,8 @@ func (s *store) page(title, desc, canonical string, index bool, og string, about
 		return ""
 	}
 	t, d, c := html.EscapeString(title), html.EscapeString(desc), html.EscapeString(canonical)
-	doc = reTitle.ReplaceAllLiteralString(doc, "<title>"+t+"</title>")
+	// the <title> is kept short for search results; link previews (og / twitter) show the whole one
+	doc = reTitle.ReplaceAllLiteralString(doc, "<title>"+html.EscapeString(fitTitle(title))+"</title>")
 	doc = reDesc.ReplaceAllLiteralString(doc, `<meta name="description" content="`+d+`" />`)
 	doc = reSiteTags.ReplaceAllLiteralString(doc, "")
 	doc = reNoscript.ReplaceAllLiteralString(doc, "")
@@ -285,7 +416,10 @@ func (s *store) page(title, desc, canonical string, index bool, og string, about
 	tags.WriteString("  </head>")
 	doc = strings.Replace(doc, "</head>", tags.String(), 1)
 	var ns strings.Builder
-	ns.WriteString(`<div id="root"></div><noscript><main><h1>` + t + `</h1><p>` + d + `</p>`)
+	// the page's main heading in the page itself (crawlers skip <noscript>); the app replaces it once it starts
+	h1 := html.EscapeString(strings.TrimSuffix(title, brand))
+	ns.WriteString(`<div id="root"><h1 style="font:600 16px system-ui,sans-serif;color:#c8aa6e;margin:16px">` + h1 + `</h1></div>`)
+	ns.WriteString(`<noscript><main><p><strong>` + t + `</strong></p><p>` + d + `</p>`)
 	if extra != nil {
 		ns.WriteString(extra.HTML) // built and escaped by the stats build
 	}
@@ -490,6 +624,7 @@ func main() {
 	public := flag.String("public", "https://riftwise.gg/", "the site's public address")
 	addr := flag.String("addr", "127.0.0.1:8093", "listen address (IIS forwards to it)")
 	logDir := flag.String("logs", "", "folder for pages.log (default: log to the console)")
+	flag.BoolVar(&indexNowOn, "indexnow", true, "report new and changed pages to IndexNow after each stats build")
 	flag.Parse()
 	if *logDir != "" {
 		os.MkdirAll(*logDir, 0o755)

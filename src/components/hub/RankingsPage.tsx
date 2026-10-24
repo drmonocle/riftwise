@@ -181,9 +181,9 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
   return (
     <div className="space-y-3">
       <div className={`${card} space-y-2 text-xs`}>
-        <h2 className="text-base font-bold text-rw-text">
+        <h1 className="text-base font-bold text-rw-text">
           {tl("Power rankings")}
-        </h2>
+        </h1>
         <p className="text-rw-sub">
           {tl(
             "Every active pro team on one scale, across all regions. Ratings come from every pro game since 2011: beating a strong team moves you up more than beating a weak one, and international events are what compare the regions.",

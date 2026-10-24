@@ -174,10 +174,10 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-lg font-extrabold text-rw-text flex items-center gap-2 mr-auto">
+        <h1 className="text-lg font-extrabold text-rw-text flex items-center gap-2 mr-auto">
           <Trophy className="w-5 h-5 text-rw-accent" />
           {title}
-        </h2>
+        </h1>
         {d && (
           <label className="text-xs text-rw-sub flex items-center gap-1.5">
             {tl("Year")}

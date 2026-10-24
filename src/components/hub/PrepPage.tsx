@@ -397,11 +397,11 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
       <div className={`${card} flex flex-wrap items-center justify-between gap-2`}>
         <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-wider font-bold text-rw-accent">{tl("Match prep")}</div>
-          <h2 className="text-lg font-bold text-rw-text truncate">
+          <h1 className="text-lg font-bold text-rw-text truncate">
             <HubLink to={{ kind: "team", slug: a.team.u }}>{a.team.name}</HubLink>
             <span className="text-rw-muted font-normal"> vs </span>
             <HubLink to={{ kind: "team", slug: b.team.u }}>{b.team.name}</HubLink>
-          </h2>
+          </h1>
           {/* only in the copied picture, where the controls are left out */}
           <div className="rw-capture-only text-[11px] text-rw-sub gap-1">
             {periodLabel} · {new Date().toISOString().slice(0, 10)} · RiftWise Pro Stats · riftwise.gg

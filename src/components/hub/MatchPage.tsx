@@ -78,17 +78,18 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
             </HubLink>
           )}
         </div>
-        <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <div className="text-right min-w-0">
+        {/* the page's main heading: both teams and the score */}
+        <h1 className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <span className="block text-right min-w-0">
             <TeamLink name={s.a.n} u={s.a.u} className={`text-base sm:text-lg font-bold hover:underline ${!hidden && s.w === 1 ? "text-rw-teal" : "text-rw-text"}`} />
-          </div>
-          <div className="text-2xl font-black text-rw-text tabular-nums text-center min-w-[4.5rem]">
+          </span>
+          <span className="block text-2xl font-black text-rw-text tabular-nums text-center min-w-[4.5rem]">
             {scoreA} <span className="text-rw-muted/60">–</span> {scoreB}
-          </div>
-          <div className="min-w-0">
+          </span>
+          <span className="block min-w-0">
             <TeamLink name={s.b.n} u={s.b.u} className={`text-base sm:text-lg font-bold hover:underline ${!hidden && s.w === 2 ? "text-rw-teal" : "text-rw-text"}`} />
-          </div>
-        </div>
+          </span>
+        </h1>
         {hidden && (
           <div className="mt-2 text-center">
             <RevealButton onReveal={reveal} />

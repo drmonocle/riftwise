@@ -102,7 +102,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
       <div className={`${card} flex gap-3 items-start`}>
         <ChampIcon name={c.name} size={56} />
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-bold text-rw-text">{champName(c.name)}</h2>
+          <h1 className="text-lg font-bold text-rw-text">{champName(c.name)}</h1>
         <CountersLink slug={c.u} className="inline-block text-[11px] text-rw-teal hover:underline font-semibold" />
           <p className="text-[11px] text-rw-sub">
             {c.roles

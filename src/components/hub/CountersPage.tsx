@@ -68,7 +68,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   return (
     <div className="rw-page">
       <div className={`${card} space-y-2`}>
-        <h2 className="text-lg font-bold text-rw-text">{tl("Counter-pick finder")}</h2>
+        <h1 className="text-lg font-bold text-rw-text">{tl("Counter-pick finder")}</h1>
         <p className="text-[11px] text-rw-sub">
           {tl("Pick a champion: every lane opponent pro play has put against it, with its win rate and gold lead at 15 minutes in that matchup. Same role on each side; every pro game with known roles since 2011.")}
         </p>

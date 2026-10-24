@@ -90,14 +90,14 @@ const PlayerView: React.FC<{
         <div className="flex items-start gap-3">
           <PlayerPhoto name={p.name} team={p.club} slug={p.u} img={p.img} sizeClass="w-14 h-14 lg:w-20 lg:h-20 2xl:w-24 2xl:h-24" />
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-bold text-rw-text">
+            <h1 className="text-lg font-bold text-rw-text">
               {p.name}
               {p.bio.native && (
                 <span className="text-rw-sub text-sm font-semibold ml-2">
                   {p.bio.native}
                 </span>
               )}
-            </h2>
+            </h1>
             <p className="text-[11px] text-rw-sub">
               {[
                 roleName(p.role),
