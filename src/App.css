@@ -18,6 +18,10 @@
   --color-rw-red: var(--rw-red);
 }
 
+/* light:... applies on the light theme only: for the few fixed brand colours (Twitch, YouTube) that need a darker
+   shade to read on its pale background */
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+
 /* Faces and corners (every theme). System fonts only, nothing to download: headings in one condensed face (font-head),
    numbers in a monospace face with even-width digits so columns line up (font-num, and every tabular-nums). Corners
    nearly square, so sections read as flat panels with hairline edges, not floating rounded cards (rounded-full stays

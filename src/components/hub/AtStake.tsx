@@ -60,7 +60,8 @@ function matchLines(
   return lines;
 }
 
-export const AtStakeToday: React.FC<{ schedule: Match[] }> = ({ schedule }) => {
+/** `narrow`: one column of the next three matches (the Live tab's side column). */
+export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = ({ schedule, narrow }) => {
   const upcoming = useMemo(() => {
     const now = Date.now();
     return schedule
@@ -103,7 +104,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[] }> = ({ schedule }) => {
   const blocks = upcoming
     .map((m) => ({ m, lines: matchLines(m, data.index, data.stakes) }))
     .filter((x) => x.lines.length)
-    .slice(0, cols * 4);
+    .slice(0, narrow ? 3 : cols * 4);
   if (!blocks.length) return null;
   const time = (iso: string) =>
     new Date(iso).toLocaleTimeString(locale(), {
@@ -119,7 +120,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[] }> = ({ schedule }) => {
       <p className="text-[11px] text-rw-muted">
         {tl("Milestones and streaks for the matches in the next 24 hours.")}
       </p>
-      <div className={`${GRID_COLS} gap-x-6 gap-y-3 items-start`}>
+      <div className={`${narrow ? "grid" : GRID_COLS} gap-x-6 gap-y-3 items-start`}>
         {blocks.map(({ m, lines }) => (
           <div key={m.matchId} className="space-y-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs border-b border-rw-border pb-1">

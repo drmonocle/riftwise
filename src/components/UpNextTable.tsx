@@ -14,7 +14,8 @@ import { AddToCalendarMenu } from "./AddToCalendarMenu";
 import { MatchPrepButton } from "./MatchPrepButton";
 import { MatchOverviewButton } from "./MatchOverviewButton";
 
-const GRID = "sm:grid sm:grid-cols-[5.5rem_minmax(0,1fr)_8.5rem_3.5rem_5.25rem_2.25rem_8.5rem_auto] sm:items-center sm:gap-x-3";
+// the one-line layout once the table itself is 900 px wide; below that two or three lines a match
+const GRID = "@min-[900px]:grid @min-[900px]:grid-cols-[5.5rem_minmax(0,1fr)_8.5rem_3.5rem_5.25rem_2.25rem_8.5rem_auto] @min-[900px]:items-center @min-[900px]:gap-x-3";
 
 export const UpNextTable: React.FC<{
   matches: Match[];
@@ -26,7 +27,7 @@ export const UpNextTable: React.FC<{
   onToggleFollow?: (code: string) => void;
   timeOf: (iso: string) => string;
 }> = ({ matches, schedule, settings, onOpenUrl, onSelectTeam, onToggleFollow, timeOf }) => (
-  <div className="rounded-lg border border-rw-border bg-rw-surface text-xs divide-y divide-rw-border/70">
+  <div className="@container rounded-lg border border-rw-border bg-rw-surface text-xs divide-y divide-rw-border/70">
     <div className={`hidden ${GRID} px-3 py-1.5 text-[10px] uppercase tracking-wider text-rw-muted`}>
       <span>{tl("League")}</span>
       <span>{tl("Match")}</span>
@@ -62,8 +63,8 @@ const UpNextRow: React.FC<{
           className="font-semibold text-rw-text hover:text-rw-accent cursor-pointer truncate"
           title={tl("View {team} roster", { team: name })}
         >
-          <span className="sm:hidden">{code}</span>
-          <span className="max-sm:hidden">{name}</span>
+          <span className="@min-[480px]:hidden">{code}</span>
+          <span className="@max-[480px]:hidden">{name}</span>
         </span>
         {onToggleFollow && (
           <button
@@ -84,29 +85,29 @@ const UpNextRow: React.FC<{
   };
   return (
     <div className={`px-3 py-2 ${GRID} flex flex-wrap items-center gap-x-3 gap-y-1`}>
-      <span className="font-bold text-rw-teal text-[11px] truncate min-w-0 max-sm:flex-1" title={m.leagueName}>
+      <span className="font-bold text-rw-teal text-[11px] truncate min-w-0 @max-[900px]:flex-1" title={m.leagueName}>
         {m.leagueName}
       </span>
-      <span className="flex items-center gap-1.5 min-w-0 max-sm:order-last max-sm:basis-full">
+      <span className="flex items-center gap-1.5 min-w-0 @max-[900px]:order-last @max-[900px]:basis-full">
         {team(m.team1Code, m.team1Name)}
         <span className="text-rw-sub shrink-0">{tl("vs")}</span>
         {team(m.team2Code, m.team2Name)}
       </span>
-      <span className="max-sm:order-last max-sm:basis-full sm:contents">
-        <span className="max-sm:flex max-sm:items-center max-sm:gap-3">
+      <span className="@max-[900px]:order-last @max-[900px]:basis-full @min-[900px]:contents">
+        <span className="@max-[900px]:flex @max-[900px]:items-center @max-[900px]:gap-3">
           <ChanceCell m={m} />
-          <span className="sm:hidden font-mono tabular-nums text-rw-sub text-[10px]" title={tl("All-time head-to-head, in games")}>
+          <span className="@min-[900px]:hidden font-mono tabular-nums text-rw-sub text-[10px]" title={tl("All-time head-to-head, in games")}>
             {h2h ? `H2H ${h2h.team1Wins}–${h2h.team2Wins}` : ""}
           </span>
-          <span className="sm:hidden">
+          <span className="@min-[900px]:hidden">
             <FormCell m={m} schedule={schedule} hidden={settings.spoilerMode} />
           </span>
         </span>
       </span>
-      <span className="max-sm:hidden font-mono tabular-nums text-rw-sub text-[11px]" title={tl("All-time head-to-head, in games")}>
+      <span className="@max-[900px]:hidden font-mono tabular-nums text-rw-sub text-[11px]" title={tl("All-time head-to-head, in games")}>
         {h2h ? `${h2h.team1Wins}–${h2h.team2Wins}` : "–"}
       </span>
-      <span className="max-sm:hidden">
+      <span className="@max-[900px]:hidden">
         <FormCell m={m} schedule={schedule} hidden={settings.spoilerMode} />
       </span>
       <span className="text-rw-sub text-[11px] font-medium shrink-0">{tc("short best of", "Bo{n}", { n: m.bestOf })}</span>
@@ -123,7 +124,7 @@ const UpNextRow: React.FC<{
 /** Team 1's chance (left, teal) and team 2's (right) to win the series. */
 const ChanceCell: React.FC<{ m: Match }> = ({ m }) => {
   const r = useMatchRatings(m);
-  if (r?.series == null) return <span className="text-rw-muted max-sm:hidden">–</span>;
+  if (r?.series == null) return <span className="text-rw-muted @max-[900px]:hidden">–</span>;
   const a = Math.round(r.series * 100);
   return (
     <span className="flex items-center gap-1.5 min-w-[7rem]" title={tl("Chance to win the series, from the power rankings (every pro game since 2011)")}>
