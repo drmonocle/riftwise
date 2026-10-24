@@ -169,13 +169,14 @@ const Bars: React.FC<{
     pct: number;
   }[];
 }> = ({ rows }) => (
+  // long names ("Gold lead over the lane opponent at 15 minutes") wrap onto a second line instead of being cut
   <ul className="space-y-1.5 text-xs">
     {rows.map((r) => (
       <li
         key={r.label}
-        className="grid grid-cols-[minmax(7rem,10rem)_1fr_auto] items-center gap-2 min-w-0"
+        className="grid grid-cols-[minmax(7rem,14rem)_1fr_auto] items-center gap-2 min-w-0"
       >
-        <span className="text-rw-sub truncate" title={r.label}>
+        <span className="text-rw-sub leading-tight break-words min-w-0" title={r.label}>
           {r.label}
         </span>
         <span className="h-2 rounded bg-rw-border overflow-hidden">

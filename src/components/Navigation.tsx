@@ -24,7 +24,7 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onSelectTab, 
     { key: "stats", label: tl("Stats"), short: tc("short tab", "Stats"), icon: <BarChart3 className="w-4 h-4" /> },
     { key: "stream", label: tl("24/7 Stream"), short: tc("short tab", "24/7"), icon: <Radio className="w-4 h-4" /> },
     { key: "watchlist", label: tl("Watchlist"), short: tc("short tab", "Follow"), icon: <Star className="w-4 h-4" /> },
-    { key: "news", label: tl("Dispatch"), short: tc("short tab", "News"), icon: <Newspaper className="w-4 h-4" /> },
+    { key: "news", label: tc("short tab", "News"), short: tc("short tab", "News"), icon: <Newspaper className="w-4 h-4" /> },
     { key: "settings", label: tl("Settings"), short: tc("short tab", "Settings"), icon: <Settings className="w-4 h-4" /> },
   ];
 

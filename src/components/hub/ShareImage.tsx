@@ -78,7 +78,7 @@ export const CopyPageImage: React.FC<{ target: React.RefObject<HTMLElement | nul
         type="button"
         onClick={() => run(false)}
         disabled={state === "busy"}
-        className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-teal hover:underline disabled:opacity-50"
+        className="flex items-center gap-1 min-h-8 max-sm:min-h-9 px-1.5 rounded text-rw-teal hover:underline disabled:opacity-50"
         title={tl("Copy this whole page as a picture, to paste into Discord, X or a broadcast graphic")}
         aria-label={iconOnly ? tl("Copy as an image") : undefined}
       >
@@ -96,7 +96,7 @@ export const CopyPageImage: React.FC<{ target: React.RefObject<HTMLElement | nul
               : tl("Copy as an image")}
       </button>
       {IS_WEB && (
-        <button type="button" onClick={() => run(true)} disabled={state === "busy"} className="text-rw-teal hover:text-rw-text disabled:opacity-50" title={tl("Save as an image")} aria-label={tl("Save as an image")}>
+        <button type="button" onClick={() => run(true)} disabled={state === "busy"} className="min-h-8 max-sm:min-h-9 max-sm:min-w-9 flex items-center justify-center text-rw-teal hover:text-rw-text disabled:opacity-50" title={tl("Save as an image")} aria-label={tl("Save as an image")}>
           <ImageDown className="w-3.5 h-3.5" />
         </button>
       )}
@@ -140,10 +140,10 @@ export const ShareButtons: React.FC<{ target: React.RefObject<HTMLElement | null
       flash("failed");
     }
   };
-  // bigger on touch screens (a finger needs ~32px), compact with a mouse
-  const btn = "p-1 pointer-coarse:min-h-8 pointer-coarse:min-w-8 flex items-center justify-center rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-line disabled:opacity-50";
+  // bigger on touch screens and phones (36 px for a finger), compact with a mouse
+  const btn = "p-1 pointer-coarse:min-h-9 pointer-coarse:min-w-9 max-sm:min-h-9 max-sm:min-w-9 flex items-center justify-center rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-line disabled:opacity-50";
   return (
-    <span data-nocapture="1" className="flex items-center gap-1 shrink-0">
+    <span data-nocapture="1" className="flex items-center gap-1 max-sm:gap-2 shrink-0">
       {state === "copied" && <span className="text-[10px] text-rw-teal">{tl("Copied")}</span>}
       {state === "failed" && <span className="text-[10px] text-rw-red">{tl("Couldn't make the image")}</span>}
       <button type="button" onClick={copy} disabled={state === "busy"} className={btn} title={tl("Copy as an image")} aria-label={tl("Copy as an image")}>

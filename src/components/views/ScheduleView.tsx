@@ -100,6 +100,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     onUpdateSettings({ followedTeams: next });
   };
 
+  // the countdowns on upcoming matches move on once a minute
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = window.setInterval(() => setTick((x) => x + 1), 60000);
+    return () => window.clearInterval(t);
+  }, []);
+
   const now = new Date();
   const todayStr = now.toDateString();
   const playerTeams = followedOnly ? followedPlayerTeams(settings.followedPlayers, catalog) : [];
@@ -139,7 +146,31 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     const d = new Date(a.startTimeUtc).getTime() - new Date(b.startTimeUtc).getTime();
     return filterRange === "results" ? -d : d;
   });
-  const dayOf = (iso: string) => {
+  // every row of the same league (a Worlds day): phones drop the repeated name
+  const oneLeague = new Set(filtered.map((m) => m.leagueName)).size === 1;
+  // tomorrow's "TBD vs TBD" slots: one line per run of them instead of a tile each
+  const isTbd = (m: Match) => m.state === "unstarted" && m.team1Code.toUpperCase() === "TBD" && m.team2Code.toUpperCase() === "TBD";
+  const tbdRuns = new Map<string, number>();
+  const tbdHidden = new Set<string>();
+  filtered.forEach((m, i) => {
+    if (!isTbd(m)) return;
+    const prev = filtered[i - 1];
+    if (prev && isTbd(prev) && dayOf(prev.startTimeUtc) === dayOf(m.startTimeUtc)) {
+      tbdHidden.add(m.matchId);
+      let j = i - 1;
+      while (tbdHidden.has(filtered[j].matchId)) j--;
+      tbdRuns.set(filtered[j].matchId, (tbdRuns.get(filtered[j].matchId) || 1) + 1);
+    } else tbdRuns.set(m.matchId, 1);
+  });
+  /** "in 2h 15m" for a match starting within a day, null after that */
+  const untilText = (iso: string) => {
+    const ms = new Date(iso).getTime() - Date.now();
+    if (isNaN(ms) || ms > 86400000) return null;
+    if (ms <= 0) return tl("Starting soon");
+    const mins = Math.ceil(ms / 60000);
+    return mins < 60 ? tl("in {m} min", { m: mins }) : tl("in {h}h {m}m", { h: Math.floor(mins / 60), m: mins % 60 });
+  };
+  function dayOf(iso: string) {
     if (!iso) return tl("Date to be announced");
     const d = new Date(iso);
     const days = Math.round(
@@ -151,10 +182,11 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     if (days === 1) return tl("Tomorrow");
     if (days === -1) return tl("Yesterday");
     return d.toLocaleDateString(locale(), { weekday: "long", month: "short", day: "numeric" });
-  };
+  }
 
   return (
-    <div className="p-4 space-y-4 page-4xl rw-capped overflow-y-auto h-full select-none">
+    <div className="p-4 space-y-4 page-5xl rw-capped overflow-y-auto h-full select-none">
+      <h1 className="sr-only">{tl("Schedule")}</h1>
       {/* Top Segmented Control: Schedule vs Standings */}
       <div className="flex items-center justify-between pb-2 border-b border-rw-border">
         <div className="flex items-center gap-1.5 bg-rw-deep p-1 rounded-lg border border-rw-border">
@@ -265,6 +297,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 const isLive = m.state === "inProgress";
                 const showScore = (m.state === "completed" || isLive) && (!settings.spoilerMode || shown);
                 const h2h = computeHeadToHead(m.team1Code, m.team2Code, schedule, m.matchId, showScore);
+                const tbdCount = tbdRuns.get(m.matchId) || 0;
 
                 return (
                   <React.Fragment key={m.matchId}>
@@ -274,6 +307,12 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       <span className="flex-1 h-px bg-rw-border" />
                     </div>
                   )}
+                  {tbdCount > 1 ? (
+                    <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border border-dashed border-rw-border text-xs text-rw-sub">
+                      <span className="font-mono text-rw-teal font-bold">{timeStr}</span>
+                      <span>{tl("{n} matches to be decided", { n: tbdCount })}</span>
+                    </div>
+                  ) : tbdHidden.has(m.matchId) ? null : (
                   <div
                     id={`match-${m.matchId}`}
                     onClick={(e) => {
@@ -290,12 +329,18 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     }`}
                   >
                     {/* Time, Calendar & League */}
-                    <div className="flex items-center gap-2 min-w-0 sm:w-44 shrink sm:shrink-0 order-1">
+                    <div className="flex items-center gap-2 min-w-0 sm:w-56 lg:w-72 shrink sm:shrink-0 order-1">
                       <span className="font-mono text-xs text-rw-teal font-bold shrink-0">{timeStr}</span>
                       {m.state === "unstarted" && <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />}
                       {m.state !== "completed" && <MatchPrepButton match={m} compact />}
                       {m.state !== "completed" && <MatchOverviewButton match={m} compact />}
-                      <span className="text-[11px] text-rw-sub truncate font-medium">{m.leagueName}</span>
+                      <span
+                        className={`text-[11px] text-rw-sub truncate font-medium ${oneLeague ? "max-sm:hidden" : ""}`}
+                        title={m.blockName ? `${m.leagueName} · ${m.blockName}` : m.leagueName}
+                      >
+                        {m.leagueName}
+                        {m.blockName && <span className="hidden lg:inline text-rw-muted"> · {m.blockName}</span>}
+                      </span>
                     </div>
 
                     {/* Teams & Score */}
@@ -363,8 +408,11 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                             <span className="text-rw-sub font-medium">{tl("VS")}</span>
                           )}
                         </div>
+                        <span className="sm:hidden text-[10px] text-rw-muted">{tc("short best of", "Bo{n}", { n: m.bestOf })}</span>
                         {(showScore || m.state !== "completed") && h2h && (
+                          <div className="max-sm:hidden">
                           <H2HMeter team1Code={m.team1Code} team2Code={m.team2Code} h2h={h2h} matchId={m.matchId} countThisMatch={showScore} />
+                          </div>
                         )}
                       </div>
 
@@ -403,9 +451,12 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     </div>
 
                     {/* Status / Best Of */}
-                    <div className="flex items-center gap-2 sm:w-32 justify-end shrink-0 ml-auto sm:ml-0 order-2 sm:order-3">
-                      <ShareMatchButton match={m} />
-                      <span className="text-[10px] text-rw-sub bg-rw-bg px-2 py-0.5 rounded border border-rw-border font-medium">
+                    <div className="flex items-center gap-2 sm:w-40 justify-end shrink-0 ml-auto sm:ml-0 order-2 sm:order-3">
+                      {/* phones: just the status here, so the row fits on two lines (best-of moves under VS) */}
+                      <span className="max-sm:hidden">
+                        <ShareMatchButton match={m} />
+                      </span>
+                      <span className="max-sm:hidden text-[10px] text-rw-sub bg-rw-bg px-2 py-0.5 rounded border border-rw-border font-medium">
                         {tc("short best of", "Bo{n}", { n: m.bestOf })}
                       </span>
                       {m.state === "completed" ? (
@@ -425,10 +476,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           {tl("LIVE")}
                         </span>
                       ) : (
-                        <span className="text-[10px] text-rw-accent font-semibold">{tl("UPCOMING")}</span>
+                        <span className="text-[10px] text-rw-accent font-semibold whitespace-nowrap" title={m.blockName || undefined}>
+                          {untilText(m.startTimeUtc) || m.blockName || tl("UPCOMING")}
+                        </span>
                       )}
                     </div>
                   </div>
+                  )}
                   </React.Fragment>
                 );
               })}

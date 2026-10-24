@@ -39,7 +39,7 @@ export const LanguageFlag: React.FC<{ onUpdateSettings: (s: Partial<AppSettings>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center justify-center h-7 w-7 rounded hover:bg-rw-raised transition-colors"
+        className="flex items-center justify-center h-7 w-7 max-sm:h-9 rounded hover:bg-rw-raised transition-colors"
         aria-label={tl("Language")}
         aria-haspopup="listbox"
         aria-expanded={open}

@@ -239,13 +239,13 @@ export const BroadcastCardButton: React.FC<{ data: () => CardData; name: string;
         onClick={() => start(false)}
         disabled={state === "busy"}
         className={`flex items-center gap-1 rounded border border-rw-border text-rw-teal hover:border-rw-accent disabled:opacity-50 text-[11px] ${
-          compact ? "p-1 pointer-coarse:min-h-8 pointer-coarse:min-w-8" : "px-2 py-1.5 min-h-8 whitespace-nowrap"
+          compact ? "p-1 pointer-coarse:min-h-9 pointer-coarse:min-w-9 max-sm:min-h-9 max-sm:min-w-9" : "px-2 py-1.5 min-h-8 whitespace-nowrap"
         }`}
         title={`${label ? `${label}: ` : ""}${tl("Copy a 1600×900 card for a broadcast, X or Discord")}`}
-        aria-label={compact ? `${label || tl("16:9 card")}: ${tl("Copy a 1600×900 card for a broadcast, X or Discord")}` : undefined}
+        aria-label={compact ? `${label || tl("Overview card")}: ${tl("Copy a 1600×900 card for a broadcast, X or Discord")}` : undefined}
       >
         <MonitorPlay className="w-3.5 h-3.5" />
-        {compact ? (state === "copied" ? tl("Copied") : null) : state === "busy" ? tl("Making the image…") : state === "copied" ? tl("Copied") : label || tl("16:9 card")}
+        {compact ? (state === "copied" ? tl("Copied") : null) : state === "busy" ? tl("Making the image…") : state === "copied" ? tl("Copied") : label || tl("Overview card")}
       </button>
       {IS_WEB && !compact && (
         <button
@@ -255,7 +255,7 @@ export const BroadcastCardButton: React.FC<{ data: () => CardData; name: string;
           className="text-[11px] px-2 py-1.5 min-h-8 rounded border border-rw-border text-rw-sub hover:text-rw-text disabled:opacity-50"
           title={tl("Save the 16:9 card as a picture")}
         >
-          {tl("Save")}
+          {tl("Save card")}
         </button>
       )}
       {state === "failed" && <span className="text-[10px] text-rw-red">{tl("Couldn't make the image")}</span>}

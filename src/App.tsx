@@ -57,6 +57,7 @@ import { tl, locale } from "./i18n";
 import { statsUpdatedAt } from "./stats";
 import { syncPush } from "./push";
 import { STARTED_ON_HUB, navigateHub, onHubRoute, syncFromLocation, syncTabAddress } from "./hub/route";
+import { dedication } from "./dedication";
 import { lazyPart } from "./lazyPart";
 import { PartBoundary } from "./components/PartBoundary";
 import { startSync, SYNC_EVENT } from "./sync";
@@ -1163,6 +1164,10 @@ export default function App() {
             {syncLabel}
           </span>
         </div>
+        {/* who RiftWise is for: the middle of the footer when there is room (all of it on the About page) */}
+        <p className="hidden md:block flex-1 min-w-0 truncate text-center italic" title={dedication()}>
+          {dedication()}
+        </p>
         <div className="flex items-center gap-3 shrink-0">
           {settings.spoilerMode && (
             <span className="text-rw-accent font-semibold whitespace-nowrap">
@@ -1180,7 +1185,7 @@ export default function App() {
                 handleOpenUrl(feedbackUrl(activeTab));
               }
             }}
-            className={`hover:text-rw-accent whitespace-nowrap ${settings.spoilerMode ? "hidden sm:inline" : ""}`}
+            className={`hover:text-rw-accent whitespace-nowrap max-sm:py-2.5 max-sm:-my-2.5 ${settings.spoilerMode ? "hidden sm:inline" : ""}`}
             title={tl("Ideas or something to fix? Email Kyle: a good one gets an RP code as a thank-you.")}
           >
             {tl("Feedback")}
@@ -1188,7 +1193,7 @@ export default function App() {
           <button
             type="button"
             onClick={() => navigateHub({ kind: "aboutme" })}
-            className={`hover:text-rw-accent whitespace-nowrap ${settings.spoilerMode ? "hidden sm:inline" : ""}`}
+            className={`hover:text-rw-accent whitespace-nowrap max-sm:py-2.5 max-sm:-my-2.5 ${settings.spoilerMode ? "hidden sm:inline" : ""}`}
           >
             {tl("About")}
           </button>

@@ -273,7 +273,7 @@ export const NewsView: React.FC<NewsViewProps> = ({ onOpenUrl }) => {
     i === 0 && riot ? { ...s, url: `https://lolesports.com/${riot}/news` } : s,
   );
   return (
-    <div className="p-4 space-y-4 page-4xl rw-capped overflow-y-auto h-full select-none">
+    <div className="p-4 space-y-4 page-5xl rw-capped overflow-y-auto h-full select-none">
       <div className="pb-1 border-b border-rw-border">
         <h2 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
           <Newspaper className="w-3.5 h-3.5 text-rw-teal" />

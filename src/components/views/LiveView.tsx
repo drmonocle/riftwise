@@ -221,7 +221,8 @@ export const LiveView: React.FC<LiveViewProps> = ({
   // If pro matches are live right now
   if (matches.length > 0) {
     return (
-      <div className="p-4 space-y-4 page-4xl rw-capped overflow-y-auto h-full">
+      <div className="p-4 space-y-4 page-5xl rw-capped overflow-y-auto h-full">
+        <h1 className="sr-only">{tl("Live Matches")}</h1>
         <IntlBanner schedule={schedule} onSelectTab={onSelectTab} />
         <div className="flex items-center justify-between pb-1 border-b border-rw-border">
           <h2 className="text-xs font-bold text-rw-red uppercase tracking-wider flex items-center gap-2">
@@ -517,7 +518,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     {/* Phones: league, Bo and time on the first line, the teams on the second */}
                     <span className="font-bold text-rw-teal text-[11px] flex-1 sm:flex-none sm:w-24 truncate min-w-0">{m.leagueName}</span>
                     <span className="order-last sm:order-none basis-full sm:basis-auto sm:flex-1 text-rw-text font-semibold truncate min-w-0">
-                      {m.team1Name} <span className="text-rw-sub mx-1">{tl("vs")}</span> {m.team2Name}
+                      {m.team1Name} <span className="text-rw-sub mx-1 shrink-0">{tl("vs")}</span> {m.team2Name}
                     </span>
                     <span className="text-rw-sub text-[11px] font-medium shrink-0">{tc("short best of", "Bo{n}", { n: m.bestOf })}</span>
                     <div className="text-rw-sub font-mono text-[11px] font-medium shrink-0">
@@ -558,7 +559,8 @@ export const LiveView: React.FC<LiveViewProps> = ({
 
   // IDLE STATE: No matches live right now -> Show Next Match Hero with Live Countdown
   return (
-    <div className="p-4 space-y-6 page-4xl rw-capped overflow-y-auto h-full">
+    <div className="p-4 space-y-6 page-5xl rw-capped overflow-y-auto h-full">
+      <h1 className="sr-only">{tl("Live Matches")}</h1>
       <IntlBanner schedule={schedule} onSelectTab={onSelectTab} />
       {/* Idle Notice Header */}
       <div className="text-center py-4 border-b border-rw-border">
@@ -925,7 +927,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                             e.stopPropagation();
                             toggleTeamFollow(m.team1Code);
                           }}
-                          className={`p-1.5 -m-1 rounded hover:bg-rw-border ${
+                          className={`p-1.5 -m-1 rounded hover:bg-rw-border shrink-0 ${
                             settings.followedTeams.includes(m.team1Code) ? "text-rw-accent" : "text-rw-sub"
                           }`}
                           aria-label={
@@ -959,7 +961,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                             e.stopPropagation();
                             toggleTeamFollow(m.team2Code);
                           }}
-                          className={`p-1.5 -m-1 rounded hover:bg-rw-border ${
+                          className={`p-1.5 -m-1 rounded hover:bg-rw-border shrink-0 ${
                             settings.followedTeams.includes(m.team2Code) ? "text-rw-accent" : "text-rw-sub"
                           }`}
                           aria-label={
@@ -1027,19 +1029,22 @@ export const LiveView: React.FC<LiveViewProps> = ({
             {comingUp.map((m) => (
               <div
                 key={m.matchId}
-                className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 p-3 rounded-lg bg-rw-surface border border-rw-border hover:border-rw-accent/60 transition-all text-xs"
+                className="grid grid-cols-[4.5rem_minmax(0,1fr)] sm:grid-cols-[5.5rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 p-3 rounded-lg bg-rw-surface border border-rw-border hover:border-rw-accent/60 transition-all text-xs"
               >
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
-                  <span className="font-bold text-rw-teal text-[11px] w-20 truncate">
-                    {m.leagueName}
-                  </span>
-                  <div className="flex items-center gap-1 text-rw-text font-semibold">
+                  <div className="flex flex-col min-w-0 leading-tight">
+                    <span className="font-bold text-rw-teal text-[11px] truncate" title={m.leagueName}>
+                      {m.leagueName}
+                    </span>
+                    <span className="text-rw-sub text-[11px] font-medium whitespace-nowrap">{tc("short best of", "Bo{n}", { n: m.bestOf })}</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-rw-text font-semibold min-w-0">
                     <span
                       {...clickable(() => onSelectTeam?.(m.team1Code, m.team1Name))}
-                      className="hover:text-rw-accent cursor-pointer transition-colors"
+                      className="hover:text-rw-accent cursor-pointer transition-colors truncate"
                       title={tl("View {team} roster", { team: m.team1Name })}
                     >
-                      {m.team1Name}
+                      <span className="sm:hidden">{m.team1Code}</span>
+                      <span className="max-sm:hidden">{m.team1Name}</span>
                     </span>
                     <button
                       type="button"
@@ -1047,7 +1052,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                         e.stopPropagation();
                         toggleTeamFollow(m.team1Code);
                       }}
-                      className={`p-1.5 -m-1 rounded hover:bg-rw-border ${
+                      className={`p-1.5 -m-1 rounded hover:bg-rw-border shrink-0 ${
                         settings.followedTeams.includes(m.team1Code) ? "text-rw-accent" : "text-rw-sub"
                       }`}
                       aria-label={
@@ -1070,10 +1075,11 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     <span className="text-rw-sub mx-1">{tl("vs")}</span>
                     <span
                       {...clickable(() => onSelectTeam?.(m.team2Code, m.team2Name))}
-                      className="hover:text-rw-accent cursor-pointer transition-colors"
+                      className="hover:text-rw-accent cursor-pointer transition-colors truncate"
                       title={tl("View {team} roster", { team: m.team2Name })}
                     >
-                      {m.team2Name}
+                      <span className="sm:hidden">{m.team2Code}</span>
+                      <span className="max-sm:hidden">{m.team2Name}</span>
                     </span>
                     <button
                       type="button"
@@ -1081,7 +1087,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                         e.stopPropagation();
                         toggleTeamFollow(m.team2Code);
                       }}
-                      className={`p-1.5 -m-1 rounded hover:bg-rw-border ${
+                      className={`p-1.5 -m-1 rounded hover:bg-rw-border shrink-0 ${
                         settings.followedTeams.includes(m.team2Code) ? "text-rw-accent" : "text-rw-sub"
                       }`}
                       aria-label={
@@ -1102,9 +1108,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       />
                     </button>
                   </div>
-                  <span className="text-rw-sub text-[11px] font-medium">{tc("short best of", "Bo{n}", { n: m.bestOf })}</span>
-                </div>
-                <div className="flex items-center gap-2 ml-auto">
+                <div className="flex items-center gap-2 justify-end col-span-2 sm:col-span-1">
                   <RowH2H m={m} schedule={schedule} />
                   <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />
                   <MatchPrepButton match={m} compact />

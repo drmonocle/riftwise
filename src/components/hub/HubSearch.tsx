@@ -85,7 +85,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
   return (
     <div ref={box} className="relative w-full">
       <label
-        className={`flex items-center gap-2 bg-rw-bg border border-rw-border focus-within:border-rw-accent/70 rounded-lg ${big ? "px-3 py-2.5" : "px-2.5 py-1.5"}`}
+        className={`flex items-center gap-2 bg-rw-bg border border-rw-border focus-within:border-rw-accent/70 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-rw-accent/60 rounded-lg ${big ? "px-3 py-2.5" : "px-2.5 py-1.5"}`}
       >
         <Search className={`${big ? "w-4 h-4" : "w-3.5 h-3.5"} text-rw-muted shrink-0`} />
         <input
