@@ -1861,10 +1861,11 @@ def build(ctx) -> dict:
             "players": players_out, "teamStats": team_stats_out, "overview": overview, "rosters": roster_out,
             "regions": regions_out,
             "games": sum(len(v) for v in series.values()), "series": sum(1 for st in stages for _ in st["series"]),
+            "played": sum(1 for st in stages for s_ in st["series"] if s_.get("w")),
         }
         out.json(f"event/{eslug}.json", {k: v for k, v in event.items() if v not in (None, [], {})})
         kept[op] = {"tp": tp, "tts": tts, "tc": tc, "facts": facts, "mvp": ev_mvp, "tteam": tteam, "regions": regions,
-                    "last": last_date, "stats": n_stats_games, "rosters": roster_out, "series": event["series"],
+                    "last": last_date, "stats": n_stats_games, "rosters": roster_out, "series": event["series"], "played": event["played"],
                     "lu": league_slug.get(lg_ev), "y": event["year"], "en": en, "eslug": eslug}
         if ev_lines and ev_lines["g"]:
             # each team's region and final place, for the Worlds page's region table (every year and all years)
@@ -1917,7 +1918,8 @@ def build(ctx) -> dict:
             won = final_winner(stages)
         events_by_year[event["year"]].append({
             "n": en, "u": eslug, "l": lg_ev, "r": info.get("Region"), "lv": info.get("TournamentLevel"),
-            "st": start, "en": end, "g": event["games"], "q": event["q"],
+            "st": start, "en": end, "g": event["games"], "q": event["q"], "sp": event["played"],
+            **({"m": overview["min"]} if overview and overview.get("min") else {}),
             **({"w": won[0], "wu": won[1]} if won else {}),
             **({"p": event["parent"]["u"]} if event.get("parent") else {}),
         })
@@ -1978,6 +1980,8 @@ def build(ctx) -> dict:
         events_by_year[event["year"]].append({
             "n": event["n"], "u": eslug, "l": info.get("League"), "r": info.get("Region"), "lv": info.get("TournamentLevel"),
             "st": event["start"], "en": event["end"], "g": event["games"], "q": 0, "kids": len(event["children"]),
+            "sp": sum(kept[c].get("played", 0) for c in kids if c in kept),
+            **({"m": event["overview"]["min"]} if (event.get("overview") or {}).get("min") else {}),
             # its stages' pages (Worlds page "all years": each stage's lines file without loading every event)
             "c": [c["u"] for c in event["children"]],
             **({"res": 1} if res_out else {}),
@@ -2344,6 +2348,7 @@ def build(ctx) -> dict:
     # roster moves (hub/moves.json): players who started at a new club in the last 150 days, newest first
     moves = []
     moves_cut = (datetime.date.today() - datetime.timedelta(days=150)).isoformat()
+    club_of = {}  # page -> (current club, its slug)
     titles_by_event = defaultdict(list)
     for x in ctx.titles:
         titles_by_event[x["t"]].append(x)
@@ -2448,6 +2453,7 @@ def build(ctx) -> dict:
                               "to": {"n": clubs[0]["n"], "u": clubs[0]["u"], "g": clubs[0]["g"]}, "g": p["g"],
                               # the league the new club plays in (its newest event), so the app can show top leagues only
                               "lu": next((e.get("lu") for e in obj.get("events") or [] if e.get("tu") == clubs[0]["u"] and e.get("lu")), None)})
+        club_of[page] = (obj.get("club") or "", obj.get("clubU"))
         out.json(f"player/{u}.json", obj)
         if games:
             out.json(f"playergames/{u}.json", [list(r) for r in games])
@@ -2907,7 +2913,8 @@ def build(ctx) -> dict:
         "latest": latest_major[:12],
         "now": [{k: v for k, v in x.items() if k not in ("w", "wu")} for x in current[:12]],
         "busiest": [{"n": ctx.pname(pg), "u": player_slug.get(pg), "g": x["years"][this_year]["g"], "w": x["years"][this_year]["w"],
-                     "kda": kda(x["years"][this_year]["k"], x["years"][this_year]["d"], x["years"][this_year]["a"])} for x, pg in busiest],
+                     "kda": kda(x["years"][this_year]["k"], x["years"][this_year]["d"], x["years"][this_year]["a"]),
+                     "t": club_of.get(pg, ("", None))[0], "tu": club_of.get(pg, ("", None))[1]} for x, pg in busiest],
         "year": this_year,
     }
     out.json("home.json", home)

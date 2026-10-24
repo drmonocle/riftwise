@@ -5,7 +5,7 @@
  * while the page is visible. Between games it shows the last game's final numbers.
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Castle, ChevronDown, ChevronUp, Crown, Shield, Swords } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import type { Game, Match } from "../types";
 import { tl, roleName, fmtDec } from "../i18n";
 import {
@@ -131,9 +131,9 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
     };
   }, [game, live, open, showStats]);
 
-  // Gold-lead graph: one point a minute, loaded when the details are opened (and kept up to date after)
+  // Gold-lead graph: about one point a minute (fewer for long games), loaded with the stats and kept up to date after
   useEffect(() => {
-    if (!open || !state?.startMs || !game) return;
+    if (!state?.startMs || !game) return;
     let alive = true;
     const end = Date.parse(state.frame.rfc460Timestamp);
     if (!history) {
@@ -147,7 +147,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, state?.frame, state?.startMs, game?.id]);
+  }, [state?.frame, state?.startMs, game?.id]);
 
   if (!game) return null;
   if (!showStats)
@@ -194,20 +194,13 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
         )}
       </div>
 
-      {/* Gold and objectives */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-        <TeamLine side={left} align="left" />
-        <div className="text-center">
-          <div className={`font-mono font-bold ${lead > 0 ? "text-rw-teal" : lead < 0 ? "text-rw-red" : "text-rw-sub"}`}>
-            {lead === 0 ? "=" : `${lead > 0 ? "◀" : ""} ${k(Math.abs(lead))} ${lead < 0 ? "▶" : ""}`}
-          </div>
-          <div className="text-[9px] text-rw-muted">{tl("gold lead")}</div>
-        </div>
-        <TeamLine side={right} align="right" />
-      </div>
-      <div className="h-1.5 rounded overflow-hidden bg-rw-red/60" aria-hidden="true">
+      {/* Gold and objectives: both teams and the difference */}
+      <StatsTable left={left} right={right} minutes={elapsed != null ? elapsed / 60_000 : null} />
+      <div className="h-1.5 rounded overflow-hidden bg-rw-red/60" aria-hidden="true" title={tl("Share of the gold")}>
         <div className="h-full bg-rw-teal/80" style={{ width: `${share * 100}%` }} />
       </div>
+      {!finished && elapsed != null && elapsed > 60_000 && <ChanceNow leftCode={left.code} rightCode={right.code} minute={elapsed / 60_000} lead={lead} />}
+      {history && history.length > 1 && <GoldGraph points={history} blueIsLeft={blueIsTeam1} leftCode={left.code} rightCode={right.code} />}
 
       <button
         type="button"
@@ -216,13 +209,12 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
         aria-expanded={open}
       >
         {open ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        {open ? tl("Hide players") : tl("Players, items and gold graph")}
+        {open ? tl("Hide players") : tl("Players and items")}
       </button>
 
       {open && (
         <div className="space-y-3">
           <Players left={left} right={right} details={state.details} />
-          {history && history.length > 1 && <GoldGraph points={history} blueIsLeft={blueIsTeam1} leftCode={left.code} />}
           {!finished && <p className="text-[10px] text-rw-muted">{tl("From Riot's live stats feed, about a minute behind the broadcast.")}</p>}
         </div>
       )}
@@ -232,38 +224,111 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
 
 type SideInfo = { code: string; t: LiveFrame["blueTeam"]; meta: LiveParticipantMeta[]; color: string };
 
-const TeamLine: React.FC<{ side: SideInfo; align: "left" | "right" }> = ({ side, align }) => (
-  <div className={`min-w-0 space-y-0.5 ${align === "right" ? "text-right" : ""}`}>
-    <div className={`flex items-center gap-1.5 ${align === "right" ? "justify-end" : ""}`}>
-      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: side.color }} title={side.color === "#3fa7ff" ? tl("Blue side") : tl("Red side")} />
-      <span className="font-bold text-rw-text">{side.code}</span>
-      <span className="font-mono text-rw-accent">{k(side.t.totalGold)}</span>
+/** Both teams' gold, kills, towers, dragons (by type), barons, inhibitors and CS, and the left team's difference. */
+const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | null }> = ({ left, right, minutes }) => {
+  const cs = (x: SideInfo) => x.t.participants.reduce((sum, p) => sum + (p.creepScore || 0), 0);
+  const cols: { key: string; label: string; title: string; v: (x: SideInfo) => number; fmt?: (n: number) => string; extra?: (x: SideInfo) => React.ReactNode }[] = [
+    { key: "gold", label: tl("Gold"), title: tl("Team gold"), v: (x) => x.t.totalGold, fmt: (n) => k(n) },
+    { key: "kills", label: tl("Kills"), title: tl("Kills"), v: (x) => x.t.totalKills },
+    { key: "towers", label: tl("Towers"), title: tl("Towers"), v: (x) => x.t.towers },
+    {
+      key: "dragons",
+      label: tl("Dragons"),
+      title: tl("Dragons"),
+      v: (x) => x.t.dragons.length,
+      extra: (x) =>
+        x.t.dragons.map((d, i) => (
+          <span key={i} className="w-2 h-2 rounded-full inline-block ml-0.5 align-middle" style={{ background: DRAGON_COLOR[d] || "var(--rw-muted)" }} title={dragonName(d)} />
+        )),
+    },
+    { key: "barons", label: tl("Barons"), title: tl("Barons"), v: (x) => x.t.barons },
+    { key: "inhibitors", label: tl("Inhib."), title: tl("Inhibitors"), v: (x) => x.t.inhibitors },
+    {
+      key: "cs",
+      label: minutes ? tl("CS/min") : "CS",
+      title: minutes ? tl("Team CS per minute") : tl("Team CS"),
+      v: (x) => (minutes ? cs(x) / minutes : cs(x)),
+      fmt: (n) => (minutes ? fmtDec(n) : String(n)),
+    },
+  ];
+  const sign = (n: number, fmt?: (n: number) => string) => (n === 0 ? "0" : `${n > 0 ? "+" : "−"}${fmt ? fmt(Math.abs(n)) : Math.abs(n)}`);
+  const cell = "px-1.5 py-1 text-right font-mono tabular-nums";
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-[11px] min-w-[22rem]">
+        <thead>
+          <tr className="text-[10px] text-rw-muted">
+            <th className="px-1.5 py-1 text-left font-normal" />
+            {cols.map((c) => (
+              <th key={c.key} className="px-1.5 py-1 text-right font-normal" title={c.title}>
+                {c.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {[left, right].map((x, i) => {
+            const other = i === 0 ? right : left;
+            return (
+              <tr key={x.code} className="border-t border-rw-border/60">
+                <td className="px-1.5 py-1 text-left font-bold text-rw-text whitespace-nowrap">
+                  <span className="w-2 h-2 rounded-full inline-block mr-1.5 align-middle" style={{ background: x.color }} title={x.color === "#3fa7ff" ? tl("Blue side") : tl("Red side")} />
+                  {x.code}
+                </td>
+                {cols.map((c) => (
+                  <td key={c.key} className={`${cell} ${c.v(x) > c.v(other) ? "text-rw-teal" : "text-rw-text"}`}>
+                    {c.fmt ? c.fmt(c.v(x)) : c.v(x)}
+                    {c.extra?.(x)}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
+          <tr className="border-t border-rw-border/60 text-rw-sub">
+            <td className="px-1.5 py-1 text-left whitespace-nowrap" title={tl("{a} minus {b}", { a: left.code, b: right.code })}>
+              {tl("Diff ({team})", { team: left.code })}
+            </td>
+            {cols.map((c) => {
+              const d = c.v(left) - c.v(right);
+              return (
+                <td key={c.key} className={`${cell} ${d > 0 ? "text-rw-teal" : d < 0 ? "text-rw-red" : "text-rw-muted"}`}>
+                  {sign(c.key === "cs" && minutes ? Math.round(d * 10) / 10 : d, c.fmt)}
+                </td>
+              );
+            })}
+          </tr>
+        </tbody>
+      </table>
     </div>
-    <div className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-rw-sub ${align === "right" ? "justify-end" : ""}`}>
-      <span className="flex items-center gap-0.5" title={tl("Kills")}>
-        <Swords className="w-3 h-3" /> {side.t.totalKills}
-      </span>
-      <span className="flex items-center gap-0.5" title={tl("Towers")}>
-        <Castle className="w-3 h-3" /> {side.t.towers}
-      </span>
-      <span className="flex items-center gap-0.5" title={tl("Barons")}>
-        <Crown className="w-3 h-3" /> {side.t.barons}
-      </span>
-      <span className="flex items-center gap-0.5" title={tl("Inhibitors")}>
-        <Shield className="w-3 h-3" /> {side.t.inhibitors}
-      </span>
-      <span className="flex items-center gap-0.5" title={tl("Dragons")}>
-        {side.t.dragons.length === 0 ? (
-          <span className="text-rw-muted">{tl("No dragons")}</span>
-        ) : (
-          side.t.dragons.map((d, i) => (
-            <span key={i} className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: DRAGON_COLOR[d] || "var(--rw-muted)" }} title={dragonName(d)} />
-          ))
-        )}
-      </span>
+  );
+};
+
+/** "Win chance right now": the chance the gold lead at this minute has given in pro games (liveGame.ts). */
+const ChanceNow: React.FC<{ leftCode: string; rightCode: string; minute: number; lead: number }> = ({ leftCode, rightCode, minute, lead }) => {
+  const p = winChanceFromGold(minute, lead);
+  const a = Math.round(p * 100);
+  return (
+    <div className="space-y-0.5">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-[10px] text-rw-sub">
+        <span className="uppercase tracking-wider font-semibold">{tl("Win chance right now")}</span>
+        <span className="text-rw-muted" title={tl("P = 1 / (1 + e^(−a × gold lead)), a = 0.0098 / (minute + 2.3): fitted on about 37,000 pro games since 2023 with gold at 10, 15 and 20 minutes (Oracle's Elixir). Gold only: towers, dragons and barons count through the gold they bring.")}>
+          {tl("from the gold lead at this minute · ~37,000 pro games since 2023")}
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="font-mono tabular-nums font-bold text-rw-teal w-16 text-right whitespace-nowrap">
+          {leftCode} {a}%
+        </span>
+        <div className="flex-1 h-2 rounded-sm overflow-hidden bg-rw-red/70" role="img" aria-label={`${leftCode} ${a}% · ${rightCode} ${100 - a}%`}>
+          <div className="h-full bg-rw-teal" style={{ width: `${a}%` }} />
+        </div>
+        <span className="font-mono tabular-nums font-bold text-rw-red w-16 whitespace-nowrap">
+          {100 - a}% {rightCode}
+        </span>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsParticipant[] | null }> = ({ left, right, details }) => {
   const byRole = (side: SideInfo) =>
@@ -354,7 +419,7 @@ const PlayerCells: React.FC<{ p: PlayerRow; align: "left" | "right" }> = ({ p, a
 
 /** Gold lead over the game, or the win chance it gives (liveGame.ts winChanceFromGold): above the line = the team
  *  on the left is ahead. */
-const GoldGraph: React.FC<{ points: [number, number][]; blueIsLeft: boolean; leftCode: string }> = ({ points, blueIsLeft, leftCode }) => {
+const GoldGraph: React.FC<{ points: [number, number][]; blueIsLeft: boolean; leftCode: string; rightCode: string }> = ({ points, blueIsLeft, leftCode, rightCode }) => {
   const [mode, setMode] = useState<"gold" | "chance">("gold");
   const W = 600;
   const H = 120;
@@ -380,9 +445,10 @@ const GoldGraph: React.FC<{ points: [number, number][]; blueIsLeft: boolean; lef
   return (
     <div>
       <div className="flex justify-between text-[10px] text-rw-muted mb-0.5">
-        <span className="flex gap-1" role="group" aria-label={tl("Graph")}>
+        <span className="flex gap-1 items-baseline" role="group" aria-label={tl("Graph")}>
           {tab("gold", tl("Gold lead"))}
           {tab("chance", tl("Win chance"))}
+          <span className="text-rw-muted">· {tl("{a} minus {b}", { a: leftCode, b: rightCode })}</span>
         </span>
         <span className="font-mono" title={mode === "chance" ? tl("From the gold lead only, as in pro games since 2023") : undefined}>
           {mode === "gold" ? (

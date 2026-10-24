@@ -576,3 +576,42 @@ export function teamHeadToHead(rows: TeamGameRow[], oppSlug: string): { g: numbe
   }
   return { g, w };
 }
+
+/**
+ * Win rate by what happened early (games with Oracle's Elixir timelines): with and without each first objective,
+ * and by the gold lead at 15 minutes in four bands. [games, wins] each; "without" counts games the other team got it.
+ */
+export function winWhen(rows: TeamGameRow[]): {
+  firsts: { key: "fb" | "ft" | "f3t" | "fd" | "fh" | "fbaron"; got: [number, number]; lost: [number, number] }[];
+  gold: { key: "a2" | "a0" | "b0" | "b2"; g: number; w: number }[];
+  n: number;
+} {
+  const idx = { fb: 5, ft: 6, f3t: 8, fd: 9, fh: 10, fbaron: 11 } as const;
+  const firsts = (Object.keys(idx) as (keyof typeof idx)[]).map((key) => ({ key, got: [0, 0] as [number, number], lost: [0, 0] as [number, number] }));
+  const bands = { a2: [0, 0], a0: [0, 0], b0: [0, 0], b2: [0, 0] } as Record<"a2" | "a0" | "b0" | "b2", [number, number]>;
+  let n = 0;
+  for (const r of rows) {
+    const t = r[23] as TeamTimeline | null | undefined;
+    if (!t) continue;
+    n++;
+    for (const f of firsts) {
+      const v = t[idx[f.key]];
+      if (v === 1) {
+        f.got[0]++;
+        f.got[1] += r[7];
+      } else if (v === 0) {
+        f.lost[0]++;
+        f.lost[1] += r[7];
+      }
+    }
+    const g = t[1];
+    if (g != null) {
+      const b = g >= 2000 ? "a2" : g > 0 ? "a0" : g > -2000 ? "b0" : "b2";
+      if (g !== 0) {
+        bands[b][0]++;
+        bands[b][1] += r[7];
+      }
+    }
+  }
+  return { firsts, gold: (["a2", "a0", "b0", "b2"] as const).map((key) => ({ key, g: bands[key][0], w: bands[key][1] })), n };
+}

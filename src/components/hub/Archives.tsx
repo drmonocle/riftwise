@@ -150,7 +150,13 @@ export const TeamSeriesArchive: React.FC<{ slug: string; teamName: string }> = (
 
 export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; bName: string }> = ({ a, b, aName, bName }) => {
   const state = useLoad(() => loadTeamSeries(a), [a]);
-  const rows = useMemo(() => (state.data || []).filter((r) => r[2] === b), [state.data, b]);
+  const all = useMemo(() => (state.data || []).filter((r) => r[2] === b), [state.data, b]);
+  // narrow to one event or one year
+  const [event, setEvent] = useState("all");
+  const [year, setYear] = useState("all");
+  const events = useMemo(() => [...new Map(all.map((r) => [r[6], r[5]])).entries()], [all]);
+  const years = useMemo(() => [...new Set(all.map((r) => r[0].slice(0, 4)))], [all]);
+  const rows = useMemo(() => all.filter((r) => (event === "all" || r[6] === event) && (year === "all" || r[0].startsWith(year))), [all, event, year]);
   const [hidden] = useHidden(`h2h:${a}:${b}`, rows.find((r) => isFresh(r[0]))?.[0]);
   if (state.loading) return <Loading />;
   if (state.error) return null;
@@ -169,6 +175,27 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
               <span className="ml-2 text-xs font-normal text-rw-sub tabular-nums">{tl("Games {a}–{b}", { a: ga, b: gb })}</span>
             )}
           </p>
+          {all.length > 3 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <select value={year} onChange={(e) => setYear(e.target.value)} aria-label={tl("Year")} className={select}>
+                <option value="all">{tl("All years")}</option>
+                {years.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+              <select value={event} onChange={(e) => setEvent(e.target.value)} aria-label={tl("Tournament")} className={`${select} max-w-[16rem]`}>
+                <option value="all">{tl("Every tournament")}</option>
+                {events.map(([u, n]) => (
+                  <option key={u} value={u}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+              <span className="text-[11px] text-rw-muted">{tl("The number before the date is the series rating: how good it was to watch, 0-100.")}</span>
+            </div>
+          )}
           <SeriesList rows={rows} teamName={aName} spoilerKey={`h2h:${a}:${b}`} showOpp={false} />
         </>
       )}

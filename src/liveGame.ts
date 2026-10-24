@@ -85,12 +85,14 @@ export const fetchLiveDetails = (gameId: string, at = Date.now() - LAG_MS) =>
   );
 
 /**
- * Blue's gold lead over the game so far, one point a minute (for the graph): [minute, gold lead].
+ * Blue's gold lead over the game so far, one point a minute (every two after 30 minutes...) for the graph: [minute, gold lead].
  * Fetched only when someone opens the details, a few requests at a time.
  */
 export async function fetchGoldHistory(gameId: string, startMs: number, endMs: number): Promise<[number, number][]> {
   const times: number[] = [];
-  for (let t = startMs + 60_000; t <= endMs; t += 60_000) times.push(t);
+  // a point a minute, but at most ~30 for a long game: the graph shows for everyone watching, so it stays light
+  const step = Math.max(1, Math.ceil((endMs - startMs) / 60_000 / 30)) * 60_000;
+  for (let t = startMs + step; t <= endMs; t += step) times.push(t);
   const points: [number, number][] = [];
   for (let i = 0; i < times.length; i += 4) {
     const batch = await Promise.all(
