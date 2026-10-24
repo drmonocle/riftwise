@@ -241,6 +241,29 @@ export const PeriodPicker: React.FC<{
   );
 };
 
+/** Narrows the period's games: wins or losses only, and for a team blue or red side only. */
+type GameOnly = "" | "w" | "l" | "b" | "r";
+const OnlyPicker: React.FC<{ value: GameOnly; onChange: (v: GameOnly) => void; sides?: boolean }> = ({ value, onChange, sides }) => (
+  <>
+    <span className="rw-capture-only text-xs text-rw-sub">{value ? onlyText(value) : ""}</span>
+    <select
+      data-nocapture="1"
+      value={value}
+      onChange={(e) => onChange(e.target.value as GameOnly)}
+      aria-label={tl("Which games")}
+      className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-xs text-rw-text max-w-full"
+    >
+      <option value="">{tl("Every game")}</option>
+      <option value="w">{tl("Wins only")}</option>
+      <option value="l">{tl("Losses only")}</option>
+      {sides && <option value="b">{tl("Blue side only")}</option>}
+      {sides && <option value="r">{tl("Red side only")}</option>}
+    </select>
+  </>
+);
+const onlyText = (v: GameOnly) =>
+  ({ "": "", w: tl("Wins only"), l: tl("Losses only"), b: tl("Blue side only"), r: tl("Red side only") })[v];
+
 /** Default period: the newest year in the log (this season), else all time. */
 export const defaultPeriod = (opts: PeriodOption[]): PeriodKey =>
   opts.find((o) => o.group === "year")?.key || "all";
@@ -285,9 +308,10 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
   useDDragon();
   const options = useMemo(() => periodOptions(rows.map(playerRowRef)), [rows]);
   const [period, setPeriod] = useState<PeriodKey>(() => defaultPeriod(options));
+  const [only, setOnly] = useState<GameOnly>("");
   const sel = useMemo(
-    () => inPeriod(rows, period, playerRowRef),
-    [rows, period],
+    () => inPeriod(rows, period, playerRowRef).filter((r) => (only === "w" ? r[6] === 1 : only === "l" ? r[6] === 0 : true)),
+    [rows, period, only],
   );
   const agg = useMemo(() => playerAgg(sel), [sel]);
   const [hidden, reveal] = useHidden(
@@ -362,6 +386,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
       right={
         <>
           <PeriodPicker options={options} value={period} onChange={setPeriod} />
+          <OnlyPicker value={only} onChange={setOnly} />
           {who && !hidden && (
             <BroadcastCardButton data={() => playerCardData(who, agg, periodText)} name={`${who.name}-${period}`} />
           )}
@@ -492,7 +517,14 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: { name
   useDDragon();
   const options = useMemo(() => periodOptions(rows.map(teamRowRef)), [rows]);
   const [period, setPeriod] = useState<PeriodKey>(() => defaultPeriod(options));
-  const sel = useMemo(() => inPeriod(rows, period, teamRowRef), [rows, period]);
+  const [only, setOnly] = useState<GameOnly>("");
+  const sel = useMemo(
+    () =>
+      inPeriod(rows, period, teamRowRef).filter((r) =>
+        only === "w" ? r[7] === 1 : only === "l" ? r[7] === 0 : only === "b" || only === "r" ? r[6] === only : true,
+      ),
+    [rows, period, only],
+  );
   const t = useMemo(() => teamAgg(sel), [sel]);
   const [hidden, reveal] = useHidden(
     `period:t:${slug}:${period}`,
@@ -504,6 +536,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: { name
       right={
         <>
           <PeriodPicker options={options} value={period} onChange={setPeriod} />
+          <OnlyPicker value={only} onChange={setOnly} sides />
           {who && !hidden && (
             <BroadcastCardButton
               data={() => {

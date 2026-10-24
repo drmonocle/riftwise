@@ -9,9 +9,11 @@ import { loadLeagueSeason, loadLeagues } from "../../hub/data";
 import type { EventPlayer, EventTeamStats, LeagueRow } from "../../hub/types";
 import { isFresh, Loading, RevealButton, Section, useHidden, useLoad } from "./ui";
 
-interface Metric<T> {
+export interface Metric<T> {
   key: string;
   label: string;
+  /** a short column header for tables (Leaderboards) */
+  short?: string;
   value: (x: T) => number | null;
   fmt: (v: number) => string;
   /** lower is better (deaths) */
@@ -27,7 +29,7 @@ const sR1 = (v: number) => `${v > 0 ? "+" : ""}${fmtDec(v)}`;
 const div = (a: number | undefined, b: number | undefined) =>
   a != null && b ? a / b : null;
 
-const PLAYER_METRICS: Metric<EventPlayer>[] = [
+export const PLAYER_METRICS: Metric<EventPlayer>[] = [
   {
     key: "kda",
     label: "KDA",
@@ -37,12 +39,14 @@ const PLAYER_METRICS: Metric<EventPlayer>[] = [
   { key: "kp", label: "KP", value: (p) => div(p.k + p.a, p.tk), fmt: pc },
   {
     key: "k",
+    short: "K",
     label: tk("Kills per game"),
     value: (p) => div(p.k, p.g),
     fmt: r1,
   },
   {
     key: "d",
+    short: "D",
     label: tk("Deaths per game"),
     value: (p) => div(p.d, p.g),
     fmt: r1,
@@ -50,18 +54,21 @@ const PLAYER_METRICS: Metric<EventPlayer>[] = [
   },
   {
     key: "csm",
+    short: "CSM",
     label: tk("CS per minute"),
     value: (p) => div(p.cs, p.min),
     fmt: r1,
   },
   {
     key: "gpm",
+    short: "GPM",
     label: tk("Gold per minute"),
     value: (p) => div(p.gold, p.min),
     fmt: int,
   },
   {
     key: "dpm",
+    short: "DPM",
     label: tk("Damage per minute"),
     value: (p) => div(p.dmg, p.min),
     fmt: int,
@@ -70,16 +77,17 @@ const PLAYER_METRICS: Metric<EventPlayer>[] = [
   { key: "golds", label: tk("Gold%"), value: (p) => div(p.sg, p.tg), fmt: pc },
   {
     key: "vsm",
+    short: "VSPM",
     label: tk("Vision score per minute"),
     value: (p) => div(p.vis, p.vmin),
     fmt: r2,
   },
   // Oracle's Elixir (games with timelines only)
-  { key: "g15", label: tk("Gold lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? div(p.g15, p.tn) : null), fmt: sInt },
-  { key: "c15", label: tk("CS lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? div(p.c15, p.tn) : null), fmt: sR1 },
-  { key: "x15", label: tk("XP lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? div(p.x15, p.tn) : null), fmt: sInt },
-  { key: "fbp", label: tk("Took part in first blood (kill or assist)"), value: (p) => (p.fbn ? div(p.fbp, p.fbn) : null), fmt: pc },
-  { key: "wr", label: tk("Win %"), value: (p) => div(p.w, p.g), fmt: pc },
+  { key: "g15", short: "GD@15", label: tk("Gold lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? div(p.g15, p.tn) : null), fmt: sInt },
+  { key: "c15", short: "CSD@15", label: tk("CS lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? div(p.c15, p.tn) : null), fmt: sR1 },
+  { key: "x15", short: "XPD@15", label: tk("XP lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? div(p.x15, p.tn) : null), fmt: sInt },
+  { key: "fbp", short: "FB%", label: tk("Took part in first blood (kill or assist)"), value: (p) => (p.fbn ? div(p.fbp, p.fbn) : null), fmt: pc },
+  { key: "wr", short: "W%", label: tk("Win %"), value: (p) => div(p.w, p.g), fmt: pc },
 ];
 
 const TEAM_METRICS: Metric<EventTeamStats>[] = [

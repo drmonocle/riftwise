@@ -384,3 +384,30 @@ func TestLanguagePages(t *testing.T) {
 		t.Error("hreflang on a noindex page")
 	}
 }
+
+// riftwise.gg/calendar.ics: a calendar of the chosen teams' and leagues' matches.
+func TestCalendar(t *testing.T) {
+	testSite(t)
+	w := httptest.NewRecorder()
+	serveCalendar(w, httptest.NewRequest(http.MethodGet, "/riftwise/calendar.ics?teams=gen", nil))
+	b := w.Body.String()
+	if ct := w.Header().Get("Content-Type"); !strings.HasPrefix(ct, "text/calendar") {
+		t.Errorf("content type %q", ct)
+	}
+	if !strings.Contains(b, "BEGIN:VCALENDAR\r\n") || !strings.Contains(b, "SUMMARY:Gen.G vs G2 Esports (Bo3) – Worlds · Swiss") || strings.Contains(b, "KT Rolster") || strings.Contains(b, "Dplus") {
+		t.Errorf("teams=gen: %s", b)
+	}
+	if !strings.Contains(b, "DTSTART:20261025T130000Z") || !strings.Contains(b, "DTEND:20261025T160000Z") {
+		t.Errorf("times: %s", b)
+	}
+	w = httptest.NewRecorder()
+	serveCalendar(w, httptest.NewRequest(http.MethodGet, "/riftwise/calendar.ics?leagues=lck", nil))
+	if b := w.Body.String(); !strings.Contains(b, "Hanwha Life Esports vs KT Rolster") || strings.Contains(b, "Gen.G") {
+		t.Errorf("leagues=lck: %s", b)
+	}
+	for _, line := range strings.Split(w.Body.String(), "\r\n") {
+		if len(line) > 75 {
+			t.Errorf("line longer than 75 octets: %q", line)
+		}
+	}
+}

@@ -26,6 +26,8 @@ const SECTIONS = {
   draft: ["Draft board", "Plan a draft with both teams' pools"],
   best: ["Best games", "Highest-rated games and series"],
   counters: ["Counter-picks", "Every pro lane matchup, by champion"],
+  leaders: ["Leaderboards", "Every player on every stat, by league and role"],
+  tiers: ["Pro tier list", "What pros play on each patch, by role"],
   worlds: ["event::Worlds", "Winners, records and region stats"],
   msi: ["event::MSI", "Winners, records and region stats"],
   "first-stand": ["event::First Stand", "Winners, records and region stats"],

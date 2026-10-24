@@ -1069,6 +1069,7 @@ export default function App() {
             onUpdateSettings={handleUpdateSettings}
             onRefreshCatalog={handleRefreshCatalog}
             isRefreshingCatalog={isRefreshing}
+            onOpenUrl={handleOpenUrl}
           />
 </LazyPart>
         )}

@@ -162,7 +162,7 @@ export function loadSettings(): AppSettings {
       const merged = { ...DEFAULT_SETTINGS, ...parsed } as AppSettings;
       const oneOf = <T,>(v: unknown, allowed: readonly T[], dflt: T): T => (allowed.includes(v as T) ? (v as T) : dflt);
       merged.language = oneOf(merged.language, ["auto", "en", "es", "pt-BR", "ko", "vi", "zh-CN", "zh-TW", "ja", "fr", "de", "tr"] as const, "auto");
-      merged.theme = oneOf(merged.theme, ["rift", "classic", "midnight", "tsm", "flyquest", "t1"] as const, "rift");
+      merged.theme = oneOf(merged.theme, ["rift", "classic", "midnight", "light", "tsm", "flyquest", "t1"] as const, "rift");
       merged.defaultTab = oneOf(merged.defaultTab, ["live", "schedule", "stats", "stream", "watchlist", "news", "settings"] as const, DEFAULT_SETTINGS.defaultTab);
       // Settings for the removed ticker bar / desktop HUD (0.4.0) are dropped
       for (const old of ["tickerMode", "tickerTopmost", "tickerCycleSec"]) delete (merged as unknown as Record<string, unknown>)[old];
@@ -484,6 +484,8 @@ function scheduleEventsToMatches(rawEvents: any[]): Match[] {
       team2Name: teamDisplayName(t2.name),
       team2Image: t2.image,
       team2Score: t2.result?.gameWins ?? 0,
+      team1Record: t1.record ? [t1.record.wins ?? 0, t1.record.losses ?? 0] : undefined,
+      team2Record: t2.record ? [t2.record.wins ?? 0, t2.record.losses ?? 0] : undefined,
       games: [],
     });
   }

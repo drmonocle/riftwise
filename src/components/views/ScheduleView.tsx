@@ -5,7 +5,7 @@ import { AddToCalendarMenu } from "../AddToCalendarMenu";
 import { MatchPrepButton } from "../MatchPrepButton";
 import { MatchOverviewButton } from "../MatchOverviewButton";
 import { ShareMatchButton } from "../ShareMatchButton";
-import { isMatchFollowed, followedPlayerTeams, computeHeadToHead } from "../../helpers";
+import { isMatchFollowed, followedPlayerTeams, computeHeadToHead, swissStakes } from "../../helpers";
 import { clickable } from "../../a11y";
 import { H2HMeter } from "../H2HMeter";
 import { StandingsView } from "./StandingsView";
@@ -434,6 +434,12 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           )}
                         </div>
                         <span className="sm:hidden text-[10px] text-rw-muted">{tc("short best of", "Bo{n}", { n: m.bestOf })}</span>
+                        {/* Swiss: what this match decides */}
+                        {swissStakes(m) && (
+                          <span className={`text-[9px] font-bold uppercase tracking-wide whitespace-nowrap ${swissStakes(m) === "advance" ? "text-rw-teal" : "text-rw-red"}`}>
+                            {swissStakes(m) === "both" ? tl("Win and in, lose and out") : swissStakes(m) === "advance" ? tl("Winner advances") : tl("Elimination match")}
+                          </span>
+                        )}
                         {(showScore || m.state !== "completed") && h2h && (
                           <div className="max-sm:hidden">
                           <H2HMeter team1Code={m.team1Code} team2Code={m.team2Code} h2h={h2h} matchId={m.matchId} countThisMatch={showScore} />

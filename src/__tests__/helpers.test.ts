@@ -285,3 +285,16 @@ describe("csvSafe", () => {
     expect(csvSafe("Faker")).toBe("Faker");
   });
 });
+
+import { swissStakes } from "../helpers";
+describe("Swiss stakes", () => {
+  const m = (a: [number, number], b: [number, number], blockName = "Swiss") =>
+    ({ state: "unstarted", blockName, team1Record: a, team2Record: b }) as unknown as Parameters<typeof swissStakes>[0];
+  it("says what a Swiss match decides", () => {
+    expect(swissStakes(m([2, 0], [2, 0]))).toBe("advance");
+    expect(swissStakes(m([1, 2], [1, 2]))).toBe("out");
+    expect(swissStakes(m([2, 2], [2, 2]))).toBe("both");
+    expect(swissStakes(m([1, 1], [1, 1]))).toBeNull();
+    expect(swissStakes(m([2, 0], [2, 0], "Groups"))).toBeNull();
+  });
+});

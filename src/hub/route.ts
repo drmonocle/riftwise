@@ -18,7 +18,7 @@ import { IS_WEB, SITE_URL } from "../platform";
 
 export type HubSection =
   | "tournaments" | "leagues" | "champions" | "patches" | "records" | "titles" | "compare" | "data" | "about" | "prep"
-  | "rankings" | "finder" | "draft" | "best" | "counters" | "worlds" | "msi" | "first-stand"
+  | "rankings" | "finder" | "draft" | "best" | "counters" | "worlds" | "msi" | "first-stand" | "leaders" | "tiers"
   | "aboutme"; // riftwise.gg/about (not under /stats)
 export type HubEntity = "team" | "player" | "event" | "match" | "champ" | "league";
 
@@ -35,12 +35,12 @@ export type CompareRoute = { kind: "compare"; mode?: "team" | "player"; a?: stri
 export type PrepRoute = { kind: "prep"; a?: string; b?: string; period?: string };
 const SECTIONS: HubSection[] = [
   "tournaments", "leagues", "champions", "patches", "records", "titles", "compare", "data", "about", "prep", "rankings", "finder", "draft",
-  "best", "counters", "worlds", "msi", "first-stand",
+  "best", "counters", "worlds", "msi", "first-stand", "leaders", "tiers",
 ];
 /** Pages that keep their filters in the address (?league=lck&year=2026...). */
 /** Worlds, MSI and First Stand: one page each, for a year or every year (/stats/msi/2024, /stats/worlds/all). */
 const INTL_SECTIONS: HubSection[] = ["worlds", "msi", "first-stand"];
-const QUERY_SECTIONS: HubSection[] = ["champions", "finder", "draft", "best", "counters"];
+const QUERY_SECTIONS: HubSection[] = ["champions", "finder", "draft", "best", "counters", "leaders", "tiers"];
 const ENTITY_PATH: Record<HubEntity, string> = {
   team: "team", player: "player", event: "tournament", match: "match", champ: "champion", league: "league",
 };

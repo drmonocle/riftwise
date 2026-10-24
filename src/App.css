@@ -147,6 +147,46 @@
     --rw-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 59, 85, 0.04);
     --rw-on-accent: #160306;
   }
+  /* Light: a pale background with deep violet, for daylight and printing */
+  :root[data-theme="light"] {
+    --rw-bg: #f6f5fb;
+    --rw-deep: #ecebf5;
+    --rw-surface: #ffffff;
+    --rw-raised: #f0eef9;
+    --rw-border: #dcd8ec;
+    --rw-line: #c5bfdd;
+    --rw-accent: #5b3fd6;
+    --rw-accent-2: #7c5cff;
+    --rw-text: #17142b;
+    --rw-sub: #46406a;
+    --rw-muted: #6a6588;
+    --rw-teal: #0d7f72;
+    --rw-red: #c92a52;
+    --rw-glow-1: rgba(91, 63, 214, 0.08);
+    --rw-glow-2: rgba(13, 127, 114, 0.05);
+    --rw-sheen: rgba(0, 0, 0, 0.02);
+    --rw-shadow: 0 8px 24px -16px rgba(30, 20, 80, 0.25), 0 0 0 1px rgba(91, 63, 214, 0.04);
+    --rw-on-accent: #ffffff;
+    color-scheme: light;
+  }
+  /* white team logos (G2, DK, Team Liquid...) would vanish on the pale background: a thin dark edge */
+  :root[data-theme="light"] img {
+    filter: drop-shadow(0 0 0.8px rgba(23, 20, 43, 0.9)) drop-shadow(0 0 0.8px rgba(23, 20, 43, 0.6));
+  }
+  /* Windows high contrast (forced colours): the system picks the colours; keep every control's edge and the
+     keyboard focus visible */
+  @media (forced-colors: active) {
+    button,
+    select,
+    input,
+    a[role="button"] {
+      border: 1px solid ButtonText;
+    }
+    :focus-visible {
+      outline: 2px solid Highlight;
+      outline-offset: 2px;
+    }
+  }
 
   html {
     font-size: 17.5px; /* Scales all rem-based typography up 1 full size (12px -> 13.5px, 14px -> 15.5px, 16px -> 17.5px) */

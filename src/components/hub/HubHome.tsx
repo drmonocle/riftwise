@@ -3,7 +3,7 @@ import React, { useMemo, useState } from "react";
 import { HomeStorylines } from "./Storylines";
 import { AtStakeToday } from "./AtStake";
 import type { Match } from "../../types";
-import { Trophy, Swords, Medal, GitCompare, CalendarRange, Crown, Layers, History, ClipboardList, TrendingUp, Search, LayoutGrid, Flame, Crosshair, Globe } from "lucide-react";
+import { Trophy, Swords, Medal, GitCompare, CalendarRange, Crown, Layers, History, ClipboardList, TrendingUp, Search, LayoutGrid, Flame, Crosshair, Globe, ListOrdered, Rows3 } from "lucide-react";
 import { tl, tn, tk, regionName } from "../../i18n";
 import { loadEventsOfYear, loadHubHome, loadHubMeta, loadPatches } from "../../hub/data";
 import { useRecentPages } from "../../hub/recent";
@@ -29,6 +29,8 @@ const QUICK: { to: HubRoute; label: string; sub: string; icon: React.ReactNode }
   { to: { kind: "prep" }, label: tk("Match prep"), sub: tk("Everything before a broadcast"), icon: <ClipboardList className="w-4 h-4" /> },
   { to: { kind: "finder" }, label: tk("Game finder"), sub: tk("Any game by team, champion, player"), icon: <Search className="w-4 h-4" /> },
   { to: { kind: "draft" }, label: tk("Draft board"), sub: tk("Plan a draft with both teams' pools"), icon: <LayoutGrid className="w-4 h-4" /> },
+  { to: { kind: "leaders" }, label: tk("Leaderboards"), sub: tk("Every player on every stat, by league and role"), icon: <ListOrdered className="w-4 h-4" /> },
+  { to: { kind: "tiers" }, label: tk("Pro tier list"), sub: tk("What pros play on each patch, by role"), icon: <Rows3 className="w-4 h-4" /> },
   { to: { kind: "counters" }, label: tk("Counter-picks"), sub: tk("Every pro lane matchup, by champion"), icon: <Crosshair className="w-4 h-4" /> },
   { to: { kind: "worlds" }, label: tk("Worlds, MSI & First Stand"), sub: tk("Winners, records and region stats"), icon: <Globe className="w-4 h-4" /> },
 ];

@@ -45,6 +45,7 @@ type riotEvent struct {
 		Slug string `json:"slug"`
 	} `json:"league"`
 	Match struct {
+		ID    string `json:"id"`
 		Teams []struct {
 			Name   string `json:"name"`
 			Code   string `json:"code"`
