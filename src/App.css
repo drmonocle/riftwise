@@ -89,6 +89,23 @@
     --rw-red: #f4577a;
     --rw-on-accent: #0a0f1c;
   }
+  /* Scoreboard: near-black and grey, one teal accent (the redesign mock's colours) */
+  :root[data-theme="scoreboard"] {
+    --rw-bg: #0b0c0e;
+    --rw-deep: #08090b;
+    --rw-surface: #101215;
+    --rw-raised: #171a1e;
+    --rw-border: #23262b;
+    --rw-line: #33373e;
+    --rw-accent: #2dd4bf;
+    --rw-accent-2: #14b8a6;
+    --rw-text: #e7e8ea;
+    --rw-sub: #b2b6bd;
+    --rw-muted: #8a8f98;
+    --rw-teal: #2dd4bf;
+    --rw-red: #f0647a;
+    --rw-on-accent: #06231f;
+  }
   /* TSM: black and white with a steel blue */
   :root[data-theme="tsm"] {
     --rw-bg: #09090b;
