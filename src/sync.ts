@@ -48,7 +48,8 @@ export class SyncError extends Error {}
 type Field = { v: unknown; t: number };
 type State = { times: Record<string, number>; snap: Record<string, string>; last: number };
 
-const SETTING_KEYS = ["theme", "language", "spoilerMode", "defaultTab", "soundAlerts", "notifyKickoff", "notifyPregame", "notifyStream"] as const;
+// themePicked travels with the theme: a Rift picked on one device stays Rift on the others (0.7.38 default change)
+const SETTING_KEYS = ["theme", "themePicked", "language", "spoilerMode", "defaultTab", "soundAlerts", "notifyKickoff", "notifyPregame", "notifyStream"] as const;
 
 function read<T>(key: string, fallback: T): T {
   try {

@@ -5,10 +5,10 @@
 export type ThemeName = "rift" | "classic" | "midnight" | "scoreboard" | "light" | "tsm" | "flyquest" | "t1";
 
 export const THEMES: { id: ThemeName; swatch: [string, string, string] }[] = [
+  { id: "scoreboard", swatch: ["#0b0c0e", "#e7e8ea", "#2dd4bf"] },
   { id: "rift", swatch: ["#120f2b", "#a78bfa", "#2dd4bf"] },
   { id: "classic", swatch: ["#091428", "#c8aa6e", "#0ac8b9"] },
   { id: "midnight", swatch: ["#0d1017", "#7aa2ff", "#22d3ee"] },
-  { id: "scoreboard", swatch: ["#0b0c0e", "#e7e8ea", "#2dd4bf"] },
   { id: "light", swatch: ["#f6f5fb", "#5b3fd6", "#0d7f72"] },
   // team colours
   { id: "tsm", swatch: ["#121215", "#f2f2f2", "#5ab4f0"] },
@@ -16,7 +16,7 @@ export const THEMES: { id: ThemeName; swatch: [string, string, string] }[] = [
   { id: "t1", swatch: ["#150c0e", "#ff3b55", "#e3c27a"] },
 ];
 
-export const DEFAULT_THEME: ThemeName = "rift";
+export const DEFAULT_THEME: ThemeName = "scoreboard";
 
 /** Page background per theme, for the browser / phone status bar. */
 const BAR: Record<ThemeName, string> = {

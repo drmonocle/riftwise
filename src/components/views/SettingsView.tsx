@@ -392,7 +392,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <button
                     key={th.id}
                     type="button"
-                    onClick={() => onUpdateSettings({ theme: th.id })}
+                    onClick={() => onUpdateSettings({ theme: th.id, themePicked: true })}
                     aria-pressed={on}
                     className={`text-left rounded-lg border p-2.5 transition-all ${th.id === "light" ? "[&_*]:!text-[#17142b]" : ""} ${
                       on ? "border-rw-accent ring-1 ring-rw-accent/50" : "border-rw-border hover:border-rw-line"
