@@ -11,6 +11,7 @@ import type { HubEvent, SeriesRow, Stage, StandingRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { EventPlayerStats, EventTeamStatsTable } from "./EventTables";
 import { EventFacts, EventRosters, RegionalRecords } from "./EventExtras";
+import { EventStatsSection } from "./EventStats";
 import { PlayoffChances } from "./PlayoffChances";
 import { eventCardData } from "./BroadcastCard";
 import {
@@ -116,7 +117,7 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
             className="mt-2 inline-flex items-center gap-1 text-xs text-rw-teal hover:underline"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            {tl("Facts and pickers for {event}", { event: eventTitle((e.parent?.n || e.n).replace(/ (Main Event|Play-In)$/, "")) })}
+            {tl("Stats and pickers for {event}", { event: eventTitle((e.parent?.n || e.n).replace(/ (Main Event|Play-In)$/, "")) })}
           </HubLink>
         )}
         {(e.games || 0) > 0 && (
@@ -227,6 +228,8 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
       <div className="rw-span space-y-3">
         <EventPlayerStats e={e} hidden={resultsHidden} />
         <EventTeamStatsTable e={e} hidden={resultsHidden} />
+        {/* the stats cards (records, objectives, the draft...) from every game's scoreboard */}
+        {e.ln && !resultsHidden ? <EventStatsSection slug={e.u} name={eventTitle(e.n)} end={e.end} /> : null}
       </div>
       <RegionalRecords e={e} hidden={resultsHidden} />
 
@@ -371,12 +374,15 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
       };
     }),
   }));
+  // four rounds or more need the whole page width (half of a two-column page made them scroll sideways)
   return (
-    <Section title={title || tl("Bracket")}>
-      <div className="overflow-x-auto -mx-1 px-1 pb-1">
-        <BracketBoard columns={columns} />
-      </div>
-    </Section>
+    <div className={columns.length >= 4 ? "rw-span" : undefined}>
+      <Section title={title || tl("Bracket")}>
+        <div className="overflow-x-auto -mx-1 px-1 pb-1">
+          <BracketBoard columns={columns} />
+        </div>
+      </Section>
+    </div>
   );
 };
 

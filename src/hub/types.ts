@@ -131,6 +131,8 @@ export interface HubEvent {
   statsGames?: number;
   games?: number;
   series?: number;
+  /** 1: the stats build wrote lines/<event>.json (the stats cards come from it) */
+  ln?: number;
   /** every player's sums in this tournament (rates are worked out in the app) */
   players?: EventPlayer[];
   teamStats?: EventTeamStats[];

@@ -11,10 +11,21 @@ export interface EventLines {
   /** [series page, stage, date, team a, page, code, team b, page, code, wins a, wins b, best of] */
   s: [string, string, string, string, string, string, string, string, string, number | null, number | null, number][];
   /** [series, game, a on blue, winner (1 a, 2 b, 0), minutes, towers a, towers b, kills a, kills b, gold a, gold b,
-   *  a's pre-game chance in %, a's gold lead at 15] (the last two from builds of 2026-10-23 on) */
-  g: [number, number, number, number, number | null, number | null, number | null, number | null, number | null, number | null, number | null, (number | null)?, (number | null)?][];
-  /** [game, side (0 a, 1 b), player, page, role, champion, kills, deaths, assists, cs, damage] */
-  p: [number, number, string, string | null, string | null, string, number | null, number | null, number | null, number | null, number | null][];
+   *  a's pre-game chance in %, a's gold lead at 15] (the last two from builds of 2026-10-23 on), then from builds of
+   *  2026-10-25 on: dragons, barons, heralds, void grubs, elders, turret plates and inhibitors (a, b each), first blood
+   *  and first tower (1 a, 2 b, 0), a's bans, b's bans */
+  g: [
+    number, number, number, number, number | null, number | null, number | null, number | null, number | null, number | null, number | null,
+    (number | null)?, (number | null)?,
+    (number | null)?, (number | null)?, (number | null)?, (number | null)?, (number | null)?, (number | null)?, (number | null)?, (number | null)?,
+    (number | null)?, (number | null)?, (number | null)?, (number | null)?, (number | null)?, (number | null)?,
+    (number | null)?, (number | null)?, string[]?, string[]?,
+  ][];
+  /** [game, side (0 a, 1 b), player, page, role, champion, kills, deaths, assists, cs, damage], then (2026-10-25 on)
+   *  vision score and gold */
+  p: [number, number, string, string | null, string | null, string, number | null, number | null, number | null, number | null, number | null, (number | null)?, (number | null)?][];
+  /** pentakills: [game, player page, player, champion, how many in that game] (2026-10-25 on) */
+  pk?: [number, string | null, string, string, number][];
   /** team page -> region code, and -> final place ("1", "3-4"), builds from 2026-10-23 on */
   rg?: Record<string, string>;
   pl?: Record<string, string>;
@@ -37,9 +48,11 @@ export interface Fact {
   headline: string;
   rows: FactRow[];
   note?: string;
+  /** a list of figures, not a ranking: no 1. 2. 3. */
+  plain?: boolean;
 }
 
-interface Game {
+export interface Game {
   /** which event it was at ("Worlds 2016"), for lists over several years */
   label?: string;
   series: string;
@@ -49,23 +62,46 @@ interface Game {
   w: number;
   min: number | null;
   team: [Side, Side];
+  /** team a's chance before the game (0-100), a's gold lead at 15; null when not known */
+  chance: number | null;
+  g15: number | null;
+  /** the side on blue (0 team a, 1 team b); first blood / first tower: 0 team a, 1 team b, null not known */
+  blue: number;
+  fb: number | null;
+  ft: number | null;
+  /** pentakills in this game */
+  pentas: { u: string | null; name: string; champ: string; n: number }[];
 }
-interface Side {
+export interface Side {
   name: string;
   u: string;
   c: string;
   towers: number | null;
   kills: number | null;
+  gold: number | null;
+  /** objectives (null when the file doesn't have them) */
+  drag: number | null;
+  baron: number | null;
+  herald: number | null;
+  grubs: number | null;
+  elder: number | null;
+  plates: number | null;
+  inhib: number | null;
+  bans: string[];
   players: Line[];
 }
-interface Line {
+export interface Line {
   name: string;
   u: string | null;
+  role: string | null;
   champ: string;
   k: number;
   d: number;
   a: number;
+  cs: number | null;
   dmg: number | null;
+  vision: number | null;
+  gold: number | null;
 }
 
 /** All the events' games in one list (several stages, or several years with `labels`: the event of each file). */
@@ -75,19 +111,32 @@ export function gamesOf(files: (EventLines | null)[], labels: (string | undefine
     if (!f) return;
     const games: Game[] = f.g.map((g) => {
       const s = f.s[g[0]];
+      const v = (i: number) => (typeof g[i] === "number" ? (g[i] as number) : null);
+      const side = (i: 0 | 1) => ({
+        towers: g[5 + i] as number | null, kills: g[7 + i] as number | null, gold: g[9 + i] as number | null,
+        drag: v(13 + i), baron: v(15 + i), herald: v(17 + i), grubs: v(19 + i), elder: v(21 + i), plates: v(23 + i), inhib: v(25 + i),
+        bans: (g[29 + i] as string[] | undefined) || [], players: [] as Line[],
+      });
+      const first = (x: number | null) => (x === 1 ? 0 : x === 2 ? 1 : null);
       return {
         label: labels[fi],
         series: s[0], stage: s[1], date: s[2], n: g[1], w: g[3], min: g[4],
         team: [
-          { name: s[3], u: s[4], c: s[5], towers: g[5], kills: g[7], players: [] },
-          { name: s[6], u: s[7], c: s[8], towers: g[6], kills: g[8], players: [] },
+          { name: s[3], u: s[4], c: s[5], ...side(0) },
+          { name: s[6], u: s[7], c: s[8], ...side(1) },
         ],
+        blue: g[2] === 1 ? 0 : 1, chance: v(11), g15: v(12), fb: first(v(27)), ft: first(v(28)), pentas: [],
       };
     });
     for (const p of f.p) {
       const g = games[p[0]];
-      if (g) g.team[p[1] ? 1 : 0].players.push({ name: p[2], u: p[3], champ: p[5], k: p[6] || 0, d: p[7] || 0, a: p[8] || 0, dmg: p[10] });
+      if (g)
+        g.team[p[1] ? 1 : 0].players.push({
+          name: p[2], u: p[3], role: p[4], champ: p[5], k: p[6] || 0, d: p[7] || 0, a: p[8] || 0, cs: p[9], dmg: p[10],
+          vision: p[11] ?? null, gold: p[12] ?? null,
+        });
     }
+    for (const [gi, u, name, champ, n] of f.pk || []) games[gi]?.pentas.push({ u, name, champ, n });
     out.push(...games);
   });
   return out.sort((a, b) => a.date.localeCompare(b.date) || a.n - b.n);
@@ -307,6 +356,6 @@ export function eventFacts(games: Game[], event: string): Fact[] {
 
 /** A fact as plain text to paste anywhere: the headline, then the numbered list. */
 export function factText(f: Fact, link: string): string {
-  const rows = f.rows.map((r, i) => `${i + 1}. ${r.label} - ${r.value}${r.sub && f.id !== "kills" && f.id !== "deaths" ? ` (${r.sub})` : ""}`);
+  const rows = f.rows.map((r, i) => `${f.plain ? "" : `${i + 1}. `}${r.label} - ${r.value}${r.sub && f.id !== "kills" && f.id !== "deaths" ? ` (${r.sub})` : ""}`);
   return [f.headline, "", ...rows, "", `(via RiftWise: ${link})`].join("\n");
 }

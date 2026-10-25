@@ -76,6 +76,19 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       .map((l) => ({ l, tier: tier.get(l)! }));
   }, [d.teams]);
   type Row = { r: RatingRow; rank: number };
+  // the rating after each game day of the last 30 days (the stats build), ending at the rating shown (which counts the
+  // games since); the "30 days" number is the same line's start to end, so the line, its colour and the number agree
+  const trend = (r: RatingRow): [string, number][] | null => {
+    const h = hist.data?.[r[0]];
+    if (!h || !h.length) return null;
+    const end = h[h.length - 1];
+    // no game since: a flat (grey) line
+    return end[1] === r[5] && h.length > 1 ? h : [...h, [r[8] > end[0] ? r[8] : end[0], r[5]]];
+  };
+  const change = (r: RatingRow) => {
+    const p = trend(r);
+    return p && p.length > 1 ? p[p.length - 1][1] - p[0][1] : r[6];
+  };
   const columns: Column<Row>[] = [
     {
       key: "rank",
@@ -127,14 +140,11 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
     {
       key: "trend",
       label: tl("Trend"),
-      title: tl("Rating over the last 120 days"),
-      value: (x) => {
-        const h = hist.data?.[x.r[0]];
-        return h && h.length > 1 ? h[h.length - 1][1] - h[0][1] : null;
-      },
+      title: tl("Rating over the last 30 days, after each game day: green went up, red went down, grey stayed the same"),
+      value: (x) => change(x.r),
       render: (x) => {
-        const h = hist.data?.[x.r[0]];
-        return h && h.length > 1 ? <Sparkline points={h} width={80} height={20} /> : null;
+        const p = trend(x.r);
+        return p && p.length > 1 ? <Sparkline points={p} width={80} height={20} /> : null;
       },
       className: "hidden md:table-cell",
     },
@@ -142,8 +152,8 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       key: "chg",
       label: tl("30 days"),
       title: tl("Rating change over the last 30 days"),
-      value: (x) => x.r[6],
-      render: (x) => <Change v={x.r[6]} />,
+      value: (x) => change(x.r),
+      render: (x) => <Change v={change(x.r)} />,
       className: "tabular-nums",
     },
     {

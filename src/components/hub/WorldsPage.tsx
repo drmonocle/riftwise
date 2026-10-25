@@ -4,7 +4,7 @@
  * roll by the chances or flip a coin, or play the rest out thousands of times). Picks stay on this device.
  */
 import React, { useEffect, useMemo, useState } from "react";
-import { Check, Copy, Dice5, Eraser, Lock, RefreshCw, Shuffle, Sparkles, TrendingUp, Trophy } from "lucide-react";
+import { Dice5, Eraser, Lock, RefreshCw, Shuffle, Sparkles, TrendingUp, Trophy } from "lucide-react";
 import { eventName, eventTitle, stageName, tk, tl } from "../../i18n";
 import { loadEventLines, loadHubEvent, loadHubTitles, loadLeague, loadRatings } from "../../hub/data";
 import type { EventListItem, HubEvent, HubLeague, HubRatings } from "../../hub/types";
@@ -16,14 +16,15 @@ import {
 } from "../../hub/worlds";
 import type { Match } from "../../types";
 import { normalizeTeamCode } from "../../helpers";
-import { eventFacts, factText, gamesOf, type Fact } from "../../hub/worldsFacts";
+import { type Fact } from "../../hub/worldsFacts";
+import { allFacts, FactGroups } from "./EventStats";
 import { detectBracket, realOfStages, runBracket, simulateBracket, type Bracket } from "../../hub/bracket";
 import { BroadcastCardButton, SectionCard, chancesCard, listCard } from "./BroadcastCard";
 import { RegionStats } from "./RegionStats";
 import { IntlInsights } from "./IntlInsights";
 import { liveLines } from "../../hub/liveLines";
 import type { EventLines } from "../../hub/worldsFacts";
-import { ChampIcon, Failed, HubLink, Loading, PlayerLink, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
+import { Failed, HubLink, Loading, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
 
 /** The three international events with a page of their own; Worlds has had a Swiss stage since 2023. */
 export type IntlKind = "worlds" | "msi" | "first-stand";
@@ -169,10 +170,7 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
   useEffect(() => {
     if (!swissYear && !bracket) setTab("facts");
   }, [swissYear, bracket]);
-  // this year's Worlds opens on the Swiss picker (the stage being played); other years on the facts
-  useEffect(() => {
-    if (swissYear && d?.year === thisYear) setTab("swiss");
-  }, [swissYear, d?.year, thisYear]);
+  // every year opens on the stats (TV, 2026-10-25: International events → Worlds lands there); the pickers are a tab away
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -200,7 +198,7 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
       <div className="flex flex-wrap gap-1.5" role="tablist">
         <button type="button" role="tab" aria-selected={tab === "facts"} className={pill(tab === "facts")} onClick={() => setTab("facts")}>
           <Sparkles className="w-3.5 h-3.5" />
-          {tl("Facts")}
+          {tl("Stats")}
         </button>
         {swissYear && (
           <>
@@ -293,7 +291,8 @@ const FactsTab: React.FC<{ d: Loaded; kind: IntlKind }> = ({ d, kind }) => {
     const { files: all, stages } = lines.data;
     const files = all.map((f, i) => (stage === "all" || stages[i].u === stage ? f : null));
     const name = stage === "all" ? d.name : eventTitle(d.stages.find((s) => s.u === stage)?.n || d.name);
-    const out = eventFacts(gamesOf(files, d.all ? stages.map((s) => s.label) : []), name);
+    // (game upsets and gold comebacks are in the insights below)
+    const out = allFacts(files, d.all ? stages.map((s) => s.label) : [], name).filter((f) => f.id !== "upsets" && f.id !== "comebacks");
     if (d.all && d.league.titles?.length) {
       const t = d.league.titles.slice(0, 5);
       out.unshift({
@@ -334,13 +333,9 @@ const FactsTab: React.FC<{ d: Loaded; kind: IntlKind }> = ({ d, kind }) => {
       {d.all && <p className="text-[11px] text-rw-muted">{tl("Every edition together, {from} to {to}.", { from: d.years[d.years.length - 1], to: d.years[0] })}</p>}
       {d.all && <Winners kind={kind} name={d.name} />}
       {!facts.length ? (
-        <p className="text-xs text-rw-sub">{tl("No games with full stats yet. Facts show up as soon as the first games are in.")}</p>
+        <p className="text-xs text-rw-sub">{tl("No games with full stats yet. Stats show up as soon as the first games are in.")}</p>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
-          {facts.map((f) => (
-            <FactCard key={f.id} f={f} kind={kind} year={d.year} />
-          ))}
-        </div>
+        <FactGroups facts={facts} link={hubShareUrl({ kind, year: d.year })} shareId={(f) => `${kind}-${d.year}-${f.id}`} />
       )}
       <RegionStats files={shownFiles} years={years} all={d.all} name={d.name} />
       <IntlInsights files={shownFiles} years={years} stages={stageSlugs} all={d.all} name={d.name} />
@@ -446,57 +441,6 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
   );
 };
 
-
-const FactCard: React.FC<{ f: Fact; kind: IntlKind; year: string }> = ({ f, kind, year }) => {
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard
-      ?.writeText(factText(f, hubShareUrl({ kind, year })))
-      .then(() => {
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1500);
-      })
-      .catch(() => {});
-  };
-  return (
-    <Section
-      title={f.title}
-      share={`${kind}-${year}-${f.id}`}
-      right={
-        <button type="button" className={btn} onClick={copy} aria-label={tl("Copy as text")}>
-          {copied ? <Check className="w-3.5 h-3.5 text-rw-teal" /> : <Copy className="w-3.5 h-3.5" />}
-          {tl("Text")}
-        </button>
-      }
-    >
-      <p className="text-sm font-semibold text-rw-text leading-snug">{f.headline}</p>
-      <ol className="text-xs space-y-1.5">
-        {f.rows.map((r, i) => (
-          <li key={i} className="flex items-start gap-2 min-w-0">
-            <span className="w-4 text-rw-muted text-right shrink-0">{i + 1}.</span>
-            {r.champ && <ChampIcon name={r.champ} size={18} className="shrink-0" />}
-            <span className="min-w-0 flex-1">
-              {r.player ? (
-                <PlayerLink name={r.label} u={r.player} />
-              ) : r.team ? (
-                <TeamLink name={r.label} u={r.team} />
-              ) : r.match ? (
-                <HubLink to={{ kind: "match", slug: r.match.slug, game: r.match.game }} className="hover:text-rw-accent hover:underline">
-                  {r.label}
-                </HubLink>
-              ) : (
-                <span>{r.label}</span>
-              )}
-              {r.sub && <span className="block text-[11px] text-rw-muted break-words">{r.sub}</span>}
-            </span>
-            <span className="font-bold text-rw-accent shrink-0">{r.value}</span>
-          </li>
-        ))}
-      </ol>
-      {f.note && <p className="text-[10px] text-rw-muted">{f.note}</p>}
-    </Section>
-  );
-};
 
 // ── pickers ───────────────────────────────────────────────────────────────
 

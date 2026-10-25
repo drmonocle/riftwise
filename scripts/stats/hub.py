@@ -928,6 +928,10 @@ def build(ctx) -> dict:
     def big_event(name):
         return bool(name and BIG_EVENT_RE.search(name) and not NOT_BIG_RE.search(name))
 
+    # events that get a lines file (their stats on the event page) besides the big ones: those played into last year
+    # or later (~20 MB; every year would be ~140 MB a build)
+    LINES_FROM = f"{datetime.date.today().year - 1}-01-01"
+
     # Riot's team list once per build: logos for big events' team lists, photos for current pros' page files
     try:
         import photos_lp
@@ -1061,9 +1065,10 @@ def build(ctx) -> dict:
         stage_rows = defaultdict(list)
         n_stats_games = 0
         csv_rows = []
-        # Worlds / MSI / First Stand: every game's scoreboard in one small file (lines/<event>.json) for the Worlds
-        # page's facts (most kills so far, a player's line in a series, 0-5 champions...), instead of one file per series
-        ev_lines = {"s": [], "g": [], "p": []} if big_event(en) else None
+        # every game's scoreboard in one small file (lines/<event>.json) for the event's stats (most kills so far, a
+        # player's line in a series, 0-5 champions, objectives, bans...), instead of one file per series: Worlds / MSI /
+        # First Stand of every year, every other event from LINES_FROM on (written only if it has games, below)
+        ev_lines = {"s": [], "g": [], "p": []}
         # the teams' logos for the Worlds page's pickers (big events only: their pages show them)
         ev_logos = big_event(en)
         first_date, last_date = None, None
@@ -1665,16 +1670,28 @@ def build(ctx) -> dict:
                         gi = len(ev_lines["g"])
                         # series, game, a on blue, winner side (1 a, 2 b, 0 not known), minutes, towers / kills / gold a and b,
                         # then a's pre-game chance in % (filled in after the ratings) and a's gold lead at 15 (Oracle's Elixir)
+                        # (2026-10-25 on) then objectives a / b: dragons, barons, heralds, void grubs, elder dragons, turret
+                        # plates, inhibitors; first blood and first tower (1 a, 2 b, 0 not known); each side's bans
                         g15_a = ta.get("g15")
+
+                        def first_(key):
+                            return 1 if ta.get(key) == 1 else 2 if tb_.get(key) == 1 else 0
+
                         ev_lines["g"].append([si, x["n"], 1 if a_blue else 0, x.get("w") or 0, x.get("min"),
                                               ta.get("towers"), tb_.get("towers"), ta.get("k"), tb_.get("k"), ta.get("gold"), tb_.get("gold"),
-                                              None, g15_a])
+                                              None, g15_a,
+                                              ta.get("drag"), tb_.get("drag"), ta.get("barons"), tb_.get("barons"),
+                                              ta.get("heralds"), tb_.get("heralds"), ta.get("grubs"), tb_.get("grubs"),
+                                              (ta.get("drakes") or {}).get("elder"), (tb_.get("drakes") or {}).get("elder"),
+                                              ta.get("pl"), tb_.get("pl"), ta.get("inhib"), tb_.get("inhib"),
+                                              first_("fb"), first_("ft"), ta.get("bans") or [], tb_.get("bans") or []])
                         ev_lines.setdefault("_gi", {})[(gslug, x["n"])] = gi
                         for p_ in x["p"]:
                             side_b = 0 if (p_.get("s") == 1) == a_blue else 1
-                            # game, side (0 a, 1 b), player, page, role, champion, kills, deaths, assists, cs, damage
+                            # game, side (0 a, 1 b), player, page, role, champion, kills, deaths, assists, cs, damage, then
+                            # (2026-10-25 on) vision score and gold
                             ev_lines["p"].append([gi, side_b, p_.get("n"), p_.get("u"), p_.get("r"), p_.get("c"), p_.get("k"), p_.get("d"),
-                                                  p_.get("a"), p_.get("cs"), p_.get("dm")])
+                                                  p_.get("a"), p_.get("cs"), p_.get("dm"), p_.get("v"), p_.get("gd")])
                 lu_b = league_slug.get(lg_ev)
                 region_b = (info or {}).get("Region") if not lu_b else None  # Regional Finals: the region's league (below)
                 g_by_n = {g["n"]: g for g in glist}
@@ -1865,17 +1882,23 @@ def build(ctx) -> dict:
             "games": sum(len(v) for v in series.values()), "series": sum(1 for st in stages for _ in st["series"]),
             # series with at least one game, from the same list as "games" (the stage tables can miss some series)
             "played": sum(1 for v in series.values() if v),
+            # 1: lines/<event>.json exists (the event page's stats come from it)
+            "ln": 1 if ev_lines["g"] and (big_event(en) or (last_date or "") >= LINES_FROM) else None,
         }
         out.json(f"event/{eslug}.json", {k: v for k, v in event.items() if v not in (None, [], {})})
         kept[op] = {"tp": tp, "tts": tts, "tc": tc, "facts": facts, "mvp": ev_mvp, "tteam": tteam, "regions": regions,
                     "last": last_date, "stats": n_stats_games, "rosters": roster_out, "series": event["series"], "played": event["played"],
                     "lu": league_slug.get(lg_ev), "y": event["year"], "en": en, "eslug": eslug}
-        if ev_lines and ev_lines["g"]:
+        if ev_lines["g"] and (big_event(en) or (last_date or "") >= LINES_FROM):
             # each team's region and final place, for the Worlds page's region table (every year and all years)
             ev_lines["rg"] = {t_["u"]: t_["r"] for t_ in roster_out if t_.get("u") and t_.get("r")}
             ev_lines["pl"] = {r_["u"]: r_["p"] for r_ in res_out if r_.get("u") and r_.get("p")}
             if info.get("Country"):
                 ev_lines["host"] = info.get("Country")
+            # pentakills (Leaguepedia): [game index, player page, player, champion, how many in that game]
+            gi_of = ev_lines.get("_gi", {})
+            ev_lines["pk"] = [[gi_of[(pk_["g"], pk_["gn"])], pk_.get("u"), pk_.get("n"), pk_.get("c"), pk_.get("x") or 1]
+                              for pk_ in facts["pentas"] if (pk_.get("g"), pk_.get("gn")) in gi_of]
             lines_pending.append((eslug, ev_lines))  # written after the ratings (each game's pre-game chance)
             checks["hub: event line files"] = checks.get("hub: event line files", 0) + 1
         if csv_rows:
@@ -2090,12 +2113,15 @@ def build(ctx) -> dict:
     league_rank = Counter()
     world_rank = 0
     rank_rows = []
+    trend_of = {}  # team slug -> its rating after each game day of the last 30 days (the rankings page trend line)
     for fid, x in ranked:
         lg_r = x["league"]
         league_rank[lg_r] += 1
         top_r = tier_of(lg_r) == 1
         world_rank += 1 if top_r else 0
         was = team_ratings.rating_on(x["hist"], before_30)
+        trend_of[team_slug[fid]] = ([[before_30, round(was)]] if was is not None else []) + [
+            [d_, round(v_)] for d_, v_ in x["hist"] if d_ > before_30]
         # a world rank only for top-league teams: second-tier leagues never meet them, so theirs is a league rank
         team_rating[fid] = {"r": round(x["r"]), "rank": world_rank if top_r else None, "of": n_top, "league": lg_r,
                             "lrank": league_rank[lg_r], "chg30": round(x["r"] - was) if was is not None else None}
@@ -2172,10 +2198,10 @@ def build(ctx) -> dict:
             os.replace(tmp_h, hist_path)
         except OSError as e:
             checks["hub: rating history not saved"] = str(e)
-    # the rankings page's sparklines: top-league teams, last 120 days, ratings only
-    cut120 = (datetime.date.today() - datetime.timedelta(days=120)).isoformat()
-    out.json("ratings-history.json", {row[0]: [[p[0], p[1]] for p in rating_hist.get(row[0], []) if p[0] >= cut120]
-                                      for row in rank_rows if row[9] == 1})
+    # the rankings page's trend lines, top-league teams: the rating after each game day over the same 30 days as the
+    # "30 days" column, from the rating run itself (the daily snapshots above only began on 2026-10-18, so a line made
+    # from them covered a week and often went the other way from the number beside it)
+    out.json("ratings-history.json", {row[0]: trend_of[row[0]] for row in rank_rows if row[9] == 1 and row[0] in trend_of})
     checks["hub: teams with rating history"] = sum(1 for v in rating_hist.values() if len(v) > 1)
     checks["hub: rated teams in top leagues"] = n_top
     checks["hub: rating test accuracy"] = team_ratings.score(rating_tests).get("acc")
