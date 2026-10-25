@@ -45,7 +45,7 @@ describe("settings come over from lolworlds.com/riftwise by themselves", () => {
   });
 
   it("saves what came back, sign-in included, and puts the address back", () => {
-    const settings = JSON.stringify({ followedTeams: ["T1", "GEN"], language: "ko", theme: "midnight" });
+    const settings = JSON.stringify({ followedTeams: ["T1", "GEN"], language: "ko", theme: "classic" });
     at("https://riftwise.gg/team/t1#import=" + pack({ riftwatch_settings: settings, riftwatch_sync_token: "tok", other: "x" }) + "&h=" + encodeURIComponent("#match/123"));
     importMovedSettings();
     expect(localStorage.getItem("riftwatch_settings")).toBe(settings);

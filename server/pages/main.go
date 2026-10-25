@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "1.19.0"
+	version  = "1.19.1"
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -262,6 +262,8 @@ var (
 	// the site-wide versions of these in index.html make way for the page's own
 	reSiteTags = regexp.MustCompile(`(?is)\s*(<link\s+rel="canonical"[^>]*>|<link\s+rel="alternate"\s+hreflang=[^>]*>|<meta\s+(property="og:|name="twitter:)[^>]*>|<script\s+type="application/ld\+json">.*?</script>)`)
 	reNoscript = regexp.MustCompile(`(?is)\s*<noscript>.*?</noscript>`)
+	// index.html's #root: empty, or (the web build, vite.config.ts) holding the home page's heading
+	reRoot = regexp.MustCompile(`(?s)<div id="root">.*?</div>`)
 )
 
 // Links in every page's <noscript> summary (paths under the site's root)
@@ -447,7 +449,7 @@ func (s *store) page(title, desc, canonical string, index bool, og string, about
 		ns.WriteString(`<a href="` + publicPath + map[bool]string{true: pl.seg + "/", false: ""}[pl.seg != ""] + l[0] + `">` + l[1] + `</a>`)
 	}
 	ns.WriteString(` · <a href="https://lolworlds.com/">LoL Worlds 24/7 stream</a></nav></main></noscript>`)
-	return strings.Replace(doc, `<div id="root"></div>`, ns.String(), 1)
+	return reRoot.ReplaceAllLiteralString(doc, ns.String())
 }
 
 func (s *store) serve(w http.ResponseWriter, r *http.Request) {

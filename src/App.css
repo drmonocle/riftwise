@@ -72,23 +72,6 @@
     --rw-red: #e84057;
     --rw-on-accent: #091428;
   }
-  /* Midnight: neutral graphite with a cool blue */
-  :root[data-theme="midnight"] {
-    --rw-bg: #0b0d12;
-    --rw-deep: #07090d;
-    --rw-surface: #12151d;
-    --rw-raised: #1b1f2a;
-    --rw-border: #252a36;
-    --rw-line: #353c4d;
-    --rw-accent: #8ab4ff;
-    --rw-accent-2: #5b8cff;
-    --rw-text: #e9edf5;
-    --rw-sub: #aab3c5;
-    --rw-muted: #7f889b;
-    --rw-teal: #22d3ee;
-    --rw-red: #f4577a;
-    --rw-on-accent: #0a0f1c;
-  }
   /* TSM: black and white with a steel blue */
   :root[data-theme="tsm"] {
     --rw-bg: #09090b;
