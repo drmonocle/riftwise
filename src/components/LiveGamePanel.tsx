@@ -18,6 +18,7 @@ import {
   fetchLiveDetails,
   fetchLiveStart,
   fetchLiveWindow,
+  feedNow,
 } from "../liveGame";
 import { champIcon, champNameById, itemIconById, useDDragon } from "../hub/ddragon";
 import { champName } from "../champions";
@@ -101,7 +102,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
           if (first?.gameMetadata) firstRef.current[game.id] = first;
         }
         // a finished game: ask well past its end, the feed answers with its last frames
-        const w = await fetchLiveWindow(game.id, live ? undefined : Date.now() - 60_000);
+        const w = await fetchLiveWindow(game.id, live ? undefined : feedNow() - 60_000);
         const frame = w?.frames?.[w.frames.length - 1];
         if (!alive) return;
         if (!w || !frame) {
@@ -112,7 +113,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
           setDraft(first && startRef.current[game.id] != null ? first : null);
         } else {
           setDraft(null);
-          const det = open ? await fetchLiveDetails(game.id, live ? undefined : Date.now() - 60_000).catch(() => null) : null;
+          const det = open ? await fetchLiveDetails(game.id, live ? undefined : feedNow() - 60_000).catch(() => null) : null;
           if (!alive) return;
           const players = det?.frames?.[det.frames.length - 1]?.participants ?? null;
           setState((prev) => ({ win: w, frame, startMs: startRef.current[game.id] ?? null, details: players ?? prev?.details ?? null }));

@@ -100,17 +100,15 @@ describe("loadSettings", () => {
     expect(s.followedRegions).toEqual(["EMEA", "KOREA"]);
     expect(s.followedTeams).toEqual(DEFAULT_SETTINGS.followedTeams);
   });
-  it("moves the old default Rift to Scoreboard unless Rift was picked in Settings", () => {
+  it("opens on Rift, keeps a picked theme, and moves the retired Scoreboard back to Rift", () => {
     (globalThis as any).localStorage = fakeStorage();
-    expect(loadSettings().theme).toBe("scoreboard");
-    localStorage.setItem("riftwatch_settings", JSON.stringify({ theme: "rift" }));
-    expect(loadSettings().theme).toBe("scoreboard");
-    localStorage.setItem("riftwatch_settings", JSON.stringify({ theme: "rift", themePicked: true }));
     expect(loadSettings().theme).toBe("rift");
-    localStorage.setItem("riftwatch_settings", JSON.stringify({ theme: "classic" }));
-    expect(loadSettings().theme).toBe("classic");
+    localStorage.setItem("riftwatch_settings", JSON.stringify({ theme: "scoreboard" }));
+    expect(loadSettings().theme).toBe("rift");
+    localStorage.setItem("riftwatch_settings", JSON.stringify({ theme: "fnatic" }));
+    expect(loadSettings().theme).toBe("fnatic");
     localStorage.setItem("riftwatch_settings", JSON.stringify({ theme: "no-such-theme" }));
-    expect(loadSettings().theme).toBe("scoreboard");
+    expect(loadSettings().theme).toBe("rift");
   });
 });
 

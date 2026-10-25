@@ -371,28 +371,32 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   rift: tl("Rift"),
                   classic: tl("Classic"),
                   midnight: tl("Midnight"),
-                  scoreboard: tl("Scoreboard"),
                   light: tl("Light"),
                   // team names stay as they are in every language
                   tsm: "TSM",
                   flyquest: "FlyQuest",
                   t1: "T1",
+                  geng: "Gen.G",
+                  fnatic: "Fnatic",
+                  cloud9: "Cloud9",
                 }[th.id];
                 const about = {
                   rift: tl("Deep indigo with a soft violet, like the Rift Herald"),
                   classic: tl("The original navy and Hextech gold"),
                   midnight: tl("Graphite with a cool blue"),
-                  scoreboard: tl("Near-black and grey with one teal accent, like a broadcast scoreboard"),
                   light: tl("A pale background with deep violet, for daylight and printing"),
                   tsm: tl("TSM's black and white, with a steel blue"),
                   flyquest: tl("FlyQuest green on near-black"),
                   t1: tl("T1 red on black, with championship gold"),
+                  geng: tl("Gen.G gold on black"),
+                  fnatic: tl("Fnatic orange on black"),
+                  cloud9: tl("Cloud9 sky blue on deep navy"),
                 }[th.id];
                 return (
                   <button
                     key={th.id}
                     type="button"
-                    onClick={() => onUpdateSettings({ theme: th.id, themePicked: true })}
+                    onClick={() => onUpdateSettings({ theme: th.id })}
                     aria-pressed={on}
                     className={`text-left rounded-lg border p-2.5 transition-all ${th.id === "light" ? "[&_*]:!text-[#17142b]" : ""} ${
                       on ? "border-rw-accent ring-1 ring-rw-accent/50" : "border-rw-border hover:border-rw-line"

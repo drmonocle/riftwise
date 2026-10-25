@@ -36,7 +36,8 @@
 }
 
 @layer base {
-  /* Rift: deep indigo with soft Rift Herald violet */
+  /* Rift (default): deep indigo with soft Rift Herald violet */
+  :root,
   :root[data-theme="rift"] {
     --rw-bg: #0c0a1d;
     --rw-deep: #09071a;
@@ -88,24 +89,6 @@
     --rw-red: #f4577a;
     --rw-on-accent: #0a0f1c;
   }
-  /* Scoreboard (default): near-black and grey, one teal accent (the redesign mock's colours) */
-  :root,
-  :root[data-theme="scoreboard"] {
-    --rw-bg: #0b0c0e;
-    --rw-deep: #08090b;
-    --rw-surface: #101215;
-    --rw-raised: #171a1e;
-    --rw-border: #23262b;
-    --rw-line: #33373e;
-    --rw-accent: #2dd4bf;
-    --rw-accent-2: #14b8a6;
-    --rw-text: #e7e8ea;
-    --rw-sub: #b2b6bd;
-    --rw-muted: #8a8f98;
-    --rw-teal: #2dd4bf;
-    --rw-red: #f0647a;
-    --rw-on-accent: #06231f;
-  }
   /* TSM: black and white with a steel blue */
   :root[data-theme="tsm"] {
     --rw-bg: #09090b;
@@ -156,6 +139,57 @@
     --rw-teal: #e3c27a;
     --rw-red: #fb923c;
     --rw-on-accent: #160306;
+  }
+  /* Gen.G: gold on black */
+  :root[data-theme="geng"] {
+    --rw-bg: #0b0a07;
+    --rw-deep: #070604;
+    --rw-surface: #14120c;
+    --rw-raised: #1d1a11;
+    --rw-border: #2a2618;
+    --rw-line: #3d3722;
+    --rw-accent: #d4af37;
+    --rw-accent-2: #a8862a;
+    --rw-text: #f3eee0;
+    --rw-sub: #c9bfa3;
+    --rw-muted: #958b70;
+    --rw-teal: #3ec9a7;
+    --rw-red: #f0605d;
+    --rw-on-accent: #1a1405;
+  }
+  /* Fnatic: orange on black */
+  :root[data-theme="fnatic"] {
+    --rw-bg: #0a0806;
+    --rw-deep: #060504;
+    --rw-surface: #14100c;
+    --rw-raised: #1d1711;
+    --rw-border: #2b2219;
+    --rw-line: #3e3125;
+    --rw-accent: #ff6a13;
+    --rw-accent-2: #e04e00;
+    --rw-text: #f5efe9;
+    --rw-sub: #cdbfb2;
+    --rw-muted: #988a7d;
+    --rw-teal: #35c9b0;
+    --rw-red: #f2556b;
+    --rw-on-accent: #1a0b00;
+  }
+  /* Cloud9: sky blue on deep navy */
+  :root[data-theme="cloud9"] {
+    --rw-bg: #07111c;
+    --rw-deep: #050c14;
+    --rw-surface: #0c1a29;
+    --rw-raised: #122336;
+    --rw-border: #1b2f45;
+    --rw-line: #29435f;
+    --rw-accent: #2fb5f0;
+    --rw-accent-2: #1c8fd0;
+    --rw-text: #eaf6ff;
+    --rw-sub: #a9c4d9;
+    --rw-muted: #7590a8;
+    --rw-teal: #3fd6a2;
+    --rw-red: #f7607a;
+    --rw-on-accent: #04121e;
   }
   /* Light: a pale background with deep violet, for daylight and printing */
   :root[data-theme="light"] {
