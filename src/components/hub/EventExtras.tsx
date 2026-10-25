@@ -71,7 +71,7 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean; card?: {
   const drakes = Object.entries(o.drakes).sort((a, b) => b[1] - a[1]);
   return (
     <Section
-      title={tl("Tournament facts")}
+      title={tl("Tournament stats")}
       share="tournament-facts"
       right={card && !hidden ? <BroadcastCardButton data={card.data} name={card.name} label={tl("Overview card")} /> : undefined}
     >

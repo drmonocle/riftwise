@@ -14,8 +14,9 @@ import { AddToCalendarMenu } from "./AddToCalendarMenu";
 import { MatchPrepButton } from "./MatchPrepButton";
 import { MatchOverviewButton } from "./MatchOverviewButton";
 
-// the one-line layout once the table itself is 900 px wide; below that two or three lines a match
-const GRID = "@min-[900px]:grid @min-[900px]:grid-cols-[5.5rem_minmax(0,1fr)_8.5rem_3.5rem_5.25rem_2.25rem_8.5rem_auto] @min-[900px]:items-center @min-[900px]:gap-x-3";
+// the one-line layout once the table itself is 900 px wide; below that two or three lines a match. Every column has
+// a set width (the buttons' too: an "auto" one was empty in the header row, so its columns sat ~75 px right of the rows')
+const GRID = "@min-[900px]:grid @min-[900px]:grid-cols-[5.5rem_minmax(0,1fr)_8.5rem_3.5rem_5.25rem_2.25rem_8.5rem_5rem] @min-[900px]:items-center @min-[900px]:gap-x-3";
 
 export const UpNextTable: React.FC<{
   matches: Match[];
