@@ -100,10 +100,12 @@ describe("loadSettings", () => {
     expect(s.followedRegions).toEqual(["EMEA", "KOREA"]);
     expect(s.followedTeams).toEqual(DEFAULT_SETTINGS.followedTeams);
   });
-  it("opens on Rift, keeps a picked theme, and moves the retired Scoreboard back to Rift", () => {
+  it("opens on Rift, keeps a picked theme, and moves the retired Scoreboard and Midnight back to Rift", () => {
     (globalThis as any).localStorage = fakeStorage();
     expect(loadSettings().theme).toBe("rift");
     localStorage.setItem("riftwatch_settings", JSON.stringify({ theme: "scoreboard" }));
+    expect(loadSettings().theme).toBe("rift");
+    localStorage.setItem("riftwatch_settings", JSON.stringify({ theme: "midnight" }));
     expect(loadSettings().theme).toBe("rift");
     localStorage.setItem("riftwatch_settings", JSON.stringify({ theme: "fnatic" }));
     expect(loadSettings().theme).toBe("fnatic");

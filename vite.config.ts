@@ -10,25 +10,36 @@ import path from "node:path";
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
-// Web build only: the PWA manifest and home-screen icon tags (meaningless inside the desktop app),
-// and the web/ files (service worker, manifest, icons, IIS config) copied next to the bundle.
+// Web build only: the PWA manifest and home-screen icon tags (meaningless inside the desktop app), the home page's
+// main heading in the page itself, and the web/ files (service worker, manifest, icons, IIS config) copied next to
+// the bundle.
 const webPlugin = {
   name: "riftwise-web",
   closeBundle: () => {
     for (const f of fs.readdirSync("web")) fs.copyFileSync(path.join("web", f), path.join("dist-web", f));
   },
   transformIndexHtml: (html: string) =>
-    html.replace(
-      "</head>",
-      [
-        '    <link rel="manifest" href="/manifest.webmanifest" />',
-        '    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=3" />',
-        '    <meta name="apple-mobile-web-app-capable" content="yes" />',
-        '    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />',
-        '    <meta name="apple-mobile-web-app-title" content="RiftWise" />',
-        "  </head>",
-      ].join("\n"),
-    ),
+    html
+      .replace(
+        "</head>",
+        [
+          '    <link rel="manifest" href="/manifest.webmanifest" />',
+          '    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=3" />',
+          '    <meta name="apple-mobile-web-app-capable" content="yes" />',
+          '    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />',
+          '    <meta name="apple-mobile-web-app-title" content="RiftWise" />',
+          "  </head>",
+        ].join("\n"),
+      )
+      // riftwise.gg/ is this file as it is and crawlers skip <noscript>, so the <noscript> summary's heading moves
+      // into #root (its text stays in the summary, in bold), where the app replaces it once it starts. The page
+      // service (server/pages) puts each other page's own heading there instead.
+      .replace(
+        /<div id="root"><\/div>([\s\S]*?)<h1>([^<]*)<\/h1>/,
+        (_m: string, between: string, h1: string) =>
+          `<div id="root"><h1 style="font:600 16px system-ui,sans-serif;color:#c8aa6e;margin:16px">${h1}</h1></div>` +
+          `${between}<p><strong>${h1}</strong></p>`,
+      ),
 };
 
 // `vite preview` only: RIFTWISE_STATS_DIR=<folder> serves a stats build made on this PC

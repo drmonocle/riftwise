@@ -177,6 +177,23 @@ func TestThinPageIsNoindex(t *testing.T) {
 	}
 }
 
+// The web build's index.html holds the home page's heading in #root (vite.config.ts): a page gets its own instead.
+func TestHomeHeadingMakesWayForThePagesOwn(t *testing.T) {
+	s := testSite(t)
+	home := strings.Replace(indexHTML, `<div id="root"></div>`, `<div id="root"><h1 style="font:600 16px system-ui,sans-serif;color:#c8aa6e;margin:16px">Home heading</h1></div>`, 1)
+	if err := os.WriteFile(filepath.Join(s.site, "index.html"), []byte(home), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	s.mu.Lock()
+	s.checked, s.indexMod = time.Time{}, time.Time{}
+	s.mu.Unlock()
+	body := get(s, "/riftwise/team/t1").Body.String()
+	if !strings.Contains(body, `<div id="root"><h1 style="font:600 16px system-ui,sans-serif;color:#c8aa6e;margin:16px">T1 – stats</h1></div><noscript>`) ||
+		strings.Contains(body, "Home heading") || strings.Count(body, "<h1") != 1 {
+		t.Errorf("expected only the page's own heading in\n%s", body)
+	}
+}
+
 func TestUnknownAndOldNames(t *testing.T) {
 	s := testSite(t)
 	if w := get(s, "/riftwise/player/nobody"); w.Code != 404 || !strings.Contains(w.Body.String(), `<div id="root">`) {

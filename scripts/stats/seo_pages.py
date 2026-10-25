@@ -9,11 +9,14 @@ SportsEvent data. Reads the hub files this build just wrote; any problem leaves 
 
     python seo_pages.py <stats>/<version>/hub      (hub.py calls write() at the end of a build)
 """
+import functools
 import html
 import json
 import os
 import re
 import sys
+
+from hub import pretty
 
 SECTIONS = {
     "worlds": ("world-championship", "League of Legends World Championship", "Worlds"),
@@ -46,6 +49,13 @@ def load(hub, rel):
             return json.load(f)
     except (OSError, ValueError):
         return None
+
+
+@functools.lru_cache(maxsize=None)
+def champ_slugs(hub):
+    """Champion name -> its page's slug ("Kai'Sa" -> "kaisa"), from search/champs.json: [name, slug, picks], where
+    the slug is left out when it is pretty(name)."""
+    return {r[0]: r[1] or pretty(r[0]) for r in load(hub, "search/champs.json") or []}
 
 
 def stages_of(hub, ev):
@@ -122,8 +132,13 @@ def year_page(hub, sec, ev):
     if champs:
         picked = sorted(champs, key=lambda c: -(c.get("p") or 0))[:5]
         banned = sorted(champs, key=lambda c: -(c.get("b") or 0))[:5]
+        slugs = champ_slugs(hub)
+
+        def champ(c):
+            # the champion page's own address; a name without one stays plain text rather than a dead link
+            return link("champion/" + slugs[c["c"]], c["c"]) if c["c"] in slugs else e(c["c"])
         h.append("<h3>Champions</h3><p>Most picked: " + ", ".join(
-            f"{link('champion/' + re.sub(r'[^a-z0-9]+', '-', c['c'].lower()).strip('-'), c['c'])} ({c.get('p')}, {c.get('w')} wins)" for c in picked)
+            f"{champ(c)} ({c.get('p')}, {c.get('w')} wins)" for c in picked)
             + ". Most banned: " + ", ".join(f"{e(c['c'])} ({c.get('b')})" for c in banned) + ".</p>")
     series_rows = []
     for stage_event, st in stages:
