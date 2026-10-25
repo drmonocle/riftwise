@@ -210,7 +210,7 @@ export function useColumns(): number {
 }
 
 /** The grid that goes with useColumns(). */
-export const GRID_COLS = "grid md:grid-cols-2 xl:grid-cols-3 min-[1800px]:grid-cols-4";
+export const GRID_COLS = "grid md:grid-cols-2 xl:grid-cols-3 4xl:grid-cols-4";
 
 /** Sets the browser tab's title while a page is open. */
 export function usePageTitle(title: string | null | undefined): void {

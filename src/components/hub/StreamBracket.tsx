@@ -173,6 +173,8 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           ))}
         </div>
       )}
+      {/* a wide window: the bracket and the standings side by side */}
+      <div className={`grid gap-3 items-start ${bracket.length > 0 && ev.standings?.length ? "3xl:grid-cols-2" : ""}`}>
       {bracket.length > 0 && <Bracket stages={bracket} hide={hide} note={note} />}
       {ev.standings && ev.standings.length > 0 && (
         <div className={`grid gap-3 ${ev.standings.length > 1 ? "md:grid-cols-2" : ""}`}>
@@ -186,10 +188,11 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           ))}
         </div>
       )}
+      </div>
       {lists.map((st) => (
         <div key={st.name} className="space-y-1.5">
           <div className="text-[10px] font-semibold text-rw-muted">{stageLabel(st.name)}</div>
-          <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4">
             {st.series.map((r, i) => (
               <SeriesBox key={i} r={r} hideResult={hide(r)} note={note(r)} />
             ))}

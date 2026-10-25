@@ -324,7 +324,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                 )}
                 <div className="overflow-x-auto p-3">
                   <BracketBoard
-                    colClass="w-[200px]"
+                    colClass="w-[200px] grow max-w-80"
                     titleClass="text-[10px] font-bold uppercase tracking-wider text-rw-sub px-1 mb-2"
                     columns={sec.rounds.map((round, ri) => ({
                       key: String(ri),

@@ -94,7 +94,10 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
 
       <Page state={home}>
         {(h) => (
-          <div className="grid gap-3 md:grid-cols-2">
+          // two columns that each keep their own height: "Happening now" (often one line) with the busiest players
+          // under it, the latest tournaments beside them (a stretched grid row left a mostly empty box)
+          <div className="grid gap-3 md:grid-cols-2 items-start">
+            <div className="space-y-3 min-w-0">
             {h.now && h.now.length > 0 && (
               <Section title={tl("Happening now")}>
                 <ul className="text-xs space-y-1.5">
@@ -122,15 +125,16 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
                 </ul>
               </Section>
             )}
+            <Section title={tl("Most games in {year}", { year: h.year })}>
+              <BusiestTable rows={h.busiest} />
+            </Section>
+            </div>
             <Section title={tl("Latest tournaments")}>
               <ul className="text-xs space-y-1.5">
                 {h.latest.map((e) => (
                   <LatestRow key={e.u} e={e} />
                 ))}
               </ul>
-            </Section>
-            <Section title={tl("Most games in {year}", { year: h.year })}>
-              <BusiestTable rows={h.busiest} />
             </Section>
           </div>
         )}

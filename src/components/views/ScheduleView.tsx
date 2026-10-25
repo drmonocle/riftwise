@@ -340,7 +340,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       if (m.state !== "completed" || (e.target as HTMLElement).closest("button, a, img, [role=button], input")) return;
                       openDetails(m);
                     }}
-                    className={`flex flex-wrap sm:flex-nowrap items-center justify-between gap-y-1.5 bg-rw-surface border px-3 sm:px-4 py-2.5 rounded-lg transition-all ${
+                    className={`@container bg-rw-surface border px-3 sm:px-4 py-2.5 rounded-lg transition-all ${
                       m.state === "completed" ? "cursor-pointer " : ""
                     }${
                       flashMatchId === m.matchId
@@ -348,14 +348,16 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         : "border-rw-border hover:border-rw-accent/80"
                     }`}
                   >
+                    {/* laid out by the tile's own width: on a wide screen the tiles sit two to a row */}
+                    <div className="flex flex-wrap @min-[36rem]:flex-nowrap items-center justify-between gap-y-1.5 h-full">
                     {/* Time, Calendar & League */}
-                    <div className="flex items-center gap-2 min-w-0 sm:w-56 lg:w-72 shrink sm:shrink-0 order-1">
+                    <div className="flex items-center gap-2 min-w-0 @min-[36rem]:w-56 @min-[56rem]:w-72 shrink @min-[36rem]:shrink-0 order-1">
                       <span className="font-mono text-xs text-rw-teal font-bold shrink-0">{timeStr}</span>
                       {m.state === "unstarted" && <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />}
                       {m.state !== "completed" && <MatchPrepButton match={m} compact />}
                       {m.state !== "completed" && <MatchOverviewButton match={m} compact />}
                       <span
-                        className={`text-[11px] text-rw-sub truncate font-medium ${oneLeague ? "max-sm:hidden" : ""}`}
+                        className={`text-[11px] text-rw-sub truncate font-medium ${oneLeague ? "@max-[36rem]:hidden" : ""}`}
                         title={m.blockName ? `${m.leagueName} · ${m.blockName}` : m.leagueName}
                       >
                         <span
@@ -364,14 +366,14 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         >
                           {m.leagueName}
                         </span>
-                        {m.blockName && <span className="hidden lg:inline text-rw-muted"> · {m.blockName}</span>}
+                        {m.blockName && <span className="hidden @min-[56rem]:inline text-rw-muted"> · {m.blockName}</span>}
                       </span>
                     </div>
 
                     {/* Teams & Score */}
-                    <div className="flex items-center justify-center gap-2 sm:gap-4 w-full sm:w-auto sm:flex-1 order-3 sm:order-2 min-w-0">
+                    <div className="flex items-center justify-center gap-2 @min-[36rem]:gap-3 w-full @min-[36rem]:w-auto @min-[36rem]:flex-1 order-3 @min-[36rem]:order-2 min-w-0">
                       {/* Team 1 */}
-                      <div className="flex items-center gap-1.5 flex-1 sm:flex-none sm:w-36 justify-end text-right min-w-0">
+                      <div className="flex items-center gap-1.5 flex-1 justify-end text-right min-w-0">
                         <button
                           type="button"
                           onClick={(e) => {
@@ -404,7 +406,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       </div>
 
                       {/* Score / VS Center with Per-Match Reveal & H2H */}
-                      <div className="flex flex-col items-center justify-center min-w-[70px]">
+                      <div className="flex flex-col items-center justify-center w-24 @min-[36rem]:w-28 shrink-0 text-center">
                         <div className="font-mono font-bold text-xs px-2 flex items-center justify-center">
                           {showScore ? (
                             <div
@@ -433,22 +435,22 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                             <span className="text-rw-sub font-medium">{tl("VS")}</span>
                           )}
                         </div>
-                        <span className="sm:hidden text-[10px] text-rw-muted">{tc("short best of", "Bo{n}", { n: m.bestOf })}</span>
+                        <span className="@min-[36rem]:hidden text-[10px] text-rw-muted">{tc("short best of", "Bo{n}", { n: m.bestOf })}</span>
                         {/* Swiss: what this match decides */}
                         {swissStakes(m) && (
-                          <span className={`text-[9px] font-bold uppercase tracking-wide whitespace-nowrap ${swissStakes(m) === "advance" ? "text-rw-teal" : "text-rw-red"}`}>
+                          <span className={`text-[9px] font-bold uppercase tracking-wide leading-tight ${swissStakes(m) === "advance" ? "text-rw-teal" : "text-rw-red"}`}>
                             {swissStakes(m) === "both" ? tl("Win and in, lose and out") : swissStakes(m) === "advance" ? tl("Winner advances") : tl("Elimination match")}
                           </span>
                         )}
                         {(showScore || m.state !== "completed") && h2h && (
-                          <div className="max-sm:hidden">
+                          <div className="@max-[36rem]:hidden">
                           <H2HMeter team1Code={m.team1Code} team2Code={m.team2Code} h2h={h2h} matchId={m.matchId} countThisMatch={showScore} />
                           </div>
                         )}
                       </div>
 
                       {/* Team 2 */}
-                      <div className="flex items-center gap-1.5 flex-1 sm:flex-none sm:w-36 justify-start text-left min-w-0">
+                      <div className="flex items-center gap-1.5 flex-1 justify-start text-left min-w-0">
                         {m.team2Image && (
                           <img
                             {...riotImg(m.team2Image, 64)}
@@ -482,12 +484,12 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     </div>
 
                     {/* Status / Best Of */}
-                    <div className="flex items-center gap-2 sm:w-40 justify-end shrink-0 ml-auto sm:ml-0 order-2 sm:order-3">
+                    <div className="flex items-center gap-2 @min-[36rem]:w-48 justify-end shrink-0 min-w-0 ml-auto @min-[36rem]:ml-0 order-2 @min-[36rem]:order-3">
                       {/* phones: just the status here, so the row fits on two lines (best-of moves under VS) */}
-                      <span className="max-sm:hidden">
+                      <span className="@max-[36rem]:hidden">
                         <ShareMatchButton match={m} />
                       </span>
-                      <span className="max-sm:hidden text-[10px] text-rw-sub bg-rw-bg px-2 py-0.5 rounded border border-rw-border font-medium">
+                      <span className="@max-[36rem]:hidden text-[10px] text-rw-sub bg-rw-bg px-2 py-0.5 rounded border border-rw-border font-medium">
                         {tc("short best of", "Bo{n}", { n: m.bestOf })}
                       </span>
                       {m.state === "completed" ? (
@@ -507,10 +509,11 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           {tl("LIVE")}
                         </span>
                       ) : (
-                        <span className="text-[10px] text-rw-accent font-semibold whitespace-nowrap" title={m.blockName || undefined}>
+                        <span className="text-[10px] text-rw-accent font-semibold whitespace-nowrap truncate min-w-0" title={m.blockName || undefined}>
                           {untilText(m.startTimeUtc) || m.blockName || tl("UPCOMING")}
                         </span>
                       )}
+                    </div>
                     </div>
                   </div>
                   )}

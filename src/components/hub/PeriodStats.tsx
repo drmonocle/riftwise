@@ -267,17 +267,17 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[] }> = ({ rows }) => {
     ) : (
       <span className="text-rw-muted">–</span>
     );
-  const th = "px-2 py-1 font-normal text-right text-[10px] text-rw-muted";
+  const th = "px-2 py-1 font-normal text-[10px] text-rw-muted";
   return (
     <div className="space-y-1">
       <Sub>{tl("Win rate when…")}</Sub>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 items-start">
         <table className="w-full text-xs">
           <thead>
             <tr>
               <th className={`${th} text-left`} />
-              <th className={th}>{tl("They got it")}</th>
-              <th className={th}>{tl("Opponent got it")}</th>
+              <th className={`${th} text-right`}>{tl("They got it")}</th>
+              <th className={`${th} text-right`}>{tl("Opponent got it")}</th>
             </tr>
           </thead>
           <tbody>
@@ -294,7 +294,7 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[] }> = ({ rows }) => {
           <thead>
             <tr>
               <th className={`${th} text-left`}>{tl("Gold at 15 minutes")}</th>
-              <th className={th}>{tl("Win rate")}</th>
+              <th className={`${th} text-right`}>{tl("Win rate")}</th>
             </tr>
           </thead>
           <tbody>

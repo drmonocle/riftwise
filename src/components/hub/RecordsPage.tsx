@@ -332,7 +332,7 @@ export const RecordsPanel: React.FC = () => {
               )}{" "}
               {tl("The top records were checked against Leaguepedia.")}
             </p>
-            <div className="grid gap-3 md:grid-cols-2 min-[2300px]:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-2 5xl:grid-cols-3">
               {gameList(tl("Fastest wins"), r.game.fastest, mmss)}
               {gameList(tl("Longest games"), r.game.longest, mmss)}
               {gameList(tl("Most kills in a game"), r.game.bloodiest, (v) =>
