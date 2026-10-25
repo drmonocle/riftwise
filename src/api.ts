@@ -124,7 +124,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   notifyPregame: true,
   notifyStream: true,
   soundAlerts: false,
-  theme: "rift",
+  theme: "scoreboard",
   compactMode: false,
   minimizeToTrayOnClose: true,
   startWithWindows: true,
@@ -162,7 +162,9 @@ export function loadSettings(): AppSettings {
       const merged = { ...DEFAULT_SETTINGS, ...parsed } as AppSettings;
       const oneOf = <T,>(v: unknown, allowed: readonly T[], dflt: T): T => (allowed.includes(v as T) ? (v as T) : dflt);
       merged.language = oneOf(merged.language, ["auto", "en", "es", "pt-BR", "ko", "vi", "zh-CN", "zh-TW", "ja", "fr", "de", "tr"] as const, "auto");
-      merged.theme = oneOf(merged.theme, ["rift", "classic", "midnight", "scoreboard", "light", "tsm", "flyquest", "t1"] as const, "rift");
+      merged.theme = oneOf(merged.theme, ["rift", "classic", "midnight", "scoreboard", "light", "tsm", "flyquest", "t1"] as const, "scoreboard");
+      // Scoreboard replaced Rift as the default (0.7.38); a saved Rift that was never picked was just the old default
+      if (merged.theme === "rift" && !merged.themePicked) merged.theme = "scoreboard";
       merged.defaultTab = oneOf(merged.defaultTab, ["live", "schedule", "stats", "stream", "watchlist", "news", "settings"] as const, DEFAULT_SETTINGS.defaultTab);
       // Settings for the removed ticker bar / desktop HUD (0.4.0) are dropped
       for (const old of ["tickerMode", "tickerTopmost", "tickerCycleSec"]) delete (merged as unknown as Record<string, unknown>)[old];

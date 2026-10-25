@@ -310,14 +310,14 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-2.5 rounded-lg border border-[#ff4655]/50 bg-rw-red/10 text-xs">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
             <Flame className="w-3.5 h-3.5 text-[#ff4655] fill-current shrink-0" />
-            <span className="font-bold text-[#ff4655] uppercase tracking-wider text-[10px] shrink-0">{tl("Next banger")}</span>
+            <span className="font-bold text-[#ff4655] light:text-[#c8102e] uppercase tracking-wider text-[10px] shrink-0">{tl("Next banger")}</span>
             <Matchup e={nextBanger} />
             <span className="text-rw-muted truncate hidden sm:inline">
               {streamEventTitle(nextBanger)}
               {nextBanger.stage ? ` · ${stageName(nextBanger.stage)}` : ""}
             </span>
           </div>
-          <span className="font-mono text-[#ff4655] shrink-0">{relTime(nextBanger.utcIso, now)}</span>
+          <span className="font-mono text-[#ff4655] light:text-[#c8102e] shrink-0">{relTime(nextBanger.utcIso, now)}</span>
         </div>
       )}
 

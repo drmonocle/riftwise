@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
-  <meta name="theme-color" content="#0c0a1d">
+  <meta name="theme-color" content="#0b0c0e">
   <title>Page not found | RiftWise</title>
   <link rel="icon" type="image/png" href="/icon.png?v=2">
   <!-- IIS serves this file (web.config, httpErrors) for any address that doesn't exist, with the 404 status kept.
@@ -14,11 +14,8 @@
     * { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
     body {
-      background: #0c0a1d;
-      background-image:
-        radial-gradient(60% 45% at 50% 0%, rgba(139, 92, 246, 0.22), transparent 70%),
-        radial-gradient(40% 40% at 100% 100%, rgba(45, 212, 191, 0.08), transparent 70%);
-      color: #efeaff;
+      background: #0b0c0e;
+      color: #e7e8ea;
       font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
       min-height: 100vh;
       min-height: 100dvh;
@@ -31,18 +28,16 @@
       align-items: baseline;
       gap: 8px;
       padding: 10px 16px;
-      border-bottom: 1px solid #2a2452;
-      background: rgba(12, 10, 29, 0.82);
+      border-bottom: 1px solid #23262b;
+      background: #08090b;
     }
     .logo {
-      font-weight: 800;
+      font-family: "Bahnschrift SemiCondensed", Bahnschrift, "Avenir Next Condensed", "Arial Narrow", sans-serif;
+      font-weight: 700;
       font-size: 18px;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.08em;
       text-decoration: none;
-      background: linear-gradient(90deg, #efeaff, #b39dff 55%, #7f6bff);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+      color: #e7e8ea;
     }
     main {
       flex: 1;
@@ -54,11 +49,10 @@
     .card {
       width: 100%;
       max-width: 560px;
-      background: #151230;
-      border: 1px solid #2a2452;
-      border-radius: 16px;
+      background: #101215;
+      border: 1px solid #23262b;
+      border-radius: 3px;
       padding: 28px 20px;
-      box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(179, 157, 255, 0.03);
       text-align: center;
     }
     .code {
@@ -67,17 +61,18 @@
       font-weight: 700;
       letter-spacing: 0.2em;
       text-transform: uppercase;
-      color: #8c85b0;
+      color: #8a8f98;
     }
     h1 {
       margin: 0 0 10px;
       font-size: clamp(26px, 5vw, 36px);
       line-height: 1.15;
-      font-weight: 800;
+      font-family: "Bahnschrift SemiCondensed", Bahnschrift, "Avenir Next Condensed", "Arial Narrow", sans-serif;
+      font-weight: 700;
     }
     p {
       margin: 0 0 22px;
-      color: #b9b0dc;
+      color: #b2b6bd;
       font-size: 15px;
       line-height: 1.5;
     }
@@ -89,23 +84,23 @@
     input {
       flex: 1;
       min-width: 0;
-      background: #0c0a1d;
-      color: #efeaff;
-      border: 1px solid #2a2452;
-      border-radius: 10px;
+      background: #0b0c0e;
+      color: #e7e8ea;
+      border: 1px solid #23262b;
+      border-radius: 3px;
       padding: 11px 13px;
       font: inherit;
       font-size: 15px;
     }
-    input::placeholder { color: #8c85b0; }
-    input:focus { outline: none; border-color: rgba(179, 157, 255, 0.7); }
+    input::placeholder { color: #8a8f98; }
+    input:focus { outline: none; border-color: #2dd4bf; }
     button {
-      background: linear-gradient(135deg, #b39dff, #7f6bff);
-      color: #120d2c;
+      background: #2dd4bf;
+      color: #06231f;
       font: inherit;
       font-weight: 700;
       border: 0;
-      border-radius: 10px;
+      border-radius: 3px;
       padding: 11px 16px;
       cursor: pointer;
     }
@@ -117,20 +112,20 @@
       gap: 8px;
     }
     nav a {
-      color: #efeaff;
+      color: #e7e8ea;
       text-decoration: none;
       font-size: 14px;
       font-weight: 600;
-      background: #201b44;
-      border: 1px solid #2a2452;
-      border-radius: 999px;
+      background: #171a1e;
+      border: 1px solid #23262b;
+      border-radius: 3px;
       padding: 8px 14px;
     }
-    nav a:hover { border-color: rgba(179, 157, 255, 0.6); }
+    nav a:hover { border-color: #2dd4bf; }
     footer {
       padding: 0 16px 20px;
       text-align: center;
-      color: #8c85b0;
+      color: #8a8f98;
       font-size: 12px;
     }
     footer a { color: #2dd4bf; text-decoration: none; }

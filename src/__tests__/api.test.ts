@@ -100,6 +100,18 @@ describe("loadSettings", () => {
     expect(s.followedRegions).toEqual(["EMEA", "KOREA"]);
     expect(s.followedTeams).toEqual(DEFAULT_SETTINGS.followedTeams);
   });
+  it("moves the old default Rift to Scoreboard unless Rift was picked in Settings", () => {
+    (globalThis as any).localStorage = fakeStorage();
+    expect(loadSettings().theme).toBe("scoreboard");
+    localStorage.setItem("riftwatch_settings", JSON.stringify({ theme: "rift" }));
+    expect(loadSettings().theme).toBe("scoreboard");
+    localStorage.setItem("riftwatch_settings", JSON.stringify({ theme: "rift", themePicked: true }));
+    expect(loadSettings().theme).toBe("rift");
+    localStorage.setItem("riftwatch_settings", JSON.stringify({ theme: "classic" }));
+    expect(loadSettings().theme).toBe("classic");
+    localStorage.setItem("riftwatch_settings", JSON.stringify({ theme: "no-such-theme" }));
+    expect(loadSettings().theme).toBe("scoreboard");
+  });
 });
 
 describe("regionIsFollowed", () => {

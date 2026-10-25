@@ -36,8 +36,7 @@
 }
 
 @layer base {
-  /* Rift (default): deep indigo with soft Rift Herald violet */
-  :root,
+  /* Rift: deep indigo with soft Rift Herald violet */
   :root[data-theme="rift"] {
     --rw-bg: #0c0a1d;
     --rw-deep: #09071a;
@@ -89,7 +88,8 @@
     --rw-red: #f4577a;
     --rw-on-accent: #0a0f1c;
   }
-  /* Scoreboard: near-black and grey, one teal accent (the redesign mock's colours) */
+  /* Scoreboard (default): near-black and grey, one teal accent (the redesign mock's colours) */
+  :root,
   :root[data-theme="scoreboard"] {
     --rw-bg: #0b0c0e;
     --rw-deep: #08090b;

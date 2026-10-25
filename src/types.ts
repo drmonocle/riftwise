@@ -139,6 +139,8 @@ export interface AppSettings {
   startWithWindows: boolean;
   /** Colour theme (src/theme.ts); older saves have none and get the default. */
   theme?: "rift" | "classic" | "midnight" | "scoreboard" | "light" | "tsm" | "flyquest" | "t1";
+  /** a theme was picked in Settings (an old saved "rift" without it was only the old default) */
+  themePicked?: boolean;
   /** "auto" follows the browser / Windows language. */
   language: "auto" | "en" | "es" | "pt-BR" | "ko" | "vi" | "zh-CN" | "zh-TW" | "ja" | "fr" | "de" | "tr";
   followedTeams: string[];
