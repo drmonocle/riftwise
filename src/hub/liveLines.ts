@@ -8,7 +8,7 @@ import type { HubEvent } from "./types";
 import type { EventLines } from "./worldsFacts";
 import type { Match } from "../types";
 import { fetchMatchGames } from "../api";
-import { fetchLiveDetails, fetchLiveStart, fetchLiveWindow, type LiveWindow } from "../liveGame";
+import { feedNow, fetchLiveDetails, fetchLiveStart, fetchLiveWindow, type LiveWindow } from "../liveGame";
 import { findHubTeam, loadHubIndex, type HubIndex } from "./data";
 import { RIOT_PREFIX, recentSchedule } from "./riotMatch";
 import { champNameById, ddragonReady } from "./ddragon";
@@ -38,8 +38,8 @@ function gameLines(gameId: string, match: Match, index: HubIndex): Promise<GameL
       const [first, last, det] = await Promise.all([
         fetchLiveStart(gameId),
         // asking well past a finished game's end gives its last frames
-        fetchLiveWindow(gameId, Date.now() - 60_000),
-        fetchLiveDetails(gameId, Date.now() - 60_000).catch(() => null),
+        fetchLiveWindow(gameId, feedNow() - 60_000),
+        fetchLiveDetails(gameId, feedNow() - 60_000).catch(() => null),
       ]);
       const f = last?.frames?.[last.frames.length - 1];
       const meta = (last || first)?.gameMetadata;

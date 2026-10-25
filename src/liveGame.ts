@@ -63,23 +63,52 @@ export interface LiveDetailsParticipant {
 /** ISO time rounded down to ten seconds, as the feed wants it. */
 const stamp = (ms: number) => new Date(Math.floor(ms / 10_000) * 10_000).toISOString();
 
-async function get<T>(url: string): Promise<T | null> {
+/**
+ * How far Riot's clock is ahead of this device's (ms). The feed refuses a window that ends less than 20 seconds
+ * before its own time ("ahead of broadcast"), so a device whose clock runs fast asked for windows that weren't served
+ * yet and never got live stats. The refusal says Riot's time; from then on requests are timed by it.
+ */
+let clockOffset = 0;
+/** Now by Riot's clock (as far as this device has learned it). */
+export const feedNow = () => Date.now() + clockOffset;
+
+/** Riot's time from the feed's "too recent" refusal ("... current time: 2026-10-25T01:11:53.734707Z"). */
+function serverTime(text: string): number | null {
+  const m = /current time: (\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)(\.\d+)?/.exec(text);
+  if (!m) return null;
+  const t = Date.parse(`${m[1]}${(m[2] || "").slice(0, 4)}Z`);
+  return isNaN(t) ? null : t;
+}
+
+async function get<T>(url: string, again = true): Promise<T | null> {
   const r = await fetch(url, { signal: AbortSignal.timeout(15_000) });
   if (r.status === 204 || r.status === 404) return null; // game not started or no stats for it
+  if (r.status === 400 && again) {
+    // too recent for Riot's clock: learn the difference, then ask once more for a window far enough back
+    const server = serverTime(await r.text().catch(() => ""));
+    const u = new URL(url);
+    const asked = Date.parse(u.searchParams.get("startingTime") || "");
+    if (server != null && !isNaN(asked)) {
+      clockOffset = server - Date.now();
+      u.searchParams.set("startingTime", stamp(Math.min(asked, server - LAG_MS)));
+      return get<T>(u.toString(), false);
+    }
+    throw new Error("HTTP 400");
+  }
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const text = await r.text();
   return text ? (JSON.parse(text) as T) : null;
 }
 
-/** The latest frames of a game (at = a time in ms; default: now minus the feed's lag). */
-export const fetchLiveWindow = (gameId: string, at = Date.now() - LAG_MS) =>
+/** The latest frames of a game (at = a time in ms by Riot's clock; default: now minus the feed's lag). */
+export const fetchLiveWindow = (gameId: string, at = feedNow() - LAG_MS) =>
   get<LiveWindow>(`${FEED}/window/${gameId}?startingTime=${stamp(at)}`);
 
 /** The game's first frames: when it started, and who plays what. */
 export const fetchLiveStart = (gameId: string) => get<LiveWindow>(`${FEED}/window/${gameId}`);
 
 /** Per-player items, kill participation and damage share. */
-export const fetchLiveDetails = (gameId: string, at = Date.now() - LAG_MS) =>
+export const fetchLiveDetails = (gameId: string, at = feedNow() - LAG_MS) =>
   get<{ frames: { rfc460Timestamp: string; participants: LiveDetailsParticipant[] }[] }>(
     `${FEED}/details/${gameId}?startingTime=${stamp(at)}`,
   );
