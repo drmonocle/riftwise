@@ -11,6 +11,7 @@ import type { HubEvent, SeriesRow, Stage, StandingRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { EventPlayerStats, EventTeamStatsTable } from "./EventTables";
 import { EventFacts, EventRosters, RegionalRecords } from "./EventExtras";
+import { PlayoffChances } from "./PlayoffChances";
 import { eventCardData } from "./BroadcastCard";
 import {
   card,
@@ -209,6 +210,9 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
           ))}
         </div>
       )}
+
+      {/* a league table still being played: each team's chance of first place and of a top-N finish */}
+      <PlayoffChances e={e} />
 
       {lists.length > 0 && <StageLists stages={lists} />}
 
