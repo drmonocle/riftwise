@@ -44,9 +44,11 @@ export const RosterMoves: React.FC = () => {
           date: fmtDate(moves.data.since),
         })}
       </p>
-      <ul className="divide-y divide-rw-border text-xs">
+      {/* two columns, newest first down each, when the list is wide (one line a move left most of the row empty) */}
+      <div className="@container">
+      <ul className="text-xs @min-[64rem]:columns-2 gap-x-10">
         {list.slice(0, shown).map((m) => (
-          <li key={`${m.u}-${m.d}`} className="py-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
+          <li key={`${m.u}-${m.d}`} className="py-1.5 border-b border-rw-border break-inside-avoid flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
             <span className="text-rw-muted tabular-nums w-20 shrink-0">{fmtDate(m.d, false)}</span>
             <span className="min-w-0">
               <PlayerLink name={m.n} u={m.u} className="font-semibold text-rw-text hover:text-rw-accent" />
@@ -62,6 +64,7 @@ export const RosterMoves: React.FC = () => {
         ))}
         {!list.length && <li className="py-2 text-rw-muted">{tl("No moves in the top leagues yet. See every league.")}</li>}
       </ul>
+      </div>
       {list.length > shown && (
         <button type="button" onClick={() => setShown((n) => n + 50)} className="text-[11px] text-rw-teal hover:underline">
           {tl("Show {n} more", { n: Math.min(50, list.length - shown) })}

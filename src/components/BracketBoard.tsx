@@ -67,7 +67,8 @@ export function bracketEdges(columns: BracketColumn[]): Edge[] {
 
 export const BracketBoard: React.FC<{ columns: BracketColumn[]; colClass?: string; titleClass?: string }> = ({
   columns,
-  colClass = "w-48",
+  // columns grow to fill a wide box (up to a readable width) instead of leaving its right side empty
+  colClass = "w-48 grow max-w-80",
   titleClass = "text-[10px] uppercase tracking-wider font-bold text-rw-muted mb-1.5 truncate",
 }) => {
   const wrap = useRef<HTMLDivElement>(null);
@@ -115,7 +116,7 @@ export const BracketBoard: React.FC<{ columns: BracketColumn[]; colClass?: strin
   }, [edges]);
 
   return (
-    <div ref={wrap} className="relative flex gap-7 min-w-max items-stretch">
+    <div ref={wrap} className="relative flex gap-7 min-w-max w-full items-stretch">
       <svg className="absolute left-0 top-0 pointer-events-none overflow-visible" width={size.w} height={size.h} aria-hidden="true">
         {/* draw the plain lines first so highlighted paths sit on top */}
         {[...lines].sort((x, y) => Number(x.on) - Number(y.on)).map((l, i) => (

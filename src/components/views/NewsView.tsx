@@ -292,7 +292,7 @@ export const NewsView: React.FC<NewsViewProps> = ({ onOpenUrl }) => {
           <h3 className="text-[10px] font-bold uppercase tracking-wider text-rw-muted">
             {tl("In your language")}
           </h3>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 3xl:grid-cols-3">
             {local.map((s) => (
               <Card key={s.name} s={s} text={s.blurb} onOpenUrl={onOpenUrl} />
             ))}
@@ -302,7 +302,7 @@ export const NewsView: React.FC<NewsViewProps> = ({ onOpenUrl }) => {
           </h3>
         </>
       )}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 3xl:grid-cols-3">
         {main.map((s) => (
           <Card key={s.name} s={s} text={tl(s.blurb)} onOpenUrl={onOpenUrl} />
         ))}
@@ -316,7 +316,7 @@ export const NewsView: React.FC<NewsViewProps> = ({ onOpenUrl }) => {
           </h2>
           <div className="text-[11px] text-rw-muted mt-0.5">{tl("Fan-made projects we love. Not ours: all credit to their makers.")}</div>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 3xl:grid-cols-3">
           <Card
             s={{ name: "NerdFinder", url: "https://nerdfinder.gg/", blurb: "" }}
             text={tl(

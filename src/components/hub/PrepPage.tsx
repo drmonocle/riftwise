@@ -939,8 +939,8 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
         label={`${pa?.p.name || "–"} vs ${pb?.p.name || "–"} · ${roleName(r)}`}
         name={`${title}-${r}-${periodLabel}`}
         card={laneCard}
-        left={pa ? <PlayerPhoto name={pa.p.name} team={a.team.name} slug={pa.p.u} sizeClass="w-16 h-16 lg:w-24 lg:h-24 2xl:w-32 2xl:h-32" /> : null}
-        right={pb ? <PlayerPhoto name={pb.p.name} team={b.team.name} slug={pb.p.u} sizeClass="w-16 h-16 lg:w-24 lg:h-24 2xl:w-32 2xl:h-32" /> : null}
+        left={pa ? <PlayerPhoto name={pa.p.name} team={a.team.name} slug={pa.p.u} sizeClass="w-16 h-16 @min-[44rem]:w-24 @min-[44rem]:h-24 @min-[60rem]:w-32 @min-[60rem]:h-32" /> : null}
+        right={pb ? <PlayerPhoto name={pb.p.name} team={b.team.name} slug={pb.p.u} sizeClass="w-16 h-16 @min-[44rem]:w-24 @min-[44rem]:h-24 @min-[60rem]:w-32 @min-[60rem]:h-32" /> : null}
       >
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className="min-w-0 flex justify-end">{name(pa, false)}</div>
@@ -982,11 +982,16 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
   };
   return (
     <Section title={tl("Lane by lane")} right={<span className="text-[11px] text-rw-sub">{periodLabel}</span>} share={`${title}-lanes-${periodLabel}`}>
-      <ul className="divide-y divide-rw-border">
-        {ROLES.map((r, i) => (
-          <li key={r}>{lane(r, a.players[i], b.players[i])}</li>
-        ))}
-      </ul>
+      {/* one lane a row, or two / three side by side when the section is wide (one lane a row left most of it empty) */}
+      <div className="@container">
+        <ul className="grid @min-[60rem]:grid-cols-2 @min-[96rem]:grid-cols-3 gap-x-8">
+          {ROLES.map((r, i) => (
+            <li key={r} className="border-t border-rw-border first:border-t-0 @min-[60rem]:nth-2:border-t-0 @min-[96rem]:nth-3:border-t-0">
+              {lane(r, a.players[i], b.players[i])}
+            </li>
+          ))}
+        </ul>
+      </div>
       <p className="text-[10px] text-rw-muted">{tl("Starters: the players with the most games in each team's newest roster. The better number of each pair is highlighted; champions with games played.")}</p>
       <p className="text-[10px] text-rw-muted" data-nocapture="1">
         {tl("Photos: the camera by a name opens Riot's event photos of that player on NerdFinder.")}{" "}
@@ -1011,7 +1016,7 @@ const LaneBlock: React.FC<{
   label: string;
   name: string;
   card: () => CardData | null;
-  /** the two players' photos, on the outer sides (from a medium-wide window on) */
+  /** the two players' photos, on the outer sides (when the lane is wide enough) */
   left?: React.ReactNode;
   right?: React.ReactNode;
   children: React.ReactNode;
@@ -1019,18 +1024,18 @@ const LaneBlock: React.FC<{
   const ref = useRef<HTMLDivElement>(null);
   const data = card();
   return (
-    <div className="flex items-center justify-center gap-6 lg:gap-12">
-      <div className="hidden md:flex w-16 lg:w-24 2xl:w-32 justify-center">{left}</div>
-      <div ref={ref} className="relative py-2.5 w-full max-w-lg">
+    <div className="@container flex items-center justify-center gap-4 @min-[44rem]:gap-12">
+      <div className="hidden @min-[28rem]:flex w-16 @min-[44rem]:w-24 @min-[60rem]:w-32 justify-center shrink-0">{left}</div>
+      <div ref={ref} className="relative py-2.5 w-full max-w-lg min-w-0">
         <div className="rw-capture-only rw-section-context text-sm font-extrabold text-rw-text pb-1">{label}</div>
-        <div className="absolute right-0 top-2 flex items-center gap-1" data-nocapture="1">
+        <div className="flex justify-end mb-1 @min-[36rem]:mb-0 @min-[36rem]:absolute @min-[36rem]:right-0 @min-[36rem]:top-2 items-center gap-1" data-nocapture="1">
           {data && <BroadcastCardButton data={() => card() as CardData} name={name} label={tl("Lane card")} compact />}
           <ShareButtons target={ref} name={name} />
         </div>
         {children}
         <CaptureFooter />
       </div>
-      <div className="hidden md:flex w-16 lg:w-24 2xl:w-32 justify-center">{right}</div>
+      <div className="hidden @min-[28rem]:flex w-16 @min-[44rem]:w-24 @min-[60rem]:w-32 justify-center shrink-0">{right}</div>
     </div>
   );
 };
