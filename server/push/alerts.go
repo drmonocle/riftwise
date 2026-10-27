@@ -263,8 +263,11 @@ type riotEvent struct {
 	Match *struct {
 		ID    string `json:"id"`
 		Teams []struct {
-			Name string `json:"name"`
-			Code string `json:"code"`
+			Name   string `json:"name"`
+			Code   string `json:"code"`
+			Result *struct {
+				GameWins int `json:"gameWins"`
+			} `json:"result"` // the series score (Discord results)
 		} `json:"teams"`
 		Strategy struct {
 			Count int `json:"count"`
@@ -371,8 +374,21 @@ func (a *App) pollMatches() {
 			if a.sent.claim("kick:"+id) && fresh {
 				a.alertMatch("kickoff", id, e, t1, t2, 0)
 			}
+			a.mu.Lock()
+			a.seenWaiting[id] = true // (also: its result goes to Discord when it ends)
+			a.mu.Unlock()
+		case "completed":
+			// Discord channels get the result of a match this service saw before it ended: not a backlog of every
+			// finished match on the schedule after a restart
+			a.mu.Lock()
+			seen := a.seenWaiting[id]
+			a.mu.Unlock()
+			if r, ok := resultEmbed(e); ok && seen && a.sent.claim("res:"+id) {
+				go a.postAll("results", r)
+			}
 		}
 	}
+	a.dailyCard(byID, now)
 }
 
 func (a *App) alertMatch(kind, id string, e riotEvent, t1, t2 string, minutes int) {

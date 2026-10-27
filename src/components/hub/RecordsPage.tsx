@@ -11,7 +11,7 @@ import {
 import { tl, tk, tc, eventTitle, fmtDec } from "../../i18n";
 import { champName, useChampionNames } from "../../champions";
 import { loadHubMeta, loadHubRecords, loadHubTitles, loadRecordsYear } from "../../hub/data";
-import type { HubRecords, HubTitle } from "../../hub/types";
+import type { HubRecords, HubRecordsYear, HubTitle } from "../../hub/types";
 import {
   CompareRoute,
   HubRoute,
@@ -188,6 +188,52 @@ const mmss = (m: number) => {
   const s = Math.round(m * 60);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
+/**
+ * Closest to falling: each record next to the best of the year so far, nearest first (as a share of the record;
+ * for the fastest win, the record's time over this year's).
+ */
+const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label: string }> = ({ all, year, label }) => {
+  type Row = { title: string; rec: number; best: number; recBy: string; bestBy: string; fmt: (v: number) => string; lower?: boolean };
+  const g = (title: string, a: HubRecords["game"]["fastest"], b: HubRecords["game"]["fastest"], fmt: (v: number) => string, lower = false): Row | null =>
+    a[0] && b[0] ? { title, rec: a[0].v, best: b[0].v, recBy: a[0].w, bestBy: b[0].w, fmt, lower } : null;
+  const p = (title: string, a: HubRecords["player"]["kills"], b: HubRecords["player"]["kills"]): Row | null =>
+    a[0] && b[0] ? { title, rec: a[0].v, best: b[0].v, recBy: a[0].pl, bestBy: b[0].pl, fmt: fmtNum } : null;
+  const rows = [
+    g(tl("Fastest wins"), all.game.fastest, year.game.fastest, mmss, true),
+    g(tl("Longest games"), all.game.longest, year.game.longest, mmss),
+    g(tl("Most kills in a game"), all.game.bloodiest, year.game.bloodiest, (v) => tl("{n} kills", { n: v })),
+    p(tl("Most kills by one player"), all.player.kills, year.player.kills),
+    p(tl("Most assists by one player"), all.player.assists, year.player.assists),
+    p(tl("Most damage in a game"), all.player.dmg, year.player.dmg),
+    p(tl("Most CS in a game"), all.player.cs, year.player.cs),
+  ]
+    .filter((r): r is Row => !!r)
+    .map((r) => ({ ...r, share: r.lower ? r.rec / r.best : r.best / r.rec }))
+    .sort((a, b) => b.share - a.share);
+  if (!rows.length) return null;
+  return (
+    <Section title={tl("Closest to falling")} share="records-closest-to-falling">
+      <p className="text-[11px] text-rw-muted">{tl("Each record next to the best of {year} so far.", { year: label })}</p>
+      <ol className="text-xs space-y-1.5">
+        {rows.map((r) => (
+          <li key={r.title} className="min-w-0">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="truncate text-rw-text">{r.title}</span>
+              <span className={`font-num tabular-nums font-bold shrink-0 ${r.share >= 1 ? "text-rw-teal" : "text-rw-accent"}`}>{Math.round(r.share * 100)}%</span>
+            </div>
+            <div className="text-[10px] text-rw-muted truncate">
+              {tl("Record {value} ({who}) · best this year {best} ({by})", { value: r.fmt(r.rec), who: r.recBy, best: r.fmt(r.best), by: r.bestBy })}
+            </div>
+            <div className="h-1 mt-0.5 rounded bg-rw-border overflow-hidden" aria-hidden="true">
+              <div className="h-full bg-rw-accent" style={{ width: `${Math.min(100, r.share * 100)}%` }} />
+            </div>
+          </li>
+        ))}
+      </ol>
+    </Section>
+  );
+};
+
 // ── Records ───────────────────────────────────────────────────────────────
 
 export const RecordsPanel: React.FC = () => {
@@ -196,12 +242,26 @@ export const RecordsPanel: React.FC = () => {
   // all time, or one year (its own file; team streaks, titles and career totals are all-time only)
   const [year, setYear] = useState("all");
   const yearState = useLoad(() => (year === "all" ? Promise.resolve(null) : loadRecordsYear(year)), [year]);
+  // this year's file too, for "Closest to falling" on the all-time view
+  const thisYear = String(new Date().getFullYear());
+  const thisYearState = useLoad(() => loadRecordsYear(thisYear).catch(() => null), [thisYear]);
   return (
     <Page state={state}>
       {(all) => {
         const y = year !== "all" ? yearState.data : null;
         const r: HubRecords = y ? { ...all, game: y.game, player: y.player, pentas: y.pentas } : all;
+        const btn = (on: boolean) =>
+          `px-2 py-1 rounded text-xs font-semibold border ${on ? "border-rw-accent text-rw-accent bg-rw-accent/10" : "border-rw-border text-rw-sub hover:text-rw-text"}`;
         const yearPick = all.years && all.years.length > 0 && (
+          <span className="flex items-center gap-1.5">
+            <button type="button" className={btn(year === "all")} onClick={() => setYear("all")}>
+              {tl("All time")}
+            </button>
+            {all.years.includes(thisYear) && (
+              <button type="button" className={btn(year === thisYear)} onClick={() => setYear(thisYear)}>
+                {tl("This year")}
+              </button>
+            )}
           <select
             value={year}
             onChange={(e) => setYear(e.target.value)}
@@ -215,6 +275,7 @@ export const RecordsPanel: React.FC = () => {
               </option>
             ))}
           </select>
+          </span>
         );
         const gameList = (
           title: string,
@@ -333,6 +394,7 @@ export const RecordsPanel: React.FC = () => {
               {tl("The top records were checked against Leaguepedia.")}
             </p>
             <div className="grid gap-3 md:grid-cols-2 5xl:grid-cols-3">
+              {year === "all" && thisYearState.data && <ClosestToFalling all={all} year={thisYearState.data} label={thisYear} />}
               {gameList(tl("Fastest wins"), r.game.fastest, mmss)}
               {gameList(tl("Longest games"), r.game.longest, mmss)}
               {gameList(tl("Most kills in a game"), r.game.bloodiest, (v) =>

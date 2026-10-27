@@ -19,6 +19,7 @@ import { IS_WEB, SITE_URL } from "../platform";
 export type HubSection =
   | "tournaments" | "leagues" | "champions" | "patches" | "records" | "titles" | "compare" | "data" | "about" | "prep"
   | "rankings" | "finder" | "draft" | "best" | "counters" | "worlds" | "msi" | "first-stand" | "leaders" | "tiers"
+  | "weekly"
   | "aboutme"; // riftwise.gg/about (not under /stats)
 export type HubEntity = "team" | "player" | "event" | "match" | "champ" | "league";
 
@@ -35,7 +36,7 @@ export type CompareRoute = { kind: "compare"; mode?: "team" | "player"; a?: stri
 export type PrepRoute = { kind: "prep"; a?: string; b?: string; period?: string };
 const SECTIONS: HubSection[] = [
   "tournaments", "leagues", "champions", "patches", "records", "titles", "compare", "data", "about", "prep", "rankings", "finder", "draft",
-  "best", "counters", "worlds", "msi", "first-stand", "leaders", "tiers",
+  "best", "counters", "worlds", "msi", "first-stand", "leaders", "tiers", "weekly",
 ];
 /** Pages that keep their filters in the address (?league=lck&year=2026...). */
 /** Worlds, MSI and First Stand: one page each, for a year or every year (/stats/msi/2024, /stats/worlds/all). */

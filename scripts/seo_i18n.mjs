@@ -18,6 +18,7 @@ const SECTIONS = {
   champions: ["Champions", "Pick, ban and win rates"],
   patches: ["Patches", "The pro meta on every patch"],
   records: ["Records", "Fastest, longest, best games"],
+  weekly: ["This week", "Upsets, ranking movers, records, best games"],
   titles: ["Titles", "Every champion, every league"],
   compare: ["Compare", "Any two teams or players"],
   prep: ["Match prep", "Everything before a broadcast"],

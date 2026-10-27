@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "0.7.51" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "0.7.52" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -79,6 +79,7 @@ var sections = map[string][2]string{
 	"leaders":     {"Pro LoL player leaderboards: every stat, every league", "Rank every player of a League of Legends league season or tournament on any stat: KDA, damage, gold, CS, vision, laning leads at 15 minutes and more, by role, with a minimum number of games."},
 	"tiers":       {"Pro LoL tier list by role and patch", "What pro League of Legends teams actually pick and ban on each patch, by role: every champion placed in a tier by its presence and win rate in pro games."},
 	"counters":    {"LoL counter-pick finder: every pro lane matchup", "Pick a champion and see every lane opponent pro play has put against it, with its win rate and gold lead at 15 minutes in that matchup, from every pro game since 2011."},
+	"weekly":      {"The week in pro LoL: upsets, records, best games", "The last seven days of professional League of Legends in one page: the biggest upsets, who moved in the power rankings, all-time records set, the best games and every result."},
 	"best":        {"The best pro LoL games ever, rated", "Every professional League of Legends game since 2011 rated 0 to 100 for action, closeness, stakes and drama: the best games and series of all time, by year and by league."},
 	"worlds":      {"LoL Worlds hub: facts, Swiss stage and bracket picker", "The League of Legends World Championship on one page: the standout stats from every game so far, a Swiss stage and knockout picker with each team's win chances, and the chances of every team to win Worlds."},
 	"msi":         {"LoL MSI hub: every Mid-Season Invitational in numbers", "The League of Legends Mid-Season Invitational on one page: the standout stats from every game, for one year or every MSI together."},
@@ -89,6 +90,7 @@ var sections = map[string][2]string{
 type entry struct {
 	title, desc string
 	index       bool
+	summary     string // a few sentences with numbers for the page itself (bigger pages; the build's 5th column)
 }
 
 // intlPage: what the stats build wrote for one Worlds / MSI / First Stand page (seo_pages.py): its title and
@@ -229,7 +231,11 @@ func (s *store) refresh() {
 			if len(p) < 4 || p[0] == "" {
 				continue
 			}
-			m[p[0]] = entry{title: p[1], desc: p[2], index: p[3] == "1"}
+			e := entry{title: p[1], desc: p[2], index: p[3] == "1"}
+			if len(p) > 4 {
+				e.summary = p[4]
+			}
+			m[p[0]] = e
 			order[kind] = append(order[kind], p[0])
 		}
 		f.Close()
@@ -378,7 +384,7 @@ type pageLang struct {
 	alts      [][2]string
 }
 
-func (s *store) page(title, desc, canonical string, index bool, og string, about map[string]any, extra *intlPage, pl pageLang) string {
+func (s *store) page(title, desc, canonical string, index bool, og string, about map[string]any, extra *intlPage, pl pageLang, summary string) string {
 	s.mu.RLock()
 	doc, ver := s.indexHTML, s.version
 	s.mu.RUnlock()
@@ -440,7 +446,12 @@ func (s *store) page(title, desc, canonical string, index bool, og string, about
 	var ns strings.Builder
 	// the page's main heading in the page itself (crawlers skip <noscript>); the app replaces it once it starts
 	h1 := html.EscapeString(strings.TrimSuffix(title, brand))
-	ns.WriteString(`<div id="root"><h1 style="font:600 16px system-ui,sans-serif;color:#c8aa6e;margin:16px">` + h1 + `</h1></div>`)
+	ns.WriteString(`<div id="root"><h1 style="font:600 16px system-ui,sans-serif;color:#c8aa6e;margin:16px">` + h1 + `</h1>`)
+	if summary != "" {
+		// the page in a few sentences with numbers, readable without scripts (the app replaces it like the heading)
+		ns.WriteString(`<p style="font:14px/1.5 system-ui,sans-serif;color:#b9b0dc;margin:0 16px 16px;max-width:60em">` + html.EscapeString(summary) + `</p>`)
+	}
+	ns.WriteString(`</div>`)
 	ns.WriteString(`<noscript><main><p><strong>` + t + `</strong></p><p>` + d + `</p>`)
 	if extra != nil {
 		ns.WriteString(extra.HTML) // built and escaped by the stats build
@@ -462,7 +473,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	// riftwise.gg/<lang>/...: the same page in another language (i18n.go)
 	seg, lang, rest := splitLang(rest)
 	parts := strings.Split(strings.Trim(rest, "/"), "/")
-	status, title, desc, index, og := http.StatusOK, "", "", true, ""
+	status, title, desc, index, og, summary := http.StatusOK, "", "", true, "", ""
 	var about map[string]any
 	var extra *intlPage
 
@@ -553,6 +564,9 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		title, desc, index = e.title, e.desc, e.index
+		if lang == "" && len(parts) == 2 {
+			summary = e.summary // English sentences: the English page only
+		}
 		og = "og/" + parts[0] + "/" + slug + ".png"
 		if len(parts) == 2 {
 			about = aboutOf(kind, title)
@@ -584,7 +598,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		}
 		pl.alts = alternates(path)
 	}
-	body := s.page(title, desc, canonical, index, og, about, extra, pl)
+	body := s.page(title, desc, canonical, index, og, about, extra, pl, summary)
 	if body == "" {
 		http.Error(w, "RiftWise is starting, try again in a moment", http.StatusServiceUnavailable)
 		return
@@ -761,7 +775,7 @@ func main() {
 			return
 		}
 		if r.URL.Path == basePath+"feed.xml" {
-			serveFeed(w, r) // feed.go
+			s.serveFeed(w, r) // feed.go
 			return
 		}
 		if strings.HasPrefix(r.URL.Path, basePath+"sitemap") && strings.HasSuffix(r.URL.Path, ".xml") {

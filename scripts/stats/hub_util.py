@@ -346,4 +346,52 @@ def csv_safe(v):
     return f"'{v}" if isinstance(v, str) and CSV_FORMULA.match(v) and not CSV_NUMBER.match(v) else v
 
 
+# ── page summaries: a few sentences with numbers on the bigger pages, for search engines (seo/<kind>.tsv) ──
+
+ROLE_NOUN = {"Top": "top laner", "Jungle": "jungler", "Mid": "mid laner", "Bot": "bot laner", "Support": "support"}
+
+
+def champ_list(champs, with_wins=True):
+    """Azir (213 games, 71% wins), Orianna (128 games), Ryze (119 games): the first with its win rate."""
+    out = []
+    for i, c in enumerate(champs[:3]):
+        wins = f", {round(100 * c['w'] / c['g'])}% wins" if with_wins and i == 0 and c.get("g") else ""
+        out.append(f"{c['c']} ({c['g']:,} games{wins})")
+    return ", ".join(out)
+
+
+def player_summary(name, role, club, p, obj, titles):
+    """'' under 100 games. No pronouns: the sentences name the player or say nothing."""
+    if p["g"] < 100 or not obj.get("years"):
+        return ""
+    first, last = obj["years"][-1]["y"], obj["years"][0]["y"]
+    current = club and last >= str(datetime.date.today().year - 1)
+    s = (f"{name} has played {p['g']:,} pro games as a {ROLE_NOUN.get(role, (role or 'player').lower())} from {first} to {last}"
+         f"{', now for ' + club if current else ''}, winning {round(100 * p['w'] / p['g'])}% of them with a KDA of {obj['kda']}.")
+    if obj.get("champs"):
+        s += f" Most played champions: {champ_list(obj['champs'])}."
+    if titles:
+        worlds = sum(1 for t in titles if t[2] == "Worlds")
+        s += f" {len(titles)} title{'s' if len(titles) != 1 else ''}" + (f", including {worlds} Worlds." if worlds else ".")
+    return s
+
+
+def team_summary(name, t, obj, worlds):
+    if t["g"] < 100:
+        return ""
+    s = (f"{name} has played {t['g']:,} pro games from {t['from'][:4]} to {t['to'][:4]}, "
+         f"with a record of {t['w']:,}-{t['g'] - t['w']:,} ({round(100 * t['w'] / t['g'])}% wins).")
+    n = len(obj.get("titles") or [])
+    if n:
+        s += f" {n} title{'s' if n != 1 else ''}" + (f", including {worlds} Worlds." if worlds else ".")
+    r = obj.get("rating") or {}
+    if r.get("rank"):
+        s += f" Power ranking: #{r['rank']} of the top-league teams worldwide (rating {r['r']:,})."
+    elif r.get("lrank") and r.get("league"):
+        s += f" Power ranking: #{r['lrank']} in {r['league']}."
+    if obj.get("champs"):
+        s += f" Most picked champions: {champ_list(obj['champs'], with_wins=False)}."
+    return s
+
+
 # ── the build ─────────────────────────────────────────────────────────────────

@@ -113,23 +113,48 @@ export const fetchLiveDetails = (gameId: string, at = feedNow() - LAG_MS) =>
     `${FEED}/details/${gameId}?startingTime=${stamp(at)}`,
   );
 
+/** One team at one moment: kills, towers, barons, inhibitors and dragons taken so far. */
+export interface TeamSnap {
+  k: number;
+  tw: number;
+  b: number;
+  inh: number;
+  d: number;
+}
+/** A moment of the game: minute, blue's gold lead, and both teams' totals (the gold graph and the game story). */
+export interface TimelinePoint {
+  t: number;
+  lead: number;
+  blue: TeamSnap;
+  red: TeamSnap;
+}
+const snap = (t: LiveTeamFrame): TeamSnap => ({ k: t.totalKills, tw: t.towers, b: t.barons, inh: t.inhibitors, d: t.dragons.length });
+
+/** A frame as a timeline point (startMs: when the game started). */
+export const timelinePoint = (f: LiveFrame, startMs: number): TimelinePoint => ({
+  t: (Date.parse(f.rfc460Timestamp) - startMs) / 60_000,
+  lead: f.blueTeam.totalGold - f.redTeam.totalGold,
+  blue: snap(f.blueTeam),
+  red: snap(f.redTeam),
+});
+
 /**
- * Blue's gold lead over the game so far, one point a minute (every two after 30 minutes...) for the graph: [minute, gold lead].
- * Fetched only when someone opens the details, a few requests at a time.
+ * The game so far, one point a minute (every two after 30 minutes...): the gold graph and, once it's over, the game
+ * story (gameStory.ts). Fetched only when someone opens the details, a few requests at a time.
  */
-export async function fetchGoldHistory(gameId: string, startMs: number, endMs: number): Promise<[number, number][]> {
+export async function fetchTimeline(gameId: string, startMs: number, endMs: number): Promise<TimelinePoint[]> {
   const times: number[] = [];
   // a point a minute, but at most ~30 for a long game: the graph shows for everyone watching, so it stays light
   const step = Math.max(1, Math.ceil((endMs - startMs) / 60_000 / 30)) * 60_000;
   for (let t = startMs + step; t <= endMs; t += step) times.push(t);
-  const points: [number, number][] = [];
+  const points: TimelinePoint[] = [];
   for (let i = 0; i < times.length; i += 4) {
     const batch = await Promise.all(
       times.slice(i, i + 4).map((t) =>
         fetchLiveWindow(gameId, t)
           .then((w) => {
             const f = w?.frames?.[0];
-            return f ? ([(Date.parse(f.rfc460Timestamp) - startMs) / 60_000, f.blueTeam.totalGold - f.redTeam.totalGold] as [number, number]) : null;
+            return f ? timelinePoint(f, startMs) : null;
           })
           .catch(() => null),
       ),

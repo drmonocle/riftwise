@@ -49,6 +49,7 @@ const OLD_USER = (() => {
 })();
 import { ArrowDownToLine, WifiOff, AlertTriangle, X } from "lucide-react";
 import { ShortcutsDialog } from "./components/ShortcutsDialog";
+import { countSecondPage, countVisit } from "./usage";
 import { IS_DESKTOP, IS_WEB, matchIdFromHash } from "./platform";
 import { clearMovedNote, movedHere } from "./move";
 import { reconcileLiveAndSchedule, playKickoffChime, applyH2HData, loadBundledH2H } from "./helpers";
@@ -128,6 +129,7 @@ export default function App() {
 
   const activeTabRef = useRef(activeTab);
   const selectTab = useCallback((tab: TabKey) => {
+    if (tab !== activeTabRef.current) countSecondPage();
     syncTabAddress(activeTabRef.current, tab);
     activeTabRef.current = tab;
     setActiveTab(tab);
@@ -141,6 +143,11 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   // the header search closes when another page opens (the Stats home has its own search box)
   useEffect(() => onHubRoute(() => setSearchOpen(false)), []);
+  // the day's anonymous counts (usage.ts): this visit, and whether it goes past the first page
+  useEffect(() => {
+    countVisit(loadSettings().theme);
+    return onHubRoute(countSecondPage);
+  }, []);
   // "/" opens the search from anywhere (not while typing somewhere else), "?" the list of shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

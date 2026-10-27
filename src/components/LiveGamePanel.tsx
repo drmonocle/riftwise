@@ -13,7 +13,9 @@ import {
   LiveFrame,
   LiveParticipantMeta,
   LiveWindow,
-  fetchGoldHistory,
+  fetchTimeline,
+  timelinePoint,
+  type TimelinePoint,
   winChanceFromGold,
   fetchLiveDetails,
   fetchLiveStart,
@@ -22,6 +24,8 @@ import {
 } from "../liveGame";
 import { champIcon, champNameById, itemIconById, useDDragon } from "../hub/ddragon";
 import { champName } from "../champions";
+import { useMatchRatings } from "../hub/matchRatings";
+import { gameStory } from "../gameStory";
 
 const POLL_MS = 15_000;
 const ROLE_ORDER = ["top", "jungle", "mid", "bottom", "support"];
@@ -77,7 +81,9 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
   const [state, setState] = useState<GameState | null>(null);
   const [failed, setFailed] = useState(false);
   const [open, setOpen] = useState(!!startOpen);
-  const [history, setHistory] = useState<[number, number][] | null>(null);
+  const [history, setHistory] = useState<TimelinePoint[] | null>(null);
+  // the model's chance for team 1 to win a game, before it started (the upset meter's starting point)
+  const ratings = useMatchRatings(match);
   const startRef = useRef<Record<string, number>>({});
   // the game's first frames (who plays what): all there is when Riot switches a game's live stats off
   const firstRef = useRef<Record<string, LiveWindow>>({});
@@ -138,11 +144,11 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
     let alive = true;
     const end = Date.parse(state.frame.rfc460Timestamp);
     if (!history) {
-      fetchGoldHistory(game.id, state.startMs, end).then((pts) => alive && setHistory(pts));
+      fetchTimeline(game.id, state.startMs, end).then((pts) => alive && setHistory(pts));
     } else {
-      const t = (end - state.startMs) / 60_000;
+      const now = timelinePoint(state.frame, state.startMs);
       const last = history[history.length - 1];
-      if (!last || t - last[0] >= 0.25) setHistory([...history, [t, state.frame.blueTeam.totalGold - state.frame.redTeam.totalGold]]);
+      if (!last || now.t - last.t >= 0.25) setHistory([...history, now]);
     }
     return () => {
       alive = false;
@@ -201,7 +207,11 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
         <div className="h-full bg-rw-teal/80" style={{ width: `${share * 100}%` }} />
       </div>
       {!finished && elapsed != null && elapsed > 60_000 && <ChanceNow leftCode={left.code} rightCode={right.code} minute={elapsed / 60_000} lead={lead} />}
-      {history && history.length > 1 && <GoldGraph points={history} blueIsLeft={blueIsTeam1} leftCode={left.code} rightCode={right.code} />}
+      {!finished && elapsed != null && elapsed > 3 * 60_000 && ratings?.game != null && (
+        <UpsetMeter leftCode={left.code} rightCode={right.code} before={ratings.game} now={winChanceFromGold(elapsed / 60_000, lead)} />
+      )}
+      {history && history.length > 1 && <GoldGraph points={history.map((p) => [p.t, p.lead] as [number, number])} blueIsLeft={blueIsTeam1} leftCode={left.code} rightCode={right.code} />}
+      {finished && history && <GameStory points={history} left={left.code} right={right.code} blueIsLeft={blueIsTeam1} />}
 
       <button
         type="button"
@@ -302,6 +312,50 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
           </tr>
         </tbody>
       </table>
+    </div>
+  );
+};
+
+/**
+ * The upset meter: how far the game has swung from what the model expected. The underdog's chance before the game
+ * (power rankings, hub/matchRatings.ts) against its chance now from the gold lead (winChanceFromGold).
+ */
+const UpsetMeter: React.FC<{ leftCode: string; rightCode: string; before: number; now: number }> = ({ leftCode, rightCode, before, now }) => {
+  if (Math.abs(before - 0.5) < 0.05) return null; // a coin flip has no underdog
+  const leftIsDog = before < 0.5;
+  const dog = leftIsDog ? leftCode : rightCode;
+  const pre = leftIsDog ? before : 1 - before;
+  const cur = leftIsDog ? now : 1 - now;
+  const swing = Math.round((cur - pre) * 100);
+  const label = cur > 0.5 ? tl("Upset on") : swing >= 15 ? tl("Upset brewing") : swing <= -15 ? tl("Favourite pulling away") : tl("Going as expected");
+  const hot = cur > 0.5 || swing >= 15;
+  return (
+    <div className="space-y-0.5" title={tl("The underdog's chance before the game, from the power rankings, against its chance now from the gold lead.")}>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-[10px] text-rw-sub">
+        <span className="uppercase tracking-wider font-semibold">
+          {tl("Upset meter")} · <span className={hot ? "text-rw-accent" : "text-rw-sub"}>{label}</span>
+        </span>
+        <span className="text-rw-muted">
+          {tl("{team}: {before} before the game, {now} now", { team: dog, before: `${Math.round(pre * 100)}%`, now: `${Math.round(cur * 100)}%` })}
+        </span>
+      </div>
+      {/* the underdog's chance now, with a tick where it started */}
+      <div className="relative h-2 rounded-sm bg-rw-border overflow-hidden" aria-hidden="true">
+        <div className={`h-full ${hot ? "bg-rw-accent" : "bg-rw-sub/60"}`} style={{ width: `${cur * 100}%` }} />
+        <div className="absolute top-0 bottom-0 w-0.5 bg-rw-text" style={{ left: `${pre * 100}%` }} />
+      </div>
+    </div>
+  );
+};
+
+/** After the game: what happened, in a few sentences (gameStory.ts; rules over the sampled frames, no AI). */
+const GameStory: React.FC<{ points: TimelinePoint[]; left: string; right: string; blueIsLeft: boolean }> = ({ points, left, right, blueIsLeft }) => {
+  const lines = useMemo(() => gameStory(points, left, right, blueIsLeft), [points, left, right, blueIsLeft]);
+  if (!lines.length) return null;
+  return (
+    <div className="space-y-0.5">
+      <div className="text-[10px] uppercase tracking-wider font-semibold text-rw-sub">{tl("Game story")}</div>
+      <p className="text-xs text-rw-text leading-relaxed">{lines.join(" ")}</p>
     </div>
   );
 };

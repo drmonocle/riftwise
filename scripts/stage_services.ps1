@@ -4,6 +4,8 @@
 #   powershell -ExecutionPolicy Bypass -File scripts\stage_services.ps1 [-Services pages,push,sync]
 param([string[]]$Services = @('pages', 'push', 'sync'))
 $ErrorActionPreference = 'Stop'
+# "pages,push" arrives as one word through powershell -File: split it
+$Services = @($Services | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
 $root = Split-Path -Parent $PSScriptRoot
 $build = 'W:\Sites\riftwise-build'
 

@@ -2,8 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -136,5 +139,64 @@ func TestRecordAlertPreview(t *testing.T) {
 	}
 	if _, _, ok := a.recordAlert(newRecord{S: "player", K: "perfect", R: map[string]any{"v": 1.0}}, "en"); ok {
 		t.Error("a record without an alert")
+	}
+}
+
+// The day's usage totals: counted by event and value, nothing else kept; odd values are folded, junk refused.
+func TestUsageCounts(t *testing.T) {
+	a := &App{dataDir: t.TempDir()}
+	now := time.Date(2026, 10, 28, 3, 0, 0, 0, time.UTC) // still Oct 27 in New York
+	for _, e := range [][]string{{"visit", "rift", "ko", "web", "0.7.52"}, {"visit", "classic", "en", "desktop", "0.7.52"}, {"visit", "rift", "ko", "web", "<script>"}, {"second", "", "", "", ""}} {
+		if !a.countUsage(e[0], e[1], e[2], e[3], e[4], now) {
+			t.Fatalf("refused %v", e)
+		}
+	}
+	if a.countUsage("delete", "x", "x", "x", "x", now) {
+		t.Error("unknown event counted")
+	}
+	b, err := os.ReadFile(filepath.Join(a.dataDir, "usage", "2026-10-27.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var d usageDay
+	json.Unmarshal(b, &d)
+	if d.Visits != 3 || d.SecondPage != 1 || d.Themes["rift"] != 2 || d.Langs["ko"] != 2 || d.Apps["desktop"] != 1 || d.Versions["other"] != 1 {
+		t.Errorf("totals: %s", b)
+	}
+}
+
+// Discord: only discord.com webhook addresses are taken; a finished series becomes a message with its score.
+func TestDiscord(t *testing.T) {
+	for u, want := range map[string]bool{
+		"https://discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyz_ABC-123": true,
+		"https://ptb.discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyz_ABC-123": true,
+		"https://discord.com.evil.io/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyz": false,
+		"http://discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyz_ABC-123": false,
+		"https://127.0.0.1/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyz": false,
+		"https://discord.com/api/webhooks/123456789012345678/abc?x=https://evil": false,
+	} {
+		if discordURL.MatchString(u) != want {
+			t.Errorf("%s: want %v", u, want)
+		}
+	}
+	var e riotEvent
+	json.Unmarshal([]byte(`{"state": "completed", "blockName": "Swiss", "league": {"name": "Worlds"}, "match": {"id": "113",
+		"teams": [{"name": "T1", "code": "T1", "result": {"gameWins": 2}}, {"name": "Gen.G", "code": "GEN", "result": {"gameWins": 1}}], "strategy": {"count": 3}}}`), &e)
+	m, ok := resultEmbed(e)
+	if !ok || m.Title != "T1 2–1 Gen.G" || m.URL != siteURL+"match/riot-113" || !strings.HasPrefix(m.Description, "Worlds · Swiss · best of 3") {
+		t.Errorf("result message: %+v", m)
+	}
+	// a webhook Discord no longer has is dropped; one that works stays
+	gone := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(404) }))
+	defer gone.Close()
+	fine := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(204) }))
+	defer fine.Close()
+	a := &App{dataDir: t.TempDir(), client: http.DefaultClient}
+	a.saveHooks([]hook{{URL: gone.URL, Results: true}, {URL: fine.URL, Results: true}, {URL: fine.URL + "/2", Records: true}})
+	if n := a.postAll("results", m); n != 1 {
+		t.Errorf("sent to %d", n)
+	}
+	if hs := a.loadHooks(); len(hs) != 2 || hs[0].URL != fine.URL {
+		t.Errorf("hooks after: %+v", hs)
 	}
 }

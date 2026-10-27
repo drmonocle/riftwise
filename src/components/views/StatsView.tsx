@@ -65,6 +65,7 @@ const PatchesPanel = lazyPart(() => pageCode.patches().then((m) => m.PatchesPane
 const LeaguePage = lazyPart(() => pageCode.league().then((m) => m.LeaguePage));
 const ChampionsPage = lazyPart(() => pageCode.champions().then((m) => m.ChampionsPage));
 const RecordsPanel = lazyPart(() => pageCode.records().then((m) => m.RecordsPanel));
+const WeeklyPage = lazyPart(() => pageCode.weekly().then((m) => m.WeeklyPage));
 const TitlesPanel = lazyPart(() => pageCode.titles().then((m) => m.TitlesPanel));
 const DownloadsPage = lazyPart(() => pageCode.data().then((m) => m.DownloadsPage));
 const AboutPage = lazyPart(() => pageCode.about().then((m) => m.AboutPage));
@@ -119,6 +120,7 @@ const GROUPS: { label: string; icon: React.ReactNode; items: MenuItem[] }[] = [
     label: tk("Tournaments"),
     icon: <CalendarRange className="w-3.5 h-3.5" />,
     items: [
+      { kind: "weekly", label: tk("This week"), icon: <CalendarRange className="w-3.5 h-3.5" /> },
       { kind: "tournaments", label: tk("Tournaments"), icon: <CalendarRange className="w-3.5 h-3.5" /> },
       { kind: "leagues", label: tk("Leagues"), icon: <Layers className="w-3.5 h-3.5" /> },
       { kind: "titles", label: tk("Titles"), icon: <Trophy className="w-3.5 h-3.5" /> },
@@ -161,7 +163,7 @@ const SECTIONS: MenuItem[] = GROUPS.flatMap((g) => g.items);
 const LINKABLE = new Set<SectionKind>(["prep", "draft", "finder", "compare", "best", "champions", "counters", "leaders", "tiers"]);
 
 /** pages that are one big table: kept at the two-column width on very wide screens (App.css .rw-capped) */
-const CAPPED_KINDS = new Set(["tournaments", "leagues", "rankings", "titles", "best", "champions", "patches", "data", "finder", "counters", "leaders"]);
+const CAPPED_KINDS = new Set(["weekly", "tournaments", "leagues", "rankings", "titles", "best", "champions", "patches", "data", "finder", "counters", "leaders"]);
 
 // ── Compare ───────────────────────────────────────────────────────────────
 
@@ -338,6 +340,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
           (statsMeta.data ? <TiersPage meta={statsMeta.data} query={"query" in route ? route.query : undefined} /> : statsMeta.error ? <Failed /> : <Loading />)}
         {route.kind === "aboutme" && <AboutMePage onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
         {route.kind === "titles" && <TitlesPanel />}
+        {route.kind === "weekly" && <WeeklyPage />}
         {route.kind === "compare" && <ComparePage route={route as CompareRoute} />}
         {route.kind === "team" && <TeamPage slug={route.slug} />}
         {route.kind === "player" && (

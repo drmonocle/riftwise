@@ -134,6 +134,7 @@ func (a *App) pollRecords() {
 		if !ok || !a.sent.claim(id) {
 			continue
 		}
+		go a.postAll("records", embed{Title: p.Title, Description: p.Body, URL: p.URL, Color: 0xffc857}) // discord.go
 		var subs []Sub
 		for _, s := range a.store.all() {
 			if s.Banger {

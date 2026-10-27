@@ -254,6 +254,9 @@ func (a *App) serveHTTP(addr string) error {
 
 	// what the record alerts say, for the current all-time #1 of each record (nothing is sent):
 	// riftwise.gg/api/push/records/preview?lang=ko
+	a.usageRoute(mux, lim) // usage.go: the day's anonymous counts
+	a.discordRoutes(mux, lim) // discord.go: webhooks that get results, records and the daily card
+
 	mux.HandleFunc(apiPrefix+"records/preview", func(w http.ResponseWriter, r *http.Request) {
 		if !lim.allow(clientIP(r)) {
 			writeJSON(w, 429, map[string]string{"error": "too many requests"})

@@ -115,6 +115,7 @@ export const AboutMePage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ o
           <li>{tl("Free, always. No paid tiers, ever.")}</li>
           <li>{tl("No ads, and I'll never sell your data.")}</li>
           <li>{tl("No account needed. Accounts are optional, only to sync your settings between devices.")}</li>
+          <li>{tl("To see what people use, the app counts each browser once a day, with its theme and language. No cookie, and nothing that says who you are.")}</li>
           <li>
             {tl(
               "RiftWise runs on a server in my house. If it ever costs more than I can cover, I'll ask for donations, like Wikipedia does. At most there could be a small sponsor image with a plain link and no tracking, never front and center.",
