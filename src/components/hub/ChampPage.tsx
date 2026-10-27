@@ -35,7 +35,7 @@ import { BroadcastCardButton, champCardData } from "./BroadcastCard";
 
 export const ChampPage: React.FC<{ slug: string }> = ({ slug }) => {
   const state = useLoad(() => loadHubChamp(slug), [slug]);
-  usePageTitle(state.data ? champName(state.data.name) : null);
+  usePageTitle(state.data ? champName(state.data.name) : null, state.data?.name);
   useDDragon();
   return <Page state={state}>{(c) => <ChampView c={c} />}</Page>;
 };

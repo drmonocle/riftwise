@@ -226,18 +226,21 @@ export function useColumns(): number {
 /** The grid that goes with useColumns(). */
 export const GRID_COLS = "grid md:grid-cols-2 xl:grid-cols-3 4xl:grid-cols-4";
 
-/** Sets the browser tab's title while a page is open. */
-export function usePageTitle(title: string | null | undefined): void {
+/**
+ * Sets the browser tab's title while a page is open. `name` is the page's own name when the title says it another
+ * way (a champion's name in this language, a league with a year): the page views are counted under that one.
+ */
+export function usePageTitle(title: string | null | undefined, name?: string): void {
   useEffect(() => {
     if (!title) return;
-    rememberRecent(currentHubRoute(), title);
+    rememberRecent(currentHubRoute(), title, name);
     if (!IS_WEB) return;
     const before = document.title;
     document.title = `${title} | RiftWise`;
     return () => {
       document.title = before;
     };
-  }, [title]);
+  }, [title, name]);
 }
 
 // ── Links ─────────────────────────────────────────────────────────────────

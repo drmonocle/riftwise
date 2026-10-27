@@ -20,7 +20,7 @@
   "Upset meter": "Đồng hồ bất ngờ",
   "{team}: {before} before the game, {now} now": "{team}: {before} trước trận, {now} bây giờ",
   "Game story": "Diễn biến ván đấu",
-  "To see what people use, the app counts each browser once a day, with its theme and language. No cookie, and nothing that says who you are.": "Để biết mọi người dùng gì, ứng dụng đếm mỗi trình duyệt một lần mỗi ngày, kèm giao diện và ngôn ngữ. Không cookie, không gì cho biết bạn là ai.",
+  "To see what people use, the app counts each browser once a day, with its theme and language, and how many open each team, player, tournament, league and champion page (for Most viewed on the stats home). No cookie, and nothing that says who you are.": "Để biết mọi người dùng gì, ứng dụng đếm mỗi trình duyệt một lần mỗi ngày, kèm giao diện và ngôn ngữ, và số người mở từng trang đội, tuyển thủ, giải đấu, giải khu vực và tướng (cho mục \"Xem nhiều nhất tuần này\" ở trang chủ thống kê). Không cookie, không gì cho biết bạn là ai.",
   "This week": "Tuần này",
   "Upsets, ranking movers, records, best games": "Bất ngờ, biến động xếp hạng, kỷ lục, ván đấu hay nhất",
   "Closest to falling": "Sắp bị phá",
@@ -2140,5 +2140,6 @@
   "Picked or banned in the week's {n} game.|Picked or banned in the week's {n} games.": "Pick hoặc cấm trong {n} ván của tuần.",
   "Upsets, runs and finals": "Bất ngờ, hành trình và chung kết",
   "Team records": "Kỷ lục đội",
-  "Player records": "Kỷ lục tuyển thủ"
+  "Player records": "Kỷ lục tuyển thủ",
+  "Most viewed this week": "Xem nhiều nhất tuần này"
 }

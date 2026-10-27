@@ -20,7 +20,7 @@
   "Upset meter": "爆冷指数",
   "{team}: {before} before the game, {now} now": "{team}：赛前 {before}，现在 {now}",
   "Game story": "比赛回顾",
-  "To see what people use, the app counts each browser once a day, with its theme and language. No cookie, and nothing that says who you are.": "为了解大家用什么，应用每天对每个浏览器计数一次，记录主题和语言。没有 Cookie，也没有任何能识别你的信息。",
+  "To see what people use, the app counts each browser once a day, with its theme and language, and how many open each team, player, tournament, league and champion page (for Most viewed on the stats home). No cookie, and nothing that says who you are.": "为了解大家用什么，应用每天对每个浏览器计数一次，记录主题和语言，并统计每个战队、选手、赛事、联赛和英雄页面有多少人打开（用于数据首页的「本周最多浏览」）。没有 Cookie，也没有任何能识别你的信息。",
   "This week": "本周",
   "Upsets, ranking movers, records, best games": "冷门、排名变动、纪录、最佳比赛",
   "Closest to falling": "最接近被打破",
@@ -2140,5 +2140,6 @@
   "Picked or banned in the week's {n} game.|Picked or banned in the week's {n} games.": "本周 {n} 局中的选用或禁用。",
   "Upsets, runs and finals": "爆冷、黑马和决赛",
   "Team records": "战队纪录",
-  "Player records": "选手纪录"
+  "Player records": "选手纪录",
+  "Most viewed this week": "本周最多浏览"
 }
