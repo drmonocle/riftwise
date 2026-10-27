@@ -44,6 +44,8 @@ type App struct {
 	seenWaiting map[string]bool // matches seen before they started (so a late start still alerts)
 	lastPoll    time.Time
 	lastErr     string
+	lastSent    time.Time // the last alert that reached at least one subscriber, and its kind (the status page)
+	lastSentTag string
 	lastStream  time.Time
 
 	// the schedule for the app (api/push/schedule): Riot's first pages, raw, refreshed every poll
@@ -194,6 +196,12 @@ func (a *App) sendTo(subs []Sub, ttl int, build func(lang string) payload) int {
 		}()
 	}
 	wg.Wait()
+	if okCount > 0 {
+		tag := build("en").Tag
+		a.mu.Lock()
+		a.lastSent, a.lastSentTag = time.Now(), tag
+		a.mu.Unlock()
+	}
 	return okCount
 }
 

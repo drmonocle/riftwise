@@ -164,11 +164,15 @@ def shift(date: str, days: int) -> str:
     return (datetime.date.fromisoformat(date) + datetime.timedelta(days=days)).isoformat()
 
 
+# --offline (the test build, test/test_build.py): no downloads, only the saved copies
+OFFLINE = False
+
+
 def load_renames(cache_path: str) -> list:
     """Leaguepedia's TeamRenames table, refreshed each run; falls back to the cached copy."""
     rows, offset = [], 0
     try:
-        while True:
+        while not OFFLINE:
             q = urllib.parse.urlencode({
                 "tables": "TeamRenames", "fields": "Date,OriginalName,NewName,Verb", "format": "json",
                 "limit": 500, "offset": offset, "order by": "Date",
@@ -194,11 +198,12 @@ def load_team_shorts(cache_path: str, max_age_days: int = 7) -> dict:
     """Leaguepedia's short team names (SKT, C9, HLE...) so the search box finds teams by abbreviation.
     Refreshed weekly; the cached copy is used in between or if Leaguepedia can't be reached."""
     try:
-        if time.time() - os.path.getmtime(cache_path) < max_age_days * 86400:
+        if OFFLINE or time.time() - os.path.getmtime(cache_path) < max_age_days * 86400:
             with open(cache_path, encoding="utf-8") as f:
                 return json.load(f)
     except OSError:
-        pass
+        if OFFLINE:
+            return {}
     shorts, offset = {}, 0
     try:
         while True:
@@ -319,7 +324,12 @@ def main() -> None:
     ap.add_argument("--renames-cache", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "team_renames.json"))
     ap.add_argument("--lp-db", help="Leaguepedia sidecar database (default: lp_all_games.db next to --db)")
     ap.add_argument("--no-hub", action="store_true", help="skip the stats hub pages")
+    ap.add_argument("--offline", action="store_true", help="no downloads (Leaguepedia, Riot, Data Dragon): saved copies only")
     args = ap.parse_args()
+    global OFFLINE
+    OFFLINE = args.offline
+    if OFFLINE:
+        os.environ["RIFTWISE_OFFLINE"] = "1"  # photos_lp, ddragon_maps
     if not args.lp_db:
         args.lp_db = os.path.join(os.path.dirname(os.path.abspath(args.db)), "lp_all_games.db")
     t0 = time.time()

@@ -30,6 +30,8 @@ def norm(s):
 
 
 def get(url):
+    if os.environ.get("RIFTWISE_OFFLINE"):
+        raise RuntimeError("offline: no Data Dragon download")
     with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=60) as r:
         return json.load(r)
 

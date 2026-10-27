@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "0.7.48" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "0.7.49" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -717,6 +717,8 @@ func main() {
 	logDir := flag.String("logs", "", "folder for pages.log (default: log to the console)")
 	flag.StringVar(&scheduleURL, "schedule", scheduleURL, "the push service's schedule (for the /schedule and /results pages)")
 	flag.BoolVar(&indexNowOn, "indexnow", true, "report new and changed pages to IndexNow after each stats build")
+	flag.StringVar(&statusScripts, "scripts", statusScripts, "the stats build's folder (build_stats.log, audit_latest.json) for /status")
+	flag.StringVar(&statusRelease, "release", statusRelease, "the release watcher's folder (status.json) for /status")
 	flag.Parse()
 	if *logDir != "" {
 		os.MkdirAll(*logDir, 0o755)
@@ -747,6 +749,8 @@ func main() {
 			"matches": len(s.pages["game"]), "champions": len(s.pages["champ"]), "leagues": len(s.pages["league"]),
 		})
 	})
+	mux.HandleFunc(basePath+"status", s.serveStatus)          // status.go
+	mux.HandleFunc(basePath+"status.json", s.serveStatusJSON) // read by scripts/server/status_watch.ps1
 	mux.HandleFunc(basePath, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)

@@ -133,6 +133,14 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
+// stamp: a time for the health check, "" when it hasn't happened yet.
+func stamp(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	return t.UTC().Format(time.RFC3339)
+}
+
 // scheduleBody: the kept schedule as served at `now`: as it is while fresh, with "stale":true once Riot hasn't
 // answered for 10 minutes, nothing (ok false) when there is none or it's over a week old.
 func scheduleBody(b []byte, at, now time.Time) ([]byte, bool) {
@@ -159,6 +167,7 @@ func (a *App) serveHTTP(addr string) error {
 		writeJSON(w, 200, map[string]any{
 			"ok": a.lastErr == "" && time.Since(a.lastPoll) < 5*time.Minute, "version": version, "started": started.UTC().Format(time.RFC3339),
 			"subscriptions": a.store.count(), "lastPoll": a.lastPoll.UTC().Format(time.RFC3339), "lastError": a.lastErr,
+			"lastSent": stamp(a.lastSent), "lastSentTag": a.lastSentTag,
 		})
 	})
 

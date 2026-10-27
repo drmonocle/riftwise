@@ -1,7 +1,7 @@
 {
   "name": "riftwise-tauri",
   "private": true,
-  "version": "0.7.48",
+  "version": "0.7.49",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,9 @@
     "tauri": "tauri",
     "test": "vitest run",
     "check:version": "node scripts/check-version.mjs",
-    "set-version": "node scripts/set-version.mjs"
+    "set-version": "node scripts/set-version.mjs",
+    "test:stats": "python scripts/stats/test/test_build.py",
+    "smoke": "node scripts/audit/smoke.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
