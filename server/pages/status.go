@@ -306,8 +306,11 @@ func (s *store) status() statusDoc {
 	d.Audit.Version, d.Audit.Counts = audit.Version, audit.Counts
 	d.Audit.Hard = hardAuditKinds(audit.Counts)
 
-	if b, err := os.ReadFile(filepath.Join(statusRelease, "status.json")); err == nil && json.Valid(b) {
-		d.Release = b
+	// written by Windows PowerShell, which may start the file with a byte-order mark JSON doesn't allow
+	if b, err := os.ReadFile(filepath.Join(statusRelease, "status.json")); err == nil {
+		if b = []byte(strings.TrimPrefix(string(b), string(rune(0xFEFF)))); json.Valid(b) {
+			d.Release = b
+		}
 	}
 	d.Problems = problems(d)
 	statusCache.at, statusCache.doc = now, d
@@ -319,7 +322,7 @@ func hours(dur time.Duration) float64 { return float64(int(dur.Hours()*10)) / 10
 // hardAuditKinds: the data check's findings that make it fail (audit_data.py: broken links and wrong series or
 // champion facts), as opposed to the source data's known slips it only counts.
 func hardAuditKinds(counts map[string]int) []string {
-	var hard []string
+	hard := []string{} // [] in status.json, not null
 	for k, n := range counts {
 		for _, p := range []string{"broken link", "series score above", "series winner", "wrong champion"} {
 			if n > 0 && strings.HasPrefix(k, p) {

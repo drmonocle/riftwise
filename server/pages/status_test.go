@@ -118,7 +118,8 @@ func TestStatusPage(t *testing.T) {
 	statusScripts, statusRelease = dir, dir
 	os.WriteFile(filepath.Join(dir, "build_stats.log"), []byte(buildLog), 0o644)
 	os.WriteFile(filepath.Join(dir, "audit_latest.json"), []byte(`{"version": "20261015000000", "counts": {"same champion twice in one game": 3}}`), 0o644)
-	os.WriteFile(filepath.Join(dir, "status.json"), []byte(`{"version": "0.7.49", "result": "installed", "at": "2026-10-27T15:00:00Z"}`), 0o644)
+	// as Windows PowerShell 5.1 wrote it on the server: with a byte-order mark
+	os.WriteFile(filepath.Join(dir, "status.json"), []byte(string(rune(0xFEFF))+`{"version": "0.7.49", "result": "installed", "at": "2026-10-27T15:00:00Z"}`), 0o644)
 	healthy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{"ok": true, "version": "0.7.49", "started": "2026-10-27T15:00:00Z", "lastSent": "2026-10-27T16:00:00Z", "lastSentTag": "rec-game-fastest"}`))
 	}))
@@ -136,6 +137,9 @@ func TestStatusPage(t *testing.T) {
 	if d.Stats.Version != "20261015000000" || d.Alerts.Tag != "rec-game-fastest" || len(d.Builds.Recent) != 7 || d.Builds.MedianSecs != 610 {
 		t.Errorf("status: %+v", d)
 	}
+	if !strings.Contains(string(d.Release), `"0.7.49"`) || d.Audit.Hard == nil {
+		t.Errorf("release %q, hard %v", d.Release, d.Audit.Hard)
+	}
 	var syncDown bool
 	for _, p := range d.Problems {
 		syncDown = syncDown || p.Key == "service-sync"
@@ -145,7 +149,7 @@ func TestStatusPage(t *testing.T) {
 	}
 	w = httptest.NewRecorder()
 	s.serveStatus(w, httptest.NewRequest(http.MethodGet, "/riftwise/status", nil))
-	if b := w.Body.String(); !strings.Contains(b, "RiftWise status: ") || !strings.Contains(b, "noindex") || !strings.Contains(b, "Service: sync") || !strings.Contains(b, "rec-game-fastest") {
+	if b := w.Body.String(); !strings.Contains(b, "RiftWise status: ") || !strings.Contains(b, "noindex") || !strings.Contains(b, "Service: sync") || !strings.Contains(b, "rec-game-fastest") || !strings.Contains(b, "Last release") {
 		t.Errorf("page: %s", b)
 	}
 }
