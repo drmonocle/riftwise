@@ -27,6 +27,7 @@ import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 import { riotImg } from "../../riotImage";
 import { navigateHub } from "../../hub/route";
 import { lazyPart } from "../../lazyPart";
+import { formatMatchTime } from "../../matchTime";
 
 // what's on the line in the next day (milestones, streaks), in the side column: loaded only when it shows
 const AtStakeToday = lazyPart(() => import("../hub/AtStake").then((m) => m.AtStakeToday));
@@ -107,33 +108,6 @@ function useCountdown(utcDateStr?: string) {
   }, [utcDateStr]);
 
   return timeLeft;
-}
-
-function formatMatchTime(iso: string): string {
-  try {
-    const d = new Date(iso);
-    const today = new Date();
-    const isToday =
-      d.getDate() === today.getDate() &&
-      d.getMonth() === today.getMonth() &&
-      d.getFullYear() === today.getFullYear();
-
-    const timeStr = d.toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit" });
-    if (isToday) return tl("Today at {time}", { time: timeStr });
-
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-    const isTomorrow =
-      d.getDate() === tomorrow.getDate() &&
-      d.getMonth() === tomorrow.getMonth() &&
-      d.getFullYear() === tomorrow.getFullYear();
-
-    if (isTomorrow) return tl("Tomorrow at {time}", { time: timeStr });
-
-    return tl("{date} at {time}", { date: d.toLocaleDateString(locale(), { month: "short", day: "numeric" }), time: timeStr });
-  } catch {
-    return iso;
-  }
 }
 
 export const LiveView: React.FC<LiveViewProps> = ({

@@ -30,6 +30,7 @@ EXPECT = [
     "{v}/hub/records.json",
     "{v}/hub/records_new.json",
     "{v}/hub/weekly.json",
+    "{v}/hub/rating.json",
     "{v}/hub/leagues.json",
     "{v}/hub/titles.json",
     "{v}/hub/patches.json",
@@ -45,7 +46,29 @@ EXPECT = [
 ]
 
 
+def rating_check() -> str:
+    """The player rating on one known game: the app's copy (src/__tests__/playerRating.test.ts) must agree."""
+    sys.path.insert(0, STATS)
+    import player_rating as pr
+
+    base = {"2026|Mid": {"kp": [0.65, 0.15], "ds": [0.27, 0.06], "gs": [0.22, 0.03], "cs": [8.5, 1.2], "vs": [0.14, 0.04], "dpm": [0.08, 0.04]}}
+    # [date, series, champion, k, d, a, won, team, opponent, event, role, event slug, cs, gold, damage, vision,
+    #  minutes, team kills, team damage, team gold, team vision]
+    row = ["2026-10-20", "s", "Ahri", 5, 1, 7, 1, "T1", "G2", "Worlds", "Mid", "w", 300, 14000, 25000, 40, 32, 18, 80000, 62000, 260]
+    got = pr.rate(row, base, 1.2)
+    if got != 7.2:
+        return f"rating {got}, want 7.2"
+    lost = pr.rate(row[:6] + [0] + row[7:], base, 1.2)
+    if lost != 6.2:
+        return f"rating in a loss {lost}, want 6.2"
+    return ""
+
+
 def main() -> int:
+    bad = rating_check()
+    if bad:
+        print(f"FAIL: player rating: {bad}")
+        return 1
     keep = "--keep" in sys.argv
     out_dir = sys.argv[sys.argv.index("--out") + 1] if "--out" in sys.argv else None
     work = tempfile.mkdtemp(prefix="riftwise-stats-test-")
@@ -81,6 +104,14 @@ def main() -> int:
             week = json.load(f)
         if not week["series"] or not week["results"]:
             print(f"FAIL: weekly.json has no series for {week['from']} to {week['to']}")
+            return 1
+        if not week.get("players") or not week.get("champs"):
+            print("FAIL: weekly.json has no players of the week or champions")
+            return 1
+        with open(os.path.join(out, v, "hub", "rating.json"), encoding="utf-8") as f:
+            rating = json.load(f)
+        if not rating.get("base", {}).get("all|Mid") or not 0.3 < rating.get("scale", 0) < 5:
+            print(f"FAIL: rating.json: scale {rating.get('scale')}, roles {sorted(rating.get('base', {}))[:6]}")
             return 1
         audit = subprocess.run([sys.executable, "-u", os.path.join(STATS, "audit_data.py"), out],
                                capture_output=True, text=True, encoding="utf-8", errors="replace")

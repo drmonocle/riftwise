@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect, useRef, useState } from "react";
-import { Trophy, Swords, Medal, ArrowLeft, GitCompare, Home, CalendarRange, Layers, History, Database, TrendingUp, Flame, Crosshair, Globe, Flag, Wrench, ClipboardList, LayoutGrid, Search, ListOrdered, Rows3 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { AppSettings, Match, CatalogData } from "../../types";
 import { IS_WEB } from "../../platform";
 import {
@@ -48,6 +48,7 @@ import {
   OpenUrlContext,
 } from "../hub/ui";
 import { HubSearch } from "../hub/HubSearch";
+import { AllPagesMenu, groupOf, MENU, MENU_ITEMS, pillClass, subPillClass } from "../hub/menu";
 
 import { lazyPart } from "../../lazyPart";
 import { reportUrl } from "../../feedback";
@@ -85,6 +86,8 @@ const EventPage = lazyPart(() => pageCode.event().then((m) => m.EventPage));
 const MatchPage = lazyPart(() => pageCode.match().then((m) => m.MatchPage));
 const ChampPage = lazyPart(() => pageCode.champ().then((m) => m.ChampPage));
 const WorldsPage = lazyPart(() => pageCode.worlds().then((m) => m.WorldsPage));
+const TeamsDirectory = lazyPart(() => pageCode.teams().then((m) => m.TeamsDirectory));
+const PlayersDirectory = lazyPart(() => pageCode.players().then((m) => m.PlayersDirectory));
 
 interface StatsViewProps {
   settings: AppSettings;
@@ -96,74 +99,14 @@ interface StatsViewProps {
 }
 
 type SectionKind = HubRoute["kind"];
-interface MenuItem {
-  kind: SectionKind;
-  label: string;
-  icon: React.ReactNode;
-}
-/** The stats menu: groups on the first row, the open group's pages on the second. */
 /** pages whose own title is their <h1> (the others get the "Pro stats" header as theirs) */
 const OWN_H1 = new Set(["home", "worlds", "msi", "first-stand", "rankings", "records", "prep", "draft", "finder", "best", "counters", "leaders", "tiers", "team", "player", "event", "champ", "league", "match", "aboutme"]);
 
-const GROUPS: { label: string; icon: React.ReactNode; items: MenuItem[] }[] = [
-  { label: tk("Home"), icon: <Home className="w-3.5 h-3.5" />, items: [{ kind: "home", label: tk("Home"), icon: <Home className="w-3.5 h-3.5" /> }] },
-  {
-    label: tk("International events"),
-    icon: <Globe className="w-3.5 h-3.5" />,
-    items: [
-      { kind: "worlds", label: tk("Worlds"), icon: <Globe className="w-3.5 h-3.5" /> },
-      { kind: "msi", label: tk("MSI"), icon: <Trophy className="w-3.5 h-3.5" /> },
-      { kind: "first-stand", label: tk("First Stand"), icon: <Flag className="w-3.5 h-3.5" /> },
-    ],
-  },
-  {
-    label: tk("Tournaments"),
-    icon: <CalendarRange className="w-3.5 h-3.5" />,
-    items: [
-      { kind: "weekly", label: tk("This week"), icon: <CalendarRange className="w-3.5 h-3.5" /> },
-      { kind: "tournaments", label: tk("Tournaments"), icon: <CalendarRange className="w-3.5 h-3.5" /> },
-      { kind: "leagues", label: tk("Leagues"), icon: <Layers className="w-3.5 h-3.5" /> },
-      { kind: "titles", label: tk("Titles"), icon: <Trophy className="w-3.5 h-3.5" /> },
-    ],
-  },
-  {
-    label: tk("Teams & players"),
-    icon: <TrendingUp className="w-3.5 h-3.5" />,
-    items: [
-      { kind: "rankings", label: tk("Rankings"), icon: <TrendingUp className="w-3.5 h-3.5" /> },
-      { kind: "leaders", label: tk("Leaderboards"), icon: <ListOrdered className="w-3.5 h-3.5" /> },
-      { kind: "compare", label: tk("Compare"), icon: <GitCompare className="w-3.5 h-3.5" /> },
-      { kind: "records", label: tk("Records"), icon: <Medal className="w-3.5 h-3.5" /> },
-    ],
-  },
-  {
-    label: tk("Champions"),
-    icon: <Swords className="w-3.5 h-3.5" />,
-    items: [
-      { kind: "champions", label: tk("Champions"), icon: <Swords className="w-3.5 h-3.5" /> },
-      { kind: "counters", label: tk("Counters"), icon: <Crosshair className="w-3.5 h-3.5" /> },
-      { kind: "tiers", label: tk("Tier list"), icon: <Rows3 className="w-3.5 h-3.5" /> },
-      { kind: "patches", label: tk("Patches"), icon: <History className="w-3.5 h-3.5" /> },
-    ],
-  },
-  {
-    label: tk("Tools"),
-    icon: <Wrench className="w-3.5 h-3.5" />,
-    items: [
-      { kind: "prep", label: tk("Match prep"), icon: <ClipboardList className="w-3.5 h-3.5" /> },
-      { kind: "draft", label: tk("Draft board"), icon: <LayoutGrid className="w-3.5 h-3.5" /> },
-      { kind: "finder", label: tk("Game finder"), icon: <Search className="w-3.5 h-3.5" /> },
-      { kind: "best", label: tk("Best games"), icon: <Flame className="w-3.5 h-3.5" /> },
-      { kind: "data", label: tk("Data"), icon: <Database className="w-3.5 h-3.5" /> },
-    ],
-  },
-];
-const SECTIONS: MenuItem[] = GROUPS.flatMap((g) => g.items);
 /** pages whose address carries what they show (teams, filters): their link is worth copying */
-const LINKABLE = new Set<SectionKind>(["prep", "draft", "finder", "compare", "best", "champions", "counters", "leaders", "tiers"]);
+const LINKABLE = new Set<SectionKind>(["prep", "draft", "finder", "compare", "best", "champions", "counters", "leaders", "tiers", "teams", "players"]);
 
 /** pages that are one big table: kept at the two-column width on very wide screens (App.css .rw-capped) */
-const CAPPED_KINDS = new Set(["weekly", "tournaments", "leagues", "rankings", "titles", "best", "champions", "patches", "data", "finder", "counters", "leaders"]);
+const CAPPED_KINDS = new Set(["weekly", "tournaments", "leagues", "rankings", "titles", "best", "champions", "patches", "data", "finder", "counters", "leaders", "teams", "players"]);
 
 // ── Compare ───────────────────────────────────────────────────────────────
 
@@ -182,31 +125,30 @@ export const StatsView: React.FC<StatsViewProps> = ({
   const statsMeta = useLoad<StatsMeta>(loadStatsMeta, []);
   const hubMeta = useLoad(loadHubMeta, []);
   const scroller = useRef<HTMLDivElement>(null);
-  // the section menu is one sideways row on phones: keep the open section in view
+  // the open group's pages are one sideways row on phones: keep the open page in view
   const sectionRow = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const row = sectionRow.current;
-    const on = row?.querySelector<HTMLElement>(".bg-rw-accent");
+    const on = row?.querySelector<HTMLElement>(".bg-rw-raised");
     if (row && on && row.scrollWidth > row.clientWidth) row.scrollLeft = on.offsetLeft - (row.clientWidth - on.offsetWidth) / 2;
   }, [route.kind]);
   const lastRoute = useRef(route);
   useEffect(() => {
     const prev = lastRoute.current;
     lastRoute.current = route;
-    // switching games inside one series keeps the place on the page
-    if (prev.kind === "match" && route.kind === "match" && "slug" in prev && "slug" in route && prev.slug === route.slug) return;
+    const samePage = prev.kind === route.kind && "slug" in prev && "slug" in route && prev.slug === route.slug;
+    // switching games inside one series keeps the place on the page, and so does switching a page's tabs (the tabs
+    // bring themselves to the top when they had scrolled away: PageTabs)
+    if (samePage && (route.kind === "match" || "tab" in prev || "tab" in route)) return;
     scroller.current?.scrollTo({ top: 0 });
   }, [route]);
 
-  const isSection = SECTIONS.some((s) => s.kind === route.kind);
+  const isSection = MENU_ITEMS.some((s) => s.kind === route.kind);
   // pages without a title heading of their own: the "Pro stats" header is their <h1>, with the page's name
   const ownTitle = !OWN_H1.has(route.kind);
-  const sectionName = GROUPS.flatMap((g) => g.items).find((it) => it.kind === route.kind)?.label || (route.kind === "about" ? tk("About") : "");
-  const group = GROUPS.find((g) => g.items.some((i) => i.kind === route.kind));
-  const pillClass = (on: boolean) =>
-    `flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors shrink-0 whitespace-nowrap ${
-      on ? "bg-rw-accent/10 text-rw-accent border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50"
-    }`;
+  const sectionName = MENU_ITEMS.find((it) => it.kind === route.kind)?.label || (route.kind === "about" ? tk("About") : "");
+  // a team's or player's page sits under Teams & players, a tournament under Events... (menu.tsx)
+  const group = groupOf(route.kind);
   const back = () => {
     if (!hubBack()) navigateHub({ kind: "home" });
   };
@@ -244,52 +186,65 @@ export const StatsView: React.FC<StatsViewProps> = ({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {!isSection && (
-            <button
-              type="button"
-              onClick={back}
-              className="flex items-center gap-1 min-h-8 px-1.5 -ml-1.5 rounded text-xs text-rw-teal hover:underline shrink-0"
-              aria-label={tl("Back")}
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />{" "}
-              {canGoBack() ? tl("Back") : tl("Stats home")}
-            </button>
-          )}
-          {(!isSection || LINKABLE.has(route.kind)) && <CopyLinkButton url={hubShareUrl(route)} />}
-          {/* phones: one row that scrolls sideways, so the page itself starts near the top; wider screens: wrapped */}
-          <div
-            ref={sectionRow}
-            className="relative flex gap-1.5 overflow-x-auto [scrollbar-width:none] -mx-4 px-4 w-[calc(100%+2rem)] sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0 sm:w-auto"
-            role="tablist"
-          >
-            {GROUPS.map((g) => (
-              <HubLink key={g.label} to={{ kind: g.items[0].kind } as HubRoute} className={pillClass(g === group)}>
+        <div className="space-y-2">
+          {/* the groups: always the same place on every page (the page's own buttons are on the row below) */}
+          <div className="relative hidden sm:flex flex-wrap items-center gap-1.5" role="tablist" aria-label={tl("Pro Stats")}>
+            {MENU.map((g) => (
+              <HubLink key={g.key} to={{ kind: g.items[0].kind } as HubRoute} className={pillClass(g === group)}>
                 {g.icon}
                 {tl(g.label)}
               </HubLink>
             ))}
+            <AllPagesMenu kind={route.kind} />
           </div>
-          {/* the open group's pages */}
-          {group && group.items.length > 1 && (
-            <div
-              className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] -mx-4 px-4 w-[calc(100%+2rem)] sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0 sm:w-full"
-              role="tablist"
-              aria-label={tl(group.label)}
-            >
-              {group.items.map((i) => (
-                <HubLink key={i.kind} to={{ kind: i.kind } as HubRoute} className={pillClass(route.kind === i.kind).replace("bg-rw-accent/10 text-rw-accent border-rw-accent", "bg-rw-raised text-rw-text border-rw-line")}>
-                  {i.icon}
-                  {tl(i.label)}
-                </HubLink>
-              ))}
-            </div>
-          )}
-          {route.kind !== "home" && (
-            <div className="w-full sm:w-64 sm:ml-auto">
-              <HubSearch placeholder={tl("Search…")} />
-            </div>
-          )}
+          {/* phones: the whole menu behind one button that says where you are */}
+          <div className="relative sm:hidden flex">
+            <AllPagesMenu
+              phone
+              kind={route.kind}
+              current={group && group.key !== "home" ? (isSection ? `${tl(group.label)} · ${tl(sectionName)}` : tl(group.label)) : tl("Home")}
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+            {!isSection && (
+              <button
+                type="button"
+                onClick={back}
+                className="flex items-center gap-1 min-h-8 px-1.5 -ml-1.5 rounded text-xs text-rw-teal hover:underline shrink-0"
+                aria-label={tl("Back")}
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />{" "}
+                {canGoBack() ? tl("Back") : tl("Stats home")}
+              </button>
+            )}
+            {/* the open group's pages; phones: one row that scrolls sideways, so the page itself starts near the top */}
+            {isSection && group && group.items.length > 1 && (
+              <div
+                ref={sectionRow}
+                className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] -mx-4 px-4 w-[calc(100%+2rem)] sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0 sm:w-auto"
+                role="tablist"
+                aria-label={tl(group.label)}
+              >
+                {group.items.map((i) => (
+                  <HubLink key={i.kind} to={{ kind: i.kind } as HubRoute} className={subPillClass(route.kind === i.kind)}>
+                    {i.icon}
+                    {tl(i.label)}
+                  </HubLink>
+                ))}
+              </div>
+            )}
+            {(route.kind !== "home" || !isSection) && (
+              // phones: beside the Back button when there is one (one row of buttons instead of two)
+              <div className="flex items-center gap-2 flex-1 min-w-[min(100%,14rem)] sm:flex-none sm:w-auto sm:ml-auto">
+                {(!isSection || LINKABLE.has(route.kind)) && <CopyLinkButton url={hubShareUrl(route)} />}
+                {route.kind !== "home" && (
+                  <div className="flex-1 sm:flex-none sm:w-64 min-w-0">
+                    <HubSearch placeholder={tl("Search…")} />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {settings.spoilerMode && (
@@ -305,7 +260,9 @@ export const StatsView: React.FC<StatsViewProps> = ({
             Keyed by the page, not its filters, so changing a period or a filter doesn't restart it. */}
         <PartBoundary key={`${route.kind}:${"slug" in route ? route.slug : ""}`}>
         <Suspense fallback={<Loading />}>
-        {route.kind === "home" && <HubHome schedule={schedule} />}
+        {route.kind === "home" && <HubHome schedule={schedule} settings={settings} onOpenUrl={onOpenUrl} />}
+        {route.kind === "teams" && <TeamsDirectory query={"query" in route ? route.query : undefined} />}
+        {route.kind === "players" && <PlayersDirectory query={"query" in route ? route.query : undefined} />}
         {route.kind === "tournaments" && (
           <EventsBrowse
             year={route.year}
@@ -342,11 +299,11 @@ export const StatsView: React.FC<StatsViewProps> = ({
         {route.kind === "titles" && <TitlesPanel />}
         {route.kind === "weekly" && <WeeklyPage />}
         {route.kind === "compare" && <ComparePage route={route as CompareRoute} />}
-        {route.kind === "team" && <TeamPage slug={route.slug} />}
+        {route.kind === "team" && <TeamPage slug={route.slug} tab={"tab" in route ? route.tab : undefined} />}
         {route.kind === "player" && (
-          <PlayerPage slug={route.slug} onOpenUrl={onOpenUrl} />
+          <PlayerPage slug={route.slug} tab={"tab" in route ? route.tab : undefined} onOpenUrl={onOpenUrl} />
         )}
-        {route.kind === "event" && <EventPage slug={route.slug} onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
+        {route.kind === "event" && <EventPage slug={route.slug} tab={"tab" in route ? route.tab : undefined} onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
         {route.kind === "match" && (
           <MatchPage slug={route.slug} game={route.game} onOpenUrl={onOpenUrl} />
         )}

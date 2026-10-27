@@ -29,6 +29,8 @@ function read(): RecentPage[] {
 /** Called by usePageTitle: the page just opened goes to the front of the list. */
 export function rememberRecent(route: HubRoute, title: string): void {
   if (!KINDS.has(route.kind) || !title) return;
+  // a page's tabs are one page here (T1 once, not T1 and T1's matches)
+  if ("tab" in route && route.tab) route = { ...route, tab: undefined };
   const path = hubPath(route);
   const next = [{ route, title, at: Date.now() }, ...read().filter((x) => hubPath(x.route) !== path)].slice(0, MAX);
   list = next;

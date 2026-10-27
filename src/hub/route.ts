@@ -8,8 +8,10 @@
  *                                         best (?view=series&year=2025&league=..)
  *   /stats/compare?teams=t1,gen-g&p=y2026   a comparison (players=..., p = period: all, last20, y2026, e:<event>)
  *   /stats/champions?league=lck&year=2026&event=..&patch=26.18&side=b&role=Mid   champion stats with filters
+ *   /stats/teams, /stats/players   every team and every player (?region=..&active=2026&role=Mid&q=..)
  *   /about                      who makes RiftWise
  *   /player/<slug>              /team/<slug>  /tournament/<slug>  /match/<slug>[?g=<game>]  /champion/<slug>  /league/<slug>[/<year>]
+ *   /player/<slug>/<tab>        a team's, player's or tournament's other tabs (/team/t1/matches, /player/faker/champions)
  *
  * The desktop app has no address bar, so it keeps its own back stack instead.
  */
@@ -19,14 +21,25 @@ import { IS_WEB, SITE_URL } from "../platform";
 export type HubSection =
   | "tournaments" | "leagues" | "champions" | "patches" | "records" | "titles" | "compare" | "data" | "about" | "prep"
   | "rankings" | "finder" | "draft" | "best" | "counters" | "worlds" | "msi" | "first-stand" | "leaders" | "tiers"
-  | "weekly"
+  | "weekly" | "teams" | "players"
   | "aboutme"; // riftwise.gg/about (not under /stats)
 export type HubEntity = "team" | "player" | "event" | "match" | "champ" | "league";
+
+/** The tabs of a team's, player's and tournament's page (the first one, Overview, is the page's own address). Keep
+ *  in step with server/pages (entityTabs) and the riftwise.gg rewrite rule in web/web.config. */
+export const ENTITY_TABS = {
+  team: ["stats", "matches", "history", "champions"],
+  player: ["stats", "champions", "matches", "career"],
+  event: ["matches", "stats", "champions", "teams"],
+} as const;
+export type TabbedEntity = keyof typeof ENTITY_TABS;
+export type EntityTab<K extends TabbedEntity = TabbedEntity> = (typeof ENTITY_TABS)[K][number];
+export const isTabbed = (kind: string): kind is TabbedEntity => kind in ENTITY_TABS;
 
 export type HubRoute =
   | { kind: "home" }
   | { kind: HubSection; year?: string; mode?: "team" | "player"; a?: string; b?: string; period?: string; query?: string; more?: string[] }
-  | { kind: HubEntity; slug: string; game?: number; year?: string };
+  | { kind: HubEntity; slug: string; game?: number; year?: string; tab?: string };
 
 export const HUB_HOME: HubRoute = { kind: "home" };
 /** The compare page with who is compared over which period (all in the address). */
@@ -36,12 +49,12 @@ export type CompareRoute = { kind: "compare"; mode?: "team" | "player"; a?: stri
 export type PrepRoute = { kind: "prep"; a?: string; b?: string; period?: string };
 const SECTIONS: HubSection[] = [
   "tournaments", "leagues", "champions", "patches", "records", "titles", "compare", "data", "about", "prep", "rankings", "finder", "draft",
-  "best", "counters", "worlds", "msi", "first-stand", "leaders", "tiers", "weekly",
+  "best", "counters", "worlds", "msi", "first-stand", "leaders", "tiers", "weekly", "teams", "players",
 ];
 /** Pages that keep their filters in the address (?league=lck&year=2026...). */
 /** Worlds, MSI and First Stand: one page each, for a year or every year (/stats/msi/2024, /stats/worlds/all). */
 const INTL_SECTIONS: HubSection[] = ["worlds", "msi", "first-stand"];
-const QUERY_SECTIONS: HubSection[] = ["champions", "finder", "draft", "best", "counters", "leaders", "tiers"];
+const QUERY_SECTIONS: HubSection[] = ["champions", "finder", "draft", "best", "counters", "leaders", "tiers", "teams", "players"];
 const ENTITY_PATH: Record<HubEntity, string> = {
   team: "team", player: "player", event: "tournament", match: "match", champ: "champion", league: "league",
 };
@@ -102,6 +115,9 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
   const kind = PATH_ENTITY[parts[0]];
   // a league page can open at one season: /league/lck/2025
   if (kind === "league" && parts.length === 3 && /^\d{4}$/.test(parts[2])) return { kind, slug: parts[1].toLowerCase(), year: parts[2] };
+  // one tab of a team's, player's or tournament's page: /team/t1/matches
+  if (kind && isTabbed(kind) && parts.length === 3 && parts[1] && (ENTITY_TABS[kind] as readonly string[]).includes(parts[2].toLowerCase()))
+    return { kind, slug: parts[1].toLowerCase(), tab: parts[2].toLowerCase() };
   if (!kind || !parts[1] || parts.length !== 2) return null;
   // a match page can open at one of its games: /match/<slug>?g=5
   const game = kind === "match" ? Number(new URLSearchParams(search).get("g")) || undefined : undefined;
@@ -132,8 +148,9 @@ export function hubPath(r: HubRoute): string {
     const y = "year" in r && r.year ? `/${r.year}` : "";
     return `${BASE}stats/${r.kind}${y}`;
   }
-  const e = r as { slug: string; game?: number; year?: string };
-  const tail = r.kind === "match" && e.game ? `?g=${e.game}` : r.kind === "league" && e.year ? `/${e.year}` : "";
+  const e = r as { slug: string; game?: number; year?: string; tab?: string };
+  const tail =
+    r.kind === "match" && e.game ? `?g=${e.game}` : r.kind === "league" && e.year ? `/${e.year}` : isTabbed(r.kind) && e.tab ? `/${e.tab}` : "";
   return `${BASE}${ENTITY_PATH[r.kind as HubEntity]}/${encodeURIComponent(e.slug)}${tail}`;
 }
 

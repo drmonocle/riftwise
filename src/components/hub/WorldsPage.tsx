@@ -27,6 +27,7 @@ import { IntlInsights } from "./IntlInsights";
 import { liveLines } from "../../hub/liveLines";
 import type { EventLines } from "../../hub/worldsFacts";
 import { Failed, HubLink, Loading, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
+import { JumpBar, type JumpItem } from "./PageTabs";
 
 /** The three international events with a page of their own; Worlds has had a Swiss stage since 2023. */
 export type IntlKind = "worlds" | "msi" | "first-stand";
@@ -320,6 +321,7 @@ const FactsTab: React.FC<{ d: Loaded; kind: IntlKind }> = ({ d, kind }) => {
   const parentName = d.parent?.n || "";
   return (
     <div className="space-y-3">
+      <JumpBar items={FACT_JUMPS} />
       {!d.all && d.stages.length > 1 && (
         <div className="flex flex-wrap gap-1.5">
           <button type="button" className={pill(stage === "all")} onClick={() => setStage("all")}>
@@ -339,12 +341,31 @@ const FactsTab: React.FC<{ d: Loaded; kind: IntlKind }> = ({ d, kind }) => {
       ) : (
         <FactGroups facts={facts} link={hubShareUrl({ kind, year: d.year })} shareId={(f) => `${kind}-${d.year}-${f.id}`} />
       )}
-      <RegionStats files={shownFiles} years={years} all={d.all} name={d.name} />
-      <IntlInsights files={shownFiles} years={years} stages={stageSlugs} all={d.all} name={d.name} />
-      {!d.all && <Winners kind={kind} name={eventName(INTL[kind].name)} current={d.year} />}
+      <div id="jump-regions">
+        <RegionStats files={shownFiles} years={years} all={d.all} name={d.name} />
+      </div>
+      <div id="jump-insights" className="space-y-3">
+        <IntlInsights files={shownFiles} years={years} stages={stageSlugs} all={d.all} name={d.name} />
+      </div>
+      {!d.all && (
+        <div id="jump-winners">
+          <Winners kind={kind} name={eventName(INTL[kind].name)} current={d.year} />
+        </div>
+      )}
     </div>
   );
 };
+
+/** The stats tab's parts, for its "jump to" row (the ones a year doesn't have are left out by JumpBar itself) */
+const FACT_JUMPS: JumpItem[] = [
+  { id: "facts-event", label: tk("The event") },
+  { id: "facts-teams", label: tk("Teams") },
+  { id: "facts-players", label: tk("Players") },
+  { id: "facts-champs", label: tk("Champions and the draft") },
+  { id: "jump-regions", label: tk("Regions") },
+  { id: "jump-insights", label: tk("Upsets, runs and finals") },
+  { id: "jump-winners", label: tk("Titles") },
+];
 
 /** Every edition's champion in order: the final's score, the runner-up, and the teams that won it back to back. */
 const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({ kind, name, current }) => {

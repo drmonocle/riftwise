@@ -1,10 +1,15 @@
-/** Team page: record, titles, tournaments with placements, roster by year, rivals and champions. */
+/**
+ * Team page, in tabs (each its own address, /team/t1/<tab>): Overview (record, storylines, recent series, titles,
+ * this year's roster), Stats (any period, league ranks), Matches (every series, rivals), History (tournaments with
+ * placements, roster by year) and Champions.
+ */
 import React, { useState } from "react";
 import { Trophy } from "lucide-react";
-import { tl, roleName, regionName, eventTitle, tc } from "../../i18n";
+import { tl, tk, roleName, regionName, eventTitle, tc } from "../../i18n";
 import { winRate } from "../../stats";
 import { loadHubTeam } from "../../hub/data";
-import { currentHubRoute, navigateHub } from "../../hub/route";
+import { currentHubRoute, navigateHub, type HubRoute } from "../../hub/route";
+import { PageTabs, type PageTab } from "./PageTabs";
 import type { HubTeam } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { TeamSeriesArchive } from "./Archives";
@@ -18,32 +23,42 @@ import { STable } from "../STable";
 import { SectionCard } from "./BroadcastCard";
 import { champName } from "../../champions";
 
-export const TeamPage: React.FC<{ slug: string }> = ({ slug }) => {
+/** The tabs' names (the address says the key: /team/t1/matches) */
+const TAB_LABEL: Record<string, string> = {
+  "": tk("Overview"),
+  stats: tk("Stats"),
+  matches: tk("Matches"),
+  history: tk("History"),
+  champions: tk("Champions"),
+};
+
+export const TeamPage: React.FC<{ slug: string; tab?: string }> = ({ slug, tab }) => {
   // reached by an old or short address (/team/hle): show the team's own address, once this team's file is in and
   // only while its page is still the one open (moving to another team mustn't bounce back)
   const state = useLoad(
     () =>
       loadHubTeam(slug).then((t) => {
         const now = currentHubRoute();
-        if (t.u && t.u !== slug && now.kind === "team" && now.slug === slug) navigateHub({ kind: "team", slug: t.u }, { replace: true });
+        if (t.u && t.u !== slug && now.kind === "team" && now.slug === slug)
+          navigateHub({ kind: "team", slug: t.u, ...("tab" in now && now.tab ? { tab: now.tab } : {}) }, { replace: true });
         return t;
       }),
     [slug],
   );
-  usePageTitle(state.data?.name);
+  usePageTitle(state.data ? (tab && TAB_LABEL[tab] ? `${state.data.name} · ${tl(TAB_LABEL[tab])}` : state.data.name) : undefined);
   useDDragon();
   return (
     <Page state={state}>
       {(t) => (
         <CaptureContext.Provider value={t.name}>
-          <TeamView t={t} />
+          <TeamView t={t} tab={tab && TAB_LABEL[tab] ? tab : ""} />
         </CaptureContext.Provider>
       )}
     </Page>
   );
 };
 
-const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
+const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
   const worlds = t.titles.filter((x) => x.kind === "Worlds").length;
   const msi = t.titles.filter((x) => x.kind === "MSI").length;
   const firstStand = t.titles.filter((x) => x.kind === "First Stand").length;
@@ -54,9 +69,19 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
   // the section cards leave out what spoiler mode hides
   const hiddenCheck = useHiddenCheck();
   const cardSub = t.region ? regionName(t.region) : undefined;
+  const tabs: PageTab[] = [
+    { key: "", label: TAB_LABEL[""] },
+    { key: "stats", label: TAB_LABEL.stats },
+    { key: "matches", label: TAB_LABEL.matches, count: t.sg },
+    { key: "history", label: TAB_LABEL.history, count: t.events.length },
+    ...(t.champs.length ? [{ key: "champions", label: TAB_LABEL.champions }] : []),
+  ];
+  const to = (key: string): HubRoute => ({ kind: "team", slug: t.u, ...(key ? { tab: key } : {}) });
+  const overview = tab === "";
   return (
-    <div className="rw-page">
-      <div className={card}>
+    <div>
+      {/* the team's name on every tab; its numbers on the Overview */}
+      <div className={`${card} mb-3`}>
         <h1 className="text-lg font-bold text-rw-text">
           {t.name}
           {t.codes.length > 0 && <span className="text-rw-muted text-sm font-semibold ml-2">{t.codes.slice(0, 3).join(" · ")}</span>}
@@ -71,7 +96,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
           {/* its own calendar and results feed, while it still plays (the schedule only has current teams) */}
           {!t.disbanded && Date.now() - Date.parse(t.to) < 180 * 86_400_000 && <FollowFeeds teams={[t.name]} />}
         </span>
-        {oldNames.length > 0 && (
+        {overview && oldNames.length > 0 && (
           <p className="text-[11px] text-rw-sub mt-1">
             {tl("Also played as:")}{" "}
             {oldNames.map((n, i) => (
@@ -85,6 +110,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
             {tl("All of it counts here.")}
           </p>
         )}
+        {overview && (
         <div className="grid grid-cols-2 sm:grid-cols-4 rw-stats mt-3">
           <Stat label={tl("Games")} value={`${fmtNum(t.w)}-${fmtNum(t.g - t.w)}`} sub={tl("{pct} win rate", { pct: winRate(t.w, t.g) })} />
           <Stat label={tl("Series")} value={`${t.sw}-${t.sg - t.sw}`} sub={tl("{pct} won", { pct: winRate(t.sw, t.sg) })} />
@@ -135,13 +161,20 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
             />
           )}
         </div>
+        )}
       </div>
 
-      <OwnStorylines notes={t.notes} spoilerKey={`notes:team:${t.u}`} share={`${t.u}-storylines`} />
-      <TeamPeriodStats slug={t.u} has2y={!!t.g2y} who={{ name: t.name, sub: [t.region, t.rating?.league].filter(Boolean).join(" · ") || undefined }} />
-      <TeamRanks slug={t.u} events={t.events} has2y={!!t.g2y} />
+      <PageTabs tabs={tabs} active={tab} to={to} />
+      <div className="rw-page mt-3">
+      {overview && <OwnStorylines notes={t.notes} spoilerKey={`notes:team:${t.u}`} share={`${t.u}-storylines`} />}
+      {tab === "stats" && (
+        <>
+          <TeamPeriodStats slug={t.u} has2y={!!t.g2y} who={{ name: t.name, sub: [t.region, t.rating?.league].filter(Boolean).join(" · ") || undefined }} />
+          <TeamRanks slug={t.u} events={t.events} has2y={!!t.g2y} />
+        </>
+      )}
 
-      {t.titles.length > 0 && (
+      {overview && t.titles.length > 0 && (
         <Section
           title={tl("Titles")}
           right={<SectionCard section={tl("Titles")} name={t.name} sub={tl("{n} titles", { n: t.titles.length })} rows={() => t.titles.map((x) => ({ label: eventTitle(x.t), sub: `${x.score} vs ${x.l}`, value: x.date.slice(0, 4) }))} />}
@@ -164,6 +197,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
       )}
 
       {/* side by side, each only as tall as it needs; a long recent list scrolls instead of leaving a gap beside By year */}
+      {overview && (
       <div className="grid gap-3 md:grid-cols-2 md:items-start">
         <Section
           title={tl("Recent series")}
@@ -253,8 +287,9 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
           </STable>
         </Section>
       </div>
+      )}
 
-      {t.events.length > 0 && (
+      {tab === "history" && t.events.length > 0 && (
         <Section
           title={tl("Tournaments")}
           right={
@@ -297,8 +332,10 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
         </Section>
       )}
 
-      <TeamSeriesArchive slug={t.u} teamName={t.name} />
+      {tab === "matches" && <TeamSeriesArchive slug={t.u} teamName={t.name} />}
 
+      {/* this year's roster on the Overview, every year's under History */}
+      {(overview || tab === "history") && t.roster.length > 0 && (
       <Section
         title={tl("Roster")}
         right={
@@ -313,7 +350,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
         }
       >
         <div className="space-y-2">
-          {t.roster.map((yr) => (
+          {(overview ? t.roster.slice(0, 1) : t.roster).map((yr) => (
             <div key={yr.y} className="text-xs">
               <span className="text-rw-muted font-semibold mr-2">{yr.y}</span>
               {yr.p.map((p, i) => (
@@ -325,9 +362,16 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
               ))}
             </div>
           ))}
+          {overview && t.roster.length > 1 && (
+            <HubLink to={to("history")} className="text-[11px] text-rw-teal hover:underline">
+              {tl("Every roster since {year}", { year: t.roster[t.roster.length - 1].y })}
+            </HubLink>
+          )}
         </div>
       </Section>
+      )}
 
+      {tab === "matches" && (
       <Section
         title={tl("Against other teams")}
         right={
@@ -366,7 +410,9 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
           </STable>
         </div>
       </Section>
+      )}
 
+      {tab === "champions" && (
       <div className="grid gap-3 md:grid-cols-2">
         <Section
           title={tl("Most picked champions")}
@@ -411,6 +457,14 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
             </ul>
           </Section>
         )}
+        <p className="text-[11px] text-rw-muted md:col-span-2">
+          {tl("Every game since {year}.", { year: t.from.slice(0, 4) })}{" "}
+          <HubLink to={to("stats")} className="text-rw-teal hover:underline">
+            {tl("Draft tendencies for any period are under Stats.")}
+          </HubLink>
+        </p>
+      </div>
+      )}
       </div>
     </div>
   );

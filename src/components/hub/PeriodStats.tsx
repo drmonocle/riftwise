@@ -23,6 +23,8 @@ import { SortTable, type Column } from "./SortTable";
 import { TrendChart } from "./TrendChart";
 import { DraftTendencies } from "./DraftTendencies";
 import { BroadcastCardButton, playerCardData, teamSoloCardData } from "./BroadcastCard";
+import { fmtRating, useRatingFile } from "./PlayerRating";
+import { playerRowLine, rateLine } from "../../hub/playerRating";
 import {
   ChampLink,
   Loading,
@@ -444,6 +446,13 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
     [rows, period, only],
   );
   const agg = useMemo(() => playerAgg(sel), [sel]);
+  // the period's average RiftWise rating (src/hub/playerRating.ts), and its best game
+  const ratingFile = useRatingFile();
+  const rated = useMemo(() => {
+    if (!ratingFile) return null;
+    const vs = sel.map((r) => rateLine(playerRowLine(r), ratingFile)).filter((v): v is number => v != null);
+    return vs.length ? { avg: vs.reduce((s, v) => s + v, 0) / vs.length, best: Math.max(...vs), n: vs.length } : null;
+  }, [sel, ratingFile]);
   const [hidden, reveal] = useHidden(
     `period:p:${slug}:${period}`,
     sel.find((r) => isFresh(r[0]))?.[0],
@@ -536,6 +545,13 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
               value={`${agg.w}-${agg.g - agg.w}`}
               sub={tl("{p} win rate", { p: winRate(agg.w, agg.g) })}
             />
+            {rated && (
+              <Stat
+                label={tl("Rating")}
+                value={fmtRating(rated.avg)}
+                sub={tl("best {r} · 6 is an average game", { r: fmtRating(rated.best) })}
+              />
+            )}
             <Stat
               label={tl("KDA")}
               value={fmtN(agg.kda)}

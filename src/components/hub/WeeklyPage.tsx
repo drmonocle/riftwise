@@ -6,12 +6,14 @@
  */
 import React, { useState } from "react";
 import { ClipboardCopy, Check } from "lucide-react";
-import { tl, tn, locale } from "../../i18n";
+import { tl, tn, locale, roleName } from "../../i18n";
+import { champName } from "../../champions";
 import { loadWeekly } from "../../hub/data";
 import type { HubWeekly } from "../../hub/types";
 import { SITE_URL } from "../../platform";
-import { card, EventLink, fmtDate, HubLink, Page, RevealButton, Section, TeamLink, useHidden, useLoad, usePageTitle } from "./ui";
+import { card, ChampLink, EventLink, fmtDate, HubLink, Page, PlayerLink, RevealButton, Section, TeamLink, th, td, useHidden, useLoad, usePageTitle } from "./ui";
 import { BroadcastCardButton, listCard } from "./BroadcastCard";
+import { fmtRating, RatingBadge } from "./PlayerRating";
 
 // the records worth naming, with the Records page's titles
 const RECORD_TITLES: Record<string, string> = {
@@ -51,6 +53,16 @@ function markdown(w: HubWeekly): string {
   if (w.best.length) {
     L.push("## Best games (game rating 0-100)", "");
     for (const b of w.best) L.push(`- ${b.r}: ${b.a} vs ${b.b}, game ${b.gn} · ${b.t} · ${SITE_URL}match/${b.g}?g=${b.gn}`);
+    L.push("");
+  }
+  if (w.players?.length) {
+    L.push("## Players of the week (RiftWise rating, 6 is an average game)", "");
+    for (const p of w.players) L.push(`- **${p.n}**${p.t ? ` (${p.t})` : ""}: ${p.rt.toFixed(1)} over ${p.g} games`);
+    L.push("");
+  }
+  if (w.champs?.length) {
+    L.push("## Most picked or banned", "");
+    for (const [c, pk, bn, wn] of w.champs.slice(0, 5)) L.push(`- ${c}: ${pk} picks (${pk ? Math.round((wn / pk) * 100) : 0}% wins), ${bn} bans`);
     L.push("");
   }
   L.push(`Every result, chance and record: ${SITE_URL}stats/weekly`);
@@ -202,6 +214,66 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
               <p className="text-xs text-rw-sub">{tl("No rated games yet this week.")}</p>
             )}
           </Section>
+          {w.players && w.players.length > 0 && (
+            <Section title={tl("Players of the week")} share="weekly-players">
+              <ol className="text-xs space-y-1.5">
+                {w.players.map((p, i) => (
+                  <li key={p.u || p.n} className="min-w-0">
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      <span className="truncate min-w-0">
+                        <span className="text-rw-muted mr-1 tabular-nums">{i + 1}.</span>
+                        <PlayerLink name={p.n} u={p.u} />
+                        <span className="text-rw-muted"> · {[p.r ? roleName(p.r) : "", p.t].filter(Boolean).join(" · ")}</span>
+                      </span>
+                      <RatingBadge v={p.rt} title={tl("Average RiftWise rating over {n} games (6 is an average game)", { n: p.g })} />
+                    </div>
+                    {p.best && (
+                      <div className="text-[10px] text-rw-muted truncate">
+                        {tl("Best: {rating} on {champion} vs {team}", { rating: fmtRating(p.best.rt), champion: champName(p.best.c), team: p.best.opp })}
+                        {" · "}
+                        <HubLink to={{ kind: "match", slug: p.best.g, game: p.best.gn }}>{tl("the game")}</HubLink>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ol>
+              <p className="text-[10px] text-rw-muted">
+                {tl("Two games or more.")}{" "}
+                <HubLink to={{ kind: "about" }} className="text-rw-teal hover:underline">
+                  {tl("How the rating works")}
+                </HubLink>
+              </p>
+            </Section>
+          )}
+          {w.champs && w.champs.length > 0 && (
+            <Section title={tl("Picks and bans this week")} share="weekly-champs">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr>
+                    <th className={th}>{tl("Champion")}</th>
+                    <th className={th}>{tl("Presence")}</th>
+                    <th className={th}>{tl("Picks")}</th>
+                    <th className={th}>{tl("Bans")}</th>
+                    <th className={th}>{tl("Win %")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {w.champs.map(([c, pk, bn, wn]) => (
+                    <tr key={c} className="border-t border-rw-border">
+                      <td className={`${td} max-w-[9rem]`}>
+                        <ChampLink name={c} size={18} />
+                      </td>
+                      <td className={`${td} tabular-nums text-rw-sub`}>{w.champGames ? `${Math.round(((pk + bn) / w.champGames) * 100)}%` : "–"}</td>
+                      <td className={`${td} tabular-nums text-rw-sub`}>{pk}</td>
+                      <td className={`${td} tabular-nums text-rw-sub`}>{bn}</td>
+                      <td className={`${td} tabular-nums text-rw-sub`}>{pk ? `${Math.round((wn / pk) * 100)}%` : "–"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="text-[10px] text-rw-muted">{tn("Picked or banned in the week's {n} game.", "Picked or banned in the week's {n} games.", w.champGames || 0)}</p>
+            </Section>
+          )}
           <div className="md:col-span-2">
             <Section title={tl("Every result")} share="weekly-results">
               <ul className="text-xs divide-y divide-rw-border/60">

@@ -1,11 +1,17 @@
-/** Player page: career numbers, bio, tournaments, teams, champion pool, recent games and bests. */
+/**
+ * Player page, in tabs (each its own address, /player/faker/<tab>): Overview (career numbers, bio, titles, recent
+ * games, bests), Stats (any period, league ranks), Champions (the pool), Matches (every game) and Career
+ * (tournaments, teams, years).
+ */
 import React, { useState } from "react";
 import { Trophy, ExternalLink } from "lucide-react";
 import { tl, tk, tc, roleName, eventTitle, regionName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { loadHubPlayer } from "../../hub/data";
+import type { HubRoute } from "../../hub/route";
 import type { HubPlayer } from "../../hub/types";
+import { PageTabs, type PageTab } from "./PageTabs";
 import { useDDragon } from "../../hub/ddragon";
 import { PlayerGamesArchive } from "./Archives";
 import { PlayerPeriodStats } from "./PeriodStats";
@@ -24,18 +30,28 @@ const BEST_LABEL: Record<string, string> = {
   cs: tk("Most CS"),
 };
 
+/** The tabs' names (the address says the key: /player/faker/champions) */
+const TAB_LABEL: Record<string, string> = {
+  "": tk("Overview"),
+  stats: tk("Stats"),
+  champions: tk("Champions"),
+  matches: tk("Matches"),
+  career: tk("Career"),
+};
+
 export const PlayerPage: React.FC<{
   slug: string;
+  tab?: string;
   onOpenUrl: (url: string) => void;
-}> = ({ slug, onOpenUrl }) => {
+}> = ({ slug, tab, onOpenUrl }) => {
   const state = useLoad(() => loadHubPlayer(slug), [slug]);
-  usePageTitle(state.data?.name);
+  usePageTitle(state.data ? (tab && TAB_LABEL[tab] ? `${state.data.name} · ${tl(TAB_LABEL[tab])}` : state.data.name) : undefined);
   useDDragon();
   return (
     <Page state={state}>
       {(p) => (
         <CaptureContext.Provider value={p.name}>
-          <PlayerView p={p} onOpenUrl={onOpenUrl} />
+          <PlayerView p={p} tab={tab && TAB_LABEL[tab] ? tab : ""} onOpenUrl={onOpenUrl} />
         </CaptureContext.Provider>
       )}
     </Page>
@@ -57,8 +73,18 @@ function age(born?: string): number | null {
 
 const PlayerView: React.FC<{
   p: HubPlayer;
+  tab: string;
   onOpenUrl: (url: string) => void;
-}> = ({ p, onOpenUrl }) => {
+}> = ({ p, tab, onOpenUrl }) => {
+  const overview = tab === "";
+  const tabs: PageTab[] = [
+    { key: "", label: TAB_LABEL[""] },
+    { key: "stats", label: TAB_LABEL.stats },
+    { key: "champions", label: TAB_LABEL.champions, count: p.nChamps },
+    { key: "matches", label: TAB_LABEL.matches, count: p.g },
+    { key: "career", label: TAB_LABEL.career, count: p.events.length },
+  ];
+  const to = (key: string): HubRoute => ({ kind: "player", slug: p.u, ...(key ? { tab: key } : {}) });
   const [allEvents, setAllEvents] = useState(false);
   const [allChamps, setAllChamps] = useState(false);
   const [recentHidden, revealRecent] = useHidden(
@@ -85,10 +111,17 @@ const PlayerView: React.FC<{
   const hiddenCheck = useHiddenCheck();
   const cardSub = [p.role ? roleName(p.role) : null, p.club].filter(Boolean).join(" · ") || undefined;
   return (
-    <div className="rw-page">
-      <div className={card}>
+    <div>
+      {/* who they are on every tab; their numbers on the Overview */}
+      <div className={`${card} mb-3`}>
         <div className="flex items-start gap-3">
-          <PlayerPhoto name={p.name} team={p.club} slug={p.u} img={p.img} sizeClass="w-14 h-14 lg:w-20 lg:h-20 2xl:w-24 2xl:h-24" />
+          <PlayerPhoto
+            name={p.name}
+            team={p.club}
+            slug={p.u}
+            img={p.img}
+            sizeClass={overview ? "w-14 h-14 lg:w-20 lg:h-20 2xl:w-24 2xl:h-24" : "w-10 h-10 lg:w-12 lg:h-12"}
+          />
           <div className="min-w-0 flex-1">
             <h1 className="text-lg font-bold text-rw-text">
               {p.name}
@@ -128,6 +161,8 @@ const PlayerView: React.FC<{
             <PhotosLink q={p.name} className="mt-1 inline-flex items-center gap-1 text-[11px] text-rw-teal hover:underline" />
           </div>
         </div>
+        {overview && (
+        <>
         {p.bio.fav && p.bio.fav.length > 0 && (
           <div className="flex flex-wrap items-center gap-1 mt-1 text-[11px] text-rw-muted">
             {tl("Favorite champions:")}
@@ -207,13 +242,21 @@ const PlayerView: React.FC<{
         <p className="text-[10px] text-rw-muted mt-2">
           {tl("All-Star and show matches aren't counted.")}
         </p>
+        </>
+        )}
       </div>
 
-      <OwnStorylines notes={p.notes} spoilerKey={`notes:player:${p.u}`} share={`${p.u}-storylines`} />
-      <PlayerPeriodStats slug={p.u} has2y={!!p.g2y} who={{ name: p.name, role: p.role ? roleName(p.role) : undefined, club: p.club }} />
-      <PlayerRanks slug={p.u} events={p.events} has2y={!!p.g2y} />
+      <PageTabs tabs={tabs} active={tab} to={to} />
+      <div className="rw-page mt-3">
+      {overview && <OwnStorylines notes={p.notes} spoilerKey={`notes:player:${p.u}`} share={`${p.u}-storylines`} />}
+      {tab === "stats" && (
+        <>
+          <PlayerPeriodStats slug={p.u} has2y={!!p.g2y} who={{ name: p.name, role: p.role ? roleName(p.role) : undefined, club: p.club }} />
+          <PlayerRanks slug={p.u} events={p.events} has2y={!!p.g2y} />
+        </>
+      )}
 
-      {p.titles.length > 0 && (
+      {overview && p.titles.length > 0 && (
         <Section
           title={tl("Titles")}
           right={<SectionCard section={tl("Titles")} name={p.name} sub={tl("{n} titles", { n: p.titles.length })} rows={() => p.titles.map((x) => ({ label: eventTitle(x.t), value: x.date.slice(0, 4) }))} />}
@@ -236,7 +279,7 @@ const PlayerView: React.FC<{
         </Section>
       )}
 
-      {p.events.length > 0 && (
+      {tab === "career" && p.events.length > 0 && (
         <Section
           title={tl("Tournaments")}
           right={
@@ -288,6 +331,7 @@ const PlayerView: React.FC<{
         </Section>
       )}
 
+      {tab === "career" && (
       <div className="grid gap-3 md:grid-cols-2">
         <Section
           title={tl("Teams")}
@@ -343,12 +387,14 @@ const PlayerView: React.FC<{
           </STable>
         </Section>
       </div>
+      )}
 
+      {tab === "champions" && (
       <Section
         title={tl("Champion pool")}
         right={
           <span className="flex items-center gap-2">
-            {p.champs.length > 15 && (
+            {p.champs.length > 15 && tab !== "champions" && (
               <button
                 type="button"
                 onClick={() => setAllChamps((v) => !v)}
@@ -380,7 +426,7 @@ const PlayerView: React.FC<{
               </tr>
             </thead>
             <tbody>
-              {(allChamps ? p.champs : p.champs.slice(0, 15)).map((c) => (
+              {(allChamps || tab === "champions" ? p.champs : p.champs.slice(0, 15)).map((c) => (
                 <tr key={c.c} className="border-t border-rw-border">
                   <td className={`${td} max-w-[10rem]`}>
                     <ChampLink name={c.c} size={18} />
@@ -399,7 +445,9 @@ const PlayerView: React.FC<{
           </STable>
         </div>
       </Section>
+      )}
 
+      {overview && (
       <div className="grid gap-3 md:grid-cols-2">
         <Section
           title={tl("Recent games")}
@@ -501,8 +549,9 @@ const PlayerView: React.FC<{
           </ul>
         </Section>
       </div>
+      )}
 
-      {p.pentas && p.pentas.length > 0 && (
+      {overview && p.pentas && p.pentas.length > 0 && (
         <Section
           title={tl("Pentakills")}
           right={<SectionCard section={tl("Pentakills")} name={p.name} sub={cardSub} rows={() => p.pentas!.map((x) => ({ champ: x.c, label: x.x > 1 ? `${champName(x.c)} ×${x.x}` : champName(x.c), sub: x.en, value: x.date.slice(0, 4) }))} />}
@@ -538,7 +587,8 @@ const PlayerView: React.FC<{
         </Section>
       )}
 
-      <PlayerGamesArchive slug={p.u} />
+      {tab === "matches" && <PlayerGamesArchive slug={p.u} />}
+      </div>
     </div>
   );
 };

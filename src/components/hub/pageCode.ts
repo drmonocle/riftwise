@@ -32,6 +32,8 @@ export const pageCode = {
   worlds: () => import("./WorldsPage"),
   msi: () => import("./WorldsPage"),
   "first-stand": () => import("./WorldsPage"),
+  teams: () => import("./DirectoryPages"),
+  players: () => import("./DirectoryPages"),
 };
 
 /** Start downloading one page's code (a failure shows, and is retried, where the page loads it). */

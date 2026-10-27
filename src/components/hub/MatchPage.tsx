@@ -1,12 +1,14 @@
 /** One series (a "match": Bo1 to Bo5): every game's draft, scoreboard, builds, runes and objectives. */
-import React, { useEffect, useState } from "react";
-import { PlayCircle, Clock, Crown } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { PlayCircle, Clock, Crown, Star } from "lucide-react";
 import { tl, tc, tk, roleName, locale, stageLabel, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
 import { loadHubSeries } from "../../hub/data";
 import type { GamePlayer, HubGame, HubSeries, SideStats } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { RatingBadge } from "./BestPage";
+import { RatingBadge as PlayerRatingBadge, fmtRating, useRatingFile } from "./PlayerRating";
+import { rateLine } from "../../hub/playerRating";
 import { navigateHub } from "../../hub/route";
 import { BroadcastCardButton, gameCardData, seriesCardData } from "./BroadcastCard";
 import { RiotGamesFor, RiotMatchPage } from "./RiotMatch";
@@ -185,6 +187,39 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
   const redWon = g.w !== 0 && !blueWon;
   const blue = g.p?.filter((p) => p.s === 1) || [];
   const red = g.p?.filter((p) => p.s === 2) || [];
+  // each player's rating for this game (src/hub/playerRating.ts), and the best of the ten
+  const ratingFile = useRatingFile();
+  const ratings = useMemo(() => {
+    const m = new Map<GamePlayer, number>();
+    if (!ratingFile || !g.p || !g.min || !g.w) return m;
+    const year = (g.date || s.date || "").slice(0, 4);
+    const sum = (side: number, f: (p: GamePlayer) => number | undefined) => (g.p || []).filter((p) => p.s === side).reduce((a, p) => a + (f(p) || 0), 0);
+    for (const p of g.p) {
+      const v = rateLine(
+        {
+          year,
+          role: p.r || "",
+          won: p.s === 1 ? blueWon : redWon,
+          k: p.k,
+          d: p.d,
+          a: p.a,
+          cs: p.cs,
+          gold: p.gd,
+          dmg: p.dm,
+          vision: p.v,
+          min: g.min,
+          teamK: sum(p.s, (x) => x.k),
+          teamDmg: p.dm != null ? sum(p.s, (x) => x.dm) : null,
+          teamGold: p.gd != null ? sum(p.s, (x) => x.gd) : null,
+          teamVision: p.v != null ? sum(p.s, (x) => x.v) : null,
+        },
+        ratingFile,
+      );
+      if (v != null) m.set(p, v);
+    }
+    return m;
+  }, [ratingFile, g, s.date, blueWon, redWon]);
+  const top = [...ratings.entries()].sort((a, b) => b[1] - a[1])[0];
   return (
     <div className="space-y-3">
       <div className={`${card} space-y-3`}>
@@ -203,6 +238,13 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
               <span className="flex items-center gap-1 text-rw-accent">
                 <Crown className="w-3 h-3" />
                 {tl("Player of the Game:")} <PlayerLink name={g.mvp.n} u={g.mvp.u} className="text-rw-accent hover:underline font-semibold" />
+              </span>
+            )}
+            {top && !hidden && (
+              <span className="flex items-center gap-1 text-rw-teal" title={tl("RiftWise rating: how well they played this game (6 is average)")}>
+                <Star className="w-3 h-3 fill-current" />
+                {tl("Top rated:")} <PlayerLink name={top[0].n} u={top[0].u} className="text-rw-teal hover:underline font-semibold" />
+                <span className="tabular-nums">{fmtRating(top[1])}</span>
               </span>
             )}
           </span>
@@ -254,8 +296,8 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
       )}
       {!hidden && (blue.length > 0 || red.length > 0) && (
         <div className="grid gap-3 lg:grid-cols-2">
-          <Scoreboard name={blueTeam.n} side="blue" players={blue} hidden={hidden} won={blueWon} minutes={g.min} />
-          <Scoreboard name={redTeam.n} side="red" players={red} hidden={hidden} won={redWon} minutes={g.min} />
+          <Scoreboard name={blueTeam.n} side="blue" players={blue} hidden={hidden} won={blueWon} minutes={g.min} ratings={ratings} top={top?.[0]} />
+          <Scoreboard name={redTeam.n} side="red" players={red} hidden={hidden} won={redWon} minutes={g.min} ratings={ratings} top={top?.[0]} />
         </div>
       )}
       {!hidden && <Leads g={g} blueName={blueTeam.n} redName={redTeam.n} blue={blue} red={red} />}
@@ -570,14 +612,16 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean }>
   </div>
 );
 
-const Scoreboard: React.FC<{ name: string; side: "blue" | "red"; players: GamePlayer[]; hidden: boolean; won: boolean; minutes?: number | null }> = ({
-  name,
-  side,
-  players,
-  hidden,
-  won,
-  minutes,
-}) => {
+const Scoreboard: React.FC<{
+  name: string;
+  side: "blue" | "red";
+  players: GamePlayer[];
+  hidden: boolean;
+  won: boolean;
+  minutes?: number | null;
+  ratings?: Map<GamePlayer, number>;
+  top?: GamePlayer;
+}> = ({ name, side, players, hidden, won, minutes, ratings, top }) => {
   const color = side === "blue" ? "#4a9eff" : "var(--rw-red)";
   const totalK = players.reduce((s, p) => s + p.k, 0);
   const totalDmg = players.reduce((s, p) => s + (p.dm || 0), 0);
@@ -591,19 +635,21 @@ const Scoreboard: React.FC<{ name: string; side: "blue" | "red"; players: GamePl
       </h3>
       <div className="space-y-2">
         {players.map((p, i) => (
-          <PlayerRow key={i} p={p} teamKills={totalK} teamDmg={totalDmg} teamGold={totalGold} minutes={minutes} />
+          <PlayerRow key={i} p={p} teamKills={totalK} teamDmg={totalDmg} teamGold={totalGold} minutes={minutes} rating={ratings?.get(p)} top={p === top} />
         ))}
       </div>
     </section>
   );
 };
 
-const PlayerRow: React.FC<{ p: GamePlayer; teamKills: number; teamDmg: number; teamGold: number; minutes?: number | null }> = ({
+const PlayerRow: React.FC<{ p: GamePlayer; teamKills: number; teamDmg: number; teamGold: number; minutes?: number | null; rating?: number; top?: boolean }> = ({
   p,
   teamKills,
   teamDmg,
   teamGold,
   minutes,
+  rating,
+  top,
 }) => {
   const kp = teamKills ? Math.round(((p.k + p.a) / teamKills) * 100) : null;
   const csm = p.cs != null && minutes ? fmtDec(p.cs / minutes) : null;
@@ -618,6 +664,7 @@ const PlayerRow: React.FC<{ p: GamePlayer; teamKills: number; teamDmg: number; t
           </div>
           <div className="text-[10px] text-rw-muted truncate">{p.c ? champName(p.c) : ""}</div>
         </div>
+        {rating != null && <PlayerRatingBadge v={rating} top={top} />}
         <div className="text-right shrink-0">
           <div className="font-bold text-rw-text tabular-nums">
             {p.k}/{p.d}/{p.a}

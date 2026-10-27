@@ -104,8 +104,12 @@ func localize(lang string, parts []string, title, desc string) (string, string) 
 		case "champ":
 			t, d = fill(lang, "champ.t", name), fill(lang, "champ.d", name)
 		default:
-			if len(parts) == 3 { // a league season: /league/lck/2025
+			if len(parts) == 3 && kind == "league" { // a league season: /league/lck/2025
 				name += " " + parts[2]
+			} else if len(parts) == 3 { // one tab of the page: /ko/team/t1/matches, the tab's name in the app's words
+				if label := tr(lang, "tab."+strings.ToLower(parts[2])); label != "" {
+					name += " · " + label
+				}
 			}
 			t, d = name+" – "+tr(lang, kind+".t"), fill(lang, kind+".d", name)
 			if tr(lang, kind+".t") == "" {

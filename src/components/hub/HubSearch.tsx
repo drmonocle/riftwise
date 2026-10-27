@@ -1,12 +1,72 @@
-/** One search box for every team, player, tournament and champion since 2011. */
+/**
+ * One search box for every team, player, tournament and champion since 2011, and for the stats pages themselves
+ * ("tier list", "draft"). Two names with "vs" between them ("T1 vs Gen.G", "Faker vs Chovy") open Match prep or
+ * Compare for the pair.
+ */
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Search, Users, User, Trophy, Swords, X, Flag } from "lucide-react";
+import { Search, Users, User, Trophy, Swords, X, Flag, GitCompare, ClipboardList, Compass } from "lucide-react";
 import { tl, tk, roleName } from "../../i18n";
 import { champName } from "../../champions";
 import { isNonLatin } from "../../searchAliases";
-import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubIndex, loadHubIndexQuick, searchHub } from "../../hub/data";
+import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubIndex, loadHubIndexQuick, normText, searchHub } from "../../hub/data";
 import { HubRoute, navigateHub } from "../../hub/route";
 import { ChampIcon, fmtNum, HubLink } from "./ui";
+import { MENU_ITEMS } from "./menu";
+
+/** A result that isn't a team, player... page: a matchup (Match prep, Compare) or one of the stats pages. */
+interface Shortcut {
+  key: string;
+  route: HubRoute;
+  label: string;
+  sub: string;
+  icon: React.ReactNode;
+}
+
+/** "a vs b" (also "a v b", "a versus b", "a x b", "a - b") */
+const VS = /^(.+?)\s+(?:vs\.?|v\.?|versus|x|[-–])\s+(.+)$/i;
+
+/** The pair in "a vs b" when both sides are teams, or both are players: Match prep and Compare for them. */
+export function matchupShortcuts(index: HubIndex, q: string): Shortcut[] {
+  const m = VS.exec(q.trim());
+  if (!m) return [];
+  const [ha, hb] = [m[1], m[2]].map((side) => searchHub(index, side, 1));
+  const good = (h: HubHit | undefined) => !!h && (h.score ?? 9) <= 1.5;
+  const ta = ha.team[0];
+  const tb = hb.team[0];
+  const pa = ha.player[0];
+  const pb = hb.player[0];
+  // teams when both sides name one (the better match of the two kinds wins a tie: "faker" is a player)
+  const teams = good(ta) && good(tb) && ta.slug !== tb.slug && !((pa?.score ?? 9) < (ta.score ?? 9) && (pb?.score ?? 9) < (tb.score ?? 9));
+  if (teams) {
+    return [
+      { key: "prep", route: { kind: "prep", a: ta.slug, b: tb.slug }, label: tl("Match prep: {a} vs {b}", { a: ta.name, b: tb.name }), sub: tl("Form, head-to-head, drafts and every lane"), icon: <ClipboardList className="w-3.5 h-3.5" /> },
+      { key: "compare", route: { kind: "compare", mode: "team", a: ta.slug, b: tb.slug }, label: tl("Compare {a} and {b}", { a: ta.name, b: tb.name }), sub: tl("Side by side, over any period"), icon: <GitCompare className="w-3.5 h-3.5" /> },
+    ];
+  }
+  if (good(pa) && good(pb) && pa.slug !== pb.slug)
+    return [
+      { key: "compare", route: { kind: "compare", mode: "player", a: pa.slug, b: pb.slug }, label: tl("Compare {a} and {b}", { a: pa.name, b: pb.name }), sub: tl("Side by side, over any period"), icon: <GitCompare className="w-3.5 h-3.5" /> },
+    ];
+  return [];
+}
+
+/** The stats pages a search names ("tier list", "rankings", "draft"), by their name in the reader's language or a
+ *  few English words (menu.tsx), best first. */
+export function pageShortcuts(q: string, limit = 3): Shortcut[] {
+  const w = normText(q.trim());
+  if (w.length < 3) return [];
+  const scored: [number, (typeof MENU_ITEMS)[number]][] = [];
+  for (const it of MENU_ITEMS) {
+    if (it.kind === "home") continue;
+    const names = [normText(tl(it.label)), normText(it.label), ...(it.also || []).map(normText)];
+    const s = names.reduce((best, n) => Math.min(best, n === w ? 0 : n.startsWith(w) ? 1 : n.includes(w) ? 2 : w.startsWith(n) && n.length >= 4 ? 2.5 : 9), 9);
+    if (s < 9) scored.push([s, it]);
+  }
+  return scored
+    .sort((a, b) => a[0] - b[0])
+    .slice(0, limit)
+    .map(([, it]) => ({ key: `page-${it.kind}`, route: { kind: it.kind } as HubRoute, label: tl(it.label), sub: tl(it.sub), icon: <Compass className="w-3.5 h-3.5" /> }));
+}
 
 const KIND_ROUTE: Record<HubSearchKind, HubRoute["kind"]> = { team: "team", player: "player", event: "event", champ: "champ", league: "league" };
 export const hitRoute = (h: HubHit): HubRoute => ({ kind: KIND_ROUTE[h.kind], slug: h.slug }) as HubRoute;
@@ -69,18 +129,31 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
   }, []);
 
   const results = useMemo(() => (index && q.trim() ? searchHub(index, q, big ? 6 : 5) : null), [index, q, big]);
+  // a matchup ("t1 vs gen.g") and the stats pages the words name, above the rest
+  const shortcuts = useMemo(() => (q.trim() ? [...(index ? matchupShortcuts(index, q) : []), ...pageShortcuts(q)] : []), [index, q]);
   // the group with the best match first (a champion called exactly that, a big tournament, ...)
   const groups = useMemo(() => (results ? [...GROUPS].sort((a, b) => groupRank(results[a.kind]) - groupRank(results[b.kind])) : GROUPS), [results]);
   const flat = useMemo(() => (results ? groups.flatMap((g) => results[g.kind]) : []), [results, groups]);
   const fuzzy = flat.length > 0 && flat.every((h) => h.fuzzy);
   useEffect(() => setActive(0), [q]);
 
-  const go = (h: HubHit) => {
-    navigateHub(hitRoute(h));
+  const done = () => {
     setQ("");
     setOpen(false);
     onDone?.();
   };
+  const go = (h: HubHit) => {
+    navigateHub(hitRoute(h));
+    done();
+  };
+  /** the highlighted line: the shortcuts first, then the hits */
+  const choose = (i: number) => {
+    if (i < shortcuts.length) {
+      navigateHub(shortcuts[i].route);
+      done();
+    } else if (flat[i - shortcuts.length]) go(flat[i - shortcuts.length]);
+  };
+  const count = shortcuts.length + flat.length;
 
   return (
     <div ref={box} className="relative w-full">
@@ -99,13 +172,13 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
           onKeyDown={(e) => {
             if (e.key === "ArrowDown") {
               e.preventDefault();
-              setActive((a) => Math.min(a + 1, flat.length - 1));
+              setActive((a) => Math.min(a + 1, count - 1));
             } else if (e.key === "ArrowUp") {
               e.preventDefault();
               setActive((a) => Math.max(a - 1, 0));
-            } else if (e.key === "Enter" && flat[active]) {
+            } else if (e.key === "Enter" && active < count) {
               e.preventDefault();
-              go(flat[active]);
+              choose(active);
             } else if (e.key === "Escape") {
               setOpen(false);
               onDone?.();
@@ -125,11 +198,28 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
       </label>
       {open && q.trim() && (
         <div className="absolute z-40 left-0 right-0 min-w-[min(18rem,calc(100vw-1.5rem))] mt-1 bg-rw-surface border border-rw-accent/40 rounded-lg shadow-2xl max-h-[70vh] overflow-y-auto p-1.5 text-xs">
+          {shortcuts.length > 0 && (
+            <div className="mb-1">
+              {shortcuts.map((s, i) => (
+                <HubLink
+                  key={s.key}
+                  to={s.route}
+                  onNavigate={done}
+                  className={`flex items-center gap-2 px-2 py-1.5 rounded-md min-w-0 ${i === active ? "bg-rw-accent/15 text-rw-text" : "text-rw-text hover:bg-rw-raised"}`}
+                >
+                  <span className="text-rw-accent shrink-0">{s.icon}</span>
+                  {/* the label keeps its room ("Match prep: T1 vs Gen.G"); the hint gives way */}
+                  <span className="font-semibold truncate shrink-0 max-w-[80%]">{s.label}</span>
+                  <span className="text-rw-muted text-[11px] truncate ml-auto min-w-0">{s.sub}</span>
+                </HubLink>
+              ))}
+            </div>
+          )}
           {failed ? (
             <p className="p-3 text-rw-red">{tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>
           ) : !index || (partial && (flat.length === 0 || fuzzy)) ? (
             <p className="p-3 text-rw-sub">{tl("Loading…")}</p>
-          ) : flat.length === 0 ? (
+          ) : flat.length === 0 && shortcuts.length > 0 ? null : flat.length === 0 ? (
             <p className="p-3 text-rw-sub">
               {tl("Nothing matches \"{q}\".", { q })}
               {isNonLatin(q) ? " " + tl("Names here use English letters. Try the in-game name, like Faker or T1.") : ""}
@@ -144,7 +234,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
                   {tl(g.label)}
                 </div>
                 {results![g.kind].map((h) => {
-                  const i = flat.indexOf(h);
+                  const i = shortcuts.length + flat.indexOf(h);
                   return (
                     <HubLink
                       key={h.kind + h.slug}
