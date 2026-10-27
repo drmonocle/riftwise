@@ -36,20 +36,21 @@ The goal is how fans and casters in each region actually talk, not dictionary wo
 
 Other choices worth knowing:
 
-- **ko**: Bo3/Bo5 stay as Bo3/Bo5; Quarterfinals 8강, Semifinals 4강; Presence = 픽밴률; champion pool = 챔프폭;
+- **ko**: Bo3/Bo5 stay as Bo3/Bo5; Worlds = 롤드컵 (not 월즈); a series = 매치, a game = 세트 in counts (경기당 is fine); Quarterfinals 8강, Semifinals 4강; Presence = 픽밴률; champion pool = 챔프폭;
   polite 해요체 for sentences.
 - **zh-CN**: CS = 补刀, gold = 经济, baron = 大龙, dragon = 小龙, presence = BP 率, patch = 版本,
   First Stand = 先锋赛, ticker = 比分条, floating HUD = 悬浮窗.
 - **zh-TW**: Taiwan wording, not converted Simplified: CS = 補兵, baron = 巴龍, system tray = 系統匣,
   follow = 追蹤, calendar = 行事曆, standings = 排名, Semifinals = 四強賽, spoilers = 防雷/暴雷.
-- **ja**: です/ます for sentences; Presence = P/B率; system tray = タスクトレイ.
-- **vi**: Worlds = CKTG; kills = Hạ gục; Presence = Tỉ lệ pick/cấm; Play-in = Vòng khởi động.
-- **pt-BR**: kills = Abates; pick = pickado; schedule = Agenda; standings = Classificação; roster = Elenco.
-- **es**: kills stay "kills"; pick = pickeado; roster = Plantilla; standings = Clasificación; tú form.
-- **fr**: vous form; kills stay "kills"; roster stays "roster"; French spacing before ? ! : ; and inside « ».
-- **de**: du form; kills/assists/picks stay English; roster = Kader; standings = Tabelle; system tray = Infobereich.
+- **ja**: です/ます for sentences; Presence = P/B率; system tray = タスクトレイ. A game = ゲーム in counts (1試合平均 is fine in running text); ban = バン.
+- **vi**: Worlds = CKTG; kills = Hạ gục; Presence = Tỉ lệ pick/cấm; Play-in = Vòng khởi động. A game = ván (Loạt trận = series); WR stays WR; inhibitor = Nhà lính.
+- **pt-BR**: kills = Abates; pick = pickado; schedule = Agenda; standings = Classificação; roster = Elenco. A game = partida ("Jogo {n}" for a numbered game; partida is feminine: "das partidas"); role = função.
+- **es**: kills stay "kills"; pick = pickeado; roster = Plantilla; standings = Clasificación; tú form. Kills are feminine ("las kills"); a draft turn is "Pick de {team}" / "Ban de {team}".
+- **fr**: vous form; kills stay "kills"; roster stays "roster"; French spacing before ? ! : ; and inside « ». A game = partie (feminine), per game = "par partie"; baron = nashor.
+- **de**: du form; kills/assists/picks stay English; roster = Kader; standings = Tabelle; system tray = Infobereich. picked = gepickt, most picked = meistgepickt.
 - **tr**: informal "sen"; text never glues a Turkish case ending onto a team or league name
   (writes "Takip et: {name}" instead of "{name}'i takip et"), so names of any shape read correctly.
+  Kills = skor (as Turkish players say it), a game = oyun, presence = Pick/ban oranı, WR = KO.
 - `tournament::` = season words inside tournament names (Split, Summer, Regional Qualifier...), `short result::`
   = W/L letters, `short best of::` = Bo3/BO3, `league::Demacia Cup` = 德玛西亚杯 etc.
 - Champion names are not in these files: they come from Riot's Data Dragon in each language (아지르, 阿兹尔,
