@@ -14,7 +14,7 @@ const allowed = (u) => allow && allow.test(u);
 // one page of each kind; a match page is taken from the build's records (the test build has other games than live)
 const PAGES = [
   "/", "/schedule", "/results", "/stats", "/stats/rankings", "/stats/records", "/stats/titles", "/stats/leagues",
-  "/stats/champions", "/stats/tournaments", "/stats/best", "/stats/data", "/stats/worlds", "/stats/worlds/2024",
+  "/stats/champions", "/stats/tournaments", "/stats/best", "/stats/data", "/stats/worlds", "/stats/worlds/2024", "/stats/weekly", "/watchlist",
   "/team/t1", "/player/faker", "/tournament/worlds-2024-main-event", "/league/lol-champions-korea", "/champion/ahri",
 ];
 try {
