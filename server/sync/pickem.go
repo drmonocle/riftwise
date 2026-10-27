@@ -49,6 +49,7 @@ type pickemEntry struct {
 	Name    string       `json:"name"`
 	Picks   []pickemPick `json:"picks"`
 	Updated int64        `json:"updated"`
+	Hidden  bool         `json:"hidden,omitempty"` // the name isn't shown to anyone else (pickem/hide)
 }
 
 type pickemResult struct {
@@ -67,6 +68,8 @@ type pickemRow struct {
 	Right  int    `json:"right"`
 	Scored int    `json:"scored"`
 	Me     bool   `json:"me,omitempty"`
+	Hidden bool   `json:"hidden,omitempty"` // shown as a hidden player: Name is "" except on the caller's own row
+	sortBy string // the real name, for ties: a hidden name keeps its place
 }
 
 var eventRe = regexp.MustCompile(`^(worlds|msi|first-stand)-(20\d\d)$`)
@@ -286,7 +289,10 @@ func (s *Server) pickemBoard(event, me string) map[string]any {
 	entries := s.pickemEntries(event)
 	rows := make([]pickemRow, 0, len(entries))
 	for id, e := range entries {
-		row := pickemRow{Name: e.Name, Me: id == me}
+		row := pickemRow{Name: e.Name, Me: id == me, Hidden: e.Hidden, sortBy: strings.ToLower(e.Name)}
+		if e.Hidden && !row.Me {
+			row.Name = ""
+		}
 		for _, p := range e.Picks {
 			r := decided(results, p)
 			if r == nil {
@@ -307,7 +313,7 @@ func (s *Server) pickemBoard(event, me string) map[string]any {
 		if rows[i].Right != rows[j].Right {
 			return rows[i].Right > rows[j].Right
 		}
-		return strings.ToLower(rows[i].Name) < strings.ToLower(rows[j].Name)
+		return rows[i].sortBy < rows[j].sortBy
 	})
 	var mine *pickemRow
 	for i := range rows {
@@ -425,7 +431,7 @@ func (s *Server) pickemRoutes(mux *http.ServeMux, p string,
 				next[key] = prev
 			}
 		}
-		entry := pickemEntry{Name: displayName(a), Updated: now}
+		entry := pickemEntry{Name: displayName(a), Updated: now, Hidden: old.Hidden}
 		for _, p := range next {
 			entry.Picks = append(entry.Picks, p)
 		}
@@ -433,6 +439,39 @@ func (s *Server) pickemRoutes(mux *http.ServeMux, p string,
 			return entry.Picks[i].S+":"+pair(entry.Picks[i].A, entry.Picks[i].B) < entry.Picks[j].S+":"+pair(entry.Picks[j].A, entry.Picks[j].B)
 		})
 		if err := writeJSON(filepath.Join(dir, "entry-"+a.ID+".json"), entry); err != nil {
+			fail(w, 500, "failed")
+			return
+		}
+		reply(w, 200, s.pickemBoard(req.Event, a.ID))
+	})
+
+	// hide (or show again) the caller's name on the board: the row stays, scored as before, shown as a hidden player
+	mux.HandleFunc(p+"pickem/hide", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Event string `json:"event"`
+			Hide  bool   `json:"hide"`
+		}
+		if !read(w, r, "pickem", 20, time.Minute, &req) {
+			return
+		}
+		a := signedIn(w, r)
+		if a == nil {
+			return
+		}
+		if !eventRe.MatchString(req.Event) {
+			fail(w, 400, "bad_event")
+			return
+		}
+		pickemMu.Lock()
+		defer pickemMu.Unlock()
+		path := filepath.Join(s.pickemDir(req.Event), "entry-"+a.ID+".json")
+		var e pickemEntry
+		if readJSON(path, &e) != nil {
+			fail(w, 404, "not_entered")
+			return
+		}
+		e.Hidden = req.Hide
+		if err := writeJSON(path, e); err != nil {
 			fail(w, 500, "failed")
 			return
 		}

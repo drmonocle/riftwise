@@ -1,3 +1,7 @@
+# Collecting RiftWise's stats with a script? No need to crawl: every pro game since 2011 is a free CSV download
+# (one tournament, or a league's whole year at once) at https://riftwise.gg/stats/data, which also documents the
+# JSON files behind every page. Please credit riftwise.gg, and keep it to about one request a second. Thank you!
+
 User-agent: *
 Allow: /
 

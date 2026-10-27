@@ -500,22 +500,40 @@ function scheduleEventsToMatches(rawEvents: any[]): Match[] {
  */
 /** The schedule riftwise.gg's push service keeps (one Riot caller instead of every visitor): events as Riot sends them. */
 const SCHEDULE_CACHE_URL = IS_WEB ? "/api/push/schedule" : "https://riftwise.gg/api/push/schedule";
+/** The last schedule this browser got, for when neither the server's copy nor Riot answers (a fresh visit in an outage). */
+const SCHEDULE_SAVE_KEY = "riftwatch_schedule_saved";
+const SCHEDULE_SAVE_MAX_MS = 7 * 86_400_000;
 
-export async function fetchSchedule(extraNewerPages = 2): Promise<Match[]> {
-  // the server's copy first (fast, and kind to Riot's limits); Riot itself when it isn't there
+let scheduleAsOf: number | null = null;
+/** When the schedule last shown is from, if it's an old copy because Riot isn't answering (null: it's current). */
+export const schedulePausedAt = () => scheduleAsOf;
+
+function uniqueSorted(ms: Match[]): Match[] {
+  const seen = new Set<string>();
+  const unique = ms.filter((m) => (seen.has(m.matchId) ? false : (seen.add(m.matchId), true)));
+  unique.sort((a, b) => a.startTimeUtc.localeCompare(b.startTimeUtc));
+  return unique;
+}
+
+function saveSchedule(matches: Match[]) {
   try {
-    const cached = await fetchJson(SCHEDULE_CACHE_URL, undefined, 8000);
-    const events = cached?.events;
-    if (Array.isArray(events) && events.length > 0) {
-      const ms = scheduleEventsToMatches(events);
-      const seen = new Set<string>();
-      const unique = ms.filter((m) => (seen.has(m.matchId) ? false : (seen.add(m.matchId), true)));
-      unique.sort((a, b) => a.startTimeUtc.localeCompare(b.startTimeUtc));
-      return unique;
-    }
+    localStorage.setItem(SCHEDULE_SAVE_KEY, JSON.stringify({ at: Date.now(), matches }));
   } catch {
-    /* Riot directly, below */
+    /* storage full or off: the copy is only a fallback */
   }
+}
+
+function savedSchedule(): { at: number; matches: Match[] } | null {
+  try {
+    const s = JSON.parse(localStorage.getItem(SCHEDULE_SAVE_KEY) || "null");
+    if (s && typeof s.at === "number" && Array.isArray(s.matches) && s.matches.length && Date.now() - s.at < SCHEDULE_SAVE_MAX_MS) return s;
+  } catch {
+    /* unreadable: no copy */
+  }
+  return null;
+}
+
+async function fetchRiotSchedule(extraNewerPages: number): Promise<Match[]> {
   const first = await fetchJson(`${RIOT_BASE}/getSchedule?hl=${riotHl()}`, { headers: riotHeaders });
   const all: Match[] = scheduleEventsToMatches(first?.data?.schedule?.events || []);
 
@@ -532,11 +550,51 @@ export async function fetchSchedule(extraNewerPages = 2): Promise<Match[]> {
       break; // later pages are a bonus; keep what we have
     }
   }
+  return uniqueSorted(all);
+}
 
-  const seen = new Set<string>();
-  const unique = all.filter((m) => (seen.has(m.matchId) ? false : (seen.add(m.matchId), true)));
-  unique.sort((a, b) => a.startTimeUtc.localeCompare(b.startTimeUtc));
-  return unique;
+/**
+ * The schedule: the server's copy first (fast, and kind to Riot's limits), Riot itself when that's missing or stale.
+ * If Riot doesn't answer either, the last copy there is (the server's stale one, else this browser's saved one) instead
+ * of nothing, and schedulePausedAt() says from when, for the "Riot data paused" note.
+ */
+export async function fetchSchedule(extraNewerPages = 2): Promise<Match[]> {
+  let stale: { at: number; matches: Match[] } | null = null;
+  try {
+    const cached = await fetchJson(SCHEDULE_CACHE_URL, undefined, 8000);
+    const events = cached?.events;
+    if (Array.isArray(events) && events.length > 0) {
+      const ms = uniqueSorted(scheduleEventsToMatches(events));
+      if (!cached.stale) {
+        scheduleAsOf = null;
+        saveSchedule(ms);
+        return ms;
+      }
+      stale = { at: Date.parse(cached.at) || Date.now(), matches: ms };
+    }
+  } catch {
+    /* Riot directly, below */
+  }
+  try {
+    const ms = await fetchRiotSchedule(extraNewerPages);
+    if (ms.length) {
+      scheduleAsOf = null;
+      saveSchedule(ms);
+      return ms;
+    }
+  } catch (e) {
+    const old = stale || savedSchedule();
+    if (!old) throw e;
+    scheduleAsOf = old.at;
+    return old.matches;
+  }
+  // Riot answered with an empty schedule: a quiet week, or a hiccup the server's copy outlived
+  if (stale) {
+    scheduleAsOf = stale.at;
+    return stale.matches;
+  }
+  scheduleAsOf = null;
+  return [];
 }
 
 /**

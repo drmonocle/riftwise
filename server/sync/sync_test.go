@@ -239,3 +239,57 @@ func TestOAuthKeysFile(t *testing.T) {
 		t.Fatal("start url", u, err)
 	}
 }
+
+// Pick'Em: a hidden name keeps its row and score but shows as "" to everyone else; its owner still sees it.
+func TestPickemHide(t *testing.T) {
+	sched := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(`{"events": []}`)) }))
+	defer sched.Close()
+	pickemScheduleURL = sched.URL
+	st, _ := openStore(t.TempDir())
+	h := newServer(st, loadOAuth(st.dir)).routes()
+	a, b := &client{t: t, h: h}, &client{t: t, h: h}
+	for _, c := range []struct {
+		c    *client
+		name string
+	}{{a, "HiddenFan"}, {b, "OtherFan"}} {
+		_, out := c.c.call("POST", "register", map[string]string{"username": c.name, "password": "blue side wins 2026"})
+		c.c.token, _ = out["token"].(string)
+	}
+	picks := []map[string]any{{"s": "ko", "r": 1, "a": "t1", "b": "geng", "w": "t1"}}
+	teams := []map[string]string{{"u": "t1", "c": "T1", "n": "T1"}, {"u": "geng", "c": "GEN", "n": "Gen.G"}}
+	if code, _ := a.call("POST", "pickem/hide", map[string]any{"event": "worlds-2026", "hide": true}); code != 404 {
+		t.Fatal("hide before entering", code)
+	}
+	for _, c := range []*client{a, b} {
+		if code, out := c.call("POST", "pickem/submit", map[string]any{"event": "worlds-2026", "picks": picks, "teams": teams}); code != 200 {
+			t.Fatal("submit", code, out)
+		}
+	}
+	if code, _ := a.call("POST", "pickem/hide", map[string]any{"event": "worlds-2026", "hide": true}); code != 200 {
+		t.Fatal("hide", code)
+	}
+	names := func(c *client) (shown []string, me map[string]any) {
+		_, out := c.call("GET", "pickem/board?event=worlds-2026", nil)
+		for _, r := range out["rows"].([]any) {
+			row := r.(map[string]any)
+			shown = append(shown, row["name"].(string))
+		}
+		me, _ = out["me"].(map[string]any)
+		return
+	}
+	if shown, _ := names(b); len(shown) != 2 || strings.Contains(strings.Join(shown, ","), "HiddenFan") {
+		t.Fatalf("others see %v", shown)
+	}
+	if _, me := names(a); me == nil || me["name"] != "HiddenFan" || me["hidden"] != true {
+		t.Fatalf("own row %v", me)
+	}
+	// entering again keeps it hidden; showing it again works
+	a.call("POST", "pickem/submit", map[string]any{"event": "worlds-2026", "picks": picks, "teams": teams})
+	if shown, _ := names(b); strings.Contains(strings.Join(shown, ","), "HiddenFan") {
+		t.Fatal("name back after updating picks")
+	}
+	a.call("POST", "pickem/hide", map[string]any{"event": "worlds-2026", "hide": false})
+	if shown, _ := names(b); !strings.Contains(strings.Join(shown, ","), "HiddenFan") {
+		t.Fatalf("not shown again: %v", shown)
+	}
+}

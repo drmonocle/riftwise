@@ -22,6 +22,7 @@ import {
   useHidden,
   useLoad,
   usePageTitle,
+  FollowFeeds,
 } from "./ui";
 import { STable } from "../STable";
 import { navigateHub } from "../../hub/route";
@@ -286,9 +287,13 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
             .filter(Boolean)
             .join(" · ")}
         </p>
-        <HubLink to={{ kind: "best", query: `league=${l.u}` }} className="mt-1 inline-block text-[11px] text-rw-teal hover:underline font-semibold">
-          {tl("Best games in this league")}
-        </HubLink>
+        <span className="flex flex-wrap items-center gap-x-3">
+          <HubLink to={{ kind: "best", query: `league=${l.u}` }} className="mt-1 inline-block text-[11px] text-rw-teal hover:underline font-semibold">
+            {tl("Best games in this league")}
+          </HubLink>
+          {/* a league still playing: its own calendar and results feed (Riot names its leagues by the short name) */}
+          {l.primary && l.s && years[0] && Number(years[0]) >= new Date().getFullYear() - 1 && <FollowFeeds leagues={[l.s]} />}
+        </span>
         {l.history && l.history.length > 1 && (
           <div className="mt-2 space-y-0.5">
             <div className="text-[10px] font-semibold text-rw-muted">{tl("History")}</div>

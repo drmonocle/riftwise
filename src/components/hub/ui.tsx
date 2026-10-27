@@ -1,6 +1,6 @@
 /** Building blocks shared by the stats hub pages. */
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
-import { Check, Clock, Eye, Link2, SearchX, Camera, RefreshCw } from "lucide-react";
+import { CalendarPlus, Check, Clock, Eye, Link2, SearchX, Camera, RefreshCw, Rss } from "lucide-react";
 import { MissingFile } from "../../stats";
 import { tl, locale } from "../../i18n";
 import { champName } from "../../champions";
@@ -8,7 +8,7 @@ import { HubRoute, currentHubRoute, hubPath, navigateHub } from "../../hub/route
 import { rememberRecent } from "../../hub/recent";
 import { champIcon, itemIcon, itemName, runeIcon, runeName, spellIcon, spellName } from "../../hub/ddragon";
 import { prefetchHub, prettySlug } from "../../hub/data";
-import { IS_WEB } from "../../platform";
+import { IS_WEB, SITE_URL } from "../../platform";
 import { CaptureFooter, ShareButtons } from "./ShareImage";
 import { usePlayerPicture, useTeamLogo } from "../../hub/riotCatalog";
 import { ddragonThumb, riotThumb } from "../../riotImage";
@@ -99,11 +99,25 @@ function prefetchSoon(to: HubRoute) {
   prefetchTimer = window.setTimeout(() => prefetchHub(to), 80);
 }
 
+// loaded when it's needed: HubSearch itself uses this file's links
+const LazyHubSearch = React.lazy(() => import("./HubSearch").then((m) => ({ default: m.HubSearch })));
+
+/** The words of the page that wasn't found (/player/fakerr -> "fakerr"), to start its search box with. */
+function missingWords(): string {
+  const r = currentHubRoute();
+  return "slug" in r && r.slug ? r.slug.replace(/[-_]+/g, " ").trim() : "";
+}
+
 export const Failed: React.FC<{ missing?: boolean }> = ({ missing }) =>
   missing ? (
-    <div className="py-10 text-center text-xs text-rw-sub space-y-2">
+    <div className="py-10 text-center text-xs text-rw-sub space-y-3">
       <SearchX className="w-5 h-5 mx-auto text-rw-muted" />
-      <p>{tl("We couldn't find that page. It may have been renamed: try the search above.")}</p>
+      <p>{tl("We couldn't find that page. It may have been renamed: search for it here.")}</p>
+      <div className="max-w-md mx-auto text-left">
+        <React.Suspense fallback={null}>
+          <LazyHubSearch initial={missingWords()} />
+        </React.Suspense>
+      </div>
       <HubLink to={{ kind: "home" }} className="text-rw-teal hover:underline">
         {tl("Go to the stats home page")}
       </HubLink>
@@ -534,5 +548,44 @@ export const PhotosLink: React.FC<{ q: string; url?: string; label?: string; tit
       <Camera className="w-3.5 h-3.5 shrink-0" />
       {!iconOnly && text}
     </a>
+  );
+};
+
+/**
+ * A team's or a league's own calendar and results feed (server/pages calendar.go, feed.go): `teams` by Riot code or
+ * name ("T1", "Gen.G"), `leagues` by Riot slug or name ("LCK"). Calendar apps and feed readers keep them current.
+ */
+export const FollowFeeds: React.FC<{ teams?: string[]; leagues?: string[] }> = ({ teams, leagues }) => {
+  const open = useContext(OpenUrlContext);
+  const q = new URLSearchParams();
+  if (teams?.length) q.set("teams", teams.join(","));
+  if (leagues?.length) q.set("leagues", leagues.join(","));
+  const ics = `${SITE_URL}calendar.ics?${q}`;
+  const links: [string, React.ReactNode, string, string][] = [
+    [ics.replace(/^https:/, "webcal:"), <CalendarPlus className="w-3.5 h-3.5 shrink-0" />, tl("Calendar"), tl("Every match in your calendar app, kept up to date")],
+    [`${SITE_URL}feed.xml?${q}`, <Rss className="w-3.5 h-3.5 shrink-0" />, tl("Results feed (RSS)"), tl("Each result as it happens, for feed readers and Discord feed bots")],
+  ];
+  return (
+    <span className="mt-1 inline-flex flex-wrap items-center gap-x-3 gap-y-1" data-nocapture="1">
+      {links.map(([href, icon, text, title]) => (
+        <a
+          key={text}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={title}
+          onClick={(e) => {
+            if (!IS_WEB && open) {
+              e.preventDefault();
+              open(href);
+            }
+          }}
+          className="inline-flex items-center gap-1 text-[11px] text-rw-teal hover:underline"
+        >
+          {icon}
+          {text}
+        </a>
+      ))}
+    </span>
   );
 };
