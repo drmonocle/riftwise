@@ -7,7 +7,8 @@
 # and, when the stats build's scripts changed, the 5-second test build plus a full build into a scratch folder (the
 # rule for hub.py: a full build must finish before it goes live). Only then: web files (bundles first, index.html
 # last), the services one by one (each must answer its health check with the new version), the stats scripts. Last,
-# the live site must serve the new page. If anything live fails, everything this run changed is put back.
+# the live site must serve the new page. If anything live fails, everything this run changed is put back. New stats
+# scripts then get a stats build right away (not at the next database change).
 # Nothing GitHub sends runs here: the code comes from a tag on main, which only the repository's owner can push.
 #
 #   -Version 0.7.49   install that tag now (even if it isn't the newest)
@@ -28,6 +29,9 @@ $py = 'C:\Users\TV\AppData\Local\Programs\Python\Python313\python.exe'
 $web = 'C:\inetpub\riftwise.gg'
 $scripts = 'C:\Scripts\riftwise'
 $catalog = 'C:\Users\TV\twitch_bot\data\pro_games_catalog.db'
+$statsTask = 'RiftWiseStatsBuild'
+# the jobs that write the game databases (as in scripts\stats\stats_watch.ps1)
+$dbWriters = @('TwitchBotNightlyCatalog', 'Claude-LpScheduleRefresh', 'Claude-OeDailyRefresh', 'Claude-LpWeeklyRefresh')
 $build = 'C:\Sites\riftwise-build'
 $services = @('pages', 'push', 'sync')
 $env:Path = "C:\Program Files\nodejs;C:\Program Files\Git\cmd;$env:Path"
@@ -96,6 +100,28 @@ function Run($what, [scriptblock]$cmd) {
   Add-Content -Path $log -Value $r.out -Encoding UTF8
   if ($r.code) { throw "$what failed (exit $($r.code))" }
   return $r.out
+}
+# After new stats scripts went live: start the stats build now, so their pages and files don't wait for the next
+# database change (0.7.52's weekly page did). A build already running started with the old scripts, so wait for it
+# (up to 45 minutes). Not while a job writes the database: stats_watch.ps1 builds once that write is done anyway.
+# Never fails the release (it's live by now).
+function Start-StatsBuild {
+  try {
+    $until = (Get-Date).AddMinutes(45)
+    while ((Get-ScheduledTask -TaskName $statsTask).State -eq 'Running') {
+      if ((Get-Date) -gt $until) { Log 'stats build: one is still running after 45 minutes; the next database change builds with the new scripts'; return }
+      Start-Sleep -Seconds 30
+    }
+    foreach ($w in $dbWriters) {
+      $t = Get-ScheduledTask -TaskName $w -ErrorAction SilentlyContinue
+      if ($t -and $t.State -eq 'Running') { Log "stats build: not started, $w is writing the database (stats_watch.ps1 builds after it)"; return }
+    }
+    foreach ($f in 'pro_games_catalog.db', 'lp_all_games.db') {
+      if (Test-Path "$(Split-Path $catalog)\$f-journal") { Log "stats build: not started, $f is being written (stats_watch.ps1 builds after it)"; return }
+    }
+    Start-ScheduledTask -TaskName $statsTask
+    Log "stats build started with the new scripts ($statsTask)"
+  } catch { Log "stats build not started: $($_.Exception.Message)" }
 }
 
 $live = @{ web = $false; services = @(); stats = '' }
@@ -206,6 +232,7 @@ try {
   if ($Rollback) { Add-Content "$root\skip.txt" $installed.version } # don't put the version just rolled back from live again
   Status 'installed' 'done'
   Log "v$target is live"
+  if ($changed.Count) { Start-StatsBuild }
 } catch {
   $err = $_.Exception.Message
   Log "FAILED at '$step': $err"
