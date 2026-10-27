@@ -2,7 +2,10 @@
 // riftwise-push on HomeServer sends them. The server keeps only this browser's push address, the team
 // codes it follows, its language and which alerts are on.
 import { AppSettings } from "./types";
-import { currentLang } from "./i18n";
+import { currentLang, tl } from "./i18n";
+
+/** Texts the push service (server/push) sends, listed here so the translation test keeps them in every language. */
+export const PUSH_SERVICE_TEXTS = () => [tl("New all-time record: {who}")];
 import { IS_WEB } from "./platform";
 
 const API = "/api/push";

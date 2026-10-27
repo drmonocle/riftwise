@@ -56,6 +56,7 @@ func main() {
 		app.openLog()
 		log.Printf("riftwise-push %s starting on %s, %d subscriptions", version, *addr, app.store.count())
 		go app.alertLoop()
+		go app.recordLoop() // records.go: "record broken" alerts from the stats build
 		log.Fatal(app.serveHTTP(*addr))
 	case "key":
 		fmt.Println(app.vapid.Public)

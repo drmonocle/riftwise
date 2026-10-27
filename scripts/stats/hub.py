@@ -71,6 +71,9 @@ from names import blue_red, champ_name, match_teams
 SITE = "RiftWise"
 RECENT_EVENT_DAYS = 30        # event and series descriptions leave the winner out while this fresh
 SEO_MIN_GAMES = 10            # thinner team / player pages are kept out of search engines
+# match pages older than this stay out of the sitemaps unless they're from a big event: 100k match pages spread a
+# search engine's crawl over 2014 minor-league series instead of the pages that can rank (2026-10-27)
+SEO_MATCH_FROM = (datetime.date.today() - datetime.timedelta(days=730)).isoformat()
 KNOCKOUT_TAB = re.compile(
     r"^(round of \d+|(quarter|semi)-?finals?|finals?|grand finals?|(third|3rd)[- ]place( match| decider)?|"
     r"(upper|lower|winners'?|losers'?) (bracket|round|final|semifinal|quarterfinal).*|knockouts?|bracket stage|"
@@ -1727,7 +1730,7 @@ def build(ctx) -> dict:
                 title = f"{an} vs {bn} – {en}{' ' + stage_name if stage_name else ''}"
                 seo["game"].append((gslug, f"{title} | {SITE}",
                                     f"{an} vs {bn} at {en}{', ' + stage_name if stage_name else ''} ({gdate}): drafts, builds, runes and stats for every game.",
-                                    1 if any(g.get("p") for g in games_out) else 0))
+                                    1 if any(g.get("p") for g in games_out) and (big_event(en) or (gdate or "") >= SEO_MATCH_FROM) else 0))
 
             # Team rows for this tournament and the team pages' recent series
             for name, u, mine, theirs, opp, opp_u in ((an, au, wa, wb, bn, bu), (bn, bu, wb, wa, an, au)):
@@ -2618,6 +2621,14 @@ def build(ctx) -> dict:
         "most": [{"n": ctx.pname(pg), "u": player_slug.get(pg), "v": n} for pg, n in most_pentas.most_common(15)],
     }
     out.json("records.json", rec)
+    # the all-time #1 rows set in the last two days: the push service's "record broken" alerts (server/push/records.go)
+    rec_cut = (datetime.date.today() - datetime.timedelta(days=2)).isoformat()
+    rec_new = []
+    for sec in ("game", "player", "team"):
+        for key, lst in (rec.get(sec) or {}).items():
+            if lst and isinstance(lst[0], dict) and (lst[0].get("date") or "") >= rec_cut:
+                rec_new.append({"s": sec, "k": key, "r": lst[0]})
+    out.json("records_new.json", rec_new)
     for year, ry in (getattr(ctx, "records_by_year", None) or {}).items():
         ry = json.loads(json.dumps(ry, ensure_ascii=False))
         for lst in ry["game"].values():

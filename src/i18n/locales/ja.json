@@ -1,4 +1,5 @@
 {
+  "New all-time record: {who}": "歴代新記録: {who}",
   "All results →": "すべての結果 →",
   "Enter my picks": "予想を送信",
   "Every stats page reads plain JSON files you can read too. Please credit RiftWise (riftwise.gg) when you use them, and ask for a whole year as CSV above rather than fetching thousands of files.": "各スタッツページは、誰でも読めるプレーンな JSON ファイルを読み込んでいます。利用する際は RiftWise (riftwise.gg) をクレジットし、何千ものファイルを取得する代わりに上の年間 CSV をご利用ください。",
