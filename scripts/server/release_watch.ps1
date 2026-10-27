@@ -48,7 +48,9 @@ function Git {
   return $r.out
 }
 function Read-Json($path) { if (Test-Path $path) { Get-Content $path -Raw | ConvertFrom-Json } else { $null } }
-function Save-Json($path, $obj) { $obj | ConvertTo-Json -Depth 5 | Set-Content -Path $path -Encoding UTF8 }
+# UTF-8 without a byte-order mark (Set-Content -Encoding UTF8 adds one in PowerShell 5.1; the page service reads
+# status.json for riftwise.gg/status)
+function Save-Json($path, $obj) { [IO.File]::WriteAllText($path, ($obj | ConvertTo-Json -Depth 5), (New-Object Text.UTF8Encoding $false)) }
 
 # -- what to install ---------------------------------------------------------------------------------------------
 $installed = Read-Json "$root\installed.json"
