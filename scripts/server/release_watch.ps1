@@ -74,7 +74,9 @@ if ((Test-Path $lock) -and ((Get-Date) - (Get-Item $lock).LastWriteTime).TotalHo
 Set-Content $lock $PID
 
 $log = "$root\logs\$target-$(Get-Date -Format yyyyMMdd-HHmmss).log"
-function Log($text) { $line = "$((Get-Date).ToString('s')) $text"; Add-Content -Path $log -Value $line -Encoding UTF8; Write-Output $line }
+# Write-Host, not Write-Output: Log runs inside functions that return a value (Run), and output would join it
+# (v0.7.49 failed its version check that way: the log line came back with the version text)
+function Log($text) { $line = "$((Get-Date).ToString('s')) $text"; Add-Content -Path $log -Value $line -Encoding UTF8; Write-Host $line }
 function Status($result, $step, $err = '') {
   Save-Json "$root\status.json" ([ordered]@{ version = $target; result = $result; step = $step; error = $err; at = (Get-Date).ToUniversalTime().ToString('o'); log = $log })
 }
