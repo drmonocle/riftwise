@@ -54,6 +54,9 @@ func testSite(t *testing.T) *store {
 	must(os.MkdirAll(filepath.Join(hub, "seo", "pages"), 0o755))
 	must(os.WriteFile(filepath.Join(hub, "seo", "pages", "worlds.2025.json"), []byte(`{"title": "Worlds 2025: results | RiftWise", "desc": "T1 won Worlds 2025.", "html": "<h2>Final standings</h2><ol><li>T1</li></ol>", "ld": [{"@type": "SportsEvent", "name": "League of Legends World Championship 2025"}]}`), 0o644))
 	must(os.WriteFile(filepath.Join(hub, "alias.json"), []byte(`{"team": {"sk-telecom-t1": "t1"}, "league": {"worlds": "world-championship"}}`), 0o644))
+	// a league with tournaments but no games: a page of its own, not in league.tsv
+	must(os.MkdirAll(filepath.Join(hub, "league"), 0o755))
+	must(os.WriteFile(filepath.Join(hub, "league", "tiny-league.json"), []byte(`{"l": "Tiny League", "u": "tiny-league", "events": [{"n": "Tiny 2022"}, {"n": "Tiny 2023"}]}`), 0o644))
 	// the push service's schedule: one finished and one coming Worlds match, one LCK match, a show without teams
 	sched := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(testSchedule))
@@ -70,7 +73,7 @@ func testSite(t *testing.T) *store {
 
 const testSchedule = `{"events": [
  {"startTime": "2026-10-24T13:00:00Z", "state": "completed", "type": "match", "blockName": "Swiss", "league": {"name": "Worlds", "slug": "worlds"},
-  "match": {"teams": [{"name": "T1", "code": "T1", "result": {"gameWins": 1}}, {"name": "Dplus KIA", "code": "DK", "result": {"gameWins": 0}}], "strategy": {"count": 1}}},
+  "match": {"id": "113", "teams": [{"name": "T1", "code": "T1", "result": {"gameWins": 1}}, {"name": "Dplus KIA", "code": "DK", "result": {"gameWins": 0}}], "strategy": {"count": 1}}},
  {"startTime": "2026-10-25T13:00:00Z", "state": "unstarted", "type": "match", "blockName": "Swiss", "league": {"name": "Worlds", "slug": "worlds"},
   "match": {"teams": [{"name": "Gen.G", "code": "GEN"}, {"name": "G2 Esports", "code": "G2"}], "strategy": {"count": 3}}},
  {"startTime": "2026-10-26T09:00:00Z", "state": "unstarted", "type": "match", "blockName": "Week 1", "league": {"name": "LCK", "slug": "lck"},
@@ -399,6 +402,67 @@ func TestLanguagePages(t *testing.T) {
 	}
 	if b := get(s, "/riftwise/ko/team/small-team").Body.String(); strings.Contains(b, "hreflang") {
 		t.Error("hreflang on a noindex page")
+	}
+}
+
+// A league the build has a page for but no games of: served (noindex), not a 404; made-up ones still 404.
+func TestBareLeague(t *testing.T) {
+	s := testSite(t)
+	w := get(s, "/riftwise/league/tiny-league")
+	if b := w.Body.String(); w.Code != 200 || !strings.Contains(b, "<title>Tiny League – tournaments | RiftWise</title>") || !strings.Contains(b, "noindex") || !strings.Contains(b, "2 tournaments") {
+		t.Errorf("bare league: %d %s", w.Code, b)
+	}
+	if w := get(s, "/riftwise/league/tiny-league/2022"); w.Code != 200 || !strings.Contains(w.Body.String(), "Tiny League 2022 season") {
+		t.Errorf("bare league season: %d", w.Code)
+	}
+	for _, p := range []string{"/riftwise/league/no-such-league", "/riftwise/league/..", "/riftwise/league/tiny-league.json"} {
+		if w := get(s, p); w.Code != 404 {
+			t.Errorf("%s: %d", p, w.Code)
+		}
+	}
+	if b := get(s, "/riftwise/sitemap-league-1.xml").Body.String(); strings.Contains(b, "tiny-league") {
+		t.Error("bare league in the sitemap")
+	}
+}
+
+// riftwise.gg/feed.xml: every result, or one team's / one league's (Riot's code, slug or league name).
+func TestFeedFilter(t *testing.T) {
+	testSite(t)
+	feed := func(q string) string {
+		w := httptest.NewRecorder()
+		serveFeed(w, httptest.NewRequest(http.MethodGet, "/riftwise/feed.xml"+q, nil))
+		return w.Body.String()
+	}
+	if b := feed(""); !strings.Contains(b, "T1 1–0 Dplus KIA") || !strings.Contains(b, "<title>RiftWise: LoL esports results</title>") {
+		t.Errorf("whole feed: %s", b)
+	}
+	if b := feed("?teams=T1"); !strings.Contains(b, "T1 1–0 Dplus KIA") || !strings.Contains(b, "<title>RiftWise: T1 results</title>") || !strings.Contains(b, "feed.xml?teams=T1") {
+		t.Errorf("teams=T1: %s", b)
+	}
+	// a team page asks by the team's name: no case, spaces or punctuation needed to match
+	if b := feed("?teams=dplus-kia"); !strings.Contains(b, "T1 1–0 Dplus KIA") {
+		t.Errorf("teams by name: %s", b)
+	}
+	if b := feed("?teams=Gen.G"); strings.Contains(b, "<item>") {
+		t.Errorf("Gen.G has no finished match: %s", b)
+	}
+	if b := feed("?leagues=LCK"); strings.Contains(b, "<item>") || !strings.Contains(b, "<title>RiftWise: LCK results</title>") {
+		t.Errorf("leagues=LCK (nothing finished): %s", b)
+	}
+	if b := feed("?leagues=worlds"); !strings.Contains(b, "Dplus KIA") {
+		t.Errorf("leagues=worlds: %s", b)
+	}
+}
+
+// The daily card draws finished matches too (Final and the winner), without failing on any mix of rows.
+func TestTodayCardFinal(t *testing.T) {
+	rows := []todayRow{
+		{left: "T1", right: "DK", mid: "Worlds · Final 1–0", pa: 0.62, done: true, leftWon: true},
+		{left: "GEN", right: "G2", mid: "Worlds · 13:00 UTC · Bo3", pa: 0.7},
+		{left: "HLE", right: "KT", mid: "LCK · Final 1–2", pa: -1, done: true},
+	}
+	if b := ogToday("Today's pro matches: our chances", "", rows); len(b) < 2000 {
+		t.Errorf("card: %d bytes", len(b))
 	}
 }
 

@@ -36,10 +36,12 @@ import (
 )
 
 const (
-	version  = "1.19.1"
+	version  = "0.7.48" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
+
+var started = time.Now() // reported by the health check: a fresh time means a new exe really took over
 
 // publicURL is the site's public address with a trailing slash (-public); publicPath its path part ("/").
 var publicURL, publicPath = "https://riftwise.gg/", "/"
@@ -543,6 +545,9 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, publicPath+parts[0]+"/"+to+yearSuffix(parts), http.StatusMovedPermanently)
 			return
 		}
+		if !ok && kind == "league" {
+			e, ok = s.bareLeague(slug)
+		}
 		if !ok {
 			status, title, desc, index = http.StatusNotFound, "Page not found | RiftWise", sections[""][1], false
 			break
@@ -590,6 +595,33 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodHead {
 		w.Write([]byte(body))
 	}
+}
+
+var reSlug = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,100}$`)
+
+// bareLeague: a league the build wrote a page for but left out of league.tsv because none of its games are in the
+// catalog (small leagues known only from their tournament list, ~190 of them). The app shows their tournaments, so
+// the page is served like any other, kept out of search engines (noindex, not in the sitemap).
+func (s *store) bareLeague(slug string) (entry, bool) {
+	s.mu.RLock()
+	ver := s.version
+	s.mu.RUnlock()
+	if ver == "" || !reSlug.MatchString(slug) {
+		return entry{}, false
+	}
+	b, err := os.ReadFile(filepath.Join(s.stats, ver, "hub", "league", slug+".json"))
+	if err != nil {
+		return entry{}, false
+	}
+	var l struct {
+		L      string            `json:"l"`
+		Events []json.RawMessage `json:"events"`
+	}
+	if json.Unmarshal(b, &l) != nil || l.L == "" {
+		return entry{}, false
+	}
+	return entry{title: l.L + " – tournaments | RiftWise",
+		desc: l.L + ": " + strconv.Itoa(len(l.Events)) + " tournaments, with their dates and stages. No game stats for this league yet."}, true
 }
 
 // Sitemaps: riftwise.gg/sitemap.xml lists the pieces (riftwise.gg/sitemap-<kind>-<n>.xml).
@@ -710,7 +742,7 @@ func main() {
 		defer s.mu.RUnlock()
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{
-			"ok": s.indexHTML != "" && s.version != "", "version": version, "stats": s.version,
+			"ok": s.indexHTML != "" && s.version != "", "version": version, "started": started.UTC().Format(time.RFC3339), "stats": s.version,
 			"teams": len(s.pages["team"]), "players": len(s.pages["player"]), "events": len(s.pages["event"]),
 			"matches": len(s.pages["game"]), "champions": len(s.pages["champ"]), "leagues": len(s.pages["league"]),
 		})

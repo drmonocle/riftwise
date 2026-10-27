@@ -14,6 +14,8 @@ import (
 
 const apiPrefix = "/riftwise/api/sync/"
 
+var started = time.Now() // reported by the health check: a fresh time means a new exe really took over
+
 // Pages that may call the API from a browser: the website (and its local test server) and the Windows app.
 var allowedOrigins = map[string]bool{
 	"https://riftwise.gg": true, "https://lolworlds.com": true, "https://www.lolworlds.com": true,
@@ -219,7 +221,7 @@ func (s *Server) routes() http.Handler {
 	s.pickemRoutes(mux, p, read, signedIn) // pickem.go: the Worlds Pick'Em leaderboard
 
 	mux.HandleFunc(p+"health", func(w http.ResponseWriter, r *http.Request) {
-		reply(w, 200, map[string]any{"ok": true, "version": version, "accounts": s.st.count()})
+		reply(w, 200, map[string]any{"ok": true, "version": version, "started": started.UTC().Format(time.RFC3339), "accounts": s.st.count()})
 	})
 
 	mux.HandleFunc(p+"config", func(w http.ResponseWriter, r *http.Request) {

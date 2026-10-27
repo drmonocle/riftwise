@@ -4,7 +4,7 @@
  * people use most. Three of four visits ended on the home page before this (2026-10-26 logs).
  */
 import React, { useMemo } from "react";
-import { ArrowRight, BarChart3, Columns2, ClipboardList, Trophy } from "lucide-react";
+import { ArrowRight, BarChart3, Columns2, ClipboardList, EyeOff, Trophy } from "lucide-react";
 import { Match, AppSettings } from "../types";
 import { tl, tc, locale } from "../i18n";
 import { isRevealed, setRevealed } from "../revealed";
@@ -12,7 +12,7 @@ import { navigateHub } from "../hub/route";
 import { loadRatings } from "../hub/data";
 import { useLoad } from "./hub/ui";
 import { riotImg } from "../riotImage";
-import { clickable } from "../a11y";
+import { clickable, OPEN_TAB_EVENT } from "../a11y";
 
 const HEAD = "font-head text-xs font-semibold uppercase tracking-wider text-rw-text";
 
@@ -40,6 +40,18 @@ const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings; onSele
           {tl("All results →")}
         </button>
       </div>
+      {/* why the scores are buttons: spoiler mode hides results until asked */}
+      {settings.spoilerMode && done.some((m) => !isRevealed(`match:${m.matchId}`)) && (
+        <p className="flex items-start gap-1.5 text-[11px] text-rw-sub">
+          <EyeOff className="w-3.5 h-3.5 shrink-0 mt-px text-rw-accent" />
+          <span>
+            {tl("Spoiler mode is on, so scores stay hidden until you press Reveal.")}{" "}
+            <button type="button" onClick={() => window.dispatchEvent(new CustomEvent(OPEN_TAB_EVENT, { detail: "settings" }))} className="text-rw-teal hover:underline">
+              {tl("Turn it off in Settings")}
+            </button>
+          </span>
+        </p>
+      )}
       <ul className="divide-y divide-rw-border border border-rw-border rounded-lg bg-rw-surface">
         {done.map((m) => {
           const shown = !settings.spoilerMode || isRevealed(`match:${m.matchId}`);

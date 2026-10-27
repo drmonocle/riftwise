@@ -24,6 +24,7 @@
 ## Data
 
 - [Downloads and the data layout](https://riftwise.gg/stats/data): CSV of every game per tournament, yearly bundles, and how the JSON files are organised
+- Collecting a lot of it? Use those downloads (a league's whole year as one CSV) rather than crawling page by page, credit riftwise.gg, and keep to about one request a second
 - Current build: https://riftwise.gg/stats/latest.json gives the version; files live under https://riftwise.gg/stats/<version>/hub/
   (player/<slug>.json, team/<slug>.json, event/<slug>.json, game/<id>.json, league/<slug>.json, ratings.json, records.json, leagues.json)
 - Sources: Riot Games' public esports API (live matches, schedules), Leaguepedia (CC BY-SA 3.0) and Oracle's Elixir (non-commercial) for historical games.

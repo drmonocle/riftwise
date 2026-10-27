@@ -27,7 +27,8 @@ import (
 	"strings"
 )
 
-const version = "1.1.0"
+// the app's version (package.json; npm run set-version), reported by the health check
+const version = "0.7.48"
 
 func main() {
 	if len(os.Args) < 2 {

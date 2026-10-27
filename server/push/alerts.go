@@ -86,6 +86,7 @@ func newApp(dataDir string) (*App, error) {
 		client:      &http.Client{Timeout: 20 * time.Second},
 		seenWaiting: map[string]bool{},
 	}
+	a.loadSavedSchedule()
 	return a, nil
 }
 
@@ -512,6 +513,8 @@ func (a *App) testPayload(lang string) payload {
 
 // refreshScheduleCache keeps Riot's schedule (the first page and the two after it, as the app fetched them itself)
 // as one JSON document: {"events": [...], "at": "..."}; the app reads /api/push/schedule instead of calling Riot.
+// The last good copy is also saved (schedule.json in the data folder), so a restart while Riot is down still has
+// one: the app shows it, marked stale, instead of an empty page.
 func (a *App) refreshScheduleCache() {
 	var events []json.RawMessage
 	token := ""
@@ -560,6 +563,31 @@ func (a *App) refreshScheduleCache() {
 	a.schedMu.Lock()
 	a.schedJSON, a.schedAt = b, time.Now()
 	a.schedMu.Unlock()
+	if a.dataDir != "" {
+		tmp := filepath.Join(a.dataDir, "schedule.json.tmp")
+		if os.WriteFile(tmp, b, 0o644) == nil {
+			os.Rename(tmp, filepath.Join(a.dataDir, "schedule.json"))
+		}
+	}
+}
+
+// loadSavedSchedule: the copy refreshScheduleCache saved last time, with the time it was fetched.
+func (a *App) loadSavedSchedule() {
+	b, err := os.ReadFile(filepath.Join(a.dataDir, "schedule.json"))
+	if err != nil {
+		return
+	}
+	var saved struct {
+		At string `json:"at"`
+	}
+	if json.Unmarshal(b, &saved) != nil {
+		return
+	}
+	if at, err := time.Parse(time.RFC3339, saved.At); err == nil {
+		a.schedMu.Lock()
+		a.schedJSON, a.schedAt = b, at
+		a.schedMu.Unlock()
+	}
 }
 
 // ---- "On the line" alerts ----

@@ -461,6 +461,8 @@ export interface PickemRow {
   right: number;
   scored: number;
   me?: boolean;
+  /** the name is hidden: "" for everyone but its owner */
+  hidden?: boolean;
 }
 export interface PickemBoard {
   event: string;
@@ -477,3 +479,5 @@ export const submitPickem = (event: string, picks: PickemPick[], teams: PickemTe
 export const pickemBoard = (event: string) => call<PickemBoard>(`pickem/board?event=${encodeURIComponent(event)}`);
 /** Leaves the leaderboard (the account's picks for that event are deleted). */
 export const leavePickem = (event: string) => call<{ ok: boolean }>("pickem/leave", { event });
+/** Hides the account's name on the board (or shows it again); its row and score stay. The board comes back. */
+export const hidePickem = (event: string, hide: boolean) => call<PickemBoard>("pickem/hide", { event, hide });

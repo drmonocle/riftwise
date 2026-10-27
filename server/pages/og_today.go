@@ -159,8 +159,9 @@ func (rf *ratingsFile) seriesChance(a, b *ratingTeam, bo int) float64 {
 
 type todayRow struct {
 	left, right, mid string
-	pa               float64 // a's chance, -1 when unrated
+	pa               float64 // a's chance before the match, -1 when unrated
 	done             bool
+	leftWon          bool // when done
 }
 
 var todayCache struct {
@@ -211,8 +212,9 @@ func (s *store) todayCard() []byte {
 		}
 		row.left, row.right = a.Code, b.Code
 		if e.State == "completed" && a.Result != nil && b.Result != nil {
-			row.done = true
-			row.mid = strconv.Itoa(a.Result.GameWins) + "–" + strconv.Itoa(b.Result.GameWins)
+			// a finished match says so: the chances beside it were the ones before it started
+			row.done, row.leftWon = true, a.Result.GameWins > b.Result.GameWins
+			row.mid = "Final " + strconv.Itoa(a.Result.GameWins) + "–" + strconv.Itoa(b.Result.GameWins)
 		} else {
 			row.mid = t.UTC().Format("15:04") + " UTC"
 		}
@@ -290,8 +292,14 @@ func ogToday(title, sub string, rows []todayRow) []byte {
 		if r.pa >= 0 {
 			pa, pb = strconv.Itoa(int(math.Round(r.pa*100)))+"%", strconv.Itoa(int(math.Round((1-r.pa)*100)))+"%"
 		}
+		// the favourite in teal; once it's over, the winner in teal and the loser greyed out
 		ca, cb := text, text
-		if r.pa >= 0 {
+		if r.done {
+			ca, cb = teal, muted
+			if !r.leftWon {
+				ca, cb = muted, teal
+			}
+		} else if r.pa >= 0 {
 			if r.pa >= 0.5 {
 				ca = teal
 			} else {
@@ -321,7 +329,11 @@ func ogToday(title, sub string, rows []todayRow) []byte {
 			mid = strings.TrimRight(mid[:len(mid)-2], " ·") + "…"
 		}
 		mw := (&font.Drawer{Face: midFace}).MeasureString(mid).Ceil()
-		drawText(img, midFace, x+(xr-x-mw)/2, y, subC, mid)
+		midC := subC
+		if r.done {
+			midC = text
+		}
+		drawText(img, midFace, x+(xr-x-mw)/2, y, midC, mid)
 		y += step
 	}
 	foot := ogFace(false, 26)

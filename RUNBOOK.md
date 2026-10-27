@@ -1,0 +1,114 @@
+# RiftWise runbook
+
+How to put a new version live, take it back, restart things, and where to look when something is wrong.
+Everything live runs on HomeServer (`192.168.1.8`, hostname `TV`); its `C:` is `W:` on the main PC.
+**Never edit the live files on HomeServer by hand**: every deploy below overwrites them from this repo.
+
+## What runs where
+
+| Piece | Lives in (HomeServer) | Scheduled task | Health |
+|---|---|---|---|
+| Web app (riftwise.gg) | `C:\inetpub\riftwise.gg` (IIS site `riftwise.gg`, pool `RiftWisePool`) | – | `https://riftwise.gg/` |
+| Page service (titles, og cards, sitemaps, feed, calendar) | `C:\Sites\riftwise-pages-data\riftwise-pages.exe`, port 8093 | `RiftWisePages-Server` | `http://127.0.0.1:8093/riftwise/pages/health` |
+| Push service (alerts, schedule copy) | `C:\Sites\riftwise-push-data\riftwise-push.exe`, port 8092 | `RiftWisePush-Server` | `https://riftwise.gg/api/push/health` |
+| Sync service (accounts, Pick'Em) | `C:\Sites\riftwise-sync-data\riftwise-sync.exe`, port 8094 | `RiftWiseSync-Server` | `https://riftwise.gg/api/sync/health` |
+| Stats build (hub.py and friends) | `C:\Scripts\riftwise\*.py`, output `C:\inetpub\wwwroot\riftwise\stats\<build>\` | `RiftWiseStatsBuild` (started by `RiftWiseStatsWatch`) | last line of `build_stats.log` is `exit 0` |
+| Player photos | `C:\Scripts\riftwise\photos_lp.py` | `RiftWisePhotos` (04:40) | – |
+| Desktop app | GitHub Releases (`drmonocle/riftwise`) | Release workflow on a `v*` tag | – |
+
+Each health check reports `version` (the app version, the same number as `package.json`) and `started`
+(when that exe started): a new install that really took over shows the new version and a fresh time.
+
+## Before any release
+
+```
+npm test
+npm run check:version
+```
+
+Bump the version everywhere at once (package.json, lock files, Tauri, Cargo and the three services):
+
+```
+npm run set-version -- 0.7.49
+```
+
+## Deploy the web app
+
+```
+powershell -ExecutionPolicy Bypass -File scripts\deploy_web.ps1
+```
+
+Builds `dist-web` and copies it to `W:\inetpub\riftwise.gg`: new bundles first, `index.html` last, old bundles kept a
+week so open pages never miss a file. Check `https://riftwise.gg/` afterwards (a hard reload: the service worker
+caches the shell).
+
+## Deploy the Go services
+
+They are compiled on HomeServer (Go isn't on the main PC). Changes on the server go only through
+`C:\Users\TV\.claude\tools\Invoke-HomeServer.ps1 -ScriptPath <file.ps1>`, which takes no arguments, so write a
+one-line launcher for it.
+
+1. Stage the source: `powershell -ExecutionPolicy Bypass -File scripts\stage_services.ps1 -Services pages,push`
+   (copies `server\<svc>` to `W:\Sites\riftwise-build\<svc>`, the push translations, and `scripts\server\*.ps1`).
+2. Build and test there: launcher `& 'C:\Sites\riftwise-build\scripts\build_services.ps1' -Services pages,push`.
+   Exit 1 means `go vet`, `go test` or `go build` failed; nothing changed.
+3. Install: launcher `& 'C:\Sites\riftwise-build\scripts\install_services.ps1' -Services pages,push`. Each service:
+   stop task, keep the old exe as `.prev`, copy the new one, start the task, wait up to 30 s for its health check to
+   report the new version. **A service that doesn't come back healthy gets its `.prev` back by itself** (exit 1).
+
+Translations used by push alerts are copied in step 1 and installed in step 3: redo both for `push` whenever
+`src/i18n/locales` changes.
+
+## Install a changed stats build (hub.py)
+
+1. Run a full local build first (about 8 minutes) and check it ends with `done:`:
+   ```
+   py -3 -u scripts/stats/build_stats.py --db C:\Users\TV\Tools\riftwatch-hub-dev\catalog_mepi.db --out C:\Users\TV\Tools\riftwatch-hub-dev\out --renames-cache C:\Users\TV\Tools\riftwatch-hub-dev\team_renames.json
+   ```
+   A compile check alone is not enough (it missed the 2026-10-24 crash).
+2. Copy the old one aside on the server (`hub.py.bak-YYYYMMDD` in `C:\Scripts\riftwise`), then copy the changed
+   `scripts\stats\*.py` there. The next nightly build uses them; a failed build leaves the previous data live.
+
+## Desktop app release
+
+```
+git tag v0.7.49
+git push origin v0.7.49
+```
+
+The Release workflow builds `RiftWise.exe` into a **draft** release. Publish the draft on GitHub to make it "Latest"
+(that is what the in-app updater sees).
+
+## Roll back
+
+| What | How |
+|---|---|
+| Web app | `git checkout <previous tag>` then `scripts\deploy_web.ps1` (old bundles are still on the server for a week) |
+| A Go service | launcher `& 'C:\Sites\riftwise-build\scripts\install_services.ps1' -Services <svc> -Rollback` (puts `.prev` back) |
+| Stats build code | copy `C:\Scripts\riftwise\hub.py.bak-YYYYMMDD` back over `hub.py` |
+| Stats data | `C:\inetpub\wwwroot\riftwise\stats\latest.json` names the build in use; point `version` at the previous build folder |
+| Desktop app | mark the previous GitHub release as Latest again |
+
+## Restart
+
+- A service: `Stop-ScheduledTask <task>; Get-Process riftwise-<svc> | Stop-Process -Force; Start-ScheduledTask <task>`
+  (each task runs a `run-server.cmd` loop that also restarts the exe within 5 seconds if it exits).
+- IIS site: `Restart-WebAppPool RiftWisePool`.
+- After any HomeServer reboot the server waits at the sign-in screen; the RiftWise tasks start without a sign-in.
+
+## Logs
+
+| What | Where (HomeServer) |
+|---|---|
+| Stats build | `C:\Scripts\riftwise\build_stats.log` (each run ends `exit 0` / `exit 1`) |
+| Data check after each build | `C:\Scripts\riftwise\audit_latest.txt` and `.json` |
+| Page service | `C:\Sites\riftwise-pages-data\logs\` |
+| Push / sync services | `C:\Sites\riftwise-push-data\`, `C:\Sites\riftwise-sync-data\` (`logs\` there) |
+| IIS (riftwise.gg) | `C:\inetpub\logs\LogFiles\W3SVC4\u_exYYMMDD_x.log` |
+| Every remote change made through the wrapper | `C:\Backups\claude-remote\` (`index.log`, one line per run) |
+
+## Checks
+
+- Crawl like Bing (4xx and pages without an H1): `node C:\Users\TV\Tools\riftwatch-hub-dev\crawl.mjs https://riftwise.gg 1200 20 4000`
+- Phone layout: `node C:\Users\TV\Tools\riftwatch-hub-dev\mobile_audit.mjs <base> <outdir> 375`
+- Wide screens: `node C:\Users\TV\Tools\riftwatch-hub-dev\wide_audit.mjs http://localhost:4174 <outdir> 1920`

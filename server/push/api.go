@@ -20,6 +20,8 @@ const (
 	testInterval = 20 * time.Second
 )
 
+var started = time.Now() // reported by the health check: a fresh time means a new exe really took over
+
 // Push services browsers actually use. Anything else is refused, so the server can't be pointed at
 // arbitrary addresses.
 var pushHosts = []string{
@@ -131,6 +133,18 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
+// scheduleBody: the kept schedule as served at `now`: as it is while fresh, with "stale":true once Riot hasn't
+// answered for 10 minutes, nothing (ok false) when there is none or it's over a week old.
+func scheduleBody(b []byte, at, now time.Time) ([]byte, bool) {
+	if len(b) < 2 || now.Sub(at) > 7*24*time.Hour {
+		return nil, false
+	}
+	if now.Sub(at) > 10*time.Minute && b[len(b)-1] == '}' {
+		return append(append([]byte{}, b[:len(b)-1]...), []byte(`,"stale":true}`)...), true
+	}
+	return b, true
+}
+
 func (a *App) serveHTTP(addr string) error {
 	lim := &limiter{hits: map[string][]time.Time{}, tests: map[string]time.Time{}}
 	mux := http.NewServeMux()
@@ -143,7 +157,7 @@ func (a *App) serveHTTP(addr string) error {
 		a.mu.Lock()
 		defer a.mu.Unlock()
 		writeJSON(w, 200, map[string]any{
-			"ok": a.lastErr == "" && time.Since(a.lastPoll) < 5*time.Minute, "version": version,
+			"ok": a.lastErr == "" && time.Since(a.lastPoll) < 5*time.Minute, "version": version, "started": started.UTC().Format(time.RFC3339),
 			"subscriptions": a.store.count(), "lastPoll": a.lastPoll.UTC().Format(time.RFC3339), "lastError": a.lastErr,
 		})
 	})
@@ -211,12 +225,15 @@ func (a *App) serveHTTP(addr string) error {
 		writeJSON(w, 200, map[string]any{"ok": true, "teams": len(teams)})
 	})
 
-	// the schedule the app shows: Riot's, fetched here every poll (one caller instead of every visitor)
+	// the schedule the app shows: Riot's, fetched here every poll (one caller instead of every visitor). When Riot
+	// hasn't answered for 10 minutes the last copy still comes, marked "stale": the app then asks Riot itself and
+	// shows this one (with its time) only if Riot doesn't answer there either. A week-old copy isn't worth showing.
 	mux.HandleFunc(apiPrefix+"schedule", func(w http.ResponseWriter, r *http.Request) {
 		a.schedMu.Lock()
 		b, at := a.schedJSON, a.schedAt
 		a.schedMu.Unlock()
-		if len(b) == 0 || time.Since(at) > 10*time.Minute {
+		b, ok := scheduleBody(b, at, time.Now())
+		if !ok {
 			writeJSON(w, 503, map[string]string{"error": "no schedule yet"})
 			return
 		}
@@ -224,6 +241,20 @@ func (a *App) serveHTTP(addr string) error {
 		w.Header().Set("Cache-Control", "public, max-age=30")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Write(b)
+	})
+
+	// what the record alerts say, for the current all-time #1 of each record (nothing is sent):
+	// riftwise.gg/api/push/records/preview?lang=ko
+	mux.HandleFunc(apiPrefix+"records/preview", func(w http.ResponseWriter, r *http.Request) {
+		if !lim.allow(clientIP(r)) {
+			writeJSON(w, 429, map[string]string{"error": "too many requests"})
+			return
+		}
+		lang := r.URL.Query().Get("lang")
+		if lang == "" || len(lang) > 8 {
+			lang = "en"
+		}
+		writeJSON(w, 200, map[string]any{"lang": lang, "alerts": a.previewRecords(lang)})
 	})
 
 	mux.HandleFunc(apiPrefix+"unsubscribe", func(w http.ResponseWriter, r *http.Request) {

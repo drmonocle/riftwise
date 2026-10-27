@@ -8,7 +8,8 @@
   <title>Page not found | RiftWise</title>
   <link rel="icon" type="image/png" href="/icon.png?v=2">
   <!-- IIS serves this file (web.config, httpErrors) for any address that doesn't exist, with the 404 status kept.
-       Self-contained on purpose: no script, no fonts, no app bundle, so it works even when the app is mid-deploy. -->
+       Self-contained on purpose: no fonts, no app bundle, so it works even when the app is mid-deploy. Its one
+       script (404.js) only fills the search box with the missing address's words. -->
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
@@ -92,6 +93,7 @@
       font: inherit;
       font-size: 15px;
     }
+    .note { margin: -10px 0 12px; color: #2dd4bf; font-weight: 600; }
     input::placeholder { color: #8c85b0; }
     input:focus { outline: none; border-color: #b39dff; }
     button {
@@ -142,6 +144,7 @@
       <p class="code">404 · Page not found</p>
       <h1>That page isn't here</h1>
       <p>The address may have a typo, or the page has moved. Search for a team, player, tournament or champion, or pick a place to start.</p>
+      <p class="note" id="search-note" hidden></p>
       <form action="/stats" method="get" role="search">
         <input type="search" name="q" placeholder="Search pro stats…" aria-label="Search pro stats" autocomplete="off">
         <button type="submit">Search</button>
@@ -155,5 +158,6 @@
     </div>
   </main>
   <footer>RiftWise is free, with no ads. <a href="/about">About RiftWise</a></footer>
+  <script src="/404.js" defer></script>
 </body>
 </html>

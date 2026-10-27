@@ -7,6 +7,7 @@ import {
   saveSettings,
   fetchLiveMatches,
   fetchSchedule,
+  schedulePausedAt,
   fetchStreamSchedule,
   fetchStreamStatus,
   loadCachedStreamSchedule,
@@ -47,6 +48,7 @@ const OLD_USER = (() => {
   }
 })();
 import { ArrowDownToLine, WifiOff, AlertTriangle, X } from "lucide-react";
+import { ShortcutsDialog } from "./components/ShortcutsDialog";
 import { IS_DESKTOP, IS_WEB, matchIdFromHash } from "./platform";
 import { clearMovedNote, movedHere } from "./move";
 import { reconcileLiveAndSchedule, playKickoffChime, applyH2HData, loadBundledH2H } from "./helpers";
@@ -139,13 +141,17 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   // the header search closes when another page opens (the Stats home has its own search box)
   useEffect(() => onHubRoute(() => setSearchOpen(false)), []);
-  // "/" opens the search from anywhere (not while typing somewhere else)
+  // "/" opens the search from anywhere (not while typing somewhere else), "?" the list of shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+      if ((e.key !== "/" && e.key !== "?") || e.ctrlKey || e.metaKey || e.altKey) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
       e.preventDefault();
+      if (e.key === "?") {
+        setShortcutsOpen(true);
+        return;
+      }
       // the header's own search box when it has room for one, else the search under the header
       const box = document.querySelector<HTMLInputElement>('[data-header-search="box"] input');
       if (box) box.focus();
@@ -235,6 +241,10 @@ export default function App() {
   const [updateCheck, setUpdateCheck] = useState<{ at: number; error: string | null } | null>(null);
   // Set when Riot's API stops answering: "riot-down" (no response), "riot-key" (401/403), "offline".
   const [outage, setOutage] = useState<"riot-down" | "riot-key" | "offline" | null>(null);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const closeShortcuts = useCallback(() => setShortcutsOpen(false), []);
+  // the schedule shown is an old copy (Riot not answering): from when
+  const [schedulePaused, setSchedulePaused] = useState<number | null>(null);
   const lastLiveOk = useRef(0);
   const [toast, setToast] = useState<string | null>(null);
   const showToast = useCallback((msg: string) => {
@@ -464,6 +474,7 @@ export default function App() {
         nextSched = sched.value;
         lastSchedule.current = now;
       }
+      if (sched.status === "fulfilled" && sched.value) setSchedulePaused(schedulePausedAt());
 
       // Correlate live broadcasts with scheduled matches to surface live tournament slates
       const { finalLive, finalSchedule } = reconcileLiveAndSchedule(nextLive, nextSched);
@@ -855,12 +866,20 @@ export default function App() {
       ? clock(d.getTime())
       : d.toLocaleString(locale(), { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   };
+  // "3 hours ago", in the reader's language (the exact time is in the tooltip)
+  const agoText = (iso: string) => {
+    const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60_000));
+    const rtf = new Intl.RelativeTimeFormat(locale(), { numeric: "auto" });
+    if (mins < 60) return rtf.format(-mins, "minute");
+    if (mins < 48 * 60) return rtf.format(-Math.round(mins / 60), "hour");
+    return rtf.format(-Math.round(mins / 1440), "day");
+  };
   const syncLabel = syncFailed
     ? lastSync
       ? tl("Connection problem · showing data from {time}", { time: clock(lastSync) })
       : tl("Can't reach the data sources right now")
     : dbUpdated
-      ? tl("Database updated {time}", { time: whenText(dbUpdated) })
+      ? tl("Stats updated {ago}", { ago: agoText(dbUpdated) })
       : lastSync
         ? tl("Live scores up to date")
         : tl("Loading…");
@@ -917,8 +936,8 @@ export default function App() {
       {/* Tab Navigation */}
       <Navigation activeTab={activeTab} onSelectTab={selectTab} liveCount={liveMatches.length} />
 
-      {/* Data outage banner */}
-      {outage && (
+      {/* Data outage banner (a paused schedule says the same with its time: then only that one) */}
+      {outage && !(outage === "riot-down" && schedulePaused !== null) && (
         <div
           role="status"
           className={`flex items-center gap-2 px-4 py-2 text-xs border-b ${
@@ -945,6 +964,14 @@ export default function App() {
               </>
             )}
           </span>
+        </div>
+      )}
+
+      {/* Riot data paused: the schedule shown is the last copy there was, not an empty page */}
+      {schedulePaused !== null && (
+        <div role="status" className="flex items-center gap-2 px-4 py-2 text-xs border-b bg-rw-accent/10 border-rw-accent/50 text-rw-text">
+          <AlertTriangle className="w-4 h-4 shrink-0 text-rw-accent" />
+          <span>{tl("Riot data paused: showing the schedule from {time}. It updates by itself when Riot is back.", { time: whenText(new Date(schedulePaused).toISOString()) })}</span>
         </div>
       )}
 
@@ -1186,6 +1213,9 @@ export default function App() {
               <span className="sm:hidden">{tl("SPOILERS HIDDEN")}</span>
             </span>
           )}
+          <button type="button" onClick={() => setShortcutsOpen(true)} className="hidden md:inline hover:text-rw-accent whitespace-nowrap" title={tl("Keyboard shortcuts")}>
+            {tl("Shortcuts")} <kbd className="font-num">?</kbd>
+          </button>
           {/* Narrow screens: make room for the spoiler notice so the footer stays on one line */}
           <a
             href={feedbackUrl(IS_WEB ? window.location.href : activeTab)}
@@ -1229,6 +1259,7 @@ export default function App() {
           </button>}
         </div>
       </footer>
+      {shortcutsOpen && <ShortcutsDialog onClose={closeShortcuts} />}
     </div>
   );
 }
