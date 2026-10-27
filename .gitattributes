@@ -1,0 +1,17 @@
+# Line endings: the repo keeps LF and checks text files out as LF everywhere, so commits on Windows
+# (core.autocrlf=true) stop warning "LF will be replaced by CRLF". Windows scripts stay CRLF in the working
+# copy: cmd.exe misreads labels and goto in LF batch files, and the server runs these as they are copied.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.psm1 text eol=crlf
+
+*.png binary
+*.webp binary
+*.ico binary
+*.jpg binary
+*.ttf binary
+*.woff2 binary
+*.exe binary
+*.db binary
