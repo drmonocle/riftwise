@@ -438,3 +438,42 @@ export async function oauthSignIn(provider: "discord" | "twitch", openUrl?: (url
   }
   throw new SyncError("expired");
 }
+
+// ── Pick'Em leaderboard (server/sync/pickem.go): the Worlds picks, scored against Riot's results ──
+
+/** One pick: the stage, its round, the two teams (stats slugs, with Riot's code and name for matching) and the winner picked. */
+export interface PickemPick {
+  s: "swiss" | "ko";
+  r: number;
+  a: string;
+  b: string;
+  w: string;
+}
+export interface PickemTeam {
+  u: string;
+  c: string;
+  n: string;
+}
+export interface PickemRow {
+  rank: number;
+  name: string;
+  score: number;
+  right: number;
+  scored: number;
+  me?: boolean;
+}
+export interface PickemBoard {
+  event: string;
+  players: number;
+  results: number;
+  rows: PickemRow[];
+  me?: PickemRow | null;
+}
+
+/** Enters (or updates) the signed-in account's picks for an event; the board comes back. */
+export const submitPickem = (event: string, picks: PickemPick[], teams: PickemTeam[]) =>
+  call<PickemBoard>("pickem/submit", { event, picks, teams });
+/** The leaderboard (no sign-in needed; the caller's own row is marked when signed in). */
+export const pickemBoard = (event: string) => call<PickemBoard>(`pickem/board?event=${encodeURIComponent(event)}`);
+/** Leaves the leaderboard (the account's picks for that event are deleted). */
+export const leavePickem = (event: string) => call<{ ok: boolean }>("pickem/leave", { event });

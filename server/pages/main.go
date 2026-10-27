@@ -107,6 +107,7 @@ type store struct {
 	order     map[string][]string          // kind -> slugs in file order (for sitemaps)
 	alias     map[string]map[string]string // kind -> old slug or short name -> current (team: "sk-telecom-t1", league: "lck")
 	intl      map[string]intlPage          // "worlds", "worlds/2025", "msi/all"... -> the page's summary (hub/seo/pages)
+	ratings   *ratingsFile                 // hub/ratings.json: the power ratings behind /og/today.png (og_today.go)
 	failed    string                       // a build without hub files (logged once, not retried)
 	indexHTML string
 	indexMod  time.Time
@@ -252,6 +253,7 @@ func (s *store) refresh() {
 	}
 	indexNow(s.changedPages(pages, intl))
 	s.pages, s.order, s.alias, s.version, s.intl = pages, order, alias, latest.Version, intl
+	s.ratings = loadRatings(hub)
 	log.Printf("stats %s loaded: %d teams, %d players, %d events, %d matches, %d champions, %d leagues",
 		latest.Version, len(pages["team"]), len(pages["player"]), len(pages["event"]), len(pages["game"]), len(pages["champ"]), len(pages["league"]))
 }
@@ -720,6 +722,10 @@ func main() {
 		}
 		if r.URL.Path == basePath+"calendar.ics" {
 			serveCalendar(w, r) // calendar.go
+			return
+		}
+		if r.URL.Path == basePath+"feed.xml" {
+			serveFeed(w, r) // feed.go
 			return
 		}
 		if strings.HasPrefix(r.URL.Path, basePath+"sitemap") && strings.HasSuffix(r.URL.Path, ".xml") {

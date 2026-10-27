@@ -9,6 +9,7 @@ import { TeamRatingSub, WinChanceLine } from "../WinChanceLine";
 import { UpNextTable } from "../UpNextTable";
 import { SwissStandings } from "../SwissStandings";
 import { ShareMatchButton } from "../ShareMatchButton";
+import { IdleHome } from "../IdleHome";
 import {
   getLeagueBroadcastStreams,
   isMatchFollowed,
@@ -693,6 +694,9 @@ export const LiveView: React.FC<LiveViewProps> = ({
               </div>
             </div>
           )}
+
+          {/* Nothing live: the latest results, the stats pages people use most, the top of the rankings */}
+          <IdleHome schedule={schedule} settings={settings} onSelectTab={onSelectTab} />
 
           {/* Coming Up Next (followed upcoming matches) */}
           {comingUp.length > 0 && (

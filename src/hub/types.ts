@@ -719,6 +719,8 @@ export interface LeagueRow {
   to?: string | null;
   pr: number;
   g: number;
+  /** the seasons with a whole-season file (hub/leagueyear/<league>/<year>.json); builds before 0.7.45 don't say */
+  sy?: string[];
 }
 
 export interface HubLeague {
@@ -728,6 +730,8 @@ export interface HubLeague {
   history?: LeagueStep[] | null;
   region?: string | null;
   primary: boolean;
+  /** the seasons with a whole-season file (hub/leagueyear/<league>/<year>.json); builds before 0.7.45 don't say */
+  seasons?: string[];
   events: (EventListItem & { y: string })[];
   titles: { t: string; u: string | null; n: number }[];
 }

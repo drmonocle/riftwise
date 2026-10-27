@@ -216,6 +216,8 @@ func (s *Server) routes() http.Handler {
 		return c, recoveryHash(c)
 	}
 
+	s.pickemRoutes(mux, p, read, signedIn) // pickem.go: the Worlds Pick'Em leaderboard
+
 	mux.HandleFunc(p+"health", func(w http.ResponseWriter, r *http.Request) {
 		reply(w, 200, map[string]any{"ok": true, "version": version, "accounts": s.st.count()})
 	})

@@ -3,7 +3,7 @@
  * teams) for each stat, e.g. "damage share: better than 92% of LCK mids in 2026, 2nd of 10".
  * Data: hub/leagueyear/<league>/<year>.json (every split and playoffs of the season summed).
  */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { tl, tk, roleName, fmtDec } from "../../i18n";
 import { loadLeagueSeason, loadLeagues, loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y } from "../../hub/data";
 import type { EventPlayer, EventTeamStats, LeagueRow, PlayerGameRow, TeamGameRow } from "../../hub/types";
@@ -271,6 +271,7 @@ function lastTen<R>(rows: R[] | null, get: ((r: R, perMin: boolean) => number | 
 function useSeasonGames<R extends unknown[]>(
   on: boolean,
   slug: string,
+  has2y: boolean | undefined,
   load2y: (slug: string) => Promise<R[]>,
   loadAll: (slug: string) => Promise<R[]>,
   eventAt: number,
@@ -278,7 +279,8 @@ function useSeasonGames<R extends unknown[]>(
   lu: string,
   year: string,
 ): R[] | null {
-  const recent = Number(year) >= new Date().getFullYear() - 1;
+  // the smaller two-year file only when the build made one (g2y): asking for a missing one was a 404 on every page
+  const recent = Number(year) >= new Date().getFullYear() - 1 && !!has2y;
   const state = useLoad(
     () => (!on ? Promise.resolve(null) : recent ? load2y(slug).catch(() => loadAll(slug)) : loadAll(slug)),
     [on, slug, recent],
@@ -528,17 +530,32 @@ const useLeagueNames = () => {
   );
 };
 
+/** The seasons a player's or team's events span that have a whole-season file (builds since 0.7.45 list them in
+ *  leagues.json as `sy`; before that every season is assumed to have one), at least `min` games each. */
+function useSeasons(events: { lu?: string; date: string; g: number }[], min: number): [string, string, number][] {
+  const leagues = useLoad(loadLeagues, []);
+  return useMemo(() => {
+    const sy = new Map((leagues.data || []).map((l: LeagueRow) => [l.u, l.sy]));
+    return seasonsOf(events).filter((s) => {
+      if (s[2] < min) return false;
+      const years = sy.get(s[0]);
+      return !years || years.includes(s[1]);
+    });
+  }, [events, min, leagues.data]);
+}
+
 export const PlayerRanks: React.FC<{
   slug: string;
   events: { e?: string; lu?: string; date: string; g: number }[];
-}> = ({ slug, events }) => {
-  const seasons = useMemo(
-    () => seasonsOf(events).filter((s) => s[2] >= 5),
-    [events],
-  );
+  has2y?: boolean;
+}> = ({ slug, events, has2y }) => {
+  const seasons = useSeasons(events, 5);
   const [pick, setPick] = useState(() =>
     seasons[0] ? `${seasons[0][0]}|${seasons[0][1]}` : "",
   );
+  useEffect(() => {
+    if (seasons.length && !seasons.some((s) => `${s[0]}|${s[1]}` === pick)) setPick(`${seasons[0][0]}|${seasons[0][1]}`);
+  }, [seasons, pick]);
   const names = useLeagueNames();
   const [lu, year] = pick.split("|");
   const state = useLoad(
@@ -552,7 +569,7 @@ export const PlayerRanks: React.FC<{
   const newest = events.filter((e) => e.lu === lu && (e.date || "").startsWith(year)).reduce((m, e) => (e.date > m ? e.date : m), "");
   const [ranksHidden, revealRanks] = useHidden(`ranks:${slug}:${pick}`, newest && isFresh(newest) ? newest : undefined);
   const [prefs, setPrefs] = useRankPrefs();
-  const games = useSeasonGames<PlayerGameRow>(!prefs.hide.includes("last") && !!lu && !!year, slug, loadPlayerGames2y, loadPlayerGames, 11, events, lu, year);
+  const games = useSeasonGames<PlayerGameRow>(!prefs.hide.includes("last") && !!lu && !!year, slug, has2y, loadPlayerGames2y, loadPlayerGames, 11, events, lu, year);
   if (!seasons.length) return null;
   const season = state.data;
   const me = season?.players.find((p) => p.u === slug);
@@ -634,14 +651,15 @@ export const PlayerRanks: React.FC<{
 export const TeamRanks: React.FC<{
   slug: string;
   events: { e?: string; lu?: string; date: string; g: number }[];
-}> = ({ slug, events }) => {
-  const seasons = useMemo(
-    () => seasonsOf(events).filter((s) => s[2] >= 5),
-    [events],
-  );
+  has2y?: boolean;
+}> = ({ slug, events, has2y }) => {
+  const seasons = useSeasons(events, 5);
   const [pick, setPick] = useState(() =>
     seasons[0] ? `${seasons[0][0]}|${seasons[0][1]}` : "",
   );
+  useEffect(() => {
+    if (seasons.length && !seasons.some((s) => `${s[0]}|${s[1]}` === pick)) setPick(`${seasons[0][0]}|${seasons[0][1]}`);
+  }, [seasons, pick]);
   const names = useLeagueNames();
   const [lu, year] = pick.split("|");
   const state = useLoad(
@@ -655,7 +673,7 @@ export const TeamRanks: React.FC<{
   const newest = events.filter((e) => e.lu === lu && (e.date || "").startsWith(year)).reduce((m, e) => (e.date > m ? e.date : m), "");
   const [ranksHidden, revealRanks] = useHidden(`ranks:${slug}:${pick}`, newest && isFresh(newest) ? newest : undefined);
   const [prefs, setPrefs] = useRankPrefs();
-  const games = useSeasonGames<TeamGameRow>(!prefs.hide.includes("last") && !!lu && !!year, slug, loadTeamGames2y, loadTeamGames, 2, events, lu, year);
+  const games = useSeasonGames<TeamGameRow>(!prefs.hide.includes("last") && !!lu && !!year, slug, has2y, loadTeamGames2y, loadTeamGames, 2, events, lu, year);
   if (!seasons.length) return null;
   const season = state.data;
   const me = season?.teamStats.find((t) => t.u === slug);
@@ -734,7 +752,8 @@ export function useTeamPercentiles(
   slug: string,
   events: { lu?: string; date: string; g: number }[],
 ): { league: string; year: string; n: number; pct: Record<string, number> } | null {
-  const pick = useMemo(() => seasonsOf(events).filter((s) => s[2] >= 5)[0] || null, [events]);
+  const seasons = useSeasons(events, 5);
+  const pick = seasons[0] || null;
   const names = useLeagueNames();
   const state = useLoad(
     () => (pick ? loadLeagueSeason(pick[0], pick[1]) : Promise.reject(new Error("none"))),

@@ -203,6 +203,20 @@ func (s *store) serveOG(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(rest, "/")
 	kind, title, desc := "", "", ""
 	switch {
+	case len(parts) == 1 && parts[0] == "today":
+		// today's matches with their chances: drawn every ten minutes (og_today.go), not from the per-build cache
+		b := s.todayCard()
+		if b == nil {
+			http.Error(w, "no picture", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "image/png")
+		w.Header().Set("Cache-Control", "public, max-age=600")
+		w.Header().Set("Content-Length", strconv.Itoa(len(b)))
+		if r.Method != http.MethodHead {
+			w.Write(b)
+		}
+		return
 	case len(parts) == 1 && parts[0] == "home":
 		kind, title, desc = "home", "RiftWise: live LoL esports scores, pro stats and power rankings", sections[""][1]
 	case len(parts) == 2 && parts[0] == "stats":
