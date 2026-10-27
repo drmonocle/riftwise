@@ -37,8 +37,9 @@ Release day is **Tuesday**; a fix for something broken can go out any day.
 3. Within 5 minutes the release watcher on HomeServer (`RiftWiseReleaseWatch`, `scripts/server/release_watch.ps1`)
    builds and checks everything from that tag first (web, services, and when the stats scripts changed the test build
    plus a full stats build), then installs web, services and stats scripts, then checks the live site serves the new
-   page. If a live step fails it puts everything back and sends a phone notification. Watch it on /status ("Last
-   release") or in `C:\Sites\riftwise-release\logs\`.
+   page. If a live step fails it puts everything back and sends a phone notification. New stats scripts then get a
+   stats build right away (after one already running; not while a job writes the database, which brings one anyway).
+   Watch it on /status ("Last release") or in `C:\Sites\riftwise-release\logs\`.
 4. The same tag starts the desktop build (Release workflow): publish its draft on GitHub when it should reach the app.
 
 Roll back to the version before: run `C:\Sites\riftwise-build\scripts\release_watch.ps1 -Rollback` on HomeServer
@@ -95,7 +96,9 @@ Translations used by push alerts are copied in step 1 and installed in step 3: r
    ```
    A compile check alone is not enough (it missed the 2026-10-24 crash).
 2. Copy the old one aside on the server (`hub.py.bak-YYYYMMDD` in `C:\Scripts\riftwise`), then copy the changed
-   `scripts\stats\*.py` there. The next nightly build uses them; a failed build leaves the previous data live.
+   `scripts\stats\*.py` there. Builds start only when the game database changes (or once a day), so start one:
+   `Start-ScheduledTask RiftWiseStatsBuild` (not while it's already running). A failed build leaves the previous
+   data live.
 
 ## Roll back by hand
 
