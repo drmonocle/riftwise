@@ -10,6 +10,7 @@ export const pageCode = {
   league: () => import("./MetaPages"),
   champions: () => import("./ChampionsPage"),
   records: () => import("./RecordsPage"),
+  weekly: () => import("./WeeklyPage"),
   titles: () => import("./RecordsPage"),
   data: () => import("./DownloadsPage"),
   about: () => import("./AboutPage"),

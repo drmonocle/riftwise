@@ -115,6 +115,16 @@ Translations used by push alerts are copied in step 1 and installed in step 3: r
 - IIS site: `Restart-WebAppPool RiftWisePool`.
 - After any HomeServer reboot the server waits at the sign-in screen; the RiftWise tasks start without a sign-in.
 
+## Numbers (what visitors use)
+
+- **Funnel**: the analytics hub (HomeServer `:8088`) tab "RiftWise funnel": visits, how many go past the first page,
+  themes, languages, web vs desktop app, Pick'Em entries, results-feed and calendar readers. Written every 10 minutes
+  by `scripts/analytics/funnel.py` (run by the hub's `update_reports.ps1` from the release watcher's checkout).
+- The visits come from the app itself (`src/usage.ts` → `/api/push/usage`): once a day per browser, no cookie, no
+  id; only the day's totals are kept (`C:\Sites\riftwise-push-data\usage\<date>.json`).
+- **Discord**: channels that get results, records and the daily card are in `C:\Sites\riftwise-push-data\discord.json`
+  (added and removed from the Watchlist tab; a webhook Discord says is gone is dropped by itself).
+
 ## Logs
 
 | What | Where (HomeServer) |

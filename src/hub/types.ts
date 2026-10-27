@@ -611,6 +611,24 @@ export interface HubMatchups {
   vs: [string, number, number, number, number | null][];
 }
 /** hub/records/<year>.json: one year's game and single-game player records, and its pentakills */
+/** hub/weekly.json: the last seven days (from, to inclusive) in top leagues and international events. */
+export interface HubWeekly {
+  from: string;
+  to: string;
+  series: number;
+  games: number;
+  upsetCount: number;
+  /** newest first; i = 1 for an international event */
+  results: { date: string; t: string; e: string; st: string; a: string; au: string | null; b: string; bu: string | null; sa: number; sb: number; g: string; i: number }[];
+  /** the winner's chance in game 1, lowest first (under 40%) */
+  upsets: { g: string; date: string; t: string; e: string; w: string; wu: string | null; l: string; lu: string | null; s: string; p: number }[];
+  /** top-league teams' rating change over the seven days, biggest first */
+  movers: { u: string; n: string; c: string; lg: string; r: number; chg: number }[];
+  /** all-time #1 rows set this week (s: game | player | team, k: the record's key in records.json) */
+  records: { s: string; k: string; r: Record<string, string | number> }[];
+  best: { r: number; g: string; gn: number; date: string; t: string; e: string; a: string; b: string; w: number; min: number | null }[];
+}
+
 export interface HubRecordsYear {
   year: string;
   game: HubRecords["game"];

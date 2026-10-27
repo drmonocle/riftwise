@@ -6,6 +6,7 @@ import { tl, tn, regionName, roleName } from "../../i18n";
 import { IS_WEB } from "../../platform";
 import { PushAlertsBanner } from "../PushAlerts";
 import { CalendarFeed } from "../CalendarFeed";
+import { DiscordFeed } from "../DiscordFeed";
 import { searchAlias, isNonLatin } from "../../searchAliases";
 import { mainPlayerEntries } from "../../helpers";
 import { riotImg } from "../../riotImage";
@@ -301,6 +302,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
 
       {IS_WEB && <PushAlertsBanner settings={settings} />}
       <CalendarFeed settings={settings} onOpenUrl={IS_WEB ? undefined : onOpenUrl} />
+      {IS_WEB && <DiscordFeed />}
 
       {/* Sub-tab Navigation & Search */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-rw-border">

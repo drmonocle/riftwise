@@ -19,6 +19,7 @@ import { SortTable, type Column } from "./SortTable";
 import type { HubHome as HubHomeData, PatchMove, PatchRow } from "../../hub/types";
 
 const QUICK: { to: HubRoute; label: string; sub: string; icon: React.ReactNode }[] = [
+  { to: { kind: "weekly" }, label: tk("This week"), sub: tk("Upsets, ranking movers, records, best games"), icon: <CalendarRange className="w-4 h-4" /> },
   { to: { kind: "rankings" }, label: tk("Power rankings"), sub: tk("Every team, every region, one scale"), icon: <TrendingUp className="w-4 h-4" /> },
   { to: { kind: "best" }, label: tk("Best games"), sub: tk("Highest-rated games and series"), icon: <Flame className="w-4 h-4" /> },
   { to: { kind: "tournaments" }, label: tk("Tournaments"), sub: tk("Every event since 2011"), icon: <CalendarRange className="w-4 h-4" /> },

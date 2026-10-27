@@ -41,7 +41,7 @@ func testSite(t *testing.T) *store {
 	must(os.MkdirAll(filepath.Join(hub, "seo"), 0o755))
 	must(os.WriteFile(filepath.Join(dir, "stats", "latest.json"), []byte(`{"version": "20261015000000"}`), 0o644))
 	files := map[string]string{
-		"team":   "t1\tT1 – stats | RiftWise\tT1: 1,216-644 & more <b>\t1\nsmall-team\tSmall – stats | RiftWise\tFew games\t0\n",
+		"team":   "t1\tT1 – stats | RiftWise\tT1: 1,216-644 & more <b>\t1\nsmall-team\tSmall – stats | RiftWise\tFew games\t0\nbig-team\tBig – stats | RiftWise\tBig.\t1\tBig has played 1,860 <pro> games.\n",
 		"player": "faker\tFaker – pro stats | RiftWise\tFaker, Mid for T1.\t1\n",
 		"event":  "worlds-2025\tWorlds 2025 | RiftWise\tWorlds 2025.\t1\n",
 		"game":   "worlds-2025-finals-1\tT1 vs KT | RiftWise\tT1 vs KT.\t1\n",
@@ -405,6 +405,23 @@ func TestLanguagePages(t *testing.T) {
 	}
 }
 
+// A bigger page's summary (the build's 5th column) sits under the heading, escaped, on the English page only.
+func TestPageSummary(t *testing.T) {
+	s := testSite(t)
+	b := get(s, "/riftwise/team/big-team").Body.String()
+	root := b[strings.Index(b, `<div id="root">`):]
+	root = root[:strings.Index(root, "</div>")]
+	if !strings.Contains(root, "Big has played 1,860 &lt;pro&gt; games.</p>") || !strings.Contains(root, "<h1") {
+		t.Errorf("root: %s", root)
+	}
+	if b := get(s, "/riftwise/ko/team/big-team").Body.String(); strings.Contains(b, "1,860") {
+		t.Error("English summary on the Korean page")
+	}
+	if b := get(s, "/riftwise/team/small-team").Body.String(); strings.Contains(b, "margin:0 16px 16px") {
+		t.Error("a summary where the build wrote none")
+	}
+}
+
 // A league the build has a page for but no games of: served (noindex), not a 404; made-up ones still 404.
 func TestBareLeague(t *testing.T) {
 	s := testSite(t)
@@ -427,14 +444,24 @@ func TestBareLeague(t *testing.T) {
 
 // riftwise.gg/feed.xml: every result, or one team's / one league's (Riot's code, slug or league name).
 func TestFeedFilter(t *testing.T) {
-	testSite(t)
+	s := testSite(t)
 	feed := func(q string) string {
 		w := httptest.NewRecorder()
-		serveFeed(w, httptest.NewRequest(http.MethodGet, "/riftwise/feed.xml"+q, nil))
+		s.serveFeed(w, httptest.NewRequest(http.MethodGet, "/riftwise/feed.xml"+q, nil))
 		return w.Body.String()
 	}
 	if b := feed(""); !strings.Contains(b, "T1 1–0 Dplus KIA") || !strings.Contains(b, "<title>RiftWise: LoL esports results</title>") {
 		t.Errorf("whole feed: %s", b)
+	}
+	// the build's weekly recap: one item in the whole feed, named after its week
+	os.WriteFile(filepath.Join(s.stats, "20261015000000", "hub", "weekly.json"), []byte(`{"from": "2026-10-21", "to": "2026-10-27", "series": 12, "games": 30,
+		"upsets": [{"w": "MKOI", "l": "T1", "s": "1-0", "p": 0.24}], "best": [{"a": "GEN", "b": "BLG", "r": 88.4}]}`), 0o644)
+	if b := feed(""); !strings.Contains(b, "<title>The week in pro LoL: 2026-10-21 to 2026-10-27</title>") || !strings.Contains(b, "riftwise-weekly-2026-10-26</guid>") ||
+		!strings.Contains(b, "Biggest upset: MKOI beat T1 1-0 (24% before game 1).") || strings.Count(b, "<item>") < 2 {
+		t.Errorf("weekly item: %s", b)
+	}
+	if b := feed("?teams=T1"); strings.Contains(b, "The week in pro LoL") {
+		t.Error("weekly item in a team's feed")
 	}
 	if b := feed("?teams=T1"); !strings.Contains(b, "T1 1–0 Dplus KIA") || !strings.Contains(b, "<title>RiftWise: T1 results</title>") || !strings.Contains(b, "feed.xml?teams=T1") {
 		t.Errorf("teams=T1: %s", b)

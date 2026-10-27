@@ -82,8 +82,8 @@ DRAKES = ("Clouds", "Infernals", "Mountains", "Oceans", "Hextechs", "Chemtechs")
 
 from hub_util import (  # the helpers (hub_util.py)
     LEAGUE_COUNTRY, LEAGUE_NAME_COUNTRY, Slugs, Writer, champs, chunks, clean, country_code, csv_safe, fix_patch, jlist,
-    kda, milestone_notes, num, parse_len, phase_rank, pretty, r1, r2, region_code, rmin, rune_name, short_hash,
-    short_slug, soloq_ids, spell_name, tsv_cell, unesc,
+    kda, milestone_notes, num, parse_len, phase_rank, player_summary, pretty, r1, r2, region_code, rmin, rune_name,
+    short_hash, short_slug, soloq_ids, spell_name, team_summary, tsv_cell, unesc,
 )
 
 
@@ -400,6 +400,14 @@ def build(ctx) -> dict:
     used_gslugs = set()
     # Game ratings (MEPI, 0-100, Antigravity's engine on the catalog: matches.mepi_rating) for the Best games page
     best_games, best_series = [], []
+    # the weekly recap (hub/weekly.json): the last seven days' series in top leagues and international events, and
+    # game 1 of each tagged for the ratings run, whose pre-game chance finds the week's upsets
+    # (RIFTWISE_WEEK_TO=YYYY-MM-DD ends the week on another day: the test build's games stop on 2026-10-17)
+    WEEK_TO = os.environ.get("RIFTWISE_WEEK_TO") or today
+    WEEK_FROM = (datetime.date.fromisoformat(WEEK_TO) - datetime.timedelta(days=6)).isoformat()
+    week_series = []  # [date, event, event slug, stage, a, a slug, b, b slug, wins a, wins b, series slug, international]
+    week_tagged = {}  # rating-game tag -> series slug
+    week_seen = set()
     # champion -> (opponent champion, role) -> [games, wins, gold-lead-at-15 sum, games with it]: the counter-pick finder
     lane_vs = defaultdict(lambda: defaultdict(lambda: [0, 0, 0, 0]))
     gid_slug = {}                      # catalog game id -> its series page
@@ -1390,6 +1398,8 @@ def build(ctx) -> dict:
                                 for x in sorted(games_out, key=lambda x: x["n"]) if x.get("w") and not x.get("remake")]
                     best_series.append([s_rating, gslug, date[:10], en, eslug, stage_name, an, au, bn, bu, wa, wb, s_best["n"],
                                         played_n, lu_b, per_game, region_b])
+                if played and gslug and WEEK_FROM <= date[:10] <= WEEK_TO and (info.get("TournamentLevel") or "") == "Primary":
+                    week_series.append([date[:10], en, eslug, stage_name, an, au, bn, bu, wa, wb, gslug, 1 if INTL_RE.search(en or "") else 0])
                 n_series_pages += 1
                 gdate = date[:10]
                 title = f"{an} vs {bn} – {en}{' ' + stage_name if stage_name else ''}"
@@ -1439,6 +1449,10 @@ def build(ctx) -> dict:
                             if ev_lines is not None and (gslug, g.get("n")) in ev_lines.get("_gi", {}):
                                 tag_r = len(rating_games)
                                 lines_tagged[tag_r] = (ev_lines, ev_lines["_gi"][(gslug, g.get("n"))])
+                            if gslug and WEEK_FROM <= gd <= WEEK_TO and tier_r == 1 and gslug not in week_seen:
+                                week_seen.add(gslug)
+                                tag_r = len(rating_games)
+                                week_tagged[tag_r] = gslug
                             rating_tags.append(tag_r)
                             rating_games.append((gd, lg_r, intl_r, fid_on(a, gd), fid_on(b, gd), 1 if g["w"] == a else 0, tier_r, reg_r))
                             gid_r = g["gid"]
@@ -1622,7 +1636,9 @@ def build(ctx) -> dict:
         seo["event"].append((eslug, f"{en} – results, bracket and stats | {SITE}",
                              f"{en} ({start} to {end}){': ' + info['League'] if info.get('League') else ''}.{wtxt} "
                              f"Every series, standings, bracket, player leaders and champion picks.",
-                             1 if event["games"] >= 4 else 0))
+                             1 if event["games"] >= 4 else 0,
+                             f"{en} ran from {start} to {end}, with {event['games']:,} games played.{wtxt}"
+                             if event["games"] >= 20 and start and end else ""))
 
     # Parent events with no games of their own (Worlds 2025 = Play-In + Main Event)
     for op in parents:
@@ -1748,6 +1764,8 @@ def build(ctx) -> dict:
         [g + (tuple(x) if x else (None, None, None, [], [])) + (t,) for g, x, t in zip(rating_games, rating_extra, rating_tags)],
         series_out=rating_series, chances_out=rating_chances)
     # the Worlds / MSI / First Stand lines files: each game's pre-game chance, then out they go
+    # team a's chance in game 1 of each series this week (before it was played)
+    week_chance = {gs: rating_chances[tag] for tag, gs in week_tagged.items() if tag in rating_chances}
     for tag_c, (lines_c, gi_c) in lines_tagged.items():
         if tag_c in rating_chances:
             lines_c["g"][gi_c][11] = round(rating_chances[tag_c] * 100)
@@ -2021,7 +2039,7 @@ def build(ctx) -> dict:
             bits.append(f"{len(titles)} titles" + (f" incl. {worlds} Worlds" if worlds else ""))
         seo["team"].append((u, f"{name} – stats, roster and history | {SITE}",
                             f"{name}{' (' + ', '.join(codes[:2]) + ')' if codes else ''}: {'; '.join(bits)}. Roster by year, head-to-head records, tournaments and champion picks.",
-                            1 if t["g"] >= SEO_MIN_GAMES else 0))
+                            1 if t["g"] >= SEO_MIN_GAMES else 0, team_summary(name, t, obj, worlds)))
     search_teams.sort(key=lambda x: -x[2])
 
     # Every series of each team (results archive, Compare's head-to-head list): newest first
@@ -2163,7 +2181,7 @@ def build(ctx) -> dict:
                               f"{name}{' (' + bio['Name'] + ')' if bio.get('Name') else ''}, {role}{' for ' + club if club else ''}. "
                               f"{p['g']:,} pro games, KDA {obj['kda']}, {round(100 * p['w'] / p['g']) if p['g'] else 0}% wins"
                               f"{', ' + str(len(my_titles)) + ' titles' if my_titles else ''}. Champion pool, tournaments and career bests.",
-                              1 if p["g"] >= SEO_MIN_GAMES else 0))
+                              1 if p["g"] >= SEO_MIN_GAMES else 0, player_summary(name, role, club, p, obj, my_titles)))
     search_players.sort(key=lambda x: -x[3])
 
     # -- what's at stake: storylines of every active team and its starters, for "On the line today" ------
@@ -2294,6 +2312,45 @@ def build(ctx) -> dict:
             if lst and isinstance(lst[0], dict) and (lst[0].get("date") or "") >= rec_cut:
                 rec_new.append({"s": sec, "k": key, "r": lst[0]})
     out.json("records_new.json", rec_new)
+
+    # -- the week in one file (hub/weekly.json: the /stats/weekly page, its card, the feed's weekly item) -------------
+    wk = sorted(week_series, key=lambda r: (r[0], r[11]), reverse=True)
+    upsets = []
+    for r in wk:
+        p_a = week_chance.get(r[10])
+        if p_a is None or r[8] == r[9]:
+            continue
+        a_won = r[8] > r[9]
+        p_w = p_a if a_won else 1 - p_a
+        if p_w < 0.4:
+            upsets.append({"g": r[10], "date": r[0], "t": r[1], "e": r[2], "w": r[4] if a_won else r[6], "wu": r[5] if a_won else r[7],
+                           "l": r[6] if a_won else r[4], "lu": r[7] if a_won else r[5], "s": f"{max(r[8], r[9])}-{min(r[8], r[9])}",
+                           "p": round(p_w, 3)})
+    upsets.sort(key=lambda x: x["p"])
+    week_ago = (datetime.date.fromisoformat(WEEK_TO) - datetime.timedelta(days=7)).isoformat()
+    movers = []
+    for row in rank_rows:
+        pts = [p_ for p_ in rating_hist.get(row[0]) or [] if p_[0] <= week_ago]
+        if row[9] == 1 and pts and round(row[5] - pts[-1][1]):
+            movers.append({"u": row[0], "n": row[1], "c": row[2], "lg": row[3], "r": round(row[5]), "chg": round(row[5] - pts[-1][1])})
+    movers.sort(key=lambda x: -abs(x["chg"]))
+    wk_records = []
+    for sec in ("game", "player", "team"):
+        for key, lst in (rec.get(sec) or {}).items():
+            if lst and isinstance(lst[0], dict) and WEEK_FROM <= (lst[0].get("date") or "") <= WEEK_TO:
+                wk_records.append({"s": sec, "k": key, "r": lst[0]})
+    wk_best = heapq.nlargest(5, [r for r in best_games if WEEK_FROM <= r[3] <= WEEK_TO and r[0] is not None], key=lambda r: r[0])
+    out.json("weekly.json", {
+        "from": WEEK_FROM, "to": WEEK_TO, "series": len(wk), "games": sum(r[8] + r[9] for r in wk), "upsetCount": len(upsets),
+        "results": [{"date": r[0], "t": r[1], "e": r[2], "st": r[3], "a": r[4], "au": r[5], "b": r[6], "bu": r[7], "sa": r[8], "sb": r[9],
+                     "g": r[10], "i": r[11]} for r in wk[:60]],
+        "upsets": upsets[:5],
+        "movers": movers[:8],
+        "records": wk_records,
+        "best": [{"r": round(r[0], 1), "g": r[1], "gn": r[2], "date": r[3], "t": r[4], "e": r[5], "a": r[7], "b": r[9], "w": r[11], "min": r[12]}
+                 for r in wk_best],
+    })
+    checks["hub: weekly recap series"] = len(wk)
     for year, ry in (getattr(ctx, "records_by_year", None) or {}).items():
         ry = json.loads(json.dumps(ry, ensure_ascii=False))
         for lst in ry["game"].values():
@@ -2639,8 +2696,11 @@ def build(ctx) -> dict:
         "series": n_series_pages, "teams": len(search_teams), "players": len(search_players), "events": tournaments_played,
         "champs": len(search_champs), "years": years,
     })
+    # slug, title, description, index flag, and for the bigger pages a few sentences with numbers (page_summary below)
     for kind, rows in seo.items():
-        out.text(f"seo/{kind}.tsv", "".join(f"{tsv_cell(s)}\t{tsv_cell(t)}\t{tsv_cell(d)}\t{i}\n" for s, t, d, i in rows))
+        out.text(f"seo/{kind}.tsv", "".join(
+            "\t".join([tsv_cell(r[0]), tsv_cell(r[1]), tsv_cell(r[2]), str(r[3])] + ([tsv_cell(r[4])] if len(r) > 4 and r[4] else [])) + "\n"
+            for r in rows))
     # Players with a Leaguepedia photo (fetched nightly by photos_lp.py into <out>/photos/<slug>.webp):
     # {slug: "YYYYMMDD"}, so the app shows a picture where Riot has none
     try:

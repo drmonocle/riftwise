@@ -339,6 +339,8 @@ export function groupRank(hits: HubHit[]): number {
 
 export const loadHubRecords = () => load<import("./types").HubRecords>("hub/records.json");
 export const loadHubTitles = () => load<import("./types").HubTitle[]>("hub/titles.json");
+/** the last seven days in one file (hub.py "weekly.json"): results, upsets, rating movers, records, best games */
+export const loadWeekly = () => load<import("./types").HubWeekly>("hub/weekly.json");
 
 /** The stats page of a team known only by its current name and short code (from Riot's feeds). */
 /** A team name without a "(...)" note or a ".CN"-style region suffix: "LYON (2024 American Team)" -> "lyon". */

@@ -29,6 +29,7 @@ EXPECT = [
     "{v}/hub/ratings.json",
     "{v}/hub/records.json",
     "{v}/hub/records_new.json",
+    "{v}/hub/weekly.json",
     "{v}/hub/leagues.json",
     "{v}/hub/titles.json",
     "{v}/hub/patches.json",
@@ -63,7 +64,8 @@ def main() -> int:
             [sys.executable, "-u", os.path.join(STATS, "build_stats.py"), "--db", os.path.join(work, "fixture.db"),
              "--lp-db", os.path.join(work, "fixture_lp.db"), "--out", out,
              "--renames-cache", os.path.join(work, "team_renames.json"), "--offline"],
-            capture_output=True, text=True, encoding="utf-8", errors="replace")
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            env={**os.environ, "RIFTWISE_WEEK_TO": "2026-10-17"})  # the test games' last week (weekly.json)
         print(build.stdout[-3000:])
         if build.returncode != 0 or "\ndone: " not in "\n" + build.stdout:
             print(build.stderr[-6000:])
@@ -74,6 +76,11 @@ def main() -> int:
         missing = [p.format(v=v) for p in EXPECT if not os.path.exists(os.path.join(out, p.format(v=v)))]
         if missing:
             print("FAIL: the build didn't write " + ", ".join(missing))
+            return 1
+        with open(os.path.join(out, v, "hub", "weekly.json"), encoding="utf-8") as f:
+            week = json.load(f)
+        if not week["series"] or not week["results"]:
+            print(f"FAIL: weekly.json has no series for {week['from']} to {week['to']}")
             return 1
         audit = subprocess.run([sys.executable, "-u", os.path.join(STATS, "audit_data.py"), out],
                                capture_output=True, text=True, encoding="utf-8", errors="replace")
