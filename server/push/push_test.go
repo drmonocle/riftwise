@@ -165,6 +165,77 @@ func TestUsageCounts(t *testing.T) {
 	}
 }
 
+// Page views: only known page addresses with a name are counted, per day; the week's top needs two views or more,
+// counts the last seven New York days, and skips crawlers.
+func TestPageViews(t *testing.T) {
+	a := &App{dataDir: t.TempDir()}
+	now := time.Date(2026, 10, 28, 3, 0, 0, 0, time.UTC) // still Oct 27 in New York
+	n := a.countViews([]viewPage{
+		{"player/faker", "Faker"}, {"team/t1", "T1"}, {"team/t1", "T1\x00\n"}, {"match/x-1", "A vs B"},
+		{"player/../x", "x"}, {"team/geng", "  "}, {"Player/Faker", "Faker"},
+	}, now)
+	if n != 3 {
+		t.Errorf("counted %d, want 3", n)
+	}
+	b, err := os.ReadFile(filepath.Join(a.dataDir, "usage", "views", "2026-10-27.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(b), `"team/t1":{"n":2,"t":"T1"}`) {
+		t.Errorf("day file: %s", b)
+	}
+	// the funnel's own files stay as they were
+	if _, err := os.Stat(filepath.Join(a.dataDir, "usage", "2026-10-27.json")); err == nil {
+		t.Error("views written to the funnel's day file")
+	}
+	many := make([]viewPage, 30)
+	for i := range many {
+		many[i] = viewPage{"champ/ahri", "Ahri"}
+	}
+	if n := a.countViews(many, now); n != viewsPerPost {
+		t.Errorf("one request counted %d", n)
+	}
+	a.countViews([]viewPage{{"player/faker", "Faker"}}, now.AddDate(0, 0, -6))
+	a.countViews([]viewPage{{"event/msi-2026", "MSI 2026"}, {"event/msi-2026", "MSI 2026"}}, now.AddDate(0, 0, -7)) // eight days back: left out
+	top := a.popularPages(now)
+	if len(top) != 3 || top[0].Page != "champ/ahri" || top[0].N != 20 || top[1].Page != "player/faker" || top[1].N != 2 || top[2].Page != "team/t1" {
+		t.Errorf("top: %+v", top)
+	}
+
+	mux := http.NewServeMux()
+	a.usageRoute(mux, &limiter{hits: map[string][]time.Time{}, tests: map[string]time.Time{}})
+	post := func(ua, body string) int {
+		req := httptest.NewRequest("POST", apiPrefix+"usage", strings.NewReader(body))
+		req.Header.Set("User-Agent", ua)
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		return rec.Code
+	}
+	chrome := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36"
+	if c := post(chrome, `{"event":"views","pages":[{"page":"team/geng","title":"Gen.G"}]}`); c != 204 {
+		t.Errorf("views: %d", c)
+	}
+	if c := post(chrome, `{"event":"views","pages":[{"page":"nope","title":"x"}]}`); c != 400 {
+		t.Errorf("junk views: %d", c)
+	}
+	if c := post("Googlebot/2.1", `{"event":"views","pages":[{"page":"team/geng","title":"Gen.G"}]}`); c != 204 {
+		t.Errorf("crawler views: %d", c)
+	}
+	if c := post(chrome, `{"event":"visit","theme":"rift","lang":"en","app":"web","v":"0.7.55"}`); c != 204 {
+		t.Errorf("visit: %d", c)
+	}
+	today, _ := os.ReadFile(a.viewsFile(time.Now()))
+	if !strings.Contains(string(today), `"team/geng":{"n":1,`) {
+		t.Errorf("crawler counted or browser not: %s", today)
+	}
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest("GET", apiPrefix+"popular", nil))
+	var got struct{ Pages []popularPage }
+	if rec.Code != 200 || json.Unmarshal(rec.Body.Bytes(), &got) != nil || got.Pages == nil || rec.Header().Get("Access-Control-Allow-Origin") != "*" {
+		t.Errorf("popular: %d %s", rec.Code, rec.Body)
+	}
+}
+
 // Discord: only discord.com webhook addresses are taken; a finished series becomes a message with its score.
 func TestDiscord(t *testing.T) {
 	for u, want := range map[string]bool{

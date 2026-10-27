@@ -20,7 +20,7 @@
   "Upset meter": "Sürpriz göstergesi",
   "{team}: {before} before the game, {now} now": "{team}: maç öncesi {before}, şimdi {now}",
   "Game story": "Oyunun hikâyesi",
-  "To see what people use, the app counts each browser once a day, with its theme and language. No cookie, and nothing that says who you are.": "Neyin kullanıldığını görmek için uygulama her tarayıcıyı günde bir kez, tema ve diliyle sayar. Çerez yok, kim olduğunu söyleyen hiçbir şey yok.",
+  "To see what people use, the app counts each browser once a day, with its theme and language, and how many open each team, player, tournament, league and champion page (for Most viewed on the stats home). No cookie, and nothing that says who you are.": "Neyin kullanıldığını görmek için uygulama her tarayıcıyı günde bir kez, tema ve diliyle sayar; her takım, oyuncu, turnuva, lig ve şampiyon sayfasını kaç kişinin açtığını da sayar (istatistik ana sayfasındaki \"Bu hafta en çok bakılanlar\" için). Çerez yok, kim olduğunu söyleyen hiçbir şey yok.",
   "This week": "Bu hafta",
   "Upsets, ranking movers, records, best games": "Sürprizler, sıralama değişimleri, rekorlar, en iyi oyunlar",
   "Closest to falling": "Kırılmaya en yakın",
@@ -2140,5 +2140,6 @@
   "Picked or banned in the week's {n} game.|Picked or banned in the week's {n} games.": "Haftanın {n} oyununda pick veya ban.",
   "Upsets, runs and finals": "Sürprizler, yükselişler ve finaller",
   "Team records": "Takım rekorları",
-  "Player records": "Oyuncu rekorları"
+  "Player records": "Oyuncu rekorları",
+  "Most viewed this week": "Bu hafta en çok bakılanlar"
 }

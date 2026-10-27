@@ -261,7 +261,7 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
 
 export const LeaguePage: React.FC<{ slug: string; year?: string }> = ({ slug, year }) => {
   const state = useLoad(() => loadLeague(slug), [slug]);
-  usePageTitle(state.data ? (year ? `${state.data.l} ${year}` : state.data.l) : undefined);
+  usePageTitle(state.data ? (year ? `${state.data.l} ${year}` : state.data.l) : undefined, state.data?.l);
   return <Page state={state}>{(l) => <LeagueView l={l} year={year} />}</Page>;
 };
 

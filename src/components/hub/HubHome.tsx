@@ -10,6 +10,7 @@ import { UpNextTable } from "../UpNextTable";
 import { formatMatchTime } from "../../matchTime";
 import { RatingBadge } from "./PlayerRating";
 import { useRecentPages } from "../../hub/recent";
+import { loadPopular } from "../../hub/popular";
 import { champName } from "../../champions";
 import { ChampIcon } from "./ui";
 import type { EventListItem, HubMeta } from "../../hub/types";
@@ -266,16 +267,35 @@ const BusiestTable: React.FC<{ rows: HubHomeData["busiest"] }> = ({ rows }) => {
   return <SortTable rows={rows} columns={columns} initial={{ key: "g", desc: true }} rowKey={(p, i) => `${p.n}-${i}`} />;
 };
 
-/** The pages opened last on this device, as chips. */
+const chipClass = "px-2 py-0.5 rounded-full border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-line max-w-[14rem] truncate";
+
+/** The pages opened last on this device, as chips; a first visit (none yet) gets the week's most viewed instead. */
 const RecentPages: React.FC = () => {
   const recent = useRecentPages();
-  if (!recent.length) return null;
+  if (!recent.length) return <MostViewed />;
   return (
     <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
       <span className="text-rw-muted font-semibold text-[10px] mr-1">{tl("Recently viewed")}</span>
       {recent.slice(0, 8).map((r) => (
-        <HubLink key={hubPathOf(r.route)} to={r.route} className="px-2 py-0.5 rounded-full border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-line max-w-[14rem] truncate">
+        <HubLink key={hubPathOf(r.route)} to={r.route} className={chipClass}>
           {r.title}
+        </HubLink>
+      ))}
+    </div>
+  );
+};
+
+/** The pages everyone opened most in the last seven days (src/hub/popular.ts); nothing until there are some. */
+const MostViewed: React.FC = () => {
+  const state = useLoad(loadPopular, []);
+  const list = (state.data || []).slice(0, 8);
+  if (!list.length) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+      <span className="text-rw-muted font-semibold text-[10px] mr-1">{tl("Most viewed this week")}</span>
+      {list.map((p) => (
+        <HubLink key={hubPathOf(p.route)} to={p.route} className={chipClass}>
+          {p.route.kind === "champ" ? champName(p.title) : p.title}
         </HubLink>
       ))}
     </div>
