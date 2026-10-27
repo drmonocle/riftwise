@@ -1,4 +1,4 @@
-# Runs ON HOMESERVER once, after the release that brings scriptsnalyticsunnel.py (through the remote wrapper).
+# Runs ON HOMESERVER once, after the release that brings scripts/analytics/funnel.py (through the remote wrapper).
 # Analytics hub (C:\goaccess): a "RiftWise funnel" tab. The report (www\reports\riftwise-funnel.html) is written by the
 # RiftWise repository's scripts\analytics\funnel.py, which the hub's update_reports.ps1 now runs every 10 minutes from
 # the release watcher's checkout. Both hub files are backed up first (.bak-<time>); both are UTF-8 without BOM, LF.
