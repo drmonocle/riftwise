@@ -308,7 +308,7 @@ func (s *store) status() statusDoc {
 
 	// written by Windows PowerShell, which may start the file with a byte-order mark JSON doesn't allow
 	if b, err := os.ReadFile(filepath.Join(statusRelease, "status.json")); err == nil {
-		if b = []byte(strings.TrimPrefix(string(b), "﻿")); json.Valid(b) {
+		if b = []byte(strings.TrimPrefix(string(b), string(rune(0xFEFF)))); json.Valid(b) {
 			d.Release = b
 		}
 	}

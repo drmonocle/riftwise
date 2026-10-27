@@ -119,7 +119,7 @@ func TestStatusPage(t *testing.T) {
 	os.WriteFile(filepath.Join(dir, "build_stats.log"), []byte(buildLog), 0o644)
 	os.WriteFile(filepath.Join(dir, "audit_latest.json"), []byte(`{"version": "20261015000000", "counts": {"same champion twice in one game": 3}}`), 0o644)
 	// as Windows PowerShell 5.1 wrote it on the server: with a byte-order mark
-	os.WriteFile(filepath.Join(dir, "status.json"), []byte("﻿"+`{"version": "0.7.49", "result": "installed", "at": "2026-10-27T15:00:00Z"}`), 0o644)
+	os.WriteFile(filepath.Join(dir, "status.json"), []byte(string(rune(0xFEFF))+`{"version": "0.7.49", "result": "installed", "at": "2026-10-27T15:00:00Z"}`), 0o644)
 	healthy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{"ok": true, "version": "0.7.49", "started": "2026-10-27T15:00:00Z", "lastSent": "2026-10-27T16:00:00Z", "lastSentTag": "rec-game-fastest"}`))
 	}))
