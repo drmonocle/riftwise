@@ -15,3 +15,4 @@
 *.woff2 binary
 *.exe binary
 *.db binary
+*.gz binary

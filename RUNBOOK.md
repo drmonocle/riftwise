@@ -19,20 +19,48 @@ Everything live runs on HomeServer (`192.168.1.8`, hostname `TV`); its `C:` is `
 Each health check reports `version` (the app version, the same number as `package.json`) and `started`
 (when that exe started): a new install that really took over shows the new version and a fresh time.
 
+**Is everything running?** https://riftwise.gg/status (and `/status.json`): stats build age and build lengths, each
+service, the last alert sent, head-to-head data age, the data check, the last release. Problems from that page reach
+the phone through ntfy (task `RiftWiseStatusWatch`, every 5 minutes, once per problem per 6 hours, and when it clears).
+
+## Release (push-button)
+
+Release day is **Tuesday**; a fix for something broken can go out any day.
+
+1. In the pull request: `npm run set-version -- 0.7.50`. CI runs the app tests, the Go services' tests, the stats
+   test build and the main pages in a headless browser (`scripts/audit/smoke.mjs`).
+2. Merge, then tag main:
+   ```
+   git tag v0.7.50
+   git push origin v0.7.50
+   ```
+3. Within 5 minutes the release watcher on HomeServer (`RiftWiseReleaseWatch`, `scripts/server/release_watch.ps1`)
+   builds and checks everything from that tag first (web, services, and when the stats scripts changed the test build
+   plus a full stats build), then installs web, services and stats scripts, then checks the live site serves the new
+   page. If a live step fails it puts everything back and sends a phone notification. Watch it on /status ("Last
+   release") or in `C:\Sites\riftwise-release\logs\`.
+4. The same tag starts the desktop build (Release workflow): publish its draft on GitHub when it should reach the app.
+
+Roll back to the version before: run `C:\Sites\riftwise-build\scripts\release_watch.ps1 -Rollback` on HomeServer
+(through the wrapper). The version rolled back from is skipped until a newer tag comes. `-Version 0.7.49` installs a
+given tag. A tag that isn't on main is refused unless `-Force`.
+
+Set up once with `scripts\server\install_watchers.ps1 -NtfyUrl <topic address> -LiveVersion <version live now>`.
+
 ## Before any release
 
 ```
 npm test
+npm run test:stats
 npm run check:version
 ```
 
-Bump the version everywhere at once (package.json, lock files, Tauri, Cargo and the three services):
+`npm run test:stats` is the whole stats build on the small test database (`scripts/stats/test`, ~5 seconds). Re-cut
+that database with `scripts/stats/test/make_fixture.py` when the build starts reading another table.
 
-```
-npm run set-version -- 0.7.49
-```
+## Deploy by hand (when the watcher can't)
 
-## Deploy the web app
+### The web app
 
 ```
 powershell -ExecutionPolicy Bypass -File scripts\deploy_web.ps1
@@ -42,7 +70,7 @@ Builds `dist-web` and copies it to `W:\inetpub\riftwise.gg`: new bundles first, 
 week so open pages never miss a file. Check `https://riftwise.gg/` afterwards (a hard reload: the service worker
 caches the shell).
 
-## Deploy the Go services
+### The Go services
 
 They are compiled on HomeServer (Go isn't on the main PC). Changes on the server go only through
 `C:\Users\TV\.claude\tools\Invoke-HomeServer.ps1 -ScriptPath <file.ps1>`, which takes no arguments, so write a
@@ -59,9 +87,9 @@ one-line launcher for it.
 Translations used by push alerts are copied in step 1 and installed in step 3: redo both for `push` whenever
 `src/i18n/locales` changes.
 
-## Install a changed stats build (hub.py)
+### A changed stats build (hub.py)
 
-1. Run a full local build first (about 8 minutes) and check it ends with `done:`:
+1. Run `npm run test:stats`, then a full local build (about 8 minutes) and check it ends with `done:`:
    ```
    py -3 -u scripts/stats/build_stats.py --db C:\Users\TV\Tools\riftwatch-hub-dev\catalog_mepi.db --out C:\Users\TV\Tools\riftwatch-hub-dev\out --renames-cache C:\Users\TV\Tools\riftwatch-hub-dev\team_renames.json
    ```
@@ -69,20 +97,11 @@ Translations used by push alerts are copied in step 1 and installed in step 3: r
 2. Copy the old one aside on the server (`hub.py.bak-YYYYMMDD` in `C:\Scripts\riftwise`), then copy the changed
    `scripts\stats\*.py` there. The next nightly build uses them; a failed build leaves the previous data live.
 
-## Desktop app release
-
-```
-git tag v0.7.49
-git push origin v0.7.49
-```
-
-The Release workflow builds `RiftWise.exe` into a **draft** release. Publish the draft on GitHub to make it "Latest"
-(that is what the in-app updater sees).
-
-## Roll back
+## Roll back by hand
 
 | What | How |
 |---|---|
+| Everything (preferred) | `release_watch.ps1 -Rollback` on HomeServer (see Release) |
 | Web app | `git checkout <previous tag>` then `scripts\deploy_web.ps1` (old bundles are still on the server for a week) |
 | A Go service | launcher `& 'C:\Sites\riftwise-build\scripts\install_services.ps1' -Services <svc> -Rollback` (puts `.prev` back) |
 | Stats build code | copy `C:\Scripts\riftwise\hub.py.bak-YYYYMMDD` back over `hub.py` |
@@ -106,9 +125,16 @@ The Release workflow builds `RiftWise.exe` into a **draft** release. Publish the
 | Push / sync services | `C:\Sites\riftwise-push-data\`, `C:\Sites\riftwise-sync-data\` (`logs\` there) |
 | IIS (riftwise.gg) | `C:\inetpub\logs\LogFiles\W3SVC4\u_exYYMMDD_x.log` |
 | Every remote change made through the wrapper | `C:\Backups\claude-remote\` (`index.log`, one line per run) |
+| Releases | `C:\Sites\riftwise-release\logs\<version>-<time>.log`; `status.json`, `installed.json`, `skip.txt` beside it |
+| Phone notifications sent | `C:\Sites\riftwise-release\logs\status_watch.log` |
 
-## Checks
+## Checks (`scripts/audit`, Edge or Chrome found by itself, `BROWSER=<path>` to choose)
 
-- Crawl like Bing (4xx and pages without an H1): `node C:\Users\TV\Tools\riftwatch-hub-dev\crawl.mjs https://riftwise.gg 1200 20 4000`
-- Phone layout: `node C:\Users\TV\Tools\riftwatch-hub-dev\mobile_audit.mjs <base> <outdir> 375`
-- Wide screens: `node C:\Users\TV\Tools\riftwatch-hub-dev\wide_audit.mjs http://localhost:4174 <outdir> 1920`
+The weekly site audit (`.github/workflows/audit.yml`, Wednesdays) runs the first three against the live site.
+
+- Main pages in a browser (script errors, missing files, error messages): `npm run smoke -- https://riftwise.gg`
+- Crawl like Bing (4xx and pages without an H1): `node scripts/audit/crawl.mjs https://riftwise.gg 1200 20 4000`
+- Titles and headings across the sitemaps: `node scripts/audit/seo_scan.mjs https://riftwise.gg 40`
+- Phone layout: `node scripts/audit/mobile_audit.mjs <base> <outdir> 375`
+- Wide screens: `node scripts/audit/wide_audit.mjs http://localhost:4174 <outdir> 1920` (`crop.ps1` for tall shots)
+- Esports wording in the translations: `node scripts/audit/term_check.mjs src/i18n/locales [lang]` (a list to read, not pass/fail)

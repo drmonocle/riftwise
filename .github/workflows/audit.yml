@@ -1,0 +1,33 @@
+name: Weekly site audit
+
+# The live site, the way search engines and visitors meet it, every Wednesday morning (the day after release day):
+# a crawl without scripts (4xx pages, broken links, pages without an <h1>), page titles and headings across the
+# sitemaps, and the main pages in a headless Chrome (script errors, missing files, error messages). A failure here
+# fails the run, and GitHub emails it. Run it by hand from Actions > Weekly site audit > Run workflow.
+on:
+  schedule:
+    - cron: "0 9 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    env:
+      AUDIT_UA: "Mozilla/5.0 (compatible; RiftWiseAudit/1.0; +https://riftwise.gg/status)"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Crawl (no scripts)
+        if: always()
+        run: node scripts/audit/crawl.mjs https://riftwise.gg 600 15 2000
+      - name: Titles and headings across the sitemaps
+        if: always()
+        run: node scripts/audit/seo_scan.mjs https://riftwise.gg 30
+      - name: Main pages in Chrome
+        if: always()
+        run: node scripts/audit/smoke.mjs https://riftwise.gg

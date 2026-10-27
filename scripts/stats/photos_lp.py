@@ -135,6 +135,8 @@ def riot_index(cache_path: str = None) -> dict:
     cache_path = cache_path or os.path.join(os.path.dirname(os.path.abspath(__file__)), "riot_photos.json")
     index = None
     try:
+        if os.environ.get("RIFTWISE_OFFLINE"):
+            raise RuntimeError("offline")
         req = urllib.request.Request(RIOT_TEAMS, headers={"User-Agent": UA_WIKI, "x-api-key": RIOT_KEY})
         with urllib.request.urlopen(req, timeout=30) as r:
             data = json.load(r)

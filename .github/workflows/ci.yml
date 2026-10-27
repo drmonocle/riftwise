@@ -29,6 +29,49 @@ jobs:
           path: dist
           retention-days: 1
 
+  services:
+    # the three Go services on the server (server/pages, push, sync)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+          cache-dependency-path: server/*/go.sum
+      - name: go vet and go test
+        run: |
+          for svc in pages push sync; do
+            echo "== $svc"
+            (cd server/$svc && go vet ./... && go test ./...)
+          done
+
+  pages:
+    # The stats build on the test database (seconds, scripts/stats/test), then the web build served with those stats:
+    # the main pages open in a headless Chrome, and any script error, missing file or error message fails the run.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - run: npm ci
+      - name: Stats test build
+        run: python scripts/stats/test/test_build.py --out "$RUNNER_TEMP/stats"
+      - run: npm run build:web
+      - name: Open the main pages
+        env:
+          RIFTWISE_STATS_DIR: ${{ runner.temp }}/stats
+          # the test build has no Data Dragon name lists (no downloads); the live builds have them
+          SMOKE_ALLOW: /hub/dd(/|\.json)
+        run: |
+          npx vite preview --mode web --port 4174 --strictPort &
+          for i in $(seq 30); do curl -sf http://localhost:4174/ >/dev/null && break; sleep 1; done
+          node scripts/audit/smoke.mjs http://localhost:4174
+
   rust:
     # RiftWise is a Windows app (registry autostart, updater, hotkeys), so check it on Windows.
     runs-on: windows-latest
