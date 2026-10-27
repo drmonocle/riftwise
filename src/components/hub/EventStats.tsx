@@ -53,7 +53,8 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
         const list = facts.filter((f) => groupOf(f) === g).sort((a, b) => Number(b.id === "totals") - Number(a.id === "totals"));
         if (!list.length) return null;
         return (
-          <div key={g} className="space-y-2">
+          // the id: a "jump to" link's target (the Worlds page's JumpBar)
+          <div key={g} className="space-y-2" id={`facts-${g}`}>
             <h2 className="text-xs font-semibold uppercase tracking-wider text-rw-text flex items-center gap-2">
               {titles[g]}
               <span className="flex-1 h-px bg-rw-border" />

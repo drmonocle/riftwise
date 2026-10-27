@@ -62,7 +62,17 @@
   "sec.msi.name": "MSI",
   "sec.msi.desc": "Campeones, récords y estadísticas por región",
   "sec.first-stand.name": "First Stand",
-  "sec.first-stand.desc": "Campeones, récords y estadísticas por región"
+  "sec.first-stand.desc": "Campeones, récords y estadísticas por región",
+  "sec.teams.name": "Todos los equipos",
+  "sec.teams.desc": "Cada equipo desde 2011, por región",
+  "sec.players.name": "Todos los jugadores",
+  "sec.players.desc": "Cada jugador profesional, por posición y equipo",
+  "tab.stats": "Estadísticas",
+  "tab.matches": "Enfrentamientos",
+  "tab.history": "Historia",
+  "tab.champions": "Campeones",
+  "tab.career": "Trayectoria",
+  "tab.teams": "Equipos"
  },
  "pt-BR": {
   "home.title": "RiftWise: placares ao vivo, agenda e estatísticas de LoL Esports",
@@ -127,7 +137,17 @@
   "sec.msi.name": "MSI",
   "sec.msi.desc": "Campeões, recordes e estatísticas por região",
   "sec.first-stand.name": "First Stand",
-  "sec.first-stand.desc": "Campeões, recordes e estatísticas por região"
+  "sec.first-stand.desc": "Campeões, recordes e estatísticas por região",
+  "sec.teams.name": "Todos os times",
+  "sec.teams.desc": "Todo time desde 2011, por região",
+  "sec.players.name": "Todos os jogadores",
+  "sec.players.desc": "Todo jogador profissional, por rota e time",
+  "tab.stats": "Estatísticas",
+  "tab.matches": "Confrontos",
+  "tab.history": "Histórico",
+  "tab.champions": "Campeões",
+  "tab.career": "Carreira",
+  "tab.teams": "Times"
  },
  "ko": {
   "home.title": "RiftWise: LoL e스포츠 실시간 스코어, 일정, 프로 통계",
@@ -192,7 +212,17 @@
   "sec.msi.name": "MSI",
   "sec.msi.desc": "우승팀, 기록, 지역별 통계",
   "sec.first-stand.name": "퍼스트 스탠드",
-  "sec.first-stand.desc": "우승팀, 기록, 지역별 통계"
+  "sec.first-stand.desc": "우승팀, 기록, 지역별 통계",
+  "sec.teams.name": "모든 팀",
+  "sec.teams.desc": "2011년부터 모든 팀, 지역별로",
+  "sec.players.name": "모든 선수",
+  "sec.players.desc": "모든 프로 선수, 포지션과 팀별로",
+  "tab.stats": "통계",
+  "tab.matches": "경기",
+  "tab.history": "역사",
+  "tab.champions": "챔피언",
+  "tab.career": "커리어",
+  "tab.teams": "팀"
  },
  "vi": {
   "home.title": "RiftWise: tỉ số trực tiếp, lịch thi đấu và số liệu LMHT chuyên nghiệp",
@@ -257,7 +287,17 @@
   "sec.msi.name": "MSI",
   "sec.msi.desc": "Nhà vô địch, kỷ lục và số liệu theo khu vực",
   "sec.first-stand.name": "First Stand",
-  "sec.first-stand.desc": "Nhà vô địch, kỷ lục và số liệu theo khu vực"
+  "sec.first-stand.desc": "Nhà vô địch, kỷ lục và số liệu theo khu vực",
+  "sec.teams.name": "Tất cả đội",
+  "sec.teams.desc": "Mọi đội từ 2011, theo khu vực",
+  "sec.players.name": "Tất cả tuyển thủ",
+  "sec.players.desc": "Mọi tuyển thủ chuyên nghiệp, theo vị trí và đội",
+  "tab.stats": "Thống kê",
+  "tab.matches": "Các trận",
+  "tab.history": "Lịch sử",
+  "tab.champions": "Tướng",
+  "tab.career": "Sự nghiệp",
+  "tab.teams": "Đội"
  },
  "zh-CN": {
   "home.title": "RiftWise：英雄联盟电竞实时比分、赛程与职业数据",
@@ -322,7 +362,17 @@
   "sec.msi.name": "MSI",
   "sec.msi.desc": "冠军、纪录与赛区数据",
   "sec.first-stand.name": "先锋赛",
-  "sec.first-stand.desc": "冠军、纪录与赛区数据"
+  "sec.first-stand.desc": "冠军、纪录与赛区数据",
+  "sec.teams.name": "全部战队",
+  "sec.teams.desc": "2011 年以来的所有战队，按赛区",
+  "sec.players.name": "全部选手",
+  "sec.players.desc": "所有职业选手，按位置和战队",
+  "tab.stats": "数据",
+  "tab.matches": "比赛",
+  "tab.history": "沿革",
+  "tab.champions": "英雄",
+  "tab.career": "职业生涯",
+  "tab.teams": "战队"
  },
  "zh-TW": {
   "home.title": "RiftWise：英雄聯盟電競即時比分、賽程與職業數據",
@@ -387,7 +437,17 @@
   "sec.msi.name": "MSI",
   "sec.msi.desc": "冠軍、紀錄與賽區數據",
   "sec.first-stand.name": "First Stand",
-  "sec.first-stand.desc": "冠軍、紀錄與賽區數據"
+  "sec.first-stand.desc": "冠軍、紀錄與賽區數據",
+  "sec.teams.name": "全部隊伍",
+  "sec.teams.desc": "2011 年以來的所有隊伍，依賽區",
+  "sec.players.name": "全部選手",
+  "sec.players.desc": "所有職業選手，依位置和隊伍",
+  "tab.stats": "數據",
+  "tab.matches": "比賽",
+  "tab.history": "沿革",
+  "tab.champions": "英雄",
+  "tab.career": "職業生涯",
+  "tab.teams": "隊伍"
  },
  "ja": {
   "home.title": "RiftWise：LoL eスポーツのライブスコア、日程、プロのスタッツ",
@@ -452,7 +512,17 @@
   "sec.msi.name": "MSI",
   "sec.msi.desc": "優勝チーム、記録、地域別スタッツ",
   "sec.first-stand.name": "First Stand",
-  "sec.first-stand.desc": "優勝チーム、記録、地域別スタッツ"
+  "sec.first-stand.desc": "優勝チーム、記録、地域別スタッツ",
+  "sec.teams.name": "全チーム",
+  "sec.teams.desc": "2011年以降の全チームを地域別に",
+  "sec.players.name": "全選手",
+  "sec.players.desc": "すべてのプロ選手をロール・チーム別に",
+  "tab.stats": "データ",
+  "tab.matches": "試合",
+  "tab.history": "歴史",
+  "tab.champions": "チャンピオン",
+  "tab.career": "経歴",
+  "tab.teams": "チーム"
  },
  "fr": {
   "home.title": "RiftWise : scores en direct, calendrier et stats LoL Esports",
@@ -517,7 +587,17 @@
   "sec.msi.name": "MSI",
   "sec.msi.desc": "Vainqueurs, records et stats par région",
   "sec.first-stand.name": "First Stand",
-  "sec.first-stand.desc": "Vainqueurs, records et stats par région"
+  "sec.first-stand.desc": "Vainqueurs, records et stats par région",
+  "sec.teams.name": "Toutes les équipes",
+  "sec.teams.desc": "Chaque équipe depuis 2011, par région",
+  "sec.players.name": "Tous les joueurs",
+  "sec.players.desc": "Chaque joueur pro, par rôle et équipe",
+  "tab.stats": "Stats",
+  "tab.matches": "Matchs",
+  "tab.history": "Historique",
+  "tab.champions": "Champions",
+  "tab.career": "Carrière",
+  "tab.teams": "Équipes"
  },
  "de": {
   "home.title": "RiftWise: LoL-Esports-Liveergebnisse, Spielplan und Profi-Stats",
@@ -582,7 +662,17 @@
   "sec.msi.name": "MSI",
   "sec.msi.desc": "Sieger, Rekorde und Regionen-Statistiken",
   "sec.first-stand.name": "First Stand",
-  "sec.first-stand.desc": "Sieger, Rekorde und Regionen-Statistiken"
+  "sec.first-stand.desc": "Sieger, Rekorde und Regionen-Statistiken",
+  "sec.teams.name": "Alle Teams",
+  "sec.teams.desc": "Jedes Team seit 2011, nach Region",
+  "sec.players.name": "Alle Spieler",
+  "sec.players.desc": "Jeder Profi, nach Rolle und Team",
+  "tab.stats": "Statistiken",
+  "tab.matches": "Matches",
+  "tab.history": "Geschichte",
+  "tab.champions": "Champions",
+  "tab.career": "Karriere",
+  "tab.teams": "Teams"
  },
  "tr": {
   "home.title": "RiftWise: LoL Espor canlı skorlar, fikstür ve profesyonel istatistikler",
@@ -647,6 +737,16 @@
   "sec.msi.name": "MSI",
   "sec.msi.desc": "Şampiyonlar, rekorlar ve bölge istatistikleri",
   "sec.first-stand.name": "First Stand",
-  "sec.first-stand.desc": "Şampiyonlar, rekorlar ve bölge istatistikleri"
+  "sec.first-stand.desc": "Şampiyonlar, rekorlar ve bölge istatistikleri",
+  "sec.teams.name": "Tüm takımlar",
+  "sec.teams.desc": "2011'den beri her takım, bölgeye göre",
+  "sec.players.name": "Tüm oyuncular",
+  "sec.players.desc": "Her profesyonel oyuncu, role ve takıma göre",
+  "tab.stats": "İstatistik",
+  "tab.matches": "Maçlar",
+  "tab.history": "Geçmiş",
+  "tab.champions": "Şampiyonlar",
+  "tab.career": "Kariyer",
+  "tab.teams": "Takımlar"
  }
 }

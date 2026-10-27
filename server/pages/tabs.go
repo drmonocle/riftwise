@@ -244,7 +244,28 @@ func entityCrumbs(kind, title, canonical string) json.RawMessage {
 	case "champ":
 		items = append(items, [2]string{"Champions", publicURL + "stats/champions"})
 	case "team":
-		items = append(items, [2]string{"Power Rankings", publicURL + "stats/rankings"})
+		items = append(items, [2]string{"Teams", publicURL + "stats/teams"})
+	case "player":
+		items = append(items, [2]string{"Players", publicURL + "stats/players"})
 	}
 	return breadcrumbs(append(items, [2]string{name, canonical}))
+}
+
+// tabNames: a page tab's name in the crumbs (/team/t1/matches -> "Matches")
+var tabNames = map[string]string{"stats": "Stats", "matches": "Matches", "history": "History", "champions": "Champions", "career": "Career", "teams": "Teams"}
+
+// entityTabCrumbs: one tab of a team's, player's or tournament's page, under the page itself.
+func entityTabCrumbs(kind, name, page, tab, canonical string) json.RawMessage {
+	var crumbs struct {
+		Items []struct {
+			Name string `json:"name"`
+			Item string `json:"item"`
+		} `json:"itemListElement"`
+	}
+	json.Unmarshal(entityCrumbs(kind, name+brand, page), &crumbs)
+	items := make([][2]string, 0, len(crumbs.Items)+1)
+	for _, it := range crumbs.Items {
+		items = append(items, [2]string{it.Name, it.Item})
+	}
+	return breadcrumbs(append(items, [2]string{tabNames[tab], canonical}))
 }

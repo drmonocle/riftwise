@@ -109,6 +109,23 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
           </HubLink>
         </p>
       </Section>
+      <Section title={tl("Player rating")} id="rating">
+        <p className="text-rw-sub mb-2">
+          {tl("Every player in every game with a full scoreboard gets a rating from 0 to 10 for how well they played; 6 is an average game. It compares six numbers with players of the same role in the same year, so a support isn't judged on damage and old, slower games aren't held against new ones:")}
+        </p>
+        <dl>
+          <Term t="KP">{tl("Kill participation: 25% of the rating's form part.")}</Term>
+          <Term t={tl("DMG%")}>{tl("Share of the team's damage to champions: 25%.")}</Term>
+          <Term t={tl("Gold%")}>{tl("Share of the team's gold: 15%.")}</Term>
+          <Term t={tl("CS/m")}>{tl("Creep score per minute: 10%.")}</Term>
+          <Term t={tl("VS%")}>{tl("Share of the team's vision score: 5%.")}</Term>
+          <Term t={tl("Deaths")}>{tl("Deaths per minute, fewer is better: 20%.")}</Term>
+        </dl>
+        <p className="text-rw-sub mt-2">
+          {tl("Each number is measured in spreads from the role's average, and the form part is scaled so about two in three games land within a point of 6. A win adds half a point, a loss takes half a point off. The rating uses only the scoreboard, so it can't see vision denial, macro calls or the shotcalling behind a fight.")}{" "}
+          {tl("The game's top rated player is starred on its match page; the best averages are the Players of the week and of the month.")}
+        </p>
+      </Section>
       <Section title={tl("Not shown yet")}>
         <ul className="list-disc pl-4 space-y-1 text-rw-sub">
           <li>{tl("Solo kills: not in our data yet.")}</li>

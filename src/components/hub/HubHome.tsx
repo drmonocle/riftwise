@@ -2,10 +2,13 @@
 import React, { useMemo, useState } from "react";
 import { HomeStorylines } from "./Storylines";
 import { AtStakeToday } from "./AtStake";
-import type { Match } from "../../types";
-import { Trophy, Swords, Medal, GitCompare, CalendarRange, Crown, Layers, History, ClipboardList, TrendingUp, Search, LayoutGrid, Flame, Crosshair, Globe, ListOrdered, Rows3 } from "lucide-react";
-import { tl, tn, tk, regionName, fmtDec } from "../../i18n";
-import { loadEventsOfYear, loadHubHome, loadHubMeta, loadPatches } from "../../hub/data";
+import type { AppSettings, Match } from "../../types";
+import { CalendarRange, Crown, ClipboardList, TrendingUp, Flame, Rows3, Users, Globe, Trophy, Flag } from "lucide-react";
+import { tl, tn, tk, regionName, roleName, fmtDec } from "../../i18n";
+import { loadEventsOfYear, loadHubHome, loadHubMeta, loadLeagues, loadPatches } from "../../hub/data";
+import { UpNextTable } from "../UpNextTable";
+import { formatMatchTime } from "../../matchTime";
+import { RatingBadge } from "./PlayerRating";
 import { useRecentPages } from "../../hub/recent";
 import { champName } from "../../champions";
 import { ChampIcon } from "./ui";
@@ -13,32 +16,22 @@ import type { EventListItem, HubMeta } from "../../hub/types";
 import { HubRoute } from "../../hub/route";
 import { HubSearch } from "./HubSearch";
 import { IS_WEB } from "../../platform";
-import { card, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerLink, RevealButton, StandingsFirst, Section, td, th, TeamLink, useHidden, useLoad, usePageTitle } from "./ui";
+import { card, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerLink, RevealButton, StandingsFirst, Section, sectionTitle, td, th, TeamLink, useHidden, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
 import { SortTable, type Column } from "./SortTable";
 import type { HubHome as HubHomeData, PatchMove, PatchRow } from "../../hub/types";
 
-const QUICK: { to: HubRoute; label: string; sub: string; icon: React.ReactNode }[] = [
+/** Where most visits go next: six pages to start from (every page is one click away in the menu's All pages). */
+const START: { to: HubRoute; label: string; sub: string; icon: React.ReactNode }[] = [
   { to: { kind: "weekly" }, label: tk("This week"), sub: tk("Upsets, ranking movers, records, best games"), icon: <CalendarRange className="w-4 h-4" /> },
   { to: { kind: "rankings" }, label: tk("Power rankings"), sub: tk("Every team, every region, one scale"), icon: <TrendingUp className="w-4 h-4" /> },
-  { to: { kind: "best" }, label: tk("Best games"), sub: tk("Highest-rated games and series"), icon: <Flame className="w-4 h-4" /> },
-  { to: { kind: "tournaments" }, label: tk("Tournaments"), sub: tk("Every event since 2011"), icon: <CalendarRange className="w-4 h-4" /> },
-  { to: { kind: "leagues" }, label: tk("Leagues"), sub: tk("Every season and its champion"), icon: <Layers className="w-4 h-4" /> },
-  { to: { kind: "champions" }, label: tk("Champions"), sub: tk("Pick, ban and win rates"), icon: <Swords className="w-4 h-4" /> },
-  { to: { kind: "patches" }, label: tk("Patches"), sub: tk("The pro meta on every patch"), icon: <History className="w-4 h-4" /> },
-  { to: { kind: "records" }, label: tk("Records"), sub: tk("Fastest, longest, best games"), icon: <Medal className="w-4 h-4" /> },
-  { to: { kind: "titles" }, label: tk("Titles"), sub: tk("Every champion, every league"), icon: <Trophy className="w-4 h-4" /> },
-  { to: { kind: "compare" }, label: tk("Compare"), sub: tk("Any two teams or players"), icon: <GitCompare className="w-4 h-4" /> },
   { to: { kind: "prep" }, label: tk("Match prep"), sub: tk("Everything before a broadcast"), icon: <ClipboardList className="w-4 h-4" /> },
-  { to: { kind: "finder" }, label: tk("Game finder"), sub: tk("Any game by team, champion, player"), icon: <Search className="w-4 h-4" /> },
-  { to: { kind: "draft" }, label: tk("Draft board"), sub: tk("Plan a draft with both teams' pools"), icon: <LayoutGrid className="w-4 h-4" /> },
-  { to: { kind: "leaders" }, label: tk("Leaderboards"), sub: tk("Every player on every stat, by league and role"), icon: <ListOrdered className="w-4 h-4" /> },
+  { to: { kind: "best" }, label: tk("Best games"), sub: tk("Highest-rated games and series"), icon: <Flame className="w-4 h-4" /> },
   { to: { kind: "tiers" }, label: tk("Pro tier list"), sub: tk("What pros play on each patch, by role"), icon: <Rows3 className="w-4 h-4" /> },
-  { to: { kind: "counters" }, label: tk("Counter-picks"), sub: tk("Every pro lane matchup, by champion"), icon: <Crosshair className="w-4 h-4" /> },
-  { to: { kind: "worlds" }, label: tk("Worlds, MSI & First Stand"), sub: tk("Winners, records and region stats"), icon: <Globe className="w-4 h-4" /> },
+  { to: { kind: "players" }, label: tk("Every player"), sub: tk("Every pro player, by role and team"), icon: <Users className="w-4 h-4" /> },
 ];
 
-export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
+export const HubHome: React.FC<{ schedule?: Match[]; settings?: AppSettings; onOpenUrl?: (url: string) => void }> = ({ schedule, settings, onOpenUrl }) => {
   usePageTitle(tl("Pro Stats"));
   const meta = useLoad(loadHubMeta, []);
   const home = useLoad(loadHubHome, []);
@@ -75,9 +68,12 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
         )}
       </div>
 
-      {/* the shortcuts: one flush grid, hairlines between the tiles (the gap shows the border colour) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-rw-border border border-rw-border rounded-lg overflow-hidden">
-        {QUICK.map((q) => (
+      {/* pick a league: its seasons, standings and stats (fans think "LCK stats", not "the tournaments page") */}
+      <LeagueChips />
+
+      {/* where to start: one flush grid, hairlines between the tiles (the gap shows the border colour) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-px bg-rw-border border border-rw-border rounded-lg overflow-hidden">
+        {START.map((q) => (
           <HubLink key={q.label} to={q.to} className="bg-rw-surface hover:bg-rw-raised p-3 transition-colors block min-w-0">
             <div className="flex items-center gap-1.5 text-rw-text font-semibold text-xs">
               <span className="text-rw-accent shrink-0">{q.icon}</span>
@@ -89,7 +85,9 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
       </div>
 
       <RecentPages />
+      {schedule && settings && onOpenUrl && <NextMatches schedule={schedule} settings={settings} onOpenUrl={onOpenUrl} />}
       {schedule && schedule.length > 0 && <AtStakeToday schedule={schedule} />}
+      {home.data?.potm && home.data.potm.length > 0 && <PlayersOfTheMonth rows={home.data.potm} from={home.data.potmFrom} />}
       <HomeStorylines />
       <PatchChanges />
 
@@ -149,6 +147,111 @@ export const HubHome: React.FC<{ schedule?: Match[] }> = ({ schedule }) => {
 
 /** m.ss from minutes (32.2 -> 32:12) */
 const mmss = (min: number) => `${Math.floor(min)}:${String(Math.round((min % 1) * 60)).padStart(2, "0")}`;
+
+const INTL_CHIPS: { to: HubRoute; label: string; icon: React.ReactNode }[] = [
+  { to: { kind: "worlds" }, label: tk("Worlds"), icon: <Globe className="w-3 h-3" /> },
+  { to: { kind: "msi" }, label: tk("MSI"), icon: <Trophy className="w-3 h-3" /> },
+  { to: { kind: "first-stand" }, label: tk("First Stand"), icon: <Flag className="w-3 h-3" /> },
+];
+
+/**
+ * The main leagues playing this year (most games first), each to its league page, and the three international
+ * events. From hub/leagues.json: a top league (pr) with a short name (LCK, not KeSPA Cup) that played this year.
+ */
+const LeagueChips: React.FC = () => {
+  const state = useLoad(loadLeagues, []);
+  const year = new Date().getFullYear();
+  const main = (y: number) =>
+    (state.data || []).filter((l) => l.pr && l.s && l.r !== "International" && (l.to || "") >= String(y)).sort((a, b) => b.g - a.g);
+  // early in a year, before the leagues start: last year's
+  const leagues = (main(year).length >= 4 ? main(year) : main(year - 1)).slice(0, 8);
+  if (!leagues.length) return null;
+  const chip = "inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rw-border text-xs font-semibold text-rw-text hover:border-rw-accent/60 hover:text-rw-accent";
+  return (
+    <nav className="flex flex-wrap items-center gap-1.5" aria-label={tl("Leagues")}>
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted mr-1">{tl("Leagues")}</span>
+      {leagues.map((l) => (
+        <HubLink key={l.u} to={{ kind: "league", slug: l.u }} className={chip} title={l.l}>
+          {l.s}
+        </HubLink>
+      ))}
+      <span className="w-px h-4 bg-rw-border mx-1" aria-hidden="true" />
+      {INTL_CHIPS.map((c) => (
+        <HubLink key={c.label} to={c.to} className={chip}>
+          <span className="text-rw-accent">{c.icon}</span>
+          {tl(c.label)}
+        </HubLink>
+      ))}
+      <HubLink to={{ kind: "leagues" }} className="text-[11px] text-rw-teal hover:underline ml-1">
+        {tl("Every league")}
+      </HubLink>
+    </nav>
+  );
+};
+
+/** The next matches on the schedule, with each side's chance, form and the Match prep button (the Live tab's table). */
+const NextMatches: React.FC<{ schedule: Match[]; settings: AppSettings; onOpenUrl: (url: string) => void }> = ({ schedule, settings, onOpenUrl }) => {
+  const next = useMemo(() => {
+    const now = Date.now();
+    return schedule
+      .filter(
+        (m) =>
+          m.state !== "completed" &&
+          Date.parse(m.startTimeUtc) > now - 3 * 60 * 60 * 1000 &&
+          m.team1Code &&
+          m.team2Code &&
+          !/^tbd$/i.test(m.team1Code) &&
+          !/^tbd$/i.test(m.team2Code),
+      )
+      .sort((a, b) => a.startTimeUtc.localeCompare(b.startTimeUtc))
+      .slice(0, 5);
+  }, [schedule]);
+  if (!next.length) return null;
+  return (
+    <section className="space-y-2">
+      <h2 className={sectionTitle}>{tl("Up Next")}</h2>
+      <UpNextTable matches={next} schedule={schedule} settings={settings} onOpenUrl={onOpenUrl} timeOf={formatMatchTime} />
+    </section>
+  );
+};
+
+/** The best-rated players of the last 30 days in the top leagues and international events (hub.py: home.json potm). */
+const PlayersOfTheMonth: React.FC<{ rows: NonNullable<HubHomeData["potm"]>; from?: string }> = ({ rows, from }) => {
+  const [hidden, reveal] = useHidden("potm", new Date().toISOString().slice(0, 10));
+  return (
+    <Section
+      title={tl("Players of the month")}
+      right={hidden ? <RevealButton onReveal={reveal} small /> : <HubLink to={{ kind: "about" }} className="text-[11px] text-rw-teal hover:underline">{tl("How the rating works")}</HubLink>}
+    >
+      {hidden ? (
+        <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
+      ) : (
+        <>
+          <ol className="grid gap-x-6 gap-y-1.5 text-xs sm:grid-cols-2 xl:grid-cols-3">
+            {rows.map((p, i) => (
+              <li key={p.u || p.n} className="flex items-center justify-between gap-2 min-w-0">
+                <span className="flex items-center gap-1.5 min-w-0">
+                  <span className="w-4 text-right text-rw-muted tabular-nums shrink-0">{i + 1}.</span>
+                  <span className="truncate min-w-0">
+                    <PlayerLink name={p.n} u={p.u} />
+                    <span className="text-rw-muted"> · {[p.r ? roleName(p.r) : "", p.t].filter(Boolean).join(" · ")}</span>
+                  </span>
+                </span>
+                <span className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] text-rw-muted tabular-nums">{tn("{n} game", "{n} games", p.g)}</span>
+                  <RatingBadge v={p.rt} />
+                </span>
+              </li>
+            ))}
+          </ol>
+          <p className="text-[10px] text-rw-muted">
+            {tl("Average RiftWise rating since {date} in the top leagues and international events (at least {n} games).", { date: fmtDate(from), n: 6 })}
+          </p>
+        </>
+      )}
+    </Section>
+  );
+};
 
 /** The year's busiest players: games, wins, win rate, KDA and team, sortable. */
 const BusiestTable: React.FC<{ rows: HubHomeData["busiest"] }> = ({ rows }) => {

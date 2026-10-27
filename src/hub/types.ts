@@ -57,6 +57,23 @@ export interface HubHome {
   /** the year's busiest players; t / tu: their current club (builds from 2026-10-25 on) */
   busiest: { n: string; u: string | null; g: number; w: number; kda: number; t?: string; tu?: string | null }[];
   year: string;
+  /** the best average player ratings since potmFrom (the last 30 days), top leagues and internationals (0.7.54 on) */
+  potm?: RatedPlayer[];
+  potmFrom?: string;
+}
+
+/** A player's average rating over some games, with their best one (hub.py best_rated) */
+export interface RatedPlayer {
+  n: string;
+  u: string | null;
+  /** current club */
+  t?: string;
+  tu?: string | null;
+  /** role */
+  r?: string;
+  g: number;
+  rt: number;
+  best?: { g: string; gn: number; c: string; rt: number; opp: string };
 }
 
 export interface SeriesRow {
@@ -627,6 +644,11 @@ export interface HubWeekly {
   /** all-time #1 rows set this week (s: game | player | team, k: the record's key in records.json) */
   records: { s: string; k: string; r: Record<string, string | number> }[];
   best: { r: number; g: string; gn: number; date: string; t: string; e: string; a: string; b: string; w: number; min: number | null }[];
+  /** (0.7.54 on) the best average player ratings of the week (two games or more) */
+  players?: RatedPlayer[];
+  /** (0.7.54 on) the most present champions: [champion, picks, bans, wins], in champGames games */
+  champs?: [string, number, number, number][];
+  champGames?: number;
 }
 
 export interface HubRecordsYear {

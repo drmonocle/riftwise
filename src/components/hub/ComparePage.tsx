@@ -32,6 +32,9 @@ import { BroadcastCardButton, draftCard, playerCardData, teamCardData } from "./
 import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, td, TeamLogo, useHidden, usePageTitle } from "./ui";
 import { useTeamPercentiles } from "./Ranks";
 import { STable } from "../STable";
+import { Radar } from "./Radar";
+import { useRatingFile } from "./PlayerRating";
+import { playerRowLine, profile } from "../../hub/playerRating";
 
 type Mode = "team" | "player";
 
@@ -267,6 +270,40 @@ const CompareRows: React.FC<{ rows: RowSpec[] }> = ({ rows }) => {
         </tbody>
       </table>
     </>
+  );
+};
+
+/** The two teams on their league-season percentiles (the rows that have both), as one picture. */
+const TeamRadar: React.FC<{ rows: RowSpec[]; a: string; b: string }> = ({ rows, a, b }) => {
+  const both = rows.filter((r) => r.pa != null && r.pb != null).slice(0, 8);
+  if (both.length < 3) return null;
+  return (
+    <Radar
+      axes={both.map((r) => r.label)}
+      sides={[
+        { name: a, values: both.map((r) => r.pa as number) },
+        { name: b, values: both.map((r) => r.pb as number) },
+      ]}
+      note={tl("Percentile among their league's teams that season: the dashed ring is the middle, the edge the best.")}
+    />
+  );
+};
+
+/** The two players on the parts of the RiftWise rating, each against their role's average game. */
+const PlayerRadar: React.FC<{ ra: PlayerGameRow[]; rb: PlayerGameRow[]; a: string; b: string }> = ({ ra, rb, a, b }) => {
+  const f = useRatingFile();
+  const pa = useMemo(() => (f ? profile(ra.map(playerRowLine), f) : null), [f, ra]);
+  const pb = useMemo(() => (f ? profile(rb.map(playerRowLine), f) : null), [f, rb]);
+  if (!pa || !pb) return null;
+  return (
+    <Radar
+      axes={[tl("Kill participation"), tl("Damage share"), tl("Gold share"), tl("CS / min"), tl("Vision share"), tl("Staying alive")]}
+      sides={[
+        { name: a, values: pa },
+        { name: b, values: pb },
+      ]}
+      note={tl("The parts of the RiftWise rating, each against the same role's average game (the dashed ring); the edge is the best.")}
+    />
   );
 };
 
@@ -526,6 +563,7 @@ export const TeamRows: React.FC<{
           </p>
         )}
         <CompareRows rows={rows} />
+        <TeamRadar rows={rows} a={x.name} b={y.name} />
         {(A.tl || B.tl) && <OeCredit />}
       </Section>
       <div className="grid sm:grid-cols-2 gap-3">
@@ -648,6 +686,7 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
             )}
           </tbody>
         </table>
+        <PlayerRadar ra={ra} rb={rb} a={x.name} b={y.name} />
         {(A.tl || B.tl) && <OeCredit />}
       </Section>
       <div className="grid sm:grid-cols-2 gap-3">

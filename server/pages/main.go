@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "0.7.53" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "0.7.54" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -84,7 +84,42 @@ var sections = map[string][2]string{
 	"worlds":      {"LoL Worlds hub: facts, Swiss stage and bracket picker", "The League of Legends World Championship on one page: the standout stats from every game so far, a Swiss stage and knockout picker with each team's win chances, and the chances of every team to win Worlds."},
 	"msi":         {"LoL MSI hub: every Mid-Season Invitational in numbers", "The League of Legends Mid-Season Invitational on one page: the standout stats from every game, for one year or every MSI together."},
 	"first-stand": {"LoL First Stand hub: facts from every game", "League of Legends First Stand on one page: the standout stats from every game, for one year or every First Stand together."},
-	"about":       {"How RiftWise counts pro LoL stats", "Where RiftWise's pro League of Legends numbers come from and what every stat means: KDA, KP, DMG%, GD per minute, presence, blind picks and more."},
+	"about":       {"How RiftWise counts pro LoL stats", "Where RiftWise's pro League of Legends numbers come from and what every stat means: KDA, KP, DMG%, GD per minute, presence, blind picks, the player rating and more."},
+	"teams":       {"Every pro LoL team since 2011", "Every professional League of Legends team since 2011 in one list: filter by region and by the last year played, sorted by games."},
+	"players":     {"Every pro LoL player since 2011", "Every professional League of Legends player since 2011 in one list: filter by role and by the last year played, sorted by games."},
+}
+
+// entityTabs: the other tabs of a team's, player's and tournament's page (/team/t1/matches), the app's ENTITY_TABS
+// (src/hub/route.ts): the tab's English title and description, {name} being the team's, player's or tournament's.
+// They are served like the page itself (indexed when it is), with their own title and the page's preview picture.
+var entityTabs = map[string]map[string][2]string{
+	"team": {
+		"stats":     {"{name} stats: early game, playstyle and draft", "{name}'s numbers for any period: early-game leads, objectives, playstyle, draft tendencies and league ranks."},
+		"matches":   {"{name} matches: every series and head-to-head", "Every pro series {name} has played, and its record against every opponent."},
+		"history":   {"{name} history: tournaments, placements and rosters", "Every tournament {name} has played with its placement and prize, and its roster every year."},
+		"champions": {"{name} champions: most picked and banned", "The champions {name} picks most, bans most and sees banned against it, over every pro game."},
+	},
+	"player": {
+		"stats":     {"{name} stats by season: KDA, CS, damage and laning", "{name}'s numbers for any period: KDA, CS, damage, gold and vision shares, laning leads at 15 minutes and league ranks."},
+		"champions": {"{name} champion pool: every champion played", "Every champion {name} has played in pro games, with games, win rate and KDA."},
+		"matches":   {"{name} match history: every pro game", "Every pro game {name} has played, with the champion, KDA and result."},
+		"career":    {"{name} career: teams, tournaments and titles", "{name}'s career: every team, every tournament with its placement, and every year."},
+	},
+	"tournament": {
+		"matches":   {"{name}: every series and result", "Every series of {name}, stage by stage."},
+		"stats":     {"{name} stats: players, teams and records", "{name} in numbers: player and team stats, leaders and the standout stats from every game."},
+		"champions": {"{name} champions: picks, bans and win rates", "Every champion picked or banned at {name}, with its presence and win rate."},
+		"teams":      {"{name} teams and rosters", "Every team at {name}, with its record and roster."},
+	},
+}
+
+// entityTab: the tab an address asks for (/team/t1/matches -> its texts), ok false when it isn't one.
+func entityTab(parts []string) ([2]string, bool) {
+	if len(parts) != 3 {
+		return [2]string{}, false
+	}
+	t, ok := entityTabs[parts[0]][strings.ToLower(parts[2])]
+	return t, ok
 }
 
 type entry struct {
@@ -546,8 +581,9 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 			}
 			extra = &intlPage{LD: []json.RawMessage{breadcrumbs(crumbs)}}
 		}
-	case (len(parts) == 2 || (len(parts) == 3 && parts[0] == "league" && isYear(parts[2]))) && kinds[parts[0]] != "":
+	case (len(parts) == 2 || (len(parts) == 3 && ((parts[0] == "league" && isYear(parts[2])) || isEntityTab(parts)))) && kinds[parts[0]] != "":
 		kind, slug := kinds[parts[0]], strings.ToLower(parts[1])
+		tab, tabbed := entityTab(parts)
 		s.mu.RLock()
 		e, ok := s.pages[kind][slug]
 		to := s.alias[kind][slug]
@@ -572,7 +608,15 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 			about = aboutOf(kind, title)
 			extra = &intlPage{LD: []json.RawMessage{entityCrumbs(kind, title, publicURL+rest)}}
 		}
-		if len(parts) == 3 { // one season of a league: /league/lck/2025
+		if tabbed { // one tab of the page: /team/t1/matches
+			name := englishName(title)
+			if lang == "" {
+				title = strings.ReplaceAll(tab[0], "{name}", name) + brand
+				desc = strings.ReplaceAll(tab[1], "{name}", name)
+			} // (another language: localize() puts the tab's name after the page's)
+			about = aboutOf(kind, name+brand)
+			extra = &intlPage{LD: []json.RawMessage{entityTabCrumbs(kind, name, publicURL+strings.Join(parts[:2], "/"), strings.ToLower(parts[2]), publicURL+rest)}}
+		} else if len(parts) == 3 { // one season of a league: /league/lck/2025
 			name := strings.TrimSuffix(title, " | RiftWise")
 			if i := strings.Index(name, " – "); i > 0 {
 				name = name[:i] // "LCK – every season, champions and results" -> "LCK"
@@ -813,6 +857,11 @@ func isYear(s string) bool {
 }
 
 // "/2025" for /league/<slug>/2025, so a renamed league's season address keeps its season
+func isEntityTab(parts []string) bool {
+	_, ok := entityTab(parts)
+	return ok
+}
+
 func yearSuffix(parts []string) string {
 	if len(parts) == 3 {
 		return "/" + parts[2]

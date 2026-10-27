@@ -115,6 +115,50 @@ func TestTabPages(t *testing.T) {
 	}
 }
 
+// A team's, player's and tournament's page tabs (/team/t1/matches) are pages of their own: their own title and
+// description, the page's picture, crumbs under the page; an unknown tab is a 404, an old team name redirects.
+func TestEntityTabs(t *testing.T) {
+	s := testSite(t)
+	w := get(s, "/riftwise/team/t1/matches")
+	b := w.Body.String()
+	for _, want := range []string{
+		"<title>T1 matches: every series and head-to-head | RiftWise</title>",
+		"Every pro series T1 has played",
+		`<link rel="canonical" href="https://riftwise.gg/team/t1/matches" />`,
+		`og/team/t1.png`,
+		`"name":"Matches"`,
+		`"item":"https://riftwise.gg/team/t1"`,
+		`"name":"Teams"`,
+	} {
+		if !strings.Contains(b, want) {
+			t.Errorf("/team/t1/matches %d: no %q", w.Code, want)
+		}
+	}
+	if b := get(s, "/riftwise/player/faker/champions").Body.String(); !strings.Contains(b, "<title>Faker champion pool: every champion played") {
+		t.Errorf("player tab: %s", b)
+	}
+	if b := get(s, "/riftwise/tournament/worlds-2025/stats").Body.String(); !strings.Contains(b, "Worlds 2025 stats: players, teams and records") {
+		t.Errorf("tournament tab: %s", b)
+	}
+	if b := get(s, "/riftwise/ko/team/t1/history").Body.String(); !strings.Contains(b, `<html lang="ko">`) || !strings.Contains(b, "T1 · ") {
+		t.Errorf("Korean tab: %s", b)
+	}
+	if b := get(s, "/riftwise/team/small-team/stats").Body.String(); !strings.Contains(b, `content="noindex"`) {
+		t.Error("a small team's tab is indexed")
+	}
+	for _, p := range []string{"/riftwise/team/t1/career", "/riftwise/player/faker/history", "/riftwise/champion/ahri/stats", "/riftwise/team/nobody/stats"} {
+		if w := get(s, p); w.Code != http.StatusNotFound {
+			t.Errorf("%s: %d", p, w.Code)
+		}
+	}
+	if w := get(s, "/riftwise/team/sk-telecom-t1/stats"); w.Code != http.StatusMovedPermanently || !strings.HasSuffix(w.Header().Get("Location"), "/team/t1/stats") {
+		t.Errorf("old name: %d %s", w.Code, w.Header().Get("Location"))
+	}
+	if b := get(s, "/riftwise/stats/players").Body.String(); !strings.Contains(b, "<title>Every pro LoL player since 2011") {
+		t.Errorf("players section: %s", b)
+	}
+}
+
 // Stats pages say where they sit (schema.org BreadcrumbList).
 func TestBreadcrumbs(t *testing.T) {
 	s := testSite(t)

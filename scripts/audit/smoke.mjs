@@ -16,6 +16,9 @@ const PAGES = [
   "/", "/schedule", "/results", "/stats", "/stats/rankings", "/stats/records", "/stats/titles", "/stats/leagues",
   "/stats/champions", "/stats/tournaments", "/stats/best", "/stats/data", "/stats/worlds", "/stats/worlds/2024", "/stats/weekly", "/watchlist",
   "/team/t1", "/player/faker", "/tournament/worlds-2024-main-event", "/league/lol-champions-korea", "/champion/ahri",
+  // the lists of every team and player, and a tab of each tabbed page
+  "/stats/teams", "/stats/players?role=Mid", "/team/t1/matches", "/team/t1/stats", "/player/faker/champions", "/player/faker/career",
+  "/tournament/worlds-2024-main-event/stats", "/stats/compare?teams=t1,geng",
 ];
 try {
   const { version } = await (await fetch(`${base}/stats/latest.json`)).json();

@@ -10,7 +10,7 @@ const root = new URL("..", import.meta.url);
 const read = (p) => JSON.parse(fs.readFileSync(new URL(p, root), "utf8"));
 const templates = read("scripts/seo_templates.json");
 
-// section -> [name key, description key] (the Stats home tiles)
+// section -> [name key, description key] (the stats menu's pages, src/components/hub/menu.tsx)
 const SECTIONS = {
   "": ["Pro Stats", "Every pro League of Legends game, in one place"],
   tournaments: ["Tournaments", "Every event since 2011"],
@@ -32,7 +32,12 @@ const SECTIONS = {
   worlds: ["event::Worlds", "Winners, records and region stats"],
   msi: ["event::MSI", "Winners, records and region stats"],
   "first-stand": ["event::First Stand", "Winners, records and region stats"],
+  teams: ["Every team", "Every team since 2011, by region"],
+  players: ["Every player", "Every pro player, by role and team"],
 };
+
+// a team's, player's and tournament's page tabs (/ko/team/t1/matches): the tab's name, as on screen
+const TABS = { stats: "Stats", matches: "Matches", history: "History", champions: "Champions", career: "Career", teams: "Teams" };
 
 const out = {};
 for (const [lang, t] of Object.entries(templates)) {
@@ -43,6 +48,7 @@ for (const [lang, t] of Object.entries(templates)) {
     entry[`sec.${sec}.name`] = dict[nameKey] || dict[plain] || plain;
     if (dict[descKey]) entry[`sec.${sec}.desc`] = dict[descKey];
   }
+  for (const [tab, key] of Object.entries(TABS)) if (dict[key]) entry[`tab.${tab}`] = dict[key];
   out[lang] = entry;
 }
 fs.writeFileSync(new URL("server/pages/seo_i18n.json", root), JSON.stringify(out, null, 1) + "\n");

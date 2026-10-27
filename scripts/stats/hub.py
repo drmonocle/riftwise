@@ -38,6 +38,8 @@ folder, so one latest.json switch publishes both:
                                     control wards, vision score] or null (see timeline.py)
   hub/events/<year>.json            all tournaments of a year
   hub/records.json, hub/titles.json the Stats tab's records and title lists, with links to the hub pages
+  hub/rating.json                   the player rating's weights and role-year averages (player_rating.py): the app
+                                    rates each game's players with it; weekly.json / home.json carry the best averages
   hub/alias.json                    {"team": {old slug: current slug}}: teams that changed name
   hub/seo/<kind>.tsv                slug, title, description, index flag (read by the page service)
   hub/manifest.json                 file -> content hash, so the next build can hard-link unchanged files
@@ -60,6 +62,7 @@ import time
 from collections import Counter, defaultdict
 
 import leagues_info
+import player_rating as prating
 import ratings as team_ratings
 import timeline
 from names import blue_red, champ_name, match_teams
@@ -408,6 +411,14 @@ def build(ctx) -> dict:
     week_series = []  # [date, event, event slug, stage, a, a slug, b, b slug, wins a, wins b, series slug, international]
     week_tagged = {}  # rating-game tag -> series slug
     week_seen = set()
+    # the week's picks and bans in the same games: champion -> [picks, bans, wins]
+    week_champs = {"games": 0, "c": defaultdict(lambda: [0, 0, 0])}
+    # players of the week / month count games in the main leagues and international events: each event's league here,
+    # the main ones (a top league with a short name like LCK, or an international one) once the league list is made
+    event_league = {}
+    top_leagues = set()
+    PROMO_RE = re.compile(r"promotion|qualif|relegation", re.I)
+    MONTH_FROM = (datetime.date.fromisoformat(WEEK_TO) - datetime.timedelta(days=29)).isoformat()
     # champion -> (opponent champion, role) -> [games, wins, gold-lead-at-15 sum, games with it]: the counter-pick finder
     lane_vs = defaultdict(lambda: defaultdict(lambda: [0, 0, 0, 0]))
     gid_slug = {}                      # catalog game id -> its series page
@@ -1054,6 +1065,15 @@ def build(ctx) -> dict:
                     # one ban per champion per game, never a champion that was picked (bans written twice, blind picks)
                     game_bans = {ch for sd in sides.values() for ch in sd.get("bans", [])} - {
                         ch for sd in sides.values() for ch in sd.get("picks", [])} - {r["champion"] for r in rows if r["champion"]}
+                    if rows and g["w"] and WEEK_FROM <= (g["date"] or "")[:10] <= WEEK_TO and (info.get("TournamentLevel") or "") == "Primary":
+                        week_champs["games"] += 1
+                        for r in rows:
+                            if r["champion"]:
+                                wc_ = week_champs["c"][r["champion"]]
+                                wc_[0] += 1
+                                wc_[2] += 1 if r["team"] == g["w"] else 0
+                        for ch in game_bans:
+                            week_champs["c"][ch][1] += 1
                     if rows:
                         n_stats_games += 1
                         plist = []
@@ -1400,6 +1420,10 @@ def build(ctx) -> dict:
                                         played_n, lu_b, per_game, region_b])
                 if played and gslug and WEEK_FROM <= date[:10] <= WEEK_TO and (info.get("TournamentLevel") or "") == "Primary":
                     week_series.append([date[:10], en, eslug, stage_name, an, au, bn, bu, wa, wb, gslug, 1 if INTL_RE.search(en or "") else 0])
+                # (not a promotion series or a qualifier by name: "LCS 2027 Promotion" is filed under the LCS; Leaguepedia's
+                # IsQualifier flag would also drop the Worlds Play-In)
+                if lg_ev and (info.get("TournamentLevel") or "") == "Primary" and not PROMO_RE.search(en or ""):
+                    event_league[eslug] = lg_ev
                 n_series_pages += 1
                 gdate = date[:10]
                 title = f"{an} vs {bn} – {en}{' ' + stage_name if stage_name else ''}"
@@ -2340,7 +2364,19 @@ def build(ctx) -> dict:
             if lst and isinstance(lst[0], dict) and WEEK_FROM <= (lst[0].get("date") or "") <= WEEK_TO:
                 wk_records.append({"s": sec, "k": key, "r": lst[0]})
     wk_best = heapq.nlargest(5, [r for r in best_games if WEEK_FROM <= r[3] <= WEEK_TO and r[0] is not None], key=lambda r: r[0])
-    out.json("weekly.json", {
+
+    # -- player ratings (player_rating.py): the averages the app rates games with, and the week's / month's best ------
+    all_prows = [r for rows_ in p_games.values() for r in rows_]
+    r_base = prating.baselines(all_prows)
+    # the spread of the form part from the last three seasons (today's game, not 2014's)
+    r_scale = prating.scale_for([r for r in all_prows if r[0] >= str(int(today[:4]) - 2)], r_base)
+    out.json("rating.json", prating.file(r_base, r_scale, today))
+    del all_prows
+    checks["hub: rating role-years"] = len(r_base)
+    # the week's most present champions: picked or banned in the most of its games
+    wk_champs = sorted(week_champs["c"].items(), key=lambda x: -(x[1][0] + x[1][1]))[:10]
+    # (written once the players of the week are known: they need the league list, further down)
+    weekly_doc = {
         "from": WEEK_FROM, "to": WEEK_TO, "series": len(wk), "games": sum(r[8] + r[9] for r in wk), "upsetCount": len(upsets),
         "results": [{"date": r[0], "t": r[1], "e": r[2], "st": r[3], "a": r[4], "au": r[5], "b": r[6], "bu": r[7], "sa": r[8], "sb": r[9],
                      "g": r[10], "i": r[11]} for r in wk[:60]],
@@ -2349,7 +2385,10 @@ def build(ctx) -> dict:
         "records": wk_records,
         "best": [{"r": round(r[0], 1), "g": r[1], "gn": r[2], "date": r[3], "t": r[4], "e": r[5], "a": r[7], "b": r[9], "w": r[11], "min": r[12]}
                  for r in wk_best],
-    })
+        # (builds from 0.7.54 on) picks / bans / wins of the most present champions; "players" is added below
+        "champs": [[c, v[0], v[1], v[2]] for c, v in wk_champs],
+        "champGames": week_champs["games"],
+    }
     checks["hub: weekly recap series"] = len(wk)
     for year, ry in (getattr(ctx, "records_by_year", None) or {}).items():
         ry = json.loads(json.dumps(ry, ensure_ascii=False))
@@ -2481,6 +2520,8 @@ def build(ctx) -> dict:
             primary = any(e.get("lv") == "Primary" and int(((e.get("st") or e.get("en") or e["y"])[:4]) or 0) >= cur_year - 1
                           for e in lst if (e.get("st") or e.get("en") or e["y"])[:4].isdigit())
         short_l = leagues_info.SHORT.get(lg)
+        if primary and (short_l or intl):
+            top_leagues.add(lg)  # players of the week / month (LCK, LEC, Worlds...; not a cup or a college league)
         hist_l = league_history(lg)
         out.json(f"league/{lu}.json", {
             "l": lg, "u": lu, "s": short_l, "history": hist_l, "seasons": sorted(season_years.get(lu, ())),
@@ -2674,6 +2715,19 @@ def build(ctx) -> dict:
                and not x.get("q") and not x.get("p") and (x.get("st") or "9") <= soon
                and (x.get("en") or "") >= yesterday]
     current.sort(key=lambda x: (x.get("r") != "International", x.get("st") or ""))
+    # players of the week and of the month: the best average ratings in the main leagues and international events
+    def best_rated(lo, hi, min_g, n):
+        keep = lambda r: lo <= r[0] <= hi and event_league.get(r[11]) in top_leagues  # noqa: E731
+        return [{"n": ctx.pname(pg), "u": player_slug.get(pg), "t": club_of.get(pg, ("", None))[0], "tu": club_of.get(pg, ("", None))[1],
+                 "r": br[10], "g": g_, "rt": avg, "best": {"g": br[1], "gn": br[22], "c": br[2], "rt": bv, "opp": br[8]}}
+                for avg, g_, pg, br, bv in prating.leaders(p_games, keep, r_base, r_scale, min_g, n)]
+
+    weekly_doc["players"] = best_rated(WEEK_FROM, WEEK_TO, 2, 5)
+    out.json("weekly.json", weekly_doc)
+    potm = best_rated(MONTH_FROM, WEEK_TO, 6, 6)
+    checks["hub: players of the week"] = len(weekly_doc["players"])
+    checks["hub: players of the month"] = len(potm)
+    checks["hub: leagues for players of the week"] = len(top_leagues)
     this_year = today[:4]
     busiest = sorted(((x, p) for x, p in ((ctx.players[pg], pg) for pg in ctx.players)
                       if x["years"].get(this_year, {}).get("g", 0) >= 10),
@@ -2685,6 +2739,9 @@ def build(ctx) -> dict:
                      "kda": kda(x["years"][this_year]["k"], x["years"][this_year]["d"], x["years"][this_year]["a"]),
                      "t": club_of.get(pg, ("", None))[0], "tu": club_of.get(pg, ("", None))[1]} for x, pg in busiest],
         "year": this_year,
+        # the best average player ratings of the last 30 days (builds from 0.7.54 on)
+        "potm": potm,
+        "potmFrom": MONTH_FROM,
     }
     out.json("home.json", home)
     # Headline counts: games with a recorded result (not slots with only a VOD link), and tournaments counted once

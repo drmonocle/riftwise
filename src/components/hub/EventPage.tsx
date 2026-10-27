@@ -1,4 +1,8 @@
-/** Tournament page: results and prize money, standings, bracket, every series, leaders and champions. */
+/**
+ * Tournament page, in tabs when it has enough to show (each its own address, /tournament/<slug>/<tab>): Overview
+ * (results and prize money, the bracket, standings), Matches (every series by stage), Stats (leaders, player and team
+ * tables, the stat cards), Champions and Teams (rosters).
+ */
 import React, { useMemo, useState } from "react";
 import { Trophy, MapPin, CalendarDays, Coins, Download, Sparkles } from "lucide-react";
 import { downloadEventCsv, downloadStagesCsv } from "./DownloadsPage";
@@ -37,12 +41,35 @@ import {
 } from "./ui";
 import { ratingTextClass } from "./BestPage";
 import { STable } from "../STable";
+import { JumpBar, PageTabs, type JumpItem, type PageTab } from "./PageTabs";
+import type { HubRoute } from "../../hub/route";
 
-export const EventPage: React.FC<{ slug: string; onOpenUrl?: (url: string) => void }> = ({ slug, onOpenUrl }) => {
+/** The Stats tab's parts, for its "jump to" row (JumpBar leaves out the ones a tournament doesn't have) */
+const STATS_JUMPS: JumpItem[] = [
+  { id: "jump-leaders", label: tk("Player leaders") },
+  { id: "jump-pstats", label: tk("Players") },
+  { id: "jump-tstats", label: tk("Teams") },
+  { id: "facts-event", label: tk("The event") },
+  { id: "facts-teams", label: tk("Team records") },
+  { id: "facts-players", label: tk("Player records") },
+  { id: "facts-champs", label: tk("Champions and the draft") },
+  { id: "jump-regions", label: tk("Region vs region") },
+];
+
+/** The tabs' names (the address says the key: /tournament/worlds-2026-main-event/stats) */
+const TAB_LABEL: Record<string, string> = {
+  "": tk("Overview"),
+  matches: tk("Matches"),
+  stats: tk("Stats"),
+  champions: tk("Champions"),
+  teams: tk("Teams"),
+};
+
+export const EventPage: React.FC<{ slug: string; tab?: string; onOpenUrl?: (url: string) => void }> = ({ slug, tab, onOpenUrl }) => {
   const state = useLoad(() => loadHubEvent(slug), [slug]);
-  usePageTitle(state.data?.n);
+  usePageTitle(state.data ? (tab && TAB_LABEL[tab] ? `${state.data.n} · ${tl(TAB_LABEL[tab])}` : state.data.n) : undefined);
   useDDragon();
-  return <Page state={state}>{(e) => <EventView e={e} onOpenUrl={onOpenUrl} />}</Page>;
+  return <Page state={state}>{(e) => <EventView e={e} tab={tab || ""} onOpenUrl={onOpenUrl} />}</Page>;
 };
 
 /** Worlds, MSI and First Stand have a page of their own (facts, pickers): the league -> its section */
@@ -52,14 +79,29 @@ const INTL_PAGE: Record<string, "worlds" | "msi" | "first-stand"> = {
   "first-stand": "first-stand",
 };
 
-const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = ({ e, onOpenUrl }) => {
+const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) => void }> = ({ e, tab: asked, onOpenUrl }) => {
   const [resultsHidden, revealResults] = useHidden(`event:${e.u}`, e.end);
   const stages = e.stages || [];
   const bracket = stages.filter((s) => s.kind === "bracket");
   const lists = stages.filter((s) => s.kind === "list");
+  // the tabs this tournament has something for; one with two parts or fewer stays one page
+  const tabs: PageTab[] = [
+    { key: "", label: TAB_LABEL[""] },
+    ...(lists.length ? [{ key: "matches", label: TAB_LABEL.matches, count: e.series }] : []),
+    ...((e.leaders && Object.keys(e.leaders).length) || e.players?.length || e.teamStats?.length || e.ln || e.regions?.length
+      ? [{ key: "stats", label: TAB_LABEL.stats }]
+      : []),
+    ...(e.champs?.length ? [{ key: "champions", label: TAB_LABEL.champions }] : []),
+    ...(e.teams?.length || e.rosters?.length ? [{ key: "teams", label: TAB_LABEL.teams, count: e.teams?.length }] : []),
+  ];
+  const tabbed = tabs.length >= 3;
+  const tab = tabbed && tabs.some((t) => t.key === asked) ? asked : "";
+  /** is this part on the open tab (everything is, on a one-page tournament) */
+  const on = (key: string) => !tabbed || tab === key;
+  const to = (key: string): HubRoute => ({ kind: "event", slug: e.u, ...(key ? { tab: key } : {}) });
   return (
-    <div className="rw-page">
-      <div className={card}>
+    <div>
+      <div className={`${card} mb-3`}>
         {e.parent && (
           <p className="text-[11px] text-rw-muted mb-1">
             {tl("Part of")} <EventLink name={e.parent.n} u={e.parent.u} className="text-rw-accent hover:underline" />
@@ -144,7 +186,9 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
         )}
       </div>
 
-      {e.children && e.children.length > 0 && (
+      {tabbed && <PageTabs tabs={tabs} active={tab} to={to} below={tab === "stats" ? <JumpBar bare items={STATS_JUMPS} /> : undefined} />}
+      <div className={`rw-page ${tabbed ? "mt-3" : ""}`}>
+      {on("") && e.children && e.children.length > 0 && (
         <Section title={tl("Stages")}>
           <ul className="text-xs space-y-1">
             {e.children.map((c) => (
@@ -156,7 +200,7 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
         </Section>
       )}
 
-      {e.results && e.results.length > 0 && (
+      {on("") && e.results && e.results.length > 0 && (
         <Section
           title={e.resultsFrom === "event" ? tl("Final standings (whole event)") : tl("Final standings")}
           right={resultsHidden ? <RevealButton onReveal={revealResults} small /> : undefined}
@@ -184,7 +228,7 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
         </Section>
       )}
 
-      {e.overview && (
+      {on("") && e.overview && (
         <EventFacts
           o={e.overview}
           hidden={resultsHidden}
@@ -202,9 +246,9 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
         />
       )}
 
-      {bracket.length > 0 && <Bracket stages={bracket} />}
+      {on("") && bracket.length > 0 && <Bracket stages={bracket} />}
 
-      {e.standings && e.standings.length > 0 && (
+      {on("") && e.standings && e.standings.length > 0 && (
         <div className={`grid gap-3 ${e.standings.length > 1 ? "md:grid-cols-2" : ""}`}>
           {e.standings.map((t, i) => (
             <Standings key={i} name={t.name === "Standings" ? tl("Standings") : tl("Group {name}", { name: t.name.replace(/^Group /, "") })} rows={t.rows} end={e.end} />
@@ -213,29 +257,52 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
       )}
 
       {/* a league table still being played: each team's chance of first place and of a top-N finish */}
-      <PlayoffChances e={e} />
+      {on("") && <PlayoffChances e={e} />}
 
-      {lists.length > 0 && <StageLists stages={lists} />}
+      {on("matches") && lists.length > 0 && <StageLists stages={lists} />}
 
-      {e.children && e.children.length > 0 && bracket.length === 0 && lists.length === 0 && !(e.standings && e.standings.length) && (
+      {on("") && e.children && e.children.length > 0 && bracket.length === 0 && lists.length === 0 && !(e.standings && e.standings.length) && (
         <ChildStages kids={e.children} />
       )}
 
       {/* the leaders' game counts tell who went deep: hidden with the results */}
-      {e.leaders && Object.keys(e.leaders).length > 0 && !resultsHidden && <Leaders e={e} />}
+      {on("stats") && e.leaders && Object.keys(e.leaders).length > 0 && !resultsHidden && (
+        <div id="jump-leaders">
+          <Leaders e={e} />
+        </div>
+      )}
 
-      {/* wide tables: the whole page width on multi-column screens */}
-      <div className="rw-span space-y-3">
-        <EventPlayerStats e={e} hidden={resultsHidden} />
-        <EventTeamStatsTable e={e} hidden={resultsHidden} />
-        {/* the stats cards (records, objectives, the draft...) from every game's scoreboard */}
-        {e.ln && !resultsHidden ? <EventStatsSection slug={e.u} name={eventTitle(e.n)} end={e.end} /> : null}
-      </div>
-      <RegionalRecords e={e} hidden={resultsHidden} />
+      {/* wide tables: the whole page width on multi-column screens (the ids: the Stats tab's "jump to" row) */}
+      {on("stats") && (
+        <div className="rw-span space-y-3">
+          {!!e.players?.length && !resultsHidden && (
+            <div id="jump-pstats">
+              <EventPlayerStats e={e} hidden={resultsHidden} />
+            </div>
+          )}
+          {!!e.teamStats?.length && !resultsHidden && (
+            <div id="jump-tstats">
+              <EventTeamStatsTable e={e} hidden={resultsHidden} />
+            </div>
+          )}
+          {/* the stats cards (records, objectives, the draft...) from every game's scoreboard */}
+          {e.ln && !resultsHidden ? <EventStatsSection slug={e.u} name={eventTitle(e.n)} end={e.end} /> : null}
+        </div>
+      )}
+      {on("stats") && !!e.regions?.length && !resultsHidden && (
+        <div id="jump-regions">
+          <RegionalRecords e={e} hidden={resultsHidden} />
+        </div>
+      )}
+      {tabbed && tab === "stats" && resultsHidden && (
+        <p className="text-xs text-rw-sub flex items-center gap-2">
+          {tl("Hidden while spoiler mode is on.")} <RevealButton onReveal={revealResults} />
+        </p>
+      )}
 
       <div className="grid gap-3 md:grid-cols-2">
-        {e.champs && e.champs.length > 0 && <EventChamps e={e} />}
-        {e.teams && e.teams.length > 0 && (
+        {on("champions") && e.champs && e.champs.length > 0 && <EventChamps e={e} />}
+        {on("teams") && e.teams && e.teams.length > 0 && (
           <Section title={tl("Teams")}>
             <STable className="w-full text-xs">
               <thead>
@@ -260,7 +327,8 @@ const EventView: React.FC<{ e: HubEvent; onOpenUrl?: (url: string) => void }> = 
           </Section>
         )}
       </div>
-      {e.rosters && e.rosters.length > 0 && <EventRosters rosters={e.rosters} />}
+      {on("teams") && e.rosters && e.rosters.length > 0 && <EventRosters rosters={e.rosters} />}
+      </div>
     </div>
   );
 };
