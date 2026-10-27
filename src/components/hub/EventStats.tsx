@@ -3,14 +3,14 @@
  * the draft. Used by the Worlds / MSI / First Stand stats tab and by every tournament page with a lines file (the
  * stats build writes one for those events, so the cards appear and update with the data, nothing to set up per event).
  */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { tl } from "../../i18n";
 import { loadEventLines } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import { eventFacts, factText, gamesOf, type Fact } from "../../hub/worldsFacts";
 import { moreEventFacts } from "../../hub/eventStats";
-import { ChampIcon, HubLink, PlayerLink, RevealButton, Section, TeamLink, useHidden, useLoad } from "./ui";
+import { ChampIcon, CopyLinkButton, HubLink, PlayerLink, RevealButton, Section, TeamLink, useHidden, useLoad } from "./ui";
 
 const btn =
   "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50 disabled:opacity-50";
@@ -38,6 +38,14 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
     players: tl("Players"),
     champs: tl("Champions and the draft"),
   };
+  // a link to one card (riftwise.gg/stats/worlds/2026#worlds-2026-totals) opens the page scrolled to it
+  useEffect(() => {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    if (!id || !facts.some((f) => shareId(f) === id)) return;
+    const t = window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ block: "start" }), 50);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [facts.length]);
   return (
     <div className="space-y-4">
       {(["event", "teams", "players", "champs"] as Group[]).map((g) => {
@@ -76,12 +84,16 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string }> = ({
   return (
     <Section
       title={f.title}
+      id={shareId}
       share={shareId}
       right={
-        <button type="button" className={btn} onClick={copy} aria-label={tl("Copy as text")}>
-          {copied ? <Check className="w-3.5 h-3.5 text-rw-teal" /> : <Copy className="w-3.5 h-3.5" />}
-          {tl("Text")}
-        </button>
+        <span className="flex items-center gap-1">
+          <CopyLinkButton url={`${link}#${shareId}`} />
+          <button type="button" className={btn} onClick={copy} aria-label={tl("Copy as text")}>
+            {copied ? <Check className="w-3.5 h-3.5 text-rw-teal" /> : <Copy className="w-3.5 h-3.5" />}
+            {tl("Text")}
+          </button>
+        </span>
       }
     >
       <p className="text-sm font-semibold text-rw-text leading-snug">{f.headline}</p>

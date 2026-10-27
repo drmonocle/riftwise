@@ -296,8 +296,11 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
           </div>
         )}
       </div>
-      {/* the chosen season, else the newest one */}
-      {years[0] && <LeagueSeasonPanel league={l.u} year={season || years[0]} name={l.s || l.l} />}
+      {/* the chosen season, else the newest one that has a whole-season file (l.seasons, builds since 0.7.45) */}
+      {(() => {
+        const y = season || years.find((x) => !l.seasons || l.seasons.includes(x));
+        return y && (!l.seasons || l.seasons.includes(y)) ? <LeagueSeasonPanel league={l.u} year={y} name={l.s || l.l} /> : null;
+      })()}
       {l.titles.length > 0 && (
         <Section title={tl("Most titles")}>
           <ul className="text-xs grid sm:grid-cols-2 gap-x-4 gap-y-1">

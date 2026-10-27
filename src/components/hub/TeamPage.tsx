@@ -135,7 +135,7 @@ const TeamView: React.FC<{ t: HubTeam }> = ({ t }) => {
 
       <OwnStorylines notes={t.notes} spoilerKey={`notes:team:${t.u}`} share={`${t.u}-storylines`} />
       <TeamPeriodStats slug={t.u} has2y={!!t.g2y} who={{ name: t.name, sub: [t.region, t.rating?.league].filter(Boolean).join(" · ") || undefined }} />
-      <TeamRanks slug={t.u} events={t.events} />
+      <TeamRanks slug={t.u} events={t.events} has2y={!!t.g2y} />
 
       {t.titles.length > 0 && (
         <Section

@@ -1,3 +1,4 @@
+import { OPEN_TAB_EVENT } from "./a11y";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { applyTheme } from "./theme";
 import { AppSettings, Match, StreamEvent, StreamStatus, CatalogData, AppUpdateInfo, LiveShow } from "./types";
@@ -129,6 +130,12 @@ export default function App() {
     activeTabRef.current = tab;
     setActiveTab(tab);
   }, []);
+  // a stats page can ask for another tab (the Pick'Em leaderboard's "Sign in" opens Settings): window event
+  useEffect(() => {
+    const onOpen = (e: Event) => selectTab((e as CustomEvent<TabKey>).detail);
+    window.addEventListener(OPEN_TAB_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_TAB_EVENT, onOpen);
+  }, [selectTab]);
   const [searchOpen, setSearchOpen] = useState(false);
   // the header search closes when another page opens (the Stats home has its own search box)
   useEffect(() => onHubRoute(() => setSearchOpen(false)), []);

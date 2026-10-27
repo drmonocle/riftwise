@@ -120,6 +120,24 @@ export const DownloadsPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({
               {tl("Team rows have position \"team\" and carry the objectives, bans and picks; player rows carry the player's numbers. Empty means not recorded.")}
             </p>
           </Section>
+          <Section title={tl("The data behind the pages (JSON)")} id="json">
+            <p className="text-xs text-rw-sub">
+              {tl("Every stats page reads plain JSON files you can read too. Please credit RiftWise (riftwise.gg) when you use them, and ask for a whole year as CSV above rather than fetching thousands of files.")}
+            </p>
+            <ul className="font-mono text-[11px] text-rw-sub space-y-0.5 break-words">
+              <li>
+                <span className="text-rw-text">{SITE_URL}stats/latest.json</span> {tl("→ the current build's version")}
+              </li>
+              <li>
+                <span className="text-rw-text">{SITE_URL}stats/&lt;version&gt;/hub/</span>player/&lt;slug&gt;.json · team/&lt;slug&gt;.json · event/&lt;slug&gt;.json · game/&lt;id&gt;.json · league/&lt;slug&gt;.json · champ/&lt;slug&gt;.json
+              </li>
+              <li>…/hub/ratings.json · records.json · leagues.json · search/teams.json · search/players.json · csv/index.json</li>
+              <li>…/hub/playergames/&lt;slug&gt;.json · teamgames/&lt;slug&gt;.json · leagueyear/&lt;league&gt;/&lt;year&gt;.json · lines/&lt;event&gt;.json</li>
+            </ul>
+            <p className="text-[10px] text-rw-muted">
+              {tl("Slugs are the ones in the page addresses (/player/faker, /team/t1). Files change only when a new build lands (a few times a day), so cache them by version.")}
+            </p>
+          </Section>
         </>
       )}
     </div>

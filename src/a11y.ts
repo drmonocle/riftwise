@@ -22,3 +22,6 @@ export function clickable(onActivate: () => void): {
     },
   };
 }
+
+/** Asks the app to show a tab (window event, detail: the tab key); App.tsx listens. For code far from App's props. */
+export const OPEN_TAB_EVENT = "riftwise_open_tab";

@@ -18,6 +18,8 @@ import type { Match } from "../../types";
 import { normalizeTeamCode } from "../../helpers";
 import { type Fact } from "../../hub/worldsFacts";
 import { allFacts, FactGroups } from "./EventStats";
+import { PickemBoard } from "./PickemBoard";
+import type { PickemPick } from "../../sync";
 import { detectBracket, realOfStages, runBracket, simulateBracket, type Bracket } from "../../hub/bracket";
 import { BroadcastCardButton, SectionCard, chancesCard, listCard } from "./BroadcastCard";
 import { RegionStats } from "./RegionStats";
@@ -629,6 +631,19 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
             </>
           )}
         </Section>
+      )}
+      {live && (
+        <PickemBoard
+          event={`worlds-${year}`}
+          name={d.name}
+          teams={teams.map((t) => ({ u: t.u, c: t.c, n: t.n }))}
+          picks={[
+            ...swiss.rounds.flat().filter((m) => m.from === "pick" && m.w).map((m): PickemPick => ({ s: "swiss", r: m.round || 1, a: m.a, b: m.b, w: m.w === 1 ? m.a : m.b })),
+            ...(ko ? [...ko.qf.map((m) => [1, m] as const), ...ko.sf.map((m) => [2, m] as const), ...(ko.final ? [[3, ko.final] as const] : [])] : [])
+              .filter(([, m]) => m.from === "pick" && m.w)
+              .map(([r, m]): PickemPick => ({ s: "ko", r, a: m.a, b: m.b, w: m.w === 1 ? m.a : m.b })),
+          ]}
+        />
       )}
       <Section
         title={tl("Chances from here")}

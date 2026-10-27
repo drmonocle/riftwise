@@ -2698,6 +2698,11 @@ def build(ctx) -> dict:
             if x.get("p") and x["p"] in with_results:
                 continue
             league_events[x["l"]].append({k: v for k, v in x.items() if k not in ("kids", "res", "p")} | {"y": year})
+    # the seasons that get a whole-season file below (leagueyear/<league>/<year>.json): the app only asks for those
+    season_years = defaultdict(set)
+    for k_ in kept.values():
+        if k_["lu"] and k_["y"] and k_["y"].isdigit() and k_["tp"]:
+            season_years[k_["lu"]].add(k_["y"])
     leagues_out = []
     league_years = {}  # league -> (first year, last year) with games, for history chains without fixed years
     for lg, lst in league_events.items():
@@ -2745,7 +2750,7 @@ def build(ctx) -> dict:
         short_l = leagues_info.SHORT.get(lg)
         hist_l = league_history(lg)
         out.json(f"league/{lu}.json", {
-            "l": lg, "u": lu, "s": short_l, "history": hist_l,
+            "l": lg, "u": lu, "s": short_l, "history": hist_l, "seasons": sorted(season_years.get(lu, ())),
             "region": next((e.get("r") for e in lst if e.get("r")), None), "primary": primary,
             "events": lst, "titles": [{"t": t_, "u": u_, "n": n_} for (t_, u_), n_ in wins.most_common(30)],
         })
@@ -2753,6 +2758,7 @@ def build(ctx) -> dict:
             continue  # nothing played yet (or ever): a page, but not in the list
         leagues_out.append({"l": lg, "u": lu, "s": short_l, "r": next((e.get("r") for e in lst if e.get("r")), None), "n": len(lst),
                             "from": years_l[0] if years_l else None, "to": years_l[-1] if years_l else None,
+                            "sy": sorted(season_years.get(lu, ())),
                             "pr": 1 if primary else 0, "g": games_l, **({"h": hist_l} if hist_l else {})})
         seo["league"].append((lu, f"{lg} – every season, champions and results | {SITE}",
                               f"{lg}: {len(lst)} tournaments{' from ' + years_l[0] + ' to ' + years_l[-1] if years_l else ''}, "

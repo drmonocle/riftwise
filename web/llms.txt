@@ -1,0 +1,35 @@
+# RiftWise
+
+> Live League of Legends esports scores and schedules, plus pro stats for every game since 2011 (185,000+ games,
+> 19,000+ players, 4,000+ teams, 6,000+ tournaments). Free, no ads, no account needed. Made by Kyle "Dr. Monocle"
+> Hoover. The data behind the stats pages is open JSON and CSV; please credit riftwise.gg when you quote it.
+
+## Pages
+
+- [Live scores and schedule](https://riftwise.gg/): what is live, today's and upcoming pro matches, results
+- [Schedule](https://riftwise.gg/schedule) and [Results](https://riftwise.gg/results): plain HTML with every match
+- [Pro Stats home](https://riftwise.gg/stats): counts, what changed on the latest patch, latest tournaments
+- [Power rankings](https://riftwise.gg/stats/rankings): every active team on one scale across all regions, with win chances
+- [Worlds](https://riftwise.gg/stats/worlds), [MSI](https://riftwise.gg/stats/msi), [First Stand](https://riftwise.gg/stats/first-stand): facts, Swiss and bracket pickers; add /all for every year
+- [Records](https://riftwise.gg/stats/records) and [Title winners](https://riftwise.gg/stats/titles)
+- [Best games](https://riftwise.gg/stats/best): every game rated 0 to 100 for action, closeness, stakes and drama
+- [Match prep](https://riftwise.gg/stats/prep?teams=t1,geng): storylines, form, head-to-head and every lane for two teams
+- [Compare](https://riftwise.gg/stats/compare?teams=t1,geng): two or more teams or players side by side
+- [Counter-pick finder](https://riftwise.gg/stats/counters), [Draft board](https://riftwise.gg/stats/draft), [Game finder](https://riftwise.gg/stats/finder)
+- Players: https://riftwise.gg/player/<slug> (e.g. /player/faker). Teams: /team/<slug> (e.g. /team/t1, /team/geng).
+  Tournaments: /tournament/<slug>. Matches: /match/<slug>. Champions: /champion/<slug>. Leagues: /league/<slug>[/<year>].
+- Every page exists in 11 languages: prefix the path with es, pt-br, ko, vi, zh-cn, zh-tw, ja, fr, de or tr (e.g. /ko/player/faker).
+- [Sitemap](https://riftwise.gg/sitemap.xml), [Results feed (RSS)](https://riftwise.gg/feed.xml), [Calendar (iCal)](https://riftwise.gg/calendar.ics)
+
+## Data
+
+- [Downloads and the data layout](https://riftwise.gg/stats/data): CSV of every game per tournament, yearly bundles, and how the JSON files are organised
+- Current build: https://riftwise.gg/stats/latest.json gives the version; files live under https://riftwise.gg/stats/<version>/hub/
+  (player/<slug>.json, team/<slug>.json, event/<slug>.json, game/<id>.json, league/<slug>.json, ratings.json, records.json, leagues.json)
+- Sources: Riot Games' public esports API (live matches, schedules), Leaguepedia (CC BY-SA 3.0) and Oracle's Elixir (non-commercial) for historical games.
+  RiftWise isn't endorsed by Riot Games.
+
+## About
+
+- [About RiftWise](https://riftwise.gg/about): who makes it and its promises (free forever, no ads, no selling data)
+- Windows app and source: https://github.com/drmonocle/riftwise (MIT)
