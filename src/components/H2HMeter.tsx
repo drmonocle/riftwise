@@ -28,7 +28,7 @@ export interface OpenH2HDetail {
 }
 
 export const H2HBar: React.FC<{ t1Pct: number; className?: string }> = ({ t1Pct, className = "h-1.5" }) => (
-  <div className={`flex w-full rounded-full overflow-hidden bg-rw-border ${className}`}>
+  <div className={`flex w-full rounded-full overflow-hidden bg-rw-border gap-px ${className}`}>
     <div style={{ width: `${t1Pct}%`, backgroundColor: T1_COLOR }} />
     <div style={{ width: `${100 - t1Pct}%`, backgroundColor: T2_COLOR }} />
   </div>
@@ -54,14 +54,14 @@ export const H2HMeter: React.FC<H2HMeterProps> = ({ team1Code, team2Code, h2h, s
         onClick={open}
         aria-label={label}
         title={tl("{summary} · tap for history", { summary })}
-        className="flex flex-col items-center w-[84px] mt-1 rounded px-0.5 hover:bg-rw-border/60 transition-colors cursor-pointer"
+        className="flex flex-col items-center w-[100px] mt-1 rounded px-1 py-0.5 hover:bg-rw-border/60 transition-colors cursor-pointer"
       >
-        <div className="flex items-center justify-between w-full text-[9px] font-mono leading-none mb-0.5">
+        <div className="flex items-center justify-between w-full text-[11px] font-num font-bold tabular-nums leading-none mb-1">
           <span style={{ color: T1_COLOR }}>{h2h.team1Wins}</span>
-          <span className="text-rw-muted tracking-wide">H2H</span>
+          <span className="text-[8px] text-rw-muted tracking-widest font-normal">H2H</span>
           <span style={{ color: T2_COLOR }}>{h2h.team2Wins}</span>
         </div>
-        <H2HBar t1Pct={t1Pct} />
+        <H2HBar t1Pct={t1Pct} className="h-2" />
       </button>
     );
   }

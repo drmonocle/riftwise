@@ -253,15 +253,15 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
     },
   ];
   const sign = (n: number, fmt?: (n: number) => string) => (n === 0 ? "0" : `${n > 0 ? "+" : "−"}${fmt ? fmt(Math.abs(n)) : Math.abs(n)}`);
-  const cell = "px-1.5 py-1 text-right font-mono tabular-nums";
+  const cell = "px-2 py-1.5 text-right font-num tabular-nums";
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-[11px] min-w-[22rem]">
+      <table className="w-full text-xs min-w-[22rem] border border-rw-border rounded-md">
         <thead>
-          <tr className="text-[10px] text-rw-muted">
-            <th className="px-1.5 py-1 text-left font-normal" />
+          <tr className="font-head text-[10px] uppercase tracking-wider text-rw-muted bg-rw-bg/60">
+            <th className="px-2 py-1.5 text-left font-normal" />
             {cols.map((c) => (
-              <th key={c.key} className="px-1.5 py-1 text-right font-normal" title={c.title}>
+              <th key={c.key} className="px-2 py-1.5 text-right font-normal" title={c.title}>
                 {c.label}
               </th>
             ))}
@@ -272,20 +272,22 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
             const other = i === 0 ? right : left;
             return (
               <tr key={x.code} className="border-t border-rw-border/60">
-                <td className="px-1.5 py-1 text-left font-bold text-rw-text whitespace-nowrap">
-                  <span className="w-2 h-2 rounded-full inline-block mr-1.5 align-middle" style={{ background: x.color }} title={x.color === "#3fa7ff" ? tl("Blue side") : tl("Red side")} />
+                <td className="px-2 py-1.5 text-left font-bold text-rw-text whitespace-nowrap" style={{ boxShadow: `inset 3px 0 0 ${x.color}` }} title={x.color === "#3fa7ff" ? tl("Blue side") : tl("Red side")}>
                   {x.code}
                 </td>
-                {cols.map((c) => (
-                  <td key={c.key} className={`${cell} ${c.v(x) > c.v(other) ? "text-rw-teal" : "text-rw-text"}`}>
-                    {c.fmt ? c.fmt(c.v(x)) : c.v(x)}
-                    {c.extra?.(x)}
-                  </td>
-                ))}
+                {cols.map((c) => {
+                  const ahead = c.v(x) > c.v(other);
+                  return (
+                    <td key={c.key} className={`${cell} ${ahead ? "text-rw-teal font-bold" : "text-rw-sub"}`}>
+                      {c.fmt ? c.fmt(c.v(x)) : c.v(x)}
+                      {c.extra?.(x)}
+                    </td>
+                  );
+                })}
               </tr>
             );
           })}
-          <tr className="border-t border-rw-border/60 text-rw-sub">
+          <tr className="border-t border-rw-border text-rw-sub bg-rw-bg/40 text-[11px]">
             <td className="px-1.5 py-1 text-left whitespace-nowrap" title={tl("{a} minus {b}", { a: left.code, b: right.code })}>
               {tl("Diff ({team})", { team: left.code })}
             </td>
@@ -462,10 +464,45 @@ const GoldGraph: React.FC<{ points: [number, number][]; blueIsLeft: boolean; lef
           )}
         </span>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-24" preserveAspectRatio="none" role="img" aria-label={tl("Gold lead over the game")}>
-        <line x1="0" x2={W} y1={H / 2} y2={H / 2} style={{ stroke: "var(--rw-border)" }} strokeWidth="1" />
-        <path d={path} fill="none" style={{ stroke: "var(--rw-accent)" }} strokeWidth="2" vectorEffect="non-scaling-stroke" />
-      </svg>
+      {/* an area chart: the side that is ahead fills its half in its colour; faint lines at half and full scale */}
+      {(() => {
+        const leftColor = blueIsLeft ? "#3fa7ff" : "var(--rw-red)";
+        const rightColor = blueIsLeft ? "var(--rw-red)" : "#3fa7ff";
+        const area = `M0,${H / 2} ${pts.map((p) => `L${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join(" ")} L${x(last[0]).toFixed(1)},${H / 2} Z`;
+        const grid = [0.5, 1].map((f) => f * maxAbs);
+        const lab = (v: number) => (mode === "gold" ? k(v) : `${Math.round((v + 0.5) * 100)}%`);
+        const id = `gg-${leftCode}-${rightCode}`.replace(/[^a-z0-9-]/gi, "");
+        return (
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-28" preserveAspectRatio="none" role="img" aria-label={tl("Gold lead over the game")}>
+            <defs>
+              <clipPath id={`${id}-top`}>
+                <rect x="0" y="0" width={W} height={H / 2} />
+              </clipPath>
+              <clipPath id={`${id}-bottom`}>
+                <rect x="0" y={H / 2} width={W} height={H / 2} />
+              </clipPath>
+            </defs>
+            {grid.map((g) => (
+              <g key={g}>
+                <line x1="0" x2={W} y1={y(g)} y2={y(g)} style={{ stroke: "var(--rw-border)" }} strokeWidth="1" strokeDasharray="3 5" vectorEffect="non-scaling-stroke" />
+                <line x1="0" x2={W} y1={y(-g)} y2={y(-g)} style={{ stroke: "var(--rw-border)" }} strokeWidth="1" strokeDasharray="3 5" vectorEffect="non-scaling-stroke" />
+              </g>
+            ))}
+            <path d={area} clipPath={`url(#${id}-top)`} style={{ fill: leftColor, opacity: 0.28 }} />
+            <path d={area} clipPath={`url(#${id}-bottom)`} style={{ fill: rightColor, opacity: 0.28 }} />
+            <line x1="0" x2={W} y1={H / 2} y2={H / 2} style={{ stroke: "var(--rw-sub)" }} strokeWidth="1" vectorEffect="non-scaling-stroke" />
+            <path d={path} fill="none" clipPath={`url(#${id}-top)`} style={{ stroke: leftColor }} strokeWidth="2.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+            <path d={path} fill="none" clipPath={`url(#${id}-bottom)`} style={{ stroke: rightColor }} strokeWidth="2.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+            <circle cx={x(last[0])} cy={y(last[1])} r="4" style={{ fill: last[1] >= 0 ? leftColor : rightColor, stroke: "var(--rw-bg)" }} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+            {grid.map((g) => (
+              <g key={`l${g}`} className="font-num" style={{ fill: "var(--rw-muted)", fontSize: 10 }}>
+                <text x={4} y={y(g) - 2}>+{lab(g)}</text>
+                <text x={4} y={y(-g) + 10}>−{lab(g)}</text>
+              </g>
+            ))}
+          </svg>
+        );
+      })()}
       <div className="flex justify-between text-[9px] text-rw-muted">
         <span>0:00</span>
         <span>{clock(maxT * 60_000)}</span>
