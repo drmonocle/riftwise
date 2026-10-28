@@ -47,7 +47,7 @@ type PhotoMap = Record<string, string>;
 let hubPhotos: PhotoMap | null = null;
 let hubPhotosPromise: Promise<PhotoMap> | null = null;
 
-function loadHubPhotos(): Promise<PhotoMap> {
+export function loadHubPhotos(): Promise<PhotoMap> {
   if (!hubPhotosPromise) {
     hubPhotosPromise = load<PhotoMap>("hub/photos.json")
       .catch((): PhotoMap => ({})) // an older build without the file: nobody has one

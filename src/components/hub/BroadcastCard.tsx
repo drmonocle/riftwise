@@ -11,7 +11,7 @@ import { tl, tc, locale, roleName, fmtDec, stageLabel, eventTitle } from "../../
 import { IS_WEB } from "../../platform";
 import { ChampIcon } from "./ui";
 import { champName } from "../../champions";
-import { usePlayerPicture, useTeamLogo } from "../../hub/riotCatalog";
+import { loadHubPhotos, usePlayerPicture, useTeamLogo } from "../../hub/riotCatalog";
 import type { PlayerAgg, TeamAgg } from "../../hub/period";
 import { ROLES } from "../../hub/champAgg";
 import type { draftTendencies } from "./DraftTendencies";
@@ -27,14 +27,26 @@ export interface CardSide {
   code?: string | null;
   /** a player's card: their photo (by page slug, or Riot's photo the page file carries), the team logo on it */
   player?: { slug?: string; img?: string };
+  /** a team's card: its current five, faces in a row beside the name */
+  roster?: { name: string; slug?: string; role?: string }[];
 }
+
+/** A team page's roster player: name, page slug, games, role (the team file's `roster[].p`). */
+export type RosterPlayer = { n: string; u?: string | null; r?: string };
 
 /**
  * A player's photo on a card (TV, 2026-10-28: "player face cards on their stat sheets"): Riot's photo from Riot's own
  * picture server, or the Leaguepedia copy on our server, both allowed inside a picture; initials when there's none.
  * The team logo sits on its corner.
  */
-export const CardPhoto: React.FC<{ name: string; team?: string; slug?: string; img?: string; size: number }> = ({ name, team, slug, img, size }) => {
+export const CardPhoto: React.FC<{ name: string; team?: string; slug?: string; img?: string; size: number; noLogo?: boolean }> = ({
+  name,
+  team,
+  slug,
+  img,
+  size,
+  noLogo,
+}) => {
   const pic = usePlayerPicture(name, team, slug, img);
   const [broken, setBroken] = useState(false);
   const src = pic && !broken ? pic.src.replace(/^http:/, "https:") : null;
@@ -42,7 +54,7 @@ export const CardPhoto: React.FC<{ name: string; team?: string; slug?: string; i
     width: size,
     height: size,
     borderRadius: "50%",
-    boxShadow: "0 0 0 4px var(--rw-accent), 0 8px 24px rgba(0,0,0,0.45)",
+    boxShadow: `0 0 0 ${size > 100 ? 4 : 3}px var(--rw-accent), 0 8px 24px rgba(0,0,0,0.45)`,
     background: "radial-gradient(circle at 50% 30%, var(--rw-raised), var(--rw-bg))",
   };
   return (
@@ -54,7 +66,7 @@ export const CardPhoto: React.FC<{ name: string; team?: string; slug?: string; i
           {name.slice(0, 2).toUpperCase()}
         </span>
       )}
-      {team && (
+      {team && !noLogo && (
         <span
           style={{
             position: "absolute",
@@ -251,6 +263,29 @@ const Card: React.FC<{ d: CardData }> = ({ d }) => {
           </div>
         )}
         {d.b && side(d.b, true)}
+        {!two && d.a.roster && d.a.roster.length > 0 && (
+          <div style={{ display: "flex", gap: 14, flexShrink: 0 }}>
+            {d.a.roster.map((p) => (
+              <div key={p.name} style={{ width: 124, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+                <CardPhoto name={p.name} team={d.a.team} slug={p.slug} size={92} noLogo />
+                <div
+                  style={{
+                    fontSize: p.name.length > 9 ? 18 : p.name.length > 7 ? 20 : 22,
+                    fontWeight: 800,
+                    marginTop: 12,
+                    maxWidth: "100%",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {p.name}
+                </div>
+                {p.role && <div style={{ fontSize: 15, color: "var(--rw-muted)", textTransform: "uppercase", letterSpacing: 1.5 }}>{roleName(p.role)}</div>}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
       {two ? (
         <div style={{ marginTop: 22, flex: 1, minHeight: 0, overflow: "hidden", display: "grid", gridTemplateColumns: "1fr", gap: 6, alignContent: "start" }}>
@@ -335,6 +370,9 @@ export const BroadcastCardButton: React.FC<{ data: () => CardData; name: string;
     let alive = true;
     (async () => {
       try {
+        // the list of who has a photo on our server first, so the faces are in the card before it's drawn (it can
+        // come after the card's first draw on a slow connection, and the picture had initials)
+        await Promise.race([loadHubPhotos(), new Promise((r) => setTimeout(r, 3000))]);
         // let the card and its champion pictures load: off screen, lazy pictures never would, so load them now
         // (and don't wait more than a few seconds for a slow one)
         await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -778,8 +816,15 @@ const mmss = (m: number) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
 
-/** One team over a period: record, sides, gold, objectives and (with Oracle's Elixir games) the early game. */
-export function teamSoloCardData(t: { name: string; sub?: string }, A: TeamAgg, period: string): CardData {
+/**
+ * One team over a period: record, sides, gold, objectives and (with Oracle's Elixir games) the early game, with its
+ * current five (TV, 2026-10-28: "not showing player faces for the current roster"): this year's most played player
+ * in each role, the roster listing them by games.
+ */
+export function teamSoloCardData(t: { name: string; sub?: string; roster?: RosterPlayer[] }, A: TeamAgg, period: string): CardData {
+  const list = t.roster ?? [];
+  const byRole = ROLES.flatMap((r) => list.find((p) => p.r === r) ?? []);
+  const five = (byRole.length >= 3 ? byRole : list.slice(0, 5)).map((p) => ({ name: p.n, slug: p.u ?? undefined, role: p.r }));
   const rows: CardRow[] = [
     { label: tl("Games won"), a: `${A.w}-${A.g - A.w}` },
     { label: tl("Win rate"), a: pc(wrOf(A.w, A.g)), pct: wrOf(A.w, A.g) },
@@ -799,7 +844,7 @@ export function teamSoloCardData(t: { name: string; sub?: string }, A: TeamAgg, 
   return {
     title: tl("Team card"),
     subtitle: period,
-    a: { name: t.name, sub: t.sub, champs: A.picks.slice(0, 5).map((p) => p[0]), team: t.name },
+    a: { name: t.name, sub: t.sub, champs: A.picks.slice(0, 5).map((p) => p[0]), team: t.name, roster: five },
     rows,
     note: A.tl ? tl("Early game: Oracle's Elixir") : undefined,
   };
