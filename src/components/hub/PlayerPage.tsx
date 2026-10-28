@@ -4,7 +4,7 @@
  * (tournaments, teams, years).
  */
 import React, { useState } from "react";
-import { Trophy, ExternalLink } from "lucide-react";
+import { Trophy, ExternalLink, Package } from "lucide-react";
 import { tl, tk, tc, roleName, eventTitle, regionName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
@@ -158,7 +158,13 @@ const PlayerView: React.FC<{
                 )}
               </p>
             )}
-            <PhotosLink q={p.name} className="mt-1 inline-flex items-center gap-1 text-[11px] text-rw-teal hover:underline" />
+            <span className="flex flex-wrap items-center gap-x-3">
+              <PhotosLink q={p.name} className="mt-1 inline-flex items-center gap-1 text-[11px] text-rw-teal hover:underline" />
+              <HubLink to={{ kind: "items", query: `player=${p.u}` }} className="mt-1 inline-flex items-center gap-1 text-[11px] text-rw-teal hover:underline">
+                <Package className="w-3 h-3" />
+                {tl("Item history")}
+              </HubLink>
+            </span>
           </div>
         </div>
         {overview && (
@@ -248,35 +254,11 @@ const PlayerView: React.FC<{
 
       <PageTabs tabs={tabs} active={tab} to={to} />
       <div className="rw-page mt-3">
-      {overview && <OwnStorylines notes={p.notes} spoilerKey={`notes:player:${p.u}`} share={`${p.u}-storylines`} />}
       {tab === "stats" && (
         <>
           <PlayerPeriodStats slug={p.u} has2y={!!p.g2y} who={{ name: p.name, role: p.role ? roleName(p.role) : undefined, club: p.club }} />
           <PlayerRanks slug={p.u} events={p.events} has2y={!!p.g2y} />
         </>
-      )}
-
-      {overview && p.titles.length > 0 && (
-        <Section
-          title={tl("Titles")}
-          right={<SectionCard section={tl("Titles")} name={p.name} sub={tl("{n} titles", { n: p.titles.length })} rows={() => p.titles.map((x) => ({ label: eventTitle(x.t), value: x.date.slice(0, 4) }))} />}
-        >
-          <ul className="text-xs space-y-1">
-            {p.titles.map((x) => (
-              <li key={x.t + x.date} className="flex justify-between gap-2">
-                <span className="text-rw-text truncate min-w-0">
-                  <Trophy
-                    className={`w-3 h-3 inline mr-1 ${x.kind === "Worlds" ? "text-rw-accent" : "text-rw-muted"}`}
-                  />
-                  <EventLink name={eventTitle(x.t)} u={x.e} />
-                </span>
-                <span className="text-rw-muted shrink-0">
-                  {fmtDate(x.date)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Section>
       )}
 
       {tab === "career" && p.events.length > 0 && (
@@ -447,6 +429,8 @@ const PlayerView: React.FC<{
       </Section>
       )}
 
+      {/* the Overview leads with how the player is doing now (TV, 2026-10-28: pages in the order people want them):
+          recent games and career bests, then storylines, titles and pentakills */}
       {overview && (
       <div className="grid gap-3 md:grid-cols-2">
         <Section
@@ -549,6 +533,31 @@ const PlayerView: React.FC<{
           </ul>
         </Section>
       </div>
+      )}
+
+      {overview && <OwnStorylines notes={p.notes} spoilerKey={`notes:player:${p.u}`} share={`${p.u}-storylines`} />}
+
+      {overview && p.titles.length > 0 && (
+        <Section
+          title={tl("Titles")}
+          right={<SectionCard section={tl("Titles")} name={p.name} sub={tl("{n} titles", { n: p.titles.length })} rows={() => p.titles.map((x) => ({ label: eventTitle(x.t), value: x.date.slice(0, 4) }))} />}
+        >
+          <ul className="text-xs space-y-1">
+            {p.titles.map((x) => (
+              <li key={x.t + x.date} className="flex justify-between gap-2">
+                <span className="text-rw-text truncate min-w-0">
+                  <Trophy
+                    className={`w-3 h-3 inline mr-1 ${x.kind === "Worlds" ? "text-rw-accent" : "text-rw-muted"}`}
+                  />
+                  <EventLink name={eventTitle(x.t)} u={x.e} />
+                </span>
+                <span className="text-rw-muted shrink-0">
+                  {fmtDate(x.date)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Section>
       )}
 
       {overview && p.pentas && p.pentas.length > 0 && (

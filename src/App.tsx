@@ -50,6 +50,7 @@ const OLD_USER = (() => {
 import { ArrowDownToLine, WifiOff, AlertTriangle, X } from "lucide-react";
 import { ShortcutsDialog } from "./components/ShortcutsDialog";
 import { countSecondPage, countVisit } from "./usage";
+import { TeamBubbles } from "./components/TeamBubbles";
 import { IS_DESKTOP, IS_WEB, matchIdFromHash } from "./platform";
 import { clearMovedNote, movedHere } from "./move";
 import { reconcileLiveAndSchedule, playKickoffChime, applyH2HData, loadBundledH2H } from "./helpers";
@@ -898,7 +899,9 @@ export default function App() {
     .join("\n");
 
   return (
-    <div className="rw-app flex flex-col h-screen w-screen bg-rw-bg text-rw-text overflow-hidden select-none">
+    <div className="rw-app isolate flex flex-col h-screen w-screen bg-rw-bg text-rw-text overflow-hidden select-none">
+      {/* the floating team logos, behind everything (isolate keeps them above the app's background) */}
+      <TeamBubbles matches={schedule} on={settings.bubbles !== false && !settings.compactMode} />
       {/* Keyboard users: the first Tab offers a jump past the header and tabs straight to the page */}
       <a
         href="#rw-main"

@@ -81,9 +81,7 @@ const INTL_PAGE: Record<string, "worlds" | "msi" | "first-stand"> = {
 
 const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) => void }> = ({ e, tab: asked, onOpenUrl }) => {
   const [resultsHidden, revealResults] = useHidden(`event:${e.u}`, e.end);
-  const stages = e.stages || [];
-  const bracket = stages.filter((s) => s.kind === "bracket");
-  const lists = stages.filter((s) => s.kind === "list");
+  const lists = (e.stages || []).filter((s) => s.kind === "list");
   // the tabs this tournament has something for; one with two parts or fewer stays one page
   const tabs: PageTab[] = [
     { key: "", label: TAB_LABEL[""] },
@@ -188,17 +186,9 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
 
       {tabbed && <PageTabs tabs={tabs} active={tab} to={to} below={tab === "stats" ? <JumpBar bare items={STATS_JUMPS} /> : undefined} />}
       <div className={`rw-page ${tabbed ? "mt-3" : ""}`}>
-      {on("") && e.children && e.children.length > 0 && (
-        <Section title={tl("Stages")}>
-          <ul className="text-xs space-y-1">
-            {e.children.map((c) => (
-              <li key={c.u}>
-                <EventLink name={c.n} u={c.u} />
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
+      {/* what most people open a tournament for comes first (TV, 2026-10-28): the bracket and standings, then the
+          results and prize money, then the facts */}
+      {on("") && <EventBracketBlock e={e} />}
 
       {on("") && e.results && e.results.length > 0 && (
         <Section
@@ -246,23 +236,18 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
         />
       )}
 
-      {on("") && bracket.length > 0 && <Bracket stages={bracket} />}
-
-      {on("") && e.standings && e.standings.length > 0 && (
-        <div className={`grid gap-3 ${e.standings.length > 1 ? "md:grid-cols-2" : ""}`}>
-          {e.standings.map((t, i) => (
-            <Standings key={i} name={t.name === "Standings" ? tl("Standings") : tl("Group {name}", { name: t.name.replace(/^Group /, "") })} rows={t.rows} end={e.end} />
-          ))}
-        </div>
-      )}
-
-      {/* a league table still being played: each team's chance of first place and of a top-N finish */}
-      {on("") && <PlayoffChances e={e} />}
-
       {on("matches") && lists.length > 0 && <StageLists stages={lists} />}
 
-      {on("") && e.children && e.children.length > 0 && bracket.length === 0 && lists.length === 0 && !(e.standings && e.standings.length) && (
-        <ChildStages kids={e.children} />
+      {on("") && e.children && e.children.length > 0 && (
+        <Section title={tl("Stages")}>
+          <ul className="text-xs space-y-1">
+            {e.children.map((c) => (
+              <li key={c.u}>
+                <EventLink name={c.n} u={c.u} />
+              </li>
+            ))}
+          </ul>
+        </Section>
       )}
 
       {/* the leaders' game counts tell who went deep: hidden with the results */}
@@ -371,6 +356,32 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
         </span>
       </div>
     </div>
+  );
+};
+
+/**
+ * A tournament's bracket and standings, as far as it has them: its own knockout rounds and tables (with each team's
+ * chances while a league table is still being played), else its stages' (ChildStages). The top of a tournament's
+ * Overview, and of the Worlds, MSI and First Stand pages in the years their pickers don't cover.
+ */
+export const EventBracketBlock: React.FC<{ e: HubEvent }> = ({ e }) => {
+  const st = e.stages || [];
+  const bracket = st.filter((s) => s.kind === "bracket");
+  const tables = e.standings || [];
+  return (
+    <>
+      {bracket.length > 0 && <Bracket stages={bracket} />}
+      {tables.length > 0 && (
+        <div className={`grid gap-3 ${tables.length > 1 ? "md:grid-cols-2" : ""}`}>
+          {tables.map((t, i) => (
+            <Standings key={i} name={t.name === "Standings" ? tl("Standings") : tl("Group {name}", { name: t.name.replace(/^Group /, "") })} rows={t.rows} end={e.end} />
+          ))}
+        </div>
+      )}
+      {/* a league table still being played: each team's chance of first place and of a top-N finish */}
+      <PlayoffChances e={e} />
+      {!!e.children?.length && !bracket.length && !st.some((s) => s.kind === "list") && !tables.length && <ChildStages kids={e.children} />}
+    </>
   );
 };
 

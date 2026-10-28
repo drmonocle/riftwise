@@ -3,7 +3,7 @@ import React, { useMemo, useState } from "react";
 import { tl, tc, roleName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { loadHubChamp } from "../../hub/data";
+import { loadHubChamp, prettySlug } from "../../hub/data";
 import type { HubChamp } from "../../hub/types";
 import { isFinishedItem, useDDragon } from "../../hub/ddragon";
 import {
@@ -30,7 +30,8 @@ import {
 } from "./ui";
 import { itemName, runeName, spellName } from "../../hub/ddragon";
 import { CountersLink } from "./CountersPage";
-import { STable } from "../STable";
+import { STable } from "../STable";
+
 import { BroadcastCardButton, champCardData } from "./BroadcastCard";
 
 export const ChampPage: React.FC<{ slug: string }> = ({ slug }) => {
@@ -193,79 +194,14 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               </ul>
             </div>
           </div>
-          <p className="text-[10px] text-rw-muted">{tl("Click an item, keystone or spell pair to see the latest pro games that used it.")}</p>
+          <p className="text-[10px] text-rw-muted">
+            {tl("Click an item, keystone or spell pair to see the latest pro games that used it.")}{" "}
+            <HubLink to={{ kind: "items", ...(usedOnly?.kind === "item" ? { query: `item=${prettySlug(usedOnly.v)}` } : {}) }} className="text-rw-teal hover:underline">
+              {tl("Has a pro ever built it? Item history")}
+            </HubLink>
+          </p>
         </Section>
       )}
-
-      {c.slots && Object.keys(c.slots).length > 0 && (
-        <Section title={tl("By pick order")}>
-          <p className="text-[11px] text-rw-muted">{tl("Games and win rate by where it was picked in the draft (B = blue side, R = red side), every pro game with the pick order known.")}</p>
-          <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-            {Object.entries(c.slots).map(([slot, [g, w]]) => (
-              <div key={slot} className="rounded-lg border border-rw-border bg-rw-bg px-2 py-1.5 text-center">
-                <div className={`text-xs font-bold ${slot.startsWith("B") ? "text-[#4a9eff]" : "text-rw-red"}`}>{slot}</div>
-                <div className="text-sm font-semibold text-rw-text tabular-nums">{g >= 5 ? pctOf(w, g) : "–"}</div>
-                <div className="text-[10px] text-rw-muted">{tl("{n} games", { n: fmtNum(g) })}</div>
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {c.patches && c.patches.length > 0 && (
-        <Section title={tl("Recent patches")} right={c.patches.length >= 3 ? <PatchTrend patches={c.patches} /> : undefined}>
-          <div className="space-y-1">
-            {c.patches.map((p, i) => {
-              const pres = (p.pr ?? p.pk + p.b) / Math.max(p.g, 1);
-              const before = c.patches![i + 1];
-              const d = before ? Math.round((pres - (before.pr ?? before.pk + before.b) / Math.max(before.g, 1)) * 100) : null;
-              return (
-                <div key={p.p} className="grid grid-cols-[3.5rem_1fr_2.5rem_auto] items-center gap-2 text-xs">
-                  <span className="text-rw-text font-semibold">{p.p}</span>
-                  <div className="h-2.5 bg-rw-bg rounded overflow-hidden">
-                    <div className="h-full bg-rw-accent/70" style={{ width: `${(pres / maxPatch) * 100}%` }} />
-                  </div>
-                  <span
-                    className={`tabular-nums text-right text-[10px] ${d == null || d === 0 ? "text-rw-muted" : d > 0 ? "text-rw-teal" : "text-rw-red"}`}
-                    title={before ? tl("Change in presence against {patch}, in points", { patch: before.p }) : undefined}
-                  >
-                    {d == null ? "" : d === 0 ? "=" : `${d > 0 ? "+" : ""}${d}`}
-                  </span>
-                  <span className="text-rw-sub tabular-nums text-right leading-tight sm:whitespace-nowrap sm:min-w-56">
-                    {tl("{pres} presence · {p} picks · {wr}", { pres: `${Math.round(pres * 100)}%`, p: p.pk, wr: p.pk ? pctOf(p.w, p.pk) : "–" })}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-          <p className="text-[10px] text-rw-muted">{tl("Presence = picked or banned in that share of games (all leagues).")}</p>
-        </Section>
-      )}
-
-      <Section
-        title={tl("By year")}
-        right={<BroadcastCardButton data={() => champCardData(c, champName(c.name))} name={`${c.u}-pro-play`} label={tl("Overview card")} />}
-      >
-        <div className="space-y-1">
-          {c.years.map((y) => (
-            <div key={y.y} className="grid grid-cols-[3rem_1fr_auto] items-center gap-2 text-xs">
-              <span className="text-rw-text font-semibold">{y.y}</span>
-              <div className="h-3 bg-rw-bg rounded overflow-hidden flex" title={`${y.p} / ${y.b}`}>
-                <div className="bg-rw-teal/70" style={{ width: `${(y.p / maxYear) * 100}%` }} />
-                <div className="bg-rw-red/50" style={{ width: `${(y.b / maxYear) * 100}%` }} />
-              </div>
-              <span className="text-rw-sub tabular-nums text-right shrink-0 whitespace-nowrap min-w-44">
-                {tl("{p} picks · {b} bans · {wr}", { p: fmtNum(y.p), b: fmtNum(y.b), wr: y.p ? winRate(y.w, y.p) : "–" })}
-              </span>
-            </div>
-          ))}
-        </div>
-        <p className="text-[10px] text-rw-muted">
-          <span className="inline-block w-2 h-2 bg-rw-teal/70 mr-1" />
-          {tl("Picks")} <span className="inline-block w-2 h-2 bg-rw-red/50 ml-2 mr-1" />
-          {tl("Bans")}
-        </p>
-      </Section>
 
       {roleKeys.length > 0 && (
         <Section
@@ -481,6 +417,78 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
           )}
         </Section>
       </div>
+
+      {/* the champion's history in pro play after what most people come for (TV, 2026-10-28): builds, matchups, who
+          plays it and its latest games first */}
+      {c.slots && Object.keys(c.slots).length > 0 && (
+        <Section title={tl("By pick order")}>
+          <p className="text-[11px] text-rw-muted">{tl("Games and win rate by where it was picked in the draft (B = blue side, R = red side), every pro game with the pick order known.")}</p>
+          <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+            {Object.entries(c.slots).map(([slot, [g, w]]) => (
+              <div key={slot} className="rounded-lg border border-rw-border bg-rw-bg px-2 py-1.5 text-center">
+                <div className={`text-xs font-bold ${slot.startsWith("B") ? "text-[#4a9eff]" : "text-rw-red"}`}>{slot}</div>
+                <div className="text-sm font-semibold text-rw-text tabular-nums">{g >= 5 ? pctOf(w, g) : "–"}</div>
+                <div className="text-[10px] text-rw-muted">{tl("{n} games", { n: fmtNum(g) })}</div>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {c.patches && c.patches.length > 0 && (
+        <Section title={tl("Recent patches")} right={c.patches.length >= 3 ? <PatchTrend patches={c.patches} /> : undefined}>
+          <div className="space-y-1">
+            {c.patches.map((p, i) => {
+              const pres = (p.pr ?? p.pk + p.b) / Math.max(p.g, 1);
+              const before = c.patches![i + 1];
+              const d = before ? Math.round((pres - (before.pr ?? before.pk + before.b) / Math.max(before.g, 1)) * 100) : null;
+              return (
+                <div key={p.p} className="grid grid-cols-[3.5rem_1fr_2.5rem_auto] items-center gap-2 text-xs">
+                  <span className="text-rw-text font-semibold">{p.p}</span>
+                  <div className="h-2.5 bg-rw-bg rounded overflow-hidden">
+                    <div className="h-full bg-rw-accent/70" style={{ width: `${(pres / maxPatch) * 100}%` }} />
+                  </div>
+                  <span
+                    className={`tabular-nums text-right text-[10px] ${d == null || d === 0 ? "text-rw-muted" : d > 0 ? "text-rw-teal" : "text-rw-red"}`}
+                    title={before ? tl("Change in presence against {patch}, in points", { patch: before.p }) : undefined}
+                  >
+                    {d == null ? "" : d === 0 ? "=" : `${d > 0 ? "+" : ""}${d}`}
+                  </span>
+                  <span className="text-rw-sub tabular-nums text-right leading-tight sm:whitespace-nowrap sm:min-w-56">
+                    {tl("{pres} presence · {p} picks · {wr}", { pres: `${Math.round(pres * 100)}%`, p: p.pk, wr: p.pk ? pctOf(p.w, p.pk) : "–" })}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-[10px] text-rw-muted">{tl("Presence = picked or banned in that share of games (all leagues).")}</p>
+        </Section>
+      )}
+
+      <Section
+        title={tl("By year")}
+        right={<BroadcastCardButton data={() => champCardData(c, champName(c.name))} name={`${c.u}-pro-play`} label={tl("Overview card")} />}
+      >
+        <div className="space-y-1">
+          {c.years.map((y) => (
+            <div key={y.y} className="grid grid-cols-[3rem_1fr_auto] items-center gap-2 text-xs">
+              <span className="text-rw-text font-semibold">{y.y}</span>
+              <div className="h-3 bg-rw-bg rounded overflow-hidden flex" title={`${y.p} / ${y.b}`}>
+                <div className="bg-rw-teal/70" style={{ width: `${(y.p / maxYear) * 100}%` }} />
+                <div className="bg-rw-red/50" style={{ width: `${(y.b / maxYear) * 100}%` }} />
+              </div>
+              <span className="text-rw-sub tabular-nums text-right shrink-0 whitespace-nowrap min-w-44">
+                {tl("{p} picks · {b} bans · {wr}", { p: fmtNum(y.p), b: fmtNum(y.b), wr: y.p ? winRate(y.w, y.p) : "–" })}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="text-[10px] text-rw-muted">
+          <span className="inline-block w-2 h-2 bg-rw-teal/70 mr-1" />
+          {tl("Picks")} <span className="inline-block w-2 h-2 bg-rw-red/50 ml-2 mr-1" />
+          {tl("Bans")}
+        </p>
+      </Section>
     </div>
   );
 };

@@ -83,6 +83,25 @@ function getVersion(force = false): Promise<string> {
   return versionPromise;
 }
 
+/** A reigning international champion (latest.json): kind, year, the team today and its short name. */
+export interface Reigning {
+  k: "Worlds" | "MSI" | "First Stand";
+  y: string;
+  t: string;
+  c: string;
+}
+let reigning: Promise<Reigning[]> | null = null;
+
+/** The reigning Worlds, MSI and First Stand champions (the floating team logos); [] when they can't be read. */
+export function statsReigning(): Promise<Reigning[]> {
+  if (!reigning)
+    reigning = fetch(`${STATS_BASE}/latest.json`, { cache: "no-store", signal: AbortSignal.timeout(15000) })
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((j: { reigning?: Reigning[] }) => (Array.isArray(j.reigning) ? j.reigning : []))
+      .catch(() => []);
+  return reigning;
+}
+
 /** When the stats database was last rebuilt from new games (ISO time), or null if it can't be read. */
 export async function statsUpdatedAt(force = false): Promise<string | null> {
   try {

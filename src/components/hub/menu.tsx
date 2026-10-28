@@ -6,7 +6,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   CalendarRange, ChevronDown, ClipboardList, Crosshair, Database, Flag, Flame, GitCompare, Globe, History, Home, Layers, LayoutGrid,
-  ListOrdered, Medal, Menu, Rows3, Search, Sparkles, Swords, TrendingUp, Trophy, User, Users, Wrench, X, type LucideIcon,
+  ListOrdered, Medal, Menu, Package, Rows3, Search, Sparkles, Swords, TrendingUp, Trophy, User, Users, Wrench, X, type LucideIcon,
 } from "lucide-react";
 import { tk, tl } from "../../i18n";
 import type { HubRoute, HubSection } from "../../hub/route";
@@ -86,6 +86,7 @@ export const MENU: MenuGroup[] = [
       { kind: "prep", label: tk("Match prep"), sub: tk("Everything before a broadcast"), icon: ic(ClipboardList), also: ["preview", "head to head", "h2h", "caster"] },
       { kind: "draft", label: tk("Draft board"), sub: tk("Plan a draft with both teams' pools"), icon: ic(LayoutGrid), also: ["draft", "pick and ban", "fearless"] },
       { kind: "finder", label: tk("Game finder"), sub: tk("Any game by team, champion, player"), icon: ic(Search), also: ["find games", "search games", "csv"] },
+      { kind: "items", label: tk("Item history"), sub: tk("Has a pro ever built it?"), icon: ic(Package), also: ["items", "item builds", "builds", "built", "build history"] },
       { kind: "data", label: tk("Data"), sub: tk("Download every game (CSV)"), icon: ic(Database), also: ["download", "csv", "json", "api"] },
     ],
   },

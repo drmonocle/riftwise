@@ -135,6 +135,8 @@ export interface AppSettings {
   notifyStream: boolean;
   soundAlerts?: boolean;
   compactMode?: boolean;
+  /** the floating team logos behind the page (TeamBubbles); on unless turned off */
+  bubbles?: boolean;
   minimizeToTrayOnClose: boolean;
   startWithWindows: boolean;
   /** Colour theme (src/theme.ts); older saves have none and get the default. */

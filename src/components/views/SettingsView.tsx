@@ -462,6 +462,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               ))}
             </div>
           </div>
+
+          {/* the background's floating team logos (src/components/TeamBubbles.tsx) */}
+          <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-rw-surface border border-rw-border">
+            <div>
+              <div className="font-semibold text-rw-text">{tl("Floating team logos")}</div>
+              <div className="text-[11px] text-rw-muted">
+                {tl("Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.")}
+              </div>
+            </div>
+            <button
+              onClick={() => onUpdateSettings({ bubbles: settings.bubbles === false })}
+              className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
+                settings.bubbles !== false ? "bg-rw-teal text-rw-bg" : "bg-rw-border text-rw-muted"
+              }`}
+            >
+              {settings.bubbles !== false ? tl("ON") : tl("OFF")}
+            </button>
+          </div>
         </div>
       </section>
 

@@ -78,6 +78,42 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
   ];
   const to = (key: string): HubRoute => ({ kind: "team", slug: t.u, ...(key ? { tab: key } : {}) });
   const overview = tab === "";
+  // this year's roster on the Overview (after the recent series), every year's under History (after the tournaments)
+  const rosterSection = t.roster.length > 0 && (
+    <Section
+      title={tl("Roster")}
+      right={
+        t.roster[0] ? (
+          <SectionCard
+            section={tl("Roster")}
+            name={t.name}
+            sub={t.roster[0].y}
+            rows={() => t.roster[0].p.map((x) => ({ label: x.n, sub: roleName(x.r), value: tl("{n} games", { n: x.g }) }))}
+          />
+        ) : undefined
+      }
+    >
+      <div className="space-y-2">
+        {(overview ? t.roster.slice(0, 1) : t.roster).map((yr) => (
+          <div key={yr.y} className="text-xs">
+            <span className="text-rw-muted font-semibold mr-2">{yr.y}</span>
+            {yr.p.map((p, i) => (
+              <span key={p.n + i}>
+                {i > 0 && <span className="text-rw-muted/60"> · </span>}
+                <PlayerLink name={p.n} u={p.u} />
+                <span className="text-rw-muted"> {roleName(p.r)}</span>
+              </span>
+            ))}
+          </div>
+        ))}
+        {overview && t.roster.length > 1 && (
+          <HubLink to={to("history")} className="text-[11px] text-rw-teal hover:underline">
+            {tl("Every roster since {year}", { year: t.roster[t.roster.length - 1].y })}
+          </HubLink>
+        )}
+      </div>
+    </Section>
+  );
   return (
     <div>
       {/* the team's name on every tab; its numbers on the Overview */}
@@ -166,7 +202,6 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
 
       <PageTabs tabs={tabs} active={tab} to={to} />
       <div className="rw-page mt-3">
-      {overview && <OwnStorylines notes={t.notes} spoilerKey={`notes:team:${t.u}`} share={`${t.u}-storylines`} />}
       {tab === "stats" && (
         <>
           <TeamPeriodStats slug={t.u} has2y={!!t.g2y} who={{ name: t.name, sub: [t.region, t.rating?.league].filter(Boolean).join(" · ") || undefined }} />
@@ -174,29 +209,9 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
         </>
       )}
 
-      {overview && t.titles.length > 0 && (
-        <Section
-          title={tl("Titles")}
-          right={<SectionCard section={tl("Titles")} name={t.name} sub={tl("{n} titles", { n: t.titles.length })} rows={() => t.titles.map((x) => ({ label: eventTitle(x.t), sub: `${x.score} vs ${x.l}`, value: x.date.slice(0, 4) }))} />}
-        >
-          <ul className="text-xs space-y-1">
-            {t.titles.map((x) => (
-              <li key={x.t + x.date} className="flex justify-between gap-2">
-                <span className="text-rw-text min-w-0 truncate">
-                  <Trophy className={`w-3 h-3 inline mr-1 ${x.kind === "Worlds" ? "text-rw-accent" : "text-rw-muted"}`} />
-                  <EventLink name={eventTitle(x.t)} u={x.e} />
-                  {x.as !== t.name && <span className="text-rw-muted"> ({tl("as {name}", { name: x.as })})</span>}
-                </span>
-                <span className="text-rw-muted shrink-0">
-                  {x.score} vs {x.l}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
-
-      {/* side by side, each only as tall as it needs; a long recent list scrolls instead of leaving a gap beside By year */}
+      {/* the Overview leads with how the team is doing now (TV, 2026-10-28: pages in the order people want them):
+          recent series and this year's roster, then storylines and titles.
+          Side by side, each only as tall as it needs; a long recent list scrolls instead of leaving a gap beside By year */}
       {overview && (
       <div className="grid gap-3 md:grid-cols-2 md:items-start">
         <Section
@@ -289,6 +304,32 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
       </div>
       )}
 
+      {overview && rosterSection}
+
+      {overview && <OwnStorylines notes={t.notes} spoilerKey={`notes:team:${t.u}`} share={`${t.u}-storylines`} />}
+
+      {overview && t.titles.length > 0 && (
+        <Section
+          title={tl("Titles")}
+          right={<SectionCard section={tl("Titles")} name={t.name} sub={tl("{n} titles", { n: t.titles.length })} rows={() => t.titles.map((x) => ({ label: eventTitle(x.t), sub: `${x.score} vs ${x.l}`, value: x.date.slice(0, 4) }))} />}
+        >
+          <ul className="text-xs space-y-1">
+            {t.titles.map((x) => (
+              <li key={x.t + x.date} className="flex justify-between gap-2">
+                <span className="text-rw-text min-w-0 truncate">
+                  <Trophy className={`w-3 h-3 inline mr-1 ${x.kind === "Worlds" ? "text-rw-accent" : "text-rw-muted"}`} />
+                  <EventLink name={eventTitle(x.t)} u={x.e} />
+                  {x.as !== t.name && <span className="text-rw-muted"> ({tl("as {name}", { name: x.as })})</span>}
+                </span>
+                <span className="text-rw-muted shrink-0">
+                  {x.score} vs {x.l}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+
       {tab === "history" && t.events.length > 0 && (
         <Section
           title={tl("Tournaments")}
@@ -334,42 +375,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
 
       {tab === "matches" && <TeamSeriesArchive slug={t.u} teamName={t.name} />}
 
-      {/* this year's roster on the Overview, every year's under History */}
-      {(overview || tab === "history") && t.roster.length > 0 && (
-      <Section
-        title={tl("Roster")}
-        right={
-          t.roster[0] ? (
-            <SectionCard
-              section={tl("Roster")}
-              name={t.name}
-              sub={t.roster[0].y}
-              rows={() => t.roster[0].p.map((x) => ({ label: x.n, sub: roleName(x.r), value: tl("{n} games", { n: x.g }) }))}
-            />
-          ) : undefined
-        }
-      >
-        <div className="space-y-2">
-          {(overview ? t.roster.slice(0, 1) : t.roster).map((yr) => (
-            <div key={yr.y} className="text-xs">
-              <span className="text-rw-muted font-semibold mr-2">{yr.y}</span>
-              {yr.p.map((p, i) => (
-                <span key={p.n + i}>
-                  {i > 0 && <span className="text-rw-muted/60"> · </span>}
-                  <PlayerLink name={p.n} u={p.u} />
-                  <span className="text-rw-muted"> {roleName(p.r)}</span>
-                </span>
-              ))}
-            </div>
-          ))}
-          {overview && t.roster.length > 1 && (
-            <HubLink to={to("history")} className="text-[11px] text-rw-teal hover:underline">
-              {tl("Every roster since {year}", { year: t.roster[t.roster.length - 1].y })}
-            </HubLink>
-          )}
-        </div>
-      </Section>
-      )}
+      {tab === "history" && rosterSection}
 
       {tab === "matches" && (
       <Section

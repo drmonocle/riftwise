@@ -399,6 +399,10 @@ export function prefetchHub(r: import("./route").HubRoute): void {
 export const loadBestIndex = () => load<import("./types").BestIndex>("hub/best/index.json");
 export const loadRecordsYear = (year: string) => load<import("./types").HubRecordsYear>(`hub/records/${year}.json`);
 export const loadMatchups = (slug: string) => load<import("./types").HubMatchups>(`hub/matchups/${slug}.json`);
+/** The item history (/stats/items): one player's items, one item's players, and every item */
+export const loadPlayerItems = (slug: string) => load<import("./types").PlayerItems>(`hub/playeritems/${slug}.json`);
+export const loadHubItem = (slug: string) => load<import("./types").HubItem>(`hub/items/${slug}.json`);
+export const loadItemIndex = () => load<import("./types").ItemIndexRow[]>("hub/items/index.json");
 /** top-league teams' ratings over the last 120 days: slug -> [date, rating][] */
 export const loadRatingsHistory = () => load<Record<string, [string, number][]>>("hub/ratings-history.json");
 /** a player's last two years of games (smaller than the full log; not every player has one) */
