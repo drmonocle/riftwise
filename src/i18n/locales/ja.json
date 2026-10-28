@@ -2149,7 +2149,6 @@
   "Player…": "選手…",
   "Item…": "アイテム…",
   "Item": "アイテム",
-  "Most built items": "よく積まれるアイテム",
   "No item history for this player yet.": "この選手のアイテム履歴はまだありません。",
   "No.": "いいえ。",
   "None of {player}'s {n} pro games with a full scoreboard ended with {item}.": "{player} の完全なスコアボードがあるプロ試合 {n} ゲームのうち、{item} を持って終えたゲームはありません。",
@@ -2190,5 +2189,12 @@
   "Every round": "すべてのラウンド",
 
   "Dragon": "ドラゴン",
-  "Baron": "バロン"
+  "Baron": "バロン",
+
+  "Item stats": "アイテム統計",
+  "ended with it": "所持して終了",
+  "{n} won": "{n} 勝",
+  "Most built on": "最も多いチャンピオン",
+  "{n} players": "{n} 人",
+  "Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.": "勝率：選手のインベントリにそのアイテムがある状態で終わった試合。勝つチームほど多くのアイテムを完成させるため、ほとんどが50%を超えます。"
 }

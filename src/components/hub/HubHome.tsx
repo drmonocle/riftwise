@@ -3,7 +3,7 @@ import React, { useMemo, useState } from "react";
 import { HomeStorylines } from "./Storylines";
 import { AtStakeToday } from "./AtStake";
 import type { AppSettings, Match } from "../../types";
-import { CalendarRange, Crown, ClipboardList, TrendingUp, Flame, Rows3, Users, Globe, Trophy, Flag } from "lucide-react";
+import { CalendarRange, Crown, ClipboardList, TrendingUp, Flame, Rows3, Users, Globe, Trophy, Flag, Package, Crosshair } from "lucide-react";
 import { tl, tn, tk, regionName, roleName, fmtDec } from "../../i18n";
 import { loadEventsOfYear, loadHubHome, loadHubMeta, loadLeagues, loadPatches } from "../../hub/data";
 import { UpNextTable } from "../UpNextTable";
@@ -22,7 +22,8 @@ import { STable } from "../STable";
 import { SortTable, type Column } from "./SortTable";
 import type { HubHome as HubHomeData, PatchMove, PatchRow } from "../../hub/types";
 
-/** Where most visits go next: six pages to start from (every page is one click away in the menu's All pages). */
+/** Where most visits go next: eight pages to start from (every page is one click away in the menu's All pages). Item
+ *  history and Counters are here too (TV, 2026-10-28: "what happened to the item look up?", only under Tools). */
 const START: { to: HubRoute; label: string; sub: string; icon: React.ReactNode }[] = [
   { to: { kind: "weekly" }, label: tk("This week"), sub: tk("Upsets, ranking movers, records, best games"), icon: <CalendarRange className="w-4 h-4" /> },
   { to: { kind: "rankings" }, label: tk("Power rankings"), sub: tk("Every team, every region, one scale"), icon: <TrendingUp className="w-4 h-4" /> },
@@ -30,6 +31,8 @@ const START: { to: HubRoute; label: string; sub: string; icon: React.ReactNode }
   { to: { kind: "best" }, label: tk("Best games"), sub: tk("Highest-rated games and series"), icon: <Flame className="w-4 h-4" /> },
   { to: { kind: "tiers" }, label: tk("Pro tier list"), sub: tk("What pros play on each patch, by role"), icon: <Rows3 className="w-4 h-4" /> },
   { to: { kind: "players" }, label: tk("Every player"), sub: tk("Every pro player, by role and team"), icon: <Users className="w-4 h-4" /> },
+  { to: { kind: "items" }, label: tk("Item history"), sub: tk("Has a pro ever built it?"), icon: <Package className="w-4 h-4" /> },
+  { to: { kind: "counters" }, label: tk("Counters"), sub: tk("Every pro lane matchup, by champion"), icon: <Crosshair className="w-4 h-4" /> },
 ];
 
 export const HubHome: React.FC<{ schedule?: Match[]; settings?: AppSettings; onOpenUrl?: (url: string) => void }> = ({ schedule, settings, onOpenUrl }) => {
@@ -73,7 +76,7 @@ export const HubHome: React.FC<{ schedule?: Match[]; settings?: AppSettings; onO
       <LeagueChips />
 
       {/* where to start: one flush grid, hairlines between the tiles (the gap shows the border colour) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-px bg-rw-border border border-rw-border rounded-lg overflow-hidden">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-rw-border border border-rw-border rounded-lg overflow-hidden">
         {START.map((q) => (
           <HubLink key={q.label} to={q.to} className="bg-rw-surface hover:bg-rw-raised p-3 transition-colors block min-w-0">
             <div className="flex items-center gap-1.5 text-rw-text font-semibold text-xs">

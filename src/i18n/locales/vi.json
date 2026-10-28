@@ -2149,7 +2149,6 @@
   "Player…": "Tuyển thủ…",
   "Item…": "Trang bị…",
   "Item": "Trang bị",
-  "Most built items": "Trang bị được lên nhiều nhất",
   "No item history for this player yet.": "Chưa có lịch sử trang bị của tuyển thủ này.",
   "No.": "Không.",
   "None of {player}'s {n} pro games with a full scoreboard ended with {item}.": "Không ván nào trong {n} ván chuyên nghiệp có bảng điểm đầy đủ của {player} kết thúc với {item}.",
@@ -2190,5 +2189,12 @@
   "Every round": "Mọi vòng",
 
   "Dragon": "Rồng",
-  "Baron": "Baron"
+  "Baron": "Baron",
+
+  "Item stats": "Thống kê trang bị",
+  "ended with it": "kết thúc với nó",
+  "{n} won": "thắng {n}",
+  "Most built on": "Lên nhiều nhất cho",
+  "{n} players": "{n} tuyển thủ",
+  "Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.": "Tỉ lệ thắng: các trận kết thúc khi trang bị nằm trong túi đồ của tuyển thủ. Đội thắng hoàn thành nhiều trang bị hơn, nên phần lớn trên 50%."
 }

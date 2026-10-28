@@ -27,9 +27,10 @@ folder, so one latest.json switch publishes both:
                                     or null (see timeline.py); then the game number in the series and the game's rating
   hub/playeritems/<slug>.json       the item history: [item, [rows of playergames/<slug>.json]] for every item the
                                     player finished a game holding (final inventory), most games first
-  hub/items/<item>.json             {n: item, g: games, np: players, players: [[name, slug, games, newest date]], the
-                                    300 with the most games, c: [[champion, games, players]], y: [[year, games, players]]};
-                                    hub/items/index.json [[item, slug, games, players]]
+  hub/items/<item>.json             {n: item, g: games, np: players, w: games won, players: [[name, slug, games, newest
+                                    date]], the 300 with the most games, c: [[champion, games, players, won]], y: [[year,
+                                    games, players, won]]}; hub/items/index.json [[item, slug, games, players, won,
+                                    [its three most common champions]]]
   hub/items/<item>/c/<champ>.json   one item on one champion: {c: champion, g: games, p: [[player, games, year - 2000,
                                     games that year, ...]]} for every player, most games first; player = its row in
                                     search/players.json
@@ -2145,6 +2146,8 @@ def build(ctx) -> dict:
     item_players = defaultdict(list)  # item -> (games, newest date, player name, slug), for items/<item>.json
     # (item page name, champion) -> (slug, games, year - 2000, games that year, ...) per player: items/<item>/c/ and /y/
     item_champ = defaultdict(list)
+    # games won with an item in the final inventory: by item page name, (item, champion) and (item, year - 2000)
+    item_wins, item_cw, item_yw = Counter(), Counter(), Counter()
     search_us = []  # each search_players row's player slug (the item files point at rows of search/players.json)
     for page, p in ctx.players.items():
         u = player_slug.get(page)
@@ -2267,7 +2270,12 @@ def build(ctx) -> dict:
                         s_it = pretty(it)
                         by_c = defaultdict(Counter)
                         for q in pos:
-                            by_c[games[q][2]][int(games[q][0][:4]) - 2000] += 1
+                            y_q = int(games[q][0][:4]) - 2000
+                            by_c[games[q][2]][y_q] += 1
+                            if games[q][6]:  # the item stats' win rates: overall, on each champion, each year
+                                item_wins[s_it] += 1
+                                item_cw[(s_it, games[q][2])] += 1
+                                item_yw[(s_it, y_q)] += 1
                         for c_, ys in by_c.items():
                             if c_:
                                 item_champ[(s_it, c_)].append((u, sum(ys.values()), *(x for y_ in sorted(ys) for x in (y_, ys[y_]))))
@@ -2305,7 +2313,7 @@ def build(ctx) -> dict:
                          key=lambda r: (-r[1], r[0]))
         g_ic = sum(r[1] for r in rows_ic)
         out.json(f"items/{s_it}/c/{pretty(c_)}.json", {"c": c_, "g": g_ic, "p": rows_ic})
-        item_c[s_it].append([c_, g_ic, len(rows_ic)])
+        item_c[s_it].append([c_, g_ic, len(rows_ic), item_cw[(s_it, c_)]])
         for k, cnt in per.items():
             for y_, m_ in cnt.items():
                 item_yc[s_it][y_][c_] += m_
@@ -2334,12 +2342,14 @@ def build(ctx) -> dict:
         top = sorted(b["players"].values(), key=lambda x: (-x[2], x[0]))
         total = sum(x[2] for x in top)
         name_i = b["names"].most_common(1)[0][0]
-        items_index.append([name_i, s, total, len(top)])
-        out.json(f"items/{s}.json", {"n": name_i, "g": total, "np": len(top), "players": top[:300],
-                                     "c": sorted(item_c.get(s, []), key=lambda x: (-x[1], x[0])),
-                                     "y": [[str(2000 + y_), sum(item_yp[s][y_].values()), len(item_yp[s][y_])] for y_ in sorted(item_yp.get(s, {}))]})
+        champs_i = sorted(item_c.get(s, []), key=lambda x: (-x[1], x[0]))
+        items_index.append([name_i, s, total, len(top), item_wins[s], [c[0] for c in champs_i[:3]]])
+        out.json(f"items/{s}.json", {"n": name_i, "g": total, "np": len(top), "w": item_wins[s], "players": top[:300],
+                                     "c": champs_i,
+                                     "y": [[str(2000 + y_), sum(item_yp[s][y_].values()), len(item_yp[s][y_]), item_yw[(s, y_)]]
+                                           for y_ in sorted(item_yp.get(s, {}))]})
     out.json("items/index.json", sorted(items_index, key=lambda x: (-x[2], x[0])))
-    del item_players, by_islug, item_c, item_yc, item_yp, search_row
+    del item_players, by_islug, item_c, item_yc, item_yp, search_row, item_wins, item_cw, item_yw
 
     # -- what's at stake: storylines of every active team and its starters, for "On the line today" ------
     stakes = {}

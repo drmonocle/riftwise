@@ -2149,7 +2149,6 @@
   "Player…": "選手…",
   "Item…": "裝備…",
   "Item": "裝備",
-  "Most built items": "出得最多的裝備",
   "No item history for this player yet.": "暫無這位選手的裝備紀錄。",
   "No.": "沒有。",
   "None of {player}'s {n} pro games with a full scoreboard ended with {item}.": "{player} 有完整數據的 {n} 局職業比賽中，沒有一局以 {item} 結束。",
@@ -2190,5 +2189,12 @@
   "Every round": "所有輪次",
 
   "Dragon": "小龍",
-  "Baron": "巴龍"
+  "Baron": "巴龍",
+
+  "Item stats": "裝備統計",
+  "ended with it": "結束時持有",
+  "{n} won": "勝 {n} 場",
+  "Most built on": "最常出於",
+  "{n} players": "{n} 名選手",
+  "Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.": "勝率：選手結束時背包裡有該裝備的比賽。獲勝方會做出更多裝備，所以大多數裝備的勝率都高於 50%。"
 }
