@@ -631,12 +631,30 @@ export interface HubMatchups {
  *  final inventory], most games first */
 export type PlayerItems = [string, number[]][];
 /** hub/items/<item>.json: the players who finished pro games holding an item, most games first (the top 300):
- *  [name, slug, games, newest date] */
+ *  [name, slug, games, newest date]; c: its champions [champion, games, players], y: its years [year, games, players] */
 export interface HubItem {
   n: string;
   g: number;
   np: number;
   players: [string, string, number, string][];
+  c?: [string, number, number][];
+  y?: [string, number, number][];
+}
+/** hub/items/<item>/c/<champion>.json: one item on one champion, every player, most games first:
+ *  [row of search/players.json, games, year - 2000, games that year, year - 2000, games that year, ...] */
+export interface HubItemChamp {
+  c: string;
+  g: number;
+  p: number[][];
+}
+/** hub/items/<item>/y/<year>.json: one item in one year: the 500 players with the most games [row of
+ *  search/players.json, games], and its champions that year [champion, games] */
+export interface HubItemYear {
+  y: string;
+  g: number;
+  np: number;
+  p: [number, number][];
+  c: [string, number][];
 }
 /** hub/items/index.json: [item, slug, games, players] */
 export type ItemIndexRow = [string, string, number, number];

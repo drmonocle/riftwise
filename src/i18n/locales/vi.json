@@ -2173,5 +2173,19 @@
   "Still in": "Vẫn còn",
   "To be decided": "Chưa xác định",
   "Floating team logos": "Logo đội bay lơ lửng",
-  "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "Logo các đội trôi phía sau trang; nhà vô địch MSI và First Stand hiện tại có viền riêng. Tắt khi thiết bị của bạn yêu cầu giảm chuyển động."
+  "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "Logo các đội trôi phía sau trang; nhà vô địch MSI và First Stand hiện tại có viền riêng. Tắt khi thiết bị của bạn yêu cầu giảm chuyển động.",
+
+  "Only games on {champ} in {year}": "Chỉ các trận dùng {champ} năm {year}",
+  "Only games on {champ}": "Chỉ các trận dùng {champ}",
+  "Only games in {year}": "Chỉ các trận năm {year}",
+  "A champion and a year narrow any of it.": "Chọn tướng và năm để thu hẹp kết quả.",
+  "Pick an item to see who built it.": "Chọn một trang bị để xem ai đã lên nó.",
+  "Who built {item} on {champ}": "Ai lên {item} cho {champ}",
+  "Who built {item} on {champ} in {year}": "Ai lên {item} cho {champ} năm {year}",
+  "Who built {item} in {year}": "Ai lên {item} năm {year}",
+  "Next match": "Trận tiếp theo",
+  "On now": "Đang diễn ra",
+  "Match page": "Trang trận đấu",
+  "This round only": "Chỉ vòng này",
+  "Every round": "Mọi vòng"
 }

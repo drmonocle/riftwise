@@ -1,15 +1,16 @@
 /**
  * Item history: has a pro ever finished a game holding an item? Pick a player and an item for the yes or no and every
  * game; a player alone for every item they've finished games with; an item alone for the players who built it most.
+ * A champion and a year narrow any of it ("who built Heartsteel on Sion in 2026", TV 2026-10-28).
  * From each game's final inventory (hub/playeritems/ and hub/items/, written by the stats build), so an item sold
  * before the end of a game isn't counted.
- * Address: /stats/items?player=faker&item=heartsteel
+ * Address: /stats/items?player=faker&item=heartsteel&champ=sion&year=2026
  */
 import React, { useMemo, useState } from "react";
 import { tl, tc } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { loadHubIndex, loadHubItem, loadItemIndex, loadPlayerGames, loadPlayerItems, normText, prettySlug } from "../../hub/data";
+import { loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemIndex, loadPlayerGames, loadPlayerItems, normText, prettySlug } from "../../hub/data";
 import type { PlayerGameRow, SearchPlayerRow } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
 import { isFinishedItem, itemName, useDDragon } from "../../hub/ddragon";
@@ -18,6 +19,8 @@ import { STable } from "../STable";
 
 const playerSlug = (r: SearchPlayerRow) => r[1] || prettySlug(r[0]);
 const sel = "bg-rw-bg border border-rw-border rounded px-2 py-1 text-xs text-rw-text";
+const chip = "px-2 py-1 rounded-full border border-rw-accent text-rw-accent flex items-center gap-1";
+const FIRST_YEAR = 2011;
 
 /** The players whose name fits what was typed, best fit first, then most games. */
 function findPlayers(rows: SearchPlayerRow[], typed: string, n = 8): SearchPlayerRow[] {
@@ -35,29 +38,53 @@ function findPlayers(rows: SearchPlayerRow[], typed: string, n = 8): SearchPlaye
     .map(([, r]) => r);
 }
 
+/** What a champion and a year narrow the games to: "Only games on Sion in 2026" (null without either). */
+function scopeText(champ: string, year: string): string | null {
+  if (champ && year) return tl("Only games on {champ} in {year}", { champ, year });
+  if (champ) return tl("Only games on {champ}", { champ });
+  if (year) return tl("Only games in {year}", { year });
+  return null;
+}
+
+/** The address's player, item, champion and year (champion and item as their page names: sion, heartsteel). */
+interface Picks {
+  player: string;
+  item: string;
+  champ: string;
+  year: string;
+}
+
 export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
   usePageTitle(tl("Item history"));
   useDDragon();
   const q = new URLSearchParams(query || "");
-  const player = q.get("player") || "";
-  const item = q.get("item") || "";
-  const set = (patch: Record<string, string | undefined>) => {
+  const picks: Picks = { player: q.get("player") || "", item: q.get("item") || "", champ: q.get("champ") || "", year: q.get("year") || "" };
+  const { player, item, champ, year } = picks;
+  const queryWith = (patch: Partial<Record<keyof Picks, string | undefined>>) => {
     const next = new URLSearchParams(query || "");
     for (const [k, v] of Object.entries(patch)) v ? next.set(k, v) : next.delete(k);
-    navigateHub({ kind: "items", query: next.toString() }, { replace: true });
+    return next.toString();
   };
+  const set = (patch: Partial<Record<keyof Picks, string | undefined>>) => navigateHub({ kind: "items", query: queryWith(patch) }, { replace: true });
   const items = useLoad(loadItemIndex, []);
   const people = useLoad(loadHubIndex, []);
   const [typed, setTyped] = useState("");
   const found = useMemo(() => findPlayers(people.data?.players || [], typed), [people.data, typed]);
   const who = useMemo(() => (people.data?.players || []).find((r) => playerSlug(r) === player), [people.data, player]);
   const itemRow = useMemo(() => (items.data || []).find((r) => r[1] === item), [items.data, item]);
+  const champs = useMemo(() => [...(people.data?.champs || [])].sort((a, b) => champName(a[0]).localeCompare(champName(b[0]))), [people.data]);
+  const champRow = useMemo(() => champs.find((r) => prettySlug(r[0]) === champ), [champs, champ]);
+  const champLabel = champRow ? champName(champRow[0]) : champ;
+  const thisYear = new Date().getFullYear();
+  const years = Array.from({ length: thisYear - FIRST_YEAR + 1 }, (_, i) => String(thisYear - i));
+  const scope = scopeText(champLabel, year);
   return (
     <div className="rw-page">
       <div className={`${card} space-y-2 rw-span`}>
         <h1 className="text-lg font-bold text-rw-text">{tl("Item history")}</h1>
         <p className="text-[11px] text-rw-sub">
-          {tl("Has a pro ever built it? Pick a player and an item: every pro game they finished holding it. A player alone shows every item they've finished games with; an item alone, the players who built it most. From the final inventory of every pro game with a full scoreboard, so an item sold before the end doesn't count.")}
+          {tl("Has a pro ever built it? Pick a player and an item: every pro game they finished holding it. A player alone shows every item they've finished games with; an item alone, the players who built it most. From the final inventory of every pro game with a full scoreboard, so an item sold before the end doesn't count.")}{" "}
+          {tl("A champion and a year narrow any of it.")}
         </p>
         <div className="flex flex-wrap items-start gap-2 text-xs">
           <div className="relative">
@@ -101,7 +128,7 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
             list="rw-item-list"
             placeholder={itemRow ? itemName(itemRow[0]) : tl("Item…")}
             aria-label={tl("Item")}
-            key={item}
+            key={`item:${item}`}
             onChange={(e) => {
               const v = normText(e.target.value.trim());
               const hit = (items.data || []).find((r) => normText(r[0]) === v || normText(itemName(r[0])) === v);
@@ -114,16 +141,51 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
               <option key={r[1]} value={itemName(r[0])} />
             ))}
           </datalist>
-          {(player || item) && (
+          <input
+            list="rw-champ-list"
+            placeholder={champRow ? champLabel : tl("Champion…")}
+            aria-label={tl("Champion")}
+            key={`champ:${champ}`}
+            onChange={(e) => {
+              const v = normText(e.target.value.trim());
+              const hit = champs.find((r) => normText(r[0]) === v || normText(champName(r[0])) === v);
+              if (hit) set({ champ: prettySlug(hit[0]) });
+            }}
+            className={`${sel} w-40`}
+          />
+          <datalist id="rw-champ-list">
+            {champs.map((r) => (
+              <option key={r[1]} value={champName(r[0])} />
+            ))}
+          </datalist>
+          <select value={year} onChange={(e) => set({ year: e.target.value || undefined })} aria-label={tl("Year")} className={sel}>
+            <option value="">{tl("Any year")}</option>
+            {years.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+          {(player || item || champ || year) && (
             <span className="flex flex-wrap gap-1.5 items-center">
               {who && (
-                <button type="button" onClick={() => set({ player: undefined })} className="px-2 py-1 rounded-full border border-rw-accent text-rw-accent" title={tl("Clear")}>
+                <button type="button" onClick={() => set({ player: undefined })} className={chip} title={tl("Clear")}>
                   {who[0]} ✕
                 </button>
               )}
               {itemRow && (
-                <button type="button" onClick={() => set({ item: undefined })} className="px-2 py-1 rounded-full border border-rw-accent text-rw-accent flex items-center gap-1" title={tl("Clear")}>
+                <button type="button" onClick={() => set({ item: undefined })} className={chip} title={tl("Clear")}>
                   <ItemIcon name={itemRow[0]} size={16} /> {itemName(itemRow[0])} ✕
+                </button>
+              )}
+              {champ && (
+                <button type="button" onClick={() => set({ champ: undefined })} className={chip} title={tl("Clear")}>
+                  {champRow && <ChampIcon name={champRow[0]} size={16} />} {champLabel} ✕
+                </button>
+              )}
+              {year && (
+                <button type="button" onClick={() => set({ year: undefined })} className={chip} title={tl("Clear")}>
+                  {year} ✕
                 </button>
               )}
             </span>
@@ -131,11 +193,20 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
         </div>
       </div>
       {player ? (
-        <PlayerItemsView slug={player} name={who?.[0] || player} item={item} itemTitle={itemRow?.[0]} onItem={(s) => set({ item: s })} />
+        <PlayerItemsView slug={player} name={who?.[0] || player} picks={picks} champLabel={champLabel} scope={scope} itemTitle={itemRow?.[0]} onItem={(s) => set({ item: s })} />
+      ) : item && champ ? (
+        <ItemChampView picks={picks} champLabel={champLabel} players={people.data?.players} onPlayer={(s) => set({ player: s })} />
+      ) : item && year ? (
+        <ItemYearView picks={picks} players={people.data?.players} onPlayer={(s) => set({ player: s })} onChamp={(c) => set({ champ: prettySlug(c) })} />
       ) : item ? (
-        <ItemPlayersView slug={item} onPlayer={(s) => set({ player: s })} />
+        <ItemPlayersView slug={item} onPlayer={(s) => set({ player: s })} onChamp={(c) => set({ champ: prettySlug(c) })} onYear={(y) => set({ year: y })} />
       ) : (
         <Section title={tl("Most built items")}>
+          {scope && (
+            <p className="text-[11px] text-rw-sub">
+              <span className="text-rw-accent">{scope}</span> · {tl("Pick an item to see who built it.")}
+            </p>
+          )}
           {items.loading ? (
             <Loading />
           ) : !items.data ? (
@@ -146,7 +217,7 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
                 .filter((r) => isFinishedItem(r[0]))
                 .slice(0, 60)
                 .map((r) => (
-                  <HubLink key={r[1]} to={{ kind: "items", query: `item=${r[1]}` }} className="flex items-center gap-1 px-2 py-1 rounded border border-rw-border text-xs hover:border-rw-accent">
+                  <HubLink key={r[1]} to={{ kind: "items", query: queryWith({ item: r[1] }) }} className="flex items-center gap-1 px-2 py-1 rounded border border-rw-border text-xs hover:border-rw-accent">
                     <ItemIcon name={r[0]} size={18} /> {itemName(r[0])}
                   </HubLink>
                 ))}
@@ -158,8 +229,17 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
   );
 };
 
-/** One player's items: every item with its games, or one item's yes or no and the games. */
-const PlayerItemsView: React.FC<{ slug: string; name: string; item: string; itemTitle?: string; onItem: (slug: string) => void }> = ({ slug, name, item, itemTitle, onItem }) => {
+/** One player's items: every item with its games, or one item's yes or no and the games (on a champion, in a year). */
+const PlayerItemsView: React.FC<{
+  slug: string;
+  name: string;
+  picks: Picks;
+  champLabel: string;
+  scope: string | null;
+  itemTitle?: string;
+  onItem: (slug: string) => void;
+}> = ({ slug, name, picks, champLabel, scope, itemTitle, onItem }) => {
+  const { item, champ, year } = picks;
   const mine = useLoad(() => loadPlayerItems(slug), [slug]);
   const log = useLoad(() => loadPlayerGames(slug), [slug]);
   const [filter, setFilter] = useState("");
@@ -167,25 +247,32 @@ const PlayerItemsView: React.FC<{ slug: string; name: string; item: string; item
   if (mine.loading || log.loading) return <Loading />;
   if (!mine.data || !log.data) return <p className="text-xs text-rw-sub rw-span">{tl("No item history for this player yet.")}</p>;
   const rows = log.data;
-  const games = (pos: number[]) => pos.map((i) => rows[i]).filter((r): r is PlayerGameRow => !!r);
+  const keep = (r: PlayerGameRow) => (!champ || prettySlug(r[2]) === champ) && (!year || r[0].startsWith(year));
+  const games = (pos: number[]) => pos.map((i) => rows[i]).filter((r): r is PlayerGameRow => !!r && keep(r));
+  const counted = champ || year ? rows.filter(keep).length : rows.length;
+  const whoBuilt = (label: string) => (
+    <HubLink to={{ kind: "items", query: new URLSearchParams({ item, ...(champ ? { champ } : {}), ...(year ? { year } : {}) }).toString() }} className="text-[11px] text-rw-teal hover:underline">
+      {champ ? tl("Who built {item} on {champ}", { item: label, champ: champLabel }) : tl("Who built {item} most", { item: label })}
+    </HubLink>
+  );
   if (item) {
     const hit = mine.data.find(([it]) => prettySlug(it) === item);
     const label = itemName(hit?.[0] || itemTitle || item);
-    if (!hit)
+    const g = hit ? games(hit[1]) : [];
+    if (!g.length)
       return (
         <Section title={label}>
+          {scope && <p className="text-[11px] text-rw-accent">{scope}</p>}
           <p className="text-sm text-rw-text">
             <span className="font-bold text-rw-red">{tl("No.")}</span>{" "}
-            {tl("None of {player}'s {n} pro games with a full scoreboard ended with {item}.", { player: name, n: fmtNum(rows.length), item: label })}
+            {tl("None of {player}'s {n} pro games with a full scoreboard ended with {item}.", { player: name, n: fmtNum(counted), item: label })}
           </p>
-          <HubLink to={{ kind: "items", query: `item=${item}` }} className="text-[11px] text-rw-teal hover:underline">
-            {tl("Who built {item} most", { item: label })}
-          </HubLink>
+          {whoBuilt(label)}
         </Section>
       );
-    const g = games(hit[1]);
     return (
-      <Section title={label} right={<ItemIcon name={hit[0]} size={22} />}>
+      <Section title={label} right={<ItemIcon name={hit![0]} size={22} />}>
+        {scope && <p className="text-[11px] text-rw-accent">{scope}</p>}
         <p className="text-sm text-rw-text">
           <span className="font-bold text-rw-teal">{tl("Yes.")}</span>{" "}
           {tl("{player} finished {n} pro games holding {item}: first on {first}, last on {last}.", {
@@ -198,23 +285,26 @@ const PlayerItemsView: React.FC<{ slug: string; name: string; item: string; item
         </p>
         <ChampSpread games={g} />
         <GameList games={g} spoilerKey={`items:${slug}`} />
-        <HubLink to={{ kind: "items", query: `item=${item}` }} className="text-[11px] text-rw-teal hover:underline">
-          {tl("Who built {item} most", { item: label })}
-        </HubLink>
+        {whoBuilt(label)}
       </Section>
     );
   }
   const f = normText(filter.trim());
-  const list = mine.data.filter(([it]) => (!finishedOnly || isFinishedItem(it)) && (!f || normText(itemName(it)).includes(f) || normText(it).includes(f)));
+  const list = mine.data
+    .filter(([it]) => (!finishedOnly || isFinishedItem(it)) && (!f || normText(itemName(it)).includes(f) || normText(it).includes(f)))
+    .map(([it, pos]) => [it, games(pos)] as const)
+    .filter(([, g]) => g.length > 0)
+    .sort((a, b) => b[1].length - a[1].length);
   return (
     <Section title={tl("Every item {player} finished pro games with", { player: name })}>
+      {scope && <p className="text-[11px] text-rw-accent">{scope}</p>}
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <input type="search" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder={tl("Find an item…")} aria-label={tl("Find an item")} className={`${sel} w-48`} />
         <label className="flex items-center gap-1.5 text-rw-sub">
           <input type="checkbox" checked={finishedOnly} onChange={(e) => setFinishedOnly(e.target.checked)} />
           {tl("Finished items only")}
         </label>
-        <span className="text-rw-muted">{tl("{n} pro games with a full scoreboard", { n: fmtNum(rows.length) })}</span>
+        <span className="text-rw-muted">{tl("{n} pro games with a full scoreboard", { n: fmtNum(counted) })}</span>
       </div>
       <STable className="w-full text-xs">
         <thead>
@@ -227,8 +317,7 @@ const PlayerItemsView: React.FC<{ slug: string; name: string; item: string; item
           </tr>
         </thead>
         <tbody>
-          {list.map(([it, pos]) => {
-            const g = games(pos);
+          {list.map(([it, g]) => {
             const won = g.filter((r) => r[6]).length;
             return (
               <tr key={it} className="border-t border-rw-border">
@@ -264,8 +353,13 @@ const PlayerItemsView: React.FC<{ slug: string; name: string; item: string; item
   );
 };
 
-/** One item's players, most games first; picking one opens their games with it. */
-const ItemPlayersView: React.FC<{ slug: string; onPlayer: (slug: string) => void }> = ({ slug, onPlayer }) => {
+/** One item's players, most games first, with the champions and years it was built on and in; picking one narrows. */
+const ItemPlayersView: React.FC<{ slug: string; onPlayer: (slug: string) => void; onChamp: (champ: string) => void; onYear: (year: string) => void }> = ({
+  slug,
+  onPlayer,
+  onChamp,
+  onYear,
+}) => {
   const st = useLoad(() => loadHubItem(slug), [slug]);
   if (st.loading) return <Loading />;
   if (!st.data) return <p className="text-xs text-rw-sub rw-span">{tl("No pro game in the stats ended with this item.")}</p>;
@@ -276,6 +370,8 @@ const ItemPlayersView: React.FC<{ slug: string; onPlayer: (slug: string) => void
         {tl("{g} pro games by {p} players ended with it.", { g: fmtNum(it.g), p: fmtNum(it.np) })}
         {it.np > it.players.length ? ` ${tl("The {n} with the most games:", { n: it.players.length })}` : ""}
       </p>
+      <PickChips label={tl("Champions")} rows={(it.c || []).slice(0, 24).map(([c, g]) => ({ key: c, champ: c, text: champName(c), n: g, pick: () => onChamp(c) }))} />
+      <PickChips label={tl("By year")} rows={[...(it.y || [])].reverse().map(([y, g]) => ({ key: y, text: y, n: g, pick: () => onYear(y) }))} />
       <STable className="w-full text-xs">
         <thead>
           <tr>
@@ -296,9 +392,7 @@ const ItemPlayersView: React.FC<{ slug: string; onPlayer: (slug: string) => void
                 {fmtDate(last, false)}
               </td>
               <td className={`${td} text-right`}>
-                <button type="button" onClick={() => onPlayer(u)} className="text-rw-teal hover:underline">
-                  {tl("Their games")}
-                </button>
+                <TheirGames onClick={() => onPlayer(u)} />
               </td>
             </tr>
           ))}
@@ -307,6 +401,163 @@ const ItemPlayersView: React.FC<{ slug: string; onPlayer: (slug: string) => void
     </Section>
   );
 };
+
+/** One item on one champion: every player who finished a game with it on that champion (in a year, when one is picked). */
+const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: SearchPlayerRow[]; onPlayer: (slug: string) => void }> = ({ picks, champLabel, players, onPlayer }) => {
+  const { item, champ, year } = picks;
+  const st = useLoad(() => loadHubItemChamp(item, champ), [item, champ]);
+  const head = useLoad(() => loadHubItem(item), [item]);
+  const [all, setAll] = useState(false);
+  if (st.loading || head.loading) return <Loading />;
+  const label = itemName(head.data?.n || item);
+  const title = year ? tl("Who built {item} on {champ} in {year}", { item: label, champ: champLabel, year }) : tl("Who built {item} on {champ}", { item: label, champ: champLabel });
+  const y2 = year ? Number(year) - 2000 : null;
+  // each player's games (that year's, when a year is picked) and the years they built it in
+  const rows = (st.data?.p || [])
+    .map((r) => {
+      const ys: number[] = [];
+      let inYear = 0;
+      for (let i = 2; i + 1 < r.length; i += 2) {
+        ys.push(r[i] + 2000);
+        if (r[i] === y2) inYear = r[i + 1];
+      }
+      return { k: r[0], g: y2 == null ? r[1] : inYear, ys };
+    })
+    .filter((r) => r.g > 0)
+    .sort((a, b) => b.g - a.g || a.k - b.k);
+  const total = rows.reduce((s, r) => s + r.g, 0);
+  const shown = all ? rows : rows.slice(0, 100);
+  return (
+    <Section title={title} right={head.data ? <ItemIcon name={head.data.n} size={22} /> : undefined}>
+      {!rows.length ? (
+        <p className="text-sm text-rw-text">
+          <span className="font-bold text-rw-red">{tl("No.")}</span> {tl("No pro game in the stats ended with this item.")}
+        </p>
+      ) : (
+        <>
+          <p className="text-sm text-rw-text">
+            <span className="font-bold text-rw-teal">{tl("Yes.")}</span> {tl("{g} pro games by {p} players ended with it.", { g: fmtNum(total), p: fmtNum(rows.length) })}
+          </p>
+          <STable className="w-full text-xs">
+            <thead>
+              <tr>
+                <th className={th}>{tl("Player")}</th>
+                <th className={th}>{tl("Games")}</th>
+                <th className={`${th} max-sm:hidden`}>{tl("Years")}</th>
+                <th className={th} />
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((r) => {
+                const p = players?.[r.k];
+                const u = p ? playerSlug(p) : "";
+                return (
+                  <tr key={r.k} className="border-t border-rw-border">
+                    <td className={td}>{p ? <PlayerLink name={p[0]} u={u} /> : "–"}</td>
+                    <td className={`${td} tabular-nums text-rw-sub`}>{fmtNum(r.g)}</td>
+                    <td className={`${td} text-rw-muted max-sm:hidden`}>{yearSpan(r.ys)}</td>
+                    <td className={`${td} text-right`}>{u && <TheirGames onClick={() => onPlayer(u)} />}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </STable>
+          {rows.length > shown.length && (
+            <button type="button" onClick={() => setAll(true)} className="text-[11px] text-rw-teal hover:underline">
+              {tl("Show all {n}", { n: rows.length })}
+            </button>
+          )}
+        </>
+      )}
+    </Section>
+  );
+};
+
+/** One item in one year: the players with the most games and the champions it was built on that year. */
+const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlayer: (slug: string) => void; onChamp: (champ: string) => void }> = ({
+  picks,
+  players,
+  onPlayer,
+  onChamp,
+}) => {
+  const { item, year } = picks;
+  const st = useLoad(() => loadHubItemYear(item, year), [item, year]);
+  const head = useLoad(() => loadHubItem(item), [item]);
+  if (st.loading || head.loading) return <Loading />;
+  const label = itemName(head.data?.n || item);
+  const y = st.data;
+  return (
+    <Section title={tl("Who built {item} in {year}", { item: label, year })} right={head.data ? <ItemIcon name={head.data.n} size={22} /> : undefined}>
+      {!y ? (
+        <p className="text-sm text-rw-text">
+          <span className="font-bold text-rw-red">{tl("No.")}</span> {tl("No pro game in the stats ended with this item.")}
+        </p>
+      ) : (
+        <>
+          <p className="text-[11px] text-rw-muted">
+            {tl("{g} pro games by {p} players ended with it.", { g: fmtNum(y.g), p: fmtNum(y.np) })}
+            {y.np > y.p.length ? ` ${tl("The {n} with the most games:", { n: y.p.length })}` : ""}
+          </p>
+          <PickChips label={tl("Champions")} rows={y.c.slice(0, 24).map(([c, g]) => ({ key: c, champ: c, text: champName(c), n: g, pick: () => onChamp(c) }))} />
+          <STable className="w-full text-xs">
+            <thead>
+              <tr>
+                <th className={th}>{tl("Player")}</th>
+                <th className={th}>{tl("Games")}</th>
+                <th className={th} />
+              </tr>
+            </thead>
+            <tbody>
+              {y.p.map(([k, g]) => {
+                const p = players?.[k];
+                const u = p ? playerSlug(p) : "";
+                return (
+                  <tr key={k} className="border-t border-rw-border">
+                    <td className={td}>{p ? <PlayerLink name={p[0]} u={u} /> : "–"}</td>
+                    <td className={`${td} tabular-nums text-rw-sub`}>{fmtNum(g)}</td>
+                    <td className={`${td} text-right`}>{u && <TheirGames onClick={() => onPlayer(u)} />}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </STable>
+        </>
+      )}
+    </Section>
+  );
+};
+
+const TheirGames: React.FC<{ onClick: () => void }> = ({ onClick }) => (
+  <button type="button" onClick={onClick} className="text-rw-teal hover:underline">
+    {tl("Their games")}
+  </button>
+);
+
+/** A row of picks with their game counts ("On: Sion 120 · Ornn 80"), each narrowing the list. */
+const PickChips: React.FC<{ label: string; rows: { key: string; text: string; n: number; champ?: string; pick: () => void }[] }> = ({ label, rows }) =>
+  rows.length > 1 ? (
+    <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+      <span className="text-rw-muted">{label}</span>
+      {rows.map((r) => (
+        <button key={r.key} type="button" onClick={r.pick} className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-rw-border text-rw-sub hover:border-rw-accent hover:text-rw-text">
+          {r.champ && <ChampIcon name={r.champ} size={14} />}
+          {r.text} <span className="text-rw-muted tabular-nums">{fmtNum(r.n)}</span>
+        </button>
+      ))}
+    </div>
+  ) : null;
+
+/** "2019–2021, 2024" from the years a player built it in */
+function yearSpan(ys: number[]): string {
+  const out: string[] = [];
+  for (let i = 0; i < ys.length; ) {
+    let j = i;
+    while (j + 1 < ys.length && ys[j + 1] === ys[j] + 1) j++;
+    out.push(j > i ? `${ys[i]}–${ys[j]}` : String(ys[i]));
+    i = j + 1;
+  }
+  return out.join(", ");
+}
 
 const topChamps = (games: PlayerGameRow[], n: number): [string, number][] => {
   const c = new Map<string, number>();

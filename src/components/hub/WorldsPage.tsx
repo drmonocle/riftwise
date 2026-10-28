@@ -272,6 +272,7 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[] }> = ({
   const real = useMemo(() => withLive(realOf(main, /^round \d/i, (n) => Number(/\d+/.exec(n)?.[0] || 0)), riot), [main, riot]);
   const realKo = useMemo(() => withLiveKo(realOf(main, /quarter|semi|final/i, (n) => (/quarter/i.test(n) ? 1 : /semi/i.test(n) ? 2 : 3)), riot), [main, riot]);
   const adjust = d.ratings?.adjust;
+  const [allRounds, setAllRounds] = useState(false);
   // no picks: only the real results and Riot's draws (a round Riot hasn't drawn yet isn't drawn here either)
   const swiss = useMemo(() => runSwiss(teams, real, {}, 1, adjust), [teams, real, adjust]);
   const ko = useMemo(() => {
@@ -288,6 +289,9 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[] }> = ({
       next.set(m.b, m.a);
     }
   const none = () => {};
+  // the round being played: its first match still to play (or the last round, once all are played)
+  const open = rounds.findIndex((r) => r.some((m) => !m.w));
+  const current = open >= 0 ? open : rounds.length - 1;
   return (
     <>
       {ko && (
@@ -299,21 +303,32 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[] }> = ({
       )}
       <div className="rw-span">
         <Section title={tl("Swiss stage")}>
-          {!ko && (
-            <div className="grid gap-3 lg:grid-cols-5 sm:grid-cols-2">
-              {rounds.map((r, i) => (
-                <div key={i} className="space-y-1.5 min-w-0">
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-rw-sub">{tl("Round {n}", { n: i + 1 })}</h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-1 gap-1.5">
-                    {r.map((m) => (
-                      <MatchBox key={m.key} m={m} byU={byU} onPick={none} readOnly />
-                    ))}
+          {/* a phone gets the records first and only the round being played (TV, 2026-10-28: the five rounds one under
+              another are a long scroll); every round is a tap away */}
+          <div className="flex flex-col gap-3">
+            {!ko && (
+              <div className="grid gap-3 lg:grid-cols-5 sm:grid-cols-2">
+                {rounds.map((r, i) => (
+                  <div key={i} className={`space-y-1.5 min-w-0 ${i === current || allRounds ? "" : "max-sm:hidden"}`}>
+                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-rw-sub">{tl("Round {n}", { n: i + 1 })}</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-1 gap-1.5">
+                      {r.map((m) => (
+                        <MatchBox key={m.key} m={m} byU={byU} onPick={none} readOnly />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+                {rounds.length > 1 && (
+                  <button type="button" onClick={() => setAllRounds((v) => !v)} className="sm:hidden text-[11px] text-rw-teal hover:underline justify-self-start">
+                    {allRounds ? tl("This round only") : tl("Every round")}
+                  </button>
+                )}
+              </div>
+            )}
+            <div className="max-sm:order-first">
+              <SwissTable rec={swiss.rec} byU={byU} next={next} />
             </div>
-          )}
-          <SwissTable rec={swiss.rec} byU={byU} next={next} />
+          </div>
         </Section>
       </div>
     </>
@@ -331,7 +346,7 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
             <th className="px-2 py-1 text-left">{tl("Team")}</th>
             <th className="px-2 py-1 text-center">{tl("Record")}</th>
             <th className="px-2 py-1 text-left">{tl("Status")}</th>
-            <th className="px-2 py-1 text-left max-sm:hidden">{tl("Next")}</th>
+            <th className="px-2 py-1 text-left">{tl("Next")}</th>
           </tr>
         </thead>
         <tbody>
@@ -342,9 +357,11 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
             return (
               <tr key={u} className="border-t border-rw-border">
                 <td className="px-2 py-1">
+                  {/* the short name on a phone, so the next opponent fits beside it */}
                   <span className="flex items-center gap-1.5 min-w-0">
                     <TeamLogo name={t?.n || u} code={t?.c} src={t?.img} size={16} className="shrink-0" />
-                    <TeamLink name={t?.n || u} u={u} className="truncate hover:text-rw-accent" />
+                    <TeamLink name={t?.n || u} u={u} className="truncate hover:text-rw-accent max-sm:hidden" />
+                    <TeamLink name={t?.c || t?.n || u} u={u} className="hover:text-rw-accent sm:hidden" />
                   </span>
                 </td>
                 <td className="px-2 py-1 text-center tabular-nums font-bold">
@@ -353,7 +370,7 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                 <td className={`px-2 py-1 ${w >= 3 ? "text-rw-teal font-semibold" : l >= 3 ? "text-rw-red" : "text-rw-sub"}`}>
                   {w >= 3 ? tl("through") : l >= 3 ? tl("out") : tl("Still in")}
                 </td>
-                <td className="px-2 py-1 text-rw-sub max-sm:hidden">{opp ? `${tl("vs")} ${byU.get(opp)?.c || opp}` : ""}</td>
+                <td className="px-2 py-1 text-rw-sub whitespace-nowrap">{opp ? `${tl("vs")} ${byU.get(opp)?.c || opp}` : ""}</td>
               </tr>
             );
           })}
