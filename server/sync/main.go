@@ -26,7 +26,7 @@ import (
 )
 
 // the app's version (package.json; npm run set-version), reported by the health check
-const version = "0.7.62"
+const version = "0.7.63"
 
 // siteURL is where a finished web sign-in lands (the provider's callback can still be the old address,
 // lolworlds.com/riftwise, as registered with Discord / Twitch: oauth.json publicBase).

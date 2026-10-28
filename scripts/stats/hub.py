@@ -2916,7 +2916,7 @@ def build(ctx) -> dict:
     # instead of Riot's full lists before the first champion picture shows
     try:
         import ddragon_maps
-        checks["hub: ddragon languages"] = ddragon_maps.write(out)
+        checks["hub: ddragon languages"] = ddragon_maps.write(out, [r[0] for r in items_index])
     except Exception as e:  # noqa: BLE001 - the app falls back to Riot's own lists
         print(f"hub: ddragon lists skipped: {e}")
         checks["hub: ddragon languages"] = 0

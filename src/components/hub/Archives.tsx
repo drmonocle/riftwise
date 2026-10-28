@@ -1,12 +1,13 @@
 /** Full histories, loaded on demand: every series of a team, every game of a player, every meeting of two teams. */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ListOrdered } from "lucide-react";
 import { tl, tn, tc, roleName, stageLabel, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
-import { loadPlayerGames, loadTeamSeries } from "../../hub/data";
+import { loadPlayerGames, loadPlayerItems, loadTeamSeries } from "../../hub/data";
 import type { PlayerGameRow, TeamSeriesRow } from "../../hub/types";
+import { isFinishedItem } from "../../hub/ddragon";
 import { ratingTextClass } from "./BestPage";
-import { ChampIcon, EventLink, Failed, fmtDate, HubLink, isFresh, Loading, RevealButton, Section, TeamLink, useHidden, useLoad } from "./ui";
+import { ChampIcon, EventLink, Failed, fmtDate, HubLink, isFresh, ItemIcon, Loading, RevealButton, Section, TeamLink, useHidden, useLoad } from "./ui";
 
 const PAGE = 50;
 const btn = "px-2.5 py-1 rounded-lg border border-rw-border hover:border-rw-accent/60 text-rw-accent text-xs font-semibold";
@@ -205,13 +206,29 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
 
 // ── Player: every game ────────────────────────────────────────────────────
 
-const PlayerGamesBody: React.FC<{ slug: string }> = ({ slug }) => {
+/** `champ`: open on that champion's games (the Champions tab's "Every game" button). Each game shows the items the
+ *  player ended it with (hub/playeritems/: the finished ones first). */
+const PlayerGamesBody: React.FC<{ slug: string; champ?: string }> = ({ slug, champ: startChamp }) => {
   const state = useLoad(() => loadPlayerGames(slug), [slug]);
+  const owned = useLoad(() => loadPlayerItems(slug).catch(() => null), [slug]);
   const [year, setYear] = useState("all");
-  const [champ, setChamp] = useState("all");
+  const [champ, setChamp] = useState(startChamp || "all");
   const [order, setOrder] = useState<"d" | "r">("d");
   const [n, setN] = useState(PAGE);
+  useEffect(() => {
+    if (startChamp) {
+      setChamp(startChamp);
+      setN(PAGE);
+    }
+  }, [startChamp]);
   const data = state.data || [];
+  // each game's final items: playeritems lists, for every item, the rows of this log it was in
+  const itemsOf = useMemo(() => {
+    const m = new Map<PlayerGameRow, string[]>();
+    for (const [it, pos] of owned.data || []) for (const p of pos) if (data[p]) m.set(data[p], [...(m.get(data[p]) || []), it]);
+    for (const [r, its] of m) m.set(r, [...its].sort((a, b) => Number(isFinishedItem(b)) - Number(isFinishedItem(a))));
+    return m;
+  }, [owned.data, data]);
   const years = useMemo(() => [...new Set(data.map((r) => r[0].slice(0, 4)))], [data]);
   const champs = useMemo(() => {
     const count = new Map<string, number>();
@@ -263,8 +280,10 @@ const PlayerGamesBody: React.FC<{ slug: string }> = ({ slug }) => {
       <ul className="text-xs space-y-1">
         {shown.slice(0, n).map((r, i) => {
           const hide = hidden && isFresh(r[0]);
+          const its = itemsOf.get(r);
           return (
-            <li key={i} className="flex items-center justify-between gap-2 min-w-0">
+            <li key={i} className="min-w-0">
+            <div className="flex items-center justify-between gap-2 min-w-0">
               <span className="flex items-center gap-1.5 min-w-0">
                 <span className={`w-3.5 shrink-0 font-bold ${hide ? "text-rw-muted" : r[6] ? "text-rw-teal" : "text-rw-red"}`}>
                   {hide ? "?" : r[6] ? tc("short result", "W") : tc("short result", "L")}
@@ -294,6 +313,14 @@ const PlayerGamesBody: React.FC<{ slug: string }> = ({ slug }) => {
                   </HubLink>
                 )}
               </span>
+            </div>
+            {its && its.length > 0 && (
+              <div className="flex flex-wrap items-center gap-0.5 mt-0.5 pl-5" aria-label={tl("Items")}>
+                {its.map((it) => (
+                  <ItemIcon key={it} name={it} size={18} />
+                ))}
+              </div>
+            )}
             </li>
           );
         })}
@@ -311,5 +338,19 @@ export const PlayerGamesArchive: React.FC<{ slug: string }> = ({ slug }) => (
   <OnDemand title={tl("Every game")} label={tl("Show every game, with filters for year and champion")}>
     {() => <PlayerGamesBody slug={slug} />}
   </OnDemand>
+);
+
+/** Every game of a player on one champion, open at once (the Champions tab, after a champion is picked). */
+export const PlayerChampGames: React.FC<{ slug: string; champ: string; onClose: () => void }> = ({ slug, champ, onClose }) => (
+  <Section
+    title={tl("Every game on {champ}", { champ: champName(champ) })}
+    right={
+      <button type="button" onClick={onClose} className="text-[11px] text-rw-teal hover:underline">
+        {tl("Close")}
+      </button>
+    }
+  >
+    <PlayerGamesBody slug={slug} champ={champ} />
+  </Section>
 );
 
