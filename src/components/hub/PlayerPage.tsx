@@ -13,7 +13,7 @@ import type { HubRoute } from "../../hub/route";
 import type { HubPlayer } from "../../hub/types";
 import { PageTabs, type PageTab } from "./PageTabs";
 import { useDDragon } from "../../hub/ddragon";
-import { PlayerGamesArchive } from "./Archives";
+import { PlayerChampGames, PlayerGamesArchive } from "./Archives";
 import { PlayerPeriodStats } from "./PeriodStats";
 import { BroadcastCardButton, SectionCard, playerCareerCardData } from "./BroadcastCard";
 import { PlayerRanks } from "./Ranks";
@@ -87,6 +87,8 @@ const PlayerView: React.FC<{
   const to = (key: string): HubRoute => ({ kind: "player", slug: p.u, ...(key ? { tab: key } : {}) });
   const [allEvents, setAllEvents] = useState(false);
   const [allChamps, setAllChamps] = useState(false);
+  // the Champions tab: a champion's every game, with the items of each (TV, 2026-10-28)
+  const [gamesOn, setGamesOn] = useState<string | null>(null);
   const [recentHidden, revealRecent] = useHidden(
     `player-recent:${p.u}`,
     p.recent[0]?.date,
@@ -371,6 +373,8 @@ const PlayerView: React.FC<{
       </div>
       )}
 
+      {tab === "champions" && gamesOn && <PlayerChampGames slug={p.u} champ={gamesOn} onClose={() => setGamesOn(null)} />}
+
       {tab === "champions" && (
       <Section
         title={tl("Champion pool")}
@@ -405,11 +409,12 @@ const PlayerView: React.FC<{
                 <th className={th}>{tl("Win %")}</th>
                 <th className={th}>{tl("KDA")}</th>
                 <th className={th}>K / D / A</th>
+                <th className={th} />
               </tr>
             </thead>
             <tbody>
               {(allChamps || tab === "champions" ? p.champs : p.champs.slice(0, 15)).map((c) => (
-                <tr key={c.c} className="border-t border-rw-border">
+                <tr key={c.c} className={`border-t border-rw-border ${gamesOn === c.c ? "bg-rw-accent/10" : ""}`}>
                   <td className={`${td} max-w-[10rem]`}>
                     <ChampLink name={c.c} size={18} />
                   </td>
@@ -420,6 +425,18 @@ const PlayerView: React.FC<{
                   <td className={`${td} text-rw-sub`}>{fmtN(c.kda)}</td>
                   <td className={`${td} text-rw-muted`}>
                     {c.k} / {c.d} / {c.a}
+                  </td>
+                  <td className={`${td} text-right whitespace-nowrap`}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGamesOn(c.c);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                      className="text-rw-teal hover:underline"
+                    >
+                      {tl("Every game")}
+                    </button>
                   </td>
                 </tr>
               ))}

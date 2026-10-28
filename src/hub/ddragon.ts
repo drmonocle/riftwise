@@ -17,7 +17,7 @@ import { load } from "../stats";
 
 const DD = "https://ddragon.leagueoflegends.com/cdn";
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-const KEY = "riftwatch_ddragon_maps_v5";
+const KEY = "riftwatch_ddragon_maps_v6";
 
 interface Maps {
   v: string;
@@ -26,6 +26,7 @@ interface Maps {
   spell: Record<string, string>; // normalized name -> image file ("SummonerFlash.png")
   rune: Record<string, string>; // normalized name -> icon path ("perk-images/Styles/...png")
   full: Record<string, 1>; // normalized names of finished items (not parts, starters or consumables)
+  itemOld?: Record<string, string>; // removed items (Broken Stopwatch): normalized name -> "<old version>/<item id>"
   names: string[]; // every champion's English name ("Kai'Sa"), for the draft board
   // the reader's language (empty in English): item id / spell image / rune icon -> name
   locItem?: Record<string, string>;
@@ -58,6 +59,7 @@ function loadMaps(): Promise<void> {
     try {
       localStorage.removeItem("riftwatch_ddragon_maps_v2"); // older copies
       localStorage.removeItem("riftwatch_ddragon_maps_v4");
+      localStorage.removeItem("riftwatch_ddragon_maps_v5"); // before the removed items' pictures
       const cached = JSON.parse(localStorage.getItem(KEY) || "null");
       if (cached && Date.now() - cached.at < WEEK_MS && cached.lang === currentLang()) {
         maps = cached.maps;
@@ -188,10 +190,23 @@ export function itemIconById(id: number | undefined): string | null {
   return `${DD}/${maps.v}/img/item/${id}.png`;
 }
 
+/** The names to look an item up by: as it is, without a "(0.9.25.21 - 10.22)" patch range, without a " - Warrior"
+ *  enchantment (scripts/stats/ddragon_maps.py item_keys too). */
+function itemKeys(name: string): string[] {
+  const base = name.replace(/\s*\([^)]*\)\s*$/, "");
+  return [norm(name), norm(base), norm(base.replace(/\s+-\s+.*$/, ""))];
+}
+
+/** An item's picture: from this patch, else from the last old patch that had it (a removed item), else none. */
 export function itemIcon(name: string | undefined): string | null {
   if (!maps || !name) return null;
-  const id = maps.item[norm(name)];
-  return id ? `${DD}/${maps.v}/img/item/${id}.png` : null;
+  if (/^\d{4}$/.test(name)) return `${DD}/${maps.v}/img/item/${name}.png`; // a bare item id in the stats
+  for (const k of itemKeys(name)) {
+    const id = maps.item[k];
+    if (id) return `${DD}/${maps.v}/img/item/${id}.png`;
+  }
+  const old = maps.itemOld?.[norm(name)];
+  return old ? `${DD}/${old.replace("/", "/img/item/")}.png` : null;
 }
 
 export function spellIcon(name: string | undefined): string | null {

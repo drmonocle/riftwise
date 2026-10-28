@@ -2196,5 +2196,7 @@
   "{n} won": "{n} gewonnen",
   "Most built on": "Am häufigsten auf",
   "{n} players": "{n} Spieler",
-  "Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.": "Sieg-%: die Spiele, die mit dem Item im Inventar eines Spielers endeten. Siegerteams schließen mehr Items ab, daher liegen die meisten über 50 %."
+  "Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.": "Sieg-%: die Spiele, die mit dem Item im Inventar eines Spielers endeten. Siegerteams schließen mehr Items ab, daher liegen die meisten über 50 %.",
+
+  "Every game on {champ}": "Alle Spiele mit {champ}"
 }

@@ -9,12 +9,19 @@ Riot's lists when they're missing.
 
 Downloads are kept per game version in <script folder>/ddragon_cache/<version>.json, so a build only downloads when
 Riot ships a patch. A failure just leaves the files out of that build (hub.py goes on without them).
+
+Items Riot has since removed (Broken Stopwatch, Luden's Tempest, the old jungle enchantments...) aren't in the current
+lists, but their pictures are still on Data Dragon under the patches that had them: dd.json "itemOld" maps each such
+item of the stats to "<version>/<item id>", from the newest old patch that has it (legacy_items; each old patch's
+item names are kept in ddragon_cache/legacy_items.json, since an old patch never changes). The app also tries an item
+without a "(0.9.25.21 - 10.22)" range or a " - Warrior" enchantment in its name.
 """
 import concurrent.futures
 import json
 import os
 import re
 import urllib.request
+from collections import defaultdict
 
 DD = "https://ddragon.leagueoflegends.com"
 # app language -> Data Dragon locale (the same table as DD_LOCALE in src/champions.ts)
@@ -91,8 +98,8 @@ def translated(v, loc):
     return m
 
 
-def maps():
-    v = get(f"{DD}/api/versions.json")[0]
+def maps(v=None):
+    v = v or get(f"{DD}/api/versions.json")[0]
     path = os.path.join(CACHE, f"{v}.json")
     try:
         with open(path, encoding="utf-8") as f:
@@ -117,10 +124,95 @@ def maps():
     return res
 
 
-def write(out):
-    """Writes dd.json and dd/<language>.json through hub.py's writer; returns how many languages it wrote."""
-    res = maps()
-    out.json("dd.json", res["en"])
+# the stats' spelling -> Riot's, where they differ
+ITEM_ALIASES = {"lorddominiksregard": "lorddominiksregards", "sorcerersboots": "sorcerersshoes"}
+
+
+def item_keys(name):
+    """The names to look an item up by: as it is, without a patch range, without an enchantment (ddragon.ts too)."""
+    base = re.sub(r"\s*\([^)]*\)\s*$", "", name or "")
+    keys = [norm(name), norm(base), norm(re.sub(r"\s+-\s+.*$", "", base))]
+    return keys + [ITEM_ALIASES[k] for k in keys if k in ITEM_ALIASES]
+
+
+def legacy_versions(versions):
+    """Old game versions to look a removed item up in, newest first: each season's last patch, then every fourth
+    patch of each season (about 120; an item missing from all of them is a typo in the stats, so the search ends,
+    and once they are all in the cache a build downloads nothing)."""
+    by_season = defaultdict(list)
+    for v in versions[1:]:
+        if re.match(r"^\d+\.\d+\.\d+$", v):
+            by_season[v.split(".")[0]].append(v)  # Riot lists them newest first
+    seasons = sorted(by_season, key=int, reverse=True)
+    return [by_season[s][0] for s in seasons] + [v for s in seasons for v in by_season[s][4::4]]
+
+
+LEGACY = os.path.join(CACHE, "legacy_items.json")
+LEGACY_FETCHES = 60  # old patches downloaded at most per build (each about 200 KB; kept for good)
+
+
+def legacy_items(names, current, versions):
+    """Item name (normalized) -> "<version>/<item id>" for the items of the stats that the current patch lacks (or
+    has under another spelling: the app doesn't know the aliases)."""
+    out, need = {}, {}
+    for n in set(names):
+        keys = item_keys(n)
+        if any(k in current for k in keys[:3]):
+            continue  # the app finds it in the current patch
+        alias = next((k for k in keys[3:] if k in current), None)
+        if alias:
+            out[norm(n)] = f"{versions[0]}/{current[alias]}"
+        else:
+            need[n] = keys
+    try:
+        with open(LEGACY, encoding="utf-8") as f:
+            cache = json.load(f)
+    except (OSError, ValueError):
+        cache = {}
+    fetched = 0
+    for v in legacy_versions(versions):
+        if not need:
+            break
+        if v not in cache:
+            if fetched >= LEGACY_FETCHES:
+                break
+            try:
+                data = get(f"{DD}/cdn/{v}/data/en_US/item.json")["data"]
+            except Exception:  # noqa: BLE001 - a patch without lists: the next one
+                continue
+            m = {}
+            for iid, it in data.items():
+                k = norm(it.get("name"))
+                if k and (k not in m or int(iid) < int(m[k])):
+                    m[k] = iid
+            cache[v] = m
+            fetched += 1
+        m = cache[v]
+        for n, ks in list(need.items()):
+            hit = next((m[k] for k in ks if k in m), None)
+            if hit:
+                out[norm(n)] = f"{v}/{hit}"
+                del need[n]
+    if fetched:
+        os.makedirs(CACHE, exist_ok=True)
+        with open(LEGACY + ".tmp", "w", encoding="utf-8") as f:
+            json.dump(cache, f, separators=(",", ":"))
+        os.replace(LEGACY + ".tmp", LEGACY)
+    return out
+
+
+def write(out, item_names=()):
+    """Writes dd.json and dd/<language>.json through hub.py's writer; returns how many languages it wrote.
+    item_names: every item of the stats, for the removed items' pictures (dd.json "itemOld")."""
+    versions = get(f"{DD}/api/versions.json")
+    res = maps(versions[0])
+    en = dict(res["en"])
+    if item_names:
+        try:
+            en["itemOld"] = legacy_items(item_names, en["item"], versions)
+        except Exception as e:  # noqa: BLE001 - the current pictures still go out
+            print(f"hub: old item pictures skipped: {e}")
+    out.json("dd.json", en)
     for lang in LOCALES:
         out.json(f"dd/{lang}.json", res[lang])
     return len(LOCALES)
