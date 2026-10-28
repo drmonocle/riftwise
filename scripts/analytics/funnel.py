@@ -2,9 +2,10 @@
 page, which themes, languages and apps they use, how many entered Pick'Em, and how many read the results feed or
 subscribe to the calendar. Days are US Eastern (midnight rollover), like the hub's other reports.
 
-Sources, all on HomeServer: the push service's anonymous daily counts (C:\\Sites\\riftwise-push-data\\usage, written
-by server/push/usage.go from src/usage.ts), the Pick'Em entries (C:\\Sites\\riftwise-sync-data\\pickem) and the IIS
-logs of riftwise.gg (feed.xml and calendar.ics requests: one reader = one address + user agent a day).
+Sources, all on HomeServer: the push service's anonymous daily counts (C:\\Sites\\riftwise-push-data\\usage\\people,
+written by server/push/usage.go from src/usage.ts since v0.7.58; the older files one folder up aren't read), the
+Pick'Em entries (C:\\Sites\\riftwise-sync-data\\pickem) and the IIS logs of riftwise.gg
+(feed.xml and calendar.ics requests: one reader = one address + user agent a day).
 
   python scripts/analytics/funnel.py [--days 30] [--out C:\\goaccess\\www\\reports]
 Writes riftwise-funnel.html and riftwise-funnel.json. The hub's update_reports.ps1 runs it every 10 minutes.
@@ -17,7 +18,7 @@ import json
 import os
 from collections import Counter, defaultdict
 
-USAGE = r"C:\Sites\riftwise-push-data\usage"
+USAGE = r"C:\Sites\riftwise-push-data\usage\people"
 PICKEM = r"C:\Sites\riftwise-sync-data\pickem"
 LOGS = r"C:\inetpub\logs\LogFiles\W3SVC4"
 OUT = r"C:\goaccess\www\reports"
@@ -138,7 +139,7 @@ h1{{font-size:20px;margin:0 0 4px}}p{{color:#9aa3b2;margin:0 0 16px}}.kpis{{disp
 h2{{font-size:14px;margin:0 0 8px}}table{{border-collapse:collapse;width:100%}}td,th{{text-align:left;padding:4px 8px;border-top:1px solid #262b38;white-space:nowrap}}th{{color:#9aa3b2;font-weight:600}}
 </style></head><body><main>
 <h1>RiftWise funnel, last {len(report['days'])} days</h1>
-<p>Updated {e(report['updated'])} (US Eastern days). Visits are browsers counted once a day by the app itself (bots don't run it); counting started with v0.7.52 on 2026-10-27, so earlier days are empty. Feed and calendar readers: one address and app a day.</p>
+<p>Updated {e(report['updated'])} (US Eastern days). Visits are browsers counted once a day by the app itself, once someone uses the page. Counting restarted with v0.7.58; earlier days are empty. Feed and calendar readers: one address and app a day.</p>
 <div class=kpis>
 <div class=kpi><b>{t['visits']}</b><span>visits</span></div>
 <div class=kpi><b>{pct(t['secondPage'], t['visits'])}</b><span>went past the first page ({t['secondPage']})</span></div>

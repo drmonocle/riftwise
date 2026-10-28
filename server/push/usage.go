@@ -2,14 +2,19 @@ package main
 
 // Anonymous daily counts for the analytics hub's RiftWise funnel (scripts/analytics/funnel.py): once a day each
 // browser says it visited, with its theme, language, web or desktop app and version, and once a day that it opened
-// a second page (src/usage.ts). Only the day's totals are kept, in <data>/usage/<date>.json (dates in US Eastern
-// time, like the hub): no address, no id, nothing about who sent it.
+// a second page (src/usage.ts). Only the day's totals are kept, in <data>/usage/people/<date>.json (dates in US
+// Eastern time, like the hub): no address, no id, nothing about who sent it.
 //
 // Page views the same way, for the stats home's "Most viewed this week" (src/hub/popular.ts): once a page a day each
 // browser says it opened a team, player, tournament, champion or league page, with the name it shows. Kept per day
-// in <data>/usage/views/<date>.json (page -> views and name); /api/push/popular gives the week's most opened.
+// in <data>/usage/people/views/<date>.json (page -> views and name); /api/push/popular gives the week's most opened.
+//
+// A count needs "person": true from the app, and each address counts once a thing a day (held only in memory,
+// hashed, for the day). Counts from before 0.7.58 are in <data>/usage and <data>/usage/views and aren't read.
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"net/http"
 	"os"
@@ -50,7 +55,7 @@ func (a *App) countUsage(event, theme, lang, app, version string, now time.Time)
 	}
 	usageMu.Lock()
 	defer usageMu.Unlock()
-	dir := filepath.Join(a.dataDir, "usage")
+	dir := filepath.Join(a.dataDir, "usage", "people")
 	os.MkdirAll(dir, 0o755)
 	path := filepath.Join(dir, now.In(eastern).Format("2006-01-02")+".json")
 	var d usageDay
@@ -133,7 +138,67 @@ func cleanTitle(s string) string {
 }
 
 func (a *App) viewsFile(day time.Time) string {
-	return filepath.Join(a.dataDir, "usage", "views", day.In(eastern).Format("2006-01-02")+".json")
+	return filepath.Join(a.dataDir, "usage", "people", "views", day.In(eastern).Format("2006-01-02")+".json")
+}
+
+// ── Which counts are taken ────────────────────────────────────────────────
+
+const seenMax = 200000 // a real day is a few thousand; past this, nothing new is counted until tomorrow
+
+var (
+	// the analytics hub's filter file (-filters): address ranges whose counts are left out, re-read every 10 minutes
+	usageFilters struct {
+		sync.Mutex
+		path string
+		at   time.Time
+		pfx  []string
+	}
+	// what each address was counted for today: hashed, in memory only, gone at the next New York midnight
+	seen struct {
+		sync.Mutex
+		day  string
+		keys map[[16]byte]bool
+	}
+)
+
+// filteredIP: true for an address in a range the filter file lists (none when there is no file).
+func filteredIP(ip string) bool {
+	f := &usageFilters
+	f.Lock()
+	defer f.Unlock()
+	if f.path != "" && time.Since(f.at) > 10*time.Minute {
+		f.at = time.Now()
+		var j struct {
+			Prefixes []string `json:"suspect_prefixes"`
+		}
+		if b, err := os.ReadFile(f.path); err == nil && json.Unmarshal(bytes.TrimPrefix(b, []byte("\xef\xbb\xbf")), &j) == nil {
+			f.pfx = j.Prefixes
+		}
+	}
+	for _, p := range f.pfx {
+		if p != "" && strings.HasPrefix(ip, p) {
+			return true
+		}
+	}
+	return false
+}
+
+// firstFrom: true the first time today that `ip` is counted for `what` ("visit", "second", "view:player/faker").
+func firstFrom(ip, what string, now time.Time) bool {
+	day := now.In(eastern).Format("2006-01-02")
+	h := sha256.Sum256([]byte(day + "|" + ip + "|" + what))
+	var k [16]byte
+	copy(k[:], h[:16])
+	seen.Lock()
+	defer seen.Unlock()
+	if seen.day != day || seen.keys == nil {
+		seen.day, seen.keys = day, map[[16]byte]bool{}
+	}
+	if seen.keys[k] || len(seen.keys) >= seenMax {
+		return false
+	}
+	seen.keys[k] = true
+	return true
 }
 
 // countViews adds one view to each page it takes (a page address it knows, with a name) and says how many.
@@ -231,18 +296,44 @@ func (a *App) usageRoute(mux *http.ServeMux, lim *limiter) {
 		var req struct {
 			Event, Theme, Lang, App, V string
 			Pages                      []viewPage
+			Person                     bool
 		}
 		if json.NewDecoder(http.MaxBytesReader(w, r.Body, 8192)).Decode(&req) != nil {
 			writeJSON(w, 400, map[string]string{"error": "bad request"})
 			return
 		}
-		if req.Event == "views" {
-			// a crawler's views are taken and dropped; the rest must have at least one page it knows
-			if !botAgent.MatchString(r.UserAgent()) && a.countViews(req.Pages, time.Now()) == 0 {
-				writeJSON(w, 400, map[string]string{"error": "bad request"})
-				return
+		ip, now := clientIP(r), time.Now()
+		drop := !req.Person || botAgent.MatchString(r.UserAgent()) || filteredIP(ip) // taken, not counted
+		bad := false
+		switch req.Event {
+		case "views":
+			// at least one page it knows; each counted once a day from an address
+			var fresh []viewPage
+			known := 0
+			for i, p := range req.Pages {
+				if i == viewsPerPost {
+					break
+				}
+				if !viewPath.MatchString(p.Page) || cleanTitle(p.Title) == "" {
+					continue
+				}
+				known++
+				if !drop && firstFrom(ip, "view:"+p.Page, now) {
+					fresh = append(fresh, p)
+				}
 			}
-		} else if !a.countUsage(req.Event, req.Theme, req.Lang, req.App, req.V, time.Now()) {
+			bad = known == 0
+			if len(fresh) > 0 {
+				a.countViews(fresh, now)
+			}
+		case "visit", "second":
+			if !drop && firstFrom(ip, req.Event, now) {
+				a.countUsage(req.Event, req.Theme, req.Lang, req.App, req.V, now)
+			}
+		default:
+			bad = true
+		}
+		if bad {
 			writeJSON(w, 400, map[string]string{"error": "bad request"})
 			return
 		}
