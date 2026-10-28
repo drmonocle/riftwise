@@ -11,6 +11,7 @@ import { tl, tc, locale, roleName, fmtDec, stageLabel, eventTitle } from "../../
 import { IS_WEB } from "../../platform";
 import { ChampIcon } from "./ui";
 import { champName } from "../../champions";
+import { useTeamLogo } from "../../hub/riotCatalog";
 import type { PlayerAgg, TeamAgg } from "../../hub/period";
 import { ROLES } from "../../hub/champAgg";
 import type { draftTendencies } from "./DraftTendencies";
@@ -21,7 +22,54 @@ export interface CardSide {
   sub?: string;
   /** most played champions, shown as icons */
   champs?: string[];
+  /** the team whose logo goes beside the name (a player's card: their team), and its short name */
+  team?: string;
+  code?: string | null;
 }
+
+/**
+ * A team's logo on a card ("could we get team logos into the overview pictures?", 2026-10-28): Riot's logo from its
+ * team list, loaded from Riot's own picture server, which lets pages copy it into a picture (Riot's resizer doesn't,
+ * so the page's small logos stay out of cards). A team Riot has none for gets a badge with its short name when
+ * `badge` is set (the headline teams), and nothing in a list.
+ */
+export const CardLogo: React.FC<{ name?: string; code?: string | null; size: number; badge?: boolean }> = ({ name, code, size, badge }) => {
+  const logo = useTeamLogo(name, code ?? undefined);
+  if (logo)
+    return (
+      <img
+        src={logo.replace(/^http:/, "https:")}
+        crossOrigin="anonymous"
+        alt=""
+        width={size}
+        height={size}
+        style={{ width: size, height: size, objectFit: "contain", flexShrink: 0, filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.35))" }}
+      />
+    );
+  if (!badge || !name) return null;
+  const short = (code || name.replace(/[^\p{L}\p{N} ]/gu, "").split(/\s+/).map((w) => w[0]).join("") || name).slice(0, 4).toUpperCase();
+  return (
+    <span
+      style={{
+        width: size,
+        height: size,
+        flexShrink: 0,
+        borderRadius: size / 5,
+        border: "3px solid var(--rw-line)",
+        background: "linear-gradient(145deg, var(--rw-raised), var(--rw-bg))",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: size / (short.length > 3 ? 3.6 : 2.8),
+        fontWeight: 900,
+        letterSpacing: 1,
+        color: "var(--rw-sub)",
+      }}
+    >
+      {short}
+    </span>
+  );
+};
 
 export interface CardRow {
   label: string;
@@ -90,18 +138,21 @@ const Card: React.FC<{ d: CardData }> = ({ d }) => {
   const two = !!d.b;
   const rows = d.rows.slice(0, two ? 9 : 10);
   const side = (s: CardSide, right: boolean) => (
-    <div style={{ textAlign: right ? "right" : "left", minWidth: 0, flex: 1 }}>
-      <div style={{ fontSize: 52, fontWeight: 800, lineHeight: 1.05, color: "var(--rw-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-        {s.name}
-      </div>
-      {s.sub && <div style={{ fontSize: 22, color: "var(--rw-sub)", marginTop: 4 }}>{s.sub}</div>}
-      {s.champs && s.champs.length > 0 && (
-        <div style={{ display: "flex", gap: 8, marginTop: 10, justifyContent: right ? "flex-end" : "flex-start" }}>
-          {s.champs.slice(0, 5).map((c) => (
-            <ChampIcon key={c} name={c} size={44} />
-          ))}
+    <div style={{ display: "flex", alignItems: "center", gap: 24, minWidth: 0, flex: 1, flexDirection: right ? "row-reverse" : "row" }}>
+      {s.team && <CardLogo name={s.team} code={s.code} size={112} badge />}
+      <div style={{ textAlign: right ? "right" : "left", minWidth: 0, flex: 1 }}>
+        <div style={{ fontSize: 52, fontWeight: 800, lineHeight: 1.05, color: "var(--rw-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {s.name}
         </div>
-      )}
+        {s.sub && <div style={{ fontSize: 22, color: "var(--rw-sub)", marginTop: 4 }}>{s.sub}</div>}
+        {s.champs && s.champs.length > 0 && (
+          <div style={{ display: "flex", gap: 8, marginTop: 10, justifyContent: right ? "flex-end" : "flex-start" }}>
+            {s.champs.slice(0, 5).map((c) => (
+              <ChampIcon key={c} name={c} size={44} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
   const bar = (r: CardRow) => {
@@ -306,8 +357,8 @@ export function teamCardData(
   return {
     title: tl("Head to head"),
     subtitle: period,
-    a: { name: a.name, sub: a.region, champs: A.picks.slice(0, 5).map((p) => p[0]) },
-    b: { name: b.name, sub: b.region, champs: B.picks.slice(0, 5).map((p) => p[0]) },
+    a: { name: a.name, sub: a.region, champs: A.picks.slice(0, 5).map((p) => p[0]), team: a.name },
+    b: { name: b.name, sub: b.region, champs: B.picks.slice(0, 5).map((p) => p[0]), team: b.name },
     chance,
     rows,
     note: A.tl || B.tl ? tl("Early game: Oracle's Elixir") : undefined,
@@ -344,8 +395,8 @@ export function playerCardData(
   return {
     title: two ? tl("Player comparison") : tl("Player card"),
     subtitle: period,
-    a: { name: a.name, sub: sub(a), champs: A.champs.slice(0, 5).map((c) => c.c) },
-    b: two ? { name: b!.name, sub: sub(b!), champs: B!.champs.slice(0, 5).map((c) => c.c) } : undefined,
+    a: { name: a.name, sub: sub(a), champs: A.champs.slice(0, 5).map((c) => c.c), team: a.club },
+    b: two ? { name: b!.name, sub: sub(b!), champs: B!.champs.slice(0, 5).map((c) => c.c), team: b!.club } : undefined,
     rows,
     note: A.tl || B?.tl ? tl("Early game: Oracle's Elixir") : undefined,
   };
@@ -384,6 +435,8 @@ export function prepOverviewCard(d: {
   period: string;
 }): CardData {
   const team = (t: PrepTeamLine, right: boolean, color: string) => (
+    <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "flex-start", gap: 24, flexDirection: right ? "row-reverse" : "row" }}>
+    <CardLogo name={t.name} size={124} badge />
     <div style={{ flex: 1, minWidth: 0, textAlign: right ? "right" : "left" }}>
       <div style={{ fontSize: 56, fontWeight: 800, lineHeight: 1.05, color, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
       {t.rank && (
@@ -417,6 +470,7 @@ export function prepOverviewCard(d: {
           </span>
         ))}
       </div>
+    </div>
     </div>
   );
   return {
@@ -523,10 +577,16 @@ export function fearlessCard(d: { aName: string; bName: string; rows: { role: st
     rows: [],
     body: (
       <div style={{ marginTop: 18, display: "grid", gap: 6, flex: 1, alignContent: "start" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 150px 1fr", gap: 20, fontSize: 30, fontWeight: 800 }}>
-          <span style={{ color: A_COLOR }}>{d.aName}</span>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 150px 1fr", gap: 20, fontSize: 30, fontWeight: 800, alignItems: "center" }}>
+          <span style={{ color: A_COLOR, display: "flex", alignItems: "center", gap: 14 }}>
+            <CardLogo name={d.aName} size={56} badge />
+            {d.aName}
+          </span>
           <span />
-          <span style={{ color: B_COLOR, textAlign: "right" }}>{d.bName}</span>
+          <span style={{ color: B_COLOR, display: "flex", alignItems: "center", gap: 14, justifyContent: "flex-end" }}>
+            {d.bName}
+            <CardLogo name={d.bName} size={56} badge />
+          </span>
         </div>
         {d.rows.map((r) => (
           <div key={r.role} style={{ display: "grid", gridTemplateColumns: "1fr 150px 1fr", gap: 20, alignItems: "center", borderTop: "1px solid var(--rw-border)", paddingTop: 8 }}>
@@ -588,10 +648,16 @@ export function draftCard(d: { aName: string; bName: string; A: Draft; B: Draft;
     note: tl("{a} and {b} games with the draft order", { a: d.A.games, b: d.B.games }),
     body: (
       <div style={{ marginTop: 18, display: "grid", gap: 4, flex: 1, alignContent: "start" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 260px 1fr", gap: 20, fontSize: 34, fontWeight: 800 }}>
-          <span style={{ color: A_COLOR, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.aName}</span>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 260px 1fr", gap: 20, fontSize: 34, fontWeight: 800, alignItems: "center" }}>
+          <span style={{ color: A_COLOR, display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+            <CardLogo name={d.aName} size={60} badge />
+            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.aName}</span>
+          </span>
           <span />
-          <span style={{ color: B_COLOR, textAlign: "right", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.bName}</span>
+          <span style={{ color: B_COLOR, display: "flex", alignItems: "center", gap: 14, justifyContent: "flex-end", minWidth: 0 }}>
+            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.bName}</span>
+            <CardLogo name={d.bName} size={60} badge />
+          </span>
         </div>
         {rows.map(([what, a, b]) => (
           <div key={what} style={{ display: "grid", gridTemplateColumns: "1fr 260px 1fr", gap: 20, alignItems: "center", borderTop: "1px solid var(--rw-border)", padding: "8px 0" }}>
@@ -633,7 +699,7 @@ export function teamSoloCardData(t: { name: string; sub?: string }, A: TeamAgg, 
   return {
     title: tl("Team card"),
     subtitle: period,
-    a: { name: t.name, sub: t.sub, champs: A.picks.slice(0, 5).map((p) => p[0]) },
+    a: { name: t.name, sub: t.sub, champs: A.picks.slice(0, 5).map((p) => p[0]), team: t.name },
     rows,
     note: A.tl ? tl("Early game: Oracle's Elixir") : undefined,
   };
@@ -670,8 +736,9 @@ export function eventCardData(d: {
         {d.podium.length > 0 && (
           <div style={{ display: "flex", gap: 40, marginTop: 14, alignItems: "baseline", flexWrap: "wrap" }}>
             {d.podium.slice(0, 3).map((t, i) => (
-              <span key={i} style={{ fontSize: i === 0 ? 40 : 28, fontWeight: 800, color: medal[i] }}>
+              <span key={i} style={{ fontSize: i === 0 ? 40 : 28, fontWeight: 800, color: medal[i], display: "inline-flex", alignItems: "center", gap: 12 }}>
                 {i === 0 ? "🏆 " : `${i + 1}. `}
+                <CardLogo name={t} size={i === 0 ? 64 : 44} />
                 {t}
               </span>
             ))}
@@ -709,8 +776,11 @@ export function rankingsCard(d: { title: string; subtitle: string; rows: { name:
     body: (
       <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "1fr 1fr", gridAutoFlow: "column", gridTemplateRows: `repeat(${Math.ceil(rows.length / 2)}, auto)`, gap: "10px 56px", alignContent: "start" }}>
         {rows.map((x, i) => (
-          <div key={i} style={{ display: "grid", gridTemplateColumns: "64px 1fr auto auto", gap: 18, alignItems: "baseline", borderTop: "1px solid var(--rw-border)", padding: "12px 0", fontVariantNumeric: "tabular-nums" }}>
+          <div key={i} style={{ display: "grid", gridTemplateColumns: "64px 48px 1fr auto auto", gap: 18, alignItems: "center", borderTop: "1px solid var(--rw-border)", padding: "12px 0", fontVariantNumeric: "tabular-nums" }}>
             <span style={{ fontSize: 34, fontWeight: 800, color: i === 0 ? "var(--rw-accent)" : "var(--rw-muted)" }}>{i + 1}</span>
+            <span style={{ display: "flex" }}>
+              <CardLogo name={x.name} size={48} />
+            </span>
             <span style={{ minWidth: 0 }}>
               <span style={{ display: "block", fontSize: 34, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.name}</span>
               {x.league && <span style={{ display: "block", fontSize: 18, color: "var(--rw-sub)" }}>{x.league}</span>}
@@ -746,7 +816,10 @@ export function chancesCard(d: { title: string; subtitle: string; cols: string[]
         </div>
         {rows.map((r, i) => (
           <div key={i} style={{ display: "grid", gridTemplateColumns: grid, gap: 12, alignItems: "baseline", borderTop: "1px solid var(--rw-border)", padding: "6px 0", fontVariantNumeric: "tabular-nums" }}>
-            <span style={{ fontSize: 28, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+              <CardLogo name={r.name} size={34} />
+              <span style={{ fontSize: 28, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</span>
+            </span>
             {r.v.map((x, j) => (
               <span key={j} style={{ fontSize: j === r.v.length - 1 ? 32 : 26, fontWeight: j === r.v.length - 1 ? 800 : 600, textAlign: "right", color: j === r.v.length - 1 ? "var(--rw-accent)" : "var(--rw-text)" }}>{x}</span>
             ))}
@@ -801,7 +874,7 @@ export function playerCareerCardData(p: import("../../hub/types").HubPlayer): Ca
   return {
     title: tl("Career card"),
     subtitle: years,
-    a: { name: p.name, sub, champs: p.champs.slice(0, 5).map((c) => c.c) },
+    a: { name: p.name, sub, champs: p.champs.slice(0, 5).map((c) => c.c), team: p.club || undefined },
     rows,
   };
 }
@@ -820,13 +893,19 @@ export function seriesCardData(s: import("../../hub/types").HubSeries): CardData
     body: (
       <>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 32, marginTop: 18 }}>
-          <div style={{ fontSize: 52, fontWeight: 800, color: s.w === 1 ? A_COLOR : "var(--rw-text)", textAlign: "right", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.a.n}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 22, justifyContent: "flex-end", minWidth: 0 }}>
+            <div style={{ fontSize: 52, fontWeight: 800, color: s.w === 1 ? A_COLOR : "var(--rw-text)", textAlign: "right", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.a.n}</div>
+            <CardLogo name={s.a.n} code={s.a.c} size={96} badge />
+          </div>
           <div style={{ fontSize: 72, fontWeight: 900, fontVariantNumeric: "tabular-nums" }}>
             {s.sa}
             <span style={{ color: "var(--rw-muted)" }}> – </span>
             {s.sb}
           </div>
-          <div style={{ fontSize: 52, fontWeight: 800, color: s.w === 2 ? A_COLOR : "var(--rw-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.b.n}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 22, minWidth: 0 }}>
+            <CardLogo name={s.b.n} code={s.b.c} size={96} badge />
+            <div style={{ fontSize: 52, fontWeight: 800, color: s.w === 2 ? A_COLOR : "var(--rw-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.b.n}</div>
+          </div>
         </div>
         <div style={{ marginTop: 18, display: "grid", gap: big ? 14 : 8, alignContent: "start" }}>
           {games.map((g) => {
@@ -886,8 +965,8 @@ export function gameCardData(s: import("../../hub/types").HubSeries, g: import("
   return {
     title: tl("{event} · Game {n}", { event: eventTitle(s.en), n: g.n }),
     subtitle: [g.min ? mmss(g.min) : null, g.patch ? tl("Patch {patch}", { patch: g.patch }) : null].filter(Boolean).join(" · "),
-    a: { name: blueTeam.n, sub: `${tl("Blue side")}${blueWon ? ` · ${won}` : ""}`, champs: B.picks },
-    b: { name: redTeam.n, sub: `${tl("Red side")}${!blueWon && g.w ? ` · ${won}` : ""}`, champs: R.picks },
+    a: { name: blueTeam.n, sub: `${tl("Blue side")}${blueWon ? ` · ${won}` : ""}`, champs: B.picks, team: blueTeam.n, code: blueTeam.c },
+    b: { name: redTeam.n, sub: `${tl("Red side")}${!blueWon && g.w ? ` · ${won}` : ""}`, champs: R.picks, team: redTeam.n, code: redTeam.c },
     rows,
     note: B.g15 != null ? tl("Early game: Oracle's Elixir") : undefined,
   };
@@ -911,8 +990,13 @@ export interface BoardSide {
 export function draftBoardCard(d: { blue: BoardSide; red: BoardSide; period: string; earlier: { blue: string[]; red: string[] }[] }): CardData {
   const side = (s: BoardSide, color: string, sideName: string, right: boolean) => (
     <div style={{ minWidth: 0, textAlign: right ? "right" : "left" }}>
-      <div style={{ fontSize: 46, fontWeight: 800, color, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
-      <div style={{ ...caption, marginTop: 2 }}>{sideName}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 18, flexDirection: right ? "row-reverse" : "row" }}>
+        <CardLogo name={s.name} size={72} badge />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 46, fontWeight: 800, color, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
+          <div style={{ ...caption, marginTop: 2 }}>{sideName}</div>
+        </div>
+      </div>
       <div style={{ display: "flex", gap: 6, marginTop: 12, alignItems: "center", justifyContent: right ? "flex-end" : "flex-start" }}>
         <span style={{ ...caption, fontSize: 16, marginRight: 6 }}>{tl("Bans")}</span>
         {s.bans.length ? s.bans.map((c) => <span key={c} style={{ opacity: 0.55, filter: "grayscale(0.7)" }}><ChampIcon name={c} size={40} /></span>) : none}
