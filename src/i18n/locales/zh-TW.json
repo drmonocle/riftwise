@@ -2198,5 +2198,7 @@
   "{n} players": "{n} 名選手",
   "Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.": "勝率：選手結束時背包裡有該裝備的比賽。獲勝方會做出更多裝備，所以大多數裝備的勝率都高於 50%。",
 
-  "Every game on {champ}": "使用{champ}的全部比賽"
+  "Every game on {champ}": "使用{champ}的全部比賽",
+
+  "Pick a winner to play the rest out in the picker.": "選擇勝者，在模擬器中推演剩下的比賽。"
 }

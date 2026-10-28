@@ -2198,5 +2198,7 @@
   "{n} players": "{n} Spieler",
   "Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.": "Sieg-%: die Spiele, die mit dem Item im Inventar eines Spielers endeten. Siegerteams schließen mehr Items ab, daher liegen die meisten über 50 %.",
 
-  "Every game on {champ}": "Alle Spiele mit {champ}"
+  "Every game on {champ}": "Alle Spiele mit {champ}",
+
+  "Pick a winner to play the rest out in the picker.": "Wähle einen Sieger, um den Rest im Picker durchzuspielen."
 }

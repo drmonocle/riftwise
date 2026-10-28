@@ -2198,5 +2198,7 @@
   "{n} players": "{n}명",
   "Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.": "승률: 선수의 인벤토리에 그 아이템이 있는 채로 끝난 경기. 이기는 팀이 아이템을 더 많이 완성하므로 대부분 50%를 넘습니다.",
 
-  "Every game on {champ}": "{champ} 전체 경기"
+  "Every game on {champ}": "{champ} 전체 경기",
+
+  "Pick a winner to play the rest out in the picker.": "승자를 고르면 나머지를 예측기에서 이어서 진행합니다."
 }

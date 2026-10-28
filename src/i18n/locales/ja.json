@@ -2198,5 +2198,7 @@
   "{n} players": "{n} 人",
   "Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.": "勝率：選手のインベントリにそのアイテムがある状態で終わった試合。勝つチームほど多くのアイテムを完成させるため、ほとんどが50%を超えます。",
 
-  "Every game on {champ}": "{champ}の全試合"
+  "Every game on {champ}": "{champ}の全試合",
+
+  "Pick a winner to play the rest out in the picker.": "勝者を選ぶと、残りをピッカーで予想できます。"
 }
