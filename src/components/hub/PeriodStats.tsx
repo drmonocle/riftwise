@@ -22,7 +22,7 @@ import { useDDragon } from "../../hub/ddragon";
 import { SortTable, type Column } from "./SortTable";
 import { TrendChart } from "./TrendChart";
 import { DraftTendencies } from "./DraftTendencies";
-import { BroadcastCardButton, playerCardData, teamSoloCardData } from "./BroadcastCard";
+import { BroadcastCardButton, playerCardData, teamSoloCardData, type RosterPlayer } from "./BroadcastCard";
 import { fmtRating, useRatingFile } from "./PlayerRating";
 import { playerRowLine, rateLine } from "../../hub/playerRating";
 import {
@@ -629,7 +629,9 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
 
 // ── teams ─────────────────────────────────────────────────────────────────
 
-export const TeamPeriodStats: React.FC<{ slug: string; has2y?: boolean; who?: { name: string; sub?: string } }> = ({ slug, has2y, who }) => {
+type TeamWho = { name: string; sub?: string; roster?: RosterPlayer[] };
+
+export const TeamPeriodStats: React.FC<{ slug: string; has2y?: boolean; who?: TeamWho }> = ({ slug, has2y, who }) => {
   const { loading, rows } = useGameLog(slug, has2y, loadTeamGames2y, loadTeamGames);
   if (loading) return <Loading />;
   if (!rows || !rows.length) return null;
@@ -656,7 +658,7 @@ const ChampCounts: React.FC<{ title: string; list: [string, number][] }> = ({
     </div>
   ) : null;
 
-const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: { name: string; sub?: string } }> = ({
+const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWho }> = ({
   slug,
   rows,
   who,
