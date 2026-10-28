@@ -11,7 +11,7 @@ import { tl, tc, locale, roleName, fmtDec, stageLabel, eventTitle } from "../../
 import { IS_WEB } from "../../platform";
 import { ChampIcon } from "./ui";
 import { champName } from "../../champions";
-import { useTeamLogo } from "../../hub/riotCatalog";
+import { usePlayerPicture, useTeamLogo } from "../../hub/riotCatalog";
 import type { PlayerAgg, TeamAgg } from "../../hub/period";
 import { ROLES } from "../../hub/champAgg";
 import type { draftTendencies } from "./DraftTendencies";
@@ -25,7 +25,57 @@ export interface CardSide {
   /** the team whose logo goes beside the name (a player's card: their team), and its short name */
   team?: string;
   code?: string | null;
+  /** a player's card: their photo (by page slug, or Riot's photo the page file carries), the team logo on it */
+  player?: { slug?: string; img?: string };
 }
+
+/**
+ * A player's photo on a card (TV, 2026-10-28: "player face cards on their stat sheets"): Riot's photo from Riot's own
+ * picture server, or the Leaguepedia copy on our server, both allowed inside a picture; initials when there's none.
+ * The team logo sits on its corner.
+ */
+export const CardPhoto: React.FC<{ name: string; team?: string; slug?: string; img?: string; size: number }> = ({ name, team, slug, img, size }) => {
+  const pic = usePlayerPicture(name, team, slug, img);
+  const [broken, setBroken] = useState(false);
+  const src = pic && !broken ? pic.src.replace(/^http:/, "https:") : null;
+  const ring: React.CSSProperties = {
+    width: size,
+    height: size,
+    borderRadius: "50%",
+    boxShadow: "0 0 0 4px var(--rw-accent), 0 8px 24px rgba(0,0,0,0.45)",
+    background: "radial-gradient(circle at 50% 30%, var(--rw-raised), var(--rw-bg))",
+  };
+  return (
+    <span style={{ position: "relative", width: size, height: size, flexShrink: 0, display: "inline-block" }}>
+      {src ? (
+        <img src={src} crossOrigin="anonymous" alt="" onError={() => setBroken(true)} style={{ ...ring, objectFit: "cover", objectPosition: "top" }} />
+      ) : (
+        <span style={{ ...ring, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: size / 3, fontWeight: 900, color: "var(--rw-sub)" }}>
+          {name.slice(0, 2).toUpperCase()}
+        </span>
+      )}
+      {team && (
+        <span
+          style={{
+            position: "absolute",
+            right: -size * 0.06,
+            bottom: -size * 0.06,
+            width: size * 0.42,
+            height: size * 0.42,
+            borderRadius: "50%",
+            background: "var(--rw-surface)",
+            boxShadow: "0 0 0 3px var(--rw-bg)",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <CardLogo name={team} size={size * 0.3} />
+        </span>
+      )}
+    </span>
+  );
+};
 
 /**
  * A team's logo on a card ("could we get team logos into the overview pictures?", 2026-10-28): Riot's logo from its
@@ -139,7 +189,11 @@ const Card: React.FC<{ d: CardData }> = ({ d }) => {
   const rows = d.rows.slice(0, two ? 9 : 10);
   const side = (s: CardSide, right: boolean) => (
     <div style={{ display: "flex", alignItems: "center", gap: 24, minWidth: 0, flex: 1, flexDirection: right ? "row-reverse" : "row" }}>
-      {s.team && <CardLogo name={s.team} code={s.code} size={112} badge />}
+      {s.player ? (
+        <CardPhoto name={s.name} team={s.team} slug={s.player.slug} img={s.player.img} size={128} />
+      ) : (
+        s.team && <CardLogo name={s.team} code={s.code} size={112} badge />
+      )}
       <div style={{ textAlign: right ? "right" : "left", minWidth: 0, flex: 1 }}>
         <div style={{ fontSize: 52, fontWeight: 800, lineHeight: 1.05, color: "var(--rw-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {s.name}
@@ -195,9 +249,9 @@ const Card: React.FC<{ d: CardData }> = ({ d }) => {
         )}
         {d.b && side(d.b, true)}
       </div>
-      <div style={{ marginTop: 22, flex: 1, minHeight: 0, overflow: "hidden", display: "grid", gridTemplateColumns: two ? "1fr" : "1fr 1fr", gap: two ? 6 : "14px 48px", alignContent: "start" }}>
-        {rows.map((r) =>
-          two ? (
+      {two ? (
+        <div style={{ marginTop: 22, flex: 1, minHeight: 0, overflow: "hidden", display: "grid", gridTemplateColumns: "1fr", gap: 6, alignContent: "start" }}>
+          {rows.map((r) => (
             <div key={r.label}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "baseline", gap: 24, fontVariantNumeric: "tabular-nums" }}>
                 <span style={{ fontSize: 30, fontWeight: 700, lineHeight: 1.15 }}>{r.a}</span>
@@ -206,22 +260,70 @@ const Card: React.FC<{ d: CardData }> = ({ d }) => {
               </div>
               {bar(r)}
             </div>
-          ) : (
-            <div key={r.label}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontVariantNumeric: "tabular-nums" }}>
-                <span style={{ fontSize: 22, color: "var(--rw-sub)", textTransform: "uppercase", letterSpacing: 1.5 }}>{r.label}</span>
-                <span style={{ fontSize: 36, fontWeight: 800 }}>{r.a}</span>
-              </div>
-              {r.pct != null && (
-                <div style={{ height: 8, borderRadius: 4, background: "var(--rw-bg)", marginTop: 6, overflow: "hidden" }}>
-                  <div style={{ width: `${Math.max(0, Math.min(100, r.pct))}%`, height: "100%", background: "var(--rw-accent)" }} />
-                </div>
-              )}
-            </div>
-          ),
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <OneSide rows={rows} />
+      )}
     </Frame>
+  );
+};
+
+/**
+ * A one-sided card's numbers (TV, 2026-10-28: "some lines not having bars look weird"): the shares and rates as bars
+ * on one 0-100% scale with a mark at 50%, every other number as a tile of its own. With about as many of each, bars
+ * left and tiles right; with few bars, the bars across the top and the tiles in rows of four under them.
+ */
+const OneSide: React.FC<{ rows: CardRow[] }> = ({ rows }) => {
+  const bars = rows.filter((r) => r.pct != null);
+  const tiles = rows.filter((r) => r.pct == null);
+  const sideBySide = bars.length >= 3 && bars.length * 2 >= tiles.length;
+  // a signed number reads as ahead (teal) or behind (red); everything else in the text colour
+  const tone = (v: string) => (/^\+\d/.test(v) ? "var(--rw-teal)" : /^[−-]\d/.test(v) ? "var(--rw-red)" : "var(--rw-text)");
+  const barRow = (r: CardRow) => {
+    const p = Math.max(0, Math.min(100, r.pct!));
+    return (
+      <div key={r.label} style={{ minWidth: 0 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16, fontVariantNumeric: "tabular-nums" }}>
+          <span style={{ fontSize: 21, color: "var(--rw-sub)", textTransform: "uppercase", letterSpacing: 1.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.label}</span>
+          <span style={{ fontSize: 36, fontWeight: 800 }}>{r.a}</span>
+        </div>
+        <div style={{ position: "relative", height: 12, borderRadius: 6, background: "var(--rw-bg)", boxShadow: "inset 0 0 0 1px var(--rw-border)", marginTop: 8, overflow: "hidden" }}>
+          <div style={{ width: `${p}%`, height: "100%", borderRadius: 6, background: "linear-gradient(90deg, var(--rw-accent-2), var(--rw-accent))" }} />
+          <div style={{ position: "absolute", left: "calc(50% - 1px)", top: 0, bottom: 0, width: 2, background: "var(--rw-bg)", opacity: 0.85 }} />
+        </div>
+      </div>
+    );
+  };
+  const tile = (r: CardRow) => (
+    <div key={r.label} style={{ minWidth: 0, borderRadius: 10, background: "var(--rw-surface)", boxShadow: "inset 0 0 0 1px var(--rw-border)", padding: "14px 20px" }}>
+      <div style={{ fontSize: 18, color: "var(--rw-sub)", textTransform: "uppercase", letterSpacing: 1.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.label}</div>
+      <div
+        style={{
+          fontSize: r.a.length > 14 ? 24 : r.a.length > 9 ? 30 : 40,
+          fontWeight: 800,
+          marginTop: 4,
+          color: tone(r.a),
+          fontVariantNumeric: "tabular-nums",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {r.a}
+      </div>
+    </div>
+  );
+  return sideBySide ? (
+    <div style={{ marginTop: 30, flex: 1, minHeight: 0, overflow: "hidden", display: "grid", gridTemplateColumns: tiles.length ? "minmax(0, 1.25fr) minmax(0, 1fr)" : "minmax(0, 1fr)", gap: 56, alignContent: "start" }}>
+      <div style={{ display: "grid", gap: 24, alignContent: "start" }}>{bars.map(barRow)}</div>
+      {tiles.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignContent: "start" }}>{tiles.map(tile)}</div>}
+    </div>
+  ) : (
+    <div style={{ marginTop: 30, flex: 1, minHeight: 0, overflow: "hidden", display: "grid", gap: 28, alignContent: "start" }}>
+      {bars.length > 0 && <div style={{ display: "grid", gridTemplateColumns: `repeat(${bars.length}, minmax(0, 1fr))`, gap: 48 }}>{bars.map(barRow)}</div>}
+      {tiles.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 16 }}>{tiles.map(tile)}</div>}
+    </div>
   );
 };
 
@@ -367,10 +469,10 @@ export function teamCardData(
 
 /** One player, or two side by side, over a period. */
 export function playerCardData(
-  a: { name: string; role?: string; club?: string },
+  a: { name: string; role?: string; club?: string; slug?: string },
   A: PlayerAgg,
   period: string,
-  b?: { name: string; role?: string; club?: string },
+  b?: { name: string; role?: string; club?: string; slug?: string },
   B?: PlayerAgg,
 ): CardData {
   const sub = (x: { role?: string; club?: string }) => [x.role, x.club].filter(Boolean).join(" · ");
@@ -383,7 +485,7 @@ export function playerCardData(
     row("KP", pc(A.kp), A.kp, B && pc(B.kp), B?.kp, A.kp),
     row(tl("CS / min"), n1(A.csm), A.csm, B && n1(B.csm), B?.csm),
     row(tl("Damage / min"), A.dpm != null ? A.dpm.toLocaleString(locale()) : "–", A.dpm, B && (B.dpm != null ? B.dpm.toLocaleString(locale()) : "–"), B?.dpm),
-    row(tl("DMG%"), pc(A.dmgShare), A.dmgShare, B && pc(B.dmgShare), B?.dmgShare),
+    row(tl("DMG%"), pc(A.dmgShare), A.dmgShare, B && pc(B.dmgShare), B?.dmgShare, A.dmgShare),
   ];
   if (A.tl || B?.tl) {
     rows.push(row("GD@15", sg(A.tl?.gd15), A.tl?.gd15 ?? null, B && sg(B.tl?.gd15), B?.tl?.gd15 ?? null));
@@ -395,8 +497,8 @@ export function playerCardData(
   return {
     title: two ? tl("Player comparison") : tl("Player card"),
     subtitle: period,
-    a: { name: a.name, sub: sub(a), champs: A.champs.slice(0, 5).map((c) => c.c), team: a.club },
-    b: two ? { name: b!.name, sub: sub(b!), champs: B!.champs.slice(0, 5).map((c) => c.c), team: b!.club } : undefined,
+    a: { name: a.name, sub: sub(a), champs: A.champs.slice(0, 5).map((c) => c.c), team: a.club, player: { slug: a.slug } },
+    b: two ? { name: b!.name, sub: sub(b!), champs: B!.champs.slice(0, 5).map((c) => c.c), team: b!.club, player: { slug: b!.slug } } : undefined,
     rows,
     note: A.tl || B?.tl ? tl("Early game: Oracle's Elixir") : undefined,
   };
@@ -681,7 +783,7 @@ const mmss = (m: number) => {
 /** One team over a period: record, sides, gold, objectives and (with Oracle's Elixir games) the early game. */
 export function teamSoloCardData(t: { name: string; sub?: string }, A: TeamAgg, period: string): CardData {
   const rows: CardRow[] = [
-    { label: tl("Games won"), a: `${A.w}-${A.g - A.w}`, pct: wrOf(A.w, A.g) },
+    { label: tl("Games won"), a: `${A.w}-${A.g - A.w}` },
     { label: tl("Win rate"), a: pc(wrOf(A.w, A.g)), pct: wrOf(A.w, A.g) },
     { label: tl("Blue side"), a: `${A.blue[1]}-${A.blue[0] - A.blue[1]}`, pct: wrOf(A.blue[1], A.blue[0]) },
     { label: tl("Red side"), a: `${A.red[1]}-${A.red[0] - A.red[1]}`, pct: wrOf(A.red[1], A.red[0]) },
@@ -857,7 +959,7 @@ export function champCardData(c: import("../../hub/types").HubChamp, label: stri
 export function playerCareerCardData(p: import("../../hub/types").HubPlayer): CardData {
   const per = (v: number) => (p.g ? fmtDec(v / p.g) : "–");
   const rows: CardRow[] = [
-    { label: tl("Games won"), a: `${p.w.toLocaleString(locale())}-${(p.g - p.w).toLocaleString(locale())}`, pct: wrOf(p.w, p.g) },
+    { label: tl("Games won"), a: `${p.w.toLocaleString(locale())}-${(p.g - p.w).toLocaleString(locale())}` },
     { label: tl("Win rate"), a: pc(wrOf(p.w, p.g)), pct: wrOf(p.w, p.g) },
     { label: tl("KDA"), a: String(p.kda) },
     { label: tl("K / D / A per game"), a: `${per(p.k)} / ${per(p.d)} / ${per(p.a)}` },
@@ -874,7 +976,7 @@ export function playerCareerCardData(p: import("../../hub/types").HubPlayer): Ca
   return {
     title: tl("Career card"),
     subtitle: years,
-    a: { name: p.name, sub, champs: p.champs.slice(0, 5).map((c) => c.c), team: p.club || undefined },
+    a: { name: p.name, sub, champs: p.champs.slice(0, 5).map((c) => c.c), team: p.club || undefined, player: { slug: p.u, img: p.img } },
     rows,
   };
 }
