@@ -620,10 +620,10 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
             <BroadcastCardButton
               data={() =>
                 playerCardData(
-                  { name: x.name, role: x.role ? roleName(x.role) : undefined, club: x.club },
+                  { name: x.name, role: x.role ? roleName(x.role) : undefined, club: x.club, slug: x.u },
                   A,
                   periodLabel,
-                  { name: y.name, role: y.role ? roleName(y.role) : undefined, club: y.club },
+                  { name: y.name, role: y.role ? roleName(y.role) : undefined, club: y.club, slug: y.u },
                   B,
                 )
               }

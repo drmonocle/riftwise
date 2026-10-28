@@ -527,7 +527,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
           <PeriodPicker options={options} value={period} onChange={setPeriod} />
           <OnlyPicker value={only} onChange={setOnly} />
           {who && !hidden && (
-            <BroadcastCardButton data={() => playerCardData(who, agg, periodText)} name={`${who.name}-${period}`} />
+            <BroadcastCardButton data={() => playerCardData({ ...who, slug }, agg, periodText)} name={`${who.name}-${period}`} />
           )}
         </>
       }
