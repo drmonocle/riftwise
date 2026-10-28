@@ -4,7 +4,8 @@ Builds the RiftWise Stats tab data from the Twitch bot's pro games catalog.
 Reads pro_games_catalog.db (read-only) and writes small JSON files the app loads one at a time,
 so the Stats tab never downloads or crunches the whole database:
 
-  <out>/latest.json                    {"version": "...", "built": "..."}  (never cached)
+  <out>/latest.json                    {"version": "...", "built": "...", "reigning": [{k: "MSI", y, t: team, c: code}]}
+                                       (never cached; reigning = the latest Worlds, MSI and First Stand champions)
   <out>/<version>/meta.json            totals, years, patches
   <out>/<version>/hub/...              the stats pages' files (hub.py: players, teams, events, games, ...)
   <out>/<version>/champions/<key>.json pick/ban/win rates for all time, a year or a patch
@@ -1126,9 +1127,16 @@ def main() -> None:
 
     # Point readers at the new build, then remove old builds (keep the newest three: the build runs whenever
     # the database changes, a few times a day, and an open page may still be reading an older one).
+    # the reigning Worlds, MSI and First Stand champions, for the app's floating team logos (src/components/TeamBubbles.tsx):
+    # a few bytes, so they ride along with the version instead of a file of their own
+    reigning = []
+    for kind in ("Worlds", "MSI", "First Stand"):
+        last = max((x for x in titles if x["kind"] == kind), key=lambda x: x["date"], default=None)
+        if last:
+            reigning.append({"k": kind, "y": last["date"][:4], "t": last["w"], "c": short_of(last["w"]) or short_of(last["as"])})
     tmp = os.path.join(args.out, "latest.json.tmp")
     with open(tmp, "w", encoding="utf-8") as f:
-        json.dump({"version": version, "built": datetime.datetime.now(datetime.timezone.utc).isoformat()}, f)
+        json.dump({"version": version, "built": datetime.datetime.now(datetime.timezone.utc).isoformat(), "reigning": reigning}, f)
     os.replace(tmp, os.path.join(args.out, "latest.json"))
     builds = sorted(d for d in os.listdir(args.out) if d.isdigit() and os.path.isdir(os.path.join(args.out, d)))
     for old in builds[:-3]:

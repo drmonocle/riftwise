@@ -9,6 +9,7 @@
  *   /stats/compare?teams=t1,gen-g&p=y2026   a comparison (players=..., p = period: all, last20, y2026, e:<event>)
  *   /stats/champions?league=lck&year=2026&event=..&patch=26.18&side=b&role=Mid   champion stats with filters
  *   /stats/teams, /stats/players   every team and every player (?region=..&active=2026&role=Mid&q=..)
+ *   /stats/items?player=faker&item=heartsteel   the item history: has a pro ever finished a game holding an item
  *   /about                      who makes RiftWise
  *   /player/<slug>              /team/<slug>  /tournament/<slug>  /match/<slug>[?g=<game>]  /champion/<slug>  /league/<slug>[/<year>]
  *   /player/<slug>/<tab>        a team's, player's or tournament's other tabs (/team/t1/matches, /player/faker/champions)
@@ -21,7 +22,7 @@ import { IS_WEB, SITE_URL } from "../platform";
 export type HubSection =
   | "tournaments" | "leagues" | "champions" | "patches" | "records" | "titles" | "compare" | "data" | "about" | "prep"
   | "rankings" | "finder" | "draft" | "best" | "counters" | "worlds" | "msi" | "first-stand" | "leaders" | "tiers"
-  | "weekly" | "teams" | "players"
+  | "weekly" | "teams" | "players" | "items"
   | "aboutme"; // riftwise.gg/about (not under /stats)
 export type HubEntity = "team" | "player" | "event" | "match" | "champ" | "league";
 
@@ -49,12 +50,12 @@ export type CompareRoute = { kind: "compare"; mode?: "team" | "player"; a?: stri
 export type PrepRoute = { kind: "prep"; a?: string; b?: string; period?: string };
 const SECTIONS: HubSection[] = [
   "tournaments", "leagues", "champions", "patches", "records", "titles", "compare", "data", "about", "prep", "rankings", "finder", "draft",
-  "best", "counters", "worlds", "msi", "first-stand", "leaders", "tiers", "weekly", "teams", "players",
+  "best", "counters", "worlds", "msi", "first-stand", "leaders", "tiers", "weekly", "teams", "players", "items",
 ];
 /** Pages that keep their filters in the address (?league=lck&year=2026...). */
 /** Worlds, MSI and First Stand: one page each, for a year or every year (/stats/msi/2024, /stats/worlds/all). */
 const INTL_SECTIONS: HubSection[] = ["worlds", "msi", "first-stand"];
-const QUERY_SECTIONS: HubSection[] = ["champions", "finder", "draft", "best", "counters", "leaders", "tiers", "teams", "players"];
+const QUERY_SECTIONS: HubSection[] = ["champions", "finder", "draft", "best", "counters", "leaders", "tiers", "teams", "players", "items"];
 const ENTITY_PATH: Record<HubEntity, string> = {
   team: "team", player: "player", event: "tournament", match: "match", champ: "champion", league: "league",
 };

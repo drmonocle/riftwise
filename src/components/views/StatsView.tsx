@@ -76,6 +76,7 @@ const FinderPage = lazyPart(() => pageCode.finder().then((m) => m.FinderPage));
 const DraftPage = lazyPart(() => pageCode.draft().then((m) => m.DraftPage));
 const BestPage = lazyPart(() => pageCode.best().then((m) => m.BestPage));
 const CountersPage = lazyPart(() => pageCode.counters().then((m) => m.CountersPage));
+const ItemsPage = lazyPart(() => pageCode.items().then((m) => m.ItemsPage));
 const LeadersPage = lazyPart(() => pageCode.leaders().then((m) => m.LeadersPage));
 const TiersPage = lazyPart(() => pageCode.tiers().then((m) => m.TiersPage));
 const AboutMePage = lazyPart(() => pageCode.aboutme().then((m) => m.AboutMePage));
@@ -100,13 +101,13 @@ interface StatsViewProps {
 
 type SectionKind = HubRoute["kind"];
 /** pages whose own title is their <h1> (the others get the "Pro stats" header as theirs) */
-const OWN_H1 = new Set(["home", "worlds", "msi", "first-stand", "rankings", "records", "prep", "draft", "finder", "best", "counters", "leaders", "tiers", "team", "player", "event", "champ", "league", "match", "aboutme"]);
+const OWN_H1 = new Set(["home", "worlds", "msi", "first-stand", "rankings", "records", "prep", "draft", "finder", "best", "counters", "items", "leaders", "tiers", "team", "player", "event", "champ", "league", "match", "aboutme"]);
 
 /** pages whose address carries what they show (teams, filters): their link is worth copying */
-const LINKABLE = new Set<SectionKind>(["prep", "draft", "finder", "compare", "best", "champions", "counters", "leaders", "tiers", "teams", "players"]);
+const LINKABLE = new Set<SectionKind>(["prep", "draft", "finder", "compare", "best", "champions", "counters", "items", "leaders", "tiers", "teams", "players"]);
 
 /** pages that are one big table: kept at the two-column width on very wide screens (App.css .rw-capped) */
-const CAPPED_KINDS = new Set(["weekly", "tournaments", "leagues", "rankings", "titles", "best", "champions", "patches", "data", "finder", "counters", "leaders", "teams", "players"]);
+const CAPPED_KINDS = new Set(["weekly", "tournaments", "leagues", "rankings", "titles", "best", "champions", "patches", "data", "finder", "counters", "items", "leaders", "teams", "players"]);
 
 // ── Compare ───────────────────────────────────────────────────────────────
 
@@ -292,6 +293,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
         {route.kind === "draft" && <DraftPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "best" && <BestPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "counters" && <CountersPage query={"query" in route ? route.query : undefined} />}
+        {route.kind === "items" && <ItemsPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "leaders" && <LeadersPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "tiers" &&
           (statsMeta.data ? <TiersPage meta={statsMeta.data} query={"query" in route ? route.query : undefined} /> : statsMeta.error ? <Failed /> : <Loading />)}

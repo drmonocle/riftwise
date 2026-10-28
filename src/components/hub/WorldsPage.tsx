@@ -1,6 +1,6 @@
 /**
- * The Worlds, MSI and First Stand pages: headline facts from every game (one year, or every year together), and for
- * Worlds the Swiss stage and knockout pickers with the power ratings' chances (pick by hand, fill with the favourites,
+ * The Worlds, MSI and First Stand pages: where the event stands (bracket, Swiss rounds, records) above headline facts
+ * from every game (one year, or every year together), and for Worlds the Swiss stage and knockout pickers with the power ratings' chances (pick by hand, fill with the favourites,
  * roll by the chances or flip a coin, or play the rest out thousands of times). Picks stay on this device.
  */
 import React, { useEffect, useMemo, useState } from "react";
@@ -28,6 +28,7 @@ import { liveLines } from "../../hub/liveLines";
 import type { EventLines } from "../../hub/worldsFacts";
 import { Failed, HubLink, Loading, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
 import { JumpBar, type JumpItem } from "./PageTabs";
+import { EventBracketBlock } from "./EventPage";
 
 /** The three international events with a page of their own; Worlds has had a Swiss stage since 2023. */
 export type IntlKind = "worlds" | "msi" | "first-stand";
@@ -173,7 +174,8 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
   useEffect(() => {
     if (!swissYear && !bracket) setTab("facts");
   }, [swissYear, bracket]);
-  // every year opens on the stats (TV, 2026-10-25: International events → Worlds lands there); the pickers are a tab away
+  // every year opens on the stats (TV, 2026-10-25: International events → Worlds lands there), with where the event
+  // stands at their top (TV, 2026-10-28); the pickers are a tab away
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -234,10 +236,168 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
       ) : tab === "bracket" && bracket && kind !== "worlds" ? (
         <BracketPicker d={d} kind={kind} br={bracket} live={d.year === thisYear} />
       ) : tab === "facts" || !swissYear ? (
-        <FactsTab d={d} kind={kind} />
+        <>
+          <WhereItStands d={d} kind={kind} br={bracket} swissYear={swissYear} schedule={d.year === thisYear ? schedule : undefined} />
+          <FactsTab d={d} kind={kind} />
+        </>
       ) : (
         <Pickers d={d} year={d.year} tab={tab} live={d.year === thisYear} schedule={d.year === thisYear ? schedule : undefined} />
       )}
+    </div>
+  );
+};
+
+// ── where it stands (the top of the stats tab) ────────────────────────────
+
+/**
+ * Where the event stands, read-only, above its stats (TV, 2026-10-28: the bracket is what most people come for):
+ * for a Worlds with a Swiss stage, the rounds Riot drew with their results and the records table, and the knockouts
+ * once Riot draws them; MSI's and First Stand's bracket. Matches still to play show each side's chance; the pickers'
+ * tabs play the rest out. Years the pickers don't cover show the stats' own bracket and standings.
+ */
+const WhereItStands: React.FC<{ d: Loaded; kind: IntlKind; br: Bracket | null; swissYear: boolean; schedule?: Match[] }> = ({ d, kind, br, swissYear, schedule }) => {
+  const last = d.stages.map((s) => s.end || "").sort().pop();
+  // spoiler mode hides it with the facts (the stats tab shows the Reveal button)
+  const [hidden] = useHidden(`worlds-facts:${kind}:${d.year}`, last);
+  if (d.all || hidden) return null;
+  if (swissYear && d.main) return <SwissNow d={d} main={d.main} schedule={schedule} />;
+  if (br && kind !== "worlds" && d.main) return <BracketNow d={d} kind={kind} br={br} />;
+  return d.parent ? <EventBracketBlock e={d.parent} /> : null;
+};
+
+const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[] }> = ({ d, main, schedule }) => {
+  const teams = useMemo(() => teamsOf(main, d.ratings), [main, d.ratings]);
+  const byU = useMemo(() => new Map(teams.map((t) => [t.u, t])), [teams]);
+  const riot = useMemo(() => liveResults(schedule, "worlds", teams), [schedule, teams]);
+  const real = useMemo(() => withLive(realOf(main, /^round \d/i, (n) => Number(/\d+/.exec(n)?.[0] || 0)), riot), [main, riot]);
+  const realKo = useMemo(() => withLiveKo(realOf(main, /quarter|semi|final/i, (n) => (/quarter/i.test(n) ? 1 : /semi/i.test(n) ? 2 : 3)), riot), [main, riot]);
+  const adjust = d.ratings?.adjust;
+  // no picks: only the real results and Riot's draws (a round Riot hasn't drawn yet isn't drawn here either)
+  const swiss = useMemo(() => runSwiss(teams, real, {}, 1, adjust), [teams, real, adjust]);
+  const ko = useMemo(() => {
+    const qf = realKo.filter((s) => s.round === 1);
+    return qf.length === 4 ? runKnockout(teams, quarterPairs(swiss.rec, 1, qf), realKo, {}, adjust) : null;
+  }, [teams, swiss.rec, realKo, adjust]);
+  if (teams.length < 16 || !real.some((s) => s.round === 1)) return d.parent ? <EventBracketBlock e={d.parent} /> : null;
+  const rounds = swiss.rounds.map((r) => r.filter((m) => !m.drawn)).filter((r) => r.length);
+  // each team's next match: the first one still to play
+  const next = new Map<string, string>();
+  for (const m of rounds.flat())
+    if (!m.w) {
+      next.set(m.a, m.b);
+      next.set(m.b, m.a);
+    }
+  const none = () => {};
+  return (
+    <>
+      {ko && (
+        <div className="rw-span">
+          <Section title={tl("Knockouts")}>
+            <Bracket ko={ko} byU={byU} onPick={none} readOnly />
+          </Section>
+        </div>
+      )}
+      <div className="rw-span">
+        <Section title={tl("Swiss stage")}>
+          {!ko && (
+            <div className="grid gap-3 lg:grid-cols-5 sm:grid-cols-2">
+              {rounds.map((r, i) => (
+                <div key={i} className="space-y-1.5 min-w-0">
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-rw-sub">{tl("Round {n}", { n: i + 1 })}</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-1 gap-1.5">
+                    {r.map((m) => (
+                      <MatchBox key={m.key} m={m} byU={byU} onPick={none} readOnly />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <SwissTable rec={swiss.rec} byU={byU} next={next} />
+        </Section>
+      </div>
+    </>
+  );
+};
+
+/** Every Swiss team by its record: through (3 wins), out (3 losses) or still in, with its next opponent. */
+const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<string, WTeam>; next: Map<string, string> }> = ({ rec, byU, next }) => {
+  const rows = Object.keys(rec).sort((a, b) => rec[b][0] - rec[a][0] || rec[a][1] - rec[b][1] || (byU.get(a)?.n || a).localeCompare(byU.get(b)?.n || b));
+  return (
+    <div className="overflow-x-auto max-w-full">
+      <table className="w-full text-xs">
+        <thead className="text-[10px] text-rw-muted">
+          <tr>
+            <th className="px-2 py-1 text-left">{tl("Team")}</th>
+            <th className="px-2 py-1 text-center">{tl("Record")}</th>
+            <th className="px-2 py-1 text-left">{tl("Status")}</th>
+            <th className="px-2 py-1 text-left max-sm:hidden">{tl("Next")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((u) => {
+            const t = byU.get(u);
+            const [w, l] = rec[u];
+            const opp = next.get(u);
+            return (
+              <tr key={u} className="border-t border-rw-border">
+                <td className="px-2 py-1">
+                  <span className="flex items-center gap-1.5 min-w-0">
+                    <TeamLogo name={t?.n || u} code={t?.c} src={t?.img} size={16} className="shrink-0" />
+                    <TeamLink name={t?.n || u} u={u} className="truncate hover:text-rw-accent" />
+                  </span>
+                </td>
+                <td className="px-2 py-1 text-center tabular-nums font-bold">
+                  {w}-{l}
+                </td>
+                <td className={`px-2 py-1 ${w >= 3 ? "text-rw-teal font-semibold" : l >= 3 ? "text-rw-red" : "text-rw-sub"}`}>
+                  {w >= 3 ? tl("through") : l >= 3 ? tl("out") : tl("Still in")}
+                </td>
+                <td className="px-2 py-1 text-rw-sub max-sm:hidden">{opp ? `${tl("vs")} ${byU.get(opp)?.c || opp}` : ""}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const BracketNow: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Bracket }> = ({ d, kind, br }) => {
+  const main = d.main as HubEvent;
+  const teams = useMemo(() => teamsOf(main, d.ratings), [main, d.ratings]);
+  const byU = useMemo(() => new Map(teams.map((t) => [t.u, t])), [teams]);
+  const real = useMemo(() => realOfStages(main.stages || [], kind), [main, kind]);
+  const res = useMemo(() => runBracket(br, teams, real, {}, d.ratings?.adjust), [br, teams, real, d.ratings]);
+  const cols = [...new Set(br.nodes.map((n) => n.col))];
+  const champ = res.champion ? byU.get(res.champion) : null;
+  const none = () => {};
+  return (
+    <div className="rw-span">
+      <Section title={tl("Bracket")}>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 items-start">
+          {cols.map((c) => {
+            const ms = res.matches.filter((m) => m.col === c);
+            return (
+              <div key={c} className="space-y-2 min-w-0">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-rw-sub">{tl(COL_LABELS[c] || c)}</h4>
+                {ms.length ? ms.map((m) => <MatchBox key={m.id} m={m} byU={byU} onPick={none} readOnly />) : <p className="text-[11px] text-rw-muted">{tl("To be decided")}</p>}
+              </div>
+            );
+          })}
+          <div className="space-y-2">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-rw-sub">{tl("Champion")}</h4>
+            {champ ? (
+              <div className="rounded-lg border border-rw-accent/60 bg-rw-accent/10 p-3 flex items-center gap-2">
+                <TeamLogo name={champ.n} code={champ.c} src={champ.img} size={32} />
+                <TeamLink name={champ.n} u={champ.u} className="font-extrabold text-rw-text hover:text-rw-accent" />
+              </div>
+            ) : (
+              <p className="text-[11px] text-rw-muted">{tl("To be decided")}</p>
+            )}
+          </div>
+        </div>
+      </Section>
     </div>
   );
 };
@@ -729,16 +889,17 @@ const TeamButton: React.FC<{ u: string; t?: WTeam; won: boolean; lost: boolean; 
   </button>
 );
 
-const MatchBox: React.FC<{ m: WMatch; byU: Map<string, WTeam>; onPick: (u: string) => void }> = ({ m, byU, onPick }) => {
-  const locked = m.from === "real";
+const MatchBox: React.FC<{ m: WMatch; byU: Map<string, WTeam>; onPick: (u: string) => void; readOnly?: boolean }> = ({ m, byU, onPick, readOnly }) => {
+  const locked = readOnly || m.from === "real";
   return (
     <div className={`rounded-lg border ${m.from === "pick" ? "border-rw-accent/50" : "border-rw-border"} bg-rw-deep/40 p-1 space-y-0.5`}>
       <div className="flex items-center justify-between px-1 text-[10px] text-rw-muted">
         <span>{tl("Best of {n}", { n: m.bo })}</span>
-        {locked ? <Lock className="w-3 h-3" aria-label={tl("Played")} /> : m.drawn ? <span>{tl("drawn here")}</span> : null}
+        {m.from === "real" ? <Lock className="w-3 h-3" aria-label={tl("Played")} /> : m.drawn && !readOnly ? <span>{tl("drawn here")}</span> : null}
       </div>
-      <TeamButton u={m.a} t={byU.get(m.a)} won={m.w === 1} lost={m.w === 2} p={m.p} locked={locked} score={locked ? m.sa : undefined} onPick={() => onPick(m.a)} />
-      <TeamButton u={m.b} t={byU.get(m.b)} won={m.w === 2} lost={m.w === 1} p={1 - m.p} locked={locked} score={locked ? m.sb : undefined} onPick={() => onPick(m.b)} />
+      {/* a match still to play shows each side's chance, also when it can't be picked here */}
+      <TeamButton u={m.a} t={byU.get(m.a)} won={m.w === 1} lost={m.w === 2} p={m.p} locked={locked} score={m.from === "real" ? m.sa : undefined} onPick={() => onPick(m.a)} />
+      <TeamButton u={m.b} t={byU.get(m.b)} won={m.w === 2} lost={m.w === 1} p={1 - m.p} locked={locked} score={m.from === "real" ? m.sb : undefined} onPick={() => onPick(m.b)} />
     </div>
   );
 };
@@ -792,13 +953,19 @@ const Records: React.FC<{ rec: Record<string, [number, number]>; byU: Map<string
   );
 };
 
-const Bracket: React.FC<{ ko: ReturnType<typeof runKnockout>; byU: Map<string, WTeam>; onPick: (m: WMatch, u: string) => void }> = ({ ko, byU, onPick }) => {
+const Bracket: React.FC<{ ko: ReturnType<typeof runKnockout>; byU: Map<string, WTeam>; onPick: (m: WMatch, u: string) => void; readOnly?: boolean }> = ({
+  ko,
+  byU,
+  onPick,
+  readOnly,
+}) => {
   const col = (title: string, ms: WMatch[]) => (
     <div className="space-y-2 min-w-0">
       <h4 className="text-[11px] font-bold uppercase tracking-wider text-rw-sub">{title}</h4>
       {ms.map((m) => (
-        <MatchBox key={m.key} m={m} byU={byU} onPick={(u) => onPick(m, u)} />
+        <MatchBox key={m.key} m={m} byU={byU} onPick={(u) => onPick(m, u)} readOnly={readOnly} />
       ))}
+      {readOnly && !ms.length && <p className="text-[11px] text-rw-muted">{tl("To be decided")}</p>}
     </div>
   );
   const champ = ko.champion ? byU.get(ko.champion) : null;
@@ -815,7 +982,7 @@ const Bracket: React.FC<{ ko: ReturnType<typeof runKnockout>; byU: Map<string, W
             <TeamLink name={champ.n} u={champ.u} className="font-extrabold text-rw-text hover:text-rw-accent" />
           </div>
         ) : (
-          <p className="text-[11px] text-rw-muted">{tl("Pick the final to crown one.")}</p>
+          <p className="text-[11px] text-rw-muted">{readOnly ? tl("To be decided") : tl("Pick the final to crown one.")}</p>
         )}
       </div>
     </div>

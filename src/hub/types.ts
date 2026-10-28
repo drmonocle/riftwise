@@ -627,6 +627,19 @@ export interface HubMatchups {
   g: number;
   vs: [string, number, number, number, number | null][];
 }
+/** hub/playeritems/<player>.json (the item history): [item, rows of the player's game log (playergames) with it in the
+ *  final inventory], most games first */
+export type PlayerItems = [string, number[]][];
+/** hub/items/<item>.json: the players who finished pro games holding an item, most games first (the top 300):
+ *  [name, slug, games, newest date] */
+export interface HubItem {
+  n: string;
+  g: number;
+  np: number;
+  players: [string, string, number, string][];
+}
+/** hub/items/index.json: [item, slug, games, players] */
+export type ItemIndexRow = [string, string, number, number];
 /** hub/records/<year>.json: one year's game and single-game player records, and its pentakills */
 /** hub/weekly.json: the last seven days (from, to inclusive) in top leagues and international events. */
 export interface HubWeekly {
