@@ -262,7 +262,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
             {tl("RiftWise for Windows")}
           </h2>
-          <div className="p-4 rounded-lg border border-rw-border bg-rw-surface space-y-3">
+          <div className="p-4 rounded-lg border border-rw-border bg-rw-panel space-y-3">
             <p className="text-rw-sub text-xs leading-relaxed">
               {tl("The desktop app adds a system tray icon, a global hotkey (Alt+Shift+L), kickoff notifications and automatic updates. It is free, about 5 MB, and needs no installer.")}
             </p>
@@ -308,7 +308,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
           {tl("Language")}
         </h2>
-        <div className="p-3 rounded-lg bg-rw-surface border border-rw-border space-y-2">
+        <div className="p-3 rounded-lg bg-rw-panel border border-rw-border space-y-2">
           <select
             value={settings.language}
             onChange={(e) => {
@@ -359,7 +359,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
         <div className="space-y-2">
           {/* Theme */}
-          <div className="p-3 rounded-lg bg-rw-surface border border-rw-border space-y-2">
+          <div className="p-3 rounded-lg bg-rw-panel border border-rw-border space-y-2">
             <div>
               <div className="font-semibold text-rw-text">{tl("Theme")}</div>
               <div className="text-[11px] text-rw-muted">{tl("Pick the colours for RiftWise.")}</div>
@@ -417,7 +417,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
 
           {/* Spoiler Mode */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-surface border border-rw-border">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-panel border border-rw-border">
             <div>
               <div className="font-semibold text-rw-text">{tl("Spoiler Mode")}</div>
               <div className="text-[11px] text-rw-muted">
@@ -437,7 +437,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
 
           {/* Default Tab on Launch */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-rw-surface border border-rw-border">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-rw-panel border border-rw-border">
             <div>
               <div className="font-semibold text-rw-text">{tl("Default Tab on Launch")}</div>
               <div className="text-[11px] text-rw-muted">
@@ -464,7 +464,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
 
           {/* the background's floating team logos (src/components/TeamBubbles.tsx) */}
-          <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-rw-surface border border-rw-border">
+          <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-rw-panel border border-rw-border">
             <div>
               <div className="font-semibold text-rw-text">{tl("Floating team logos")}</div>
               <div className="text-[11px] text-rw-muted">
@@ -492,7 +492,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="space-y-2">
           {!IS_DESKTOP && <PushAlertsCard settings={settings} onUpdateSettings={onUpdateSettings} />}
           {/* Kickoff Audio Chime */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-rw-surface border border-rw-border">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-rw-panel border border-rw-border">
             <div>
               <div className="font-semibold text-rw-text flex items-center gap-1.5">
                 <Volume2 className="w-3.5 h-3.5 text-rw-teal" />
@@ -524,7 +524,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
 
           {IS_DESKTOP && (<>
-          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-surface border border-rw-border">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-panel border border-rw-border">
             <div>
               <div className="font-semibold text-rw-text">{tl("Live Kickoff Desktop Alerts")}</div>
               <div className="text-[11px] text-rw-muted">
@@ -555,7 +555,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </button>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-surface border border-rw-border">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-panel border border-rw-border">
             <div>
               <div className="font-semibold text-rw-text">{tl("Pre-match 15m Countdown")}</div>
               <div className="text-[11px] text-rw-muted">
@@ -572,7 +572,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </button>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-surface border border-rw-border">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-panel border border-rw-border">
             <div>
               <div className="font-semibold text-rw-text">{tl("24/7 Stream & S-Tier Banger Alerts")}</div>
               <div className="text-[11px] text-rw-muted">
@@ -601,7 +601,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
         <div className="space-y-2">
           {/* Global Summon Hotkey */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-surface border border-rw-teal/40">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-panel border border-rw-teal/40">
             <div>
               <div className="font-semibold text-rw-text flex items-center gap-1.5">
                 <Keyboard className="w-3.5 h-3.5 text-rw-teal" />
@@ -617,7 +617,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
 
           {/* Compact Mode */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-surface border border-rw-border">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-panel border border-rw-border">
             <div>
               <div className="font-semibold text-rw-text">{tl("Compact Desktop Mode")}</div>
               <div className="text-[11px] text-rw-muted">
@@ -634,7 +634,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </button>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-surface border border-rw-border">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-panel border border-rw-border">
             <div>
               <div className="font-semibold text-rw-text">{tl("Close Button Minimizes to System Tray")}</div>
               <div className="text-[11px] text-rw-muted">
@@ -653,7 +653,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </button>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-surface border border-rw-border">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-panel border border-rw-border">
             <div>
               <div className="font-semibold text-rw-text">{tl("Start RiftWise with Windows")}</div>
               <div className="text-[11px] text-rw-muted">
@@ -679,7 +679,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           {tl("Watchlist & Following Status")}
         </h2>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-lg bg-rw-surface border border-rw-border">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-lg bg-rw-panel border border-rw-border">
           <div>
             <div className="font-bold text-rw-text text-xs">{tl("What you follow")}</div>
             <div className="text-[11px] text-rw-accent mt-0.5">
@@ -706,7 +706,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           {tl("24/7 Stream Rebroadcasts (Twitch & YouTube)")}
         </h2>
 
-        <div className="p-3.5 rounded-lg bg-rw-surface border border-rw-border space-y-3">
+        <div className="p-3.5 rounded-lg bg-rw-panel border border-rw-border space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <div className="font-bold text-rw-teal text-xs">
@@ -755,7 +755,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           ].map((ds) => (
             <div
               key={ds.name}
-              className="flex items-center justify-between p-2.5 rounded bg-rw-surface border border-rw-border text-[11px]"
+              className="flex items-center justify-between p-2.5 rounded bg-rw-panel border border-rw-border text-[11px]"
             >
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-rw-teal" />
@@ -781,7 +781,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 }
               }}
               disabled={isSyncingCatalog}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-rw-surface border border-rw-border hover:border-rw-teal text-rw-text hover:text-rw-teal transition-colors text-xs font-semibold"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-rw-panel border border-rw-border hover:border-rw-teal text-rw-text hover:text-rw-teal transition-colors text-xs font-semibold"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isSyncingCatalog ? "animate-spin text-rw-teal" : ""}`} />
               <span>
@@ -796,7 +796,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           <button
             onClick={handleClearCache}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-rw-surface border border-rw-border hover:border-rw-red text-rw-muted hover:text-rw-red transition-colors text-xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-rw-panel border border-rw-border hover:border-rw-red text-rw-muted hover:text-rw-red transition-colors text-xs"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>{cacheCleared ? tl("Cache cleared!") : tl("Clear cache")}</span>
@@ -805,7 +805,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </section>
 
       {/* 7. Support & About */}
-      <section className="p-4 rounded-lg bg-rw-surface border border-[#720e9e]/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <section className="p-4 rounded-lg bg-rw-panel border border-[#720e9e]/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="font-bold text-rw-text flex items-center gap-1.5 text-sm">
             <Heart className="w-4 h-4 text-[#ff4655] fill-current" />

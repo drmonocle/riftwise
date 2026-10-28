@@ -239,7 +239,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
         <div className="space-y-4">
           {stage.sections.map((sec, si) =>
             sec.type === "group" ? (
-              <div key={si} className="bg-rw-surface border border-rw-border rounded-xl overflow-hidden">
+              <div key={si} className="bg-rw-panel border border-rw-border rounded-xl overflow-hidden">
                 {(stage.sections.length > 1 || sec.name !== stage.name) && sec.name && (
                   <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-rw-accent border-b border-rw-border bg-rw-bg">
                     {sec.name}
@@ -316,7 +316,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                 </STable>
               </div>
             ) : (
-              <div key={si} className="bg-rw-surface border border-rw-border rounded-xl overflow-hidden">
+              <div key={si} className="bg-rw-panel border border-rw-border rounded-xl overflow-hidden">
                 {(stage.sections.length > 1 || sec.name !== stage.name) && sec.name && (
                   <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-rw-accent border-b border-rw-border bg-rw-bg">
                     {sec.name}
@@ -397,7 +397,7 @@ function tournamentStatus(t: TournamentInfo): string {
 }
 
 const Notice: React.FC<{ icon: React.ReactNode; title: string; text?: string }> = ({ icon, title, text }) => (
-  <div className="bg-rw-surface border border-rw-border rounded-xl p-8 text-center text-xs text-rw-sub space-y-2" role="status">
+  <div className="bg-rw-panel border border-rw-border rounded-xl p-8 text-center text-xs text-rw-sub space-y-2" role="status">
     {icon}
     <p className="font-semibold text-rw-text">{title}</p>
     {text && <p>{text}</p>}

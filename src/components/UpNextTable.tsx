@@ -34,7 +34,7 @@ export const UpNextTable: React.FC<{
   onToggleFollow?: (code: string) => void;
   timeOf: (iso: string) => string;
 }> = ({ matches, schedule, settings, onOpenUrl, onSelectTeam, onToggleFollow, timeOf }) => (
-  <div className="@container rounded-lg border border-rw-border bg-rw-surface text-xs divide-y divide-rw-border/70">
+  <div className="@container rounded-lg border border-rw-border bg-rw-panel text-xs divide-y divide-rw-border/70">
     <div className={`hidden ${GRID} px-3 py-1.5 text-[10px] uppercase tracking-wider text-rw-muted`}>
       <span>{tl("League")}</span>
       <span className="text-center">{tl("Match")}</span>

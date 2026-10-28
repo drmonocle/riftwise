@@ -14,7 +14,7 @@ import { usePlayerPicture, useTeamLogo } from "../../hub/riotCatalog";
 import { ddragonThumb, riotThumb } from "../../riotImage";
 import { allRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 
-export const card = "bg-rw-surface border border-rw-border rounded-xl p-4";
+export const card = "bg-rw-panel border border-rw-border rounded-xl p-4";
 export const th = "text-left font-semibold text-rw-muted py-1.5 pr-3 whitespace-nowrap";
 export const td = "py-1.5 pr-3 whitespace-nowrap";
 
@@ -184,7 +184,7 @@ export const Section: React.FC<{
   const pageContext = useContext(CaptureContext);
   const context = captureContext ?? pageContext;
   return (
-    <section ref={ref} className="bg-rw-surface border border-rw-border rounded-lg min-w-0" id={id}>
+    <section ref={ref} className="bg-rw-panel border border-rw-border rounded-lg min-w-0" id={id}>
       {share && context && <div className="rw-capture-only rw-section-context px-3 pt-2 text-sm font-extrabold text-rw-text">{context}</div>}
       {/* a flat panel: the header strip (title left, the section's controls and tools right) over a hairline */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-rw-border">

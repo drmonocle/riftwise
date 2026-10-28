@@ -4,7 +4,7 @@
  * level, K/D/A, CS, gold, items, kill share and damage share plus a gold-lead graph. Refreshes every 15 seconds
  * while the page is visible. Between games it shows the last game's final numbers.
  */
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type { Game, Match } from "../types";
 import { tl, roleName, fmtDec } from "../i18n";
@@ -26,8 +26,13 @@ import { champIcon, champNameById, itemIconById, useDDragon } from "../hub/ddrag
 import { champName } from "../champions";
 import { useMatchRatings } from "../hub/matchRatings";
 import { gameStory } from "../gameStory";
+import { smoothPath, useWidth } from "../useWidth";
 
 const POLL_MS = 15_000;
+// the gold graph: blue side's colour, and its dragon and baron marks
+const BLUE = "#3fa7ff";
+const DRAGON = "#f0a04b";
+const BARON = "#a970ff";
 const ROLE_ORDER = ["top", "jungle", "mid", "bottom", "support"];
 const ROLE_LABEL: Record<string, string> = { top: "Top", jungle: "Jungle", mid: "Mid", bottom: "Bot", support: "Support" };
 const DRAGON_COLOR: Record<string, string> = {
@@ -210,7 +215,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
       {!finished && elapsed != null && elapsed > 3 * 60_000 && ratings?.game != null && (
         <UpsetMeter leftCode={left.code} rightCode={right.code} before={ratings.game} now={winChanceFromGold(elapsed / 60_000, lead)} />
       )}
-      {history && history.length > 1 && <GoldGraph points={history.map((p) => [p.t, p.lead] as [number, number])} blueIsLeft={blueIsTeam1} leftCode={left.code} rightCode={right.code} />}
+      {history && history.length > 1 && <GoldGraph points={history} blueIsLeft={blueIsTeam1} leftCode={left.code} rightCode={right.code} />}
       {finished && history && <GameStory points={history} left={left.code} right={right.code} blueIsLeft={blueIsTeam1} />}
 
       <button
@@ -475,20 +480,64 @@ const PlayerCells: React.FC<{ p: PlayerRow; align: "left" | "right" }> = ({ p, a
 };
 
 /** Gold lead over the game, or the win chance it gives (liveGame.ts winChanceFromGold): above the line = the team
- *  on the left is ahead. */
-const GoldGraph: React.FC<{ points: [number, number][]; blueIsLeft: boolean; leftCode: string; rightCode: string }> = ({ points, blueIsLeft, leftCode, rightCode }) => {
+ *  on the left is ahead. Drawn at the box's real width (TV, 2026-10-28: the stretched one "just looks ugly"): a
+ *  smooth line in the leading side's colour over a fill that fades toward the middle, clean gridlines (±1k, 2k, 5k...),
+ *  the minutes along the bottom, the dragons and barons each side took on its own edge, and any minute's lead and
+ *  kills under the pointer. */
+const GoldGraph: React.FC<{ points: TimelinePoint[]; blueIsLeft: boolean; leftCode: string; rightCode: string }> = ({ points, blueIsLeft, leftCode, rightCode }) => {
   const [mode, setMode] = useState<"gold" | "chance">("gold");
-  const W = 600;
-  const H = 120;
-  const gold = points.map(([t, d]) => [t, blueIsLeft ? d : -d] as [number, number]);
+  const [box, W] = useWidth<HTMLDivElement>();
+  const [hover, setHover] = useState<number | null>(null);
+  const id = useId().replace(/[^a-z0-9]/gi, "");
+  const lead = (p: TimelinePoint) => (blueIsLeft ? p.lead : -p.lead);
   // win chance as a lead over 50%, on the same "above the line" scale
-  const pts = mode === "gold" ? gold : gold.map(([t, d]) => [t, winChanceFromGold(t, d) - 0.5] as [number, number]);
-  const maxT = Math.max(...pts.map((p) => p[0]), 1);
-  const maxAbs = mode === "gold" ? Math.max(1000, ...pts.map((p) => Math.abs(p[1]))) : 0.5;
-  const x = (t: number) => (t / maxT) * W;
-  const y = (d: number) => H / 2 - (d / maxAbs) * (H / 2 - 6);
-  const path = pts.map((p, i) => `${i ? "L" : "M"}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join(" ");
-  const last = pts[pts.length - 1];
+  const val = (p: TimelinePoint) => (mode === "gold" ? lead(p) : winChanceFromGold(p.t, lead(p)) - 0.5);
+  const leftSnap = (p: TimelinePoint) => (blueIsLeft ? p.blue : p.red);
+  const rightSnap = (p: TimelinePoint) => (blueIsLeft ? p.red : p.blue);
+  const leftColor = blueIsLeft ? BLUE : "var(--rw-red)";
+  const rightColor = blueIsLeft ? "var(--rw-red)" : BLUE;
+  // the plot inside room for the scale (left), the objective marks (top and bottom edges) and the minutes (below)
+  const L = 36;
+  const R = 10;
+  const T = 14;
+  const PH = 112;
+  const B = 14;
+  const H = T + PH + B + 14;
+  const pw = Math.max(W - L - R, 60);
+  const maxT = Math.max(points[points.length - 1].t, 1);
+  // the scale: the next clean number past the biggest lead (a 10.5k lead gets ±12k), gridlines at half and full
+  const peak = mode === "gold" ? Math.max(1000, ...points.map((p) => Math.abs(lead(p)))) : 0.5;
+  const range = mode === "gold" ? [2000, 3000, 4000, 5000, 6000, 8000, 10000, 12000, 15000, 20000, 25000, 30000].find((s) => s >= peak * 1.08) || 40000 : 0.5;
+  const step = range / 2;
+  const x = (t: number) => L + (t / maxT) * pw;
+  const y = (v: number) => T + PH / 2 - (v / range) * (PH / 2);
+  const zero = y(0);
+  const xy = points.map((p) => [x(p.t), y(val(p))] as [number, number]);
+  const line = smoothPath(xy);
+  const area = `${line} L${xy[xy.length - 1][0].toFixed(1)},${zero} L${xy[0][0].toFixed(1)},${zero} Z`;
+  const ticks: number[] = [];
+  for (let v = step; v <= range + 1e-9; v += step) ticks.push(v);
+  const minuteStep = maxT <= 24 ? 5 : 10;
+  const minutes: number[] = [];
+  for (let m = minuteStep; m < maxT - 1; m += minuteStep) minutes.push(m);
+  const lab = (v: number) => (mode === "gold" ? `${v > 0 ? "+" : v < 0 ? "−" : ""}${Number((Math.abs(v) / 1000).toFixed(1))}k` : `${Math.round((v + 0.5) * 100)}%`);
+  // dragons and barons: each one a side took between two points, on that side's edge
+  const marks: { t: number; kind: "dragon" | "baron"; left: boolean }[] = [];
+  for (let i = 1; i < points.length; i++)
+    for (const left of [true, false]) {
+      const [a, b] = left ? [leftSnap(points[i - 1]), leftSnap(points[i])] : [rightSnap(points[i - 1]), rightSnap(points[i])];
+      for (let n = a.d; n < b.d; n++) marks.push({ t: points[i].t, kind: "dragon", left });
+      for (let n = a.b; n < b.b; n++) marks.push({ t: points[i].t, kind: "baron", left });
+    }
+  const last = points[points.length - 1];
+  const h = hover != null ? points[hover] : null;
+  const pick = (e: React.PointerEvent<SVGSVGElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const t = ((e.clientX - r.left - L) / pw) * maxT;
+    let best = 0;
+    for (let i = 1; i < points.length; i++) if (Math.abs(points[i].t - t) < Math.abs(points[best].t - t)) best = i;
+    setHover(best);
+  };
   const tab = (m: "gold" | "chance", label: string) => (
     <button
       type="button"
@@ -499,6 +548,7 @@ const GoldGraph: React.FC<{ points: [number, number][]; blueIsLeft: boolean; lef
       {label}
     </button>
   );
+  const ahead = (v: number) => (mode === "gold" ? (v >= 0 ? `${leftCode} +${k(v)}` : `${rightCode} +${k(-v)}`) : `${leftCode} ${Math.round((v + 0.5) * 100)}%`);
   return (
     <div>
       <div className="flex justify-between text-[10px] text-rw-muted mb-0.5">
@@ -507,60 +557,121 @@ const GoldGraph: React.FC<{ points: [number, number][]; blueIsLeft: boolean; lef
           {tab("chance", tl("Win chance"))}
           <span className="text-rw-muted">· {tl("{a} minus {b}", { a: leftCode, b: rightCode })}</span>
         </span>
-        <span className="font-mono" title={mode === "chance" ? tl("From the gold lead only, as in pro games since 2023") : undefined}>
-          {mode === "gold" ? (
-            <>
-              {last[1] > 0 ? "+" : ""}
-              {k(last[1])}
-            </>
-          ) : (
-            `${leftCode} ${Math.round((last[1] + 0.5) * 100)}%`
-          )}
+        <span className="font-mono text-rw-text" title={mode === "chance" ? tl("From the gold lead only, as in pro games since 2023") : undefined}>
+          {ahead(val(last))}
         </span>
       </div>
-      {/* an area chart: the side that is ahead fills its half in its colour; faint lines at half and full scale */}
-      {(() => {
-        const leftColor = blueIsLeft ? "#3fa7ff" : "var(--rw-red)";
-        const rightColor = blueIsLeft ? "var(--rw-red)" : "#3fa7ff";
-        const area = `M0,${H / 2} ${pts.map((p) => `L${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join(" ")} L${x(last[0]).toFixed(1)},${H / 2} Z`;
-        const grid = [0.5, 1].map((f) => f * maxAbs);
-        const lab = (v: number) => (mode === "gold" ? k(v) : `${Math.round((v + 0.5) * 100)}%`);
-        const id = `gg-${leftCode}-${rightCode}`.replace(/[^a-z0-9-]/gi, "");
-        return (
-          <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-28" preserveAspectRatio="none" role="img" aria-label={tl("Gold lead over the game")}>
-            <defs>
-              <clipPath id={`${id}-top`}>
-                <rect x="0" y="0" width={W} height={H / 2} />
-              </clipPath>
-              <clipPath id={`${id}-bottom`}>
-                <rect x="0" y={H / 2} width={W} height={H / 2} />
-              </clipPath>
-            </defs>
-            {grid.map((g) => (
-              <g key={g}>
-                <line x1="0" x2={W} y1={y(g)} y2={y(g)} style={{ stroke: "var(--rw-border)" }} strokeWidth="1" strokeDasharray="3 5" vectorEffect="non-scaling-stroke" />
-                <line x1="0" x2={W} y1={y(-g)} y2={y(-g)} style={{ stroke: "var(--rw-border)" }} strokeWidth="1" strokeDasharray="3 5" vectorEffect="non-scaling-stroke" />
-              </g>
-            ))}
-            <path d={area} clipPath={`url(#${id}-top)`} style={{ fill: leftColor, opacity: 0.28 }} />
-            <path d={area} clipPath={`url(#${id}-bottom)`} style={{ fill: rightColor, opacity: 0.28 }} />
-            <line x1="0" x2={W} y1={H / 2} y2={H / 2} style={{ stroke: "var(--rw-sub)" }} strokeWidth="1" vectorEffect="non-scaling-stroke" />
-            <path d={path} fill="none" clipPath={`url(#${id}-top)`} style={{ stroke: leftColor }} strokeWidth="2.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-            <path d={path} fill="none" clipPath={`url(#${id}-bottom)`} style={{ stroke: rightColor }} strokeWidth="2.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-            <circle cx={x(last[0])} cy={y(last[1])} r="4" style={{ fill: last[1] >= 0 ? leftColor : rightColor, stroke: "var(--rw-bg)" }} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-            {grid.map((g) => (
-              <g key={`l${g}`} className="font-num" style={{ fill: "var(--rw-muted)", fontSize: 10 }}>
-                <text x={4} y={y(g) - 2}>+{lab(g)}</text>
-                <text x={4} y={y(-g) + 10}>−{lab(g)}</text>
-              </g>
-            ))}
-          </svg>
-        );
-      })()}
-      <div className="flex justify-between text-[9px] text-rw-muted">
-        <span>0:00</span>
-        <span>{clock(maxT * 60_000)}</span>
+      <div ref={box} className="relative select-none">
+        <svg
+          width={W}
+          height={H}
+          viewBox={`0 0 ${W} ${H}`}
+          className="block w-full touch-pan-y"
+          role="img"
+          aria-label={tl("Gold lead over the game")}
+          onPointerMove={pick}
+          onPointerDown={pick}
+          onPointerLeave={() => setHover(null)}
+        >
+          <defs>
+            <clipPath id={`${id}t`}>
+              <rect x={0} y={0} width={W} height={zero} />
+            </clipPath>
+            <clipPath id={`${id}b`}>
+              <rect x={0} y={zero} width={W} height={H - zero} />
+            </clipPath>
+            <linearGradient id={`${id}gt`} gradientUnits="userSpaceOnUse" x1={0} y1={T} x2={0} y2={zero}>
+              <stop offset="0" style={{ stopColor: leftColor, stopOpacity: 0.42 }} />
+              <stop offset="1" style={{ stopColor: leftColor, stopOpacity: 0.03 }} />
+            </linearGradient>
+            <linearGradient id={`${id}gb`} gradientUnits="userSpaceOnUse" x1={0} y1={zero} x2={0} y2={T + PH}>
+              <stop offset="0" style={{ stopColor: rightColor, stopOpacity: 0.03 }} />
+              <stop offset="1" style={{ stopColor: rightColor, stopOpacity: 0.42 }} />
+            </linearGradient>
+          </defs>
+          {/* which half is whose: the team's name in its top / bottom corner, beside a dot in its colour */}
+          <circle cx={L + 8} cy={T + 9} r={3} style={{ fill: leftColor }} />
+          <text x={L + 15} y={T + 12} style={{ fill: "var(--rw-sub)", fontSize: 10, fontWeight: 600 }}>
+            {leftCode} ▲
+          </text>
+          <circle cx={L + 8} cy={T + PH - 9} r={3} style={{ fill: rightColor }} />
+          <text x={L + 15} y={T + PH - 6} style={{ fill: "var(--rw-sub)", fontSize: 10, fontWeight: 600 }}>
+            {rightCode} ▼
+          </text>
+          {ticks.map((v) => (
+            <g key={v}>
+              {[v, -v].map((g) => (
+                <line key={g} x1={L} x2={L + pw} y1={y(g)} y2={y(g)} style={{ stroke: "var(--rw-border)" }} strokeWidth={1} opacity={0.7} />
+              ))}
+              <text x={L - 6} y={y(v) + 3} textAnchor="end" className="font-num" style={{ fill: "var(--rw-muted)", fontSize: 9 }}>
+                {lab(v)}
+              </text>
+              <text x={L - 6} y={y(-v) + 3} textAnchor="end" className="font-num" style={{ fill: "var(--rw-muted)", fontSize: 9 }}>
+                {lab(-v)}
+              </text>
+            </g>
+          ))}
+          <text x={L - 6} y={zero + 3} textAnchor="end" className="font-num" style={{ fill: "var(--rw-muted)", fontSize: 9 }}>
+            {mode === "gold" ? "0" : "50%"}
+          </text>
+          {minutes.map((m) => (
+            <g key={m}>
+              <line x1={x(m)} x2={x(m)} y1={T} y2={T + PH} style={{ stroke: "var(--rw-border)" }} strokeWidth={1} opacity={0.35} />
+              <text x={x(m)} y={H - 3} textAnchor="middle" className="font-num" style={{ fill: "var(--rw-muted)", fontSize: 9 }}>
+                {m}:00
+              </text>
+            </g>
+          ))}
+          <path d={area} clipPath={`url(#${id}t)`} style={{ fill: `url(#${id}gt)` }} />
+          <path d={area} clipPath={`url(#${id}b)`} style={{ fill: `url(#${id}gb)` }} />
+          <line x1={L} x2={L + pw} y1={zero} y2={zero} style={{ stroke: "var(--rw-line)" }} strokeWidth={1} />
+          <path d={line} fill="none" clipPath={`url(#${id}t)`} style={{ stroke: leftColor }} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+          <path d={line} fill="none" clipPath={`url(#${id}b)`} style={{ stroke: rightColor }} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+          {marks.map((mk, i) => {
+            const cx = x(mk.t);
+            const cy = mk.left ? T - 7 : T + PH + 7;
+            const fill = mk.kind === "baron" ? BARON : DRAGON;
+            return mk.kind === "baron" ? (
+              <circle key={i} cx={cx} cy={cy} r={4} style={{ fill, stroke: "var(--rw-surface)" }} strokeWidth={1.5}>
+                <title>{`${mk.left ? leftCode : rightCode}: ${tl("Baron")} · ${clock(mk.t * 60_000)}`}</title>
+              </circle>
+            ) : (
+              <rect key={i} x={cx - 3.5} y={cy - 3.5} width={7} height={7} transform={`rotate(45 ${cx} ${cy})`} style={{ fill, stroke: "var(--rw-surface)" }} strokeWidth={1.5}>
+                <title>{`${mk.left ? leftCode : rightCode}: ${tl("Dragon")} · ${clock(mk.t * 60_000)}`}</title>
+              </rect>
+            );
+          })}
+          {h && (
+            <g pointerEvents="none">
+              <line x1={x(h.t)} x2={x(h.t)} y1={T} y2={T + PH} style={{ stroke: "var(--rw-sub)" }} strokeWidth={1} />
+              <circle cx={x(h.t)} cy={y(val(h))} r={4.5} style={{ fill: val(h) >= 0 ? leftColor : rightColor, stroke: "var(--rw-surface)" }} strokeWidth={2} />
+            </g>
+          )}
+          {!h && <circle cx={xy[xy.length - 1][0]} cy={xy[xy.length - 1][1]} r={4.5} style={{ fill: val(last) >= 0 ? leftColor : rightColor, stroke: "var(--rw-surface)" }} strokeWidth={2} />}
+        </svg>
+        {h && (
+          <div
+            className="absolute top-0 pointer-events-none rounded border border-rw-border bg-rw-raised px-2 py-1 text-[10px] leading-tight shadow-lg whitespace-nowrap"
+            style={{ left: Math.min(Math.max(x(h.t) - 60, 0), Math.max(W - 120, 0)) }}
+          >
+            <div className="font-num text-rw-muted">{clock(h.t * 60_000)}</div>
+            <div className="font-num font-semibold text-rw-text">{ahead(val(h))}</div>
+            <div className="text-rw-sub">
+              {tl("Kills")} {leftSnap(h).k}–{rightSnap(h).k}
+            </div>
+          </div>
+        )}
       </div>
+      {marks.length > 0 && (
+        <div className="flex justify-end gap-3 text-[9px] text-rw-muted mt-0.5">
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-1.5 h-1.5 rotate-45" style={{ background: DRAGON }} /> {tl("Dragon")}
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-2 h-2 rounded-full" style={{ background: BARON }} /> {tl("Baron")}
+          </span>
+        </div>
+      )}
     </div>
   );
 };

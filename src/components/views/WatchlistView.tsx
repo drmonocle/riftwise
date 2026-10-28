@@ -217,7 +217,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
   return (
     <div className="p-4 space-y-4 page-5xl rw-capped overflow-y-auto h-full select-none text-xs">
       {/* Active Watchlist Summary */}
-      <div className="p-3 rounded-lg bg-rw-surface border border-rw-border space-y-2">
+      <div className="p-3 rounded-lg bg-rw-panel border border-rw-border space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="font-bold text-rw-accent uppercase tracking-wider text-[11px]">
@@ -550,13 +550,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={followAllRegions}
-                className="px-2.5 py-1 rounded bg-rw-surface border border-rw-accent text-rw-accent hover:bg-rw-accent hover:text-rw-bg font-semibold text-[11px] transition-colors"
+                className="px-2.5 py-1 rounded bg-rw-panel border border-rw-accent text-rw-accent hover:bg-rw-accent hover:text-rw-bg font-semibold text-[11px] transition-colors"
               >
                 {tl("★ Follow All")}
               </button>
               <button
                 onClick={unfollowAllRegions}
-                className="px-2.5 py-1 rounded bg-rw-surface border border-rw-border text-rw-muted hover:text-rw-red font-semibold text-[11px] transition-colors"
+                className="px-2.5 py-1 rounded bg-rw-panel border border-rw-border text-rw-muted hover:text-rw-red font-semibold text-[11px] transition-colors"
               >
                 {tl("Unfollow All")}
               </button>
@@ -618,19 +618,19 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={followAllLeagues}
-                className="px-2.5 py-1 rounded bg-rw-surface border border-rw-accent text-rw-accent hover:bg-rw-accent hover:text-rw-bg font-semibold text-[11px] transition-colors"
+                className="px-2.5 py-1 rounded bg-rw-panel border border-rw-accent text-rw-accent hover:bg-rw-accent hover:text-rw-bg font-semibold text-[11px] transition-colors"
               >
                 {tl("Follow all ({n})", { n: catalog.leagues.length || 51 })}
               </button>
               <button
                 onClick={unfollowAllLeagues}
-                className="px-2.5 py-1 rounded bg-rw-surface border border-rw-border text-rw-muted hover:text-rw-red font-semibold text-[11px] transition-colors"
+                className="px-2.5 py-1 rounded bg-rw-panel border border-rw-border text-rw-muted hover:text-rw-red font-semibold text-[11px] transition-colors"
               >
                 {tl("Unfollow All")}
               </button>
               <button
                 onClick={followInternationalEvents}
-                className="px-2.5 py-1 rounded bg-rw-surface border border-rw-teal text-rw-teal hover:bg-rw-teal hover:text-rw-bg font-semibold text-[11px] transition-colors"
+                className="px-2.5 py-1 rounded bg-rw-panel border border-rw-teal text-rw-teal hover:bg-rw-teal hover:text-rw-bg font-semibold text-[11px] transition-colors"
               >
                 {tl("★ International Events")}
               </button>

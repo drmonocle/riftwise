@@ -542,7 +542,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
   if (isLoading && schedule.length === 0) {
     return (
       <div className="p-4 h-full flex items-center justify-center" role="status">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rw-surface border border-rw-border text-rw-sub text-xs">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rw-panel border border-rw-border text-rw-sub text-xs">
           <Clock className="w-3.5 h-3.5 text-rw-teal animate-pulse" />
           <span>{tl("Loading live matches and the schedule…")}</span>
         </div>
@@ -557,7 +557,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
       <IntlBanner schedule={schedule} onSelectTab={onSelectTab} />
       {/* Idle Notice Header */}
       <div className="text-center py-4 border-b border-rw-border">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rw-surface border border-rw-border text-rw-muted text-xs mb-1">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rw-panel border border-rw-border text-rw-muted text-xs mb-1">
           <Clock className="w-3.5 h-3.5 text-rw-teal" />
           <span>{tl("No pro matches are live right now")}</span>
         </div>
@@ -600,7 +600,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
             />
           ) : hasWatchlist ? (
             <div className="space-y-6">
-              <div className="bg-rw-surface border border-rw-border rounded-xl p-8 text-center space-y-4 max-w-xl mx-auto my-4">
+              <div className="bg-rw-panel border border-rw-border rounded-xl p-8 text-center space-y-4 max-w-xl mx-auto my-4">
                 <div className="w-12 h-12 rounded-full bg-rw-accent/10 border border-rw-accent/30 flex items-center justify-center mx-auto text-rw-accent">
                   <Star className="w-6 h-6 fill-rw-accent/20" />
                 </div>
@@ -650,7 +650,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
               )}
             </div>
           ) : (
-            <div className="bg-rw-surface border border-rw-border rounded-xl p-8 text-center space-y-3 max-w-xl mx-auto my-6">
+            <div className="bg-rw-panel border border-rw-border rounded-xl p-8 text-center space-y-3 max-w-xl mx-auto my-6">
               <div className="w-12 h-12 rounded-full bg-rw-teal/10 border border-rw-teal/30 flex items-center justify-center mx-auto text-rw-teal">
                 <Calendar className="w-6 h-6" />
               </div>
@@ -785,7 +785,7 @@ const NextMatchCard: React.FC<{
   const h2h = computeHeadToHead(m.team1Code, m.team2Code, schedule, m.matchId);
   const streams = getLeagueBroadcastStreams(m.leagueSlug, m.streamUrl);
   return (
-    <section className="bg-rw-surface border border-rw-border rounded-lg min-w-0">
+    <section className="bg-rw-panel border border-rw-border rounded-lg min-w-0">
       <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-rw-border">
         <h2 className={HEAD}>{tag}</h2>
         {m.blockName && <span className="text-xs text-rw-sub font-medium">{m.blockName}</span>}
@@ -927,7 +927,7 @@ const IntlBanner: React.FC<{ schedule: Match[]; onSelectTab: (tab: "stats") => v
         navigateHub({ kind: ev.kind });
         onSelectTab("stats");
       }}
-      className="w-full text-left rounded-lg border border-rw-border border-l-[3px] border-l-rw-accent bg-rw-surface hover:bg-rw-raised px-4 py-3 flex flex-wrap items-center justify-between gap-2"
+      className="w-full text-left rounded-lg border border-rw-border border-l-[3px] border-l-rw-accent bg-rw-panel hover:bg-rw-raised px-4 py-3 flex flex-wrap items-center justify-between gap-2"
     >
       <span>
         <span className="block text-sm font-extrabold text-rw-text">{tl("{event} {year} is on", { event: tc("event", ev.name), year })}</span>

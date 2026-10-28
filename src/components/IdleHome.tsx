@@ -52,7 +52,7 @@ const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings; onSele
           </span>
         </p>
       )}
-      <ul className="divide-y divide-rw-border border border-rw-border rounded-lg bg-rw-surface">
+      <ul className="divide-y divide-rw-border border border-rw-border rounded-lg bg-rw-panel">
         {done.map((m) => {
           const shown = !settings.spoilerMode || isRevealed(`match:${m.matchId}`);
           const w1 = shown && m.team1Score > m.team2Score;
@@ -105,7 +105,7 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
           {tl("Every team →")}
         </button>
       </div>
-      <ol className="border border-rw-border rounded-lg bg-rw-surface divide-y divide-rw-border">
+      <ol className="border border-rw-border rounded-lg bg-rw-panel divide-y divide-rw-border">
         {top.map((t, i) => (
           <li key={t[0]} {...clickable(() => open(t[0]))} className="flex items-center gap-3 px-3 py-1.5 text-xs cursor-pointer hover:bg-rw-raised">
             <span className="w-4 text-rw-muted font-num tabular-nums">{i + 1}</span>
@@ -142,7 +142,7 @@ const Explore: React.FC<{ onSelectTab: (tab: "stats") => void; worlds: boolean }
             key={t.kind}
             type="button"
             onClick={() => go(t.kind)}
-            className="text-left rounded-lg border border-rw-border bg-rw-surface hover:bg-rw-raised hover:border-rw-accent/50 px-3 py-2.5 flex items-start gap-3"
+            className="text-left rounded-lg border border-rw-border bg-rw-panel hover:bg-rw-raised hover:border-rw-accent/50 px-3 py-2.5 flex items-start gap-3"
           >
             <span className="mt-0.5 text-rw-accent shrink-0">{t.icon}</span>
             <span className="min-w-0 flex-1">

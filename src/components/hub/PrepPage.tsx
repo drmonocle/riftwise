@@ -322,7 +322,7 @@ const KeyStats: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[
   const cell = (side: Side, X: ReturnType<typeof teamAgg>, other: Side, c: (typeof cols)[number]) =>
     (c[3] === "period" && hidden) || (c[3] === "form" && formHidden) ? "?" : c[2](side, X, other);
   return (
-    <div className="overflow-x-auto bg-rw-surface border border-rw-border rounded-lg px-1 py-1">
+    <div className="overflow-x-auto bg-rw-panel border border-rw-border rounded-lg px-1 py-1">
       <table className="w-full text-xs min-w-[34rem]">
         <thead>
           <tr className="text-[10px] text-rw-muted">
