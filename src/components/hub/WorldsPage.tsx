@@ -77,6 +77,19 @@ function useSaved(year: string): [Saved, (s: Saved) => void] {
   return [saved, put];
 }
 
+/** A pick made on the Stats tab ("I can't select any of the teams", 2026-10-28): saved the way the pickers save
+ *  theirs, so the picker it opens starts with it. */
+function savePick(year: string, part: "swiss" | "ko", key: string, u: string) {
+  const s = loadSaved(year);
+  s[part] = { ...s[part], [key]: u };
+  try {
+    localStorage.setItem(storeKey(year), JSON.stringify(s));
+  } catch {
+    /* storage blocked: the picker opens without it */
+  }
+}
+type StatsPick = (part: "swiss" | "ko", m: WMatch, u: string) => void;
+
 // ── the page ──────────────────────────────────────────────────────────────
 
 type Tab = "facts" | "swiss" | "ko" | "bracket";
@@ -237,7 +250,22 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
         <BracketPicker d={d} kind={kind} br={bracket} live={d.year === thisYear} />
       ) : tab === "facts" || !swissYear ? (
         <>
-          <WhereItStands d={d} kind={kind} br={bracket} swissYear={swissYear} schedule={d.year === thisYear ? schedule : undefined} />
+          <WhereItStands
+            d={d}
+            kind={kind}
+            br={bracket}
+            swissYear={swissYear}
+            schedule={d.year === thisYear ? schedule : undefined}
+            onPick={
+              d.year === thisYear
+                ? (part, m, u) => {
+                    savePick(d.year, part, m.key, u);
+                    setTab(part);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }
+                : undefined
+            }
+          />
           <FactsTab d={d} kind={kind} />
         </>
       ) : (
@@ -255,17 +283,25 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
  * once Riot draws them; MSI's and First Stand's bracket. Matches still to play show each side's chance; the pickers'
  * tabs play the rest out. Years the pickers don't cover show the stats' own bracket and standings.
  */
-const WhereItStands: React.FC<{ d: Loaded; kind: IntlKind; br: Bracket | null; swissYear: boolean; schedule?: Match[] }> = ({ d, kind, br, swissYear, schedule }) => {
+const WhereItStands: React.FC<{ d: Loaded; kind: IntlKind; br: Bracket | null; swissYear: boolean; schedule?: Match[]; onPick?: StatsPick }> = ({
+  d,
+  kind,
+  br,
+  swissYear,
+  schedule,
+  onPick,
+}) => {
   const last = d.stages.map((s) => s.end || "").sort().pop();
   // spoiler mode hides it with the facts (the stats tab shows the Reveal button)
   const [hidden] = useHidden(`worlds-facts:${kind}:${d.year}`, last);
   if (d.all || hidden) return null;
-  if (swissYear && d.main) return <SwissNow d={d} main={d.main} schedule={schedule} />;
+  if (swissYear && d.main) return <SwissNow d={d} main={d.main} schedule={schedule} onPick={onPick} />;
   if (br && kind !== "worlds" && d.main) return <BracketNow d={d} kind={kind} br={br} />;
   return d.parent ? <EventBracketBlock e={d.parent} /> : null;
 };
 
-const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[] }> = ({ d, main, schedule }) => {
+/** `onPick` (this year's event): a match still to play can be picked here, which opens the picker with that pick. */
+const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick?: StatsPick }> = ({ d, main, schedule, onPick }) => {
   const teams = useMemo(() => teamsOf(main, d.ratings), [main, d.ratings]);
   const byU = useMemo(() => new Map(teams.map((t) => [t.u, t])), [teams]);
   const riot = useMemo(() => liveResults(schedule, "worlds", teams), [schedule, teams]);
@@ -297,12 +333,13 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[] }> = ({
       {ko && (
         <div className="rw-span">
           <Section title={tl("Knockouts")}>
-            <Bracket ko={ko} byU={byU} onPick={none} readOnly />
+            <Bracket ko={ko} byU={byU} onPick={(m, u) => onPick?.("ko", m, u)} readOnly={!onPick} />
           </Section>
         </div>
       )}
       <div className="rw-span">
         <Section title={tl("Swiss stage")}>
+          {onPick && <p className="text-[11px] text-rw-sub">{tl("Pick a winner to play the rest out in the picker.")}</p>}
           {/* a phone gets the records first and only the round being played (TV, 2026-10-28: the five rounds one under
               another are a long scroll); every round is a tap away */}
           <div className="flex flex-col gap-3">
@@ -313,7 +350,7 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[] }> = ({
                     <h4 className="text-[11px] font-bold uppercase tracking-wider text-rw-sub">{tl("Round {n}", { n: i + 1 })}</h4>
                     <div className="grid grid-cols-2 sm:grid-cols-1 gap-1.5">
                       {r.map((m) => (
-                        <MatchBox key={m.key} m={m} byU={byU} onPick={none} readOnly />
+                        <MatchBox key={m.key} m={m} byU={byU} onPick={(u) => onPick?.("swiss", m, u)} readOnly={!onPick} />
                       ))}
                     </div>
                   </div>

@@ -2198,5 +2198,7 @@
   "{n} players": "{n} tuyển thủ",
   "Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.": "Tỉ lệ thắng: các trận kết thúc khi trang bị nằm trong túi đồ của tuyển thủ. Đội thắng hoàn thành nhiều trang bị hơn, nên phần lớn trên 50%.",
 
-  "Every game on {champ}": "Mọi trận dùng {champ}"
+  "Every game on {champ}": "Mọi trận dùng {champ}",
+
+  "Pick a winner to play the rest out in the picker.": "Chọn đội thắng để dự đoán phần còn lại trong trình chọn."
 }
