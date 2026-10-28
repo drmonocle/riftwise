@@ -136,6 +136,45 @@ export const CardLogo: React.FC<{ name?: string; code?: string | null; size: num
   );
 };
 
+/**
+ * A team's logo as a soft silhouette behind a card (TV, 2026-10-28: "a soft silhouette of their team ... that
+ * matches the color scheme"): Riot's logo used as a cutout, filled with the theme's colours, so it suits every theme
+ * with no pictures of our own. Nothing for a team Riot has no logo for.
+ */
+const CardMark: React.FC<{ name: string; code?: string | null; color: string; opacity: number; style: React.CSSProperties }> = ({
+  name,
+  code,
+  color,
+  opacity,
+  style,
+}) => {
+  const logo = useTeamLogo(name, code ?? undefined);
+  if (!logo) return null;
+  const url = `url("${logo.replace(/^http:/, "https:")}")`;
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "absolute",
+        zIndex: -1,
+        pointerEvents: "none",
+        opacity,
+        filter: "blur(1.5px)",
+        background: `linear-gradient(160deg, ${color}, var(--rw-accent-2))`,
+        WebkitMaskImage: url,
+        maskImage: url,
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskPosition: "center",
+        maskPosition: "center",
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+        ...style,
+      }}
+    />
+  );
+};
+
 export interface CardRow {
   label: string;
   a: string;
@@ -161,15 +200,35 @@ export interface CardData {
   note?: string;
   /** a layout of its own (Match prep's overview, Fearless and draft cards) in place of the sides and rows */
   body?: React.ReactNode;
+  /** the teams whose logos sit faintly behind the card: one on the right, or a and b on their halves (null: none on
+   *  that half). Cards with sides take them from the sides' teams. */
+  marks?: ({ name: string; code?: string | null } | null)[];
 }
 
 const W = 1600;
 const H = 900;
 
-/** The 1600×900 frame every card shares: headline, the card's own content, the RiftWise footer. */
+/** The teams' logos faintly behind a card: one team's large on the right, two teams' each on its own half. */
+const CardMarks: React.FC<{ d: CardData }> = ({ d }) => {
+  const marks = d.marks ?? (d.body ? [] : (d.b ? [d.a, d.b] : [d.a]).map((s) => (s.team ? { name: s.team, code: s.code } : null)));
+  const [a, b] = marks;
+  if (marks.length === 1) return a ? <CardMark {...a} color={A_COLOR} opacity={0.09} style={{ width: 760, height: 760, right: -120, top: 120 }} /> : null;
+  return (
+    <>
+      {a && <CardMark {...a} color={A_COLOR} opacity={0.08} style={{ width: 620, height: 620, left: -150, top: 200 }} />}
+      {b && <CardMark {...b} color={B_COLOR} opacity={0.08} style={{ width: 620, height: 620, right: -150, top: 200 }} />}
+    </>
+  );
+};
+
+/** The 1600×900 frame every card shares: headline, the card's own content, the RiftWise footer, the teams' logos
+ *  faintly behind it all. */
 const Frame: React.FC<{ d: CardData; children: React.ReactNode }> = ({ d, children }) => (
   <div
     style={{
+      position: "relative",
+      overflow: "hidden",
+      isolation: "isolate",
       width: W,
       height: H,
       boxSizing: "border-box",
@@ -181,6 +240,7 @@ const Frame: React.FC<{ d: CardData; children: React.ReactNode }> = ({ d, childr
       background: "linear-gradient(135deg, var(--rw-surface) 0%, var(--rw-bg) 70%)",
     }}
   >
+    <CardMarks d={d} />
     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 24 }}>
       <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: "var(--rw-accent)" }}>{d.title}</div>
       {d.subtitle && <div style={{ fontSize: 24, color: "var(--rw-sub)" }}>{d.subtitle}</div>}
@@ -616,6 +676,7 @@ export function prepOverviewCard(d: {
     subtitle: d.period,
     a: { name: d.a.name },
     rows: [],
+    marks: [{ name: d.a.name }, { name: d.b.name }],
     body: (
       <>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 32, marginTop: 20 }}>
@@ -713,6 +774,7 @@ export function fearlessCard(d: { aName: string; bName: string; rows: { role: st
     subtitle: `${d.aName} vs ${d.bName} · ${d.period}`,
     a: { name: d.aName },
     rows: [],
+    marks: [{ name: d.aName }, { name: d.bName }],
     body: (
       <div style={{ marginTop: 18, display: "grid", gap: 6, flex: 1, alignContent: "start" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 150px 1fr", gap: 20, fontSize: 30, fontWeight: 800, alignItems: "center" }}>
@@ -783,6 +845,7 @@ export function draftCard(d: { aName: string; bName: string; A: Draft; B: Draft;
     subtitle: d.period,
     a: { name: d.aName },
     rows: [],
+    marks: [{ name: d.aName }, { name: d.bName }],
     note: tl("{a} and {b} games with the draft order", { a: d.A.games, b: d.B.games }),
     body: (
       <div style={{ marginTop: 18, display: "grid", gap: 4, flex: 1, alignContent: "start" }}>
@@ -1035,6 +1098,7 @@ export function seriesCardData(s: import("../../hub/types").HubSeries): CardData
     subtitle: [s.stage ? stageLabel(s.stage) : null, fmtDay(s.date)].filter(Boolean).join(" · "),
     a: { name: s.a.n },
     rows: [],
+    marks: [{ name: s.a.n, code: s.a.c }, { name: s.b.n, code: s.b.c }],
     body: (
       <>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 32, marginTop: 18 }}>
@@ -1164,6 +1228,7 @@ export function draftBoardCard(d: { blue: BoardSide; red: BoardSide; period: str
     subtitle: d.period ? tl("Pools from {period}", { period: d.period }) : undefined,
     a: { name: d.blue.name },
     rows: [],
+    marks: [{ name: d.blue.name }, { name: d.red.name }],
     body: (
       <>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, marginTop: 14, flex: 1, minHeight: 0 }}>
