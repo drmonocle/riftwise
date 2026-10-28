@@ -528,8 +528,8 @@ const n1 = (v: number | null | undefined) => (v == null ? "–" : String(v));
 
 /** Two teams over a period: record, gold, objectives and (with Oracle's Elixir games) the early game. */
 export function teamCardData(
-  a: { name: string; region?: string },
-  b: { name: string; region?: string },
+  a: { name: string; region?: string; codes?: string[] },
+  b: { name: string; region?: string; codes?: string[] },
   A: TeamAgg,
   B: TeamAgg,
   period: string,
@@ -555,8 +555,8 @@ export function teamCardData(
   return {
     title: tl("Head to head"),
     subtitle: period,
-    a: { name: a.name, sub: a.region, champs: A.picks.slice(0, 5).map((p) => p[0]), team: a.name },
-    b: { name: b.name, sub: b.region, champs: B.picks.slice(0, 5).map((p) => p[0]), team: b.name },
+    a: { name: a.name, sub: a.region, champs: A.picks.slice(0, 5).map((p) => p[0]), team: a.name, code: a.codes?.[0] },
+    b: { name: b.name, sub: b.region, champs: B.picks.slice(0, 5).map((p) => p[0]), team: b.name, code: b.codes?.[0] },
     chance,
     rows,
     note: A.tl || B.tl ? tl("Early game: Oracle's Elixir") : undefined,
@@ -884,7 +884,7 @@ const mmss = (m: number) => {
  * current five (TV, 2026-10-28: "not showing player faces for the current roster"): this year's most played player
  * in each role, the roster listing them by games.
  */
-export function teamSoloCardData(t: { name: string; sub?: string; roster?: RosterPlayer[] }, A: TeamAgg, period: string): CardData {
+export function teamSoloCardData(t: { name: string; sub?: string; code?: string; roster?: RosterPlayer[] }, A: TeamAgg, period: string): CardData {
   const list = t.roster ?? [];
   const byRole = ROLES.flatMap((r) => list.find((p) => p.r === r) ?? []);
   const five = (byRole.length >= 3 ? byRole : list.slice(0, 5)).map((p) => ({ name: p.n, slug: p.u ?? undefined, role: p.r }));
@@ -907,7 +907,7 @@ export function teamSoloCardData(t: { name: string; sub?: string; roster?: Roste
   return {
     title: tl("Team card"),
     subtitle: period,
-    a: { name: t.name, sub: t.sub, champs: A.picks.slice(0, 5).map((p) => p[0]), team: t.name, roster: five },
+    a: { name: t.name, sub: t.sub, champs: A.picks.slice(0, 5).map((p) => p[0]), team: t.name, code: t.code, roster: five },
     rows,
     note: A.tl ? tl("Early game: Oracle's Elixir") : undefined,
   };

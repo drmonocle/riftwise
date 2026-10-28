@@ -11,7 +11,7 @@ import threading
 import unicodedata
 from collections import defaultdict
 
-from names import champ_name
+from names import champ_name, show_teams
 
 LETTERS = str.maketrans({"Ø": "O", "ø": "o", "Æ": "AE", "æ": "ae", "Œ": "OE", "œ": "oe", "ß": "ss", "Ł": "L", "ł": "l",
                          "Đ": "D", "đ": "d", "Þ": "Th", "þ": "th", "ı": "i", "Ð": "D", "ð": "d"})
@@ -296,10 +296,10 @@ class Writer:
         self.pool.submit(self._store, rel, path, data, self.prev.get(rel) == h)
 
     def json(self, rel, obj):
-        self._put(rel, json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+        self._put(rel, show_teams(json.dumps(obj, ensure_ascii=False, separators=(",", ":"))).encode("utf-8"))
 
     def text(self, rel, text):
-        self._put(rel, text.encode("utf-8"))
+        self._put(rel, show_teams(text).encode("utf-8"))
 
     def finish(self):
         self.pool.shutdown(wait=True)

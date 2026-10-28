@@ -11,6 +11,29 @@ import re
 _SUFFIX_NOTE = re.compile(r"\s*\(.*?\)\s*$")
 _SUFFIX_REGION = re.compile(r"\.(cn|na|eu|kr|cis|vn|br|jp|tw|lat|oce|tr)$")
 
+# Teams Leaguepedia files under a page name with a note that tells it apart from other teams of the same name: the
+# pages show the name the team plays under (TV, 2026-10-28: LYON is "just called LYON"; Lyon Gaming, the same brand,
+# is joined to it in build_stats.MANUAL_LINKS). The build keeps the page names inside (they're what Leaguepedia's
+# tables use); every file it writes shows these names instead (show_teams).
+TEAM_NAMES = {
+    "LYON (2024 American Team)": "LYON",
+    "Lyon Gaming (2013 Latin American Team)": "Lyon Gaming",
+    "Lyon Gaming (2017 Latin America North Team)": "Lyon Gaming",
+}
+
+
+def show_team(name):
+    """The name a team is shown under: its own, or the one in TEAM_NAMES for a Leaguepedia page name with a note."""
+    return TEAM_NAMES.get(name, name)
+
+
+def show_teams(text: str) -> str:
+    """A file's text with every TEAM_NAMES page name shown under its own name (one pass per name, only if present)."""
+    for page, shown in TEAM_NAMES.items():
+        if page in text:
+            text = text.replace(page, shown)
+    return text
+
 
 def team_key(name) -> str:
     """Loose form of a team name: lower case, without a "(...)" note or a ".CN"-style suffix, letters and digits only."""
