@@ -6,15 +6,17 @@
  * before the end of a game isn't counted.
  * Address: /stats/items?player=faker&item=heartsteel&champ=sion&year=2026
  */
-import React, { useMemo, useState } from "react";
+import React, { useId, useMemo, useState } from "react";
+import { useWidth } from "../../useWidth";
+import type { HubRoute } from "../../hub/route";
 import { tl, tc } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemIndex, loadPlayerGames, loadPlayerItems, normText, prettySlug } from "../../hub/data";
-import type { PlayerGameRow, SearchPlayerRow } from "../../hub/types";
+import type { ItemIndexRow, PlayerGameRow, SearchPlayerRow } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
 import { isFinishedItem, itemName, useDDragon } from "../../hub/ddragon";
-import { card, ChampIcon, fmtDate, fmtNum, HubLink, ItemIcon, Loading, PlayerLink, Section, td, th, useHiddenCheck, useLoad, usePageTitle } from "./ui";
+import { card, ChampIcon, fmtDate, fmtNum, HubLink, ItemIcon, Loading, PlayerLink, Section, Stat, td, th, useHiddenCheck, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
 
 const playerSlug = (r: SearchPlayerRow) => r[1] || prettySlug(r[0]);
@@ -201,29 +203,7 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
       ) : item ? (
         <ItemPlayersView slug={item} onPlayer={(s) => set({ player: s })} onChamp={(c) => set({ champ: prettySlug(c) })} onYear={(y) => set({ year: y })} />
       ) : (
-        <Section title={tl("Most built items")}>
-          {scope && (
-            <p className="text-[11px] text-rw-sub">
-              <span className="text-rw-accent">{scope}</span> · {tl("Pick an item to see who built it.")}
-            </p>
-          )}
-          {items.loading ? (
-            <Loading />
-          ) : !items.data ? (
-            <p className="text-xs text-rw-sub">{tl("Not in the stats yet.")}</p>
-          ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {(items.data || [])
-                .filter((r) => isFinishedItem(r[0]))
-                .slice(0, 60)
-                .map((r) => (
-                  <HubLink key={r[1]} to={{ kind: "items", query: queryWith({ item: r[1] }) }} className="flex items-center gap-1 px-2 py-1 rounded border border-rw-border text-xs hover:border-rw-accent">
-                    <ItemIcon name={r[0]} size={18} /> {itemName(r[0])}
-                  </HubLink>
-                ))}
-            </div>
-          )}
-        </Section>
+        <ItemStats loading={items.loading} rows={items.data ?? undefined} scope={scope} to={(slug) => ({ kind: "items", query: queryWith({ item: slug }) })} />
       )}
     </div>
   );
@@ -364,14 +344,19 @@ const ItemPlayersView: React.FC<{ slug: string; onPlayer: (slug: string) => void
   if (st.loading) return <Loading />;
   if (!st.data) return <p className="text-xs text-rw-sub rw-span">{tl("No pro game in the stats ended with this item.")}</p>;
   const it = st.data;
+  const top = it.c?.[0];
   return (
     <Section title={tl("Who built {item} most", { item: itemName(it.n) })} right={<ItemIcon name={it.n} size={22} />}>
-      <p className="text-[11px] text-rw-muted">
-        {tl("{g} pro games by {p} players ended with it.", { g: fmtNum(it.g), p: fmtNum(it.np) })}
-        {it.np > it.players.length ? ` ${tl("The {n} with the most games:", { n: it.players.length })}` : ""}
-      </p>
+      {/* the item at a glance, then its years as columns (a column opens that year) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 rw-stats">
+        <Stat label={tl("Games")} value={fmtNum(it.g)} sub={tl("ended with it")} />
+        <Stat label={tl("Players")} value={fmtNum(it.np)} />
+        {it.w != null && <Stat label={tl("Win %")} value={winRate(it.w, it.g)} sub={tl("{n} won", { n: fmtNum(it.w) })} />}
+        {top && <Stat label={tl("Most built on")} value={champName(top[0])} sub={tl("{n} games", { n: fmtNum(top[1]) })} />}
+      </div>
+      {it.y && it.y.length > 1 && <YearBars years={it.y} onYear={onYear} />}
       <PickChips label={tl("Champions")} rows={(it.c || []).slice(0, 24).map(([c, g]) => ({ key: c, champ: c, text: champName(c), n: g, pick: () => onChamp(c) }))} />
-      <PickChips label={tl("By year")} rows={[...(it.y || [])].reverse().map(([y, g]) => ({ key: y, text: y, n: g, pick: () => onYear(y) }))} />
+      {it.np > it.players.length && <p className="text-[11px] text-rw-muted">{tl("The {n} with the most games:", { n: it.players.length })}</p>}
       <STable className="w-full text-xs">
         <thead>
           <tr>
@@ -524,6 +509,182 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
         </>
       )}
     </Section>
+  );
+};
+
+/**
+ * Item stats (the page with nothing picked): every item pro games ended with, most games first, with its players,
+ * win rate and the champions it's built on most; a filter and "finished items only" (the default). A row opens who
+ * built it.
+ */
+const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: string | null; to: (slug: string) => HubRoute }> = ({ loading, rows, scope, to }) => {
+  const [filter, setFilter] = useState("");
+  const [finishedOnly, setFinishedOnly] = useState(true);
+  const [all, setAll] = useState(false);
+  const f = normText(filter.trim());
+  const list = (rows || []).filter((r) => (!finishedOnly || isFinishedItem(r[0])) && (!f || normText(itemName(r[0])).includes(f) || normText(r[0]).includes(f)));
+  const max = Math.max(1, ...list.map((r) => r[2]));
+  const shown = all || f ? list : list.slice(0, 60);
+  return (
+    <Section title={tl("Item stats")}>
+      {scope && (
+        <p className="text-[11px] text-rw-sub">
+          <span className="text-rw-accent">{scope}</span> · {tl("Pick an item to see who built it.")}
+        </p>
+      )}
+      {loading ? (
+        <Loading />
+      ) : !rows ? (
+        <p className="text-xs text-rw-sub">{tl("Not in the stats yet.")}</p>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <input type="search" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder={tl("Find an item…")} aria-label={tl("Find an item")} className={`${sel} w-48`} />
+            <label className="flex items-center gap-1.5 text-rw-sub">
+              <input type="checkbox" checked={finishedOnly} onChange={(e) => setFinishedOnly(e.target.checked)} />
+              {tl("Finished items only")}
+            </label>
+          </div>
+          <STable className="w-full text-xs">
+            <thead>
+              <tr>
+                <th className={th}>{tl("Item")}</th>
+                <th className={th}>{tl("Games")}</th>
+                <th className={`${th} max-sm:hidden`}>{tl("Players")}</th>
+                <th className={th}>{tl("Win %")}</th>
+                <th className={`${th} max-sm:hidden`}>{tl("Champions")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((r) => (
+                <tr key={r[1]} className="border-t border-rw-border">
+                  <td className={`${td} max-w-[15rem]`}>
+                    <HubLink to={to(r[1])} className="flex items-center gap-1.5 min-w-0 hover:text-rw-accent">
+                      <ItemIcon name={r[0]} size={20} />
+                      <span className="truncate">{itemName(r[0])}</span>
+                    </HubLink>
+                  </td>
+                  {/* the number over a thin bar of its share of the most built item's games */}
+                  <td className={`${td} tabular-nums text-rw-sub w-28`} data-sort={r[2]}>
+                    {fmtNum(r[2])}
+                    <span className="block h-1 mt-0.5 rounded-sm bg-rw-accent/50" style={{ width: `${Math.max(2, (r[2] / max) * 100)}%` }} aria-hidden="true" />
+                  </td>
+                  <td className={`${td} tabular-nums text-rw-sub max-sm:hidden`} data-sort={r[3]}>
+                    {fmtNum(r[3])}
+                  </td>
+                  <td className={`${td} tabular-nums text-rw-sub`} data-sort={r[4] != null && r[2] ? r[4] / r[2] : 0}>
+                    {r[4] != null ? winRate(r[4], r[2]) : "–"}
+                  </td>
+                  <td className={`${td} max-sm:hidden`}>
+                    <span className="flex gap-0.5">
+                      {(r[5] || []).map((c) => (
+                        <ChampIcon key={c} name={c} size={18} />
+                      ))}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </STable>
+          {list.length > shown.length && (
+            <button type="button" onClick={() => setAll(true)} className="text-[11px] text-rw-teal hover:underline">
+              {tl("Show all {n}", { n: list.length })}
+            </button>
+          )}
+          {!list.length && <p className="text-[11px] text-rw-muted">{tl("No item fits.")}</p>}
+          <p className="text-[10px] text-rw-muted">{tl("Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.")}</p>
+        </>
+      )}
+    </Section>
+  );
+};
+
+/** Games each year that ended with the item, as columns (a year without any is an empty slot); a column opens that
+ *  year, and its games, players and win rate show under the pointer. */
+const YearBars: React.FC<{ years: [string, number, number, number?][]; onYear: (year: string) => void }> = ({ years, onYear }) => {
+  const [box, W] = useWidth<HTMLDivElement>();
+  const [hover, setHover] = useState<number | null>(null);
+  const id = useId().replace(/[^a-z0-9]/gi, "");
+  const first = Number(years[0][0]);
+  const last = Number(years[years.length - 1][0]);
+  const all: [string, number, number, number?][] = Array.from({ length: last - first + 1 }, (_, i) => String(first + i)).map((y) => years.find((r) => r[0] === y) || [y, 0, 0]);
+  const T = 16;
+  const PH = 64;
+  const H = T + PH + 16;
+  const bw = W / all.length;
+  const colW = Math.max(4, Math.min(28, bw * 0.62));
+  const max = Math.max(1, ...all.map((r) => r[1]));
+  const every = Math.max(1, Math.ceil(all.length / Math.max(2, Math.floor(W / 44))));
+  const peak = all.findIndex((r) => r[1] === max);
+  const h = hover != null ? all[hover] : null;
+  // the column under the pointer: its whole slot counts, not just the bar
+  const slot = (e: React.PointerEvent<SVGSVGElement> | React.MouseEvent<SVGSVGElement>) =>
+    Math.min(all.length - 1, Math.max(0, Math.floor((e.clientX - e.currentTarget.getBoundingClientRect().left) / bw)));
+  return (
+    <div ref={box} className="relative select-none">
+      <svg
+        width={W}
+        height={H}
+        viewBox={`0 0 ${W} ${H}`}
+        className={`block w-full touch-pan-y ${h && h[1] ? "cursor-pointer" : ""}`}
+        role="img"
+        aria-label={tl("By year")}
+        onPointerMove={(e) => setHover(slot(e))}
+        onPointerDown={(e) => setHover(slot(e))}
+        onPointerLeave={() => setHover(null)}
+        onClick={(e) => {
+          const r = all[slot(e)];
+          if (r && r[1]) onYear(r[0]);
+        }}
+      >
+        <defs>
+          <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" style={{ stopColor: "var(--rw-accent)" }} />
+            <stop offset="1" style={{ stopColor: "var(--rw-accent-2)" }} />
+          </linearGradient>
+        </defs>
+        <line x1={0} x2={W} y1={T + PH + 0.5} y2={T + PH + 0.5} style={{ stroke: "var(--rw-border)" }} />
+        {all.map((r, i) => {
+          const ch = r[1] ? Math.max(2, (r[1] / max) * PH) : 0;
+          const x0 = i * bw + (bw - colW) / 2;
+          const y0 = T + PH - ch;
+          const rad = Math.min(4, colW / 2, ch);
+          return (
+            <g key={r[0]}>
+              {ch > 0 && (
+                <path
+                  d={`M${x0},${T + PH} V${y0 + rad} Q${x0},${y0} ${x0 + rad},${y0} H${x0 + colW - rad} Q${x0 + colW},${y0} ${x0 + colW},${y0 + rad} V${T + PH} Z`}
+                  style={{ fill: `url(#${id})`, opacity: hover == null || hover === i ? 1 : 0.45 }}
+                />
+              )}
+              {i === peak && hover == null && (
+                <text x={i * bw + bw / 2} y={y0 - 4} textAnchor="middle" className="font-num" style={{ fill: "var(--rw-sub)", fontSize: 9 }}>
+                  {fmtNum(r[1])}
+                </text>
+              )}
+              {(i % every === 0 || i === all.length - 1) && (
+                <text x={i * bw + bw / 2} y={H - 3} textAnchor="middle" className="font-num" style={{ fill: "var(--rw-muted)", fontSize: 9 }}>
+                  {all.length > 8 ? `'${r[0].slice(2)}` : r[0]}
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+      {h && (
+        <div
+          className="absolute top-0 pointer-events-none rounded border border-rw-border bg-rw-raised px-2 py-1 text-[10px] leading-tight shadow-lg whitespace-nowrap"
+          style={{ left: Math.min(Math.max(hover! * bw + bw / 2 - 55, 0), Math.max(W - 110, 0)) }}
+        >
+          <div className="font-num font-semibold text-rw-text">{h[0]}</div>
+          <div className="text-rw-sub">
+            {tl("{n} games", { n: fmtNum(h[1]) })}
+            {h[1] > 0 && h[3] != null ? ` · ${winRate(h[3], h[1])}` : ""}
+          </div>
+          {h[2] > 0 && <div className="text-rw-muted">{tl("{n} players", { n: fmtNum(h[2]) })}</div>}
+        </div>
+      )}
+    </div>
   );
 };
 

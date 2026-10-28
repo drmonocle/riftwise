@@ -2149,7 +2149,6 @@
   "Player…": "선수…",
   "Item…": "아이템…",
   "Item": "아이템",
-  "Most built items": "가장 많이 산 아이템",
   "No item history for this player yet.": "이 선수의 아이템 기록이 아직 없습니다.",
   "No.": "아니요.",
   "None of {player}'s {n} pro games with a full scoreboard ended with {item}.": "{player}의 전체 스코어보드가 있는 프로 경기 {n}세트 중 {item}을(를) 들고 끝낸 세트는 없습니다.",
@@ -2190,5 +2189,12 @@
   "Every round": "모든 라운드",
 
   "Dragon": "드래곤",
-  "Baron": "바론"
+  "Baron": "바론",
+
+  "Item stats": "아이템 통계",
+  "ended with it": "보유한 채 종료",
+  "{n} won": "{n}승",
+  "Most built on": "가장 많이 산 챔피언",
+  "{n} players": "{n}명",
+  "Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.": "승률: 선수의 인벤토리에 그 아이템이 있는 채로 끝난 경기. 이기는 팀이 아이템을 더 많이 완성하므로 대부분 50%를 넘습니다."
 }

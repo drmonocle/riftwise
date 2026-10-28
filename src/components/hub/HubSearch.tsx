@@ -1,16 +1,18 @@
 /**
  * One search box for every team, player, tournament and champion since 2011, and for the stats pages themselves
  * ("tier list", "draft"). Two names with "vs" between them ("T1 vs Gen.G", "Faker vs Chovy") open Match prep or
- * Compare for the pair.
+ * Compare for the pair; an item ("heartsteel"), or a player and an item ("faker heartsteel"), opens its item history.
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Users, User, Trophy, Swords, X, Flag, GitCompare, ClipboardList, Compass } from "lucide-react";
 import { tl, tk, roleName } from "../../i18n";
 import { champName } from "../../champions";
 import { isNonLatin } from "../../searchAliases";
-import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubIndex, loadHubIndexQuick, normText, searchHub } from "../../hub/data";
+import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubIndex, loadHubIndexQuick, loadItemIndex, normText, searchHub } from "../../hub/data";
+import type { ItemIndexRow } from "../../hub/types";
+import { itemName } from "../../hub/ddragon";
 import { HubRoute, navigateHub } from "../../hub/route";
-import { ChampIcon, fmtNum, HubLink } from "./ui";
+import { ChampIcon, fmtNum, HubLink, ItemIcon } from "./ui";
 import { MENU_ITEMS } from "./menu";
 
 /** A result that isn't a team, player... page: a matchup (Match prep, Compare) or one of the stats pages. */
@@ -68,6 +70,65 @@ export function pageShortcuts(q: string, limit = 3): Shortcut[] {
     .map(([, it]) => ({ key: `page-${it.kind}`, route: { kind: it.kind } as HubRoute, label: tl(it.label), sub: tl(it.sub), icon: <Compass className="w-3.5 h-3.5" /> }));
 }
 
+/**
+ * The items a search names, for the item history: the whole name in the search, or the search the start of a name
+ * ("heart" -> Heartsteel); with a player's name beside it ("faker heartsteel", "has faker built rabadon's deathcap"),
+ * that player's games with it.
+ */
+export function itemShortcuts(items: ItemIndexRow[] | null, index: HubIndex | null, q: string, limit = 2): Shortcut[] {
+  // apostrophes and dots don't count ("rabadons deathcap")
+  const flat = (s: string) => normText(s).replace(/[^\p{L}\p{N} ]/gu, "").replace(/\s+/g, " ").trim();
+  const w = flat(q)
+    .replace(/\b(has|did|ever|built|build|buy|bought|item|items)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!items || w.length < 3) return [];
+  const words = w.split(" ");
+  // the search split in two: one side the start of an item's name ("rabadon"), the other a player ("faker")
+  const splits: [string, string][] = [];
+  for (let i = 1; i < words.length; i++) {
+    const head = words.slice(0, i).join(" ");
+    const tail = words.slice(i).join(" ");
+    splits.push([tail, head], [head, tail]);
+  }
+  // once per side of the search, only when an item fits the other side (a whole search over every player each time)
+  const seen = new Map<string, HubHit | undefined>();
+  const playerOf = (rest: string) => {
+    if (!seen.has(rest)) {
+      const p = rest && index ? searchHub(index, rest, 1).player[0] : undefined;
+      seen.set(rest, p && (p.score ?? 9) <= 1.5 ? p : undefined);
+    }
+    return seen.get(rest);
+  };
+  const hits: { r: ItemIndexRow; s: number; len: number; p?: HubHit }[] = [];
+  for (const r of items) {
+    let best: { s: number; len: number; p?: HubHit } | null = null;
+    for (const n of new Set([flat(r[0]), flat(itemName(r[0]))])) {
+      // the whole search: the item's name or its start
+      if (n === w || n.startsWith(w)) {
+        const s = n === w ? 0 : 1;
+        if (!best || s < best.s) best = { s, len: n.length };
+        continue;
+      }
+      // an item and a player
+      for (const [part, rest] of splits) {
+        if (part.length < 4 || !n.startsWith(part)) continue;
+        const p = playerOf(rest);
+        if (p && (!best || best.s > 2)) best = { s: 2, len: part.length, p };
+      }
+    }
+    if (best) hits.push({ r, ...best });
+  }
+  hits.sort((a, b) => a.s - b.s || b.len - a.len || b.r[2] - a.r[2]);
+  return hits.slice(0, limit).map(({ r, p }) => {
+    const label = itemName(r[0]);
+    const icon = <ItemIcon name={r[0]} size={16} />;
+    if (p)
+      return { key: `item-${r[1]}-${p.slug}`, route: { kind: "items", query: `player=${p.slug}&item=${r[1]}` }, label: `${p.name} · ${label}`, sub: tl("Has a pro ever built it?"), icon };
+    return { key: `item-${r[1]}`, route: { kind: "items", query: `item=${r[1]}` }, label, sub: `${tl("Item history")} · ${tl("{n} games", { n: fmtNum(r[2]) })}`, icon };
+  });
+}
+
 const KIND_ROUTE: Record<HubSearchKind, HubRoute["kind"]> = { team: "team", player: "player", event: "event", champ: "champ", league: "league" };
 export const hitRoute = (h: HubHit): HubRoute => ({ kind: KIND_ROUTE[h.kind], slug: h.slug }) as HubRoute;
 
@@ -89,6 +150,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
 }) => {
   const [q, setQ] = useState(initial || "");
   const [index, setIndex] = useState<HubIndex | null>(null);
+  const [items, setItems] = useState<ItemIndexRow[] | null>(null);
   // the small lists first (teams, tournaments, champions, leagues), the players when their bigger list arrives
   const [partial, setPartial] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -114,6 +176,10 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
           setPartial(false);
         })
         .catch(() => setFailed(true));
+      // the item names (~27 KB), for "heartsteel" and "faker heartsteel"
+      loadItemIndex()
+        .then(setItems)
+        .catch(() => {});
     }
   };
   useEffect(() => {
@@ -130,7 +196,10 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
 
   const results = useMemo(() => (index && q.trim() ? searchHub(index, q, big ? 6 : 5) : null), [index, q, big]);
   // a matchup ("t1 vs gen.g") and the stats pages the words name, above the rest
-  const shortcuts = useMemo(() => (q.trim() ? [...(index ? matchupShortcuts(index, q) : []), ...pageShortcuts(q)] : []), [index, q]);
+  const shortcuts = useMemo(
+    () => (q.trim() ? [...(index ? matchupShortcuts(index, q) : []), ...itemShortcuts(items, index, q), ...pageShortcuts(q)] : []),
+    [index, items, q],
+  );
   // the group with the best match first (a champion called exactly that, a big tournament, ...)
   const groups = useMemo(() => (results ? [...GROUPS].sort((a, b) => groupRank(results[a.kind]) - groupRank(results[b.kind])) : GROUPS), [results]);
   const flat = useMemo(() => (results ? groups.flatMap((g) => results[g.kind]) : []), [results, groups]);

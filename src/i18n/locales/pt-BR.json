@@ -2149,7 +2149,6 @@
   "Player…": "Jogador…",
   "Item…": "Item…",
   "Item": "Item",
-  "Most built items": "Itens mais feitos",
   "No item history for this player yet.": "Ainda não há histórico de itens deste jogador.",
   "No.": "Não.",
   "None of {player}'s {n} pro games with a full scoreboard ended with {item}.": "Nenhuma das {n} partidas profissionais de {player} com estatísticas completas terminou com {item}.",
@@ -2190,5 +2189,12 @@
   "Every round": "Todas as rodadas",
 
   "Dragon": "Dragão",
-  "Baron": "Barão"
+  "Baron": "Barão",
+
+  "Item stats": "Estatísticas de itens",
+  "ended with it": "terminaram com ele",
+  "{n} won": "{n} vitórias",
+  "Most built on": "Mais feito em",
+  "{n} players": "{n} jogadores",
+  "Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.": "% de vitórias: as partidas que terminaram com o item no inventário de um jogador. Times vencedores completam mais itens, então a maioria fica acima de 50%."
 }

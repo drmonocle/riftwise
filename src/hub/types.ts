@@ -631,14 +631,16 @@ export interface HubMatchups {
  *  final inventory], most games first */
 export type PlayerItems = [string, number[]][];
 /** hub/items/<item>.json: the players who finished pro games holding an item, most games first (the top 300):
- *  [name, slug, games, newest date]; c: its champions [champion, games, players], y: its years [year, games, players] */
+ *  [name, slug, games, newest date]; w: games won with it; c: its champions [champion, games, players, won],
+ *  y: its years [year, games, players, won] (won: builds from 10-28 on) */
 export interface HubItem {
   n: string;
   g: number;
   np: number;
+  w?: number;
   players: [string, string, number, string][];
-  c?: [string, number, number][];
-  y?: [string, number, number][];
+  c?: [string, number, number, number?][];
+  y?: [string, number, number, number?][];
 }
 /** hub/items/<item>/c/<champion>.json: one item on one champion, every player, most games first:
  *  [row of search/players.json, games, year - 2000, games that year, year - 2000, games that year, ...] */
@@ -656,8 +658,9 @@ export interface HubItemYear {
   p: [number, number][];
   c: [string, number][];
 }
-/** hub/items/index.json: [item, slug, games, players] */
-export type ItemIndexRow = [string, string, number, number];
+/** hub/items/index.json: [item, slug, games, players, won, its three most common champions] (won and the champions:
+ *  builds from 10-28 on) */
+export type ItemIndexRow = [string, string, number, number, number?, string[]?];
 /** hub/records/<year>.json: one year's game and single-game player records, and its pentakills */
 /** hub/weekly.json: the last seven days (from, to inclusive) in top leagues and international events. */
 export interface HubWeekly {
