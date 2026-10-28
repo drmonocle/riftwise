@@ -101,9 +101,11 @@ export function usePlayerPicture(name: string | undefined, teamName?: string, sl
 export function useTeamLogo(name: string | undefined, code?: string): string | undefined {
   const { logos, named } = useIndex();
   const n = norm(name);
+  // a Leaguepedia note tells teams of one name apart ("Team Secret (Vietnamese Team)"); Riot lists the name alone
+  const bare = norm(name?.replace(/\s*\([^()]*\)\s*$/, ""));
   // a short one-word name is its code too ("TSM" is "TSM Challengers", code TSM, in Riot's list)
   const c = code || (name && name.length <= 5 && !/\s/.test(name) ? name : undefined);
-  const exact = logos.get(n) || (c ? logos.get(`code:${norm(c)}`) : undefined);
+  const exact = logos.get(n) || (bare !== n ? logos.get(bare) : undefined) || (c ? logos.get(`code:${norm(c)}`) : undefined);
   if (exact || n.length < 4) return exact;
   let best: [string, string] | undefined;
   for (const x of named) if (x[0].startsWith(n) && (!best || x[0].length < best[0].length)) best = x;

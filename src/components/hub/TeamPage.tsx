@@ -208,7 +208,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
       <div className="rw-page mt-3">
       {tab === "stats" && (
         <>
-          <TeamPeriodStats slug={t.u} has2y={!!t.g2y} who={{ name: t.name, sub: [t.region, t.rating?.league].filter(Boolean).join(" · ") || undefined, roster: t.roster[0]?.p }} />
+          <TeamPeriodStats slug={t.u} has2y={!!t.g2y} who={{ name: t.name, sub: [t.region, t.rating?.league].filter(Boolean).join(" · ") || undefined, code: t.codes[0], roster: t.roster[0]?.p }} />
           <TeamRanks slug={t.u} events={t.events} has2y={!!t.g2y} />
         </>
       )}

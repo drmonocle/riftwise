@@ -76,7 +76,7 @@ import leagues_info
 import player_rating as prating
 import ratings as team_ratings
 import timeline
-from names import blue_red, champ_name, match_teams
+from names import blue_red, champ_name, match_teams, show_team
 
 SITE = "RiftWise"
 RECENT_EVENT_DAYS = 30        # event and series descriptions leave the winner out while this fresh
@@ -334,7 +334,8 @@ def build(ctx) -> dict:
     # -- slugs -------------------------------------------------------------------------
     team_slug_maker = Slugs()
     for fid, name in ctx.fr_name.items():
-        team_slug_maker.add(fid, name, ctx.fr_games[fid])
+        # by the name it's shown under (LYON, not "LYON (2024 American Team)"); its old address is an alias below
+        team_slug_maker.add(fid, show_team(name), ctx.fr_games[fid])
     team_slug = team_slug_maker.build()
 
     player_slug_maker = Slugs()
@@ -1984,7 +1985,7 @@ def build(ctx) -> dict:
         codes = []
         for e in sorted(eras, key=lambda e: -e["g"]):
             c = str(ctx.team_shorts.get(e["n"]) or "").strip()
-            if c and c.lower() not in (x.lower() for x in codes) and c.lower() != name.lower():
+            if c and c.lower() not in (x.lower() for x in codes) and c.lower() != show_team(name).lower():
                 codes.append(c)
         ss = ctx.team_series.get(fid, [])
         sw = sum(1 for x in ss if (x["fa"] if x["w"] == x["a"] else x["fb"]) == fid)
@@ -2103,7 +2104,8 @@ def build(ctx) -> dict:
         if t_has2y:
             obj["g2y"] = 1  # teamgames2y/<slug>.json exists
         out.json(f"team/{u}.json", obj)
-        search_teams.append([name, short_slug(name, u), t["g"], t["to"][:4], " | ".join(e["n"] for e in eras if e["n"] != name), " | ".join(codes),
+        search_teams.append([name, short_slug(name, u), t["g"], t["to"][:4],
+                             " | ".join(dict.fromkeys(show_team(e["n"]) for e in eras if show_team(e["n"]) != show_team(name))), " | ".join(codes),
                              lpt.get("Region") or ""])
         titles = obj["titles"]
         worlds = sum(1 for x in titles if x["kind"] == "Worlds")

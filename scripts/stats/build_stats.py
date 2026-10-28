@@ -43,7 +43,7 @@ import urllib.request
 from collections import Counter, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from names import PlayerNames, champ_name, match_teams, team_key  # noqa: E402
+from names import PlayerNames, champ_name, match_teams, show_team, show_teams, team_key  # noqa: E402
 
 MIN_SEARCH_GAMES = 10     # teams / players with fewer games get no page
 RECORD_MIN_MINUTES = 14   # shorter "games" are remakes or forfeits
@@ -63,6 +63,10 @@ MANUAL_LINKS = [
     ("2014-11-01", "Samsung White", "Samsung Galaxy"),    # Samsung White and Blue merged into Samsung Galaxy
     ("2015-01-07", "Team Curse", "Team Liquid"),
     ("2017-11-30", "Samsung Galaxy", "KSV eSports"),      # Leaguepedia says "acquire"; the org then became Gen.G
+    # Lyon Gaming (Latin America, 2013-2019) and LYON (the Americas, since 2025) are one brand (TV, 2026-10-28);
+    # Leaguepedia files them as three teams, one after another
+    ("2018-01-01", "Lyon Gaming (2013 Latin American Team)", "Lyon Gaming (2017 Latin America North Team)"),
+    ("2025-01-01", "Lyon Gaming (2017 Latin America North Team)", "LYON (2024 American Team)"),
 ]
 RENAME_VERBS = {"rename", "rebrand", "reband"}
 LEAGUEPEDIA_UA = {"User-Agent": "RiftWise-stats/1.0 (lolworlds.com; nightly stats build)"}
@@ -158,7 +162,7 @@ def parse_len(s):
 def write(path: str, obj) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(obj, f, ensure_ascii=False, separators=(",", ":"))
+        f.write(show_teams(json.dumps(obj, ensure_ascii=False, separators=(",", ":"))))
 
 
 def shift(date: str, days: int) -> str:
@@ -580,7 +584,7 @@ def main() -> None:
         return lineage.team(name, date)
 
     def tslug(fid):
-        return slug(fr_name[fid]) if fr_games[fid] >= MIN_SEARCH_GAMES else None
+        return slug(show_team(fr_name[fid])) if fr_games[fid] >= MIN_SEARCH_GAMES else None
 
     merged = sum(1 for lst in fr_eras.values() if len(lst) > 1)
     checks["teams with more than one name"] = merged
@@ -936,13 +940,13 @@ def main() -> None:
         if t["g"] < MIN_SEARCH_GAMES:
             continue
         name = fr_name[fid]
-        s = slug(name)
+        s = slug(show_team(name))
         names = [e for e in fr_eras[fid] if e["g"] >= 1]
-        aka = [e["n"] for e in names if e["n"] != name]
+        aka = list(dict.fromkeys(show_team(e["n"]) for e in names if show_team(e["n"]) != show_team(name)))
         codes = []
         for e in sorted(names, key=lambda e: -e["g"]):
             c = short_of(e["n"])
-            if c and c.lower() not in (x.lower() for x in codes) and c.lower() != name.lower():
+            if c and c.lower() not in (x.lower() for x in codes) and c.lower() != show_team(name).lower():
                 codes.append(c)
         search_teams.append({"n": name, "s": s, "g": t["g"], "y": t["to"][:4],
                              **({"a": " | ".join(aka)} if aka else {}), **({"c": " | ".join(codes)} if codes else {})})

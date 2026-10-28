@@ -629,7 +629,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
 
 // ── teams ─────────────────────────────────────────────────────────────────
 
-type TeamWho = { name: string; sub?: string; roster?: RosterPlayer[] };
+type TeamWho = { name: string; sub?: string; code?: string; roster?: RosterPlayer[] };
 
 export const TeamPeriodStats: React.FC<{ slug: string; has2y?: boolean; who?: TeamWho }> = ({ slug, has2y, who }) => {
   const { loading, rows } = useGameLog(slug, has2y, loadTeamGames2y, loadTeamGames);
