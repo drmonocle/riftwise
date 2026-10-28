@@ -28,12 +28,16 @@ function useIndex() {
       photos.set(k, [...(photos.get(k) || []), { team: norm(p.teamName), image: p.image }]);
     }
     const logos = new Map<string, string>();
+    const named: [string, string][] = []; // every team's normalized name and logo, for the longer-name match below
     for (const t of catalog?.teams || []) {
       if (!t.image) continue;
-      if (t.name) logos.set(norm(t.name), t.image);
+      if (t.name) {
+        logos.set(norm(t.name), t.image);
+        named.push([norm(t.name), t.image]);
+      }
       if (t.code && !logos.has(`code:${norm(t.code)}`)) logos.set(`code:${norm(t.code)}`, t.image);
     }
-    return { photos, logos };
+    return { photos, logos, named };
   }, [catalog]);
 }
 
@@ -92,7 +96,14 @@ export function usePlayerPicture(name: string | undefined, teamName?: string, sl
   return list.length === 1 ? { src: list[0].image, from: "riot" } : undefined;
 }
 
+/** A team's logo by its name, its short name, or else Riot's team whose name starts with it, the shortest one
+ *  ("Team Liquid" is "Team Liquid Alienware", code TLAW, in Riot's list). */
 export function useTeamLogo(name: string | undefined, code?: string): string | undefined {
-  const { logos } = useIndex();
-  return logos.get(norm(name)) || (code ? logos.get(`code:${norm(code)}`) : undefined);
+  const { logos, named } = useIndex();
+  const n = norm(name);
+  const exact = logos.get(n) || (code ? logos.get(`code:${norm(code)}`) : undefined);
+  if (exact || n.length < 4) return exact;
+  let best: [string, string] | undefined;
+  for (const x of named) if (x[0].startsWith(n) && (!best || x[0].length < best[0].length)) best = x;
+  return best?.[1];
 }

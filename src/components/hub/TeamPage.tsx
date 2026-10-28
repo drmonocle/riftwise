@@ -16,7 +16,7 @@ import { TeamSeriesArchive } from "./Archives";
 import { TeamPeriodStats } from "./PeriodStats";
 import { TeamRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
-import { CaptureContext, card, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, HubLink, Page, PlayerLink, RevealButton, Section, Stat, td, TeamLink, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink, FollowFeeds } from "./ui";
+import { CaptureContext, card, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, HubLink, Page, PlayerLink, RevealButton, Section, Stat, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink, FollowFeeds } from "./ui";
 import { ratingTextClass } from "./BestPage";
 import { Sparkline } from "./Sparkline";
 import { STable } from "../STable";
@@ -119,9 +119,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
     <div>
       {/* the team's name on every tab; its numbers on the Overview */}
       <div className={`${card} mb-3`}>
-        <h1 className="text-lg font-bold text-rw-text">
-          {t.name}
-          {t.codes.length > 0 && <span className="text-rw-muted text-sm font-semibold ml-2">{t.codes.slice(0, 3).join(" · ")}</span>}
+        <h1 className="text-lg font-bold text-rw-text flex items-center gap-2.5 min-w-0">
+          <TeamLogo name={t.name} code={t.codes[0]} size={36} />
+          <span className="min-w-0">
+            {t.name}
+            {t.codes.length > 0 && <span className="text-rw-muted text-sm font-semibold ml-2">{t.codes.slice(0, 3).join(" · ")}</span>}
+          </span>
         </h1>
         <p className="text-[11px] text-rw-muted">
           {[t.region ? regionName(t.region, t.region) : null, tl("Pro games from {from} to {to}", { from: fmtDate(t.from), to: fmtDate(t.to) }), t.disbanded ? tl("Disbanded") : null]
