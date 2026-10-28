@@ -9,13 +9,11 @@ package main
 // browser says it opened a team, player, tournament, champion or league page, with the name it shows. Kept per day
 // in <data>/usage/people/views/<date>.json (page -> views and name); /api/push/popular gives the week's most opened.
 //
-// Only people: on 10-28 ~99.7 % of the counts came from crawlers that run the app. The app now sends a count only
-// after someone pressed something ("person": true), and this side drops crawler user agents, the address ranges
-// of the renderer swarms the analytics hub flags, and a second count of the same thing from the same address that
-// day (the address is held only in memory, hashed, for the day). The counts from before that, crawlers included,
-// stay in <data>/usage and <data>/usage/views and are no longer read.
+// A count needs "person": true from the app, and each address counts once a thing a day (held only in memory,
+// hashed, for the day). Counts from before 0.7.58 are in <data>/usage and <data>/usage/views and aren't read.
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/json"
 	"net/http"
@@ -143,13 +141,18 @@ func (a *App) viewsFile(day time.Time) string {
 	return filepath.Join(a.dataDir, "usage", "people", "views", day.In(eastern).Format("2006-01-02")+".json")
 }
 
-// ── People, not crawlers ──────────────────────────────────────────────────
+// ── Which counts are taken ────────────────────────────────────────────────
 
 const seenMax = 200000 // a real day is a few thousand; past this, nothing new is counted until tomorrow
 
 var (
-	// the renderer swarms the analytics hub counts as automated (C:\goaccess\riftwise_filters.json suspect_prefixes)
-	crawlerNets = []string{"72.63.", "43.119.", "47.82.", "43.104."}
+	// the analytics hub's filter file (-filters): address ranges whose counts are left out, re-read every 10 minutes
+	usageFilters struct {
+		sync.Mutex
+		path string
+		at   time.Time
+		pfx  []string
+	}
 	// what each address was counted for today: hashed, in memory only, gone at the next New York midnight
 	seen struct {
 		sync.Mutex
@@ -158,9 +161,22 @@ var (
 	}
 )
 
-func crawlerNet(ip string) bool {
-	for _, p := range crawlerNets {
-		if strings.HasPrefix(ip, p) {
+// filteredIP: true for an address in a range the filter file lists (none when there is no file).
+func filteredIP(ip string) bool {
+	f := &usageFilters
+	f.Lock()
+	defer f.Unlock()
+	if f.path != "" && time.Since(f.at) > 10*time.Minute {
+		f.at = time.Now()
+		var j struct {
+			Prefixes []string `json:"suspect_prefixes"`
+		}
+		if b, err := os.ReadFile(f.path); err == nil && json.Unmarshal(bytes.TrimPrefix(b, []byte("\xef\xbb\xbf")), &j) == nil {
+			f.pfx = j.Prefixes
+		}
+	}
+	for _, p := range f.pfx {
+		if p != "" && strings.HasPrefix(ip, p) {
 			return true
 		}
 	}
@@ -168,7 +184,6 @@ func crawlerNet(ip string) bool {
 }
 
 // firstFrom: true the first time today that `ip` is counted for `what` ("visit", "second", "view:player/faker").
-// A crawler that opens every page in a fresh browser from one address counts once, like a person opening it twice.
 func firstFrom(ip, what string, now time.Time) bool {
 	day := now.In(eastern).Format("2006-01-02")
 	h := sha256.Sum256([]byte(day + "|" + ip + "|" + what))
@@ -288,9 +303,7 @@ func (a *App) usageRoute(mux *http.ServeMux, lim *limiter) {
 			return
 		}
 		ip, now := clientIP(r), time.Now()
-		// taken and dropped: an app that saw no one press anything (or is too old to say), a crawler's user agent,
-		// a renderer swarm's address
-		drop := !req.Person || botAgent.MatchString(r.UserAgent()) || crawlerNet(ip)
+		drop := !req.Person || botAgent.MatchString(r.UserAgent()) || filteredIP(ip) // taken, not counted
 		bad := false
 		switch req.Event {
 		case "views":

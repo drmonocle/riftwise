@@ -125,10 +125,7 @@ Translations used by push alerts are copied in step 1 and installed in step 3: r
   by `scripts/analytics/funnel.py` (run by the hub's `update_reports.ps1` from the release watcher's checkout).
 - The visits come from the app itself (`src/usage.ts` → `/api/push/usage`): once a day per browser, no cookie, no
   id; only the day's totals are kept (`C:\Sites\riftwise-push-data\usage\people\<date>.json`, page views for Most
-  viewed in `people\views\`). Only people count: the app sends nothing until the first tap, click, key press or mouse
-  move, and the service drops crawler user agents, the renderer-swarm ranges the analytics hub flags (`crawlerNets`
-  in `server/push/usage.go`) and repeats from one address in a day. The files directly in `usage\` (v0.7.52–0.7.57)
-  were ~99.7 % crawlers and aren't read any more.
+  viewed in `people\views\`; the files directly in `usage\` are from before 0.7.58 and aren't read).
 - **Discord**: channels that get results, records and the daily card are in `C:\Sites\riftwise-push-data\discord.json`
   (added and removed from the Watchlist tab; a webhook Discord says is gone is dropped by itself).
 

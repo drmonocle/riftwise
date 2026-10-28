@@ -167,8 +167,8 @@ func TestUsageCounts(t *testing.T) {
 }
 
 // Page views: only known page addresses with a name are counted, per day; the week's top needs two views or more,
-// counts the last seven New York days. Over the wire only people count: not crawlers, renderer swarms or an app that
-// saw no one press anything, and each address once a day.
+// counts the last seven New York days. Over the wire: not crawlers, filtered ranges or counts without "person", and
+// each address once a day.
 func TestPageViews(t *testing.T) {
 	a := &App{dataDir: t.TempDir()}
 	now := time.Date(2026, 10, 28, 3, 0, 0, 0, time.UTC) // still Oct 27 in New York
@@ -206,6 +206,11 @@ func TestPageViews(t *testing.T) {
 
 	mux := http.NewServeMux()
 	a.usageRoute(mux, &limiter{hits: map[string][]time.Time{}, tests: map[string]time.Time{}})
+	// the filter file's ranges are left out (written with a byte-order mark, like PowerShell does)
+	filters := filepath.Join(t.TempDir(), "filters.json")
+	os.WriteFile(filters, []byte("\xef\xbb\xbf"+`{"suspect_prefixes":["192.0.2."]}`), 0o644)
+	usageFilters.path, usageFilters.at, usageFilters.pfx = filters, time.Time{}, nil
+	defer func() { usageFilters.path, usageFilters.pfx = "", nil }()
 	// each post comes from its own address unless it says which (the counts are once a day per address)
 	ips := 0
 	post := func(ua, ip, body string) int {
@@ -232,12 +237,12 @@ func TestPageViews(t *testing.T) {
 		{"junk views", chrome, "", `{"event":"views","pages":[{"page":"nope","title":"x"}],"person":true}`, 400},
 		{"crawler views", "Googlebot/2.1", "", geng, 204},
 		{"views before anyone pressed anything", chrome, "", `{"event":"views","pages":[{"page":"team/geng","title":"Gen.G"}]}`, 204},
-		{"a renderer swarm's views", chrome, "72.63.23.9", geng, 204},
+		{"views from a filtered range", chrome, "192.0.2.9", geng, 204},
 		{"views from another address", chrome, "", geng, 204},
 		{"visit", chrome, "203.0.113.5", visit, 204},
 		{"the same visit again", chrome, "203.0.113.5", visit, 204},
 		{"crawler visit", "Mozilla/5.0 HeadlessChrome/141.0", "", visit, 204},
-		{"a renderer swarm's visit", chrome, "43.104.1.1", visit, 204},
+		{"visit from a filtered range", chrome, "192.0.2.77", visit, 204},
 		{"visit from an older app", chrome, "", `{"event":"visit","theme":"rift","lang":"en","app":"web","v":"0.7.57"}`, 204},
 		{"unknown event", chrome, "", `{"event":"delete","person":true}`, 400},
 	} {
@@ -247,12 +252,12 @@ func TestPageViews(t *testing.T) {
 	}
 	today, _ := os.ReadFile(a.viewsFile(time.Now()))
 	if !strings.Contains(string(today), `"team/geng":{"n":2,`) {
-		t.Errorf("geng counted wrong (2 people, one of them twice, plus a crawler, an old app and a swarm): %s", today)
+		t.Errorf("geng counted wrong (2 people, one of them twice, plus a crawler, an old app and a filtered range): %s", today)
 	}
 	var d usageDay
 	b, _ = os.ReadFile(filepath.Join(a.dataDir, "usage", "people", time.Now().In(eastern).Format("2006-01-02")+".json"))
 	if json.Unmarshal(b, &d) != nil || d.Visits != 1 || d.Versions["0.7.58"] != 1 {
-		t.Errorf("visits counted wrong (one person, twice, plus a crawler, a swarm and an old app): %s", b)
+		t.Errorf("visits counted wrong (one person, twice, plus a crawler, a filtered range and an old app): %s", b)
 	}
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, httptest.NewRequest("GET", apiPrefix+"popular", nil))

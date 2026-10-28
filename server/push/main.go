@@ -39,6 +39,7 @@ func main() {
 	fs := flag.NewFlagSet(cmd, flag.ExitOnError)
 	dataDir := fs.String("data", `C:\Sites\riftwise-push-data`, "data folder (keys, subscriptions, locales, logs)")
 	statsDir := fs.String("stats", `C:\inetpub\wwwroot\riftwise\stats`, "the stats builds (latest.json, <version>/hub/stakes.json) for the on-the-line alerts")
+	filters := fs.String("filters", `C:\goaccess\riftwise_filters.json`, "the analytics hub's filter file, for the usage counts")
 	addr := fs.String("addr", "127.0.0.1:8092", "listen address (serve)")
 	kind := fs.String("kind", "test", "sample: kickoff, pregame, banger or test")
 	team := fs.String("team", "T1", "sample: send to people following this team")
@@ -48,6 +49,7 @@ func main() {
 	if err == nil {
 		app.statsDir = *statsDir
 	}
+	usageFilters.path = *filters
 	if err != nil {
 		log.Fatal(err)
 	}

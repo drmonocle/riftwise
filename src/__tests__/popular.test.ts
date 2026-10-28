@@ -104,7 +104,6 @@ describe("page view counts", () => {
     expect(sent).toEqual([{ event: "views", pages: [{ page: "champ/kaisa", title: "Kai'Sa" }, { page: "team/t1", title: "T1" }], person: true }]);
   });
 
-  // crawlers that run the app open a page and leave: nothing is counted until someone presses something
   it("counts nothing until the first real tap, click or key press, then what waited", async () => {
     const { countView, countVisit, countSecondPage } = await import("../usage");
     countVisit("rift");

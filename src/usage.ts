@@ -5,11 +5,8 @@
  * who it is: the day it last counted is the only thing kept here, so the next visit that day isn't counted again.
  * Team, player, tournament, champion and league pages are counted the same way, once a page a day: the stats home's
  * "Most viewed this week" for a first visit, when there are no recently viewed pages yet (src/hub/popular.ts).
- *
- * Only people are counted: crawlers that run the app (AI search, scrapers on rented home connections) open a page and
- * leave without pressing anything, and they were ~99.7 % of the counts (10-28). So nothing is sent until this page's
- * first tap, click, key press, wheel turn or mouse move made by the browser itself (`isTrusted`, not a script's);
- * counts asked for before that wait for it, and are never sent when it doesn't come.
+ * Counts are sent once someone uses the page (a tap, click, key press, wheel turn or mouse move); the ones asked for
+ * before that wait for it.
  */
 import { currentLang } from "./i18n";
 import { IS_DESKTOP, IS_WEB } from "./platform";
@@ -34,11 +31,10 @@ function send(body: Record<string, unknown>) {
   // the local preview and tests have no usage service; a failed count is just not counted
   if (IS_WEB && !/(^|\.)riftwise\.gg$/.test(location.hostname)) return;
   // plain text and no-cors: the desktop app posts from another origin without a CORS preflight (the reply isn't read)
-  // `person`: the service drops counts without it (an older app's, sent before anyone pressed anything)
   fetch(URL_, { method: "POST", mode: IS_WEB ? "same-origin" : "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify({ ...body, person: true }), keepalive: true }).catch(() => {});
 }
 
-// ── A person, not a page renderer ─────────────────────────────────────────
+// ── Someone using the page ────────────────────────────────────────────────
 
 /** a crawler or a test browser: it would count every page it renders (the service checks the user agent too) */
 const botLike = () =>
@@ -57,7 +53,7 @@ function onInput(e: Event) {
 if (typeof window !== "undefined" && typeof window.addEventListener === "function")
   for (const t of INPUTS) window.addEventListener(t, onInput, { capture: true, passive: true });
 
-/** runs `count` now when someone has pressed something on this page, or at their first press (never for a crawler) */
+/** runs `count` now when someone has used this page, or when they first do */
 function asPerson(count: () => void) {
   if (botLike()) return;
   if (person) count();
