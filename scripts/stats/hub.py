@@ -137,8 +137,8 @@ def build(ctx) -> dict:
                   team1, team2, winner_side, winner, series_team1, series_team2, best_of, is_remake, ff, vod_url,
                   vod_game_start, vod_pb, catalog_game_id, has_stats, mvp FROM all_games WHERE overview_page IS NOT NULL"""
     ):
-        if ctx.is_show(r["overview_page"], r["tournament_name"]):
-            continue
+        if ctx.is_show(r["overview_page"], r["tournament_name"]) or (r["match_id"], r["game_number"]) in ctx.dupes.rows:
+            continue  # (a game the catalog has twice: build_stats.duplicates)
         games_by_op[r["overview_page"]][(r["match_id"], r["game_number"])] = {
             "mid": r["match_id"], "n": r["game_number"] or 1, "status": r["status"], "tname": r["tournament_name"],
             "date": (r["date_utc"] or "")[:16], "patch": r["patch"] or r["patch_inferred"], "t1": r["team1"], "t2": r["team2"],
@@ -177,7 +177,7 @@ def build(ctx) -> dict:
            FROM matches WHERE overview_page IS NOT NULL"""
     ):
         op = r["overview_page"]
-        if ctx.is_show(op, r["tournament_name"]):
+        if ctx.is_show(op, r["tournament_name"]) or r["game_id"] in ctx.dupes.copies:
             continue
         if r["tournament_name"]:
             tname_to_op.setdefault(r["tournament_name"], op)
@@ -236,6 +236,37 @@ def build(ctx) -> dict:
     checks["hub: game winners taken from the scoreboard (schedule disagreed)"] = winner_fixed
     checks["hub: matches games found in all_games by their catalog id (not added twice)"] = linked_by_id
     checks["hub: fresh games given teams from matches"] = filled_new
+    # a scoreboard only for a game the build counts: all_games (refreshed nightly) can still point at a game the catalog
+    # has since left out (excluded_matches), whose player rows are still there; the game logs would count it, the
+    # careers wouldn't
+    not_counted = 0
+    for gm in games_by_op.values():
+        for g in gm.values():
+            if g["gid"] and g["gid"] not in ctx.games:
+                g["gid"] = None
+                not_counted += 1
+    checks["hub: scoreboards left off (game not counted by the build)"] = not_counted
+    # one scoreboard, one game: Leaguepedia can list a series under two ids that differ only in case ("Third-Place
+    # Match_1" and "Third-Place match_1", NA LCS 2013 Summer Playoffs), both pointing at the same catalog game. The
+    # one with the catalog's own series id stays (only when the two are the same teams on the same day)
+    by_gid = defaultdict(list)
+    for op, gm in games_by_op.items():
+        for key, g in gm.items():
+            if g["gid"]:
+                by_gid[g["gid"]].append((op, key, g))
+    shared = 0
+    emptied = set()  # series ids that lost their games here (Leaguepedia's schedule may still list them)
+    for gid, places in by_gid.items():
+        if len(places) < 2:
+            continue
+        keep = next((p for p in places if p[1][0] == ctx.games[gid]["match"]), places[0])
+        for op, key, g in places:
+            if key != keep[1] and same_pair(g["t1"], g["t2"], keep[2]["t1"], keep[2]["t2"]) and g["date"][:10] == keep[2]["date"][:10]:
+                del games_by_op[op][key]
+                emptied.add(key[0])
+                shared += 1
+    emptied -= {k[0] for gm in games_by_op.values() for k in gm}
+    checks["hub: games listed twice with one scoreboard (kept once)"] = shared
     placeholders = 0
     for gm in games_by_op.values():
         # keep rows that still have something to show (a VOD link, Player of the Game)
@@ -278,6 +309,8 @@ def build(ctx) -> dict:
                     "a": clean(r[6]), "b": clean(r[7]), "sa": num(r[8]), "sb": num(r[9]), "w": str(r[10] or ""), "date": (r[11] or "")[:16],
                     "ff": r[12], "tb": r[13],
                 }
+                if s["mid"] in ctx.dupes.series or s["mid"] in emptied:
+                    continue  # every game of it is a duplicate (Leaguepedia's second page: build_stats.duplicates)
                 sched[s["mid"]] = s
                 if s["op"]:
                     sched_by_op[s["op"]].append(s)
