@@ -317,6 +317,57 @@ def current_club(teams_sorted):
     return regular[0] if regular else clubs[0][0] if clubs else teams_sorted[0][0] if teams_sorted else None
 
 
+def duplicates(con):
+    """Games the catalog has twice, so each counts once. Leaguepedia lists some weeks on two pages (2015 GPL:
+    "..._Week 4_1" and "..._Stage 1 W4_1"), and the VOD harvester filled the second copy from the VOD (24 games counted
+    twice, found 10-27). Two kinds:
+    - the catalog's own decision: a game in excluded_matches as "duplicate of <game>" (all_games, refreshed nightly,
+      can still list it as a game);
+    - a VOD copy still in matches: a VOD series whose every game has a Leaguepedia game in matches in the same
+      tournament, on the same day, with the same game number and the same two teams, all in one Leaguepedia series
+      (a rematch the same day, like a tiebreaker or a grand final after the winners' final, is between two Leaguepedia
+      series or two VOD series, and stays).
+    Returns .copies {VOD copy's game id: Leaguepedia's game id}, .rows {(series id, game number)} to leave out, and
+    .series {series ids with no game left} (Leaguepedia's schedule still lists them)."""
+    out = types.SimpleNamespace(copies={}, rows=set(), series=set())
+    if not {"stats_source", "catalog_game_id"} <= {r[1] for r in con.execute("PRAGMA table_info(all_games)")}:
+        return out
+    try:
+        out.rows = {(r[0], r[1]) for r in con.execute(
+            "SELECT match_id, game_number FROM excluded_matches WHERE exclude_reason LIKE 'duplicate of%'")}
+    except sqlite3.Error:
+        pass  # (a catalog without the table)
+    in_matches = "IN (SELECT game_id FROM matches)"
+    pairs = defaultdict(list)  # VOD series -> [(game number, its game id, Leaguepedia series, Leaguepedia game id)]
+    for r in con.execute(
+        f"""SELECT v.match_id, v.game_number, v.catalog_game_id, f.match_id, f.catalog_game_id
+            FROM all_games v JOIN all_games f
+              ON f.overview_page = v.overview_page AND f.match_id <> v.match_id AND f.game_number = v.game_number
+             AND substr(f.date_utc, 1, 10) = substr(v.date_utc, 1, 10)
+             AND ((f.team1 = v.team1 AND f.team2 = v.team2) OR (f.team1 = v.team2 AND f.team2 = v.team1))
+            WHERE v.stats_source = 'vod_recovered' AND v.catalog_game_id {in_matches} AND v.team1 != '' AND v.team2 != ''
+              AND f.stats_source = 'leaguepedia' AND f.catalog_game_id {in_matches}"""
+    ):
+        pairs[r[0]].append(tuple(r[1:]))
+    if pairs:
+        q = ",".join("?" * len(pairs))
+        size = dict(con.execute(
+            f"SELECT match_id, COUNT(*) FROM all_games WHERE match_id IN ({q}) AND catalog_game_id {in_matches} GROUP BY match_id",
+            list(pairs)).fetchall())
+        for mid, rs in pairs.items():
+            if len({r[2] for r in rs}) == 1 and len({r[1] for r in rs}) == size.get(mid):
+                out.copies.update({r[1]: r[3] for r in rs})
+                out.rows.update((mid, r[0]) for r in rs)
+    if out.rows:
+        mids = sorted({m for m, _ in out.rows})
+        q = ",".join("?" * len(mids))
+        left = Counter(r[0] for r in con.execute(
+            f"SELECT match_id, game_number FROM all_games WHERE match_id IN ({q}) AND winner IS NOT NULL AND winner != ''", mids)
+            if (r[0], r[1]) not in out.rows)
+        out.series = {m for m in mids if not left[m]}
+    return out
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", required=True)
@@ -352,6 +403,10 @@ def main() -> None:
     def is_show(op, tname):
         return levels.get(op) in SHOWMATCH_LEVELS or bool(SHOWMATCH_NAME.search(tname or "") or SHOWMATCH_NAME.search(op or ""))
 
+    dupes = duplicates(con)
+    for gid, kept in sorted(dupes.copies.items()):
+        print(f"left out, a VOD copy of a Leaguepedia game: {gid} (kept: {kept})")
+    checks["series left out (all their games are duplicates, duplicates())"] = len(dupes.series)
     games = {}
     for r in con.execute(
         """SELECT game_id, match_id, game_number, overview_page, tournament_name, tournament_tier, stage_tab, date_utc, patch,
@@ -360,6 +415,9 @@ def main() -> None:
     ):
         if is_show(r["overview_page"], r["tournament_name"]):
             checks["games left out (all-star and show matches)"] += 1
+            continue
+        if r["game_id"] in dupes.copies:
+            checks["games left out (VOD copies of a Leaguepedia game, duplicates())"] += 1
             continue
         games[r["game_id"]] = {
             "match": r["match_id"] or r["game_id"],
@@ -1054,6 +1112,7 @@ def main() -> None:
                 team_shorts=team_shorts, team_players=team_players, team_roles=team_roles, player_events=player_events,
                 records=records, records_by_year=records_by_year, out_root=args.out,
                 names=player_names, is_show=is_show, short_of=short_of, current_club=current_club,
+                dupes=dupes,
             ))
         except Exception:
             # Leave the last good build in place rather than publish one without its hub
