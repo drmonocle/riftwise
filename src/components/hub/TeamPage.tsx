@@ -1,6 +1,6 @@
 /**
- * Team page, in tabs (each its own address, /team/t1/<tab>): Overview (record, storylines, recent series, titles,
- * this year's roster), Stats (any period, league ranks), Matches (every series, rivals), History (tournaments with
+ * Team page, in tabs (each its own address, /team/t1/<tab>): Overview (record, next match, recent series, this
+ * year's roster, storylines, titles), Stats (any period, league ranks), Matches (every series, rivals), History (tournaments with
  * placements, roster by year) and Champions.
  */
 import React, { useState } from "react";
@@ -22,6 +22,7 @@ import { Sparkline } from "./Sparkline";
 import { STable } from "../STable";
 import { SectionCard } from "./BroadcastCard";
 import { champName } from "../../champions";
+import { NextMatch } from "./NextMatch";
 
 /** The tabs' names (the address says the key: /team/t1/matches) */
 const TAB_LABEL: Record<string, string> = {
@@ -209,8 +210,10 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
         </>
       )}
 
+      {overview && <NextMatch t={t} />}
+
       {/* the Overview leads with how the team is doing now (TV, 2026-10-28: pages in the order people want them):
-          recent series and this year's roster, then storylines and titles.
+          its next match, recent series and this year's roster, then storylines and titles.
           Side by side, each only as tall as it needs; a long recent list scrolls instead of leaving a gap beside By year */}
       {overview && (
       <div className="grid gap-3 md:grid-cols-2 md:items-start">

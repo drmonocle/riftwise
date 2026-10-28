@@ -2173,5 +2173,19 @@
   "Still in": "残留",
   "To be decided": "未定",
   "Floating team logos": "浮かぶチームロゴ",
-  "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "チームロゴがページの背景に浮かびます。現 MSI・First Stand 王者には専用のリングが付きます。端末が動きを減らす設定のときはオフになります。"
+  "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "チームロゴがページの背景に浮かびます。現 MSI・First Stand 王者には専用のリングが付きます。端末が動きを減らす設定のときはオフになります。",
+
+  "Only games on {champ} in {year}": "{year}年の{champ}の試合のみ",
+  "Only games on {champ}": "{champ}の試合のみ",
+  "Only games in {year}": "{year}年の試合のみ",
+  "A champion and a year narrow any of it.": "チャンピオンと年でさらに絞り込めます。",
+  "Pick an item to see who built it.": "アイテムを選ぶと、誰が積んだかを表示します。",
+  "Who built {item} on {champ}": "{champ}で{item}を積んだ選手",
+  "Who built {item} on {champ} in {year}": "{year}年に{champ}で{item}を積んだ選手",
+  "Who built {item} in {year}": "{year}年に{item}を積んだ選手",
+  "Next match": "次の試合",
+  "On now": "試合中",
+  "Match page": "試合ページ",
+  "This round only": "このラウンドのみ",
+  "Every round": "すべてのラウンド"
 }

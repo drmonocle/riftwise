@@ -2173,5 +2173,19 @@
   "Still in": "Encore en lice",
   "To be decided": "À déterminer",
   "Floating team logos": "Logos d'équipes flottants",
-  "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "Les logos des équipes flottent derrière la page ; les champions en titre du MSI et du First Stand ont leur propre anneau. Désactivé si votre appareil demande moins d'animations."
+  "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "Les logos des équipes flottent derrière la page ; les champions en titre du MSI et du First Stand ont leur propre anneau. Désactivé si votre appareil demande moins d'animations.",
+
+  "Only games on {champ} in {year}": "Seulement les parties sur {champ} en {year}",
+  "Only games on {champ}": "Seulement les parties sur {champ}",
+  "Only games in {year}": "Seulement les parties de {year}",
+  "A champion and a year narrow any of it.": "Un champion et une année affinent chaque recherche.",
+  "Pick an item to see who built it.": "Choisissez un objet pour voir qui l'a acheté.",
+  "Who built {item} on {champ}": "Qui a acheté {item} sur {champ}",
+  "Who built {item} on {champ} in {year}": "Qui a acheté {item} sur {champ} en {year}",
+  "Who built {item} in {year}": "Qui a acheté {item} en {year}",
+  "Next match": "Prochain match",
+  "On now": "En cours",
+  "Match page": "Page du match",
+  "This round only": "Cette ronde seulement",
+  "Every round": "Toutes les rondes"
 }

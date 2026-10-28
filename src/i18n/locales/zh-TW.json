@@ -2173,5 +2173,19 @@
   "Still in": "仍在爭奪",
   "To be decided": "待定",
   "Floating team logos": "漂浮的戰隊隊徽",
-  "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "戰隊隊徽在頁面背後漂浮；現任 MSI 和 First Stand 冠軍有專屬光環。裝置要求減少動態效果時自動關閉。"
+  "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "戰隊隊徽在頁面背後漂浮；現任 MSI 和 First Stand 冠軍有專屬光環。裝置要求減少動態效果時自動關閉。",
+
+  "Only games on {champ} in {year}": "僅 {year} 年使用{champ}的比賽",
+  "Only games on {champ}": "僅使用{champ}的比賽",
+  "Only games in {year}": "僅 {year} 年的比賽",
+  "A champion and a year narrow any of it.": "可再依英雄和年份篩選。",
+  "Pick an item to see who built it.": "選擇一件裝備，查看誰出過它。",
+  "Who built {item} on {champ}": "誰用{champ}出過 {item}",
+  "Who built {item} on {champ} in {year}": "{year} 年誰用{champ}出過 {item}",
+  "Who built {item} in {year}": "{year} 年誰出過 {item}",
+  "Next match": "下一場比賽",
+  "On now": "進行中",
+  "Match page": "比賽頁面",
+  "This round only": "僅本輪",
+  "Every round": "所有輪次"
 }

@@ -2173,5 +2173,19 @@
   "Still in": "Hâlâ yarışta",
   "To be decided": "Belli değil",
   "Floating team logos": "Yüzen takım logoları",
-  "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "Takım logoları sayfanın arkasında süzülür; güncel MSI ve First Stand şampiyonlarının kendi halkası vardır. Cihazın daha az hareket istediğinde kapanır."
+  "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "Takım logoları sayfanın arkasında süzülür; güncel MSI ve First Stand şampiyonlarının kendi halkası vardır. Cihazın daha az hareket istediğinde kapanır.",
+
+  "Only games on {champ} in {year}": "Yalnızca {year} yılında {champ} maçları",
+  "Only games on {champ}": "Yalnızca {champ} maçları",
+  "Only games in {year}": "Yalnızca {year} maçları",
+  "A champion and a year narrow any of it.": "Bir şampiyon ve bir yıl her aramayı daraltır.",
+  "Pick an item to see who built it.": "Kimin aldığını görmek için bir eşya seç.",
+  "Who built {item} on {champ}": "{champ} ile {item} eşyasını kim aldı",
+  "Who built {item} on {champ} in {year}": "{year} yılında {champ} ile {item} eşyasını kim aldı",
+  "Who built {item} in {year}": "{year} yılında {item} eşyasını kim aldı",
+  "Next match": "Sıradaki maç",
+  "On now": "Şu an oynanıyor",
+  "Match page": "Maç sayfası",
+  "This round only": "Yalnızca bu tur",
+  "Every round": "Tüm turlar"
 }

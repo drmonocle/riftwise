@@ -2173,5 +2173,19 @@
   "Still in": "생존",
   "To be decided": "미정",
   "Floating team logos": "떠다니는 팀 로고",
-  "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "팀 로고가 페이지 뒤에서 떠다니고, 현 MSI·퍼스트 스탠드 우승팀은 전용 테두리를 두릅니다. 기기가 움직임 줄이기를 요청하면 꺼집니다."
+  "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "팀 로고가 페이지 뒤에서 떠다니고, 현 MSI·퍼스트 스탠드 우승팀은 전용 테두리를 두릅니다. 기기가 움직임 줄이기를 요청하면 꺼집니다.",
+
+  "Only games on {champ} in {year}": "{year}년 {champ} 경기만",
+  "Only games on {champ}": "{champ} 경기만",
+  "Only games in {year}": "{year}년 경기만",
+  "A champion and a year narrow any of it.": "챔피언과 연도로 더 좁혀 볼 수 있습니다.",
+  "Pick an item to see who built it.": "아이템을 고르면 누가 샀는지 보여 줍니다.",
+  "Who built {item} on {champ}": "{champ}(으)로 {item}을(를) 산 선수",
+  "Who built {item} on {champ} in {year}": "{year}년 {champ}(으)로 {item}을(를) 산 선수",
+  "Who built {item} in {year}": "{year}년에 {item}을(를) 산 선수",
+  "Next match": "다음 경기",
+  "On now": "진행 중",
+  "Match page": "경기 페이지",
+  "This round only": "이번 라운드만",
+  "Every round": "모든 라운드"
 }

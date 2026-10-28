@@ -402,6 +402,8 @@ export const loadMatchups = (slug: string) => load<import("./types").HubMatchups
 /** The item history (/stats/items): one player's items, one item's players, and every item */
 export const loadPlayerItems = (slug: string) => load<import("./types").PlayerItems>(`hub/playeritems/${slug}.json`);
 export const loadHubItem = (slug: string) => load<import("./types").HubItem>(`hub/items/${slug}.json`);
+export const loadHubItemChamp = (item: string, champ: string) => load<import("./types").HubItemChamp>(`hub/items/${item}/c/${champ}.json`);
+export const loadHubItemYear = (item: string, year: string) => load<import("./types").HubItemYear>(`hub/items/${item}/y/${year}.json`);
 export const loadItemIndex = () => load<import("./types").ItemIndexRow[]>("hub/items/index.json");
 /** top-league teams' ratings over the last 120 days: slug -> [date, rating][] */
 export const loadRatingsHistory = () => load<Record<string, [string, number][]>>("hub/ratings-history.json");

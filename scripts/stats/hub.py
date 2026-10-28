@@ -27,8 +27,14 @@ folder, so one latest.json switch publishes both:
                                     or null (see timeline.py); then the game number in the series and the game's rating
   hub/playeritems/<slug>.json       the item history: [item, [rows of playergames/<slug>.json]] for every item the
                                     player finished a game holding (final inventory), most games first
-  hub/items/<item>.json             {n: item, g: games, np: players, players: [[name, slug, games, newest date]]}, the
-                                    300 with the most games; hub/items/index.json [[item, slug, games, players]]
+  hub/items/<item>.json             {n: item, g: games, np: players, players: [[name, slug, games, newest date]], the
+                                    300 with the most games, c: [[champion, games, players]], y: [[year, games, players]]};
+                                    hub/items/index.json [[item, slug, games, players]]
+  hub/items/<item>/c/<champ>.json   one item on one champion: {c: champion, g: games, p: [[player, games, year - 2000,
+                                    games that year, ...]]} for every player, most games first; player = its row in
+                                    search/players.json
+  hub/items/<item>/y/<year>.json    one item in one year: {y, g, np, p: [[player, games]] (the 500 with the most games),
+                                    c: [[champion, games]]}
   hub/csv/<event>.csv               every game of a tournament, one row per player and per team; csv/index.json
                                     (not "downloads": lolworlds.com's request filtering blocks any URL with "/download")
   hub/leagueyear/<league>/<year>.json  a league's whole season: player and team tables (percentile ranks)
@@ -2137,6 +2143,9 @@ def build(ctx) -> dict:
     riot_pics = riot["p"]  # Riot's photo of current pros (matched by name and current team), in their own page file
     n_riot_pics = 0
     item_players = defaultdict(list)  # item -> (games, newest date, player name, slug), for items/<item>.json
+    # (item page name, champion) -> (slug, games, year - 2000, games that year, ...) per player: items/<item>/c/ and /y/
+    item_champ = defaultdict(list)
+    search_us = []  # each search_players row's player slug (the item files point at rows of search/players.json)
     for page, p in ctx.players.items():
         u = player_slug.get(page)
         if not u or p["g"] < 1:
@@ -2255,18 +2264,61 @@ def build(ctx) -> dict:
                     out.json(f"playeritems/{u}.json", sorted(([it, pos] for it, pos in at.items()), key=lambda x: (-len(x[1]), x[0])))
                     for it, pos in at.items():
                         item_players[it].append((len(pos), games[pos[0]][0], name, u))
+                        s_it = pretty(it)
+                        by_c = defaultdict(Counter)
+                        for q in pos:
+                            by_c[games[q][2]][int(games[q][0][:4]) - 2000] += 1
+                        for c_, ys in by_c.items():
+                            if c_:
+                                item_champ[(s_it, c_)].append((u, sum(ys.values()), *(x for y_ in sorted(ys) for x in (y_, ys[y_]))))
         search_players.append([name, short_slug(name, u), club, p["g"], last_date[:4], (role or "")[:1],
                                " ".join(x for x in (bio.get("Name"), bio.get("NativeName")) if x) if p["g"] >= 50 else ""])
+        search_us.append(u)
         seo["player"].append((u, f"{name} – pro stats, champions and career | {SITE}",
                               f"{name}{' (' + bio['Name'] + ')' if bio.get('Name') else ''}, {role}{' for ' + club if club else ''}. "
                               f"{p['g']:,} pro games, KDA {obj['kda']}, {round(100 * p['w'] / p['g']) if p['g'] else 0}% wins"
                               f"{', ' + str(len(my_titles)) + ' titles' if my_titles else ''}. Champion pool, tournaments and career bests.",
                               1 if p["g"] >= SEO_MIN_GAMES else 0, player_summary(name, role, club, p, obj, my_titles)))
-    search_players.sort(key=lambda x: -x[3])
+    sp_order = sorted(range(len(search_players)), key=lambda i: -search_players[i][3])
+    search_players = [search_players[i] for i in sp_order]
+    search_row = {search_us[i]: k for k, i in enumerate(sp_order)}
+    del search_us, sp_order
 
     # -- the item history's other side: who finished pro games holding an item (each player's list is playeritems/) ------
+    # by champion (every player, with their games each year) and by year (the 500 with the most games, and on which
+    # champions), for "who built Heartsteel on Sion in 2026"; players are rows of search/players.json
+    item_c = defaultdict(list)  # item page name -> [champion, games, players]
+    item_yc = defaultdict(lambda: defaultdict(Counter))  # item page name -> year - 2000 -> champion -> games
+    item_yp = defaultdict(lambda: defaultdict(Counter))  # item page name -> year - 2000 -> player row -> games
+    for (s_it, c_), lst in item_champ.items():
+        if not s_it:
+            continue
+        per = defaultdict(Counter)  # player row -> year -> games (two spellings of one item add up)
+        for u_, _n, *ys in lst:
+            k = search_row.get(u_)
+            if k is not None:
+                for y_, m_ in zip(ys[::2], ys[1::2]):
+                    per[k][y_] += m_
+        if not per:
+            continue
+        rows_ic = sorted(([k, sum(cnt.values()), *(x for y_ in sorted(cnt) for x in (y_, cnt[y_]))] for k, cnt in per.items()),
+                         key=lambda r: (-r[1], r[0]))
+        g_ic = sum(r[1] for r in rows_ic)
+        out.json(f"items/{s_it}/c/{pretty(c_)}.json", {"c": c_, "g": g_ic, "p": rows_ic})
+        item_c[s_it].append([c_, g_ic, len(rows_ic)])
+        for k, cnt in per.items():
+            for y_, m_ in cnt.items():
+                item_yc[s_it][y_][c_] += m_
+                item_yp[s_it][y_][k] += m_
+    del item_champ
+    for s_it, years in item_yp.items():
+        for y_, cnt in years.items():
+            top = sorted(cnt.items(), key=lambda kv: (-kv[1], kv[0]))
+            out.json(f"items/{s_it}/y/{2000 + y_}.json", {"y": str(2000 + y_), "g": sum(cnt.values()), "np": len(top),
+                                                          "p": [list(kv) for kv in top[:500]],
+                                                          "c": [list(x) for x in item_yc[s_it][y_].most_common()]})
     # one file per item page name ("Doran's Blade" -> dorans-blade; two spellings of one name share it), the 300
-    # players with the most games, and the index of every item for the picker
+    # players with the most games, its champions and years, and the index of every item for the picker
     by_islug = defaultdict(lambda: {"names": Counter(), "players": {}})
     for it, lst in item_players.items():
         s = pretty(it)
@@ -2283,9 +2335,11 @@ def build(ctx) -> dict:
         total = sum(x[2] for x in top)
         name_i = b["names"].most_common(1)[0][0]
         items_index.append([name_i, s, total, len(top)])
-        out.json(f"items/{s}.json", {"n": name_i, "g": total, "np": len(top), "players": top[:300]})
+        out.json(f"items/{s}.json", {"n": name_i, "g": total, "np": len(top), "players": top[:300],
+                                     "c": sorted(item_c.get(s, []), key=lambda x: (-x[1], x[0])),
+                                     "y": [[str(2000 + y_), sum(item_yp[s][y_].values()), len(item_yp[s][y_])] for y_ in sorted(item_yp.get(s, {}))]})
     out.json("items/index.json", sorted(items_index, key=lambda x: (-x[2], x[0])))
-    del item_players, by_islug
+    del item_players, by_islug, item_c, item_yc, item_yp, search_row
 
     # -- what's at stake: storylines of every active team and its starters, for "On the line today" ------
     stakes = {}

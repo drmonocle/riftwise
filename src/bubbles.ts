@@ -25,11 +25,16 @@ const RINGED_R = 27;
 
 interface Sprite {
   pic: HTMLCanvasElement;
-  /** the circle's radius in the picture, and the picture's size around it (a label makes it taller) */
+  /** the circle's radius and centre in the picture, and the picture's size around it (a label makes it taller,
+   * and wider when it's longer than the circle: "First Stand 2026" is) */
   r: number;
+  cx: number;
+  cy: number;
   w: number;
   h: number;
 }
+
+const LABEL_FONT = "bold 10px system-ui, 'Segoe UI', sans-serif";
 
 interface Bubble {
   sprite: Sprite | null;
@@ -57,13 +62,16 @@ function darkPage(el: HTMLElement): boolean {
 
 function makeSprite(img: HTMLImageElement, r: number, dpr: number, dark: boolean, accent: string, ring?: Ring, label?: string): Sprite {
   const pad = ring ? 4 : 2;
-  const labelH = label ? 14 : 0;
-  const w = (r + pad) * 2;
-  const h = w + labelH;
   const pic = document.createElement("canvas");
+  let c = pic.getContext("2d")!;
+  const showLabel = !!(label && ring);
+  if (showLabel) c.font = LABEL_FONT;
+  const labelW = showLabel ? Math.ceil(c.measureText(label!).width) + 6 : 0;
+  const w = Math.max((r + pad) * 2, labelW);
+  const h = (r + pad) * 2 + (showLabel ? 14 : 0);
   pic.width = Math.ceil(w * dpr);
   pic.height = Math.ceil(h * dpr);
-  const c = pic.getContext("2d")!;
+  c = pic.getContext("2d")!; // resizing the canvas reset it
   c.scale(dpr, dpr);
   const cx = w / 2;
   const cy = r + pad;
@@ -94,14 +102,14 @@ function makeSprite(img: HTMLImageElement, r: number, dpr: number, dark: boolean
   c.strokeStyle = dark ? "rgba(255, 255, 255, 0.4)" : "rgba(255, 255, 255, 0.9)";
   c.lineWidth = 1.3;
   c.stroke();
-  if (label && ring) {
-    c.font = "bold 10px system-ui, 'Segoe UI', sans-serif";
+  if (showLabel) {
+    c.font = LABEL_FONT;
     c.textAlign = "center";
     c.textBaseline = "top";
-    c.fillStyle = RING_COLOR[ring];
-    c.fillText(label, cx, cy + r + 3, w + 30);
+    c.fillStyle = RING_COLOR[ring!];
+    c.fillText(label!, cx, cy + r + 3);
   }
-  return { pic, r, w, h };
+  return { pic, r, cx, cy, w, h };
 }
 
 /** Starts the bubbles on `canvas` (which fills the window behind the page); returns stop(). */
@@ -131,7 +139,9 @@ export function startBubbles(canvas: HTMLCanvasElement, teams: BubbleTeam[]): ()
   const make = (team: number, anywhere: boolean): Bubble => {
     const ringed = !!teams[team].ring;
     const r = ringed ? RINGED_R : 11 + Math.random() * 11;
-    const x = Math.random() * width;
+    // a ringed bubble stays far enough from the sides for its label (about 50 px each way) to show whole
+    const edge = ringed ? Math.min(60, width / 2) : 0;
+    const x = edge + Math.random() * (width - edge * 2);
     const baseAlpha = ringed ? 0.75 : 0.25 + Math.random() * 0.22;
     return {
       sprite: sprites[team], team, ringed, r, x, baseX: x,
@@ -206,8 +216,7 @@ export function startBubbles(canvas: HTMLCanvasElement, teams: BubbleTeam[]): ()
       if (!s) continue;
       const k = b.r / s.r;
       ctx.globalAlpha = b.alpha;
-      // the circle's centre is half the picture's width from its top left (a label hangs below)
-      ctx.drawImage(s.pic, b.x - (s.w / 2) * k, b.y - (s.w / 2) * k, s.w * k, s.h * k);
+      ctx.drawImage(s.pic, b.x - s.cx * k, b.y - s.cy * k, s.w * k, s.h * k);
     }
     ctx.globalAlpha = 1;
   };

@@ -2173,5 +2173,19 @@
   "Still in": "Ainda vivo",
   "To be decided": "A definir",
   "Floating team logos": "Logos de times flutuantes",
-  "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "Os logos dos times flutuam atrás da página; os atuais campeões do MSI e do First Stand têm um anel próprio. Desligado quando seu aparelho pede menos movimento."
+  "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "Os logos dos times flutuam atrás da página; os atuais campeões do MSI e do First Stand têm um anel próprio. Desligado quando seu aparelho pede menos movimento.",
+
+  "Only games on {champ} in {year}": "Só partidas de {champ} em {year}",
+  "Only games on {champ}": "Só partidas de {champ}",
+  "Only games in {year}": "Só partidas de {year}",
+  "A champion and a year narrow any of it.": "Um campeão e um ano refinam qualquer busca.",
+  "Pick an item to see who built it.": "Escolha um item para ver quem o fez.",
+  "Who built {item} on {champ}": "Quem fez {item} de {champ}",
+  "Who built {item} on {champ} in {year}": "Quem fez {item} de {champ} em {year}",
+  "Who built {item} in {year}": "Quem fez {item} em {year}",
+  "Next match": "Próxima partida",
+  "On now": "Acontecendo agora",
+  "Match page": "Página da partida",
+  "This round only": "Só esta rodada",
+  "Every round": "Todas as rodadas"
 }
