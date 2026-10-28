@@ -52,7 +52,7 @@ export const DiscordFeed: React.FC = () => {
   );
   const btn = "inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-8 rounded border border-rw-border bg-rw-bg text-rw-text hover:border-rw-accent text-[11px] disabled:opacity-50";
   return (
-    <div className="p-3 rounded-lg bg-rw-surface border border-rw-border space-y-2">
+    <div className="p-3 rounded-lg bg-rw-panel border border-rw-border space-y-2">
       <div className="flex items-center gap-2 font-bold text-rw-accent uppercase tracking-wider text-[11px]">
         <MessageSquare className="w-3.5 h-3.5 text-rw-teal" />
         {tl("RiftWise in your Discord")}

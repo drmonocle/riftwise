@@ -217,7 +217,7 @@ export const SyncPanel: React.FC<{ onOpenUrl: (url: string) => void }> = ({ onOp
       <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
         {tl("Sync & account")}
       </h2>
-      <div className="p-3 rounded-lg bg-rw-surface border border-rw-border space-y-3 text-xs">
+      <div className="p-3 rounded-lg bg-rw-panel border border-rw-border space-y-3 text-xs">
         {!account ? (
           <>
             <p className="text-rw-sub leading-relaxed">

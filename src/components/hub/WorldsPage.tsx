@@ -188,7 +188,7 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
             <select
               value={d.year}
               onChange={(e) => navigateHub({ kind, year: e.target.value === d.years[0] ? undefined : e.target.value }, { replace: true })}
-              className="bg-rw-surface border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text"
+              className="bg-rw-panel border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text"
             >
               <option value={ALL}>{tl("All years")}</option>
               {d.years.map((y) => (

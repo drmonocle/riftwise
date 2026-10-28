@@ -253,7 +253,7 @@ const Card: React.FC<{
 }> = ({ s, text, onOpenUrl }) => (
   <button
     onClick={() => onOpenUrl(s.url)}
-    className="text-left bg-rw-surface border border-rw-border hover:border-rw-accent p-4 rounded-lg transition-all group"
+    className="text-left bg-rw-panel border border-rw-border hover:border-rw-accent p-4 rounded-lg transition-all group"
   >
     <div className="flex items-center justify-between gap-2 mb-1.5">
       <span className="text-sm font-bold text-rw-text group-hover:text-rw-accent transition-colors">
