@@ -85,6 +85,9 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
   const live = game?.state === "inProgress";
   const [state, setState] = useState<GameState | null>(null);
   const [failed, setFailed] = useState(false);
+  // failed asks in a row: Riot's feed drops one now and then (TV, 2026-10-28, mid-game at Worlds: "no live stats"),
+  // so the panel says so only after three, and asks again within seconds in the meantime
+  const misses = useRef(0);
   const [open, setOpen] = useState(!!startOpen);
   const [history, setHistory] = useState<TimelinePoint[] | null>(null);
   // the model's chance for team 1 to win a game, before it started (the upset meter's starting point)
@@ -98,6 +101,8 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
     setState(null);
     setHistory(null);
     setDraft(null);
+    setFailed(false);
+    misses.current = 0;
   }, [game?.id]);
 
   useEffect(() => {
@@ -129,12 +134,15 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
           const players = det?.frames?.[det.frames.length - 1]?.participants ?? null;
           setState((prev) => ({ win: w, frame, startMs: startRef.current[game.id] ?? null, details: players ?? prev?.details ?? null }));
           setFailed(false);
+          misses.current = 0;
           if (frame.gameState === "finished") return; // final numbers: no need to keep asking
         }
       } catch {
-        if (alive) setFailed(true);
+        if (alive && ++misses.current >= 3) setFailed(true);
       }
-      if (alive && live) timer = window.setTimeout(load, document.hidden ? POLL_MS * 4 : POLL_MS);
+      // after a miss: again in five seconds (a finished game too, up to three times); otherwise the usual pace
+      if (alive && misses.current > 0 && (live || misses.current < 3)) timer = window.setTimeout(load, 5_000);
+      else if (alive && live) timer = window.setTimeout(load, document.hidden ? POLL_MS * 4 : POLL_MS);
     };
     load();
     return () => {

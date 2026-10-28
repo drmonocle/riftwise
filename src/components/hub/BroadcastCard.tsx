@@ -97,7 +97,10 @@ export const CardLogo: React.FC<{ name?: string; code?: string | null; size: num
       />
     );
   if (!badge || !name) return null;
-  const short = (code || name.replace(/[^\p{L}\p{N} ]/gu, "").split(/\s+/).map((w) => w[0]).join("") || name).slice(0, 4).toUpperCase();
+  // the short name, a short one-word name as it is ("TSM", not "T"), else the initials
+  const short = (code || (name.length <= 4 && !/\s/.test(name) ? name : name.replace(/[^\p{L}\p{N} ]/gu, "").split(/\s+/).map((w) => w[0]).join("")) || name)
+    .slice(0, 4)
+    .toUpperCase();
   return (
     <span
       style={{
@@ -271,13 +274,13 @@ const Card: React.FC<{ d: CardData }> = ({ d }) => {
 
 /**
  * A one-sided card's numbers (TV, 2026-10-28: "some lines not having bars look weird"): the shares and rates as bars
- * on one 0-100% scale with a mark at 50%, every other number as a tile of its own. With about as many of each, bars
- * left and tiles right; with few bars, the bars across the top and the tiles in rows of four under them.
+ * on one 0-100% scale with a mark at 50%, across the top up to three to a row, and every other number as a tile, four
+ * to a row under them (bars stacked in one column ran off the bottom of the card with six of them).
  */
 const OneSide: React.FC<{ rows: CardRow[] }> = ({ rows }) => {
   const bars = rows.filter((r) => r.pct != null);
   const tiles = rows.filter((r) => r.pct == null);
-  const sideBySide = bars.length >= 3 && bars.length * 2 >= tiles.length;
+  const barCols = bars.length <= 3 ? bars.length : bars.length === 4 ? 2 : 3;
   // a signed number reads as ahead (teal) or behind (red); everything else in the text colour
   const tone = (v: string) => (/^\+\d/.test(v) ? "var(--rw-teal)" : /^[−-]\d/.test(v) ? "var(--rw-red)" : "var(--rw-text)");
   const barRow = (r: CardRow) => {
@@ -314,14 +317,9 @@ const OneSide: React.FC<{ rows: CardRow[] }> = ({ rows }) => {
       </div>
     </div>
   );
-  return sideBySide ? (
-    <div style={{ marginTop: 30, flex: 1, minHeight: 0, overflow: "hidden", display: "grid", gridTemplateColumns: tiles.length ? "minmax(0, 1.25fr) minmax(0, 1fr)" : "minmax(0, 1fr)", gap: 56, alignContent: "start" }}>
-      <div style={{ display: "grid", gap: 24, alignContent: "start" }}>{bars.map(barRow)}</div>
-      {tiles.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignContent: "start" }}>{tiles.map(tile)}</div>}
-    </div>
-  ) : (
-    <div style={{ marginTop: 30, flex: 1, minHeight: 0, overflow: "hidden", display: "grid", gap: 28, alignContent: "start" }}>
-      {bars.length > 0 && <div style={{ display: "grid", gridTemplateColumns: `repeat(${bars.length}, minmax(0, 1fr))`, gap: 48 }}>{bars.map(barRow)}</div>}
+  return (
+    <div style={{ marginTop: 30, flex: 1, minHeight: 0, overflow: "hidden", display: "grid", gap: 30, alignContent: "start" }}>
+      {bars.length > 0 && <div style={{ display: "grid", gridTemplateColumns: `repeat(${barCols}, minmax(0, 1fr))`, gap: "26px 48px" }}>{bars.map(barRow)}</div>}
       {tiles.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 16 }}>{tiles.map(tile)}</div>}
     </div>
   );
