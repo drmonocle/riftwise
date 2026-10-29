@@ -23,22 +23,35 @@ export function findBrowser() {
 
 /** Starts the browser headless at a window size; `page()` gives the DevTools connection to its first tab. */
 export async function launch({ width = 1440, height = 900 } = {}) {
-  const port = 9200 + Math.floor(Math.random() * 600);
-  const profile = fs.mkdtempSync(path.join(os.tmpdir(), "rw-audit-"));
-  const proc = spawn(
-    findBrowser(),
-    [`--remote-debugging-port=${port}`, "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
-      ...(process.platform === "linux" ? ["--no-sandbox"] : []), `--user-data-dir=${profile}`, `--window-size=${width},${height}`, "about:blank"],
-    { stdio: "ignore" },
-  );
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-  let target;
-  for (let i = 0; i < 60 && !target; i++) {
-    await sleep(250);
-    try {
-      target = (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()).find((t) => t.type === "page");
-    } catch {
-      /* not up yet */
+  // A fresh profile's first start can take longer than 15 s on a CI runner, and a random port can be taken (CI on
+  // main failed with "the browser didn't start" five times on 2026-10-28): up to three tries, each on a new port with
+  // up to 45 s to answer.
+  let proc, profile, target;
+  for (let attempt = 1; attempt <= 3 && !target; attempt++) {
+    const port = 9200 + Math.floor(Math.random() * 600);
+    profile = fs.mkdtempSync(path.join(os.tmpdir(), "rw-audit-"));
+    proc = spawn(
+      findBrowser(),
+      [`--remote-debugging-port=${port}`, "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
+        ...(process.platform === "linux" ? ["--no-sandbox"] : []), `--user-data-dir=${profile}`, `--window-size=${width},${height}`, "about:blank"],
+      { stdio: "ignore" },
+    );
+    let exited = false;
+    proc.on("exit", () => (exited = true));
+    for (let i = 0; i < 180 && !target && !exited; i++) {
+      await sleep(250);
+      try {
+        target = (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()).find((t) => t.type === "page");
+      } catch {
+        /* not up yet */
+      }
+    }
+    if (!target) {
+      console.log(`(the browser didn't start${exited ? ": it quit" : ""}; try ${attempt} of 3)`);
+      proc.kill();
+      await sleep(1000);
+      fs.rmSync(profile, { recursive: true, force: true });
     }
   }
   if (!target) throw new Error("the browser didn't start");
