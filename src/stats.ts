@@ -185,6 +185,11 @@ export function statsPhotoUrl(slug: string, stamp: string): string {
   return `${STATS_BASE}/photos/${encodeURIComponent(slug)}.webp${stamp ? `?v=${stamp}` : ""}`;
 }
 
+/** Address of a team's logo from Leaguepedia (photos_lp.py, stats/logos/<slug>.webp), for teams Riot has none for. */
+export function statsLogoUrl(slug: string, stamp: string): string {
+  return `${STATS_BASE}/logos/${encodeURIComponent(slug)}.webp${stamp ? `?v=${stamp}` : ""}`;
+}
+
 export const loadStatsMeta = () => load<StatsMeta>("meta.json");
 export const loadChampionStats = (key: string) => load<ChampionStats>(`champions/${key}.json`);
 
