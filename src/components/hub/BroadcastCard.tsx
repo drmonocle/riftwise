@@ -11,7 +11,7 @@ import { tl, tc, locale, roleName, fmtDec, stageLabel, eventTitle } from "../../
 import { IS_WEB } from "../../platform";
 import { ChampIcon } from "./ui";
 import { champName } from "../../champions";
-import { loadHubPhotos, usePlayerPicture, useTeamLogo } from "../../hub/riotCatalog";
+import { loadHubLogos, loadHubPhotos, usePlayerPicture, useTeamLogo } from "../../hub/riotCatalog";
 import type { PlayerAgg, TeamAgg } from "../../hub/period";
 import { ROLES } from "../../hub/champAgg";
 import type { draftTendencies } from "./DraftTendencies";
@@ -430,9 +430,9 @@ export const BroadcastCardButton: React.FC<{ data: () => CardData; name: string;
     let alive = true;
     (async () => {
       try {
-        // the list of who has a photo on our server first, so the faces are in the card before it's drawn (it can
-        // come after the card's first draw on a slow connection, and the picture had initials)
-        await Promise.race([loadHubPhotos(), new Promise((r) => setTimeout(r, 3000))]);
+        // the lists of who has a photo or a logo on our server first, so they're in the card before it's drawn (they
+        // can come after the card's first draw on a slow connection, and the picture had initials)
+        await Promise.race([Promise.all([loadHubPhotos(), loadHubLogos()]), new Promise((r) => setTimeout(r, 3000))]);
         // let the card and its champion pictures load: off screen, lazy pictures never would, so load them now
         // (and don't wait more than a few seconds for a slow one)
         await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));

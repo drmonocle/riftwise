@@ -13,6 +13,7 @@ folder, so one latest.json switch publishes both:
   hub/team/<slug>.json              team page
   hub/player/<slug>.json            player page
   hub/photos.json                   {slug: "YYYYMMDD"} players with a Leaguepedia photo (photos_lp.py)
+  hub/logos.json                    {slug: "YYYYMMDD"} teams with a Leaguepedia logo (photos_lp.py), for Riot's gaps
   hub/event/<slug>.json             tournament page: info, results, standings, stages and bracket, leaders
   hub/game/<slug>.json              one series: each game's draft, players, items, runes, objectives, VOD, rating
   hub/best/...                      the best-rated games and series (all time, by year, by league, by league and year)
@@ -2913,6 +2914,16 @@ def build(ctx) -> dict:
         photos = {}
     out.json("photos.json", photos)
     checks["hub: player photos"] = len(photos)
+    # Teams with a Leaguepedia logo (photos_lp.py, <out>/logos/<slug>.webp) for the app where Riot's list has none:
+    # {slug: "YYYYMMDD"}, only for teams that still have that page
+    try:
+        slugs_now = set(team_slug.values())
+        logos = {s: d for s, d in photos_lp.logos_map(ctx.out_root).items() if s in slugs_now}
+    except Exception as e:  # noqa: BLE001 - as the photos
+        print(f"hub: logos map skipped: {e}")
+        logos = {}
+    out.json("logos.json", logos)
+    checks["hub: team logos"] = len(logos)
     checks["hub: players with a Riot photo in their file"] = n_riot_pics
     # Riot's champion / item / spell / rune lists boiled down for the app (dd.json, dd/<language>.json): a few KB
     # instead of Riot's full lists before the first champion picture shows

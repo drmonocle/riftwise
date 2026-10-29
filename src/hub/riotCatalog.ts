@@ -7,7 +7,7 @@
  */
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { CatalogData } from "../types";
-import { load, statsPhotoUrl } from "../stats";
+import { load, statsLogoUrl, statsPhotoUrl } from "../stats";
 import { prettySlug } from "./data";
 
 export const RiotCatalogContext = createContext<CatalogData | null>(null);
@@ -41,36 +41,43 @@ function useIndex() {
   }, [catalog]);
 }
 
-// ── Leaguepedia photos (slug -> fetch date YYYYMMDD), one small file per session ──────────────
+// ── Leaguepedia photos and team logos (slug -> fetch date YYYYMMDD), one small file each per session ──────────
 
 type PhotoMap = Record<string, string>;
-let hubPhotos: PhotoMap | null = null;
-let hubPhotosPromise: Promise<PhotoMap> | null = null;
 
-export function loadHubPhotos(): Promise<PhotoMap> {
-  if (!hubPhotosPromise) {
-    hubPhotosPromise = load<PhotoMap>("hub/photos.json")
-      .catch((): PhotoMap => ({})) // an older build without the file: nobody has one
-      .then((m) => (hubPhotos = m));
-  }
-  return hubPhotosPromise;
+/** One of the stats build's "who has a picture" lists: loaded once, then kept. */
+function stampList(file: string) {
+  let map: PhotoMap | null = null;
+  let promise: Promise<PhotoMap> | null = null;
+  const loadList = (): Promise<PhotoMap> => {
+    if (!promise) {
+      promise = load<PhotoMap>(file)
+        .catch((): PhotoMap => ({})) // an older build without the file: nobody has one
+        .then((m) => (map = m));
+    }
+    return promise;
+  };
+  /** the list; null until it has loaded (and not loaded at all while it isn't needed) */
+  const useList = (need = true): PhotoMap | null => {
+    const [m, setM] = useState<PhotoMap | null>(map);
+    useEffect(() => {
+      if (map || !need) return;
+      let on = true;
+      loadList().then((x) => {
+        if (on) setM(x);
+      });
+      return () => {
+        on = false;
+      };
+    }, [need]);
+    return m ?? map;
+  };
+  return [loadList, useList] as const;
 }
 
-/** Who has a Leaguepedia photo; null until the list has loaded. */
-export function useHubPhotos(): PhotoMap | null {
-  const [m, setM] = useState<PhotoMap | null>(hubPhotos);
-  useEffect(() => {
-    if (hubPhotos) return;
-    let on = true;
-    loadHubPhotos().then((x) => {
-      if (on) setM(x);
-    });
-    return () => {
-      on = false;
-    };
-  }, []);
-  return m;
-}
+/** Players with a Leaguepedia photo, and teams with a Leaguepedia logo (where Riot's list has none). */
+export const [loadHubPhotos, useHubPhotos] = stampList("hub/photos.json");
+export const [loadHubLogos, useHubLogos] = stampList("hub/logos.json");
 
 export interface PlayerPicture {
   src: string;
@@ -97,8 +104,19 @@ export function usePlayerPicture(name: string | undefined, teamName?: string, sl
 }
 
 /** A team's logo by its name, its short name, or else Riot's team whose name starts with it, the shortest one
- *  ("Team Liquid" is "Team Liquid Alienware", code TLAW, in Riot's list). */
+ *  ("Team Liquid" is "Team Liquid Alienware", code TLAW, in Riot's list); for a team Riot has none for, Leaguepedia's
+ *  on our server (TV, 2026-10-28: "make sure all the teams have their proper logos"). */
 export function useTeamLogo(name: string | undefined, code?: string): string | undefined {
+  const riot = useRiotLogo(name, code);
+  // the team page's slug is made from its name (photos_lp.py stores the logo under it); the list loads only when needed
+  const hub = useHubLogos(!riot && !!name);
+  if (riot) return riot;
+  const key = name ? prettySlug(name) : "";
+  const stamp = key && hub ? hub[key] : undefined;
+  return stamp !== undefined ? statsLogoUrl(key, stamp) : undefined;
+}
+
+function useRiotLogo(name: string | undefined, code?: string): string | undefined {
   const { logos, named } = useIndex();
   const n = norm(name);
   // a Leaguepedia note tells teams of one name apart ("Team Secret (Vietnamese Team)"); Riot lists the name alone
