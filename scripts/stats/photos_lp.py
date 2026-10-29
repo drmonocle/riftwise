@@ -471,6 +471,13 @@ def main() -> int:
     ap.add_argument("--logo-cache", help=f"the logo fetch record (default: {LOGO_CACHE_NAME} next to this script)")
     ap.add_argument("--only-teams", help="comma-separated team slugs to fetch logos for, Riot logo or not, and no photos (testing)")
     args = ap.parse_args()
+    # the nightly log goes through the server console's code page (cp1252): a file name it can't show ("ą") ended
+    # the first logo run in the middle (2026-10-28); show such letters as escapes instead
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="backslashreplace")
+        except (AttributeError, ValueError):
+            pass
 
     here = os.path.dirname(os.path.abspath(__file__))
     cache_path = args.cache or os.path.join(here, CACHE_NAME)
