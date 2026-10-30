@@ -129,9 +129,7 @@ export const RosterSubPicker: React.FC<{
   if (latest.length <= 5) return null;
   const cur = side.players[roleIdx]?.p.u || "";
   const role = ROLES[roleIdx];
-  const sameRole = latest.filter((x) => x.r === role && x.u);
-  const others = latest.filter((x) => x.r !== role && x.u);
-  const choices = [...sameRole, ...others];
+  const choices = latest.filter((x) => x.r === role && x.u);
   if (choices.length <= 1) return null;
   return (
     <select
