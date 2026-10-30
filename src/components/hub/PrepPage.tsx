@@ -140,11 +140,11 @@ export const RosterSubPicker: React.FC<{
       onChange={(e) => e.target.value && e.target.value !== cur && onSwap(roleIdx, e.target.value)}
       aria-label={`${side.team.name} ${roleName(role)}`}
       title={tl("Change")}
-      className="bg-rw-bg border border-rw-border rounded px-1 py-0.5 text-[10px] text-rw-sub hover:text-rw-text max-w-[6.5rem]"
+      className="bg-rw-bg border border-rw-border rounded px-1.5 py-0.5 text-[10px] text-rw-sub hover:text-rw-text max-w-[6.5rem] shrink-0"
     >
       {choices.map((x) => (
         <option key={x.u!} value={x.u!}>
-          {x.n} ({x.g}G)
+          {x.u === cur ? `${x.g}G` : `${x.n} (${x.g}G)`}
         </option>
       ))}
     </select>
@@ -1059,8 +1059,8 @@ const Lanes: React.FC<{
         label={`${pa?.p.name || "–"} vs ${pb?.p.name || "–"} · ${roleName(r)}`}
         name={`${title}-${r}-${periodLabel}`}
         card={laneCard}
-        left={pa ? <PlayerPhoto name={pa.p.name} team={a.team.name} slug={pa.p.u} sizeClass="w-16 h-16 @min-[44rem]:w-24 @min-[44rem]:h-24 @min-[60rem]:w-32 @min-[60rem]:h-32" /> : null}
-        right={pb ? <PlayerPhoto name={pb.p.name} team={b.team.name} slug={pb.p.u} sizeClass="w-16 h-16 @min-[44rem]:w-24 @min-[44rem]:h-24 @min-[60rem]:w-32 @min-[60rem]:h-32" /> : null}
+        left={pa ? <PlayerPhoto name={pa.p.name} team={a.team.name} slug={pa.p.u} img={pa.p.img} sizeClass="w-16 h-16 @min-[44rem]:w-24 @min-[44rem]:h-24 @min-[60rem]:w-32 @min-[60rem]:h-32" /> : null}
+        right={pb ? <PlayerPhoto name={pb.p.name} team={b.team.name} slug={pb.p.u} img={pb.p.img} sizeClass="w-16 h-16 @min-[44rem]:w-24 @min-[44rem]:h-24 @min-[60rem]:w-32 @min-[60rem]:h-32" /> : null}
       >
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className="min-w-0 flex justify-end">{name(pa, a, onSwapA, false)}</div>
@@ -1169,18 +1169,20 @@ const LaneBlock: React.FC<{
   const ref = useRef<HTMLDivElement>(null);
   const data = card();
   return (
-    <div className="@container flex items-center justify-center gap-4 @min-[44rem]:gap-12">
-      <div className="hidden @min-[28rem]:flex w-16 @min-[44rem]:w-24 @min-[60rem]:w-32 justify-center shrink-0">{left}</div>
-      <div ref={ref} className="relative py-2.5 w-full max-w-lg min-w-0">
-        <div className="rw-capture-only rw-section-context text-sm font-extrabold text-rw-text pb-1">{label}</div>
-        <div className="flex justify-end mb-1 @min-[36rem]:mb-0 @min-[36rem]:absolute @min-[36rem]:right-0 @min-[36rem]:top-2 items-center gap-1" data-nocapture="1">
-          {data && <BroadcastCardButton data={() => card() as CardData} name={name} label={tl("Lane card")} compact />}
-          <ShareButtons target={ref} name={name} />
-        </div>
-        {children}
-        <CaptureFooter />
+    <div className="@container py-2.5">
+      <div className="flex justify-end mb-1 items-center gap-1" data-nocapture="1">
+        {data && <BroadcastCardButton data={() => card() as CardData} name={name} label={tl("Lane card")} compact />}
+        <ShareButtons target={ref} name={name} />
       </div>
-      <div className="hidden @min-[28rem]:flex w-16 @min-[44rem]:w-24 @min-[60rem]:w-32 justify-center shrink-0">{right}</div>
+      <div className="flex items-center justify-center gap-4 @min-[44rem]:gap-10">
+        <div className="hidden @min-[28rem]:flex w-16 @min-[44rem]:w-24 @min-[60rem]:w-28 justify-center shrink-0">{left}</div>
+        <div ref={ref} className="w-full max-w-lg min-w-0">
+          <div className="rw-capture-only rw-section-context text-sm font-extrabold text-rw-text pb-1">{label}</div>
+          {children}
+          <CaptureFooter />
+        </div>
+        <div className="hidden @min-[28rem]:flex w-16 @min-[44rem]:w-24 @min-[60rem]:w-28 justify-center shrink-0">{right}</div>
+      </div>
     </div>
   );
 };
