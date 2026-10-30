@@ -3,13 +3,13 @@
  * games, bests), Stats (any period, league ranks), Champions (the pool), Matches (every game) and Career
  * (tournaments, teams, years).
  */
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Trophy, ExternalLink, Package } from "lucide-react";
 import { tl, tk, tc, roleName, eventTitle, regionName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { loadHubPlayer } from "../../hub/data";
-import type { HubRoute } from "../../hub/route";
+import { currentHubRoute, type HubRoute } from "../../hub/route";
 import type { HubPlayer } from "../../hub/types";
 import { PageTabs, type PageTab } from "./PageTabs";
 import { useDDragon } from "../../hub/ddragon";
@@ -87,8 +87,20 @@ const PlayerView: React.FC<{
   const to = (key: string): HubRoute => ({ kind: "player", slug: p.u, ...(key ? { tab: key } : {}) });
   const [allEvents, setAllEvents] = useState(false);
   const [allChamps, setAllChamps] = useState(false);
+  const nowRoute = currentHubRoute();
+  const routeQuery = nowRoute.kind === "player" && nowRoute.slug === p.u ? nowRoute.query : undefined;
+  const champParam = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : "")).get("champ");
   // the Champions tab: a champion's every game, with the items of each (TV, 2026-10-28)
-  const [gamesOn, setGamesOn] = useState<string | null>(null);
+  const [gamesOn, setGamesOn] = useState<string | null>(() => {
+    if (!champParam) return null;
+    const hit = p.champs.find((c) => c.c.toLowerCase() === champParam.toLowerCase());
+    return hit ? hit.c : champParam;
+  });
+  useEffect(() => {
+    if (!champParam) return;
+    const hit = p.champs.find((c) => c.c.toLowerCase() === champParam.toLowerCase());
+    setGamesOn(hit ? hit.c : champParam);
+  }, [champParam, p.champs]);
   const [recentHidden, revealRecent] = useHidden(
     `player-recent:${p.u}`,
     p.recent[0]?.date,
@@ -258,7 +270,12 @@ const PlayerView: React.FC<{
       <div className="rw-page mt-3">
       {tab === "stats" && (
         <>
-          <PlayerPeriodStats slug={p.u} has2y={!!p.g2y} who={{ name: p.name, role: p.role ? roleName(p.role) : undefined, club: p.club }} />
+          <PlayerPeriodStats
+            slug={p.u}
+            has2y={!!p.g2y}
+            preferAll={!!p.bio.retired || (p.clubTo ? p.clubTo.slice(0, 4) < String(new Date().getFullYear() - 1) : false)}
+            who={{ name: p.name, role: p.role ? roleName(p.role) : undefined, club: p.club }}
+          />
           <PlayerRanks slug={p.u} events={p.events} has2y={!!p.g2y} />
         </>
       )}
@@ -356,13 +373,19 @@ const PlayerView: React.FC<{
             </thead>
             <tbody>
               {p.years.map((y) => (
-                <tr key={y.y} className="border-t border-rw-border">
-                  <td className={`${td} text-rw-text`}>{y.y}</td>
+                <tr key={y.y} className="border-t border-rw-border hover:bg-rw-raised/50">
+                  <td className={`${td} text-rw-text`}>
+                    <HubLink to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${y.y}` }} className="hover:text-rw-teal hover:underline font-medium">
+                      {y.y}
+                    </HubLink>
+                  </td>
                   <td className={`${td} text-rw-sub max-w-[9rem] truncate`}>
                     {y.team}
                   </td>
                   <td className={`${td} text-rw-sub`}>
-                    {y.w}-{y.g - y.w}
+                    <HubLink to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${y.y}` }} className="hover:text-rw-teal hover:underline">
+                      {y.w}-{y.g - y.w}
+                    </HubLink>
                   </td>
                   <td className={`${td} text-rw-sub`}>{fmtN(y.kda)}</td>
                 </tr>

@@ -5,10 +5,11 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Users, User, Trophy, Swords, X, Flag, GitCompare, ClipboardList, Compass } from "lucide-react";
-import { tl, tk, roleName } from "../../i18n";
+import { tl, tk, roleName, fmtN } from "../../i18n";
 import { champName } from "../../champions";
 import { isNonLatin } from "../../searchAliases";
-import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubIndex, loadHubIndexQuick, loadItemIndex, normText, searchHub } from "../../hub/data";
+import { winRate } from "../../stats";
+import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadItemIndex, normText, searchHub } from "../../hub/data";
 import type { ItemIndexRow } from "../../hub/types";
 import { itemName } from "../../hub/ddragon";
 import { HubRoute, navigateHub } from "../../hub/route";
@@ -42,6 +43,7 @@ export function matchupShortcuts(index: HubIndex, q: string): Shortcut[] {
   if (teams) {
     return [
       { key: "prep", route: { kind: "prep", a: ta.slug, b: tb.slug }, label: tl("Match prep: {a} vs {b}", { a: ta.name, b: tb.name }), sub: tl("Form, head-to-head, drafts and every lane"), icon: <ClipboardList className="w-3.5 h-3.5" /> },
+      { key: "draft", route: { kind: "draft", query: `teams=${encodeURIComponent(ta.slug)},${encodeURIComponent(tb.slug)}` }, label: `${tl("Draft board")}: ${ta.name} vs ${tb.name}`, sub: `${tl("Champion pool")} · ${tl("Fearless")}`, icon: <Swords className="w-3.5 h-3.5" /> },
       { key: "compare", route: { kind: "compare", mode: "team", a: ta.slug, b: tb.slug }, label: tl("Compare {a} and {b}", { a: ta.name, b: tb.name }), sub: tl("Side by side, over any period"), icon: <GitCompare className="w-3.5 h-3.5" /> },
     ];
   }
@@ -130,7 +132,77 @@ export function itemShortcuts(items: ItemIndexRow[] | null, index: HubIndex | nu
 }
 
 const KIND_ROUTE: Record<HubSearchKind, HubRoute["kind"]> = { team: "team", player: "player", event: "event", champ: "champ", league: "league" };
-export const hitRoute = (h: HubHit): HubRoute => ({ kind: KIND_ROUTE[h.kind], slug: h.slug }) as HubRoute;
+export const hitRoute = (h: HubHit): HubRoute =>
+  ({
+    kind: KIND_ROUTE[h.kind],
+    slug: h.slug,
+    ...(h.kind === "team" && h.matched ? { query: `as=${encodeURIComponent(h.matched)}` } : {}),
+  }) as HubRoute;
+
+/**
+ * A player + champion ("faker azir", "chovy ahri") or team + champion ("t1 ryze") query: opens the player's or
+ * team's Champions tab directly (with ?champ= for the player's game log) and shows their career record once loaded.
+ */
+export function champPairShortcuts(
+  index: HubIndex | null,
+  q: string,
+  pairStats?: Record<string, string>,
+): { shortcuts: Shortcut[]; pairs: { kind: "player" | "team"; slug: string; champ: string; key: string }[] } {
+  if (!index || VS.test(q.trim())) return { shortcuts: [], pairs: [] };
+  const words = q
+    .trim()
+    .replace(/\b(on|with|playing|as)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ");
+  if (words.length < 2 || words.length > 5) return { shortcuts: [], pairs: [] };
+  const out: Shortcut[] = [];
+  const pairs: { kind: "player" | "team"; slug: string; champ: string; key: string }[] = [];
+  const seen = new Set<string>();
+  for (let i = 1; i < words.length; i++) {
+    const left = words.slice(0, i).join(" ");
+    const right = words.slice(i).join(" ");
+    for (const [whoPart, champPart] of [
+      [left, right],
+      [right, left],
+    ] as const) {
+      if (whoPart.length < 2 || champPart.length < 2) continue;
+      const ch = searchHub(index, champPart, 1).champ[0];
+      if (!ch || (ch.score ?? 9) > 1) continue;
+      const wh = searchHub(index, whoPart, 1);
+      const pl = wh.player[0];
+      const tm = wh.team[0];
+      const bestPl = pl && (pl.score ?? 9) <= 1;
+      const bestTm = tm && (tm.score ?? 9) <= 1;
+      if (bestPl && (!bestTm || (pl.score ?? 9) <= (tm.score ?? 9))) {
+        const key = `p-${pl.slug}-${ch.name}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        pairs.push({ kind: "player", slug: pl.slug, champ: ch.name, key });
+        out.push({
+          key: `cp-${key}`,
+          route: { kind: "player", slug: pl.slug, tab: "champions", query: `champ=${encodeURIComponent(ch.name)}` },
+          label: `${pl.name} · ${champName(ch.name)}`,
+          sub: pairStats?.[key] ?? tl("Champion pool"),
+          icon: <ChampIcon name={ch.name} size={16} />,
+        });
+      } else if (bestTm) {
+        const key = `t-${tm.slug}-${ch.name}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        pairs.push({ kind: "team", slug: tm.slug, champ: ch.name, key });
+        out.push({
+          key: `cp-${key}`,
+          route: { kind: "team", slug: tm.slug, tab: "champions" },
+          label: `${tm.name} · ${champName(ch.name)}`,
+          sub: pairStats?.[key] ?? tl("Champion pool"),
+          icon: <ChampIcon name={ch.name} size={16} />,
+        });
+      }
+    }
+  }
+  return { shortcuts: out.slice(0, 2), pairs: pairs.slice(0, 2) };
+}
 
 const GROUPS: { kind: HubSearchKind; label: string; icon: React.ReactNode }[] = [
   { kind: "team", label: tk("Teams"), icon: <Users className="w-3 h-3" /> },
@@ -195,10 +267,40 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
   }, []);
 
   const results = useMemo(() => (index && q.trim() ? searchHub(index, q, big ? 6 : 5) : null), [index, q, big]);
-  // a matchup ("t1 vs gen.g") and the stats pages the words name, above the rest
+  const [pairStats, setPairStats] = useState<Record<string, string>>({});
+  const champPairs = useMemo(() => (q.trim() ? champPairShortcuts(index, q, pairStats) : { shortcuts: [], pairs: [] }), [index, q, pairStats]);
+  useEffect(() => {
+    let alive = true;
+    for (const pr of champPairs.pairs) {
+      if (pairStats[pr.key] !== undefined) continue;
+      if (pr.kind === "player") {
+        loadHubPlayer(pr.slug)
+          .then((p) => {
+            if (!alive) return;
+            const c = p.champs.find((x) => x.c.toLowerCase() === pr.champ.toLowerCase());
+            const txt = c ? `${c.g}G · ${c.w}W-${c.g - c.w}L (${winRate(c.w, c.g)}) · KDA ${fmtN(c.kda)}` : tl("{n} games", { n: 0 });
+            setPairStats((prev) => ({ ...prev, [pr.key]: txt }));
+          })
+          .catch(() => {});
+      } else {
+        loadHubTeam(pr.slug)
+          .then((t) => {
+            if (!alive) return;
+            const c = t.champs.find((x) => x.c.toLowerCase() === pr.champ.toLowerCase());
+            const txt = c ? `${c.g}G · ${c.w}W-${c.g - c.w}L (${winRate(c.w, c.g)})` : tl("{n} games", { n: 0 });
+            setPairStats((prev) => ({ ...prev, [pr.key]: txt }));
+          })
+          .catch(() => {});
+      }
+    }
+    return () => {
+      alive = false;
+    };
+  }, [champPairs.pairs, pairStats]);
+  // a matchup ("t1 vs gen.g"), player/team + champion ("faker azir"), item history, and stats pages
   const shortcuts = useMemo(
-    () => (q.trim() ? [...(index ? matchupShortcuts(index, q) : []), ...itemShortcuts(items, index, q), ...pageShortcuts(q)] : []),
-    [index, items, q],
+    () => (q.trim() ? [...(index ? matchupShortcuts(index, q) : []), ...champPairs.shortcuts, ...itemShortcuts(items, index, q), ...pageShortcuts(q)] : []),
+    [index, items, q, champPairs.shortcuts],
   );
   // the group with the best match first (a champion called exactly that, a big tournament, ...)
   const groups = useMemo(() => (results ? [...GROUPS].sort((a, b) => groupRank(results[a.kind]) - groupRank(results[b.kind])) : GROUPS), [results]);

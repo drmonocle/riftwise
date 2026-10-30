@@ -21,6 +21,63 @@ TEAM_NAMES = {
     "Lyon Gaming (2017 Latin America North Team)": "Lyon Gaming",
 }
 
+# Case-only team name spellings in the catalog that belong to the same team
+TEAM_FIX = {
+    "Dplus KIA": "Dplus Kia",
+    "Dplus KIA Challengers": "Dplus Kia Challengers",
+    "Dplus KIA Youth": "Dplus Kia Youth",
+    "ASSET ESPORT": "Asset Esport",
+}
+
+
+def canon_team(name):
+    """Canonical spelling for a team name when tables differ only in case ('Dplus KIA' -> 'Dplus Kia')."""
+    return TEAM_FIX.get(name, name) if name else name
+
+
+# Historical names and short tags that Leaguepedia's TeamRenames / Teams tables omit or file under a disambiguated
+# page name, so searching "Team SoloMid", "M5", "GRF", "RGE", "MAD", "EG", "KDF", "AFS", "SHRC", "KTB" works.
+EXTRA_OLD_NAMES = {
+    "TSM": ["Team SoloMid"],
+    "Moscow Five": ["M5"],
+    "Rogue (European Team)": ["Rogue", "KOI"],
+    "Griffin (Korean Team)": ["Griffin"],
+    "Movistar KOI": ["MAD Lions", "MAD Lions KOI", "Splyce", "KOI"],
+    "Evil Geniuses.NA": ["Evil Geniuses"],
+    "DN SOOPers": ["Kwangdong Freecs", "Afreeca Freecs", "DN Freecs", "Freecs", "Rebels Anarchy"],
+    "Royal Club": ["Star Horn Royal Club"],
+    "Star Horn Royal Club (RNG academy)": ["Star Horn Royal Club"],
+    "Royal Club (RNG academy)": ["Royal Club", "Star Horn Royal Club"],
+    "Gen.G": ["Samsung White", "Samsung Blue", "Samsung Galaxy", "Samsung Ozone", "KSV eSports", "MVP Ozone"],
+    "Hanwha Life Esports": ["ROX Tigers", "KOO Tigers", "GE Tigers", "HUYA Tigers", "Tigers"],
+    "Dplus Kia": ["DAMWON Gaming", "DWG KIA"],
+    "T1": ["SK Telecom T1", "SK Telecom T1 K", "SK Telecom T1 S"],
+    "Kiwoom DRX": ["DRX", "DragonX", "Kingzone DragonX", "Longzhu Gaming", "Incredible Miracle"],
+}
+
+EXTRA_CODES = {
+    "TSM": ["TSM"],
+    "Moscow Five": ["M5"],
+    "Griffin (Korean Team)": ["GRF"],
+    "Rogue (European Team)": ["RGE", "KOI"],
+    "Movistar KOI": ["MKOI", "MDK", "MAD", "KOI", "SPY"],
+    "Evil Geniuses.NA": ["EG"],
+    "DN SOOPers": ["DNS", "KDF", "AF", "AFS"],
+    "Royal Club": ["RYL", "SHRC"],
+    "Star Horn Royal Club (RNG academy)": ["SHRC", "RYL"],
+    "Royal Club (RNG academy)": ["RYL", "SHRC"],
+    "Gen.G": ["GEN", "SSG", "SSW", "SSB", "KSV"],
+    "Hanwha Life Esports": ["HLE", "ROX", "KOO", "GE"],
+    "Dplus Kia": ["DK", "DWG", "DAMWON"],
+    "T1": ["T1", "SKT"],
+    "Kiwoom DRX": ["DRX", "KRX", "KZ", "LZ", "IM"],
+    "KT Rolster Bullets": ["KT.B", "KTB"],
+    "KT Rolster Arrows": ["KT.A", "KTA"],
+    "Taipei Assassins": ["TPA"],
+    "Counter Logic Gaming": ["CLG"],
+    "Counter Logic Gaming Europe": ["CLG.EU", "CLGEU"],
+}
+
 
 def show_team(name):
     """The name a team is shown under: its own, or the one in TEAM_NAMES for a Leaguepedia page name with a note."""

@@ -18,9 +18,9 @@ import { ROLES } from "../../hub/champAgg";
 import { PeriodKey, inPeriod, kdaOf, playerRowRef, teamRowRef } from "../../hub/period";
 import { ComparePick, bothOptions } from "./ComparePage";
 import { PeriodPicker, defaultPeriod } from "./PeriodStats";
-import { FearlessDepth, Side, loadSide } from "./PrepPage";
+import { FearlessDepth, RosterSubPicker, Side, loadFullLogs, loadSide, needsFullLogs, swapPlayerInSide } from "./PrepPage";
 import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, Section, useLoad, usePageTitle, useRetryAttempt, retryFailedLoads } from "./ui";
-import { loadHubChamp, prettySlug } from "../../hub/data";
+import { bare, loadHubChamp, prettySlug } from "../../hub/data";
 import { BroadcastCardButton, draftBoardCard, type BoardSide } from "./BroadcastCard";
 import type { LaneLine } from "../../hub/types";
 
@@ -70,8 +70,8 @@ interface Pool {
   games: number;
 }
 
-function pool(side: Side, period: PeriodKey): Pool {
-  const rows: TeamGameRow[] = inPeriod(side.games, period, teamRowRef);
+function pool(side: Side, period: PeriodKey, sideOnly?: "b" | "r"): Pool {
+  const rows: TeamGameRow[] = inPeriod(side.games, period, teamRowRef).filter((r) => !sideOnly || r[6] === sideOnly);
   const p: Pool = {
     picks: new Map(),
     bans: new Map(),
@@ -225,7 +225,7 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
     let alive = true;
     setSides({ a: null, b: null });
     if (!a || !b) return;
-    Promise.all([loadSide(a), loadSide(b)])
+    Promise.all([loadSide(a, true), loadSide(b, true)])
       .then(([x, y]) => alive && setSides({ a: x, b: y }))
       .catch((e) => alive && setSides({ a: null, b: null, failed: true, missing: e instanceof MissingFile }));
     return () => {
@@ -297,6 +297,7 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
       onHistory={(h) => set({ h: packHistory(h) })}
       onNextGame={(h, u) => set({ h: packHistory(h), u: u.join(","), d: "" })}
       onSwap={() => set({ a: b, b: a, d: "" })}
+      onSides={(x, y) => setSides({ a: x, b: y })}
     />
   );
 };
@@ -316,10 +317,26 @@ const Board: React.FC<{
   onHistory: (h: PastGame[]) => void;
   onNextGame: (h: PastGame[], u: string[]) => void;
   onSwap: () => void;
-}> = ({ blue, red, period: periodQ, slots, used, fearless, history, onPeriod, onSlots, onUsed, onFearless, onHistory, onNextGame, onSwap }) => {
+  onSides: (blue: Side, red: Side) => void;
+}> = ({ blue, red, period: periodQ, slots, used, fearless, history, onPeriod, onSlots, onUsed, onFearless, onHistory, onNextGame, onSwap, onSides }) => {
   const options = useMemo(() => bothOptions(blue.games.map(teamRowRef), red.games.map(teamRowRef)), [blue.games, red.games]);
   const period: PeriodKey = periodQ && options.some((o) => o.key === periodQ) ? periodQ : defaultPeriod(options);
-  const pools = useMemo(() => ({ b: pool(blue, period), r: pool(red, period) }), [blue, red, period]);
+  const notFull = blue.gamesFull === false || red.gamesFull === false || [...blue.players, ...red.players].some((p) => p && !p.full);
+  const askedOlder = !!periodQ && !options.some((o) => o.key === periodQ);
+  const wantFull = notFull && (askedOlder || needsFullLogs(period, [...blue.games, ...red.games]));
+  useEffect(() => {
+    if (!wantFull) return;
+    let alive = true;
+    Promise.all([loadFullLogs(blue), loadFullLogs(red)]).then(([x, y]) => alive && onSides(x, y));
+    return () => {
+      alive = false;
+    };
+  }, [wantFull]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [sideOnly, setSideOnly] = useState(false);
+  const pools = useMemo(
+    () => ({ b: pool(blue, period, sideOnly ? "b" : undefined), r: pool(red, period, sideOnly ? "r" : undefined) }),
+    [blue, red, period, sideOnly],
+  );
   const [cursor, setCursor] = useState<number | null>(null);
   const [focus, setFocus] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -333,11 +350,13 @@ const Board: React.FC<{
     for (const p of [pools.b, pools.r]) for (const c of [...p.picks.keys(), ...p.bans.keys()]) names.add(c);
     return [...names].sort((x, y) => champName(x).localeCompare(champName(y)));
   }, [pools]);
+  const bq = bare(search.trim());
   const shown = all.filter(
     (c) =>
       (!search.trim() ||
         champName(c).toLowerCase().includes(search.trim().toLowerCase()) ||
-        c.toLowerCase().includes(search.trim().toLowerCase())) &&
+        c.toLowerCase().includes(search.trim().toLowerCase()) ||
+        (bq.length >= 2 && (bare(champName(c)).includes(bq) || bare(c).includes(bq)))) &&
       (role == null || pools.b.roles.get(c)?.has(role) || pools.r.roles.get(c)?.has(role)),
   );
 
@@ -419,6 +438,13 @@ const Board: React.FC<{
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-rw-muted">{tl("Pools from")}</span>
           <PeriodPicker options={options} value={period} onChange={onPeriod} />
+          <label
+            className="flex items-center gap-1 text-rw-sub cursor-pointer"
+            title={`${tl("Blue side only")} / ${tl("Red side only")}`}
+          >
+            <input type="checkbox" checked={sideOnly} onChange={(e) => setSideOnly(e.target.checked)} />
+            {tl("Blue / red side")}
+          </label>
           <button type="button" onClick={onSwap} className="flex items-center gap-1 text-rw-teal hover:underline" title={tl("The teams change sides; the draft on the board starts over")}>
             <ArrowLeftRight className="w-3.5 h-3.5" />
             {tl("Swap sides")}
@@ -540,6 +566,16 @@ const Board: React.FC<{
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const openHit = shown.find((c) => !taken.has(c));
+                    if (openHit) {
+                      e.preventDefault();
+                      place(openHit);
+                      setSearch("");
+                    }
+                  }
+                }}
                 placeholder={tl("Search champions…")}
                 aria-label={tl("Search champions…")}
                 className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text w-full sm:w-40"
@@ -594,8 +630,24 @@ const Board: React.FC<{
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <PlayerPools who="b" side={blue} pool={pools.b} taken={taken} onPick={place} onFocus={setFocus} />
-        <PlayerPools who="r" side={red} pool={pools.r} taken={taken} onPick={place} onFocus={setFocus} />
+        <PlayerPools
+          who="b"
+          side={blue}
+          pool={pools.b}
+          taken={taken}
+          onPick={place}
+          onFocus={setFocus}
+          onSwap={(rIdx, slug) => swapPlayerInSide(blue, rIdx, slug).then((nb) => onSides(nb, red))}
+        />
+        <PlayerPools
+          who="r"
+          side={red}
+          pool={pools.r}
+          taken={taken}
+          onPick={place}
+          onFocus={setFocus}
+          onSwap={(rIdx, slug) => swapPlayerInSide(red, rIdx, slug).then((nr) => onSides(blue, nr))}
+        />
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         <Priorities who="b" side={blue} pool={pools.b} other={pools.r} taken={taken} onPick={place} />
@@ -773,7 +825,8 @@ const PlayerPools: React.FC<{
   taken: Set<string>;
   onPick: (c: string) => void;
   onFocus: (c: string) => void;
-}> = ({ who, side, pool: p, taken, onPick, onFocus }) => {
+  onSwap?: (roleIdx: number, slug: string) => void;
+}> = ({ who, side, pool: p, taken, onPick, onFocus, onSwap }) => {
   const color = who === "b" ? "text-rw-teal" : "text-rw-red";
   const chip = (c: string, label: string, title: string, pocket: boolean) => {
     const off = taken.has(c);
@@ -816,6 +869,7 @@ const PlayerPools: React.FC<{
                     <span className="font-semibold text-rw-text truncate block">{pl.name}</span>
                   )}
                   <span className="text-[10px] text-rw-muted">{roleName(ROLES[pl.role])}</span>
+                  {onSwap && <RosterSubPicker side={side} roleIdx={pl.role} onSwap={onSwap} />}
                 </span>
                 <span className="flex flex-wrap gap-1 min-w-0 flex-1">
                   {now.map((x) =>

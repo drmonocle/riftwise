@@ -43,7 +43,7 @@ import urllib.request
 from collections import Counter, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from names import PlayerNames, champ_name, match_teams, show_team, show_teams, team_key  # noqa: E402
+from names import PlayerNames, canon_team, champ_name, match_teams, show_team, show_teams, team_key  # noqa: E402
 
 MIN_SEARCH_GAMES = 10     # teams / players with fewer games get no page
 RECORD_MIN_MINUTES = 14   # shorter "games" are remakes or forfeits
@@ -433,9 +433,9 @@ def main() -> None:
             "date": (r["date_utc"] or "")[:10],
             "year": (r["date_utc"] or "0000")[:4],
             "patch": (r["patch"] or "").strip(),
-            "t1": r["team1"],
-            "t2": r["team2"],
-            "w": r["winner"],
+            "t1": canon_team(r["team1"]),
+            "t2": canon_team(r["team2"]),
+            "w": canon_team(r["winner"]),
             "min": r["duration_minutes"] or 0,
             "k1": r["team1_kills"],
             "k2": r["team2_kills"],
@@ -549,6 +549,10 @@ def main() -> None:
             spans[k] = (min(lo, dte), max(hi, dte))
     lineage.merge_strays(spans)
     lineage.populated = set(spans)
+    for brand in ("Dignitas", "Immortals"):
+        ks = [k for k in spans if k[0] == brand]
+        for k in ks[1:]:
+            lineage._union(ks[0], k)
 
     # Era = one name used by one team for a stretch of time
     eras = defaultdict(lambda: {"from": "9999", "to": "0000", "g": 0})
@@ -581,7 +585,7 @@ def main() -> None:
         fr_games[fid] = sum(e["g"] for e in lst)
 
     def team_of(name, date):
-        return lineage.team(name, date)
+        return lineage.team(canon_team(name), date)
 
     def tslug(fid):
         return slug(show_team(fr_name[fid])) if fr_games[fid] >= MIN_SEARCH_GAMES else None

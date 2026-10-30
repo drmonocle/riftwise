@@ -256,14 +256,14 @@ export type TeamSeriesRow = [string, string, string | null, number, number, stri
 export type PlayerTimeline = (number | null)[];
 /**
  * [date, series slug, champion, k, d, a, won, team, opponent, event, role, event slug,
- *  cs, gold, damage, vision, minutes, team kills, team damage, team gold, team vision, timeline, game number, game rating]
- * (cs .. team vision are in builds from 2026-10-16 on, the timeline from 2026-10-17, the game number from 2026-10-18;
- * null when the game has no full scoreboard / Oracle's Elixir doesn't have it)
+ *  cs, gold, damage, vision, minutes, team kills, team damage, team gold, team vision, timeline, game number, game rating, patch]
+ * (cs .. team vision are in builds from 2026-10-16 on, the timeline from 2026-10-17, the game number from 2026-10-18,
+ * patch from 2026-10-30; null when the game has no full scoreboard / Oracle's Elixir doesn't have it)
  */
 export type PlayerGameRow = [
   string, string, string, number, number, number, number, string, string, string, string, string,
   (number | null)?, (number | null)?, (number | null)?, (number | null)?, (number | null)?,
-  (number | null)?, (number | null)?, (number | null)?, (number | null)?, (PlayerTimeline | null)?, number?, (number | null)?,
+  (number | null)?, (number | null)?, (number | null)?, (number | null)?, (PlayerTimeline | null)?, number?, (number | null)?, (string | null)?,
 ];
 /**
  * Oracle's Elixir's numbers for a team's game: [gd10, gd15, gd20, csd15, xpd15, first blood, first tower,
@@ -274,12 +274,12 @@ export type TeamTimeline = (number | null)[];
 /**
  * [date, series slug, event slug, event, opponent, its slug, side "b"/"r", won 0/1, minutes, kills, deaths,
  *  gold, opp gold, dragons, opp dragons, barons, opp barons, towers, opp towers, bans, picks, opponent's bans,
- *  roles of the picks, timeline, each pick's gold lead over its lane opponent at 15]
+ *  roles of the picks, timeline, each pick's gold lead over its lane opponent at 15, patch]
  */
 export type TeamGameRow = [
   string, string, string, string, string, string | null, "b" | "r", number, number | null, number | null, number | null,
   number | null, number | null, number | null, number | null, number | null, number | null, number | null, number | null,
-  string[], string[], string[]?, number[]?, (TeamTimeline | null)?, ((number | null)[] | null)?,
+  string[], string[], string[]?, number[]?, (TeamTimeline | null)?, ((number | null)[] | null)?, (string | null)?,
 ];
 
 export interface SideStats {

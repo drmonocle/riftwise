@@ -55,6 +55,10 @@ describe("team search by old names and short names", () => {
       ["T1", "", 1860, "2026", "SK Telecom T1", "SKT", "Korea"],
       ["Gen.G", "", 1631, "2026", "KSV eSports | Samsung Galaxy", "GEN | KSV", "Korea"],
       ["Samsung Blue", "", 300, "2014", "", "", "Korea"],
+      ["TSM", "", 853, "2023", "", "TSM", "North America"],
+      ["TSM Evo", "", 22, "2012", "Team SoloMid Evo", "", "North America"],
+      ["Evil Geniuses Challengers", "", 340, "2023", "", "EG.C", "North America"],
+      ["Evil Geniuses.NA", "evil-geniuses-na", 321, "2023", "Evil Geniuses", "", "North America"],
     ],
     players: [],
     events: [],
@@ -66,5 +70,8 @@ describe("team search by old names and short names", () => {
     expect(searchHub(index, "SKT").team[0].name).toBe("T1");
     expect(searchHub(index, "ksv").team[0].name).toBe("Gen.G");
     expect(searchHub(index, "Samsung").team[0].name).toBe("Gen.G");
+    expect(searchHub(index, "Team SoloMid").team[0].name).toBe("TSM");
+    expect(searchHub(index, "Evil Geniuses").team[0].name).toBe("Evil Geniuses.NA");
+    expect(searchHub(index, "EG").team[0].name).toBe("Evil Geniuses.NA");
   });
 });

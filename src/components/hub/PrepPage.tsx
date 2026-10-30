@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ClipboardCopy, GitCompare, Printer } from "lucide-react";
+import { ClipboardCopy, GitCompare, Printer, Swords } from "lucide-react";
 import { tl, tc, roleName, fmtDec } from "../../i18n";
 import { MissingFile, winRate } from "../../stats";
 import { champName } from "../../champions";
@@ -16,7 +16,7 @@ import { Change } from "./RankingsPage";
 import type { HubPlayer, HubTeam, PlayerGameRow, TeamGameRow, TeamSeriesRow } from "../../hub/types";
 import { PrepRoute, hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
-import { PeriodKey, inPeriod, playerAgg, playerRowRef, teamAgg, teamRowRef } from "../../hub/period";
+import { PeriodKey, inPeriod, playerAgg, playerHeadToHead, playerRowRef, teamAgg, teamRowRef } from "../../hub/period";
 import { HeadToHeadSeries } from "./Archives";
 import { ComparePick, TeamRows, bothOptions } from "./ComparePage";
 import { PeriodPicker, Playstyle, TeamEarly, defaultPeriod } from "./PeriodStats";
@@ -100,7 +100,7 @@ export async function loadSide(slug: string, recent = false): Promise<Side> {
 }
 
 /** The same side with every player's whole career loaded. */
-async function loadFullLogs(s: Side): Promise<Side> {
+export async function loadFullLogs(s: Side): Promise<Side> {
   const [games, players] = await Promise.all([
     s.gamesFull === false ? loadTeamGames(s.team.u).catch(() => s.games) : Promise.resolve(s.games),
     Promise.all(
@@ -109,6 +109,47 @@ async function loadFullLogs(s: Side): Promise<Side> {
   ]);
   return { ...s, games, gamesFull: true, players };
 }
+
+/** Swap a starter slot with another player from the team's roster (for 6-man rosters / substitutes). */
+export async function swapPlayerInSide(s: Side, roleIdx: number, slug: string): Promise<Side> {
+  const p = await loadHubPlayer(slug);
+  const l = await loadLog(p.u, s.gamesFull === false && !!p.g2y);
+  const players = [...s.players];
+  players[roleIdx] = { p, log: l.log, full: l.full };
+  return { ...s, players };
+}
+
+/** Dropdown to switch a role's starter with a substitute from the team's latest roster when 6+ players exist. */
+export const RosterSubPicker: React.FC<{
+  side: Side;
+  roleIdx: number;
+  onSwap: (roleIdx: number, slug: string) => void;
+}> = ({ side, roleIdx, onSwap }) => {
+  const latest = side.team.roster[0]?.p || [];
+  if (latest.length <= 5) return null;
+  const cur = side.players[roleIdx]?.p.u || "";
+  const role = ROLES[roleIdx];
+  const sameRole = latest.filter((x) => x.r === role && x.u);
+  const others = latest.filter((x) => x.r !== role && x.u);
+  const choices = [...sameRole, ...others];
+  if (choices.length <= 1) return null;
+  return (
+    <select
+      data-nocapture="1"
+      value={cur}
+      onChange={(e) => e.target.value && e.target.value !== cur && onSwap(roleIdx, e.target.value)}
+      aria-label={`${side.team.name} ${roleName(role)}`}
+      title={tl("Change")}
+      className="bg-rw-bg border border-rw-border rounded px-1 py-0.5 text-[10px] text-rw-sub hover:text-rw-text max-w-[6.5rem]"
+    >
+      {choices.map((x) => (
+        <option key={x.u!} value={x.u!}>
+          {x.n} ({x.g}G)
+        </option>
+      ))}
+    </select>
+  );
+};
 
 export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
   useDDragon();
@@ -557,11 +598,13 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
   };
   const body = (print: boolean) => (
     <>
-      <KeyStats a={a} b={b} ra={ra} rb={rb} ratings={ratings.data} hidden={hidden} formHidden={formHidden} />
-      <WinChances a={a.team} b={b.team} card={print ? undefined : overview} />
+      <div id="prep-overview" className="space-y-3">
+        <KeyStats a={a} b={b} ra={ra} rb={rb} ratings={ratings.data} hidden={hidden} formHidden={formHidden} />
+        <WinChances a={a.team} b={b.team} card={print ? undefined : overview} />
+      </div>
       {/* the side-by-side table, with the storylines, form and calculated numbers beside it on wide screens (under
           it on smaller ones) */}
-      <div className="rw-span grid gap-3 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] items-start">
+      <div id="prep-stories" className="rw-span grid gap-3 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] items-start">
         <div className="space-y-3 min-w-0">
           {hidden ? (
             !print && (
@@ -579,17 +622,46 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           {!hidden && <Calculated a={a} b={b} ra={ra} rb={rb} ratings={ratings.data} />}
         </div>
       </div>
-      <HeadToHeadSeries a={a.team.u} b={b.team.u} aName={a.team.name} bName={b.team.name} />
+      <div id="prep-h2h">
+        <HeadToHeadSeries a={a.team.u} b={b.team.u} aName={a.team.name} bName={b.team.name} />
+      </div>
       {!hidden && (
         <>
-          <Lanes a={a} b={b} period={period} periodLabel={periodLabel} title={title} />
-          <FearlessDepth a={a} b={b} period={period} periodLabel={periodLabel} title={title} />
-          <Tendencies side={a} rows={ra} periodLabel={periodLabel} />
-          <Tendencies side={b} rows={rb} periodLabel={periodLabel} />
+          <div id="prep-lanes">
+            <Lanes
+              a={a}
+              b={b}
+              period={period}
+              periodLabel={periodLabel}
+              title={title}
+              onSwapA={(rIdx, slug) => swapPlayerInSide(a, rIdx, slug).then((na) => onFull(na, b))}
+              onSwapB={(rIdx, slug) => swapPlayerInSide(b, rIdx, slug).then((nb) => onFull(a, nb))}
+            />
+          </div>
+          <div id="prep-fearless">
+            <FearlessDepth a={a} b={b} period={period} periodLabel={periodLabel} title={title} />
+          </div>
+          <div id="prep-tendencies" className="grid gap-3 xl:grid-cols-2 items-start">
+            <Tendencies side={a} rows={ra} periodLabel={periodLabel} />
+            <Tendencies side={b} rows={rb} periodLabel={periodLabel} />
+          </div>
         </>
       )}
     </>
   );
+
+  const jumpSections: [string, string][] = [
+    ["prep-overview", tl("Overview")],
+    ["prep-stories", tl("Storylines")],
+    ["prep-h2h", tl("Head to head")],
+    ...(!hidden
+      ? ([
+          ["prep-lanes", tl("Lane by lane")],
+          ["prep-fearless", tl("Fearless")],
+          ["prep-tendencies", tl("Draft tendencies")],
+        ] as [string, string][])
+      : []),
+  ];
 
   return (
     <CaptureContext.Provider value={`${title} · ${periodLabel}`}>
@@ -612,6 +684,13 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           <span className="text-rw-muted">{tl("Stats for")}</span>
           <PeriodPicker options={options} value={period} onChange={(p) => set({ period: p })} />
           <HubLink
+            to={{ kind: "draft", query: `teams=${encodeURIComponent(a.team.u)},${encodeURIComponent(b.team.u)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
+            className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-teal hover:underline"
+          >
+            <Swords className="w-3.5 h-3.5" />
+            {tl("Draft board")}
+          </HubLink>
+          <HubLink
             to={{ kind: "compare", mode: "team", a: a.team.u, b: b.team.u, period }}
             className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-teal hover:underline"
           >
@@ -631,6 +710,18 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           <CopyPageImage target={pageRef} name={`${title} match prep`} iconOnly />
           <CopyPost text={postText} />
         </div>
+      </div>
+      <div data-nocapture="1" className="sticky top-0 z-20 flex flex-wrap items-center gap-1.5 py-1.5 px-2 bg-rw-bg/95 backdrop-blur border-b border-rw-border text-[11px]">
+        {jumpSections.map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            className="px-2 py-0.5 rounded-full border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {body(false)}
@@ -881,7 +972,15 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
 };
 
 /** Lane by lane: each team's starter, their numbers in the period and most played champions. */
-const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string; title: string }> = ({ a, b, period, periodLabel, title }) => {
+const Lanes: React.FC<{
+  a: Side;
+  b: Side;
+  period: PeriodKey;
+  periodLabel: string;
+  title: string;
+  onSwapA?: (roleIdx: number, slug: string) => void;
+  onSwapB?: (roleIdx: number, slug: string) => void;
+}> = ({ a, b, period, periodLabel, title, onSwapA, onSwapB }) => {
   const stats = (pl: Side["players"][number]) => {
     if (!pl) return null;
     const rows = inPeriod(pl.log, period, playerRowRef);
@@ -889,9 +988,10 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
   };
   // one lane as a side-by-side table: a stat per row, the better number lit up
   const fmt1 = (v: number) => fmtDec(v);
-  const lane = (r: string, pa: Side["players"][number], pb: Side["players"][number]) => {
+  const lane = (r: string, roleIdx: number, pa: Side["players"][number], pb: Side["players"][number]) => {
     const sa = stats(pa);
     const sb = stats(pb);
+    const h2h = pa && pb ? playerHeadToHead(pa.log, pb.log) : null;
     type Line = [string, number | null | undefined, number | null | undefined, (v: number) => string, string?];
     const wr = (x: typeof sa) => (x && x.g ? (x.w / x.g) * 100 : null);
     const lines: Line[] = [
@@ -918,13 +1018,14 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
           ))}
         </div>
       ) : null;
-    const name = (pl: Side["players"][number], right: boolean) =>
+    const name = (pl: Side["players"][number], side: Side, onSwap: ((roleIdx: number, slug: string) => void) | undefined, right: boolean) =>
       pl ? (
-        <span className={`flex items-center gap-1.5 min-w-0 ${right ? "" : "flex-row-reverse"}`}>
+        <span className={`flex flex-wrap items-center gap-1.5 min-w-0 ${right ? "" : "flex-row-reverse"}`}>
           <HubLink to={{ kind: "player", slug: pl.p.u }} className={`text-sm font-bold text-rw-text hover:underline truncate ${right ? "" : "text-right"}`}>
             {pl.p.name}
           </HubLink>
           <PhotosLink q={pl.p.name} iconOnly className="text-rw-muted hover:text-rw-teal shrink-0" />
+          {onSwap && <RosterSubPicker side={side} roleIdx={roleIdx} onSwap={onSwap} />}
         </span>
       ) : (
         <span className="text-rw-muted">–</span>
@@ -943,12 +1044,37 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
         right={pb ? <PlayerPhoto name={pb.p.name} team={b.team.name} slug={pb.p.u} sizeClass="w-16 h-16 @min-[44rem]:w-24 @min-[44rem]:h-24 @min-[60rem]:w-32 @min-[60rem]:h-32" /> : null}
       >
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <div className="min-w-0 flex justify-end">{name(pa, false)}</div>
-          <span className="text-[10px] uppercase tracking-wider font-bold text-rw-accent text-center min-w-16 px-1 whitespace-nowrap">{roleName(r)}</span>
-          <div className="min-w-0 flex">{name(pb, true)}</div>
+          <div className="min-w-0 flex justify-end">{name(pa, a, onSwapA, false)}</div>
+          <span className="text-[10px] uppercase tracking-wider font-bold text-rw-accent text-center min-w-16 px-1 whitespace-nowrap">
+            {pa?.p.u && pb?.p.u ? (
+              <HubLink
+                to={{ kind: "compare", mode: "player", a: pa.p.u, b: pb.p.u, period }}
+                className="hover:underline"
+                title={tl("Compare {a} and {b}", { a: pa.p.name, b: pb.p.name })}
+              >
+                {roleName(r)}
+              </HubLink>
+            ) : (
+              roleName(r)
+            )}
+          </span>
+          <div className="min-w-0 flex">{name(pb, b, onSwapB, true)}</div>
         </div>
         {sa || sb ? (
           <div className="mt-1 grid grid-cols-[1fr_auto_1fr] gap-x-3">
+            {h2h && h2h.g > 0 && (
+              <>
+                <span className={`${val} text-right ${h2h.w > h2h.g - h2h.w ? "text-rw-teal font-semibold" : "text-rw-sub"}`}>
+                  {h2h.w}W ({Math.round((h2h.w / h2h.g) * 100)}%)
+                </span>
+                <span className={`${val} text-rw-muted text-center w-16`} title={tl("Head to head")}>
+                  {tl("Head to head")}
+                </span>
+                <span className={`${val} ${h2h.g - h2h.w > h2h.w ? "text-rw-teal font-semibold" : "text-rw-sub"}`}>
+                  {h2h.g - h2h.w}W ({Math.round(((h2h.g - h2h.w) / h2h.g) * 100)}%)
+                </span>
+              </>
+            )}
             {lines
               .filter(([, va, vb]) => va != null || vb != null)
               .map(([label, va, vb, f, hint]) => {
@@ -987,7 +1113,7 @@ const Lanes: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string
         <ul className="grid @min-[60rem]:grid-cols-2 @min-[96rem]:grid-cols-3 gap-x-8">
           {ROLES.map((r, i) => (
             <li key={r} className="border-t border-rw-border first:border-t-0 @min-[60rem]:nth-2:border-t-0 @min-[96rem]:nth-3:border-t-0">
-              {lane(r, a.players[i], b.players[i])}
+              {lane(r, i, a.players[i], b.players[i])}
             </li>
           ))}
         </ul>

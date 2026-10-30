@@ -5,24 +5,31 @@
  */
 import type { PlayerGameRow, PlayerTimeline, TeamGameRow, TeamTimeline } from "./types";
 
-/** "all", "last20", "y2026", "e:<event slug>" */
+/** "all", "last20", "y2026", "p:26.18", "e:<event slug>" */
 export type PeriodKey = string;
 
 export interface PeriodOption {
   key: PeriodKey;
-  /** year or tournament name; the "all" / "last N" labels are translated by the picker */
+  /** year, patch or tournament name; the "all" / "last N" labels are translated by the picker */
   label: string;
-  group: "basic" | "year" | "event";
+  group: "basic" | "year" | "patch" | "event";
 }
 
 const LAST = [10, 20, 50];
 
-/** Choices for a game log (newest first): all time, last N games, every year, the tournaments played. */
-export function periodOptions(rows: { date: string; e: string; en: string }[], maxEvents = 60): PeriodOption[] {
+/** Choices for a game log (newest first): all time, last N games, every year, recent patches, the tournaments played. */
+export function periodOptions(rows: { date: string; e: string; en: string; patch?: string | null }[], maxEvents = 60): PeriodOption[] {
   const out: PeriodOption[] = [{ key: "all", label: "all", group: "basic" }];
   for (const n of LAST) if (rows.length > n) out.push({ key: `last${n}`, label: String(n), group: "basic" });
   const years = [...new Set(rows.map((r) => r.date.slice(0, 4)).filter((y) => /^\d{4}$/.test(y)))];
   for (const y of years) out.push({ key: `y${y}`, label: y, group: "year" });
+  const seenPatch = new Set<string>();
+  for (const r of rows) {
+    if (!r.patch || seenPatch.has(r.patch)) continue;
+    seenPatch.add(r.patch);
+    out.push({ key: `p:${r.patch}`, label: r.patch, group: "patch" });
+    if (seenPatch.size >= 16) break;
+  }
   const seen = new Set<string>();
   for (const r of rows) {
     if (!r.e || seen.has(r.e)) continue;
@@ -34,17 +41,18 @@ export function periodOptions(rows: { date: string; e: string; en: string }[], m
 }
 
 /** The rows of a period; rows are newest first. */
-export function inPeriod<T>(rows: T[], key: PeriodKey, get: (r: T) => { date: string; e: string }): T[] {
+export function inPeriod<T>(rows: T[], key: PeriodKey, get: (r: T) => { date: string; e: string; patch?: string | null }): T[] {
   if (!key || key === "all") return rows;
   const last = /^last(\d+)$/.exec(key);
   if (last) return rows.slice(0, Number(last[1]));
   if (key.startsWith("y")) return rows.filter((r) => get(r).date.startsWith(key.slice(1)));
+  if (key.startsWith("p:")) return rows.filter((r) => get(r).patch === key.slice(2));
   if (key.startsWith("e:")) return rows.filter((r) => get(r).e === key.slice(2));
   return rows;
 }
 
-export const playerRowRef = (r: PlayerGameRow) => ({ date: r[0], e: r[11], en: r[9] });
-export const teamRowRef = (r: TeamGameRow) => ({ date: r[0], e: r[2], en: r[3] });
+export const playerRowRef = (r: PlayerGameRow) => ({ date: r[0], e: r[11], en: r[9], patch: r[24] || null });
+export const teamRowRef = (r: TeamGameRow) => ({ date: r[0], e: r[2], en: r[3], patch: r[25] || null });
 
 const ratio = (n: number, d: number, digits = 1): number | null => (d > 0 ? Number((n / d).toFixed(digits)) : null);
 const share = (n: number, d: number): number | null => (d > 0 ? Math.round((n / d) * 1000) / 10 : null);

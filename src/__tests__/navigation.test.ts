@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { hubPath, parseHubPath } from "../hub/route";
 import { rateLine, profile, type RatingFile } from "../hub/playerRating";
-import { matchupShortcuts, pageShortcuts } from "../components/hub/HubSearch";
+import { champPairShortcuts, matchupShortcuts, pageShortcuts } from "../components/hub/HubSearch";
 import { groupOf, MENU, MENU_ITEMS } from "../components/hub/menu";
 import type { HubIndex } from "../hub/data";
 
@@ -89,10 +89,16 @@ const INDEX: HubIndex = {
 };
 
 describe("search shortcuts", () => {
-  it("opens Match prep and Compare for two teams", () => {
+  it("opens Match prep, Draft board and Compare for two teams", () => {
     const s = matchupShortcuts(INDEX, "t1 vs gen.g");
-    expect(s.map((x) => x.key)).toEqual(["prep", "compare"]);
+    expect(s.map((x) => x.key)).toEqual(["prep", "draft", "compare"]);
     expect(hubPath(s[0].route)).toBe("/stats/prep?teams=t1,geng");
+    expect(hubPath(s[1].route)).toBe("/stats/draft?teams=t1,geng");
+  });
+  it("opens a player's or team's champion pool for player/team + champion queries", () => {
+    const p = champPairShortcuts(INDEX, "faker azir");
+    expect(p.shortcuts).toHaveLength(1);
+    expect(hubPath(p.shortcuts[0].route)).toBe("/player/faker/champions?champ=Azir");
   });
   it("compares two players", () => {
     const s = matchupShortcuts(INDEX, "Faker v Chovy");

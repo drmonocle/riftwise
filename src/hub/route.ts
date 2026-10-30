@@ -40,7 +40,7 @@ export const isTabbed = (kind: string): kind is TabbedEntity => kind in ENTITY_T
 export type HubRoute =
   | { kind: "home" }
   | { kind: HubSection; year?: string; mode?: "team" | "player"; a?: string; b?: string; period?: string; query?: string; more?: string[] }
-  | { kind: HubEntity; slug: string; game?: number; year?: string; tab?: string };
+  | { kind: HubEntity; slug: string; game?: number; year?: string; tab?: string; query?: string };
 
 export const HUB_HOME: HubRoute = { kind: "home" };
 /** The compare page with who is compared over which period (all in the address). */
@@ -114,15 +114,22 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
     return null;
   }
   const kind = PATH_ENTITY[parts[0]];
+  const rawQ = new URLSearchParams(search);
+  const keptQ = new URLSearchParams();
+  for (const k of ["p", "as", "y", "champ"]) {
+    const v = rawQ.get(k);
+    if (v) keptQ.set(k, v);
+  }
+  const qStr = (kind === "team" || kind === "player") && keptQ.toString() ? keptQ.toString() : undefined;
   // a league page can open at one season: /league/lck/2025
   if (kind === "league" && parts.length === 3 && /^\d{4}$/.test(parts[2])) return { kind, slug: parts[1].toLowerCase(), year: parts[2] };
   // one tab of a team's, player's or tournament's page: /team/t1/matches
   if (kind && isTabbed(kind) && parts.length === 3 && parts[1] && (ENTITY_TABS[kind] as readonly string[]).includes(parts[2].toLowerCase()))
-    return { kind, slug: parts[1].toLowerCase(), tab: parts[2].toLowerCase() };
+    return { kind, slug: parts[1].toLowerCase(), tab: parts[2].toLowerCase(), ...(qStr ? { query: qStr } : {}) };
   if (!kind || !parts[1] || parts.length !== 2) return null;
   // a match page can open at one of its games: /match/<slug>?g=5
   const game = kind === "match" ? Number(new URLSearchParams(search).get("g")) || undefined : undefined;
-  return game ? { kind, slug: parts[1].toLowerCase(), game } : { kind, slug: parts[1].toLowerCase() };
+  return game ? { kind, slug: parts[1].toLowerCase(), game } : { kind, slug: parts[1].toLowerCase(), ...(qStr && kind !== "match" ? { query: qStr } : {}) };
 }
 
 /** ?teams=a,b&p=y2026 -> who is compared over which period */
@@ -149,9 +156,13 @@ export function hubPath(r: HubRoute): string {
     const y = "year" in r && r.year ? `/${r.year}` : "";
     return `${BASE}stats/${r.kind}${y}`;
   }
-  const e = r as { slug: string; game?: number; year?: string; tab?: string };
+  const e = r as { slug: string; game?: number; year?: string; tab?: string; query?: string };
   const tail =
-    r.kind === "match" && e.game ? `?g=${e.game}` : r.kind === "league" && e.year ? `/${e.year}` : isTabbed(r.kind) && e.tab ? `/${e.tab}` : "";
+    r.kind === "match" && e.game
+      ? `?g=${e.game}`
+      : r.kind === "league" && e.year
+        ? `/${e.year}`
+        : `${isTabbed(r.kind) && e.tab ? `/${e.tab}` : ""}${e.query ? `?${e.query}` : ""}`;
   return `${BASE}${ENTITY_PATH[r.kind as HubEntity]}/${encodeURIComponent(e.slug)}${tail}`;
 }
 

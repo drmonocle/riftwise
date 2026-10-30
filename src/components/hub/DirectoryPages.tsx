@@ -83,8 +83,8 @@ export const TeamsDirectory: React.FC<{ query?: string }> = ({ query }) => {
 const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows, query }) => {
   const { q, set } = useFilters("teams", query);
   const region = q.get("region") || "";
-  const since = q.get("since") || THIS_YEAR;
   const words = q.get("q") || "";
+  const since = q.get("since") || (words.trim() ? "all" : THIS_YEAR);
   const shown = Number(q.get("n")) || STEP;
   const regions = useMemo(() => {
     const n = new Map<string, number>();
@@ -149,8 +149,8 @@ export const PlayersDirectory: React.FC<{ query?: string }> = ({ query }) => {
 const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ rows, query }) => {
   const { q, set } = useFilters("players", query);
   const role = q.get("role") || "";
-  const since = q.get("since") || THIS_YEAR;
   const words = q.get("q") || "";
+  const since = q.get("since") || (words.trim() ? "all" : THIS_YEAR);
   const shown = Number(q.get("n")) || STEP;
   const years = useMemo(() => yearChoices(rows.map((p) => p[4])), [rows]);
   const list = useMemo(() => {

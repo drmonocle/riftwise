@@ -324,13 +324,16 @@ export const PeriodPicker: React.FC<{
 }> = ({ options, value, onChange }) => {
   const basic = options.filter((o) => o.group === "basic");
   const years = options.filter((o) => o.group === "year");
+  const patches = options.filter((o) => o.group === "patch");
   const events = options.filter((o) => o.group === "event");
   const label = (o: PeriodOption) =>
     o.key === "all"
       ? tl("All time")
       : o.group === "basic"
         ? tl("Last {n} games", { n: o.label })
-        : o.label;
+        : o.group === "patch"
+          ? `${tl("Patch")} ${o.label}`
+          : o.label;
   const current = options.find((o) => o.key === value);
   return (
     <>
@@ -359,6 +362,15 @@ export const PeriodPicker: React.FC<{
             ))}
           </optgroup>
         )}
+        {patches.length > 0 && (
+          <optgroup label={tl("Patch")}>
+            {patches.map((o) => (
+              <option key={o.key} value={o.key}>
+                {o.label}
+              </option>
+            ))}
+          </optgroup>
+        )}
         {events.length > 0 && (
           <optgroup label={tl("Tournaments")}>
             {events.map((o) => (
@@ -370,6 +382,43 @@ export const PeriodPicker: React.FC<{
         )}
       </select>
     </>
+  );
+};
+
+/** Quick 1-click period pills (All time, Last 20, newest year, newest tournament) beside PeriodPicker. */
+const QuickPeriods: React.FC<{
+  options: PeriodOption[];
+  value: PeriodKey;
+  onChange: (k: PeriodKey) => void;
+}> = ({ options, value, onChange }) => {
+  const topYear = options.find((o) => o.group === "year");
+  const topPatch = options.find((o) => o.group === "patch");
+  const topEvent = options.find((o) => o.group === "event");
+  const last20 = options.find((o) => o.key === "last20");
+  const pills: { key: PeriodKey; label: string }[] = [
+    { key: "all", label: tl("All time") },
+    ...(last20 ? [{ key: "last20", label: tl("Last {n} games", { n: "20" }) }] : []),
+    ...(topYear ? [{ key: topYear.key, label: topYear.label }] : []),
+    ...(topPatch ? [{ key: topPatch.key, label: `${tl("Patch")} ${topPatch.label}` }] : []),
+    ...(topEvent ? [{ key: topEvent.key, label: topEvent.label }] : []),
+  ];
+  return (
+    <div data-nocapture="1" className="flex flex-wrap items-center gap-1 text-[11px]">
+      {pills.map((p) => (
+        <button
+          key={p.key}
+          type="button"
+          onClick={() => onChange(p.key)}
+          className={`px-2 py-0.5 rounded-full border truncate max-w-[12rem] ${
+            value === p.key
+              ? "border-rw-accent bg-rw-accent/15 text-rw-text font-semibold"
+              : "border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50"
+          }`}
+        >
+          {p.label}
+        </button>
+      ))}
+    </div>
   );
 };
 
@@ -396,9 +445,15 @@ const OnlyPicker: React.FC<{ value: GameOnly; onChange: (v: GameOnly) => void; s
 const onlyText = (v: GameOnly) =>
   ({ "": "", w: tl("Wins only"), l: tl("Losses only"), b: tl("Blue side only"), r: tl("Red side only") })[v];
 
-/** Default period: the newest year in the log (this season), else all time. */
-export const defaultPeriod = (opts: PeriodOption[]): PeriodKey =>
-  opts.find((o) => o.group === "year")?.key || "all";
+/** Default period: ?p= from the address if present, "all" for inactive/disbanded teams/players, else the newest year. */
+export const defaultPeriod = (opts: PeriodOption[], preferAll = false): PeriodKey => {
+  if (typeof window !== "undefined") {
+    const p = new URLSearchParams(window.location.search).get("p");
+    if (p && (opts.some((o) => o.key === p) || /^(all|last\d+|y\d{4}|p:.+|e:.+)$/.test(p))) return p;
+  }
+  if (preferAll) return "all";
+  return opts.find((o) => o.group === "year")?.key || "all";
+};
 
 // ── players ───────────────────────────────────────────────────────────────
 
@@ -425,21 +480,22 @@ function useGameLog<T>(slug: string, has2y: boolean | undefined, recent: (s: str
   return { loading: first.loading, rows: all && all.slug === slug ? all.rows : first.data };
 }
 
-export const PlayerPeriodStats: React.FC<{ slug: string; who?: Who; has2y?: boolean }> = ({ slug, who, has2y }) => {
+export const PlayerPeriodStats: React.FC<{ slug: string; who?: Who; has2y?: boolean; preferAll?: boolean }> = ({ slug, who, has2y, preferAll }) => {
   const { loading, rows } = useGameLog(slug, has2y, loadPlayerGames2y, loadPlayerGames);
   if (loading) return null;
   if (!rows || !rows.length) return null;
-  return <PlayerPeriodView slug={slug} rows={rows} who={who} />;
+  return <PlayerPeriodView slug={slug} rows={rows} who={who} preferAll={preferAll} />;
 };
 
-const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Who }> = ({
+const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Who; preferAll?: boolean }> = ({
   slug,
   rows,
   who,
+  preferAll,
 }) => {
   useDDragon();
   const options = useMemo(() => periodOptions(rows.map(playerRowRef)), [rows]);
-  const [period, setPeriod] = useState<PeriodKey>(() => defaultPeriod(options));
+  const [period, setPeriod] = useState<PeriodKey>(() => defaultPeriod(options, preferAll));
   const [only, setOnly] = useState<GameOnly>("");
   const sel = useMemo(
     () => inPeriod(rows, period, playerRowRef).filter((r) => (only === "w" ? r[6] === 1 : only === "l" ? r[6] === 0 : true)),
@@ -533,6 +589,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
       }
       share={`${slug}-${period}`}
     >
+      <QuickPeriods options={options} value={period} onChange={setPeriod} />
       {hidden ? (
         <div className="py-3 text-center">
           <RevealButton onReveal={reveal} />
@@ -631,11 +688,11 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
 
 type TeamWho = { name: string; sub?: string; code?: string; roster?: RosterPlayer[] };
 
-export const TeamPeriodStats: React.FC<{ slug: string; has2y?: boolean; who?: TeamWho }> = ({ slug, has2y, who }) => {
+export const TeamPeriodStats: React.FC<{ slug: string; has2y?: boolean; who?: TeamWho; preferAll?: boolean }> = ({ slug, has2y, who, preferAll }) => {
   const { loading, rows } = useGameLog(slug, has2y, loadTeamGames2y, loadTeamGames);
   if (loading) return <Loading />;
   if (!rows || !rows.length) return null;
-  return <TeamPeriodView slug={slug} rows={rows} who={who} />;
+  return <TeamPeriodView slug={slug} rows={rows} who={who} preferAll={preferAll} />;
 };
 
 const ChampCounts: React.FC<{ title: string; list: [string, number][] }> = ({
@@ -658,14 +715,15 @@ const ChampCounts: React.FC<{ title: string; list: [string, number][] }> = ({
     </div>
   ) : null;
 
-const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWho }> = ({
+const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWho; preferAll?: boolean }> = ({
   slug,
   rows,
   who,
+  preferAll,
 }) => {
   useDDragon();
   const options = useMemo(() => periodOptions(rows.map(teamRowRef)), [rows]);
-  const [period, setPeriod] = useState<PeriodKey>(() => defaultPeriod(options));
+  const [period, setPeriod] = useState<PeriodKey>(() => defaultPeriod(options, preferAll));
   const [only, setOnly] = useState<GameOnly>("");
   const sel = useMemo(
     () =>
@@ -701,6 +759,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
       }
       share={`${slug}-${period}`}
     >
+      <QuickPeriods options={options} value={period} onChange={setPeriod} />
       {hidden ? (
         <div className="py-3 text-center">
           <RevealButton onReveal={reveal} />

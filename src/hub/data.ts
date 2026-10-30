@@ -171,7 +171,7 @@ export function loadHubIndex(): Promise<HubIndex> {
 }
 
 export const normText = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-const bare = (s: string) => s.replace(/[^\p{L}\p{N}]/gu, "");
+export const bare = (s: string) => normText(s).replace(/[^\p{L}\p{N}]/gu, "");
 
 /** Lower is better: 0 exact, 1 starts with, 2 contains, 3 contains ignoring spaces and dots, -1 no match. */
 function score(name: string, q: string): number {
@@ -210,6 +210,37 @@ function editDistance(a: string, b: string, max: number): number {
 
 const ROLE: Record<string, string> = { T: "Top", J: "Jungle", M: "Mid", B: "Bot", S: "Support" };
 
+const TEAM_EXTRA_OLD: Record<string, string[]> = {
+  TSM: ["Team SoloMid"],
+  "Griffin (Korean Team)": ["Griffin"],
+  "Rogue (European Team)": ["Rogue", "KOI"],
+  "Movistar KOI": ["MAD Lions KOI", "MAD Lions", "Splyce"],
+  "Evil Geniuses.NA": ["Evil Geniuses"],
+  "DN SOOPers": ["DN Freecs", "Kwangdong Freecs", "Afreeca Freecs", "Rebels Anarchy"],
+  "Gen.G": ["Samsung Galaxy", "Samsung White", "Samsung Blue", "MVP Ozone"],
+  "Hanwha Life Esports": ["ROX Tigers", "KOO Tigers", "GE Tigers"],
+  "Dplus Kia": ["DWG KIA", "DAMWON Gaming"],
+  "Royal Club": ["Star Horn Royal Club", "Royal Club Huang Zu"],
+  "Moscow Five": ["Team Empire"],
+};
+
+const TEAM_EXTRA_CODES: Record<string, string[]> = {
+  "Moscow Five": ["M5"],
+  "Griffin (Korean Team)": ["GRF"],
+  "Rogue (European Team)": ["RGE", "KOI"],
+  "Movistar KOI": ["MKOI", "MDK", "MAD", "SPY"],
+  "Evil Geniuses.NA": ["EG"],
+  "DN SOOPers": ["DNS", "DNF", "KDF", "AF", "AFS"],
+  "Gen.G": ["GEN", "SSG", "SSW", "SSB"],
+  "Hanwha Life Esports": ["HLE", "ROX", "KOO", "GE"],
+  "Dplus Kia": ["DK", "DWG"],
+  "Royal Club": ["RYL", "SHRC", "SHR"],
+  "KT Rolster Bullets": ["KTB", "KT.B"],
+  "KT Rolster Arrows": ["KTA", "KT.A"],
+};
+
+const ACADEMY_TEAM = /\b(challengers|academy|youth|junior|talent|scholars|prodigies|trainee|amateur|next)\b|\.(a|c|y|j|young)$/i;
+
 /**
  * One search across teams, players, leagues, tournaments and champions. Exact and prefix matches first, then
  * by how much a name has played; old team names, short names (SKT, C9) and real names count too.
@@ -217,6 +248,7 @@ const ROLE: Record<string, string> = { T: "Top", J: "Jungle", M: "Mid", B: "Bot"
 export function searchHub(index: HubIndex, query: string, limit = 6): Record<HubSearchKind, HubHit[]> {
   const raw = searchAlias(query.trim());
   const q = normText(raw);
+  const bq = bare(q);
   const out: Record<HubSearchKind, HubHit[]> = { team: [], player: [], event: [], champ: [], league: [] };
   if (!q) return out;
   const pick = <T>(rows: T[], rank: (r: T) => [number, string | undefined] | null, weight: (r: T) => number, make: (r: T, m?: string) => HubHit) => {
@@ -236,17 +268,25 @@ export function searchHub(index: HubIndex, query: string, limit = 6): Record<Hub
       const cands: [number, string | undefined][] = [];
       const s = score(t[0], q);
       if (s >= 0) cands.push([s, undefined]);
-      if (t[5] && normText(t[5]).split(" | ").includes(q)) cands.push([0.2, undefined]);
-      if (t[4]) {
-        const olds = t[4].split(" | ");
-        const hit = olds.find((o) => score(o, q) >= 0 && score(o, q) <= 1.5) || olds.find((o) => score(o, q) >= 0);
-        // an old name that starts with the query ("DWG" -> DWG KIA, "Samsung" -> Samsung Galaxy) ranks with the
-        // current names that do, so the bigger team (Dplus Kia, Gen.G) comes before a small one named that way
-        if (hit) cands.push([score(hit, q) <= 1.5 ? 1 : score(hit, q) + 1, hit]);
+      const codes = [...(t[5] ? normText(t[5]).split(" | ") : []), ...(TEAM_EXTRA_CODES[t[0]] || []).map(normText)];
+      if (codes.some((c) => c === q || (bq.length >= 2 && bare(c) === bq))) cands.push([0.2, undefined]);
+      const olds = [...(t[4] ? t[4].split(" | ") : []), ...(TEAM_EXTRA_OLD[t[0]] || [])];
+      if (olds.length) {
+        const hit =
+          olds.find((o) => score(o, q) >= 0 && score(o, q) <= 0.5) ||
+          olds.find((o) => score(o, q) >= 0 && score(o, q) <= 1.5) ||
+          olds.find((o) => score(o, q) >= 0);
+        // an exact old name ("Team SoloMid", "Evil Geniuses", "Griffin") beats prefix matches on other teams ("TSM Evo",
+        // "Evil Geniuses Challengers"); a prefix old name ("DWG" -> DWG KIA, "Samsung" -> Samsung Galaxy) ranks with
+        // current names that start with the query
+        if (hit) {
+          const hs = score(hit, q);
+          cands.push([hs <= 0.5 ? 0.3 : hs <= 1.5 ? 1 : hs + 1, hit]);
+        }
       }
       return cands.length ? cands.sort((a, b) => a[0] - b[0])[0] : null;
     },
-    (t) => t[2],
+    (t) => (ACADEMY_TEAM.test(t[0]) ? Math.round(t[2] * 0.15) : t[2]),
     (t, m) => ({ kind: "team", name: t[0], slug: slugOf(t[0], t[1]), sub: [t[6], t[3]].filter(Boolean).join(" · "), games: t[2], matched: m, year: t[3] }),
   );
   out.player = pick(
@@ -303,7 +343,6 @@ export function searchHub(index: HubIndex, query: string, limit = 6): Record<Hub
   );
   // Nothing at all: a misspelling? The nearest players, teams and champions ("fakr" -> Faker, "chovyy" -> Chovy),
   // one letter off for short searches, two for long ones; the most-played first.
-  const bq = bare(q);
   if (bq.length >= 4 && !Object.values(out).some((l) => l.length)) {
     const max = bq.length >= 7 ? 2 : 1;
     const near = <T>(rows: T[], name: (r: T) => string, weight: (r: T) => number) =>

@@ -77,7 +77,7 @@ import leagues_info
 import player_rating as prating
 import ratings as team_ratings
 import timeline
-from names import blue_red, champ_name, match_teams, show_team
+from names import EXTRA_CODES, EXTRA_OLD_NAMES, blue_red, canon_team, champ_name, match_teams, show_team
 
 SITE = "RiftWise"
 RECENT_EVENT_DAYS = 30        # event and series descriptions leave the winner out while this fresh
@@ -1110,7 +1110,8 @@ def build(ctx) -> dict:
                                 sd.get("drag"), od.get("drag"), sd.get("barons"), od.get("barons"), sd.get("towers"), od.get("towers"),
                                 sd.get("bans") or [], sd.get("picks") or [], od.get("bans") or [],
                                 [pick_role.get((name, ch), -1) for ch in (sd.get("picks") or [])], oe_side.get(side),
-                                [gd15_of.get((name, ch)) for ch in (sd.get("picks") or [])] if gd15_of else None])
+                                [gd15_of.get((name, ch)) for ch in (sd.get("picks") or [])] if gd15_of else None,
+                                item.get("patch") or None])
                     rows = prow.get(gid, []) if gid else []
                     # one ban per champion per game, never a champion that was picked (bans written twice, blind picks)
                     game_bans = {ch for sd in sides.values() for ch in sd.get("bans", [])} - {
@@ -1223,7 +1224,8 @@ def build(ctx) -> dict:
                                                       team_dmg[team_name] if r["damage"] is not None else None,
                                                       team_gold[team_name] if r["gold"] is not None else None,
                                                       team_vis[team_name] if r["vision"] is not None else None, ptl, g["n"],
-                                                      round(float(g["mepi"]), 1) if g.get("mepi") is not None else None))
+                                                      round(float(g["mepi"]), 1) if g.get("mepi") is not None else None,
+                                                      gpatch or None))
                                 p_items[page].append(tuple(item_canon.setdefault(it_, it_) for it_ in jlist(r["items"])))
                                 latest_heap(p_recent[page], (g["date"], gslug, r["champion"] or "", k, d, aa, won, opp, en, team_name, g["n"],
                                                              round(float(g["mepi"]), 1) if g.get("mepi") is not None else None), 20)
@@ -1978,14 +1980,14 @@ def build(ctx) -> dict:
             continue
         name = ctx.fr_name[fid]
         eras = sorted(ctx.fr_eras[fid], key=lambda e: e["from"], reverse=True)
-        for e in eras:
-            s_old = pretty(e["n"])
+        for old_n in [e["n"] for e in eras] + EXTRA_OLD_NAMES.get(name, []):
+            s_old = pretty(old_n)
             if s_old and s_old != u and s_old not in team_slug.values():
                 alias[s_old] = u
         lpt = lp_team.get(name) or {}
         codes = []
-        for e in sorted(eras, key=lambda e: -e["g"]):
-            c = str(ctx.team_shorts.get(e["n"]) or "").strip()
+        for c_cand in [ctx.short_of(e["n"]) for e in sorted(eras, key=lambda e: -e["g"])] + EXTRA_CODES.get(name, []):
+            c = str(c_cand or "").strip()
             if c and c.lower() not in (x.lower() for x in codes) and c.lower() != show_team(name).lower():
                 codes.append(c)
         ss = ctx.team_series.get(fid, [])
@@ -2105,8 +2107,12 @@ def build(ctx) -> dict:
         if t_has2y:
             obj["g2y"] = 1  # teamgames2y/<slug>.json exists
         out.json(f"team/{u}.json", obj)
+        old_names = list(dict.fromkeys(
+            [show_team(e["n"]) for e in eras if show_team(e["n"]) != show_team(name)]
+            + [x for x in EXTRA_OLD_NAMES.get(name, []) if x.lower() != show_team(name).lower()]
+        ))
         search_teams.append([name, short_slug(name, u), t["g"], t["to"][:4],
-                             " | ".join(dict.fromkeys(show_team(e["n"]) for e in eras if show_team(e["n"]) != show_team(name))), " | ".join(codes),
+                             " | ".join(old_names), " | ".join(codes),
                              lpt.get("Region") or ""])
         titles = obj["titles"]
         worlds = sum(1 for x in titles if x["kind"] == "Worlds")
