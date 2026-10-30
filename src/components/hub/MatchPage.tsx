@@ -97,9 +97,49 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
             <RevealButton onReveal={reveal} />
           </div>
         )}
-        {!hidden && s.games.some((g) => g.w) && (
-          <div className="mt-3 flex justify-center">
-            <BroadcastCardButton data={() => seriesCardData(s)} name={`${s.a.n}-vs-${s.b.n}-series`} label={tl("Overview card")} />
+        {((!hidden && s.games.some((g) => g.w)) || (s.a.u && s.b.u)) && (
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-[11px]">
+            {s.a.u && s.b.u && (
+              <>
+                <HubLink
+                  to={{ kind: "prep", a: s.a.u, b: s.b.u }}
+                  className="px-2.5 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+                >
+                  {tl("Match prep")}
+                </HubLink>
+                <HubLink
+                  to={{ kind: "compare", mode: "team", a: s.a.u, b: s.b.u }}
+                  className="px-2.5 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+                >
+                  {tl("Compare")}
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: (() => {
+                      const used = !hidden
+                        ? Array.from(
+                            new Set(
+                              s.games.flatMap((g) => [
+                                ...(g.t?.blue?.picks || []),
+                                ...(g.t?.red?.picks || []),
+                                ...(g.p || []).map((p) => p.c || "").filter(Boolean),
+                              ]),
+                            ),
+                          )
+                        : [];
+                      return `teams=${s.a.u},${s.b.u}${used.length ? `&u=${encodeURIComponent(used.join(","))}` : ""}`;
+                    })(),
+                  }}
+                  className="px-2.5 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+                >
+                  {tl("Draft board")}
+                </HubLink>
+              </>
+            )}
+            {!hidden && s.games.some((g) => g.w) && (
+              <BroadcastCardButton data={() => seriesCardData(s)} name={`${s.a.n}-vs-${s.b.n}-series`} label={tl("Overview card")} />
+            )}
           </div>
         )}
         {!hidden && s.ff ? (
@@ -137,6 +177,24 @@ const SeriesGames: React.FC<{
   reveal: () => void;
   onOpenUrl: (url: string) => void;
 }> = ({ s, tabs, gi, pick, hidden, game, reveal, onOpenUrl }) => {
+  const gamePicks = !hidden && tabs > 1
+    ? s.games.map((g, i) => {
+        const aBlue = g.blue === "a";
+        const aPicks =
+          g.t?.blue?.picks?.length && g.t?.red?.picks?.length
+            ? aBlue
+              ? g.t.blue.picks
+              : g.t.red.picks
+            : (g.p || []).filter((p) => p.s === (aBlue ? 1 : 2) && p.c).map((p) => p.c!);
+        const bPicks =
+          g.t?.blue?.picks?.length && g.t?.red?.picks?.length
+            ? aBlue
+              ? g.t.red.picks
+              : g.t.blue.picks
+            : (g.p || []).filter((p) => p.s !== (aBlue ? 1 : 2) && p.c).map((p) => p.c!);
+        return { i, n: g.n, w: g.w, aPicks, bPicks };
+      }).filter((x) => x.aPicks.length > 0 && x.bPicks.length > 0)
+    : [];
   return (
     <>
       {tabs > 1 && (
@@ -155,6 +213,34 @@ const SeriesGames: React.FC<{
               {tl("Game {n}", { n: g ? g.n : i + 1 })}
               {!hidden && g?.w ? <span className="ml-1 opacity-90">({g.w === 1 ? s.a.c || s.a.n : s.b.c || s.b.n})</span> : null}
               {!hidden && g?.r != null ? <span className="ml-1.5 tabular-nums opacity-90">· {g.r.toFixed(0)}</span> : null}
+            </button>
+          ))}
+        </div>
+      )}
+      {gamePicks.length > 1 && (
+        <div className={`${card} !py-2 flex flex-wrap items-center gap-2 text-[11px]`}>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-rw-muted">{tl("Fearless")}</span>
+          {gamePicks.map((gp) => (
+            <button
+              key={gp.n}
+              type="button"
+              onClick={() => pick(gp.i)}
+              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded border ${
+                gp.i === gi ? "border-rw-accent bg-rw-accent/10" : "border-rw-border/70 hover:border-rw-accent/50"
+              }`}
+            >
+              <span className="text-[10px] font-semibold text-rw-sub">{tc("short game", "G{n}", { n: gp.n })}</span>
+              <span className={`inline-flex items-center gap-0.5 ${gp.w === 2 ? "opacity-60" : ""}`}>
+                {gp.aPicks.map((c) => (
+                  <ChampIcon key={`a-${c}`} name={c} size={15} />
+                ))}
+              </span>
+              <span className="text-[9px] text-rw-muted">vs</span>
+              <span className={`inline-flex items-center gap-0.5 ${gp.w === 1 ? "opacity-60" : ""}`}>
+                {gp.bPicks.map((c) => (
+                  <ChampIcon key={`b-${c}`} name={c} size={15} />
+                ))}
+              </span>
             </button>
           ))}
         </div>
@@ -447,7 +533,17 @@ const PlayerBars: React.FC<{ blueName: string; redName: string; blue: GamePlayer
             </div>
             {side(b, false)}
           </div>
-          <span className="text-[9px] text-rw-muted text-center w-12">{roleName(r)}</span>
+          {b.u && o.u ? (
+            <HubLink
+              to={{ kind: "compare", mode: "player", a: b.u, b: o.u }}
+              className="text-[9px] text-rw-muted hover:text-rw-teal hover:underline text-center w-12"
+              title={`${tl("Compare")}: ${b.n} vs ${o.n}`}
+            >
+              {roleName(r)}
+            </HubLink>
+          ) : (
+            <span className="text-[9px] text-rw-muted text-center w-12">{roleName(r)}</span>
+          )}
           <div className="min-w-0">
             <div className="text-[10px] text-rw-sub truncate">
               {o.n} {o.c && <ChampIcon name={o.c} size={14} />}

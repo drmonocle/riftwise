@@ -200,7 +200,8 @@ const packHistory = (h: PastGame[]) => h.map((g) => `${g.blue}~${g.red}~${g.slot
 export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
   useDDragon();
   const q = useMemo(() => new URLSearchParams(query || ""), [query]);
-  const [a, b] = (q.get("teams") || "").split(",").map((x) => x.trim().toLowerCase() || null);
+  const rawTeams = q.get("teams") || (q.get("a") || q.get("b") ? `${q.get("a") || ""},${q.get("b") || ""}` : "");
+  const [a, b] = rawTeams.split(",").map((x) => x.trim().toLowerCase() || null);
   const set = (patch: { a?: string | null; b?: string | null; p?: string; d?: string; u?: string; f?: string; h?: string }) => {
     const next = new URLSearchParams(q);
     const ta = patch.a !== undefined ? patch.a : a;

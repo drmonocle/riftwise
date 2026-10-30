@@ -437,8 +437,11 @@ def build(ctx) -> dict:
     p_items = defaultdict(list)
     item_canon = {}
     champ = defaultdict(lambda: {"years": defaultdict(lambda: [0, 0, 0]), "roles": Counter(),
-                                 "players": defaultdict(lambda: [0, 0, 0, 0, 0]), "recent": [], "p": 0, "w": 0, "b": 0,
+                                 "players": defaultdict(lambda: [0, 0, 0, 0, 0]),
+                                 "players12": defaultdict(lambda: [0, 0, 0, 0, 0]),
+                                 "recent": [], "p": 0, "w": 0, "b": 0,
                                  "best": None, "side": [0, 0, 0, 0], "items": Counter(), "items_w": Counter(), "bg": 0,
+                                 "rb": defaultdict(lambda: {"g": 0, "items": Counter(), "items_w": Counter(), "keys": Counter(), "keys_w": Counter(), "spells": Counter(), "spells_w": Counter()}),
                                  # pick slot in the draft (B1, B2-3, B4-5, R1-2, R3, R4, R5) -> [games, wins], when the order is known
                                  "slots": defaultdict(lambda: [0, 0]),
                                  "keys": Counter(), "keys_w": Counter(), "spells": Counter(), "spells_w": Counter(),
@@ -1254,16 +1257,28 @@ def build(ctx) -> dict:
                                     patch_stats[gpatch]["w"][r["champion"]] += won
                                 if g["date"][:10] >= build_cut:
                                     c["bg"] += 1
+                                    rb_r = c["rb"][r["role"]] if r["role"] else None
+                                    if rb_r is not None:
+                                        rb_r["g"] += 1
                                     for it in set(jlist(r["items"])):
                                         c["items"][it] += 1
                                         c["items_w"][it] += won
+                                        if rb_r is not None:
+                                            rb_r["items"][it] += 1
+                                            rb_r["items_w"][it] += won
                                     if r["keystone"]:
                                         c["keys"][r["keystone"]] += 1
                                         c["keys_w"][r["keystone"]] += won
+                                        if rb_r is not None:
+                                            rb_r["keys"][r["keystone"]] += 1
+                                            rb_r["keys_w"][r["keystone"]] += won
                                     sp = " + ".join(sorted(map(spell_name, jlist(r["spells"])), key=lambda x: (x != "Flash", x)))  # Flash first
                                     if sp:
                                         c["spells"][sp] += 1
                                         c["spells_w"][sp] += won
+                                        if rb_r is not None:
+                                            rb_r["spells"][sp] += 1
+                                            rb_r["spells_w"][sp] += won
                                 role = r["role"]
                                 recent_g = g["date"][:10] >= build_cut
                                 lane_keys = []
@@ -1301,6 +1316,13 @@ def build(ctx) -> dict:
                                     cp[2] += k
                                     cp[3] += d
                                     cp[4] += aa
+                                    if recent_g:
+                                        cp12 = c["players12"][page]
+                                        cp12[0] += 1
+                                        cp12[1] += won
+                                        cp12[2] += k
+                                        cp12[3] += d
+                                        cp12[4] += aa
                                 latest_heap(c["recent"], (g["date"], gslug, page or "", r["team"], opp_of.get(r["team"], ""), k, d, aa, won, en,
                                                           tuple(jlist(r["items"])), r["keystone"] or "", r["secondary_tree"] or "",
                                                           tuple(jlist(r["spells"])), r["role"] or "", g["n"]), 20)
@@ -2389,6 +2411,7 @@ def build(ctx) -> dict:
             continue
         u = champ_slug[c]
         players_top = sorted(v["players"].items(), key=lambda kv: -kv[1][0])[:50]
+        players12_top = sorted(v["players12"].items(), key=lambda kv: -kv[1][0])[:30]
         def top_counts(cnt, wins, n, min_games=1):
             return [[k, g_, wins[k]] for k, g_ in cnt.most_common(n) if g_ >= min_games]
 
@@ -2407,12 +2430,22 @@ def build(ctx) -> dict:
             return out_m or None
 
         matchups = mu_out(v["mu"], 3, 30)
+        by_role_builds = {
+            r_b: {
+                "g": rb_d["g"],
+                "items": top_counts(rb_d["items"], rb_d["items_w"], 25, 2),
+                "keys": top_counts(rb_d["keys"], rb_d["keys_w"], 6, 1),
+                "spells": top_counts(rb_d["spells"], rb_d["spells_w"], 5, 1),
+            }
+            for r_b, rb_d in v["rb"].items() if rb_d["g"] >= 3
+        }
         obj = {
             "name": c, "u": u, "p": v["p"], "w": v["w"], "b": v["b"],
             "side": v["side"],
             "slots": {k_s: v["slots"][k_s] for k_s in ("B1", "B2-3", "B4-5", "R1-2", "R3", "R4", "R5") if k_s in v["slots"]} or None,
             "builds": {"since": build_cut, "g": v["bg"], "items": top_counts(v["items"], v["items_w"], 40, 2),
-                       "keys": top_counts(v["keys"], v["keys_w"], 6, 2), "spells": top_counts(v["spells"], v["spells_w"], 5, 2)}
+                       "keys": top_counts(v["keys"], v["keys_w"], 6, 2), "spells": top_counts(v["spells"], v["spells_w"], 5, 2),
+                       **({"byRole": by_role_builds} if len(by_role_builds) > 1 else {})}
             if v["bg"] else None,
             "matchups": matchups,
             # the last 12 months (this meta), and the champion's own lane numbers per role
@@ -2426,6 +2459,7 @@ def build(ctx) -> dict:
             "years": [{"y": y, "p": x[0], "w": x[1], "b": x[2]} for y, x in sorted(v["years"].items(), reverse=True)],
             "roles": [{"r": r, "p": n} for r, n in v["roles"].most_common()],
             "players": [{"n": ctx.pname(pg), "u": player_slug.get(pg), "g": x[0], "w": x[1], "kda": kda(x[2], x[3], x[4])} for pg, x in players_top],
+            **({"players12": [{"n": ctx.pname(pg), "u": player_slug.get(pg), "g": x[0], "w": x[1], "kda": kda(x[2], x[3], x[4])} for pg, x in players12_top]} if players12_top else {}),
             "recent": [{"date": r[0][:10], "g": r[1], "n": ctx.pname(r[2]) if r[2] else "", "u": player_slug.get(r[2]),
                         "team": r[3], "opp": r[4], "k": r[5], "d": r[6], "a": r[7], "win": r[8], "en": r[9],
                         "it": list(r[10]), "ks": r[11], "stt": r[12], "sp": list(r[13]), "r": r[14], "gn": r[15]}

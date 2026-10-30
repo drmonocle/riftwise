@@ -344,9 +344,13 @@ const PlayerView: React.FC<{
                 <span className="truncate min-w-0">
                   <TeamLink name={t.n} u={t.u} />
                 </span>
-                <span className="text-rw-muted shrink-0">
+                <HubLink
+                  to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${t.to.slice(0, 4)}` }}
+                  className="text-rw-muted hover:text-rw-teal hover:underline shrink-0"
+                  title={`${tl("Stats for")} ${t.to.slice(0, 4)}`}
+                >
                   {t.from.slice(0, 4)}–{t.to.slice(0, 4)} · {t.w}-{t.g - t.w}
-                </span>
+                </HubLink>
               </li>
             ))}
           </ul>

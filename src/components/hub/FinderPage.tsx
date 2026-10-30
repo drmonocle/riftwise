@@ -8,7 +8,7 @@ import React, { useMemo, useRef, useState } from "react";
 import { tl, tn, tc, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
 import { loadAliases, loadChampGames, loadChampIndex } from "../../hub/data";
-import type { ChampGame, ChampPick } from "../../hub/types";
+import type { ChampGame, ChampGamesFile, ChampPick } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
 import { SITE_URL } from "../../platform";
 import { useDDragon } from "../../hub/ddragon";
@@ -105,20 +105,44 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
   const leagues = index.data || [];
   const aliases = useLoad(loadAliases, []);
   const asked = q.get("league") || "";
-  const league = aliases.data?.league[asked.toLowerCase()] || asked || leagues.find((l) => l.pr)?.u || "";
-  const years = Object.keys(leagues.find((l) => l.u === league)?.y || {})
-    .sort()
-    .reverse();
+  const league = asked ? aliases.data?.league[asked.toLowerCase()] || asked : leagues.length ? "top" : "";
+  const years = useMemo(
+    () =>
+      (league === "top"
+        ? Array.from(new Set(leagues.filter((l) => l.pr).flatMap((l) => Object.keys(l.y))))
+        : Object.keys(leagues.find((l) => l.u === league)?.y || {})
+      )
+        .sort()
+        .reverse(),
+    [leagues, league],
+  );
   const year =
     q.get("year") && years.includes(q.get("year")!)
       ? q.get("year")!
       : years[0] || "";
-  const file = useLoad(
-    () =>
-      league && year
-        ? loadChampGames(league, year)
-        : Promise.reject(new Error("no league")),
-    [league, year],
+  const file = useLoad<ChampGamesFile>(
+    () => {
+      if (!league || !year) return Promise.reject(new Error("no league"));
+      if (league !== "top") return loadChampGames(league, year);
+      const topLeagues = leagues.filter((l) => l.pr && l.y[year]);
+      if (!topLeagues.length) return Promise.reject(new Error("no league"));
+      return Promise.all(topLeagues.map((l) => loadChampGames(l.u, year))).then((files) => {
+        const events: [string, string][] = [];
+        const games: ChampGame[] = [];
+        for (const f of files) {
+          const offset = events.length;
+          events.push(...f.events);
+          for (const g of f.games) {
+            const copy = [...g] as ChampGame;
+            copy[2] = g[2] + offset;
+            games.push(copy);
+          }
+        }
+        games.sort((a, b) => (b[0] < a[0] ? -1 : b[0] > a[0] ? 1 : 0));
+        return { events, games };
+      });
+    },
+    [league, year, leagues.length],
   );
 
   if (index.error) return <Failed />;
@@ -152,6 +176,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
             aria-label={tl("League")}
             className={sel}
           >
+            <option value="top">{tl("Top leagues")}</option>
             <optgroup label={tl("Leagues")}>
               {main.map((l) => (
                 <option key={l.u} value={l.u}>

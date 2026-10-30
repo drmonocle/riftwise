@@ -96,7 +96,61 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
   const muLane = muRows.some((m) => m.length > 3);
   const laneNow = (muRecent ? c.lane12 : c.lane)?.[muRole];
   const showDuos = mainRoles.some((r) => r === "Bot" || r === "Support") && (c.duos || []).length > 0;
-  const items = useMemo(() => (c.builds?.items || []).filter(([it]) => isFinishedItem(it)).slice(0, 8), [c.builds, ddReady]); // eslint-disable-line react-hooks/exhaustive-deps
+  const buildRoles = useMemo(() => {
+    if (c.builds?.byRole) return Object.keys(c.builds.byRole);
+    const counts = new Map<string, number>();
+    for (const r of c.recent) if (r.r) counts.set(r.r, (counts.get(r.r) || 0) + 1);
+    return [...counts.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).map(([r]) => r);
+  }, [c.builds, c.recent]);
+  const [buildRole, setBuildRole] = useState("");
+  const activeBuilds = useMemo(() => {
+    if (!c.builds) return null;
+    if (!buildRole) return c.builds;
+    if (c.builds.byRole?.[buildRole]) return { ...c.builds, ...c.builds.byRole[buildRole] };
+    // Fallback from recent games if byRole isn't in an older JSON yet
+    const rg = c.recent.filter((r) => r.r === buildRole);
+    if (!rg.length) return c.builds;
+    const itMap = new Map<string, [number, number]>();
+    const ksMap = new Map<string, [number, number]>();
+    const spMap = new Map<string, [number, number]>();
+    for (const r of rg) {
+      for (const it of new Set(r.it || [])) {
+        const cur = itMap.get(it) || [0, 0];
+        itMap.set(it, [cur[0] + 1, cur[1] + (r.win ? 1 : 0)]);
+      }
+      if (r.ks) {
+        const cur = ksMap.get(r.ks) || [0, 0];
+        ksMap.set(r.ks, [cur[0] + 1, cur[1] + (r.win ? 1 : 0)]);
+      }
+      if (r.sp && r.sp.length === 2) {
+        const pair = [...r.sp].sort().join(" + ");
+        const cur = spMap.get(pair) || [0, 0];
+        spMap.set(pair, [cur[0] + 1, cur[1] + (r.win ? 1 : 0)]);
+      }
+    }
+    const toList = (m: Map<string, [number, number]>, lim: number): [string, number, number][] =>
+      [...m.entries()].sort((a, b) => b[1][0] - a[1][0]).slice(0, lim).map(([k, [g, w]]) => [k, g, w]);
+    return { since: c.builds.since, g: rg.length, items: toList(itMap, 18), keys: toList(ksMap, 6), spells: toList(spMap, 6) };
+  }, [c.builds, c.recent, buildRole]);
+  const items = useMemo(() => (activeBuilds?.items || []).filter(([it]) => isFinishedItem(it)).slice(0, 8), [activeBuilds, ddReady]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [playersRecent, setPlayersRecent] = useState(false);
+  const recentPlayersList = useMemo(() => {
+    if (c.players12 && c.players12.length > 0) return c.players12;
+    const byP = new Map<string, { n: string; u: string | null; g: number; w: number; k: number; d: number; a: number }>();
+    for (const r of c.recent) {
+      const key = r.u || r.n.toLowerCase();
+      const cur = byP.get(key) || { n: r.n, u: r.u, g: 0, w: 0, k: 0, d: 0, a: 0 };
+      cur.g++;
+      cur.w += r.win ? 1 : 0;
+      cur.k += r.k;
+      cur.d += r.d;
+      cur.a += r.a;
+      byP.set(key, cur);
+    }
+    return [...byP.values()]
+      .sort((a, b) => b.g - a.g || b.w - a.w)
+      .map((p) => ({ n: p.n, u: p.u, g: p.g, w: p.w, kda: Number(((p.k + p.a) / Math.max(p.d, 1)).toFixed(2)) }));
+  }, [c.players12, c.recent]);
   // a build part picked in "Pro builds": the latest games narrow to the ones that used it
   const [usedOnly, setUsed] = useState<{ kind: "item" | "key" | "spells"; v: string } | null>(null);
   const pickUsed = (kind: "item" | "key" | "spells", v: string) => {
@@ -104,12 +158,13 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
     window.setTimeout(() => document.getElementById("champ-latest")?.scrollIntoView({ block: "start", behavior: "smooth" }), 50);
   };
   const usedIn = (r: (typeof c.recent)[number]) =>
-    !usedOnly ||
-    (usedOnly.kind === "item"
-      ? (r.it || []).includes(usedOnly.v)
-      : usedOnly.kind === "key"
-        ? r.ks === usedOnly.v
-        : [...(r.sp || [])].sort().join(" + ") === usedOnly.v.split(" + ").sort().join(" + "));
+    (!buildRole || !r.r || r.r === buildRole) &&
+    (!usedOnly ||
+      (usedOnly.kind === "item"
+        ? (r.it || []).includes(usedOnly.v)
+        : usedOnly.kind === "key"
+          ? r.ks === usedOnly.v
+          : [...(r.sp || [])].sort().join(" + ") === usedOnly.v.split(" + ").sort().join(" + ")));
   const usedName = usedOnly ? (usedOnly.kind === "item" ? itemName(usedOnly.v) : usedOnly.kind === "key" ? runeName(usedOnly.v) : usedOnly.v.split(" + ").map(spellName).join(" + ")) : "";
   const pickRow = (on: boolean) =>
     `flex items-center gap-2 min-w-0 w-full text-left rounded px-1 -mx-1 hover:bg-rw-raised ${on ? "ring-1 ring-rw-accent bg-rw-accent/10" : ""}`;
@@ -138,10 +193,30 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         </div>
       </div>
 
-      {c.builds && c.builds.g > 0 && (
-        <Section title={tl("Pro builds in the last 12 months")}>
+      {c.builds && c.builds.g > 0 && activeBuilds && (
+        <Section
+          title={tl("Pro builds in the last 12 months")}
+          right={
+            buildRoles.length > 1 ? (
+              <span className="flex flex-wrap gap-1">
+                {["", ...buildRoles].map((r) => (
+                  <button
+                    key={r || "all"}
+                    type="button"
+                    onClick={() => setBuildRole(r)}
+                    className={`px-2 py-0.5 rounded text-[11px] border ${
+                      r === buildRole ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub"
+                    }`}
+                  >
+                    {r ? roleName(r) : tl("All roles")}
+                  </button>
+                ))}
+              </span>
+            ) : undefined
+          }
+        >
           <p className="text-[11px] text-rw-muted">
-            {tl("From {n} pro games since {date}. Share of games and win rate.", { n: fmtNum(c.builds.g), date: fmtDate(c.builds.since) })}
+            {tl("From {n} pro games since {date}. Share of games and win rate.", { n: fmtNum(activeBuilds.g), date: fmtDate(c.builds.since) })}
           </p>
           <div className="grid gap-3 md:grid-cols-3">
             <div>
@@ -152,7 +227,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     <button type="button" onClick={() => pickUsed("item", it)} className={pickRow(usedOnly?.kind === "item" && usedOnly.v === it)} title={tl("Show the latest pro games with it")}>
                     <ItemIcon name={it} size={22} />
                     <span className="truncate flex-1 text-rw-text">{itemName(it)}</span>
-                    <span className="text-rw-sub tabular-nums shrink-0">{pctOf(g, c.builds!.g)}</span>
+                    <span className="text-rw-sub tabular-nums shrink-0">{pctOf(g, activeBuilds.g)}</span>
                     <span className="text-rw-muted tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
                     </button>
                   </li>
@@ -162,12 +237,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
             <div>
               <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Keystones")}</div>
               <ul className="space-y-1 text-xs">
-                {c.builds.keys.map(([k, g, w]) => (
+                {activeBuilds.keys.map(([k, g, w]) => (
                   <li key={k}>
                     <button type="button" onClick={() => pickUsed("key", k)} className={pickRow(usedOnly?.kind === "key" && usedOnly.v === k)} title={tl("Show the latest pro games with it")}>
                     <RuneIcon name={k} size={22} />
                     <span className="truncate flex-1 text-rw-text">{runeName(k)}</span>
-                    <span className="text-rw-sub tabular-nums shrink-0">{pctOf(g, c.builds!.g)}</span>
+                    <span className="text-rw-sub tabular-nums shrink-0">{pctOf(g, activeBuilds.g)}</span>
                     <span className="text-rw-muted tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
                     </button>
                   </li>
@@ -177,7 +252,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
             <div>
               <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Summoner spells")}</div>
               <ul className="space-y-1 text-xs">
-                {c.builds.spells.map(([sp, g, w]) => (
+                {activeBuilds.spells.map(([sp, g, w]) => (
                   <li key={sp}>
                     <button type="button" onClick={() => pickUsed("spells", sp)} className={pickRow(usedOnly?.kind === "spells" && usedOnly.v === sp)} title={tl("Show the latest pro games with it")}>
                     <span className="flex gap-0.5">
@@ -186,7 +261,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                       ))}
                     </span>
                     <span className="truncate flex-1 text-rw-text">{sp.split(" + ").map(spellName).join(" + ")}</span>
-                    <span className="text-rw-sub tabular-nums shrink-0">{pctOf(g, c.builds!.g)}</span>
+                    <span className="text-rw-sub tabular-nums shrink-0">{pctOf(g, activeBuilds.g)}</span>
                     <span className="text-rw-muted tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
                     </button>
                   </li>
@@ -342,7 +417,27 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
       )}
 
       <div className="grid gap-3 md:grid-cols-2">
-        <Section title={tl("Most games on {champion}", { champion: champName(c.name) })}>
+        <Section
+          title={tl("Most games on {champion}", { champion: champName(c.name) })}
+          right={
+            recentPlayersList.length > 0 ? (
+              <span className="flex gap-1">
+                {[false, true].map((recent) => (
+                  <button
+                    key={String(recent)}
+                    type="button"
+                    onClick={() => setPlayersRecent(recent)}
+                    className={`px-2 py-0.5 rounded text-[11px] border ${
+                      recent === playersRecent ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub"
+                    }`}
+                  >
+                    {recent ? tl("Last 12 months") : tl("All time")}
+                  </button>
+                ))}
+              </span>
+            ) : undefined
+          }
+        >
           <STable className="w-full text-xs">
             <thead>
               <tr>
@@ -353,7 +448,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               </tr>
             </thead>
             <tbody>
-              {c.players.slice(0, 25).map((p) => (
+              {(playersRecent ? recentPlayersList : c.players).slice(0, 25).map((p) => (
                 <tr key={p.n + p.u} className="border-t border-rw-border">
                   <td className={td}>
                     <PlayerLink name={p.n} u={p.u} />

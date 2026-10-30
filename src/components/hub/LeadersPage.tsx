@@ -3,7 +3,7 @@
  * role or all, with a minimum number of games (hub/leagueyear/<league>/<year>.json, hub/event/<slug>.json).
  * Address: /stats/leaders?league=lol-champions-korea&year=2026&event=<tournament>&role=Mid&min=10
  */
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { loadHubEvent, loadLeagues, loadLeagueSeason } from "../../hub/data";
 import type { EventPlayer, LeagueRow } from "../../hub/types";
@@ -48,6 +48,20 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
   const autoMin = Math.max(1, Math.ceil(Math.max(0, ...inRole.map((p) => p.g)) * 0.3));
   const minG = q.has("min") ? Math.max(1, Number(q.get("min")) || 1) : autoMin;
   const rows = useMemo(() => inRole.filter((p) => p.g >= minG), [inRole, minG]);
+  const [search, setSearch] = useState(() => q.get("q") || "");
+  const shownRows = useMemo(() => {
+    const terms = search
+      .toLowerCase()
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (!terms.length) return rows;
+    return rows.filter((p) => {
+      const n = p.n.toLowerCase();
+      const t = p.t.toLowerCase();
+      return terms.some((term) => n.includes(term) || t.includes(term));
+    });
+  }, [rows, search]);
   // z-scores: each stat against the average of the player's own role in this list (support vision next to mid CS)
   const zMode = q.get("show") === "z";
   const roleStats = useMemo(() => {
@@ -189,19 +203,27 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
               </option>
             ))}
           </select>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={tl("Filter by name or team…")}
+            aria-label={tl("Filter by name or team…")}
+            className={`${sel} w-44`}
+          />
         </div>
       </div>
       {loading && <Loading />}
       {!loading && failed && <p className="text-xs text-rw-sub">{tl("No player numbers for this season yet.")}</p>}
       {!loading && !failed && (
-        <Section title={tl("{scope}: {n} players", { scope, n: rows.length })} share={`riftwise-leaders-${league}-${year}${event ? `-${event}` : ""}${role ? `-${role}` : ""}`}>
+        <Section title={tl("{scope}: {n} players", { scope, n: shownRows.length })} share={`riftwise-leaders-${league}-${year}${event ? `-${event}` : ""}${role ? `-${role}` : ""}`}>
           {zMode && (
             <p className="text-[11px] text-rw-muted">
               {tl("z = (value − role average) ÷ role standard deviation, over the {n} players listed. +1.0 is one standard deviation better than the role's average (for deaths, fewer is better). Hover a number for the stat itself.", { n: rows.length })}
             </p>
           )}
-          {rows.length ? (
-            <SortTable rows={rows} columns={columns} initial={{ key: "kda", desc: true }} rowKey={(p) => `${p.u || p.n}-${p.t}-${p.r}`} copyName={`riftwise-leaders-${league}-${year}`} />
+          {shownRows.length ? (
+            <SortTable rows={shownRows} columns={columns} initial={{ key: "kda", desc: true }} rowKey={(p) => `${p.u || p.n}-${p.t}-${p.r}`} copyName={`riftwise-leaders-${league}-${year}`} />
           ) : (
             <p className="text-xs text-rw-sub">{tl("No player has that many games here. Lower the minimum.")}</p>
           )}

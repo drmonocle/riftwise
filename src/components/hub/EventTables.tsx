@@ -28,13 +28,23 @@ const teamEarlyCols = (): Column<EventTeamStats>[] => [
 export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ e, hidden }) => {
   const players = hidden ? [] : e.players || [];
   const [role, setRole] = useState("All");
+  const [search, setSearch] = useState("");
   const maxG = Math.max(0, ...players.map((p) => p.g));
   const [regular, setRegular] = useState(true);
   const minG = Math.max(2, Math.ceil(maxG * 0.4));
-  const rows = useMemo(
-    () => players.filter((p) => (role === "All" || p.r === role) && (!regular || p.g >= minG || maxG < 3)),
-    [players, role, regular, minG, maxG],
-  );
+  const rows = useMemo(() => {
+    const terms = search
+      .toLowerCase()
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return players.filter(
+      (p) =>
+        (role === "All" || p.r === role) &&
+        (!regular || p.g >= minG || maxG < 3) &&
+        (!terms.length || terms.some((term) => p.n.toLowerCase().includes(term) || p.t.toLowerCase().includes(term))),
+    );
+  }, [players, role, regular, minG, maxG, search]);
   if (players.length === 0) return null;
   const cols: Column<EventPlayer>[] = [
     { key: "n", label: tl("Player"), value: (p) => p.n.toLowerCase(), render: (p) => <PlayerLink name={p.n} u={p.u} /> },
@@ -84,6 +94,14 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
             {r === "All" ? tl("All roles") : roleName(r)}
           </button>
         ))}
+        <input
+          type="search"
+          value={search}
+          onChange={(ev) => setSearch(ev.target.value)}
+          placeholder={tl("Filter by name or team…")}
+          aria-label={tl("Filter by name or team…")}
+          className="bg-rw-bg border border-rw-border rounded px-2 py-1 text-[11px] text-rw-text w-40"
+        />
         {maxG >= 3 && (
           <label className="flex items-center gap-1 ml-auto text-rw-sub cursor-pointer">
             <input type="checkbox" checked={regular} onChange={(ev) => setRegular(ev.target.checked)} />

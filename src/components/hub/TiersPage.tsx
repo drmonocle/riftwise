@@ -10,9 +10,9 @@ import { champName } from "../../champions";
 import { ChampRow, ChampionStats, StatsMeta, loadChampionStats } from "../../stats";
 import { navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
-import { ROLES } from "../../hub/champAgg";
+import { ROLES, champAgg } from "../../hub/champAgg";
 import { card, ChampIcon, HubLink, Loading, Section, useLoad, usePageTitle } from "./ui";
-import { prettySlug } from "../../hub/data";
+import { loadChampGames, loadChampIndex, prettySlug } from "../../hub/data";
 
 const TIERS: { t: string; min: number; color: string }[] = [
   { t: "S", min: 40, color: "#ff6b81" },
@@ -45,10 +45,55 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
   };
   const patchKeys = meta.champions.filter((k) => k.startsWith("p"));
   const key = q.get("key") && meta.champions.includes(q.get("key")!) ? q.get("key")! : patchKeys[0] || meta.champions[0];
-  const scope = q.get("scope") === "all" ? "all" : "major";
+  const rawScope = q.get("league") || q.get("scope") || "major";
+  const isLeague = rawScope !== "major" && rawScope !== "all";
+  const scope: "major" | "all" = rawScope === "all" ? "all" : "major";
   const role = ROLES.includes(q.get("role") || "") ? q.get("role")! : "";
-  const state = useLoad<ChampionStats>(() => loadChampionStats(key), [key]);
-  const block = state.data?.[scope] || state.data?.all;
+  const index = useLoad(loadChampIndex, []);
+  const leagues = index.data || [];
+  const mainLeagues = leagues.filter((l) => l.pr);
+  const otherLeagues = leagues.filter((l) => !l.pr && Object.values(l.y).reduce((s, n) => s + n, 0) >= 100);
+  const state = useLoad<ChampionStats>(() => (isLeague ? Promise.resolve({ games: 0, all: { games: 0, champs: [] }, major: { games: 0, champs: [] } }) : loadChampionStats(key)), [key, isLeague]);
+  const lgBlock = useLoad(
+    () => {
+      if (!isLeague) return Promise.resolve(null);
+      const lg = leagues.find((l) => l.u === rawScope);
+      const availYears = Object.keys(lg?.y || {}).sort().reverse();
+      if (!availYears.length) return Promise.resolve({ games: 0, champs: [] as ChampRow[] });
+      let targetYears: string[] = [];
+      let patchFilter: string | undefined;
+      if (key.startsWith("y")) {
+        const y = key.slice(1);
+        targetYears = availYears.includes(y) ? [y] : [];
+      } else if (key.startsWith("p")) {
+        patchFilter = key.slice(1);
+        const majorNum = Number(patchFilter.split(".")[0]);
+        const guessedYear = String(majorNum >= 25 ? 2000 + majorNum : 2010 + majorNum);
+        targetYears = Array.from(new Set([guessedYear, ...availYears.slice(0, 2)])).filter((y) => availYears.includes(y));
+      } else {
+        targetYears = availYears;
+      }
+      if (!targetYears.length) return Promise.resolve({ games: 0, champs: [] as ChampRow[] });
+      return Promise.all(targetYears.map((y) => loadChampGames(rawScope, y))).then((files) => {
+        const allGames = files.flatMap((f) => f.games);
+        const agg = champAgg(allGames, { patch: patchFilter });
+        const champs: ChampRow[] = agg.rows.map((r) => ({
+          c: r.c,
+          role: r.role >= 0 ? ROLES[r.role] : "",
+          p: r.p,
+          w: r.w,
+          b: r.b,
+          kda: r.kda ?? 0,
+          csm: r.csm,
+          gpm: r.gpm,
+          dpm: r.dpm,
+        }));
+        return { games: agg.games, champs };
+      });
+    },
+    [isLeague, rawScope, key, leagues.length],
+  );
+  const block = isLeague ? lgBlock.data : state.data?.[scope] || state.data?.all;
 
   const byRole = useMemo(() => {
     const out = new Map<string, Ranked[]>(ROLES.map((r) => [r, []]));
@@ -82,9 +127,35 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
               </option>
             ))}
           </select>
-          <select value={scope} onChange={(e) => set({ scope: e.target.value === "all" ? "all" : undefined })} aria-label={tl("Leagues")} className={sel}>
+          <select
+            value={rawScope}
+            onChange={(e) => {
+              const v = e.target.value;
+              set({ scope: v === "major" ? undefined : v, league: undefined });
+            }}
+            aria-label={tl("Leagues")}
+            className={sel}
+          >
             <option value="major">{tl("Top leagues")}</option>
             <option value="all">{tl("All leagues")}</option>
+            {mainLeagues.length > 0 && (
+              <optgroup label={tl("Leagues")}>
+                {mainLeagues.map((l) => (
+                  <option key={l.u} value={l.u}>
+                    {l.l}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {otherLeagues.length > 0 && (
+              <optgroup label={tl("Other leagues")}>
+                {otherLeagues.map((l) => (
+                  <option key={l.u} value={l.u}>
+                    {l.l}
+                  </option>
+                ))}
+              </optgroup>
+            )}
           </select>
           <span className="flex flex-wrap gap-1" role="group" aria-label={tl("Role")}>
             {["", ...ROLES].map((r) => (
@@ -102,7 +173,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
         </div>
         {block && <p className="text-[10px] text-rw-muted">{tl("{n} games", { n: block.games })}</p>}
       </div>
-      {state.loading && <Loading />}
+      {(state.loading || lgBlock.loading) && <Loading />}
       {block && (
         <div className={`grid gap-3 ${role ? "" : "sm:grid-cols-2 xl:grid-cols-5"}`}>
           {shown.map((r) => (

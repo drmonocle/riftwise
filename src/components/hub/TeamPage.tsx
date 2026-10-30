@@ -7,13 +7,14 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Trophy } from "lucide-react";
 import { tl, tk, roleName, regionName, eventTitle, tc } from "../../i18n";
 import { winRate } from "../../stats";
-import { loadHubTeam } from "../../hub/data";
+import { loadHubTeam, loadTeamGames } from "../../hub/data";
 import { currentHubRoute, navigateHub, type HubRoute } from "../../hub/route";
 import { PageTabs, type PageTab } from "./PageTabs";
 import type { HubTeam } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { TeamSeriesArchive } from "./Archives";
-import { TeamPeriodStats } from "./PeriodStats";
+import { PeriodPicker, TeamPeriodStats } from "./PeriodStats";
+import { PeriodKey, inPeriod, periodOptions, teamAgg, teamRowRef } from "../../hub/period";
 import { TeamRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
 import { CaptureContext, card, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, HubLink, Page, PlayerLink, RevealButton, Section, Stat, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink, FollowFeeds } from "./ui";
@@ -500,7 +501,17 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     <TeamLink name={o.n} u={o.u} />
                   </td>
                   <td className={`${td} text-rw-sub`}>
-                    {o.w}-{o.g - o.w}
+                    {o.u ? (
+                      <HubLink
+                        to={{ kind: "compare", mode: "team", a: t.u, b: o.u }}
+                        className="hover:text-rw-teal hover:underline"
+                        title={tl("Head to head")}
+                      >
+                        {o.w}-{o.g - o.w}
+                      </HubLink>
+                    ) : (
+                      `${o.w}-${o.g - o.w}`
+                    )}
                   </td>
                   <td className={`${td} text-rw-sub`}>{winRate(o.w, o.g)}</td>
                   <td className={`${td} text-rw-muted`} data-sort={o.last}>{fmtDate(o.last)}</td>
@@ -512,14 +523,39 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
       </Section>
       )}
 
-      {tab === "champions" && (
+      {tab === "champions" && <TeamChampionsTab t={t} initialPeriod={urlParams.get("p") || (rosterYear && rosterYear !== t.roster[0]?.y ? `y${rosterYear}` : "all")} to={to} />}
+      </div>
+    </div>
+  );
+};
+
+const TeamChampionsTab: React.FC<{ t: HubTeam; initialPeriod: PeriodKey; to: (k: string) => HubRoute }> = ({ t, initialPeriod, to }) => {
+  const [period, setPeriod] = useState<PeriodKey>(initialPeriod || "all");
+  const log = useLoad(() => loadTeamGames(t.u), [t.u]);
+  const options = useMemo(() => (log.data ? periodOptions(log.data.map(teamRowRef)) : []), [log.data]);
+  const agg = useMemo(() => {
+    if (!log.data || period === "all") return null;
+    const rows = inPeriod(log.data, period, teamRowRef);
+    return teamAgg(rows);
+  }, [log.data, period]);
+  const champs = agg ? agg.picks.map(([c, g, w]) => ({ c, g, w })) : t.champs;
+  const bans = agg ? agg.bans.map(([c, g]) => ({ c, g })) : t.bans;
+  const bansVs = agg ? agg.bansVs.map(([c, g]) => ({ c, g })) : t.bansVs || [];
+  return (
+    <div className="space-y-3">
+      {options.length > 0 && (
+        <div className={`${card} !py-2 flex flex-wrap items-center justify-between gap-2 text-xs`}>
+          <span className="text-rw-sub font-semibold">{tl("Stats for")}</span>
+          <PeriodPicker options={options} value={period} onChange={setPeriod} />
+        </div>
+      )}
       <div className="grid gap-3 md:grid-cols-2">
         <Section
           title={tl("Most picked champions")}
-          right={<SectionCard section={tl("Most picked champions")} name={t.name} rows={() => t.champs.map((c) => ({ champ: c.c, label: champName(c.c), sub: tl("{n} games", { n: c.g }), value: winRate(c.w, c.g) }))} />}
+          right={<SectionCard section={tl("Most picked champions")} name={t.name} rows={() => champs.map((c) => ({ champ: c.c, label: champName(c.c), sub: tl("{n} games", { n: c.g }), value: winRate(c.w, c.g) }))} />}
         >
           <ul className="text-xs grid grid-cols-2 gap-x-3 gap-y-1">
-            {t.champs.map((c) => (
+            {champs.map((c) => (
               <li key={c.c} className="flex justify-between gap-1 min-w-0">
                 <ChampLink name={c.c} size={16} />
                 <span className="text-rw-muted shrink-0">
@@ -531,10 +567,10 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
         </Section>
         <Section
           title={tl("Most banned by them")}
-          right={<SectionCard section={tl("Most banned by them")} name={t.name} rows={() => t.bans.map((c) => ({ champ: c.c, label: champName(c.c), value: String(c.g) }))} />}
+          right={<SectionCard section={tl("Most banned by them")} name={t.name} rows={() => bans.map((c) => ({ champ: c.c, label: champName(c.c), value: String(c.g) }))} />}
         >
           <ul className="text-xs grid grid-cols-2 gap-x-3 gap-y-1">
-            {t.bans.map((c) => (
+            {bans.map((c) => (
               <li key={c.c} className="flex justify-between gap-1 min-w-0">
                 <ChampLink name={c.c} size={16} />
                 <span className="text-rw-muted shrink-0">{c.g}</span>
@@ -542,13 +578,13 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
             ))}
           </ul>
         </Section>
-        {t.bansVs && t.bansVs.length > 0 && (
+        {bansVs.length > 0 && (
           <Section
             title={tl("Most banned against them")}
-            right={<SectionCard section={tl("Most banned against them")} name={t.name} rows={() => (t.bansVs || []).map((c) => ({ champ: c.c, label: champName(c.c), value: String(c.g) }))} />}
+            right={<SectionCard section={tl("Most banned against them")} name={t.name} rows={() => bansVs.map((c) => ({ champ: c.c, label: champName(c.c), value: String(c.g) }))} />}
           >
             <ul className="text-xs grid grid-cols-2 gap-x-3 gap-y-1">
-              {t.bansVs.map((c) => (
+              {bansVs.map((c) => (
                 <li key={c.c} className="flex justify-between gap-1 min-w-0">
                   <ChampLink name={c.c} size={16} />
                   <span className="text-rw-muted shrink-0">{c.g}</span>
@@ -563,8 +599,6 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
             {tl("Draft tendencies for any period are under Stats.")}
           </HubLink>
         </p>
-      </div>
-      )}
       </div>
     </div>
   );

@@ -556,6 +556,7 @@ export interface HubChamp {
   years: { y: string; p: number; w: number; b: number }[];
   roles: { r: string; p: number }[];
   players: { n: string; u: string | null; g: number; w: number; kda: number }[];
+  players12?: { n: string; u: string | null; g: number; w: number; kda: number }[];
   recent: {
     date: string; g: string | null; n: string; u: string | null; team: string; opp: string; k: number; d: number; a: number; win: number; en: string;
     it?: string[]; ks?: string; stt?: string; sp?: string[]; r?: string; gn?: number;
@@ -565,7 +566,14 @@ export interface HubChamp {
   /** draft pick slot (B1, B2-3, B4-5, R1-2, R3, R4, R5) -> [games, wins], games with the pick order known (builds from 2026-10-24 on) */
   slots?: Record<string, [number, number]> | null;
   /** builds in the last 12 months: [name, games, wins] */
-  builds?: { since: string; g: number; items: [string, number, number][]; keys: [string, number, number][]; spells: [string, number, number][] } | null;
+  builds?: {
+    since: string;
+    g: number;
+    items: [string, number, number][];
+    keys: [string, number, number][];
+    spells: [string, number, number][];
+    byRole?: Record<string, { g: number; items: [string, number, number][]; keys: [string, number, number][]; spells: [string, number, number][] }>;
+  } | null;
   /** role -> [opponent champion, games, wins, then from Oracle's Elixir games: games with lane leads, average
    *  gold / CS / XP lead at 15 minutes, games ahead in gold at 15] (all time, 3+ games) */
   matchups?: Record<string, LaneLine[]> | null;

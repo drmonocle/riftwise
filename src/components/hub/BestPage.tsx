@@ -64,10 +64,10 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
   const years = (lgRow ? lgRow[4] : index.data?.years) || [];
   const year = q.get("year") && years.includes(q.get("year")!) ? q.get("year")! : "";
   const file = useLoad(() => loadBest(year || undefined, league || undefined), [year, league]);
-  // filters on the list itself (not in the address): tiers, games with a VOD, a team
-  const [tiers, setTiers] = useState<Set<string>>(new Set());
-  const [vodOnly, setVodOnly] = useState(false);
-  const [team, setTeam] = useState("");
+  // filters on the list itself (also synced to the address): tiers, games with a VOD, a team
+  const [tiers, setTiers] = useState<Set<string>>(() => new Set((q.get("tier") || "").split(",").filter(Boolean)));
+  const [vodOnly, setVodOnly] = useState(() => q.get("vod") === "1");
+  const [team, setTeam] = useState(() => q.get("team") || "");
 
   const setQ = (patch: Record<string, string | undefined>) => {
     const next = new URLSearchParams(q);
@@ -81,17 +81,30 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
   const main = index.data?.leagues.filter((l) => l[3]) || [];
   const other = index.data?.leagues.filter((l) => !l[3]) || [];
   const rows: (BestGame | BestSeries)[] = (view === "series" ? file.data?.s : file.data?.g) || [];
+  const seriesWithVod = useMemo(() => {
+    const s = new Set<string>();
+    for (const g of file.data?.g || []) if (g[15]) s.add(g[1]);
+    return s;
+  }, [file.data]);
   const dateOf = (r: BestGame | BestSeries) => (view === "series" ? (r as BestSeries)[2] : (r as BestGame)[3]);
   // spoiler mode: games of the last days stay off the list (their rating says how close they were) until Reveal
   const [spoilerHidden, reveal] = useHidden("best", rows.map(dateOf).sort().pop());
   const tq = normText(team.trim());
+  const teamAliasSlug = team.trim() ? aliases.data?.team[team.trim().toLowerCase()] : undefined;
   const shown = rows.filter((r) => {
     if (spoilerHidden && isFresh(dateOf(r))) return false;
     if (tiers.size && !tiers.has(ratingTier(r[0]))) return false;
-    if (vodOnly && view === "games" && !(r as BestGame)[15]) return false;
+    if (vodOnly && (view === "games" ? !(r as BestGame)[15] : !seriesWithVod.has(r[1]))) return false;
     if (tq) {
-      const [a, b] = view === "series" ? [(r as BestSeries)[6], (r as BestSeries)[8]] : [(r as BestGame)[7], (r as BestGame)[9]];
-      if (!normText(a).includes(tq) && !normText(b).includes(tq)) return false;
+      const [a, aSlug, b, bSlug] =
+        view === "series"
+          ? [(r as BestSeries)[6], (r as BestSeries)[7], (r as BestSeries)[8], (r as BestSeries)[9]]
+          : [(r as BestGame)[7], (r as BestGame)[8], (r as BestGame)[9], (r as BestGame)[10]];
+      const matchName = normText(a).includes(tq) || normText(b).includes(tq);
+      const matchSlug =
+        (aSlug && (aSlug === teamAliasSlug || normText(aSlug).includes(tq))) ||
+        (bSlug && (bSlug === teamAliasSlug || normText(bSlug).includes(tq)));
+      if (!matchName && !matchSlug) return false;
     }
     return true;
   });
@@ -101,6 +114,7 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
       const next = new Set(cur);
       if (next.has(t)) next.delete(t);
       else next.add(t);
+      setQ({ tier: [...next].join(",") || undefined });
       return next;
     });
 
@@ -172,17 +186,25 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
           <input
             type="search"
             value={team}
-            onChange={(e) => setTeam(e.target.value)}
+            onChange={(e) => {
+              setTeam(e.target.value);
+              setQ({ team: e.target.value || undefined });
+            }}
             placeholder={tl("Filter by team")}
             aria-label={tl("Filter by team")}
             className={`${sel} w-40`}
           />
-          {view === "games" && (
-            <label className="flex items-center gap-1 text-rw-sub cursor-pointer">
-              <input type="checkbox" checked={vodOnly} onChange={(e) => setVodOnly(e.target.checked)} />
-              {tl("Only games with a VOD")}
-            </label>
-          )}
+          <label className="flex items-center gap-1 text-rw-sub cursor-pointer">
+            <input
+              type="checkbox"
+              checked={vodOnly}
+              onChange={(e) => {
+                setVodOnly(e.target.checked);
+                setQ({ vod: e.target.checked ? "1" : undefined });
+              }}
+            />
+            {tl("Only games with a VOD")}
+          </label>
         </div>
       </div>
 
