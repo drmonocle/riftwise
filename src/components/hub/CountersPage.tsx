@@ -79,11 +79,24 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
       .map(([c, r, g, w, gd]) => ({ c, role: r, g, w, gd }));
   }, [data.data, role, minG, span]);
   const sel = "bg-rw-bg border border-rw-border rounded px-2 py-1 text-xs text-rw-text";
-  const cName = data.data ? champName(data.data.m.c) : "";
+  const rawChamp = data.data?.m.c || "";
+  const cName = rawChamp ? champName(rawChamp) : "";
+  const finderLink = (opp: string, n: number) =>
+    rawChamp ? (
+      <HubLink
+        to={{ kind: "finder", query: `champ=${encodeURIComponent(rawChamp)}&vschamp=${encodeURIComponent(opp)}` }}
+        className="hover:text-rw-teal hover:underline"
+        title={tl("Game finder")}
+      >
+        {n}
+      </HubLink>
+    ) : (
+      n
+    );
   const columns: Column<Row>[] = [
     { key: "c", label: tl("Lane opponent"), value: (x) => champName(x.c), render: (x) => <ChampLink name={x.c} size={18} /> },
     { key: "role", label: tl("Role"), value: (x) => x.role, render: (x) => (x.role >= 0 ? roleName(ROLES[x.role]) : "–"), className: "text-rw-sub" },
-    { key: "g", label: tl("Games"), value: (x) => x.g, className: "tabular-nums text-rw-sub" },
+    { key: "g", label: tl("Games"), value: (x) => x.g, render: (x) => finderLink(x.c, x.g), className: "tabular-nums text-rw-sub" },
     {
       key: "wr",
       label: tl("Win rate"),
@@ -195,7 +208,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         <ChampLink name={x.c} size={18} /> <span className="text-rw-muted">{x.role >= 0 ? roleName(ROLES[x.role]) : ""}</span>
                       </span>
                       <span className="tabular-nums text-rw-teal font-semibold">
-                        {Math.round((x.w / x.g) * 100)}% <span className="text-rw-muted font-normal">({x.g})</span>
+                        {Math.round((x.w / x.g) * 100)}% <span className="text-rw-muted font-normal">({finderLink(x.c, x.g)})</span>
                       </span>
                     </li>
                   ))}
@@ -209,7 +222,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         <ChampLink name={x.c} size={18} /> <span className="text-rw-muted">{x.role >= 0 ? roleName(ROLES[x.role]) : ""}</span>
                       </span>
                       <span className="tabular-nums text-rw-red font-semibold">
-                        {Math.round((x.w / x.g) * 100)}% <span className="text-rw-muted font-normal">({x.g})</span>
+                        {Math.round((x.w / x.g) * 100)}% <span className="text-rw-muted font-normal">({finderLink(x.c, x.g)})</span>
                       </span>
                     </li>
                   ))}

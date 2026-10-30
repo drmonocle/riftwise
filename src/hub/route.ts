@@ -55,7 +55,7 @@ const SECTIONS: HubSection[] = [
 /** Pages that keep their filters in the address (?league=lck&year=2026...). */
 /** Worlds, MSI and First Stand: one page each, for a year or every year (/stats/msi/2024, /stats/worlds/all). */
 const INTL_SECTIONS: HubSection[] = ["worlds", "msi", "first-stand"];
-const QUERY_SECTIONS: HubSection[] = ["champions", "finder", "draft", "best", "counters", "leaders", "tiers", "teams", "players", "items"];
+const QUERY_SECTIONS: HubSection[] = ["champions", "finder", "draft", "best", "counters", "leaders", "tiers", "teams", "players", "items", "records", "titles"];
 const ENTITY_PATH: Record<HubEntity, string> = {
   team: "team", player: "player", event: "tournament", match: "match", champ: "champion", league: "league",
 };

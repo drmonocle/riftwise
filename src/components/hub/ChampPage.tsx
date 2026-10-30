@@ -357,7 +357,15 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                   <td className={`${td} max-w-[10rem]`}>
                     <ChampLink name={oc} size={16} />
                   </td>
-                  <td className={`${td} text-rw-sub`}>{g}</td>
+                  <td className={`${td} text-rw-sub`}>
+                    <HubLink
+                      to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&vschamp=${encodeURIComponent(oc)}` }}
+                      className="hover:text-rw-teal hover:underline"
+                      title={tl("Game finder")}
+                    >
+                      {g}
+                    </HubLink>
+                  </td>
                   <td className={`${td} ${w / g >= 0.5 ? "text-rw-teal" : "text-rw-red"}`}>{pctOf(w, g)}</td>
                   {muLane && (
                     <>

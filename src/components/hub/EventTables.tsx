@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import type { EventPlayer, EventTeamStats, HubEvent } from "../../hub/types";
-import { ChampIcon, OeCredit, PlayerLink, Section, TeamLink, fmtNum } from "./ui";
+import { ChampIcon, HubLink, OeCredit, PlayerLink, Section, TeamLink, fmtNum } from "./ui";
 import { Column, SortTable, per } from "./SortTable";
 
 const ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"];
@@ -118,6 +118,15 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
 
 export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ e, hidden }) => {
   const teams = e.teamStats || [];
+  const [search, setSearch] = useState("");
+  const rows = useMemo(() => {
+    const terms = search
+      .toLowerCase()
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return !terms.length ? teams : teams.filter((t) => terms.some((term) => t.t.toLowerCase().includes(term)));
+  }, [teams, search]);
   if (teams.length === 0 || hidden) return null;
   const all: Column<EventTeamStats>[] = [
     { key: "t", label: tl("Team"), value: (t) => t.t.toLowerCase(), render: (t) => <TeamLink name={t.t} u={t.u} /> },
@@ -163,9 +172,33 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
   const cols = all.filter((c) => c.key !== "grub" || teams.some((t) => t.grub > 0));
   const early = teams.some((t) => t.tn || t.fbn || t.pln);
   if (early) cols.push(...teamEarlyCols());
+  const pair = rows.length === 2 && rows[0].u && rows[1].u ? [rows[0].u, rows[1].u] : null;
   return (
     <Section title={tl("Team stats")} share={`${e.u}-teams`}>
-      <SortTable rows={teams} columns={cols} initial={{ key: "wr", desc: true }} rowKey={(t, i) => `${t.t}-${i}`} copyName={`${e.u}-teams`} />
+      {teams.length > 2 && (
+        <div className="flex flex-wrap items-center gap-2 text-xs" data-nocapture="1">
+          <input
+            type="search"
+            value={search}
+            onChange={(ev) => setSearch(ev.target.value)}
+            placeholder={tl("Filter by name or team…")}
+            aria-label={tl("Filter by name or team…")}
+            className="bg-rw-bg border border-rw-border rounded px-2 py-1 text-[11px] text-rw-text w-44"
+          />
+          {pair && (
+            <span className="flex items-center gap-2 text-[11px]">
+              <HubLink to={{ kind: "prep", a: pair[0], b: pair[1], period: `e:${e.u}` }} className="text-rw-teal hover:underline font-semibold">
+                {tl("Match prep")}
+              </HubLink>
+              <span className="text-rw-muted">·</span>
+              <HubLink to={{ kind: "compare", mode: "team", a: pair[0], b: pair[1], period: `e:${e.u}` }} className="text-rw-teal hover:underline font-semibold">
+                {tl("Compare")}
+              </HubLink>
+            </span>
+          )}
+        </div>
+      )}
+      <SortTable rows={rows} columns={cols} initial={{ key: "wr", desc: true }} rowKey={(t, i) => `${t.t}-${i}`} copyName={`${e.u}-teams`} />
       <p className="text-[10px] text-rw-muted">{tl("Per game, games with a full scoreboard only.")}</p>
       {early && <OeCredit />}
     </Section>

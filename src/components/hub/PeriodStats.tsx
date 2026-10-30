@@ -386,7 +386,7 @@ export const PeriodPicker: React.FC<{
 };
 
 /** Quick 1-click period pills (All time, Last 20, newest year, newest tournament) beside PeriodPicker. */
-const QuickPeriods: React.FC<{
+export const QuickPeriods: React.FC<{
   options: PeriodOption[];
   value: PeriodKey;
   onChange: (k: PeriodKey) => void;

@@ -26,7 +26,7 @@ import {
   teamRowRef,
 } from "../../hub/period";
 import { HeadToHeadSeries } from "./Archives";
-import { PeriodPicker } from "./PeriodStats";
+import { PeriodPicker, QuickPeriods } from "./PeriodStats";
 import { DraftTendencies, draftTendencies } from "./DraftTendencies";
 import { BroadcastCardButton, draftCard, playerCardData, teamCardData } from "./BroadcastCard";
 import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, td, TeamLogo, useHidden, usePageTitle } from "./ui";
@@ -356,7 +356,19 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
   const refs = (rows: (TeamGameRow | PlayerGameRow)[]) =>
     mode === "team" ? (rows as TeamGameRow[]).map(teamRowRef) : (rows as PlayerGameRow[]).map(playerRowRef);
   const options = useMemo(() => (ready ? bothOptions(refs(logs.a!), refs(logs.b!)) : []), [ready, logs]); // eslint-disable-line react-hooks/exhaustive-deps
-  const period: PeriodKey = route.period && options.some((o) => o.key === route.period) ? route.period : "all";
+  const defaultComparePeriod = useMemo<PeriodKey>(() => {
+    if (!ready) return "all";
+    const topYr = options.find((o) => o.group === "year")?.key;
+    if (topYr && topYr.startsWith("y")) {
+      const yr = topYr.slice(1);
+      const recentCutoff = String(new Date().getFullYear() - 1);
+      if (yr >= recentCutoff && logs.a!.some((r) => r[0].startsWith(yr)) && logs.b!.some((r) => r[0].startsWith(yr))) {
+        return topYr;
+      }
+    }
+    return "all";
+  }, [ready, options, logs.a, logs.b]);
+  const period: PeriodKey = route.period && options.some((o) => o.key === route.period) ? route.period : defaultComparePeriod;
 
   const selA = useMemo(
     () => (ready ? (mode === "team" ? inPeriod(logs.a as TeamGameRow[], period, teamRowRef) : inPeriod(logs.a as PlayerGameRow[], period, playerRowRef)) : []),
@@ -388,12 +400,21 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
           </button>
         ))}
         {ready && mode === "team" && (
-          <HubLink to={{ kind: "prep", a: a!, b: b!, period: route.period }} className="text-rw-teal hover:underline">
-            {tl("Match prep")}
-          </HubLink>
+          <>
+            <HubLink to={{ kind: "prep", a: a!, b: b!, period: route.period }} className="text-rw-teal hover:underline">
+              {tl("Match prep")}
+            </HubLink>
+            <HubLink
+              to={{ kind: "draft", query: `teams=${encodeURIComponent(a!)},${encodeURIComponent(b!)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
+              className="text-rw-teal hover:underline"
+            >
+              {tl("Draft board")}
+            </HubLink>
+          </>
         )}
         {ready && (
-          <span className="flex items-center gap-1.5 ml-auto min-w-0">
+          <span className="flex flex-wrap items-center gap-1.5 ml-auto min-w-0">
+            <QuickPeriods options={options} value={period} onChange={(p) => set({ period: p })} />
             <span className="text-rw-muted">{tl("Stats for")}</span>
             <PeriodPicker options={options} value={period} onChange={(p) => set({ period: p })} />
           </span>

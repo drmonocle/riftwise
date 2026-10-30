@@ -471,6 +471,7 @@ const StageLists: React.FC<{ stages: Stage[] }> = ({ stages }) => {
   // Long leagues: one stage at a time, newest first
   const [i, setI] = useState(stages.length - 1);
   const [byRating, setByRating] = useState(false);
+  const [search, setSearch] = useState("");
   const isHidden = useHiddenCheck();
   const st = stages[Math.min(i, stages.length - 1)];
   // "Top rated": every stage's series, best first (results still hidden by spoiler mode stay out, so the order gives
@@ -483,26 +484,48 @@ const StageLists: React.FC<{ stages: Stage[] }> = ({ stages }) => {
         .sort((a, b) => (b.r || 0) - (a.r || 0)),
     [stages, isHidden],
   );
-  const shown = byRating ? rated : st.series;
+  const terms = useMemo(
+    () =>
+      search
+        .toLowerCase()
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    [search],
+  );
+  const shown = useMemo(() => {
+    const base = byRating ? rated : terms.length > 0 ? stages.flatMap((s) => s.series) : st.series;
+    if (!terms.length) return base;
+    return base.filter((r) => terms.some((t) => r.a.toLowerCase().includes(t) || r.b.toLowerCase().includes(t)));
+  }, [byRating, rated, terms, stages, st.series]);
   return (
     <Section
       title={tl("Matches")}
       right={
-        rated.length > 1 ? (
-          <select
-            value={byRating ? "r" : "d"}
-            onChange={(e) => setByRating(e.target.value === "r")}
-            aria-label={tl("Order")}
-            className="bg-rw-bg border border-rw-border rounded px-1.5 py-0.5 text-[11px] text-rw-text"
-            data-nocapture="1"
-          >
-            <option value="d">{tl("By stage")}</option>
-            <option value="r">{tl("Top rated")}</option>
-          </select>
-        ) : undefined
+        <span className="flex flex-wrap items-center gap-1.5" data-nocapture="1">
+          <input
+            type="search"
+            value={search}
+            onChange={(ev) => setSearch(ev.target.value)}
+            placeholder={tl("Filter by name or team…")}
+            aria-label={tl("Filter by name or team…")}
+            className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text w-36"
+          />
+          {rated.length > 1 && (
+            <select
+              value={byRating ? "r" : "d"}
+              onChange={(e) => setByRating(e.target.value === "r")}
+              aria-label={tl("Order")}
+              className="bg-rw-bg border border-rw-border rounded px-1.5 py-0.5 text-[11px] text-rw-text"
+            >
+              <option value="d">{tl("By stage")}</option>
+              <option value="r">{tl("Top rated")}</option>
+            </select>
+          )}
+        </span>
       }
     >
-      {!byRating && stages.length > 1 && (
+      {!byRating && !terms.length && stages.length > 1 && (
         <div className="flex flex-wrap gap-1">
           {stages.map((s, k) => (
             <button

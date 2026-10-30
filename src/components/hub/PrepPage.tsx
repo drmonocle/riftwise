@@ -848,14 +848,16 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
                 <span className="flex gap-0.5">
                   {rows.map((r) => {
                     const won = r[3] > r[4];
-                    return (
-                      <span
-                        key={`${r[0]}-${r[7]}-${r[1]}`}
-                        title={`${won ? tc("short result", "W") : tc("short result", "L")} ${r[3]}-${r[4]} vs ${r[1]} · ${r[5]} · ${fmtDate(r[0])}`}
-                        className={`w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center ${
-                          won ? "bg-rw-teal/20 text-rw-teal" : "bg-rw-red/20 text-rw-red"
-                        }`}
-                      >
+                    const cls = `w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center ${
+                      won ? "bg-rw-teal/20 text-rw-teal" : "bg-rw-red/20 text-rw-red"
+                    }`;
+                    const tip = `${won ? tc("short result", "W") : tc("short result", "L")} ${r[3]}-${r[4]} vs ${r[1]} · ${r[5]} · ${fmtDate(r[0])}`;
+                    return r[7] ? (
+                      <HubLink key={`${r[0]}-${r[7]}-${r[1]}`} to={{ kind: "match", slug: r[7] }} title={tip} className={`${cls} hover:ring-1 hover:ring-rw-accent`}>
+                        {won ? tc("short result", "W") : tc("short result", "L")}
+                      </HubLink>
+                    ) : (
+                      <span key={`${r[0]}-${r[7]}-${r[1]}`} title={tip} className={cls}>
                         {won ? tc("short result", "W") : tc("short result", "L")}
                       </span>
                     );
@@ -889,7 +891,7 @@ function fearlessPools(a: Side, b: Side, period: PeriodKey) {
       m.set(g[2], x);
     }
     const list = [...m.entries()].sort((p, q) => q[1][0] - p[1][0]);
-    return { name: pl.p.name, list, deep: list.filter(([, x]) => x[0] >= 2).length };
+    return { name: pl.p.name, slug: pl.p.u, list, deep: list.filter(([, x]) => x[0] >= 2).length };
   };
   const pa = a.players.map(of);
   const pb = b.players.map(of);
@@ -925,10 +927,15 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
         </div>
         <div className={`flex flex-wrap gap-1 ${right ? "justify-end" : ""}`}>
           {x.list.slice(0, 10).map(([c, [g, w]]) => (
-            <span key={c} className={`flex items-center gap-0.5 text-[10px] ${g >= 2 ? "text-rw-sub" : "text-rw-muted opacity-60"}`} title={`${champName(c)} · ${g} · ${winRate(w, g)}`}>
+            <HubLink
+              key={c}
+              to={{ kind: "player", slug: x.slug, tab: "champions", query: `champ=${encodeURIComponent(c)}` }}
+              className={`flex items-center gap-0.5 text-[10px] hover:text-rw-teal hover:underline ${g >= 2 ? "text-rw-sub" : "text-rw-muted opacity-60"}`}
+              title={`${champName(c)} · ${g} · ${winRate(w, g)}`}
+            >
               <ChampIcon name={c} size={18} />
               {g}
-            </span>
+            </HubLink>
           ))}
           {x.list.length > 10 && <span className="text-[10px] text-rw-muted self-center">+{x.list.length - 10}</span>}
         </div>
@@ -1007,15 +1014,27 @@ const Lanes: React.FC<{
       [tl("XP @15"), sa?.tl?.xpd15, sb?.tl?.xpd15, (v) => sgn(v)],
     ];
     const pool = (x: typeof sa) => (x ? `${x.champs.length} (${x.champs.filter((c) => c.g >= 2).length})` : "–");
-    const icons = (x: typeof sa, right: boolean) =>
+    const icons = (x: typeof sa, right: boolean, slug?: string) =>
       x ? (
         <div className={`flex gap-1 flex-wrap ${right ? "" : "justify-end"}`}>
-          {x.champs.slice(0, 4).map((c) => (
-            <span key={c.c} className="flex items-center gap-0.5 text-[10px] text-rw-sub" title={`${champName(c.c)} · ${c.g} · ${winRate(c.w, c.g)}`}>
-              <ChampIcon name={c.c} size={18} />
-              {c.g}
-            </span>
-          ))}
+          {x.champs.slice(0, 4).map((c) =>
+            slug ? (
+              <HubLink
+                key={c.c}
+                to={{ kind: "player", slug, tab: "champions", query: `champ=${encodeURIComponent(c.c)}` }}
+                className="flex items-center gap-0.5 text-[10px] text-rw-sub hover:text-rw-teal hover:underline"
+                title={`${champName(c.c)} · ${c.g} · ${winRate(c.w, c.g)}`}
+              >
+                <ChampIcon name={c.c} size={18} />
+                {c.g}
+              </HubLink>
+            ) : (
+              <span key={c.c} className="flex items-center gap-0.5 text-[10px] text-rw-sub" title={`${champName(c.c)} · ${c.g} · ${winRate(c.w, c.g)}`}>
+                <ChampIcon name={c.c} size={18} />
+                {c.g}
+              </span>
+            ),
+          )}
         </div>
       ) : null;
     const name = (pl: Side["players"][number], side: Side, onSwap: ((roleIdx: number, slug: string) => void) | undefined, right: boolean) =>
@@ -1099,9 +1118,9 @@ const Lanes: React.FC<{
           <div className="text-[11px] text-rw-muted text-center">{tl("No games in this period")}</div>
         )}
         <div className="mt-1.5 grid grid-cols-[1fr_auto_1fr] gap-x-3">
-          {icons(sa, false) || <span />}
+          {icons(sa, false, pa?.p.u) || <span />}
           <span className="w-16" />
-          {icons(sb, true) || <span />}
+          {icons(sb, true, pb?.p.u) || <span />}
         </div>
       </LaneBlock>
     );

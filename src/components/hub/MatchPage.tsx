@@ -758,7 +758,23 @@ const PlayerRow: React.FC<{ p: GamePlayer; teamKills: number; teamDmg: number; t
             <PlayerLink name={p.n} u={p.u} className="font-semibold text-rw-text hover:text-rw-accent hover:underline truncate" />
             {p.r && <span className="text-[10px] text-rw-muted shrink-0">{roleName(p.r)}</span>}
           </div>
-          <div className="text-[10px] text-rw-muted truncate">{p.c ? champName(p.c) : ""}</div>
+          <div className="text-[10px] text-rw-muted truncate">
+            {p.c ? (
+              p.u ? (
+                <HubLink
+                  to={{ kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(p.c)}` }}
+                  className="hover:text-rw-teal hover:underline"
+                  title={`${p.n} · ${champName(p.c)}`}
+                >
+                  {champName(p.c)}
+                </HubLink>
+              ) : (
+                champName(p.c)
+              )
+            ) : (
+              ""
+            )}
+          </div>
         </div>
         {rating != null && <PlayerRatingBadge v={rating} top={top} />}
         <div className="text-right shrink-0">

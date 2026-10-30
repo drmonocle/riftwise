@@ -239,8 +239,17 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
 export const RecordsPanel: React.FC = () => {
   usePageTitle(tl("Records"));
   const state = useLoad<HubRecords>(loadHubRecords, []);
+  const route = useHubRoute();
+  const q = new URLSearchParams(route.kind === "records" && "query" in route ? route.query || "" : "");
   // all time, or one year (its own file; team streaks, titles and career totals are all-time only)
-  const [year, setYear] = useState("all");
+  const year = q.get("year") || "all";
+  const setYear = (y: string) => {
+    const next = new URLSearchParams(q);
+    if (!y || y === "all") next.delete("year");
+    else next.set("year", y);
+    const qs = next.toString();
+    navigateHub({ kind: "records", ...(qs ? { query: qs } : {}) }, { replace: true });
+  };
   const yearState = useLoad(() => (year === "all" ? Promise.resolve(null) : loadRecordsYear(year)), [year]);
   // this year's file too, for "Closest to falling" on the all-time view
   const thisYear = String(new Date().getFullYear());
@@ -480,8 +489,19 @@ const TITLE_FILTERS = [
 export const TitlesPanel: React.FC = () => {
   usePageTitle(tl("Titles"));
   const state = useLoad<HubTitle[]>(loadHubTitles, []);
-  const [kind, setKind] =
-    useState<(typeof TITLE_FILTERS)[number]["key"]>("International");
+  const route = useHubRoute();
+  const q = new URLSearchParams(route.kind === "titles" && "query" in route ? route.query || "" : "");
+  const kindParam = q.get("kind") as (typeof TITLE_FILTERS)[number]["key"] | null;
+  const kind: (typeof TITLE_FILTERS)[number]["key"] =
+    kindParam && TITLE_FILTERS.some((f) => f.key === kindParam) ? kindParam : "International";
+  const [search, setSearch] = useState(() => q.get("q") || "");
+  const setTitleUrl = (nextKind: string, nextQ: string) => {
+    const next = new URLSearchParams();
+    if (nextKind && nextKind !== "International") next.set("kind", nextKind);
+    if (nextQ.trim()) next.set("q", nextQ.trim());
+    const qs = next.toString();
+    navigateHub({ kind: "titles", ...(qs ? { query: qs } : {}) }, { replace: true });
+  };
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -489,7 +509,7 @@ export const TitlesPanel: React.FC = () => {
           <button
             key={f.key}
             type="button"
-            onClick={() => setKind(f.key)}
+            onClick={() => setTitleUrl(f.key, search)}
             className={`px-2.5 py-1.5 rounded-lg border ${
               kind === f.key
                 ? "bg-rw-accent text-rw-bg font-bold border-rw-accent"
@@ -499,9 +519,25 @@ export const TitlesPanel: React.FC = () => {
             {tl(f.label)}
           </button>
         ))}
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setTitleUrl(kind, e.target.value);
+          }}
+          placeholder={tl("Filter by name or team…")}
+          aria-label={tl("Filter by name or team…")}
+          className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1.5 text-xs text-rw-text w-48"
+        />
       </div>
       <Page state={state}>
         {(data) => {
+          const terms = search
+            .toLowerCase()
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
           const rows = data
             .filter((x) =>
               kind === "All"
@@ -511,6 +547,17 @@ export const TitlesPanel: React.FC = () => {
                   : kind === "Worlds"
                     ? x.kind === "Worlds"
                     : x.kind === "Regional",
+            )
+            .filter(
+              (x) =>
+                !terms.length ||
+                terms.some(
+                  (t) =>
+                    x.t.toLowerCase().includes(t) ||
+                    x.w.toLowerCase().includes(t) ||
+                    x.as.toLowerCase().includes(t) ||
+                    x.l.toLowerCase().includes(t),
+                ),
             )
             .slice(0, 300);
           return (

@@ -3,18 +3,19 @@
  * games, bests), Stats (any period, league ranks), Champions (the pool), Matches (every game) and Career
  * (tournaments, teams, years).
  */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Trophy, ExternalLink, Package } from "lucide-react";
 import { tl, tk, tc, roleName, eventTitle, regionName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { loadHubPlayer } from "../../hub/data";
+import { loadHubPlayer, loadPlayerGames } from "../../hub/data";
 import { currentHubRoute, type HubRoute } from "../../hub/route";
 import type { HubPlayer } from "../../hub/types";
+import { type PeriodKey, inPeriod, periodOptions, playerAgg, playerRowRef } from "../../hub/period";
 import { PageTabs, type PageTab } from "./PageTabs";
 import { useDDragon } from "../../hub/ddragon";
 import { PlayerChampGames, PlayerGamesArchive } from "./Archives";
-import { PlayerPeriodStats } from "./PeriodStats";
+import { PeriodPicker, PlayerPeriodStats, QuickPeriods } from "./PeriodStats";
 import { BroadcastCardButton, SectionCard, playerCareerCardData } from "./BroadcastCard";
 import { PlayerRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
@@ -86,10 +87,10 @@ const PlayerView: React.FC<{
   ];
   const to = (key: string): HubRoute => ({ kind: "player", slug: p.u, ...(key ? { tab: key } : {}) });
   const [allEvents, setAllEvents] = useState(false);
-  const [allChamps, setAllChamps] = useState(false);
   const nowRoute = currentHubRoute();
   const routeQuery = nowRoute.kind === "player" && nowRoute.slug === p.u ? nowRoute.query : undefined;
-  const champParam = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : "")).get("champ");
+  const urlParams = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
+  const champParam = urlParams.get("champ");
   // the Champions tab: a champion's every game, with the items of each (TV, 2026-10-28)
   const [gamesOn, setGamesOn] = useState<string | null>(() => {
     if (!champParam) return null;
@@ -403,74 +404,15 @@ const PlayerView: React.FC<{
       {tab === "champions" && gamesOn && <PlayerChampGames slug={p.u} champ={gamesOn} onClose={() => setGamesOn(null)} />}
 
       {tab === "champions" && (
-      <Section
-        title={tl("Champion pool")}
-        right={
-          <span className="flex items-center gap-2">
-            {p.champs.length > 15 && tab !== "champions" && (
-              <button
-                type="button"
-                onClick={() => setAllChamps((v) => !v)}
-                className="text-[11px] text-rw-teal hover:underline"
-              >
-                {allChamps
-                  ? tl("Show fewer")
-                  : tl("Show all {n}", { n: p.champs.length })}
-              </button>
-            )}
-            <SectionCard
-              section={tl("Champion pool")}
-              name={p.name}
-              sub={tl("{n} champions played", { n: p.nChamps })}
-              rows={() => p.champs.map((c) => ({ champ: c.c, label: champName(c.c), sub: tl("{g} games · {wr}", { g: c.g, wr: winRate(c.w, c.g) }), value: `KDA ${fmtN(c.kda)}` }))}
-            />
-          </span>
-        }
-      >
-        <div className="overflow-x-auto">
-          <STable className="w-full text-xs">
-            <thead>
-              <tr>
-                <th className={th}>{tl("Champion")}</th>
-                <th className={th}>{tl("Games")}</th>
-                <th className={th}>{tl("Win %")}</th>
-                <th className={th}>{tl("KDA")}</th>
-                <th className={th}>K / D / A</th>
-                <th className={th} />
-              </tr>
-            </thead>
-            <tbody>
-              {(allChamps || tab === "champions" ? p.champs : p.champs.slice(0, 15)).map((c) => (
-                <tr key={c.c} className={`border-t border-rw-border ${gamesOn === c.c ? "bg-rw-accent/10" : ""}`}>
-                  <td className={`${td} max-w-[10rem]`}>
-                    <ChampLink name={c.c} size={18} />
-                  </td>
-                  <td className={`${td} text-rw-sub`}>{c.g}</td>
-                  <td className={`${td} text-rw-sub`}>
-                    {winRate(c.w, c.g)}
-                  </td>
-                  <td className={`${td} text-rw-sub`}>{fmtN(c.kda)}</td>
-                  <td className={`${td} text-rw-muted`}>
-                    {c.k} / {c.d} / {c.a}
-                  </td>
-                  <td className={`${td} text-right whitespace-nowrap`}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setGamesOn(c.c);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                      className="text-rw-teal hover:underline"
-                    >
-                      {tl("Every game")}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </STable>
-        </div>
-      </Section>
+        <PlayerChampionsTab
+          p={p}
+          initialPeriod={urlParams.get("p") || "all"}
+          gamesOn={gamesOn}
+          onSelectChamp={(c) => {
+            setGamesOn(c);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
       )}
 
       {/* the Overview leads with how the player is doing now (TV, 2026-10-28: pages in the order people want them):
@@ -642,6 +584,86 @@ const PlayerView: React.FC<{
 
       {tab === "matches" && <PlayerGamesArchive slug={p.u} />}
       </div>
+    </div>
+  );
+};
+
+const PlayerChampionsTab: React.FC<{
+  p: HubPlayer;
+  initialPeriod: PeriodKey;
+  gamesOn: string | null;
+  onSelectChamp: (c: string) => void;
+}> = ({ p, initialPeriod, gamesOn, onSelectChamp }) => {
+  const [period, setPeriod] = useState<PeriodKey>(initialPeriod || "all");
+  const log = useLoad(() => loadPlayerGames(p.u), [p.u]);
+  const options = useMemo(() => (log.data ? periodOptions(log.data.map(playerRowRef)) : []), [log.data]);
+  const agg = useMemo(() => {
+    if (!log.data || period === "all") return null;
+    const rows = inPeriod(log.data, period, playerRowRef);
+    return playerAgg(rows);
+  }, [log.data, period]);
+  const champs = agg ? agg.champs : p.champs;
+  return (
+    <div className="space-y-3">
+      {options.length > 0 && (
+        <div className={`${card} !py-2 flex flex-wrap items-center justify-between gap-2 text-xs`}>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-rw-sub font-semibold">{tl("Stats for")}</span>
+            <QuickPeriods options={options} value={period} onChange={setPeriod} />
+          </div>
+          <PeriodPicker options={options} value={period} onChange={setPeriod} />
+        </div>
+      )}
+      <Section
+        title={tl("Champion pool")}
+        right={
+          <SectionCard
+            section={tl("Champion pool")}
+            name={p.name}
+            sub={tl("{n} champions played", { n: champs.length })}
+            rows={() => champs.map((c) => ({ champ: c.c, label: champName(c.c), sub: tl("{g} games · {wr}", { g: c.g, wr: winRate(c.w, c.g) }), value: `KDA ${fmtN(c.kda)}` }))}
+          />
+        }
+      >
+        <div className="overflow-x-auto">
+          <STable className="w-full text-xs">
+            <thead>
+              <tr>
+                <th className={th}>{tl("Champion")}</th>
+                <th className={th}>{tl("Games")}</th>
+                <th className={th}>{tl("Win %")}</th>
+                <th className={th}>{tl("KDA")}</th>
+                <th className={th}>K / D / A</th>
+                <th className={th} />
+              </tr>
+            </thead>
+            <tbody>
+              {champs.map((c) => (
+                <tr key={c.c} className={`border-t border-rw-border ${gamesOn === c.c ? "bg-rw-accent/10" : ""}`}>
+                  <td className={`${td} max-w-[10rem]`}>
+                    <ChampLink name={c.c} size={18} />
+                  </td>
+                  <td className={`${td} text-rw-sub`}>{c.g}</td>
+                  <td className={`${td} text-rw-sub`}>{winRate(c.w, c.g)}</td>
+                  <td className={`${td} text-rw-sub`}>{fmtN(c.kda)}</td>
+                  <td className={`${td} text-rw-muted`}>
+                    {c.k} / {c.d} / {c.a}
+                  </td>
+                  <td className={`${td} text-right whitespace-nowrap`}>
+                    <button
+                      type="button"
+                      onClick={() => onSelectChamp(c.c)}
+                      className="text-rw-teal hover:underline"
+                    >
+                      {tl("Every game")}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </STable>
+        </div>
+      </Section>
     </div>
   );
 };
