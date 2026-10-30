@@ -208,10 +208,10 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
 
 /** `champ`: open on that champion's games (the Champions tab's "Every game" button). Each game shows the items the
  *  player ended it with (hub/playeritems/: the finished ones first). */
-const PlayerGamesBody: React.FC<{ slug: string; champ?: string }> = ({ slug, champ: startChamp }) => {
+const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }> = ({ slug, champ: startChamp, year: startYear }) => {
   const state = useLoad(() => loadPlayerGames(slug), [slug]);
   const owned = useLoad(() => loadPlayerItems(slug).catch(() => null), [slug]);
-  const [year, setYear] = useState("all");
+  const [year, setYear] = useState(startYear || "all");
   const [champ, setChamp] = useState(startChamp || "all");
   const [order, setOrder] = useState<"d" | "r">("d");
   const [n, setN] = useState(PAGE);
@@ -221,6 +221,12 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string }> = ({ slug, cha
       setN(PAGE);
     }
   }, [startChamp]);
+  useEffect(() => {
+    if (startYear) {
+      setYear(startYear);
+      setN(PAGE);
+    }
+  }, [startYear]);
   const data = state.data || [];
   // each game's final items: playeritems lists, for every item, the rows of this log it was in
   const itemsOf = useMemo(() => {
@@ -341,7 +347,7 @@ export const PlayerGamesArchive: React.FC<{ slug: string }> = ({ slug }) => (
 );
 
 /** Every game of a player on one champion, open at once (the Champions tab, after a champion is picked). */
-export const PlayerChampGames: React.FC<{ slug: string; champ: string; onClose: () => void }> = ({ slug, champ, onClose }) => (
+export const PlayerChampGames: React.FC<{ slug: string; champ: string; year?: string; onClose: () => void }> = ({ slug, champ, year, onClose }) => (
   <Section
     title={tl("Every game on {champ}", { champ: champName(champ) })}
     right={
@@ -350,7 +356,7 @@ export const PlayerChampGames: React.FC<{ slug: string; champ: string; onClose: 
       </button>
     }
   >
-    <PlayerGamesBody slug={slug} champ={champ} />
+    <PlayerGamesBody slug={slug} champ={champ} year={year} />
   </Section>
 );
 

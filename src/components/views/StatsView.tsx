@@ -131,7 +131,9 @@ export const StatsView: React.FC<StatsViewProps> = ({
   useEffect(() => {
     const row = sectionRow.current;
     const on = row?.querySelector<HTMLElement>(".bg-rw-raised");
-    if (row && on && row.scrollWidth > row.clientWidth) row.scrollLeft = on.offsetLeft - (row.clientWidth - on.offsetWidth) / 2;
+    if (row && on && row.scrollWidth > row.clientWidth) {
+      row.scrollLeft = on.offsetLeft + on.offsetWidth <= row.clientWidth - 8 ? 0 : on.offsetLeft - (row.clientWidth - on.offsetWidth) / 2;
+    }
   }, [route.kind]);
   const lastRoute = useRef(route);
   useEffect(() => {

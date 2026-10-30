@@ -321,6 +321,7 @@ const FinderBody: React.FC<{
     list: string[],
     value: string,
     onChange: (v: string) => void,
+    selectedPrefix?: string,
   ) => (
     <select
       value={value}
@@ -331,7 +332,7 @@ const FinderBody: React.FC<{
       <option value="">{label}</option>
       {list.map((c) => (
         <option key={c} value={c}>
-          {champName(c)}
+          {selectedPrefix ? `${selectedPrefix}: ${champName(c)}` : champName(c)}
         </option>
       ))}
     </select>
@@ -462,18 +463,27 @@ const FinderBody: React.FC<{
               </option>
             ))}
           </select>
-          {champSel(tl("With champion"), opts.champs, champs[0] || "", (v) =>
-            setChamp(0, v),
+          {champSel(
+            tl("With champion"),
+            opts.champs,
+            champs[0] || "",
+            (v) => setChamp(0, v),
+            tl("With champion"),
           )}
           {champs.length > 0 &&
-            champSel(tl("and champion"), opts.champs, champs[1] || "", (v) =>
-              setChamp(1, v),
+            champSel(
+              `+ ${tl("and champion")}`,
+              opts.champs,
+              champs[1] || "",
+              (v) => setChamp(1, v),
+              `+ ${tl("and champion")}`,
             )}
           {champSel(
             tl("Against champion"),
             opts.champs,
             q.get("vschamp") || "",
             (v) => setQ({ vschamp: v || undefined }),
+            tl("Against champion"),
           )}
         </div>
       </div>

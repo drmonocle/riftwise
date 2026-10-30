@@ -336,7 +336,7 @@ const Pic: React.FC<{ src: string | null; alt: string; size: number; round?: boo
       height={size}
       loading="lazy"
       onError={() => setFailed((f) => [...f, shown])}
-      className={`inline-block shrink-0 ${round ? "rounded-full" : "rounded"} ${className || ""}`}
+      className={`inline-block shrink-0 bg-rw-border/30 ${round ? "rounded-full" : "rounded"} ${className || ""}`}
       style={style}
     />
   );

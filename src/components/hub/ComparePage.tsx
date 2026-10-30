@@ -386,7 +386,7 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
   return (
     <CaptureContext.Provider value={ready ? `${info.a!.name} vs ${info.b!.name} · ${periodLabel}` : null}>
     <div className="rw-page">
-      <div className="flex flex-wrap items-center gap-2 text-xs">
+      <div className="rw-span flex flex-wrap items-center gap-2 text-xs">
         {(["team", "player"] as const).map((k) => (
           <button
             key={k}
@@ -420,7 +420,7 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
           </span>
         )}
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="rw-span grid grid-cols-2 gap-3">
         {(
           [
             { s: a, i: info.key === forKey ? info.a : null, key: "a" as const },
@@ -444,7 +444,7 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
         ))}
       </div>
       {ready && (
-        <details className="text-xs">
+        <details className="rw-span text-xs">
           <summary className="cursor-pointer text-rw-teal hover:underline">{tl("Compare a third one too")}</summary>
           <div className={`${card} mt-2 max-w-md`}>
             <ComparePick kind={mode} autoFocus onPick={(slug) => set({ more: [slug] })} />

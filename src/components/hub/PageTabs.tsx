@@ -66,7 +66,9 @@ export const PageTabs: React.FC<{ tabs: PageTab[]; active: string; to: (key: str
     const r = row.current;
     const on = r?.children[at] as HTMLElement | undefined;
     // (the row is relative: the tabs' offsetParent)
-    if (r && on && r.scrollWidth > r.clientWidth) r.scrollLeft = on.offsetLeft - (r.clientWidth - on.offsetWidth) / 2;
+    if (r && on && r.scrollWidth > r.clientWidth) {
+      r.scrollLeft = on.offsetLeft + on.offsetWidth <= r.clientWidth - 8 ? 0 : on.offsetLeft - (r.clientWidth - on.offsetWidth) / 2;
+    }
   }, [at]);
   if (tabs.length < 2) return null;
   return (

@@ -21,7 +21,7 @@ const DDRAGON_CHAMP = /^https:\/\/ddragon\.leagueoflegends\.com\/cdn\/[^/]+\/img
  */
 export function ddragonThumb(url: string, shown: number): string {
   if (!DDRAGON_CHAMP.test(url)) return url;
-  const w = shown <= 19 ? 48 : shown <= 26 ? 64 : shown <= 38 ? 96 : 0;
+  const w = shown <= 38 ? 64 : 0;
   return w ? `https://am-a.akamaihd.net/image?resize=${w}:&f=${encodeURIComponent(url)}` : url;
 }
 

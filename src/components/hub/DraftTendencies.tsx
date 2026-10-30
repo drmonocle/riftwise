@@ -251,16 +251,14 @@ export const DraftTendencies: React.FC<{ rows: TeamGameRow[] }> = ({ rows }) => 
           <Pairs title={tl("Red openers (R1 + R2)")} list={d.r12pairs} />
         </div>
       )}
-      <div className="text-xs" title={tl("Champions each role played in this period (in brackets: 2+ games). In Fearless, a Bo5 needs up to five per role.")}>
-        <span className="text-[10px] font-semibold text-rw-muted mr-2">{tl("Pool depth")}</span>
-        <span className="text-rw-text">
-          {d.depth.map(([n, two], i) => (
-            <span key={i} className={n < 5 ? "text-rw-red" : ""}>
-              {i > 0 ? " · " : ""}
-              {`${roleName(ROLES[i])} ${n} (${two})`}
-            </span>
-          ))}
-        </span>
+      <div className="text-xs flex flex-wrap items-baseline gap-x-2 gap-y-0.5" title={tl("Champions each role played in this period (in brackets: 2+ games). In Fearless, a Bo5 needs up to five per role.")}>
+        <span className="text-[10px] font-semibold text-rw-muted shrink-0">{tl("Pool depth")}</span>
+        {d.depth.map(([n, two], i) => (
+          <span key={i} className={`whitespace-nowrap ${n < 5 ? "text-rw-red" : "text-rw-text"}`}>
+            {i > 0 ? "· " : ""}
+            {`${roleName(ROLES[i])} ${n} (${two})`}
+          </span>
+        ))}
       </div>
       {d.flex.length > 0 && (
         <div className="text-xs flex flex-wrap items-center gap-x-3 gap-y-1">

@@ -119,7 +119,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   const bad = rows.filter((x) => x.g >= sampleFloor).sort((a, b) => a.w / a.g - b.w / b.g).slice(0, 5);
   return (
     <div className="rw-page">
-      <div className={`${card} space-y-2`}>
+      <div className={`rw-span ${card} space-y-2`}>
         <h1 className="text-lg font-bold text-rw-text">{tl("Counter-pick finder")}</h1>
         <p className="text-[11px] text-rw-sub">
           {tl("Pick a champion: every lane opponent pro play has put against it, with its win rate and gold lead at 15 minutes in that matchup. Same role on each side; every pro game with known roles since 2011.")}
@@ -185,21 +185,23 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
         </div>
       </div>
       {!slug && index.data && (
-        <Section title={tl("Most played champions")}>
-          <div className="flex flex-wrap gap-2">
-            {index.data.champs.slice(0, 40).map((c) => (
-              <HubLink key={champSlug(c)} to={{ kind: "counters", query: `champ=${champSlug(c)}` }} className="flex items-center gap-1 px-2 py-1 rounded border border-rw-border text-xs hover:border-rw-accent">
-                <ChampIcon name={c[0]} size={18} /> {champName(c[0])}
-              </HubLink>
-            ))}
-          </div>
-        </Section>
+        <div className="rw-span">
+          <Section title={tl("Most played champions")}>
+            <div className="flex flex-wrap gap-2">
+              {index.data.champs.slice(0, 40).map((c) => (
+                <HubLink key={champSlug(c)} to={{ kind: "counters", query: `champ=${champSlug(c)}` }} className="flex items-center gap-1 px-2 py-1 rounded border border-rw-border text-xs hover:border-rw-accent">
+                  <ChampIcon name={c[0]} size={18} /> {champName(c[0])}
+                </HubLink>
+              ))}
+            </div>
+          </Section>
+        </div>
       )}
       {slug && data.loading && <Loading />}
       {slug && data.data && (
         <>
           {(good.length > 0 || bad.length > 0) && (
-            <div className="grid sm:grid-cols-2 gap-3">
+            <div className="rw-span grid sm:grid-cols-2 gap-3">
               <Section title={tl("{champ} does best against", { champ: cName })}>
                 <ul className="text-xs space-y-1">
                   {good.map((x) => (
@@ -230,15 +232,17 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               </Section>
             </div>
           )}
-          <Section title={tl("Every lane matchup: {champ}", { champ: cName })} share={`riftwise-counters-${slug}`}>
-            <p className="text-[11px] text-rw-muted">
-              {span === "12m"
-                ? `${tl("Last 12 months")} · ${tl("{n} games with a lane opponent in pro play", { n: rows.reduce((s, r) => s + r.g, 0) })}`
-                : tl("{n} games with a lane opponent in pro play", { n: data.data.m.g })}
-            </p>
-            <SortTable rows={rows} columns={columns} initial={{ key: "g", desc: true }} rowKey={(x) => `${x.c}-${x.role}`} copyName={`riftwise-counters-${slug}`} />
-            <OeCredit />
-          </Section>
+          <div className="rw-span">
+            <Section title={tl("Every lane matchup: {champ}", { champ: cName })} share={`riftwise-counters-${slug}`}>
+              <p className="text-[11px] text-rw-muted">
+                {span === "12m"
+                  ? `${tl("Last 12 months")} · ${tl("{n} games with a lane opponent in pro play", { n: rows.reduce((s, r) => s + r.g, 0) })}`
+                  : tl("{n} games with a lane opponent in pro play", { n: data.data.m.g })}
+              </p>
+              <SortTable rows={rows} columns={columns} initial={{ key: "g", desc: true }} rowKey={(x) => `${x.c}-${x.role}`} copyName={`riftwise-counters-${slug}`} />
+              <OeCredit />
+            </Section>
+          </div>
         </>
       )}
       {slug && !data.loading && !data.data && <p className="text-xs text-rw-sub">{tl("No lane matchups for this champion yet.")}</p>}

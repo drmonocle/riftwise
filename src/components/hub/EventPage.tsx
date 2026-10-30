@@ -236,7 +236,11 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
         />
       )}
 
-      {on("matches") && lists.length > 0 && <StageLists stages={lists} />}
+      {on("matches") && lists.length > 0 && (
+        <div className="rw-span">
+          <StageLists stages={lists} />
+        </div>
+      )}
 
       {on("") && e.children && e.children.length > 0 && (
         <Section title={tl("Stages")}>
@@ -252,7 +256,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
 
       {/* the leaders' game counts tell who went deep: hidden with the results */}
       {on("stats") && e.leaders && Object.keys(e.leaders).length > 0 && !resultsHidden && (
-        <div id="jump-leaders">
+        <div id="jump-leaders" className="rw-span">
           <Leaders e={e} />
         </div>
       )}
@@ -275,7 +279,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
         </div>
       )}
       {on("stats") && !!e.regions?.length && !resultsHidden && (
-        <div id="jump-regions">
+        <div id="jump-regions" className="rw-span">
           <RegionalRecords e={e} hidden={resultsHidden} />
         </div>
       )}
@@ -285,33 +289,35 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
         </p>
       )}
 
-      <div className="grid gap-3 md:grid-cols-2">
-        {on("champions") && e.champs && e.champs.length > 0 && <EventChamps e={e} />}
-        {on("teams") && e.teams && e.teams.length > 0 && (
-          <Section title={tl("Teams")}>
-            <STable className="w-full text-xs">
-              <thead>
-                <tr>
-                  <th className={th}>{tl("Team")}</th>
-                  <th className={th}>{tl("Series")}</th>
-                  <th className={th}>{tl("Games")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {e.teams.map((t) => (
-                  <tr key={t.t} className="border-t border-rw-border">
-                    <td className={`${td} max-w-[12rem] truncate`}>
-                      <TeamLink name={t.t} u={t.u} />
-                    </td>
-                    <td className={`${td} text-rw-sub`}>{resultsHidden ? "–" : `${t.sw}-${t.sg - t.sw}`}</td>
-                    <td className={`${td} text-rw-sub`}>{resultsHidden ? "–" : `${t.w}-${t.g - t.w}`}</td>
+      {((on("champions") && e.champs && e.champs.length > 0) || (on("teams") && e.teams && e.teams.length > 0)) && (
+        <div className={`${tabbed && tab === "champions" ? "rw-span " : ""}grid gap-3 md:grid-cols-2`}>
+          {on("champions") && e.champs && e.champs.length > 0 && <EventChamps e={e} />}
+          {on("teams") && e.teams && e.teams.length > 0 && (
+            <Section title={tl("Teams")}>
+              <STable className="w-full text-xs">
+                <thead>
+                  <tr>
+                    <th className={th}>{tl("Team")}</th>
+                    <th className={th}>{tl("Series")}</th>
+                    <th className={th}>{tl("Games")}</th>
                   </tr>
-                ))}
-              </tbody>
-            </STable>
-          </Section>
-        )}
-      </div>
+                </thead>
+                <tbody>
+                  {e.teams.map((t) => (
+                    <tr key={t.t} className="border-t border-rw-border">
+                      <td className={`${td} max-w-[12rem] truncate`}>
+                        <TeamLink name={t.t} u={t.u} />
+                      </td>
+                      <td className={`${td} text-rw-sub`}>{resultsHidden ? "–" : `${t.sw}-${t.sg - t.sw}`}</td>
+                      <td className={`${td} text-rw-sub`}>{resultsHidden ? "–" : `${t.w}-${t.g - t.w}`}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </STable>
+            </Section>
+          )}
+        </div>
+      )}
       {on("teams") && e.rosters && e.rosters.length > 0 && <EventRosters rosters={e.rosters} />}
       </div>
     </div>

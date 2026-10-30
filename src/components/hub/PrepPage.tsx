@@ -598,7 +598,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
   };
   const body = (print: boolean) => (
     <>
-      <div id="prep-overview" className="space-y-3">
+      <div id="prep-overview" className="rw-span grid gap-3 xl:grid-cols-2 items-start [&>*:only-child]:col-span-full">
         <KeyStats a={a} b={b} ra={ra} rb={rb} ratings={ratings.data} hidden={hidden} formHidden={formHidden} />
         <WinChances a={a.team} b={b.team} card={print ? undefined : overview} />
       </div>
@@ -667,7 +667,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
     <CaptureContext.Provider value={`${title} · ${periodLabel}`}>
     <div className="rw-page" ref={pageRef}>
       {/* the title panel: a thin accent bar on its left, the two teams big, the period and tools on the right */}
-      <div className={`${card} border-l-[3px] border-l-rw-accent flex flex-wrap items-center justify-between gap-2`}>
+      <div className={`rw-span ${card} border-l-[3px] border-l-rw-accent flex flex-wrap items-center justify-between gap-2`}>
         <div className="min-w-0">
           <div className="font-head text-[10px] uppercase tracking-wider font-semibold text-rw-accent">{tl("Match prep")}</div>
           <h1 className="text-xl sm:text-2xl font-semibold text-rw-text truncate">
@@ -711,7 +711,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           <CopyPost text={postText} />
         </div>
       </div>
-      <div data-nocapture="1" className="sticky top-0 z-20 flex flex-wrap items-center gap-1.5 py-1.5 px-2 bg-rw-bg/95 backdrop-blur border-b border-rw-border text-[11px]">
+      <div data-nocapture="1" className="rw-span sticky top-0 z-20 flex flex-wrap items-center gap-1.5 py-1.5 px-2 bg-rw-bg/95 backdrop-blur border-b border-rw-border text-[11px]">
         {jumpSections.map(([id, label]) => (
           <button
             key={id}

@@ -91,6 +91,7 @@ const PlayerView: React.FC<{
   const routeQuery = nowRoute.kind === "player" && nowRoute.slug === p.u ? nowRoute.query : undefined;
   const urlParams = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
   const champParam = urlParams.get("champ");
+  const [champPeriod, setChampPeriod] = useState<PeriodKey>(urlParams.get("p") || "all");
   // the Champions tab: a champion's every game, with the items of each (TV, 2026-10-28)
   const [gamesOn, setGamesOn] = useState<string | null>(() => {
     if (!champParam) return null;
@@ -401,12 +402,20 @@ const PlayerView: React.FC<{
       </div>
       )}
 
-      {tab === "champions" && gamesOn && <PlayerChampGames slug={p.u} champ={gamesOn} onClose={() => setGamesOn(null)} />}
+      {tab === "champions" && gamesOn && (
+        <PlayerChampGames
+          slug={p.u}
+          champ={gamesOn}
+          year={/^y\d{4}$/.test(champPeriod) ? champPeriod.slice(1) : "all"}
+          onClose={() => setGamesOn(null)}
+        />
+      )}
 
       {tab === "champions" && (
         <PlayerChampionsTab
           p={p}
-          initialPeriod={urlParams.get("p") || "all"}
+          period={champPeriod}
+          onPeriodChange={setChampPeriod}
           gamesOn={gamesOn}
           onSelectChamp={(c) => {
             setGamesOn(c);
@@ -582,7 +591,11 @@ const PlayerView: React.FC<{
         </Section>
       )}
 
-      {tab === "matches" && <PlayerGamesArchive slug={p.u} />}
+      {tab === "matches" && (
+        <div className="rw-span">
+          <PlayerGamesArchive slug={p.u} />
+        </div>
+      )}
       </div>
     </div>
   );
@@ -590,11 +603,11 @@ const PlayerView: React.FC<{
 
 const PlayerChampionsTab: React.FC<{
   p: HubPlayer;
-  initialPeriod: PeriodKey;
+  period: PeriodKey;
+  onPeriodChange: (p: PeriodKey) => void;
   gamesOn: string | null;
   onSelectChamp: (c: string) => void;
-}> = ({ p, initialPeriod, gamesOn, onSelectChamp }) => {
-  const [period, setPeriod] = useState<PeriodKey>(initialPeriod || "all");
+}> = ({ p, period, onPeriodChange: setPeriod, gamesOn, onSelectChamp }) => {
   const log = useLoad(() => loadPlayerGames(p.u), [p.u]);
   const options = useMemo(() => (log.data ? periodOptions(log.data.map(playerRowRef)) : []), [log.data]);
   const agg = useMemo(() => {
@@ -604,7 +617,7 @@ const PlayerChampionsTab: React.FC<{
   }, [log.data, period]);
   const champs = agg ? agg.champs : p.champs;
   return (
-    <div className="space-y-3">
+    <div className={`${gamesOn ? "" : "rw-span "}space-y-3`}>
       {options.length > 0 && (
         <div className={`${card} !py-2 flex flex-wrap items-center justify-between gap-2 text-xs`}>
           <div className="flex flex-wrap items-center gap-2">

@@ -237,7 +237,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
           {t.rating && (
             <HubLink to={{ kind: "rankings" }} className="block hover:opacity-80 relative">
               {t.rh && t.rh.length > 1 && (
-                <span className="absolute right-2 top-2" title={tl("Rating over the last year")}>
+                <span className="hidden sm:block absolute right-2 top-2" title={tl("Rating over the last year")}>
                   <Sparkline points={t.rh} width={72} height={22} />
                 </span>
               )}
@@ -542,7 +542,7 @@ const TeamChampionsTab: React.FC<{ t: HubTeam; initialPeriod: PeriodKey; to: (k:
   const bans = agg ? agg.bans.map(([c, g]) => ({ c, g })) : t.bans;
   const bansVs = agg ? agg.bansVs.map(([c, g]) => ({ c, g })) : t.bansVs || [];
   return (
-    <div className="space-y-3">
+    <div className="rw-span space-y-3">
       {options.length > 0 && (
         <div className={`${card} !py-2 flex flex-wrap items-center justify-between gap-2 text-xs`}>
           <span className="text-rw-sub font-semibold">{tl("Stats for")}</span>
