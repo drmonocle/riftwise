@@ -12,7 +12,37 @@ import { prettySlug } from "./data";
 
 export const RiotCatalogContext = createContext<CatalogData | null>(null);
 
-const norm = (s: string | undefined) => (s || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+const FOLD_LETTERS: Record<string, string> = {
+  ø: "o",
+  æ: "ae",
+  œ: "oe",
+  ß: "ss",
+  ł: "l",
+  đ: "d",
+  þ: "th",
+  ı: "i",
+  ð: "d",
+};
+
+const fold = (s: string | undefined) =>
+  (s || "")
+    .toLowerCase()
+    .replace(/[øæœßłđþıð]/g, (c) => FOLD_LETTERS[c] || c)
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+const norm = (s: string | undefined) => fold(s).replace(/[^\p{L}\p{N}]+/gu, "");
+
+const STRIP_ORG_WORDS =
+  /^(esports?|gaming|team|club|academy|challengers?|youth|stars|rookies|junior|cn|vn|kr|br|na|eu|kalunga|alienware|redforce|soopers|kia|honda|telecom|rolster|life|flying|oyster|canids|grandes|whales)$/i;
+
+function orgTokens(s: string | undefined): string[] {
+  const words = fold((s || "").replace(/\([^()]*\)/g, " "))
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+  const core = words.filter((w) => w.length >= 2 && !STRIP_ORG_WORDS.test(w));
+  return core.length > 0 ? core : words;
+}
 
 /** Riot lists a picture for every player, but many are the same stand-in silhouette (photos_lp.py skips the same ones). */
 const PLACEHOLDER = /default-headshot|silhouette|placeholder|\/download\.png|pobrane|noplayer/i;
@@ -21,11 +51,14 @@ const PLACEHOLDER = /default-headshot|silhouette|placeholder|\/download\.png|pob
 function useIndex() {
   const catalog = useContext(RiotCatalogContext);
   return useMemo(() => {
-    const photos = new Map<string, { team: string; image: string }[]>();
+    const photos = new Map<string, { team: string; code: string; tokens: string[]; image: string }[]>();
     for (const p of catalog?.players || []) {
       if (!p.image || !p.name || PLACEHOLDER.test(p.image)) continue;
       const k = norm(p.name);
-      photos.set(k, [...(photos.get(k) || []), { team: norm(p.teamName), image: p.image }]);
+      photos.set(k, [
+        ...(photos.get(k) || []),
+        { team: norm(p.teamName), code: norm(p.teamCode), tokens: orgTokens(p.teamName), image: p.image },
+      ]);
     }
     const logos = new Map<string, string>();
     const named: [string, string][] = []; // every team's normalized name and logo, for the longer-name match below
@@ -93,14 +126,19 @@ export function usePlayerPicture(name: string | undefined, teamName?: string, sl
   const hub = useHubPhotos();
   const list = photos.get(norm(name)) || [];
   const t = norm(teamName);
-  const onTeam = t ? list.find((x) => x.team === t || x.team.includes(t) || t.includes(x.team))?.image : undefined;
+  const tTokens = useMemo(() => (teamName ? orgTokens(teamName) : []), [teamName]);
+  const onTeam = t
+    ? (list.find((x) => x.team && (x.team === t || x.team.includes(t) || t.includes(x.team))) ??
+        list.find((x) => (x.code && (x.code === t || (x.code.length >= 3 && tTokens.includes(x.code)))) || x.tokens.some((w) => w.length >= 3 && tTokens.includes(w))))?.image
+    : undefined;
   if (onTeam) return { src: onTeam, from: "riot" };
   // the photo the stats build found in Riot's list: shows before (or without) the app's own copy of that list
-  if (img) return { src: img, from: "riot" };
+  if (img && !PLACEHOLDER.test(img)) return { src: img, from: "riot" };
   const key = slug || (name ? prettySlug(name) : "");
   const stamp = key && hub ? hub[key] : undefined;
   if (stamp !== undefined) return { src: statsPhotoUrl(key, stamp), from: "leaguepedia" };
-  return list.length === 1 ? { src: list[0].image, from: "riot" } : undefined;
+  const uniq = [...new Set(list.map((x) => x.image))];
+  return uniq.length === 1 ? { src: uniq[0], from: "riot" } : undefined;
 }
 
 /** A team's logo by its name, its short name, or else Riot's team whose name starts with it, the shortest one

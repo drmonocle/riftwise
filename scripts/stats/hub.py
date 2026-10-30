@@ -2173,6 +2173,10 @@ def build(ctx) -> dict:
     for x in ctx.titles:
         titles_by_event[x["t"]].append(x)
     riot_pics = riot["p"]  # Riot's photo of current pros (matched by name and current team), in their own page file
+    team_codes_by_name = {
+        r[0]: [x.strip() for x in (f"{r[4]} | {r[5]}").split("|") if x.strip()]
+        for r in search_teams
+    }
     n_riot_pics = 0
     item_players = defaultdict(list)  # item -> (games, newest date, player name, slug), for items/<item>.json
     # (item page name, champion) -> (slug, games, year - 2000, games that year, ...) per player: items/<item>/c/ and /y/
@@ -2193,9 +2197,7 @@ def build(ctx) -> dict:
         my_titles = sorted({(x["t"], x["date"], x["kind"]) for x in ctx.titles if (x["t"], x["fid"]) in ctx.player_events[page]},
                            key=lambda x: x[1], reverse=True)
         role = p["roles"].most_common(1)[0][0]
-        tn_ = re.sub(r"[\W_]+", "", club.lower())
-        img = next((im for t_, im in riot_pics.get(re.sub(r"[\W_]+", "", (name or "").lower()), [])
-                    if t_ and tn_ and (t_ == tn_ or tn_ in t_ or t_ in tn_)), None)
+        img = photos_lp.riot_player_photo(riot, name, club, [n for n, _ in teams_sorted], team_codes_by_name, page) if riot_pics else None
         n_riot_pics += 1 if img else 0
         obj = {
             "name": name, "u": u, "page": page, "role": role, **({"img": img} if img else {}),

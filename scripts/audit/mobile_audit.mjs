@@ -1,7 +1,7 @@
 // Phone audit: every listed page at 375x812 (touch), what sticks out past the screen edge without being inside a
 // scrolling box, whether the page itself scrolls sideways, and any script errors. Saves a screenshot of each.
 // usage: node mobile_audit.mjs <base> <outdir> [width]
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -55,6 +55,7 @@ const PAGES = [
 const edge = findBrowser(); // Edge or Chrome (browser.mjs; BROWSER=<path> to choose)
 const port = 9200 + Math.floor(Math.random() * 300);
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), "rw-edge-"));
+process.on("exit", () => { try { fs.rmSync(profile, { recursive: true, force: true }); } catch {} }); // fallback: the profile used to pile up in %TEMP% (~1 GB each) when a run died early or Edge still held the folder
 const proc = spawn(edge, [`--remote-debugging-port=${port}`, "--headless=new", "--disable-gpu", `--user-data-dir=${profile}`, `--window-size=${W},812`, "about:blank"], { stdio: "ignore" });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let ws, id = 0;
@@ -130,4 +131,4 @@ try {
   }
   fs.writeFileSync(path.join(outDir, "report.json"), JSON.stringify(report, null, 1));
 } catch (e) { console.log("error", e.message); }
-finally { try { ws && ws.close(); } catch {} proc.kill(); await sleep(500); try { fs.rmSync(profile, { recursive: true, force: true }); } catch {} }
+finally { try { ws && ws.close(); } catch {} try { spawnSync("taskkill", ["/T", "/F", "/PID", String(proc.pid)], { stdio: "ignore" }); } catch {} proc.kill(); for (let i = 0; i < 20 && fs.existsSync(profile); i++) { try { fs.rmSync(profile, { recursive: true, force: true }); } catch {} if (fs.existsSync(profile)) await sleep(250); } }

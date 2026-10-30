@@ -463,12 +463,14 @@ export const PlayerPhoto: React.FC<{
   className?: string;
 }> = ({ name, team, slug, img, size = 56, sizeClass, className = "" }) => {
   const pic = usePlayerPicture(name, team, slug, img);
+  const open = useContext(OpenUrlContext);
   const [broken, setBroken] = useState<string[]>([]); // addresses that failed to load
   const box = sizeClass ? undefined : { width: size, height: size };
   const sz = sizeClass || "";
   // Riot's photo through Riot's resizer (a 13th of the download), the full picture if that fails, then initials
   const httpsPic = pic?.src.replace(/^http:\/\//, "https://");
   const src = httpsPic ? [riotThumb(httpsPic), httpsPic].find((u) => !broken.includes(u)) : undefined;
+  const photosHref = nerdfinderSearch(name);
   return src ? (
     <img
       src={src}
@@ -480,13 +482,23 @@ export const PlayerPhoto: React.FC<{
       className={`rounded-full object-cover object-top bg-rw-raised border border-rw-border shrink-0 ${sz} ${className}`}
     />
   ) : (
-    <span
+    <a
+      href={photosHref}
+      target="_blank"
+      rel="noopener noreferrer"
       data-nocapture="1"
-      style={{ ...box, fontSize: sizeClass ? undefined : size / 3 }}
-      className={`rounded-full bg-rw-raised border border-rw-border text-rw-muted font-bold flex items-center justify-center shrink-0 ${sz} ${sizeClass ? "text-base lg:text-xl" : ""} ${className}`}
+      onClick={(e) => {
+        if (!IS_WEB && open) {
+          e.preventDefault();
+          open(photosHref);
+        }
+      }}
+      title={tl("Riot's event photos of {name} on NerdFinder", { name })}
+      style={{ ...box, fontSize: sizeClass ? undefined : Math.max(10, Math.round(size / 3)) }}
+      className={`rounded-full bg-rw-raised border border-rw-border hover:border-rw-teal text-rw-muted hover:text-rw-teal font-bold flex items-center justify-center shrink-0 transition-colors ${sz} ${sizeClass ? "text-base lg:text-xl" : ""} ${className}`}
     >
       {name.slice(0, 2).toUpperCase()}
-    </span>
+    </a>
   );
 };
 

@@ -29,7 +29,7 @@ import { HeadToHeadSeries } from "./Archives";
 import { PeriodPicker, QuickPeriods } from "./PeriodStats";
 import { DraftTendencies, draftTendencies } from "./DraftTendencies";
 import { BroadcastCardButton, draftCard, playerCardData, teamCardData } from "./BroadcastCard";
-import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, td, TeamLogo, useHidden, usePageTitle } from "./ui";
+import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, isFresh, Loading, OeCredit, PhotosLink, PlayerPhoto, RevealButton, Section, td, TeamLogo, useHidden, usePageTitle } from "./ui";
 import { useTeamPercentiles } from "./Ranks";
 import { STable } from "../STable";
 import { Radar } from "./Radar";
@@ -659,8 +659,10 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
           <span className="flex items-center gap-2 min-w-0">
             <PlayerPhoto name={x.name} team={x.club} slug={x.u} img={x.img} sizeClass="w-11 h-11 lg:w-16 lg:h-16 2xl:w-20 2xl:h-20" />
             <span className="truncate">{x.name}</span>
+            <PhotosLink q={x.name} iconOnly className="text-rw-muted hover:text-rw-teal shrink-0" />
           </span>
           <span className="flex items-center gap-2 min-w-0">
+            <PhotosLink q={y.name} iconOnly className="text-rw-muted hover:text-rw-teal shrink-0" />
             <span className="truncate text-right">{y.name}</span>
             <PlayerPhoto name={y.name} team={y.club} slug={y.u} img={y.img} sizeClass="w-11 h-11 lg:w-16 lg:h-16 2xl:w-20 2xl:h-20" />
           </span>

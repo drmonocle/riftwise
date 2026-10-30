@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { CatalogData, Match, AppSettings, PlayerEntry } from "../types";
-import { X, Star, ExternalLink, User, BarChart3 } from "lucide-react";
+import { X, Star, ExternalLink, BarChart3 } from "lucide-react";
 import { computeHeadToHead, pickTeamByCode } from "../helpers";
 import { H2HMeter } from "./H2HMeter";
 import { tl, locale, roleName, regionName, tc } from "../i18n";
 import { findHubTeam, loadHubIndex } from "../hub/data";
 import { navigateHub } from "../hub/route";
-import { riotImg, riotThumb } from "../riotImage";
+import { RiotCatalogContext } from "../hub/riotCatalog";
+import { PlayerPhoto, PhotosLink } from "./hub/ui";
+import { riotImg } from "../riotImage";
 
 interface TeamRosterModalProps {
   teamCode: string | null;
@@ -208,63 +210,53 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
             </div>
 
             {players.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {players.map((p) => {
-                  const isPlayerFollowed = settings.followedPlayers.includes(p.name);
-                  const colors = ROLE_COLORS[p.role] || ROLE_COLORS.Sub;
+              <RiotCatalogContext.Provider value={catalog ?? null}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {players.map((p) => {
+                    const isPlayerFollowed = settings.followedPlayers.includes(p.name);
+                    const colors = ROLE_COLORS[p.role] || ROLE_COLORS.Sub;
 
-                  return (
-                    <div
-                      key={p.name}
-                      className="flex items-center justify-between p-3 rounded-xl bg-rw-bg border border-rw-border hover:border-rw-accent/50 transition-all group"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        {p.image ? (
-                          <img
-                            src={riotThumb(p.image, 128)}
-                            onError={(e) => {
-                              if (e.currentTarget.src !== p.image) e.currentTarget.src = p.image!;
-                            }}
-                            alt={p.name}
-                            className="w-11 h-11 rounded-full object-cover bg-rw-surface border border-rw-border shrink-0"
-                          />
-                        ) : (
-                          <div className="w-11 h-11 rounded-full bg-rw-surface border border-rw-border flex items-center justify-center text-rw-sub shrink-0">
-                            <User className="w-5 h-5 opacity-70" />
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm text-rw-text group-hover:text-rw-accent transition-colors truncate">
-                              {p.name}
-                            </span>
-                            <span
-                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${colors.bg} ${colors.text} ${colors.border}`}
-                            >
-                              {roleName(p.role)}
-                            </span>
-                          </div>
-                          {p.realName && (
-                            <div className="text-xs text-rw-sub truncate">{p.realName}</div>
-                          )}
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => onTogglePlayerFollow(p.name)}
-                        className={`p-1.5 rounded hover:bg-rw-border transition-colors shrink-0 ml-2 ${
-                          isPlayerFollowed ? "text-rw-accent" : "text-rw-sub hover:text-rw-accent"
-                        }`}
-                        aria-label={isPlayerFollowed ? tl("Unfollow {name}", { name: p.name }) : tl("Follow {name}", { name: p.name })}
-                        title={isPlayerFollowed ? tl("Unfollow {name}", { name: p.name }) : tl("Follow {name}", { name: p.name })}
+                    return (
+                      <div
+                        key={p.name}
+                        className="flex items-center justify-between p-3 rounded-xl bg-rw-bg border border-rw-border hover:border-rw-accent/50 transition-all group"
                       >
-                        <Star className={`w-4 h-4 ${isPlayerFollowed ? "fill-rw-accent" : ""}`} />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <PlayerPhoto name={p.name} team={displayName} img={p.image} size={44} />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-sm text-rw-text group-hover:text-rw-accent transition-colors truncate">
+                                {p.name}
+                              </span>
+                              <PhotosLink q={p.name} iconOnly className="text-rw-muted hover:text-rw-teal shrink-0" />
+                              <span
+                                className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${colors.bg} ${colors.text} ${colors.border}`}
+                              >
+                                {roleName(p.role)}
+                              </span>
+                            </div>
+                            {p.realName && (
+                              <div className="text-xs text-rw-sub truncate">{p.realName}</div>
+                            )}
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => onTogglePlayerFollow(p.name)}
+                          className={`p-1.5 rounded hover:bg-rw-border transition-colors shrink-0 ml-2 ${
+                            isPlayerFollowed ? "text-rw-accent" : "text-rw-sub hover:text-rw-accent"
+                          }`}
+                          aria-label={isPlayerFollowed ? tl("Unfollow {name}", { name: p.name }) : tl("Follow {name}", { name: p.name })}
+                          title={isPlayerFollowed ? tl("Unfollow {name}", { name: p.name }) : tl("Follow {name}", { name: p.name })}
+                        >
+                          <Star className={`w-4 h-4 ${isPlayerFollowed ? "fill-rw-accent" : ""}`} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </RiotCatalogContext.Provider>
             ) : (
               <div className="p-6 text-center rounded-xl bg-rw-bg border border-rw-border text-xs text-rw-sub">
                 {tl("Roster details for {team} are not currently cataloged.", { team: displayName })}

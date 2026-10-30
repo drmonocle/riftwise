@@ -324,7 +324,7 @@ export default function App() {
     }
     const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
     if (conn && (conn.saveData || /2g|3g/.test(conn.effectiveType || ""))) return;
-    const t = window.setTimeout(() => setExtrasWanted(true), 12000);
+    const t = window.setTimeout(() => setExtrasWanted(true), 1500);
     return () => window.clearTimeout(t);
   }, [activeTab, extrasWanted]);
 

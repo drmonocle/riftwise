@@ -81,9 +81,30 @@ def pretty(text: str) -> str:
     return s[:70].strip("-")
 
 
+_FOLD = str.maketrans({"ø": "o", "æ": "ae", "œ": "oe", "ß": "ss", "đ": "d", "ł": "l", "þ": "th", "ı": "i", "ð": "d"})
+STRIP_ORG_WORDS = re.compile(
+    r"\b(esports?|gaming|team|club|academy|challengers?|youth|stars|rookies|junior|cn|vn|kr|br|na|eu|kalunga|alienware|redforce|soopers|kia|honda|telecom|rolster|life|flying|oyster|canids|grandes|whales)\b",
+    re.I,
+)
+
+
+def fold(s: str) -> str:
+    """Accents and special letters to plain ones ("løs" -> "los", "é" -> "e")."""
+    s = unicodedata.normalize("NFKD", str(s or "").lower().translate(_FOLD))
+    return "".join(ch for ch in s if not unicodedata.combining(ch))
+
+
 def norm(s) -> str:
-    """Name matching as the app does it (riotCatalog.ts): letters and digits only, lower case."""
-    return "".join(ch for ch in (s or "").lower() if ch.isalnum())
+    """Name matching as the app does it (riotCatalog.ts): folded letters and digits only, lower case."""
+    return "".join(ch for ch in fold(s) if ch.isalnum())
+
+
+def org_tokens(s: str) -> set:
+    """Core organisation words of a team name ("Ninjas in Pyjamas.CN" -> {"ninjas", "pyjamas"})."""
+    s = fold(re.sub(r"\([^()]*\)", " ", str(s or "")))
+    words = [w for w in re.split(r"[^a-z0-9]+", s) if w]
+    core = [w for w in words if not STRIP_ORG_WORDS.fullmatch(w) and len(w) >= 2]
+    return set(core or words)
 
 
 class RateLimited(Exception):
@@ -153,13 +174,15 @@ def riot_index(cache_path: str = None) -> dict:
         index = {"p": {}, "n": {}, "c": {}}
         teams = sorted(data.get("data", {}).get("teams", []), key=lambda t: t.get("status") != "active")
         for t in teams:
+            tname = norm(t.get("name"))
+            tcode = norm(t.get("code"))
             for p in t.get("players") or []:
                 if p.get("image") and p.get("summonerName") and not PLACEHOLDER.search(p["image"]):
-                    index["p"].setdefault(norm(p["summonerName"]), []).append((norm(t.get("name")), p["image"]))
+                    index["p"].setdefault(norm(p["summonerName"]), []).append([tname, p["image"], tcode])
             if t.get("image"):
-                index["n"].setdefault(norm(t.get("name")), t["image"])
-                if t.get("code"):
-                    index["c"].setdefault(norm(t["code"]), t["image"])
+                index["n"].setdefault(tname, t["image"])
+                if tcode:
+                    index["c"].setdefault(tcode, t["image"])
         if len(index["p"]) > 500:
             with open(cache_path, "w", encoding="utf-8") as f:
                 json.dump(index, f)
@@ -174,15 +197,6 @@ def riot_index(cache_path: str = None) -> dict:
         except (OSError, ValueError):
             index = {}
     return {"p": index.get("p", {}), "n": index.get("n", {}), "c": index.get("c", {})}
-
-
-_FOLD = str.maketrans({"ø": "o", "æ": "ae", "œ": "oe", "ß": "ss", "đ": "d", "ł": "l", "þ": "th", "ı": "i"})
-
-
-def fold(s: str) -> str:
-    """Accents and special letters to plain ones ("løs" -> "los", "é" -> "e")."""
-    s = unicodedata.normalize("NFKD", (s or "").translate(_FOLD))
-    return "".join(ch for ch in s if not unicodedata.combining(ch))
 
 
 def riot_logo(index: dict, name: str, code: str = None):
@@ -203,6 +217,50 @@ def riot_logo(index: dict, name: str, code: str = None):
         return None
     best = [v for ln, v in near if ln == near[0][0]]
     return best[0] if len(set(best)) == 1 else None
+
+
+def _team_matches_entry(entry, tname: str, tcodes=()):
+    rt = norm(entry[0])
+    rc = norm(entry[2]) if len(entry) > 2 else ""
+    tn = norm(tname)
+    if rt and tn and (rt == tn or tn in rt or rt in tn):
+        return True
+    ctoks = org_tokens(tname)
+    codes = {norm(c) for c in (tcodes or ()) if c}
+    if rc and (rc in codes or (len(rc) >= 3 and rc in ctoks)):
+        return True
+    rtoks = org_tokens(rt)
+    return any(len(w) >= 3 for w in (ctoks & rtoks))
+
+
+def riot_player_photo(index: dict, name: str, club: str = "", teams: list = None, team_codes: dict = None, page: str = None):
+    """A player's Riot photo from riot_index(), matched against their current club or career teams (by folded name,
+    team code or organisation root), else their unique Riot photo when the player's name has no Leaguepedia homonym."""
+    cands = (index.get("p") or {}).get(norm(name)) or []
+    if not cands:
+        return None
+    clubs = []
+    if club:
+        clubs.append(club)
+    for t in teams or []:
+        tn = t.get("n") if isinstance(t, dict) else t
+        if tn and tn not in clubs:
+            clubs.append(tn)
+    codes_map = team_codes or {}
+    for cname in clubs:
+        ccodes = codes_map.get(cname) or ()
+        for entry in cands:
+            if _team_matches_entry(entry, cname, ccodes):
+                return entry[1]
+    if page and page == name:
+        uniq = list(dict.fromkeys(e[1] for e in cands if len(e) > 1 and e[1]))
+        if len(uniq) == 1:
+            return uniq[0]
+        for entry in cands:
+            rt = norm(entry[0])
+            if "allstar" in rt or "legend" in rt:
+                return entry[1]
+    return None
 
 
 def riot_names_with_photo(fetcher: Fetcher, cache_path: str) -> set:
@@ -236,23 +294,41 @@ def cargo_escape(s: str) -> str:
     return s.replace("\\", "\\\\").replace('"', '\\"')
 
 
+def _split_rank(text: str) -> int:
+    s = (text or "").lower()
+    if any(k in s for k in ("worlds", "world championship", "finals")):
+        return 9
+    if any(k in s for k in ("split 3", "summer", "closing")):
+        return 6
+    if any(k in s for k in ("msi", "mid-season")):
+        return 5
+    if "split 2" in s:
+        return 4
+    if any(k in s for k in ("split 1", "spring", "opening", "cup", "lock-in", "winter")):
+        return 2
+    return 0
+
+
 def lp_images(fetcher: Fetcher, pages: list) -> dict:
     """page -> (file name, team, tournament) for the players' newest profile picture."""
-    where = "Link IN (" + ",".join(f'"{cargo_escape(p)}"' for p in pages) + ")"
+    where = "Link IN (" + ",".join(f'"{cargo_escape(str(p))}"' for p in pages) + ")"
     rows = fetcher.cargo({"tables": "PlayerImages", "fields": "Link,FileName,Team,Tournament,IsProfileImage,SortDate",
                           "where": where, "order by": "SortDate DESC", "limit": 500})
     best = {}
     for t in rows:
-        link, fn = t.get("Link"), t.get("FileName")
+        link, fn = str(t.get("Link") or ""), str(t.get("FileName") or "")
         if not link or not fn:
             continue
         profile = str(t.get("IsProfileImage")) in ("1", "Yes")
-        date = t.get("SortDate") or ""
+        date = str(t.get("SortDate") or "")
+        tourn = str(t.get("Tournament") or "")
+        year = max(re.findall(r"\b(?:19|20)\d\d\b", f"{date} {tourn} {fn}"), default="")
+        key = (profile, date, year, _split_rank(f"{tourn} {fn}"), fn)
         cur = best.get(link)
-        # a profile picture beats any other; among equals the newest wins
-        if cur is None or (profile, date) > (cur[0], cur[1]):
-            best[link] = (profile, date, (fn, t.get("Team") or "", t.get("Tournament") or ""))
-    return {k: v[2] for k, v in best.items()}
+        # a profile picture beats any other; among equals the newest year/split wins
+        if cur is None or key > cur[0]:
+            best[link] = (key, (fn, str(t.get("Team") or ""), tourn))
+    return {k: v[1] for k, v in best.items()}
 
 
 def file_url(fn: str) -> str:
@@ -285,13 +361,19 @@ def current_hub(out_root: str) -> str:
     return os.path.join(out_root, version, "hub")
 
 
-def player_page(hub: str, slug: str):
-    """The player's Leaguepedia page name (the PlayerImages.Link), from the player's page file."""
+def player_page_and_img(hub: str, slug: str):
+    """(Leaguepedia page name, Riot img URL if already matched) from the player's page file."""
     try:
         with open(os.path.join(hub, "player", f"{slug}.json"), encoding="utf-8") as f:
-            return json.load(f).get("page")
+            d = json.load(f)
+            return str(d.get("page") or "") or None, d.get("img")
     except (OSError, ValueError):
-        return None
+        return None, None
+
+
+def player_page(hub: str, slug: str):
+    """The player's Leaguepedia page name (the PlayerImages.Link), from the player's page file."""
+    return player_page_and_img(hub, slug)[0]
 
 
 def photos_map(out_root: str, player_slug: dict, cache_path: str = None) -> dict:
@@ -352,9 +434,9 @@ def app_finds_riot_logo(riot: set, name: str) -> bool:
 
 def lp_team_images(fetcher: Fetcher, pages: list) -> dict:
     """Leaguepedia team page -> its logo file (the Teams table's Image)."""
-    where = "OverviewPage IN (" + ",".join(f'"{cargo_escape(p)}"' for p in pages) + ")"
+    where = "OverviewPage IN (" + ",".join(f'"{cargo_escape(str(p))}"' for p in pages) + ")"
     rows = fetcher.cargo({"tables": "Teams", "fields": "OverviewPage,Image", "where": where, "limit": 500})
-    return {t["OverviewPage"]: t["Image"] for t in rows if t.get("OverviewPage") and t.get("Image")}
+    return {str(t["OverviewPage"]): str(t["Image"]) for t in rows if t.get("OverviewPage") and t.get("Image")}
 
 
 def logos_map(out_root: str, cache_path: str = None) -> dict:
@@ -541,8 +623,8 @@ def main() -> int:
             if not pages:
                 continue
             # Leaguepedia matches names regardless of case ("XPeke" finds the page "xPeke"): map them back
-            lower = {page.lower(): page for page in pages}
-            found = {lower.get(k.lower(), k): v for k, v in lp_images(fetcher, list(pages)).items()}
+            lower = {str(page).lower(): page for page in pages}
+            found = {lower.get(str(k).lower(), str(k)): v for k, v in lp_images(fetcher, list(pages)).items()}
             for page, slug in pages.items():
                 if page not in found:
                     cache[slug] = {"page": page, "file": None, "tried": today}

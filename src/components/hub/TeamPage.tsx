@@ -17,7 +17,7 @@ import { PeriodPicker, TeamPeriodStats } from "./PeriodStats";
 import { PeriodKey, inPeriod, periodOptions, teamAgg, teamRowRef } from "../../hub/period";
 import { TeamRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
-import { CaptureContext, card, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, HubLink, Page, PlayerLink, RevealButton, Section, Stat, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink, FollowFeeds } from "./ui";
+import { CaptureContext, card, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, HubLink, Page, PlayerLink, PlayerPhoto, RevealButton, Section, Stat, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink, FollowFeeds } from "./ui";
 import { ratingTextClass } from "./BestPage";
 import { Sparkline } from "./Sparkline";
 import { STable } from "../STable";
@@ -155,16 +155,18 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
         {(overview ? (activeRoster ? [activeRoster] : []) : t.roster).map((yr) => {
           const eraName = t.years.find((y) => y.y === yr.y)?.as;
           return (
-            <div key={yr.y} className="text-xs flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <div key={yr.y} className="text-xs flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
               <span className="text-rw-muted font-semibold whitespace-nowrap">
                 {yr.y}
                 {eraName && eraName !== t.name ? ` (${eraName})` : ""}
               </span>
               {yr.p.map((p, i) => (
-                <span key={p.n + i} className="whitespace-nowrap">
-                  {i > 0 && <span className="text-rw-muted/60 mr-2">·</span>}
+                <span key={p.n + i} className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                  {i > 0 && !overview && <span className="text-rw-muted/60 mr-0.5">·</span>}
+                  {overview && <PlayerPhoto name={p.n} team={eraName || t.name} slug={p.u ?? undefined} size={22} />}
                   <PlayerLink name={p.n} u={p.u} />
-                  <span className="text-rw-muted"> {roleName(p.r)}</span>
+                  <span className="text-rw-muted">{roleName(p.r)}</span>
+                  {overview && <PhotosLink q={p.n} iconOnly className="text-rw-muted hover:text-rw-teal" />}
                 </span>
               ))}
             </div>
