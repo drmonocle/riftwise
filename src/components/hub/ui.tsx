@@ -467,12 +467,12 @@ export const PlayerPhoto: React.FC<{
   const box = sizeClass ? undefined : { width: size, height: size };
   const sz = sizeClass || "";
   // Riot's photo through Riot's resizer (a 13th of the download), the full picture if that fails, then initials
-  const src = pic ? [riotThumb(pic.src), pic.src].find((u) => !broken.includes(u)) : undefined;
+  const httpsPic = pic?.src.replace(/^http:\/\//, "https://");
+  const src = httpsPic ? [riotThumb(httpsPic), httpsPic].find((u) => !broken.includes(u)) : undefined;
   return src ? (
     <img
       src={src}
       alt=""
-      loading="lazy"
       onError={() => setBroken((b) => [...b, src])}
       // our own copy may go into copied pictures (the stats host allows cross-origin reads)
       {...(pic?.from === "riot" ? { "data-nocapture": "1" } : { crossOrigin: "anonymous" as const })}
@@ -496,7 +496,8 @@ export const TeamLogo: React.FC<{ name: string; code?: string; src?: string; siz
   const logo = useTeamLogo(name, code) || given;
   const [broken, setBroken] = useState<string[]>([]); // addresses that failed to load
   // Riot's logo through Riot's resizer (big enough for the largest size here), the original if that fails, then none
-  const src = logo ? [riotThumb(logo, 160), logo].find((u) => !broken.includes(u)) : undefined;
+  const httpsLogo = logo?.replace(/^http:\/\//, "https://");
+  const src = httpsLogo ? [riotThumb(httpsLogo, 160), httpsLogo].find((u) => !broken.includes(u)) : undefined;
   if (!src) return null;
   return (
     <img

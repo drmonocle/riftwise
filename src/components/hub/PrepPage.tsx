@@ -140,7 +140,7 @@ export const RosterSubPicker: React.FC<{
       onChange={(e) => e.target.value && e.target.value !== cur && onSwap(roleIdx, e.target.value)}
       aria-label={`${side.team.name} ${roleName(role)}`}
       title={tl("Change")}
-      className="bg-rw-bg border border-rw-border rounded px-1.5 py-0.5 text-[10px] text-rw-sub hover:text-rw-text max-w-[6.5rem] shrink-0"
+      className="bg-rw-bg border border-rw-border rounded px-1 py-0.5 text-[10px] text-rw-sub hover:text-rw-text w-[3.75rem] shrink-0"
     >
       {choices.map((x) => (
         <option key={x.u!} value={x.u!}>
@@ -1039,7 +1039,7 @@ const Lanes: React.FC<{
       ) : null;
     const name = (pl: Side["players"][number], side: Side, onSwap: ((roleIdx: number, slug: string) => void) | undefined, right: boolean) =>
       pl ? (
-        <span className={`flex flex-wrap items-center gap-1.5 min-w-0 ${right ? "" : "flex-row-reverse"}`}>
+        <span className={`flex items-center gap-1.5 min-w-0 ${right ? "" : "flex-row-reverse"}`}>
           <HubLink to={{ kind: "player", slug: pl.p.u }} className={`text-sm font-bold text-rw-text hover:underline truncate ${right ? "" : "text-right"}`}>
             {pl.p.name}
           </HubLink>
