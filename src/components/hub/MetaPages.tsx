@@ -44,6 +44,7 @@ export const PatchesPanel: React.FC = () => {
               "The most picked or banned champions on every patch, newest first (all pro leagues). Percent = presence: picked or banned in that share of games.",
             )}
           </p>
+          <div className="grid gap-3 xl:grid-cols-2 items-start">
           {rows.slice(0, n).map((p) => (
             <div key={p.p} className={`${card} p-3`}>
               <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2">
@@ -83,6 +84,7 @@ export const PatchesPanel: React.FC = () => {
               )}
             </div>
           ))}
+          </div>
           {rows.length > n && (
             <button
               type="button"
@@ -272,7 +274,7 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
   const events = season ? l.events.filter((e) => e.y === season) : l.events;
   const pick = (y?: string) => navigateHub({ kind: "league", slug: l.u, year: y }, { replace: true });
   return (
-    <div className="rw-page">
+    <div className="space-y-3">
       <div className={card}>
         <h1 className="text-lg font-bold text-rw-text">
           {l.s && <span className="text-rw-accent mr-2">{l.s}</span>}
@@ -306,60 +308,62 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
         const y = season || years.find((x) => !l.seasons || l.seasons.includes(x));
         return y && (!l.seasons || l.seasons.includes(y)) ? <LeagueSeasonPanel league={l.u} year={y} name={l.s || l.l} /> : null;
       })()}
-      {l.titles.length > 0 && (
-        <Section title={tl("Most titles")}>
-          <ul className="text-xs grid sm:grid-cols-2 gap-x-4 gap-y-1">
-            {l.titles.map((t) => (
-              <li key={t.t} className="flex justify-between gap-2 min-w-0">
-                <span className="truncate">
-                  <TeamLink name={t.t} u={t.u} />
-                </span>
-                <span className="text-rw-accent font-bold shrink-0">{t.n}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="text-[10px] text-rw-muted">
-            {tl(
-              "Finals won (playoffs, championships and cups). Teams that changed names count as one.",
-            )}
-          </p>
-        </Section>
-      )}
-      <Section title={season ? tl("{year} season", { year: season }) : tl("Every tournament")}>
-        {years.length > 1 && (
-          <div className="flex flex-wrap gap-1" role="group" aria-label={tl("Season")}>
-            {[undefined, ...years].map((y) => (
-              <button
-                key={y || "all"}
-                type="button"
-                onClick={() => pick(y)}
-                aria-pressed={season === y}
-                className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
-                  season === y ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
-                }`}
-              >
-                {y || tl("All seasons")}
-              </button>
-            ))}
-          </div>
-        )}
-        <div className="overflow-x-auto">
-          <STable className="w-full text-xs">
-            <thead>
-              <tr>
-                <th className={th}>{tl("Tournament")}</th>
-                <th className={`${th} hidden sm:table-cell`}>{tl("Dates")}</th>
-                <th className={th}>{tl("Winner")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.map((e) => (
-                <LeagueEventRow key={e.u} e={e} />
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] items-start [&>*:only-child]:col-span-full">
+        {l.titles.length > 0 && (
+          <Section title={tl("Most titles")}>
+            <ul className="text-xs space-y-1">
+              {l.titles.map((t) => (
+                <li key={t.t} className="flex justify-between gap-2 min-w-0">
+                  <span className="truncate">
+                    <TeamLink name={t.t} u={t.u} />
+                  </span>
+                  <span className="text-rw-accent font-bold shrink-0">{t.n}</span>
+                </li>
               ))}
-            </tbody>
-          </STable>
-        </div>
-      </Section>
+            </ul>
+            <p className="text-[10px] text-rw-muted">
+              {tl(
+                "Finals won (playoffs, championships and cups). Teams that changed names count as one.",
+              )}
+            </p>
+          </Section>
+        )}
+        <Section title={season ? tl("{year} season", { year: season }) : tl("Every tournament")}>
+          {years.length > 1 && (
+            <div className="flex flex-wrap gap-1" role="group" aria-label={tl("Season")}>
+              {[undefined, ...years].map((y) => (
+                <button
+                  key={y || "all"}
+                  type="button"
+                  onClick={() => pick(y)}
+                  aria-pressed={season === y}
+                  className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                    season === y ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
+                  }`}
+                >
+                  {y || tl("All seasons")}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="overflow-x-auto">
+            <STable className="w-full text-xs">
+              <thead>
+                <tr>
+                  <th className={th}>{tl("Tournament")}</th>
+                  <th className={`${th} hidden sm:table-cell`}>{tl("Dates")}</th>
+                  <th className={th}>{tl("Winner")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {events.map((e) => (
+                  <LeagueEventRow key={e.u} e={e} />
+                ))}
+              </tbody>
+            </STable>
+          </div>
+        </Section>
+      </div>
     </div>
   );
 };

@@ -101,7 +101,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
   const pct = (p: number) => `${Math.round(p * 100)}%`;
   return (
     <div className="rw-page">
-      <div className={card}>
+      <div className={`rw-span ${card}`}>
         <h1 className="text-lg font-bold text-rw-text">{tl("The week in pro League")}</h1>
         <p className="text-[11px] text-rw-sub">
           {range} · {tn("{n} series", "{n} series", w.series)} · {tn("{n} game", "{n} games", w.games)} · {tl("top leagues and international events")}
@@ -127,12 +127,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
         </div>
       </div>
       {hidden ? (
-        <div className={`${card} flex items-center gap-3 text-xs text-rw-sub`}>
+        <div className={`rw-span ${card} flex items-center gap-3 text-xs text-rw-sub`}>
           <span>{tl("Spoiler mode is on, so the week's results stay hidden.")}</span>
           <RevealButton onReveal={reveal} />
         </div>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="rw-span grid gap-3 md:grid-cols-2 3xl:grid-cols-3 items-start">
           <Section title={tl("Biggest upsets")} share="weekly-upsets">
             {w.upsets.length ? (
               <ol className="text-xs space-y-1.5">

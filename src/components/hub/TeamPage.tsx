@@ -155,14 +155,14 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
         {(overview ? (activeRoster ? [activeRoster] : []) : t.roster).map((yr) => {
           const eraName = t.years.find((y) => y.y === yr.y)?.as;
           return (
-            <div key={yr.y} className="text-xs">
-              <span className="text-rw-muted font-semibold mr-2">
+            <div key={yr.y} className="text-xs flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <span className="text-rw-muted font-semibold whitespace-nowrap">
                 {yr.y}
                 {eraName && eraName !== t.name ? ` (${eraName})` : ""}
               </span>
               {yr.p.map((p, i) => (
-                <span key={p.n + i}>
-                  {i > 0 && <span className="text-rw-muted/60"> · </span>}
+                <span key={p.n + i} className="whitespace-nowrap">
+                  {i > 0 && <span className="text-rw-muted/60 mr-2">·</span>}
                   <PlayerLink name={p.n} u={p.u} />
                   <span className="text-rw-muted"> {roleName(p.r)}</span>
                 </span>

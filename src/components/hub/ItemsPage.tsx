@@ -81,8 +81,8 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
   const years = Array.from({ length: thisYear - FIRST_YEAR + 1 }, (_, i) => String(thisYear - i));
   const scope = scopeText(champLabel, year);
   return (
-    <div className="rw-page">
-      <div className={`${card} space-y-2 rw-span`}>
+    <div className="space-y-3">
+      <div className={`${card} space-y-2`}>
         <h1 className="text-lg font-bold text-rw-text">{tl("Item history")}</h1>
         <p className="text-[11px] text-rw-sub">
           {tl("Has a pro ever built it? Pick a player and an item: every pro game they finished holding it. A player alone shows every item they've finished games with; an item alone, the players who built it most. From the final inventory of every pro game with a full scoreboard, so an item sold before the end doesn't count.")}{" "}

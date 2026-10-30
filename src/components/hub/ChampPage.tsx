@@ -171,7 +171,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
   const maxPatch = Math.max(1, ...(c.patches || []).map((p) => (p.pr ?? p.pk + p.b) / Math.max(p.g, 1)));
   return (
     <div className="rw-page">
-      <div className={`${card} flex gap-3 items-start`}>
+      <div className={`rw-span ${card} flex gap-3 items-start`}>
         <ChampIcon name={c.name} size={56} />
         <div className="min-w-0 flex-1">
           <h1 className="text-lg font-bold text-rw-text">{champName(c.name)}</h1>
@@ -424,102 +424,100 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         </Section>
       )}
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <Section
-          title={tl("Most games on {champion}", { champion: champName(c.name) })}
-          right={
-            recentPlayersList.length > 0 ? (
-              <span className="flex gap-1">
-                {[false, true].map((recent) => (
-                  <button
-                    key={String(recent)}
-                    type="button"
-                    onClick={() => setPlayersRecent(recent)}
-                    className={`px-2 py-0.5 rounded text-[11px] border ${
-                      recent === playersRecent ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub"
-                    }`}
-                  >
-                    {recent ? tl("Last 12 months") : tl("All time")}
-                  </button>
-                ))}
-              </span>
-            ) : undefined
-          }
-        >
-          <STable className="w-full text-xs">
-            <thead>
-              <tr>
-                <th className={th}>{tl("Player")}</th>
-                <th className={th}>{tl("Games")}</th>
-                <th className={th}>{tl("Win %")}</th>
-                <th className={th}>{tl("KDA")}</th>
+      <Section
+        title={tl("Most games on {champion}", { champion: champName(c.name) })}
+        right={
+          recentPlayersList.length > 0 ? (
+            <span className="flex gap-1">
+              {[false, true].map((recent) => (
+                <button
+                  key={String(recent)}
+                  type="button"
+                  onClick={() => setPlayersRecent(recent)}
+                  className={`px-2 py-0.5 rounded text-[11px] border ${
+                    recent === playersRecent ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub"
+                  }`}
+                >
+                  {recent ? tl("Last 12 months") : tl("All time")}
+                </button>
+              ))}
+            </span>
+          ) : undefined
+        }
+      >
+        <STable className="w-full text-xs">
+          <thead>
+            <tr>
+              <th className={th}>{tl("Player")}</th>
+              <th className={th}>{tl("Games")}</th>
+              <th className={th}>{tl("Win %")}</th>
+              <th className={th}>{tl("KDA")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(playersRecent ? recentPlayersList : c.players).slice(0, 25).map((p) => (
+              <tr key={p.n + p.u} className="border-t border-rw-border">
+                <td className={td}>
+                  <PlayerLink name={p.n} u={p.u} />
+                </td>
+                <td className={`${td} text-rw-sub`}>{p.g}</td>
+                <td className={`${td} text-rw-sub`}>{winRate(p.w, p.g)}</td>
+                <td className={`${td} text-rw-sub`}>{fmtN(p.kda)}</td>
               </tr>
-            </thead>
-            <tbody>
-              {(playersRecent ? recentPlayersList : c.players).slice(0, 25).map((p) => (
-                <tr key={p.n + p.u} className="border-t border-rw-border">
-                  <td className={td}>
-                    <PlayerLink name={p.n} u={p.u} />
-                  </td>
-                  <td className={`${td} text-rw-sub`}>{p.g}</td>
-                  <td className={`${td} text-rw-sub`}>{winRate(p.w, p.g)}</td>
-                  <td className={`${td} text-rw-sub`}>{fmtN(p.kda)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </STable>
-        </Section>
-        <Section
-          title={tl("Latest pro games")}
-          right={
-            recentHidden ? (
-              <RevealButton onReveal={revealRecent} small />
-            ) : usedOnly ? (
-              <button type="button" onClick={() => setUsed(null)} className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-rw-accent text-rw-accent text-[11px]" title={tl("Show every game")}>
-                {tl("With {name}", { name: usedName })} ✕
-              </button>
-            ) : undefined
-          }
-        >
-          <span id="champ-latest" />
-          {recentHidden ? (
-            <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
-          ) : (
-            <ul className="text-xs space-y-2">
-              {usedOnly && !c.recent.some(usedIn) && <li className="text-rw-muted">{tl("None of the latest games used it.")}</li>}
-              {c.recent.filter(usedIn).map((r, i) => (
-                <li key={i} className="min-w-0">
-                  <div className="flex items-center justify-between gap-2 min-w-0">
-                    <span className="truncate min-w-0">
-                      <span className={`font-bold mr-1 ${r.win ? "text-rw-teal" : "text-rw-red"}`}>
-                        {r.win ? tc("short result", "W") : tc("short result", "L")}
-                      </span>
-                      <PlayerLink name={r.n} u={r.u} /> <span className="text-rw-sub tabular-nums">{r.k}/{r.d}/{r.a}</span>{" "}
-                      {r.g ? <HubLink to={{ kind: "match", slug: r.g, game: r.gn }}>vs {r.opp}</HubLink> : <span>vs {r.opp}</span>}
+            ))}
+          </tbody>
+        </STable>
+      </Section>
+      <Section
+        title={tl("Latest pro games")}
+        right={
+          recentHidden ? (
+            <RevealButton onReveal={revealRecent} small />
+          ) : usedOnly ? (
+            <button type="button" onClick={() => setUsed(null)} className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-rw-accent text-rw-accent text-[11px]" title={tl("Show every game")}>
+              {tl("With {name}", { name: usedName })} ✕
+            </button>
+          ) : undefined
+        }
+      >
+        <span id="champ-latest" />
+        {recentHidden ? (
+          <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
+        ) : (
+          <ul className="text-xs space-y-2">
+            {usedOnly && !c.recent.some(usedIn) && <li className="text-rw-muted">{tl("None of the latest games used it.")}</li>}
+            {c.recent.filter(usedIn).map((r, i) => (
+              <li key={i} className="min-w-0">
+                <div className="flex items-center justify-between gap-2 min-w-0">
+                  <span className="truncate min-w-0">
+                    <span className={`font-bold mr-1 ${r.win ? "text-rw-teal" : "text-rw-red"}`}>
+                      {r.win ? tc("short result", "W") : tc("short result", "L")}
                     </span>
-                    <span className="text-rw-muted shrink-0">{fmtDate(r.date, false)}</span>
+                    <PlayerLink name={r.n} u={r.u} /> <span className="text-rw-sub tabular-nums">{r.k}/{r.d}/{r.a}</span>{" "}
+                    {r.g ? <HubLink to={{ kind: "match", slug: r.g, game: r.gn }}>vs {r.opp}</HubLink> : <span>vs {r.opp}</span>}
+                  </span>
+                  <span className="text-rw-muted shrink-0">{fmtDate(r.date, false)}</span>
+                </div>
+                {r.it && r.it.length > 0 && (
+                  <div className="flex items-center gap-0.5 mt-0.5">
+                    {r.ks && <RuneIcon name={r.ks} size={18} />}
+                    {r.stt && <RuneIcon name={r.stt} size={14} />}
+                    <span className="w-1" />
+                    {r.it.map((it, j) => (
+                      <ItemIcon key={j} name={it} size={18} />
+                    ))}
+                    <span className="w-1" />
+                    {(r.sp || []).map((sp) => (
+                      <SpellIcon key={sp} name={sp} size={14} />
+                    ))}
                   </div>
-                  {r.it && r.it.length > 0 && (
-                    <div className="flex items-center gap-0.5 mt-0.5">
-                      {r.ks && <RuneIcon name={r.ks} size={18} />}
-                      {r.stt && <RuneIcon name={r.stt} size={14} />}
-                      <span className="w-1" />
-                      {r.it.map((it, j) => (
-                        <ItemIcon key={j} name={it} size={18} />
-                      ))}
-                      <span className="w-1" />
-                      {(r.sp || []).map((sp) => (
-                        <SpellIcon key={sp} name={sp} size={14} />
-                      ))}
-                    </div>
-                  )}
-                  <div className="text-[10px] text-rw-muted truncate">{r.en}</div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Section>
-      </div>
+                )}
+                <div className="text-[10px] text-rw-muted truncate">{r.en}</div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
 
       {/* the champion's history in pro play after what most people come for (TV, 2026-10-28): builds, matchups, who
           plays it and its latest games first */}

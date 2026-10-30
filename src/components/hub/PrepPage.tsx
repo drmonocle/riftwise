@@ -598,12 +598,11 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
   };
   const body = (print: boolean) => (
     <>
-      <div id="prep-overview" className="rw-span grid gap-3 xl:grid-cols-2 items-start [&>*:only-child]:col-span-full">
+      <div id="prep-overview" className="rw-span">
         <KeyStats a={a} b={b} ra={ra} rb={rb} ratings={ratings.data} hidden={hidden} formHidden={formHidden} />
-        <WinChances a={a.team} b={b.team} card={print ? undefined : overview} />
       </div>
-      {/* the side-by-side table, with the storylines, form and calculated numbers beside it on wide screens (under
-          it on smaller ones) */}
+      {/* the side-by-side table, with win chances, storylines, form and calculated numbers beside it on wide screens
+          (under it on smaller ones) */}
       <div id="prep-stories" className="rw-span grid gap-3 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] items-start">
         <div className="space-y-3 min-w-0">
           {hidden ? (
@@ -617,6 +616,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           )}
         </div>
         <div className="space-y-3 min-w-0">
+          <WinChances a={a.team} b={b.team} card={print ? undefined : overview} />
           <PrepStorylines a={a} b={b} />
           <Form a={a} b={b} />
           {!hidden && <Calculated a={a} b={b} ra={ra} rb={rb} ratings={ratings.data} />}

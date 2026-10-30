@@ -82,7 +82,7 @@ const CareerRecords: React.FC<{
           ? tl("Every pro game except All-Star and show matches, like the player pages.")
           : tl("Only top leagues and international events (Worlds, MSI, First Stand).")}
       </p>
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2 3xl:grid-cols-4 items-start">
         {list(tl("Most pro games"), c.games)}
         {list(tl("Most career kills"), c.kills)}
         {list(tl("Most career assists"), c.assists)}
@@ -402,7 +402,7 @@ export const RecordsPanel: React.FC = () => {
               )}{" "}
               {tl("The top records were checked against Leaguepedia.")}
             </p>
-            <div className="grid gap-3 md:grid-cols-2 5xl:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-2 3xl:grid-cols-3 items-start">
               {year === "all" && thisYearState.data && <ClosestToFalling all={all} year={thisYearState.data} label={thisYear} />}
               {gameList(tl("Fastest wins"), r.game.fastest, mmss)}
               {gameList(tl("Longest games"), r.game.longest, mmss)}
