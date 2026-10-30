@@ -287,7 +287,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
       <PageTabs tabs={tabs} active={tab} to={to} />
       <div className="rw-page mt-3">
       {tab === "stats" && (
-        <>
+        <div className="rw-span space-y-3">
           <TeamPeriodStats
             slug={t.u}
             has2y={!!t.g2y}
@@ -295,7 +295,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
             who={{ name: t.name, sub: [t.region, t.rating?.league].filter(Boolean).join(" · ") || undefined, code: t.codes[0], roster: t.roster[0]?.p }}
           />
           <TeamRanks slug={t.u} events={t.events} has2y={!!t.g2y} />
-        </>
+        </div>
       )}
 
       {overview && <NextMatch t={t} />}
@@ -304,7 +304,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
           its next match, recent series and this year's roster, then storylines and titles.
           Side by side, each only as tall as it needs; a long recent list scrolls instead of leaving a gap beside By year */}
       {overview && (
-      <div className="grid gap-3 md:grid-cols-2 md:items-start">
+      <div className="rw-span grid gap-3 md:grid-cols-2 md:items-start">
         <Section
           title={tl("Recent series")}
           right={
@@ -484,7 +484,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
           />
         }
       >
-        <div className="overflow-x-auto max-h-96">
+        <div className="overflow-x-auto max-h-[36rem]">
           <STable className="w-full text-xs">
             <thead>
               <tr>

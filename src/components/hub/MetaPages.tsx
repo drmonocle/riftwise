@@ -44,7 +44,7 @@ export const PatchesPanel: React.FC = () => {
               "The most picked or banned champions on every patch, newest first (all pro leagues). Percent = presence: picked or banned in that share of games.",
             )}
           </p>
-          <div className="grid gap-3 xl:grid-cols-2 items-start">
+          <div className="grid gap-3 xl:grid-cols-2">
           {rows.slice(0, n).map((p) => (
             <div key={p.p} className={`${card} p-3`}>
               <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2">

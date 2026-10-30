@@ -271,7 +271,7 @@ const PlayerView: React.FC<{
       <PageTabs tabs={tabs} active={tab} to={to} />
       <div className="rw-page mt-3">
       {tab === "stats" && (
-        <>
+        <div className="rw-span space-y-3">
           <PlayerPeriodStats
             slug={p.u}
             has2y={!!p.g2y}
@@ -279,10 +279,11 @@ const PlayerView: React.FC<{
             who={{ name: p.name, role: p.role ? roleName(p.role) : undefined, club: p.club }}
           />
           <PlayerRanks slug={p.u} events={p.events} has2y={!!p.g2y} />
-        </>
+        </div>
       )}
 
       {tab === "career" && p.events.length > 0 && (
+        <div className="rw-span">
         <Section
           title={tl("Tournaments")}
           right={
@@ -332,10 +333,11 @@ const PlayerView: React.FC<{
             </STable>
           </div>
         </Section>
+        </div>
       )}
 
       {tab === "career" && (
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="rw-span grid gap-3 md:grid-cols-2 items-start">
         <Section
           title={tl("Teams")}
           right={<SectionCard section={tl("Teams")} name={p.name} sub={cardSub} rows={() => p.teams.map((x) => ({ label: x.n, sub: `${x.from.slice(0, 4)}–${x.to.slice(0, 4)}`, value: `${x.w}-${x.g - x.w}` }))} />}
@@ -427,7 +429,7 @@ const PlayerView: React.FC<{
       {/* the Overview leads with how the player is doing now (TV, 2026-10-28: pages in the order people want them):
           recent games and career bests, then storylines, titles and pentakills */}
       {overview && (
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="rw-span grid gap-3 md:grid-cols-2 items-start">
         <Section
           title={tl("Recent games")}
           right={

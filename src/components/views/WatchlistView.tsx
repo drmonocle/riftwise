@@ -58,6 +58,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
     : settings.followedPlayers.slice(0, Math.max(0, CHIP_LIMIT - teamChips.length));
   const [search, setSearch] = useState("");
   const [expandedTeamSlug, setExpandedTeamSlug] = useState<string | null>(null);
+  const [brokenImgs, setBrokenImgs] = useState<Record<string, boolean>>({});
 
   // Toggle handlers (instant in-place updates)
   const toggleTeam = (code: string) => {
@@ -393,10 +394,11 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      {team.image ? (
+                      {team.image && !brokenImgs[team.slug] ? (
                         <img
                           {...riotImg(team.image, 96)}
                           alt={team.code}
+                          onError={() => setBrokenImgs((b) => ({ ...b, [team.slug]: true }))}
                           className="w-9 h-9 object-contain rounded bg-rw-deep p-0.5"
                           loading="lazy"
                         />
@@ -652,10 +654,11 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    {league.image ? (
+                    {league.image && !brokenImgs[league.slug] ? (
                       <img
                         {...riotImg(league.image, 96)}
                         alt={league.name}
+                        onError={() => setBrokenImgs((b) => ({ ...b, [league.slug]: true }))}
                         className="w-8 h-8 object-contain rounded bg-rw-deep p-0.5"
                         loading="lazy"
                       />

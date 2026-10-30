@@ -1,6 +1,5 @@
-/** Full histories, loaded on demand: every series of a team, every game of a player, every meeting of two teams. */
+/** Full histories: every series of a team, every game of a player, every meeting of two teams. */
 import React, { useEffect, useMemo, useState } from "react";
-import { ListOrdered } from "lucide-react";
 import { tl, tn, tc, roleName, stageLabel, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
 import { loadPlayerGames, loadPlayerItems, loadTeamSeries } from "../../hub/data";
@@ -10,31 +9,13 @@ import { ratingTextClass } from "./BestPage";
 import { ChampIcon, EventLink, Failed, fmtDate, HubLink, isFresh, ItemIcon, Loading, RevealButton, Section, TeamLink, useHidden, useLoad } from "./ui";
 
 const PAGE = 50;
-const btn = "px-2.5 py-1 rounded-lg border border-rw-border hover:border-rw-accent/60 text-rw-accent text-xs font-semibold";
 const select = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text";
-
-/** A "Show ..." button that turns into the section once pressed (so the file loads only when wanted). */
-const OnDemand: React.FC<{ title: string; label: string; children: () => React.ReactNode }> = ({ title, label, children }) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <Section title={title}>
-      {open ? (
-        children()
-      ) : (
-        <button type="button" onClick={() => setOpen(true)} className={`${btn} flex items-center gap-1.5`}>
-          <ListOrdered className="w-3.5 h-3.5" />
-          {label}
-        </button>
-      )}
-    </Section>
-  );
-};
 
 // ── Team: every series ────────────────────────────────────────────────────
 
 const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; spoilerKey: string; showOpp?: boolean }> = ({ rows, teamName, spoilerKey, showOpp = true }) => {
   const [hidden, reveal] = useHidden(spoilerKey, rows.find((r) => isFresh(r[0]))?.[0]);
-  const [n, setN] = useState(PAGE);
+  const [n, setN] = useState(25);
   return (
     <div className="space-y-2">
       {hidden && (
@@ -142,9 +123,9 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
 };
 
 export const TeamSeriesArchive: React.FC<{ slug: string; teamName: string }> = ({ slug, teamName }) => (
-  <OnDemand title={tl("Every series")} label={tl("Show every series this team played")}>
-    {() => <TeamSeriesBody slug={slug} teamName={teamName} />}
-  </OnDemand>
+  <Section title={tl("Every series")} right={<span className="text-[11px] text-rw-muted">{tl("Show every series this team played")}</span>}>
+    <TeamSeriesBody slug={slug} teamName={teamName} />
+  </Section>
 );
 
 // ── Compare: every meeting of two teams ───────────────────────────────────
@@ -341,9 +322,9 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }>
 };
 
 export const PlayerGamesArchive: React.FC<{ slug: string }> = ({ slug }) => (
-  <OnDemand title={tl("Every game")} label={tl("Show every game, with filters for year and champion")}>
-    {() => <PlayerGamesBody slug={slug} />}
-  </OnDemand>
+  <Section title={tl("Every game")} right={<span className="text-[11px] text-rw-muted">{tl("Show every game, with filters for year and champion")}</span>}>
+    <PlayerGamesBody slug={slug} />
+  </Section>
 );
 
 /** Every game of a player on one champion, open at once (the Champions tab, after a champion is picked). */

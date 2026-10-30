@@ -98,7 +98,7 @@ const shareName = (title: string) => "records-" + title.toLowerCase().replace(/[
 const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
   p,
 }) => {
-  const [n, setN] = useState(15);
+  const [n, setN] = useState(8);
   return (
     <>
       <Section title={tl("Most pentakills")} share="records-most-pentakills">

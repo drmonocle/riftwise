@@ -622,12 +622,12 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           {!hidden && <Calculated a={a} b={b} ra={ra} rb={rb} ratings={ratings.data} />}
         </div>
       </div>
-      <div id="prep-h2h">
+      <div id="prep-h2h" className="rw-span">
         <HeadToHeadSeries a={a.team.u} b={b.team.u} aName={a.team.name} bName={b.team.name} />
       </div>
       {!hidden && (
         <>
-          <div id="prep-lanes">
+          <div id="prep-lanes" className="rw-span">
             <Lanes
               a={a}
               b={b}
@@ -638,10 +638,10 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
               onSwapB={(rIdx, slug) => swapPlayerInSide(b, rIdx, slug).then((nb) => onFull(a, nb))}
             />
           </div>
-          <div id="prep-fearless">
+          <div id="prep-fearless" className="rw-span">
             <FearlessDepth a={a} b={b} period={period} periodLabel={periodLabel} title={title} />
           </div>
-          <div id="prep-tendencies" className="grid gap-3 xl:grid-cols-2 items-start">
+          <div id="prep-tendencies" className="rw-span grid gap-3 xl:grid-cols-2 items-start">
             <Tendencies side={a} rows={ra} periodLabel={periodLabel} />
             <Tendencies side={b} rows={rb} periodLabel={periodLabel} />
           </div>

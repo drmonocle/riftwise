@@ -660,14 +660,16 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 .join(" · ")}
             />
           </div>
-          <TrendChart games={sel.map((r) => ({ date: r[0], won: r[6] }))} />
-          {agg.tl && (
-            <PlayerEarly
-              t={agg.tl}
-              dmgShare={agg.dmgShare}
-              goldShare={agg.goldShare}
-            />
-          )}
+          <div className="grid gap-4 xl:grid-cols-2 items-start [&>*:only-child]:col-span-full">
+            <TrendChart games={sel.map((r) => ({ date: r[0], won: r[6] }))} />
+            {agg.tl && (
+              <PlayerEarly
+                t={agg.tl}
+                dmgShare={agg.dmgShare}
+                goldShare={agg.goldShare}
+              />
+            )}
+          </div>
           <SortTable
             rows={agg.champs}
             columns={cols}
@@ -835,38 +837,44 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
               sub={tl("different champions picked")}
             />
           </div>
-          <TeamEarly t={t} />
-          <Playstyle t={t} />
-          <WinWhen rows={sel} />
-          <div className="grid sm:grid-cols-3 gap-4">
-            {t.picks.length > 0 && (
-              <div className="min-w-0">
-                <div className="text-[10px] font-semibold text-rw-muted mb-1">
-                  {tl("Most picked champions")}
-                </div>
-                <ul className="text-xs space-y-1">
-                  {t.picks.map(([c, n, w]) => (
-                    <li
-                      key={c}
-                      className="flex items-center justify-between gap-2 min-w-0"
-                    >
-                      <ChampLink name={c} size={16} />
-                      <span className="text-rw-sub tabular-nums shrink-0">
-                        {n} · {winRate(w, n)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+          <div className="grid gap-4 xl:grid-cols-2 items-start">
+            <div className="space-y-4 min-w-0">
+              <TeamEarly t={t} />
+              <Playstyle t={t} />
+              <WinWhen rows={sel} />
+            </div>
+            <div className="space-y-4 min-w-0">
+              <div className="grid sm:grid-cols-3 gap-4">
+                {t.picks.length > 0 && (
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-semibold text-rw-muted mb-1">
+                      {tl("Most picked champions")}
+                    </div>
+                    <ul className="text-xs space-y-1">
+                      {t.picks.map(([c, n, w]) => (
+                        <li
+                          key={c}
+                          className="flex items-center justify-between gap-2 min-w-0"
+                        >
+                          <ChampLink name={c} size={16} />
+                          <span className="text-rw-sub tabular-nums shrink-0">
+                            {n} · {winRate(w, n)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <ChampCounts title={tl("Most banned by them")} list={t.bans} />
+                <ChampCounts
+                  title={tl("Most banned against them")}
+                  list={t.bansVs}
+                />
               </div>
-            )}
-            <ChampCounts title={tl("Most banned by them")} list={t.bans} />
-            <ChampCounts
-              title={tl("Most banned against them")}
-              list={t.bansVs}
-            />
+              <DraftTendencies rows={sel} />
+              <TrendChart games={sel.map((r) => ({ date: r[0], won: r[7] }))} />
+            </div>
           </div>
-          <DraftTendencies rows={sel} />
-          <TrendChart games={sel.map((r) => ({ date: r[0], won: r[7] }))} />
           {t.sg < t.g && (
             <p className="text-[10px] text-rw-muted">
               {tl(
