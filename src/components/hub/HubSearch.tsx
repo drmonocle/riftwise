@@ -23,6 +23,8 @@ interface Shortcut {
   label: string;
   sub: string;
   icon: React.ReactNode;
+  /** Text to fill into the search box when Tab / scroll-fill is used on this shortcut. */
+  fillText?: string;
 }
 
 /** "a vs b" (also "a v b", "a versus b", "a x b", "a - b") */
@@ -141,7 +143,7 @@ export const hitRoute = (h: HubHit): HubRoute =>
 
 /**
  * A player + champion ("faker azir", "chovy ahri") or team + champion ("t1 ryze") query: opens the player's or
- * team's Champions tab directly (with ?champ= for the player's game log) and shows their career record once loaded.
+ * team's Champions tab directly (with ?champ= for that specific champion's page/game log) and shows their career record once loaded.
  */
 export function champPairShortcuts(
   index: HubIndex | null,
@@ -166,42 +168,53 @@ export function champPairShortcuts(
       [left, right],
       [right, left],
     ] as const) {
-      if (whoPart.length < 2 || champPart.length < 2) continue;
-      const ch = searchHub(index, champPart, 1).champ[0];
-      if (!ch || (ch.score ?? 9) > 1) continue;
+      if (whoPart.length < 2 || champPart.length < 1) continue;
       const wh = searchHub(index, whoPart, 1);
       const pl = wh.player[0];
       const tm = wh.team[0];
       const bestPl = pl && (pl.score ?? 9) <= 1;
       const bestTm = tm && (tm.score ?? 9) <= 1;
-      if (bestPl && (!bestTm || (pl.score ?? 9) <= (tm.score ?? 9))) {
-        const key = `p-${pl.slug}-${ch.name}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        pairs.push({ kind: "player", slug: pl.slug, champ: ch.name, key });
-        out.push({
-          key: `cp-${key}`,
-          route: { kind: "player", slug: pl.slug, tab: "champions", query: `champ=${encodeURIComponent(ch.name)}` },
-          label: `${pl.name} · ${champName(ch.name)}`,
-          sub: pairStats?.[key] ?? tl("Champion pool"),
-          icon: <ChampIcon name={ch.name} size={16} />,
-        });
-      } else if (bestTm) {
-        const key = `t-${tm.slug}-${ch.name}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        pairs.push({ kind: "team", slug: tm.slug, champ: ch.name, key });
-        out.push({
-          key: `cp-${key}`,
-          route: { kind: "team", slug: tm.slug, tab: "champions" },
-          label: `${tm.name} · ${champName(ch.name)}`,
-          sub: pairStats?.[key] ?? tl("Champion pool"),
-          icon: <ChampIcon name={ch.name} size={16} />,
-        });
+      if (!bestPl && !bestTm) continue;
+      // When the player or team name is an exact/code match (like after Tab-filling "G2 Esports " or typing "T1 r"),
+      // allow 1+ char champion prefixes ("T1 r" -> Ryze, Rumble, Renekton).
+      if (champPart.length === 1 && (pl?.score ?? 9) > 0.5 && (tm?.score ?? 9) > 0.5) continue;
+      const champs = searchHub(index, champPart, 3).champ.filter((c) => (c.score ?? 9) <= 1);
+      for (const ch of champs) {
+        if (bestPl && (!bestTm || (pl.score ?? 9) <= (tm.score ?? 9))) {
+          const key = `p-${pl.slug}-${ch.name}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          pairs.push({ kind: "player", slug: pl.slug, champ: ch.name, key });
+          out.push({
+            key: `cp-${key}`,
+            route: { kind: "player", slug: pl.slug, tab: "champions", query: `champ=${encodeURIComponent(ch.name)}` },
+            label: `${pl.name} · ${champName(ch.name)}`,
+            sub: pairStats?.[key] ?? tl("Champion pool"),
+            icon: <ChampIcon name={ch.name} size={16} />,
+            fillText: `${pl.name} ${champName(ch.name)}`,
+          });
+        } else if (bestTm) {
+          const key = `t-${tm.slug}-${ch.name}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          pairs.push({ kind: "team", slug: tm.slug, champ: ch.name, key });
+          const qParts = [
+            tm.matched ? `as=${encodeURIComponent(tm.matched)}` : "",
+            `champ=${encodeURIComponent(ch.name)}`,
+          ].filter(Boolean);
+          out.push({
+            key: `cp-${key}`,
+            route: { kind: "team", slug: tm.slug, tab: "champions", query: qParts.join("&") },
+            label: `${tm.name} · ${champName(ch.name)}`,
+            sub: pairStats?.[key] ?? tl("Champion pool"),
+            icon: <ChampIcon name={ch.name} size={16} />,
+            fillText: `${tm.name} ${champName(ch.name)}`,
+          });
+        }
       }
     }
   }
-  return { shortcuts: out.slice(0, 2), pairs: pairs.slice(0, 2) };
+  return { shortcuts: out.slice(0, 4), pairs: pairs.slice(0, 4) };
 }
 
 const GROUPS: { kind: HubSearchKind; label: string; icon: React.ReactNode }[] = [
@@ -221,6 +234,9 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
   initial,
 }) => {
   const [q, setQ] = useState(initial || "");
+  // When scrolling over options (ArrowDown/ArrowUp or mouse hover), fills the name into the input box
+  // without wiping the current search results list until the user types their next character (like a champion name).
+  const [preview, setPreview] = useState<string | null>(null);
   const [index, setIndex] = useState<HubIndex | null>(null);
   const [items, setItems] = useState<ItemIndexRow[] | null>(null);
   // the small lists first (teams, tournaments, champions, leagues), the players when their bigger list arrives
@@ -229,6 +245,8 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
   const [active, setActive] = useState(0);
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const lastMouse = useRef<{ x: number; y: number }>({ x: -1, y: -1 });
 
   const start = () => {
     setOpen(true);
@@ -260,7 +278,10 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
   }, []);
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
-      if (box.current && !box.current.contains(e.target as Node)) setOpen(false);
+      if (box.current && !box.current.contains(e.target as Node)) {
+        setOpen(false);
+        setPreview(null);
+      }
     };
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
@@ -297,10 +318,86 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
       alive = false;
     };
   }, [champPairs.pairs, pairStats]);
-  // a matchup ("t1 vs gen.g"), player/team + champion ("faker azir"), item history, and stats pages
+
+  // When a player or team name is filled in with a trailing space ("Faker " or "T1 "), load their top signature champions
+  // so the user can either type any champion name or immediately pick one of their most-played champions.
+  const [entityChamps, setEntityChamps] = useState<Record<string, Shortcut[]>>({});
+  const filledEntity = useMemo(() => {
+    const activeText = preview ?? q;
+    if (!index || !/\s$/.test(activeText) || VS.test(activeText.trim())) return null;
+    const trimmed = activeText.trim();
+    if (!trimmed) return null;
+    const hit = searchHub(index, trimmed, 1);
+    const pl = hit.player[0];
+    const tm = hit.team[0];
+    if (pl && (pl.score ?? 9) <= 0.5 && (!tm || (pl.score ?? 9) <= (tm.score ?? 9))) {
+      return { kind: "player" as const, slug: pl.slug, name: pl.name, key: `ep-${pl.slug}` };
+    }
+    if (tm && (tm.score ?? 9) <= 0.5) {
+      return { kind: "team" as const, slug: tm.slug, name: tm.name, matched: tm.matched, key: `et-${tm.slug}` };
+    }
+    return null;
+  }, [index, q, preview]);
+
+  useEffect(() => {
+    if (!filledEntity || entityChamps[filledEntity.key]) return;
+    let alive = true;
+    if (filledEntity.kind === "player") {
+      loadHubPlayer(filledEntity.slug)
+        .then((p) => {
+          if (!alive) return;
+          const top: Shortcut[] = p.champs.slice(0, 4).map((c) => ({
+            key: `top-p-${p.u}-${c.c}`,
+            route: { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(c.c)}` },
+            label: `${p.name} · ${champName(c.c)}`,
+            sub: `${c.g}G · ${c.w}W-${c.g - c.w}L (${winRate(c.w, c.g)}) · KDA ${fmtN(c.kda)}`,
+            icon: <ChampIcon name={c.c} size={16} />,
+            fillText: `${p.name} ${champName(c.c)}`,
+          }));
+          setEntityChamps((prev) => ({ ...prev, [filledEntity.key]: top }));
+        })
+        .catch(() => {});
+    } else {
+      loadHubTeam(filledEntity.slug)
+        .then((t) => {
+          if (!alive) return;
+          const top: Shortcut[] = t.champs.slice(0, 4).map((c) => {
+            const qParts = [
+              filledEntity.matched ? `as=${encodeURIComponent(filledEntity.matched)}` : "",
+              `champ=${encodeURIComponent(c.c)}`,
+            ].filter(Boolean);
+            return {
+              key: `top-t-${t.u}-${c.c}`,
+              route: { kind: "team", slug: t.u, tab: "champions", query: qParts.join("&") },
+              label: `${t.name} · ${champName(c.c)}`,
+              sub: `${c.g}G · ${c.w}W-${c.g - c.w}L (${winRate(c.w, c.g)})`,
+              icon: <ChampIcon name={c.c} size={16} />,
+              fillText: `${t.name} ${champName(c.c)}`,
+            };
+          });
+          setEntityChamps((prev) => ({ ...prev, [filledEntity.key]: top }));
+        })
+        .catch(() => {});
+    }
+    return () => {
+      alive = false;
+    };
+  }, [filledEntity, entityChamps]);
+
+  // a matchup ("t1 vs gen.g"), player/team + champion ("faker azir"), top champions when a player/team is filled ("Faker "), item history, and stats pages
+  const topEntityShortcuts = filledEntity && champPairs.shortcuts.length === 0 ? entityChamps[filledEntity.key] || [] : [];
   const shortcuts = useMemo(
-    () => (q.trim() ? [...(index ? matchupShortcuts(index, q) : []), ...champPairs.shortcuts, ...itemShortcuts(items, index, q), ...pageShortcuts(q)] : []),
-    [index, items, q, champPairs.shortcuts],
+    () =>
+      q.trim()
+        ? [
+            ...(index ? matchupShortcuts(index, q) : []),
+            ...champPairs.shortcuts,
+            ...topEntityShortcuts,
+            ...itemShortcuts(items, index, q),
+            ...pageShortcuts(q),
+          ]
+        : [],
+    [index, items, q, champPairs.shortcuts, topEntityShortcuts],
   );
   // the group with the best match first (a champion called exactly that, a big tournament, ...)
   const groups = useMemo(() => (results ? [...GROUPS].sort((a, b) => groupRank(results[a.kind]) - groupRank(results[b.kind])) : GROUPS), [results]);
@@ -310,6 +407,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
 
   const done = () => {
     setQ("");
+    setPreview(null);
     setOpen(false);
     onDone?.();
   };
@@ -326,6 +424,57 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
   };
   const count = shortcuts.length + flat.length;
 
+  /** What text to fill into the search box when scrolling over or pressing Tab on a hit. */
+  const fillForHit = (h: HubHit): string | null => {
+    if (h.kind === "team" || h.kind === "player") {
+      const vsMatch = /^(.+?\s+(?:vs\.?|v\.?|versus|x|[-–])\s*).*$/i.exec(q);
+      if (vsMatch) return `${vsMatch[1]}${h.name}`;
+      return `${h.name} `;
+    }
+    if (h.kind === "champ") {
+      return `${champName(h.name)} `;
+    }
+    return null;
+  };
+
+  /** Fill text for any index `i` in the dropdown (`shortcuts` + `flat`). */
+  const fillForIndex = (i: number): string | null => {
+    if (i < 0 || i >= count) return null;
+    if (i < shortcuts.length) return shortcuts[i].fillText || null;
+    const h = flat[i - shortcuts.length];
+    return h ? fillForHit(h) : null;
+  };
+
+  /** Preview a filled name in the search box (on ArrowDown/Up or mouse hover) with caret placed at the end. */
+  const applyPreview = (fill: string | null) => {
+    setPreview(fill);
+    if (fill) {
+      requestAnimationFrame(() => {
+        const el = inputRef.current;
+        if (el) {
+          if (document.activeElement !== el) el.focus();
+          el.setSelectionRange(fill.length, fill.length);
+        }
+      });
+    }
+  };
+
+  /** Commit a filled name into `q` and focus the input at the end so the user can immediately type a champion name. */
+  const commitFill = (text: string) => {
+    setQ(text);
+    setPreview(null);
+    setOpen(true);
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (el) {
+        el.focus();
+        el.setSelectionRange(text.length, text.length);
+      }
+    });
+  };
+
+  const displayValue = preview ?? q;
+
   return (
     <div ref={box} className="relative w-full">
       <label
@@ -333,26 +482,52 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
       >
         <Search className={`${big ? "w-4 h-4" : "w-3.5 h-3.5"} text-rw-muted shrink-0`} />
         <input
-          value={q}
+          ref={inputRef}
+          value={displayValue}
           autoFocus={autoFocus}
           onFocus={start}
           onChange={(e) => {
             setQ(e.target.value);
+            setPreview(null);
             setOpen(true);
           }}
           onKeyDown={(e) => {
-            if (e.key === "ArrowDown") {
+            if (e.key === "Tab" && open && (q.trim() || preview)) {
+              const target =
+                preview ||
+                fillForIndex(active) ||
+                (() => {
+                  const firstWho = flat.find((h) => h.kind === "team" || h.kind === "player" || h.kind === "champ");
+                  return firstWho ? fillForHit(firstWho) : null;
+                })();
+              if (target) {
+                e.preventDefault();
+                commitFill(target);
+              }
+            } else if (e.key === "ArrowDown") {
               e.preventDefault();
-              setActive((a) => Math.min(a + 1, count - 1));
+              if (count > 0) {
+                const next = Math.min(active + 1, count - 1);
+                setActive(next);
+                applyPreview(fillForIndex(next));
+              }
             } else if (e.key === "ArrowUp") {
               e.preventDefault();
-              setActive((a) => Math.max(a - 1, 0));
+              if (count > 0) {
+                const next = Math.max(active - 1, 0);
+                setActive(next);
+                applyPreview(fillForIndex(next));
+              }
             } else if (e.key === "Enter" && active < count) {
               e.preventDefault();
               choose(active);
             } else if (e.key === "Escape") {
-              setOpen(false);
-              onDone?.();
+              if (preview) {
+                setPreview(null);
+              } else {
+                setOpen(false);
+                onDone?.();
+              }
             }
           }}
           placeholder={placeholder || tl("Search teams, players, tournaments, champions…")}
@@ -361,14 +536,35 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
           // on its right off a phone screen
           className={`bg-transparent outline-none text-rw-text placeholder-rw-muted flex-1 min-w-0 w-full ${big ? "text-sm" : "text-xs"}`}
         />
-        {q && (
-          <button type="button" onClick={() => setQ("")} aria-label={tl("Clear")} className="text-rw-muted hover:text-rw-text">
+        {displayValue && (
+          <button
+            type="button"
+            onClick={() => {
+              setQ("");
+              setPreview(null);
+            }}
+            aria-label={tl("Clear")}
+            className="text-rw-muted hover:text-rw-text"
+          >
             <X className="w-3.5 h-3.5" />
           </button>
         )}
       </label>
       {open && q.trim() && (
-        <div className="absolute z-40 left-0 right-0 min-w-[min(18rem,calc(100vw-1.5rem))] mt-1 bg-rw-surface border border-rw-accent/40 rounded-lg shadow-2xl max-h-[70vh] overflow-y-auto p-1.5 text-xs">
+        <div
+          className="absolute z-40 left-0 right-0 min-w-[min(18rem,calc(100vw-1.5rem))] mt-1 bg-rw-surface border border-rw-accent/40 rounded-lg shadow-2xl max-h-[70vh] overflow-y-auto p-1.5 text-xs"
+          onMouseLeave={() => {
+            if (preview) setPreview(null);
+          }}
+        >
+          {filledEntity && (
+            <div className="px-2 py-1 mb-1 rounded bg-rw-accent/10 border border-rw-accent/25 text-[11px] text-rw-sub flex items-center justify-between gap-2">
+              <span>
+                <span className="font-semibold text-rw-text">{filledEntity.name}</span> · {tl("Search champions…")}
+              </span>
+              <span className="text-[10px] font-mono text-rw-accent shrink-0">Enter ↵</span>
+            </div>
+          )}
           {shortcuts.length > 0 && (
             <div className="mb-1">
               {shortcuts.map((s, i) => (
@@ -376,6 +572,12 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
                   key={s.key}
                   to={s.route}
                   onNavigate={done}
+                  onMouseMove={(e) => {
+                    if (e.clientX === lastMouse.current.x && e.clientY === lastMouse.current.y) return;
+                    lastMouse.current = { x: e.clientX, y: e.clientY };
+                    setActive(i);
+                    if (s.fillText) applyPreview(s.fillText);
+                  }}
                   className={`flex items-center gap-2 px-2 py-1.5 rounded-md min-w-0 ${i === active ? "bg-rw-accent/15 text-rw-text" : "text-rw-text hover:bg-rw-raised"}`}
                 >
                   <span className="text-rw-accent shrink-0">{s.icon}</span>
@@ -406,16 +608,25 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
                 </div>
                 {results![g.kind].map((h) => {
                   const i = shortcuts.length + flat.indexOf(h);
+                  const fill = fillForHit(h);
+                  const canChain = h.kind === "team" || h.kind === "player";
                   return (
                     <HubLink
                       key={h.kind + h.slug}
                       to={hitRoute(h)}
                       onNavigate={() => {
                         setQ("");
+                        setPreview(null);
                         setOpen(false);
                         onDone?.();
                       }}
-                      className={`flex items-center justify-between gap-2 px-2 py-1.5 rounded-md min-w-0 ${
+                      onMouseMove={(e) => {
+                        if (e.clientX === lastMouse.current.x && e.clientY === lastMouse.current.y) return;
+                        lastMouse.current = { x: e.clientX, y: e.clientY };
+                        setActive(i);
+                        if (fill) applyPreview(fill);
+                      }}
+                      className={`group flex items-center justify-between gap-2 px-2 py-1.5 rounded-md min-w-0 ${
                         i === active ? "bg-rw-accent/15 text-rw-text" : "text-rw-text hover:bg-rw-raised"
                       }`}
                     >
@@ -424,12 +635,32 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
                         <span className="font-semibold truncate">{h.kind === "champ" ? champName(h.name) : h.name}</span>
                         {h.matched && <span className="text-rw-muted truncate">({h.kind === "team" ? tl("was {name}", { name: h.matched }) : h.matched})</span>}
                       </span>
-                      <span className="text-rw-muted text-[11px] truncate shrink-0 max-w-[50%]">
-                        {h.kind === "player"
-                          ? [h.role ? roleName(h.role) : "", h.sub, h.year].filter(Boolean).join(" · ")
-                          : h.kind === "champ"
-                            ? tl("{n} pro picks", { n: fmtNum(h.games) })
-                            : h.sub}
+                      <span className="flex items-center gap-1.5 shrink-0 max-w-[55%] min-w-0">
+                        <span className="text-rw-muted text-[11px] truncate">
+                          {h.kind === "player"
+                            ? [h.role ? roleName(h.role) : "", h.sub, h.year].filter(Boolean).join(" · ")
+                            : h.kind === "champ"
+                              ? tl("{n} pro picks", { n: fmtNum(h.games) })
+                              : h.sub}
+                        </span>
+                        {canChain && fill && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              commitFill(fill);
+                            }}
+                            title={`${h.name} · ${tl("Search champions…")} (Tab)`}
+                            className={`px-1.5 py-0.5 rounded text-[9px] font-mono border transition-colors shrink-0 ${
+                              i === active
+                                ? "border-rw-accent/50 bg-rw-accent/15 text-rw-accent"
+                                : "border-rw-border bg-rw-bg/70 text-rw-muted opacity-0 group-hover:opacity-100"
+                            }`}
+                          >
+                            Tab ↹
+                          </button>
+                        )}
                       </span>
                     </HubLink>
                   );

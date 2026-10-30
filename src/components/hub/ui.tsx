@@ -249,11 +249,19 @@ export function usePageTitle(title: string | null | undefined, name?: string): v
  * A link to a hub page. On the web it is a real link (open in new tab works, search engines follow
  * it); a plain click stays inside the app.
  */
-export const HubLink: React.FC<{ to: HubRoute; className?: string; title?: string; onNavigate?: () => void; children: React.ReactNode }> = ({
+export const HubLink: React.FC<{
+  to: HubRoute;
+  className?: string;
+  title?: string;
+  onNavigate?: () => void;
+  onMouseMove?: React.MouseEventHandler<HTMLAnchorElement>;
+  children: React.ReactNode;
+}> = ({
   to,
   className,
   title,
   onNavigate,
+  onMouseMove,
   children,
 }) => (
   <a
@@ -261,6 +269,7 @@ export const HubLink: React.FC<{ to: HubRoute; className?: string; title?: strin
     title={title}
     className={className ?? "text-rw-text hover:text-rw-accent hover:underline"}
     onMouseEnter={() => prefetchSoon(to)}
+    onMouseMove={onMouseMove}
     onFocus={() => prefetchSoon(to)}
     onTouchStart={() => prefetchHub(to)}
     onClick={(e) => {

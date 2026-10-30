@@ -4,10 +4,13 @@
  * level, K/D/A, CS, gold, items, kill share and damage share plus a gold-lead graph. Refreshes every 15 seconds
  * while the page is visible. Between games it shows the last game's final numbers.
  */
-import React, { useEffect, useId, useMemo, useRef, useState } from "react";
+import React, { Suspense, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type { Game, Match } from "../types";
 import { tl, roleName, fmtDec } from "../i18n";
+import { lazyPart } from "../lazyPart";
+
+const LiveNextGamePreview = lazyPart(() => import("./LiveNextGamePreview").then((m) => m.LiveNextGamePreview));
 import {
   LiveDetailsParticipant,
   LiveFrame,
@@ -172,16 +175,60 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
   if (!game) return null;
   if (!showStats)
     return <p className="text-[11px] text-rw-muted text-center py-1">{tl("Live game stats are hidden while spoiler mode is on.")}</p>;
-  if (!state && draft) return <DraftOnly match={match} win={draft} number={game.number} startMs={startRef.current[game.id] ?? null} live={live} />;
+
+  const winsNeeded = Math.ceil((match.bestOf || 1) / 2);
+  const seriesDone =
+    match.state === "completed" ||
+    (match.team1Score ?? 0) >= winsNeeded ||
+    (match.team2Score ?? 0) >= winsNeeded;
+  const completedGames = (match.games || []).filter((g) => g.state === "completed");
+  const currentFinished = state?.frame.gameState === "finished";
+  const gamesPlayedCount = Math.max(
+    completedGames.length + (currentFinished && game.state !== "completed" ? 1 : 0),
+    (match.team1Score ?? 0) + (match.team2Score ?? 0),
+  );
+  const nextGameNum =
+    live && !currentFinished
+      ? game.number
+      : Math.min(match.bestOf || 1, (game.number || gamesPlayedCount) + 1);
+  const nextGameGoldGraphUp = Boolean(live && !currentFinished && state && history && history.length > 1);
+  const showNextPreview =
+    !only &&
+    showStats &&
+    (match.bestOf || 1) > 1 &&
+    !seriesDone &&
+    gamesPlayedCount >= 1 &&
+    nextGameNum >= 2 &&
+    !nextGameGoldGraphUp;
+
+  if (!state && draft) {
+    return (
+      <>
+        <DraftOnly match={match} win={draft} number={game.number} startMs={startRef.current[game.id] ?? null} live={live} />
+        {showNextPreview && (
+          <Suspense fallback={null}>
+            <LiveNextGamePreview match={match} nextGameNum={nextGameNum} currentWin={draft} currentGameNum={game.number} />
+          </Suspense>
+        )}
+      </>
+    );
+  }
   if (!state)
     return (
-      <p className="text-[11px] text-rw-muted text-center pt-2">
-        {failed
-          ? tl("Live game stats aren't available right now.")
-          : live
-            ? tl("Game {n}: live stats appear here once the game starts (after champion select).", { n: game.number })
-            : null}
-      </p>
+      <div>
+        <p className="text-[11px] text-rw-muted text-center pt-2">
+          {failed
+            ? tl("Live game stats aren't available right now.")
+            : live
+              ? tl("Game {n}: live stats appear here once the game starts (after champion select).", { n: game.number })
+              : null}
+        </p>
+        {showNextPreview && (
+          <Suspense fallback={null}>
+            <LiveNextGamePreview match={match} nextGameNum={nextGameNum} currentWin={null} currentGameNum={game.number} />
+          </Suspense>
+        )}
+      </div>
     );
 
   const { win, frame } = state;
@@ -225,6 +272,11 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
       )}
       {history && history.length > 1 && <GoldGraph points={history} blueIsLeft={blueIsTeam1} leftCode={left.code} rightCode={right.code} />}
       {finished && history && <GameStory points={history} left={left.code} right={right.code} blueIsLeft={blueIsTeam1} />}
+      {showNextPreview && (
+        <Suspense fallback={null}>
+          <LiveNextGamePreview match={match} nextGameNum={nextGameNum} currentWin={win} currentGameNum={game.number} />
+        </Suspense>
+      )}
 
       <button
         type="button"

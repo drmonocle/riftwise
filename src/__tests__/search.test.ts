@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { groupRank, searchHub, type HubIndex } from "../hub/data";
 import type { HubSearchKind } from "../hub/data";
+import { champPairShortcuts } from "../components/hub/HubSearch";
 
 // A tiny search index shaped like hub/search/*.json
 const index: HubIndex = {
@@ -51,5 +52,34 @@ describe("stats search", () => {
     expect(fakr.player[0].fuzzy).toBe(true);
     expect(searchHub(index, "chovyy").player[0].name).toBe("Chovy");
     expect(searchHub(index, "zzzz").player).toEqual([]);
+  });
+
+  it("links team + champion and player + champion searches directly to their specific champion view", () => {
+    const teamPair = champPairShortcuts(index, "G2 Ahri");
+    expect(teamPair.shortcuts[0].route).toEqual({
+      kind: "team",
+      slug: "g2-esports",
+      tab: "champions",
+      query: "champ=Ahri",
+    });
+    expect(teamPair.shortcuts[0].fillText).toBe("G2 Esports Ahri");
+
+    const playerPair = champPairShortcuts(index, "Faker Ahri");
+    expect(playerPair.shortcuts[0].route).toEqual({
+      kind: "player",
+      slug: "faker",
+      tab: "champions",
+      query: "champ=Ahri",
+    });
+    expect(playerPair.shortcuts[0].fillText).toBe("Faker Ahri");
+
+    // 1-char champion prefix after Tab-filling a team or player name ("G2 a" -> G2 Esports · Ahri)
+    const prefixPair = champPairShortcuts(index, "G2 a");
+    expect(prefixPair.shortcuts[0]?.route).toEqual({
+      kind: "team",
+      slug: "g2-esports",
+      tab: "champions",
+      query: "champ=Ahri",
+    });
   });
 });

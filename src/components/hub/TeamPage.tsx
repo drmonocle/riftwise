@@ -5,25 +5,27 @@
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { Trophy } from "lucide-react";
-import { tl, tk, roleName, regionName, eventTitle, tc } from "../../i18n";
+import { tl, tk, roleName, regionName, eventTitle, tc, tn, fmtDec } from "../../i18n";
 import { winRate } from "../../stats";
-import { loadHubTeam, loadTeamGames } from "../../hub/data";
+import { loadHubTeam, loadPlayerGames, loadTeamGames, prettySlug } from "../../hub/data";
 import { currentHubRoute, navigateHub, type HubRoute } from "../../hub/route";
 import { PageTabs, type PageTab } from "./PageTabs";
-import type { HubTeam } from "../../hub/types";
+import type { HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { TeamSeriesArchive } from "./Archives";
-import { PeriodPicker, TeamPeriodStats } from "./PeriodStats";
+import { PeriodPicker, QuickPeriods, TeamPeriodStats } from "./PeriodStats";
 import { PeriodKey, inPeriod, periodOptions, teamAgg, teamRowRef } from "../../hub/period";
 import { TeamRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
-import { CaptureContext, card, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, HubLink, Page, PlayerLink, PlayerPhoto, RevealButton, Section, Stat, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink, FollowFeeds } from "./ui";
+import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, HubLink, isFresh, Loading, Page, PlayerLink, PlayerPhoto, RevealButton, Section, Stat, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink, FollowFeeds } from "./ui";
 import { ratingTextClass } from "./BestPage";
 import { Sparkline } from "./Sparkline";
 import { STable } from "../STable";
 import { SectionCard } from "./BroadcastCard";
 import { champName } from "../../champions";
 import { NextMatch } from "./NextMatch";
+
+const select = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text";
 
 /** The tabs' names (the address says the key: /team/t1/matches) */
 const TAB_LABEL: Record<string, string> = {
@@ -525,14 +527,58 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
       </Section>
       )}
 
-      {tab === "champions" && <TeamChampionsTab t={t} initialPeriod={urlParams.get("p") || (rosterYear && rosterYear !== t.roster[0]?.y ? `y${rosterYear}` : "all")} to={to} />}
+      {tab === "champions" && (
+        <TeamChampionsTab
+          t={t}
+          initialPeriod={urlParams.get("p") || (rosterYear && rosterYear !== t.roster[0]?.y ? `y${rosterYear}` : "all")}
+          initialChamp={urlParams.get("champ")}
+          asParam={asParam}
+          to={to}
+        />
+      )}
       </div>
     </div>
   );
 };
 
-const TeamChampionsTab: React.FC<{ t: HubTeam; initialPeriod: PeriodKey; to: (k: string) => HubRoute }> = ({ t, initialPeriod, to }) => {
+const ROLE_NAMES = ["Top", "Jungle", "Mid", "Bot", "Support"];
+
+const TeamChampionsTab: React.FC<{
+  t: HubTeam;
+  initialPeriod: PeriodKey;
+  initialChamp?: string | null;
+  asParam?: string;
+  to: (k: string) => HubRoute;
+}> = ({ t, initialPeriod, initialChamp, asParam, to }) => {
   const [period, setPeriod] = useState<PeriodKey>(initialPeriod || "all");
+  const [selectedChamp, setSelectedChamp] = useState<string | null>(initialChamp || null);
+  useEffect(() => {
+    setSelectedChamp(initialChamp || null);
+  }, [initialChamp]);
+  useEffect(() => {
+    setPeriod(initialPeriod || "all");
+  }, [initialPeriod]);
+
+  const syncUrl = (nextChamp: string | null, nextPeriod: PeriodKey) => {
+    const q = new URLSearchParams();
+    if (asParam) q.set("as", asParam);
+    if (nextPeriod && nextPeriod !== "all") q.set("p", nextPeriod);
+    if (nextChamp) q.set("champ", nextChamp);
+    const qs = q.toString();
+    navigateHub({ kind: "team", slug: t.u, tab: "champions", ...(qs ? { query: qs } : {}) }, { replace: true });
+  };
+
+  const pickChamp = (c: string | null) => {
+    setSelectedChamp(c);
+    syncUrl(c, period);
+    if (c) window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const pickPeriod = (p: PeriodKey) => {
+    setPeriod(p);
+    syncUrl(selectedChamp, p);
+  };
+
   const log = useLoad(() => loadTeamGames(t.u), [t.u]);
   const options = useMemo(() => (log.data ? periodOptions(log.data.map(teamRowRef)) : []), [log.data]);
   const agg = useMemo(() => {
@@ -547,9 +593,24 @@ const TeamChampionsTab: React.FC<{ t: HubTeam; initialPeriod: PeriodKey; to: (k:
     <div className="rw-span space-y-3">
       {options.length > 0 && (
         <div className={`${card} !py-2 flex flex-wrap items-center justify-between gap-2 text-xs`}>
-          <span className="text-rw-sub font-semibold">{tl("Stats for")}</span>
-          <PeriodPicker options={options} value={period} onChange={setPeriod} />
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-rw-sub font-semibold">{tl("Stats for")}</span>
+            <QuickPeriods options={options} value={period} onChange={pickPeriod} />
+          </div>
+          <PeriodPicker options={options} value={period} onChange={pickPeriod} />
         </div>
+      )}
+      {selectedChamp && (
+        <TeamChampGames
+          t={t}
+          rows={log.data}
+          loading={log.loading}
+          champ={selectedChamp}
+          period={period}
+          allChamps={champs}
+          onSelectChamp={pickChamp}
+          onClose={() => pickChamp(null)}
+        />
       )}
       <div className="grid gap-3 md:grid-cols-2">
         <Section
@@ -557,14 +618,35 @@ const TeamChampionsTab: React.FC<{ t: HubTeam; initialPeriod: PeriodKey; to: (k:
           right={<SectionCard section={tl("Most picked champions")} name={t.name} rows={() => champs.map((c) => ({ champ: c.c, label: champName(c.c), sub: tl("{n} games", { n: c.g }), value: winRate(c.w, c.g) }))} />}
         >
           <ul className="text-xs grid grid-cols-2 gap-x-3 gap-y-1">
-            {champs.map((c) => (
-              <li key={c.c} className="flex justify-between gap-1 min-w-0">
-                <ChampLink name={c.c} size={16} />
-                <span className="text-rw-muted shrink-0">
-                  {c.g} · {winRate(c.w, c.g)}
-                </span>
-              </li>
-            ))}
+            {champs.map((c) => {
+              const isSel = selectedChamp?.toLowerCase() === c.c.toLowerCase();
+              return (
+                <li
+                  key={c.c}
+                  className={`flex items-center justify-between gap-1 min-w-0 rounded px-1 py-0.5 transition-colors ${
+                    isSel ? "bg-rw-accent/15 ring-1 ring-rw-accent/50" : "hover:bg-rw-raised/60"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => pickChamp(c.c)}
+                    className="flex items-center gap-1.5 min-w-0 text-left hover:text-rw-accent truncate"
+                    title={tl("Every game on {champ}", { champ: champName(c.c) })}
+                  >
+                    <ChampIcon name={c.c} size={16} />
+                    <span className="truncate font-medium text-rw-text">{champName(c.c)}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => pickChamp(c.c)}
+                    className="text-rw-muted hover:text-rw-teal shrink-0 tabular-nums"
+                    title={tl("Every game on {champ}", { champ: champName(c.c) })}
+                  >
+                    {c.g} · {winRate(c.w, c.g)}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </Section>
         <Section
@@ -574,7 +656,14 @@ const TeamChampionsTab: React.FC<{ t: HubTeam; initialPeriod: PeriodKey; to: (k:
           <ul className="text-xs grid grid-cols-2 gap-x-3 gap-y-1">
             {bans.map((c) => (
               <li key={c.c} className="flex justify-between gap-1 min-w-0">
-                <ChampLink name={c.c} size={16} />
+                <button
+                  type="button"
+                  onClick={() => pickChamp(c.c)}
+                  className="flex items-center gap-1.5 min-w-0 text-left hover:text-rw-accent truncate"
+                >
+                  <ChampIcon name={c.c} size={16} />
+                  <span className="truncate text-rw-text">{champName(c.c)}</span>
+                </button>
                 <span className="text-rw-muted shrink-0">{c.g}</span>
               </li>
             ))}
@@ -588,7 +677,14 @@ const TeamChampionsTab: React.FC<{ t: HubTeam; initialPeriod: PeriodKey; to: (k:
             <ul className="text-xs grid grid-cols-2 gap-x-3 gap-y-1">
               {bansVs.map((c) => (
                 <li key={c.c} className="flex justify-between gap-1 min-w-0">
-                  <ChampLink name={c.c} size={16} />
+                  <button
+                    type="button"
+                    onClick={() => pickChamp(c.c)}
+                    className="flex items-center gap-1.5 min-w-0 text-left hover:text-rw-accent truncate"
+                  >
+                    <ChampIcon name={c.c} size={16} />
+                    <span className="truncate text-rw-text">{champName(c.c)}</span>
+                  </button>
                   <span className="text-rw-muted shrink-0">{c.g}</span>
                 </li>
               ))}
@@ -603,6 +699,513 @@ const TeamChampionsTab: React.FC<{ t: HubTeam; initialPeriod: PeriodKey; to: (k:
         </p>
       </div>
     </div>
+  );
+};
+
+/**
+ * Dedicated Team + Champion view (/team/<slug>/champions?champ=<Champ>): shows the team's record, side split,
+ * lane & team gold diff at 15, bans, which players on the team played that champion, top draft partners,
+ * and every game the team played on that champion.
+ */
+const TeamChampGames: React.FC<{
+  t: HubTeam;
+  rows: TeamGameRow[] | null | undefined;
+  loading: boolean;
+  champ: string;
+  period: PeriodKey;
+  allChamps: { c: string; g: number; w: number }[];
+  onSelectChamp: (c: string) => void;
+  onClose: () => void;
+}> = ({ t, rows, loading, champ, period, allChamps, onSelectChamp, onClose }) => {
+  const [year, setYear] = useState("all");
+  const [sideFilter, setSideFilter] = useState<"all" | "b" | "r">("all");
+  const [playerFilter, setPlayerFilter] = useState("all");
+  const [limit, setLimit] = useState(25);
+
+  useEffect(() => {
+    setPlayerFilter("all");
+    setLimit(25);
+  }, [champ]);
+
+  useEffect(() => {
+    if (/^y\d{4}$/.test(period)) setYear(period.slice(1));
+    else setYear("all");
+  }, [period]);
+
+  const canonical = useMemo(() => {
+    const low = champ.toLowerCase();
+    const hit =
+      t.champs.find((x) => x.c.toLowerCase() === low || champName(x.c).toLowerCase() === low)?.c ||
+      t.bans.find((x) => x.c.toLowerCase() === low || champName(x.c).toLowerCase() === low)?.c ||
+      (t.bansVs || []).find((x) => x.c.toLowerCase() === low || champName(x.c).toLowerCase() === low)?.c;
+    return hit || champ;
+  }, [t, champ]);
+
+  const periodRows = useMemo(() => {
+    if (!rows) return [];
+    return period === "all" ? rows : inPeriod(rows, period, teamRowRef);
+  }, [rows, period]);
+
+  const pickEntries = useMemo(() => {
+    const low = canonical.toLowerCase();
+    const out: { r: TeamGameRow; idx: number; roleIdx: number | null; gd15: number | null }[] = [];
+    for (const r of periodRows) {
+      const picks = r[20] || [];
+      const idx = picks.findIndex((c) => c.toLowerCase() === low || champName(c).toLowerCase() === low);
+      if (idx >= 0) {
+        const roleIdx = r[22]?.[idx] != null && r[22]![idx] >= 0 ? r[22]![idx] : null;
+        const gd15 = r[24]?.[idx] ?? null;
+        out.push({ r, idx, roleIdx, gd15 });
+      }
+    }
+    return out;
+  }, [periodRows, canonical]);
+
+  // Identify candidate roster players who played in the years & roles where this champion was picked, and load their logs
+  // so we can show exact player records and per-game K/D/A.
+  const candidatePlayers = useMemo(() => {
+    const years = new Set(pickEntries.map((x) => x.r[0].slice(0, 4)));
+    const roles = new Set(pickEntries.map((x) => (x.roleIdx != null ? ROLE_NAMES[x.roleIdx] : "")).filter(Boolean));
+    const map = new Map<string, { n: string; u: string; r: string }>();
+    for (const ry of t.roster) {
+      if (years.size > 0 && !years.has(ry.y)) continue;
+      for (const p of ry.p) {
+        if (!p.u) continue;
+        if (roles.size === 0 || roles.has(p.r)) {
+          if (!map.has(p.u)) map.set(p.u, { n: p.n, u: p.u, r: p.r });
+        }
+      }
+    }
+    return [...map.values()].slice(0, 30);
+  }, [t.roster, pickEntries]);
+
+  const [playerLogs, setPlayerLogs] = useState<Record<string, PlayerGameRow[]>>({});
+  useEffect(() => {
+    let alive = true;
+    for (const p of candidatePlayers) {
+      if (playerLogs[p.u] !== undefined) continue;
+      loadPlayerGames(p.u)
+        .then((g) => {
+          if (alive) setPlayerLogs((prev) => ({ ...prev, [p.u]: g }));
+        })
+        .catch(() => {
+          if (alive) setPlayerLogs((prev) => ({ ...prev, [p.u]: [] }));
+        });
+    }
+    return () => {
+      alive = false;
+    };
+  }, [candidatePlayers, playerLogs]);
+
+  // Match each team game on `canonical` to the player who played it (via player game logs, or single-role-starter fallback)
+  const gamePlayerMap = useMemo(() => {
+    const low = canonical.toLowerCase();
+    const bySeriesDate = new Map<string, { n: string; u: string; r: string; k: number; d: number; a: number; g15: number | null }>();
+    for (const p of candidatePlayers) {
+      const logs = playerLogs[p.u] || [];
+      for (const pg of logs) {
+        if (pg[2]?.toLowerCase() !== low && champName(pg[2] || "").toLowerCase() !== low) continue;
+        const key = `${pg[0]}|${pg[1] || ""}|${pg[22] || ""}`;
+        const keyFallback = `${pg[0]}|${pg[1] || ""}|${pg[6]}`;
+        const info = { n: p.n, u: p.u, r: pg[10] || p.r, k: pg[3], d: pg[4], a: pg[5], g15: pg[21]?.[3] ?? null };
+        bySeriesDate.set(key, info);
+        if (!bySeriesDate.has(keyFallback)) bySeriesDate.set(keyFallback, info);
+      }
+    }
+    const result = new Map<TeamGameRow, { n: string; u: string | null; r: string; k?: number; d?: number; a?: number; g15?: number | null }>();
+    for (const e of pickEntries) {
+      const r = e.r;
+      const hit = bySeriesDate.get(`${r[0]}|${r[1] || ""}|${r[7]}`);
+      if (hit) {
+        result.set(r, hit);
+        continue;
+      }
+      // Fallback: if only 1 player played that role in that year on this team's roster
+      if (e.roleIdx != null) {
+        const roleNameStr = ROLE_NAMES[e.roleIdx];
+        const yr = r[0].slice(0, 4);
+        const rosterYr = t.roster.find((x) => x.y === yr);
+        const inRole = (rosterYr?.p || []).filter((x) => x.r === roleNameStr);
+        if (inRole.length === 1) {
+          result.set(r, { n: inRole[0].n, u: inRole[0].u, r: roleNameStr, g15: e.gd15 });
+        } else if (inRole.length > 1) {
+          const main = [...inRole].sort((a, b) => b.g - a.g)[0];
+          result.set(r, { n: main.n, u: main.u, r: roleNameStr, g15: e.gd15 });
+        }
+      }
+    }
+    return result;
+  }, [pickEntries, candidatePlayers, playerLogs, canonical, t.roster]);
+
+  // Aggregate per-player stats on this champion for this team
+  const playersSummary = useMemo(() => {
+    const map = new Map<string, { n: string; u: string | null; r: string; g: number; w: number; k: number; d: number; a: number; kdaGames: number; gdSum: number; gdGames: number }>();
+    for (const e of pickEntries) {
+      const who = gamePlayerMap.get(e.r);
+      const roleStr = who?.r || (e.roleIdx != null ? ROLE_NAMES[e.roleIdx] : "");
+      const key = who?.u || who?.n || (roleStr ? `role:${roleStr}` : "unknown");
+      const cur = map.get(key) || {
+        n: who?.n || (roleStr ? roleName(roleStr) : "–"),
+        u: who?.u ?? null,
+        r: roleStr,
+        g: 0,
+        w: 0,
+        k: 0,
+        d: 0,
+        a: 0,
+        kdaGames: 0,
+        gdSum: 0,
+        gdGames: 0,
+      };
+      cur.g++;
+      cur.w += e.r[7];
+      if (who?.k != null && who.d != null && who.a != null) {
+        cur.k += who.k;
+        cur.d += who.d;
+        cur.a += who.a;
+        cur.kdaGames++;
+      }
+      const gd = e.gd15 ?? who?.g15 ?? null;
+      if (gd != null) {
+        cur.gdSum += gd;
+        cur.gdGames++;
+      }
+      map.set(key, cur);
+    }
+    return [...map.values()].sort((a, b) => b.g - a.g || b.w - a.w);
+  }, [pickEntries, gamePlayerMap]);
+
+  // Draft synergies: most frequent teammate champions in the same 5-man composition
+  const draftPartners = useMemo(() => {
+    const low = canonical.toLowerCase();
+    const counts = new Map<string, [number, number]>();
+    for (const e of pickEntries) {
+      for (const c of e.r[20] || []) {
+        if (c.toLowerCase() === low || champName(c).toLowerCase() === low) continue;
+        const cur = counts.get(c) || [0, 0];
+        cur[0]++;
+        cur[1] += e.r[7];
+        counts.set(c, cur);
+      }
+    }
+    return [...counts.entries()].sort((a, b) => b[1][0] - a[1][0] || b[1][1] - a[1][1]).slice(0, 6);
+  }, [pickEntries, canonical]);
+
+  const bansInfo = useMemo(() => {
+    const low = canonical.toLowerCase();
+    let byTeam = 0;
+    let vsTeam = 0;
+    for (const r of periodRows) {
+      if ((r[19] || []).some((c) => c.toLowerCase() === low)) byTeam++;
+      if ((r[21] || []).some((c) => c.toLowerCase() === low)) vsTeam++;
+    }
+    return { byTeam, vsTeam };
+  }, [periodRows, canonical]);
+
+  const years = useMemo(() => [...new Set(pickEntries.map((x) => x.r[0].slice(0, 4)))], [pickEntries]);
+  const filtered = useMemo(
+    () =>
+      pickEntries.filter((e) => {
+        if (year !== "all" && !e.r[0].startsWith(year)) return false;
+        if (sideFilter !== "all" && e.r[6] !== sideFilter) return false;
+        if (playerFilter !== "all") {
+          const who = gamePlayerMap.get(e.r);
+          if ((who?.u || who?.n || "") !== playerFilter) return false;
+        }
+        return true;
+      }),
+    [pickEntries, year, sideFilter, playerFilter, gamePlayerMap],
+  );
+
+  const [hidden, reveal] = useHidden(`teamchamp:${t.u}:${canonical}:${year}`, filtered.find((e) => isFresh(e.r[0]))?.r[0]);
+
+  if (loading && !rows) return <Loading />;
+
+  const totalG = pickEntries.length;
+  const totalW = pickEntries.filter((e) => e.r[7] === 1).length;
+  const blueEntries = pickEntries.filter((e) => e.r[6] === "b");
+  const redEntries = pickEntries.filter((e) => e.r[6] === "r");
+  const blueW = blueEntries.filter((e) => e.r[7] === 1).length;
+  const redW = redEntries.filter((e) => e.r[7] === 1).length;
+  const gdEntries = pickEntries.map((e) => e.gd15).filter((v): v is number => v != null);
+  const avgGd15 = gdEntries.length > 0 ? Math.round(gdEntries.reduce((s, v) => s + v, 0) / gdEntries.length) : null;
+
+  return (
+    <Section
+      title={`${t.name} · ${champName(canonical)}`}
+      right={
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <select
+            value={canonical}
+            onChange={(e) => onSelectChamp(e.target.value)}
+            aria-label={tl("Champion")}
+            className={select}
+          >
+            {!allChamps.some((x) => x.c.toLowerCase() === canonical.toLowerCase()) && (
+              <option value={canonical}>{champName(canonical)} (0)</option>
+            )}
+            {allChamps.map((x) => (
+              <option key={x.c} value={x.c}>
+                {champName(x.c)} ({x.g})
+              </option>
+            ))}
+          </select>
+          <HubLink to={{ kind: "champ", slug: prettySlug(canonical) }} className="text-[11px] text-rw-teal hover:underline">
+            {champName(canonical)} →
+          </HubLink>
+          <button type="button" onClick={onClose} className="text-[11px] text-rw-sub hover:text-rw-text">
+            {tl("Close")}
+          </button>
+        </div>
+      }
+    >
+      <div className="space-y-3 text-xs">
+        {/* Top KPI Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <Stat
+            label={tl("Picks")}
+            value={totalG > 0 ? `${totalW}–${totalG - totalW} (${winRate(totalW, totalG)})` : tl("{n} games", { n: 0 })}
+            sub={tn("{n} game", "{n} games", totalG)}
+          />
+          <Stat
+            label={tl("Blue / red side")}
+            value={
+              totalG > 0
+                ? `${blueEntries.length ? winRate(blueW, blueEntries.length) : "–"} / ${redEntries.length ? winRate(redW, redEntries.length) : "–"}`
+                : "–"
+            }
+            sub={`${blueW}–${blueEntries.length - blueW} ${tl("Blue side")} · ${redW}–${redEntries.length - redW} ${tl("Red side")}`}
+          />
+          <Stat
+            label={tl("Gold @15")}
+            value={avgGd15 != null ? `${avgGd15 > 0 ? "+" : ""}${fmtNum(avgGd15)}` : "–"}
+            sub={tl("Average lead over the lane opponent at 15 minutes")}
+          />
+          <Stat
+            label={tl("Bans")}
+            value={`${bansInfo.byTeam} / ${bansInfo.vsTeam}`}
+            sub={tl("Banned it {n} times · banned against them {m} times", { n: bansInfo.byTeam, m: bansInfo.vsTeam })}
+          />
+        </div>
+
+        {/* Players on this team who played the champion + Most paired with */}
+        {totalG > 0 && (
+          <div className="grid gap-3 md:grid-cols-2">
+            {playersSummary.length > 0 && (
+              <div className="bg-rw-bg border border-rw-border rounded-lg p-2.5 space-y-1.5">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">
+                  {tl("Most games on {champion}", { champion: champName(canonical) })}
+                </div>
+                <ul className="space-y-1">
+                  {playersSummary.map((pl) => (
+                    <li key={pl.u || pl.n} className="flex items-center justify-between gap-2 min-w-0">
+                      <span className="flex items-center gap-1.5 min-w-0">
+                        <PlayerPhoto slug={pl.u ?? undefined} name={pl.n} team={t.name} size={20} />
+                        {pl.u ? (
+                          <HubLink
+                            to={{ kind: "player", slug: pl.u, tab: "champions", query: `champ=${encodeURIComponent(canonical)}` }}
+                            className="font-semibold text-rw-text hover:text-rw-accent truncate"
+                          >
+                            {pl.n}
+                          </HubLink>
+                        ) : (
+                          <span className="font-semibold text-rw-text truncate">{pl.n}</span>
+                        )}
+                        {pl.r && <span className="text-[10px] text-rw-muted shrink-0">· {roleName(pl.r)}</span>}
+                      </span>
+                      <span className="text-rw-sub tabular-nums shrink-0 text-[11px]">
+                        {pl.g}G · {pl.w}–{pl.g - pl.w} ({winRate(pl.w, pl.g)})
+                        {pl.kdaGames > 0 && ` · KDA ${fmtDec((pl.k + pl.a) / Math.max(pl.d, 1), 2)}`}
+                        {pl.gdGames > 0 && (
+                          <span className="text-rw-muted">
+                            {` · GD@15 ${Math.round(pl.gdSum / pl.gdGames) > 0 ? "+" : ""}${Math.round(pl.gdSum / pl.gdGames)}`}
+                          </span>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {draftPartners.length > 0 && (
+              <div className="bg-rw-bg border border-rw-border rounded-lg p-2.5 space-y-1.5">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">
+                  {tl("With {name}", { name: champName(canonical) })}
+                </div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                  {draftPartners.map(([c, [g, w]]) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => onSelectChamp(c)}
+                      className="flex items-center justify-between gap-1 min-w-0 text-left hover:bg-rw-raised rounded px-1 py-0.5"
+                    >
+                      <span className="flex items-center gap-1.5 min-w-0">
+                        <ChampIcon name={c} size={16} />
+                        <span className="truncate text-rw-text">{champName(c)}</span>
+                      </span>
+                      <span className="text-rw-muted tabular-nums shrink-0 text-[11px]">
+                        {g}G · {winRate(w, g)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Game Log */}
+        {totalG === 0 ? (
+          <p className="text-rw-muted py-2">
+            {tl("Not picked in this period")}
+          </p>
+        ) : (
+          <div className="space-y-2 pt-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">
+                {tl("Every game on {champ}", { champ: champName(canonical) })}
+              </span>
+              {years.length > 1 && (
+                <select
+                  value={year}
+                  onChange={(e) => {
+                    setYear(e.target.value);
+                    setLimit(25);
+                  }}
+                  aria-label={tl("Year")}
+                  className={select}
+                >
+                  <option value="all">{tl("All years")}</option>
+                  {years.map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <select
+                value={sideFilter}
+                onChange={(e) => {
+                  setSideFilter(e.target.value as "all" | "b" | "r");
+                  setLimit(25);
+                }}
+                aria-label={tl("Blue / red side")}
+                className={select}
+              >
+                <option value="all">{tl("All")}</option>
+                <option value="b">{tl("Blue side")}</option>
+                <option value="r">{tl("Red side")}</option>
+              </select>
+              {playersSummary.length > 1 && (
+                <select
+                  value={playerFilter}
+                  onChange={(e) => {
+                    setPlayerFilter(e.target.value);
+                    setLimit(25);
+                  }}
+                  aria-label={tl("Player")}
+                  className={select}
+                >
+                  <option value="all">{tl("All")}</option>
+                  {playersSummary.map((p) => (
+                    <option key={p.u || p.n} value={p.u || p.n}>
+                      {p.n} ({p.g})
+                    </option>
+                  ))}
+                </select>
+              )}
+              <span className="text-[11px] text-rw-sub">
+                {tn("{n} game", "{n} games", filtered.length)}
+                {!hidden && filtered.length > 0 && (
+                  <>
+                    {" · "}
+                    {tl("{pct} win rate", {
+                      pct: winRate(
+                        filtered.filter((e) => e.r[7] === 1).length,
+                        filtered.length,
+                      ),
+                    })}
+                  </>
+                )}
+              </span>
+              {hidden && <RevealButton onReveal={reveal} small />}
+            </div>
+
+            <ul className="space-y-1">
+              {filtered.slice(0, limit).map((e, i) => {
+                const r = e.r;
+                const hide = hidden && isFresh(r[0]);
+                const who = gamePlayerMap.get(r);
+                const roleStr = who?.r || (e.roleIdx != null ? ROLE_NAMES[e.roleIdx] : "");
+                const otherPicks = (r[20] || []).filter((_, idx) => idx !== e.idx);
+                return (
+                  <li key={i} className="flex items-center justify-between gap-2 min-w-0 py-0.5 border-t border-rw-border/40 first:border-t-0">
+                    <span className="flex items-center gap-1.5 min-w-0">
+                      <span className={`w-3.5 shrink-0 font-bold ${hide ? "text-rw-muted" : r[7] ? "text-rw-teal" : "text-rw-red"}`}>
+                        {hide ? "?" : r[7] ? tc("short result", "W") : tc("short result", "L")}
+                      </span>
+                      <ChampIcon name={canonical} size={18} />
+                      <span className="truncate min-w-0">
+                        {who && (
+                          <>
+                            {who.u ? (
+                              <PlayerLink name={who.n} u={who.u} className="font-semibold text-rw-text hover:text-rw-accent" />
+                            ) : (
+                              <span className="font-semibold text-rw-text">{who.n}</span>
+                            )}{" "}
+                            {who.k != null && (
+                              <span className="text-rw-text tabular-nums">{hide ? "?/?/?" : `${who.k}/${who.d}/${who.a}`}</span>
+                            )}{" "}
+                          </>
+                        )}
+                        <span className="text-rw-sub">
+                          vs {r[4]}
+                          {roleStr ? ` · ${roleName(roleStr)}` : ""}
+                        </span>{" "}
+                        <span className="text-rw-muted">
+                          · <EventLink name={r[3]} u={r[2]} className="text-rw-muted hover:text-rw-accent hover:underline" />
+                        </span>
+                      </span>
+                    </span>
+                    <span className="flex items-center gap-2 shrink-0 text-rw-muted">
+                      {!hide && e.gd15 != null && (
+                        <span
+                          className={`hidden sm:inline font-mono text-[10px] tabular-nums ${e.gd15 >= 0 ? "text-rw-teal" : "text-rw-red"}`}
+                          title={tl("Average lead over the lane opponent at 15 minutes")}
+                        >
+                          GD@15 {e.gd15 > 0 ? "+" : ""}
+                          {e.gd15}
+                        </span>
+                      )}
+                      {otherPicks.length > 0 && (
+                        <span className="hidden md:flex items-center gap-0.5" title={tl("Picks")}>
+                          {otherPicks.map((oc, oi) => (
+                            <ChampIcon key={`${oc}-${oi}`} name={oc} size={15} />
+                          ))}
+                        </span>
+                      )}
+                      {fmtDate(r[0])}
+                      {r[1] && (
+                        <HubLink to={{ kind: "match", slug: r[1] }} className="text-rw-teal hover:underline">
+                          {tl("Details")}
+                        </HubLink>
+                      )}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+            {filtered.length > limit && (
+              <button type="button" onClick={() => setLimit((x) => x + 50)} className="text-[11px] text-rw-teal hover:underline">
+                {tl("Show more ({n} left)", { n: filtered.length - limit })}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </Section>
   );
 };
 

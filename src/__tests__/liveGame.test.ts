@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { feedNow, fetchLiveWindow } from "../liveGame";
+import { feedNow, fetchLiveWindow, type LiveWindow } from "../liveGame";
+import { extractGamePicks } from "../components/LiveNextGamePreview";
+import type { Match } from "../types";
 
 // the feed's refusal of a window it won't serve yet, with Riot's time in microseconds (as the real one says it)
 const refusal = (server: number) =>
@@ -39,5 +41,48 @@ describe("live feed timing", () => {
     await expect(fetchLiveWindow("g2")).rejects.toThrow("HTTP 400");
     vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 204 })));
     await expect(fetchLiveWindow("g3")).resolves.toBeNull();
+  });
+
+  it("extracts earlier-game picks in role order for Fearless Draft preview", () => {
+    const match = {
+      id: "m1",
+      team1Id: "t1",
+      team1Code: "T1",
+      team1Name: "T1",
+      team2Id: "geng",
+      team2Code: "GEN",
+      team2Name: "Gen.G",
+    } as unknown as Match;
+    const win: LiveWindow = {
+      gameMetadata: {
+        blueTeamMetadata: {
+          esportsTeamId: "geng",
+          participantMetadata: [
+            { participantId: 3, summonerName: "GEN Chovy", championId: "Ahri", role: "mid" },
+            { participantId: 1, summonerName: "GEN Kiin", championId: "Ksante", role: "top" },
+          ],
+        },
+        redTeamMetadata: {
+          esportsTeamId: "t1",
+          participantMetadata: [
+            { participantId: 8, summonerName: "T1 Faker", championId: "Azir", role: "mid" },
+            { participantId: 6, summonerName: "T1 Doran", championId: "Gnar", role: "top" },
+          ],
+        },
+      },
+      frames: [],
+    };
+    const res = extractGamePicks(match, win, 1);
+    expect(res).toEqual({
+      number: 1,
+      team1: [
+        { c: "Gnar", player: "Doran", role: "top" },
+        { c: "Azir", player: "Faker", role: "mid" },
+      ],
+      team2: [
+        { c: "Ksante", player: "Kiin", role: "top" },
+        { c: "Ahri", player: "Chovy", role: "mid" },
+      ],
+    });
   });
 });

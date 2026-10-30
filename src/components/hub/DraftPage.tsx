@@ -33,7 +33,7 @@ const ORDER: { side: Who; ban: boolean }[] = [
   ...(["r", "b", "b", "r"] as Who[]).map((side) => ({ side, ban: false })),
 ];
 
-interface PlayerOnChamp {
+export interface PlayerOnChamp {
   c: string;
   name: string;
   /** roster slot = role index (0 top .. 4 support) */
@@ -49,7 +49,7 @@ interface PlayerOnChamp {
   ckda: number;
 }
 
-interface PlayerPool {
+export interface PlayerPool {
   name: string;
   u: string | null;
   role: number;
@@ -57,7 +57,7 @@ interface PlayerPool {
   champs: PlayerOnChamp[];
 }
 
-interface Pool {
+export interface Pool {
   picks: Map<string, [number, number]>; // champion -> games, wins
   bans: Map<string, number>;
   bansVs: Map<string, number>;
@@ -70,7 +70,7 @@ interface Pool {
   games: number;
 }
 
-function pool(side: Side, period: PeriodKey, sideOnly?: "b" | "r"): Pool {
+export function pool(side: Side, period: PeriodKey, sideOnly?: "b" | "r"): Pool {
   const rows: TeamGameRow[] = inPeriod(side.games, period, teamRowRef).filter((r) => !sideOnly || r[6] === sideOnly);
   const p: Pool = {
     picks: new Map(),
@@ -148,7 +148,7 @@ function pool(side: Side, period: PeriodKey, sideOnly?: "b" | "r"): Pool {
 }
 
 /** The role a champion would fill for this team: the role it played it in most, else its main player's seat. */
-function roleOf(c: string, p: Pool): number | null {
+export function roleOf(c: string, p: Pool): number | null {
   const rc = p.roleCount.get(c);
   if (rc) {
     let best = -1;
@@ -167,9 +167,9 @@ function roleOf(c: string, p: Pool): number | null {
 }
 
 /** games weighted by how they went: 10 games at 70% beat 12 at 40% */
-const comfort = (g: number, w: number) => g * (0.5 + (g ? w / g : 0));
+export const comfort = (g: number, w: number) => g * (0.5 + (g ? w / g : 0));
 
-const champOf = (c: string | null, p: Pool) => (c ? [...(p.players.get(c) || [])].sort((a, b) => b.g - a.g || b.cg - a.cg)[0] : undefined);
+export const champOf = (c: string | null, p: Pool) => (c ? [...(p.players.get(c) || [])].sort((a, b) => b.g - a.g || b.cg - a.cg)[0] : undefined);
 
 // ── address <-> state ──────────────────────────────────────────────────────
 
