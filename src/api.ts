@@ -427,11 +427,17 @@ export async function fetchLiveMatches(): Promise<{
       team2Image: t2.image,
       team2Score: t2.result?.gameWins ?? 0,
       team2Id: t2.id,
-      games: (m.games || []).map((g: any) => ({
-        id: g.id,
-        number: g.number,
-        state: g.state,
-      })),
+      games: (m.games || []).map((g: any) => {
+        const blueTeamId = (g.teams || []).find((t: any) => t.side === "blue")?.id;
+        const redTeamId = (g.teams || []).find((t: any) => t.side === "red")?.id;
+        return {
+          id: g.id,
+          number: g.number,
+          state: g.state,
+          ...(blueTeamId ? { blueTeamId } : {}),
+          ...(redTeamId ? { redTeamId } : {}),
+        };
+      }),
     });
   }
   return { matches, shows };
@@ -454,7 +460,17 @@ export async function fetchMatchGames(match: Match): Promise<Match> {
     team2Id: match.team2Id || id(match.team2Code),
     team1Score: wins(match.team1Code, match.team1Score),
     team2Score: wins(match.team2Code, match.team2Score),
-    games: (m?.games || []).map((g: any) => ({ id: g.id, number: g.number, state: g.state })),
+    games: (m?.games || []).map((g: any) => {
+      const blueTeamId = (g.teams || []).find((t: any) => t.side === "blue")?.id;
+      const redTeamId = (g.teams || []).find((t: any) => t.side === "red")?.id;
+      return {
+        id: g.id,
+        number: g.number,
+        state: g.state,
+        ...(blueTeamId ? { blueTeamId } : {}),
+        ...(redTeamId ? { redTeamId } : {}),
+      };
+    }),
   };
 }
 

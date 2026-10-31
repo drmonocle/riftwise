@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { feedNow, fetchLiveWindow, type LiveWindow } from "../liveGame";
 import { extractGamePicks } from "../components/LiveNextGamePreview";
-import { buildGameDraftQuery, buildTakenSet, isChampTaken, slotsFromGameDraft } from "../components/hub/DraftPage";
+import { buildGameDraftQuery, buildTakenSet, isChampTaken, nextDraftSlot, ORDER, slotsFromGameDraft, swapDraftSlots } from "../components/hub/DraftPage";
 import { seriesGameDraftQuery } from "../components/hub/MatchPage";
 import type { HubSeries } from "../hub/types";
 import type { Match } from "../types";
@@ -238,5 +238,39 @@ describe("live feed timing", () => {
     expect(isChampTaken("Trundle", nonFearless)).toBe(true);
     expect(isChampTaken("TwistedFate", nonFearless)).toBe(true);
     expect(isChampTaken("Rumble", nonFearless)).toBe(false);
+  });
+
+  it("advances draft cursor in live turn order, same-team ban order, and preserves team bans/picks on Swap sides", () => {
+    const empty: (string | null)[] = ORDER.map(() => null);
+
+    // 1. Jumping mid-draft to Pick 1 (slot 6) while bans 0..5 are empty continues forward to slot 7 (R1) instead of jumping back to slot 0
+    const s1 = [...empty];
+    s1[6] = "Olaf";
+    expect(nextDraftSlot(s1, 6, false)).toBe(7);
+
+    // 2. Clicking a team's Ban slot in TeamColumn (sameTeamBans = true) fills that team's Phase 1 bans (0 -> 2 -> 4),
+    //    then moves to the other team's Phase 1 bans (1 -> 3 -> 5), and then to Pick 1 (slot 6)
+    const s2 = [...empty];
+    s2[0] = "Trundle";
+    expect(nextDraftSlot(s2, 0, true)).toBe(2);
+    s2[2] = "TwistedFate";
+    expect(nextDraftSlot(s2, 2, true)).toBe(4);
+    s2[4] = "Viktor";
+    expect(nextDraftSlot(s2, 4, true)).toBe(1);
+    s2[1] = "Skarner";
+    expect(nextDraftSlot(s2, 1, true)).toBe(3);
+    s2[3] = "Ashe";
+    expect(nextDraftSlot(s2, 3, true)).toBe(5);
+    s2[5] = "Kalista";
+    expect(nextDraftSlot(s2, 5, true)).toBe(6);
+
+    // 3. Swapping sides moves Blue's bans (0, 2, 4) to Red's bans (1, 3, 5) and vice versa
+    const swapped = swapDraftSlots(s2);
+    expect(swapped[1]).toBe("Trundle");
+    expect(swapped[3]).toBe("TwistedFate");
+    expect(swapped[5]).toBe("Viktor");
+    expect(swapped[0]).toBe("Skarner");
+    expect(swapped[2]).toBe("Ashe");
+    expect(swapped[4]).toBe("Kalista");
   });
 });

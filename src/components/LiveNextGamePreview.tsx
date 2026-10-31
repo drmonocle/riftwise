@@ -253,7 +253,15 @@ export const LiveNextGamePreview: React.FC<{
 
   const currentNextPicks =
     currentGameNum === nextGameNum && currentWin ? extractGamePicks(match, currentWin, nextGameNum) : null;
-  const nextBlueIsTeam1 = currentNextPicks?.blueIsTeam1 != null ? currentNextPicks.blueIsTeam1 : true;
+  const targetGame = (match.games || []).find((g) => g.number === nextGameNum);
+  const nextBlueIsTeam1 =
+    currentNextPicks?.blueIsTeam1 != null
+      ? currentNextPicks.blueIsTeam1
+      : targetGame?.blueTeamId && match.team1Id
+        ? targetGame.blueTeamId === match.team1Id
+        : earlier.length > 0 && earlier[earlier.length - 1].blueIsTeam1 != null
+          ? !earlier[earlier.length - 1].blueIsTeam1
+          : true;
 
   const draftQuery = draftIntel
     ? buildGameDraftQuery({

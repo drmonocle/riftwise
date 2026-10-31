@@ -26,7 +26,7 @@ import type { LaneLine } from "../../hub/types";
 
 type Who = "b" | "r";
 /** Tournament draft order: who acts and whether it's a ban or a pick. */
-const ORDER: { side: Who; ban: boolean }[] = [
+export const ORDER: { side: Who; ban: boolean }[] = [
   ...(["b", "r", "b", "r", "b", "r"] as Who[]).map((side) => ({ side, ban: true })),
   ...(["b", "r", "r", "b", "b", "r"] as Who[]).map((side) => ({ side, ban: false })),
   ...(["r", "b", "r", "b"] as Who[]).map((side) => ({ side, ban: true })),
@@ -267,6 +267,56 @@ export function slotsFromGameDraft(g: GameDraftInput): (string | null)[] {
   return out;
 }
 
+/**
+ * Swaps Blue and Red ban/pick slots so clicking "Swap sides" moves each team's already-entered bans and picks
+ * to its new side rather than inverting or wiping them.
+ */
+export function swapDraftSlots(slots: (string | null)[]): (string | null)[] {
+  const blueBans = ORDER.map((o, i) => (o.side === "b" && o.ban ? slots[i] ?? null : undefined)).filter((x): x is string | null => x !== undefined);
+  const redBans = ORDER.map((o, i) => (o.side === "r" && o.ban ? slots[i] ?? null : undefined)).filter((x): x is string | null => x !== undefined);
+  const bluePicks = ORDER.map((o, i) => (o.side === "b" && !o.ban ? slots[i] ?? null : undefined)).filter((x): x is string | null => x !== undefined);
+  const redPicks = ORDER.map((o, i) => (o.side === "r" && !o.ban ? slots[i] ?? null : undefined)).filter((x): x is string | null => x !== undefined);
+  return slotsFromGameDraft({
+    blueBans: redBans,
+    redBans: blueBans,
+    bluePicks: redPicks,
+    redPicks: bluePicks,
+  });
+}
+
+/**
+ * Computes the next cursor slot after placing a champion at `currentStep`:
+ * - When `sameTeamBans` is true on a Ban slot, advances through that team's remaining empty bans in the same ban phase
+ *   (e.g. Blue Ban 1 -> 2 -> 3), then to the other team's empty bans in that phase, and then into the Pick phase.
+ * - Otherwise advances forward in tournament turn order from `currentStep + 1` so jumping mid-draft to any turn
+ *   (e.g. Pick 1 or Ban 3) continues forward without yanking the cursor back to slot 0.
+ */
+export function nextDraftSlot(slots: (string | null)[], currentStep: number, sameTeamBans = false): number | null {
+  if (sameTeamBans && currentStep >= 0 && currentStep < SLOTS && ORDER[currentStep].ban) {
+    const phaseIndices = currentStep < 6 ? [0, 1, 2, 3, 4, 5] : [12, 13, 14, 15];
+    const mySide = ORDER[currentStep].side;
+    const sameAfter = phaseIndices.find((i) => i > currentStep && ORDER[i].side === mySide && slots[i] === null);
+    if (sameAfter !== undefined) return sameAfter;
+    const sameBefore = phaseIndices.find((i) => ORDER[i].side === mySide && slots[i] === null);
+    if (sameBefore !== undefined) return sameBefore;
+    const otherSide = phaseIndices.find((i) => ORDER[i].side !== mySide && slots[i] === null);
+    if (otherSide !== undefined) return otherSide;
+    const afterPhaseEnd = phaseIndices[phaseIndices.length - 1];
+    for (let i = afterPhaseEnd + 1; i < SLOTS; i++) {
+      if (slots[i] === null) return i;
+    }
+  }
+  for (let i = currentStep + 1; i < SLOTS; i++) {
+    if (slots[i] === null) return i;
+  }
+  const allPicksFilled = ORDER.every((o, i) => o.ban || !!slots[i]);
+  if (!allPicksFilled) {
+    const first = slots.findIndex((s) => s === null);
+    return first >= 0 ? first : null;
+  }
+  return null;
+}
+
 export interface GameDraftQueryInput {
   blueSlug: string;
   redSlug: string;
@@ -440,7 +490,7 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
           h: packHistory(prior),
         });
       }}
-      onSwap={() => set({ a: b, b: a, d: "" })}
+      onSwap={() => set({ a: b, b: a, d: packSlots(swapDraftSlots(slots)) })}
       onSides={(x, y) => setSides({ a: x, b: y })}
     />
   );
@@ -494,6 +544,7 @@ const Board: React.FC<{
     [blue, red, period, sideOnly],
   );
   const [cursor, setCursor] = useState<number | null>(null);
+  const [sameTeamBans, setSameTeamBans] = useState<boolean>(false);
   const [focus, setFocus] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<number | "open" | null>(null);
@@ -503,7 +554,7 @@ const Board: React.FC<{
   const [hideTaken, setHideTaken] = useState<boolean>(true);
   const firstEmpty = slots.findIndex((s) => s === null);
   const allPicksFilled = ORDER.every((o, i) => o.ban || !!slots[i]);
-  const step = cursor != null && slots[cursor] === null ? cursor : allPicksFilled ? -1 : firstEmpty;
+  const step = cursor != null && cursor >= 0 && cursor < SLOTS ? cursor : allPicksFilled ? -1 : firstEmpty;
   const taken = useMemo(() => buildTakenSet(slots, used, fearless), [slots, used, fearless]);
 
   const now = step >= 0 && step < SLOTS ? ORDER[step] : null;
@@ -632,13 +683,25 @@ const Board: React.FC<{
     const next = [...slots];
     next[step] = c;
     onSlots(next);
-    setCursor(null);
+    const nextIdx = nextDraftSlot(next, step, sameTeamBans);
+    if (nextIdx == null || !ORDER[nextIdx].ban) setSameTeamBans(false);
+    setCursor(nextIdx);
     setFocus(c);
   };
-  const clearSlot = (i: number) => {
-    const next = [...slots];
-    next[i] = null;
-    onSlots(next);
+  const selectSlot = (i: number, fromTeamColumn = false) => {
+    setSameTeamBans(fromTeamColumn && ORDER[i]?.ban === true);
+    // If clicking a filled slot that isn't currently focused as the cursor, select it first so a champion click replaces it;
+    // clicking it again clears it to empty.
+    if (slots[i] !== null && cursor !== i) {
+      setCursor(i);
+      setFocus(slots[i]);
+      return;
+    }
+    if (slots[i] !== null) {
+      const next = [...slots];
+      next[i] = null;
+      onSlots(next);
+    }
     setCursor(i);
   };
   const undo = () => {
@@ -646,17 +709,24 @@ const Board: React.FC<{
       .map((s, i) => (s ? i : -1))
       .filter((i) => i >= 0)
       .pop();
-    if (last != null) clearSlot(last);
+    if (last != null) {
+      const next = [...slots];
+      next[last] = null;
+      onSlots(next);
+      setCursor(last);
+    }
   };
   const reset = () => {
     onSlots(ORDER.map(() => null));
     setCursor(null);
+    setSameTeamBans(false);
   };
   const nextGame = () => {
     const picks = slots.filter((s, i): s is string => !!s && !ORDER[i].ban);
     const h = picks.length ? [...history, { blue: blue.team.u, red: red.team.u, slots }] : history;
     onNextGame(h, [...new Set([...used, ...picks])]);
     setCursor(null);
+    setSameTeamBans(false);
   };
 
   const draftText = () => {
@@ -748,15 +818,17 @@ const Board: React.FC<{
 
       {/* phones and tablets: both boards side by side, the champion picker under them (so a pick shows on the board) */}
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_minmax(0,15rem)]">
-        <TeamColumn who="b" side={blue} pool={pools.b} slots={slots} step={step} onSlot={clearSlot} onPick={setCursor} />
+        <TeamColumn who="b" side={blue} pool={pools.b} slots={slots} step={step} onSelect={(i) => selectSlot(i, true)} />
         <div className="space-y-3 min-w-0 col-span-2 order-last lg:col-span-1 lg:order-none">
           <div className={`${card} space-y-2`}>
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className={`font-bold ${now ? (now.side === "b" ? "text-rw-teal" : "text-rw-red") : "text-rw-accent"}`}>
                 {now
-                  ? now.ban
-                    ? tl("{team} to ban", { team: team(now.side).team.name })
-                    : tl("{team} to pick", { team: team(now.side).team.name })
+                  ? `#${step + 1} · ${
+                      now.ban
+                        ? tl("{team} to ban", { team: team(now.side).team.name })
+                        : tl("{team} to pick", { team: team(now.side).team.name })
+                    }`
                   : tl("Draft complete")}
               </span>
               <span className="ml-auto flex flex-wrap items-center gap-2">
@@ -785,6 +857,7 @@ const Board: React.FC<{
                 )}
               </span>
             </div>
+            <DraftOrderStrip slots={slots} step={step} blueName={blue.team.name} redName={red.team.name} onSelect={(i) => selectSlot(i, false)} />
             {now && (
               <Suggest
                 now={now}
@@ -995,7 +1068,7 @@ const Board: React.FC<{
           </div>
           {focus && <ChampInfo c={focus} pools={pools} blue={blue} red={red} taken={taken} hideTaken={hideTaken} />}
         </div>
-        <TeamColumn who="r" side={red} pool={pools.r} slots={slots} step={step} onSlot={clearSlot} onPick={setCursor} />
+        <TeamColumn who="r" side={red} pool={pools.r} slots={slots} step={step} onSelect={(i) => selectSlot(i, true)} />
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
@@ -1120,18 +1193,89 @@ const Suggest: React.FC<{
   );
 };
 
-/** A side's five bans and five picks; click a slot to empty it and fill it next. Picks show the role they fill. */
+const PICK_CODES: Record<number, string> = {
+  6: "B1",
+  7: "R1",
+  8: "R2",
+  9: "B2",
+  10: "B3",
+  11: "R3",
+  16: "R4",
+  17: "B4",
+  18: "B5",
+  19: "R5",
+};
+
+/** Interactive 20-turn strip grouped into the 4 tournament draft phases so users can jump to any turn in real time. */
+const DraftOrderStrip: React.FC<{
+  slots: (string | null)[];
+  step: number;
+  blueName: string;
+  redName: string;
+  onSelect: (i: number) => void;
+}> = ({ slots, step, blueName, redName, onSelect }) => {
+  const groups: { label: string; indices: number[] }[] = [
+    { label: `${tl("Bans")} 1–3`, indices: [0, 1, 2, 3, 4, 5] },
+    { label: `${tl("Picks")} 1–3`, indices: [6, 7, 8, 9, 10, 11] },
+    { label: `${tl("Bans")} 4–5`, indices: [12, 13, 14, 15] },
+    { label: `${tl("Picks")} 4–5`, indices: [16, 17, 18, 19] },
+  ];
+  return (
+    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px]">
+      {groups.map((grp) => (
+        <div key={grp.label} className="flex items-center gap-1">
+          <span className="text-rw-muted font-medium">{grp.label}</span>
+          <div className="flex items-center gap-0.5">
+            {grp.indices.map((i) => {
+              const o = ORDER[i];
+              const c = slots[i];
+              const active = step === i;
+              const isBlue = o.side === "b";
+              const teamLabel = isBlue ? blueName : redName;
+              const code = o.ban ? `#${i + 1}` : PICK_CODES[i] || `#${i + 1}`;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => onSelect(i)}
+                  title={`#${i + 1} · ${o.ban ? tl("{team} to ban", { team: teamLabel }) : tl("{team} to pick", { team: teamLabel })}${c ? ` (${champName(c)})` : ""}`}
+                  className={`relative flex items-center justify-center rounded border h-6 min-w-[1.55rem] px-1 transition-colors ${
+                    active
+                      ? "border-rw-accent bg-rw-accent/15 ring-1 ring-rw-accent text-rw-accent font-bold"
+                      : isBlue
+                        ? "border-rw-teal/40 bg-rw-teal/10 text-rw-teal hover:border-rw-teal"
+                        : "border-rw-red/40 bg-rw-red/10 text-rw-red hover:border-rw-red"
+                  }`}
+                >
+                  {c ? (
+                    <ChampIcon name={c} size={18} className={o.ban ? "grayscale opacity-80" : ""} />
+                  ) : (
+                    <span className="leading-none tabular-nums">{code}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/** A side's five bans and five picks arranged in chronological draft phases (Bans 1–3, Picks 1–3, Bans 4–5, Picks 4–5). */
 const TeamColumn: React.FC<{
   who: Who;
   side: Side;
   pool: Pool;
   slots: (string | null)[];
   step: number;
-  onSlot: (i: number) => void;
-  onPick: (i: number) => void;
-}> = ({ who, side, pool: p, slots, step, onSlot, onPick }) => {
+  onSelect: (i: number) => void;
+}> = ({ who, side, pool: p, slots, step, onSelect }) => {
   const mine = ORDER.map((o, i) => ({ ...o, i })).filter((o) => o.side === who);
-  const bans = mine.filter((o) => o.ban);
+  const bans1 = mine.filter((o) => o.ban && o.i < 6);
+  const picks1 = mine.filter((o) => !o.ban && o.i < 12);
+  const bans2 = mine.filter((o) => o.ban && o.i >= 12);
+  const picks2 = mine.filter((o) => !o.ban && o.i >= 16);
   const picks = mine.filter((o) => !o.ban);
   const color = who === "b" ? "var(--rw-teal)" : "var(--rw-red)";
   const picked = picks.map((o) => slots[o.i]).filter((c): c is string => !!c);
@@ -1142,32 +1286,76 @@ const TeamColumn: React.FC<{
     if (r == null) unknown++;
     else count[r]++;
   }
-  const slot = (i: number, big: boolean) => {
+  const selectFirstEmptyIn = (list: { i: number }[]) => {
+    const empty = list.find((o) => slots[o.i] === null);
+    onSelect((empty || list[0]).i);
+  };
+  const banSlot = (i: number) => {
     const c = slots[i];
     const active = step === i;
-    const r = c && big ? roleOf(c, p) : null;
-    const who_ = c && big ? champOf(c, p) : undefined;
     return (
       <button
         key={i}
         type="button"
-        onClick={() => (c ? onSlot(i) : onPick(i))}
-        className={`flex items-center gap-2 rounded border ${big ? "p-1.5 w-full" : "p-0.5"} ${active ? "border-rw-accent" : "border-rw-border"} bg-rw-bg`}
-        title={c ? tl("Click to change") : undefined}
+        onClick={() => onSelect(i)}
+        className={`relative flex flex-col items-center gap-0.5 rounded border p-1 min-w-0 ${
+          active ? "border-rw-accent ring-1 ring-rw-accent bg-rw-accent/10" : "border-rw-border hover:border-rw-line bg-rw-bg"
+        }`}
+        title={c ? `${champName(c)} (#${i + 1}) · ${tl("Click to change")}` : `#${i + 1}`}
         aria-label={c ? `${champName(c)}: ${tl("Click to change")}` : tl("Empty slot")}
       >
-        {c ? <ChampIcon name={c} size={big ? 32 : 24} className={big ? "" : "grayscale"} /> : <span className={`${big ? "w-8 h-8" : "w-6 h-6"} rounded bg-rw-border`} />}
-        {big && (
-          <span className="min-w-0 text-left">
-            <span className="block text-xs text-rw-text truncate">{c ? champName(c) : ""}</span>
-            {c && (
-              <span className="block text-[10px] text-rw-muted truncate">
-                {r != null ? roleName(ROLES[r]) : tl("role unknown")}
-                {who_ && who_.cg > 0 ? ` · ${who_.name}` : ""}
-              </span>
-            )}
+        <span className="absolute top-0.5 left-1 text-[9px] text-rw-muted font-semibold tabular-nums leading-none">
+          #{i + 1}
+        </span>
+        {c ? (
+          <ChampIcon name={c} size={28} className="grayscale shrink-0" />
+        ) : (
+          <span className="w-7 h-7 rounded bg-rw-border shrink-0 flex items-center justify-center text-[10px] text-rw-muted font-semibold tabular-nums">
+            –
           </span>
         )}
+        <span className="block w-full text-center text-[10px] text-rw-sub truncate leading-tight">
+          {c ? champName(c) : `#${i + 1}`}
+        </span>
+      </button>
+    );
+  };
+  const pickSlot = (i: number) => {
+    const c = slots[i];
+    const active = step === i;
+    const r = c ? roleOf(c, p) : null;
+    const who_ = c ? champOf(c, p) : undefined;
+    const code = PICK_CODES[i] || `#${i + 1}`;
+    return (
+      <button
+        key={i}
+        type="button"
+        onClick={() => onSelect(i)}
+        className={`flex items-center gap-2 rounded border p-1.5 w-full ${
+          active ? "border-rw-accent ring-1 ring-rw-accent bg-rw-accent/10" : "border-rw-border hover:border-rw-line bg-rw-bg"
+        }`}
+        title={c ? `${champName(c)} (${code} · #${i + 1}) · ${tl("Click to change")}` : `${code} · #${i + 1}`}
+        aria-label={c ? `${champName(c)}: ${tl("Click to change")}` : tl("Empty slot")}
+      >
+        {c ? (
+          <ChampIcon name={c} size={32} className="shrink-0" />
+        ) : (
+          <span className="w-8 h-8 rounded bg-rw-border shrink-0 flex items-center justify-center text-[10px] text-rw-muted font-bold tabular-nums">
+            {code}
+          </span>
+        )}
+        <span className="min-w-0 text-left flex-1">
+          <span className="flex items-center justify-between gap-1 text-xs text-rw-text">
+            <span className="truncate font-medium">{c ? champName(c) : code}</span>
+            <span className="text-[10px] text-rw-muted tabular-nums shrink-0">#{i + 1}</span>
+          </span>
+          {c && (
+            <span className="block text-[10px] text-rw-muted truncate">
+              {r != null ? roleName(ROLES[r]) : tl("role unknown")}
+              {who_ && who_.cg > 0 ? ` · ${who_.name}` : ""}
+            </span>
+          )}
+        </span>
       </button>
     );
   };
@@ -1176,8 +1364,50 @@ const TeamColumn: React.FC<{
       <div className="text-xs font-bold truncate" style={{ color }}>
         {who === "b" ? tl("Blue side") : tl("Red side")}: {side.team.name}
       </div>
-      <div className="flex flex-wrap gap-1">{bans.map((o) => slot(o.i, false))}</div>
-      <div className="space-y-1">{picks.map((o) => slot(o.i, true))}</div>
+      <div className="space-y-1">
+        <button
+          type="button"
+          onClick={() => selectFirstEmptyIn(bans1)}
+          className="text-[10px] font-semibold text-rw-muted hover:text-rw-text flex items-center gap-1"
+        >
+          <span>{tl("Bans")} 1–3</span>
+          <span className="text-[9px] font-normal tabular-nums">({bans1.map((o) => `#${o.i + 1}`).join(", ")})</span>
+        </button>
+        <div className="grid grid-cols-3 gap-1">{bans1.map((o) => banSlot(o.i))}</div>
+      </div>
+      <div className="space-y-1">
+        <button
+          type="button"
+          onClick={() => selectFirstEmptyIn(picks1)}
+          className="text-[10px] font-semibold text-rw-muted hover:text-rw-text flex items-center gap-1"
+        >
+          <span>{tl("Picks")} 1–3</span>
+          <span className="text-[9px] font-normal tabular-nums">({picks1.map((o) => PICK_CODES[o.i]).join(", ")})</span>
+        </button>
+        <div className="space-y-1">{picks1.map((o) => pickSlot(o.i))}</div>
+      </div>
+      <div className="space-y-1 pt-0.5 border-t border-rw-border/60">
+        <button
+          type="button"
+          onClick={() => selectFirstEmptyIn(bans2)}
+          className="text-[10px] font-semibold text-rw-muted hover:text-rw-text flex items-center gap-1"
+        >
+          <span>{tl("Bans")} 4–5</span>
+          <span className="text-[9px] font-normal tabular-nums">({bans2.map((o) => `#${o.i + 1}`).join(", ")})</span>
+        </button>
+        <div className="grid grid-cols-2 gap-1">{bans2.map((o) => banSlot(o.i))}</div>
+      </div>
+      <div className="space-y-1">
+        <button
+          type="button"
+          onClick={() => selectFirstEmptyIn(picks2)}
+          className="text-[10px] font-semibold text-rw-muted hover:text-rw-text flex items-center gap-1"
+        >
+          <span>{tl("Picks")} 4–5</span>
+          <span className="text-[9px] font-normal tabular-nums">({picks2.map((o) => PICK_CODES[o.i]).join(", ")})</span>
+        </button>
+        <div className="space-y-1">{picks2.map((o) => pickSlot(o.i))}</div>
+      </div>
       {picked.length >= 2 && (
         <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px]" title={tl("Roles the picks so far cover")}>
           {ROLES.map((r, i) => (
