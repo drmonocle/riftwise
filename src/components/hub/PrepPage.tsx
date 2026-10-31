@@ -9,7 +9,7 @@ import { ClipboardCopy, GitCompare, Printer, Swords } from "lucide-react";
 import { tl, tc, roleName, fmtDec } from "../../i18n";
 import { MissingFile, winRate } from "../../stats";
 import { champName } from "../../champions";
-import { loadHubPlayer, loadHubTeam, loadPlayerGames, loadPlayerGames2y, loadRatings, loadTeamGames, loadTeamGames2y, loadTeamSeries } from "../../hub/data";
+import { bare, loadHubPlayer, loadHubTeam, loadPlayerGames, loadPlayerGames2y, loadRatings, loadTeamGames, loadTeamGames2y, loadTeamSeries } from "../../hub/data";
 import { chanceContext, matchChance, pct, seriesChance } from "../../hub/winChance";
 import { liveRating } from "../../hub/liveRatings";
 import { Change } from "./RankingsPage";
@@ -877,12 +877,24 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
  * champions with 2+ games) is where the other team can squeeze in games 3-5.
  */
 /** Each starter's champions in the period (most played first), and the shallowest pool of all ten. */
-function fearlessPools(a: Side, b: Side, period: PeriodKey) {
+function fearlessPools(a: Side, b: Side, period: PeriodKey, exclude?: Set<string>) {
+  const isExcluded = (c: string) => {
+    if (!exclude || exclude.size === 0) return false;
+    const cn = champName(c);
+    return (
+      exclude.has(c) ||
+      exclude.has(c.toLowerCase()) ||
+      exclude.has(cn) ||
+      exclude.has(cn.toLowerCase()) ||
+      (!!bare(c) && exclude.has(bare(c))) ||
+      (!!bare(cn) && exclude.has(bare(cn)))
+    );
+  };
   const of = (pl: Side["players"][number]) => {
     if (!pl) return null;
     const m = new Map<string, [number, number]>();
     for (const g of inPeriod(pl.log, period, playerRowRef)) {
-      if (!g[2]) continue;
+      if (!g[2] || isExcluded(g[2])) continue;
       const x = m.get(g[2]) || [0, 0];
       x[0]++;
       x[1] += g[6];
@@ -903,14 +915,15 @@ function fearlessPools(a: Side, b: Side, period: PeriodKey) {
   return { a: pa, b: pb, enough: all.length >= 4, minDeep, pinch: pinch as { name: string; team: string; role: string; deep: number } | null };
 }
 
-export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string; title: string }> = ({
+export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; periodLabel: string; title: string; exclude?: Set<string> }> = ({
   a,
   b,
   period,
   periodLabel,
   title,
+  exclude,
 }) => {
-  const pools = useMemo(() => fearlessPools(a, b, period), [a, b, period]);
+  const pools = useMemo(() => fearlessPools(a, b, period, exclude), [a, b, period, exclude]);
   if (!pools.enough) return null;
   const minDeep = pools.minDeep;
   const line = (x: (typeof pools.a)[number]): PoolLine | null => (x ? { name: x.name, list: x.list.map(([c, [g]]) => [c, g]), deep: x.deep } : null);

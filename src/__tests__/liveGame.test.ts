@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { feedNow, fetchLiveWindow, type LiveWindow } from "../liveGame";
 import { extractGamePicks } from "../components/LiveNextGamePreview";
-import { buildGameDraftQuery, slotsFromGameDraft } from "../components/hub/DraftPage";
+import { buildGameDraftQuery, buildTakenSet, isChampTaken, slotsFromGameDraft } from "../components/hub/DraftPage";
 import { seriesGameDraftQuery } from "../components/hub/MatchPage";
 import type { HubSeries } from "../hub/types";
 import type { Match } from "../types";
@@ -188,5 +188,55 @@ describe("live feed timing", () => {
     expect(customQ.get("teams")).toBe("t1,gen-g");
     expect(customQ.get("p")).toBe("y2026");
     expect(customQ.get("g")).toBe("4");
+  });
+
+  it("normalizes picked, banned, and Fearless-locked champions across display names and DDragon IDs", () => {
+    const used = [
+      "Rumble",
+      "Pantheon",
+      "Syndra",
+      "Ezreal",
+      "Alistar",
+      "Aurora",
+      "Vi",
+      "Cassiopeia",
+      "Kai'Sa",
+      "Nautilus",
+      "Gnar",
+      "Lee Sin",
+      "Orianna",
+      "Yunara",
+      "Lulu",
+      "Ambessa",
+      "Qiyana",
+      "LeBlanc",
+      "Caitlyn",
+      "Karma",
+      "Wukong",
+    ];
+    const slots: (string | null)[] = ["Trundle", "Twisted Fate", "Viktor", ...new Array(17).fill(null)];
+    const taken = buildTakenSet(slots, used, true);
+
+    for (const c of [
+      ...used,
+      "Kaisa",
+      "LeeSin",
+      "Leblanc",
+      "MonkeyKing",
+      "Trundle",
+      "Twisted Fate",
+      "TwistedFate",
+      "Viktor",
+    ]) {
+      expect(isChampTaken(c, taken)).toBe(true);
+    }
+    expect(isChampTaken("Ahri", taken)).toBe(false);
+    expect(isChampTaken("Azir", taken)).toBe(false);
+
+    // When Fearless is disabled, only current-game slots are taken
+    const nonFearless = buildTakenSet(slots, used, false);
+    expect(isChampTaken("Trundle", nonFearless)).toBe(true);
+    expect(isChampTaken("TwistedFate", nonFearless)).toBe(true);
+    expect(isChampTaken("Rumble", nonFearless)).toBe(false);
   });
 });

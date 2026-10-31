@@ -182,6 +182,53 @@ const parseSlots = (s: string | null): (string | null)[] => {
 export const packSlots = (slots: (string | null)[]) => (slots.some((s) => s) ? slots.map((s) => s || "").join(",") : "");
 const parseList = (s: string | null) => (s || "").split(",").map((x) => x.trim()).filter(Boolean);
 
+const CHAMP_ALIAS: Record<string, string> = {
+  monkeyking: "wukong",
+  wukong: "monkeyking",
+  nunu: "nunuwillump",
+  nunuwillump: "nunu",
+  renata: "renataglasc",
+  renataglasc: "renata",
+};
+
+/**
+ * Builds a normalized lookup set of all unavailable champions (picked/banned in `slots` + Fearless `used` when `fearless` is enabled),
+ * matching across spacing, apostrophes, case, and DDragon/OE aliases (`Kai'Sa`/`Kaisa`, `Lee Sin`/`LeeSin`, `Twisted Fate`/`TwistedFate`, `LeBlanc`/`Leblanc`, `Wukong`/`MonkeyKing`).
+ */
+export function buildTakenSet(slots: (string | null)[], used: string[], fearless: boolean): Set<string> {
+  const out = new Set<string>();
+  const raw = [...slots.filter((s): s is string => !!s), ...(fearless ? used : [])];
+  for (const r of raw) {
+    const t = r.trim();
+    if (!t) continue;
+    out.add(t);
+    out.add(t.toLowerCase());
+    const b = bare(t);
+    if (b) {
+      out.add(b);
+      if (CHAMP_ALIAS[b]) out.add(CHAMP_ALIAS[b]);
+    }
+    const cn = champName(t);
+    if (cn && cn !== t) {
+      out.add(cn);
+      out.add(cn.toLowerCase());
+      const bcn = bare(cn);
+      if (bcn) out.add(bcn);
+    }
+  }
+  return out;
+}
+
+export function isChampTaken(c: string, taken: Set<string>): boolean {
+  if (!c) return false;
+  if (taken.has(c) || taken.has(c.toLowerCase())) return true;
+  const b = bare(c);
+  if (b && (taken.has(b) || (CHAMP_ALIAS[b] !== undefined && taken.has(CHAMP_ALIAS[b])))) return true;
+  const cn = champName(c);
+  if (cn && (taken.has(cn) || taken.has(cn.toLowerCase()) || taken.has(bare(cn)))) return true;
+  return false;
+}
+
 export interface PastGame {
   blue: string;
   red: string;
@@ -353,8 +400,16 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
   if (!sides.a || !sides.b) return <Loading />;
   const slots = parseSlots(q.get("d"));
   const history = parseHistory(q.get("h"));
+  const usedList = parseList(q.get("u"));
   const gameParam = Number(q.get("g")) || 0;
-  const activeGameNum = history.length > 0 ? Math.max(gameParam, history.length + 1) : gameParam > 0 ? gameParam : null;
+  const activeGameNum =
+    history.length > 0
+      ? Math.max(gameParam, history.length + 1)
+      : gameParam > 0
+        ? gameParam
+        : usedList.length >= 10
+          ? Math.floor(usedList.length / 10) + 1
+          : null;
   return (
     <Board
       blue={sides.a}
@@ -362,7 +417,7 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
       period={q.get("p") || undefined}
       gameNum={activeGameNum}
       slots={slots}
-      used={parseList(q.get("u"))}
+      used={usedList}
       fearless={q.get("f") !== "0"}
       history={history}
       onPeriod={(p) => set({ p })}
@@ -390,6 +445,16 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
     />
   );
 };
+
+type PoolFilter = "all" | "played" | "blue" | "red" | "both" | "flex" | "pocket";
+type SortKey = "picked" | "wr" | "bans" | "az";
+
+function champHasRole(c: string, r: number, pools: { b: Pool; r: Pool }): boolean {
+  if (pools.b.roles.get(c)?.has(r) || pools.r.roles.get(c)?.has(r)) return true;
+  if (pools.b.players.get(c)?.some((p) => p.role === r && (p.g > 0 || p.cg >= 3))) return true;
+  if (pools.r.players.get(c)?.some((p) => p.role === r && (p.g > 0 || p.cg >= 3))) return true;
+  return false;
+}
 
 const Board: React.FC<{
   blue: Side;
@@ -431,29 +496,139 @@ const Board: React.FC<{
   const [cursor, setCursor] = useState<number | null>(null);
   const [focus, setFocus] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [role, setRole] = useState<number | null>(null);
+  const [role, setRole] = useState<number | "open" | null>(null);
+  const [poolFilter, setPoolFilter] = useState<PoolFilter>("all");
+  const [minGames, setMinGames] = useState<number>(0);
+  const [sortBy, setSortBy] = useState<SortKey>("picked");
+  const [hideTaken, setHideTaken] = useState<boolean>(true);
   const firstEmpty = slots.findIndex((s) => s === null);
   const allPicksFilled = ORDER.every((o, i) => o.ban || !!slots[i]);
   const step = cursor != null && slots[cursor] === null ? cursor : allPicksFilled ? -1 : firstEmpty;
-  const taken = new Set([...slots.filter((s): s is string => !!s), ...(fearless ? used : [])]);
+  const taken = useMemo(() => buildTakenSet(slots, used, fearless), [slots, used, fearless]);
+
+  const now = step >= 0 && step < SLOTS ? ORDER[step] : null;
+  const team = (w: Who) => (w === "b" ? blue : red);
+  const picksOf = (w: Who) => ORDER.map((o, i) => (o.side === w && !o.ban ? slots[i] : null)).filter((c): c is string => !!c);
+  const bansOf = (w: Who) => ORDER.map((o, i) => (o.side === w && o.ban ? slots[i] : null)).filter((c): c is string => !!c);
+
+  const activeSide: Who = now ? now.side : "b";
+  const filledRoles = useMemo(() => {
+    const pks = ORDER.map((o, i) => (o.side === activeSide && !o.ban ? slots[i] : null)).filter((c): c is string => !!c);
+    return new Set(pks.map((c) => roleOf(c, pools[activeSide])).filter((r): r is number => r != null));
+  }, [slots, activeSide, pools]);
+  const openRoles = useMemo(() => [0, 1, 2, 3, 4].filter((r) => !filledRoles.has(r)), [filledRoles]);
 
   const all = useMemo(() => {
-    const names = new Set(championList());
-    for (const p of [pools.b, pools.r]) for (const c of [...p.picks.keys(), ...p.bans.keys()]) names.add(c);
-    return [...names].sort((x, y) => champName(x).localeCompare(champName(y)));
+    const seen = new Set<string>();
+    const out: string[] = [];
+    const add = (c: string) => {
+      const k = bare(c);
+      if (!k || seen.has(k)) return;
+      seen.add(k);
+      out.push(c);
+    };
+    for (const p of [pools.b, pools.r]) {
+      for (const c of [...p.picks.keys(), ...p.bans.keys(), ...p.bansVs.keys(), ...p.players.keys()]) add(c);
+    }
+    for (const c of championList()) add(c);
+    return out.sort((x, y) => champName(x).localeCompare(champName(y)));
   }, [pools]);
+
+  const takenCount = useMemo(() => all.filter((c) => isChampTaken(c, taken)).length, [all, taken]);
+  const availableTotal = hideTaken ? all.length - takenCount : all.length;
+
   const bq = bare(search.trim());
-  const shown = all.filter(
-    (c) =>
-      (!search.trim() ||
-        champName(c).toLowerCase().includes(search.trim().toLowerCase()) ||
-        c.toLowerCase().includes(search.trim().toLowerCase()) ||
-        (bq.length >= 2 && (bare(champName(c)).includes(bq) || bare(c).includes(bq)))) &&
-      (role == null || pools.b.roles.get(c)?.has(role) || pools.r.roles.get(c)?.has(role)),
-  );
+  const shown = useMemo(() => {
+    const filtered = all.filter((c) => {
+      if (hideTaken && isChampTaken(c, taken)) return false;
+      if (
+        search.trim() &&
+        !champName(c).toLowerCase().includes(search.trim().toLowerCase()) &&
+        !c.toLowerCase().includes(search.trim().toLowerCase()) &&
+        !(bq.length >= 2 && (bare(champName(c)).includes(bq) || bare(c).includes(bq)))
+      ) {
+        return false;
+      }
+      if (role === "open") {
+        if (openRoles.length > 0 && !openRoles.some((r) => champHasRole(c, r, pools))) return false;
+      } else if (role != null) {
+        if (!champHasRole(c, role, pools)) return false;
+      }
+      const pb = pools.b.picks.get(c)?.[0] || 0;
+      const pr = pools.r.picks.get(c)?.[0] || 0;
+      const bStarter = (pools.b.players.get(c) || []).some((p) => p.g > 0 || p.cg >= 3);
+      const rStarter = (pools.r.players.get(c) || []).some((p) => p.g > 0 || p.cg >= 3);
+      if (poolFilter === "played" && pb === 0 && pr === 0 && !bStarter && !rStarter) return false;
+      if (poolFilter === "blue" && pb === 0 && !bStarter) return false;
+      if (poolFilter === "red" && pr === 0 && !rStarter) return false;
+      if (poolFilter === "both" && !((pb > 0 || bStarter) && (pr > 0 || rStarter))) return false;
+      if (poolFilter === "flex") {
+        const flexRoles = new Set([...(pools.b.roles.get(c) || []), ...(pools.r.roles.get(c) || [])]);
+        if (flexRoles.size < 2) return false;
+      }
+      if (poolFilter === "pocket") {
+        const hasPocket = [...(pools.b.players.get(c) || []), ...(pools.r.players.get(c) || [])].some((p) => p.g === 0 && p.cg >= 3);
+        if (pb + pr > 0 || !hasPocket) return false;
+      }
+      if (minGames > 0) {
+        if (poolFilter === "blue" && pb < minGames) return false;
+        else if (poolFilter === "red" && pr < minGames) return false;
+        else if (poolFilter === "both" && (pb < minGames || pr < minGames)) return false;
+        else if (pb + pr < minGames) return false;
+      }
+      return true;
+    });
+
+    const statsOf = (c: string) => {
+      const [gb, wb] = pools.b.picks.get(c) || [0, 0];
+      const [gr, wr] = pools.r.picks.get(c) || [0, 0];
+      const g = poolFilter === "blue" ? gb : poolFilter === "red" ? gr : gb + gr;
+      const w = poolFilter === "blue" ? wb : poolFilter === "red" ? wr : wb + wr;
+      const comf =
+        poolFilter === "blue"
+          ? comfort(gb, wb)
+          : poolFilter === "red"
+            ? comfort(gr, wr)
+            : comfort(gb, wb) + comfort(gr, wr);
+      const bans =
+        (pools.b.bans.get(c) || 0) +
+        (pools.r.bans.get(c) || 0) +
+        (pools.b.bansVs.get(c) || 0) +
+        (pools.r.bansVs.get(c) || 0);
+      const career = [...(pools.b.players.get(c) || []), ...(pools.r.players.get(c) || [])].reduce((acc, p) => Math.max(acc, p.cg), 0);
+      return { g, w, comf, bans, career };
+    };
+
+    return [...filtered].sort((x, y) => {
+      if (sortBy === "az") return champName(x).localeCompare(champName(y));
+      const sx = statsOf(x);
+      const sy = statsOf(y);
+      if (sortBy === "bans") {
+        return sy.bans - sx.bans || sy.comf - sx.comf || sy.g - sx.g || champName(x).localeCompare(champName(y));
+      }
+      if (sortBy === "wr") {
+        const wx = sx.g > 0 ? sx.w / sx.g : -1;
+        const wy = sy.g > 0 ? sy.w / sy.g : -1;
+        return wy - wx || sy.g - sx.g || sy.comf - sx.comf || champName(x).localeCompare(champName(y));
+      }
+      return sy.comf - sx.comf || sy.g - sx.g || sy.bans - sx.bans || sy.career - sx.career || champName(x).localeCompare(champName(y));
+    });
+  }, [all, hideTaken, taken, search, bq, role, openRoles, pools, poolFilter, minGames, sortBy]);
+
+  const hasActiveFilters =
+    !!search.trim() || role !== null || poolFilter !== "all" || minGames > 0 || !hideTaken || sortBy !== "picked";
+
+  const clearAllFilters = () => {
+    setSearch("");
+    setRole(null);
+    setPoolFilter("all");
+    setMinGames(0);
+    setSortBy("picked");
+    setHideTaken(true);
+  };
 
   const place = (c: string) => {
-    if (step < 0 || step >= SLOTS || taken.has(c)) return;
+    if (step < 0 || step >= SLOTS || isChampTaken(c, taken)) return;
     const next = [...slots];
     next[step] = c;
     onSlots(next);
@@ -483,10 +658,6 @@ const Board: React.FC<{
     onNextGame(h, [...new Set([...used, ...picks])]);
     setCursor(null);
   };
-  const now = step >= 0 && step < SLOTS ? ORDER[step] : null;
-  const team = (w: Who) => (w === "b" ? blue : red);
-  const picksOf = (w: Who) => ORDER.map((o, i) => (o.side === w && !o.ban ? slots[i] : null)).filter((c): c is string => !!c);
-  const bansOf = (w: Who) => ORDER.map((o, i) => (o.side === w && o.ban ? slots[i] : null)).filter((c): c is string => !!c);
 
   const draftText = () => {
     const lines: string[] = [];
@@ -663,69 +834,166 @@ const Board: React.FC<{
                 </div>
               </div>
             )}
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    const openHit = shown.find((c) => !taken.has(c));
-                    if (openHit) {
-                      e.preventDefault();
-                      place(openHit);
-                      setSearch("");
+            <div className="space-y-1.5 text-xs">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const openHit = shown.find((c) => !isChampTaken(c, taken));
+                      if (openHit) {
+                        e.preventDefault();
+                        place(openHit);
+                        setSearch("");
+                      }
                     }
-                  }
-                }}
-                placeholder={tl("Search champions…")}
-                aria-label={tl("Search champions…")}
-                className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text w-full sm:w-40"
-              />
-              <span className="flex flex-wrap gap-1">
-                {[null, 0, 1, 2, 3, 4].map((r) => (
+                  }}
+                  placeholder={tl("Search champions…")}
+                  aria-label={tl("Search champions…")}
+                  className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1 text-rw-text w-full sm:w-36"
+                />
+                <span className="flex flex-wrap gap-1">
+                  {([null, 0, 1, 2, 3, 4] as const).map((r) => (
+                    <button
+                      key={String(r)}
+                      type="button"
+                      onClick={() => setRole(r)}
+                      className={`px-2 py-1 rounded border ${role === r ? "border-rw-accent text-rw-accent bg-rw-accent/10" : "border-rw-border text-rw-sub hover:text-rw-text"}`}
+                      title={r == null ? undefined : tl("Champions these teams played in this role")}
+                    >
+                      {r == null ? tl("All") : roleName(ROLES[r])}
+                    </button>
+                  ))}
+                  {filledRoles.size > 0 && openRoles.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setRole(role === "open" ? null : "open")}
+                      className={`px-2 py-1 rounded border ${role === "open" ? "border-rw-accent text-rw-accent bg-rw-accent/10" : "border-rw-border text-rw-sub hover:text-rw-text"}`}
+                      title={tl("Roles the picks so far cover")}
+                    >
+                      {openRoles.map((r) => roleName(ROLES[r])).join(" / ")}
+                    </button>
+                  )}
+                </span>
+                <span className="ml-auto flex flex-wrap items-center gap-1 text-[11px]">
+                  {(
+                    [
+                      ["picked", tl("Most picked")],
+                      ["wr", tl("Best win rate")],
+                      ["bans", tl("Bans")],
+                      ["az", "A–Z"],
+                    ] as [SortKey, string][]
+                  ).map(([k, label]) => (
+                    <button
+                      key={k}
+                      type="button"
+                      onClick={() => setSortBy(k)}
+                      className={`px-1.5 py-0.5 rounded border ${sortBy === k ? "border-rw-accent text-rw-accent bg-rw-accent/10" : "border-rw-border text-rw-muted hover:text-rw-text"}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-1 text-[11px]">
+                {(
+                  [
+                    ["all", tl("All"), "text-rw-sub"],
+                    ["played", tl("Champions played"), "text-rw-sub"],
+                    ["blue", blue.team.name, "text-rw-teal"],
+                    ["red", red.team.name, "text-rw-red"],
+                    ["both", tl("Champions both played"), "text-rw-sub"],
+                    ["flex", tl("Flex picks"), "text-rw-sub"],
+                    ["pocket", tl("pocket pick"), "text-rw-sub"],
+                  ] as [PoolFilter, string, string][]
+                ).map(([k, label, tone]) => (
                   <button
-                    key={String(r)}
+                    key={k}
                     type="button"
-                    onClick={() => setRole(r)}
-                    className={`px-2 py-1 rounded border ${role === r ? "border-rw-accent text-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"}`}
-                    title={r == null ? undefined : tl("Champions these teams played in this role")}
+                    onClick={() => setPoolFilter(poolFilter === k && k !== "all" ? "all" : k)}
+                    className={`px-2 py-0.5 rounded border ${
+                      poolFilter === k ? "border-rw-accent text-rw-accent bg-rw-accent/10 font-semibold" : `border-rw-border ${tone} hover:text-rw-text`
+                    }`}
                   >
-                    {r == null ? tl("All") : roleName(ROLES[r])}
+                    {label}
                   </button>
                 ))}
-              </span>
-            </div>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(3.75rem,1fr))] gap-1 max-h-[22rem] max-sm:max-h-[55vh] overflow-y-auto pr-1">
-              {shown.map((c) => {
-                const off = taken.has(c);
-                const pb = pools.b.picks.get(c)?.[0] || 0;
-                const pr = pools.r.picks.get(c)?.[0] || 0;
-                return (
+                <button
+                  type="button"
+                  onClick={() => setMinGames(minGames === 2 ? 0 : 2)}
+                  className={`px-2 py-0.5 rounded border ${
+                    minGames === 2 ? "border-rw-accent text-rw-accent bg-rw-accent/10 font-semibold" : "border-rw-border text-rw-sub hover:text-rw-text"
+                  }`}
+                >
+                  {tl("{n}+ games", { n: 2 })}
+                </button>
+                {takenCount > 0 && (
                   <button
-                    key={c}
                     type="button"
-                    disabled={off}
-                    onClick={() => place(c)}
-                    onMouseEnter={() => setFocus(c)}
-                    onFocus={() => setFocus(c)}
-                    className={`relative flex flex-col items-center gap-0.5 p-1 rounded border text-[9px] leading-tight ${
-                      off ? "opacity-25 border-transparent" : focus === c ? "border-rw-accent" : "border-transparent hover:border-rw-line"
+                    onClick={() => setHideTaken((v) => !v)}
+                    className={`px-2 py-0.5 rounded border ${
+                      hideTaken ? "border-rw-teal/60 text-rw-teal bg-rw-teal/10 font-semibold" : "border-rw-border text-rw-muted hover:text-rw-text"
                     }`}
-                    title={champName(c)}
+                    title={tl("Fearless: champions picked in earlier games of the series can't be picked again")}
                   >
-                    <ChampIcon name={c} size={36} />
-                    <span className="truncate w-full text-center text-rw-sub">{champName(c)}</span>
-                    {pb > 0 && <span className="absolute top-0 left-0 px-0.5 rounded bg-rw-teal text-rw-bg font-bold">{pb}</span>}
-                    {pr > 0 && <span className="absolute top-0 right-0 px-0.5 rounded bg-rw-red text-rw-bg font-bold">{pr}</span>}
+                    {tl("Most picked, still open")} ({takenCount})
                   </button>
-                );
-              })}
+                )}
+                <span className="ml-auto flex items-center gap-2 text-[10px] text-rw-muted tabular-nums">
+                  <span>{tl("{shown} of {total}", { shown: shown.length, total: availableTotal })}</span>
+                  {hasActiveFilters && (
+                    <button type="button" onClick={clearAllFilters} className="text-rw-teal hover:underline">
+                      {tl("Clear filters")}
+                    </button>
+                  )}
+                </span>
+              </div>
             </div>
+            {shown.length === 0 ? (
+              <div className="py-6 text-center text-xs text-rw-muted space-y-1">
+                <p>{tl("No games match these filters.")}</p>
+                {hasActiveFilters && (
+                  <button type="button" onClick={clearAllFilters} className="text-rw-teal hover:underline">
+                    {tl("Clear filters")}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(3.75rem,1fr))] gap-1 max-h-[22rem] max-sm:max-h-[55vh] overflow-y-auto pr-1">
+                {shown.map((c) => {
+                  const off = isChampTaken(c, taken);
+                  const pb = pools.b.picks.get(c)?.[0] || 0;
+                  const pr = pools.r.picks.get(c)?.[0] || 0;
+                  const isFlex = new Set([...(pools.b.roles.get(c) || []), ...(pools.r.roles.get(c) || [])]).size >= 2;
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      disabled={off}
+                      onClick={() => place(c)}
+                      onMouseEnter={() => setFocus(c)}
+                      onFocus={() => setFocus(c)}
+                      className={`relative flex flex-col items-center gap-0.5 p-1 rounded border text-[9px] leading-tight ${
+                        off ? "opacity-25 border-transparent" : focus === c ? "border-rw-accent" : "border-transparent hover:border-rw-line"
+                      }`}
+                      title={champName(c)}
+                    >
+                      <ChampIcon name={c} size={36} />
+                      <span className="truncate w-full text-center text-rw-sub">{champName(c)}</span>
+                      {pb > 0 && <span className="absolute top-0 left-0 px-0.5 rounded bg-rw-teal text-rw-bg font-bold">{pb}</span>}
+                      {pr > 0 && <span className="absolute top-0 right-0 px-0.5 rounded bg-rw-red text-rw-bg font-bold">{pr}</span>}
+                      {isFlex && <span className="absolute bottom-3.5 right-0.5 px-0.5 rounded bg-rw-accent/85 text-rw-bg font-bold text-[8px]">{tl("flex")}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             <p className="text-[10px] text-rw-muted">
               {tl("Numbers on a champion: games each team picked it in this period. Click a filled slot to change it.")}
             </p>
           </div>
-          {focus && <ChampInfo c={focus} pools={pools} blue={blue} red={red} />}
+          {focus && <ChampInfo c={focus} pools={pools} blue={blue} red={red} taken={taken} hideTaken={hideTaken} />}
         </div>
         <TeamColumn who="r" side={red} pool={pools.r} slots={slots} step={step} onSlot={clearSlot} onPick={setCursor} />
       </div>
@@ -736,6 +1004,9 @@ const Board: React.FC<{
           side={blue}
           pool={pools.b}
           taken={taken}
+          hideTaken={hideTaken}
+          roleFilter={typeof role === "number" ? role : null}
+          minGames={minGames}
           onPick={place}
           onFocus={setFocus}
           onSwap={(rIdx, slug) => swapPlayerInSide(blue, rIdx, slug).then((nb) => onSides(nb, red))}
@@ -745,6 +1016,9 @@ const Board: React.FC<{
           side={red}
           pool={pools.r}
           taken={taken}
+          hideTaken={hideTaken}
+          roleFilter={typeof role === "number" ? role : null}
+          minGames={minGames}
           onPick={place}
           onFocus={setFocus}
           onSwap={(rIdx, slug) => swapPlayerInSide(red, rIdx, slug).then((nr) => onSides(blue, nr))}
@@ -754,7 +1028,7 @@ const Board: React.FC<{
         <Priorities who="b" side={blue} pool={pools.b} other={pools.r} taken={taken} onPick={place} />
         <Priorities who="r" side={red} pool={pools.r} other={pools.b} taken={taken} onPick={place} />
       </div>
-      <FearlessDepth a={blue} b={red} period={period} periodLabel="" title={`${blue.team.name}-${red.team.name}`} />
+      <FearlessDepth a={blue} b={red} period={period} periodLabel="" title={`${blue.team.name}-${red.team.name}`} exclude={hideTaken ? taken : undefined} />
     </div>
   );
 };
@@ -797,7 +1071,7 @@ const Suggest: React.FC<{
   let rows: Row[];
   if (now.ban) {
     rows = [...them.picks.entries()]
-      .filter(([c]) => !taken.has(c))
+      .filter(([c]) => !isChampTaken(c, taken))
       .map(([c, [g, w]]) => {
         const who = champOf(c, them);
         const parts = [who ? `${who.name}: ${tl("{n} games, won {pct}", { n: who.g, pct: winRate(who.w, who.g) })}` : tl("{n} games, won {pct}", { n: g, pct: winRate(w, g) })];
@@ -806,7 +1080,7 @@ const Suggest: React.FC<{
       });
   } else {
     rows = [...me.picks.entries()]
-      .filter(([c]) => !taken.has(c))
+      .filter(([c]) => !isChampTaken(c, taken))
       .map(([c, [g, w]]) => {
         const who = champOf(c, me);
         const r = roleOf(c, me);
@@ -924,13 +1198,16 @@ const PlayerPools: React.FC<{
   side: Side;
   pool: Pool;
   taken: Set<string>;
+  hideTaken?: boolean;
+  roleFilter?: number | null;
+  minGames?: number;
   onPick: (c: string) => void;
   onFocus: (c: string) => void;
   onSwap?: (roleIdx: number, slug: string) => void;
-}> = ({ who, side, pool: p, taken, onPick, onFocus, onSwap }) => {
+}> = ({ who, side, pool: p, taken, hideTaken = true, roleFilter = null, minGames = 0, onPick, onFocus, onSwap }) => {
   const color = who === "b" ? "text-rw-teal" : "text-rw-red";
   const chip = (c: string, label: string, title: string, pocket: boolean) => {
-    const off = taken.has(c);
+    const off = isChampTaken(c, taken);
     return (
       <button
         key={c}
@@ -947,16 +1224,20 @@ const PlayerPools: React.FC<{
       </button>
     );
   };
+  const rows = roleFilter != null ? p.byPlayer.filter((pl) => pl.role === roleFilter) : p.byPlayer;
   return (
     <Section title={tl("{team}: player pools", { team: side.team.name })} right={<span className={`text-[11px] ${color}`}>{tl("{n} games in this period", { n: p.games })}</span>}>
-      {p.byPlayer.length === 0 ? (
+      {rows.length === 0 ? (
         <p className="text-xs text-rw-muted">{tl("No roster known for this team.")}</p>
       ) : (
         <div className="space-y-2 text-xs">
-          {p.byPlayer.map((pl) => {
-            const now = pl.champs.filter((x) => x.g > 0).sort((a, b) => comfort(b.g, b.w) - comfort(a.g, a.w) || b.g - a.g).slice(0, 8);
+          {rows.map((pl) => {
+            const now = pl.champs
+              .filter((x) => x.g > 0 && x.g >= minGames && (!hideTaken || !isChampTaken(x.c, taken)))
+              .sort((a, b) => comfort(b.g, b.w) - comfort(a.g, a.w) || b.g - a.g)
+              .slice(0, 8);
             const pocket = pl.champs
-              .filter((x) => x.g === 0 && x.cg >= 3)
+              .filter((x) => x.g === 0 && x.cg >= Math.max(3, minGames) && (!hideTaken || !isChampTaken(x.c, taken)))
               .sort((a, b) => comfort(b.cg, b.cw) - comfort(a.cg, a.cw))
               .slice(0, 5);
             return (
@@ -1012,13 +1293,21 @@ const PlayerPools: React.FC<{
  * at 15) and whom it beats, in its main role. The last 12 months when there are enough games, else all time.
  * A counter one of the two teams has in its own pool is marked with the team's colour and the player.
  */
-const LaneCounters: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Side; red: Side }> = ({ c, pools, blue, red }) => {
+const LaneCounters: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Side; red: Side; taken: Set<string>; hideTaken?: boolean }> = ({
+  c,
+  pools,
+  blue,
+  red,
+  taken,
+  hideTaken = true,
+}) => {
   const state = useLoad(() => loadHubChamp(prettySlug(c)), [c]);
   const data = state.data;
   if (!data) return null;
   const role = data.roles[0]?.r;
   if (!role) return null;
-  const withLane = (m?: Record<string, LaneLine[]> | null) => (m?.[role] || []).filter((x) => x[3] != null && x[3] >= 3);
+  const withLane = (m?: Record<string, LaneLine[]> | null) =>
+    (m?.[role] || []).filter((x) => x[3] != null && x[3] >= 3 && (!hideTaken || !isChampTaken(x[0], taken)));
   const recent = withLane(data.matchups12);
   const rows = recent.length >= 4 ? recent : withLane(data.matchups);
   if (rows.length < 2) return null;
@@ -1079,7 +1368,14 @@ const LaneCounters: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Sid
 };
 
 /** What both teams have done with the champion under the pointer. */
-const ChampInfo: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Side; red: Side }> = ({ c, pools, blue, red }) => (
+const ChampInfo: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Side; red: Side; taken: Set<string>; hideTaken?: boolean }> = ({
+  c,
+  pools,
+  blue,
+  red,
+  taken,
+  hideTaken = true,
+}) => (
   <Section title={champName(c)}>
     <div className="grid sm:grid-cols-2 gap-3 text-xs">
       {(
@@ -1138,7 +1434,7 @@ const ChampInfo: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Side; 
         );
       })}
     </div>
-    <LaneCounters c={c} pools={pools} blue={blue} red={red} />
+    <LaneCounters c={c} pools={pools} blue={blue} red={red} taken={taken} hideTaken={hideTaken} />
   </Section>
 );
 
@@ -1152,15 +1448,15 @@ const Priorities: React.FC<{
   onPick: (c: string) => void;
 }> = ({ who, side, pool: p, taken, onPick }) => {
   const open = [...p.picks.entries()]
-    .filter(([c]) => !taken.has(c))
+    .filter(([c]) => !isChampTaken(c, taken))
     .sort((a, b) => b[1][0] - a[1][0])
     .slice(0, 10);
   const bans = [...p.bans.entries()]
-    .filter(([c]) => !taken.has(c))
+    .filter(([c]) => !isChampTaken(c, taken))
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6);
   const vs = [...p.bansVs.entries()]
-    .filter(([c]) => !taken.has(c))
+    .filter(([c]) => !isChampTaken(c, taken))
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6);
   const color = who === "b" ? "text-rw-teal" : "text-rw-red";
