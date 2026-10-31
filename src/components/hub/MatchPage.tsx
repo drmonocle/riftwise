@@ -1,6 +1,6 @@
 /** One series (a "match": Bo1 to Bo5): every game's draft, scoreboard, builds, runes and objectives. */
 import React, { useEffect, useMemo, useState } from "react";
-import { PlayCircle, Clock, Crown, Star } from "lucide-react";
+import { PlayCircle, Clock, Crown, Star, Swords } from "lucide-react";
 import { tl, tc, tk, roleName, locale, stageLabel, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
 import { loadHubSeries } from "../../hub/data";
@@ -11,9 +11,60 @@ import { RatingBadge as PlayerRatingBadge, fmtRating, useRatingFile } from "./Pl
 import { rateLine } from "../../hub/playerRating";
 import { navigateHub } from "../../hub/route";
 import { BroadcastCardButton, gameCardData, seriesCardData } from "./BroadcastCard";
+import { buildGameDraftQuery, type GameDraftInput } from "./DraftPage";
 import { RiotGamesFor, RiotMatchPage } from "./RiotMatch";
 import { RIOT_PREFIX } from "../../hub/riotMatch";
 import { card, ChampIcon, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, OeCredit, Page, PlayerLink, RevealButton, RuneIcon, SpellIcon, TeamLink, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
+
+export function extractHubGameDraft(g: HubGame): GameDraftInput {
+  const bluePicks = g.t?.blue?.picks?.length
+    ? g.t.blue.picks
+    : (g.p || []).filter((p) => p.s === 1 && p.c).map((p) => p.c!);
+  const redPicks = g.t?.red?.picks?.length
+    ? g.t.red.picks
+    : (g.p || []).filter((p) => p.s === 2 && p.c).map((p) => p.c!);
+  return {
+    blueBans: g.t?.blue?.bans || [],
+    redBans: g.t?.red?.bans || [],
+    bluePicks,
+    redPicks,
+  };
+}
+
+export function seriesGameDraftQuery(s: HubSeries, g: HubGame | undefined, gi = 0): string {
+  const slugA = s.a.u || "";
+  const slugB = s.b.u || "";
+  const year = (g?.date || s.date || "").slice(0, 4);
+  const period = /^\d{4}$/.test(year) ? `y${year}` : undefined;
+  if (!g) {
+    return buildGameDraftQuery({
+      blueSlug: slugA,
+      redSlug: slugB,
+      period,
+      gameNum: gi + 1,
+    });
+  }
+  const activeIdx = Math.max(0, s.games.indexOf(g));
+  const blueIsB = g.blue === "b";
+  const blueSlug = blueIsB ? slugB : slugA;
+  const redSlug = blueIsB ? slugA : slugB;
+  const earlier = s.games.slice(0, activeIdx).map((eg) => {
+    const egBlueIsB = eg.blue === "b";
+    return {
+      blueSlug: egBlueIsB ? slugB : slugA,
+      redSlug: egBlueIsB ? slugA : slugB,
+      draft: extractHubGameDraft(eg),
+    };
+  });
+  return buildGameDraftQuery({
+    blueSlug,
+    redSlug,
+    period,
+    gameNum: g.n || activeIdx + 1,
+    current: extractHubGameDraft(g),
+    earlier,
+  });
+}
 
 const fmtGold = (g?: number) => (g == null ? "–" : `${fmtDec(g / 1000)}k`);
 const fmtMin = (m?: number | null) => {
@@ -116,20 +167,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: (() => {
-                      const used = !hidden
-                        ? Array.from(
-                            new Set(
-                              s.games.flatMap((g) => [
-                                ...(g.t?.blue?.picks || []),
-                                ...(g.t?.red?.picks || []),
-                                ...(g.p || []).map((p) => p.c || "").filter(Boolean),
-                              ]),
-                            ),
-                          )
-                        : [];
-                      return `teams=${s.a.u},${s.b.u}${used.length ? `&u=${encodeURIComponent(used.join(","))}` : ""}`;
-                    })(),
+                    query: seriesGameDraftQuery(s, game, gi),
                   }}
                   className="px-2.5 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
                 >
@@ -334,9 +372,20 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
               </span>
             )}
           </span>
-          {!hidden && g.t && (
-            <BroadcastCardButton data={() => gameCardData(s, g)} name={`${s.a.n}-vs-${s.b.n}-game-${g.n}`} label={tl("Game card")} />
-          )}
+          <span className="flex flex-wrap items-center gap-2 ml-auto">
+            {s.a.u && s.b.u && (
+              <HubLink
+                to={{ kind: "draft", query: seriesGameDraftQuery(s, g) }}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-teal hover:underline"
+              >
+                <Swords className="w-3.5 h-3.5" />
+                {tl("Draft board")}
+              </HubLink>
+            )}
+            {!hidden && g.t && (
+              <BroadcastCardButton data={() => gameCardData(s, g)} name={`${s.a.n}-vs-${s.b.n}-game-${g.n}`} label={tl("Game card")} />
+            )}
+          </span>
           {(g.vod || g.vpb || g.vgs) && (
             <span className="flex flex-wrap items-center gap-1.5">
               {(

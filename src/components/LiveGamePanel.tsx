@@ -11,6 +11,7 @@ import { tl, roleName, fmtDec } from "../i18n";
 import { lazyPart } from "../lazyPart";
 
 const LiveNextGamePreview = lazyPart(() => import("./LiveNextGamePreview").then((m) => m.LiveNextGamePreview));
+const LiveGameDraftLink = lazyPart(() => import("./LiveNextGamePreview").then((m) => m.LiveGameDraftLink));
 import {
   LiveDetailsParticipant,
   LiveFrame,
@@ -79,12 +80,27 @@ interface GameState {
 /** `only`: show that game (a finished match's games on the schedule); `startOpen`: players and items shown at once. */
 export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: Game; startOpen?: boolean }> = ({ match, showStats, only, startOpen }) => {
   useDDragon();
+  const playableGames = useMemo(
+    () => (match.games || []).filter((g) => g.state === "completed" || g.state === "inProgress"),
+    [match.games],
+  );
   // The game in progress, or between games the one that just ended
+  const defaultGame = useMemo(() => {
+    if (only) return only;
+    return playableGames.find((g) => g.state === "inProgress") || playableGames[playableGames.length - 1] || null;
+  }, [playableGames, only]);
+  const [pickedGameId, setPickedGameId] = useState<string | null>(null);
+  useEffect(() => {
+    setPickedGameId(null);
+  }, [defaultGame?.id]);
   const game = useMemo(() => {
     if (only) return only;
-    const games = match.games || [];
-    return games.find((g) => g.state === "inProgress") || [...games].reverse().find((g) => g.state === "completed") || null;
-  }, [match.games, only]);
+    if (pickedGameId) {
+      const found = playableGames.find((g) => g.id === pickedGameId);
+      if (found) return found;
+    }
+    return defaultGame;
+  }, [only, pickedGameId, playableGames, defaultGame]);
   const live = game?.state === "inProgress";
   const [state, setState] = useState<GameState | null>(null);
   const [failed, setFailed] = useState(false);
@@ -250,15 +266,38 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
 
   return (
     <div className="mt-3 pt-3 border-t border-rw-border/60 space-y-2 text-xs">
+      {!only && playableGames.length > 1 && (
+        <div className="flex flex-wrap gap-1">
+          {playableGames.map((g) => (
+            <button
+              key={g.id}
+              type="button"
+              onClick={() => setPickedGameId(g.id)}
+              className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                g.id === game.id
+                  ? "bg-rw-accent text-rw-bg border-rw-accent"
+                  : "border-rw-border text-rw-sub hover:text-rw-text"
+              }`}
+            >
+              {tl("Game {n}", { n: g.number })}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="font-bold uppercase tracking-wider text-[10px] text-rw-accent">
           {finished ? tl("Game {n} · final", { n: game.number }) : tl("Game {n} · live", { n: game.number })}
           {elapsed != null && <span className="ml-2 font-mono text-rw-text">{clock(elapsed)}</span>}
           {paused && <span className="ml-2 text-rw-red">{tl("Paused")}</span>}
         </span>
-        {win.gameMetadata.patchVersion && (
-          <span className="text-[10px] text-rw-muted">{tl("Patch {patch}", { patch: win.gameMetadata.patchVersion.split(".").slice(0, 2).join(".") })}</span>
-        )}
+        <span className="flex items-center gap-2 ml-auto">
+          <Suspense fallback={null}>
+            <LiveGameDraftLink match={match} gameNum={game.number} win={win} />
+          </Suspense>
+          {win.gameMetadata.patchVersion && (
+            <span className="text-[10px] text-rw-muted">{tl("Patch {patch}", { patch: win.gameMetadata.patchVersion.split(".").slice(0, 2).join(".") })}</span>
+          )}
+        </span>
       </div>
 
       {/* Gold and objectives: both teams and the difference */}
@@ -761,7 +800,12 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
           {tl("Game {n} · live", { n: number })}
           {live && startMs != null && <span className="ml-2 font-mono text-rw-text">{clock(now - startMs)}</span>}
         </span>
-        <span className="text-[10px] text-rw-muted">{tl("Riot isn't sharing live stats for this game. Here is the draft.")}</span>
+        <span className="flex items-center gap-2 ml-auto">
+          <Suspense fallback={null}>
+            <LiveGameDraftLink match={match} gameNum={number} win={win} />
+          </Suspense>
+          <span className="text-[10px] text-rw-muted">{tl("Riot isn't sharing live stats for this game. Here is the draft.")}</span>
+        </span>
       </div>
       <div className="grid grid-cols-[1fr_auto_1fr] gap-x-2 gap-y-1 items-center">
         <span className="font-bold text-rw-text">{left.code}</span>

@@ -179,10 +179,10 @@ const parseSlots = (s: string | null): (string | null)[] => {
   while (out.length < SLOTS) out.push(null);
   return out.slice(0, SLOTS);
 };
-const packSlots = (slots: (string | null)[]) => (slots.some((s) => s) ? slots.map((s) => s || "").join(",") : "");
+export const packSlots = (slots: (string | null)[]) => (slots.some((s) => s) ? slots.map((s) => s || "").join(",") : "");
 const parseList = (s: string | null) => (s || "").split(",").map((x) => x.trim()).filter(Boolean);
 
-interface PastGame {
+export interface PastGame {
   blue: string;
   red: string;
   slots: (string | null)[];
@@ -195,14 +195,84 @@ const parseHistory = (s: string | null): PastGame[] =>
       const [blue, red, rest] = e.split("~");
       return { blue, red, slots: parseSlots(rest || "") };
     });
-const packHistory = (h: PastGame[]) => h.map((g) => `${g.blue}~${g.red}~${g.slots.map((s) => s || "").join(",")}`).join(";");
+export const packHistory = (h: PastGame[]) => h.map((g) => `${g.blue}~${g.red}~${g.slots.map((s) => s || "").join(",")}`).join(";");
+
+export interface GameDraftInput {
+  blueBans?: (string | null | undefined)[];
+  redBans?: (string | null | undefined)[];
+  bluePicks?: (string | null | undefined)[];
+  redPicks?: (string | null | undefined)[];
+}
+
+/** Maps a game's Blue/Red bans & picks into the 20 tournament-order Draft Board slots. */
+export function slotsFromGameDraft(g: GameDraftInput): (string | null)[] {
+  const out: (string | null)[] = ORDER.map(() => null);
+  let bb = 0;
+  let rb = 0;
+  let bp = 0;
+  let rp = 0;
+  ORDER.forEach((o, i) => {
+    if (o.side === "b" && o.ban) out[i] = g.blueBans?.[bb++]?.trim() || null;
+    else if (o.side === "r" && o.ban) out[i] = g.redBans?.[rb++]?.trim() || null;
+    else if (o.side === "b" && !o.ban) out[i] = g.bluePicks?.[bp++]?.trim() || null;
+    else if (o.side === "r" && !o.ban) out[i] = g.redPicks?.[rp++]?.trim() || null;
+  });
+  return out;
+}
+
+export interface GameDraftQueryInput {
+  blueSlug: string;
+  redSlug: string;
+  period?: string;
+  gameNum?: number;
+  current?: GameDraftInput | null;
+  earlier?: {
+    blueSlug: string;
+    redSlug: string;
+    draft: GameDraftInput;
+  }[];
+}
+
+/**
+ * Builds the `/stats/draft?...` query string that loads a specific game (`gameNum`) onto the Draft Board:
+ * - `teams=blueSlug,redSlug` (matching the Blue and Red sides of that game)
+ * - `g=gameNum` (which game of the series is loaded on the board)
+ * - `d=<20-slot-csv>` (that game's bans and picks loaded directly onto the board)
+ * - `u=<earlier-picks-csv>` (champions picked in games 1..gameNum-1 locked in Fearless mode)
+ * - `h=<PastGame-history>` (each earlier game's Blue/Red teams and picks shown in the Fearless history)
+ */
+export function buildGameDraftQuery(input: GameDraftQueryInput): string {
+  const parts: string[] = [`teams=${encodeURIComponent(input.blueSlug)},${encodeURIComponent(input.redSlug)}`];
+  if (input.period && input.period !== "all") parts.push(`p=${encodeURIComponent(input.period)}`);
+  if (input.gameNum != null && input.gameNum >= 1) parts.push(`g=${encodeURIComponent(String(input.gameNum))}`);
+  if (input.current) {
+    const d = packSlots(slotsFromGameDraft(input.current));
+    if (d) parts.push(`d=${encodeURIComponent(d)}`);
+  }
+  if (input.earlier && input.earlier.length > 0) {
+    const usedSet = new Set<string>();
+    const history: PastGame[] = [];
+    for (const eg of input.earlier) {
+      const slots = slotsFromGameDraft(eg.draft);
+      for (const c of [...(eg.draft.bluePicks || []), ...(eg.draft.redPicks || [])]) {
+        if (c && c.trim()) usedSet.add(c.trim());
+      }
+      if (slots.some((s) => s)) {
+        history.push({ blue: eg.blueSlug, red: eg.redSlug, slots });
+      }
+    }
+    if (usedSet.size > 0) parts.push(`u=${encodeURIComponent([...usedSet].join(","))}`);
+    if (history.length > 0) parts.push(`h=${encodeURIComponent(packHistory(history))}`);
+  }
+  return parts.join("&");
+}
 
 export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
   useDDragon();
   const q = useMemo(() => new URLSearchParams(query || ""), [query]);
   const rawTeams = q.get("teams") || (q.get("a") || q.get("b") ? `${q.get("a") || ""},${q.get("b") || ""}` : "");
   const [a, b] = rawTeams.split(",").map((x) => x.trim().toLowerCase() || null);
-  const set = (patch: { a?: string | null; b?: string | null; p?: string; d?: string; u?: string; f?: string; h?: string }) => {
+  const set = (patch: { a?: string | null; b?: string | null; p?: string; g?: string; d?: string; u?: string; f?: string; h?: string }) => {
     const next = new URLSearchParams(q);
     const ta = patch.a !== undefined ? patch.a : a;
     const tb = patch.b !== undefined ? patch.b : b;
@@ -212,7 +282,7 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
       if (patch.p && patch.p !== "all") next.set("p", patch.p);
       else next.delete("p");
     }
-    for (const k of ["d", "u", "f", "h"] as const) {
+    for (const k of ["g", "d", "u", "f", "h"] as const) {
       const v = patch[k];
       if (v === undefined) continue;
       if (v) next.set(k, v);
@@ -275,28 +345,46 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
             {tl("Try again")}
           </button>
         )}
-        <button type="button" onClick={() => set({ a: null, b: null, d: "", u: "", h: "" })} className="text-rw-teal hover:underline">
+        <button type="button" onClick={() => set({ a: null, b: null, g: "", d: "", u: "", h: "" })} className="text-rw-teal hover:underline">
           {tl("Pick the teams again")}
         </button>
       </div>
     );
   if (!sides.a || !sides.b) return <Loading />;
   const slots = parseSlots(q.get("d"));
+  const history = parseHistory(q.get("h"));
+  const gameParam = Number(q.get("g")) || 0;
+  const activeGameNum = history.length > 0 ? Math.max(gameParam, history.length + 1) : gameParam > 0 ? gameParam : null;
   return (
     <Board
       blue={sides.a}
       red={sides.b}
       period={q.get("p") || undefined}
+      gameNum={activeGameNum}
       slots={slots}
       used={parseList(q.get("u"))}
       fearless={q.get("f") !== "0"}
-      history={parseHistory(q.get("h"))}
+      history={history}
       onPeriod={(p) => set({ p })}
       onSlots={(s) => set({ d: packSlots(s) })}
       onUsed={(u) => set({ u: u.join(",") })}
       onFearless={(on) => set({ f: on ? "" : "0" })}
-      onHistory={(h) => set({ h: packHistory(h) })}
-      onNextGame={(h, u) => set({ h: packHistory(h), u: u.join(","), d: "" })}
+      onHistory={(h) => set({ h: packHistory(h), g: h.length ? String(h.length + 1) : "" })}
+      onNextGame={(h, u) => set({ h: packHistory(h), u: u.join(","), d: "", g: String(h.length + 1) })}
+      onLoadPastGame={(idx) => {
+        const target = history[idx];
+        if (!target) return;
+        const prior = history.slice(0, idx);
+        const priorPicks = prior.flatMap((pg) => pg.slots.filter((s, k): s is string => !!s && !ORDER[k].ban));
+        set({
+          a: target.blue || a,
+          b: target.red || b,
+          g: String(idx + 1),
+          d: packSlots(target.slots),
+          u: [...new Set(priorPicks)].join(","),
+          h: packHistory(prior),
+        });
+      }}
       onSwap={() => set({ a: b, b: a, d: "" })}
       onSides={(x, y) => setSides({ a: x, b: y })}
     />
@@ -307,6 +395,7 @@ const Board: React.FC<{
   blue: Side;
   red: Side;
   period?: string;
+  gameNum?: number | null;
   slots: (string | null)[];
   used: string[];
   fearless: boolean;
@@ -317,9 +406,10 @@ const Board: React.FC<{
   onFearless: (on: boolean) => void;
   onHistory: (h: PastGame[]) => void;
   onNextGame: (h: PastGame[], u: string[]) => void;
+  onLoadPastGame: (idx: number) => void;
   onSwap: () => void;
   onSides: (blue: Side, red: Side) => void;
-}> = ({ blue, red, period: periodQ, slots, used, fearless, history, onPeriod, onSlots, onUsed, onFearless, onHistory, onNextGame, onSwap, onSides }) => {
+}> = ({ blue, red, period: periodQ, gameNum, slots, used, fearless, history, onPeriod, onSlots, onUsed, onFearless, onHistory, onNextGame, onLoadPastGame, onSwap, onSides }) => {
   const options = useMemo(() => bothOptions(blue.games.map(teamRowRef), red.games.map(teamRowRef)), [blue.games, red.games]);
   const period: PeriodKey = periodQ && options.some((o) => o.key === periodQ) ? periodQ : defaultPeriod(options);
   const notFull = blue.gamesFull === false || red.gamesFull === false || [...blue.players, ...red.players].some((p) => p && !p.full);
@@ -343,7 +433,8 @@ const Board: React.FC<{
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<number | null>(null);
   const firstEmpty = slots.findIndex((s) => s === null);
-  const step = cursor != null && slots[cursor] === null ? cursor : firstEmpty;
+  const allPicksFilled = ORDER.every((o, i) => o.ban || !!slots[i]);
+  const step = cursor != null && slots[cursor] === null ? cursor : allPicksFilled ? -1 : firstEmpty;
   const taken = new Set([...slots.filter((s): s is string => !!s), ...(fearless ? used : [])]);
 
   const all = useMemo(() => {
@@ -425,7 +516,10 @@ const Board: React.FC<{
     <div className="space-y-3">
       <div className={`${card} flex flex-wrap items-center justify-between gap-2`}>
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-rw-accent">{tl("Draft board")}</div>
+          <div className="text-[10px] uppercase tracking-wider font-bold text-rw-accent">
+            {tl("Draft board")}
+            {gameNum != null && gameNum >= 1 ? ` · ${tl("Game {n}", { n: gameNum })}` : ""}
+          </div>
           <h1 className="text-lg font-bold truncate">
             <HubLink to={{ kind: "team", slug: blue.team.u }} className="text-rw-teal">
               {blue.team.name}
@@ -537,7 +631,13 @@ const Board: React.FC<{
               <div className="space-y-1 text-[10px] text-rw-muted">
                 {history.map((g, i) => (
                   <div key={i} className="flex flex-wrap items-center gap-1">
-                    <span className="font-semibold text-rw-sub">{tl("Game {n}", { n: i + 1 })}</span>
+                    <button
+                      type="button"
+                      onClick={() => onLoadPastGame(i)}
+                      className="font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Game {n}", { n: i + 1 })}
+                    </button>
                     <span className="text-rw-teal">{g.blue === blue.team.u ? blue.team.name : red.team.name}</span>
                     {ORDER.map((o, k) => (o.side === "b" && !o.ban && g.slots[k] ? <ChampIcon key={k} name={g.slots[k] as string} size={16} /> : null))}
                     <span className="text-rw-red ml-1">{g.red === red.team.u ? red.team.name : blue.team.name}</span>

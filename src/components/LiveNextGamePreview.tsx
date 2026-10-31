@@ -21,7 +21,7 @@ import { teamRowRef } from "../hub/period";
 import { bothOptions } from "./hub/ComparePage";
 import { defaultPeriod } from "./hub/PeriodStats";
 import { loadSide, type Side } from "./hub/PrepPage";
-import { pool, comfort, champOf, type Pool } from "./hub/DraftPage";
+import { pool, comfort, champOf, buildGameDraftQuery, type Pool } from "./hub/DraftPage";
 import { ChampIcon, HubLink } from "./hub/ui";
 
 const ROLE_ORDER = ["top", "jungle", "mid", "bottom", "support"];
@@ -33,7 +33,7 @@ const playerName = (n: string) => n.replace(/^\S+\s+/, "") || n;
 const windowCache = new Map<string, Promise<LiveWindow | null>>();
 const sideCache = new Map<string, Promise<Side | null>>();
 
-function getCachedStart(gameId: string): Promise<LiveWindow | null> {
+export function getCachedStart(gameId: string): Promise<LiveWindow | null> {
   if (!windowCache.has(gameId)) {
     windowCache.set(
       gameId,
@@ -55,6 +55,7 @@ function getCachedSide(slug: string): Promise<Side | null> {
 
 export interface EarlierGamePicks {
   number: number;
+  blueIsTeam1?: boolean;
   team1: { c: string; player: string; role: string }[];
   team2: { c: string; player: string; role: string }[];
 }
@@ -79,7 +80,7 @@ export function extractGamePicks(match: Match, win: LiveWindow, number: number):
   const team1 = mapSide(t1Meta);
   const team2 = mapSide(t2Meta);
   if (team1.length === 0 && team2.length === 0) return null;
-  return { number, team1, team2 };
+  return { number, blueIsTeam1, team1, team2 };
 }
 
 export const LiveNextGamePreview: React.FC<{
@@ -250,10 +251,34 @@ export const LiveNextGamePreview: React.FC<{
 
   if (earlier.length === 0 && !draftIntel) return null;
 
+  const currentNextPicks =
+    currentGameNum === nextGameNum && currentWin ? extractGamePicks(match, currentWin, nextGameNum) : null;
+  const nextBlueIsTeam1 = currentNextPicks?.blueIsTeam1 != null ? currentNextPicks.blueIsTeam1 : true;
+
   const draftQuery = draftIntel
-    ? `teams=${encodeURIComponent(draftIntel.slugA)},${encodeURIComponent(draftIntel.slugB)}${
-        fearlessUsed.length ? `&u=${encodeURIComponent(fearlessUsed.join(","))}` : ""
-      }`
+    ? buildGameDraftQuery({
+        blueSlug: nextBlueIsTeam1 ? draftIntel.slugA : draftIntel.slugB,
+        redSlug: nextBlueIsTeam1 ? draftIntel.slugB : draftIntel.slugA,
+        period: draftIntel.period,
+        gameNum: nextGameNum,
+        current: currentNextPicks
+          ? {
+              bluePicks: (nextBlueIsTeam1 ? currentNextPicks.team1 : currentNextPicks.team2).map((p) => p.c),
+              redPicks: (nextBlueIsTeam1 ? currentNextPicks.team2 : currentNextPicks.team1).map((p) => p.c),
+            }
+          : null,
+        earlier: earlier.map((eg) => {
+          const b1 = eg.blueIsTeam1 !== false;
+          return {
+            blueSlug: b1 ? draftIntel.slugA : draftIntel.slugB,
+            redSlug: b1 ? draftIntel.slugB : draftIntel.slugA,
+            draft: {
+              bluePicks: (b1 ? eg.team1 : eg.team2).map((p) => p.c),
+              redPicks: (b1 ? eg.team2 : eg.team1).map((p) => p.c),
+            },
+          };
+        }),
+      })
     : "";
 
   return (
@@ -444,5 +469,90 @@ export const LiveNextGamePreview: React.FC<{
         </div>
       )}
     </div>
+  );
+};
+
+/** Direct "Draft board" link for a specific live or completed game (`gameNum`) in `LiveGamePanel`, loading that game's picks + earlier Fearless history. */
+export const LiveGameDraftLink: React.FC<{ match: Match; gameNum: number; win: LiveWindow }> = ({ match, gameNum, win }) => {
+  useDDragon();
+  const [slugs, setSlugs] = useState<{ a: string; b: string } | null>(null);
+  const [earlier, setEarlier] = useState<EarlierGamePicks[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    const resolve = async () => {
+      try {
+        let idx = await loadHubIndexQuick().catch(() => null);
+        if (!idx) idx = await loadHubIndex().catch(() => null);
+        if (!idx || !alive) return;
+        const a = findHubTeam(idx, match.team1Name, match.team1Code);
+        const b = findHubTeam(idx, match.team2Name, match.team2Code);
+        if (a && b && alive) setSlugs({ a, b });
+      } catch {
+        /* ignore */
+      }
+    };
+    resolve();
+    return () => {
+      alive = false;
+    };
+  }, [match.team1Name, match.team1Code, match.team2Name, match.team2Code]);
+
+  useEffect(() => {
+    let alive = true;
+    const prevGames = (match.games || [])
+      .filter((g) => g.number < gameNum && (g.state === "completed" || g.state === "inProgress"))
+      .sort((a, b) => a.number - b.number);
+    if (!prevGames.length) {
+      setEarlier([]);
+      return;
+    }
+    Promise.all(
+      prevGames.map(async (g) => {
+        const w = await getCachedStart(g.id);
+        return w ? extractGamePicks(match, w, g.number) : null;
+      }),
+    ).then((list) => {
+      if (alive) setEarlier(list.filter((x): x is EarlierGamePicks => !!x));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [match, gameNum]);
+
+  if (!slugs) return null;
+  const cur = extractGamePicks(match, win, gameNum);
+  const blueIsTeam1 = cur?.blueIsTeam1 !== false;
+  const query = buildGameDraftQuery({
+    blueSlug: blueIsTeam1 ? slugs.a : slugs.b,
+    redSlug: blueIsTeam1 ? slugs.b : slugs.a,
+    gameNum,
+    current: cur
+      ? {
+          bluePicks: (blueIsTeam1 ? cur.team1 : cur.team2).map((p) => p.c),
+          redPicks: (blueIsTeam1 ? cur.team2 : cur.team1).map((p) => p.c),
+        }
+      : null,
+    earlier: earlier.map((eg) => {
+      const b1 = eg.blueIsTeam1 !== false;
+      return {
+        blueSlug: b1 ? slugs.a : slugs.b,
+        redSlug: b1 ? slugs.b : slugs.a,
+        draft: {
+          bluePicks: (b1 ? eg.team1 : eg.team2).map((p) => p.c),
+          redPicks: (b1 ? eg.team2 : eg.team1).map((p) => p.c),
+        },
+      };
+    }),
+  });
+
+  return (
+    <HubLink
+      to={{ kind: "draft", query }}
+      className="inline-flex items-center gap-1 text-[10px] font-semibold text-rw-teal hover:underline"
+    >
+      <Swords className="w-3 h-3" />
+      {tl("Draft board")}
+    </HubLink>
   );
 };
