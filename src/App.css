@@ -85,6 +85,9 @@
     --rw-muted: #7e8e9f;
     --rw-teal: #0ac8b9;
     --rw-red: #e84057;
+    /* a matchup's two sides: the client's Hextech blue and gold */
+    --rw-side-a: #0ac8b9;
+    --rw-side-b: #c8aa6e;
     --rw-on-accent: #091428;
   }
   /* TSM: black and white with a steel blue */
@@ -103,6 +106,9 @@
     --rw-muted: #8e9199;
     --rw-teal: #5ab4f0;
     --rw-red: #ff5c6c;
+    /* a matchup's two sides: white and the steel blue */
+    --rw-side-a: #e8e8ec;
+    --rw-side-b: #5ab4f0;
     --rw-on-accent: #0b0b0d;
   }
   /* FlyQuest: FlyQuest green on near-black */
@@ -121,6 +127,9 @@
     --rw-muted: #7f9a87;
     --rw-teal: #7dd3fc;
     --rw-red: #ff6b6b;
+    /* a matchup's two sides: FlyQuest green and sky blue */
+    --rw-side-a: #3ddc84;
+    --rw-side-b: #7dd3fc;
     --rw-on-accent: #03140a;
   }
   /* T1: T1 red on black, with championship gold (gold marks wins, orange losses, so red stays T1's) */
@@ -139,6 +148,9 @@
     --rw-muted: #a3878c;
     --rw-teal: #e3c27a;
     --rw-red: #fb923c;
+    /* a matchup's two sides: championship gold and orange (red stays T1's) */
+    --rw-side-a: #e3c27a;
+    --rw-side-b: #fb923c;
     --rw-on-accent: #160306;
   }
   /* Gen.G: gold on black */
@@ -157,6 +169,9 @@
     --rw-muted: #958b70;
     --rw-teal: #3ec9a7;
     --rw-red: #f0605d;
+    /* a matchup's two sides: gold and silver */
+    --rw-side-a: #d4af37;
+    --rw-side-b: #bfc5cc;
     --rw-on-accent: #1a1405;
   }
   /* Fnatic: orange on black */
@@ -175,6 +190,9 @@
     --rw-muted: #988a7d;
     --rw-teal: #35c9b0;
     --rw-red: #f2556b;
+    /* a matchup's two sides: Fnatic orange and silver */
+    --rw-side-a: #ff6a13;
+    --rw-side-b: #d9d2cb;
     --rw-on-accent: #1a0b00;
   }
   /* Cloud9: sky blue on deep navy */
@@ -193,6 +211,9 @@
     --rw-muted: #7590a8;
     --rw-teal: #3fd6a2;
     --rw-red: #f7607a;
+    /* a matchup's two sides: Cloud9 blue and white */
+    --rw-side-a: #2fb5f0;
+    --rw-side-b: #e6f3fb;
     --rw-on-accent: #04121e;
   }
   /* Light: a pale background with deep violet, for daylight and printing */
@@ -211,13 +232,21 @@
     --rw-muted: #6a6588;
     --rw-teal: #0d7f72;
     --rw-red: #c92a52;
+    /* a matchup's two sides: the deep violet and a gold dark enough for a pale page */
+    --rw-side-a: #5b3fd6;
+    --rw-side-b: #a87b14;
     --rw-on-accent: #ffffff;
     color-scheme: light;
   }
-  /* every other theme keeps its own two colours for a matchup's sides (only Rift, the default, has its own pair) */
+  /* the Ko-fi heart in the header: Rift's own purple, every other theme's second accent */
+  :root,
+  :root[data-theme="rift"] {
+    --rw-support: #720e9e;
+    --rw-on-support: #ffffff;
+  }
   :root[data-theme]:not([data-theme="rift"]) {
-    --rw-side-a: var(--rw-teal);
-    --rw-side-b: var(--rw-red);
+    --rw-support: var(--rw-accent-2);
+    --rw-on-support: var(--rw-on-accent);
   }
   /* white team logos (G2, DK, Team Liquid...) would vanish on the pale background: a thin dark edge */
   :root[data-theme="light"] img {

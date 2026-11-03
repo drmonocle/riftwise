@@ -38,7 +38,7 @@ import { prettySlug } from "../../hub/data";
 import type { TabKey } from "../Navigation";
 
 /** the panel that matters most on the page: a brighter edge and a soft glow (the card's look, its own border colour) */
-const hot = "bg-rw-panel border border-rw-accent/50 rounded-xl p-4 shadow-[0_18px_50px_rgba(127,107,255,0.16)]";
+const hot = "bg-rw-panel border border-rw-accent/50 rounded-xl p-4 shadow-[0_18px_50px_color-mix(in_oklab,var(--rw-accent-2)_16%,transparent)]";
 /** a small condensed label over a block, with a short accent line before it */
 const Eyebrow: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = "" }) => (
   <div className={`flex items-center gap-2 font-head text-[11px] font-semibold uppercase tracking-[0.14em] text-rw-accent ${className}`}>
@@ -77,7 +77,7 @@ export const HubHome: React.FC<{
       {/* the title, the search and the numbers */}
       {/* no overflow-hidden here: the search's results open below the box, past the panel's edge */}
       <section className="bg-rw-panel border border-rw-border rounded-xl relative p-5 sm:p-7 space-y-4">
-        <div className="absolute inset-0 rounded-[inherit] pointer-events-none bg-[radial-gradient(900px_380px_at_8%_-20%,rgba(127,107,255,0.28),transparent_60%),radial-gradient(600px_300px_at_100%_0%,rgba(179,157,255,0.1),transparent_60%)]" aria-hidden="true" />
+        <div className="absolute inset-0 rounded-[inherit] pointer-events-none bg-[radial-gradient(900px_380px_at_8%_-20%,color-mix(in_oklab,var(--rw-accent-2)_28%,transparent),transparent_60%),radial-gradient(600px_300px_at_100%_0%,color-mix(in_oklab,var(--rw-accent)_10%,transparent),transparent_60%)]" aria-hidden="true" />
         <div className="relative space-y-4">
           <Eyebrow>{ev && intl ? tl("{event} {year} is on", { event: tc("event", ev.name), year: intl.startTimeUtc.slice(0, 4) }) : tl("Pro League of Legends stats")}</Eyebrow>
           <h1 className="font-head text-3xl sm:text-[2.6rem] font-bold text-rw-text leading-[1.05] max-w-3xl">{tl("Every pro League of Legends game since 2011.")}</h1>
