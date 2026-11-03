@@ -144,7 +144,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
         className="p-4 space-y-4 page-5xl overflow-y-auto h-full"
       >
         {route.kind !== "home" && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pb-2 border-b border-rw-border">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             {/* the desktop app has no browser Back button: its own, while there is a page to go back to */}
             {!IS_WEB && canGoBack() && (
               <button type="button" onClick={() => hubBack()} className="flex items-center gap-1 min-h-8 px-1.5 -ml-1.5 rounded text-xs text-rw-teal hover:underline shrink-0" aria-label={tl("Back")}>

@@ -38,9 +38,9 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
   }, [key]);
   if (!d || d.played === 0 || d.played >= d.total) return null;
   return (
-    <section className="rounded-lg border border-rw-border bg-rw-panel text-xs">
+    <section className="rounded-xl border border-rw-border bg-rw-panel rw-lit text-xs">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-3 py-2 border-b border-rw-border">
-        <h2 className="font-head text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Worlds Swiss stage: standings")}</h2>
+        <h2 className="font-head text-[13px] font-bold uppercase tracking-[0.12em] text-rw-sub">{tl("Worlds Swiss stage: standings")}</h2>
         <span className="text-[11px] text-rw-muted font-mono tabular-nums">{tl("{n} of {m} series played", { n: d.played, m: d.total })}</span>
         <button
           type="button"

@@ -14,7 +14,8 @@ import { BroadcastCardButton, gameCardData, seriesCardData } from "./BroadcastCa
 import { buildGameDraftQuery, type GameDraftInput } from "./DraftPage";
 import { RiotGamesFor, RiotMatchPage } from "./RiotMatch";
 import { RIOT_PREFIX } from "../../hub/riotMatch";
-import { card, ChampIcon, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, OeCredit, Page, PlayerLink, RevealButton, RuneIcon, SpellIcon, TeamLink, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
+import { card, ChampIcon, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, OeCredit, Page, PlayerLink, RevealButton, RuneIcon, SpellIcon, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
+import { heroBtn } from "./EntityHero";
 
 export function extractHubGameDraft(g: HubGame): GameDraftInput {
   const bluePicks = g.t?.blue?.picks?.length
@@ -87,6 +88,36 @@ const HubMatchPage: React.FC<{ slug: string; game?: number; onOpenUrl: (url: str
   return <Page state={state}>{(s) => <SeriesView key={slug} s={s} slug={slug} game={game} onOpenUrl={onOpenUrl} />}</Page>;
 };
 
+/** One team in a series' top card: its logo next to the score and its name, the winner's in the accent. Phones: the
+ *  logo over the short name. */
+const SeriesSide: React.FC<{ team: HubSeries["a"]; won: boolean; align: "left" | "right" }> = ({ team, won, align }) => {
+  const name = (
+    <>
+      <span className="sm:hidden">{team.c || team.n}</span>
+      <span className="hidden sm:inline">{team.n}</span>
+    </>
+  );
+  const cls = `font-head text-[20px] sm:text-[28px] font-bold leading-tight break-words min-w-0 ${won ? "text-rw-teal" : "text-rw-text"}`;
+  const logo = <TeamLogo name={team.n} code={team.c || undefined} sizeClass="w-11 h-11 sm:w-14 sm:h-14" className="drop-shadow-[0_6px_14px_rgba(0,0,0,0.5)]" />;
+  return (
+    <span
+      className={`flex items-center gap-2 sm:gap-3 min-w-0 ${
+        align === "right" ? "flex-col-reverse sm:flex-row sm:justify-end text-center sm:text-right" : "flex-col sm:flex-row text-center sm:text-left"
+      }`}
+    >
+      {align === "left" && logo}
+      {team.u ? (
+        <HubLink to={{ kind: "team", slug: team.u }} className={`${cls} hover:underline`}>
+          {name}
+        </HubLink>
+      ) : (
+        <span className={cls}>{name}</span>
+      )}
+      {align === "right" && logo}
+    </span>
+  );
+};
+
 const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUrl: (url: string) => void }> = ({ s, slug, game: startGame, onOpenUrl }) => {
   const [hidden, reveal] = useHidden(`series:${slug}`, s.date);
   const withStats = s.games.filter((g) => g.p && g.p.length);
@@ -110,9 +141,14 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
   const scoreB = hidden ? "?" : s.sb;
   return (
     <div className="space-y-3">
-      <div className={card}>
-        <div className="text-[11px] text-rw-muted flex flex-wrap gap-x-2">
-          <EventLink name={s.en} u={s.e} className="text-rw-accent hover:underline" />
+      {/* the series' top card: where and when, both teams and the score, then what to open next */}
+      <section className="relative bg-rw-panel border border-rw-accent/40 rounded-xl rw-hot p-4 sm:p-6">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 rounded-[inherit] pointer-events-none bg-[radial-gradient(640px_220px_at_50%_0%,color-mix(in_oklab,var(--rw-accent)_12%,transparent),transparent_70%)]"
+        />
+        <div className="relative text-[13px] text-rw-sub flex flex-wrap items-center gap-x-2 gap-y-1">
+          <EventLink name={s.en} u={s.e} className="text-rw-accent font-semibold hover:underline" />
           {s.stage && <span>· {stageLabel(s.stage)}</span>}
           <span>· {fmtDate(s.date)}</span>
           <span>· {tc("series length", "Best of {n}", { n: s.bo })}</span>
@@ -131,37 +167,27 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
             </HubLink>
           )}
         </div>
-        {/* the page's main heading: both teams and the score */}
-        <h1 className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <span className="block text-right min-w-0">
-            <TeamLink name={s.a.n} u={s.a.u} className={`text-base sm:text-lg font-bold hover:underline ${!hidden && s.w === 1 ? "text-rw-teal" : "text-rw-text"}`} />
-          </span>
-          <span className="block text-2xl font-black text-rw-text tabular-nums text-center min-w-[4.5rem]">
+        {/* the page's main heading: both teams and the score (short names on phones) */}
+        <h1 className="relative mt-4 sm:mt-5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 sm:gap-6">
+          <SeriesSide team={s.a} won={!hidden && s.w === 1} align="right" />
+          <span className="block font-num text-[32px] sm:text-[44px] font-bold text-rw-text tabular-nums text-center min-w-[4.5rem] leading-none">
             {scoreA} <span className="text-rw-muted/60">–</span> {scoreB}
           </span>
-          <span className="block min-w-0">
-            <TeamLink name={s.b.n} u={s.b.u} className={`text-base sm:text-lg font-bold hover:underline ${!hidden && s.w === 2 ? "text-rw-teal" : "text-rw-text"}`} />
-          </span>
+          <SeriesSide team={s.b} won={!hidden && s.w === 2} align="left" />
         </h1>
         {hidden && (
-          <div className="mt-2 text-center">
+          <div className="relative mt-3 text-center">
             <RevealButton onReveal={reveal} />
           </div>
         )}
         {((!hidden && s.games.some((g) => g.w)) || (s.a.u && s.b.u)) && (
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-[11px]">
+          <div className="relative mt-4 sm:mt-5 flex flex-wrap items-center justify-center gap-2">
             {s.a.u && s.b.u && (
               <>
-                <HubLink
-                  to={{ kind: "prep", a: s.a.u, b: s.b.u }}
-                  className="px-2.5 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
-                >
+                <HubLink to={{ kind: "prep", a: s.a.u, b: s.b.u }} className={heroBtn(true)}>
                   {tl("Match prep")}
                 </HubLink>
-                <HubLink
-                  to={{ kind: "compare", mode: "team", a: s.a.u, b: s.b.u }}
-                  className="px-2.5 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
-                >
+                <HubLink to={{ kind: "compare", mode: "team", a: s.a.u, b: s.b.u }} className={heroBtn()}>
                   {tl("Compare")}
                 </HubLink>
                 <HubLink
@@ -169,21 +195,21 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
                     kind: "draft",
                     query: seriesGameDraftQuery(s, game, gi),
                   }}
-                  className="px-2.5 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+                  className={heroBtn()}
                 >
                   {tl("Draft board")}
                 </HubLink>
               </>
             )}
             {!hidden && s.games.some((g) => g.w) && (
-              <BroadcastCardButton data={() => seriesCardData(s)} name={`${s.a.n}-vs-${s.b.n}-series`} label={tl("Overview card")} />
+              <BroadcastCardButton hero data={() => seriesCardData(s)} name={`${s.a.n}-vs-${s.b.n}-series`} label={tl("Overview card")} />
             )}
           </div>
         )}
         {!hidden && s.ff ? (
-          <p className="mt-2 text-[11px] text-rw-muted text-center">{tl("Result awarded by forfeit, not by the games played.")}</p>
+          <p className="relative mt-3 text-[12px] text-rw-muted text-center">{tl("Result awarded by forfeit, not by the games played.")}</p>
         ) : null}
-      </div>
+      </section>
 
       {/* no stats in the hub yet (a match from today): every game from Riot's live stats feed instead */}
       {withStats.length === 0 ? (

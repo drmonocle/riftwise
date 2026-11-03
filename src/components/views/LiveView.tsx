@@ -11,6 +11,7 @@ import { SwissStandings } from "../SwissStandings";
 import { ShareMatchButton } from "../ShareMatchButton";
 import { IdleHome } from "../IdleHome";
 import {
+  type BroadcastStream,
   getLeagueBroadcastStreams,
   isMatchFollowed,
   followedPlayerTeams,
@@ -35,9 +36,10 @@ const AtStakeToday = lazyPart(() => import("../hub/AtStake").then((m) => m.AtSta
 
 /** Two columns from 1280 px: the matches, and a side column (the next match in your leagues, the Swiss standings,
  *  what's on the line today). One column below that, the side column after the matches. */
-const COLS = "grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem] items-start";
+// grid-cols-1 below 1280 px: a single "auto" column would grow to its widest content (a wide table) past the screen
+const COLS = "grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_22rem] items-start";
 /** A heading in the shared section look: small condensed capitals in the text colour. */
-const HEAD = "font-head text-xs font-semibold uppercase tracking-wider text-rw-text";
+const HEAD = "font-head text-[13px] font-bold uppercase tracking-[0.12em] text-rw-sub";
 
 interface LiveViewProps {
   matches: Match[];
@@ -126,7 +128,6 @@ export const LiveView: React.FC<LiveViewProps> = ({
 }) => {
   // revealed scores are remembered on this device (src/revealed.ts) and synced with cloud sync
   useRevealedVersion();
-  const toggleReveal = (matchId: string) => setRevealed(`match:${matchId}`, !isRevealed(`match:${matchId}`));
 
   // A shared link to a live match: scroll to its card and flash it.
   const [flashMatchId, setFlashMatchId] = useState<string | null>(null);
@@ -214,8 +215,8 @@ export const LiveView: React.FC<LiveViewProps> = ({
         <IntlBanner schedule={schedule} onSelectTab={onSelectTab} />
         <div className={COLS}>
           <div className="space-y-4 min-w-0">
-            <div className="flex items-center justify-between pb-1 border-b border-rw-border">
-              <h2 className="text-xs font-bold text-rw-red uppercase tracking-wider flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="font-head text-[13px] font-bold text-rw-red uppercase tracking-[0.12em] flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-rw-red animate-ping" />
                 {tl("Live Pro Matches ({n})", { n: matches.length })}
               </h2>
@@ -226,262 +227,19 @@ export const LiveView: React.FC<LiveViewProps> = ({
               )}
             </div>
 
-            <div className="grid gap-4">
-              {matches.map((m) => {
-                const isT1Followed = settings.followedTeams.includes(m.team1Code);
-                const isT2Followed = settings.followedTeams.includes(m.team2Code);
-                const shown = isRevealed(`match:${m.matchId}`);
-                const showScore = !settings.spoilerMode || shown;
-
-                return (
-                  <div
-                    key={m.matchId}
-                    id={`match-${m.matchId}`}
-                    className={`bg-rw-surface border rounded-lg p-4 transition-all hover:border-rw-accent ${
-                      flashMatchId === m.matchId
-                        ? "border-rw-teal ring-2 ring-rw-teal/40"
-                        : isT1Followed || isT2Followed
-                          ? "border-rw-accent"
-                          : "border-rw-border"
-                    }`}
-                  >
-                    {/* Card Header: League & Best-of */}
-                    <div className="flex items-center justify-between text-xs text-rw-sub mb-3 font-medium">
-                      <span className="font-bold text-rw-teal">{m.leagueName}</span>
-                      <span className="flex items-center gap-1.5">
-                        <ShareMatchButton match={m} />
-                        <span className="font-medium bg-rw-bg px-2 py-0.5 rounded border border-rw-border">
-                          {tl("Best of {n}", { n: m.bestOf })}
-                        </span>
-                      </span>
-                    </div>
-
-                    {/* Match Scoreboard */}
-                    <div className="grid grid-cols-5 items-center gap-2 my-2">
-                      {/* Team 1 */}
-                      <div className="col-span-2 min-w-0 flex items-center justify-end gap-2 sm:gap-3 text-right">
-                        <div className="min-w-0">
-                          <div className="flex items-center justify-end gap-1.5 min-w-0">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleTeamFollow(m.team1Code);
-                              }}
-                              className={`p-1 shrink-0 rounded hover:bg-rw-border transition-colors ${
-                                isT1Followed ? "text-rw-accent" : "text-rw-sub hover:text-rw-accent"
-                              }`}
-                              aria-label={isT1Followed ? tl("Unfollow {name}", { name: m.team1Code }) : tl("Follow {name}", { name: m.team1Code })}
-                              title={isT1Followed ? tl("Unfollow {name}", { name: m.team1Code }) : tl("Follow {name}", { name: m.team1Code })}
-                            >
-                              <Star className={`w-3.5 h-3.5 ${isT1Followed ? "fill-rw-accent" : ""}`} />
-                            </button>
-                            <span
-                              {...clickable(() => onSelectTeam?.(m.team1Code, m.team1Name))}
-                              className="font-bold text-sm sm:text-base text-rw-text hover:text-rw-accent cursor-pointer transition-colors truncate"
-                              title={tl("View {team} roster", { team: m.team1Name })}
-                            >
-                              {m.team1Name}
-                            </span>
-                          </div>
-                          <TeamRatingSub match={m} side="a" align="right" />
-                        </div>
-                        {m.team1Image ? (
-                          <img
-                            {...riotImg(m.team1Image, 96)}
-                            alt={m.team1Code}
-                            className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 object-contain rounded cursor-pointer"
-                            onClick={() => onSelectTeam?.(m.team1Code, m.team1Name)}
-                          />
-                        ) : (
-                          <div
-                            {...clickable(() => onSelectTeam?.(m.team1Code, m.team1Name))}
-                            className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 bg-rw-bg rounded flex items-center justify-center font-bold text-xs text-rw-accent cursor-pointer font-mono"
-                          >
-                            {m.team1Code.slice(0, 3)}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Score Center (Interactive with Per-Match Reveal) */}
-                      <div className="col-span-1 text-center font-bold font-mono flex flex-col items-center justify-center">
-                        {showScore ? (
-                          <div
-                            onClick={() => settings.spoilerMode && toggleReveal(m.matchId)}
-                            className={`text-2xl text-rw-text ${
-                              settings.spoilerMode ? "cursor-pointer group flex flex-col items-center" : ""
-                            }`}
-                            title={settings.spoilerMode ? tl("Click to re-hide score") : undefined}
-                          >
-                            <div>
-                              <span className="text-rw-teal">{m.team1Score}</span>
-                              <span className="text-rw-sub mx-2">:</span>
-                              <span className="text-rw-red">{m.team2Score}</span>
-                            </div>
-                            {settings.spoilerMode && (
-                              <span className="text-[9px] text-rw-sub opacity-80 group-hover:opacity-100 font-sans tracking-tight">
-                                {tl("Revealed (hide)")}
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => toggleReveal(m.matchId)}
-                            className="text-xs text-rw-sub bg-rw-bg hover:bg-rw-raised hover:text-rw-accent py-1 px-2.5 rounded border border-rw-border hover:border-rw-accent/50 transition-all cursor-pointer flex flex-col items-center gap-0.5 group"
-                            title={tl("Click to reveal live score for this match")}
-                          >
-                            <span className="font-bold">{tl("VS")}</span>
-                            <span className="text-[9px] text-rw-sub group-hover:text-rw-accent">
-                              {tl("Reveal")}
-                            </span>
-                          </button>
-                        )}
-                        {(() => {
-                          // Games already finished in this series count, unless the score is hidden
-                          const h2h = computeHeadToHead(m.team1Code, m.team2Code, schedule, m.matchId, showScore);
-                          return h2h ? <H2HMeter team1Code={m.team1Code} team2Code={m.team2Code} h2h={h2h} matchId={m.matchId} countThisMatch={showScore} /> : null;
-                        })()}
-                      </div>
-
-                      {/* Team 2 */}
-                      <div className="col-span-2 min-w-0 flex items-center gap-2 sm:gap-3 text-left">
-                        {m.team2Image ? (
-                          <img
-                            {...riotImg(m.team2Image, 96)}
-                            alt={m.team2Code}
-                            className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 object-contain rounded cursor-pointer"
-                            onClick={() => onSelectTeam?.(m.team2Code, m.team2Name)}
-                          />
-                        ) : (
-                          <div
-                            {...clickable(() => onSelectTeam?.(m.team2Code, m.team2Name))}
-                            className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 bg-rw-bg rounded flex items-center justify-center font-bold text-xs text-rw-accent cursor-pointer font-mono"
-                          >
-                            {m.team2Code.slice(0, 3)}
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span
-                              {...clickable(() => onSelectTeam?.(m.team2Code, m.team2Name))}
-                              className="font-bold text-sm sm:text-base text-rw-text hover:text-rw-accent cursor-pointer transition-colors truncate"
-                              title={tl("View {team} roster", { team: m.team2Name })}
-                            >
-                              {m.team2Name}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleTeamFollow(m.team2Code);
-                              }}
-                              className={`p-1 shrink-0 rounded hover:bg-rw-border transition-colors ${
-                                isT2Followed ? "text-rw-accent" : "text-rw-sub hover:text-rw-accent"
-                              }`}
-                              aria-label={isT2Followed ? tl("Unfollow {name}", { name: m.team2Code }) : tl("Follow {name}", { name: m.team2Code })}
-                              title={isT2Followed ? tl("Unfollow {name}", { name: m.team2Code }) : tl("Follow {name}", { name: m.team2Code })}
-                            >
-                              <Star className={`w-3.5 h-3.5 ${isT2Followed ? "fill-rw-accent" : ""}`} />
-                            </button>
-                          </div>
-                          <TeamRatingSub match={m} side="b" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Series Progression Game Tracker */}
-                    {/* Hidden in spoiler mode: the game number gives the series score away (Game 5 = 2-2) */}
-                    {m.bestOf > 1 && showScore && (
-                      <div className="flex flex-wrap items-center justify-center gap-1.5 my-2 pt-2 border-t border-rw-border/40">
-                        {Array.from({ length: m.bestOf }).map((_, idx) => {
-                          const gNum = idx + 1;
-                          const winsNeeded = Math.ceil((m.bestOf || 1) / 2);
-                          const isMatchDone = m.state === "completed" || (m.team1Score ?? 0) >= winsNeeded || (m.team2Score ?? 0) >= winsNeeded;
-                          const totalGamesPlayed = (m.team1Score ?? 0) + (m.team2Score ?? 0);
-                          const isPast = gNum <= totalGamesPlayed;
-                          const isCurrent = !isMatchDone && !isPast && totalGamesPlayed === idx;
-                          const isNotNeeded = isMatchDone && gNum > totalGamesPlayed;
-                          // Between games Riot marks the next game "unstarted": say "Next", not "Live"
-                          const isBetweenGames =
-                            isCurrent && (m.games?.length ?? 0) > 0 && !m.games.some((g) => g.state === "inProgress");
-
-                          if (isNotNeeded) return null;
-
-                          return (
-                            <span
-                              key={gNum}
-                              className={`px-1.5 sm:px-2.5 py-0.5 rounded text-[10px] font-mono font-bold border whitespace-nowrap transition-all ${
-                                isCurrent && isBetweenGames
-                                  ? "bg-rw-accent/10 border-rw-accent text-rw-accent"
-                                  : isCurrent
-                                  ? "bg-rw-red/20 border-rw-red text-rw-red animate-pulse"
-                                  : isPast
-                                  ? "bg-rw-bg border-rw-border text-rw-teal"
-                                  : "bg-rw-bg/40 border-rw-border/50 text-rw-muted"
-                              }`}
-                            >
-                              {isCurrent && !isBetweenGames && "● "}
-                              <span className="sm:hidden">{tc("short game", "G{n}", { n: gNum })}</span>
-                              <span className="hidden sm:inline">{tl("Game {n}", { n: gNum })}</span>
-                              {isCurrent && (isBetweenGames ? " · " + tl("Next") : " · " + tl("Live"))}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* Before the series (power rankings), then the game being played: gold, objectives, the chance right
-                        now, players (spoiler mode hides the game like the score) */}
-                    <div className="mt-2">
-                      <WinChanceLine match={m} />
-                    </div>
-                    <LiveGamePanel match={m} showStats={showScore} />
-
-                    {/* Action Footer */}
-                    <div className="flex items-center justify-between pt-3 mt-2 border-t border-rw-border/60 text-xs">
-                      {(() => {
-                        const winsNeeded = Math.ceil((m.bestOf || 1) / 2);
-                        const isDone = m.state === "completed" || (m.team1Score ?? 0) >= winsNeeded || (m.team2Score ?? 0) >= winsNeeded;
-                        if (isDone) {
-                          const winnerName = m.winner
-                            ? m.winner === m.team1Code ? m.team1Name : m.team2Name
-                            : (m.team1Score ?? 0) > (m.team2Score ?? 0) ? m.team1Name : m.team2Name;
-                          return (
-                            <span className="flex items-center gap-1.5 text-rw-teal font-bold text-[11px]">
-                              <span className="w-2 h-2 rounded-full bg-rw-teal" />
-                              {showScore
-                                ? tl("Final · {team} won {score}", {
-                                    team: winnerName,
-                                    score: `${Math.max(m.team1Score, m.team2Score)}-${Math.min(m.team1Score, m.team2Score)}`,
-                                  })
-                                : tl("Series over")}
-                            </span>
-                          );
-                        }
-                        return (
-                          <span className="flex items-center gap-1.5 text-rw-red font-semibold text-[11px]">
-                            <span className="w-2 h-2 rounded-full bg-rw-red animate-ping" />
-                            {tl("Match In Progress")}
-                          </span>
-                        );
-                      })()}
-
-                      <span className="flex flex-wrap items-center justify-end gap-2">
-                        <MatchPrepButton match={m} />
-                        <MatchOverviewButton match={m} />
-                        <button
-                          onClick={() => onOpenUrl(m.streamUrl || "https://lolesports.com")}
-                          className="flex items-center gap-1.5 px-3 py-1 rounded bg-rw-teal hover:bg-rw-teal/80 text-rw-bg font-bold text-xs transition-colors"
-                        >
-                          <Tv className="w-3.5 h-3.5" />
-                          <span>{tl("Watch Stream")}</span>
-                        </button>
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="grid grid-cols-1 gap-6">
+              {matches.map((m) => (
+                <LiveMatchBlock
+                  key={m.matchId}
+                  m={m}
+                  schedule={schedule}
+                  settings={settings}
+                  flash={flashMatchId === m.matchId}
+                  onToggleFollow={toggleTeamFollow}
+                  onSelectTeam={onSelectTeam}
+                  onOpenUrl={onOpenUrl}
+                />
+              ))}
             </div>
 
             {/* Up next: keeps the page useful when only one or two matches are live */}
@@ -601,7 +359,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
             />
           ) : hasWatchlist ? (
             <div className="space-y-6">
-              <div className="bg-rw-panel border border-rw-border rounded-xl p-8 text-center space-y-4 max-w-xl mx-auto my-4">
+              <div className="bg-rw-panel border border-rw-border rounded-xl rw-lit p-8 text-center space-y-4 max-w-xl mx-auto my-4">
                 <div className="w-12 h-12 rounded-full bg-rw-accent/10 border border-rw-accent/30 flex items-center justify-center mx-auto text-rw-accent">
                   <Star className="w-6 h-6 fill-rw-accent/20" />
                 </div>
@@ -651,7 +409,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
               )}
             </div>
           ) : (
-            <div className="bg-rw-panel border border-rw-border rounded-xl p-8 text-center space-y-3 max-w-xl mx-auto my-6">
+            <div className="bg-rw-panel border border-rw-border rounded-xl rw-lit p-8 text-center space-y-3 max-w-xl mx-auto my-6">
               <div className="w-12 h-12 rounded-full bg-rw-teal/10 border border-rw-teal/30 flex items-center justify-center mx-auto text-rw-teal">
                 <Calendar className="w-6 h-6" />
               </div>
@@ -714,9 +472,285 @@ export const LiveView: React.FC<LiveViewProps> = ({
 };
 
 /**
+ * A live series: its top card (where it's played, both teams and the score, the games so far, the chance before it,
+ * match prep and overview, where to watch), then the game being played in a panel of its own (LiveGamePanel: gold,
+ * objectives, the chance now, the gold graph, and the players and items, open from the start where there's room).
+ */
+const LiveMatchBlock: React.FC<{
+  m: Match;
+  schedule: Match[];
+  settings: AppSettings;
+  flash: boolean;
+  onToggleFollow: (code: string) => void;
+  onSelectTeam?: (teamCode: string, teamName?: string) => void;
+  onOpenUrl: (url: string) => void;
+}> = ({ m, schedule, settings, flash, onToggleFollow, onSelectTeam, onOpenUrl }) => {
+  const shown = isRevealed(`match:${m.matchId}`);
+  const showScore = !settings.spoilerMode || shown;
+  const toggleReveal = () => setRevealed(`match:${m.matchId}`, !shown);
+  const winsNeeded = Math.ceil((m.bestOf || 1) / 2);
+  const isDone = m.state === "completed" || (m.team1Score ?? 0) >= winsNeeded || (m.team2Score ?? 0) >= winsNeeded;
+  const followed1 = settings.followedTeams.includes(m.team1Code);
+  const followed2 = settings.followedTeams.includes(m.team2Code);
+  // games already finished in this series count, unless the score is hidden
+  const h2h = computeHeadToHead(m.team1Code, m.team2Code, schedule, m.matchId, showScore);
+  // the players and items open by themselves where there is room for them beside everything else
+  const wide = typeof window !== "undefined" && window.innerWidth >= 1280;
+  const edge = flash
+    ? "border-rw-teal ring-2 ring-rw-teal/40 rw-lit"
+    : isDone
+      ? "border-rw-border rw-lit"
+      : followed1 || followed2
+        ? "border-rw-accent/60 rw-live"
+        : "border-rw-red/50 rw-live";
+  const winner = m.winner
+    ? m.winner === m.team1Code
+      ? m.team1Name
+      : m.team2Name
+    : (m.team1Score ?? 0) > (m.team2Score ?? 0)
+      ? m.team1Name
+      : m.team2Name;
+  return (
+    <div id={`match-${m.matchId}`} className="space-y-3">
+      <section className={`relative bg-rw-panel border rounded-xl p-4 sm:p-6 transition-colors ${edge}`}>
+        {!isDone && (
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 rounded-[inherit] pointer-events-none bg-[radial-gradient(700px_220px_at_50%_0%,color-mix(in_oklab,var(--rw-red)_9%,transparent),transparent_70%)]"
+          />
+        )}
+        {/* live or over, where, how long; share */}
+        <div className="relative flex items-start justify-between gap-2">
+          <span
+            className={`font-head text-[13px] font-bold uppercase tracking-[0.12em] flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0 flex-1 pt-1 ${
+              isDone ? "text-rw-teal" : "text-rw-red"
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full shrink-0 ${isDone ? "bg-rw-teal" : "bg-rw-red animate-pulse"}`} aria-hidden="true" />
+            <span>
+              {isDone
+                ? showScore
+                  ? tl("Final · {team} won {score}", {
+                      team: winner,
+                      score: `${Math.max(m.team1Score, m.team2Score)}-${Math.min(m.team1Score, m.team2Score)}`,
+                    })
+                  : tl("Series over")
+                : tl("Match In Progress")}
+            </span>
+            <span className="text-rw-sub">
+              · {m.leagueName}
+              {m.blockName ? ` · ${m.blockName}` : ""} · {tl("Best of {n}", { n: m.bestOf })}
+            </span>
+          </span>
+          <ShareMatchButton match={m} />
+        </div>
+
+        {/* both teams and the score (in spoiler mode a tap shows or hides it), the head to head under it */}
+        <div className="relative mt-4 sm:mt-5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-6">
+          <LiveSide m={m} side="a" followed={followed1} onToggleFollow={onToggleFollow} onSelectTeam={onSelectTeam} />
+          <div className="flex flex-col items-center">
+            {showScore ? (
+              <div
+                onClick={() => settings.spoilerMode && toggleReveal()}
+                className={`flex flex-col items-center ${settings.spoilerMode ? "cursor-pointer group" : ""}`}
+                title={settings.spoilerMode ? tl("Click to re-hide score") : undefined}
+              >
+                <span className="font-num text-[34px] sm:text-[44px] font-bold leading-none text-rw-text tabular-nums whitespace-nowrap">
+                  {m.team1Score} <span className="text-rw-muted/60">–</span> {m.team2Score}
+                </span>
+                {settings.spoilerMode && (
+                  <span className="text-[9px] text-rw-sub opacity-80 group-hover:opacity-100 tracking-tight mt-1">{tl("Revealed (hide)")}</span>
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={toggleReveal}
+                className="text-xs text-rw-sub bg-rw-bg hover:bg-rw-raised hover:text-rw-accent py-1.5 px-3 rounded-lg border border-rw-border hover:border-rw-accent/50 transition-all cursor-pointer flex flex-col items-center gap-0.5 group"
+                title={tl("Click to reveal live score for this match")}
+              >
+                <span className="font-bold">{tl("VS")}</span>
+                <span className="text-[9px] text-rw-sub group-hover:text-rw-accent">{tl("Reveal")}</span>
+              </button>
+            )}
+            {h2h && <H2HMeter team1Code={m.team1Code} team2Code={m.team2Code} h2h={h2h} matchId={m.matchId} countThisMatch={showScore} />}
+          </div>
+          <LiveSide m={m} side="b" followed={followed2} onToggleFollow={onToggleFollow} onSelectTeam={onSelectTeam} />
+        </div>
+
+        {/* the games of the series; hidden in spoiler mode (the game number gives the series score away: Game 5 = 2-2) */}
+        {m.bestOf > 1 && showScore && (
+          <div className="relative flex flex-wrap items-center justify-center gap-1.5 mt-4">
+            {Array.from({ length: m.bestOf }).map((_, idx) => {
+              const gNum = idx + 1;
+              const totalGamesPlayed = (m.team1Score ?? 0) + (m.team2Score ?? 0);
+              const isPast = gNum <= totalGamesPlayed;
+              const isCurrent = !isDone && !isPast && totalGamesPlayed === idx;
+              const isNotNeeded = isDone && gNum > totalGamesPlayed;
+              // Between games Riot marks the next game "unstarted": say "Next", not "Live"
+              const isBetweenGames = isCurrent && (m.games?.length ?? 0) > 0 && !m.games.some((g) => g.state === "inProgress");
+              if (isNotNeeded) return null;
+              return (
+                <span
+                  key={gNum}
+                  className={`px-2 sm:px-3 py-1 rounded-lg text-[11px] font-num font-bold border whitespace-nowrap transition-all ${
+                    isCurrent && isBetweenGames
+                      ? "bg-rw-accent/10 border-rw-accent text-rw-accent"
+                      : isCurrent
+                        ? "bg-rw-red/20 border-rw-red text-rw-red animate-pulse"
+                        : isPast
+                          ? "bg-rw-bg border-rw-border text-rw-teal"
+                          : "bg-rw-bg/40 border-rw-border/50 text-rw-muted"
+                  }`}
+                >
+                  {isCurrent && !isBetweenGames && "● "}
+                  <span className="sm:hidden">{tc("short game", "G{n}", { n: gNum })}</span>
+                  <span className="hidden sm:inline">{tl("Game {n}", { n: gNum })}</span>
+                  {isCurrent && (isBetweenGames ? " · " + tl("Next") : " · " + tl("Live"))}
+                </span>
+              );
+            })}
+          </div>
+        )}
+
+        {/* before the series: the power rankings' chance */}
+        <div className="relative mt-3">
+          <WinChanceLine match={m} />
+        </div>
+
+        {/* what to open, and where to watch */}
+        <div className="relative mt-4 pt-4 border-t border-rw-border/60 flex flex-wrap items-center justify-between gap-3">
+          <span className="flex flex-wrap items-center gap-2">
+            <MatchPrepButton match={m} />
+            <MatchOverviewButton match={m} />
+          </span>
+          <WatchLinks streams={getLeagueBroadcastStreams(m.leagueSlug, m.streamUrl)} onOpenUrl={onOpenUrl} inline />
+        </div>
+      </section>
+
+      {/* the game being played (or, between games, the one that just ended) */}
+      <LiveGamePanel match={m} showStats={showScore} panel startOpen={wide} />
+    </div>
+  );
+};
+
+/** One team of a live series: logo by the score, name (the short one on phones), follow star, its rating under it. */
+const LiveSide: React.FC<{
+  m: Match;
+  side: "a" | "b";
+  followed: boolean;
+  onToggleFollow: (code: string) => void;
+  onSelectTeam?: (teamCode: string, teamName?: string) => void;
+}> = ({ m, side, followed, onToggleFollow, onSelectTeam }) => {
+  const first = side === "a"; // team 1 sits left of the score, so it lines up toward the right
+  const code = first ? m.team1Code : m.team2Code;
+  const name = first ? m.team1Name : m.team2Name;
+  const image = first ? m.team1Image : m.team2Image;
+  const open = () => onSelectTeam?.(code, name);
+  const follow = followed ? tl("Unfollow {name}", { name: code }) : tl("Follow {name}", { name: code });
+  const logo = image ? (
+    <img
+      {...riotImg(image, 160)}
+      alt={code}
+      className="w-11 h-11 sm:w-16 sm:h-16 shrink-0 object-contain cursor-pointer drop-shadow-[0_6px_14px_rgba(0,0,0,0.5)]"
+      onClick={open}
+    />
+  ) : (
+    <div
+      {...clickable(open)}
+      className="w-11 h-11 sm:w-16 sm:h-16 shrink-0 rounded-lg bg-rw-bg border border-rw-border flex items-center justify-center font-num font-bold text-rw-accent cursor-pointer"
+    >
+      {code.slice(0, 3)}
+    </div>
+  );
+  const star = (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggleFollow(code);
+      }}
+      className={`p-1 shrink-0 rounded hover:bg-rw-border transition-colors ${followed ? "text-rw-accent" : "text-rw-sub hover:text-rw-accent"}`}
+      aria-label={follow}
+      title={follow}
+    >
+      <Star className={`w-3.5 h-3.5 ${followed ? "fill-rw-accent" : ""}`} />
+    </button>
+  );
+  return (
+    <div
+      className={`flex items-center gap-2 sm:gap-4 min-w-0 ${
+        first ? "flex-col-reverse sm:flex-row sm:justify-end text-center sm:text-right" : "flex-col sm:flex-row text-center sm:text-left"
+      }`}
+    >
+      {!first && logo}
+      <div className="min-w-0 max-w-full">
+        <div className={`flex items-center gap-1 min-w-0 justify-center ${first ? "sm:justify-end" : "sm:justify-start"}`}>
+          {first && star}
+          <span
+            {...clickable(open)}
+            className="font-head text-[18px] sm:text-[22px] xl:text-[26px] font-bold leading-tight text-rw-text hover:text-rw-accent cursor-pointer line-clamp-2 break-words min-w-0 transition-colors"
+            title={tl("View {team} roster", { team: name })}
+          >
+            <span className="sm:hidden">{code}</span>
+            <span className="hidden sm:inline">{name}</span>
+          </span>
+          {!first && star}
+        </div>
+        <TeamRatingSub match={m} side={side} align={first ? "right" : "left"} />
+      </div>
+      {first && logo}
+    </div>
+  );
+};
+
+/** The official broadcast channels for a match's league (Twitch, YouTube, lolesports...). `inline`: a row with a
+ *  "Watch" label in front, for the foot of a card. */
+const WatchLinks: React.FC<{ streams: BroadcastStream[]; onOpenUrl: (url: string) => void; inline?: boolean }> = ({ streams, onOpenUrl, inline }) => {
+  if (!streams.length) return null;
+  return (
+    <div className={`flex flex-wrap items-center gap-2 ${inline ? "" : "justify-center"}`}>
+      {inline && <span className="font-head text-[12px] font-bold uppercase tracking-[0.12em] text-rw-muted">{tl("Watch")}</span>}
+      {streams.map((s, idx) => (
+        <button
+          key={idx}
+          type="button"
+          onClick={() => onOpenUrl(s.url)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+            s.badge === "LIVE FEED"
+              ? "bg-rw-red hover:bg-rw-red/90 text-white animate-pulse"
+              : s.icon === "twitch"
+                ? "bg-[#9146ff]/20 hover:bg-[#9146ff]/35 border border-[#9146ff]/60 text-[#d8b4fe] light:text-[#5b21b6]"
+                : s.icon === "youtube"
+                  ? "bg-[#ff0000]/15 hover:bg-[#ff0000]/30 border border-[#ff0000]/50 text-[#fca5a5] light:text-[#a51111]"
+                  : "bg-rw-bg hover:bg-rw-raised border border-rw-teal/60 text-rw-teal"
+          }`}
+          title={tl("Open {name} ({url})", { name: s.name, url: s.url })}
+        >
+          {s.icon === "twitch" && (
+            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
+            </svg>
+          )}
+          {s.icon === "youtube" && (
+            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+            </svg>
+          )}
+          {s.icon === "riot" && !s.badge && <Tv className="w-3.5 h-3.5 text-rw-teal" />}
+          {s.badge && <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />}
+          <span>{s.name}</span>
+          <ExternalLink className="w-3 h-3 opacity-70" />
+        </button>
+      ))}
+    </div>
+  );
+};
+
+/**
  * The next match (one you follow, in your leagues, or the next overall): both teams, the head to head, the countdown
- * or how late it is, calendar / prep / overview / share, and the official broadcast channels. A flat panel with its
- * label in the header strip; big on the idle page, compact in the side column.
+ * or how late it is, calendar / prep / overview / share, and the official broadcast channels. A lit panel with its
+ * label on top; big on the idle page, compact in the side column.
  */
 const NextMatchCard: React.FC<{
   match: Match;
@@ -786,8 +820,8 @@ const NextMatchCard: React.FC<{
   const h2h = computeHeadToHead(m.team1Code, m.team2Code, schedule, m.matchId);
   const streams = getLeagueBroadcastStreams(m.leagueSlug, m.streamUrl);
   return (
-    <section className="bg-rw-panel border border-rw-border rounded-lg min-w-0">
-      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-rw-border">
+    <section className="bg-rw-panel border border-rw-border rounded-xl rw-lit min-w-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 pt-3 pb-1">
         <h2 className={HEAD}>{tag}</h2>
         {m.blockName && <span className="text-xs text-rw-sub font-medium">{m.blockName}</span>}
       </div>
@@ -858,40 +892,7 @@ const NextMatchCard: React.FC<{
           {/* Official League Broadcast Stream Channels */}
           <div className="mt-4 w-full pt-3 border-t border-rw-border/60">
             <div className="text-[10px] font-semibold text-rw-muted mb-2 text-center">{tl("Broadcast & Live Stream Channels")}</div>
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {streams.map((s, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => onOpenUrl(s.url)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                    s.badge === "LIVE FEED"
-                      ? "bg-rw-red hover:bg-rw-red/90 text-white animate-pulse"
-                      : s.icon === "twitch"
-                      ? "bg-[#9146ff]/20 hover:bg-[#9146ff]/35 border border-[#9146ff]/60 text-[#d8b4fe] light:text-[#5b21b6]"
-                      : s.icon === "youtube"
-                      ? "bg-[#ff0000]/15 hover:bg-[#ff0000]/30 border border-[#ff0000]/50 text-[#fca5a5] light:text-[#a51111]"
-                      : "bg-rw-bg hover:bg-rw-raised border border-rw-teal/60 text-rw-teal"
-                  }`}
-                  title={tl("Open {name} ({url})", { name: s.name, url: s.url })}
-                >
-                  {s.icon === "twitch" && (
-                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/>
-                    </svg>
-                  )}
-                  {s.icon === "youtube" && (
-                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                    </svg>
-                  )}
-                  {s.icon === "riot" && !s.badge && <Tv className="w-3.5 h-3.5 text-rw-teal" />}
-                  {s.badge && <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />}
-                  <span>{s.name}</span>
-                  <ExternalLink className="w-3 h-3 opacity-70" />
-                </button>
-              ))}
-            </div>
+            <WatchLinks streams={streams} onOpenUrl={onOpenUrl} />
           </div>
         </div>
       </div>
@@ -916,7 +917,7 @@ const IntlBanner: React.FC<{ schedule: Match[]; onSelectTab: (tab: "stats") => v
         navigateHub({ kind: ev.kind });
         onSelectTab("stats");
       }}
-      className="w-full text-left rounded-lg border border-rw-border border-l-[3px] border-l-rw-accent bg-rw-panel hover:bg-rw-raised px-4 py-3 flex flex-wrap items-center justify-between gap-2"
+      className="w-full text-left rounded-xl border border-rw-border border-l-[3px] border-l-rw-accent bg-rw-panel rw-lit hover:bg-rw-raised px-4 py-3 flex flex-wrap items-center justify-between gap-2"
     >
       <span>
         <span className="block text-sm font-extrabold text-rw-text">{tl("{event} {year} is on", { event: tc("event", ev.name), year })}</span>

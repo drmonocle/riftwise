@@ -20,7 +20,9 @@ import { BroadcastCardButton, SectionCard, playerCareerCardData } from "./Broadc
 import { PlayerRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
 import { localCountry } from "./CountryFlag";
-import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerPhoto, RevealButton, Section, Stat, td, TeamLink, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink } from "./ui";
+import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerPhoto, RevealButton, Section, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink } from "./ui";
+import { EntityHero, heroBtn, heroLink } from "./EntityHero";
+import { useTeamLogo } from "../../hub/riotCatalog";
 import { ratingTextClass } from "./BestPage";
 import { STable } from "../STable";
 
@@ -72,6 +74,17 @@ function age(born?: string): number | null {
   return a;
 }
 
+/** The club's logo in the corner of the photo (none when Riot has no logo for it). */
+const ClubBadge: React.FC<{ name: string }> = ({ name }) => {
+  const logo = useTeamLogo(name);
+  if (!logo) return null;
+  return (
+    <span className="absolute -right-1 -bottom-0.5 w-[30px] h-[30px] md:w-9 md:h-9 rounded-full bg-rw-deep border-2 border-rw-accent/50 p-[3px] flex items-center justify-center">
+      <TeamLogo name={name} sizeClass="w-full h-full" />
+    </span>
+  );
+};
+
 const PlayerView: React.FC<{
   p: HubPlayer;
   tab: string;
@@ -108,6 +121,7 @@ const PlayerView: React.FC<{
     p.recent[0]?.date,
   );
   const yrs = age(p.bio.born);
+  const pentas = p.pentas ? p.pentas.reduce((s, x) => s + x.x, 0) : 0;
   const links: [string, string][] = [];
   if (p.bio.twitter)
     links.push([
@@ -128,26 +142,32 @@ const PlayerView: React.FC<{
   const cardSub = [p.role ? roleName(p.role) : null, p.club].filter(Boolean).join(" · ") || undefined;
   return (
     <div>
-      {/* who they are on every tab; their numbers on the Overview */}
-      <div className={`${card} mb-3`}>
-        <div className="flex items-start gap-3">
-          <PlayerPhoto
-            name={p.name}
-            team={p.club}
-            slug={p.u}
-            img={p.img}
-            sizeClass={overview ? "w-14 h-14 lg:w-20 lg:h-20 2xl:w-24 2xl:h-24" : "w-10 h-10 lg:w-12 lg:h-12"}
-          />
-          <div className="min-w-0 flex-1">
-            <h1 className="text-lg font-bold text-rw-text">
-              {p.name}
-              {p.bio.native && (
-                <span className="text-rw-sub text-sm font-semibold ml-2">
-                  {p.bio.native}
-                </span>
-              )}
-            </h1>
-            <p className="text-[11px] text-rw-sub">
+      {/* who they are on every tab; their numbers, links and favourite champions on the Overview */}
+      <EntityHero
+        tabbed
+        compact={!overview}
+        media={
+          <>
+            <PlayerPhoto
+              name={p.name}
+              team={p.club}
+              slug={p.u}
+              img={p.img}
+              sizeClass={overview ? "w-[84px] h-[84px] md:w-[116px] md:h-[116px]" : "w-12 h-12 sm:w-14 sm:h-14"}
+              className={overview ? "!border-[3px] !border-rw-accent/50 shadow-[0_10px_30px_rgba(0,0,0,0.45)]" : ""}
+            />
+            {overview && p.club && <ClubBadge name={p.club} />}
+          </>
+        }
+        title={
+          <>
+            {p.name}
+            {p.bio.native && <span className="text-rw-sub text-[0.5em] font-semibold ml-2 align-middle">{p.bio.native}</span>}
+          </>
+        }
+        lines={
+          <>
+            <p>
               {[
                 roleName(p.role),
                 p.bio.real,
@@ -159,116 +179,97 @@ const PlayerView: React.FC<{
                 .join(" · ")}
             </p>
             {p.club && (
-              <p className="text-[11px] text-rw-muted">
-                <TeamLink name={p.club} u={p.clubU} />{" "}
+              <p>
+                <TeamLink name={p.club} u={p.clubU} className="font-semibold text-rw-text hover:text-rw-accent hover:underline" />{" "}
                 {tl("(last game {date})", { date: fmtDate(p.clubTo) })}
-                {p.bio.contract && (
-                  <>
-                    {" "}
-                    ·{" "}
-                    {tl("Contract until {date}", { date: fmtDate(p.bio.contract) })}
-                  </>
-                )}
-                {p.bio.res && (
-                  <> · {tl("Residency: {region}", { region: regionName(p.bio.res, p.bio.res) })}</>
-                )}
+                {p.bio.contract && <> · {tl("Contract until {date}", { date: fmtDate(p.bio.contract) })}</>}
+                {p.bio.res && <> · {tl("Residency: {region}", { region: regionName(p.bio.res, p.bio.res) })}</>}
               </p>
             )}
-            <span className="flex flex-wrap items-center gap-x-3">
-              <PhotosLink q={p.name} className="mt-1 inline-flex items-center gap-1 text-[11px] text-rw-teal hover:underline" />
-              <HubLink to={{ kind: "items", query: `player=${p.u}` }} className="mt-1 inline-flex items-center gap-1 text-[11px] text-rw-teal hover:underline">
-                <Package className="w-3 h-3" />
+          </>
+        }
+        extra={
+          overview && p.bio.fav && p.bio.fav.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="font-head text-[12px] font-bold uppercase tracking-[0.12em] text-rw-muted mr-1">
+                {tl("Favorite champions:").replace(/\s*[:：]\s*$/, "")}
+              </span>
+              {p.bio.fav.map((c) => (
+                <ChampLink key={c} name={c} size={34} showName={false} />
+              ))}
+            </div>
+          ) : undefined
+        }
+        foot={
+          overview ? (
+            <>
+              {p.bio.soloq && p.bio.soloq.length > 0 && (
+                <p>
+                  {tl("Solo queue:")} {p.bio.soloq.join(" · ")}
+                </p>
+              )}
+              <p>{tl("All-Star and show matches aren't counted.")}</p>
+            </>
+          ) : undefined
+        }
+        aside={
+          <>
+            {overview && (
+              <div className="flex flex-wrap gap-2 md:justify-end">
+                <HubLink to={{ kind: "compare", mode: "player", a: p.u }} className={heroBtn(true)}>
+                  {tl("Compare")}
+                </HubLink>
+                <BroadcastCardButton hero data={() => playerCareerCardData(p)} name={`${p.name}-career`} label={tl("Overview card")} />
+              </div>
+            )}
+            <div className="flex flex-wrap gap-x-3 gap-y-1 md:justify-end">
+              {overview &&
+                links.map(([label, url]) => (
+                  <button key={label} type="button" onClick={() => onOpenUrl(url)} className={heroLink}>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    {label}
+                  </button>
+                ))}
+              <PhotosLink q={p.name} className={heroLink} />
+              <HubLink to={{ kind: "items", query: `player=${p.u}` }} className={heroLink}>
+                <Package className="w-3.5 h-3.5" />
                 {tl("Item history")}
               </HubLink>
-            </span>
-          </div>
-        </div>
-        {overview && (
-        <>
-        {p.bio.fav && p.bio.fav.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1 mt-1 text-[11px] text-rw-muted">
-            {tl("Favorite champions:")}
-            {p.bio.fav.map((c) => (
-              <ChampLink key={c} name={c} size={16} showName={false} />
-            ))}
-          </div>
-        )}
-        <div className="grid grid-cols-2 sm:grid-cols-4 rw-stats mt-3">
-          <Stat
-            label={tl("Games")}
-            value={`${fmtNum(p.w)}-${fmtNum(p.g - p.w)}`}
-            sub={tl("{pct} win rate", { pct: winRate(p.w, p.g) })}
-          />
-          <Stat
-            label={tl("KDA")}
-            value={fmtN(p.kda)}
-            sub={`${fmtNum(p.k)} / ${fmtNum(p.d)} / ${fmtNum(p.a)}`}
-          />
-          <Stat
-            label={tl("Champions")}
-            value={p.nChamps}
-            sub={
-              p.champs[0]
-                ? tl("most: {champion}", { champion: champName(p.champs[0].c) })
-                : undefined
-            }
-          />
-          <Stat
-            label={tl("Titles")}
-            value={p.titles.length}
-            sub={`${tl("{n} Worlds", { n: p.titles.filter((x) => x.kind === "Worlds").length })} · ${tl("{n} MSI", { n: p.titles.filter((x) => x.kind === "MSI").length })}`}
-          />
-          {p.csm != null && <Stat label={tl("CS / min")} value={fmtN(p.csm)} />}
-          {p.gpm != null && (
-            <Stat label={tl("Gold / min")} value={fmtNum(p.gpm)} />
-          )}
-          {p.dpm != null && (
-            <Stat label={tl("Damage / min")} value={fmtNum(p.dpm)} />
-          )}
-          {p.mvp ? (
-            <Stat
-              label={tl("Player of the Game")}
-              value={fmtNum(p.mvp)}
-              sub={tl("awards (where recorded)")}
-            />
-          ) : null}
-          {p.pentas && p.pentas.length > 0 && (
-            <Stat
-              label={tl("Pentakills")}
-              value={p.pentas.reduce((s, x) => s + x.x, 0)}
-              sub={tl("fully recorded from 2018")}
-            />
-          )}
-        </div>
-        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[11px]">
-          {links.map(([label, url]) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => onOpenUrl(url)}
-              className="text-rw-teal hover:underline flex items-center gap-1"
-            >
-              <ExternalLink className="w-3 h-3" />
-              {label}
-            </button>
-          ))}
-        </div>
-        <div className="mt-2">
-          <BroadcastCardButton data={() => playerCareerCardData(p)} name={`${p.name}-career`} label={tl("Overview card")} />
-        </div>
-        {p.bio.soloq && p.bio.soloq.length > 0 && (
-          <p className="text-[10px] text-rw-muted mt-2">
-            {tl("Solo queue:")} {p.bio.soloq.join(" · ")}
-          </p>
-        )}
-        <p className="text-[10px] text-rw-muted mt-2">
-          {tl("All-Star and show matches aren't counted.")}
-        </p>
-        </>
-        )}
-      </div>
-
-      <PageTabs tabs={tabs} active={tab} to={to} />
+            </div>
+          </>
+        }
+        stats={
+          overview
+            ? [
+                { label: tl("Games"), value: `${fmtNum(p.w)}–${fmtNum(p.g - p.w)}`, sub: tl("{pct} win rate", { pct: winRate(p.w, p.g) }) },
+                { label: tl("KDA"), value: fmtN(p.kda), sub: `${fmtNum(p.k)} / ${fmtNum(p.d)} / ${fmtNum(p.a)}` },
+                {
+                  label: tl("Titles"),
+                  value: p.titles.length,
+                  sub: `${tl("{n} Worlds", { n: p.titles.filter((x) => x.kind === "Worlds").length })} · ${tl("{n} MSI", { n: p.titles.filter((x) => x.kind === "MSI").length })}`,
+                },
+                { label: tl("Champions"), value: p.nChamps, sub: p.champs[0] ? tl("most: {champion}", { champion: champName(p.champs[0].c) }) : undefined },
+                p.csm != null || p.gpm != null
+                  ? {
+                      label: [p.csm != null ? tl("CS / min") : null, p.gpm != null ? tl("Gold / min") : null].filter(Boolean).join(" · "),
+                      value: [p.csm != null ? fmtN(p.csm) : null, p.gpm != null ? fmtNum(p.gpm) : null].filter(Boolean).join(" · "),
+                      sub: p.dpm != null ? `${tl("Damage / min")} ${fmtNum(p.dpm)}` : undefined,
+                    }
+                  : null,
+                p.mvp
+                  ? {
+                      label: tl("Player of the Game"),
+                      value: fmtNum(p.mvp),
+                      sub: pentas ? `${tl("Pentakills")} ${pentas}` : tl("awards (where recorded)"),
+                    }
+                  : pentas
+                    ? { label: tl("Pentakills"), value: pentas, sub: tl("fully recorded from 2018") }
+                    : null,
+              ]
+            : undefined
+        }
+      />
+      <PageTabs tabs={tabs} active={tab} to={to} attached />
       <div className="rw-page mt-3">
       {tab === "stats" && (
         <div className="rw-span space-y-3">

@@ -10,6 +10,7 @@ import { toBlob } from "html-to-image";
 import { tl, tc, locale, roleName, fmtDec, stageLabel, eventTitle } from "../../i18n";
 import { IS_WEB } from "../../platform";
 import { ChampIcon } from "./ui";
+import { heroBtn } from "./EntityHero";
 import { champName } from "../../champions";
 import { loadHubLogos, loadHubPhotos, usePlayerPicture, useTeamLogo } from "../../hub/riotCatalog";
 import type { PlayerAgg, TeamAgg } from "../../hub/period";
@@ -421,7 +422,8 @@ const OneSide: React.FC<{ rows: CardRow[] }> = ({ rows }) => {
 };
 
 /** The button: draws the card off screen, turns it into a PNG, copies it (and on the web, offers a download). */
-export const BroadcastCardButton: React.FC<{ data: () => CardData; name: string; label?: string; compact?: boolean }> = ({ data, name, label, compact }) => {
+/** `hero`: in a page's top card (EntityHero), in its button style. */
+export const BroadcastCardButton: React.FC<{ data: () => CardData; name: string; label?: string; compact?: boolean; hero?: boolean }> = ({ data, name, label, compact, hero }) => {
   const [job, setJob] = useState<{ d: CardData; save: boolean } | null>(null);
   const [state, setState] = useState<"" | "busy" | "copied" | "failed">("");
   const ref = useRef<HTMLDivElement>(null);
@@ -482,14 +484,18 @@ export const BroadcastCardButton: React.FC<{ data: () => CardData; name: string;
     setJob({ d: data(), save });
   };
   return (
-    <span data-nocapture="1" className="flex items-center gap-1.5">
+    <span data-nocapture="1" className={`flex items-center ${hero ? "gap-2" : "gap-1.5"}`}>
       <button
         type="button"
         onClick={() => start(false)}
         disabled={state === "busy"}
-        className={`flex items-center gap-1 rounded border border-rw-border text-rw-teal hover:border-rw-accent disabled:opacity-50 text-[11px] ${
-          compact ? "p-1 pointer-coarse:min-h-9 pointer-coarse:min-w-9 max-sm:min-h-9 max-sm:min-w-9" : "px-2 py-1.5 min-h-8 whitespace-nowrap"
-        }`}
+        className={
+          hero
+            ? `${heroBtn()} disabled:opacity-50`
+            : `flex items-center gap-1 rounded border border-rw-border text-rw-teal hover:border-rw-accent disabled:opacity-50 text-[11px] ${
+                compact ? "p-1 pointer-coarse:min-h-9 pointer-coarse:min-w-9 max-sm:min-h-9 max-sm:min-w-9" : "px-2 py-1.5 min-h-8 whitespace-nowrap"
+              }`
+        }
         title={`${label ? `${label}: ` : ""}${tl("Copy a 1600×900 card for a broadcast, X or Discord")}`}
         aria-label={compact ? `${label || tl("Overview card")}: ${tl("Copy a 1600×900 card for a broadcast, X or Discord")}` : undefined}
       >
@@ -501,7 +507,7 @@ export const BroadcastCardButton: React.FC<{ data: () => CardData; name: string;
           type="button"
           onClick={() => start(true)}
           disabled={state === "busy"}
-          className="text-[11px] px-2 py-1.5 min-h-8 rounded border border-rw-border text-rw-sub hover:text-rw-text disabled:opacity-50"
+          className={hero ? `${heroBtn()} disabled:opacity-50` : "text-[11px] px-2 py-1.5 min-h-8 rounded border border-rw-border text-rw-sub hover:text-rw-text disabled:opacity-50"}
           title={tl("Save the 16:9 card as a picture")}
         >
           {tl("Save card")}

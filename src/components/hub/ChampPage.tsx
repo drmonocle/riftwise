@@ -30,6 +30,7 @@ import {
 } from "./ui";
 import { itemName, runeName, spellName } from "../../hub/ddragon";
 import { CountersLink } from "./CountersPage";
+import { EntityHero, heroBtn } from "./EntityHero";
 import { STable } from "../STable";
 
 import { BroadcastCardButton, champCardData } from "./BroadcastCard";
@@ -171,26 +172,28 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
   const maxPatch = Math.max(1, ...(c.patches || []).map((p) => (p.pr ?? p.pk + p.b) / Math.max(p.g, 1)));
   return (
     <div className="rw-page">
-      <div className={`rw-span ${card} flex gap-3 items-start`}>
-        <ChampIcon name={c.name} size={56} />
-        <div className="min-w-0 flex-1">
-          <h1 className="text-lg font-bold text-rw-text">{champName(c.name)}</h1>
-        <CountersLink slug={c.u} className="inline-block text-[11px] text-rw-teal hover:underline font-semibold" />
-          <p className="text-[11px] text-rw-sub">
-            {c.roles
-              .filter((r) => r.p / totalRoles >= 0.05)
-              .map((r) => `${roleName(r.r)} ${Math.round((r.p / totalRoles) * 100)}%`)
-              .join(" · ")}
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 rw-stats mt-3">
-            <Stat label={tl("Picks")} value={fmtNum(c.p)} />
-            <Stat label={tl("Bans")} value={fmtNum(c.b)} />
-            <Stat label={tl("Win %")} value={winRate(c.w, c.p)} />
-            {c.side && c.side[0] + c.side[2] > 0 && (
-              <Stat label={tl("Blue / red side")} value={`${pctOf(c.side[1], c.side[0])} / ${pctOf(c.side[3], c.side[2])}`} sub={tl("win rate on each side")} />
-            )}
-          </div>
-        </div>
+      <div className="rw-span">
+        <EntityHero
+          media={<ChampIcon name={c.name} size={84} className="!rounded-xl border-2 border-rw-accent/40 shadow-[0_10px_30px_rgba(0,0,0,0.45)]" />}
+          title={champName(c.name)}
+          lines={
+            <p>
+              {c.roles
+                .filter((r) => r.p / totalRoles >= 0.05)
+                .map((r) => `${roleName(r.r)} ${Math.round((r.p / totalRoles) * 100)}%`)
+                .join(" · ")}
+            </p>
+          }
+          aside={<CountersLink slug={c.u} className={heroBtn(true)} />}
+          stats={[
+            { label: tl("Picks"), value: fmtNum(c.p) },
+            { label: tl("Bans"), value: fmtNum(c.b) },
+            { label: tl("Win %"), value: winRate(c.w, c.p) },
+            c.side && c.side[0] + c.side[2] > 0
+              ? { label: tl("Blue / red side"), value: `${pctOf(c.side[1], c.side[0])} / ${pctOf(c.side[3], c.side[2])}`, sub: tl("win rate on each side") }
+              : null,
+          ]}
+        />
       </div>
 
       {c.builds && c.builds.g > 0 && activeBuilds && (

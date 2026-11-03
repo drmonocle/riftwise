@@ -49,6 +49,12 @@ const DRAGON_COLOR: Record<string, string> = {
   elder: "var(--rw-text)",
 };
 
+// where the game's numbers sit: a panel of their own, or under a hairline in a card
+const PANEL_BOX = "bg-rw-panel border border-rw-border rounded-xl rw-lit p-3 sm:p-4 space-y-3 text-xs";
+const LINE_BOX = "mt-3 pt-3 border-t border-rw-border/60 space-y-2 text-xs";
+/** a small heading inside it ("Win chance right now"): condensed capitals */
+const LABEL = "font-head text-[12px] font-bold uppercase tracking-[0.12em]";
+
 const k = (gold: number) => `${fmtDec(gold / 1000)}k`;
 const clock = (ms: number) => {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -77,9 +83,17 @@ interface GameState {
   details: LiveDetailsParticipant[] | null;
 }
 
-/** `only`: show that game (a finished match's games on the schedule); `startOpen`: players and items shown at once. */
-export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: Game; startOpen?: boolean }> = ({ match, showStats, only, startOpen }) => {
+/** `only`: show that game (a finished match's games on the schedule); `startOpen`: players and items shown at once;
+ *  `panel`: in a lit panel of its own (under a live series' top card) instead of under a hairline. */
+export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: Game; startOpen?: boolean; panel?: boolean }> = ({
+  match,
+  showStats,
+  only,
+  startOpen,
+  panel,
+}) => {
   useDDragon();
+  const box = panel ? PANEL_BOX : LINE_BOX;
   const playableGames = useMemo(
     () => (match.games || []).filter((g) => g.state === "completed" || g.state === "inProgress"),
     [match.games],
@@ -189,8 +203,10 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
   }, [state?.frame, state?.startMs, game?.id]);
 
   if (!game) return null;
-  if (!showStats)
-    return <p className="text-[11px] text-rw-muted text-center py-1">{tl("Live game stats are hidden while spoiler mode is on.")}</p>;
+  if (!showStats) {
+    const hiddenNote = <p className="text-[11px] text-rw-muted text-center py-1">{tl("Live game stats are hidden while spoiler mode is on.")}</p>;
+    return panel ? <div className={box}>{hiddenNote}</div> : hiddenNote;
+  }
 
   const winsNeeded = Math.ceil((match.bestOf || 1) / 2);
   const seriesDone =
@@ -219,26 +235,26 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
 
   if (!state && draft) {
     return (
-      <>
-        <DraftOnly match={match} win={draft} number={game.number} startMs={startRef.current[game.id] ?? null} live={live} />
+      <div className={panel ? box : undefined}>
+        <DraftOnly match={match} win={draft} number={game.number} startMs={startRef.current[game.id] ?? null} live={live} bare={panel} />
         {showNextPreview && (
           <Suspense fallback={null}>
             <LiveNextGamePreview match={match} nextGameNum={nextGameNum} currentWin={draft} currentGameNum={game.number} />
           </Suspense>
         )}
-      </>
+      </div>
     );
   }
-  if (!state)
+  if (!state) {
+    const note = failed
+      ? tl("Live game stats aren't available right now.")
+      : live
+        ? tl("Game {n}: live stats appear here once the game starts (after champion select).", { n: game.number })
+        : null;
+    if (!note && !showNextPreview) return null;
     return (
-      <div>
-        <p className="text-[11px] text-rw-muted text-center pt-2">
-          {failed
-            ? tl("Live game stats aren't available right now.")
-            : live
-              ? tl("Game {n}: live stats appear here once the game starts (after champion select).", { n: game.number })
-              : null}
-        </p>
+      <div className={panel ? box : undefined}>
+        {note && <p className={`text-[11px] text-rw-muted text-center ${panel ? "" : "pt-2"}`}>{note}</p>}
         {showNextPreview && (
           <Suspense fallback={null}>
             <LiveNextGamePreview match={match} nextGameNum={nextGameNum} currentWin={null} currentGameNum={game.number} />
@@ -246,6 +262,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
         )}
       </div>
     );
+  }
 
   const { win, frame } = state;
   // Which side each team plays on this game
@@ -265,7 +282,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
   const paused = frame.gameState === "paused";
 
   return (
-    <div className="mt-3 pt-3 border-t border-rw-border/60 space-y-2 text-xs">
+    <div className={box}>
       {!only && playableGames.length > 1 && (
         <div className="flex flex-wrap gap-1">
           {playableGames.map((g) => (
@@ -285,9 +302,9 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
         </div>
       )}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-bold uppercase tracking-wider text-[10px] text-rw-accent">
+        <span className={`${LABEL} ${panel ? "text-[13px]" : ""} text-rw-accent`}>
           {finished ? tl("Game {n} · final", { n: game.number }) : tl("Game {n} · live", { n: game.number })}
-          {elapsed != null && <span className="ml-2 font-mono text-rw-text">{clock(elapsed)}</span>}
+          {elapsed != null && <span className="ml-2 font-num text-rw-text">{clock(elapsed)}</span>}
           {paused && <span className="ml-2 text-rw-red">{tl("Paused")}</span>}
         </span>
         <span className="flex items-center gap-2 ml-auto">
@@ -436,7 +453,7 @@ const UpsetMeter: React.FC<{ leftCode: string; rightCode: string; before: number
   return (
     <div className="space-y-0.5" title={tl("The underdog's chance before the game, from the power rankings, against its chance now from the gold lead.")}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-[10px] text-rw-sub">
-        <span className="uppercase tracking-wider font-semibold">
+        <span className={LABEL}>
           {tl("Upset meter")} · <span className={hot ? "text-rw-accent" : "text-rw-sub"}>{label}</span>
         </span>
         <span className="text-rw-muted">
@@ -458,7 +475,7 @@ const GameStory: React.FC<{ points: TimelinePoint[]; left: string; right: string
   if (!lines.length) return null;
   return (
     <div className="space-y-0.5">
-      <div className="text-[10px] uppercase tracking-wider font-semibold text-rw-sub">{tl("Game story")}</div>
+      <div className={`${LABEL} text-rw-sub`}>{tl("Game story")}</div>
       <p className="text-xs text-rw-text leading-relaxed">{lines.join(" ")}</p>
     </div>
   );
@@ -471,7 +488,7 @@ const ChanceNow: React.FC<{ leftCode: string; rightCode: string; minute: number;
   return (
     <div className="space-y-0.5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-[10px] text-rw-sub">
-        <span className="uppercase tracking-wider font-semibold">{tl("Win chance right now")}</span>
+        <span className={LABEL}>{tl("Win chance right now")}</span>
         <span className="text-rw-muted" title={tl("P = 1 / (1 + e^(−a × gold lead)), a = 0.0098 / (minute + 2.3): fitted on about 37,000 pro games since 2023 with gold at 10, 15 and 20 minutes (Oracle's Elixir). Gold only: towers, dragons and barons count through the gold they bring.")}>
           {tl("from the gold lead at this minute · ~37,000 pro games since 2023")}
         </span>
@@ -775,8 +792,16 @@ const GoldGraph: React.FC<{ points: TimelinePoint[]; blueIsLeft: boolean; leftCo
   );
 };
 
-/** A game whose live stats Riot doesn't publish: how long it has been on and who plays what (its first frames). */
-const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; startMs: number | null; live: boolean }> = ({ match, win, number, startMs, live }) => {
+/** A game whose live stats Riot doesn't publish: how long it has been on and who plays what (its first frames).
+ *  `bare`: already inside the game's panel (no hairline of its own). */
+const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; startMs: number | null; live: boolean; bare?: boolean }> = ({
+  match,
+  win,
+  number,
+  startMs,
+  live,
+  bare,
+}) => {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     if (!live) return;
@@ -794,11 +819,11 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
   const l = byRole(left.meta);
   const r = byRole(right.meta);
   return (
-    <div className="mt-3 pt-3 border-t border-rw-border/60 space-y-2 text-xs">
+    <div className={bare ? "space-y-2 text-xs" : LINE_BOX}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-bold uppercase tracking-wider text-[10px] text-rw-accent">
+        <span className={`${LABEL} text-rw-accent`}>
           {tl("Game {n} · live", { n: number })}
-          {live && startMs != null && <span className="ml-2 font-mono text-rw-text">{clock(now - startMs)}</span>}
+          {live && startMs != null && <span className="ml-2 font-num text-rw-text">{clock(now - startMs)}</span>}
         </span>
         <span className="flex items-center gap-2 ml-auto">
           <Suspense fallback={null}>
