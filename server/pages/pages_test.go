@@ -424,7 +424,7 @@ func TestLanguagePages(t *testing.T) {
 	s := testSite(t)
 	b := get(s, "/riftwise/ko/player/faker").Body.String()
 	for _, want := range []string{`<html lang="ko">`, "<title>Faker – 프로 통계, 챔피언, 커리어 | RiftWise</title>", `<link rel="canonical" href="https://riftwise.gg/ko/player/faker" />`,
-		`hreflang="en" href="https://riftwise.gg/player/faker"`, `hreflang="pt-BR" href="https://riftwise.gg/pt-br/player/faker"`, `hreflang="x-default"`, `"inLanguage":"ko"`, `href="/ko/stats"`} {
+		`hreflang="en" href="https://riftwise.gg/player/faker"`, `hreflang="pt-BR" href="https://riftwise.gg/pt-br/player/faker"`, `hreflang="x-default"`, `"inLanguage":"ko"`, `href="/ko/matches"`} {
 		if !strings.Contains(b, want) {
 			t.Errorf("ko player: no %q", want)
 		}

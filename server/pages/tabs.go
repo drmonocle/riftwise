@@ -27,6 +27,7 @@ type tabInfo struct {
 }
 
 var tabPages = map[string]tabInfo{
+	"matches":   {"LoL esports live scores and today's pro matches | RiftWise", "Live scores and today's professional League of Legends matches (Worlds, MSI, LCK, LPL, LEC, LTA and more), with each side's chance, head-to-head records, match prep and where to watch.", "Matches", true},
 	"schedule":  {"LoL esports schedule: today's and upcoming pro matches | RiftWise", "Every upcoming professional League of Legends match (Worlds, MSI, LCK, LPL, LEC, LTA and more) in your time zone, with head-to-head records, match prep and calendar reminders.", "Schedule", true},
 	"results":   {"LoL esports results: the latest pro match scores | RiftWise", "The latest professional League of Legends results (Worlds, MSI, LCK, LPL, LEC, LTA and more), with every game's draft and stats a click away.", "Results", true},
 	"stream":    {"LoL Worlds 24/7: classic pro games streaming nonstop | RiftWise", "A 24/7 stream of classic League of Legends World Championship and MSI games, with what's on now and next.", "24/7 Stream", true},
@@ -229,13 +230,13 @@ func breadcrumbs(items [][2]string) json.RawMessage {
 	return b
 }
 
-// entityCrumbs: where a team, player, tournament, match, champion or league page sits under Pro Stats.
+// entityCrumbs: where a team, player, tournament, match, champion or league page sits under the site's home.
 func entityCrumbs(kind, title, canonical string) json.RawMessage {
 	name := strings.TrimSuffix(title, brand)
 	if i := strings.Index(name, " – "); i > 0 {
 		name = name[:i]
 	}
-	items := [][2]string{{"Pro Stats", publicURL + "stats"}}
+	items := [][2]string{{"RiftWise", publicURL}}
 	switch kind {
 	case "event", "game":
 		items = append(items, [2]string{"Tournaments", publicURL + "stats/tournaments"})

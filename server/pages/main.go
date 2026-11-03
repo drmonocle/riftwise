@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "0.7.86" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "0.8.0" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -193,7 +193,7 @@ func (s *store) changedPages(pages map[string]map[string]entry, intl map[string]
 	if s.version == "" {
 		for sec := range sections {
 			if sec == "" {
-				out = append(out, publicURL+"stats")
+				out = append(out, publicURL)
 			} else {
 				out = append(out, publicURL+"stats/"+sec)
 			}
@@ -314,7 +314,7 @@ var (
 
 // Links in every page's <noscript> summary (paths under the site's root)
 var noscriptLinks = [][2]string{
-	{"", "RiftWise"}, {"stats", "Pro Stats"}, {"stats/worlds", "Worlds"}, {"stats/worlds/all", "Every Worlds winner"}, {"stats/msi", "MSI"},
+	{"", "RiftWise"}, {"matches", "Live matches"}, {"stats/worlds", "Worlds"}, {"stats/worlds/all", "Every Worlds winner"}, {"stats/msi", "MSI"},
 	{"stats/first-stand", "First Stand"}, {"stats/rankings", "Power Rankings"}, {"stats/best", "Best games"}, {"stats/tournaments", "Tournaments"},
 	{"stats/leagues", "Leagues"}, {"stats/champions", "Champions"}, {"stats/patches", "Patches"}, {"stats/records", "Records"},
 	{"stats/titles", "Title winners"}, {"stats/compare", "Compare"}, {"stats/prep", "Match prep"}, {"stats/draft", "Draft board"},
@@ -515,8 +515,16 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 
 	switch {
 	case lang != "" && parts[0] == "":
-		// a language's home page (riftwise.gg/ko/): the Live tab; English's (/) is the plain index.html
-		title, desc, og = "RiftWise", sections[""][1], "og/home.png"
+		// a language's home page (riftwise.gg/ko/): the stats front page; English's (/) is the plain index.html
+		title, desc, og = sections[""][0]+" | RiftWise", sections[""][1], "og/home.png"
+	case parts[0] == "stats" && len(parts) == 1:
+		// the stats front page became the site's home (0.8.0): one address for it, with the search it was opened with
+		to := publicPath + map[bool]string{true: seg + "/", false: ""}[seg != ""]
+		if r.URL.RawQuery != "" {
+			to += "?" + r.URL.RawQuery
+		}
+		http.Redirect(w, r, to, http.StatusMovedPermanently)
+		return
 	case parts[0] == "og":
 		s.serveOG(w, r)
 		return
@@ -576,7 +584,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if extra == nil && sec != "" {
-			crumbs := [][2]string{{"Pro Stats", publicURL + "stats"}, {strings.TrimSuffix(info[0], brand), publicURL + "stats/" + sec}}
+			crumbs := [][2]string{{"RiftWise", publicURL}, {strings.TrimSuffix(info[0], brand), publicURL + "stats/" + sec}}
 			if len(parts) == 3 {
 				crumbs = append(crumbs, [2]string{parts[2], publicURL + strings.Join(parts, "/")})
 			}
@@ -725,10 +733,10 @@ func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, `<?xml version="1.0" encoding="UTF-8"?>`+"\n"+`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`+"\n")
 	if p[0] == "sections" {
 		for sec := range sections {
-			fmt.Fprintf(w, "<url><loc>%sstats%s</loc></url>\n", publicURL, map[bool]string{true: "", false: "/" + sec}[sec == ""])
+			fmt.Fprintf(w, "<url><loc>%s%s</loc></url>\n", publicURL, map[bool]string{true: "", false: "stats/" + sec}[sec == ""])
 		}
 		// the tabs with a page worth finding, and each league on the schedule now
-		for _, tab := range []string{"schedule", "results", "stream", "news"} {
+		for _, tab := range []string{"matches", "schedule", "results", "stream", "news"} {
 			fmt.Fprintf(w, "<url><loc>%s%s</loc></url>\n", publicURL, tab)
 		}
 		for _, lg := range scheduleLeagues() {

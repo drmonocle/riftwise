@@ -28,13 +28,13 @@ export const WinChanceLine: React.FC<{ match: Match }> = ({ match }) => {
         {tl("Win chance before the series")}
       </span>
       <span className="flex items-center gap-2">
-        <span className="font-mono tabular-nums font-bold text-rw-teal w-16 text-right whitespace-nowrap text-[11px]">
+        <span className="font-mono tabular-nums font-bold text-rw-side-a w-16 text-right whitespace-nowrap text-[11px]">
           {match.team1Code} {a}%
         </span>
-        <span className="flex-1 h-2 rounded-sm overflow-hidden bg-rw-red/70" aria-hidden="true">
-          <span className="block h-full bg-rw-teal" style={{ width: `${a}%` }} />
+        <span className="flex-1 h-2 rounded-sm overflow-hidden bg-rw-side-b/70" aria-hidden="true">
+          <span className="block h-full bg-rw-side-a" style={{ width: `${a}%` }} />
         </span>
-        <span className="font-mono tabular-nums font-bold text-rw-red w-16 whitespace-nowrap text-[11px]">
+        <span className="font-mono tabular-nums font-bold text-rw-side-b w-16 whitespace-nowrap text-[11px]">
           {100 - a}% {match.team2Code}
         </span>
       </span>

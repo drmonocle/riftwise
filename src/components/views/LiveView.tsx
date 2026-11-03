@@ -28,6 +28,7 @@ import { riotImg } from "../../riotImage";
 import { navigateHub } from "../../hub/route";
 import { lazyPart } from "../../lazyPart";
 import { formatMatchTime } from "../../matchTime";
+import { INTL_EVENTS, intlMatchNow } from "../../intlNow";
 
 // what's on the line in the next day (milestones, streaks), in the side column: loaded only when it shows
 const AtStakeToday = lazyPart(() => import("../hub/AtStake").then((m) => m.AtStakeToday));
@@ -902,19 +903,7 @@ const NextMatchCard: React.FC<{
  * While Worlds, MSI or First Stand is on (a match of it live, or within the next two days, or in the last day): a
  * way into its page (Swiss / bracket pickers, chances, facts) from the live page, where most visitors land.
  */
-const INTL_EVENTS: Record<string, { kind: "worlds" | "msi" | "first-stand"; name: string }> = {
-  worlds: { kind: "worlds", name: "Worlds" },
-  msi: { kind: "msi", name: "MSI" },
-  first_stand: { kind: "first-stand", name: "First Stand" },
-};
-/** A Worlds, MSI or First Stand match that is on, was on in the last day or starts in the next two. */
-export function intlMatchNow(schedule: Match[], now = Date.now()): Match | undefined {
-  return schedule.find((m) => {
-    if (!INTL_EVENTS[m.leagueSlug]) return false;
-    const t = Date.parse(m.startTimeUtc);
-    return m.state === "inProgress" || (t > now - 24 * 3600_000 && t < now + 48 * 3600_000);
-  });
-}
+export { intlMatchNow };
 const IntlBanner: React.FC<{ schedule: Match[]; onSelectTab: (tab: "stats") => void }> = ({ schedule, onSelectTab }) => {
   const on = intlMatchNow(schedule);
   if (!on) return null;

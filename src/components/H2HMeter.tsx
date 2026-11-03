@@ -15,8 +15,9 @@ interface H2HMeterProps {
   countThisMatch?: boolean;
 }
 
-export const T1_COLOR = "var(--rw-teal)";
-export const T2_COLOR = "var(--rw-red)";
+// the theme's two matchup colours (App.css --rw-side-a / --rw-side-b)
+export const T1_COLOR = "var(--rw-side-a)";
+export const T2_COLOR = "var(--rw-side-b)";
 
 /** Fired when a meter is tapped; App.tsx opens the H2H details view. */
 export const OPEN_H2H_EVENT = "riftwatch_open_h2h";

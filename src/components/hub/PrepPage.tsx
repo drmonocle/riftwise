@@ -253,12 +253,12 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
       <div className="space-y-1.5">
         {rows.map(([label, x]) => (
           <div key={label} className="grid grid-cols-[3rem_1fr_3rem] sm:grid-cols-[3.5rem_1fr_3.5rem] items-center gap-2 text-xs">
-            <span className="tabular-nums font-bold text-rw-teal">{pct(x)}</span>
-            <div className="relative h-4 rounded bg-rw-red/70 overflow-hidden">
-              <div className="absolute inset-y-0 left-0 bg-rw-teal/80" style={{ width: `${x * 100}%` }} />
+            <span className="tabular-nums font-bold text-rw-side-a">{pct(x)}</span>
+            <div className="relative h-4 rounded bg-rw-side-b/70 overflow-hidden">
+              <div className="absolute inset-y-0 left-0 bg-rw-side-a/80" style={{ width: `${x * 100}%` }} />
               <span className="absolute inset-0 flex items-center justify-center text-[10px] text-rw-text font-semibold">{label}</span>
             </div>
-            <span className="tabular-nums font-bold text-rw-red text-right">{pct(1 - x)}</span>
+            <span className="tabular-nums font-bold text-rw-side-b text-right">{pct(1 - x)}</span>
           </div>
         ))}
       </div>

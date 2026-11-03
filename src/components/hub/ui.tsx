@@ -1,5 +1,5 @@
 /** Building blocks shared by the stats hub pages. */
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { CalendarPlus, Check, Clock, Eye, Link2, SearchX, Camera, RefreshCw, Rss } from "lucide-react";
 import { MissingFile } from "../../stats";
 import { tl, locale } from "../../i18n";
@@ -234,6 +234,7 @@ export function usePageTitle(title: string | null | undefined, name?: string): v
   useEffect(() => {
     if (!title) return;
     rememberRecent(currentHubRoute(), title, name);
+    setCurrentTitle(currentHubRoute(), title);
     if (!IS_WEB) return;
     const before = document.title;
     document.title = `${title} | RiftWise`;
@@ -241,6 +242,29 @@ export function usePageTitle(title: string | null | undefined, name?: string): v
       document.title = before;
     };
   }, [title, name]);
+}
+
+// The open page's title, for the breadcrumb over it (StatsView), with the page it belongs to: a page's title effect
+// runs before StatsView's own, so the title is matched to the page instead of being cleared on a page change.
+const pageKey = (r: HubRoute) => `${r.kind}:${"slug" in r ? r.slug : ""}`;
+let currentTitle = { key: "", title: "" };
+const titleListeners = new Set<() => void>();
+function setCurrentTitle(r: HubRoute, title: string): void {
+  const key = pageKey(r);
+  if (key === currentTitle.key && title === currentTitle.title) return;
+  currentTitle = { key, title };
+  titleListeners.forEach((l) => l());
+}
+/** The title the page `route` set for itself ("" until it has loaded). */
+export function useCurrentTitle(route: HubRoute): string {
+  const t = useSyncExternalStore(
+    (cb) => {
+      titleListeners.add(cb);
+      return () => titleListeners.delete(cb);
+    },
+    () => currentTitle,
+  );
+  return t.key === pageKey(route) ? t.title : "";
 }
 
 // ── Links ─────────────────────────────────────────────────────────────────

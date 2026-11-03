@@ -146,11 +146,11 @@ const ChanceCell: React.FC<{ m: Match }> = ({ m }) => {
   const a = Math.round(r.series * 100);
   return (
     <span className="flex items-center gap-1.5 min-w-[7rem]" title={tl("Chance to win the series, from the power rankings (every pro game since 2011)")}>
-      <span className="font-mono tabular-nums text-[11px] text-rw-teal w-6 text-right">{a}</span>
-      <span className="flex-1 h-1.5 rounded-sm overflow-hidden bg-rw-red/70" aria-hidden="true">
-        <span className="block h-full bg-rw-teal" style={{ width: `${a}%` }} />
+      <span className="font-mono tabular-nums text-[11px] text-rw-side-a w-6 text-right">{a}</span>
+      <span className="flex-1 h-1.5 rounded-sm overflow-hidden bg-rw-side-b/70" aria-hidden="true">
+        <span className="block h-full bg-rw-side-a" style={{ width: `${a}%` }} />
       </span>
-      <span className="font-mono tabular-nums text-[11px] text-rw-red w-6">{100 - a}</span>
+      <span className="font-mono tabular-nums text-[11px] text-rw-side-b w-6">{100 - a}</span>
     </span>
   );
 };
@@ -179,7 +179,7 @@ const FormCell: React.FC<{ m: Match; schedule: Match[]; hidden: boolean }> = ({ 
       {f.map((x, i) => (
         <span
           key={i}
-          className={`w-3 h-3 rounded-[1px] text-[8px] leading-3 text-center font-bold ${x === "W" ? "bg-rw-teal/30 text-rw-teal" : "bg-rw-red/30 text-rw-red"}`}
+          className={`w-3 h-3 rounded-[1px] text-[8px] leading-3 text-center font-bold ${x === "W" ? "bg-rw-side-a/30 text-rw-side-a" : "bg-rw-side-b/30 text-rw-side-b"}`}
         >
           {x === "W" ? tc("short result", "W") : tc("short result", "L")}
         </span>

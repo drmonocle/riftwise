@@ -135,8 +135,10 @@ export interface AppSettings {
   notifyStream: boolean;
   soundAlerts?: boolean;
   compactMode?: boolean;
-  /** the floating team logos behind the page (TeamBubbles); on unless turned off */
+  /** the floating team logos behind the page (TeamBubbles); off unless turned on (0.8.0; they were on by default) */
   bubbles?: boolean;
+  /** set once the web's start page moved from Live to the stats front page (0.8.0, api.ts loadSettings) */
+  homeStart?: boolean;
   minimizeToTrayOnClose: boolean;
   startWithWindows: boolean;
   /** Colour theme (src/theme.ts); older saves have none and get the default. */

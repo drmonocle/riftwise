@@ -3,6 +3,7 @@ import { hubPath, parseHubPath } from "../hub/route";
 import { rateLine, profile, type RatingFile } from "../hub/playerRating";
 import { champPairShortcuts, matchupShortcuts, pageShortcuts } from "../components/hub/HubSearch";
 import { groupOf, MENU, MENU_ITEMS } from "../components/hub/menu";
+import { NAV_GROUP } from "../components/navGroups";
 import type { HubIndex } from "../hub/data";
 
 describe("page tabs in the address", () => {
@@ -13,6 +14,12 @@ describe("page tabs in the address", () => {
     expect(hubPath({ kind: "team", slug: "t1", tab: "history" })).toBe("/team/t1/history");
     expect(hubPath({ kind: "event", slug: "lck-2026", tab: "teams" })).toBe("/tournament/lck-2026/teams");
     expect(hubPath({ kind: "team", slug: "t1" })).toBe("/team/t1");
+  });
+  it("makes the stats front page the site's home", () => {
+    expect(parseHubPath("/", "")).toEqual({ kind: "home" });
+    expect(parseHubPath("/stats", "")).toEqual({ kind: "home" });
+    expect(hubPath({ kind: "home" })).toBe("/");
+    expect(hubPath({ kind: "rankings" })).toBe("/stats/rankings");
   });
   it("turns down a tab a page doesn't have", () => {
     expect(parseHubPath("/team/t1/career", "")).toBeNull();
@@ -34,10 +41,16 @@ describe("the menu", () => {
     const kinds = MENU_ITEMS.map((i) => i.kind);
     expect(new Set(kinds).size).toBe(kinds.length);
     for (const k of ["weekly", "worlds", "rankings", "teams", "players", "tiers", "prep", "data"]) expect(kinds).toContain(k);
-    expect(groupOf("team")?.key).toBe("people");
-    expect(groupOf("event")?.key).toBe("events");
-    expect(groupOf("champ")?.key).toBe("champs");
-    expect(groupOf("best")?.key).toBe("highlights");
+    expect(groupOf("team")?.key).toBe("teams");
+    expect(groupOf("event")?.key).toBe("tournaments");
+    expect(groupOf("champ")?.key).toBe("champions");
+    expect(groupOf("best")?.key).toBe("tournaments");
+    expect(groupOf("compare")?.key).toBe("tools");
+  });
+  it("lights the same top-bar item as the menu's group for every page", () => {
+    const kinds = [...MENU_ITEMS.map((i) => i.kind).filter((k) => k !== "home"), "team", "player", "event", "league", "match", "champ"];
+    for (const k of kinds) expect(NAV_GROUP[k], k).toBe(groupOf(k as never)?.key);
+    expect(Object.keys(NAV_GROUP).sort()).toEqual([...kinds].sort());
     // a group's button opens its first page, and no group is named like a page in another group
     for (const g of MENU) expect(g.items.length).toBeGreaterThan(0);
   });
