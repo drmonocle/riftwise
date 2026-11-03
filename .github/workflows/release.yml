@@ -1,8 +1,7 @@
 name: Release
 
-# Builds RiftWise.exe on GitHub's Windows runners from the tagged commit and attaches it, its
-# SHA-256 and the zip to a DRAFT release. Review the draft on GitHub, then publish it (that is
-# what makes it "Latest" and reaches the in-app updater).
+# Builds RiftWise.exe on GitHub's Windows runners from the tagged commit and publishes it, its
+# SHA-256 and the zip to the latest GitHub release so the in-app updater receives it automatically.
 #
 #   Tag a release:      git tag v0.3.19 && git push origin v0.3.19
 #   Build without tag:  Actions > Release > Run workflow (artifact only, no release)
@@ -118,7 +117,7 @@ jobs:
             release/RiftWise-windows-x64.zip
           if-no-files-found: error
 
-      - name: Draft the GitHub release
+      - name: Publish the GitHub release
         if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
         env:
@@ -133,4 +132,4 @@ jobs:
             $trust = "**SmartScreen:** RiftWise isn't code-signed yet, so Windows may show ""Windows protected your PC"". Click **More info -> Run anyway**."
           }
           $notes = "Built from $tag by GitHub Actions.`n`n### Checksum`n- ``RiftWise.exe``: ``$hash```n`n$trust"
-          gh release create $tag release\RiftWise.exe release\RiftWise.exe.sha256 release\RiftWise-windows-x64.zip --draft --title "RiftWise $tag" --notes $notes
+          gh release create $tag release\RiftWise.exe release\RiftWise.exe.sha256 release\RiftWise-windows-x64.zip --latest --title "RiftWise $tag" --notes $notes

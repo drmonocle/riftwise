@@ -31,7 +31,7 @@ $scripts = 'C:\Scripts\riftwise'
 $catalog = 'C:\Users\TV\twitch_bot\data\pro_games_catalog.db'
 $statsTask = 'RiftWiseStatsBuild'
 # the jobs that write the game databases (as in scripts\stats\stats_watch.ps1)
-$dbWriters = @('TwitchBotNightlyCatalog', 'Claude-LpScheduleRefresh', 'Claude-OeDailyRefresh', 'Claude-LpWeeklyRefresh')
+$dbWriters = @('TwitchBotNightlyCatalog', 'Claude-LeNightly', 'Claude-LpScheduleRefresh', 'Claude-OeDailyRefresh', 'Claude-LpWeeklyRefresh', 'RiftWisePhotos')
 $build = 'C:\Sites\riftwise-build'
 $services = @('pages', 'push', 'sync')
 $env:Path = "C:\Program Files\nodejs;C:\Program Files\Git\cmd;$env:Path"
@@ -202,6 +202,10 @@ try {
   foreach ($svc in $services) {
     $live.services += $svc
     Run "install $svc" { & "$build\scripts\install_services.ps1" -Services $svc } | Out-Null
+  }
+
+  if (Test-Path "$repo\scripts\stats\stats_watch.ps1") {
+    Copy-Item "$repo\scripts\stats\stats_watch.ps1" "$scripts\stats_watch.ps1" -Force
   }
 
   if ($changed.Count) {

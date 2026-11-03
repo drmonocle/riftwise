@@ -3,10 +3,11 @@
 # Run every 10 minutes by task RiftWiseStatsWatch on HomeServer (installed by hs_stats_watch_install.ps1).
 #
 # Waits until the database has been quiet for 5 minutes and none of the jobs that write it are running,
+# defers during the 02:45-05:30 nightly ingest window until TwitchBotNightlyCatalog has completed for the day,
 # leaves at least 60 minutes between builds, and still builds once a day if nothing changed.
 $ErrorActionPreference = "Stop"
 $Build = "RiftWiseStatsBuild"
-$Writers = "TwitchBotNightlyCatalog", "Claude-LpScheduleRefresh", "Claude-OeDailyRefresh", "Claude-LpWeeklyRefresh"
+$Writers = "TwitchBotNightlyCatalog", "Claude-LeNightly", "Claude-LpScheduleRefresh", "Claude-OeDailyRefresh", "Claude-LpWeeklyRefresh", "RiftWisePhotos"
 $Data = "C:\Users\TV\twitch_bot\data"
 $Files = "pro_games_catalog.db", "lp_all_games.db"
 $Log = "C:\Scripts\riftwise\stats_watch.log"
@@ -26,16 +27,23 @@ try {
         $t = Get-ScheduledTask -TaskName $w -ErrorAction SilentlyContinue
         if ($t -and $t.State -eq "Running") { exit 0 }
     }
+    $now = Get-Date
+    if ($now.TimeOfDay -ge [TimeSpan]"02:45:00" -and $now.TimeOfDay -lt [TimeSpan]"05:30:00") {
+        $nightly = Get-ScheduledTask -TaskName "TwitchBotNightlyCatalog" -ErrorAction SilentlyContinue
+        if ($nightly) {
+            $nLast = ($nightly | Get-ScheduledTaskInfo).LastRunTime
+            if (-not $nLast -or $nLast.Date -lt $now.Date) { exit 0 }
+        }
+    }
     $changed = [datetime]::MinValue
     foreach ($f in $Files) {
         $p = Join-Path $Data $f
         if (Test-Path "$p-journal") { exit 0 }  # something is writing it right now
         if (Test-Path $p) {
             $m = (Get-Item $p).LastWriteTime
-            if ($m -gt $changed) { $changed = $m }
+            if ($m -gt $changed) { $m_dt = $m; $changed = $m_dt }
         }
     }
-    $now = Get-Date
     $last = ($task | Get-ScheduledTaskInfo).LastRunTime
     if (-not $last -or $last.Year -lt 2000) { $last = [datetime]::MinValue }
     $why = $null
