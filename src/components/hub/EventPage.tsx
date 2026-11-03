@@ -42,6 +42,7 @@ import {
 import { ratingTextClass } from "./BestPage";
 import { STable } from "../STable";
 import { JumpBar, PageTabs, type JumpItem, type PageTab } from "./PageTabs";
+import { EntityHero, heroBtn, heroLink } from "./EntityHero";
 import type { HubRoute } from "../../hub/route";
 
 /** The Stats tab's parts, for its "jump to" row (JumpBar leaves out the ones a tournament doesn't have) */
@@ -99,93 +100,104 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
   const to = (key: string): HubRoute => ({ kind: "event", slug: e.u, ...(key ? { tab: key } : {}) });
   return (
     <div>
-      <div className={`${card} mb-3`}>
-        {e.parent && (
-          <p className="text-[11px] text-rw-muted mb-1">
-            {tl("Part of")} <EventLink name={e.parent.n} u={e.parent.u} className="text-rw-accent hover:underline" />
-          </p>
-        )}
-        <h1 className="text-lg font-bold text-rw-text">{e.n}</h1>
-        <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-rw-sub mt-1">
-          {(e.start || e.end) && (
-            <span className="flex items-center gap-1">
-              <CalendarDays className="w-3 h-3" />
-              {fmtDate(e.start)}
-              {e.end && e.end !== e.start ? ` – ${fmtDate(e.end)}` : ""}
-            </span>
-          )}
-          {e.league &&
-            (e.lu ? (
-              <HubLink to={{ kind: "league", slug: e.lu }} className="text-rw-sub hover:text-rw-accent hover:underline">
-                {e.league}
-              </HubLink>
-            ) : (
-              <span>{e.league}</span>
-            ))}
-          {e.region && <span>{regionName(e.region, e.region)}</span>}
-          {(e.country || e.type) && (
-            <span className="flex items-center gap-1">
-              <MapPin className="w-3 h-3" />
-              {[localCountry(e.country), e.type === "Online" ? tl("Online") : e.type === "Offline" ? tl("On stage") : e.type].filter(Boolean).join(" · ")}
-            </span>
-          )}
-          {e.prize && (
-            <span className="flex items-center gap-1">
-              <Coins className="w-3 h-3" />
-              {tl("Prize pool {amount}", { amount: e.prize })}
-            </span>
-          )}
-        </div>
-        {(e.siblings?.length || 0) > 1 && (
-          <div className="flex flex-wrap gap-1.5 mt-3">
-            {e.siblings!.map((s) => (
-              <HubLink
-                key={s.u}
-                to={{ kind: "event", slug: s.u }}
-                className={`px-2.5 py-1 rounded-lg text-xs border ${
-                  s.u === e.u ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
-                }`}
-              >
-                {s.n}
-              </HubLink>
-            ))}
+      <EntityHero
+        tabbed={tabbed}
+        kicker={
+          e.parent ? (
+            <>
+              {tl("Part of")} <EventLink name={e.parent.n} u={e.parent.u} className="text-rw-accent hover:underline" />
+            </>
+          ) : undefined
+        }
+        title={e.n}
+        lines={
+          <div className="flex flex-wrap gap-x-3 gap-y-1">
+            {(e.start || e.end) && (
+              <span className="flex items-center gap-1">
+                <CalendarDays className="w-3.5 h-3.5" />
+                {fmtDate(e.start)}
+                {e.end && e.end !== e.start ? ` – ${fmtDate(e.end)}` : ""}
+              </span>
+            )}
+            {e.league &&
+              (e.lu ? (
+                <HubLink to={{ kind: "league", slug: e.lu }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {e.league}
+                </HubLink>
+              ) : (
+                <span>{e.league}</span>
+              ))}
+            {e.region && <span>{regionName(e.region, e.region)}</span>}
+            {(e.country || e.type) && (
+              <span className="flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5" />
+                {[localCountry(e.country), e.type === "Online" ? tl("Online") : e.type === "Offline" ? tl("On stage") : e.type].filter(Boolean).join(" · ")}
+              </span>
+            )}
+            {e.prize && (
+              <span className="flex items-center gap-1">
+                <Coins className="w-3.5 h-3.5" />
+                {tl("Prize pool {amount}", { amount: e.prize })}
+              </span>
+            )}
           </div>
-        )}
-        {INTL_PAGE[e.lu || ""] && (
-          <HubLink
-            to={{ kind: INTL_PAGE[e.lu as string], year: e.year || undefined }}
-            className="mt-2 inline-flex items-center gap-1 text-xs text-rw-teal hover:underline"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            {tl("Stats and pickers for {event}", { event: eventTitle((e.parent?.n || e.n).replace(/ (Main Event|Play-In)$/, "")) })}
-          </HubLink>
-        )}
-        {(e.games || 0) > 0 && (
-          <div className="grid grid-cols-3 rw-stats mt-3">
-            <Stat label={tl("Games")} value={fmtNum(e.games || 0)} sub={e.statsGames ? tl("{n} with full stats", { n: fmtNum(e.statsGames) }) : undefined} />
-            <Stat label={tl("Series")} value={fmtNum(e.series || 0)} />
-            <Stat label={tl("Teams")} value={e.teams?.length || "–"} />
-          </div>
-        )}
-        {(e.games || 0) > 0 && (
-          <button
-            type="button"
-            onClick={() =>
-              (e.whole && e.children?.length
-                ? downloadStagesCsv(e.u, e.children.map((c) => c.u), onOpenUrl)
-                : downloadEventCsv(e.u, onOpenUrl)
-              ).catch(() => {})
-            }
-            className="mt-2 flex items-center gap-1 text-[11px] text-rw-teal hover:underline"
-          >
-            <Download className="w-3 h-3" />
-            {tl("Download every game (CSV)")}
-          </button>
-        )}
-      </div>
-
-      {tabbed && <PageTabs tabs={tabs} active={tab} to={to} below={tab === "stats" ? <JumpBar bare items={STATS_JUMPS} /> : undefined} />}
-      <div className={`rw-page ${tabbed ? "mt-3" : ""}`}>
+        }
+        extra={
+          (e.siblings?.length || 0) > 1 || INTL_PAGE[e.lu || ""] ? (
+            <div className="space-y-2">
+              {(e.siblings?.length || 0) > 1 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {e.siblings!.map((s) => (
+                    <HubLink
+                      key={s.u}
+                      to={{ kind: "event", slug: s.u }}
+                      className={`px-3 py-1.5 rounded-lg text-[13px] border ${
+                        s.u === e.u ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50"
+                      }`}
+                    >
+                      {s.n}
+                    </HubLink>
+                  ))}
+                </div>
+              )}
+              {INTL_PAGE[e.lu || ""] && (
+                <HubLink to={{ kind: INTL_PAGE[e.lu as string], year: e.year || undefined }} className={`${heroLink} font-semibold`}>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  {tl("Stats and pickers for {event}", { event: eventTitle((e.parent?.n || e.n).replace(/ (Main Event|Play-In)$/, "")) })}
+                </HubLink>
+              )}
+            </div>
+          ) : undefined
+        }
+        aside={
+          (e.games || 0) > 0 ? (
+            <button
+              type="button"
+              onClick={() =>
+                (e.whole && e.children?.length
+                  ? downloadStagesCsv(e.u, e.children.map((c) => c.u), onOpenUrl)
+                  : downloadEventCsv(e.u, onOpenUrl)
+                ).catch(() => {})
+              }
+              className={heroBtn()}
+            >
+              <Download className="w-3.5 h-3.5" />
+              {tl("Download every game (CSV)")}
+            </button>
+          ) : undefined
+        }
+        stats={
+          (e.games || 0) > 0
+            ? [
+                { label: tl("Games"), value: fmtNum(e.games || 0), sub: e.statsGames ? tl("{n} with full stats", { n: fmtNum(e.statsGames) }) : undefined },
+                { label: tl("Series"), value: fmtNum(e.series || 0) },
+                { label: tl("Teams"), value: e.teams?.length || "–" },
+              ]
+            : undefined
+        }
+      />
+      {tabbed && <PageTabs attached tabs={tabs} active={tab} to={to} below={tab === "stats" ? <JumpBar bare items={STATS_JUMPS} /> : undefined} />}
+      <div className="rw-page mt-3">
       {/* what most people open a tournament for comes first (TV, 2026-10-28): the bracket and standings, then the
           results and prize money, then the facts */}
       {on("") && <EventBracketBlock e={e} />}

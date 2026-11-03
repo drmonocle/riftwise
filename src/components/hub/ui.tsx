@@ -14,7 +14,7 @@ import { usePlayerPicture, useTeamLogo } from "../../hub/riotCatalog";
 import { ddragonThumb, riotThumb } from "../../riotImage";
 import { allRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 
-export const card = "bg-rw-panel border border-rw-border rounded-xl p-4";
+export const card = "bg-rw-panel border border-rw-border rounded-xl rw-lit p-4";
 export const th = "text-left font-semibold text-rw-muted py-1.5 pr-3 whitespace-nowrap";
 export const td = "py-1.5 pr-3 whitespace-nowrap";
 
@@ -29,6 +29,8 @@ export function fmtDate(date: string | undefined, withYear = true): string {
 }
 
 export const fmtUsd = (n: number) => n.toLocaleString(locale(), { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+/** $10,694,021 -> "$10.7M" (in the reader's language), where a big number has little room */
+export const fmtUsdShort = (n: number) => n.toLocaleString(locale(), { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 });
 
 // ── Loading files ─────────────────────────────────────────────────────────
 
@@ -184,10 +186,10 @@ export const Section: React.FC<{
   const pageContext = useContext(CaptureContext);
   const context = captureContext ?? pageContext;
   return (
-    <section ref={ref} className="bg-rw-panel border border-rw-border rounded-lg min-w-0" id={id}>
-      {share && context && <div className="rw-capture-only rw-section-context px-3 pt-2 text-sm font-extrabold text-rw-text">{context}</div>}
-      {/* a flat panel: the header strip (title left, the section's controls and tools right) over a hairline */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-rw-border">
+    <section ref={ref} className="bg-rw-panel border border-rw-border rounded-xl rw-lit min-w-0" id={id}>
+      {share && context && <div className="rw-capture-only rw-section-context px-3 sm:px-4 pt-3 text-sm font-extrabold text-rw-text">{context}</div>}
+      {/* a lit card: the title as a quiet label (left), the section's controls and tools (right), then its content */}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 pt-3 pb-1">
         <h3 className={sectionTitle}>{title}</h3>
         {(right || share) && (
           <span className="flex flex-wrap items-center justify-end gap-2 min-w-0 ml-auto">
@@ -196,7 +198,7 @@ export const Section: React.FC<{
           </span>
         )}
       </div>
-      <div className="p-3 space-y-2 min-w-0">
+      <div className="px-3 sm:px-4 pt-1.5 pb-3.5 space-y-2 min-w-0">
         {children}
         {share && <CaptureFooter />}
       </div>
@@ -204,8 +206,9 @@ export const Section: React.FC<{
   );
 };
 
-/** A section title: small condensed capitals in the text colour, no icon (every section heading looks the same). */
-export const sectionTitle = "font-head text-xs font-semibold uppercase tracking-wider text-rw-text";
+/** A section title: a quiet label in condensed capitals, so the numbers under it stand out (every section heading
+ *  looks the same, no icon). */
+export const sectionTitle = "font-head text-[13px] font-bold uppercase tracking-[0.12em] text-rw-sub";
 
 /**
  * How many side-by-side columns the window has room for (1 on a phone, 2 from 768 px, 3 from 1280 px, 4 from

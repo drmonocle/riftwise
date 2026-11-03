@@ -267,6 +267,124 @@
   font-size: 13px !important;
 }
 
+/* Panels: a lit top edge and a soft shadow under every card; the page's own card (a player's, a team's, the live
+   match) glows faintly in the theme's accent. In the components layer, so a utility class on the element wins. */
+@layer components {
+.rw-lit {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.04),
+    0 10px 30px -8px rgb(0 0 0 / 0.35);
+}
+.rw-hot {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    0 0 0 1px color-mix(in oklab, var(--rw-accent) 8%, transparent),
+    0 24px 60px -16px color-mix(in oklab, var(--rw-accent) 30%, transparent);
+}
+/* a series being played: the same, in the theme's red */
+.rw-live {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.05),
+    0 0 0 1px color-mix(in oklab, var(--rw-red) 10%, transparent),
+    0 20px 50px -16px color-mix(in oklab, var(--rw-red) 32%, transparent);
+}
+:root[data-theme="light"] .rw-lit {
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px -10px rgb(0 0 0 / 0.12);
+}
+:root[data-theme="light"] .rw-hot {
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--rw-accent) 10%, transparent), 0 16px 40px -18px rgb(0 0 0 / 0.25);
+}
+/* a copied picture of a section: no shadow around it */
+.rw-capturing .rw-lit,
+.rw-capturing.rw-lit {
+  box-shadow: none;
+}
+
+/* The top card of a page about one thing (EntityHero): picture | name and facts | actions, the extras (favourite
+   champions, the stages) under the name. Phones: picture and name side by side, the rest underneath. */
+.rw-hero-grid {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas: "media text" "extra extra";
+  column-gap: 1rem;
+  row-gap: 0.75rem;
+  align-items: center;
+}
+.rw-hero-grid.rw-hero-noextra {
+  grid-template-areas: "media text";
+}
+.rw-hero-grid.rw-hero-nomedia {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "text" "extra";
+}
+.rw-hero-grid.rw-hero-nomedia.rw-hero-noextra {
+  grid-template-areas: "text";
+}
+.rw-hero-media {
+  grid-area: media;
+  position: relative;
+}
+.rw-hero-text {
+  grid-area: text;
+  min-width: 0;
+}
+.rw-hero-extra {
+  grid-area: extra;
+  min-width: 0;
+}
+.rw-hero-aside {
+  grid-area: aside;
+  min-width: 0;
+}
+@media (min-width: 768px) {
+  .rw-hero-grid {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "media text aside" "media extra aside";
+    column-gap: 1.5rem;
+    row-gap: 0.5rem;
+  }
+  .rw-hero-grid.rw-hero-noextra {
+    grid-template-areas: "media text aside";
+  }
+  .rw-hero-grid.rw-hero-nomedia {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "text aside" "extra aside";
+  }
+  .rw-hero-grid.rw-hero-nomedia.rw-hero-noextra {
+    grid-template-areas: "text aside";
+  }
+  .rw-hero-extra {
+    align-self: start;
+  }
+}
+/* its numbers: a strip of cells with hairlines between them (the outer ones fall outside and are cut off) */
+.rw-hero-stats {
+  display: grid;
+  overflow: hidden;
+  border-top: 1px solid var(--rw-border);
+}
+.rw-hero-stats > * {
+  margin: -1px 0 0 -1px;
+  border-top: 1px solid var(--rw-border);
+  border-left: 1px solid var(--rw-border);
+  min-width: 0;
+}
+/* columns: --c1 on phones, --c2 from 640 px, --c3 from 1100 px (EntityHero sets them from how many cells there are) */
+.rw-hero-stats {
+  grid-template-columns: repeat(var(--c1, 2), minmax(0, 1fr));
+}
+@media (min-width: 640px) {
+  .rw-hero-stats {
+    grid-template-columns: repeat(var(--c2, 3), minmax(0, 1fr));
+  }
+}
+@media (min-width: 1100px) {
+  .rw-hero-stats {
+    grid-template-columns: repeat(var(--c3, 6), minmax(0, 1fr));
+  }
+}
+}
+
 /* Custom Hextech scrollbars. Sideways ones (wide tables) are thicker and brighter so they're easy to grab. */
 ::-webkit-scrollbar {
   width: 8px;

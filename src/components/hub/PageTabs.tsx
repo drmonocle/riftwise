@@ -21,9 +21,16 @@ const chip = (on: boolean) =>
   `relative flex items-center gap-1.5 px-2.5 min-h-9 text-xs font-semibold whitespace-nowrap shrink-0 border-b-2 transition-colors ${
     on ? "text-rw-accent border-rw-accent" : "text-rw-sub border-transparent hover:text-rw-text"
   }`;
+/** a tab hanging under a page's top card (EntityHero): taller, in the text colour, the open one underlined */
+const bigChip = (on: boolean) =>
+  `relative flex items-center gap-1.5 px-3 sm:px-4 min-h-11 text-[14px] font-semibold whitespace-nowrap shrink-0 border-b-2 transition-colors ${
+    on ? "text-rw-text border-rw-accent" : "text-rw-sub border-transparent hover:text-rw-text"
+  }`;
 // -top-4: flush with the top of the stats tab's scroller (its p-4 padding would leave a strip where the page shows
 // through above the row); pt-1 keeps the labels off the very edge
 const stuck = "sticky -top-4 z-20 bg-rw-bg/95 backdrop-blur border-b border-rw-border pt-1";
+// under the top card: the card's own edges continue around the tabs, a hairline between them
+const stuckUnder = "sticky -top-4 z-20 bg-rw-panel backdrop-blur border border-rw-accent/40 border-t-rw-border rounded-b-xl px-1 sm:px-2 rw-lit";
 const rowCls = "flex gap-0.5 overflow-x-auto [scrollbar-width:none]";
 /** how tall the sticky block is that a row sits in (the tabs and a jump row under them stick together) */
 const stuckHeight = (el: HTMLElement | null) => (el?.closest<HTMLElement>(".sticky") || el)?.offsetHeight || 0;
@@ -39,13 +46,14 @@ export interface PageTab {
 /**
  * Tabs of one page. Switching tabs keeps the page where it is when the tabs are in view, and brings the tabs to the
  * top when they had scrolled away, so the new tab starts right under them. `below`: a row that sticks with the tabs
- * (a long tab's JumpBar, bare).
+ * (a long tab's JumpBar, bare). `attached`: they hang under the page's top card (EntityHero `tabbed`).
  */
-export const PageTabs: React.FC<{ tabs: PageTab[]; active: string; to: (key: string) => HubRoute; below?: React.ReactNode }> = ({
+export const PageTabs: React.FC<{ tabs: PageTab[]; active: string; to: (key: string) => HubRoute; below?: React.ReactNode; attached?: boolean }> = ({
   tabs,
   active,
   to,
   below,
+  attached,
 }) => {
   const spot = useRef<HTMLDivElement>(null);
   const row = useRef<HTMLElement>(null);
@@ -74,12 +82,14 @@ export const PageTabs: React.FC<{ tabs: PageTab[]; active: string; to: (key: str
   return (
     <>
       <div ref={spot} aria-hidden="true" />
-      <div className={stuck} data-nocapture="1">
+      <div className={attached ? stuckUnder : stuck} data-nocapture="1">
         <nav ref={row} className={`relative ${rowCls}`} aria-label={tl("Page sections")}>
           {tabs.map((t) => (
-            <HubLink key={t.key || "overview"} to={to(t.key)} className={chip(t.key === active)}>
+            <HubLink key={t.key || "overview"} to={to(t.key)} className={attached ? bigChip(t.key === active) : chip(t.key === active)}>
               {tl(t.label)}
-              {t.count != null && t.count > 0 && <span className="text-[10px] font-normal text-rw-muted tabular-nums">{fmtNum(t.count)}</span>}
+              {t.count != null && t.count > 0 && (
+                <span className={`font-normal text-rw-muted tabular-nums ${attached ? "font-num text-[12px]" : "text-[10px]"}`}>{fmtNum(t.count)}</span>
+              )}
             </HubLink>
           ))}
         </nav>

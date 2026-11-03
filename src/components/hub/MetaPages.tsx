@@ -27,6 +27,7 @@ import {
 import { STable } from "../STable";
 import { navigateHub } from "../../hub/route";
 import { LeagueSeasonPanel } from "./LeagueSeasonPanel";
+import { EntityHero, heroBtn } from "./EntityHero";
 
 // ── Patches ───────────────────────────────────────────────────────────────
 
@@ -275,34 +276,42 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
   const pick = (y?: string) => navigateHub({ kind: "league", slug: l.u, year: y }, { replace: true });
   return (
     <div className="space-y-3">
-      <div className={card}>
-        <h1 className="text-lg font-bold text-rw-text">
-          {l.s && <span className="text-rw-accent mr-2">{l.s}</span>}
-          {l.l}
-        </h1>
-        <p className="text-[11px] text-rw-sub">
-          {[
-            l.region ? regionName(l.region, l.region) : null,
-            tn("{n} tournament", "{n} tournaments", l.events.length),
-            years.length > 1 ? `${years[years.length - 1]}–${years[0]}` : years[0] || null,
-          ]
-            .filter(Boolean)
-            .join(" · ")}
-        </p>
-        <span className="flex flex-wrap items-center gap-x-3">
-          <HubLink to={{ kind: "best", query: `league=${l.u}` }} className="mt-1 inline-block text-[11px] text-rw-teal hover:underline font-semibold">
-            {tl("Best games in this league")}
-          </HubLink>
-          {/* a league still playing: its own calendar and results feed (Riot names its leagues by the short name) */}
-          {l.primary && l.s && years[0] && Number(years[0]) >= new Date().getFullYear() - 1 && <FollowFeeds leagues={[l.s]} />}
-        </span>
-        {l.history && l.history.length > 1 && (
-          <div className="mt-2 space-y-0.5">
-            <div className="text-[10px] font-semibold text-rw-muted">{tl("History")}</div>
-            <HistoryChain steps={l.history} current={l.u} />
-          </div>
-        )}
-      </div>
+      <EntityHero
+        title={
+          <>
+            {l.s && <span className="text-rw-accent mr-3">{l.s}</span>}
+            {l.l}
+          </>
+        }
+        lines={
+          <p>
+            {[
+              l.region ? regionName(l.region, l.region) : null,
+              tn("{n} tournament", "{n} tournaments", l.events.length),
+              years.length > 1 ? `${years[years.length - 1]}–${years[0]}` : years[0] || null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        }
+        extra={
+          l.history && l.history.length > 1 ? (
+            <div className="space-y-0.5">
+              <div className="font-head text-[12px] font-bold uppercase tracking-[0.12em] text-rw-muted">{tl("History")}</div>
+              <HistoryChain steps={l.history} current={l.u} />
+            </div>
+          ) : undefined
+        }
+        aside={
+          <>
+            <HubLink to={{ kind: "best", query: `league=${l.u}` }} className={heroBtn(true)}>
+              {tl("Best games in this league")}
+            </HubLink>
+            {/* a league still playing: its own calendar and results feed (Riot names its leagues by the short name) */}
+            {l.primary && l.s && years[0] && Number(years[0]) >= new Date().getFullYear() - 1 && <FollowFeeds leagues={[l.s]} />}
+          </>
+        }
+      />
       {/* the chosen season, else the newest one that has a whole-season file (l.seasons, builds since 0.7.45) */}
       {(() => {
         const y = season || years.find((x) => !l.seasons || l.seasons.includes(x));

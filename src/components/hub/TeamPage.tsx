@@ -17,13 +17,15 @@ import { PeriodPicker, QuickPeriods, TeamPeriodStats } from "./PeriodStats";
 import { PeriodKey, inPeriod, periodOptions, teamAgg, teamRowRef } from "../../hub/period";
 import { TeamRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
-import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, HubLink, isFresh, Loading, Page, PlayerLink, PlayerPhoto, RevealButton, Section, Stat, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink, FollowFeeds } from "./ui";
+import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, fmtUsdShort, HubLink, isFresh, Loading, Page, PlayerLink, PlayerPhoto, RevealButton, Section, Stat, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink, FollowFeeds } from "./ui";
 import { ratingTextClass } from "./BestPage";
 import { Sparkline } from "./Sparkline";
 import { STable } from "../STable";
 import { SectionCard } from "./BroadcastCard";
 import { champName } from "../../champions";
 import { NextMatch } from "./NextMatch";
+import { EntityHero, heroBtn, heroLink } from "./EntityHero";
+import { useTeamLogo } from "../../hub/riotCatalog";
 
 const select = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text";
 
@@ -67,6 +69,8 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
   const msi = t.titles.filter((x) => x.kind === "MSI").length;
   const firstStand = t.titles.filter((x) => x.kind === "First Stand").length;
   const oldNames = t.names.filter((n) => n.n !== t.name);
+  // Riot's logo when it has one; otherwise the top card shows the team's short name in a tile
+  const logo = useTeamLogo(t.name, t.codes[0]);
   const [allEvents, setAllEvents] = useState(false);
   const [recentHidden, revealRecent] = useHidden(`team-recent:${t.u}`, t.recent[0]?.date);
   const events = allEvents ? t.events : t.events.slice(0, 15);
@@ -184,111 +188,145 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
   );
   return (
     <div>
-      {/* the team's name on every tab; its numbers on the Overview */}
-      <div className={`${card} mb-3`}>
-        <h1 className="text-lg font-bold text-rw-text flex items-center gap-2.5 min-w-0">
-          <TeamLogo name={t.name} code={t.codes[0]} size={36} />
-          <span className="min-w-0">
+      {/* the team's name on every tab; its numbers, old names and buttons on the Overview */}
+      <EntityHero
+        tabbed
+        compact={!overview}
+        media={
+          logo ? (
+            <TeamLogo
+              name={t.name}
+              code={t.codes[0]}
+              sizeClass={overview ? "w-[72px] h-[72px] md:w-[104px] md:h-[104px]" : "w-10 h-10 sm:w-12 sm:h-12"}
+              className="drop-shadow-[0_8px_18px_rgba(0,0,0,0.5)]"
+            />
+          ) : (
+            <span
+              className={`flex items-center justify-center rounded-2xl bg-rw-raised border border-rw-border font-num font-bold text-rw-accent ${
+                overview ? "w-[72px] h-[72px] md:w-[104px] md:h-[104px] text-[22px] md:text-[30px]" : "w-10 h-10 sm:w-12 sm:h-12 text-[15px]"
+              }`}
+            >
+              {(t.codes[0] || t.name).slice(0, 4)}
+            </span>
+          )
+        }
+        title={
+          <>
             {t.name}
-            {t.codes.length > 0 && <span className="text-rw-muted text-sm font-semibold ml-2">{t.codes.slice(0, 3).join(" · ")}</span>}
-          </span>
-        </h1>
-        <p className="text-[11px] text-rw-muted">
-          {[t.region ? regionName(t.region, t.region) : null, tl("Pro games from {from} to {to}", { from: fmtDate(t.from), to: fmtDate(t.to) }), t.disbanded ? tl("Disbanded") : null]
-            .filter(Boolean)
-            .join(" · ")}
-        </p>
-        <span className="flex flex-wrap items-center gap-x-3">
-          <PhotosLink q={t.name} className="mt-1 inline-flex items-center gap-1 text-[11px] text-rw-teal hover:underline" />
-          {/* its own calendar and results feed, while it still plays (the schedule only has current teams) */}
-          {!t.disbanded && Date.now() - Date.parse(t.to) < 180 * 86_400_000 && <FollowFeeds teams={[t.name]} />}
-        </span>
-        {overview && oldNames.length > 0 && (
-          <p className="text-[11px] text-rw-sub mt-1">
-            {tl("Also played as:")}{" "}
-            {oldNames.map((n, i) => {
-              const targetYr = n.to.slice(0, 4);
-              return (
-                <span key={n.n + n.from}>
-                  {i > 0 && ", "}
-                  <button
-                    type="button"
-                    onClick={() => setRosterYear(targetYr)}
-                    title={`${tl("Stats for")} ${targetYr}`}
-                    className={`hover:underline ${activeRoster?.y === targetYr ? "text-rw-accent font-semibold" : "text-rw-text"}`}
-                  >
-                    {n.n}
-                  </button>{" "}
-                  <HubLink
-                    to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${targetYr}` }}
-                    className="text-rw-muted hover:text-rw-teal hover:underline"
-                    title={`${tl("Stats for")} ${targetYr}`}
-                  >
-                    ({n.from.slice(0, 4)}
-                    {n.to.slice(0, 4) !== n.from.slice(0, 4) ? `–${n.to.slice(0, 4)}` : ""})
-                  </HubLink>
-                </span>
-              );
-            })}
-            {". "}
-            {tl("All of it counts here.")}
+            {t.codes.length > 0 && <span className="text-rw-muted text-[0.5em] font-semibold ml-2 align-middle">{t.codes.slice(0, 3).join(" · ")}</span>}
+          </>
+        }
+        lines={
+          <p>
+            {[t.region ? regionName(t.region, t.region) : null, tl("Pro games from {from} to {to}", { from: fmtDate(t.from), to: fmtDate(t.to) }), t.disbanded ? tl("Disbanded") : null]
+              .filter(Boolean)
+              .join(" · ")}
           </p>
-        )}
-        {overview && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 rw-stats mt-3">
-          <Stat label={tl("Games")} value={`${fmtNum(t.w)}-${fmtNum(t.g - t.w)}`} sub={tl("{pct} win rate", { pct: winRate(t.w, t.g) })} />
-          <Stat label={tl("Series")} value={`${t.sw}-${t.sg - t.sw}`} sub={tl("{pct} won", { pct: winRate(t.sw, t.sg) })} />
-          {t.rating && (
-            <HubLink to={{ kind: "rankings" }} className="block hover:opacity-80 relative">
-              {t.rh && t.rh.length > 1 && (
-                <span className="hidden sm:block absolute right-2 top-2" title={tl("Rating over the last year")}>
-                  <Sparkline points={t.rh} width={72} height={22} />
-                </span>
-              )}
-              <Stat
-                label={tl("Power ranking")}
-                value={`#${t.rating.rank ?? t.rating.lrank}`}
-                sub={
-                  t.rating.rank != null
-                    ? tl("#{lrank} in {league} · rating {r}", { lrank: t.rating.lrank, league: t.rating.league || "–", r: t.rating.r })
-                    : tl("in {league} · rating {r}", { league: t.rating.league || "–", r: t.rating.r })
-                }
-              />
-            </HubLink>
-          )}
-          <Stat
-            label={tl("Titles")}
-            value={t.titles.length}
-            sub={
-              worlds || msi || firstStand
-                ? [tl("{n} Worlds", { n: worlds }), tl("{n} MSI", { n: msi }), firstStand ? tl("{n} First Stand", { n: firstStand }) : ""].filter(Boolean).join(" · ")
-                : tl("finals won")
-            }
-          />
-          <Stat label={tl("Best streak")} value={t.bestStreak ? tl("{n} wins", { n: t.bestStreak.n }) : "–"} sub={t.bestStreak ? fmtDate(t.bestStreak.date) : undefined} />
-          <Stat label={tl("Avg game")} value={tl("{n} min", { n: t.avgMin })} />
-          {t.kills != null && <Stat label={tl("Kills / game")} value={t.kills} sub={tl("{n} deaths", { n: t.deaths ?? 0 })} />}
-          {t.obj && <Stat label={tl("Dragons / game")} value={t.obj.dragons} sub={tl("{n} barons", { n: t.obj.barons })} />}
-          {t.earnings ? <Stat label={tl("Prize money")} value={fmtUsd(t.earnings)} sub={tl("as listed in US dollars")} /> : null}
-          {t.sides && t.sides[0] + t.sides[2] > 0 && (
-            <Stat
-              label={tl("Blue / red side")}
-              value={`${winRate(t.sides[1], t.sides[0])} / ${winRate(t.sides[3], t.sides[2])}`}
-              sub={tl("{b} blue games · {r} red", { b: fmtNum(t.sides[0]), r: fmtNum(t.sides[2]) })}
-            />
-          )}
-          {t.obj && (
-            <Stat
-              label={tl("Gold diff / game")}
-              value={`${t.obj.golddiff >= 0 ? "+" : ""}${fmtNum(Math.round(t.obj.golddiff))}`}
-              sub={tl("{n} towers", { n: t.obj.towers })}
-            />
-          )}
-        </div>
-        )}
-      </div>
-
-      <PageTabs tabs={tabs} active={tab} to={to} />
+        }
+        extra={
+          overview && oldNames.length > 0 ? (
+            <p className="text-[13px] text-rw-sub">
+              {tl("Also played as:")}{" "}
+              {oldNames.map((n, i) => {
+                const targetYr = n.to.slice(0, 4);
+                return (
+                  <span key={n.n + n.from}>
+                    {i > 0 && ", "}
+                    <button
+                      type="button"
+                      onClick={() => setRosterYear(targetYr)}
+                      title={`${tl("Stats for")} ${targetYr}`}
+                      className={`hover:underline ${activeRoster?.y === targetYr ? "text-rw-accent font-semibold" : "text-rw-text"}`}
+                    >
+                      {n.n}
+                    </button>{" "}
+                    <HubLink
+                      to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${targetYr}` }}
+                      className="text-rw-muted hover:text-rw-teal hover:underline"
+                      title={`${tl("Stats for")} ${targetYr}`}
+                    >
+                      ({n.from.slice(0, 4)}
+                      {n.to.slice(0, 4) !== n.from.slice(0, 4) ? `–${n.to.slice(0, 4)}` : ""})
+                    </HubLink>
+                  </span>
+                );
+              })}
+              {". "}
+              {tl("All of it counts here.")}
+            </p>
+          ) : undefined
+        }
+        aside={
+          <>
+            {overview && (
+              <div className="flex flex-wrap gap-2 md:justify-end">
+                <HubLink to={{ kind: "compare", mode: "team", a: t.u }} className={heroBtn(true)}>
+                  {tl("Compare")}
+                </HubLink>
+                <HubLink to={{ kind: "prep", a: t.u }} className={heroBtn()}>
+                  {tl("Match prep")}
+                </HubLink>
+              </div>
+            )}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 md:justify-end">
+              <PhotosLink q={t.name} className={heroLink} />
+              {/* its own calendar and results feed, while it still plays (the schedule only has current teams) */}
+              {!t.disbanded && Date.now() - Date.parse(t.to) < 180 * 86_400_000 && <FollowFeeds teams={[t.name]} />}
+            </div>
+          </>
+        }
+        stats={
+          overview
+            ? [
+                { label: tl("Games"), value: `${fmtNum(t.w)}–${fmtNum(t.g - t.w)}`, sub: tl("{pct} win rate", { pct: winRate(t.w, t.g) }) },
+                { label: tl("Series"), value: `${t.sw}–${t.sg - t.sw}`, sub: tl("{pct} won", { pct: winRate(t.sw, t.sg) }) },
+                t.rating
+                  ? {
+                      label: tl("Power ranking"),
+                      value: `#${t.rating.rank ?? t.rating.lrank}`,
+                      sub:
+                        t.rating.rank != null
+                          ? tl("#{lrank} in {league} · rating {r}", { lrank: t.rating.lrank, league: t.rating.league || "–", r: t.rating.r })
+                          : tl("in {league} · rating {r}", { league: t.rating.league || "–", r: t.rating.r }),
+                      to: { kind: "rankings" } as HubRoute,
+                      title: t.rh && t.rh.length > 1 ? tl("Rating over the last year") : undefined,
+                      corner: t.rh && t.rh.length > 1 ? <Sparkline points={t.rh} width={64} height={20} /> : undefined,
+                    }
+                  : null,
+                {
+                  label: tl("Titles"),
+                  value: t.titles.length,
+                  sub:
+                    worlds || msi || firstStand
+                      ? [tl("{n} Worlds", { n: worlds }), tl("{n} MSI", { n: msi }), firstStand ? tl("{n} First Stand", { n: firstStand }) : ""].filter(Boolean).join(" · ")
+                      : tl("finals won"),
+                },
+                t.earnings
+                  ? { label: tl("Prize money"), value: fmtUsdShort(t.earnings), title: fmtUsd(t.earnings), sub: `${fmtUsd(t.earnings)} · ${tl("as listed in US dollars")}` }
+                  : null,
+                { label: tl("Best streak"), value: t.bestStreak ? tl("{n} wins", { n: t.bestStreak.n }) : "–", sub: t.bestStreak ? fmtDate(t.bestStreak.date) : undefined },
+                { label: tl("Avg game"), value: tl("{n} min", { n: t.avgMin }) },
+                t.kills != null ? { label: tl("Kills / game"), value: t.kills, sub: tl("{n} deaths", { n: t.deaths ?? 0 }) } : null,
+                t.obj ? { label: tl("Dragons / game"), value: t.obj.dragons, sub: tl("{n} barons", { n: t.obj.barons }) } : null,
+                t.sides && t.sides[0] + t.sides[2] > 0
+                  ? {
+                      label: tl("Blue / red side"),
+                      value: `${winRate(t.sides[1], t.sides[0])} / ${winRate(t.sides[3], t.sides[2])}`,
+                      sub: tl("{b} blue games · {r} red", { b: fmtNum(t.sides[0]), r: fmtNum(t.sides[2]) }),
+                    }
+                  : null,
+                t.obj
+                  ? {
+                      label: tl("Gold diff / game"),
+                      value: `${t.obj.golddiff >= 0 ? "+" : ""}${fmtNum(Math.round(t.obj.golddiff))}`,
+                      sub: tl("{n} towers", { n: t.obj.towers }),
+                    }
+                  : null,
+              ]
+            : undefined
+        }
+      />
+      <PageTabs tabs={tabs} active={tab} to={to} attached />
       <div className="rw-page mt-3">
       {tab === "stats" && (
         <div className="rw-span space-y-3">

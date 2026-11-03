@@ -14,7 +14,7 @@ import { useLoad } from "./hub/ui";
 import { riotImg } from "../riotImage";
 import { clickable, OPEN_TAB_EVENT } from "../a11y";
 
-const HEAD = "font-head text-xs font-semibold uppercase tracking-wider text-rw-text";
+const HEAD = "font-head text-[13px] font-bold uppercase tracking-[0.12em] text-rw-sub";
 
 /** The latest finished series, newest first: scores shown only when spoiler mode is off or the match is revealed.
  *  `oneEvent`: every match is from the same event (the front page's event panel), so the league column is left out. */
@@ -58,7 +58,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
           </span>
         </p>
       )}
-      <ul className="divide-y divide-rw-border border border-rw-border rounded-lg bg-rw-panel">
+      <ul className="divide-y divide-rw-border border border-rw-border rounded-xl bg-rw-panel rw-lit">
         {done.map((m) => {
           const shown = !settings.spoilerMode || isRevealed(`match:${m.matchId}`);
           const w1 = shown && m.team1Score > m.team2Score;
@@ -113,7 +113,7 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
           {tl("Every team →")}
         </button>
       </div>
-      <ol className="border border-rw-border rounded-lg bg-rw-panel divide-y divide-rw-border">
+      <ol className="border border-rw-border rounded-xl bg-rw-panel rw-lit divide-y divide-rw-border">
         {top.map((t, i) => (
           <li key={t[0]} {...clickable(() => open(t[0]))} className="flex items-center gap-3 px-3 py-1.5 text-xs cursor-pointer hover:bg-rw-raised">
             <span className="w-4 text-rw-muted font-num tabular-nums">{i + 1}</span>
@@ -150,7 +150,7 @@ const Explore: React.FC<{ onSelectTab: (tab: "stats") => void; worlds: boolean }
             key={t.kind}
             type="button"
             onClick={() => go(t.kind)}
-            className="text-left rounded-lg border border-rw-border bg-rw-panel hover:bg-rw-raised hover:border-rw-accent/50 px-3 py-2.5 flex items-start gap-3"
+            className="text-left rounded-xl border border-rw-border bg-rw-panel rw-lit hover:bg-rw-raised hover:border-rw-accent/50 px-3 py-2.5 flex items-start gap-3"
           >
             <span className="mt-0.5 text-rw-accent shrink-0">{t.icon}</span>
             <span className="min-w-0 flex-1">
