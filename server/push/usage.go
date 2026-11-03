@@ -1,9 +1,10 @@
 package main
 
 // Anonymous daily counts for the analytics hub's RiftWise funnel (scripts/analytics/funnel.py): once a day each
-// browser says it visited, with its theme, language, web or desktop app and version, and once a day that it opened
-// a second page (src/usage.ts). Only the day's totals are kept, in <data>/usage/people/<date>.json (dates in US
-// Eastern time, like the hub): no address, no id, nothing about who sent it.
+// browser says it visited, with its theme, language, web or desktop app and version, once a day that it opened a
+// second page, and once a day that it used the search (src/usage.ts). Only the day's totals are kept, in
+// <data>/usage/people/<date>.json (dates in US Eastern time, like the hub): no address, no id, nothing about who sent
+// it. Visits the hub's filter file leaves out are tallied by rule ("filtered"), so the funnel can show how many.
 //
 // Page views the same way, for the stats home's "Most viewed this week" (src/hub/popular.ts): once a page a day each
 // browser says it opened a team, player, tournament, champion or league page, with the name it shows. Kept per day
@@ -31,6 +32,8 @@ import (
 type usageDay struct {
 	Visits     int            `json:"visits"`
 	SecondPage int            `json:"secondPage"`
+	Search     int            `json:"search"`
+	Filtered   map[string]int `json:"filtered,omitempty"`
 	Themes     map[string]int `json:"themes"`
 	Langs      map[string]int `json:"langs"`
 	Apps       map[string]int `json:"apps"`
@@ -48,13 +51,8 @@ var (
 	}()
 )
 
-// countUsage adds one event to the day's totals (false for an event or value it doesn't take).
-func (a *App) countUsage(event, theme, lang, app, version string, now time.Time) bool {
-	if event != "visit" && event != "second" {
-		return false
-	}
-	usageMu.Lock()
-	defer usageMu.Unlock()
+// usageDayFile reads the day's totals (empty when there are none yet) and where they go.
+func (a *App) usageDayFile(now time.Time) (usageDay, string) {
 	dir := filepath.Join(a.dataDir, "usage", "people")
 	os.MkdirAll(dir, 0o755)
 	path := filepath.Join(dir, now.In(eastern).Format("2006-01-02")+".json")
@@ -62,6 +60,37 @@ func (a *App) countUsage(event, theme, lang, app, version string, now time.Time)
 	if b, err := os.ReadFile(path); err == nil {
 		json.Unmarshal(b, &d)
 	}
+	return d, path
+}
+
+func writeUsageDay(d usageDay, path string) {
+	b, _ := json.Marshal(d)
+	tmp := path + ".tmp"
+	if os.WriteFile(tmp, b, 0o644) == nil {
+		os.Rename(tmp, path)
+	}
+}
+
+// countFiltered tallies one visit the filter file left out, under the rule that left it out.
+func (a *App) countFiltered(rule string, now time.Time) {
+	usageMu.Lock()
+	defer usageMu.Unlock()
+	d, path := a.usageDayFile(now)
+	if d.Filtered == nil {
+		d.Filtered = map[string]int{}
+	}
+	d.Filtered[rule]++
+	writeUsageDay(d, path)
+}
+
+// countUsage adds one event to the day's totals (false for an event or value it doesn't take).
+func (a *App) countUsage(event, theme, lang, app, version string, now time.Time) bool {
+	if event != "visit" && event != "second" && event != "search" {
+		return false
+	}
+	usageMu.Lock()
+	defer usageMu.Unlock()
+	d, path := a.usageDayFile(now)
 	add := func(m *map[string]int, k string) {
 		if *m == nil {
 			*m = map[string]int{}
@@ -74,20 +103,19 @@ func (a *App) countUsage(event, theme, lang, app, version string, now time.Time)
 			(*m)[k]++
 		}
 	}
-	if event == "second" {
+	switch event {
+	case "second":
 		d.SecondPage++
-	} else {
+	case "search":
+		d.Search++
+	default:
 		d.Visits++
 		add(&d.Themes, theme)
 		add(&d.Langs, lang)
 		add(&d.Apps, app)
 		add(&d.Versions, version)
 	}
-	b, _ := json.Marshal(d)
-	tmp := path + ".tmp"
-	if os.WriteFile(tmp, b, 0o644) == nil {
-		os.Rename(tmp, path)
-	}
+	writeUsageDay(d, path)
 	return true
 }
 
@@ -146,12 +174,20 @@ func (a *App) viewsFile(day time.Time) string {
 const seenMax = 200000 // a real day is a few thousand; past this, nothing new is counted until tomorrow
 
 var (
-	// the analytics hub's filter file (-filters): address ranges whose counts are left out, re-read every 10 minutes
+	// the analytics hub's filter file (-filters), re-read every 10 minutes: what it leaves out of the counts
 	usageFilters struct {
 		sync.Mutex
 		path string
 		at   time.Time
 		pfx  []string
+		ua   []*regexp.Regexp
+		cap  int
+	}
+	// this hour's counts for the filter file's limit (hashed, in memory only)
+	agentHour struct {
+		sync.Mutex
+		hour string
+		n    map[[16]byte]int
 	}
 	// what each address was counted for today: hashed, in memory only, gone at the next New York midnight
 	seen struct {
@@ -161,26 +197,101 @@ var (
 	}
 )
 
+// refreshFilters re-reads the filter file when it's due (the caller holds usageFilters' lock). A pattern that
+// doesn't compile is skipped; a file that can't be read leaves the last rules in place.
+func refreshFilters() {
+	f := &usageFilters
+	if f.path == "" || time.Since(f.at) <= 10*time.Minute {
+		return
+	}
+	f.at = time.Now()
+	var j struct {
+		Prefixes []string `json:"suspect_prefixes"`
+		Agents   []string `json:"suspect_ua"`
+		Cap      int      `json:"ua_hour_cap"`
+	}
+	b, err := os.ReadFile(f.path)
+	if err != nil || json.Unmarshal(bytes.TrimPrefix(b, []byte("\xef\xbb\xbf")), &j) != nil {
+		return
+	}
+	f.pfx, f.cap, f.ua = j.Prefixes, j.Cap, nil
+	for _, s := range j.Agents {
+		if rx, err := regexp.Compile(s); err == nil && s != "" {
+			f.ua = append(f.ua, rx)
+		}
+	}
+}
+
 // filteredIP: true for an address in a range the filter file lists (none when there is no file).
 func filteredIP(ip string) bool {
 	f := &usageFilters
 	f.Lock()
 	defer f.Unlock()
-	if f.path != "" && time.Since(f.at) > 10*time.Minute {
-		f.at = time.Now()
-		var j struct {
-			Prefixes []string `json:"suspect_prefixes"`
-		}
-		if b, err := os.ReadFile(f.path); err == nil && json.Unmarshal(bytes.TrimPrefix(b, []byte("\xef\xbb\xbf")), &j) == nil {
-			f.pfx = j.Prefixes
-		}
-	}
+	refreshFilters()
 	for _, p := range f.pfx {
 		if p != "" && strings.HasPrefix(ip, p) {
 			return true
 		}
 	}
 	return false
+}
+
+// filteredAgent: true for a user agent the filter file lists.
+func filteredAgent(ua string) bool {
+	f := &usageFilters
+	f.Lock()
+	defer f.Unlock()
+	refreshFilters()
+	for _, rx := range f.ua {
+		if rx.MatchString(ua) {
+			return true
+		}
+	}
+	return false
+}
+
+// overAgentLimit: true past the filter file's limit this hour; `take` counts this one toward it.
+func overAgentLimit(ua string, now time.Time, take bool) bool {
+	usageFilters.Lock()
+	refreshFilters()
+	limit := usageFilters.cap
+	usageFilters.Unlock()
+	if limit <= 0 {
+		return false
+	}
+	hour := now.In(eastern).Format("2006-01-02T15")
+	h := sha256.Sum256([]byte(ua))
+	var k [16]byte
+	copy(k[:], h[:16])
+	g := &agentHour
+	g.Lock()
+	defer g.Unlock()
+	if g.hour != hour || g.n == nil {
+		g.hour, g.n = hour, map[[16]byte]int{}
+	}
+	if g.n[k] >= limit {
+		return true
+	}
+	if take {
+		g.n[k]++
+	}
+	return false
+}
+
+// leftOut says which rule leaves a count out ("" when it counts): no sign of a person using the page, a crawler, or
+// the filter file.
+func leftOut(person bool, ua, ip string) string {
+	switch {
+	case !person:
+		return "unproven"
+	case botAgent.MatchString(ua):
+		return "crawler"
+	case filteredIP(ip):
+		return "range"
+	case filteredAgent(ua):
+		return "agent"
+	}
+	return ""
 }
 
 // firstFrom: true the first time today that `ip` is counted for `what` ("visit", "second", "view:player/faker").
@@ -302,12 +413,14 @@ func (a *App) usageRoute(mux *http.ServeMux, lim *limiter) {
 			writeJSON(w, 400, map[string]string{"error": "bad request"})
 			return
 		}
-		ip, now := clientIP(r), time.Now()
-		drop := !req.Person || botAgent.MatchString(r.UserAgent()) || filteredIP(ip) // taken, not counted
+		ip, ua, now := clientIP(r), r.UserAgent(), time.Now()
+		// a count that is left out is still taken (204): the sender can't tell
+		rule := leftOut(req.Person, ua, ip)
 		bad := false
 		switch req.Event {
 		case "views":
-			// at least one page it knows; each counted once a day from an address
+			// at least one page it knows; each counted once a day from an address, not past the filter file's limit
+			drop := rule != "" || overAgentLimit(ua, now, false)
 			var fresh []viewPage
 			known := 0
 			for i, p := range req.Pages {
@@ -326,9 +439,22 @@ func (a *App) usageRoute(mux *http.ServeMux, lim *limiter) {
 			if len(fresh) > 0 {
 				a.countViews(fresh, now)
 			}
-		case "visit", "second":
-			if !drop && firstFrom(ip, req.Event, now) {
-				a.countUsage(req.Event, req.Theme, req.Lang, req.App, req.V, now)
+		case "visit":
+			// once a day from an address, counted or left out (what left it out is tallied, except no sign of a person:
+			// that's an older app or a page nobody used)
+			switch {
+			case rule == "unproven":
+			case !firstFrom(ip, "visit", now):
+			case rule != "":
+				a.countFiltered(rule, now)
+			case overAgentLimit(ua, now, true):
+				a.countFiltered("limit", now)
+			default:
+				a.countUsage("visit", req.Theme, req.Lang, req.App, req.V, now)
+			}
+		case "second", "search":
+			if rule == "" && firstFrom(ip, req.Event, now) {
+				a.countUsage(req.Event, "", "", "", "", now)
 			}
 		default:
 			bad = true

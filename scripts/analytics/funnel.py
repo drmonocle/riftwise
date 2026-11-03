@@ -3,9 +3,11 @@ page, which themes, languages and apps they use, how many entered Pick'Em, and h
 subscribe to the calendar. Days are US Eastern (midnight rollover), like the hub's other reports.
 
 Sources, all on HomeServer: the push service's anonymous daily counts (C:\\Sites\\riftwise-push-data\\usage\\people,
-written by server/push/usage.go from src/usage.ts since v0.7.58; the older files one folder up aren't read), the
-Pick'Em entries (C:\\Sites\\riftwise-sync-data\\pickem) and the IIS logs of riftwise.gg
-(feed.xml and calendar.ics requests: one reader = one address + user agent a day).
+written by server/push/usage.go from src/usage.ts since v0.7.58; the older files one folder up aren't read: visits,
+second pages, searches, the stats pages opened, and the visits the hub's filter file left out), the Pick'Em entries
+(C:\\Sites\\riftwise-sync-data\\pickem), the hub's own day cache (which page real visitors loaded first) and the IIS
+logs of riftwise.gg (feed.xml and calendar.ics requests: one reader = one address + user agent a day). Days the hub's
+filter file lists as unreliable are shown but left out of the totals.
 
   python scripts/analytics/funnel.py [--days 30] [--out C:\\goaccess\\www\\reports]
 Writes riftwise-funnel.html and riftwise-funnel.json. The hub's update_reports.ps1 runs it every 10 minutes.
@@ -16,13 +18,19 @@ import glob
 import html
 import json
 import os
+import re
 from collections import Counter, defaultdict
 
 USAGE = r"C:\Sites\riftwise-push-data\usage\people"
 PICKEM = r"C:\Sites\riftwise-sync-data\pickem"
 LOGS = r"C:\inetpub\logs\LogFiles\W3SVC4"
 OUT = r"C:\goaccess\www\reports"
+FILTERS = r"C:\goaccess\riftwise_filters.json"
+HUB_CACHE = r"C:\goaccess\www\reports\et_daycache_riftwise_v1.json"
 FEEDS = {"/feed.xml": "feed", "/calendar.ics": "calendar"}
+# the front page and the live scores, in any language (/, /ko/, /matches, /pt-br/matches)
+HOME = re.compile(r"^/(?:[a-z]{2}(?:-[a-z]{2})?/?)?$")
+MATCHES = re.compile(r"^/(?:[a-z]{2}(?:-[a-z]{2})?/)?matches/?$")
 
 
 def eastern(utc: dt.datetime) -> dt.datetime:
@@ -46,6 +54,49 @@ def usage_days(folder, days):
                 out[d] = json.load(f)
         except (OSError, ValueError):
             pass
+    return out
+
+
+def unreliable_days(path):
+    """The days the hub's filter file lists as unreliable: shown, but not added into the totals."""
+    try:
+        with open(path, encoding="utf-8-sig") as f:
+            return set(json.load(f).get("unreliable_days") or [])
+    except (OSError, ValueError, AttributeError):
+        return set()
+
+
+def pages_opened(folder, days):
+    """{day: stats pages opened}: team, player, tournament, champion and league pages, once a page a day a browser."""
+    out = {}
+    for d in days:
+        try:
+            with open(os.path.join(folder, "views", d + ".json"), encoding="utf-8") as f:
+                out[d] = sum(int(c.get("n", 0)) for c in json.load(f).values())
+        except (OSError, ValueError, AttributeError, TypeError):
+            pass
+    return out
+
+
+def landings(path, days):
+    """{day: {"loads": n, "home": n, "matches": n}} from the hub's day cache: the pages real visitors loaded from
+    outside or reloaded (moving around inside the app loads no page), and how many of them were the front page and
+    the live scores. Days the cache doesn't have yet are left out."""
+    try:
+        with open(path, encoding="utf-8-sig") as f:
+            cache = json.load(f).get("days") or {}
+    except (OSError, ValueError, AttributeError):
+        return {}
+    out = {}
+    for d in days:
+        pages = (cache.get(d) or {}).get("pages") or {}
+        loads = sum(int(n) for n in pages.values())
+        if loads:
+            out[d] = {
+                "loads": loads,
+                "home": sum(int(n) for p, n in pages.items() if HOME.match(p)),
+                "matches": sum(int(n) for p, n in pages.items() if MATCHES.match(p)),
+            }
     return out
 
 
@@ -119,11 +170,19 @@ def page(report):
     e = html.escape
     pct = lambda a, b: f"{100 * a / b:.0f}%" if b else "–"
     rows = []
+    bad = set(report.get("unreliable") or [])
     for d in reversed(report["days"]):
         u = report["usage"].get(d, {})
         f = report["feeds"].get(d, {})
-        v, s = u.get("visits", 0), u.get("secondPage", 0)
-        rows.append(f"<tr><td>{d}</td><td>{v}</td><td>{s}</td><td>{pct(s, v)}</td><td>{f.get('feed', 0)}</td><td>{f.get('calendar', 0)}</td></tr>")
+        ld = report.get("landings", {}).get(d)
+        v, s, q = u.get("visits", 0), u.get("secondPage", 0), u.get("search", 0)
+        left = sum((u.get("filtered") or {}).values())
+        loads = f"<td>{ld['loads']}</td><td>{pct(ld['home'], ld['loads'])}</td><td>{pct(ld['matches'], ld['loads'])}</td>" if ld else "<td>–</td><td>–</td><td>–</td>"
+        mark = " class=bad title='not trustworthy: left out of the totals'" if d in bad else ""
+        rows.append(
+            f"<tr{mark}><td>{d}{' *' if d in bad else ''}</td><td>{v}</td><td>{s}</td><td>{pct(s, v)}</td><td>{q}</td><td>{pct(q, v)}</td>"
+            f"<td>{report.get('opened', {}).get(d, 0)}</td>{loads}<td>{left or ''}</td><td>{f.get('feed', 0)}</td><td>{f.get('calendar', 0)}</td></tr>"
+        )
     def shares(title, c):
         n = sum(c.values())
         body = "".join(f"<tr><td>{e(k)}</td><td>{v}</td><td>{pct(v, n)}</td></tr>" for k, v in c.most_common(15)) or "<tr><td colspan=3>no data yet</td></tr>"
@@ -137,12 +196,17 @@ h1{{font-size:20px;margin:0 0 4px}}p{{color:#9aa3b2;margin:0 0 16px}}.kpis{{disp
 .kpi{{background:#171a23;border:1px solid #262b38;border-radius:6px;padding:12px}}.kpi b{{display:block;font-size:24px}}.kpi span{{color:#9aa3b2;font-size:12px}}
 .grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;margin-bottom:16px}}.card{{background:#171a23;border:1px solid #262b38;border-radius:6px;padding:12px;overflow-x:auto}}
 h2{{font-size:14px;margin:0 0 8px}}table{{border-collapse:collapse;width:100%}}td,th{{text-align:left;padding:4px 8px;border-top:1px solid #262b38;white-space:nowrap}}th{{color:#9aa3b2;font-weight:600}}
+tr.bad td{{color:#6b7280;text-decoration:line-through}}
 </style></head><body><main>
 <h1>RiftWise funnel, last {len(report['days'])} days</h1>
-<p>Updated {e(report['updated'])} (US Eastern days). Visits are browsers counted once a day by the app itself, once someone uses the page. Counting restarted with v0.7.58; earlier days are empty. Feed and calendar readers: one address and app a day.</p>
+<p>Updated {e(report['updated'])} (US Eastern days). Visits are browsers counted once a day by the app itself, once someone uses the page; "left out" are visits the hub's filter file kept out of the count. Searches: browsers that opened a page from the search box. Stats pages: team, player, tournament, champion and league pages opened, once a page a day a browser. Page loads (the hub's real visitors) show where people arrive: moving around inside the app loads no page. Days marked * are not trustworthy and left out of the totals. Counting restarted with v0.7.58; earlier days are empty. Feed and calendar readers: one address and app a day.</p>
 <div class=kpis>
 <div class=kpi><b>{t['visits']}</b><span>visits</span></div>
 <div class=kpi><b>{pct(t['secondPage'], t['visits'])}</b><span>went past the first page ({t['secondPage']})</span></div>
+<div class=kpi><b>{pct(t['search'], t['visits'])}</b><span>used the search ({t['search']})</span></div>
+<div class=kpi><b>{pct(t['homeLoads'], t['loads'])}</b><span>of page loads were the front page</span></div>
+<div class=kpi><b>{t['opened']}</b><span>stats pages opened</span></div>
+<div class=kpi><b>{t['filtered']}</b><span>visits left out by the filters</span></div>
 <div class=kpi><b>{t['pickem']}</b><span>Pick'Em entries (all events)</span></div>
 <div class=kpi><b>{t['feedPerDay']:.1f}</b><span>results-feed readers a day</span></div>
 <div class=kpi><b>{t['calendarPerDay']:.1f}</b><span>calendar subscribers a day</span></div>
@@ -150,7 +214,7 @@ h2{{font-size:14px;margin:0 0 8px}}table{{border-collapse:collapse;width:100%}}t
 </div>
 <div class=grid>{shares("Themes", Counter(report['themes']))}{shares("Languages", Counter(report['langs']))}{shares("App and version", Counter(report['apps']) + Counter({'v' + k: v for k, v in report['versions'].items()}))}</div>
 <div class=grid><div class=card><h2>Pick'Em</h2><table><tr><th>event</th><th>entries</th><th>names hidden</th><th>picks</th></tr>{pk}</table></div></div>
-<div class=card><h2>By day</h2><table><tr><th>day</th><th>visits</th><th>2nd page</th><th>%</th><th>feed readers</th><th>calendar</th></tr>{''.join(rows)}</table></div>
+<div class=card><h2>By day</h2><table><tr><th>day</th><th>visits</th><th>2nd page</th><th>%</th><th>searched</th><th>%</th><th>stats pages</th><th>page loads</th><th>front page</th><th>live scores</th><th>left out</th><th>feed readers</th><th>calendar</th></tr>{''.join(rows)}</table></div>
 </main></body></html>"""
 
 
@@ -161,10 +225,16 @@ def main():
     ap.add_argument("--pickem", default=PICKEM)
     ap.add_argument("--logs", default=LOGS)
     ap.add_argument("--out", default=OUT)
+    ap.add_argument("--filters", default=FILTERS)
+    ap.add_argument("--hub-cache", default=HUB_CACHE)
     args = ap.parse_args()
     today = eastern(utcnow()).date()
     days = [(today - dt.timedelta(days=i)).isoformat() for i in range(args.days - 1, -1, -1)]
     usage = usage_days(args.usage, days)
+    bad = unreliable_days(args.filters) & set(days)
+    good = {d: u for d, u in usage.items() if d not in bad}
+    opened = pages_opened(args.usage, days)
+    land = landings(args.hub_cache, days)
     # finished days come from the cache (the logs of 30 days are ~1 GB): only the last two are read again
     cache_path = os.path.join(args.out, "riftwise-funnel-cache.json")
     try:
@@ -178,11 +248,16 @@ def main():
     pk = pickem(args.pickem)
     report = {
         "updated": eastern(utcnow()).strftime("%Y-%m-%d %H:%M"),
-        "days": days, "usage": usage, "feeds": feeds, "pickem": pk,
-        "themes": total(usage, "themes"), "langs": total(usage, "langs"), "apps": total(usage, "apps"), "versions": total(usage, "versions"),
+        "days": days, "unreliable": sorted(bad), "usage": usage, "opened": opened, "landings": land, "feeds": feeds, "pickem": pk,
+        "themes": total(good, "themes"), "langs": total(good, "langs"), "apps": total(good, "apps"), "versions": total(good, "versions"),
         "totals": {
-            "visits": sum(u.get("visits", 0) for u in usage.values()),
-            "secondPage": sum(u.get("secondPage", 0) for u in usage.values()),
+            "visits": sum(u.get("visits", 0) for u in good.values()),
+            "secondPage": sum(u.get("secondPage", 0) for u in good.values()),
+            "search": sum(u.get("search", 0) for u in good.values()),
+            "filtered": sum(sum((u.get("filtered") or {}).values()) for u in usage.values()),
+            "opened": sum(n for d, n in opened.items() if d not in bad),
+            "loads": sum(x["loads"] for d, x in land.items() if d not in bad),
+            "homeLoads": sum(x["home"] for d, x in land.items() if d not in bad),
             "pickem": sum(p["entries"] for p in pk),
             "feedPerDay": sum(f["feed"] for f in feeds.values()) / len(days),
             "calendarPerDay": sum(f["calendar"] for f in feeds.values()) / len(days),

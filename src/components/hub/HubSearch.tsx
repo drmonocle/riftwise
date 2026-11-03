@@ -17,6 +17,7 @@ import { ChampIcon, fmtNum, HubLink, ItemIcon, useLoad } from "./ui";
 import { MENU_ITEMS } from "./menu";
 import { useRecentPages } from "../../hub/recent";
 import { loadPopular, type PopularPage } from "../../hub/popular";
+import { countSearch } from "../../usage";
 
 /** A result that isn't a team, player... page: a matchup (Match prep, Compare) or one of the stats pages. */
 interface Shortcut {
@@ -503,12 +504,14 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
     onDone?.();
   };
   const go = (h: HubHit) => {
+    countSearch();
     navigateHub(hitRoute(h));
     done();
   };
   /** the highlighted line: the shortcuts first, then the hits */
   const choose = (i: number) => {
     if (i < shortcuts.length) {
+      countSearch();
       navigateHub(shortcuts[i].route);
       done();
     } else if (flat[i - shortcuts.length]) go(flat[i - shortcuts.length]);

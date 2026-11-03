@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -112,6 +113,30 @@ func TestTabPages(t *testing.T) {
 	}
 	if !strings.Contains(get(s, "/riftwise/sitemap-sections-1.xml").Body.String(), "<loc>https://riftwise.gg/schedule/lck</loc>") {
 		t.Error("sitemap: no /schedule/lck")
+	}
+}
+
+// The live scores, shared on a match day, show today's card at an address for the day; with no match soon, the
+// site's own card.
+func TestMatchesShareTodayCard(t *testing.T) {
+	s := testSite(t)
+	if b := get(s, "/riftwise/matches").Body.String(); !strings.Contains(b, `content="https://riftwise.gg/og/home.png"`) {
+		t.Error("no match soon: not the site's card")
+	}
+	var e riotEvent
+	if err := json.Unmarshal([]byte(`{"startTime": "`+time.Now().Add(time.Hour).UTC().Format(time.RFC3339)+`", "state": "unstarted", "type": "match",
+	 "league": {"name": "Worlds", "slug": "worlds"}, "match": {"teams": [{"name": "T1", "code": "T1"}, {"name": "Gen.G", "code": "GEN"}], "strategy": {"count": 5}}}`), &e); err != nil {
+		t.Fatal(err)
+	}
+	schedCache.mu.Lock()
+	schedCache.at, schedCache.events = time.Now(), []riotEvent{e}
+	schedCache.mu.Unlock()
+	want := `<meta property="og:image" content="https://riftwise.gg/og/today.png?d=` + time.Now().UTC().Format("2006-01-02") + `" />`
+	if b := get(s, "/riftwise/matches").Body.String(); !strings.Contains(b, want) {
+		t.Errorf("a match in an hour: no %q", want)
+	}
+	if b := get(s, "/riftwise/schedule").Body.String(); strings.Contains(b, "og/today.png") {
+		t.Error("the schedule took today's card")
 	}
 }
 

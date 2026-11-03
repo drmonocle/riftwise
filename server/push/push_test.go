@@ -147,7 +147,7 @@ func TestRecordAlertPreview(t *testing.T) {
 func TestUsageCounts(t *testing.T) {
 	a := &App{dataDir: t.TempDir()}
 	now := time.Date(2026, 10, 28, 3, 0, 0, 0, time.UTC) // still Oct 27 in New York
-	for _, e := range [][]string{{"visit", "rift", "ko", "web", "0.7.52"}, {"visit", "classic", "en", "desktop", "0.7.52"}, {"visit", "rift", "ko", "web", "<script>"}, {"second", "", "", "", ""}} {
+	for _, e := range [][]string{{"visit", "rift", "ko", "web", "0.7.52"}, {"visit", "classic", "en", "desktop", "0.7.52"}, {"visit", "rift", "ko", "web", "<script>"}, {"second", "", "", "", ""}, {"search", "", "", "", ""}} {
 		if !a.countUsage(e[0], e[1], e[2], e[3], e[4], now) {
 			t.Fatalf("refused %v", e)
 		}
@@ -161,8 +161,60 @@ func TestUsageCounts(t *testing.T) {
 	}
 	var d usageDay
 	json.Unmarshal(b, &d)
-	if d.Visits != 3 || d.SecondPage != 1 || d.Themes["rift"] != 2 || d.Langs["ko"] != 2 || d.Apps["desktop"] != 1 || d.Versions["other"] != 1 {
+	if d.Visits != 3 || d.SecondPage != 1 || d.Search != 1 || d.Themes["rift"] != 2 || d.Langs["ko"] != 2 || d.Apps["desktop"] != 1 || d.Versions["other"] != 1 {
 		t.Errorf("totals: %s", b)
+	}
+}
+
+// The filter file's rules: what they leave out is tallied under its rule, not counted, page views included. A rule
+// that doesn't compile is skipped.
+func TestUsageFilters(t *testing.T) {
+	a := &App{dataDir: t.TempDir()}
+	mux := http.NewServeMux()
+	a.usageRoute(mux, &limiter{hits: map[string][]time.Time{}, tests: map[string]time.Time{}})
+	filters := filepath.Join(t.TempDir(), "filters.json")
+	os.WriteFile(filters, []byte(`{"suspect_prefixes":["192.0.2."],"suspect_ua":["Kiosk/9","(bad"],"ua_hour_cap":2}`), 0o644)
+	reset := func() {
+		usageFilters.path, usageFilters.at, usageFilters.pfx, usageFilters.ua, usageFilters.cap = "", time.Time{}, nil, nil, 0
+		agentHour.hour, agentHour.n = "", nil
+	}
+	reset()
+	usageFilters.path = filters
+	defer reset()
+	n := 0
+	post := func(ua, body string) {
+		n++
+		req := httptest.NewRequest("POST", apiPrefix+"usage", strings.NewReader(body))
+		req.Header.Set("User-Agent", ua)
+		req.Header.Set("CF-Connecting-IP", fmt.Sprintf("198.18.0.%d", n)) // each post from its own address
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		if rec.Code != 204 {
+			t.Errorf("%s from %s: %d", body, ua, rec.Code)
+		}
+	}
+	chrome := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36"
+	firefox := "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0"
+	visit := `{"event":"visit","theme":"rift","lang":"en","app":"web","v":"0.8.2","person":true}`
+	for i := 0; i < 4; i++ {
+		post(chrome, visit) // two counted, two over the hour's limit
+	}
+	post(firefox, visit)               // a limit of its own
+	post("Mozilla/5.0 Kiosk/9", visit) // a listed user agent
+	post(chrome, `{"event":"views","pages":[{"page":"team/geng","title":"Gen.G"}],"person":true}`)
+	post(firefox, `{"event":"search","person":true}`)
+	post(firefox, `{"event":"second","person":true}`)
+	post("Mozilla/5.0 Kiosk/9", `{"event":"search","person":true}`)
+	b, _ := os.ReadFile(filepath.Join(a.dataDir, "usage", "people", time.Now().In(eastern).Format("2006-01-02")+".json"))
+	var d usageDay
+	if json.Unmarshal(b, &d) != nil || d.Visits != 3 || d.Search != 1 || d.SecondPage != 1 || d.Filtered["limit"] != 2 || d.Filtered["agent"] != 1 || len(d.Filtered) != 2 {
+		t.Errorf("day: %s", b)
+	}
+	if v, _ := os.ReadFile(a.viewsFile(time.Now())); strings.Contains(string(v), "team/geng") {
+		t.Errorf("a page view counted from a user agent over the limit: %s", v)
+	}
+	if len(usageFilters.ua) != 1 {
+		t.Errorf("patterns taken: %d, want 1 (the one that compiles)", len(usageFilters.ua))
 	}
 }
 

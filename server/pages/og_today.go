@@ -171,6 +171,25 @@ var todayCache struct {
 	png []byte
 }
 
+// soonMatches: the matches today's card shows, from six hours ago to the next 24 hours with both teams known, in time
+// order (a copy: the cached schedule keeps its own order).
+func soonMatches(evs []riotEvent, now time.Time) []riotEvent {
+	from, to := now.Add(-6*time.Hour), now.Add(24*time.Hour)
+	var out []riotEvent
+	for _, e := range evs {
+		t, err := time.Parse(time.RFC3339, e.StartTime)
+		if err != nil || t.Before(from) || t.After(to) || len(e.Match.Teams) < 2 {
+			continue
+		}
+		if e.Match.Teams[0].Name == "TBD" || e.Match.Teams[1].Name == "TBD" {
+			continue
+		}
+		out = append(out, e)
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].StartTime < out[j].StartTime })
+	return out
+}
+
 // todayCard: the card for the next 24 hours' matches (and today's finished ones), or nil without a schedule.
 func (s *store) todayCard() []byte {
 	s.mu.RLock()
@@ -187,18 +206,9 @@ func (s *store) todayCard() []byte {
 	todayCache.mu.Unlock()
 
 	var rows []todayRow
-	from, to := now.Add(-6*time.Hour), now.Add(24*time.Hour)
-	evs := loadSchedule()
-	sort.SliceStable(evs, func(i, j int) bool { return evs[i].StartTime < evs[j].StartTime })
-	for _, e := range evs {
-		t, err := time.Parse(time.RFC3339, e.StartTime)
-		if err != nil || t.Before(from) || t.After(to) {
-			continue
-		}
+	for _, e := range soonMatches(loadSchedule(), now) {
+		t, _ := time.Parse(time.RFC3339, e.StartTime)
 		a, b := e.Match.Teams[0], e.Match.Teams[1]
-		if a.Name == "TBD" || b.Name == "TBD" {
-			continue
-		}
 		bo := e.Match.Strategy.Count
 		if bo < 1 {
 			bo = 1

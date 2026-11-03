@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "0.8.1" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "0.8.2" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -540,6 +540,11 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		title, desc, index, extra, og = info.title, info.desc, info.index, tx, "og/home.png"
+		// the live scores shared on a match day: today's matches with their chances (og_today.go), at an address for
+		// the day, so a post shows that day's card and not one a site kept from days before
+		if len(parts) == 1 && parts[0] == "matches" && len(soonMatches(loadSchedule(), time.Now())) > 0 {
+			og = "og/today.png?d=" + time.Now().UTC().Format("2006-01-02")
+		}
 	case len(parts) == 1 && parts[0] == "overlay":
 		// the stream overlay (OBS browser source): the app, not for search engines
 		title, desc, index = "RiftWise stream overlay", "Win chances, form and the live score of one matchup, for a stream.", false
