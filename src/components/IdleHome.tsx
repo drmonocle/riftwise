@@ -113,7 +113,7 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
           {tl("Every team →")}
         </button>
       </div>
-      <ol className="border border-rw-border rounded-xl bg-rw-panel rw-lit divide-y divide-rw-border">
+      <ol className="border border-rw-border rounded-xl bg-rw-panel rw-lit divide-y divide-rw-border overflow-hidden">
         {top.map((t, i) => (
           <li key={t[0]} {...clickable(() => open(t[0]))} className="flex items-center gap-3 px-3 py-1.5 text-xs cursor-pointer hover:bg-rw-raised">
             <span className="w-4 text-rw-muted font-num tabular-nums">{i + 1}</span>

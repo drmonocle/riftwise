@@ -131,7 +131,7 @@ export const PickemBoard: React.FC<{
       {note && <p className="text-xs text-rw-teal">{note}</p>}
       {board && <p className="text-xs text-rw-sub">{sub}</p>}
       {rows.length > 0 ? (
-        <ol className="text-xs divide-y divide-rw-border border border-rw-border rounded-lg">
+        <ol className="text-xs divide-y divide-rw-border border border-rw-border rounded-lg overflow-hidden">
           {rows.map((r, i) => (
             <li key={i} className={`flex items-center gap-3 px-3 py-1.5 ${r.me ? "bg-rw-accent/10" : ""}`}>
               <span className="w-6 text-rw-muted font-num tabular-nums text-right">{r.rank}</span>

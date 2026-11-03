@@ -30,7 +30,7 @@ const bigChip = (on: boolean) =>
 // through above the row); pt-1 keeps the labels off the very edge
 const stuck = "sticky -top-4 z-20 bg-rw-bg/95 backdrop-blur border-b border-rw-border pt-1";
 // under the top card: the card's own edges continue around the tabs, a hairline between them
-const stuckUnder = "sticky -top-4 z-20 bg-rw-panel backdrop-blur border border-rw-accent/40 border-t-rw-border rounded-b-xl px-1 sm:px-2 rw-lit";
+const stuckUnder = "sticky -top-4 z-20 bg-rw-panel backdrop-blur border border-rw-accent/40 border-t-rw-border rounded-b-xl px-2 sm:px-3 rw-lit";
 const rowCls = "flex gap-0.5 overflow-x-auto [scrollbar-width:none]";
 /** how tall the sticky block is that a row sits in (the tabs and a jump row under them stick together) */
 const stuckHeight = (el: HTMLElement | null) => (el?.closest<HTMLElement>(".sticky") || el)?.offsetHeight || 0;

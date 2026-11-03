@@ -218,7 +218,7 @@ func (s *store) serveOG(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	case len(parts) == 1 && parts[0] == "home":
-		kind, title, desc = "home", "RiftWise: live LoL esports scores, pro stats and power rankings", sections[""][1]
+		kind, title, desc = "home", "Every pro League of Legends game since 2011", sections[""][1]
 	case len(parts) == 2 && parts[0] == "stats":
 		info, ok := sections[parts[1]]
 		if !ok {

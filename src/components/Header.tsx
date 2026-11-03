@@ -195,7 +195,7 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
           <button
             onClick={() => onOpenUrl("https://ko-fi.com/monocle")}
-            className={`${iconBtn} max-[360px]:hidden bg-[#720e9e] border-[#720e9e] hover:bg-[#8c19bd] text-white`}
+            className={`${iconBtn} max-[360px]:hidden bg-[var(--rw-support)] border-[var(--rw-support)] hover:brightness-125 text-[var(--rw-on-support)]`}
             aria-label={tl("Support RiftWise on Ko-fi")}
             title={tl("Support RiftWise development on Ko-fi")}
           >

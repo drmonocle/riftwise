@@ -1,7 +1,8 @@
 /**
  * Anonymous daily counts, so features get built by numbers (server/push/usage.go keeps only each day's totals; the
  * analytics hub's RiftWise funnel reads them). Once a day each browser says it visited, with its theme, language,
- * web or desktop app and version, and once a day that it opened a second page. No cookie, no id, nothing about
+ * web or desktop app and version, once a day that it opened a second page, and once a day that it used the search
+ * to open a page. No cookie, no id, nothing about
  * who it is: the day it last counted is the only thing kept here, so the next visit that day isn't counted again.
  * Team, player, tournament, champion and league pages are counted the same way, once a page a day: the stats home's
  * "Most viewed this week" for a first visit, when there are no recently viewed pages yet (src/hub/popular.ts).
@@ -70,6 +71,13 @@ export function countVisit(theme: string | undefined) {
 export function countSecondPage() {
   asPerson(() => {
     if (firstToday("riftwatch_usage_second")) send({ event: "second" });
+  });
+}
+
+/** once a day: the search box took someone to a page (a result or a shortcut like a matchup's prep) */
+export function countSearch() {
+  asPerson(() => {
+    if (firstToday("riftwatch_usage_search")) send({ event: "search" });
   });
 }
 
