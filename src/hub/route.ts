@@ -2,7 +2,7 @@
  * Page links for the stats hub. On the web every page has its own address, so it can be shared,
  * bookmarked and found by search engines:
  *
- *   /stats                      hub front page
+ *   /                           the front page (search, today's matches, the current event; /stats was its old address)
  *   /stats/<section>[/<year>]   tournaments, leagues, champions, patches, records, titles, compare, data, about, prep,
  *                                         rankings, finder (?league=..&year=..&team=..), draft (?teams=a,b),
  *                                         best (?view=series&year=2025&league=..)
@@ -94,6 +94,8 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
       return p;
     }
   });
+  // the site's home is the stats front page (0.8.0); /stats is its old address
+  if (parts.length === 0) return HUB_HOME;
   if (parts[0] === "about" && parts.length === 1) return { kind: "aboutme" };
   if (parts[0] === "stats") {
     if (parts.length === 1) return HUB_HOME;
@@ -143,7 +145,7 @@ function parseCompare(search: string): { mode?: "team" | "player"; a?: string; b
 }
 
 export function hubPath(r: HubRoute): string {
-  if (r.kind === "home") return `${BASE}stats`;
+  if (r.kind === "home") return BASE;
   if (r.kind === "aboutme") return `${BASE}about`;
   if ((r.kind === "compare" || r.kind === "prep") && "a" in r && (r.a || r.b) && (r.kind === "prep" || ("mode" in r && r.mode))) {
     const players = r.kind === "compare" && "mode" in r && r.mode === "player";
@@ -249,9 +251,12 @@ export function syncFromLocation(): HubRoute | null {
 
 // ── The other tabs' addresses ─────────────────────────────────────────────
 
-/** Each tab's own address on the web (riftwise.gg/schedule); the Live tab is the site's home (/). The schedule
- *  also has /results (its Results list) and /schedule/<league> (one league's matches, Riot's league slug). */
-const TAB_PATHS: Record<string, string> = { live: "", schedule: "schedule", stream: "stream", watchlist: "watchlist", news: "news", settings: "settings" };
+/** Each tab's own address on the web (riftwise.gg/matches, /schedule); the site's home (/) is the stats front page.
+ *  The schedule also has /results (its Results list) and /schedule/<league> (one league's matches, Riot's league slug). */
+const TAB_PATHS: Record<string, string> = { live: "matches", schedule: "schedule", stream: "stream", watchlist: "watchlist", news: "news", settings: "settings" };
+
+/** A tab's own address on the web (riftwise.gg/matches). */
+export const tabAddress = (tab: string): string => BASE + (TAB_PATHS[tab] ?? "");
 
 /** The tab an address belongs to (null: not a tab's address, e.g. a stats page). */
 export function tabOfPath(path: string = IS_WEB ? window.location.pathname : ""): string | null {
@@ -285,6 +290,6 @@ export function syncTabAddress(prevTab: string, nextTab: string): void {
     if (parseHubPath(window.location.pathname) === null) window.history.pushState({ hub: true, tab: "stats" }, "", hubPath(current));
     return;
   }
-  const path = BASE + (TAB_PATHS[nextTab] ?? "");
+  const path = tabAddress(nextTab);
   if (tabOfPath() !== nextTab || parseHubPath(window.location.pathname) !== null) window.history.pushState({ tab: nextTab }, "", path);
 }

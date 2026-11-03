@@ -136,7 +136,10 @@ describe("tab addresses", () => {
     expect(tabOfPath("/schedule")).toBe("schedule");
     expect(tabOfPath("/results/lck")).toBe("schedule");
     expect(tabOfPath("/news/")).toBe("news");
-    expect(tabOfPath("/")).toBe("live");
+    // live scores have their own address; the site's home (/) is the stats front page
+    expect(tabOfPath("/matches")).toBe("live");
+    expect(tabOfPath("/")).toBeNull();
+    expect(parseHubPath("/", "")).toEqual({ kind: "home" });
     expect(tabOfPath("/team/t1")).toBeNull();
     expect(tabOfPath("/stats")).toBeNull();
     expect(scheduleOfPath("/results/worlds")).toEqual({ results: true, league: "worlds" });

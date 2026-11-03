@@ -302,8 +302,8 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
 
       {/* Gold and objectives: both teams and the difference */}
       <StatsTable left={left} right={right} minutes={elapsed != null ? elapsed / 60_000 : null} />
-      <div className="h-1.5 rounded overflow-hidden bg-rw-red/60" aria-hidden="true" title={tl("Share of the gold")}>
-        <div className="h-full bg-rw-teal/80" style={{ width: `${share * 100}%` }} />
+      <div className="h-1.5 rounded overflow-hidden bg-rw-side-b/60" aria-hidden="true" title={tl("Share of the gold")}>
+        <div className="h-full bg-rw-side-a/80" style={{ width: `${share * 100}%` }} />
       </div>
       {!finished && elapsed != null && elapsed > 60_000 && <ChanceNow leftCode={left.code} rightCode={right.code} minute={elapsed / 60_000} lead={lead} />}
       {!finished && elapsed != null && elapsed > 3 * 60_000 && ratings?.game != null && (
@@ -477,13 +477,13 @@ const ChanceNow: React.FC<{ leftCode: string; rightCode: string; minute: number;
         </span>
       </div>
       <div className="flex items-center gap-2">
-        <span className="font-mono tabular-nums font-bold text-rw-teal w-16 text-right whitespace-nowrap">
+        <span className="font-mono tabular-nums font-bold text-rw-side-a w-16 text-right whitespace-nowrap">
           {leftCode} {a}%
         </span>
-        <div className="flex-1 h-2 rounded-sm overflow-hidden bg-rw-red/70" role="img" aria-label={`${leftCode} ${a}% · ${rightCode} ${100 - a}%`}>
-          <div className="h-full bg-rw-teal" style={{ width: `${a}%` }} />
+        <div className="flex-1 h-2 rounded-sm overflow-hidden bg-rw-side-b/70" role="img" aria-label={`${leftCode} ${a}% · ${rightCode} ${100 - a}%`}>
+          <div className="h-full bg-rw-side-a" style={{ width: `${a}%` }} />
         </div>
-        <span className="font-mono tabular-nums font-bold text-rw-red w-16 whitespace-nowrap">
+        <span className="font-mono tabular-nums font-bold text-rw-side-b w-16 whitespace-nowrap">
           {100 - a}% {rightCode}
         </span>
       </div>

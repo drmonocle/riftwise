@@ -4,7 +4,7 @@
  * Compare for the pair; an item ("heartsteel"), or a player and an item ("faker heartsteel"), opens its item history.
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Search, Users, User, Trophy, Swords, X, Flag, GitCompare, ClipboardList, Compass } from "lucide-react";
+import { Search, Users, User, Trophy, Swords, X, Flag, GitCompare, ClipboardList, Compass, Package } from "lucide-react";
 import { tl, tk, roleName, fmtN } from "../../i18n";
 import { champName } from "../../champions";
 import { isNonLatin } from "../../searchAliases";
@@ -13,8 +13,10 @@ import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubIndex, loadHubIndexQ
 import type { ItemIndexRow } from "../../hub/types";
 import { itemName } from "../../hub/ddragon";
 import { HubRoute, navigateHub } from "../../hub/route";
-import { ChampIcon, fmtNum, HubLink, ItemIcon } from "./ui";
+import { ChampIcon, fmtNum, HubLink, ItemIcon, useLoad } from "./ui";
 import { MENU_ITEMS } from "./menu";
+import { useRecentPages } from "../../hub/recent";
+import { loadPopular, type PopularPage } from "../../hub/popular";
 
 /** A result that isn't a team, player... page: a matchup (Match prep, Compare) or one of the stats pages. */
 interface Shortcut {
@@ -225,7 +227,96 @@ const GROUPS: { kind: HubSearchKind; label: string; icon: React.ReactNode }[] = 
   { kind: "champ", label: tk("Champions"), icon: <Swords className="w-3 h-3" /> },
 ];
 
-/** `initial`: a search to start with, typed in and open (riftwise.gg/stats?q=faker, where the 404 page's box lands). */
+/** Searches to try, shown before anything is typed: each kind of thing the box understands. */
+const TRY: { text: string; icon: React.ReactNode }[] = [
+  { text: "T1 vs Gen.G", icon: <Swords className="w-3 h-3" /> },
+  { text: "Faker Azir", icon: <User className="w-3 h-3" /> },
+  { text: "Heartsteel", icon: <Package className="w-3 h-3" /> },
+  { text: `Worlds ${new Date().getFullYear()}`, icon: <Trophy className="w-3 h-3" /> },
+  { text: `LCK ${new Date().getFullYear()}`, icon: <Flag className="w-3 h-3" /> },
+  { text: "Chovy vs Faker", icon: <GitCompare className="w-3 h-3" /> },
+];
+const TIPS: [string, string][] = [
+  [tk("team vs team"), tk("match prep, a draft board and a comparison")],
+  [tk("player vs player"), tk("the two compared over any period")],
+  [tk("player + champion"), tk("every game they played on it, with items and results")],
+  [tk("an item"), tk("every pro who ever finished a game holding it")],
+  ["Tab", tk("after a player or team: add a champion")],
+];
+const tryChip = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-rw-border bg-rw-bg text-rw-text hover:border-rw-accent hover:text-rw-accent";
+const chipLink = "inline-block px-2.5 py-1 rounded-full border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-line max-w-[12rem] truncate";
+
+/**
+ * What the box shows before anything is typed: searches to try (each fills the box, so the results show what that
+ * kind of search gives), what it understands, the pages opened last on this device, and the week's most viewed.
+ */
+const SearchStart: React.FC<{ onTry: (text: string) => void; onNavigate: () => void }> = ({ onTry, onNavigate }) => {
+  const recent = useRecentPages().slice(0, 6);
+  const popular = useLoad(() => loadPopular().catch(() => [] as PopularPage[]), []);
+  const list = (popular.data || []).slice(0, 6);
+  return (
+    <div className="absolute z-40 left-0 right-0 min-w-[min(28rem,calc(100vw-1.5rem))] mt-1 bg-rw-surface border border-rw-accent/40 rounded-lg shadow-2xl p-3 text-xs space-y-3">
+      <div className="space-y-1.5">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">{tl("Try")}</div>
+        <div className="flex flex-wrap gap-1.5">
+          {TRY.map((t) => (
+            <button
+              key={t.text}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => onTry(t.text)}
+              className={tryChip}
+            >
+              <span className="text-rw-accent">{t.icon}</span>
+              {t.text}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="space-y-1">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">{tl("What it understands")}</div>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
+          {TIPS.map(([q, a]) => (
+            <React.Fragment key={q}>
+              <dt className="font-mono text-rw-text whitespace-nowrap">{q === "Tab" ? q : tl(q)}</dt>
+              <dd className="text-rw-sub m-0">{tl(a)}</dd>
+            </React.Fragment>
+          ))}
+        </dl>
+      </div>
+      {(recent.length > 0 || list.length > 0) && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {recent.length > 0 && (
+            <div className="space-y-1.5">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">{tl("Recently viewed")}</div>
+              <div className="flex flex-wrap gap-1.5">
+                {recent.map((r) => (
+                  <HubLink key={JSON.stringify(r.route)} to={r.route} onNavigate={onNavigate} className={chipLink}>
+                    {r.title}
+                  </HubLink>
+                ))}
+              </div>
+            </div>
+          )}
+          {list.length > 0 && (
+            <div className="space-y-1.5">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">{tl("Most viewed this week")}</div>
+              <div className="flex flex-wrap gap-1.5">
+                {list.map((p) => (
+                  <HubLink key={JSON.stringify(p.route)} to={p.route} onNavigate={onNavigate} className={chipLink}>
+                    {p.route.kind === "champ" ? champName(p.title) : p.title}
+                  </HubLink>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/** `initial`: a search to start with, typed in and open (riftwise.gg/?q=faker, where the 404 page's box lands). */
 export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big?: boolean; placeholder?: string; initial?: string }> = ({
   autoFocus,
   onDone,
@@ -530,7 +621,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
               }
             }
           }}
-          placeholder={placeholder || tl("Search teams, players, tournaments, champions…")}
+          placeholder={placeholder || tl("Search a team, player, champion, tournament or item")}
           aria-label={tl("Search pro stats")}
           // w-full: a text box otherwise keeps a minimum width of its own, and in the header that pushed the buttons
           // on its right off a phone screen
@@ -550,6 +641,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
           </button>
         )}
       </label>
+      {open && !q.trim() && !preview && <SearchStart onTry={commitFill} onNavigate={done} />}
       {open && q.trim() && (
         <div
           className="absolute z-40 left-0 right-0 min-w-[min(18rem,calc(100vw-1.5rem))] mt-1 bg-rw-surface border border-rw-accent/40 rounded-lg shadow-2xl max-h-[70vh] overflow-y-auto p-1.5 text-xs"

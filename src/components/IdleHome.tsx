@@ -16,8 +16,14 @@ import { clickable, OPEN_TAB_EVENT } from "../a11y";
 
 const HEAD = "font-head text-xs font-semibold uppercase tracking-wider text-rw-text";
 
-/** The latest finished series, newest first: scores shown only when spoiler mode is off or the match is revealed. */
-const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings; onSelectTab: (tab: "schedule") => void }> = ({ schedule, settings, onSelectTab }) => {
+/** The latest finished series, newest first: scores shown only when spoiler mode is off or the match is revealed.
+ *  `oneEvent`: every match is from the same event (the front page's event panel), so the league column is left out. */
+export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings; onSelectTab: (tab: "schedule") => void; oneEvent?: boolean }> = ({
+  schedule,
+  settings,
+  onSelectTab,
+  oneEvent,
+}) => {
   const done = useMemo(
     () =>
       schedule
@@ -59,9 +65,11 @@ const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings; onSele
           const w2 = shown && m.team2Score > m.team1Score;
           return (
             <li key={m.matchId} className="flex items-center gap-2 px-3 py-2 text-xs min-w-0">
-              <span className="w-24 shrink-0 text-[11px] text-rw-muted truncate" title={m.leagueName}>
-                {m.leagueName}
-              </span>
+              {!oneEvent && (
+                <span className="w-24 shrink-0 text-[11px] text-rw-muted truncate" title={m.leagueName}>
+                  {m.leagueName}
+                </span>
+              )}
               <span className={`flex-1 min-w-0 text-right truncate ${w1 ? "font-bold text-rw-text" : "text-rw-sub"}`}>{m.team1Name}</span>
               {m.team1Image && <img {...riotImg(m.team1Image, 40)} alt="" className="w-5 h-5 object-contain shrink-0" loading="lazy" />}
               {shown ? (

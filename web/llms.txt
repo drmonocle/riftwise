@@ -1,14 +1,14 @@
 # RiftWise
 
-> Live League of Legends esports scores and schedules, plus pro stats for every game since 2011 (185,000+ games,
-> 19,000+ players, 4,000+ teams, 6,000+ tournaments). Free, no ads, no account needed. Made by Kyle "Dr. Monocle"
-> Hoover. The data behind the stats pages is open JSON and CSV; please credit riftwise.gg when you quote it.
+> Pro League of Legends stats for every game since 2011 (185,000+ games, 19,000+ players, 4,000+ teams, 6,000+
+> tournaments), with live scores and schedules while games are on. Free, no ads, no account needed. Made by Kyle
+> "Dr. Monocle" Hoover. The data behind the stats pages is open JSON and CSV; please credit riftwise.gg when you quote it.
 
 ## Pages
 
-- [Live scores and schedule](https://riftwise.gg/): what is live, today's and upcoming pro matches, results
+- [Home](https://riftwise.gg/): search every team, player, champion, tournament and item; today's matches; the event that is on
+- [Live matches](https://riftwise.gg/matches): live scores, win chances, drafts and gold while games are on
 - [Schedule](https://riftwise.gg/schedule) and [Results](https://riftwise.gg/results): plain HTML with every match
-- [Pro Stats home](https://riftwise.gg/stats): counts, what changed on the latest patch, latest tournaments
 - [Power rankings](https://riftwise.gg/stats/rankings): every active team on one scale across all regions, with win chances
 - [Worlds](https://riftwise.gg/stats/worlds), [MSI](https://riftwise.gg/stats/msi), [First Stand](https://riftwise.gg/stats/first-stand): facts, Swiss and bracket pickers; add /all for every year
 - [Records](https://riftwise.gg/stats/records) and [Title winners](https://riftwise.gg/stats/titles)

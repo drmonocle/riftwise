@@ -301,7 +301,7 @@ const Spark: React.FC<NonNullable<RankRow["last"]>> = ({ vals, avg, binary, low,
     return (
       <span className="inline-flex gap-px align-middle" title={title} role="img" aria-label={title}>
         {vals.map((v, i) => (
-          <span key={i} className={`w-1.5 h-3 rounded-[1px] ${v ? "bg-rw-teal" : "bg-rw-red/60"}`} />
+          <span key={i} className={`w-1.5 h-3 rounded-[1px] ${v ? "bg-rw-side-a" : "bg-rw-side-b/60"}`} />
         ))}
       </span>
     );

@@ -445,7 +445,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-1 bg-rw-bg p-1 rounded border border-rw-border">
-              {(["live", "schedule", "stats", "stream", "watchlist"] as const).map((t) => (
+              {(["stats", "live", "schedule", "stream", "watchlist"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => onUpdateSettings({ defaultTab: t })}
@@ -456,7 +456,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   }`}
                 >
                   {
-                    { live: tl("Live"), schedule: tl("Schedule"), stats: tl("Stats"), stream: tl("24/7 Stream"), watchlist: tl("Watchlist") }[t]
+                    { live: tl("Live"), schedule: tl("Schedule"), stats: tl("Home"), stream: tl("24/7 Stream"), watchlist: tl("Watchlist") }[t]
                   }
                 </button>
               ))}
@@ -472,12 +472,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             </div>
             <button
-              onClick={() => onUpdateSettings({ bubbles: settings.bubbles === false })}
+              onClick={() => onUpdateSettings({ bubbles: settings.bubbles !== true })}
               className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
-                settings.bubbles !== false ? "bg-rw-teal text-rw-bg" : "bg-rw-border text-rw-muted"
+                settings.bubbles === true ? "bg-rw-teal text-rw-bg" : "bg-rw-border text-rw-muted"
               }`}
             >
-              {settings.bubbles !== false ? tl("ON") : tl("OFF")}
+              {settings.bubbles === true ? tl("ON") : tl("OFF")}
             </button>
           </div>
         </div>

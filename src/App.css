@@ -17,6 +17,9 @@
   --color-rw-muted: var(--rw-muted);
   --color-rw-teal: var(--rw-teal);
   --color-rw-red: var(--rw-red);
+  /* the two sides of a matchup (win chance, head to head, gold share, form): team 1 and team 2, win and loss */
+  --color-rw-side-a: var(--rw-side-a);
+  --color-rw-side-b: var(--rw-side-b);
 }
 
 /* light:... applies on the light theme only: for the few fixed brand colours (Twitch, YouTube) that need a darker
@@ -60,6 +63,9 @@
     --rw-muted: #8c85b0;
     --rw-teal: #2dd4bf;
     --rw-red: #fb6f8f;
+    /* a matchup's two sides: the Herald's violet and Hextech gold (teal against pink clashed, TV 2026-11-03) */
+    --rw-side-a: #b39dff;
+    --rw-side-b: #c8aa6e;
     --rw-on-accent: #120d2c;
     color-scheme: dark;
   }
@@ -207,6 +213,11 @@
     --rw-red: #c92a52;
     --rw-on-accent: #ffffff;
     color-scheme: light;
+  }
+  /* every other theme keeps its own two colours for a matchup's sides (only Rift, the default, has its own pair) */
+  :root[data-theme]:not([data-theme="rift"]) {
+    --rw-side-a: var(--rw-teal);
+    --rw-side-b: var(--rw-red);
   }
   /* white team logos (G2, DK, Team Liquid...) would vanish on the pale background: a thin dark edge */
   :root[data-theme="light"] img {

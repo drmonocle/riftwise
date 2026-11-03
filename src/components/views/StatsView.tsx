@@ -1,61 +1,23 @@
-import React, { Suspense, useEffect, useRef, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import React, { Suspense, useEffect, useRef } from "react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import { AppSettings, Match, CatalogData } from "../../types";
 import { IS_WEB } from "../../platform";
-import {
-  StatsMeta,
-  INTERNATIONAL_KINDS,
-  loadStatsMeta,
-} from "../../stats";
-import { tl, tk, tc, eventTitle, fmtDec } from "../../i18n";
-import { champName, useChampionNames } from "../../champions";
-import { loadHubMeta, loadHubRecords, loadHubTitles, loadRecordsYear } from "../../hub/data";
-import type { HubRecords, HubTitle } from "../../hub/types";
-import {
-  CompareRoute,
-  HubRoute,
-  PrepRoute,
-  canGoBack,
-  hubBack,
-  hubShareUrl,
-  navigateHub,
-  useHubRoute,
-} from "../../hub/route";
+import { StatsMeta, loadStatsMeta } from "../../stats";
+import { tl, tk } from "../../i18n";
+import { useChampionNames } from "../../champions";
+import { loadHubMeta } from "../../hub/data";
+import { CompareRoute, HubRoute, PrepRoute, canGoBack, hubBack, hubShareUrl, navigateHub, useHubRoute } from "../../hub/route";
 import { PartBoundary } from "../PartBoundary";
 import { useDDragon } from "../../hub/ddragon";
-import {
-  card,
-  ChampIcon,
-  CopyLinkButton,
-  EventLink,
-  Failed,
-  fmtDate,
-  fmtNum,
-  HubLink,
-  Loading,
-  Page,
-  PlayerLink,
-  RevealButton,
-  Section,
-  SpoilerProvider,
-  td,
-  th,
-  TeamLink,
-  useHidden,
-  useLoad,
-  usePageTitle,
-  CaptureContext,
-  OpenUrlContext,
-} from "../hub/ui";
-import { HubSearch } from "../hub/HubSearch";
-import { AllPagesMenu, groupOf, MENU, MENU_ITEMS, pillClass, subPillClass } from "../hub/menu";
+import { CopyLinkButton, Failed, HubLink, Loading, OpenUrlContext, SpoilerProvider, useCurrentTitle, useLoad } from "../hub/ui";
+import { groupOf, MENU_ITEMS, subPillClass } from "../hub/menu";
+import type { TabKey } from "../Navigation";
 
 import { lazyPart } from "../../lazyPart";
 import { reportUrl } from "../../feedback";
 import { pageCode } from "../hub/pageCode";
 
 import { RiotCatalogContext } from "../../hub/riotCatalog";
-import { STable } from "../STable";
 
 // Each page is its own download: a player page no longer brings the code of Compare, Draft, Finder and the rest.
 // main.tsx starts the code of the page a visit opens on straight away (pageCode.ts).
@@ -93,14 +55,19 @@ const PlayersDirectory = lazyPart(() => pageCode.players().then((m) => m.Players
 interface StatsViewProps {
   settings: AppSettings;
   onOpenUrl: (url: string) => void;
-  /** upcoming matches (for "On the line today" on the stats home) */
+  /** upcoming matches (today's matches and "On the line today" on the front page) */
   schedule?: Match[];
+  /** matches in progress (the front page's live card) */
+  liveMatches?: Match[];
   /** Riot's team list: player photos and team logos (Match prep) */
   catalog?: CatalogData | null;
+  /** the front page opens the Matches tab (live scores) and a team's roster */
+  onSelectTab?: (tab: TabKey) => void;
+  onSelectTeam?: (code: string, name?: string) => void;
 }
 
 type SectionKind = HubRoute["kind"];
-/** pages whose own title is their <h1> (the others get the "Pro stats" header as theirs) */
+/** pages whose own title is their <h1> (the others get the page's name over them as theirs) */
 const OWN_H1 = new Set(["home", "worlds", "msi", "first-stand", "rankings", "records", "prep", "draft", "finder", "best", "counters", "items", "leaders", "tiers", "team", "player", "event", "champ", "league", "match", "aboutme"]);
 
 /** pages whose address carries what they show (teams, filters): their link is worth copying */
@@ -109,22 +76,36 @@ const LINKABLE = new Set<SectionKind>(["prep", "draft", "finder", "compare", "be
 /** pages that are one big table: kept at the two-column width on very wide screens (App.css .rw-capped) */
 const CAPPED_KINDS = new Set(["weekly", "tournaments", "leagues", "rankings", "titles", "best", "champions", "patches", "data", "finder", "counters", "items", "leaders", "teams", "players"]);
 
-// ── Compare ───────────────────────────────────────────────────────────────
+/** what a page about one thing is called in the breadcrumb over it */
+const KIND_NAME: Partial<Record<SectionKind, string>> = {
+  team: tk("Teams"),
+  player: tk("Players"),
+  event: tk("Tournaments"),
+  league: tk("Leagues"),
+  match: tk("Tournaments"),
+  champ: tk("Champions"),
+  about: tk("How we count"),
+  aboutme: tk("About"),
+};
+/** the list a kind of page is reached from (the breadcrumb's first link) */
+const KIND_LIST: Partial<Record<SectionKind, HubRoute>> = {
+  team: { kind: "teams" },
+  player: { kind: "players" },
+  event: { kind: "tournaments" },
+  league: { kind: "leagues" },
+  match: { kind: "tournaments" },
+  champ: { kind: "champions" },
+};
 
+// ── The stats pages ───────────────────────────────────────────────────────
 
-// ── The Stats tab ─────────────────────────────────────────────────────────
-
-export const StatsView: React.FC<StatsViewProps> = ({
-  settings,
-  onOpenUrl,
-  schedule,
-  catalog,
-}) => {
+export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, schedule, liveMatches, catalog, onSelectTab, onSelectTeam }) => {
   useChampionNames();
   useDDragon();
   const route = useHubRoute();
   const statsMeta = useLoad<StatsMeta>(loadStatsMeta, []);
   const hubMeta = useLoad(loadHubMeta, []);
+  const pageTitle = useCurrentTitle(route);
   const scroller = useRef<HTMLDivElement>(null);
   // the open group's pages are one sideways row on phones: keep the open page in view
   const sectionRow = useRef<HTMLDivElement>(null);
@@ -147,14 +128,12 @@ export const StatsView: React.FC<StatsViewProps> = ({
   }, [route]);
 
   const isSection = MENU_ITEMS.some((s) => s.kind === route.kind);
-  // pages without a title heading of their own: the "Pro stats" header is their <h1>, with the page's name
+  // pages without a title heading of their own get the page's name as theirs
   const ownTitle = !OWN_H1.has(route.kind);
-  const sectionName = MENU_ITEMS.find((it) => it.kind === route.kind)?.label || (route.kind === "about" ? tk("About") : "");
-  // a team's or player's page sits under Teams & players, a tournament under Events... (menu.tsx)
+  const sectionName = MENU_ITEMS.find((it) => it.kind === route.kind)?.label || KIND_NAME[route.kind] || "";
+  // a team's or player's page sits under Teams or Players, a tournament under Tournaments... (menu.tsx)
   const group = groupOf(route.kind);
-  const back = () => {
-    if (!hubBack()) navigateHub({ kind: "home" });
-  };
+  const crumbs = !isSection && route.kind !== "home" && route.kind !== "about" && route.kind !== "aboutme";
 
   return (
     <OpenUrlContext.Provider value={onOpenUrl}>
@@ -164,60 +143,12 @@ export const StatsView: React.FC<StatsViewProps> = ({
         ref={scroller}
         className="p-4 space-y-4 page-5xl overflow-y-auto h-full"
       >
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-rw-border">
-          {ownTitle ? (
-            <h1 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-2">
-              {tl("Pro Stats")}
-              {sectionName && <span className="text-rw-text">· {tl(sectionName)}</span>}
-            </h1>
-          ) : (
-            <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-2">
-              {tl("Pro Stats")}
-            </h2>
-          )}
-          {hubMeta.data && (
-            <span className="text-[11px] text-rw-muted">
-              {tl("{n} pro games · {from}–{to} · updated through the day", {
-                n: fmtNum(hubMeta.data.games),
-                from: "2011",
-                to:
-                  hubMeta.data.years.find(
-                    (y) => y <= String(new Date().getFullYear()),
-                  ) || "",
-              })}
-            </span>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          {/* the groups: always the same place on every page (the page's own buttons are on the row below) */}
-          <div className="relative hidden sm:flex flex-wrap items-center gap-1.5" role="tablist" aria-label={tl("Pro Stats")}>
-            {MENU.map((g) => (
-              <HubLink key={g.key} to={{ kind: g.items[0].kind } as HubRoute} className={pillClass(g === group)}>
-                {g.icon}
-                {tl(g.label)}
-              </HubLink>
-            ))}
-            <AllPagesMenu kind={route.kind} />
-          </div>
-          {/* phones: the whole menu behind one button that says where you are */}
-          <div className="relative sm:hidden flex">
-            <AllPagesMenu
-              phone
-              kind={route.kind}
-              current={group && group.key !== "home" ? (isSection ? `${tl(group.label)} · ${tl(sectionName)}` : tl(group.label)) : tl("Home")}
-            />
-          </div>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
-            {!isSection && (
-              <button
-                type="button"
-                onClick={back}
-                className="flex items-center gap-1 min-h-8 px-1.5 -ml-1.5 rounded text-xs text-rw-teal hover:underline shrink-0"
-                aria-label={tl("Back")}
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />{" "}
-                {canGoBack() ? tl("Back") : tl("Stats home")}
+        {route.kind !== "home" && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pb-2 border-b border-rw-border">
+            {/* the desktop app has no browser Back button: its own, while there is a page to go back to */}
+            {!IS_WEB && canGoBack() && (
+              <button type="button" onClick={() => hubBack()} className="flex items-center gap-1 min-h-8 px-1.5 -ml-1.5 rounded text-xs text-rw-teal hover:underline shrink-0" aria-label={tl("Back")}>
+                <ArrowLeft className="w-3.5 h-3.5" /> {tl("Back")}
               </button>
             )}
             {/* the open group's pages; phones: one row that scrolls sideways, so the page itself starts near the top */}
@@ -236,19 +167,35 @@ export const StatsView: React.FC<StatsViewProps> = ({
                 ))}
               </div>
             )}
-            {(route.kind !== "home" || !isSection) && (
-              // phones: beside the Back button when there is one (one row of buttons instead of two)
-              <div className="flex items-center gap-2 flex-1 min-w-[min(100%,14rem)] sm:flex-none sm:w-auto sm:ml-auto">
-                {(!isSection || LINKABLE.has(route.kind)) && <CopyLinkButton url={hubShareUrl(route)} />}
-                {route.kind !== "home" && (
-                  <div className="flex-1 sm:flex-none sm:w-64 min-w-0">
-                    <HubSearch placeholder={tl("Search…")} />
-                  </div>
-                )}
+            {/* a team, player, tournament, match, league or champion: where it sits, then its own name */}
+            {crumbs && (
+              <nav aria-label={tl("Breadcrumb")} className="flex items-center gap-1 text-xs min-w-0">
+                <HubLink to={KIND_LIST[route.kind] || { kind: "home" }} className="text-rw-teal hover:underline shrink-0">
+                  {tl(sectionName)}
+                </HubLink>
+                <ChevronRight className="w-3 h-3 text-rw-muted shrink-0" aria-hidden="true" />
+                <span className="text-rw-text font-semibold truncate">{pageTitle || "…"}</span>
+              </nav>
+            )}
+            {(route.kind === "about" || route.kind === "aboutme") && (
+              <nav aria-label={tl("Breadcrumb")} className="flex items-center gap-1 text-xs min-w-0">
+                <button type="button" onClick={() => navigateHub({ kind: "home" })} className="text-rw-teal hover:underline shrink-0">
+                  RiftWise
+                </button>
+                <ChevronRight className="w-3 h-3 text-rw-muted shrink-0" aria-hidden="true" />
+                <span className="text-rw-text font-semibold truncate">{tl(sectionName)}</span>
+              </nav>
+            )}
+            {(!isSection || LINKABLE.has(route.kind)) && (
+              <div className="ml-auto flex items-center gap-2">
+                <CopyLinkButton url={hubShareUrl(route)} />
               </div>
             )}
           </div>
-        </div>
+        )}
+        {ownTitle && route.kind !== "home" && (
+          <h1 className="font-head text-xl font-bold text-rw-text leading-tight">{tl(sectionName)}</h1>
+        )}
 
         {settings.spoilerMode && (
           <p className="text-[11px] text-rw-accent bg-rw-accent/10 border border-rw-accent/30 rounded-lg px-3 py-2">
@@ -263,7 +210,9 @@ export const StatsView: React.FC<StatsViewProps> = ({
             Keyed by the page, not its filters, so changing a period or a filter doesn't restart it. */}
         <PartBoundary key={`${route.kind}:${"slug" in route ? route.slug : ""}`}>
         <Suspense fallback={<Loading />}>
-        {route.kind === "home" && <HubHome schedule={schedule} settings={settings} onOpenUrl={onOpenUrl} />}
+        {route.kind === "home" && (
+          <HubHome schedule={schedule} liveMatches={liveMatches} settings={settings} onOpenUrl={onOpenUrl} onSelectTab={onSelectTab} onSelectTeam={onSelectTeam} />
+        )}
         {route.kind === "teams" && <TeamsDirectory query={"query" in route ? route.query : undefined} />}
         {route.kind === "players" && <PlayersDirectory query={"query" in route ? route.query : undefined} />}
         {route.kind === "tournaments" && (

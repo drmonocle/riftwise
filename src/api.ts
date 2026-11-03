@@ -119,7 +119,8 @@ export const GLOBAL_LEAGUES: League[] = [
 
 export const DEFAULT_SETTINGS: AppSettings = {
   spoilerMode: false,
-  defaultTab: "live",
+  // the web opens on the stats front page (riftwise.gg/), the desktop app on live scores
+  defaultTab: IS_WEB ? "stats" : "live",
   notifyKickoff: true,
   notifyPregame: true,
   notifyStream: true,
@@ -165,6 +166,12 @@ export function loadSettings(): AppSettings {
       // a theme this version doesn't have (Scoreboard, 0.7.36-0.7.39; Midnight, up to 0.7.40) falls back to the default
       merged.theme = oneOf(merged.theme, ["rift", "classic", "light", "tsm", "flyquest", "t1", "geng", "fnatic", "cloud9"] as const, "rift");
       merged.defaultTab = oneOf(merged.defaultTab, ["live", "schedule", "stats", "stream", "watchlist", "news", "settings"] as const, DEFAULT_SETTINGS.defaultTab);
+      // 0.8.0: the web's home became the stats front page. A browser still on the old default (Live) moves to it
+      // once; a start page picked after that (Live included) is kept.
+      if (IS_WEB && !merged.homeStart) {
+        if (merged.defaultTab === "live") merged.defaultTab = "stats";
+        merged.homeStart = true;
+      }
       // Settings for the removed ticker bar / desktop HUD (0.4.0) are dropped
       for (const old of ["tickerMode", "tickerTopmost", "tickerCycleSec"]) delete (merged as unknown as Record<string, unknown>)[old];
       for (const key of Object.keys(DEFAULT_SETTINGS) as (keyof AppSettings)[]) {

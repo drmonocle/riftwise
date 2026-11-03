@@ -138,15 +138,15 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onPrep: () => void }> = (
         <div className="space-y-1.5">
           {[chances[mine], ...chances.filter((_, i) => i !== mine)].map(([label, p], i) => (
             <div key={label} className={`grid grid-cols-[3rem_1fr_3rem] items-center gap-2 ${i === 0 ? "" : "opacity-70"}`}>
-              <span className="tabular-nums font-bold text-rw-teal">{pct(p)}</span>
-              <div className={`relative rounded bg-rw-red/70 overflow-hidden ${i === 0 ? "h-5" : "h-3.5"}`}>
-                <div className="absolute inset-y-0 left-0 bg-rw-teal/80" style={{ width: `${p * 100}%` }} />
+              <span className="tabular-nums font-bold text-rw-side-a">{pct(p)}</span>
+              <div className={`relative rounded bg-rw-side-b/70 overflow-hidden ${i === 0 ? "h-5" : "h-3.5"}`}>
+                <div className="absolute inset-y-0 left-0 bg-rw-side-a/80" style={{ width: `${p * 100}%` }} />
                 <span className="absolute inset-0 flex items-center justify-center text-[10px] text-rw-text font-semibold">
                   {label}
                   {i === 0 ? ` · ${tl("this match")}` : ""}
                 </span>
               </div>
-              <span className="tabular-nums font-bold text-rw-red text-right">{pct(1 - p)}</span>
+              <span className="tabular-nums font-bold text-rw-side-b text-right">{pct(1 - p)}</span>
             </div>
           ))}
         </div>

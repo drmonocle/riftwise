@@ -1,147 +1,219 @@
-/** Stats hub front page and the tournament browser. */
+/**
+ * The site's front page: one search, today's matches (live or next, with prep, overview, calendar and where to
+ * watch), the event that is on, four ways in (tournaments, teams, players, champions), the power rankings, what is
+ * on the line tonight, the week's storylines and the analyst tools. Also the tournament browser (EventsBrowse).
+ */
 import React, { useMemo, useState } from "react";
 import { HomeStorylines } from "./Storylines";
 import { AtStakeToday } from "./AtStake";
 import type { AppSettings, Match } from "../../types";
-import { CalendarRange, Crown, ClipboardList, TrendingUp, Flame, Rows3, Users, Globe, Trophy, Flag, Package, Crosshair } from "lucide-react";
-import { tl, tn, tk, regionName, roleName, fmtDec } from "../../i18n";
-import { loadEventsOfYear, loadHubHome, loadHubMeta, loadLeagues, loadPatches } from "../../hub/data";
+import { Crown, ClipboardList, TrendingUp, Users, User, Globe, Trophy, Flag, Swords, LayoutGrid, GitCompare, Search, Package, Database, Star } from "lucide-react";
+import { tl, tn, tk, tc, regionName, roleName, LANGUAGES } from "../../i18n";
+import { loadEventsOfYear, loadHubHome, loadHubMeta, loadLeagues, loadPatches, loadRatings } from "../../hub/data";
 import { UpNextTable } from "../UpNextTable";
 import { formatMatchTime } from "../../matchTime";
 import { RatingBadge } from "./PlayerRating";
 import { useRecentPages } from "../../hub/recent";
 import { loadPopular } from "../../hub/popular";
 import { champName } from "../../champions";
-import { ChampIcon } from "./ui";
-import type { EventListItem, HubMeta } from "../../hub/types";
-import { HubRoute } from "../../hub/route";
+import type { EventListItem, HubMeta, PatchMove, PatchRow, RatingRow } from "../../hub/types";
+import { HubRoute, navigateHub } from "../../hub/route";
 import { HubSearch } from "./HubSearch";
 import { IS_WEB } from "../../platform";
-import { card, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerLink, RevealButton, StandingsFirst, Section, sectionTitle, td, th, TeamLink, useHidden, useLoad, usePageTitle } from "./ui";
+import { card, ChampIcon, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerLink, PlayerPhoto, RevealButton, StandingsFirst, Section, TeamLink, TeamLogo, td, th, useHidden, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
-import { SortTable, type Column } from "./SortTable";
-import type { HubHome as HubHomeData, PatchMove, PatchRow } from "../../hub/types";
+import { computeHeadToHead, getLeagueBroadcastStreams } from "../../helpers";
+import { clickable } from "../../a11y";
+import { riotImg } from "../../riotImage";
+import { H2HMeter } from "../H2HMeter";
+import { WinChanceLine } from "../WinChanceLine";
+import { MatchPrepButton } from "../MatchPrepButton";
+import { MatchOverviewButton } from "../MatchOverviewButton";
+import { AddToCalendarMenu } from "../AddToCalendarMenu";
+import { ShareMatchButton } from "../ShareMatchButton";
+import { SwissStandings } from "../SwissStandings";
+import { INTL_EVENTS, intlMatchNow } from "../../intlNow";
+import { LatestResults } from "../IdleHome";
+import { prettySlug } from "../../hub/data";
+import type { TabKey } from "../Navigation";
 
-/** Where most visits go next: eight pages to start from (every page is one click away in the menu's All pages). Item
- *  history and Counters are here too (TV, 2026-10-28: "what happened to the item look up?", only under Tools). */
-const START: { to: HubRoute; label: string; sub: string; icon: React.ReactNode }[] = [
-  { to: { kind: "weekly" }, label: tk("This week"), sub: tk("Upsets, ranking movers, records, best games"), icon: <CalendarRange className="w-4 h-4" /> },
-  { to: { kind: "rankings" }, label: tk("Power rankings"), sub: tk("Every team, every region, one scale"), icon: <TrendingUp className="w-4 h-4" /> },
-  { to: { kind: "prep" }, label: tk("Match prep"), sub: tk("Everything before a broadcast"), icon: <ClipboardList className="w-4 h-4" /> },
-  { to: { kind: "best" }, label: tk("Best games"), sub: tk("Highest-rated games and series"), icon: <Flame className="w-4 h-4" /> },
-  { to: { kind: "tiers" }, label: tk("Pro tier list"), sub: tk("What pros play on each patch, by role"), icon: <Rows3 className="w-4 h-4" /> },
-  { to: { kind: "players" }, label: tk("Every player"), sub: tk("Every pro player, by role and team"), icon: <Users className="w-4 h-4" /> },
-  { to: { kind: "items" }, label: tk("Item history"), sub: tk("Has a pro ever built it?"), icon: <Package className="w-4 h-4" /> },
-  { to: { kind: "counters" }, label: tk("Counters"), sub: tk("Every pro lane matchup, by champion"), icon: <Crosshair className="w-4 h-4" /> },
+/** the panel that matters most on the page: a brighter edge and a soft glow (the card's look, its own border colour) */
+const hot = "bg-rw-panel border border-rw-accent/50 rounded-xl p-4 shadow-[0_18px_50px_rgba(127,107,255,0.16)]";
+/** a small condensed label over a block, with a short accent line before it */
+const Eyebrow: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = "" }) => (
+  <div className={`flex items-center gap-2 font-head text-[11px] font-semibold uppercase tracking-[0.14em] text-rw-accent ${className}`}>
+    <span className="w-4 h-0.5 rounded bg-rw-accent shrink-0" aria-hidden="true" />
+    <span>{children}</span>
+  </div>
+);
+const more = "inline-block mt-auto pt-3 text-xs font-semibold text-rw-teal hover:underline";
+const tileHead = "font-head text-lg font-bold text-rw-text flex items-center gap-2 mb-2";
+
+/** Searches to try, one of each kind the box understands, each going straight to its page. */
+const TRY: { label: string; to: HubRoute; icon: React.ReactNode }[] = [
+  { label: "T1 vs Gen.G", to: { kind: "prep", a: "t1", b: "geng" }, icon: <Swords className="w-3 h-3" /> },
+  { label: "Faker Azir", to: { kind: "player", slug: "faker", tab: "champions", query: "champ=Azir" }, icon: <User className="w-3 h-3" /> },
+  { label: "Heartsteel", to: { kind: "items", query: "item=heartsteel" }, icon: <Package className="w-3 h-3" /> },
+  { label: `Worlds ${new Date().getFullYear()}`, to: { kind: "worlds" }, icon: <Trophy className="w-3 h-3" /> },
+  { label: `LCK ${new Date().getFullYear()}`, to: { kind: "league", slug: "lck" }, icon: <Flag className="w-3 h-3" /> },
 ];
 
-export const HubHome: React.FC<{ schedule?: Match[]; settings?: AppSettings; onOpenUrl?: (url: string) => void }> = ({ schedule, settings, onOpenUrl }) => {
-  usePageTitle(tl("Pro Stats"));
+export const HubHome: React.FC<{
+  schedule?: Match[];
+  liveMatches?: Match[];
+  settings?: AppSettings;
+  onOpenUrl?: (url: string) => void;
+  onSelectTab?: (tab: TabKey) => void;
+  onSelectTeam?: (code: string, name?: string) => void;
+}> = ({ schedule, liveMatches, settings, onOpenUrl, onSelectTab, onSelectTeam }) => {
+  usePageTitle(tl("Every pro League of Legends game since 2011"));
   const meta = useLoad(loadHubMeta, []);
   const home = useLoad(loadHubHome, []);
+  const ratings = useLoad(() => loadRatings().catch(() => null), []);
+  const intl = useMemo(() => (schedule ? intlMatchNow(schedule) : undefined), [schedule]);
+  const ev = intl ? INTL_EVENTS[intl.leagueSlug] : undefined;
   return (
-    <div className="space-y-4">
-      {/* the title and the search, with the numbers beside them on wide screens (under them on phones) */}
-      <div className={`${card} space-y-2`}>
-        <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
-          <div className="flex-1 min-w-[min(100%,18rem)] space-y-2">
-            <h1 className="text-lg font-semibold text-rw-text leading-tight">{tl("Every pro League of Legends game, in one place")}</h1>
+    <div className="space-y-6">
+      {/* the title, the search and the numbers */}
+      {/* no overflow-hidden here: the search's results open below the box, past the panel's edge */}
+      <section className="bg-rw-panel border border-rw-border rounded-xl relative p-5 sm:p-7 space-y-4">
+        <div className="absolute inset-0 rounded-[inherit] pointer-events-none bg-[radial-gradient(900px_380px_at_8%_-20%,rgba(127,107,255,0.28),transparent_60%),radial-gradient(600px_300px_at_100%_0%,rgba(179,157,255,0.1),transparent_60%)]" aria-hidden="true" />
+        <div className="relative space-y-4">
+          <Eyebrow>{ev && intl ? tl("{event} {year} is on", { event: tc("event", ev.name), year: intl.startTimeUtc.slice(0, 4) }) : tl("Pro League of Legends stats")}</Eyebrow>
+          <h1 className="font-head text-3xl sm:text-[2.6rem] font-bold text-rw-text leading-[1.05] max-w-3xl">{tl("Every pro League of Legends game since 2011.")}</h1>
+          <p className="text-sm text-rw-sub max-w-2xl">
+            {tl("Results, drafts, builds and records from every tournament. Live scores and stats while games are on, and power rankings that put every region on one scale. Free, no ads, no account.")}
+          </p>
+          {/* data-search-main: the "/" key focuses this box (App.tsx); the header has none on this page */}
+          <div className="max-w-2xl" data-search-main="1">
             <HubSearch big initial={IS_WEB ? new URLSearchParams(window.location.search).get("q") || "" : ""} />
           </div>
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted mr-1">{tl("Try")}</span>
+            {TRY.map((t) => (
+              <HubLink key={t.label} to={t.to} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-rw-border bg-rw-bg/60 text-rw-text hover:border-rw-accent hover:text-rw-accent">
+                <span className="text-rw-accent">{t.icon}</span>
+                {t.label}
+              </HubLink>
+            ))}
+          </div>
+          <p className="text-[11px] text-rw-muted max-w-2xl">
+            {tl("A matchup opens match prep, a draft board and a comparison. A player plus a champion opens their games on it. An item shows every pro who ever built it.")}
+          </p>
           {meta.data && (
-            <dl className="grid grid-cols-3 min-[480px]:grid-cols-5 gap-x-5 gap-y-2">
+            <dl className="grid grid-cols-3 sm:grid-cols-5 gap-x-5 gap-y-2 pt-3 border-t border-rw-border/60">
               {[
-                [fmtNum(meta.data.games), tl("games")],
+                [fmtNum(meta.data.games), tl("pro games")],
                 [fmtNum(meta.data.events), tl("tournaments")],
                 [fmtNum(meta.data.players), tl("players")],
                 [fmtNum(meta.data.teams), tl("teams")],
-                ["2011→", tl("to today")],
+                [String(LANGUAGES.length), tl("languages")],
               ].map(([v, label]) => (
                 <div key={label}>
-                  <dd className="font-mono tabular-nums text-xl text-rw-text leading-tight">{v}</dd>
-                  <dt className="text-[11px] text-rw-sub">{label}</dt>
+                  <dd className="font-num tabular-nums text-xl text-rw-text leading-tight">{v}</dd>
+                  <dt className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">{label}</dt>
                 </div>
               ))}
             </dl>
           )}
+          <LeagueChips />
+          <RecentPages />
         </div>
-        {meta.data && (
-          <HubLink to={{ kind: "about" }} className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline">
-            {tl("(games with a result; players and teams with full scoreboards)")}
-          </HubLink>
+      </section>
+
+      {schedule && settings && onOpenUrl && (
+        <TodayMatches schedule={schedule} liveMatches={liveMatches || []} settings={settings} onOpenUrl={onOpenUrl} onSelectTab={onSelectTab} onSelectTeam={onSelectTeam} />
+      )}
+
+      {/* the event that is on (Worlds, MSI, First Stand) or the tournaments running now, and the month's best players */}
+      {/* grid-cols-1 on phones: a grid's one automatic column grows to its widest row and pushes past the screen */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-stretch">
+        <EventNow intl={intl} schedule={schedule} settings={settings} now={home.data?.now} onSelectTab={onSelectTab} />
+        {home.data?.potm && home.data.potm.length > 0 ? (
+          <PlayersOfTheMonth rows={home.data.potm} from={home.data.potmFrom} />
+        ) : (
+          <Page state={home}>{(h) => <LatestTournaments latest={h.latest} />}</Page>
         )}
       </div>
 
-      {/* pick a league: its seasons, standings and stats (fans think "LCK stats", not "the tournaments page") */}
-      <LeagueChips />
-
-      {/* where to start: one flush grid, hairlines between the tiles (the gap shows the border colour) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-rw-border border border-rw-border rounded-lg overflow-hidden">
-        {START.map((q) => (
-          <HubLink key={q.label} to={q.to} className="bg-rw-surface hover:bg-rw-raised p-3 transition-colors block min-w-0">
-            <div className="flex items-center gap-1.5 text-rw-text font-semibold text-xs">
-              <span className="text-rw-accent shrink-0">{q.icon}</span>
-              {tl(q.label)}
-            </div>
-            <div className="text-[10px] text-rw-muted mt-0.5">{tl(q.sub)}</div>
-          </HubLink>
-        ))}
-      </div>
-
-      <RecentPages />
-      {schedule && settings && onOpenUrl && <NextMatches schedule={schedule} settings={settings} onOpenUrl={onOpenUrl} />}
-      {schedule && schedule.length > 0 && <AtStakeToday schedule={schedule} />}
-      {home.data?.potm && home.data.potm.length > 0 && <PlayersOfTheMonth rows={home.data.potm} from={home.data.potmFrom} />}
-      <HomeStorylines />
-      <PatchChanges />
-
-      <Page state={home}>
-        {(h) => (
-          // two columns that each keep their own height: "Happening now" (often one line) with the busiest players
-          // under it, the latest tournaments beside them (a stretched grid row left a mostly empty box)
-          <div className="grid gap-3 md:grid-cols-2 items-start">
-            <div className="space-y-3 min-w-0">
-            {h.now && h.now.length > 0 && (
-              <Section title={tl("Happening now")}>
+      {/* four ways in */}
+      <section className="space-y-3">
+        <Eyebrow>{tl("Browse")}</Eyebrow>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 items-stretch">
+          <div className={`${card} flex flex-col`}>
+            <h2 className={tileHead}><Trophy className="w-4 h-4 text-rw-accent" />{tl("Tournaments")}</h2>
+            <Page state={home}>
+              {(h) => (
                 <ul className="text-xs space-y-1.5">
-                  {h.now.map((e) => (
-                    <li key={e.u} className="min-w-0">
-                      <div className="flex items-center justify-between gap-2 min-w-0">
-                        <EventLink name={e.n} u={e.u} />
-                        <span className="text-rw-muted shrink-0">
-                          {fmtDate(e.st, false)} – {fmtDate(e.en, false)}
-                        </span>
-                      </div>
-                      {(e.sp != null || !!e.g) && (
-                        <div className="text-[11px] text-rw-muted font-mono tabular-nums">
-                          {[
-                            e.sp != null ? tn("{n} series played", "{n} series played", e.sp) : null,
-                            e.g ? tn("{n} game", "{n} games", e.g) : null,
-                            e.m ? tl("{t} average game", { t: mmss(e.m) }) : null,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </div>
-                      )}
-                    </li>
+                  {(h.now && h.now.length ? [...h.now.slice(0, 1), ...h.latest.filter((e) => !h.now!.some((n) => n.u === e.u))] : h.latest).slice(0, 3).map((e) => (
+                    <LatestRow key={e.u} e={e} />
                   ))}
                 </ul>
-              </Section>
-            )}
-            <Section title={tl("Most games in {year}", { year: h.year })}>
-              <BusiestTable rows={h.busiest} />
-            </Section>
-            </div>
-            <Section title={tl("Latest tournaments")}>
-              <ul className="text-xs space-y-1.5">
-                {h.latest.map((e) => (
-                  <LatestRow key={e.u} e={e} />
-                ))}
-              </ul>
-            </Section>
+              )}
+            </Page>
+            <HubLink to={{ kind: "tournaments" }} className={more}>{tl("Every event since 2011 →")}</HubLink>
           </div>
-        )}
-      </Page>
+          <div className={`${card} flex flex-col`}>
+            <h2 className={tileHead}><Users className="w-4 h-4 text-rw-accent" />{tl("Teams")}</h2>
+            <TopTeams rows={ratings.data?.teams} n={3} />
+            <HubLink to={{ kind: "teams" }} className={more}>{tl("Every team since 2011, by region →")}</HubLink>
+          </div>
+          <div className={`${card} flex flex-col`}>
+            <h2 className={tileHead}><User className="w-4 h-4 text-rw-accent" />{tl("Players")}</h2>
+            <ul className="text-xs space-y-1.5">
+              {(home.data?.potm || []).slice(0, 3).map((p) => (
+                <li key={p.u || p.n} className="flex items-center gap-2 min-w-0">
+                  <PlayerPhoto name={p.n} team={p.t} slug={p.u || undefined} size={24} />
+                  <PlayerLink name={p.n} u={p.u} className="font-semibold truncate" />
+                  <span className="text-rw-muted truncate ml-auto">{[p.r ? roleName(p.r) : "", p.t].filter(Boolean).join(" · ")}</span>
+                </li>
+              ))}
+            </ul>
+            <HubLink to={{ kind: "players" }} className={more}>{tl("Every player, by role and team →")}</HubLink>
+          </div>
+          <div className={`${card} flex flex-col`}>
+            <h2 className={tileHead}><Swords className="w-4 h-4 text-rw-accent" />{tl("Champions")}</h2>
+            <PatchMovers />
+          </div>
+        </div>
+      </section>
+
+      {/* the power rankings and the tools side by side; what is on the line today and the storylines take the whole
+          width after them (both lay themselves out in columns) */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 items-stretch">
+        <section className={`${hot} flex flex-col`}>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <h2 className="font-head text-lg font-bold text-rw-text flex items-center gap-2"><TrendingUp className="w-4 h-4 text-rw-accent" />{tl("Power rankings")}</h2>
+            <span className="text-[10px] text-rw-muted">{tl("30-day change")}</span>
+          </div>
+          <TopTeams rows={ratings.data?.teams} n={5} ranked />
+          <HubLink to={{ kind: "rankings" }} className={more}>{tl("Every active team on one scale →")}</HubLink>
+        </section>
+        <section className={`${card} flex flex-col`}>
+          <h2 className="font-head text-lg font-bold text-rw-text flex items-center gap-2 mb-2"><ClipboardList className="w-4 h-4 text-rw-accent" />{tl("Tools")}</h2>
+          <ul className="text-xs space-y-1.5">
+            {(
+              [
+                [{ kind: "prep" }, tk("Match prep"), tk("form, lanes, drafts, storylines"), <ClipboardList key="p" className="w-3.5 h-3.5" />],
+                [{ kind: "draft" }, tk("Draft board"), tk("pools, Fearless, live handoff"), <LayoutGrid key="d" className="w-3.5 h-3.5" />],
+                [{ kind: "compare" }, tk("Compare"), tk("any teams or players"), <GitCompare key="c" className="w-3.5 h-3.5" />],
+                [{ kind: "finder" }, tk("Game finder"), tk("any game, as CSV too"), <Search key="f" className="w-3.5 h-3.5" />],
+                [{ kind: "items" }, tk("Item history"), tk("has a pro ever built it?"), <Package key="i" className="w-3.5 h-3.5" />],
+                [{ kind: "data" }, tk("Data downloads"), tk("every game, CSV and JSON"), <Database key="x" className="w-3.5 h-3.5" />],
+              ] as [HubRoute, string, string, React.ReactNode][]
+            ).map(([to, label, sub, icon]) => (
+              <li key={label} className="flex items-center gap-2 min-w-0">
+                <span className="text-rw-accent shrink-0">{icon}</span>
+                <HubLink to={to} className="font-semibold text-rw-text hover:text-rw-accent shrink-0">{tl(label)}</HubLink>
+                <span className="text-rw-muted truncate">{tl(sub)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+      {schedule && schedule.length > 0 && <AtStakeToday schedule={schedule} />}
+      <HomeStorylines />
+
       <p className="text-[10px] text-rw-muted text-center">
         {tl("Data: Leaguepedia (CC BY-SA 3.0), updated through the day. Game statistics belong to Riot Games.")}
       </p>
@@ -151,6 +223,310 @@ export const HubHome: React.FC<{ schedule?: Match[]; settings?: AppSettings; onO
 
 /** m.ss from minutes (32.2 -> 32:12) */
 const mmss = (min: number) => `${Math.floor(min)}:${String(Math.round((min % 1) * 60)).padStart(2, "0")}`;
+
+// ── Today's matches ───────────────────────────────────────────────────────
+
+/** The match that matters most right now (in progress, else the next one), then the next few in a table. */
+const TodayMatches: React.FC<{
+  schedule: Match[];
+  liveMatches: Match[];
+  settings: AppSettings;
+  onOpenUrl: (url: string) => void;
+  onSelectTab?: (tab: TabKey) => void;
+  onSelectTeam?: (code: string, name?: string) => void;
+}> = ({ schedule, liveMatches, settings, onOpenUrl, onSelectTab, onSelectTeam }) => {
+  const live = useMemo(() => liveMatches.filter((m) => m.state === "inProgress" && m.team1Code && m.team2Code), [liveMatches]);
+  const next = useMemo(() => {
+    const now = Date.now();
+    return schedule
+      .filter(
+        (m) =>
+          m.state !== "completed" &&
+          m.state !== "inProgress" &&
+          Date.parse(m.startTimeUtc) > now - 3 * 60 * 60 * 1000 &&
+          m.team1Code &&
+          m.team2Code &&
+          !/^tbd$/i.test(m.team1Code) &&
+          !/^tbd$/i.test(m.team2Code),
+      )
+      .sort((a, b) => a.startTimeUtc.localeCompare(b.startTimeUtc));
+  }, [schedule]);
+  const featured = live[0] || next[0];
+  if (!featured) return null;
+  const rest = (live.length > 1 ? live.slice(1) : []).concat(next.filter((m) => m.matchId !== featured.matchId)).slice(0, 3);
+  return (
+    <section className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Eyebrow>{live.length > 0 ? tn("{n} match live now", "{n} matches live now", live.length) : tl("Next up")}</Eyebrow>
+        {onSelectTab && (
+          <button type="button" onClick={() => onSelectTab("schedule")} className="text-xs font-semibold text-rw-teal hover:underline">
+            {tl("Full schedule, results and standings →")}
+          </button>
+        )}
+      </div>
+      <FeaturedMatch m={featured} live={live.includes(featured)} schedule={schedule} settings={settings} onOpenUrl={onOpenUrl} onSelectTab={onSelectTab} onSelectTeam={onSelectTeam} />
+      {rest.length > 0 && <UpNextTable matches={rest} schedule={schedule} settings={settings} onOpenUrl={onOpenUrl} onSelectTeam={onSelectTeam} timeOf={formatMatchTime} />}
+    </section>
+  );
+};
+
+const FeaturedMatch: React.FC<{
+  m: Match;
+  live: boolean;
+  schedule: Match[];
+  settings: AppSettings;
+  onOpenUrl: (url: string) => void;
+  onSelectTab?: (tab: TabKey) => void;
+  onSelectTeam?: (code: string, name?: string) => void;
+}> = ({ m, live, schedule, settings, onOpenUrl, onSelectTab, onSelectTeam }) => {
+  const h2h = computeHeadToHead(m.team1Code, m.team2Code, schedule, m.matchId);
+  const streams = getLeagueBroadcastStreams(m.leagueSlug, m.streamUrl);
+  const showScore = live && !settings.spoilerMode;
+  const team = (code: string, name: string, image: string | undefined, right: boolean) => {
+    const open = () => onSelectTeam?.(code, name);
+    const followed = settings.followedTeams.includes(code);
+    return (
+      <div className={`flex items-center gap-3 min-w-0 ${right ? "flex-row-reverse text-right" : ""}`}>
+        {image ? (
+          <img {...riotImg(image, 160)} alt="" className="w-12 h-12 sm:w-16 sm:h-16 object-contain shrink-0 cursor-pointer drop-shadow-[0_8px_16px_rgba(0,0,0,0.5)]" onClick={open} />
+        ) : (
+          <div {...clickable(open)} className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-rw-bg border border-rw-border flex items-center justify-center font-num font-bold text-rw-accent shrink-0 cursor-pointer">
+            {code.slice(0, 3)}
+          </div>
+        )}
+        <div className="min-w-0">
+          {/* phones: the short code (TES), wider screens: the full name */}
+          <div {...clickable(open)} className="font-head text-xl sm:text-2xl font-bold text-rw-text leading-tight hover:text-rw-accent cursor-pointer truncate" title={tl("View {team} roster", { team: name })}>
+            <span className="sm:hidden">{code}</span>
+            <span className="hidden sm:inline">{name}</span>
+          </div>
+          <div className={`flex items-center gap-1.5 text-xs text-rw-sub font-num ${right ? "justify-end" : ""}`}>
+            <span className="hidden sm:inline">{code}</span>
+            {followed && <Star className="w-3 h-3 fill-rw-accent text-rw-accent" aria-label={tl("Followed")} />}
+          </div>
+        </div>
+      </div>
+    );
+  };
+  return (
+    <section className={`${hot} p-4 sm:p-5 space-y-4`}>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-xs">
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          {live ? (
+            <span className="flex items-center gap-1.5 font-head font-semibold uppercase tracking-wider text-rw-red">
+              <span className="w-2 h-2 rounded-full bg-rw-red animate-pulse" />
+              {tl("Live now")}
+            </span>
+          ) : (
+            <span className="font-head font-semibold uppercase tracking-wider text-rw-accent">{formatMatchTime(m.startTimeUtc)}</span>
+          )}
+          <span className="text-rw-muted">
+            {m.leagueName}
+            {m.blockName ? ` · ${m.blockName}` : ""} · {tl("Best of {n}", { n: m.bestOf })}
+          </span>
+        </span>
+        {h2h && <H2HMeter team1Code={m.team1Code} team2Code={m.team2Code} h2h={h2h} size="sm" matchId={m.matchId} />}
+      </div>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 sm:gap-6">
+        {team(m.team1Code, m.team1Name, m.team1Image, false)}
+        <div className="text-center">
+          {showScore ? (
+            <span className="font-num text-3xl sm:text-4xl font-bold text-rw-text tabular-nums">
+              {m.team1Score} – {m.team2Score}
+            </span>
+          ) : (
+            <span className="text-xs font-bold text-rw-sub bg-rw-bg border border-rw-border px-2.5 py-1 rounded-full uppercase tracking-widest font-num">{tl("VS")}</span>
+          )}
+        </div>
+        {team(m.team2Code, m.team2Name, m.team2Image, true)}
+      </div>
+      <WinChanceLine match={m} />
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-3 border-t border-rw-border/60">
+        <div className="flex flex-wrap items-center gap-2">
+          {live && onSelectTab && (
+            <button type="button" onClick={() => onSelectTab("live")} className="px-3 py-1.5 rounded-lg bg-rw-accent hover:bg-rw-text text-rw-bg font-bold text-xs transition-colors">
+              {tl("Live stats")}
+            </button>
+          )}
+          <MatchPrepButton match={m} />
+          <MatchOverviewButton match={m} />
+          <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} />
+          <ShareMatchButton match={m} className="border border-rw-border bg-rw-bg p-1.5" />
+        </div>
+        {streams.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted mr-1">{tl("Watch")}</span>
+            {streams.map((s, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => onOpenUrl(s.url)}
+                className={`px-2.5 py-1 rounded-lg border text-xs font-semibold transition-colors ${
+                  s.badge === "LIVE FEED" ? "bg-rw-red/15 border-rw-red/60 text-rw-text" : "border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+                }`}
+                title={tl("Open {name} ({url})", { name: s.name, url: s.url })}
+              >
+                {s.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};
+
+// ── The event that is on ──────────────────────────────────────────────────
+
+const EventNow: React.FC<{ intl?: Match; schedule?: Match[]; settings?: AppSettings; now?: EventListItem[]; onSelectTab?: (tab: TabKey) => void }> = ({
+  intl,
+  schedule,
+  settings,
+  now,
+  onSelectTab,
+}) => {
+  const ev = intl ? INTL_EVENTS[intl.leagueSlug] : undefined;
+  const year = intl?.startTimeUtc.slice(0, 4) || "";
+  const running = (now || []).filter((e) => e.sp != null || e.g);
+  const title = ev ? `${tc("event", ev.name)} ${year}` : tl("Happening now");
+  const open = () => {
+    if (ev) navigateHub({ kind: ev.kind });
+    else navigateHub({ kind: "tournaments" });
+  };
+  const line = (e: EventListItem) =>
+    [e.sp != null ? tn("{n} series played", "{n} series played", e.sp) : null, e.g ? tn("{n} game", "{n} games", e.g) : null, e.m ? tl("{t} average game", { t: mmss(e.m) }) : null]
+      .filter(Boolean)
+      .join(" · ");
+  return (
+    <section className={`${ev ? hot : card} flex flex-col gap-3`}>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <Eyebrow>{ev ? tl("Happening now") : tl("Tournaments")}</Eyebrow>
+          <h2 className="font-head text-2xl font-bold text-rw-text leading-tight mt-1">{title}</h2>
+          {ev && running[0] && <p className="text-[11px] text-rw-muted font-num">{line(running[0])}</p>}
+        </div>
+        {ev && (
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={open} className="px-3 py-1.5 rounded-lg bg-rw-accent hover:bg-rw-text text-rw-bg font-bold text-xs transition-colors">
+              {ev.kind === "worlds" ? tl("Swiss and bracket pickers") : tl("Bracket picker")}
+            </button>
+            <button type="button" onClick={open} className="px-3 py-1.5 rounded-lg border border-rw-border hover:border-rw-accent/60 text-rw-text font-semibold text-xs transition-colors">
+              {tl("Stats and records")}
+            </button>
+          </div>
+        )}
+      </div>
+      {/* the Swiss table while that stage is on; the event's latest results (spoiler-safe) */}
+      {ev && schedule && !settings?.spoilerMode && <SwissStandings schedule={schedule} onOpen={open} narrow />}
+      {ev && intl && schedule && settings && (
+        <LatestResults oneEvent schedule={schedule.filter((m) => m.leagueSlug === intl.leagueSlug)} settings={settings} onSelectTab={(t) => onSelectTab?.(t)} />
+      )}
+      {!ev && (
+        <ul className="text-xs space-y-1.5">
+          {running.length === 0 && <li className="text-rw-muted">{tl("No tournament is running this week.")}</li>}
+          {running.slice(0, 5).map((e) => (
+            <li key={e.u} className="min-w-0">
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <EventLink name={e.n} u={e.u} />
+                <span className="text-rw-muted shrink-0">
+                  {fmtDate(e.st, false)} – {fmtDate(e.en, false)}
+                </span>
+              </div>
+              <div className="text-[11px] text-rw-muted font-num">{line(e)}</div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {ev && intl && (
+        <p className="text-[11px] text-rw-sub mt-auto">
+          {ev.kind === "worlds"
+            ? tl("Pick the Swiss stage and the bracket, see every team's chances, and the standout stats so far.")
+            : tl("Pick the bracket, see every team's chances, and the standout stats so far.")}
+        </p>
+      )}
+    </section>
+  );
+};
+
+const LatestTournaments: React.FC<{ latest: EventListItem[] }> = ({ latest }) => (
+  <Section title={tl("Latest tournaments")}>
+    <ul className="text-xs space-y-1.5">
+      {latest.slice(0, 6).map((e) => (
+        <LatestRow key={e.u} e={e} />
+      ))}
+    </ul>
+  </Section>
+);
+
+// ── Teams and champions ───────────────────────────────────────────────────
+
+/** The highest-rated active teams in the top leagues (the power rankings), with their 30-day change when ranked. */
+const TopTeams: React.FC<{ rows?: RatingRow[]; n: number; ranked?: boolean }> = ({ rows, n, ranked }) => {
+  const top = useMemo(() => (rows || []).filter((t) => t[9] === 1).sort((a, b) => b[5] - a[5]).slice(0, n), [rows, n]);
+  if (!top.length) return <p className="text-xs text-rw-muted">…</p>;
+  return (
+    <ol className="text-xs space-y-1.5">
+      {top.map((t, i) => (
+        <li key={t[0]} className="flex items-center gap-2 min-w-0">
+          {ranked && <span className="w-3 text-rw-muted font-num tabular-nums shrink-0">{i + 1}</span>}
+          <TeamLogo name={t[1]} code={t[2]} size={22} />
+          <TeamLink name={t[1]} u={t[0]} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
+          <span className="ml-auto flex items-center gap-2 shrink-0">
+            {!ranked && <span className="text-rw-muted">{t[10] || t[3]}</span>}
+            <span className="font-num tabular-nums font-bold text-rw-text">{Math.round(t[5])}</span>
+            {ranked && t[6] != null && (
+              <span className={`font-num tabular-nums text-[11px] w-9 text-right ${t[6] >= 0 ? "text-rw-accent" : "text-rw-muted"}`}>
+                {t[6] >= 0 ? "+" : ""}
+                {Math.round(t[6])}
+              </span>
+            )}
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+};
+
+/** The newest patch's biggest movers, for the Champions tile. */
+const PatchMovers: React.FC = () => {
+  const state = useLoad(loadPatches, []);
+  const p = (state.data || []).find((x) => (x.up && x.up.length) || (x.down && x.down.length));
+  const before = p ? (state.data || []).find((x) => x.p === p.prev) : undefined;
+  const rows: { m: PatchMove; up: boolean }[] = p ? [...(p.up || []).slice(0, 2).map((m) => ({ m, up: true })), ...(p.down || []).slice(0, 1).map((m) => ({ m, up: false }))] : [];
+  return (
+    <>
+      <ul className="text-xs space-y-1.5">
+        {rows.map(({ m, up }) => {
+          const [c, now, was] = m;
+          const wr = winChange(m, before);
+          return (
+            <li key={c} className="flex items-center gap-2 min-w-0">
+              <ChampIcon name={c} size={22} />
+              <HubLink to={{ kind: "champ", slug: prettySlug(c) }} className="font-semibold text-rw-text hover:text-rw-accent truncate">
+                {champName(c)}
+              </HubLink>
+              <span className={`ml-auto font-num tabular-nums text-[11px] whitespace-nowrap ${up ? "text-rw-accent" : "text-rw-muted"}`}>
+                {up ? "▲" : "▼"} {Math.round(Math.abs(now - was) * 100)}%{wr.now != null ? ` · ${Math.round(wr.now * 100)}% ${tl("WR")}` : ""}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <HubLink to={{ kind: "champions" }} className={more}>{p ? tl("Patch {patch}, tier list, counters, items →", { patch: p.p }) : tl("Pick, ban and win rates →")}</HubLink>
+    </>
+  );
+};
+
+/** A patch mover's win rate when picked, and its change against the patch before (null when either is unknown). */
+function winChange(m: PatchMove, before: PatchRow | undefined): { now: number | null; change: number | null } {
+  const [c, , , wins, picks] = m;
+  const now = picks ? wins / picks : null;
+  const b = before?.c.find((x) => x[0] === c);
+  const was = b && b[1] ? b[3] / b[1] : null;
+  return { now, change: now != null && was != null && picks >= 5 && (b?.[1] || 0) >= 5 ? now - was : null };
+}
+
+// ── Leagues, recent pages, players of the month ───────────────────────────
 
 const INTL_CHIPS: { to: HubRoute; label: string; icon: React.ReactNode }[] = [
   { to: { kind: "worlds" }, label: tk("Worlds"), icon: <Globe className="w-3 h-3" /> },
@@ -193,34 +569,8 @@ const LeagueChips: React.FC = () => {
   );
 };
 
-/** The next matches on the schedule, with each side's chance, form and the Match prep button (the Live tab's table). */
-const NextMatches: React.FC<{ schedule: Match[]; settings: AppSettings; onOpenUrl: (url: string) => void }> = ({ schedule, settings, onOpenUrl }) => {
-  const next = useMemo(() => {
-    const now = Date.now();
-    return schedule
-      .filter(
-        (m) =>
-          m.state !== "completed" &&
-          Date.parse(m.startTimeUtc) > now - 3 * 60 * 60 * 1000 &&
-          m.team1Code &&
-          m.team2Code &&
-          !/^tbd$/i.test(m.team1Code) &&
-          !/^tbd$/i.test(m.team2Code),
-      )
-      .sort((a, b) => a.startTimeUtc.localeCompare(b.startTimeUtc))
-      .slice(0, 5);
-  }, [schedule]);
-  if (!next.length) return null;
-  return (
-    <section className="space-y-2">
-      <h2 className={sectionTitle}>{tl("Up Next")}</h2>
-      <UpNextTable matches={next} schedule={schedule} settings={settings} onOpenUrl={onOpenUrl} timeOf={formatMatchTime} />
-    </section>
-  );
-};
-
 /** The best-rated players of the last 30 days in the top leagues and international events (hub.py: home.json potm). */
-const PlayersOfTheMonth: React.FC<{ rows: NonNullable<HubHomeData["potm"]>; from?: string }> = ({ rows, from }) => {
+const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").HubHome["potm"]>; from?: string }> = ({ rows, from }) => {
   const [hidden, reveal] = useHidden("potm", new Date().toISOString().slice(0, 10));
   return (
     <Section
@@ -231,17 +581,16 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<HubHomeData["potm"]>; from
         <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
       ) : (
         <>
-          <ol className="grid gap-x-6 gap-y-1.5 text-xs sm:grid-cols-2 xl:grid-cols-3">
-            {rows.map((p, i) => (
-              <li key={p.u || p.n} className="flex items-center justify-between gap-2 min-w-0">
-                <span className="flex items-center gap-1.5 min-w-0">
-                  <span className="w-4 text-right text-rw-muted tabular-nums shrink-0">{i + 1}.</span>
-                  <span className="truncate min-w-0">
-                    <PlayerLink name={p.n} u={p.u} />
-                    <span className="text-rw-muted"> · {[p.r ? roleName(p.r) : "", p.t].filter(Boolean).join(" · ")}</span>
-                  </span>
+          <ol className="space-y-1.5 text-xs">
+            {rows.slice(0, 6).map((p, i) => (
+              <li key={p.u || p.n} className="flex items-center gap-2 min-w-0">
+                <span className="w-3 text-right text-rw-muted tabular-nums shrink-0">{i + 1}</span>
+                <PlayerPhoto name={p.n} team={p.t} slug={p.u || undefined} size={26} />
+                <span className="truncate min-w-0">
+                  <PlayerLink name={p.n} u={p.u} />
+                  <span className="text-rw-muted"> · {[p.r ? roleName(p.r) : "", p.t].filter(Boolean).join(" · ")}</span>
                 </span>
-                <span className="flex items-center gap-2 shrink-0">
+                <span className="ml-auto flex items-center gap-2 shrink-0">
                   <span className="text-[10px] text-rw-muted tabular-nums">{tn("{n} game", "{n} games", p.g)}</span>
                   <RatingBadge v={p.rt} />
                 </span>
@@ -255,19 +604,6 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<HubHomeData["potm"]>; from
       )}
     </Section>
   );
-};
-
-/** The year's busiest players: games, wins, win rate, KDA and team, sortable. */
-const BusiestTable: React.FC<{ rows: HubHomeData["busiest"] }> = ({ rows }) => {
-  type Row = HubHomeData["busiest"][number];
-  const columns: Column<Row>[] = [
-    { key: "n", label: tl("Player"), value: (p) => p.n, render: (p) => <PlayerLink name={p.n} u={p.u} /> },
-    { key: "t", label: tl("Team"), value: (p) => p.t || "", render: (p) => (p.t ? <TeamLink name={p.t} u={p.tu} className="text-rw-sub hover:text-rw-accent" /> : <span className="text-rw-muted">–</span>) },
-    { key: "g", label: tl("Games"), value: (p) => p.g, className: "tabular-nums" },
-    { key: "wr", label: tl("Win %"), title: tl("Wins and games this year"), value: (p) => (p.g ? p.w / p.g : null), render: (p) => (p.g ? `${Math.round((p.w / p.g) * 100)}%` : "–"), className: "tabular-nums" },
-    { key: "kda", label: "KDA", value: (p) => p.kda, className: "tabular-nums text-rw-sub" },
-  ];
-  return <SortTable rows={rows} columns={columns} initial={{ key: "g", desc: true }} rowKey={(p, i) => `${p.n}-${i}`} />;
 };
 
 const chipClass = "px-2 py-0.5 rounded-full border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-line max-w-[14rem] truncate";
@@ -305,63 +641,6 @@ const MostViewed: React.FC = () => {
   );
 };
 const hubPathOf = (r: HubRoute) => JSON.stringify(r);
-
-/** One line on the newest patch: the champions that rose and fell the most against the patch before. */
-const PatchChanges: React.FC = () => {
-  const state = useLoad(loadPatches, []);
-  const p = (state.data || []).find((x) => (x.up && x.up.length) || (x.down && x.down.length));
-  if (!p) return null;
-  const before = (state.data || []).find((x) => x.p === p.prev);
-  const list = (moves: NonNullable<typeof p.up>, up: boolean) =>
-    moves.slice(0, 4).map((m) => {
-      const [c, now, was] = m;
-      const wr = winChange(m, before);
-      return (
-        <span key={c} className="inline-flex items-center gap-1 mr-3 whitespace-nowrap">
-          <ChampIcon name={c} size={16} />
-          <span className="text-rw-text">{champName(c)}</span>
-          <span className={`tabular-nums ${up ? "text-rw-teal" : "text-rw-red"}`}>
-            {up ? "▲" : "▼"} {Math.round(Math.abs(now - was) * 100)}%
-          </span>
-          <span className="font-mono tabular-nums text-[10px] text-rw-muted" title={tl("Win rate on this patch (change against {prev}) and games picked", { prev: p.prev || "" })}>
-            {wr.now != null ? `${tl("WR")} ${Math.round(wr.now * 100)}%` : ""}
-            {wr.change != null ? ` (${wr.change > 0 ? "+" : wr.change < 0 ? "−" : "±"}${Math.abs(Math.round(wr.change * 100))})` : ""}
-            {` · ${tn("{n} game", "{n} games", m[4] || 0)}`}
-          </span>
-        </span>
-      );
-    });
-  return (
-    <Section title={tl("What changed on patch {patch}", { patch: p.p })} right={<HubLink to={{ kind: "patches" }} className="text-[11px] text-rw-teal hover:underline">{tl("Patches")}</HubLink>}>
-      <div className="text-xs space-y-1">
-        {p.up && p.up.length > 0 && (
-          <div className="flex flex-wrap items-center gap-y-1">
-            <span className="text-rw-muted mr-2">{tl("Up")}</span>
-            {list(p.up, true)}
-          </div>
-        )}
-        {p.down && p.down.length > 0 && (
-          <div className="flex flex-wrap items-center gap-y-1">
-            <span className="text-rw-muted mr-2">{tl("Down")}</span>
-            {list(p.down, false)}
-          </div>
-        )}
-        <p className="text-[10px] text-rw-muted">
-          {tl("Pick-or-ban rate against patch {prev}", { prev: p.prev || "" })} · {tl("WR: win rate when picked (change in points against {prev}); games: times picked on this patch.", { prev: p.prev || "" })}
-        </p>
-      </div>
-    </Section>
-  );
-};
-
-/** A patch mover's win rate when picked, and its change against the patch before (null when either is unknown). */
-function winChange(m: PatchMove, before: PatchRow | undefined): { now: number | null; change: number | null } {
-  const [c, , , wins, picks] = m;
-  const now = picks ? wins / picks : null;
-  const b = before?.c.find((x) => x[0] === c);
-  const was = b && b[1] ? b[3] / b[1] : null;
-  return { now, change: now != null && was != null && picks >= 5 && (b?.[1] || 0) >= 5 ? now - was : null };
-}
 
 const LatestRow: React.FC<{ e: EventListItem }> = ({ e }) => {
   const [hidden, reveal] = useHidden(`event:${e.u}`, e.en);

@@ -136,11 +136,11 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px]">
           {chance != null && (
             <span className="flex items-center gap-1.5 w-48 max-w-full" title={tl("Chance to win the series, from the power rankings (every pro game since 2011)")}>
-              <span className="font-mono tabular-nums text-rw-teal w-8 text-right">{chance}%</span>
-              <span className="flex-1 h-1.5 rounded-sm overflow-hidden bg-rw-red/70" aria-hidden="true">
-                <span className="block h-full bg-rw-teal" style={{ width: `${chance}%` }} />
+              <span className="font-mono tabular-nums text-rw-side-a w-8 text-right">{chance}%</span>
+              <span className="flex-1 h-1.5 rounded-sm overflow-hidden bg-rw-side-b/70" aria-hidden="true">
+                <span className="block h-full bg-rw-side-a" style={{ width: `${chance}%` }} />
               </span>
-              <span className="font-mono tabular-nums text-rw-red w-8">{100 - chance}%</span>
+              <span className="font-mono tabular-nums text-rw-side-b w-8">{100 - chance}%</span>
             </span>
           )}
           {h2h && (

@@ -51,17 +51,18 @@ import { ArrowDownToLine, WifiOff, AlertTriangle, X } from "lucide-react";
 import { ShortcutsDialog } from "./components/ShortcutsDialog";
 import { countSecondPage, countVisit } from "./usage";
 import { TeamBubbles } from "./components/TeamBubbles";
-import { IS_DESKTOP, IS_WEB, matchIdFromHash } from "./platform";
+import { DESKTOP_DOWNLOAD_URL, IS_DESKTOP, IS_WEB, IS_WINDOWS_BROWSER, matchIdFromHash } from "./platform";
 import { clearMovedNote, movedHere } from "./move";
-import { reconcileLiveAndSchedule, playKickoffChime, applyH2HData, loadBundledH2H } from "./helpers";
+import { reconcileLiveAndSchedule, playKickoffChime, applyH2HData, loadBundledH2H, streamPhase } from "./helpers";
 import { OPEN_H2H_EVENT, OpenH2HDetail } from "./components/H2HMeter";
 import { Header } from "./components/Header";
-import { Navigation, TabKey } from "./components/Navigation";
-import { LiveView, intlMatchNow } from "./components/views/LiveView";
+import { MATCH_TABS, TabKey } from "./components/Navigation";
+import { MatchesBar } from "./components/MatchesBar";
+import { LiveView } from "./components/views/LiveView";
 import { tl, locale } from "./i18n";
 import { statsUpdatedAt } from "./stats";
 import { syncPush } from "./push";
-import { STARTED_ON_HUB, navigateHub, onHubRoute, syncFromLocation, syncTabAddress, tabOfPath, BASE } from "./hub/route";
+import { STARTED_ON_HUB, navigateHub, onHubRoute, syncFromLocation, syncTabAddress, tabAddress, tabOfPath, BASE } from "./hub/route";
 import { dedication } from "./dedication";
 import { lazyPart } from "./lazyPart";
 import { PartBoundary } from "./components/PartBoundary";
@@ -111,13 +112,22 @@ export default function App() {
   // Initial tab. The desktop app's very first launch opens the Watchlist so people pick their
   // teams; the public web page opens on live scores, so a first-time visitor sees matches at once.
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
+    // the site's home (riftwise.gg/) is the stats front page, unless the visitor picked another start page in Settings
+    // (or an old link asks for a tab: /#schedule, /#live); the address then becomes that tab's own (/schedule)
+    // Any other hash (#match/<id>, #link=, #import=) is left alone: those flows read it themselves later on.
+    const h = IS_WEB ? window.location.hash : "";
+    if (IS_WEB && window.location.pathname === BASE && (!h || h === "#schedule" || h === "#live")) {
+      const start = (h ? h.slice(1) : loadSettings().defaultTab) as TabKey;
+      if (start && start !== "stats") {
+        window.history.replaceState({ tab: start }, "", tabAddress(start));
+        return start;
+      }
+    }
     // Opened at a stats page address (riftwise.gg/player/faker): show it
     if (STARTED_ON_HUB) return "stats";
-    // a tab's own address (riftwise.gg/schedule, /results, /news...) opens that tab
-    const fromPath = IS_WEB && window.location.pathname !== BASE ? (tabOfPath() as TabKey | null) : null;
+    // a tab's own address (riftwise.gg/matches, /schedule, /results, /news...) opens that tab
+    const fromPath = IS_WEB ? (tabOfPath() as TabKey | null) : null;
     if (fromPath) return fromPath;
-    // riftwise.gg/#schedule or /#live (the 404 page links there) opens that tab
-    if (IS_WEB && (window.location.hash === "#schedule" || window.location.hash === "#live")) return window.location.hash.slice(1) as TabKey;
     try {
       const hasLaunched = localStorage.getItem("riftwatch_has_launched");
       if (!hasLaunched) {
@@ -160,8 +170,8 @@ export default function App() {
         setShortcutsOpen(true);
         return;
       }
-      // the header's own search box when it has room for one, else the search under the header
-      const box = document.querySelector<HTMLInputElement>('[data-header-search="box"] input');
+      // the front page's search, else the header's own box when it has room for one, else the search under the header
+      const box = document.querySelector<HTMLInputElement>('[data-search-main] input, [data-header-search="box"] input');
       if (box) box.focus();
       else setSearchOpen(true);
     };
@@ -192,22 +202,6 @@ export default function App() {
     clearMovedNote();
     setMoveNote(false);
   };
-  const [hubTip, setHubTip] = useState(() => {
-    try {
-      return localStorage.getItem("riftwatch_tip_hub_v1") !== "1";
-    } catch {
-      return false;
-    }
-  });
-  const closeHubTip = () => {
-    setHubTip(false);
-    try {
-      localStorage.setItem("riftwatch_tip_hub_v1", "1");
-    } catch {
-      /* fine */
-    }
-  };
-
   // Opening any stats page (from the search, a link, a team card) brings up the Stats tab;
   // the browser's Back / Forward move between pages and tabs.
   useEffect(() => {
@@ -901,7 +895,7 @@ export default function App() {
   return (
     <div className="rw-app isolate flex flex-col h-screen w-screen bg-rw-bg text-rw-text overflow-hidden select-none">
       {/* the floating team logos, behind everything (isolate keeps them above the app's background) */}
-      <TeamBubbles matches={schedule} on={settings.bubbles !== false && !settings.compactMode} />
+      <TeamBubbles matches={schedule} on={settings.bubbles === true && !settings.compactMode} />
       {/* Keyboard users: the first Tab offers a jump past the header and tabs straight to the page */}
       <a
         href="#rw-main"
@@ -922,10 +916,10 @@ export default function App() {
         streamStatus={streamStatus}
         onRefresh={() => refreshData(true)}
         isRefreshing={isRefreshing}
+        activeTab={activeTab}
         onSelectTab={selectTab}
         onOpenUrl={handleOpenUrl}
         updateInfo={updateInfo}
-        onInstall={installPrompt ? () => installPrompt.prompt?.() : undefined}
         liveShows={liveShows}
         onSearch={() => setSearchOpen((v) => !v)}
       />
@@ -943,8 +937,10 @@ export default function App() {
         </div>
       )}
 
-      {/* Tab Navigation */}
-      <Navigation activeTab={activeTab} onSelectTab={selectTab} liveCount={liveMatches.length} />
+      {/* the Matches area's own row: live, schedule and results, your teams, the 24/7 stream */}
+      {MATCH_TABS.includes(activeTab) && (
+        <MatchesBar activeTab={activeTab} onSelectTab={selectTab} liveCount={liveMatches.length} streamLive={streamPhase(streamEvents, streamStatus).kind === "airing"} />
+      )}
 
       {/* Data outage banner (a paused schedule says the same with its time: then only that one) */}
       {outage && !(outage === "riot-down" && schedulePaused !== null) && (
@@ -1035,33 +1031,6 @@ export default function App() {
         </div>
       )}
 
-      {/* while Worlds/MSI/First Stand is on, the Live tab's event banner points at the stats instead */}
-      {hubTip && !showWelcome && !renameNote && !moveNote && activeTab !== "stats" && !intlMatchNow(schedule) && (
-        <div className="bg-rw-surface border-b border-rw-accent/40 px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs" role="status">
-          <div className="flex-1 min-w-[14rem] text-rw-sub leading-relaxed">
-            <strong className="text-rw-accent">{tl("New: Pro Stats for every game since 2011.")}</strong>{" "}
-            {tl("Search any team, player, tournament or champion; every match has its draft, builds and a link to watch it.")}{" "}
-            <span className="text-rw-muted hidden sm:inline">
-              {tl("Also: group tables and brackets are under Schedule → Standings & Brackets, and tapping the head-to-head bar on a match shows the all-time record.")}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => {
-                closeHubTip();
-                navigateHub({ kind: "home" });
-              }}
-              className="px-3 py-1.5 rounded-md bg-rw-accent hover:bg-rw-text text-rw-bg font-bold"
-            >
-              {tl("Open Pro Stats")}
-            </button>
-            <button onClick={closeHubTip} aria-label={tl("Close")} className="p-1 text-rw-muted hover:text-rw-text">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Main Content View Container */}
       <main id="rw-main" tabIndex={-1} className="flex-1 overflow-hidden relative outline-none">
         {activeTab === "live" && (
@@ -1120,7 +1089,15 @@ export default function App() {
         {activeTab === "stats" && (
           <PartBoundary>
             <React.Suspense fallback={lazyFallback}>
-              <StatsView settings={settings} onOpenUrl={handleOpenUrl} schedule={schedule} catalog={catalog} />
+              <StatsView
+                settings={settings}
+                onOpenUrl={handleOpenUrl}
+                schedule={schedule}
+                liveMatches={liveMatches}
+                catalog={catalog}
+                onSelectTab={selectTab}
+                onSelectTeam={openTeam}
+              />
             </React.Suspense>
           </PartBoundary>
         )}
@@ -1225,6 +1202,26 @@ export default function App() {
           )}
           <button type="button" onClick={() => setShortcutsOpen(true)} className="hidden md:inline hover:text-rw-accent whitespace-nowrap" title={tl("Keyboard shortcuts")}>
             {tl("Shortcuts")} <kbd className="font-num">?</kbd>
+          </button>
+          {/* the pages that left the top bar: news sources, the 24/7 stream, the Windows app, support */}
+          <button type="button" onClick={() => selectTab("news")} className={`hover:text-rw-accent whitespace-nowrap hidden sm:inline ${activeTab === "news" ? "text-rw-accent" : ""}`}>
+            {tl("News")}
+          </button>
+          <button type="button" onClick={() => selectTab("stream")} className={`hover:text-rw-accent whitespace-nowrap hidden sm:inline ${activeTab === "stream" ? "text-rw-accent" : ""}`}>
+            {tl("24/7 stream")}
+          </button>
+          {IS_WEB && IS_WINDOWS_BROWSER && (
+            <a href={DESKTOP_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" className="hover:text-rw-accent whitespace-nowrap hidden md:inline" title={tl("Download RiftWise for Windows (free, about 4 MB, no installer)")}>
+              {tl("Windows app")}
+            </a>
+          )}
+          {installPrompt && (
+            <button type="button" onClick={() => installPrompt.prompt?.()} className="hover:text-rw-accent whitespace-nowrap hidden md:inline" title={tl("Add RiftWise to your home screen or desktop")}>
+              {tl("Install")}
+            </button>
+          )}
+          <button type="button" onClick={() => handleOpenUrl("https://ko-fi.com/monocle")} className="hover:text-rw-accent whitespace-nowrap hidden md:inline" title={tl("Support RiftWise development on Ko-fi")}>
+            {tl("Support")}
           </button>
           {/* Narrow screens: make room for the spoiler notice so the footer stays on one line */}
           <a

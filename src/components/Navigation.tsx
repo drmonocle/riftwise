@@ -1,60 +1,82 @@
+/**
+ * The site's one top bar: Matches (live scores, the schedule, your teams, the 24/7 stream) and the five stats groups
+ * (menu.tsx). In the header on wide screens, a sideways row under it on phones. The hub pages open through the
+ * router (route.ts); the app's own tabs (settings, news...) are reached from the header's buttons and the footer.
+ */
 import React from "react";
-import { Radio, Calendar, Flame, Star, Newspaper, Settings, BarChart3 } from "lucide-react";
-import { tl, tc } from "../i18n";
+import { tl } from "../i18n";
+import { IS_WEB } from "../platform";
+import { HubRoute, hubPath, navigateHub, useHubRoute } from "../hub/route";
+import { NAV_GROUP } from "./navGroups";
 
 export type TabKey = "live" | "schedule" | "stats" | "stream" | "watchlist" | "news" | "settings";
 
-interface NavigationProps {
+/** the app tabs that make up the Matches area */
+export const MATCH_TABS: TabKey[] = ["live", "schedule", "watchlist", "stream"];
+
+interface Item {
+  key: string;
+  label: string;
+  /** a stats group's first page */
+  route?: HubRoute;
+  /** an app tab instead */
+  tab?: TabKey;
+  on: boolean;
+}
+
+export const Navigation: React.FC<{
   activeTab: TabKey;
   onSelectTab: (tab: TabKey) => void;
   liveCount: number;
-}
-
-export const Navigation: React.FC<NavigationProps> = ({ activeTab, onSelectTab, liveCount }) => {
-  // short = the label under the icon on phones, where all seven tabs must fit on one row
-  const tabs: { key: TabKey; label: string; short: string; icon: React.ReactNode; badge?: number }[] = [
-    {
-      key: "live",
-      label: tl("Live Matches"),
-      short: tc("short tab", "Live"),
-      icon: <Flame className="w-4 h-4" />,
-      badge: liveCount > 0 ? liveCount : undefined,
-    },
-    { key: "schedule", label: tl("Schedule"), short: tc("short tab", "Games"), icon: <Calendar className="w-4 h-4" /> },
-    { key: "stats", label: tl("Stats"), short: tc("short tab", "Stats"), icon: <BarChart3 className="w-4 h-4" /> },
-    { key: "stream", label: tl("24/7 Stream"), short: tc("short tab", "24/7"), icon: <Radio className="w-4 h-4" /> },
-    { key: "watchlist", label: tl("Watchlist"), short: tc("short tab", "Follow"), icon: <Star className="w-4 h-4" /> },
-    { key: "news", label: tc("short tab", "News"), short: tc("short tab", "News"), icon: <Newspaper className="w-4 h-4" /> },
-    { key: "settings", label: tl("Settings"), short: tc("short tab", "Settings"), icon: <Settings className="w-4 h-4" /> },
+  /** the phone row: chips that scroll sideways */
+  phone?: boolean;
+}> = ({ activeTab, onSelectTab, liveCount, phone }) => {
+  const route = useHubRoute();
+  const group = activeTab === "stats" ? NAV_GROUP[route.kind] : undefined;
+  const items: Item[] = [
+    { key: "matches", label: tl("Matches"), tab: "live", on: MATCH_TABS.includes(activeTab) },
+    { key: "tournaments", label: tl("Tournaments"), route: { kind: "tournaments" }, on: group === "tournaments" },
+    { key: "teams", label: tl("Teams"), route: { kind: "teams" }, on: group === "teams" },
+    { key: "players", label: tl("Players"), route: { kind: "players" }, on: group === "players" },
+    { key: "champions", label: tl("Champions"), route: { kind: "champions" }, on: group === "champions" },
+    { key: "tools", label: tl("Tools"), route: { kind: "prep" }, on: group === "tools" },
   ];
-
+  const cls = (on: boolean) =>
+    phone
+      ? `flex items-center gap-1.5 h-9 px-3 rounded-lg border text-xs font-semibold whitespace-nowrap shrink-0 transition-colors ${
+          on ? "border-rw-accent bg-rw-accent/10 text-rw-text" : "border-rw-border bg-rw-surface text-rw-sub hover:text-rw-text hover:border-rw-accent/50"
+        }`
+      : `flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors ${
+          on ? "text-rw-text bg-rw-raised rw-tab-active" : "text-rw-sub hover:text-rw-text hover:bg-rw-raised/60"
+        }`;
   return (
-    <nav className="rw-nav border-b border-rw-border sm:px-2 tab:px-4 flex items-stretch sm:items-center sm:gap-1 select-none sm:overflow-x-auto">
-      {tabs.map((tab) => {
-        const isActive = activeTab === tab.key;
-        return (
-          <button
-            key={tab.key}
-            onClick={() => onSelectTab(tab.key)}
-            aria-label={tab.label}
-            className={`flex flex-1 sm:flex-none flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 px-0.5 sm:px-3 tab:px-4 py-1.5 sm:py-2.5 text-[10px] sm:text-xs font-semibold sm:tracking-wide whitespace-nowrap min-w-0 border-b-2 transition-all relative ${
-              isActive
-                ? "border-transparent text-rw-accent rw-tab-active"
-                : "border-transparent text-rw-muted hover:text-rw-text hover:bg-rw-surface/50"
-            }`}
+    <nav className={`flex items-center ${phone ? "gap-1.5 overflow-x-auto [scrollbar-width:none]" : "gap-0.5"}`} aria-label={tl("Main")}>
+      {items.map((it) =>
+        it.route ? (
+          <a
+            key={it.key}
+            href={IS_WEB ? hubPath(it.route) : "#"}
+            onClick={(e) => {
+              e.preventDefault();
+              navigateHub(it.route!);
+            }}
+            aria-current={it.on ? "page" : undefined}
+            className={cls(it.on)}
           >
-            {tab.icon}
-            <span className="hidden tab:inline">{tab.label}</span>
-            {/* Phones and narrow windows (compact mode) get the short names so all 7 tabs fit */}
-            <span className="tab:hidden truncate max-w-full">{tab.short}</span>
-            {tab.badge !== undefined && (
-              <span className="absolute top-0.5 right-1 sm:static bg-rw-red text-white text-[9px] sm:text-[10px] font-bold px-1 sm:px-1.5 rounded-full animate-pulse">
-                {tab.badge}
+            {it.label}
+          </a>
+        ) : (
+          <button key={it.key} type="button" onClick={() => onSelectTab(it.tab!)} aria-current={it.on ? "page" : undefined} className={cls(it.on)}>
+            {it.label}
+            {liveCount > 0 && (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-rw-red" title={tl("{n} live now", { n: liveCount })}>
+                <span className="w-1.5 h-1.5 rounded-full bg-rw-red animate-pulse" />
+                {liveCount}
               </span>
             )}
           </button>
-        );
-      })}
+        ),
+      )}
     </nav>
   );
 };
