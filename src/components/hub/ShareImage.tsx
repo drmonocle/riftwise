@@ -14,12 +14,16 @@ export async function capture(node: HTMLElement, wholePage = false): Promise<Blo
   node.classList.add("rw-capturing");
   if (wholePage) node.classList.add("rw-capturing-page");
   try {
+    const cs = getComputedStyle(document.documentElement);
+    const bg = wholePage
+      ? cs.getPropertyValue("--rw-bg").trim() || "#120f2b"
+      : cs.getPropertyValue("--rw-surface").trim() || "#191538";
     // resized icons (no copying allowed by the resizer) are swapped for their full pictures for the shot
     return await withFullImages(node, () => toBlob(node, {
       // sharp, but a whole page stays under the browsers' picture size limits
       pixelRatio: Math.max(1, Math.min(2, 16000 / Math.max(1, node.scrollHeight))),
-      // the picture's background is the theme's card colour (html-to-image needs a real colour, not a variable)
-      backgroundColor: getComputedStyle(document.documentElement).getPropertyValue("--rw-surface").trim() || "#0a1428",
+      // the picture's background is the theme's page or card colour (html-to-image needs a real colour, not a variable)
+      backgroundColor: bg,
       skipFonts: true,
       // leave the buttons themselves out of the picture
       filter: (n) => !(n instanceof HTMLElement && n.dataset.nocapture === "1"),
@@ -31,10 +35,14 @@ export async function capture(node: HTMLElement, wholePage = false): Promise<Blo
 
 /** Shown only inside the picture. */
 export const CaptureFooter: React.FC = () => (
-  <div className="rw-capture-only items-center justify-between gap-3 pt-2.5 mt-1.5 border-t-2 border-rw-border">
-    <span className="text-sm font-extrabold text-rw-accent">RiftWise Pro Stats</span>
-    <span className="text-xs">
-      <span className="font-bold text-rw-text">riftwise.gg</span>
+  <div className="rw-capture-only items-center justify-between gap-3 pt-2.5 mt-2 border-t border-rw-border">
+    <span className="text-xs font-extrabold tracking-wide">
+      <span className="text-rw-accent">Rift</span>
+      <span className="text-rw-teal">Wise</span>
+      <span className="text-rw-sub font-semibold"> · Pro Stats</span>
+    </span>
+    <span className="text-xs tabular-nums">
+      <span className="font-bold text-rw-teal">riftwise.gg</span>
       <span className="text-rw-muted"> · {new Date().toISOString().slice(0, 10)}</span>
     </span>
   </div>

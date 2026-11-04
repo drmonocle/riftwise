@@ -257,7 +257,7 @@ func ogToday(title, sub string, rows []todayRow) []byte {
 	ogDrawMu.Lock()
 	defer ogDrawMu.Unlock()
 	img := image.NewRGBA(image.Rect(0, 0, ogW, ogH))
-	top, bottom := ogRGB("#151230"), ogRGB("#0c0a1d")
+	top, bottom := ogRGB("#191538"), ogRGB("#120f2b")
 	for y := 0; y < ogH; y++ {
 		t := float64(y) / float64(ogH)
 		c := color.RGBA{
@@ -266,17 +266,20 @@ func ogToday(title, sub string, rows []todayRow) []byte {
 			uint8(float64(top.B)*(1-t) + float64(bottom.B)*t), 255}
 		draw.Draw(img, image.Rect(0, y, ogW, y+1), image.NewUniform(c), image.Point{}, draw.Src)
 	}
-	accent, text, subC, muted, teal := ogRGB("#b39dff"), ogRGB("#efeaff"), ogRGB("#b9b0dc"), ogRGB("#8c85b0"), ogRGB("#e0b86b")
-	draw.Draw(img, image.Rect(0, 0, 14, ogH), image.NewUniform(accent), image.Point{}, draw.Src)
+	accent, text, subC, muted, teal, border := ogRGB("#b39dff"), ogRGB("#efeaff"), ogRGB("#b9b0dc"), ogRGB("#8c85b0"), ogRGB("#e0b86b"), ogRGB("#2d2654")
+	draw.Draw(img, image.Rect(0, 0, 14, ogH/2), image.NewUniform(accent), image.Point{}, draw.Src)
+	draw.Draw(img, image.Rect(0, ogH/2, 14, ogH), image.NewUniform(teal), image.Point{}, draw.Src)
 	const left, right = 72, ogW - 72
-	brand, label := ogFace(true, 30), ogFace(false, 26)
+	brand, label := ogFace(true, 30), ogFace(true, 24)
 	if brand == nil || label == nil {
 		return nil
 	}
-	drawText(img, brand, left, 86, accent, "RIFTWISE")
+	rwW := (&font.Drawer{Face: brand}).MeasureString("RIFT").Ceil()
+	drawText(img, brand, left, 86, accent, "RIFT")
+	drawText(img, brand, left+rwW, 86, teal, "WISE")
 	kindLabel := "TODAY"
 	lw := (&font.Drawer{Face: label}).MeasureString(kindLabel).Ceil()
-	drawText(img, label, right-lw, 86, muted, kindLabel)
+	drawText(img, label, right-lw, 86, teal, kindLabel)
 	titleFace := ogFace(true, 52)
 	drawText(img, titleFace, left, 160, text, title)
 	y := 160
@@ -294,7 +297,7 @@ func ogToday(title, sub string, rows []todayRow) []byte {
 	y += step
 	pctW := (&font.Drawer{Face: rowFace}).MeasureString("100%").Ceil()
 	for _, r := range rows {
-		if y > ogH-80 {
+		if y > ogH-90 {
 			break
 		}
 		la, lb := r.left, r.right
@@ -304,23 +307,26 @@ func ogToday(title, sub string, rows []todayRow) []byte {
 		}
 		// the favourite in teal; once it's over, the winner in teal and the loser greyed out
 		ca, cb := text, text
+		pca, pcb := subC, subC
 		if r.done {
 			ca, cb = teal, muted
+			pca, pcb = teal, muted
 			if !r.leftWon {
 				ca, cb = muted, teal
+				pca, pcb = muted, teal
 			}
 		} else if r.pa >= 0 {
 			if r.pa >= 0.5 {
-				ca = teal
+				ca, pca = teal, teal
 			} else {
-				cb = teal
+				cb, pcb = teal, teal
 			}
 		}
 		x := left
 		drawText(img, rowFace, x, y, ca, la)
 		x += (&font.Drawer{Face: rowFace}).MeasureString(la).Ceil() + 18
 		if pa != "" {
-			drawText(img, rowFace, x, y, muted, pa)
+			drawText(img, rowFace, x, y, pca, pa)
 		}
 		x += pctW + 30
 		// the right side, right-aligned
@@ -330,7 +336,7 @@ func ogToday(title, sub string, rows []todayRow) []byte {
 		drawText(img, rowFace, xr, y, cb, lb)
 		if pb != "" {
 			xr -= pctW + 18
-			drawText(img, rowFace, xr, y, muted, pb)
+			drawText(img, rowFace, xr, y, pcb, pb)
 		}
 		xr -= 30
 		// the middle: league, time or score
@@ -346,8 +352,9 @@ func ogToday(title, sub string, rows []todayRow) []byte {
 		drawText(img, midFace, x+(xr-x-mw)/2, y, midC, mid)
 		y += step
 	}
-	foot := ogFace(false, 26)
-	drawText(img, foot, left, ogH-52, muted, "riftwise.gg/stats/rankings · the model's chances, not advice · free, no ads")
+	draw.Draw(img, image.Rect(left, ogH-90, right, ogH-88), image.NewUniform(border), image.Point{}, draw.Src)
+	foot := ogFace(false, 25)
+	drawText(img, foot, left, ogH-48, muted, "riftwise.gg/stats/rankings · the model's chances, not advice · free, no ads")
 	var buf bytes.Buffer
 	if err := png.Encode(&buf, img); err != nil {
 		return nil

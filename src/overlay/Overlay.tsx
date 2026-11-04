@@ -118,12 +118,13 @@ export const Overlay: React.FC = () => {
             style={{
               width: 22,
               height: 22,
-              borderRadius: 4,
+              borderRadius: 5,
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: 12,
               fontWeight: 800,
+              background: "var(--rw-bg)",
               color: w ? "var(--rw-teal)" : "var(--rw-red)",
               border: `2px solid ${w ? "var(--rw-teal)" : "var(--rw-red)"}`,
             }}
@@ -155,13 +156,27 @@ export const Overlay: React.FC = () => {
           <div style={{ textAlign: "center", minWidth: 120 }}>
             {live && live.state !== "unstarted" ? (
               <div style={{ fontSize: 44, fontWeight: 900, fontVariantNumeric: "tabular-nums" }}>
-                {scoreA} <span style={{ color: "var(--rw-muted)" }}>–</span> {scoreB}
+                <span style={{ color: "var(--rw-side-a)" }}>{scoreA}</span> <span style={{ color: "var(--rw-muted)" }}>–</span> <span style={{ color: "var(--rw-side-b)" }}>{scoreB}</span>
               </div>
             ) : (
-              <div style={{ fontSize: 30, fontWeight: 800, color: "var(--rw-muted)" }}>VS</div>
+              <div
+                style={{
+                  display: "inline-block",
+                  fontSize: 18,
+                  fontWeight: 900,
+                  color: "var(--rw-sub)",
+                  padding: "4px 14px",
+                  borderRadius: 999,
+                  border: "1px solid var(--rw-border)",
+                  background: "var(--rw-bg)",
+                  letterSpacing: 1.5,
+                }}
+              >
+                VS
+              </div>
             )}
             {live && (
-              <div style={{ fontSize: 12, color: live.state === "inProgress" ? "var(--rw-red)" : "var(--rw-sub)", fontWeight: 700 }}>
+              <div style={{ fontSize: 12, color: live.state === "inProgress" ? "var(--rw-red)" : "var(--rw-sub)", fontWeight: 700, marginTop: 4 }}>
                 {live.state === "inProgress" ? tl("LIVE") : tc("short best of", "Bo{n}", { n: live.bestOf })}
               </div>
             )}
@@ -170,26 +185,43 @@ export const Overlay: React.FC = () => {
         </div>
         {chances && (
           <div style={{ marginTop: 16, display: "grid", gap: 6 }}>
-            {chances.map(([what, p]) => (
-              <div key={what} style={{ display: "grid", gridTemplateColumns: "54px 1fr 54px", alignItems: "center", gap: 10, fontVariantNumeric: "tabular-nums" }}>
-                <span style={{ fontSize: 16, fontWeight: 800, color: "var(--rw-side-a)" }}>{Math.round(p * 100)}%</span>
-                <div style={{ position: "relative", height: 18, borderRadius: 4, overflow: "hidden", background: "var(--rw-side-b)" }}>
-                  <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: `${p * 100}%`, background: "var(--rw-side-a)", borderRight: "2px solid var(--rw-bg)" }} />
-                  <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "var(--rw-bg)" }}>
-                    {what}
-                  </span>
+            {chances.map(([what, p]) => {
+              const pa = Math.round(p * 100);
+              const pb = 100 - pa;
+              return (
+                <div key={what} style={{ display: "grid", gridTemplateColumns: "54px 1fr 54px", alignItems: "center", gap: 10, fontVariantNumeric: "tabular-nums" }}>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: pa >= pb ? "var(--rw-side-a)" : "var(--rw-sub)" }}>{pa}%</span>
+                  <div style={{ position: "relative", height: 22, borderRadius: 6, overflow: "hidden", background: "var(--rw-side-b)", border: "1px solid var(--rw-border)" }}>
+                    <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: `${p * 100}%`, background: "var(--rw-side-a)", borderRight: "2px solid var(--rw-bg)" }} />
+                    <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span
+                        style={{
+                          background: "rgba(12, 10, 29, 0.86)",
+                          color: "var(--rw-text)",
+                          padding: "0 10px",
+                          borderRadius: 999,
+                          border: "1px solid var(--rw-border)",
+                          fontSize: 11,
+                          fontWeight: 800,
+                        }}
+                      >
+                        {what}
+                      </span>
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: pb >= pa ? "var(--rw-side-b)" : "var(--rw-sub)", textAlign: "right" }}>{pb}%</span>
                 </div>
-                <span style={{ fontSize: 16, fontWeight: 800, color: "var(--rw-side-b)", textAlign: "right" }}>{Math.round((1 - p) * 100)}%</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
-        <div style={{ marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 13, color: "var(--rw-sub)" }}>
+        <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--rw-border)", display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 13, color: "var(--rw-sub)" }}>
           <span>
             {meetings.length ? `${tl("Head to head (series)")}: ${a.name} ${wa}–${meetings.length - wa} ${b.name}` : tl("First ever meeting between these teams")}
           </span>
           <span style={{ color: "var(--rw-muted)" }}>
-            <b style={{ color: "var(--rw-accent)" }}>RiftWise</b> · riftwise.gg
+            <b style={{ color: "var(--rw-accent)" }}>Rift</b>
+            <b style={{ color: "var(--rw-teal)" }}>Wise</b> · <span style={{ color: "var(--rw-teal)" }}>riftwise.gg</span>
           </span>
         </div>
       </div>

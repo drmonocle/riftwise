@@ -138,7 +138,7 @@ func ogImage(kind, title, desc string) []byte {
 	ogDrawMu.Lock()
 	defer ogDrawMu.Unlock()
 	img := image.NewRGBA(image.Rect(0, 0, ogW, ogH))
-	top, bottom := ogRGB("#151230"), ogRGB("#0c0a1d")
+	top, bottom := ogRGB("#191538"), ogRGB("#120f2b")
 	for y := 0; y < ogH; y++ {
 		t := float64(y) / float64(ogH)
 		c := color.RGBA{
@@ -147,20 +147,23 @@ func ogImage(kind, title, desc string) []byte {
 			uint8(float64(top.B)*(1-t) + float64(bottom.B)*t), 255}
 		draw.Draw(img, image.Rect(0, y, ogW, y+1), image.NewUniform(c), image.Point{}, draw.Src)
 	}
-	accent, text, sub, muted := ogRGB("#b39dff"), ogRGB("#efeaff"), ogRGB("#b9b0dc"), ogRGB("#8c85b0")
-	// accent bar down the left
-	draw.Draw(img, image.Rect(0, 0, 14, ogH), image.NewUniform(accent), image.Point{}, draw.Src)
+	accent, gold, text, sub, muted, border := ogRGB("#b39dff"), ogRGB("#e0b86b"), ogRGB("#efeaff"), ogRGB("#b9b0dc"), ogRGB("#8c85b0"), ogRGB("#2d2654")
+	// two-tone accent bar down the left (Royal Violet top, Hextech Gold bottom)
+	draw.Draw(img, image.Rect(0, 0, 14, ogH/2), image.NewUniform(accent), image.Point{}, draw.Src)
+	draw.Draw(img, image.Rect(0, ogH/2, 14, ogH), image.NewUniform(gold), image.Point{}, draw.Src)
 	const left, right = 72, ogW - 72
-	brand, label := ogFace(true, 30), ogFace(false, 26)
+	brand, label := ogFace(true, 30), ogFace(true, 24)
 	if brand == nil || label == nil {
 		return nil
 	}
-	drawText(img, brand, left, 86, accent, "RIFTWISE")
+	rwW := (&font.Drawer{Face: brand}).MeasureString("RIFT").Ceil()
+	drawText(img, brand, left, 86, accent, "RIFT")
+	drawText(img, brand, left+rwW, 86, gold, "WISE")
 	kindLabel := map[string]string{"team": "TEAM", "player": "PLAYER", "event": "TOURNAMENT", "game": "MATCH", "champ": "CHAMPION",
 		"league": "LEAGUE", "stats": "PRO STATS", "home": "PRO STATS"}[kind]
 	if kindLabel != "" {
 		lw := (&font.Drawer{Face: label}).MeasureString(kindLabel).Ceil()
-		drawText(img, label, right-lw, 86, muted, kindLabel)
+		drawText(img, label, right-lw, 86, gold, kindLabel)
 	}
 	// the title: as big as fits in three lines
 	size := 64.0
@@ -181,14 +184,15 @@ func ogImage(kind, title, desc string) []byte {
 	descFace := ogFace(false, 30)
 	y += 18
 	for _, l := range wrap(descFace, desc, right-left, 3) {
-		if y > ogH-100 {
+		if y > ogH-110 {
 			break
 		}
 		drawText(img, descFace, left, y, sub, l)
 		y += 40
 	}
-	foot := ogFace(false, 26)
-	drawText(img, foot, left, ogH-52, muted, "riftwise.gg · live scores, every pro stat since 2011, free")
+	draw.Draw(img, image.Rect(left, ogH-90, right, ogH-88), image.NewUniform(border), image.Point{}, draw.Src)
+	foot := ogFace(false, 25)
+	drawText(img, foot, left, ogH-48, muted, "riftwise.gg · live scores, every pro stat since 2011, free")
 	var buf bytes.Buffer
 	if err := png.Encode(&buf, img); err != nil {
 		return nil

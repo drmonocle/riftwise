@@ -475,6 +475,10 @@
   display: flex;
 }
 /* a whole page's picture names the page once at the top, not again over every section */
+.rw-capturing-page {
+  padding: 16px;
+  border-radius: 12px;
+}
 .rw-capturing-page .rw-section-context {
   display: none;
 }

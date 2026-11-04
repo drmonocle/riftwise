@@ -40,13 +40,14 @@ export type RosterPlayer = { n: string; u?: string | null; r?: string };
  * picture server, or the Leaguepedia copy on our server, both allowed inside a picture; initials when there's none.
  * The team logo sits on its corner.
  */
-export const CardPhoto: React.FC<{ name: string; team?: string; slug?: string; img?: string; size: number; noLogo?: boolean }> = ({
+export const CardPhoto: React.FC<{ name: string; team?: string; slug?: string; img?: string; size: number; noLogo?: boolean; ringColor?: string }> = ({
   name,
   team,
   slug,
   img,
   size,
   noLogo,
+  ringColor = "var(--rw-accent)",
 }) => {
   const pic = usePlayerPicture(name, team, slug, img);
   const [broken, setBroken] = useState(false);
@@ -55,7 +56,7 @@ export const CardPhoto: React.FC<{ name: string; team?: string; slug?: string; i
     width: size,
     height: size,
     borderRadius: "50%",
-    boxShadow: `0 0 0 ${size > 100 ? 4 : 3}px var(--rw-accent), 0 8px 24px rgba(0,0,0,0.45)`,
+    boxShadow: `0 0 0 ${size > 100 ? 4 : 3}px ${ringColor}, 0 8px 24px rgba(0,0,0,0.45)`,
     background: "radial-gradient(circle at 50% 30%, var(--rw-raised), var(--rw-bg))",
   };
   return (
@@ -224,102 +225,149 @@ const CardMarks: React.FC<{ d: CardData }> = ({ d }) => {
 
 /** The 1600×900 frame every card shares: headline, the card's own content, the RiftWise footer, the teams' logos
  *  faintly behind it all. */
-const Frame: React.FC<{ d: CardData; children: React.ReactNode }> = ({ d, children }) => (
-  <div
-    style={{
-      position: "relative",
-      overflow: "hidden",
-      isolation: "isolate",
-      width: W,
-      height: H,
-      boxSizing: "border-box",
-      padding: "48px 72px 32px",
-      display: "flex",
-      flexDirection: "column",
-      fontFamily: "inherit",
-      color: "var(--rw-text)",
-      background: "linear-gradient(135deg, var(--rw-surface) 0%, var(--rw-bg) 70%)",
-    }}
-  >
-    <CardMarks d={d} />
-    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 24 }}>
-      <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: "var(--rw-accent)" }}>{d.title}</div>
-      {d.subtitle && <div style={{ fontSize: 24, color: "var(--rw-sub)" }}>{d.subtitle}</div>}
+const Frame: React.FC<{ d: CardData; children: React.ReactNode }> = ({ d, children }) => {
+  const twoSide = !!(d.b || (d.marks && d.marks.length >= 2));
+  return (
+    <div
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        isolation: "isolate",
+        width: W,
+        height: H,
+        boxSizing: "border-box",
+        padding: "44px 72px 30px",
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: "inherit",
+        color: "var(--rw-text)",
+        background: "linear-gradient(135deg, var(--rw-surface) 0%, var(--rw-bg) 72%)",
+      }}
+    >
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 6,
+          background: twoSide
+            ? "linear-gradient(90deg, var(--rw-side-a) 0%, var(--rw-accent-2) 50%, var(--rw-side-b) 100%)"
+            : "linear-gradient(90deg, var(--rw-accent) 0%, var(--rw-teal) 100%)",
+        }}
+      />
+      <CardMarks d={d} />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24 }}>
+        <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 2.5, textTransform: "uppercase", color: "var(--rw-accent)" }}>{d.title}</div>
+        {d.subtitle && (
+          <div
+            style={{
+              fontSize: 21,
+              fontWeight: 600,
+              color: "var(--rw-sub)",
+              background: "color-mix(in srgb, var(--rw-bg) 65%, transparent)",
+              border: "1px solid var(--rw-border)",
+              borderRadius: 999,
+              padding: "4px 16px",
+            }}
+          >
+            {d.subtitle}
+          </div>
+        )}
+      </div>
+      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>{children}</div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          borderTop: "2px solid var(--rw-border)",
+          paddingTop: 14,
+          marginTop: 12,
+          fontSize: 20,
+          color: "var(--rw-muted)",
+        }}
+      >
+        <span>
+          <span style={{ fontWeight: 900, color: "var(--rw-accent)" }}>RiftWise</span>{" "}
+          <span style={{ color: "var(--rw-teal)", fontWeight: 800 }}>·</span>{" "}
+          <span style={{ color: "var(--rw-sub)", fontWeight: 600 }}>riftwise.gg</span>
+        </span>
+        <span>
+          {d.note ? `${d.note} · ` : ""}
+          {new Date().toISOString().slice(0, 10)}
+        </span>
+      </div>
     </div>
-    <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>{children}</div>
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderTop: "2px solid var(--rw-border)", paddingTop: 14, marginTop: 12, fontSize: 20, color: "var(--rw-muted)" }}>
-      <span>
-        <span style={{ fontWeight: 800, color: "var(--rw-accent)" }}>RiftWise</span> · riftwise.gg
-      </span>
-      <span>
-        {d.note ? `${d.note} · ` : ""}
-        {new Date().toISOString().slice(0, 10)}
-      </span>
-    </div>
-  </div>
-);
+  );
+};
 
 const Card: React.FC<{ d: CardData }> = ({ d }) => {
   if (d.body) return <Frame d={d}>{d.body}</Frame>;
   const two = !!d.b;
   const rows = d.rows.slice(0, two ? 9 : 10);
-  const side = (s: CardSide, right: boolean) => (
-    <div style={{ display: "flex", alignItems: "center", gap: 24, minWidth: 0, flex: 1, flexDirection: right ? "row-reverse" : "row" }}>
-      {s.player ? (
-        <CardPhoto name={s.name} team={s.team} slug={s.player.slug} img={s.player.img} size={128} />
-      ) : (
-        s.team && <CardLogo name={s.team} code={s.code} size={112} badge />
-      )}
-      <div style={{ textAlign: right ? "right" : "left", minWidth: 0, flex: 1 }}>
-        <div style={{ fontSize: 52, fontWeight: 800, lineHeight: 1.05, color: "var(--rw-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-          {s.name}
-        </div>
-        {s.sub && <div style={{ fontSize: 22, color: "var(--rw-sub)", marginTop: 4 }}>{s.sub}</div>}
-        {s.champs && s.champs.length > 0 && (
-          <div style={{ display: "flex", gap: 8, marginTop: 10, justifyContent: right ? "flex-end" : "flex-start" }}>
-            {s.champs.slice(0, 5).map((c) => (
-              <ChampIcon key={c} name={c} size={44} />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-  const bar = (r: CardRow) => {
-    if (!two || r.va == null || r.vb == null) return null;
-    const a = Math.abs(r.va);
-    const b = Math.abs(r.vb);
-    // signed numbers (gold leads): compare the raw values; otherwise share of the total
-    let left = a + b > 0 ? a / (a + b) : 0.5;
-    if (r.va < 0 || r.vb < 0) left = r.va === r.vb ? 0.5 : r.va > r.vb ? 0.7 : 0.3;
-    // lower is better (deaths, game length): the better side gets the longer bar
-    if (r.better === "low") left = 1 - left;
-    const aBetter = r.better === "low" ? r.va < r.vb : r.va > r.vb;
-    const bBetter = r.better === "low" ? r.vb < r.va : r.vb > r.va;
+  const side = (s: CardSide, right: boolean) => {
+    const sideColor = two ? (right ? "var(--rw-side-b)" : "var(--rw-side-a)") : "var(--rw-text)";
+    const ringColor = two ? (right ? "var(--rw-side-b)" : "var(--rw-side-a)") : "var(--rw-accent)";
     return (
-      <div style={{ display: "flex", height: 7, borderRadius: 4, overflow: "hidden", background: "var(--rw-bg)", marginTop: 4 }}>
-        <div style={{ width: `${left * 100}%`, background: aBetter ? "var(--rw-side-a)" : "var(--rw-line)" }} />
-        <div style={{ flex: 1, background: bBetter ? "var(--rw-side-b)" : "var(--rw-line)" }} />
+      <div style={{ display: "flex", alignItems: "center", gap: 24, minWidth: 0, flex: 1, flexDirection: right ? "row-reverse" : "row" }}>
+        {s.player ? (
+          <CardPhoto name={s.name} team={s.team} slug={s.player.slug} img={s.player.img} size={120} ringColor={ringColor} />
+        ) : (
+          s.team && <CardLogo name={s.team} code={s.code} size={108} badge />
+        )}
+        <div style={{ textAlign: right ? "right" : "left", minWidth: 0, flex: 1 }}>
+          <div style={{ fontSize: 50, fontWeight: 800, lineHeight: 1.05, color: sideColor, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {s.name}
+          </div>
+          {s.sub && <div style={{ fontSize: 21, color: "var(--rw-sub)", marginTop: 4 }}>{s.sub}</div>}
+          {s.champs && s.champs.length > 0 && (
+            <div style={{ display: "flex", gap: 8, marginTop: 10, justifyContent: right ? "flex-end" : "flex-start" }}>
+              {s.champs.slice(0, 5).map((c) => (
+                <ChampIcon key={c} name={c} size={42} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     );
   };
   return (
     <Frame d={d}>
-      <div style={{ display: "flex", alignItems: "center", gap: 32, marginTop: 20 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 32, marginTop: 18 }}>
         {side(d.a, false)}
         {two && (
-          <div style={{ textAlign: "center", minWidth: 220 }}>
+          <div style={{ textAlign: "center", minWidth: 230 }}>
             {d.chance ? (
               <>
-                <div style={{ fontSize: 20, color: "var(--rw-muted)", textTransform: "uppercase", letterSpacing: 2 }}>{tl("Win chance")}</div>
-                <div style={{ fontSize: 48, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "var(--rw-muted)", textTransform: "uppercase", letterSpacing: 2 }}>{tl("Win chance")}</div>
+                <div style={{ fontSize: 44, fontWeight: 800, fontVariantNumeric: "tabular-nums", marginTop: 2 }}>
                   <span style={{ color: "var(--rw-side-a)" }}>{d.chance[0]}%</span>
-                  <span style={{ color: "var(--rw-muted)", fontSize: 32 }}> · </span>
+                  <span style={{ color: "var(--rw-muted)", fontSize: 28 }}> · </span>
                   <span style={{ color: "var(--rw-side-b)" }}>{d.chance[1]}%</span>
+                </div>
+                <div style={{ display: "flex", height: 8, borderRadius: 999, overflow: "hidden", gap: 3, marginTop: 6, background: "var(--rw-bg)" }}>
+                  <div style={{ width: `${d.chance[0]}%`, background: "var(--rw-side-a)", borderRadius: "999px 0 0 999px" }} />
+                  <div style={{ flex: 1, background: "var(--rw-side-b)", borderRadius: "0 999px 999px 0" }} />
                 </div>
               </>
             ) : (
-              <div style={{ fontSize: 40, fontWeight: 800, color: "var(--rw-muted)" }}>VS</div>
+              <div
+                style={{
+                  display: "inline-block",
+                  fontSize: 32,
+                  fontWeight: 900,
+                  color: "var(--rw-sub)",
+                  background: "var(--rw-bg)",
+                  border: "1px solid var(--rw-border)",
+                  borderRadius: 999,
+                  padding: "6px 22px",
+                  letterSpacing: 2,
+                }}
+              >
+                VS
+              </div>
             )}
           </div>
         )}
@@ -349,17 +397,82 @@ const Card: React.FC<{ d: CardData }> = ({ d }) => {
         )}
       </div>
       {two ? (
-        <div style={{ marginTop: 22, flex: 1, minHeight: 0, overflow: "hidden", display: "grid", gridTemplateColumns: "1fr", gap: 6, alignContent: "start" }}>
-          {rows.map((r) => (
-            <div key={r.label}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "baseline", gap: 24, fontVariantNumeric: "tabular-nums" }}>
-                <span style={{ fontSize: 30, fontWeight: 700, lineHeight: 1.15 }}>{r.a}</span>
-                <span style={{ fontSize: 20, color: "var(--rw-sub)", textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center" }}>{r.label}</span>
-                <span style={{ fontSize: 30, fontWeight: 700, lineHeight: 1.15, textAlign: "right" }}>{r.b}</span>
+        <div style={{ marginTop: 18, flex: 1, minHeight: 0, overflow: "hidden", display: "grid", gridTemplateColumns: "1fr", gap: 6, alignContent: "start" }}>
+          {rows.map((r) => {
+            const hasNums = r.va != null && r.vb != null;
+            const aBetter = hasNums && r.va !== r.vb && (r.better === "low" ? r.va! < r.vb! : r.va! > r.vb!);
+            const bBetter = hasNums && r.va !== r.vb && (r.better === "low" ? r.vb! < r.va! : r.vb! > r.va!);
+            let left = 0.5;
+            if (hasNums) {
+              const a = Math.abs(r.va!);
+              const b = Math.abs(r.vb!);
+              if (r.va! < 0 || r.vb! < 0) {
+                const scale = Math.max(a, b, 250);
+                left = r.va === r.vb ? 0.5 : 1 / (1 + Math.exp(-(r.va! - r.vb!) / scale));
+              } else {
+                left = a + b > 0 ? a / (a + b) : 0.5;
+              }
+              if (r.better === "low") left = 1 - left;
+              left = Math.max(0.08, Math.min(0.92, left));
+            }
+            return (
+              <div
+                key={r.label}
+                style={{
+                  padding: "6px 16px 8px",
+                  borderRadius: 10,
+                  background: "color-mix(in srgb, var(--rw-surface) 72%, transparent)",
+                  border: "1px solid color-mix(in srgb, var(--rw-border) 75%, transparent)",
+                }}
+              >
+                <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "baseline", gap: 24, fontVariantNumeric: "tabular-nums" }}>
+                  <span
+                    style={{
+                      fontSize: 28,
+                      fontWeight: aBetter || !hasNums ? 800 : 600,
+                      lineHeight: 1.1,
+                      color: !hasNums ? "var(--rw-teal)" : aBetter ? "var(--rw-side-a)" : bBetter ? "var(--rw-sub)" : "var(--rw-text)",
+                    }}
+                  >
+                    {r.a}
+                  </span>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: "var(--rw-sub)", textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center" }}>
+                    {r.label}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 28,
+                      fontWeight: bBetter || !hasNums ? 800 : 600,
+                      lineHeight: 1.1,
+                      textAlign: "right",
+                      color: !hasNums ? "var(--rw-teal)" : bBetter ? "var(--rw-side-b)" : aBetter ? "var(--rw-sub)" : "var(--rw-text)",
+                    }}
+                  >
+                    {r.b}
+                  </span>
+                </div>
+                {hasNums && (
+                  <div style={{ position: "relative", display: "flex", height: 8, borderRadius: 999, overflow: "hidden", gap: 3, background: "var(--rw-bg)", marginTop: 5 }}>
+                    <div
+                      style={{
+                        width: `calc(${left * 100}% - 1.5px)`,
+                        background: aBetter ? "var(--rw-side-a)" : "color-mix(in srgb, var(--rw-side-a) 28%, var(--rw-line))",
+                        borderRadius: "999px 0 0 999px",
+                      }}
+                    />
+                    <div
+                      style={{
+                        flex: 1,
+                        background: bBetter ? "var(--rw-side-b)" : "color-mix(in srgb, var(--rw-side-b) 28%, var(--rw-line))",
+                        borderRadius: "0 999px 999px 0",
+                      }}
+                    />
+                    <div style={{ position: "absolute", left: "calc(50% - 1px)", top: 0, bottom: 0, width: 2, background: "var(--rw-text)", opacity: 0.35 }} />
+                  </div>
+                )}
               </div>
-              {bar(r)}
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <OneSide rows={rows} />
@@ -381,22 +494,43 @@ const OneSide: React.FC<{ rows: CardRow[] }> = ({ rows }) => {
   const tone = (v: string) => (/^\+\d/.test(v) ? "var(--rw-teal)" : /^[−-]\d/.test(v) ? "var(--rw-red)" : "var(--rw-text)");
   const barRow = (r: CardRow) => {
     const p = Math.max(0, Math.min(100, r.pct!));
+    const strong = p >= 50;
     return (
-      <div key={r.label} style={{ minWidth: 0 }}>
+      <div
+        key={r.label}
+        style={{
+          minWidth: 0,
+          borderRadius: 10,
+          background: "var(--rw-surface)",
+          boxShadow: "inset 0 0 0 1px var(--rw-border)",
+          padding: "14px 20px",
+        }}
+      >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16, fontVariantNumeric: "tabular-nums" }}>
-          <span style={{ fontSize: 21, color: "var(--rw-sub)", textTransform: "uppercase", letterSpacing: 1.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.label}</span>
-          <span style={{ fontSize: 36, fontWeight: 800 }}>{r.a}</span>
+          <span style={{ fontSize: 19, fontWeight: 700, color: "var(--rw-sub)", textTransform: "uppercase", letterSpacing: 1.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {r.label}
+          </span>
+          <span style={{ fontSize: 34, fontWeight: 800, color: strong ? "var(--rw-teal)" : "var(--rw-text)" }}>{r.a}</span>
         </div>
-        <div style={{ position: "relative", height: 12, borderRadius: 6, background: "var(--rw-bg)", boxShadow: "inset 0 0 0 1px var(--rw-border)", marginTop: 8, overflow: "hidden" }}>
-          <div style={{ width: `${p}%`, height: "100%", borderRadius: 6, background: "linear-gradient(90deg, var(--rw-accent-2), var(--rw-accent))" }} />
-          <div style={{ position: "absolute", left: "calc(50% - 1px)", top: 0, bottom: 0, width: 2, background: "var(--rw-bg)", opacity: 0.85 }} />
+        <div style={{ position: "relative", height: 10, borderRadius: 999, background: "var(--rw-bg)", boxShadow: "inset 0 0 0 1px var(--rw-border)", marginTop: 8, overflow: "hidden" }}>
+          <div
+            style={{
+              width: `${p}%`,
+              height: "100%",
+              borderRadius: 999,
+              background: strong ? "linear-gradient(90deg, var(--rw-accent), var(--rw-teal))" : "linear-gradient(90deg, var(--rw-accent-2), var(--rw-accent))",
+            }}
+          />
+          <div style={{ position: "absolute", left: "calc(50% - 1px)", top: 0, bottom: 0, width: 2, background: "var(--rw-text)", opacity: 0.45 }} />
         </div>
       </div>
     );
   };
   const tile = (r: CardRow) => (
     <div key={r.label} style={{ minWidth: 0, borderRadius: 10, background: "var(--rw-surface)", boxShadow: "inset 0 0 0 1px var(--rw-border)", padding: "14px 20px" }}>
-      <div style={{ fontSize: 18, color: "var(--rw-sub)", textTransform: "uppercase", letterSpacing: 1.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.label}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, color: "var(--rw-sub)", textTransform: "uppercase", letterSpacing: 1.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        {r.label}
+      </div>
       <div
         style={{
           fontSize: r.a.length > 14 ? 24 : r.a.length > 9 ? 30 : 40,
@@ -414,8 +548,8 @@ const OneSide: React.FC<{ rows: CardRow[] }> = ({ rows }) => {
     </div>
   );
   return (
-    <div style={{ marginTop: 30, flex: 1, minHeight: 0, overflow: "hidden", display: "grid", gap: 30, alignContent: "start" }}>
-      {bars.length > 0 && <div style={{ display: "grid", gridTemplateColumns: `repeat(${barCols}, minmax(0, 1fr))`, gap: "26px 48px" }}>{bars.map(barRow)}</div>}
+    <div style={{ marginTop: 26, flex: 1, minHeight: 0, overflow: "hidden", display: "grid", gap: 20, alignContent: "start" }}>
+      {bars.length > 0 && <div style={{ display: "grid", gridTemplateColumns: `repeat(${barCols}, minmax(0, 1fr))`, gap: 16 }}>{bars.map(barRow)}</div>}
       {tiles.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 16 }}>{tiles.map(tile)}</div>}
     </div>
   );
@@ -448,7 +582,7 @@ export const BroadcastCardButton: React.FC<{ data: () => CardData; name: string;
           new Promise((r) => setTimeout(r, 4000)),
         ]);
         if (!ref.current) throw new Error("no card");
-        const bg = getComputedStyle(document.documentElement).getPropertyValue("--rw-bg").trim() || "#0a1428";
+        const bg = getComputedStyle(document.documentElement).getPropertyValue("--rw-bg").trim() || "#120f2b";
         const blob = await toBlob(ref.current.firstElementChild as HTMLElement, { width: W, height: H, pixelRatio: 1, backgroundColor: bg, skipFonts: true });
         if (!blob) throw new Error("no image");
         if (job.save) {
@@ -610,12 +744,27 @@ export function playerCardData(
 
 const A_COLOR = "var(--rw-side-a)";
 const B_COLOR = "var(--rw-side-b)";
-const caption: React.CSSProperties = { fontSize: 18, color: "var(--rw-sub)", textTransform: "uppercase", letterSpacing: 1.5 };
+const caption: React.CSSProperties = { fontSize: 17, fontWeight: 700, color: "var(--rw-sub)", textTransform: "uppercase", letterSpacing: 1.4 };
 const none = <span style={{ color: "var(--rw-muted)", fontSize: 22 }}>–</span>;
-const chip = (c: string, n?: number, size = 46) => (
-  <span key={c} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 20, color: "var(--rw-sub)", fontVariantNumeric: "tabular-nums" }}>
+const chip = (c: string, n?: number, size = 40) => (
+  <span
+    key={c}
+    style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 6,
+      fontSize: 18,
+      fontWeight: 800,
+      color: "var(--rw-text)",
+      fontVariantNumeric: "tabular-nums",
+      background: "var(--rw-bg)",
+      border: "1px solid var(--rw-border)",
+      borderRadius: 8,
+      padding: n != null ? "2px 8px 2px 2px" : 2,
+    }}
+  >
     <ChampIcon name={c} size={size} />
-    {n != null && n}
+    {n != null && <span>{n}</span>}
   </span>
 );
 
@@ -640,41 +789,42 @@ export function prepOverviewCard(d: {
 }): CardData {
   const team = (t: PrepTeamLine, right: boolean, color: string) => (
     <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "flex-start", gap: 24, flexDirection: right ? "row-reverse" : "row" }}>
-    <CardLogo name={t.name} size={124} badge />
-    <div style={{ flex: 1, minWidth: 0, textAlign: right ? "right" : "left" }}>
-      <div style={{ fontSize: 56, fontWeight: 800, lineHeight: 1.05, color, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
-      {t.rank && (
-        <div style={{ fontSize: 22, color: "var(--rw-sub)", marginTop: 6 }}>
-          {t.rank}
-          {t.chg != null && t.chg !== 0 && (
-            <span style={{ color: t.chg > 0 ? "var(--rw-teal)" : "var(--rw-red)", marginLeft: 10 }}>
-              {t.chg > 0 ? "▲" : "▼"} {Math.abs(t.chg)} {tl("in 30 days")}
+      <CardLogo name={t.name} size={116} badge />
+      <div style={{ flex: 1, minWidth: 0, textAlign: right ? "right" : "left" }}>
+        <div style={{ fontSize: 52, fontWeight: 800, lineHeight: 1.05, color, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
+        {t.rank && (
+          <div style={{ fontSize: 21, color: "var(--rw-sub)", marginTop: 6, fontWeight: 600 }}>
+            {t.rank}
+            {t.chg != null && t.chg !== 0 && (
+              <span style={{ color: t.chg > 0 ? "var(--rw-teal)" : "var(--rw-red)", marginLeft: 10, fontWeight: 800 }}>
+                {t.chg > 0 ? "▲" : "▼"} {Math.abs(t.chg)} {tl("in 30 days")}
+              </span>
+            )}
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 6, marginTop: 12, justifyContent: right ? "flex-end" : "flex-start" }}>
+          {t.form.map((w, i) => (
+            <span
+              key={i}
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 7,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 17,
+                fontWeight: 800,
+                background: "var(--rw-surface)",
+                color: w ? "var(--rw-teal)" : "var(--rw-red)",
+                border: `2px solid ${w ? "var(--rw-teal)" : "var(--rw-red)"}`,
+              }}
+            >
+              {w ? tc("short result", "W") : tc("short result", "L")}
             </span>
-          )}
+          ))}
         </div>
-      )}
-      <div style={{ display: "flex", gap: 6, marginTop: 12, justifyContent: right ? "flex-end" : "flex-start" }}>
-        {t.form.map((w, i) => (
-          <span
-            key={i}
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 6,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 18,
-              fontWeight: 800,
-              color: w ? "var(--rw-teal)" : "var(--rw-red)",
-              border: `2px solid ${w ? "var(--rw-teal)" : "var(--rw-red)"}`,
-            }}
-          >
-            {w ? tc("short result", "W") : tc("short result", "L")}
-          </span>
-        ))}
       </div>
-    </div>
     </div>
   );
   return {
@@ -685,33 +835,63 @@ export function prepOverviewCard(d: {
     marks: [{ name: d.a.name }, { name: d.b.name }],
     body: (
       <>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 32, marginTop: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 28, marginTop: 18 }}>
           {team(d.a, false, A_COLOR)}
-          <div style={{ fontSize: 40, fontWeight: 800, color: "var(--rw-muted)", paddingTop: 8 }}>VS</div>
+          <div
+            style={{
+              fontSize: 26,
+              fontWeight: 900,
+              color: "var(--rw-sub)",
+              padding: "8px 18px",
+              borderRadius: 999,
+              border: "1px solid var(--rw-border)",
+              background: "var(--rw-surface)",
+              letterSpacing: 2,
+            }}
+          >
+            VS
+          </div>
           {team(d.b, true, B_COLOR)}
         </div>
         {d.chances.length > 0 && (
-          <div style={{ marginTop: 28, display: "grid", gap: 12 }}>
+          <div style={{ marginTop: 22, display: "grid", gap: 10 }}>
             <div style={{ ...caption, textAlign: "center" }}>{tl("Win chances")}</div>
-            {d.chances.map(([what, p]) => (
-              <div key={what} style={{ display: "grid", gridTemplateColumns: "110px 1fr 110px", alignItems: "center", gap: 16, fontVariantNumeric: "tabular-nums" }}>
-                <span style={{ fontSize: 32, fontWeight: 800, color: A_COLOR }}>{Math.round(p * 100)}%</span>
-                <div style={{ position: "relative", height: 34, borderRadius: 6, overflow: "hidden", background: B_COLOR }}>
-                  <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: `${p * 100}%`, background: A_COLOR, borderRight: "3px solid var(--rw-bg)" }} />
-                  <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800, color: "var(--rw-bg)" }}>
-                    {what}
-                  </span>
+            {d.chances.map(([what, p]) => {
+              const pa = Math.round(p * 100);
+              const pb = 100 - pa;
+              return (
+                <div key={what} style={{ display: "grid", gridTemplateColumns: "110px 1fr 110px", alignItems: "center", gap: 16, fontVariantNumeric: "tabular-nums" }}>
+                  <span style={{ fontSize: 30, fontWeight: 800, color: pa >= pb ? A_COLOR : "var(--rw-sub)" }}>{pa}%</span>
+                  <div style={{ position: "relative", height: 36, borderRadius: 8, overflow: "hidden", background: B_COLOR, border: "1px solid var(--rw-border)" }}>
+                    <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: `${p * 100}%`, background: A_COLOR, borderRight: "3px solid var(--rw-bg)" }} />
+                    <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span
+                        style={{
+                          background: "rgba(12, 10, 29, 0.86)",
+                          color: "var(--rw-text)",
+                          padding: "2px 16px",
+                          borderRadius: 999,
+                          border: "1px solid var(--rw-border)",
+                          fontSize: 18,
+                          fontWeight: 800,
+                          letterSpacing: 0.4,
+                        }}
+                      >
+                        {what}
+                      </span>
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 30, fontWeight: 800, color: pb >= pa ? B_COLOR : "var(--rw-sub)", textAlign: "right" }}>{pb}%</span>
                 </div>
-                <span style={{ fontSize: 32, fontWeight: 800, color: B_COLOR, textAlign: "right" }}>{Math.round((1 - p) * 100)}%</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
-        <div style={{ marginTop: 26, display: "grid", gridTemplateColumns: d.h2h ? "320px 1fr" : "1fr", gap: 40, flex: 1, minHeight: 0 }}>
+        <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: d.h2h ? "340px 1fr" : "1fr", gap: 24, flex: 1, minHeight: 0, alignContent: "start" }}>
           {d.h2h && (
-            <div>
+            <div style={{ background: "var(--rw-surface)", border: "1px solid var(--rw-border)", borderRadius: 12, padding: "18px 24px" }}>
               <div style={caption}>{tl("Head to head (series)")}</div>
-              <div style={{ fontSize: 54, fontWeight: 800, marginTop: 6, fontVariantNumeric: "tabular-nums" }}>
+              <div style={{ fontSize: 54, fontWeight: 800, marginTop: 8, fontVariantNumeric: "tabular-nums", lineHeight: 1.05 }}>
                 <span style={{ color: A_COLOR }}>{d.h2h[0]}</span>
                 <span style={{ color: "var(--rw-muted)" }}> – </span>
                 <span style={{ color: B_COLOR }}>{d.h2h[1]}</span>
@@ -719,12 +899,12 @@ export function prepOverviewCard(d: {
             </div>
           )}
           {d.stories.length > 0 && (
-            <div style={{ minWidth: 0, overflow: "hidden" }}>
+            <div style={{ minWidth: 0, overflow: "hidden", background: "var(--rw-surface)", border: "1px solid var(--rw-border)", borderRadius: 12, padding: "18px 24px" }}>
               <div style={caption}>{tl("Storylines")}</div>
-              <ul style={{ margin: "8px 0 0", padding: 0, listStyle: "none", display: "grid", gap: 8 }}>
+              <ul style={{ margin: "10px 0 0", padding: 0, listStyle: "none", display: "grid", gap: 8 }}>
                 {d.stories.slice(0, 3).map((t, i) => (
-                  <li key={i} style={{ fontSize: 24, lineHeight: 1.25, color: "var(--rw-text)", display: "flex", gap: 10 }}>
-                    <span style={{ color: "var(--rw-accent)" }}>•</span>
+                  <li key={i} style={{ fontSize: 22, lineHeight: 1.3, color: "var(--rw-text)", display: "flex", gap: 10 }}>
+                    <span style={{ color: "var(--rw-teal)", fontWeight: 900 }}>▸</span>
                     <span style={{ overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{t}</span>
                   </li>
                 ))}
@@ -746,7 +926,7 @@ export interface PoolLine {
 }
 
 const Pinch: React.FC = () => (
-  <span style={{ fontSize: 16, fontWeight: 900, letterSpacing: 1.5, color: "#fff", background: "var(--rw-red)", borderRadius: 6, padding: "3px 10px", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+  <span style={{ fontSize: 15, fontWeight: 900, letterSpacing: 1.4, color: "#fff", background: "var(--rw-red)", borderRadius: 6, padding: "3px 10px", textTransform: "uppercase", whiteSpace: "nowrap" }}>
     {tl("pinch point")}
   </span>
 );
@@ -755,21 +935,21 @@ const Pinch: React.FC = () => (
 export function fearlessCard(d: { aName: string; bName: string; rows: { role: string; a: PoolLine | null; b: PoolLine | null }[]; period: string }): CardData {
   const all = d.rows.flatMap((r) => [r.a, r.b]).filter((x): x is PoolLine => !!x && x.list.length > 0);
   const min = all.length ? Math.min(...all.map((x) => x.deep)) : -1;
-  const cell = (x: PoolLine | null, right: boolean) =>
+  const cell = (x: PoolLine | null, right: boolean, sideColor: string) =>
     !x ? (
-      none
+      <div style={{ textAlign: right ? "right" : "left" }}>{none}</div>
     ) : (
       <div style={{ minWidth: 0, textAlign: right ? "right" : "left" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: right ? "flex-end" : "flex-start" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: right ? "flex-end" : "flex-start" }}>
           {right && x.deep === min && <Pinch />}
-          <span style={{ fontSize: 26, fontWeight: 800 }}>{x.name}</span>
-          <span style={{ fontSize: 20, color: x.deep === min ? "var(--rw-red)" : "var(--rw-sub)" }}>{tl("{n} with 2+ games", { n: x.deep })}</span>
+          <span style={{ fontSize: 24, fontWeight: 800, color: sideColor }}>{x.name}</span>
+          <span style={{ fontSize: 18, fontWeight: 600, color: x.deep === min ? "var(--rw-red)" : "var(--rw-sub)" }}>{tl("{n} with 2+ games", { n: x.deep })}</span>
           {!right && x.deep === min && <Pinch />}
         </div>
-        <div style={{ display: "flex", gap: 10, marginTop: 6, justifyContent: right ? "flex-end" : "flex-start" }}>
+        <div style={{ display: "flex", gap: 6, marginTop: 6, justifyContent: right ? "flex-end" : "flex-start" }}>
           {x.list.slice(0, 8).map(([c, n]) => (
-            <span key={c} style={{ opacity: n >= 2 ? 1 : 0.5 }}>
-              {chip(c, n, 40)}
+            <span key={c} style={{ opacity: n >= 2 ? 1 : 0.55 }}>
+              {chip(c, n, 36)}
             </span>
           ))}
         </div>
@@ -782,23 +962,49 @@ export function fearlessCard(d: { aName: string; bName: string; rows: { role: st
     rows: [],
     marks: [{ name: d.aName }, { name: d.bName }],
     body: (
-      <div style={{ marginTop: 18, display: "grid", gap: 6, flex: 1, alignContent: "start" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 150px 1fr", gap: 20, fontSize: 30, fontWeight: 800, alignItems: "center" }}>
-          <span style={{ color: A_COLOR, display: "flex", alignItems: "center", gap: 14 }}>
-            <CardLogo name={d.aName} size={56} badge />
-            {d.aName}
+      <div style={{ marginTop: 14, display: "grid", gap: 8, flex: 1, alignContent: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 130px 1fr", gap: 16, fontSize: 30, fontWeight: 800, alignItems: "center", padding: "0 12px" }}>
+          <span style={{ color: A_COLOR, display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+            <CardLogo name={d.aName} size={52} badge />
+            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.aName}</span>
           </span>
           <span />
-          <span style={{ color: B_COLOR, display: "flex", alignItems: "center", gap: 14, justifyContent: "flex-end" }}>
-            {d.bName}
-            <CardLogo name={d.bName} size={56} badge />
+          <span style={{ color: B_COLOR, display: "flex", alignItems: "center", gap: 14, justifyContent: "flex-end", minWidth: 0 }}>
+            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.bName}</span>
+            <CardLogo name={d.bName} size={52} badge />
           </span>
         </div>
         {d.rows.map((r) => (
-          <div key={r.role} style={{ display: "grid", gridTemplateColumns: "1fr 150px 1fr", gap: 20, alignItems: "center", borderTop: "1px solid var(--rw-border)", paddingTop: 8 }}>
-            {cell(r.a, false)}
-            <span style={{ ...caption, textAlign: "center", color: "var(--rw-accent)", fontWeight: 800 }}>{roleName(r.role)}</span>
-            {cell(r.b, true)}
+          <div
+            key={r.role}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 130px 1fr",
+              gap: 16,
+              alignItems: "center",
+              background: "var(--rw-surface)",
+              border: "1px solid var(--rw-border)",
+              borderRadius: 10,
+              padding: "8px 14px",
+            }}
+          >
+            {cell(r.a, false, A_COLOR)}
+            <span
+              style={{
+                ...caption,
+                fontSize: 16,
+                textAlign: "center",
+                color: "var(--rw-text)",
+                fontWeight: 800,
+                background: "var(--rw-bg)",
+                border: "1px solid var(--rw-border)",
+                borderRadius: 8,
+                padding: "6px 8px",
+              }}
+            >
+              {roleName(r.role)}
+            </span>
+            {cell(r.b, true, B_COLOR)}
           </div>
         ))}
       </div>
@@ -813,18 +1019,33 @@ export function draftCard(d: { aName: string; bName: string; A: Draft; B: Draft;
   const roleText = (shares: [number, number][]) =>
     shares.length ? shares.slice(0, 2).map(([r, v]) => `${roleName(ROLES[r])} ${Math.round(v * 100)}%`).join(" · ") : "–";
   const icons = (list: [string, number, number][], n: number, right: boolean) => (
-    <div style={{ display: "flex", gap: 10, justifyContent: right ? "flex-end" : "flex-start", flexWrap: "wrap" }}>
-      {list.length ? list.slice(0, n).map(([c, g]) => chip(c, g, 42)) : none}
+    <div style={{ display: "flex", gap: 8, justifyContent: right ? "flex-end" : "flex-start", flexWrap: "wrap" }}>
+      {list.length ? list.slice(0, n).map(([c, g]) => chip(c, g, 38)) : none}
     </div>
   );
   const duos = (x: Draft, right: boolean) => (
-    <div style={{ display: "flex", gap: 18, justifyContent: right ? "flex-end" : "flex-start" }}>
+    <div style={{ display: "flex", gap: 12, justifyContent: right ? "flex-end" : "flex-start" }}>
       {x.botDuos.length
         ? x.botDuos.slice(0, 2).map(([c1, c2, g]) => (
-            <span key={c1 + c2} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 20, color: "var(--rw-sub)" }}>
-              <ChampIcon name={c1} size={40} />
-              <ChampIcon name={c2} size={40} />
-              {g}
+            <span
+              key={c1 + c2}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: 18,
+                fontWeight: 800,
+                color: "var(--rw-text)",
+                fontVariantNumeric: "tabular-nums",
+                background: "var(--rw-bg)",
+                border: "1px solid var(--rw-border)",
+                borderRadius: 8,
+                padding: "2px 8px 2px 2px",
+              }}
+            >
+              <ChampIcon name={c1} size={38} />
+              <ChampIcon name={c2} size={38} />
+              <span>{g}</span>
             </span>
           ))
         : none}
@@ -832,17 +1053,19 @@ export function draftCard(d: { aName: string; bName: string; A: Draft; B: Draft;
   );
   const flex = (x: Draft, right: boolean) => (
     <div style={{ display: "flex", gap: 8, justifyContent: right ? "flex-end" : "flex-start" }}>
-      {x.flex.length ? x.flex.slice(0, 6).map(([c]) => <ChampIcon key={c} name={c} size={40} />) : none}
+      {x.flex.length ? x.flex.slice(0, 6).map(([c]) => chip(c, undefined, 38)) : none}
     </div>
   );
-  const text = (t: string, right: boolean) => <div style={{ fontSize: 24, fontWeight: 700, textAlign: right ? "right" : "left" }}>{t}</div>;
+  const text = (t: string, right: boolean, color: string) => (
+    <div style={{ fontSize: 23, fontWeight: 800, color, textAlign: right ? "right" : "left", fontVariantNumeric: "tabular-nums" }}>{t}</div>
+  );
   const rows: [string, React.ReactNode, React.ReactNode][] = [
     [tl("First pick (blue)"), icons(d.A.b1, 4, false), icons(d.B.b1, 4, true)],
     [tl("First picks (red)"), icons(d.A.r12, 4, false), icons(d.B.r12, 4, true)],
     [tl("Bans, phase 1"), icons(d.A.bans1, 5, false), icons(d.B.bans1, 5, true)],
     // where counter-picks go
-    [tl("Last pick on red (R5)"), text(roleText(d.A.r5), false), text(roleText(d.B.r5), true)],
-    [tl("Last picks on blue (B4-B5)"), text(roleText(d.A.b45), false), text(roleText(d.B.b45), true)],
+    [tl("Last pick on red (R5)"), text(roleText(d.A.r5), false, A_COLOR), text(roleText(d.B.r5), true, B_COLOR)],
+    [tl("Last picks on blue (B4-B5)"), text(roleText(d.A.b45), false, A_COLOR), text(roleText(d.B.b45), true, B_COLOR)],
     [tl("Bot lane pairs"), duos(d.A, false), duos(d.B, true)],
     [tl("Flex picks"), flex(d.A, false), flex(d.B, true)],
   ];
@@ -854,22 +1077,34 @@ export function draftCard(d: { aName: string; bName: string; A: Draft; B: Draft;
     marks: [{ name: d.aName }, { name: d.bName }],
     note: tl("{a} and {b} games with the draft order", { a: d.A.games, b: d.B.games }),
     body: (
-      <div style={{ marginTop: 18, display: "grid", gap: 4, flex: 1, alignContent: "start" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 260px 1fr", gap: 20, fontSize: 34, fontWeight: 800, alignItems: "center" }}>
+      <div style={{ marginTop: 12, display: "grid", gap: 6, flex: 1, alignContent: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 250px 1fr", gap: 20, fontSize: 32, fontWeight: 800, alignItems: "center", padding: "0 12px" }}>
           <span style={{ color: A_COLOR, display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
-            <CardLogo name={d.aName} size={60} badge />
+            <CardLogo name={d.aName} size={54} badge />
             <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.aName}</span>
           </span>
           <span />
           <span style={{ color: B_COLOR, display: "flex", alignItems: "center", gap: 14, justifyContent: "flex-end", minWidth: 0 }}>
             <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.bName}</span>
-            <CardLogo name={d.bName} size={60} badge />
+            <CardLogo name={d.bName} size={54} badge />
           </span>
         </div>
         {rows.map(([what, a, b]) => (
-          <div key={what} style={{ display: "grid", gridTemplateColumns: "1fr 260px 1fr", gap: 20, alignItems: "center", borderTop: "1px solid var(--rw-border)", padding: "8px 0" }}>
+          <div
+            key={what}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 250px 1fr",
+              gap: 20,
+              alignItems: "center",
+              background: "var(--rw-surface)",
+              border: "1px solid var(--rw-border)",
+              borderRadius: 10,
+              padding: "7px 14px",
+            }}
+          >
             {a}
-            <span style={{ ...caption, textAlign: "center" }}>{what}</span>
+            <span style={{ ...caption, fontSize: 16, textAlign: "center", color: "var(--rw-sub)" }}>{what}</span>
             {b}
           </div>
         ))}
@@ -938,7 +1173,7 @@ export function eventCardData(d: {
   if (o.short) rows.push({ label: tl("Shortest game"), a: mmss(o.short.v), sub: `${o.short.a} vs ${o.short.b}` });
   if (o.bloody) rows.push({ label: tl("Bloodiest game"), a: String(o.bloody.v), sub: `${o.bloody.a} vs ${o.bloody.b}` });
   if (o.pentas.length) rows.push({ label: tl("Pentakills"), a: o.pentas.map((p) => p.n).slice(0, 3).join(", ") });
-  const medal = ["var(--rw-accent)", "var(--rw-text)", "var(--rw-sub)"];
+  const medal = ["var(--rw-teal)", "var(--rw-accent)", "var(--rw-sub)"];
   return {
     title: tl("Tournament overview"),
     subtitle: d.when,
@@ -946,29 +1181,43 @@ export function eventCardData(d: {
     rows: [],
     body: (
       <>
-        <div style={{ fontSize: 56, fontWeight: 800, lineHeight: 1.05, marginTop: 18, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.name}</div>
+        <div style={{ fontSize: 54, fontWeight: 800, lineHeight: 1.05, marginTop: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.name}</div>
         {d.podium.length > 0 && (
-          <div style={{ display: "flex", gap: 40, marginTop: 14, alignItems: "baseline", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 20, marginTop: 14, alignItems: "center", flexWrap: "wrap" }}>
             {d.podium.slice(0, 3).map((t, i) => (
-              <span key={i} style={{ fontSize: i === 0 ? 40 : 28, fontWeight: 800, color: medal[i], display: "inline-flex", alignItems: "center", gap: 12 }}>
+              <span
+                key={i}
+                style={{
+                  fontSize: i === 0 ? 34 : 26,
+                  fontWeight: 800,
+                  color: medal[i],
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 12,
+                  background: "var(--rw-surface)",
+                  border: `1px solid ${i === 0 ? "var(--rw-teal)" : "var(--rw-border)"}`,
+                  borderRadius: 12,
+                  padding: i === 0 ? "8px 20px 8px 14px" : "6px 16px 6px 12px",
+                }}
+              >
                 {i === 0 ? "🏆 " : `${i + 1}. `}
-                <CardLogo name={t} size={i === 0 ? 64 : 44} />
+                <CardLogo name={t} size={i === 0 ? 52 : 38} />
                 {t}
               </span>
             ))}
           </div>
         )}
-        <div style={{ marginTop: 26, display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "18px 48px", alignContent: "start" }}>
+        <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "14px 28px", alignContent: "start" }}>
           {rows.map((r) => (
-            <div key={r.label}>
+            <div key={r.label} style={{ background: "var(--rw-surface)", border: "1px solid var(--rw-border)", borderRadius: 10, padding: "12px 18px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16, fontVariantNumeric: "tabular-nums" }}>
-                <span style={{ ...caption, fontSize: 20, whiteSpace: "nowrap" }}>{r.label}</span>
-                <span style={{ fontSize: 30, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{r.a}</span>
+                <span style={{ ...caption, fontSize: 18, whiteSpace: "nowrap" }}>{r.label}</span>
+                <span style={{ fontSize: 28, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{r.a}</span>
               </div>
-              {r.sub && <div style={{ fontSize: 20, color: "var(--rw-sub)", textAlign: "right", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.sub}</div>}
+              {r.sub && <div style={{ fontSize: 18, color: "var(--rw-sub)", textAlign: "right", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 2 }}>{r.sub}</div>}
               {r.pct != null && (
-                <div style={{ height: 8, borderRadius: 4, background: "var(--rw-bg)", marginTop: 6, overflow: "hidden" }}>
-                  <div style={{ width: `${r.pct}%`, height: "100%", background: "var(--rw-accent)" }} />
+                <div style={{ position: "relative", height: 8, borderRadius: 4, background: "var(--rw-bg)", marginTop: 8, overflow: "hidden" }}>
+                  <div style={{ width: `${r.pct}%`, height: "100%", background: r.pct >= 50 ? "var(--rw-teal)" : "var(--rw-accent)" }} />
                 </div>
               )}
             </div>
@@ -988,19 +1237,32 @@ export function rankingsCard(d: { title: string; subtitle: string; rows: { name:
     a: { name: d.title },
     rows: [],
     body: (
-      <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "1fr 1fr", gridAutoFlow: "column", gridTemplateRows: `repeat(${Math.ceil(rows.length / 2)}, auto)`, gap: "10px 56px", alignContent: "start" }}>
+      <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "1fr 1fr", gridAutoFlow: "column", gridTemplateRows: `repeat(${Math.ceil(rows.length / 2)}, auto)`, gap: "12px 32px", alignContent: "start" }}>
         {rows.map((x, i) => (
-          <div key={i} style={{ display: "grid", gridTemplateColumns: "64px 48px 1fr auto auto", gap: 18, alignItems: "center", borderTop: "1px solid var(--rw-border)", padding: "12px 0", fontVariantNumeric: "tabular-nums" }}>
-            <span style={{ fontSize: 34, fontWeight: 800, color: i === 0 ? "var(--rw-accent)" : "var(--rw-muted)" }}>{i + 1}</span>
+          <div
+            key={i}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "48px 48px 1fr auto auto",
+              gap: 16,
+              alignItems: "center",
+              background: "var(--rw-surface)",
+              border: `1px solid ${i === 0 ? "var(--rw-teal)" : "var(--rw-border)"}`,
+              borderRadius: 10,
+              padding: "12px 18px",
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            <span style={{ fontSize: 30, fontWeight: 900, color: i === 0 ? "var(--rw-teal)" : i < 3 ? "var(--rw-accent)" : "var(--rw-muted)" }}>#{i + 1}</span>
             <span style={{ display: "flex" }}>
-              <CardLogo name={x.name} size={48} />
+              <CardLogo name={x.name} size={46} />
             </span>
             <span style={{ minWidth: 0 }}>
-              <span style={{ display: "block", fontSize: 34, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.name}</span>
-              {x.league && <span style={{ display: "block", fontSize: 18, color: "var(--rw-sub)" }}>{x.league}</span>}
+              <span style={{ display: "block", fontSize: 30, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.name}</span>
+              {x.league && <span style={{ display: "block", fontSize: 17, color: "var(--rw-sub)", fontWeight: 600 }}>{x.league}</span>}
             </span>
-            <span style={{ fontSize: 30, fontWeight: 800, color: "var(--rw-accent)" }}>{x.r}</span>
-            <span style={{ fontSize: 22, minWidth: 64, textAlign: "right", color: !x.chg ? "var(--rw-muted)" : x.chg > 0 ? "var(--rw-teal)" : "var(--rw-red)" }}>
+            <span style={{ fontSize: 28, fontWeight: 800, color: i === 0 ? "var(--rw-teal)" : "var(--rw-accent)" }}>{x.r}</span>
+            <span style={{ fontSize: 21, fontWeight: 700, minWidth: 64, textAlign: "right", color: !x.chg ? "var(--rw-muted)" : x.chg > 0 ? "var(--rw-teal)" : "var(--rw-red)" }}>
               {!x.chg ? "–" : `${x.chg > 0 ? "▲" : "▼"}${Math.abs(x.chg)}`}
             </span>
           </div>
@@ -1021,21 +1283,45 @@ export function chancesCard(d: { title: string; subtitle: string; cols: string[]
     rows: [],
     note: d.note,
     body: (
-      <div style={{ marginTop: 16, display: "grid", gap: 0, alignContent: "start" }}>
-        <div style={{ display: "grid", gridTemplateColumns: grid, gap: 12, padding: "0 0 8px" }}>
+      <div style={{ marginTop: 14, display: "grid", gap: 6, alignContent: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: grid, gap: 12, padding: "0 16px 4px" }}>
           <span style={caption}>{tl("Team")}</span>
           {d.cols.map((c, i) => (
-            <span key={c} style={{ ...caption, textAlign: "right", color: i === d.cols.length - 1 ? "var(--rw-accent)" : "var(--rw-sub)" }}>{c}</span>
+            <span key={c} style={{ ...caption, textAlign: "right", color: i === d.cols.length - 1 ? "var(--rw-teal)" : "var(--rw-sub)" }}>{c}</span>
           ))}
         </div>
         {rows.map((r, i) => (
-          <div key={i} style={{ display: "grid", gridTemplateColumns: grid, gap: 12, alignItems: "baseline", borderTop: "1px solid var(--rw-border)", padding: "6px 0", fontVariantNumeric: "tabular-nums" }}>
+          <div
+            key={i}
+            style={{
+              display: "grid",
+              gridTemplateColumns: grid,
+              gap: 12,
+              alignItems: "center",
+              background: "var(--rw-surface)",
+              border: `1px solid ${i === 0 ? "var(--rw-teal)" : "var(--rw-border)"}`,
+              borderRadius: 9,
+              padding: "6px 16px",
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
             <span style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+              <span style={{ fontSize: 20, fontWeight: 800, color: i === 0 ? "var(--rw-teal)" : "var(--rw-muted)", width: 28 }}>{i + 1}</span>
               <CardLogo name={r.name} size={34} />
-              <span style={{ fontSize: 28, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</span>
+              <span style={{ fontSize: 26, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</span>
             </span>
             {r.v.map((x, j) => (
-              <span key={j} style={{ fontSize: j === r.v.length - 1 ? 32 : 26, fontWeight: j === r.v.length - 1 ? 800 : 600, textAlign: "right", color: j === r.v.length - 1 ? "var(--rw-accent)" : "var(--rw-text)" }}>{x}</span>
+              <span
+                key={j}
+                style={{
+                  fontSize: j === r.v.length - 1 ? 30 : 24,
+                  fontWeight: j === r.v.length - 1 ? 800 : 600,
+                  textAlign: "right",
+                  color: j === r.v.length - 1 ? "var(--rw-teal)" : "var(--rw-text)",
+                }}
+              >
+                {x}
+              </span>
             ))}
           </div>
         ))}
@@ -1107,40 +1393,65 @@ export function seriesCardData(s: import("../../hub/types").HubSeries): CardData
     marks: [{ name: s.a.n, code: s.a.c }, { name: s.b.n, code: s.b.c }],
     body: (
       <>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 32, marginTop: 18 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 32, marginTop: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 22, justifyContent: "flex-end", minWidth: 0 }}>
-            <div style={{ fontSize: 52, fontWeight: 800, color: s.w === 1 ? A_COLOR : "var(--rw-text)", textAlign: "right", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.a.n}</div>
-            <CardLogo name={s.a.n} code={s.a.c} size={96} badge />
+            <div style={{ fontSize: 50, fontWeight: 800, color: s.w === 1 ? A_COLOR : "var(--rw-text)", textAlign: "right", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.a.n}</div>
+            <CardLogo name={s.a.n} code={s.a.c} size={94} badge />
           </div>
-          <div style={{ fontSize: 72, fontWeight: 900, fontVariantNumeric: "tabular-nums" }}>
-            {s.sa}
+          <div
+            style={{
+              fontSize: 64,
+              fontWeight: 900,
+              fontVariantNumeric: "tabular-nums",
+              background: "var(--rw-surface)",
+              border: "1px solid var(--rw-border)",
+              borderRadius: 16,
+              padding: "6px 28px",
+              lineHeight: 1.1,
+            }}
+          >
+            <span style={{ color: s.w === 1 ? A_COLOR : "var(--rw-text)" }}>{s.sa}</span>
             <span style={{ color: "var(--rw-muted)" }}> – </span>
-            {s.sb}
+            <span style={{ color: s.w === 2 ? B_COLOR : "var(--rw-text)" }}>{s.sb}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 22, minWidth: 0 }}>
-            <CardLogo name={s.b.n} code={s.b.c} size={96} badge />
-            <div style={{ fontSize: 52, fontWeight: 800, color: s.w === 2 ? A_COLOR : "var(--rw-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.b.n}</div>
+            <CardLogo name={s.b.n} code={s.b.c} size={94} badge />
+            <div style={{ fontSize: 50, fontWeight: 800, color: s.w === 2 ? B_COLOR : "var(--rw-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.b.n}</div>
           </div>
         </div>
-        <div style={{ marginTop: 18, display: "grid", gap: big ? 14 : 8, alignContent: "start" }}>
+        <div style={{ marginTop: 18, display: "grid", gap: big ? 12 : 8, alignContent: "start" }}>
           {games.map((g) => {
             const ta = g.t ? (g.blue === "a" ? g.t.blue : g.t.red) : undefined;
             const tb = g.t ? (g.blue === "a" ? g.t.red : g.t.blue) : undefined;
             const picks = (x: typeof ta, right: boolean) => (
               <div style={{ display: "flex", gap: 6, justifyContent: right ? "flex-start" : "flex-end" }}>
                 {(x?.picks || []).slice(0, 5).map((c) => (
-                  <ChampIcon key={c} name={c} size={big ? 46 : 36} />
+                  <ChampIcon key={c} name={c} size={big ? 46 : 38} />
                 ))}
               </div>
             );
             return (
-              <div key={g.n} style={{ display: "grid", gridTemplateColumns: "1fr 380px 1fr", alignItems: "center", gap: 20, borderTop: "1px solid var(--rw-border)", paddingTop: big ? 12 : 8 }}>
+              <div
+                key={g.n}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 400px 1fr",
+                  alignItems: "center",
+                  gap: 20,
+                  background: "var(--rw-surface)",
+                  border: "1px solid var(--rw-border)",
+                  borderLeft: g.w === 1 ? `5px solid ${A_COLOR}` : "1px solid var(--rw-border)",
+                  borderRight: g.w === 2 ? `5px solid ${B_COLOR}` : "1px solid var(--rw-border)",
+                  borderRadius: 10,
+                  padding: big ? "10px 18px" : "7px 16px",
+                }}
+              >
                 {picks(ta, false)}
                 <div style={{ textAlign: "center", fontVariantNumeric: "tabular-nums" }}>
-                  <div style={{ fontSize: big ? 28 : 24, fontWeight: 800 }}>
-                    {tl("Game {n}", { n: g.n })}: <span style={{ color: A_COLOR }}>{g.w === 1 ? nameA : nameB}</span>
+                  <div style={{ fontSize: big ? 26 : 22, fontWeight: 800 }}>
+                    {tl("Game {n}", { n: g.n })}: <span style={{ color: g.w === 1 ? A_COLOR : B_COLOR }}>{g.w === 1 ? nameA : nameB}</span>
                   </div>
-                  <div style={{ fontSize: 20, color: "var(--rw-sub)" }}>
+                  <div style={{ fontSize: 19, color: "var(--rw-sub)", fontWeight: 600 }}>
                     {[g.min ? mmss(g.min) : null, ta?.k != null && tb?.k != null ? tl("{a}-{b} kills", { a: ta.k, b: tb.k }) : null, g.mvp ? `👑 ${g.mvp.n}` : null]
                       .filter(Boolean)
                       .join(" · ")}
@@ -1203,32 +1514,103 @@ export interface BoardSide {
 
 /** The draft on the Draft board: both teams' bans and picks (role and player), and earlier Fearless games. */
 export function draftBoardCard(d: { blue: BoardSide; red: BoardSide; period: string; earlier: { blue: string[]; red: string[] }[] }): CardData {
-  const side = (s: BoardSide, color: string, sideName: string, right: boolean) => (
-    <div style={{ minWidth: 0, textAlign: right ? "right" : "left" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 18, flexDirection: right ? "row-reverse" : "row" }}>
-        <CardLogo name={s.name} size={72} badge />
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 46, fontWeight: 800, color, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
-          <div style={{ ...caption, marginTop: 2 }}>{sideName}</div>
-        </div>
-      </div>
-      <div style={{ display: "flex", gap: 6, marginTop: 12, alignItems: "center", justifyContent: right ? "flex-end" : "flex-start" }}>
-        <span style={{ ...caption, fontSize: 16, marginRight: 6 }}>{tl("Bans")}</span>
-        {s.bans.length ? s.bans.map((c) => <span key={c} style={{ opacity: 0.55, filter: "grayscale(0.7)" }}><ChampIcon name={c} size={40} /></span>) : none}
-      </div>
-      <div style={{ display: "grid", gap: 8, marginTop: 14 }}>
-        {s.picks.map((p) => (
-          <div key={p.c} style={{ display: "flex", alignItems: "center", gap: 14, flexDirection: right ? "row-reverse" : "row" }}>
-            <ChampIcon name={p.c} size={64} />
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 28, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{champName(p.c)}</div>
-              {(p.role || p.player) && <div style={{ fontSize: 20, color: "var(--rw-sub)" }}>{[p.role, p.player].filter(Boolean).join(" · ")}</div>}
+  const side = (s: BoardSide, color: string, sideName: string, prefix: "B" | "R", right: boolean) => {
+    const slots = [0, 1, 2, 3, 4].map((i) => s.picks[i] || null);
+    const banSlots = [0, 1, 2, 3, 4].map((i) => s.bans[i] || null);
+    const banBox = (c: string | null, i: number) => (
+      <span
+        key={i}
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 8,
+          border: "1px solid var(--rw-border)",
+          background: "var(--rw-surface)",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+          position: "relative",
+        }}
+      >
+        {c ? (
+          <span style={{ opacity: 0.65, filter: "grayscale(0.7)", display: "flex" }}>
+            <ChampIcon name={c} size={40} />
+          </span>
+        ) : (
+          <span style={{ color: "var(--rw-muted)", fontSize: 16, fontWeight: 700 }}>–</span>
+        )}
+      </span>
+    );
+    return (
+      <div style={{ minWidth: 0, textAlign: right ? "right" : "left" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 18, flexDirection: right ? "row-reverse" : "row" }}>
+          <CardLogo name={s.name} size={68} badge />
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: 42, fontWeight: 800, color, lineHeight: 1.05, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
+            <div style={{ ...caption, marginTop: 4 }}>{sideName}</div>
+          </div>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexDirection: right ? "row-reverse" : "row" }}>
+            <span style={{ ...caption, fontSize: 14, margin: "0 4px" }}>{tl("Bans")}</span>
+            <div style={{ display: "flex", gap: 5 }}>
+              {banSlots.slice(0, 3).map((c, i) => banBox(c, i))}
+            </div>
+            <span style={{ width: 1, height: 26, background: "var(--rw-border)", margin: "0 2px" }} />
+            <div style={{ display: "flex", gap: 5 }}>
+              {banSlots.slice(3, 5).map((c, i) => banBox(c, i + 3))}
             </div>
           </div>
-        ))}
+        </div>
+        <div style={{ display: "grid", gap: 8, marginTop: 14 }}>
+          {slots.map((p, idx) => (
+            <div
+              key={idx}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 14,
+                flexDirection: right ? "row-reverse" : "row",
+                background: "var(--rw-surface)",
+                border: p ? "1px solid var(--rw-border)" : "1px dashed var(--rw-border)",
+                borderLeft: !right ? `4px solid ${color}` : undefined,
+                borderRight: right ? `4px solid ${color}` : undefined,
+                borderRadius: 10,
+                padding: "7px 14px",
+                minHeight: 68,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 16,
+                  fontWeight: 800,
+                  color,
+                  width: 30,
+                  textAlign: "center",
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                {prefix}
+                {idx + 1}
+              </span>
+              {p ? (
+                <>
+                  <ChampIcon name={p.c} size={52} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{champName(p.c)}</div>
+                    {(p.role || p.player) && (
+                      <div style={{ fontSize: 18, color: "var(--rw-sub)", fontWeight: 600, marginTop: 2 }}>{[p.role, p.player].filter(Boolean).join(" · ")}</div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div style={{ fontSize: 20, color: "var(--rw-muted)", fontWeight: 600 }}>–</div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
   return {
     title: tl("Draft board"),
     subtitle: d.period ? tl("Pools from {period}", { period: d.period }) : undefined,
@@ -1237,16 +1619,30 @@ export function draftBoardCard(d: { blue: BoardSide; red: BoardSide; period: str
     marks: [{ name: d.blue.name }, { name: d.red.name }],
     body: (
       <>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, marginTop: 14, flex: 1, minHeight: 0 }}>
-          {side(d.blue, "#4a9eff", tl("Blue side"), false)}
-          {side(d.red, "var(--rw-red)", tl("Red side"), true)}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, marginTop: 14, flex: 1, minHeight: 0 }}>
+          {side(d.blue, A_COLOR, tl("Blue side"), "B", false)}
+          {side(d.red, B_COLOR, tl("Red side"), "R", true)}
         </div>
         {d.earlier.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 28px", alignItems: "center", borderTop: "1px solid var(--rw-border)", paddingTop: 10 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 24px", alignItems: "center", borderTop: "1px solid var(--rw-border)", paddingTop: 10 }}>
             <span style={caption}>{tl("Fearless: earlier games")}</span>
             {d.earlier.map((g, i) => (
-              <span key={i} style={{ display: "inline-flex", gap: 4, alignItems: "center", fontSize: 18, color: "var(--rw-sub)" }}>
-                {tl("Game {n}", { n: i + 1 })}
+              <span
+                key={i}
+                style={{
+                  display: "inline-flex",
+                  gap: 5,
+                  alignItems: "center",
+                  fontSize: 17,
+                  fontWeight: 700,
+                  color: "var(--rw-sub)",
+                  background: "var(--rw-surface)",
+                  border: "1px solid var(--rw-border)",
+                  borderRadius: 8,
+                  padding: "3px 10px 3px 8px",
+                }}
+              >
+                <span style={{ marginRight: 4 }}>{tl("Game {n}", { n: i + 1 })}</span>
                 {[...g.blue, ...g.red].map((c, k) => (
                   <ChampIcon key={k} name={c} size={28} />
                 ))}
@@ -1284,31 +1680,57 @@ export function listCard(d: { section: string; name: string; sub?: string; rows:
     rows: [],
     body: (
       <>
-        <div style={{ fontSize: 52, fontWeight: 800, lineHeight: 1.05, marginTop: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.name}</div>
+        <div style={{ fontSize: 50, fontWeight: 800, lineHeight: 1.05, marginTop: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.name}</div>
         <div
           style={{
-            marginTop: 20,
+            marginTop: 18,
             display: "grid",
             gridTemplateColumns: two ? "minmax(0, 1fr) minmax(0, 1fr)" : "minmax(0, 1fr)",
             gridAutoFlow: two ? "column" : "row",
             gridTemplateRows: two ? `repeat(${Math.ceil(rows.length / 2)}, auto)` : undefined,
-            gap: "0 56px",
+            gap: "10px 32px",
             alignContent: "start",
           }}
         >
           {rows.map((r, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, borderTop: "1px solid var(--rw-border)", padding: "10px 0", minWidth: 0 }}>
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 16,
+                background: "var(--rw-surface)",
+                border: "1px solid var(--rw-border)",
+                borderRadius: 10,
+                padding: "10px 16px",
+                minWidth: 0,
+              }}
+            >
               {r.win != null && (
-                <span style={{ fontSize: 24, fontWeight: 900, width: 28, color: r.win ? "var(--rw-teal)" : "var(--rw-red)" }}>
+                <span
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 900,
+                    width: 34,
+                    height: 34,
+                    borderRadius: 7,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "var(--rw-bg)",
+                    border: `2px solid ${r.win ? "var(--rw-teal)" : "var(--rw-red)"}`,
+                    color: r.win ? "var(--rw-teal)" : "var(--rw-red)",
+                  }}
+                >
                   {r.win ? tc("short result", "W") : tc("short result", "L")}
                 </span>
               )}
               {r.champ && <ChampIcon name={r.champ} size={46} />}
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 28, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.label}</div>
-                {r.sub && <div style={{ fontSize: 19, color: "var(--rw-sub)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.sub}</div>}
+                <div style={{ fontSize: 26, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.label}</div>
+                {r.sub && <div style={{ fontSize: 18, color: "var(--rw-sub)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.sub}</div>}
               </div>
-              {r.value && <div style={{ fontSize: 28, fontWeight: 800, color: "var(--rw-accent)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{r.value}</div>}
+              {r.value && <div style={{ fontSize: 26, fontWeight: 800, color: "var(--rw-teal)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{r.value}</div>}
             </div>
           ))}
         </div>
