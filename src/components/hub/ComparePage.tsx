@@ -105,16 +105,16 @@ export const ComparePick: React.FC<{ kind: Mode; onPick: (slug: string) => void;
 const PctChip: React.FC<{ p: number | null | undefined }> = ({ p }) =>
   p == null ? null : (
     <span
-      className="inline-block min-w-[1.75rem] px-0.5 rounded-sm text-center font-mono tabular-nums text-[10px] text-rw-text"
+      className="inline-block px-1 py-0.5 rounded text-center font-mono tabular-nums text-[9px] leading-none text-rw-sub border border-rw-border/60"
       style={{
         background:
           p >= 50
-            ? `color-mix(in srgb, var(--rw-teal) ${Math.round(15 + (p - 50) * 1.1)}%, transparent)`
-            : `color-mix(in srgb, var(--rw-red) ${Math.round(15 + (50 - p) * 1.1)}%, transparent)`,
+            ? `color-mix(in srgb, var(--rw-teal) ${Math.round(12 + (p - 50) * 0.9)}%, transparent)`
+            : `color-mix(in srgb, var(--rw-red) ${Math.round(12 + (50 - p) * 0.9)}%, transparent)`,
       }}
       title={tl("Percentile in its league season: better than {p}% of the league's teams", { p })}
     >
-      {p}
+      P{p}
     </span>
   );
 
@@ -132,36 +132,51 @@ const Row: React.FC<{
   bars?: boolean;
 }> = ({ label, a, b, va, vb, better = "high", pa, pb, bars: barsOn = true }) => {
   const win = va != null && vb != null && va !== vb ? ((va > vb) === (better === "high") ? "a" : "b") : null;
-  const cls = (side: "a" | "b") => (win === side ? "text-rw-teal" : "text-rw-text");
-  // a bar from each number toward the outside, as long as its share of the pair (plain counts and rates only)
-  const bars = barsOn && va != null && vb != null && va >= 0 && vb >= 0 && va + vb > 0;
-  const bar = (v: number, side: "a" | "b") => (
-    <span className={`flex-1 flex ${side === "a" ? "justify-end" : "justify-start"}`} aria-hidden="true">
-      <span
-        className={`h-1.5 ${side === "a" ? "rounded-l" : "rounded-r"} ${win === side ? "bg-rw-teal/70" : "bg-rw-line"}`}
-        style={{ width: `${(v / Math.max(va as number, vb as number)) * 100}%` }}
-      />
-    </span>
-  );
+  const cls = (side: "a" | "b") => (win === side ? "text-rw-teal font-bold" : "text-rw-text font-medium");
+  const hasNums = barsOn && va != null && vb != null && Number.isFinite(va) && Number.isFinite(vb) && !(va === 0 && vb === 0);
+  let shareA = 0.5;
+  if (hasNums) {
+    const na = va as number;
+    const nb = vb as number;
+    if (na === nb) {
+      shareA = 0.5;
+    } else if (na >= 0 && nb >= 0 && na + nb > 0) {
+      shareA = Math.min(0.92, Math.max(0.08, na / (na + nb)));
+    } else {
+      const span = Math.max(Math.abs(na), Math.abs(nb), 1);
+      shareA = Math.min(0.92, Math.max(0.08, 0.5 + (na - nb) / (4 * span)));
+    }
+  }
   return (
-    <tr className="border-t border-rw-border">
-      <td className={`${td} font-semibold w-2/5 tabular-nums ${cls("a")}`}>
-        <span className="flex items-center justify-end gap-3">
-          {bars && bar(va as number, "a")}
-          <span className="text-right">{a}</span>
+    <div className="py-2 border-t border-rw-border/60 first:border-t-0 space-y-1">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-baseline gap-2">
+        <span className={`flex items-baseline gap-1.5 min-w-0 font-mono tabular-nums text-xs sm:text-[13px] ${cls("a")}`}>
+          <span className="truncate">{a}</span>
           <PctChip p={pa} />
         </span>
-      </td>
-      {/* the label may wrap (long ones like "Win rate when behind at 15" would push a phone screen sideways) */}
-      <td className="py-1.5 px-1 text-center text-rw-muted text-[11px] leading-tight">{label}</td>
-      <td className={`${td} font-semibold w-2/5 tabular-nums ${cls("b")}`}>
-        <span className="flex items-center gap-3">
+        <span className="px-2 text-center text-rw-muted text-[11px] font-medium leading-tight">{label}</span>
+        <span className={`flex items-baseline justify-end gap-1.5 min-w-0 font-mono tabular-nums text-xs sm:text-[13px] text-right ${cls("b")}`}>
           <PctChip p={pb} />
-          <span>{b}</span>
-          {bars && bar(vb as number, "b")}
+          <span className="truncate">{b}</span>
         </span>
-      </td>
-    </tr>
+      </div>
+      {hasNums && (
+        <div className="relative h-1.5 w-full rounded-full bg-rw-bg overflow-hidden flex gap-[2px]" aria-hidden="true">
+          <div
+            className={`h-full rounded-l-full transition-all ${
+              win === "a" ? "bg-rw-teal/85" : win === "b" ? "bg-rw-line/75" : "bg-rw-sub/45"
+            }`}
+            style={{ width: `calc(${(shareA * 100).toFixed(1)}% - 1px)` }}
+          />
+          <div
+            className={`h-full flex-1 rounded-r-full transition-all ${
+              win === "b" ? "bg-rw-teal/85" : win === "a" ? "bg-rw-line/75" : "bg-rw-sub/45"
+            }`}
+          />
+          <span className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-[1.5px] bg-rw-panel/90" />
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -169,6 +184,7 @@ const Row: React.FC<{
 interface RowSpec {
   key: string;
   label: string;
+  group?: string;
   a: React.ReactNode;
   b: React.ReactNode;
   va?: number | null;
@@ -188,13 +204,13 @@ interface ComparePrefs {
 const COMPARE_PREFS = "rw_compare_prefs";
 function useComparePrefs(): [ComparePrefs, (p: ComparePrefs) => void] {
   const [p, setP] = useState<ComparePrefs>(() => {
-    const none: ComparePrefs = { hide: [], bars: true, pcts: true, edge: false };
+    const none: ComparePrefs = { hide: [], bars: true, pcts: false, edge: false };
     try {
       const saved = JSON.parse(localStorage.getItem(COMPARE_PREFS) || "{}");
       return {
         hide: Array.isArray(saved.hide) ? saved.hide : [],
         bars: saved.bars !== false,
-        pcts: saved.pcts !== false,
+        pcts: saved.pcts === true,
         edge: !!saved.edge,
       };
     } catch {
@@ -219,12 +235,29 @@ const gap = (r: RowSpec) => (r.va != null && r.vb != null ? Math.abs(r.va - r.vb
  * The side-by-side table with the viewer's choices: the order (as listed, or the biggest difference first: the gap
  * relative to the two numbers' size), the bars and percentile chips on or off, and which stats show.
  */
-const CompareRows: React.FC<{ rows: RowSpec[] }> = ({ rows }) => {
+const CompareRows: React.FC<{ rows: RowSpec[]; pctNote?: React.ReactNode }> = ({ rows, pctNote }) => {
   const [prefs, set] = useComparePrefs();
   const shown = rows.filter((r) => !prefs.hide.includes(r.key));
   const ordered = prefs.edge ? [...shown].sort((x, y) => gap(y) - gap(x)) : shown;
   const seg = (on: boolean) => `px-2 py-1 pointer-coarse:min-h-9 max-sm:min-h-9 ${on ? "bg-rw-accent/15 text-rw-text" : "text-rw-sub hover:text-rw-text"}`;
   const check = "flex items-center gap-2 text-xs text-rw-text cursor-pointer min-h-7";
+  const hasAnyPcts = rows.some((r) => r.pa != null || r.pb != null);
+
+  // When in "As listed" mode and rows define groups, render clean grouped cards/sections
+  const groups = useMemo(() => {
+    if (prefs.edge || !ordered.some((r) => r.group)) {
+      return [{ title: null as string | null, items: ordered }];
+    }
+    const out: { title: string | null; items: RowSpec[] }[] = [];
+    for (const r of ordered) {
+      const g = r.group || null;
+      const last = out[out.length - 1];
+      if (!last || last.title !== g) out.push({ title: g, items: [r] });
+      else last.items.push(r);
+    }
+    return out;
+  }, [ordered, prefs.edge]);
+
   return (
     <>
       <div data-nocapture="1" className="flex flex-wrap items-center justify-end gap-2 text-[11px]">
@@ -245,10 +278,12 @@ const CompareRows: React.FC<{ rows: RowSpec[] }> = ({ rows }) => {
               <input type="checkbox" checked={prefs.bars} onChange={(e) => set({ ...prefs, bars: e.target.checked })} />
               {tl("Bars")}
             </label>
-            <label className={check}>
-              <input type="checkbox" checked={prefs.pcts} onChange={(e) => set({ ...prefs, pcts: e.target.checked })} />
-              {tl("Percentile chips")}
-            </label>
+            {hasAnyPcts && (
+              <label className={check}>
+                <input type="checkbox" checked={prefs.pcts} onChange={(e) => set({ ...prefs, pcts: e.target.checked })} />
+                {tl("Percentile chips")}
+              </label>
+            )}
             <div className="pt-1 mt-1 border-t border-rw-border text-[10px] text-rw-muted">{tl("Stats")}</div>
             {rows.map((r) => (
               <label key={r.key} className={check}>
@@ -263,13 +298,23 @@ const CompareRows: React.FC<{ rows: RowSpec[] }> = ({ rows }) => {
           </div>
         </details>
       </div>
-      <table className="w-full text-xs">
-        <tbody>
-          {ordered.map(({ key, ...r }) => (
-            <Row key={key} {...r} bars={prefs.bars} pa={prefs.pcts ? r.pa : null} pb={prefs.pcts ? r.pb : null} />
-          ))}
-        </tbody>
-      </table>
+      {prefs.pcts && pctNote}
+      <div className="space-y-3">
+        {groups.map((grp, gi) => (
+          <div key={grp.title || `g-${gi}`} className="rounded-lg border border-rw-border/70 bg-rw-bg/35 px-3 py-1.5">
+            {grp.title && (
+              <div className="text-[10px] font-bold uppercase tracking-wider text-rw-accent pt-1 pb-1.5 border-b border-rw-border/60">
+                {grp.title}
+              </div>
+            )}
+            <div>
+              {grp.items.map(({ key, ...r }) => (
+                <Row key={key} {...r} bars={prefs.bars} pa={prefs.pcts ? r.pa : null} pb={prefs.pcts ? r.pb : null} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </>
   );
 };
@@ -496,30 +541,30 @@ export const TeamRows: React.FC<{
   const drafts = useMemo(() => ({ A: draftTendencies(ra), B: draftTendencies(rb) }), [ra, rb]);
   const wr = (w: number, g: number) => (g ? w / g : null);
   // the side-by-side rows (their order and which show are the viewer's: CompareRows)
+  const gOverview = tl("Overview");
+  const gEarly = tl("Early game");
+  const gObj = `${tl("Towers")} · ${tl("Baron%")}`;
+  const gPace = tl("Stats");
   const rows: RowSpec[] = [
-    { key: "h2h", label: career ? tl("Head to head (games)") : tl("Head to head this period (games)"), a: h2h.g ? h2h.w : "–", b: h2h.g ? h2h.g - h2h.w : "–", va: h2h.g ? h2h.w : null, vb: h2h.g ? h2h.g - h2h.w : null },
-    { key: "games", label: tl("Games won"), a: `${A.w}-${A.g - A.w}`, b: `${B.w}-${B.g - B.w}` },
-    { key: "wr", label: tl("Win rate"), a: winRate(A.w, A.g), b: winRate(B.w, B.g), va: wr(A.w, A.g), vb: wr(B.w, B.g), ...pc("wr") },
-    { key: "blue", label: tl("Blue side wins"), a: `${winRate(A.blue[1], A.blue[0])} (${A.blue[0]})`, b: `${winRate(B.blue[1], B.blue[0])} (${B.blue[0]})`, va: wr(A.blue[1], A.blue[0]), vb: wr(B.blue[1], B.blue[0]) },
-    { key: "red", label: tl("Red side wins"), a: `${winRate(A.red[1], A.red[0])} (${A.red[0]})`, b: `${winRate(B.red[1], B.red[0])} (${B.red[0]})`, va: wr(A.red[1], A.red[0]), vb: wr(B.red[1], B.red[0]) },
-    { key: "min", label: tl("Avg game (min)"), a: d(A.min), b: d(B.min) },
-    { key: "k", label: tl("Kills / game"), a: d(A.kills), b: d(B.kills), va: A.kills, vb: B.kills, ...pc("k") },
-    { key: "d", label: tl("Deaths / game"), a: d(A.deaths), b: d(B.deaths), va: A.deaths, vb: B.deaths, better: "low" },
-    { key: "gd", label: tl("Gold diff / game"), a: sgn(A.gd), b: sgn(B.gd), va: A.gd, vb: B.gd },
-    { key: "gdm", label: tl("GD/m"), a: sgn(A.gdm), b: sgn(B.gdm), va: A.gdm, vb: B.gdm, ...pc("gdm") },
-    { key: "gpm", label: tl("GPM"), a: A.gpm != null ? fmtNum(A.gpm) : "–", b: B.gpm != null ? fmtNum(B.gpm) : "–", va: A.gpm, vb: B.gpm, ...pc("gpm") },
-    { key: "drap", label: tl("DRA%"), a: pct(A.dragShare), b: pct(B.dragShare), va: A.dragShare, vb: B.dragShare, ...pc("drap") },
-    { key: "barp", label: tl("Baron%"), a: pct(A.baronShare), b: pct(B.baronShare), va: A.baronShare, vb: B.baronShare, ...pc("barp") },
-    { key: "tow", label: tl("Towers"), a: d(A.towers), b: d(B.towers), va: A.towers, vb: B.towers, ...pc("tow") },
-    { key: "tl", label: tl("Towers lost per game"), a: d(A.towersLost), b: d(B.towersLost), va: A.towersLost, vb: B.towersLost, better: "low", ...pc("tl") },
-    { key: "ckpm", label: "CKPM", a: d(A.ckpm), b: d(B.ckpm) },
+    { key: "h2h", group: gOverview, label: career ? tl("Head to head (games)") : tl("Head to head this period (games)"), a: h2h.g ? h2h.w : "–", b: h2h.g ? h2h.g - h2h.w : "–", va: h2h.g ? h2h.w : null, vb: h2h.g ? h2h.g - h2h.w : null },
+    { key: "games", group: gOverview, label: tl("Games won"), a: `${A.w}-${A.g - A.w}`, b: `${B.w}-${B.g - B.w}` },
+    { key: "wr", group: gOverview, label: tl("Win rate"), a: winRate(A.w, A.g), b: winRate(B.w, B.g), va: wr(A.w, A.g), vb: wr(B.w, B.g), ...pc("wr") },
+    { key: "blue", group: gOverview, label: tl("Blue side wins"), a: `${winRate(A.blue[1], A.blue[0])} (${A.blue[0]})`, b: `${winRate(B.blue[1], B.blue[0])} (${B.blue[0]})`, va: wr(A.blue[1], A.blue[0]), vb: wr(B.blue[1], B.blue[0]) },
+    { key: "red", group: gOverview, label: tl("Red side wins"), a: `${winRate(A.red[1], A.red[0])} (${A.red[0]})`, b: `${winRate(B.red[1], B.red[0])} (${B.red[0]})`, va: wr(A.red[1], A.red[0]), vb: wr(B.red[1], B.red[0]) },
+    ...(career
+      ? ([
+          { key: "titles", group: gOverview, label: tl("Titles"), a: x.titles.length, b: y.titles.length, va: x.titles.length, vb: y.titles.length },
+          { key: "worlds", group: gOverview, label: tl("Worlds"), a: x.titles.filter((t) => t.kind === "Worlds").length, b: y.titles.filter((t) => t.kind === "Worlds").length },
+        ] as RowSpec[])
+      : []),
     ...(A.tl || B.tl
       ? ([
-          { key: "gd10", label: "GD@10", a: sgn(A.tl?.gd10 ?? null), b: sgn(B.tl?.gd10 ?? null), va: A.tl?.gd10 ?? null, vb: B.tl?.gd10 ?? null },
-          { key: "gd15", label: "GD@15", a: sgn(A.tl?.gd15 ?? null), b: sgn(B.tl?.gd15 ?? null), va: A.tl?.gd15 ?? null, vb: B.tl?.gd15 ?? null, ...pc("g15") },
-          { key: "lead15", label: tl("Ahead at 15"), a: pct(A.tl?.lead15 ?? null), b: pct(B.tl?.lead15 ?? null), va: A.tl?.lead15 ?? null, vb: B.tl?.lead15 ?? null },
+          { key: "gd10", group: gEarly, label: "GD@10", a: sgn(A.tl?.gd10 ?? null), b: sgn(B.tl?.gd10 ?? null), va: A.tl?.gd10 ?? null, vb: B.tl?.gd10 ?? null },
+          { key: "gd15", group: gEarly, label: "GD@15", a: sgn(A.tl?.gd15 ?? null), b: sgn(B.tl?.gd15 ?? null), va: A.tl?.gd15 ?? null, vb: B.tl?.gd15 ?? null, ...pc("g15") },
+          { key: "lead15", group: gEarly, label: tl("Ahead at 15"), a: pct(A.tl?.lead15 ?? null), b: pct(B.tl?.lead15 ?? null), va: A.tl?.lead15 ?? null, vb: B.tl?.lead15 ?? null },
           {
             key: "ahead",
+            group: gEarly,
             label: tl("Win rate when ahead at 15"),
             a: A.tl ? winRate(A.tl.ahead[1], A.tl.ahead[0]) : "–",
             b: B.tl ? winRate(B.tl.ahead[1], B.tl.ahead[0]) : "–",
@@ -528,29 +573,47 @@ export const TeamRows: React.FC<{
           },
           {
             key: "behind",
+            group: gEarly,
             label: tl("Win rate when behind at 15"),
             a: A.tl ? winRate(A.tl.behind[1], A.tl.behind[0]) : "–",
             b: B.tl ? winRate(B.tl.behind[1], B.tl.behind[0]) : "–",
             va: A.tl ? wr(A.tl.behind[1], A.tl.behind[0]) : null,
             vb: B.tl ? wr(B.tl.behind[1], B.tl.behind[0]) : null,
           },
-          { key: "fb", label: tl("First blood"), a: pct(A.tl?.fb ?? null), b: pct(B.tl?.fb ?? null), va: A.tl?.fb ?? null, vb: B.tl?.fb ?? null, ...pc("fb") },
-          { key: "ft", label: tl("First tower"), a: pct(A.tl?.ft ?? null), b: pct(B.tl?.ft ?? null), va: A.tl?.ft ?? null, vb: B.tl?.ft ?? null, ...pc("ft") },
-          { key: "fd", label: tl("First dragon"), a: pct(A.tl?.fd ?? null), b: pct(B.tl?.fd ?? null), va: A.tl?.fd ?? null, vb: B.tl?.fd ?? null },
-          { key: "pl", label: tl("Turret plates"), a: d(A.tl?.plates ?? null), b: d(B.tl?.plates ?? null), va: A.tl?.plates ?? null, vb: B.tl?.plates ?? null, ...pc("pl") },
+          { key: "fb", group: gEarly, label: tl("First blood"), a: pct(A.tl?.fb ?? null), b: pct(B.tl?.fb ?? null), va: A.tl?.fb ?? null, vb: B.tl?.fb ?? null, ...pc("fb") },
+          { key: "ft", group: gEarly, label: tl("First tower"), a: pct(A.tl?.ft ?? null), b: pct(B.tl?.ft ?? null), va: A.tl?.ft ?? null, vb: B.tl?.ft ?? null, ...pc("ft") },
+          { key: "fd", group: gEarly, label: tl("First dragon"), a: pct(A.tl?.fd ?? null), b: pct(B.tl?.fd ?? null), va: A.tl?.fd ?? null, vb: B.tl?.fd ?? null },
+          { key: "pl", group: gEarly, label: tl("Turret plates"), a: d(A.tl?.plates ?? null), b: d(B.tl?.plates ?? null), va: A.tl?.plates ?? null, vb: B.tl?.plates ?? null, ...pc("pl") },
           ...(A.tl?.grubs != null || B.tl?.grubs != null
-            ? [{ key: "grubs", label: tl("Void grubs"), a: d(A.tl?.grubs ?? null), b: d(B.tl?.grubs ?? null), va: A.tl?.grubs ?? null, vb: B.tl?.grubs ?? null }]
+            ? [{ key: "grubs", group: gEarly, label: tl("Void grubs"), a: d(A.tl?.grubs ?? null), b: d(B.tl?.grubs ?? null), va: A.tl?.grubs ?? null, vb: B.tl?.grubs ?? null }]
             : []),
-          { key: "vspm", label: tl("VS / min"), a: d(A.tl?.vspm ?? null), b: d(B.tl?.vspm ?? null), va: A.tl?.vspm ?? null, vb: B.tl?.vspm ?? null },
         ] as RowSpec[])
       : []),
-    ...(career
-      ? ([
-          { key: "titles", label: tl("Titles"), a: x.titles.length, b: y.titles.length, va: x.titles.length, vb: y.titles.length },
-          { key: "worlds", label: tl("Worlds"), a: x.titles.filter((t) => t.kind === "Worlds").length, b: y.titles.filter((t) => t.kind === "Worlds").length },
-        ] as RowSpec[])
+    { key: "drap", group: gObj, label: tl("DRA%"), a: pct(A.dragShare), b: pct(B.dragShare), va: A.dragShare, vb: B.dragShare, ...pc("drap") },
+    { key: "barp", group: gObj, label: tl("Baron%"), a: pct(A.baronShare), b: pct(B.baronShare), va: A.baronShare, vb: B.baronShare, ...pc("barp") },
+    { key: "tow", group: gObj, label: tl("Towers"), a: d(A.towers), b: d(B.towers), va: A.towers, vb: B.towers, ...pc("tow") },
+    { key: "tl", group: gObj, label: tl("Towers lost per game"), a: d(A.towersLost), b: d(B.towersLost), va: A.towersLost, vb: B.towersLost, better: "low", ...pc("tl") },
+    { key: "k", group: gPace, label: tl("Kills / game"), a: d(A.kills), b: d(B.kills), va: A.kills, vb: B.kills, ...pc("k") },
+    { key: "d", group: gPace, label: tl("Deaths / game"), a: d(A.deaths), b: d(B.deaths), va: A.deaths, vb: B.deaths, better: "low" },
+    { key: "ckpm", group: gPace, label: "CKPM", a: d(A.ckpm), b: d(B.ckpm), va: A.ckpm, vb: B.ckpm },
+    { key: "min", group: gPace, label: tl("Avg game (min)"), a: d(A.min), b: d(B.min) },
+    { key: "gd", group: gPace, label: tl("Gold diff / game"), a: sgn(A.gd), b: sgn(B.gd), va: A.gd, vb: B.gd },
+    { key: "gdm", group: gPace, label: tl("GD/m"), a: sgn(A.gdm), b: sgn(B.gdm), va: A.gdm, vb: B.gdm, ...pc("gdm") },
+    { key: "gpm", group: gPace, label: tl("GPM"), a: A.gpm != null ? fmtNum(A.gpm) : "–", b: B.gpm != null ? fmtNum(B.gpm) : "–", va: A.gpm, vb: B.gpm, ...pc("gpm") },
+    ...(A.tl || B.tl
+      ? ([{ key: "vspm", group: gPace, label: tl("VS / min"), a: d(A.tl?.vspm ?? null), b: d(B.tl?.vspm ?? null), va: A.tl?.vspm ?? null, vb: B.tl?.vspm ?? null }] as RowSpec[])
       : []),
   ];
+  const pctNote =
+    PX || PY ? (
+      <p className="text-[10px] text-rw-muted">
+        {tl("Shaded numbers: percentile among their league's teams that season (100 = best; {list}).", {
+          list: [PX && `${x.name}: ${PX.league} ${PX.year}, ${PX.n} ${tl("teams")}`, PY && `${y.name}: ${PY.league} ${PY.year}, ${PY.n} ${tl("teams")}`]
+            .filter(Boolean)
+            .join("; "),
+        })}
+      </p>
+    ) : null;
   return (
     <>
       <Section
@@ -580,16 +643,7 @@ export const TeamRows: React.FC<{
             <TeamLogo name={y.name} sizeClass="w-9 h-9 lg:w-12 lg:h-12 2xl:w-16 2xl:h-16" />
           </span>
         </div>
-        {(PX || PY) && (
-          <p className="text-[10px] text-rw-muted">
-            {tl("Shaded numbers: percentile among their league's teams that season (100 = best; {list}).", {
-              list: [PX && `${x.name}: ${PX.league} ${PX.year}, ${PX.n} ${tl("teams")}`, PY && `${y.name}: ${PY.league} ${PY.year}, ${PY.n} ${tl("teams")}`]
-                .filter(Boolean)
-                .join("; "),
-            })}
-          </p>
-        )}
-        <CompareRows rows={rows} />
+        <CompareRows rows={rows} pctNote={pctNote} />
         <TeamRadar rows={rows} a={x.name} b={y.name} />
         {(A.tl || B.tl) && <OeCredit />}
       </Section>
@@ -637,6 +691,63 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
   }, [A, B]);
   const wr = (w: number, g: number) => (g ? w / g : null);
   const pg = (p: typeof A) => `${perGame(p.k, p.g) ?? "–"} / ${perGame(p.d, p.g) ?? "–"} / ${perGame(p.a, p.g) ?? "–"}`;
+  const gOverview = tl("Overview");
+  const gStats = tl("Stats");
+  const gEarly = tl("Early game");
+  const pRows: RowSpec[] = [
+    { key: "p_role", group: gOverview, label: tl("Role"), a: A.roles[0] ? roleName(A.roles[0]) : "–", b: B.roles[0] ? roleName(B.roles[0]) : "–" },
+    ...(h2h.g > 0
+      ? ([
+          {
+            key: "p_h2h",
+            group: gOverview,
+            label: career ? tl("Head to head (games)") : tl("Head to head this period (games)"),
+            a: h2h.w,
+            b: h2h.g - h2h.w,
+            va: h2h.w,
+            vb: h2h.g - h2h.w,
+          },
+        ] as RowSpec[])
+      : []),
+    { key: "p_games", group: gOverview, label: tl("Games won"), a: `${A.w}-${A.g - A.w}`, b: `${B.w}-${B.g - B.w}` },
+    { key: "p_wr", group: gOverview, label: tl("Win rate"), a: winRate(A.w, A.g), b: winRate(B.w, B.g), va: wr(A.w, A.g), vb: wr(B.w, B.g) },
+    { key: "p_champs", group: gOverview, label: tl("Champions played"), a: A.champs.length, b: B.champs.length, va: A.champs.length, vb: B.champs.length },
+    ...(career
+      ? ([
+          { key: "p_titles", group: gOverview, label: tl("Titles"), a: x.titles.length, b: y.titles.length, va: x.titles.length, vb: y.titles.length },
+          { key: "p_worlds", group: gOverview, label: tl("Worlds"), a: x.titles.filter((t) => t.kind === "Worlds").length, b: y.titles.filter((t) => t.kind === "Worlds").length },
+        ] as RowSpec[])
+      : []),
+    { key: "p_kda", group: gStats, label: tl("KDA"), a: fmtN(A.kda), b: fmtN(B.kda), va: A.kda, vb: B.kda },
+    { key: "p_kda_line", group: gStats, label: "K / D / A", a: pg(A), b: pg(B) },
+    { key: "p_kp", group: gStats, label: "KP", a: pct(A.kp), b: pct(B.kp), va: A.kp, vb: B.kp },
+    { key: "p_csm", group: gStats, label: tl("CS / min"), a: d(A.csm), b: d(B.csm), va: A.csm, vb: B.csm },
+    { key: "p_gpm", group: gStats, label: tl("GPM"), a: A.gpm != null ? fmtNum(A.gpm) : "–", b: B.gpm != null ? fmtNum(B.gpm) : "–", va: A.gpm, vb: B.gpm },
+    { key: "p_dpm", group: gStats, label: tl("Damage / min"), a: A.dpm != null ? fmtNum(A.dpm) : "–", b: B.dpm != null ? fmtNum(B.dpm) : "–", va: A.dpm, vb: B.dpm },
+    { key: "p_dmgp", group: gStats, label: tl("DMG%"), a: pct(A.dmgShare), b: pct(B.dmgShare), va: A.dmgShare, vb: B.dmgShare },
+    { key: "p_goldp", group: gStats, label: tl("Gold%"), a: pct(A.goldShare), b: pct(B.goldShare), va: A.goldShare, vb: B.goldShare },
+    { key: "p_vsm", group: gStats, label: tl("VS / min"), a: d(A.vsm), b: d(B.vsm), va: A.vsm, vb: B.vsm },
+    ...(A.tl || B.tl
+      ? ([
+          { key: "p_gd15", group: gEarly, label: "GD@15", a: sgn(A.tl?.gd15 ?? null), b: sgn(B.tl?.gd15 ?? null), va: A.tl?.gd15 ?? null, vb: B.tl?.gd15 ?? null },
+          { key: "p_csd15", group: gEarly, label: "CSD@15", a: sgn(A.tl?.csd15 ?? null), b: sgn(B.tl?.csd15 ?? null), va: A.tl?.csd15 ?? null, vb: B.tl?.csd15 ?? null },
+          { key: "p_xpd15", group: gEarly, label: "XPD@15", a: sgn(A.tl?.xpd15 ?? null), b: sgn(B.tl?.xpd15 ?? null), va: A.tl?.xpd15 ?? null, vb: B.tl?.xpd15 ?? null },
+          { key: "p_fbp", group: gEarly, label: tl("First blood involvement"), a: pct(A.tl?.fbPart ?? null), b: pct(B.tl?.fbPart ?? null), va: A.tl?.fbPart ?? null, vb: B.tl?.fbPart ?? null },
+          {
+            key: "p_fbv",
+            group: gEarly,
+            label: tl("Died for first blood"),
+            a: pct(A.tl?.fbVictim ?? null),
+            b: pct(B.tl?.fbVictim ?? null),
+            va: A.tl?.fbVictim ?? null,
+            vb: B.tl?.fbVictim ?? null,
+            better: "low",
+          },
+          { key: "p_wpm", group: gEarly, label: tl("Wards / min"), a: d(A.tl?.wpm ?? null), b: d(B.tl?.wpm ?? null), va: A.tl?.wpm ?? null, vb: B.tl?.wpm ?? null },
+          { key: "p_wcpm", group: gEarly, label: tl("Wards cleared / min"), a: d(A.tl?.wcpm ?? null), b: d(B.tl?.wcpm ?? null), va: A.tl?.wcpm ?? null, vb: B.tl?.wcpm ?? null },
+        ] as RowSpec[])
+      : []),
+  ];
   return (
     <>
       <Section
@@ -673,48 +784,7 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
             <PlayerPhoto name={y.name} team={y.club} slug={y.u} img={y.img} sizeClass="w-11 h-11 lg:w-16 lg:h-16 2xl:w-20 2xl:h-20" />
           </span>
         </div>
-        <table className="w-full text-xs">
-          <tbody>
-            <Row label={tl("Role")} a={A.roles[0] ? roleName(A.roles[0]) : "–"} b={B.roles[0] ? roleName(B.roles[0]) : "–"} />
-            {h2h.g > 0 && <Row label={career ? tl("Head to head (games)") : tl("Head to head this period (games)")} a={h2h.w} b={h2h.g - h2h.w} va={h2h.w} vb={h2h.g - h2h.w} />}
-            <Row label={tl("Games won")} a={`${A.w}-${A.g - A.w}`} b={`${B.w}-${B.g - B.w}`} />
-            <Row label={tl("Win rate")} a={winRate(A.w, A.g)} b={winRate(B.w, B.g)} va={wr(A.w, A.g)} vb={wr(B.w, B.g)} />
-            <Row label={tl("KDA")} a={fmtN(A.kda)} b={fmtN(B.kda)} va={A.kda} vb={B.kda} />
-            <Row label="K / D / A" a={pg(A)} b={pg(B)} />
-            <Row label="KP" a={pct(A.kp)} b={pct(B.kp)} va={A.kp} vb={B.kp} />
-            <Row label={tl("CS / min")} a={d(A.csm)} b={d(B.csm)} va={A.csm} vb={B.csm} />
-            <Row label={tl("GPM")} a={A.gpm != null ? fmtNum(A.gpm) : "–"} b={B.gpm != null ? fmtNum(B.gpm) : "–"} va={A.gpm} vb={B.gpm} />
-            <Row label={tl("Damage / min")} a={A.dpm != null ? fmtNum(A.dpm) : "–"} b={B.dpm != null ? fmtNum(B.dpm) : "–"} va={A.dpm} vb={B.dpm} />
-            <Row label={tl("DMG%")} a={pct(A.dmgShare)} b={pct(B.dmgShare)} va={A.dmgShare} vb={B.dmgShare} />
-            <Row label={tl("Gold%")} a={pct(A.goldShare)} b={pct(B.goldShare)} va={A.goldShare} vb={B.goldShare} />
-            <Row label={tl("VS / min")} a={d(A.vsm)} b={d(B.vsm)} va={A.vsm} vb={B.vsm} />
-            {(A.tl || B.tl) && (
-              <>
-                <Row label="GD@15" a={sgn(A.tl?.gd15 ?? null)} b={sgn(B.tl?.gd15 ?? null)} va={A.tl?.gd15 ?? null} vb={B.tl?.gd15 ?? null} />
-                <Row label="CSD@15" a={sgn(A.tl?.csd15 ?? null)} b={sgn(B.tl?.csd15 ?? null)} va={A.tl?.csd15 ?? null} vb={B.tl?.csd15 ?? null} />
-                <Row label="XPD@15" a={sgn(A.tl?.xpd15 ?? null)} b={sgn(B.tl?.xpd15 ?? null)} va={A.tl?.xpd15 ?? null} vb={B.tl?.xpd15 ?? null} />
-                <Row label={tl("First blood involvement")} a={pct(A.tl?.fbPart ?? null)} b={pct(B.tl?.fbPart ?? null)} va={A.tl?.fbPart ?? null} vb={B.tl?.fbPart ?? null} />
-                <Row
-                  label={tl("Died for first blood")}
-                  a={pct(A.tl?.fbVictim ?? null)}
-                  b={pct(B.tl?.fbVictim ?? null)}
-                  va={A.tl?.fbVictim ?? null}
-                  vb={B.tl?.fbVictim ?? null}
-                  better="low"
-                />
-                <Row label={tl("Wards / min")} a={d(A.tl?.wpm ?? null)} b={d(B.tl?.wpm ?? null)} va={A.tl?.wpm ?? null} vb={B.tl?.wpm ?? null} />
-                <Row label={tl("Wards cleared / min")} a={d(A.tl?.wcpm ?? null)} b={d(B.tl?.wcpm ?? null)} va={A.tl?.wcpm ?? null} vb={B.tl?.wcpm ?? null} />
-              </>
-            )}
-            <Row label={tl("Champions played")} a={A.champs.length} b={B.champs.length} />
-            {career && (
-              <>
-                <Row label={tl("Titles")} a={x.titles.length} b={y.titles.length} va={x.titles.length} vb={y.titles.length} />
-                <Row label={tl("Worlds")} a={x.titles.filter((t) => t.kind === "Worlds").length} b={y.titles.filter((t) => t.kind === "Worlds").length} />
-              </>
-            )}
-          </tbody>
-        </table>
+        <CompareRows rows={pRows} />
         <PlayerRadar ra={ra} rb={rb} a={x.name} b={y.name} />
         {(A.tl || B.tl) && <OeCredit />}
       </Section>
