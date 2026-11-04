@@ -101,7 +101,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px]">
         <span className="min-w-0 truncate">
-          <span className="font-bold text-rw-teal">{m.leagueName}</span>
+          <span className="font-bold text-rw-accent">{m.leagueName}</span>
           {m.blockName && <span className="text-rw-sub"> · {m.blockName}</span>}
           <span className="text-rw-muted"> · {tc("short best of", "Bo{n}", { n: m.bestOf || 1 })}</span>
         </span>

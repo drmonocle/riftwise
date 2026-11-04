@@ -24,7 +24,7 @@ export class PartBoundary extends React.Component<{ children: React.ReactNode },
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="px-3 py-1.5 rounded-lg border border-rw-border text-rw-teal hover:border-rw-teal"
+          className="px-3 py-1.5 rounded-lg border border-rw-border text-rw-accent hover:border-rw-accent"
         >
           {tl("Reload")}
         </button>

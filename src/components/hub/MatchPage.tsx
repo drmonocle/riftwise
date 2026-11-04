@@ -158,7 +158,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
               q={s.en}
               label={tl("Event photos")}
               title={tl("Riot's photos from {event} on NerdFinder", { event: s.en })}
-              className="inline-flex items-center gap-1 text-rw-teal hover:underline"
+              className="inline-flex items-center gap-1 text-rw-accent hover:underline"
             />
           </span>
           {!hidden && s.r != null && (
@@ -402,7 +402,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
             {s.a.u && s.b.u && (
               <HubLink
                 to={{ kind: "draft", query: seriesGameDraftQuery(s, g) }}
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-teal hover:underline"
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-accent hover:underline"
               >
                 <Swords className="w-3.5 h-3.5" />
                 {tl("Draft board")}
@@ -611,7 +611,7 @@ const PlayerBars: React.FC<{ blueName: string; redName: string; blue: GamePlayer
           {b.u && o.u ? (
             <HubLink
               to={{ kind: "compare", mode: "player", a: b.u, b: o.u }}
-              className="text-[9px] text-rw-muted hover:text-rw-teal hover:underline text-center w-12"
+              className="text-[9px] text-rw-muted hover:text-rw-accent hover:underline text-center w-12"
               title={`${tl("Compare")}: ${b.n} vs ${o.n}`}
             >
               {roleName(r)}
@@ -838,7 +838,7 @@ const PlayerRow: React.FC<{ p: GamePlayer; teamKills: number; teamDmg: number; t
               p.u ? (
                 <HubLink
                   to={{ kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(p.c)}` }}
-                  className="hover:text-rw-teal hover:underline"
+                  className="hover:text-rw-accent hover:underline"
                   title={`${p.n} · ${champName(p.c)}`}
                 >
                   {champName(p.c)}

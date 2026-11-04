@@ -187,7 +187,7 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
           {(["a", "b"] as const).map((k) => (
             <div key={k} className={`${card} min-w-0`}>
               {(k === "a" ? a : b) ? (
-                <button type="button" onClick={() => set({ [k]: undefined })} className="text-[11px] text-rw-teal hover:underline">
+                <button type="button" onClick={() => set({ [k]: undefined })} className="text-[11px] text-rw-accent hover:underline">
                   {tl("Change")}
                 </button>
               ) : (
@@ -203,11 +203,11 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
       <div className="text-xs text-rw-sub py-6 text-center space-y-2">
         <p>{sides.missing ? tl("We couldn't find one of these teams.") : tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>
         {sides.missing ? null : (
-          <button type="button" onClick={retryFailedLoads} className="text-rw-teal hover:underline mr-4">
+          <button type="button" onClick={retryFailedLoads} className="text-rw-accent hover:underline mr-4">
             {tl("Try again")}
           </button>
         )}
-        <button type="button" onClick={() => set({ a: undefined, b: undefined })} className="text-rw-teal hover:underline">
+        <button type="button" onClick={() => set({ a: undefined, b: undefined })} className="text-rw-accent hover:underline">
           {tl("Pick the teams again")}
         </button>
       </div>
@@ -254,8 +254,8 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
       right={overview ? <BroadcastCardButton data={overview} name={`${a.name}-vs-${b.name}-match-prep`} label={tl("Overview card")} /> : undefined}
     >
       <div className="flex items-center justify-between gap-2 text-xs font-bold">
-        <span className="text-rw-teal truncate">{a.name}</span>
-        <span className="text-rw-red truncate text-right">{b.name}</span>
+        <span className="text-rw-side-a truncate">{a.name}</span>
+        <span className="text-rw-side-b truncate text-right">{b.name}</span>
       </div>
       <div className="space-y-1.5">
         {rows.map(([label, x]) => (
@@ -294,7 +294,7 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
               acc: pct(acc.acc || 0),
             })
           : tl("From the power rankings (every pro game since 2011).")}{" "}
-        <HubLink to={{ kind: "rankings" }} className="text-rw-teal hover:underline" >
+        <HubLink to={{ kind: "rankings" }} className="text-rw-accent hover:underline" >
           {tl("Power rankings")}
         </HubLink>
       </p>
@@ -691,14 +691,14 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           <PeriodPicker options={options} value={period} onChange={(p) => set({ period: p })} />
           <HubLink
             to={{ kind: "draft", query: `teams=${encodeURIComponent(a.team.u)},${encodeURIComponent(b.team.u)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
-            className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-teal hover:underline"
+            className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-accent hover:underline"
           >
             <Swords className="w-3.5 h-3.5" />
             {tl("Draft board")}
           </HubLink>
           <HubLink
             to={{ kind: "compare", mode: "team", a: a.team.u, b: b.team.u, period }}
-            className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-teal hover:underline"
+            className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-accent hover:underline"
           >
             <GitCompare className="w-3.5 h-3.5" />
             {tl("Compare")}
@@ -707,7 +707,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           <button
             type="button"
             onClick={printing.start}
-            className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-teal hover:text-rw-text"
+            className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-accent hover:text-rw-text"
             title={tl("Print a caster sheet: everything on this page, on paper or as a PDF")}
             aria-label={tl("Print sheet")}
           >
@@ -775,7 +775,7 @@ const CopyPost: React.FC<{ text: () => string }> = ({ text }) => {
     <button
       type="button"
       onClick={() => navigator.clipboard.writeText(text()).then(() => setState("copied"), () => setState("failed"))}
-      className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-teal hover:text-rw-text"
+      className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-accent hover:text-rw-text"
       title={`${tl("Copy post")}: ${tl("Copy a ready-to-post summary with the link, for X or Discord")}`}
       aria-label={tl("Copy post")}
     >
@@ -949,7 +949,7 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
             <HubLink
               key={c}
               to={{ kind: "player", slug: x.slug, tab: "champions", query: `champ=${encodeURIComponent(c)}` }}
-              className={`flex items-center gap-0.5 text-[10px] hover:text-rw-teal hover:underline ${g >= 2 ? "text-rw-sub" : "text-rw-muted opacity-60"}`}
+              className={`flex items-center gap-0.5 text-[10px] hover:text-rw-accent hover:underline ${g >= 2 ? "text-rw-sub" : "text-rw-muted opacity-60"}`}
               title={`${champName(c)} · ${g} · ${winRate(w, g)}`}
             >
               <ChampIcon name={c} size={18} />
@@ -1041,7 +1041,7 @@ const Lanes: React.FC<{
               <HubLink
                 key={c.c}
                 to={{ kind: "player", slug, tab: "champions", query: `champ=${encodeURIComponent(c.c)}` }}
-                className="flex items-center gap-0.5 text-[10px] text-rw-sub hover:text-rw-teal hover:underline"
+                className="flex items-center gap-0.5 text-[10px] text-rw-sub hover:text-rw-accent hover:underline"
                 title={`${champName(c.c)} · ${c.g} · ${winRate(c.w, c.g)}`}
               >
                 <ChampIcon name={c.c} size={18} />
@@ -1062,7 +1062,7 @@ const Lanes: React.FC<{
           <HubLink to={{ kind: "player", slug: pl.p.u }} className={`text-sm font-bold text-rw-text hover:underline truncate ${right ? "" : "text-right"}`}>
             {pl.p.name}
           </HubLink>
-          <PhotosLink q={pl.p.name} iconOnly className="text-rw-muted hover:text-rw-teal shrink-0" />
+          <PhotosLink q={pl.p.name} iconOnly className="text-rw-muted hover:text-rw-accent shrink-0" />
           {onSwap && <RosterSubPicker side={side} roleIdx={roleIdx} onSwap={onSwap} />}
         </span>
       ) : (
@@ -1102,13 +1102,13 @@ const Lanes: React.FC<{
           <div className="mt-1 grid grid-cols-[1fr_auto_1fr] gap-x-3">
             {h2h && h2h.g > 0 && (
               <>
-                <span className={`${val} text-right ${h2h.w > h2h.g - h2h.w ? "text-rw-teal font-semibold" : "text-rw-sub"}`}>
+                <span className={`${val} text-right ${h2h.w > h2h.g - h2h.w ? "text-rw-side-a font-semibold" : "text-rw-sub"}`}>
                   {h2h.w}W ({Math.round((h2h.w / h2h.g) * 100)}%)
                 </span>
                 <span className={`${val} text-rw-muted text-center w-16`} title={tl("Head to head")}>
                   {tl("Head to head")}
                 </span>
-                <span className={`${val} ${h2h.g - h2h.w > h2h.w ? "text-rw-teal font-semibold" : "text-rw-sub"}`}>
+                <span className={`${val} ${h2h.g - h2h.w > h2h.w ? "text-rw-side-b font-semibold" : "text-rw-sub"}`}>
                   {h2h.g - h2h.w}W ({Math.round(((h2h.g - h2h.w) / h2h.g) * 100)}%)
                 </span>
               </>
@@ -1119,11 +1119,11 @@ const Lanes: React.FC<{
                 const better = va != null && vb != null && va !== vb ? (va > vb ? "a" : "b") : null;
                 return (
                   <React.Fragment key={label}>
-                    <span className={`${val} text-right ${better === "a" ? "text-rw-teal font-semibold" : "text-rw-sub"}`}>{va != null ? f(va) : "–"}</span>
+                    <span className={`${val} text-right ${better === "a" ? "text-rw-side-a font-semibold" : "text-rw-sub"}`}>{va != null ? f(va) : "–"}</span>
                     <span className={`${val} text-rw-muted text-center w-16`} title={hint}>
                       {label}
                     </span>
-                    <span className={`${val} ${better === "b" ? "text-rw-teal font-semibold" : "text-rw-sub"}`}>{vb != null ? f(vb) : "–"}</span>
+                    <span className={`${val} ${better === "b" ? "text-rw-side-b font-semibold" : "text-rw-sub"}`}>{vb != null ? f(vb) : "–"}</span>
                   </React.Fragment>
                 );
               })}
@@ -1164,7 +1164,7 @@ const Lanes: React.FC<{
           url={NERDFINDER_TOGETHER}
           label={tl("Find two players in the same photo")}
           title={tl("NerdFinder's Together search: pick two players and see every photo they're both in")}
-          className="inline-flex items-center gap-1 text-rw-teal hover:underline"
+          className="inline-flex items-center gap-1 text-rw-accent hover:underline"
         />
       </p>
       <OeCredit />
@@ -1323,7 +1323,7 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
       title={`${tl("Draft board")} · ${tl("Threats to ban")} & ${tl("Comfort picks")}`}
       right={
         <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
-          <HubLink to={{ kind: "draft", query: preloadedQuery }} className="text-rw-teal hover:underline font-semibold">
+          <HubLink to={{ kind: "draft", query: preloadedQuery }} className="text-rw-accent hover:underline font-semibold">
             {tl("Draft board")} ({tl("Bans, phase 1")})
           </HubLink>
           <HubLink
@@ -1331,7 +1331,7 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
               kind: "draft",
               query: `teams=${encodeURIComponent(a.team.u)},${encodeURIComponent(b.team.u)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
             }}
-            className="text-rw-sub hover:text-rw-teal hover:underline"
+            className="text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Open →")}
           </HubLink>
@@ -1340,7 +1340,7 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
     >
       <div className="grid gap-3 md:grid-cols-2 text-xs">
         <div className="space-y-2 min-w-0">
-          <div className="font-bold text-rw-teal truncate">{a.team.name}</div>
+          <div className="font-bold text-rw-side-a truncate">{a.team.name}</div>
           <div className="space-y-1">
             <div className="text-[10px] font-semibold text-rw-muted">
               {tl("Threats to ban")} ({b.team.name})
@@ -1355,7 +1355,7 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
           </div>
         </div>
         <div className="space-y-2 min-w-0">
-          <div className="font-bold text-rw-red truncate">{b.team.name}</div>
+          <div className="font-bold text-rw-side-b truncate">{b.team.name}</div>
           <div className="space-y-1">
             <div className="text-[10px] font-semibold text-rw-muted">
               {tl("Threats to ban")} ({a.team.name})

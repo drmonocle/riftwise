@@ -120,7 +120,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
             {overview && (
               <HubLink
                 to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${activeRoster.y}` }}
-                className="text-[11px] text-rw-teal hover:underline"
+                className="text-[11px] text-rw-accent hover:underline"
               >
                 {`${tl("Stats for")} ${activeRoster.y}`}
               </HubLink>
@@ -172,14 +172,14 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   {overview && <PlayerPhoto name={p.n} team={eraName || t.name} slug={p.u ?? undefined} size={22} />}
                   <PlayerLink name={p.n} u={p.u} />
                   <span className="text-rw-muted">{roleName(p.r)}</span>
-                  {overview && <PhotosLink q={p.n} iconOnly className="text-rw-muted hover:text-rw-teal" />}
+                  {overview && <PhotosLink q={p.n} iconOnly className="text-rw-muted hover:text-rw-accent" />}
                 </span>
               ))}
             </div>
           );
         })}
         {overview && t.roster.length > 1 && (
-          <HubLink to={to("history")} className="text-[11px] text-rw-teal hover:underline">
+          <HubLink to={to("history")} className="text-[11px] text-rw-accent hover:underline">
             {tl("Every roster since {year}", { year: t.roster[t.roster.length - 1].y })}
           </HubLink>
         )}
@@ -242,7 +242,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     </button>{" "}
                     <HubLink
                       to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${targetYr}` }}
-                      className="text-rw-muted hover:text-rw-teal hover:underline"
+                      className="text-rw-muted hover:text-rw-accent hover:underline"
                       title={`${tl("Stats for")} ${targetYr}`}
                     >
                       ({n.from.slice(0, 4)}
@@ -422,13 +422,13 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
               {t.years.map((y) => (
                 <tr key={y.y} className="border-t border-rw-border hover:bg-rw-raised/50">
                   <td className={`${td} text-rw-text`}>
-                    <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${y.y}` }} className="hover:text-rw-teal hover:underline font-medium">
+                    <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${y.y}` }} className="hover:text-rw-accent hover:underline font-medium">
                       {y.y}
                     </HubLink>
                     {y.as !== t.name && <span className="text-rw-muted text-[10px]"> {tl("as {name}", { name: y.as })}</span>}
                   </td>
                   <td className={`${td} text-rw-sub`}>
-                    <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${y.y}` }} className="hover:text-rw-teal hover:underline">
+                    <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${y.y}` }} className="hover:text-rw-accent hover:underline">
                       {y.w}-{y.g - y.w}
                     </HubLink>
                   </td>
@@ -473,7 +473,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
           right={
             <span className="flex items-center gap-2">
               {t.events.length > 15 && (
-                <button type="button" onClick={() => setAllEvents((v) => !v)} className="text-[11px] text-rw-teal hover:underline">
+                <button type="button" onClick={() => setAllEvents((v) => !v)} className="text-[11px] text-rw-accent hover:underline">
                   {allEvents ? tl("Show fewer") : tl("Show all {n}", { n: t.events.length })}
                 </button>
               )}
@@ -546,7 +546,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     {o.u ? (
                       <HubLink
                         to={{ kind: "compare", mode: "team", a: t.u, b: o.u }}
-                        className="hover:text-rw-teal hover:underline"
+                        className="hover:text-rw-accent hover:underline"
                         title={tl("Head to head")}
                       >
                         {o.w}-{o.g - o.w}
@@ -677,7 +677,7 @@ const TeamChampionsTab: React.FC<{
                   <button
                     type="button"
                     onClick={() => pickChamp(c.c)}
-                    className="text-rw-muted hover:text-rw-teal shrink-0 tabular-nums"
+                    className="text-rw-muted hover:text-rw-accent shrink-0 tabular-nums"
                     title={tl("Every game on {champ}", { champ: champName(c.c) })}
                   >
                     {c.g} · {winRate(c.w, c.g)}
@@ -731,7 +731,7 @@ const TeamChampionsTab: React.FC<{
         )}
         <p className="text-[11px] text-rw-muted md:col-span-2">
           {tl("Every game since {year}.", { year: t.from.slice(0, 4) })}{" "}
-          <HubLink to={to("stats")} className="text-rw-teal hover:underline">
+          <HubLink to={to("stats")} className="text-rw-accent hover:underline">
             {tl("Draft tendencies for any period are under Stats.")}
           </HubLink>
         </p>
@@ -988,7 +988,7 @@ const TeamChampGames: React.FC<{
               </option>
             ))}
           </select>
-          <HubLink to={{ kind: "champ", slug: prettySlug(canonical) }} className="text-[11px] text-rw-teal hover:underline">
+          <HubLink to={{ kind: "champ", slug: prettySlug(canonical) }} className="text-[11px] text-rw-accent hover:underline">
             {champName(canonical)} →
           </HubLink>
           <button type="button" onClick={onClose} className="text-[11px] text-rw-sub hover:text-rw-text">
@@ -1226,7 +1226,7 @@ const TeamChampGames: React.FC<{
                       )}
                       {fmtDate(r[0])}
                       {r[1] && (
-                        <HubLink to={{ kind: "match", slug: r[1] }} className="text-rw-teal hover:underline">
+                        <HubLink to={{ kind: "match", slug: r[1] }} className="text-rw-accent hover:underline">
                           {tl("Details")}
                         </HubLink>
                       )}
@@ -1236,7 +1236,7 @@ const TeamChampGames: React.FC<{
               })}
             </ul>
             {filtered.length > limit && (
-              <button type="button" onClick={() => setLimit((x) => x + 50)} className="text-[11px] text-rw-teal hover:underline">
+              <button type="button" onClick={() => setLimit((x) => x + 50)} className="text-[11px] text-rw-accent hover:underline">
                 {tl("Show more ({n} left)", { n: filtered.length - limit })}
               </button>
             )}

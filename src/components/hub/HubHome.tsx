@@ -46,7 +46,7 @@ const Eyebrow: React.FC<{ children: React.ReactNode; className?: string }> = ({ 
     <span>{children}</span>
   </div>
 );
-const more = "inline-block mt-auto pt-3 text-xs font-semibold text-rw-teal hover:underline";
+const more = "inline-block mt-auto pt-3 text-xs font-semibold text-rw-accent hover:underline";
 const tileHead = "font-head text-lg font-bold text-rw-text flex items-center gap-2 mb-2";
 
 /** Searches to try, one of each kind the box understands, each going straight to its page. */
@@ -259,7 +259,7 @@ const TodayMatches: React.FC<{
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Eyebrow>{live.length > 0 ? tn("{n} match live now", "{n} matches live now", live.length) : tl("Next up")}</Eyebrow>
         {onSelectTab && (
-          <button type="button" onClick={() => onSelectTab("schedule")} className="text-xs font-semibold text-rw-teal hover:underline">
+          <button type="button" onClick={() => onSelectTab("schedule")} className="text-xs font-semibold text-rw-accent hover:underline">
             {tl("Full schedule, results and standings →")}
           </button>
         )}
@@ -562,7 +562,7 @@ const LeagueChips: React.FC = () => {
           {tl(c.label)}
         </HubLink>
       ))}
-      <HubLink to={{ kind: "leagues" }} className="text-[11px] text-rw-teal hover:underline ml-1">
+      <HubLink to={{ kind: "leagues" }} className="text-[11px] text-rw-accent hover:underline ml-1">
         {tl("Every league")}
       </HubLink>
     </nav>
@@ -575,7 +575,7 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
   return (
     <Section
       title={tl("Players of the month")}
-      right={hidden ? <RevealButton onReveal={reveal} small /> : <HubLink to={{ kind: "about" }} className="text-[11px] text-rw-teal hover:underline">{tl("How the rating works")}</HubLink>}
+      right={hidden ? <RevealButton onReveal={reveal} small /> : <HubLink to={{ kind: "about" }} className="text-[11px] text-rw-accent hover:underline">{tl("How the rating works")}</HubLink>}
     >
       {hidden ? (
         <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>

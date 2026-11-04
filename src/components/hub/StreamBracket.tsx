@@ -200,9 +200,9 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
         </div>
       ))}
       <p className="text-[11px] text-rw-muted">
-        <EventLink name={tl("Full stats for {event}", { event: ev.n })} u={ev.u} className="text-rw-teal hover:underline" />
+        <EventLink name={tl("Full stats for {event}", { event: ev.n })} u={ev.u} className="text-rw-accent hover:underline" />
         {" · "}
-        <HubLink to={{ kind: "home" }} className="text-rw-teal hover:underline">
+        <HubLink to={{ kind: "home" }} className="text-rw-accent hover:underline">
           {tl("Pro Stats")}
         </HubLink>
       </p>

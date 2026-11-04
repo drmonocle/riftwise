@@ -337,7 +337,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 mx-auto text-[11px] text-rw-teal hover:underline"
+        className="flex items-center gap-1 mx-auto text-[11px] text-rw-accent hover:underline"
         aria-expanded={open}
       >
         {open ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}

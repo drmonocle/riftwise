@@ -25,8 +25,8 @@ export const Radar: React.FC<{ axes: string[]; sides: [RadarSide, RadarSide]; no
     return [C + r * Math.cos(ang), C + r * Math.sin(ang)] as const;
   };
   const shape = (vals: (number | null)[]) => vals.map((v, i) => at(i, Math.min(100, v ?? 50)).join(",")).join(" ");
-  const cls = ["fill-rw-accent/20 stroke-rw-accent", "fill-rw-teal/20 stroke-rw-teal"];
-  const dot = ["fill-rw-accent", "fill-rw-teal"];
+  const cls = ["fill-rw-side-a/20 stroke-rw-side-a", "fill-rw-side-b/20 stroke-rw-side-b"];
+  const dot = ["fill-rw-side-a", "fill-rw-side-b"];
   return (
     <figure className="flex flex-col items-center gap-1" aria-label={tl("{a} and {b} on the same scale", { a: sides[0].name, b: sides[1].name })}>
       <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="w-full max-w-[22rem] h-auto overflow-visible" role="img">
@@ -65,7 +65,7 @@ export const Radar: React.FC<{ axes: string[]; sides: [RadarSide, RadarSide]; no
       <figcaption className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px]">
         {sides.map((s, k) => (
           <span key={s.name + k} className="flex items-center gap-1.5 text-rw-text">
-            <span className={`w-2.5 h-2.5 rounded-sm ${k ? "bg-rw-teal" : "bg-rw-accent"}`} aria-hidden="true" />
+            <span className={`w-2.5 h-2.5 rounded-sm ${k ? "bg-rw-side-b" : "bg-rw-side-a"}`} aria-hidden="true" />
             {s.name}
           </span>
         ))}

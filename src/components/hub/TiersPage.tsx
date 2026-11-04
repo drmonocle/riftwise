@@ -17,8 +17,8 @@ import { loadChampGames, loadChampIndex, prettySlug } from "../../hub/data";
 const TIERS: { t: string; min: number; color: string }[] = [
   { t: "S", min: 40, color: "#ff6b81" },
   { t: "A", min: 25, color: "#ffa94d" },
-  { t: "B", min: 12, color: "#ffd43b" },
-  { t: "C", min: 5, color: "#69db7c" },
+  { t: "B", min: 12, color: "#e0b86b" },
+  { t: "C", min: 5, color: "#b39dff" },
   { t: "D", min: -Infinity, color: "#74c0fc" },
 ];
 

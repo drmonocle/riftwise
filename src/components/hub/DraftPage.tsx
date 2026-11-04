@@ -492,11 +492,11 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
         <div className="grid grid-cols-2 gap-3">
           {(["a", "b"] as const).map((k) => (
             <div key={k} className={`${card} min-w-0 space-y-1`}>
-              <div className={`text-[10px] uppercase tracking-wider font-bold ${k === "a" ? "text-rw-teal" : "text-rw-red"}`}>
+              <div className={`text-[10px] uppercase tracking-wider font-bold ${k === "a" ? "text-rw-side-a" : "text-rw-side-b"}`}>
                 {k === "a" ? tl("Blue side") : tl("Red side")}
               </div>
               {(k === "a" ? a : b) ? (
-                <button type="button" onClick={() => set({ [k]: null })} className="text-[11px] text-rw-teal hover:underline">
+                <button type="button" onClick={() => set({ [k]: null })} className="text-[11px] text-rw-accent hover:underline">
                   {tl("Change")}
                 </button>
               ) : (
@@ -512,11 +512,11 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
       <div className="text-xs text-rw-sub py-6 text-center space-y-2">
         <p>{sides.missing ? tl("We couldn't find one of these teams.") : tl("Couldn't load the stats right now. Check your connection and try again in a minute.")}</p>
         {sides.missing ? null : (
-          <button type="button" onClick={retryFailedLoads} className="text-rw-teal hover:underline mr-4">
+          <button type="button" onClick={retryFailedLoads} className="text-rw-accent hover:underline mr-4">
             {tl("Try again")}
           </button>
         )}
-        <button type="button" onClick={() => set({ a: null, b: null, g: "", d: "", u: "", h: "" })} className="text-rw-teal hover:underline">
+        <button type="button" onClick={() => set({ a: null, b: null, g: "", d: "", u: "", h: "" })} className="text-rw-accent hover:underline">
           {tl("Pick the teams again")}
         </button>
       </div>
@@ -912,11 +912,11 @@ const Board: React.FC<{
             {gameNum != null && gameNum >= 1 ? ` · ${tl("Game {n}", { n: gameNum })}` : ""}
           </div>
           <h1 className="text-lg font-bold truncate">
-            <HubLink to={{ kind: "team", slug: blue.team.u }} className="text-rw-teal">
+            <HubLink to={{ kind: "team", slug: blue.team.u }} className="text-rw-side-a">
               {blue.team.name}
             </HubLink>
             <span className="text-rw-muted font-normal"> vs </span>
-            <HubLink to={{ kind: "team", slug: red.team.u }} className="text-rw-red">
+            <HubLink to={{ kind: "team", slug: red.team.u }} className="text-rw-side-b">
               {red.team.name}
             </HubLink>
           </h1>
@@ -931,7 +931,7 @@ const Board: React.FC<{
             <input type="checkbox" checked={sideOnly} onChange={(e) => setSideOnly(e.target.checked)} />
             {tl("Blue / red side")}
           </label>
-          <button type="button" onClick={onSwap} className="flex items-center gap-1 text-rw-teal hover:underline" title={tl("The teams change sides; the draft on the board starts over")}>
+          <button type="button" onClick={onSwap} className="flex items-center gap-1 text-rw-accent hover:underline" title={tl("The teams change sides; the draft on the board starts over")}>
             <ArrowLeftRight className="w-3.5 h-3.5" />
             {tl("Swap sides")}
           </button>
@@ -964,7 +964,7 @@ const Board: React.FC<{
               label={tl("Overview card")}
             />
           )}
-          <HubLink to={{ kind: "prep", a: blue.team.u, b: red.team.u, period }} className="text-rw-teal hover:underline">
+          <HubLink to={{ kind: "prep", a: blue.team.u, b: red.team.u, period }} className="text-rw-accent hover:underline">
             {tl("Match prep")}
           </HubLink>
         </div>
@@ -976,7 +976,7 @@ const Board: React.FC<{
         <div className="space-y-3 min-w-0 col-span-2 order-last lg:col-span-1 lg:order-none">
           <div className={`${card} space-y-2`}>
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className={`font-bold ${now ? (now.side === "b" ? "text-rw-teal" : "text-rw-red") : "text-rw-accent"}`}>
+              <span className={`font-bold ${now ? (now.side === "b" ? "text-rw-side-a" : "text-rw-side-b") : "text-rw-accent"}`}>
                 {now
                   ? `#${step + 1} · ${
                       now.ban
@@ -1002,7 +1002,7 @@ const Board: React.FC<{
                   <button
                     type="button"
                     onClick={nextGame}
-                    className="flex items-center gap-1 text-rw-teal hover:underline"
+                    className="flex items-center gap-1 text-rw-accent hover:underline"
                     title={tl("Keeps this game's picks out of the next draft and clears the board")}
                   >
                     <ChevronsRight className="w-3.5 h-3.5" />
@@ -1041,9 +1041,9 @@ const Board: React.FC<{
                     >
                       {tl("Game {n}", { n: i + 1 })}
                     </button>
-                    <span className="text-rw-teal">{g.blue === blue.team.u ? blue.team.name : red.team.name}</span>
+                    <span className="text-rw-side-a">{g.blue === blue.team.u ? blue.team.name : red.team.name}</span>
                     {ORDER.map((o, k) => (o.side === "b" && !o.ban && g.slots[k] ? <ChampIcon key={k} name={g.slots[k] as string} size={16} /> : null))}
-                    <span className="text-rw-red ml-1">{g.red === red.team.u ? red.team.name : blue.team.name}</span>
+                    <span className="text-rw-side-b ml-1">{g.red === red.team.u ? red.team.name : blue.team.name}</span>
                     {ORDER.map((o, k) => (o.side === "r" && !o.ban && g.slots[k] ? <ChampIcon key={k} name={g.slots[k] as string} size={16} /> : null))}
                   </div>
                 ))}
@@ -1058,7 +1058,7 @@ const Board: React.FC<{
                       onUsed([]);
                       onHistory([]);
                     }}
-                    className="text-rw-teal hover:underline ml-1"
+                    className="text-rw-accent hover:underline ml-1"
                   >
                     {tl("Clear")}
                   </button>
@@ -1133,8 +1133,8 @@ const Board: React.FC<{
                   [
                     ["all", tl("All"), "text-rw-sub"],
                     ["played", tl("Champions played"), "text-rw-sub"],
-                    ["blue", blue.team.name, "text-rw-teal"],
-                    ["red", red.team.name, "text-rw-red"],
+                    ["blue", blue.team.name, "text-rw-side-a"],
+                    ["red", red.team.name, "text-rw-side-b"],
                     ["both", tl("Champions both played"), "text-rw-sub"],
                     ["flex", tl("Flex picks"), "text-rw-sub"],
                     ["pocket", tl("pocket pick"), "text-rw-sub"],
@@ -1165,7 +1165,7 @@ const Board: React.FC<{
                     type="button"
                     onClick={() => setHideTaken((v) => !v)}
                     className={`px-2 py-0.5 rounded border ${
-                      hideTaken ? "border-rw-teal/60 text-rw-teal bg-rw-teal/10 font-semibold" : "border-rw-border text-rw-muted hover:text-rw-text"
+                      hideTaken ? "border-rw-accent/60 text-rw-accent bg-rw-accent/10 font-semibold" : "border-rw-border text-rw-muted hover:text-rw-text"
                     }`}
                     title={tl("Fearless: champions picked in earlier games of the series can't be picked again")}
                   >
@@ -1175,7 +1175,7 @@ const Board: React.FC<{
                 <span className="ml-auto flex items-center gap-2 text-[10px] text-rw-muted tabular-nums">
                   <span>{tl("{shown} of {total}", { shown: shown.length, total: availableTotal })}</span>
                   {hasActiveFilters && (
-                    <button type="button" onClick={clearAllFilters} className="text-rw-teal hover:underline">
+                    <button type="button" onClick={clearAllFilters} className="text-rw-accent hover:underline">
                       {tl("Clear filters")}
                     </button>
                   )}
@@ -1186,7 +1186,7 @@ const Board: React.FC<{
               <div className="py-6 text-center text-xs text-rw-muted space-y-1">
                 <p>{tl("No games match these filters.")}</p>
                 {hasActiveFilters && (
-                  <button type="button" onClick={clearAllFilters} className="text-rw-teal hover:underline">
+                  <button type="button" onClick={clearAllFilters} className="text-rw-accent hover:underline">
                     {tl("Clear filters")}
                   </button>
                 )}
@@ -1213,8 +1213,8 @@ const Board: React.FC<{
                     >
                       <ChampIcon name={c} size={36} />
                       <span className="truncate w-full text-center text-rw-sub">{champName(c)}</span>
-                      {pb > 0 && <span className="absolute top-0 left-0 px-0.5 rounded bg-rw-teal text-rw-bg font-bold">{pb}</span>}
-                      {pr > 0 && <span className="absolute top-0 right-0 px-0.5 rounded bg-rw-red text-rw-bg font-bold">{pr}</span>}
+                      {pb > 0 && <span className="absolute top-0 left-0 px-0.5 rounded bg-rw-side-a text-rw-bg font-bold">{pb}</span>}
+                      {pr > 0 && <span className="absolute top-0 right-0 px-0.5 rounded bg-rw-side-b text-rw-bg font-bold">{pr}</span>}
                       {isFlex && <span className="absolute bottom-3.5 right-0.5 px-0.5 rounded bg-rw-accent/85 text-rw-bg font-bold text-[8px]">{tl("flex")}</span>}
                     </button>
                   );
@@ -1289,7 +1289,7 @@ const CopyDraft: React.FC<{ text: () => string }> = ({ text }) => {
     <button
       type="button"
       onClick={() => navigator.clipboard.writeText(text()).then(() => setState("copied"), () => setState("failed"))}
-      className="flex items-center gap-1 text-rw-teal hover:underline"
+      className="flex items-center gap-1 text-rw-accent hover:underline"
       title={tl("Copy the draft as text, with the link, to paste in the team chat")}
     >
       {state === "copied" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -1614,7 +1614,7 @@ const Suggest: React.FC<{
       <button
         type="button"
         onClick={onAutoFillPhase}
-        className="ml-auto text-[10px] px-1.5 py-0.5 rounded border border-rw-border text-rw-teal hover:border-rw-teal"
+        className="ml-auto text-[10px] px-1.5 py-0.5 rounded border border-rw-border text-rw-accent hover:border-rw-accent"
         title={tl("Every open match goes to the team with the better chance")}
       >
         {tl("Favourites")}
@@ -1735,7 +1735,7 @@ const DraftMatchupPanel: React.FC<{
                       kind: "finder",
                       query: `champ=${encodeURIComponent(bChamp)}&vs=${encodeURIComponent(rChamp)}&role=${encodeURIComponent(rKey)}`,
                     }}
-                    className="text-rw-teal hover:underline"
+                    className="text-rw-accent hover:underline"
                   >
                     {tl("Game finder")}
                   </HubLink>
@@ -1771,7 +1771,7 @@ const DraftMatchupPanel: React.FC<{
             <span
               key={i}
               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border ${
-                d.side === "b" ? "border-rw-teal/40 bg-rw-teal/10 text-rw-teal" : "border-rw-red/40 bg-rw-red/10 text-rw-red"
+                d.side === "b" ? "border-rw-side-a/40 bg-rw-side-a/10 text-rw-side-a" : "border-rw-side-b/40 bg-rw-side-b/10 text-rw-side-b"
               }`}
             >
               <span className="font-semibold">{d.teamName}</span>
@@ -1842,8 +1842,8 @@ const DraftOrderStrip: React.FC<{
                     active
                       ? "border-rw-accent bg-rw-accent/15 ring-1 ring-rw-accent text-rw-accent font-bold"
                       : isBlue
-                        ? "border-rw-teal/40 bg-rw-teal/10 text-rw-teal hover:border-rw-teal"
-                        : "border-rw-red/40 bg-rw-red/10 text-rw-red hover:border-rw-red"
+                        ? "border-rw-side-a/40 bg-rw-side-a/10 text-rw-side-a hover:border-rw-side-a"
+                        : "border-rw-side-b/40 bg-rw-side-b/10 text-rw-side-b hover:border-rw-side-b"
                   }`}
                 >
                   {c ? (
@@ -1877,7 +1877,7 @@ const TeamColumn: React.FC<{
   const bans2 = mine.filter((o) => o.ban && o.i >= 12);
   const picks2 = mine.filter((o) => !o.ban && o.i >= 16);
   const picks = mine.filter((o) => !o.ban);
-  const color = who === "b" ? "var(--rw-teal)" : "var(--rw-red)";
+  const color = who === "b" ? "var(--rw-side-a)" : "var(--rw-side-b)";
   const picked = picks.map((o) => slots[o.i]).filter((c): c is string => !!c);
   const assigned = useMemo(() => assignDraftRoles(picked, p, champMap), [picked, p, champMap]);
   const count = [0, 0, 0, 0, 0];
@@ -2038,7 +2038,7 @@ const PlayerPools: React.FC<{
   onFocus: (c: string) => void;
   onSwap?: (roleIdx: number, slug: string) => void;
 }> = ({ who, side, pool: p, taken, hideTaken = true, roleFilter = null, minGames = 0, onPick, onFocus, onSwap }) => {
-  const color = who === "b" ? "text-rw-teal" : "text-rw-red";
+  const color = who === "b" ? "text-rw-side-a" : "text-rw-side-b";
   const chip = (c: string, label: string, title: string, pocket: boolean) => {
     const off = isChampTaken(c, taken);
     return (
@@ -2161,7 +2161,7 @@ const LaneCounters: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Sid
           {owner(oc).map((o) => (
             <span
               key={o.w}
-              className={`text-[9px] px-1 rounded shrink-0 ${o.w === "b" ? "bg-rw-teal/20 text-rw-teal" : "bg-rw-red/20 text-rw-red"}`}
+              className={`text-[9px] px-1 rounded shrink-0 ${o.w === "b" ? "bg-rw-side-a/20 text-rw-side-a" : "bg-rw-side-b/20 text-rw-side-b"}`}
               title={tl("{player} ({team}) plays it: {n} games, won {pct}", { player: o.who.name, team: o.team.team.name, n: o.who.g || o.who.cg, pct: winRate(o.who.g ? o.who.w : o.who.cw, o.who.g || o.who.cg) })}
             >
               {o.who.name}
@@ -2222,7 +2222,7 @@ const ChampInfo: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Side; 
         const roles = [...(p.roles.get(c) || [])].map((r) => roleName(ROLES[r]));
         return (
           <div key={w} className="space-y-1 min-w-0">
-            <div className={`font-bold truncate ${w === "b" ? "text-rw-teal" : "text-rw-red"}`}>{s.team.name}</div>
+            <div className={`font-bold truncate ${w === "b" ? "text-rw-side-a" : "text-rw-side-b"}`}>{s.team.name}</div>
             <div className="text-rw-sub">
               {pk ? tl("Picked {n} times, won {pct}", { n: pk[0], pct: winRate(pk[1], pk[0]) }) : tl("Not picked in this period")}
               {roles.length > 0 && ` (${roles.join(" / ")})`}
@@ -2292,7 +2292,7 @@ const Priorities: React.FC<{
     .filter(([c]) => !isChampTaken(c, taken))
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6);
-  const color = who === "b" ? "text-rw-teal" : "text-rw-red";
+  const color = who === "b" ? "text-rw-side-a" : "text-rw-side-b";
   const list = (rows: [string, string][]) => (
     <ul className="space-y-1">
       {rows.map(([c, v]) => (

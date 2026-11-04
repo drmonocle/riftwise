@@ -5,7 +5,7 @@
 export type ThemeName = "rift" | "classic" | "light" | "tsm" | "flyquest" | "t1" | "geng" | "fnatic" | "cloud9";
 
 export const THEMES: { id: ThemeName; swatch: [string, string, string] }[] = [
-  { id: "rift", swatch: ["#120f2b", "#a78bfa", "#2dd4bf"] },
+  { id: "rift", swatch: ["#120f2b", "#b39dff", "#e0b86b"] },
   { id: "classic", swatch: ["#091428", "#c8aa6e", "#0ac8b9"] },
   { id: "light", swatch: ["#f6f5fb", "#5b3fd6", "#0d7f72"] },
   // team colours

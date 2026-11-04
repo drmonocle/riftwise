@@ -129,7 +129,7 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
           <button
             type="button"
             onClick={() => setN((v) => v + 30)}
-            className="text-xs text-rw-teal hover:underline"
+            className="text-xs text-rw-accent hover:underline"
           >
             {tl("Show more ({n} left)", { n: p.recent.length - n })}
           </button>

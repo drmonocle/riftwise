@@ -220,7 +220,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                   { replace: true },
                 )
               }
-              className="text-rw-teal hover:underline"
+              className="text-rw-accent hover:underline"
             >
               {tl("Clear filters")}
             </button>
@@ -603,7 +603,7 @@ const FinderBody: React.FC<{
               <button
                 type="button"
                 onClick={() => setLimit((n) => n + 200)}
-                className="text-xs text-rw-teal hover:underline"
+                className="text-xs text-rw-accent hover:underline"
               >
                 {tl("Show more ({n} left)", { n: found.length - limit })}
               </button>

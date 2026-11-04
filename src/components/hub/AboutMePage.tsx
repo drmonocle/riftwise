@@ -27,7 +27,7 @@ export const AboutMePage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ o
       }
     },
   });
-  const link = "text-rw-teal hover:underline font-semibold";
+  const link = "text-rw-accent hover:underline font-semibold";
   return (
     <div className="space-y-3 text-xs leading-relaxed">
       <div className={card}>

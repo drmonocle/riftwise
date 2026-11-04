@@ -78,7 +78,7 @@ export const DownloadsPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({
           <button
             type="button"
             onClick={() => onOpenUrl?.(`${SITE_URL}stats/data`)}
-            className="text-rw-teal hover:underline font-semibold"
+            className="text-rw-accent hover:underline font-semibold"
           >
             {tl("Downloads work best in your browser: open this page there")}
           </button>
@@ -188,7 +188,7 @@ const LeagueYears: React.FC<{ league: DownloadLeague; onOpenUrl?: (url: string) 
               <button
                 type="button"
                 onClick={() => wholeYear(y)}
-                className="flex items-center gap-1 px-2 py-1 rounded border border-rw-border text-rw-teal hover:border-rw-teal"
+                className="flex items-center gap-1 px-2 py-1 rounded border border-rw-border text-rw-accent hover:border-rw-accent"
               >
                 <Download className="w-3 h-3" />
                 {tl("Whole year (CSV)")}
@@ -201,7 +201,7 @@ const LeagueYears: React.FC<{ league: DownloadLeague; onOpenUrl?: (url: string) 
                     <span className="truncate text-rw-sub">
                       {name} <span className="text-rw-muted">· {tn("{n} game", "{n} games", g)}</span>
                     </span>
-                    <button type="button" onClick={() => downloadEventCsv(slug, onOpenUrl)} className="text-rw-teal hover:underline shrink-0">
+                    <button type="button" onClick={() => downloadEventCsv(slug, onOpenUrl)} className="text-rw-accent hover:underline shrink-0">
                       CSV
                     </button>
                   </li>

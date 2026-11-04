@@ -340,7 +340,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   onOpenUrl(TRANSLATION_MAILTO());
                 }
               }}
-              className="text-rw-teal underline"
+              className="text-rw-accent underline"
             >
               {TRANSLATION_EMAIL}
             </a>
@@ -428,7 +428,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onClick={() => onUpdateSettings({ spoilerMode: !settings.spoilerMode })}
               className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
                 settings.spoilerMode
-                  ? "bg-rw-teal text-rw-bg"
+                  ? "bg-rw-accent text-rw-bg"
                   : "bg-rw-border text-rw-muted hover:text-rw-text"
               }`}
             >
@@ -474,7 +474,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               onClick={() => onUpdateSettings({ bubbles: settings.bubbles !== true })}
               className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
-                settings.bubbles === true ? "bg-rw-teal text-rw-bg" : "bg-rw-border text-rw-muted"
+                settings.bubbles === true ? "bg-rw-accent text-rw-bg" : "bg-rw-border text-rw-muted"
               }`}
             >
               {settings.bubbles === true ? tl("ON") : tl("OFF")}
@@ -495,7 +495,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-rw-panel border border-rw-border">
             <div>
               <div className="font-semibold text-rw-text flex items-center gap-1.5">
-                <Volume2 className="w-3.5 h-3.5 text-rw-teal" />
+                <Volume2 className="w-3.5 h-3.5 text-rw-accent" />
                 <span>{tl("Kickoff Hextech Audio Chime")}</span>
               </div>
               <div className="text-[11px] text-rw-muted">
@@ -515,7 +515,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <button
                 onClick={() => onUpdateSettings({ soundAlerts: !settings.soundAlerts })}
                 className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
-                  settings.soundAlerts ? "bg-rw-teal text-rw-bg" : "bg-rw-border text-rw-muted"
+                  settings.soundAlerts ? "bg-rw-accent text-rw-bg" : "bg-rw-border text-rw-muted"
                 }`}
               >
                 {settings.soundAlerts ? tl("ON") : tl("OFF")}
@@ -539,7 +539,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       }).catch(() => {}),
                     )
                   }
-                  className="text-rw-teal hover:underline"
+                  className="text-rw-accent hover:underline"
                 >
                   {tl("Send a test alert")}
                 </button>
@@ -548,7 +548,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               onClick={() => onUpdateSettings({ notifyKickoff: !settings.notifyKickoff })}
               className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
-                settings.notifyKickoff ? "bg-rw-teal text-rw-bg" : "bg-rw-border text-rw-muted"
+                settings.notifyKickoff ? "bg-rw-accent text-rw-bg" : "bg-rw-border text-rw-muted"
               }`}
             >
               {settings.notifyKickoff ? tl("ON") : tl("OFF")}
@@ -565,7 +565,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               onClick={() => onUpdateSettings({ notifyPregame: !settings.notifyPregame })}
               className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
-                settings.notifyPregame ? "bg-rw-teal text-rw-bg" : "bg-rw-border text-rw-muted"
+                settings.notifyPregame ? "bg-rw-accent text-rw-bg" : "bg-rw-border text-rw-muted"
               }`}
             >
               {settings.notifyPregame ? tl("ON") : tl("OFF")}
@@ -582,7 +582,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               onClick={() => onUpdateSettings({ notifyStream: !settings.notifyStream })}
               className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
-                settings.notifyStream ? "bg-rw-teal text-rw-bg" : "bg-rw-border text-rw-muted"
+                settings.notifyStream ? "bg-rw-accent text-rw-bg" : "bg-rw-border text-rw-muted"
               }`}
             >
               {settings.notifyStream ? tl("ON") : tl("OFF")}
@@ -601,17 +601,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
         <div className="space-y-2">
           {/* Global Summon Hotkey */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-panel border border-rw-teal/40">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-rw-panel border border-rw-accent/40">
             <div>
               <div className="font-semibold text-rw-text flex items-center gap-1.5">
-                <Keyboard className="w-3.5 h-3.5 text-rw-teal" />
+                <Keyboard className="w-3.5 h-3.5 text-rw-accent" />
                 <span>{tl("Global Summon Hotkey")}</span>
               </div>
               <div className="text-[11px] text-rw-muted">
                 {tl("Summon or hide RiftWise instantly from anywhere in Windows (even inside full-screen games or browser).")}
               </div>
             </div>
-            <span className="px-2.5 py-1 rounded bg-rw-bg border border-rw-teal/60 text-rw-teal font-mono font-bold text-xs tracking-wider">
+            <span className="px-2.5 py-1 rounded bg-rw-bg border border-rw-accent/60 text-rw-accent font-mono font-bold text-xs tracking-wider">
               {tl("Alt + Shift + L")}
             </span>
           </div>
@@ -627,7 +627,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               onClick={() => onUpdateSettings({ compactMode: !settings.compactMode })}
               className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
-                settings.compactMode ? "bg-rw-teal text-rw-bg" : "bg-rw-border text-rw-muted"
+                settings.compactMode ? "bg-rw-accent text-rw-bg" : "bg-rw-border text-rw-muted"
               }`}
             >
               {settings.compactMode ? tl("ON") : tl("OFF")}
@@ -645,7 +645,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onClick={() => onUpdateSettings({ minimizeToTrayOnClose: !settings.minimizeToTrayOnClose })}
               className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
                 settings.minimizeToTrayOnClose
-                  ? "bg-rw-teal text-rw-bg"
+                  ? "bg-rw-accent text-rw-bg"
                   : "bg-rw-border text-rw-muted"
               }`}
             >
@@ -663,7 +663,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               onClick={() => onUpdateSettings({ startWithWindows: !settings.startWithWindows })}
               className={`px-3 py-1 font-bold rounded text-xs transition-colors ${
-                settings.startWithWindows ? "bg-rw-teal text-rw-bg" : "bg-rw-border text-rw-muted"
+                settings.startWithWindows ? "bg-rw-accent text-rw-bg" : "bg-rw-border text-rw-muted"
               }`}
             >
               {settings.startWithWindows ? tl("ON") : tl("OFF")}

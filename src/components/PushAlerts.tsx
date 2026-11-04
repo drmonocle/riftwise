@@ -21,7 +21,7 @@ function usePushStatus(): [PushStatus | null, () => void] {
 }
 
 const toggleCls = (on: boolean) =>
-  `px-3 py-1 font-bold rounded text-xs transition-colors shrink-0 ${on ? "bg-rw-teal text-rw-bg" : "bg-rw-border text-rw-muted"}`;
+  `px-3 py-1 font-bold rounded text-xs transition-colors shrink-0 ${on ? "bg-rw-accent text-rw-bg" : "bg-rw-border text-rw-muted"}`;
 
 /** Settings card: turn web alerts on/off, choose which ones, send a test. Web version only. */
 export const PushAlertsCard: React.FC<{ settings: AppSettings; onUpdateSettings: (s: Partial<AppSettings>) => void }> = ({

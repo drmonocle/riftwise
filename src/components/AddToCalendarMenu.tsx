@@ -170,7 +170,7 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
                 onOpenUrl(googleUrl);
                 setIsOpen(false);
               }}
-              className="w-full text-left px-3 py-1.5 hover:bg-rw-raised hover:text-rw-teal text-rw-text flex items-center justify-between transition-colors"
+              className="w-full text-left px-3 py-1.5 hover:bg-rw-raised hover:text-rw-accent text-rw-text flex items-center justify-between transition-colors"
             >
               <div className="flex items-center gap-2">
                 <span className="text-sm">🌐</span>
@@ -183,7 +183,7 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
             <button
               type="button"
               onClick={handleDownloadIcs}
-              className="w-full text-left px-3 py-1.5 hover:bg-rw-raised hover:text-rw-teal text-rw-text flex items-center justify-between transition-colors"
+              className="w-full text-left px-3 py-1.5 hover:bg-rw-raised hover:text-rw-accent text-rw-text flex items-center justify-between transition-colors"
             >
               <div className="flex items-center gap-2">
                 <span className="text-sm">🍏</span>
@@ -199,7 +199,7 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
                 onOpenUrl(outlookUrl);
                 setIsOpen(false);
               }}
-              className="w-full text-left px-3 py-1.5 hover:bg-rw-raised hover:text-rw-teal text-rw-text flex items-center justify-between transition-colors"
+              className="w-full text-left px-3 py-1.5 hover:bg-rw-raised hover:text-rw-accent text-rw-text flex items-center justify-between transition-colors"
             >
               <div className="flex items-center gap-2">
                 <span className="text-sm">📧</span>
@@ -215,7 +215,7 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
                 onOpenUrl(yahooUrl);
                 setIsOpen(false);
               }}
-              className="w-full text-left px-3 py-1.5 hover:bg-rw-raised hover:text-rw-teal text-rw-text flex items-center justify-between transition-colors"
+              className="w-full text-left px-3 py-1.5 hover:bg-rw-raised hover:text-rw-accent text-rw-text flex items-center justify-between transition-colors"
             >
               <div className="flex items-center gap-2">
                 <span className="text-sm">🟣</span>

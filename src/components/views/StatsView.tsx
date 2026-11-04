@@ -147,7 +147,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             {/* the desktop app has no browser Back button: its own, while there is a page to go back to */}
             {!IS_WEB && canGoBack() && (
-              <button type="button" onClick={() => hubBack()} className="flex items-center gap-1 min-h-8 px-1.5 -ml-1.5 rounded text-xs text-rw-teal hover:underline shrink-0" aria-label={tl("Back")}>
+              <button type="button" onClick={() => hubBack()} className="flex items-center gap-1 min-h-8 px-1.5 -ml-1.5 rounded text-xs text-rw-accent hover:underline shrink-0" aria-label={tl("Back")}>
                 <ArrowLeft className="w-3.5 h-3.5" /> {tl("Back")}
               </button>
             )}
@@ -170,7 +170,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
             {/* a team, player, tournament, match, league or champion: where it sits, then its own name */}
             {crumbs && (
               <nav aria-label={tl("Breadcrumb")} className="flex items-center gap-1 text-xs min-w-0">
-                <HubLink to={KIND_LIST[route.kind] || { kind: "home" }} className="text-rw-teal hover:underline shrink-0">
+                <HubLink to={KIND_LIST[route.kind] || { kind: "home" }} className="text-rw-accent hover:underline shrink-0">
                   {tl(sectionName)}
                 </HubLink>
                 <ChevronRight className="w-3 h-3 text-rw-muted shrink-0" aria-hidden="true" />
@@ -179,7 +179,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
             )}
             {(route.kind === "about" || route.kind === "aboutme") && (
               <nav aria-label={tl("Breadcrumb")} className="flex items-center gap-1 text-xs min-w-0">
-                <button type="button" onClick={() => navigateHub({ kind: "home" })} className="text-rw-teal hover:underline shrink-0">
+                <button type="button" onClick={() => navigateHub({ kind: "home" })} className="text-rw-accent hover:underline shrink-0">
                   RiftWise
                 </button>
                 <ChevronRight className="w-3 h-3 text-rw-muted shrink-0" aria-hidden="true" />

@@ -48,7 +48,7 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
             navigateHub({ kind: "worlds" });
             onOpen();
           }}
-          className="ml-auto text-[11px] font-semibold text-rw-teal hover:underline"
+          className="ml-auto text-[11px] font-semibold text-rw-accent hover:underline"
         >
           {tl("Swiss picker →")}
         </button>

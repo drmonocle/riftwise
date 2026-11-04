@@ -36,7 +36,7 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
         <ul className="list-disc pl-4 space-y-1 text-rw-sub">
           <li>{tl("Leaguepedia (lol.fandom.com): every pro game since 2011, with scoreboards, drafts, rosters, results and prize money. Shared under the CC BY-SA 3.0 license.")}</li>
           <li>
-            <a href="https://oracleselixir.com/" onClick={openOe} target="_blank" rel="noopener noreferrer" className="text-rw-teal hover:underline font-semibold">
+            <a href="https://oracleselixir.com/" onClick={openOe} target="_blank" rel="noopener noreferrer" className="text-rw-accent hover:underline font-semibold">
               Oracle's Elixir
             </a>{" "}
             {tl("(oracleselixir.com) by Tim Sevenhuysen: the early game of most pro games since 2014 (gold, CS and XP leads at 10, 15 and 20 minutes, first blood, first tower, turret plates, void grubs, wards). Free for non-commercial use with credit; thank you, Tim.")}
@@ -104,7 +104,7 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
         </dl>
         <p className="text-rw-sub mt-2">
           {tl("Tiers: S 90+, A 80+, B 70+, C 55+, D below. Only about 1 game in 2,000 reaches S.")} {tl("A series counts its best game most, then its best three games and all of them; a 3-2 gets a little more, a sweep a little less.")}{" "}
-          <HubLink to={{ kind: "best" }} className="text-rw-teal hover:underline font-semibold">
+          <HubLink to={{ kind: "best" }} className="text-rw-accent hover:underline font-semibold">
             {tl("Best games")}
           </HubLink>
         </p>
@@ -140,7 +140,7 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
       <Section title={tl("Found a wrong number?")}>
         <p className="text-rw-sub">
           {tl("Tell us which page and what you expected; we check every report.")}{" "}
-          <a href={report} onClick={openReport} className="text-rw-teal hover:underline font-semibold">
+          <a href={report} onClick={openReport} className="text-rw-accent hover:underline font-semibold">
             {tl("Report a wrong stat")}
           </a>
         </p>
@@ -148,7 +148,7 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
       <Section title={tl("Use the data")}>
         <p className="text-rw-sub">
           {tl("Free to use, also in videos, articles and broadcasts. Please credit RiftWise (riftwise.gg) and Leaguepedia, and Oracle's Elixir for early-game numbers.")}{" "}
-          <HubLink to={{ kind: "data" }} className="text-rw-teal hover:underline font-semibold">
+          <HubLink to={{ kind: "data" }} className="text-rw-accent hover:underline font-semibold">
             {tl("Data downloads")}
           </HubLink>
         </p>

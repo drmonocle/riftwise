@@ -86,7 +86,7 @@ export const Loading: React.FC = () => {
     <div className="py-10 text-center text-xs text-rw-sub min-h-[6rem]" role="status" aria-busy="true">
       {slow && (
         <>
-          <Clock className="w-4 h-4 inline mr-1.5 text-rw-teal animate-pulse" />
+          <Clock className="w-4 h-4 inline mr-1.5 text-rw-accent animate-pulse" />
           {tl("Loading…")}
         </>
       )}
@@ -120,7 +120,7 @@ export const Failed: React.FC<{ missing?: boolean }> = ({ missing }) =>
           <LazyHubSearch initial={missingWords()} />
         </React.Suspense>
       </div>
-      <HubLink to={{ kind: "home" }} className="text-rw-teal hover:underline">
+      <HubLink to={{ kind: "home" }} className="text-rw-accent hover:underline">
         {tl("Go to the stats home page")}
       </HubLink>
     </div>
@@ -531,7 +531,7 @@ export const PlayerPhoto: React.FC<{
       }}
       title={tl("Riot's event photos of {name} on NerdFinder", { name })}
       style={{ ...box, fontSize: sizeClass ? undefined : Math.max(10, Math.round(size / 3)) }}
-      className={`rounded-full bg-rw-raised border border-rw-border hover:border-rw-teal text-rw-muted hover:text-rw-teal font-bold flex items-center justify-center shrink-0 transition-colors ${sz} ${sizeClass ? "text-base lg:text-xl" : ""} ${className}`}
+      className={`rounded-full bg-rw-raised border border-rw-border hover:border-rw-accent text-rw-muted hover:text-rw-accent font-bold flex items-center justify-center shrink-0 transition-colors ${sz} ${sizeClass ? "text-base lg:text-xl" : ""} ${className}`}
     >
       {name.slice(0, 2).toUpperCase()}
     </a>
@@ -595,7 +595,7 @@ export const PhotosLink: React.FC<{ q: string; url?: string; label?: string; tit
       }}
       title={title || tl("Riot's event photos of {name} on NerdFinder", { name: q })}
       aria-label={iconOnly ? title || tl("Riot's event photos of {name} on NerdFinder", { name: q }) : undefined}
-      className={className ?? "inline-flex items-center gap-1 text-[11px] text-rw-teal hover:underline"}
+      className={className ?? "inline-flex items-center gap-1 text-[11px] text-rw-accent hover:underline"}
     >
       <Camera className="w-3.5 h-3.5 shrink-0" />
       {!iconOnly && text}
@@ -632,7 +632,7 @@ export const FollowFeeds: React.FC<{ teams?: string[]; leagues?: string[] }> = (
               open(href);
             }
           }}
-          className="inline-flex items-center gap-1 text-[11px] text-rw-teal hover:underline"
+          className="inline-flex items-center gap-1 text-[11px] text-rw-accent hover:underline"
         >
           {icon}
           {text}

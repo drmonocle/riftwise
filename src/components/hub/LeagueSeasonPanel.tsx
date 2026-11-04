@@ -25,10 +25,10 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
       title={tl("{name} {year} at a glance", { name, year })}
       right={
         <span className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-semibold">
-          <HubLink to={{ kind: "leaders", query: `league=${league}&year=${year}` }} className="text-rw-teal hover:underline">
+          <HubLink to={{ kind: "leaders", query: `league=${league}&year=${year}` }} className="text-rw-accent hover:underline">
             {tl("Full leaderboard")}
           </HubLink>
-          <HubLink to={{ kind: "champions", query: `league=${league}&year=${year}` }} className="text-rw-teal hover:underline">
+          <HubLink to={{ kind: "champions", query: `league=${league}&year=${year}` }} className="text-rw-accent hover:underline">
             {tl("Champion picks")}
           </HubLink>
         </span>

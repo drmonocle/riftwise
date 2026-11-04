@@ -52,7 +52,7 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; spoilerKey
                 )}
                 {fmtDate(r[0])}
                 {r[7] && (
-                  <HubLink to={{ kind: "match", slug: r[7] }} className="text-rw-teal hover:underline">
+                  <HubLink to={{ kind: "match", slug: r[7] }} className="text-rw-accent hover:underline">
                     {tl("Details")}
                   </HubLink>
                 )}
@@ -62,7 +62,7 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; spoilerKey
         })}
       </ul>
       {rows.length > n && (
-        <button type="button" onClick={() => setN((x) => x + PAGE * 4)} className="text-[11px] text-rw-teal hover:underline">
+        <button type="button" onClick={() => setN((x) => x + PAGE * 4)} className="text-[11px] text-rw-accent hover:underline">
           {tl("Show more ({n} left)", { n: rows.length - n })}
         </button>
       )}
@@ -295,7 +295,7 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }>
                 )}
                 {fmtDate(r[0])}
                 {r[1] && (
-                  <HubLink to={{ kind: "match", slug: r[1], game: r[22] || undefined }} className="text-rw-teal hover:underline">
+                  <HubLink to={{ kind: "match", slug: r[1], game: r[22] || undefined }} className="text-rw-accent hover:underline">
                     {tl("Details")}
                   </HubLink>
                 )}
@@ -313,7 +313,7 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }>
         })}
       </ul>
       {shown.length > n && (
-        <button type="button" onClick={() => setN((x) => x + PAGE * 4)} className="text-[11px] text-rw-teal hover:underline">
+        <button type="button" onClick={() => setN((x) => x + PAGE * 4)} className="text-[11px] text-rw-accent hover:underline">
           {tl("Show more ({n} left)", { n: shown.length - n })}
         </button>
       )}
@@ -332,7 +332,7 @@ export const PlayerChampGames: React.FC<{ slug: string; champ: string; year?: st
   <Section
     title={tl("Every game on {champ}", { champ: champName(champ) })}
     right={
-      <button type="button" onClick={onClose} className="text-[11px] text-rw-teal hover:underline">
+      <button type="button" onClick={onClose} className="text-[11px] text-rw-accent hover:underline">
         {tl("Close")}
       </button>
     }

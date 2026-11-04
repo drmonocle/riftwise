@@ -238,10 +238,10 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             <button
               onClick={onRefreshCatalog}
               disabled={isRefreshingCatalog}
-              className="flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-teal transition-colors"
+              className="flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors"
               title={tl("Check Riot API for roster transfers, trades, and new leagues")}
             >
-              <RefreshCw className={`w-3 h-3 ${isRefreshingCatalog ? "animate-spin text-rw-teal" : ""}`} />
+              <RefreshCw className={`w-3 h-3 ${isRefreshingCatalog ? "animate-spin text-rw-accent" : ""}`} />
               <span>{isRefreshingCatalog ? tl("Syncing directory…") : tl("Check roster updates")}</span>
             </button>
           )}
@@ -287,7 +287,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             <button
               type="button"
               onClick={() => setShowAllChips((v) => !v)}
-              className="inline-flex items-center px-2 py-0.5 rounded border border-rw-border text-rw-teal hover:border-rw-teal/60 text-[10px] font-semibold"
+              className="inline-flex items-center px-2 py-0.5 rounded border border-rw-border text-rw-accent hover:border-rw-accent/60 text-[10px] font-semibold"
             >
               {showAllChips ? tl("Show fewer") : tl("Show all {n}", { n: chipTotal })}
             </button>

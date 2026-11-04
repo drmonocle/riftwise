@@ -362,7 +362,7 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
                   </div>
                 ))}
                 {rounds.length > 1 && (
-                  <button type="button" onClick={() => setAllRounds((v) => !v)} className="sm:hidden text-[11px] text-rw-teal hover:underline justify-self-start">
+                  <button type="button" onClick={() => setAllRounds((v) => !v)} className="sm:hidden text-[11px] text-rw-accent hover:underline justify-self-start">
                     {allRounds ? tl("This round only") : tl("Every round")}
                   </button>
                 )}
@@ -856,7 +856,7 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
           {!swiss.done ? (
             <p className="text-xs text-rw-sub">
               {tl("Finish the Swiss stage first: pick every match, or use Favourites or Roll by chances there.")}{" "}
-              <button type="button" className="text-rw-teal hover:underline" onClick={() => fillSwiss(favourites)}>
+              <button type="button" className="text-rw-accent hover:underline" onClick={() => fillSwiss(favourites)}>
                 {tl("Fill the Swiss stage with the favourites")}
               </button>
             </p>

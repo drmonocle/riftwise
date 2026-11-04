@@ -35,9 +35,9 @@ const ROLE_ORDER: Record<string, number> = {
 
 const ROLE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   Top: { bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/30" },
-  Jungle: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/30" },
+  Jungle: { bg: "bg-rw-teal/10", text: "text-rw-teal", border: "border-rw-teal/30" },
   Mid: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/30" },
-  Bot: { bg: "bg-rose-500/10", text: "text-rose-400", border: "border-rose-500/30" },
+  Bot: { bg: "bg-rw-red/10", text: "text-rw-red", border: "border-rw-red/30" },
   Support: { bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500/30" },
   Sub: { bg: "bg-slate-500/10", text: "text-slate-400", border: "border-slate-500/30" },
 };
@@ -63,7 +63,7 @@ const TeamStatsLink: React.FC<{ name: string; code: string; onDone: () => void }
           .catch(() => setMissing(true))
           .finally(() => setBusy(false));
       }}
-      className="mt-1.5 flex items-center gap-1 text-[11px] text-rw-teal hover:underline disabled:opacity-60"
+      className="mt-1.5 flex items-center gap-1 text-[11px] text-rw-accent hover:underline disabled:opacity-60"
     >
       <BarChart3 className="w-3 h-3" />
       {tl("Full history and stats")}
@@ -228,7 +228,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                               <span className="font-bold text-sm text-rw-text group-hover:text-rw-accent transition-colors truncate">
                                 {p.name}
                               </span>
-                              <PhotosLink q={p.name} iconOnly className="text-rw-muted hover:text-rw-teal shrink-0" />
+                              <PhotosLink q={p.name} iconOnly className="text-rw-muted hover:text-rw-accent shrink-0" />
                               <span
                                 className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${colors.bg} ${colors.text} ${colors.border}`}
                               >
@@ -268,7 +268,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             {/* Upcoming Matches */}
             <section className="space-y-2">
-              <h3 className="text-xs font-bold text-rw-teal uppercase tracking-wider flex items-center gap-1.5">
+              <h3 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
                 <span>{tl("Next Scheduled Matches")}</span>
               </h3>
               {upcomingMatches.length > 0 ? (
@@ -347,7 +347,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                         <div className="flex items-center gap-2">
                           <span
                             className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                              won ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"
+                              won ? "bg-rw-teal/20 text-rw-teal" : "bg-rw-red/20 text-rw-red"
                             }`}
                           >
                             <span className="uppercase">{won ? tl("Win") : tl("Loss")}</span>
@@ -355,8 +355,8 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           <span className="font-semibold text-rw-text">vs {oppName}</span>
                         </div>
                         <div className="font-mono font-bold text-xs text-rw-text">
-                          <span className={won ? "text-emerald-400" : ""}>{myScore}</span> -{" "}
-                          <span className={!won ? "text-rose-400" : ""}>{oppScore}</span>
+                          <span className={won ? "text-rw-teal" : ""}>{myScore}</span> -{" "}
+                          <span className={!won ? "text-rw-red" : ""}>{oppScore}</span>
                         </div>
                       </div>
                     );
@@ -377,7 +377,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
           <button
             type="button"
             onClick={() => onOpenUrl(`https://lolesports.com/teams/${catalogTeam?.slug || displayName.toLowerCase()}`)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded bg-rw-surface hover:bg-rw-raised border border-rw-border text-rw-teal font-semibold text-xs transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1 rounded bg-rw-surface hover:bg-rw-raised border border-rw-border text-rw-accent font-semibold text-xs transition-colors"
           >
             <span>{tl("View on LoLEsports")}</span>
             <ExternalLink className="w-3.5 h-3.5" />

@@ -298,14 +298,14 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                 <span className="text-rw-muted">? – ?</span>
                               ) : (
                                 <>
-                                  <span className="text-emerald-400">{team.wins}</span>
+                                  <span className="text-rw-teal">{team.wins}</span>
                                   <span className="text-rw-muted mx-1">–</span>
-                                  <span className="text-rose-400">{team.losses}</span>
+                                  <span className="text-rw-red">{team.losses}</span>
                                   {team.ties > 0 && <span className="text-rw-sub text-xs"> – {team.ties}</span>}
                                 </>
                               )}
                             </td>
-                            <td className="py-2.5 px-3 text-center font-mono text-xs text-rw-teal hidden sm:table-cell">
+                            <td className={`py-2.5 px-3 text-center font-mono text-xs hidden sm:table-cell ${!hideResults && played > 0 && team.wins / played >= 0.5 ? "text-rw-teal font-semibold" : "text-rw-sub"}`}>
                               {hideResults ? "–" : played > 0 ? `${Math.round((team.wins / played) * 100)}%` : "–"}
                             </td>
                           </tr>

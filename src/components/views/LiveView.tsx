@@ -253,7 +253,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     <h2 className={HEAD}>{tl("Up Next")}</h2>
                     <button
                       onClick={() => onSelectTab("schedule")}
-                      className="text-rw-teal hover:underline text-[11px] font-medium"
+                      className="text-rw-accent hover:underline text-[11px] font-medium"
                     >
                       {tl("Full schedule →")}
                     </button>
@@ -391,7 +391,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     <h2 className={HEAD}>{tl("Upcoming in Other Leagues")}</h2>
                     <button
                       onClick={() => onSelectTab("schedule")}
-                      className="text-rw-teal hover:underline text-[11px] font-medium"
+                      className="text-rw-accent hover:underline text-[11px] font-medium"
                     >
                       {tl("View all {n} matches →", { n: unstarted.length })}
                     </button>
@@ -811,7 +811,7 @@ const NextMatchCard: React.FC<{
             <Star className={`w-3.5 h-3.5 ${followed ? "fill-rw-accent" : ""}`} />
           </button>
         </div>
-        <div {...clickable(open)} className="text-xs text-rw-sub hover:text-rw-teal cursor-pointer font-mono font-medium">
+        <div {...clickable(open)} className="text-xs text-rw-sub hover:text-rw-accent cursor-pointer font-mono font-medium">
           {code}
         </div>
       </div>
@@ -828,7 +828,7 @@ const NextMatchCard: React.FC<{
       <div className={`flex flex-col items-center text-center ${compact ? "p-3" : "p-4 sm:p-6"}`}>
         {/* League & Format Badge */}
         <div className="flex items-center gap-2 text-xs text-rw-sub mb-4 font-medium">
-          <span className="font-semibold text-rw-teal">{m.leagueName}</span>
+          <span className="font-semibold text-rw-accent">{m.leagueName}</span>
           <span>·</span>
           <span className="font-mono bg-rw-bg px-2 py-0.5 rounded border border-rw-border">{tl("Best of {n}", { n: m.bestOf })}</span>
         </div>

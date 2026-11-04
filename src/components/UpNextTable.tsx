@@ -100,7 +100,7 @@ const UpNextRow: React.FC<{
   return (
     <div className={`px-3 py-2 ${GRID} flex flex-wrap items-center gap-x-3 gap-y-1`}>
       <span className="flex flex-col min-w-0 @max-[900px]:flex-1">
-        <span className="font-bold text-rw-teal text-[11px] truncate" title={m.leagueName}>
+        <span className="font-bold text-rw-accent text-[11px] truncate" title={m.leagueName}>
           {m.leagueName}
         </span>
         <span className="@max-[900px]:hidden text-rw-sub text-[10px] font-medium">{bo}</span>
@@ -179,7 +179,7 @@ const FormCell: React.FC<{ m: Match; schedule: Match[]; hidden: boolean }> = ({ 
       {f.map((x, i) => (
         <span
           key={i}
-          className={`w-3 h-3 rounded-[1px] text-[8px] leading-3 text-center font-bold ${x === "W" ? "bg-rw-side-a/30 text-rw-side-a" : "bg-rw-side-b/30 text-rw-side-b"}`}
+          className={`w-3 h-3 rounded-[1px] text-[8px] leading-3 text-center font-bold ${x === "W" ? "bg-rw-teal/25 text-rw-teal" : "bg-rw-red/20 text-rw-red"}`}
         >
           {x === "W" ? tc("short result", "W") : tc("short result", "L")}
         </span>

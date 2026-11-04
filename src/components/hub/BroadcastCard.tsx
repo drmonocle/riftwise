@@ -298,8 +298,8 @@ const Card: React.FC<{ d: CardData }> = ({ d }) => {
     const bBetter = r.better === "low" ? r.vb < r.va : r.vb > r.va;
     return (
       <div style={{ display: "flex", height: 7, borderRadius: 4, overflow: "hidden", background: "var(--rw-bg)", marginTop: 4 }}>
-        <div style={{ width: `${left * 100}%`, background: aBetter ? "var(--rw-accent)" : "var(--rw-line)" }} />
-        <div style={{ flex: 1, background: bBetter ? "var(--rw-teal)" : "var(--rw-line)" }} />
+        <div style={{ width: `${left * 100}%`, background: aBetter ? "var(--rw-side-a)" : "var(--rw-line)" }} />
+        <div style={{ flex: 1, background: bBetter ? "var(--rw-side-b)" : "var(--rw-line)" }} />
       </div>
     );
   };
@@ -313,9 +313,9 @@ const Card: React.FC<{ d: CardData }> = ({ d }) => {
               <>
                 <div style={{ fontSize: 20, color: "var(--rw-muted)", textTransform: "uppercase", letterSpacing: 2 }}>{tl("Win chance")}</div>
                 <div style={{ fontSize: 48, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>
-                  <span style={{ color: "var(--rw-accent)" }}>{d.chance[0]}%</span>
+                  <span style={{ color: "var(--rw-side-a)" }}>{d.chance[0]}%</span>
                   <span style={{ color: "var(--rw-muted)", fontSize: 32 }}> · </span>
-                  <span style={{ color: "var(--rw-teal)" }}>{d.chance[1]}%</span>
+                  <span style={{ color: "var(--rw-side-b)" }}>{d.chance[1]}%</span>
                 </div>
               </>
             ) : (
@@ -492,7 +492,7 @@ export const BroadcastCardButton: React.FC<{ data: () => CardData; name: string;
         className={
           hero
             ? `${heroBtn()} disabled:opacity-50`
-            : `flex items-center gap-1 rounded border border-rw-border text-rw-teal hover:border-rw-accent disabled:opacity-50 text-[11px] ${
+            : `flex items-center gap-1 rounded border border-rw-border text-rw-accent hover:border-rw-accent disabled:opacity-50 text-[11px] ${
                 compact ? "p-1 pointer-coarse:min-h-9 pointer-coarse:min-w-9 max-sm:min-h-9 max-sm:min-w-9" : "px-2 py-1.5 min-h-8 whitespace-nowrap"
               }`
         }
@@ -608,8 +608,8 @@ export function playerCardData(
 
 // ── Match prep cards: overview, Fearless pools, drafts (layouts of their own) ─────────────────────────────
 
-const A_COLOR = "var(--rw-accent)";
-const B_COLOR = "var(--rw-teal)";
+const A_COLOR = "var(--rw-side-a)";
+const B_COLOR = "var(--rw-side-b)";
 const caption: React.CSSProperties = { fontSize: 18, color: "var(--rw-sub)", textTransform: "uppercase", letterSpacing: 1.5 };
 const none = <span style={{ color: "var(--rw-muted)", fontSize: 22 }}>–</span>;
 const chip = (c: string, n?: number, size = 46) => (

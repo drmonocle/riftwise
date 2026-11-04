@@ -480,7 +480,7 @@ const SyncDialog: React.FC<{ dialog: Dialog; account: SyncAccount | null; onClos
         <>
           <input className={input} autoComplete="username" placeholder={tl("Username")} value={f.username} onChange={set("username")} autoFocus />
           <input className={input} type="password" autoComplete="current-password" placeholder={tl("Password")} value={f.password} onChange={set("password")} />
-          <button type="button" className="text-[11px] text-rw-teal hover:underline text-left" onClick={() => onNext({ kind: "recover" })}>
+          <button type="button" className="text-[11px] text-rw-accent hover:underline text-left" onClick={() => onNext({ kind: "recover" })}>
             {tl("Forgot your password? Use your recovery code")}
           </button>
         </>

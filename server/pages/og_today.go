@@ -266,7 +266,7 @@ func ogToday(title, sub string, rows []todayRow) []byte {
 			uint8(float64(top.B)*(1-t) + float64(bottom.B)*t), 255}
 		draw.Draw(img, image.Rect(0, y, ogW, y+1), image.NewUniform(c), image.Point{}, draw.Src)
 	}
-	accent, text, subC, muted, teal := ogRGB("#b39dff"), ogRGB("#efeaff"), ogRGB("#b9b0dc"), ogRGB("#8c85b0"), ogRGB("#5ee3c8")
+	accent, text, subC, muted, teal := ogRGB("#b39dff"), ogRGB("#efeaff"), ogRGB("#b9b0dc"), ogRGB("#8c85b0"), ogRGB("#e0b86b")
 	draw.Draw(img, image.Rect(0, 0, 14, ogH), image.NewUniform(accent), image.Point{}, draw.Src)
 	const left, right = 72, ogW - 72
 	brand, label := ogFace(true, 30), ogFace(false, 26)

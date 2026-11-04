@@ -151,7 +151,7 @@ export const Overlay: React.FC = () => {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          {side(a, false, "var(--rw-accent)")}
+          {side(a, false, "var(--rw-side-a)")}
           <div style={{ textAlign: "center", minWidth: 120 }}>
             {live && live.state !== "unstarted" ? (
               <div style={{ fontSize: 44, fontWeight: 900, fontVariantNumeric: "tabular-nums" }}>
@@ -166,20 +166,20 @@ export const Overlay: React.FC = () => {
               </div>
             )}
           </div>
-          {side(b, true, "var(--rw-teal)")}
+          {side(b, true, "var(--rw-side-b)")}
         </div>
         {chances && (
           <div style={{ marginTop: 16, display: "grid", gap: 6 }}>
             {chances.map(([what, p]) => (
               <div key={what} style={{ display: "grid", gridTemplateColumns: "54px 1fr 54px", alignItems: "center", gap: 10, fontVariantNumeric: "tabular-nums" }}>
-                <span style={{ fontSize: 16, fontWeight: 800, color: "var(--rw-accent)" }}>{Math.round(p * 100)}%</span>
-                <div style={{ position: "relative", height: 18, borderRadius: 4, overflow: "hidden", background: "var(--rw-teal)" }}>
-                  <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: `${p * 100}%`, background: "var(--rw-accent)", borderRight: "2px solid var(--rw-bg)" }} />
+                <span style={{ fontSize: 16, fontWeight: 800, color: "var(--rw-side-a)" }}>{Math.round(p * 100)}%</span>
+                <div style={{ position: "relative", height: 18, borderRadius: 4, overflow: "hidden", background: "var(--rw-side-b)" }}>
+                  <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: `${p * 100}%`, background: "var(--rw-side-a)", borderRight: "2px solid var(--rw-bg)" }} />
                   <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "var(--rw-bg)" }}>
                     {what}
                   </span>
                 </div>
-                <span style={{ fontSize: 16, fontWeight: 800, color: "var(--rw-teal)", textAlign: "right" }}>{Math.round((1 - p) * 100)}%</span>
+                <span style={{ fontSize: 16, fontWeight: 800, color: "var(--rw-side-b)", textAlign: "right" }}>{Math.round((1 - p) * 100)}%</span>
               </div>
             ))}
           </div>

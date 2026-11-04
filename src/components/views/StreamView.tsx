@@ -373,7 +373,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
           {dayKeys.length > DAYS_SHOWN && (
             <button
               onClick={() => setShowAll((s) => !s)}
-              className="w-full flex items-center justify-center gap-1 py-2 text-xs text-rw-teal hover:underline"
+              className="w-full flex items-center justify-center gap-1 py-2 text-xs text-rw-accent hover:underline"
             >
               {showAll ? tl("Show less") : tn("Show {n} more day", "Show {n} more days", dayKeys.length - DAYS_SHOWN)}
               <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAll ? "rotate-180" : ""}`} />

@@ -293,7 +293,7 @@ const PlayerView: React.FC<{
                 <button
                   type="button"
                   onClick={() => setAllEvents((v) => !v)}
-                  className="text-[11px] text-rw-teal hover:underline"
+                  className="text-[11px] text-rw-accent hover:underline"
                 >
                   {allEvents
                     ? tl("Show fewer")
@@ -351,7 +351,7 @@ const PlayerView: React.FC<{
                 </span>
                 <HubLink
                   to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${t.to.slice(0, 4)}` }}
-                  className="text-rw-muted hover:text-rw-teal hover:underline shrink-0"
+                  className="text-rw-muted hover:text-rw-accent hover:underline shrink-0"
                   title={`${tl("Stats for")} ${t.to.slice(0, 4)}`}
                 >
                   {t.from.slice(0, 4)}–{t.to.slice(0, 4)} · {t.w}-{t.g - t.w}
@@ -384,7 +384,7 @@ const PlayerView: React.FC<{
               {p.years.map((y) => (
                 <tr key={y.y} className="border-t border-rw-border hover:bg-rw-raised/50">
                   <td className={`${td} text-rw-text`}>
-                    <HubLink to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${y.y}` }} className="hover:text-rw-teal hover:underline font-medium">
+                    <HubLink to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${y.y}` }} className="hover:text-rw-accent hover:underline font-medium">
                       {y.y}
                     </HubLink>
                   </td>
@@ -392,7 +392,7 @@ const PlayerView: React.FC<{
                     {y.team}
                   </td>
                   <td className={`${td} text-rw-sub`}>
-                    <HubLink to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${y.y}` }} className="hover:text-rw-teal hover:underline">
+                    <HubLink to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${y.y}` }} className="hover:text-rw-accent hover:underline">
                       {y.w}-{y.g - y.w}
                     </HubLink>
                   </td>
@@ -582,7 +582,7 @@ const PlayerView: React.FC<{
                   {x.g && (
                     <HubLink
                       to={{ kind: "match", slug: x.g, game: x.gn }}
-                      className="text-rw-teal hover:underline"
+                      className="text-rw-accent hover:underline"
                     >
                       {tl("Details")}
                     </HubLink>
@@ -669,7 +669,7 @@ const PlayerChampionsTab: React.FC<{
                     <button
                       type="button"
                       onClick={() => onSelectChamp(c.c)}
-                      className="text-rw-teal hover:underline"
+                      className="text-rw-accent hover:underline"
                     >
                       {tl("Every game")}
                     </button>

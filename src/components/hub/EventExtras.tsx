@@ -143,7 +143,7 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean; card?: {
                 {o.farm.g && (
                   <HubLink
                     to={{ kind: "match", slug: o.farm.g, game: o.farm.gn }}
-                    className="text-rw-teal hover:underline"
+                    className="text-rw-accent hover:underline"
                   >
                     {tl("Details")}
                   </HubLink>
@@ -182,7 +182,7 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean; card?: {
                 {p.g && (
                   <HubLink
                     to={{ kind: "match", slug: p.g, game: p.gn }}
-                    className="text-rw-teal hover:underline ml-1"
+                    className="text-rw-accent hover:underline ml-1"
                   >
                     {tl("Details")}
                   </HubLink>
@@ -229,7 +229,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[] }> = ({
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="text-[11px] text-rw-teal hover:underline"
+            className="text-[11px] text-rw-accent hover:underline"
           >
             {open
               ? tl("Show fewer")

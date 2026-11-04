@@ -56,7 +56,7 @@ export const RosterMoves: React.FC = () => {
             </span>
             <span className="flex items-center gap-1 min-w-0 text-rw-sub">
               <TeamLink name={m.from.n} u={m.from.u} className="hover:text-rw-accent truncate" />
-              <ArrowRight className="w-3 h-3 shrink-0 text-rw-teal" />
+              <ArrowRight className="w-3 h-3 shrink-0 text-rw-accent" />
               <TeamLink name={m.to.n} u={m.to.u} className="text-rw-text hover:text-rw-accent truncate" />
             </span>
             {m.lu && name.get(m.lu) && <span className="text-[10px] text-rw-muted">{name.get(m.lu)}</span>}
@@ -66,7 +66,7 @@ export const RosterMoves: React.FC = () => {
       </ul>
       </div>
       {list.length > shown && (
-        <button type="button" onClick={() => setShown((n) => n + 50)} className="text-[11px] text-rw-teal hover:underline">
+        <button type="button" onClick={() => setShown((n) => n + 50)} className="text-[11px] text-rw-accent hover:underline">
           {tl("Show {n} more", { n: Math.min(50, list.length - shown) })}
         </button>
       )}

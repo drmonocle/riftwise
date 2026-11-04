@@ -268,7 +268,7 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
           {vod ? (
             <HubLink
               to={{ kind: "match", slug, game: n }}
-              className="inline-flex items-center gap-0.5 text-rw-teal hover:underline"
+              className="inline-flex items-center gap-0.5 text-rw-accent hover:underline"
               title={tl("Open the game: its VOD links are on the match page")}
             >
               <PlayCircle className="w-3 h-3" /> {tl("VOD")}

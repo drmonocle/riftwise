@@ -523,7 +523,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           type="button"
                           onClick={() => openDetails(m)}
                           disabled={busy === m.matchId}
-                          className="flex items-center gap-1 text-[10px] text-rw-teal font-semibold hover:underline disabled:opacity-60"
+                          className="flex items-center gap-1 text-[10px] text-rw-accent font-semibold hover:underline disabled:opacity-60"
                           title={tl("Open the match: every game's draft and stats")}
                         >
                           <BarChart3 className="w-3 h-3" />

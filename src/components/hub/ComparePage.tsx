@@ -132,7 +132,14 @@ const Row: React.FC<{
   bars?: boolean;
 }> = ({ label, a, b, va, vb, better = "high", pa, pb, bars: barsOn = true }) => {
   const win = va != null && vb != null && va !== vb ? ((va > vb) === (better === "high") ? "a" : "b") : null;
-  const cls = (side: "a" | "b") => (win === side ? "text-rw-teal font-bold" : "text-rw-text font-medium");
+  const cls = (side: "a" | "b") =>
+    win === side
+      ? side === "a"
+        ? "text-rw-side-a font-bold"
+        : "text-rw-side-b font-bold"
+      : win
+        ? "text-rw-sub font-medium"
+        : "text-rw-text font-medium";
   const hasNums = barsOn && va != null && vb != null && Number.isFinite(va) && Number.isFinite(vb) && !(va === 0 && vb === 0);
   let shareA = 0.5;
   if (hasNums) {
@@ -164,13 +171,13 @@ const Row: React.FC<{
         <div className="relative h-1.5 w-full rounded-full bg-rw-bg overflow-hidden flex gap-[2px]" aria-hidden="true">
           <div
             className={`h-full rounded-l-full transition-all ${
-              win === "a" ? "bg-rw-teal/85" : win === "b" ? "bg-rw-line/75" : "bg-rw-sub/45"
+              win === "a" ? "bg-rw-side-a/90" : win === "b" ? "bg-rw-side-a/25" : "bg-rw-side-a/55"
             }`}
             style={{ width: `calc(${(shareA * 100).toFixed(1)}% - 1px)` }}
           />
           <div
             className={`h-full flex-1 rounded-r-full transition-all ${
-              win === "b" ? "bg-rw-teal/85" : win === "a" ? "bg-rw-line/75" : "bg-rw-sub/45"
+              win === "b" ? "bg-rw-side-b/90" : win === "a" ? "bg-rw-side-b/25" : "bg-rw-side-b/55"
             }`}
           />
           <span className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-[1.5px] bg-rw-panel/90" />
@@ -452,12 +459,12 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
         ))}
         {ready && mode === "team" && (
           <>
-            <HubLink to={{ kind: "prep", a: a!, b: b!, period: route.period }} className="text-rw-teal hover:underline">
+            <HubLink to={{ kind: "prep", a: a!, b: b!, period: route.period }} className="text-rw-accent hover:underline">
               {tl("Match prep")}
             </HubLink>
             <HubLink
               to={{ kind: "draft", query: `teams=${encodeURIComponent(a!)},${encodeURIComponent(b!)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
-              className="text-rw-teal hover:underline"
+              className="text-rw-accent hover:underline"
             >
               {tl("Draft board")}
             </HubLink>
@@ -480,12 +487,12 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
         ).map((side) => (
           <div key={side.key} className={`${card} space-y-1 min-w-0`}>
             {side.s && side.i && (
-              <div className="text-sm font-bold truncate">
+              <div className={`text-sm font-bold truncate ${side.key === "a" ? "text-rw-side-a" : "text-rw-side-b"}`}>
                 <HubLink to={{ kind: mode, slug: side.s }}>{side.i.name}</HubLink>
               </div>
             )}
             {side.s ? (
-              <button type="button" onClick={() => set({ [side.key]: undefined })} className="text-[11px] text-rw-teal hover:underline">
+              <button type="button" onClick={() => set({ [side.key]: undefined })} className="text-[11px] text-rw-accent hover:underline">
                 {tl("Change")}
               </button>
             ) : (
@@ -496,7 +503,7 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
       </div>
       {ready && (
         <details className="rw-span text-xs">
-          <summary className="cursor-pointer text-rw-teal hover:underline">{tl("Compare a third one too")}</summary>
+          <summary className="cursor-pointer text-rw-accent hover:underline">{tl("Compare a third one too")}</summary>
           <div className={`${card} mt-2 max-w-md`}>
             <ComparePick kind={mode} autoFocus onPick={(slug) => set({ more: [slug] })} />
           </div>
@@ -634,11 +641,11 @@ export const TeamRows: React.FC<{
         share={`${x.name}-vs-${y.name}-${periodLabel}`}
       >
         <div className="flex items-center justify-between gap-3 text-sm font-bold">
-          <span className="flex items-center gap-2 min-w-0">
+          <span className="flex items-center gap-2 min-w-0 text-rw-side-a">
             <TeamLogo name={x.name} sizeClass="w-9 h-9 lg:w-12 lg:h-12 2xl:w-16 2xl:h-16" />
             <span className="truncate">{x.name}</span>
           </span>
-          <span className="flex items-center gap-2 min-w-0">
+          <span className="flex items-center gap-2 min-w-0 text-rw-side-b">
             <span className="truncate text-right">{y.name}</span>
             <TeamLogo name={y.name} sizeClass="w-9 h-9 lg:w-12 lg:h-12 2xl:w-16 2xl:h-16" />
           </span>
@@ -773,13 +780,13 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
         share={`${x.name}-vs-${y.name}-${periodLabel}`}
       >
         <div className="flex items-center justify-between gap-3 text-sm font-bold">
-          <span className="flex items-center gap-2 min-w-0">
+          <span className="flex items-center gap-2 min-w-0 text-rw-side-a">
             <PlayerPhoto name={x.name} team={x.club} slug={x.u} img={x.img} sizeClass="w-11 h-11 lg:w-16 lg:h-16 2xl:w-20 2xl:h-20" />
             <span className="truncate">{x.name}</span>
-            <PhotosLink q={x.name} iconOnly className="text-rw-muted hover:text-rw-teal shrink-0" />
+            <PhotosLink q={x.name} iconOnly className="text-rw-muted hover:text-rw-accent shrink-0" />
           </span>
-          <span className="flex items-center gap-2 min-w-0">
-            <PhotosLink q={y.name} iconOnly className="text-rw-muted hover:text-rw-teal shrink-0" />
+          <span className="flex items-center gap-2 min-w-0 text-rw-side-b">
+            <PhotosLink q={y.name} iconOnly className="text-rw-muted hover:text-rw-accent shrink-0" />
             <span className="truncate text-right">{y.name}</span>
             <PlayerPhoto name={y.name} team={y.club} slug={y.u} img={y.img} sizeClass="w-11 h-11 lg:w-16 lg:h-16 2xl:w-20 2xl:h-20" />
           </span>
@@ -930,7 +937,7 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
             </span>
             <span className="flex items-center gap-2 shrink-0 text-rw-muted">
               {fmtDate(m.a[0])}
-              <HubLink to={{ kind: "match", slug: m.a[1], game: m.a[22] || undefined }} className="text-rw-teal hover:underline">
+              <HubLink to={{ kind: "match", slug: m.a[1], game: m.a[22] || undefined }} className="text-rw-accent hover:underline">
                 {tl("Details")}
               </HubLink>
             </span>
@@ -938,7 +945,7 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
         ))}
       </ul>
       {shown.length > n && (
-        <button type="button" onClick={() => setN((x) => x + 20)} className="text-[11px] text-rw-teal hover:underline">
+        <button type="button" onClick={() => setN((x) => x + 20)} className="text-[11px] text-rw-accent hover:underline">
           {tl("Show more ({n} left)", { n: shown.length - n })}
         </button>
       )}
@@ -1053,7 +1060,7 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
         ))}
         {slugs.length < 8 && (
           <details>
-            <summary className="cursor-pointer text-rw-teal hover:underline">{tl("Add another")}</summary>
+            <summary className="cursor-pointer text-rw-accent hover:underline">{tl("Add another")}</summary>
             <div className={`${card} mt-2 max-w-md`}>
               <ComparePick kind={mode} autoFocus onPick={(slug) => set({ more: [...slugs.slice(2), slug] })} />
             </div>

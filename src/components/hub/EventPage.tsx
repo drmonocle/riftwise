@@ -367,7 +367,7 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
             </span>
           )}
           {r.g && !hideResult && (
-            <HubLink to={{ kind: "match", slug: r.g }} className="text-rw-teal hover:underline">
+            <HubLink to={{ kind: "match", slug: r.g }} className="text-rw-accent hover:underline">
               {tl("Details")}
             </HubLink>
           )}
@@ -435,7 +435,7 @@ const ChildStages: React.FC<{ kids: { n: string; u: string }[] }> = ({ kids }) =
             {k.n}
           </button>
         ))}
-        <EventLink name={tl("Open {stage}", { stage: x.n })} u={x.u} className="ml-auto text-rw-teal hover:underline" />
+        <EventLink name={tl("Open {stage}", { stage: x.n })} u={x.u} className="ml-auto text-rw-accent hover:underline" />
       </div>
       {b.length > 0 && <Bracket key={x.u} stages={b} />}
       {x.standings && x.standings.length > 0 && (
@@ -656,7 +656,7 @@ const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
     e.lu && /^\d{4}$/.test(year) ? (
       <HubLink
         to={{ kind: "champions", query: new URLSearchParams({ league: e.lu, year, ...(e.whole ? {} : { event: e.u }) }).toString() }}
-        className="text-[11px] text-rw-teal hover:underline"
+        className="text-[11px] text-rw-accent hover:underline"
       >
         {tl("Every champion, with filters")}
       </HubLink>

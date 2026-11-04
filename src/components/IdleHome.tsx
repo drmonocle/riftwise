@@ -42,7 +42,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
     <section className="space-y-2">
       <div className="flex items-center justify-between">
         <h2 className={HEAD}>{tl("Latest results")}</h2>
-        <button type="button" onClick={() => onSelectTab("schedule")} className="text-rw-teal hover:underline text-[11px] font-medium">
+        <button type="button" onClick={() => onSelectTab("schedule")} className="text-rw-accent hover:underline text-[11px] font-medium">
           {tl("All results →")}
         </button>
       </div>
@@ -52,7 +52,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
           <EyeOff className="w-3.5 h-3.5 shrink-0 mt-px text-rw-accent" />
           <span>
             {tl("Spoiler mode is on, so scores stay hidden until you press Reveal.")}{" "}
-            <button type="button" onClick={() => window.dispatchEvent(new CustomEvent(OPEN_TAB_EVENT, { detail: "settings" }))} className="text-rw-teal hover:underline">
+            <button type="button" onClick={() => window.dispatchEvent(new CustomEvent(OPEN_TAB_EVENT, { detail: "settings" }))} className="text-rw-accent hover:underline">
               {tl("Turn it off in Settings")}
             </button>
           </span>
@@ -109,7 +109,7 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
     <section className="space-y-2">
       <div className="flex items-center justify-between">
         <h2 className={HEAD}>{tl("Power rankings")}</h2>
-        <button type="button" onClick={() => open()} className="text-rw-teal hover:underline text-[11px] font-medium">
+        <button type="button" onClick={() => open()} className="text-rw-accent hover:underline text-[11px] font-medium">
           {tl("Every team →")}
         </button>
       </div>

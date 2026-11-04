@@ -231,7 +231,7 @@ const PlayerItemsView: React.FC<{
   const games = (pos: number[]) => pos.map((i) => rows[i]).filter((r): r is PlayerGameRow => !!r && keep(r));
   const counted = champ || year ? rows.filter(keep).length : rows.length;
   const whoBuilt = (label: string) => (
-    <HubLink to={{ kind: "items", query: new URLSearchParams({ item, ...(champ ? { champ } : {}), ...(year ? { year } : {}) }).toString() }} className="text-[11px] text-rw-teal hover:underline">
+    <HubLink to={{ kind: "items", query: new URLSearchParams({ item, ...(champ ? { champ } : {}), ...(year ? { year } : {}) }).toString() }} className="text-[11px] text-rw-accent hover:underline">
       {champ ? tl("Who built {item} on {champ}", { item: label, champ: champLabel }) : tl("Who built {item} most", { item: label })}
     </HubLink>
   );
@@ -448,7 +448,7 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
             </tbody>
           </STable>
           {rows.length > shown.length && (
-            <button type="button" onClick={() => setAll(true)} className="text-[11px] text-rw-teal hover:underline">
+            <button type="button" onClick={() => setAll(true)} className="text-[11px] text-rw-accent hover:underline">
               {tl("Show all {n}", { n: rows.length })}
             </button>
           )}
@@ -587,7 +587,7 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
             </tbody>
           </STable>
           {list.length > shown.length && (
-            <button type="button" onClick={() => setAll(true)} className="text-[11px] text-rw-teal hover:underline">
+            <button type="button" onClick={() => setAll(true)} className="text-[11px] text-rw-accent hover:underline">
               {tl("Show all {n}", { n: list.length })}
             </button>
           )}
@@ -689,7 +689,7 @@ const YearBars: React.FC<{ years: [string, number, number, number?][]; onYear: (
 };
 
 const TheirGames: React.FC<{ onClick: () => void }> = ({ onClick }) => (
-  <button type="button" onClick={onClick} className="text-rw-teal hover:underline">
+  <button type="button" onClick={onClick} className="text-rw-accent hover:underline">
     {tl("Their games")}
   </button>
 );
@@ -768,7 +768,7 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
         })}
       </ul>
       {games.length > shown.length && (
-        <button type="button" onClick={() => setAll(true)} className="text-[11px] text-rw-teal hover:underline">
+        <button type="button" onClick={() => setAll(true)} className="text-[11px] text-rw-accent hover:underline">
           {tl("Show all {n}", { n: games.length })}
         </button>
       )}

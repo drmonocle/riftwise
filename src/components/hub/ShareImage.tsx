@@ -78,7 +78,7 @@ export const CopyPageImage: React.FC<{ target: React.RefObject<HTMLElement | nul
         type="button"
         onClick={() => run(false)}
         disabled={state === "busy"}
-        className="flex items-center gap-1 min-h-8 max-sm:min-h-9 px-1.5 rounded text-rw-teal hover:underline disabled:opacity-50"
+        className="flex items-center gap-1 min-h-8 max-sm:min-h-9 px-1.5 rounded text-rw-accent hover:underline disabled:opacity-50"
         title={tl("Copy this whole page as a picture, to paste into Discord, X or a broadcast graphic")}
         aria-label={iconOnly ? tl("Copy as an image") : undefined}
       >
@@ -96,7 +96,7 @@ export const CopyPageImage: React.FC<{ target: React.RefObject<HTMLElement | nul
               : tl("Copy as an image")}
       </button>
       {IS_WEB && (
-        <button type="button" onClick={() => run(true)} disabled={state === "busy"} className="min-h-8 max-sm:min-h-9 max-sm:min-w-9 flex items-center justify-center text-rw-teal hover:text-rw-text disabled:opacity-50" title={tl("Save as an image")} aria-label={tl("Save as an image")}>
+        <button type="button" onClick={() => run(true)} disabled={state === "busy"} className="min-h-8 max-sm:min-h-9 max-sm:min-w-9 flex items-center justify-center text-rw-accent hover:text-rw-text disabled:opacity-50" title={tl("Save as an image")} aria-label={tl("Save as an image")}>
           <ImageDown className="w-3.5 h-3.5" />
         </button>
       )}

@@ -313,7 +313,7 @@ export const LiveNextGamePreview: React.FC<{
         {draftIntel && (
           <HubLink
             to={{ kind: "draft", query: draftQuery }}
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-teal hover:underline"
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-accent hover:underline"
           >
             <Swords className="w-3.5 h-3.5" />
             {tl("Draft board")} →
@@ -341,7 +341,7 @@ export const LiveNextGamePreview: React.FC<{
                 </span>
                 <div className="flex flex-wrap items-center justify-end gap-2 min-w-0">
                   <span className="inline-flex items-center gap-1">
-                    <span className="text-[10px] font-bold text-rw-teal">{match.team1Code}</span>
+                    <span className="text-[10px] font-bold text-rw-side-a">{match.team1Code}</span>
                     {g.team1.map((p) => (
                       <span key={p.c} title={`${champName(p.c)} (${p.player})`} className="opacity-75 grayscale-[35%]">
                         <ChampIcon name={p.c} size={18} />
@@ -350,7 +350,7 @@ export const LiveNextGamePreview: React.FC<{
                   </span>
                   <span className="text-rw-border">·</span>
                   <span className="inline-flex items-center gap-1">
-                    <span className="text-[10px] font-bold text-rw-red">{match.team2Code}</span>
+                    <span className="text-[10px] font-bold text-rw-side-b">{match.team2Code}</span>
                     {g.team2.map((p) => (
                       <span key={p.c} title={`${champName(p.c)} (${p.player})`} className="opacity-75 grayscale-[35%]">
                         <ChampIcon name={p.c} size={18} />
@@ -375,8 +375,8 @@ export const LiveNextGamePreview: React.FC<{
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             {[
-              { code: match.team1Code, slug: draftIntel.slugA, bans: draftIntel.bansA, tone: "text-rw-teal" },
-              { code: match.team2Code, slug: draftIntel.slugB, bans: draftIntel.bansB, tone: "text-rw-red" },
+              { code: match.team1Code, slug: draftIntel.slugA, bans: draftIntel.bansA, tone: "text-rw-side-a" },
+              { code: match.team2Code, slug: draftIntel.slugB, bans: draftIntel.bansB, tone: "text-rw-side-b" },
             ].map((side) => (
               <div key={side.code} className="rounded border border-rw-border/70 bg-rw-surface/60 px-2.5 py-1.5 space-y-1">
                 <div className="text-[10px] font-bold flex items-center justify-between">
@@ -557,7 +557,7 @@ export const LiveGameDraftLink: React.FC<{ match: Match; gameNum: number; win: L
   return (
     <HubLink
       to={{ kind: "draft", query }}
-      className="inline-flex items-center gap-1 text-[10px] font-semibold text-rw-teal hover:underline"
+      className="inline-flex items-center gap-1 text-[10px] font-semibold text-rw-accent hover:underline"
     >
       <Swords className="w-3 h-3" />
       {tl("Draft board")}

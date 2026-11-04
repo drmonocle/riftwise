@@ -85,7 +85,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
     rawChamp ? (
       <HubLink
         to={{ kind: "finder", query: `champ=${encodeURIComponent(rawChamp)}&vschamp=${encodeURIComponent(opp)}` }}
-        className="hover:text-rw-teal hover:underline"
+        className="hover:text-rw-accent hover:underline"
         title={tl("Game finder")}
       >
         {n}
@@ -252,7 +252,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
 
 /** A small picker used on champion pages and Match prep: open the finder for a champion. */
 export const CountersLink: React.FC<{ slug: string; role?: string; className?: string }> = ({ slug, role, className }) => (
-  <HubLink to={{ kind: "counters", query: `champ=${slug}${role ? `&role=${role}` : ""}` }} className={className || "text-[11px] text-rw-teal hover:underline font-semibold"}>
+  <HubLink to={{ kind: "counters", query: `champ=${slug}${role ? `&role=${role}` : ""}` }} className={className || "text-[11px] text-rw-accent hover:underline font-semibold"}>
     {tl("Counter-picks")}
   </HubLink>
 );

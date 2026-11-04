@@ -28,7 +28,7 @@ export const heroBtn = (primary = false) =>
   }`;
 
 /** A quiet text link in a page's top card (Leaguepedia, photos, a calendar feed). */
-export const heroLink = "inline-flex items-center gap-1 text-[13px] text-rw-teal hover:underline";
+export const heroLink = "inline-flex items-center gap-1 text-[13px] text-rw-accent hover:underline";
 
 const Cell: React.FC<{ s: HeroStat }> = ({ s }) => {
   const body = (

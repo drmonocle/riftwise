@@ -274,7 +274,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
           </div>
           <p className="text-[10px] text-rw-muted">
             {tl("Click an item, keystone or spell pair to see the latest pro games that used it.")}{" "}
-            <HubLink to={{ kind: "items", ...(usedOnly?.kind === "item" ? { query: `item=${prettySlug(usedOnly.v)}` } : {}) }} className="text-rw-teal hover:underline">
+            <HubLink to={{ kind: "items", ...(usedOnly?.kind === "item" ? { query: `item=${prettySlug(usedOnly.v)}` } : {}) }} className="text-rw-accent hover:underline">
               {tl("Has a pro ever built it? Item history")}
             </HubLink>
           </p>
@@ -363,7 +363,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                   <td className={`${td} text-rw-sub`}>
                     <HubLink
                       to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&vschamp=${encodeURIComponent(oc)}` }}
-                      className="hover:text-rw-teal hover:underline"
+                      className="hover:text-rw-accent hover:underline"
                       title={tl("Game finder")}
                     >
                       {g}

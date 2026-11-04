@@ -90,7 +90,7 @@ export const PatchesPanel: React.FC = () => {
             <button
               type="button"
               onClick={() => setN((x) => x + 48)}
-              className="text-xs text-rw-teal hover:underline"
+              className="text-xs text-rw-accent hover:underline"
             >
               {tl("Show more ({n} left)", { n: rows.length - n })}
             </button>
@@ -254,7 +254,7 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
         </tbody>
       </STable>
       {n > 0 && rows.length > n && (
-        <button type="button" onClick={() => setN(0)} className="text-xs text-rw-teal hover:underline">
+        <button type="button" onClick={() => setN(0)} className="text-xs text-rw-accent hover:underline">
           {tl("Show more ({n} left)", { n: rows.length - n })}
         </button>
       )}

@@ -212,7 +212,7 @@ export const Header: React.FC<HeaderProps> = ({
           {IS_DESKTOP && (
             <button
               onClick={() => onUpdateSettings({ compactMode: !settings.compactMode })}
-              className={`${iconBtn} ${settings.compactMode ? "bg-rw-teal border-rw-teal text-rw-bg" : quiet}`}
+              className={`${iconBtn} ${settings.compactMode ? "bg-rw-accent border-rw-accent text-rw-bg" : quiet}`}
               aria-label={settings.compactMode ? tl("Expand window") : tl("Compact window")}
               title={tl("{action} (Alt+Shift+L summons/hides app anywhere)", { action: settings.compactMode ? tl("Expand window") : tl("Compact window") })}
             >

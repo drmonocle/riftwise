@@ -47,7 +47,7 @@
 }
 
 @layer base {
-  /* Rift (default): deep indigo with soft Rift Herald violet */
+  /* Rift (default): deep indigo with soft Rift Herald violet and warm Hextech gold */
   :root,
   :root[data-theme="rift"] {
     --rw-bg: #0c0a1d;
@@ -62,11 +62,11 @@
     --rw-text: #efeaff;
     --rw-sub: #b9b0dc;
     --rw-muted: #8c85b0;
-    --rw-teal: #2dd4bf;
-    --rw-red: #fb6f8f;
+    --rw-teal: #e0b86b;
+    --rw-red: #f4728c;
     /* a matchup's two sides: the Herald's violet and Hextech gold (teal against pink clashed, TV 2026-11-03) */
     --rw-side-a: #b39dff;
-    --rw-side-b: #c8aa6e;
+    --rw-side-b: #e0b86b;
     --rw-on-accent: #120d2c;
     color-scheme: dark;
   }

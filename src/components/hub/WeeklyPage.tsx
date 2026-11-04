@@ -239,7 +239,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
               </ol>
               <p className="text-[10px] text-rw-muted">
                 {tl("Two games or more.")}{" "}
-                <HubLink to={{ kind: "about" }} className="text-rw-teal hover:underline">
+                <HubLink to={{ kind: "about" }} className="text-rw-accent hover:underline">
                   {tl("How the rating works")}
                 </HubLink>
               </p>

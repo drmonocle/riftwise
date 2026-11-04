@@ -187,11 +187,11 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
           />
           {pair && (
             <span className="flex items-center gap-2 text-[11px]">
-              <HubLink to={{ kind: "prep", a: pair[0], b: pair[1], period: `e:${e.u}` }} className="text-rw-teal hover:underline font-semibold">
+              <HubLink to={{ kind: "prep", a: pair[0], b: pair[1], period: `e:${e.u}` }} className="text-rw-accent hover:underline font-semibold">
                 {tl("Match prep")}
               </HubLink>
               <span className="text-rw-muted">·</span>
-              <HubLink to={{ kind: "compare", mode: "team", a: pair[0], b: pair[1], period: `e:${e.u}` }} className="text-rw-teal hover:underline font-semibold">
+              <HubLink to={{ kind: "compare", mode: "team", a: pair[0], b: pair[1], period: `e:${e.u}` }} className="text-rw-accent hover:underline font-semibold">
                 {tl("Compare")}
               </HubLink>
             </span>

@@ -104,7 +104,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onPrep: () => void }> = (
     });
   const team = (s: Side, right: boolean) => (
     <div className={`min-w-0 ${right ? "text-right" : ""}`}>
-      <div className={`text-sm font-extrabold truncate ${right ? "text-rw-red" : "text-rw-teal"}`}>{s.team.name}</div>
+      <div className={`text-sm font-extrabold truncate ${right ? "text-rw-side-b" : "text-rw-side-a"}`}>{s.team.name}</div>
       {s.team.rating && (
         <div className="text-[11px] text-rw-sub">
           {rankText(s.team)} · <Change v={s.team.rating.chg30} /> {tl("in 30 days")}
@@ -162,7 +162,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onPrep: () => void }> = (
             <span className="font-bold tabular-nums">
               {meetings.length ? (
                 <>
-                  <span className="text-rw-teal">{h2hWins}</span> – <span className="text-rw-red">{meetings.length - h2hWins}</span>
+                  <span className="text-rw-side-a">{h2hWins}</span> – <span className="text-rw-side-b">{meetings.length - h2hWins}</span>
                 </>
               ) : (
                 "–"
