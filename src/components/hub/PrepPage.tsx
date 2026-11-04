@@ -21,6 +21,7 @@ import { HeadToHeadSeries } from "./Archives";
 import { ComparePick, TeamRows, bothOptions } from "./ComparePage";
 import { PeriodPicker, Playstyle, TeamEarly, defaultPeriod } from "./PeriodStats";
 import { DraftTendencies } from "./DraftTendencies";
+import { pool, computeDraftSuggestions, slotsFromGameDraft, packSlots } from "./DraftPage";
 import { StoryLine, StoryList, noteText } from "./Storylines";
 import { CaptureContext, card, ChampIcon, fmtDate, fmtNum, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, useHidden, useLoad, usePageTitle, PhotosLink, NERDFINDER_TOGETHER, useRetryAttempt, retryFailedLoads } from "./ui";
 import { CaptureFooter, CopyPageImage, ShareButtons } from "./ShareImage";
@@ -642,7 +643,8 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
               onSwapB={(rIdx, slug) => swapPlayerInSide(b, rIdx, slug).then((nb) => onFull(a, nb))}
             />
           </div>
-          <div id="prep-fearless" className="rw-span">
+          <div id="prep-fearless" className="rw-span space-y-3">
+            <DraftScouting a={a} b={b} period={period} />
             <FearlessDepth a={a} b={b} period={period} periodLabel={periodLabel} title={title} />
           </div>
           <div id="prep-tendencies" className="rw-span grid gap-3 xl:grid-cols-2 items-start">
@@ -1203,3 +1205,172 @@ const LaneBlock: React.FC<{
     </div>
   );
 };
+
+/**
+ * Target Bans & Priority Openers scouting summary card on Match Prep:
+ * Computes both teams' top Phase 1 target bans and priority B1 / R1-R2 openers from `computeDraftSuggestions`,
+ * with 1-click links to launch the Draft Board either clean or pre-loaded with recommended Phase 1 bans.
+ */
+const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b, period }) => {
+  const pa = useMemo(() => pool(a, period), [a, period]);
+  const pb = useMemo(() => pool(b, period), [b, period]);
+  const emptyTaken = useMemo(() => new Set<string>(), []);
+
+  const bansByA = useMemo(
+    () =>
+      computeDraftSuggestions({
+        step: 0,
+        now: { side: "b", ban: true },
+        me: pa,
+        them: pb,
+        meSide: a,
+        themSide: b,
+        myPicks: [],
+        theirPicks: [],
+        taken: emptyTaken,
+        period,
+      }).slice(0, 4),
+    [pa, pb, a, b, emptyTaken, period],
+  );
+  const bansByB = useMemo(
+    () =>
+      computeDraftSuggestions({
+        step: 1,
+        now: { side: "r", ban: true },
+        me: pb,
+        them: pa,
+        meSide: b,
+        themSide: a,
+        myPicks: [],
+        theirPicks: [],
+        taken: emptyTaken,
+        period,
+      }).slice(0, 4),
+    [pa, pb, a, b, emptyTaken, period],
+  );
+  const picksA = useMemo(
+    () =>
+      computeDraftSuggestions({
+        step: 6,
+        now: { side: "b", ban: false },
+        me: pa,
+        them: pb,
+        meSide: a,
+        themSide: b,
+        myPicks: [],
+        theirPicks: [],
+        taken: emptyTaken,
+        period,
+      }).slice(0, 4),
+    [pa, pb, a, b, emptyTaken, period],
+  );
+  const picksB = useMemo(
+    () =>
+      computeDraftSuggestions({
+        step: 7,
+        now: { side: "r", ban: false },
+        me: pb,
+        them: pa,
+        meSide: b,
+        themSide: a,
+        myPicks: [],
+        theirPicks: [],
+        taken: emptyTaken,
+        period,
+      }).slice(0, 4),
+    [pa, pb, a, b, emptyTaken, period],
+  );
+
+  const preloadedQuery = useMemo(() => {
+    const used = new Set<string>();
+    const blueBans: string[] = [];
+    const redBans: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      const src = i % 2 === 0 ? bansByA : bansByB;
+      const dst = i % 2 === 0 ? blueBans : redBans;
+      const hit = src.find((x) => !used.has(bare(x.c)));
+      if (hit) {
+        used.add(bare(hit.c));
+        dst.push(hit.c);
+      }
+    }
+    const d = packSlots(slotsFromGameDraft({ blueBans, redBans }));
+    return `teams=${encodeURIComponent(a.team.u)},${encodeURIComponent(b.team.u)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}${d ? `&d=${encodeURIComponent(d)}` : ""}`;
+  }, [a.team.u, b.team.u, period, bansByA, bansByB]);
+
+  if (!bansByA.length && !bansByB.length && !picksA.length && !picksB.length) return null;
+
+  const chipRow = (items: ReturnType<typeof computeDraftSuggestions>) => (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((x) => (
+        <span
+          key={x.c}
+          className="inline-flex items-center gap-1 rounded border border-rw-border bg-rw-bg px-1.5 py-0.5 text-[11px]"
+          title={x.why}
+        >
+          <ChampIcon name={x.c} size={18} />
+          <span className="font-medium text-rw-text">{champName(x.c)}</span>
+          {x.role != null && <span className="text-[9px] text-rw-muted">{roleName(ROLES[x.role])}</span>}
+          {x.stat && <span className="text-[10px] text-rw-sub tabular-nums">{x.stat}</span>}
+          {x.badge && <span className="text-[9px] px-1 rounded bg-rw-accent/15 text-rw-accent font-semibold">{x.badge}</span>}
+        </span>
+      ))}
+    </div>
+  );
+
+  return (
+    <Section
+      title={`${tl("Draft board")} · ${tl("Threats to ban")} & ${tl("Comfort picks")}`}
+      right={
+        <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+          <HubLink to={{ kind: "draft", query: preloadedQuery }} className="text-rw-teal hover:underline font-semibold">
+            {tl("Draft board")} ({tl("Bans, phase 1")})
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "draft",
+              query: `teams=${encodeURIComponent(a.team.u)},${encodeURIComponent(b.team.u)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+            }}
+            className="text-rw-sub hover:text-rw-teal hover:underline"
+          >
+            {tl("Open →")}
+          </HubLink>
+        </span>
+      }
+    >
+      <div className="grid gap-3 md:grid-cols-2 text-xs">
+        <div className="space-y-2 min-w-0">
+          <div className="font-bold text-rw-teal truncate">{a.team.name}</div>
+          <div className="space-y-1">
+            <div className="text-[10px] font-semibold text-rw-muted">
+              {tl("Threats to ban")} ({b.team.name})
+            </div>
+            {chipRow(bansByA)}
+          </div>
+          <div className="space-y-1">
+            <div className="text-[10px] font-semibold text-rw-muted">
+              {tl("Comfort picks")} · {tl("First pick (blue)")}
+            </div>
+            {chipRow(picksA)}
+          </div>
+        </div>
+        <div className="space-y-2 min-w-0">
+          <div className="font-bold text-rw-red truncate">{b.team.name}</div>
+          <div className="space-y-1">
+            <div className="text-[10px] font-semibold text-rw-muted">
+              {tl("Threats to ban")} ({a.team.name})
+            </div>
+            {chipRow(bansByB)}
+          </div>
+          <div className="space-y-1">
+            <div className="text-[10px] font-semibold text-rw-muted">
+              {tl("Comfort picks")} · {tl("First picks (red)")}
+            </div>
+            {chipRow(picksB)}
+          </div>
+        </div>
+      </div>
+    </Section>
+  );
+};
+

@@ -22,7 +22,8 @@ import { FearlessDepth, RosterSubPicker, Side, loadFullLogs, loadSide, needsFull
 import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, Section, useLoad, usePageTitle, useRetryAttempt, retryFailedLoads } from "./ui";
 import { bare, loadHubChamp, prettySlug } from "../../hub/data";
 import { BroadcastCardButton, draftBoardCard, type BoardSide } from "./BroadcastCard";
-import type { LaneLine } from "../../hub/types";
+import type { HubChamp, LaneLine } from "../../hub/types";
+import { draftTendencies } from "./DraftTendencies";
 
 type Who = "b" | "r";
 /** Tournament draft order: who acts and whether it's a ban or a pick. */
@@ -148,7 +149,7 @@ export function pool(side: Side, period: PeriodKey, sideOnly?: "b" | "r"): Pool 
 }
 
 /** The role a champion would fill for this team: the role it played it in most, else its main player's seat. */
-export function roleOf(c: string, p: Pool): number | null {
+export function roleOf(c: string, p: Pool, champMap?: Record<string, HubChamp | null>): number | null {
   const rc = p.roleCount.get(c);
   if (rc) {
     let best = -1;
@@ -163,7 +164,80 @@ export function roleOf(c: string, p: Pool): number | null {
   }
   const pls = p.players.get(c);
   if (pls && pls.length) return [...pls].sort((a, b) => b.g - a.g || b.cg - a.cg)[0].role;
+  const ch = champMap?.[c] || champMap?.[bare(c)];
+  if (ch?.roles?.length) {
+    const idx = ROLES.indexOf(ch.roles[0].r);
+    if (idx >= 0) return idx;
+  }
   return null;
+}
+
+/** Candidate roles (0..4) and their preference weights for a champion on a given side. */
+export function candidateRolesOf(c: string, p: Pool, champMap?: Record<string, HubChamp | null>): Map<number, number> {
+  const weights = new Map<number, number>();
+  const rc = p.roleCount.get(c);
+  if (rc) {
+    rc.forEach((v, r) => {
+      if (v > 0) weights.set(r, (weights.get(r) || 0) + v * 12);
+    });
+  }
+  for (const pl of p.players.get(c) || []) {
+    if (pl.g > 0 || pl.cg > 0) {
+      weights.set(pl.role, (weights.get(pl.role) || 0) + pl.g * 10 + Math.min(pl.cg, 15));
+    }
+  }
+  const ch = champMap?.[c] || champMap?.[bare(c)];
+  if (ch?.roles?.length) {
+    const total = ch.roles.reduce((s, x) => s + x.p, 0) || 1;
+    for (const xr of ch.roles) {
+      const idx = ROLES.indexOf(xr.r);
+      if (idx >= 0 && (xr.p / total >= 0.08 || weights.size === 0)) {
+        weights.set(idx, (weights.get(idx) || 0) + Math.max(1, Math.round((xr.p / total) * 20)));
+      }
+    }
+  }
+  return weights;
+}
+
+/**
+ * Resolves flex picks across a team's locked picks (up to 5) so that e.g. Yone (Mid/Top) + Ahri (Mid) assigns
+ * Yone -> Top and Ahri -> Mid instead of colliding on Mid ×2.
+ */
+export function assignDraftRoles(picks: string[], p: Pool, champMap?: Record<string, HubChamp | null>): Map<string, number | null> {
+  const out = new Map<string, number | null>();
+  if (!picks.length) return out;
+  const cands = picks.map((c) => candidateRolesOf(c, p, champMap));
+  let bestScore = -1;
+  let bestAssign: (number | null)[] = picks.map((c) => roleOf(c, p, champMap));
+
+  const search = (idx: number, usedMask: number, cur: (number | null)[], score: number) => {
+    if (idx === picks.length) {
+      if (score > bestScore) {
+        bestScore = score;
+        bestAssign = [...cur];
+      }
+      return;
+    }
+    const map = cands[idx];
+    let triedAny = false;
+    for (const [r, w] of map.entries()) {
+      if ((usedMask & (1 << r)) === 0) {
+        triedAny = true;
+        cur.push(r);
+        search(idx + 1, usedMask | (1 << r), cur, score + 10000 + w);
+        cur.pop();
+      }
+    }
+    // Also allow leaving this pick on its fallback/colliding role if all its candidate roles were taken by stronger locks
+    if (!triedAny || map.size > 0) {
+      cur.push(roleOf(picks[idx], p, champMap));
+      search(idx + 1, usedMask, cur, score);
+      cur.pop();
+    }
+  };
+  search(0, 0, [], 0);
+  picks.forEach((c, i) => out.set(c, bestAssign[i] ?? null));
+  return out;
 }
 
 /** games weighted by how they went: 10 games at 70% beat 12 at 40% */
@@ -563,10 +637,39 @@ const Board: React.FC<{
   const bansOf = (w: Who) => ORDER.map((o, i) => (o.side === w && o.ban ? slots[i] : null)).filter((c): c is string => !!c);
 
   const activeSide: Who = now ? now.side : "b";
+  const [champMap, setChampMap] = useState<Record<string, HubChamp | null>>({});
+  useEffect(() => {
+    const picked = slots.filter((s, i): s is string => !!s && !ORDER[i].ban);
+    const missing = picked.filter((c) => !(c in champMap) && !(bare(c) in champMap));
+    if (!missing.length) return;
+    let alive = true;
+    Promise.all(
+      missing.map((c) =>
+        loadHubChamp(prettySlug(c))
+          .then((ch) => [c, ch] as const)
+          .catch(() => [c, null] as const),
+      ),
+    ).then((pairs) => {
+      if (!alive) return;
+      setChampMap((prev) => {
+        const next = { ...prev };
+        for (const [c, ch] of pairs) {
+          next[c] = ch;
+          next[bare(c)] = ch;
+        }
+        return next;
+      });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [slots]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const filledRoles = useMemo(() => {
     const pks = ORDER.map((o, i) => (o.side === activeSide && !o.ban ? slots[i] : null)).filter((c): c is string => !!c);
-    return new Set(pks.map((c) => roleOf(c, pools[activeSide])).filter((r): r is number => r != null));
-  }, [slots, activeSide, pools]);
+    const assigned = assignDraftRoles(pks, pools[activeSide], champMap);
+    return new Set([...assigned.values()].filter((r): r is number => r != null));
+  }, [slots, activeSide, pools, champMap]);
   const openRoles = useMemo(() => [0, 1, 2, 3, 4].filter((r) => !filledRoles.has(r)), [filledRoles]);
 
   const all = useMemo(() => {
@@ -729,6 +832,51 @@ const Board: React.FC<{
     setSameTeamBans(false);
   };
 
+  const autoFillPhase = () => {
+    if (step < 0 || step >= SLOTS) return;
+    const phaseIndices = step < 6 ? [0, 1, 2, 3, 4, 5] : step < 12 ? [6, 7, 8, 9, 10, 11] : step < 16 ? [12, 13, 14, 15] : [16, 17, 18, 19];
+    const ordered = [...phaseIndices.filter((i) => i >= step), ...phaseIndices.filter((i) => i < step)];
+    const curSlots = [...slots];
+    let lastPlaced: string | null = null;
+    for (const idx of ordered) {
+      if (curSlots[idx] !== null) continue;
+      const turn = ORDER[idx];
+      const curTaken = buildTakenSet(curSlots, used, fearless);
+      const myPks = ORDER.map((o, k) => (o.side === turn.side && !o.ban ? curSlots[k] : null)).filter((c): c is string => !!c);
+      const theirSide: Who = turn.side === "b" ? "r" : "b";
+      const theirPks = ORDER.map((o, k) => (o.side === theirSide && !o.ban ? curSlots[k] : null)).filter((c): c is string => !!c);
+      const sugs = computeDraftSuggestions({
+        step: idx,
+        now: turn,
+        me: pools[turn.side],
+        them: pools[theirSide],
+        meSide: team(turn.side),
+        themSide: team(theirSide),
+        myPicks: myPks,
+        theirPicks: theirPks,
+        taken: curTaken,
+        period,
+        champMap,
+      });
+      if (sugs.length > 0) {
+        curSlots[idx] = sugs[0].c;
+        lastPlaced = sugs[0].c;
+      }
+    }
+    onSlots(curSlots);
+    const afterPhaseEnd = phaseIndices[phaseIndices.length - 1];
+    let nextCur: number | null = null;
+    for (let i = afterPhaseEnd + 1; i < SLOTS; i++) {
+      if (curSlots[i] === null) {
+        nextCur = i;
+        break;
+      }
+    }
+    setSameTeamBans(false);
+    setCursor(nextCur);
+    if (lastPlaced) setFocus(lastPlaced);
+  };
+
   const draftText = () => {
     const lines: string[] = [];
     const per = options.find((o) => o.key === period)?.label || period;
@@ -743,8 +891,10 @@ const Board: React.FC<{
     for (const w of ["b", "r"] as Who[]) {
       const t = team(w);
       const p = pools[w];
-      const picks = picksOf(w).map((c) => {
-        const r = roleOf(c, p);
+      const pks = picksOf(w);
+      const assigned = assignDraftRoles(pks, p, champMap);
+      const picks = pks.map((c) => {
+        const r = assigned.get(c) ?? roleOf(c, p, champMap);
         return r == null ? champName(c) : `${roleName(ROLES[r])} ${champName(c)}`;
       });
       lines.push(`${t.team.name}: ${tl("Bans")} ${bansOf(w).map(champName).join(", ") || "–"} · ${tl("Picks")} ${picks.join(", ") || "–"}`);
@@ -790,14 +940,18 @@ const Board: React.FC<{
             <BroadcastCardButton
               data={() => {
                 // each pick with the role it most likely fills and the player on the roster who plays it
-                const sideOf = (w: Who): BoardSide => ({
-                  name: team(w).team.name,
-                  bans: bansOf(w),
-                  picks: picksOf(w).map((c) => {
-                    const r = roleOf(c, pools[w]);
-                    return { c, role: r == null ? undefined : roleName(ROLES[r]), player: champOf(c, pools[w])?.name };
-                  }),
-                });
+                const sideOf = (w: Who): BoardSide => {
+                  const pks = picksOf(w);
+                  const assigned = assignDraftRoles(pks, pools[w], champMap);
+                  return {
+                    name: team(w).team.name,
+                    bans: bansOf(w),
+                    picks: pks.map((c) => {
+                      const r = assigned.get(c) ?? roleOf(c, pools[w], champMap);
+                      return { c, role: r == null ? undefined : roleName(ROLES[r]), player: champOf(c, pools[w])?.name };
+                    }),
+                  };
+                };
                 const pk = (g: PastGame, w: Who) => ORDER.map((o, k) => (o.side === w && !o.ban ? g.slots[k] : null)).filter((c): c is string => !!c);
                 return draftBoardCard({
                   blue: sideOf("b"),
@@ -818,7 +972,7 @@ const Board: React.FC<{
 
       {/* phones and tablets: both boards side by side, the champion picker under them (so a pick shows on the board) */}
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_minmax(0,15rem)]">
-        <TeamColumn who="b" side={blue} pool={pools.b} slots={slots} step={step} onSelect={(i) => selectSlot(i, true)} />
+        <TeamColumn who="b" side={blue} pool={pools.b} slots={slots} step={step} champMap={champMap} onSelect={(i) => selectSlot(i, true)} />
         <div className="space-y-3 min-w-0 col-span-2 order-last lg:col-span-1 lg:order-none">
           <div className={`${card} space-y-2`}>
             <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -860,15 +1014,20 @@ const Board: React.FC<{
             <DraftOrderStrip slots={slots} step={step} blueName={blue.team.name} redName={red.team.name} onSelect={(i) => selectSlot(i, false)} />
             {now && (
               <Suggest
+                step={step}
                 now={now}
                 me={pools[now.side]}
                 them={pools[now.side === "b" ? "r" : "b"]}
                 meSide={team(now.side)}
                 themSide={team(now.side === "b" ? "r" : "b")}
                 myPicks={picksOf(now.side)}
+                theirPicks={picksOf(now.side === "b" ? "r" : "b")}
                 taken={taken}
+                period={period}
+                champMap={champMap}
                 onPick={place}
                 onFocus={setFocus}
+                onAutoFillPhase={autoFillPhase}
               />
             )}
             {fearless && (used.length > 0 || history.length > 0) && (
@@ -1068,8 +1227,20 @@ const Board: React.FC<{
           </div>
           {focus && <ChampInfo c={focus} pools={pools} blue={blue} red={red} taken={taken} hideTaken={hideTaken} />}
         </div>
-        <TeamColumn who="r" side={red} pool={pools.r} slots={slots} step={step} onSelect={(i) => selectSlot(i, true)} />
+        <TeamColumn who="r" side={red} pool={pools.r} slots={slots} step={step} champMap={champMap} onSelect={(i) => selectSlot(i, true)} />
       </div>
+
+      {(picksOf("b").length > 0 || picksOf("r").length > 0) && (
+        <DraftMatchupPanel
+          blue={blue}
+          red={red}
+          pools={pools}
+          bluePicks={picksOf("b")}
+          redPicks={picksOf("r")}
+          period={period}
+          champMap={champMap}
+        />
+      )}
 
       <div className="grid gap-3 md:grid-cols-2">
         <PlayerPools
@@ -1127,52 +1298,301 @@ const CopyDraft: React.FC<{ text: () => string }> = ({ text }) => {
   );
 };
 
+export interface DraftSuggestion {
+  c: string;
+  score: number;
+  why: string;
+  role: number | null;
+  stat: string;
+  badge?: string;
+  badgeTone?: "teal" | "red" | "accent";
+  dim?: boolean;
+}
+
+/**
+ * Phase-aware ban and context-aware pick suggestions:
+ * - Ban Phase 1 (steps 0..5): opponent comfort (games × win rate), respect-ban frequency, flex picks, signature pockets, and Fearless pinch roles.
+ * - Ban Phase 2 (steps 12..15): filters to the opponent's remaining open roles (resolving flexes), boosting Fearless pool pinches and counter-protection bans against our locked picks.
+ * - Pick Phases (steps 6..11, 16..19): resolves flex roles via `assignDraftRoles`, boosts contested picks in Phase 1, proven Mid+JG / Bot+Sup duos, and pro lane answers into opponent locks.
+ */
+export function computeDraftSuggestions(opts: {
+  step: number;
+  now: { side: Who; ban: boolean };
+  me: Pool;
+  them: Pool;
+  meSide?: Side;
+  themSide?: Side;
+  myPicks: string[];
+  theirPicks?: string[];
+  taken: Set<string>;
+  period?: PeriodKey;
+  champMap?: Record<string, HubChamp | null>;
+}): DraftSuggestion[] {
+  const { step, now, me, them, meSide, themSide, myPicks, theirPicks = [], taken, period = "all", champMap } = opts;
+  const myAssigned = assignDraftRoles(myPicks, me, champMap);
+  const theirAssigned = assignDraftRoles(theirPicks, them, champMap);
+  const myFilled = new Set([...myAssigned.values()].filter((r): r is number => r != null));
+  const theirFilled = new Set([...theirAssigned.values()].filter((r): r is number => r != null));
+  const isPhase2 = step >= 12;
+
+  const themPinchRoles = new Set<number>();
+  for (const pl of them.byPlayer) {
+    const openComfort = pl.champs.filter((x) => x.g >= 2 && !isChampTaken(x.c, taken)).length;
+    if (openComfort <= 2) themPinchRoles.add(pl.role);
+  }
+
+  if (now.ban) {
+    const candMap = new Map<string, [number, number]>();
+    for (const [c, gw] of them.picks.entries()) {
+      if (!isChampTaken(c, taken)) candMap.set(c, gw);
+    }
+    for (const pl of them.byPlayer) {
+      for (const x of pl.champs) {
+        if (x.g === 0 && x.cg >= 5 && x.cw / x.cg >= 0.55 && !isChampTaken(x.c, taken) && !candMap.has(x.c)) {
+          candMap.set(x.c, [0, 0]);
+        }
+      }
+    }
+    const rows: DraftSuggestion[] = [];
+    for (const [c, [g, w]] of candMap.entries()) {
+      const r = roleOf(c, them, champMap);
+      const roleSet = them.roles.get(c);
+      const openCandRoles = [r, ...(roleSet || [])].filter((rr): rr is number => rr != null && !theirFilled.has(rr));
+      // In Ban Phase 2 (Bans 4–5), exclude champions whose roles on the opponent are all already filled in Picks 1–3
+      if (isPhase2 && theirFilled.size > 0 && r != null && openCandRoles.length === 0) {
+        continue;
+      }
+      const targetRole = openCandRoles[0] ?? r;
+      const who = champOf(c, them);
+      const parts = [
+        who
+          ? `${who.name}: ${tl("{n} games, won {pct}", { n: who.g || who.cg, pct: winRate(who.g ? who.w : who.cw, who.g || who.cg) })}`
+          : tl("{n} games, won {pct}", { n: g, pct: winRate(w, g) }),
+      ];
+      if ((me.bans.get(c) || 0) > 0) parts.push(tl("you banned it {n} times", { n: me.bans.get(c) || 0 }));
+
+      let score =
+        g > 0
+          ? comfort(g, w) * (1 + Math.min(w / Math.max(g, 1), 1))
+          : who
+            ? comfort(Math.min(who.cg, 8) * 0.35, Math.min(who.cw, 8) * 0.35)
+            : 0.1;
+
+      const respectBans = (them.bansVs.get(c) || 0) + (me.bans.get(c) || 0);
+      if (respectBans > 0) score *= 1 + Math.min(respectBans, 8) * 0.06;
+
+      const isFlex = (roleSet?.size || 0) > 1;
+      if (isFlex && !isPhase2) score *= 1.18;
+
+      const isPinch = targetRole != null && themPinchRoles.has(targetRole) && g >= 2;
+      if (isPinch) score *= isPhase2 ? 1.45 : 1.25;
+
+      let counterVs: { myC: string; oppGd15: number } | null = null;
+      if (targetRole != null && champMap) {
+        const myLanePick = myPicks.find((mc) => myAssigned.get(mc) === targetRole);
+        if (myLanePick) {
+          const myCh = champMap[myLanePick] || champMap[bare(myLanePick)];
+          const mRows = myCh?.matchups12?.[ROLES[targetRole]] || myCh?.matchups?.[ROLES[targetRole]] || [];
+          const hit = mRows.find((m) => bare(m[0]) === bare(c) && (m[3] ?? m[1]) >= 2);
+          if (hit && hit[4] != null && hit[4] <= -120) {
+            score *= 1.35;
+            counterVs = { myC: myLanePick, oppGd15: -hit[4] };
+          }
+        }
+      }
+
+      let badge: string | undefined;
+      let badgeTone: "teal" | "red" | "accent" | undefined;
+      if (counterVs) {
+        badge = `vs ${champName(counterVs.myC)} +${counterVs.oppGd15}`;
+        badgeTone = "red";
+      } else if (isPinch) {
+        badge = tl("pinch point");
+        badgeTone = "accent";
+      } else if (isFlex) {
+        badge = tl("flex");
+        badgeTone = "accent";
+      } else if (g === 0 && who && who.cg >= 5) {
+        badge = tl("pocket pick");
+        badgeTone = "accent";
+      } else if ((them.bansVs.get(c) || 0) >= 3) {
+        badge = `${tl("Bans")} ×${them.bansVs.get(c)}`;
+        badgeTone = "red";
+      }
+
+      rows.push({
+        c,
+        score,
+        why: parts.join(" · "),
+        role: targetRole,
+        stat: g > 0 ? `${g}G ${winRate(w, g)}` : who ? `${who.cg}G` : "",
+        badge,
+        badgeTone,
+      });
+    }
+    rows.sort((a, b) => b.score - a.score || champName(a.c).localeCompare(champName(b.c)));
+    return rows;
+  }
+
+  const tend = meSide ? draftTendencies(inPeriod(meSide.games, period, teamRowRef)) : null;
+  const candMap = new Map<string, [number, number]>();
+  for (const [c, gw] of me.picks.entries()) {
+    if (!isChampTaken(c, taken)) candMap.set(c, gw);
+  }
+  for (const pl of me.byPlayer) {
+    if (myFilled.has(pl.role)) continue;
+    for (const x of pl.champs) {
+      if (x.g === 0 && x.cg >= 5 && x.cw / x.cg >= 0.55 && !isChampTaken(x.c, taken) && !candMap.has(x.c)) {
+        candMap.set(x.c, [0, 0]);
+      }
+    }
+  }
+
+  const rows: DraftSuggestion[] = [];
+  for (const [c, [g, w]] of candMap.entries()) {
+    const who = champOf(c, me);
+    const assignedWithC = assignDraftRoles([...myPicks, c], me, champMap);
+    const r = assignedWithC.get(c) ?? roleOf(c, me, champMap);
+    const assignedRoles = [...assignedWithC.values()].filter((v): v is number => v != null);
+    const hasCollision = new Set(assignedRoles).size < assignedRoles.length;
+    const roleTaken = hasCollision || (r != null && myFilled.has(r) && assignedWithC.get(c) === roleOf(c, me, champMap));
+
+    const parts = [
+      who
+        ? `${who.name}: ${tl("{n} games, won {pct}", { n: who.g || who.cg, pct: winRate(who.g ? who.w : who.cw, who.g || who.cg) })}`
+        : tl("{n} games, won {pct}", { n: g, pct: winRate(w, g) }),
+    ];
+    if (r != null) parts.push(roleTaken ? tl("{role} already picked", { role: roleName(ROLES[r]) }) : roleName(ROLES[r]));
+    if ((them.bans.get(c) || 0) > 0) parts.push(tl("they ban it {n} times", { n: them.bans.get(c) || 0 }));
+    if ((me.roles.get(c)?.size || 0) > 1) parts.push(tl("flex"));
+
+    let score =
+      (g > 0 ? comfort(g, w) : who ? comfort(Math.min(who.cg, 6) * 0.25, Math.min(who.cw, 6) * 0.25) : 0.1) *
+      (roleTaken ? 0.25 : 1);
+
+    const isFlex = (me.roles.get(c)?.size || 0) > 1;
+    if (isFlex && !roleTaken && !isPhase2) score *= 1.12;
+
+    const themG = them.picks.get(c)?.[0] || 0;
+    const themRole = roleOf(c, them, champMap);
+    const isContested = !roleTaken && !isPhase2 && themG >= 2 && (themRole == null || !theirFilled.has(themRole));
+    if (isContested) score *= 1.22;
+
+    let duoWith: { partner: string; g: number; w: number } | null = null;
+    if (!roleTaken && tend && myPicks.length > 0) {
+      for (const [p1, p2, pg, pw] of [...tend.botDuos, ...tend.midJungle]) {
+        if (pg < 2) continue;
+        if (bare(p1) === bare(c) && myPicks.some((mp) => bare(mp) === bare(p2))) {
+          duoWith = { partner: p2, g: pg, w: pw };
+          break;
+        }
+        if (bare(p2) === bare(c) && myPicks.some((mp) => bare(mp) === bare(p1))) {
+          duoWith = { partner: p1, g: pg, w: pw };
+          break;
+        }
+      }
+      if (duoWith) score *= 1.3 + Math.min(duoWith.g, 6) * 0.04;
+    }
+
+    let laneEdge: { oppC: string; myGd15: number } | null = null;
+    if (!roleTaken && r != null && champMap) {
+      const oppLanePick = theirPicks.find((oc) => theirAssigned.get(oc) === r);
+      if (oppLanePick) {
+        const oppCh = champMap[oppLanePick] || champMap[bare(oppLanePick)];
+        const mRows = oppCh?.matchups12?.[ROLES[r]] || oppCh?.matchups?.[ROLES[r]] || [];
+        const hit = mRows.find((m) => bare(m[0]) === bare(c) && (m[3] ?? m[1]) >= 2);
+        if (hit && hit[4] != null && hit[4] <= -100) {
+          score *= 1.32;
+          laneEdge = { oppC: oppLanePick, myGd15: -hit[4] };
+        }
+      }
+    }
+
+    let badge: string | undefined;
+    let badgeTone: "teal" | "red" | "accent" | undefined;
+    if (roleTaken && r != null) {
+      badge = tl("{role} already picked", { role: roleName(ROLES[r]) });
+    } else if (laneEdge) {
+      badge = `vs ${champName(laneEdge.oppC)} +${laneEdge.myGd15}`;
+      badgeTone = "teal";
+    } else if (duoWith) {
+      badge = `+${champName(duoWith.partner)} (${duoWith.g}G)`;
+      badgeTone = "teal";
+    } else if (isContested) {
+      badge = `${themSide?.team.codes?.[0] || themSide?.team.name || "Opp"} ${themG}G`;
+      badgeTone = "accent";
+    } else if (isFlex) {
+      badge = tl("flex");
+      badgeTone = "accent";
+    } else if (g === 0 && who && who.cg >= 5) {
+      badge = tl("pocket pick");
+      badgeTone = "accent";
+    }
+
+    rows.push({
+      c,
+      score,
+      why: parts.join(" · "),
+      role: r,
+      stat: g > 0 ? `${g}G ${winRate(w, g)}` : who ? `${who.cg}G` : "",
+      badge,
+      badgeTone,
+      dim: roleTaken,
+    });
+  }
+  rows.sort((a, b) => b.score - a.score || champName(a.c).localeCompare(champName(b.c)));
+  return rows;
+}
+
 /** What to do with the current ban or pick, and why: the other team's threats, or this team's comfort picks. */
 const Suggest: React.FC<{
+  step: number;
   now: { side: Who; ban: boolean };
   me: Pool;
   them: Pool;
   meSide: Side;
   themSide: Side;
   myPicks: string[];
+  theirPicks: string[];
   taken: Set<string>;
+  period: PeriodKey;
+  champMap: Record<string, HubChamp | null>;
   onPick: (c: string) => void;
   onFocus: (c: string) => void;
-}> = ({ now, me, them, meSide, themSide, myPicks, taken, onPick, onFocus }) => {
-  const filled = new Set(myPicks.map((c) => roleOf(c, me)).filter((r): r is number => r != null));
-  type Row = { c: string; score: number; why: string; dim?: boolean };
-  let rows: Row[];
-  if (now.ban) {
-    rows = [...them.picks.entries()]
-      .filter(([c]) => !isChampTaken(c, taken))
-      .map(([c, [g, w]]) => {
-        const who = champOf(c, them);
-        const parts = [who ? `${who.name}: ${tl("{n} games, won {pct}", { n: who.g, pct: winRate(who.w, who.g) })}` : tl("{n} games, won {pct}", { n: g, pct: winRate(w, g) })];
-        if ((me.bans.get(c) || 0) > 0) parts.push(tl("you banned it {n} times", { n: me.bans.get(c) || 0 }));
-        return { c, score: comfort(g, w) * (1 + Math.min(w / Math.max(g, 1), 1)), why: parts.join(" · ") };
-      });
-  } else {
-    rows = [...me.picks.entries()]
-      .filter(([c]) => !isChampTaken(c, taken))
-      .map(([c, [g, w]]) => {
-        const who = champOf(c, me);
-        const r = roleOf(c, me);
-        const roleTaken = r != null && filled.has(r);
-        const parts = [who ? `${who.name}: ${tl("{n} games, won {pct}", { n: who.g, pct: winRate(who.w, who.g) })}` : tl("{n} games, won {pct}", { n: g, pct: winRate(w, g) })];
-        if (r != null) parts.push(roleTaken ? tl("{role} already picked", { role: roleName(ROLES[r]) }) : roleName(ROLES[r]));
-        if ((them.bans.get(c) || 0) > 0) parts.push(tl("they ban it {n} times", { n: them.bans.get(c) || 0 }));
-        if ((me.roles.get(c)?.size || 0) > 1) parts.push(tl("flex"));
-        return { c, score: comfort(g, w) * (roleTaken ? 0.3 : 1), why: parts.join(" · "), dim: roleTaken };
-      });
-  }
-  rows.sort((a, b) => b.score - a.score);
+  onAutoFillPhase: () => void;
+}> = ({ step, now, me, them, meSide, themSide, myPicks, theirPicks, taken, period, champMap, onPick, onFocus, onAutoFillPhase }) => {
+  const rows = useMemo(
+    () =>
+      computeDraftSuggestions({
+        step,
+        now,
+        me,
+        them,
+        meSide,
+        themSide,
+        myPicks,
+        theirPicks,
+        taken,
+        period,
+        champMap,
+      }),
+    [step, now, me, them, meSide, themSide, myPicks, theirPicks, taken, period, champMap],
+  );
   const top = rows.slice(0, 5);
   if (!top.length) return null;
   const name = now.ban ? themSide.team.name : meSide.team.name;
+  const toneClass = (t?: "teal" | "red" | "accent") =>
+    t === "teal"
+      ? "bg-rw-teal/15 text-rw-teal"
+      : t === "red"
+        ? "bg-rw-red/15 text-rw-red"
+        : t === "accent"
+          ? "bg-rw-accent/15 text-rw-accent"
+          : "bg-rw-border text-rw-muted";
   return (
     <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
       <span className="flex items-center gap-1 text-rw-muted" title={now.ban ? tl("What {team} plays best that is still open", { team: name }) : tl("What {team} plays best that is still open", { team: name })}>
-        <Lightbulb className="w-3.5 h-3.5" />
+        <Lightbulb className="w-3.5 h-3.5 text-rw-accent" />
         {now.ban ? tl("Threats to ban") : tl("Comfort picks")}
       </span>
       {top.map((x) => (
@@ -1185,11 +1605,190 @@ const Suggest: React.FC<{
           title={x.why}
         >
           <ChampIcon name={x.c} size={18} />
-          <span className="text-rw-text">{champName(x.c)}</span>
-          <span className="text-rw-muted hidden xl:inline">· {x.why}</span>
+          <span className="text-rw-text font-medium">{champName(x.c)}</span>
+          {x.role != null && !x.dim && <span className="text-[9px] text-rw-muted">{roleName(ROLES[x.role])}</span>}
+          {x.stat && <span className="text-[10px] text-rw-sub tabular-nums">{x.stat}</span>}
+          {x.badge && <span className={`text-[9px] px-1 rounded font-semibold ${toneClass(x.badgeTone)}`}>{x.badge}</span>}
         </button>
       ))}
+      <button
+        type="button"
+        onClick={onAutoFillPhase}
+        className="ml-auto text-[10px] px-1.5 py-0.5 rounded border border-rw-border text-rw-teal hover:border-rw-teal"
+        title={tl("Every open match goes to the team with the better chance")}
+      >
+        {tl("Favourites")}
+      </button>
     </div>
+  );
+};
+
+/**
+ * Live role-by-role (Top -> Support) lane matchup & draft comfort strip once champions are locked onto the board.
+ * Resolves flex picks via `assignDraftRoles`, shows starter comfort, pro lane matchup GD@15 & win rate from `HubChamp`,
+ * 1-click Game Finder links for locked head-to-head lanes, and active Mid+JG / Bot+Sup duo synergies.
+ */
+const DraftMatchupPanel: React.FC<{
+  blue: Side;
+  red: Side;
+  pools: { b: Pool; r: Pool };
+  bluePicks: string[];
+  redPicks: string[];
+  period: PeriodKey;
+  champMap: Record<string, HubChamp | null>;
+}> = ({ blue, red, pools, bluePicks, redPicks, period, champMap }) => {
+  const bAssign = useMemo(() => assignDraftRoles(bluePicks, pools.b, champMap), [bluePicks, pools.b, champMap]);
+  const rAssign = useMemo(() => assignDraftRoles(redPicks, pools.r, champMap), [redPicks, pools.r, champMap]);
+  const bTend = useMemo(() => draftTendencies(inPeriod(blue.games, period, teamRowRef)), [blue.games, period]);
+  const rTend = useMemo(() => draftTendencies(inPeriod(red.games, period, teamRowRef)), [red.games, period]);
+
+  const byRole = ROLES.map((rKey, rIdx) => {
+    const bChamp = bluePicks.find((c) => bAssign.get(c) === rIdx) || null;
+    const rChamp = redPicks.find((c) => rAssign.get(c) === rIdx) || null;
+    const bPlayer = bChamp
+      ? (pools.b.players.get(bChamp) || []).find((pl) => pl.role === rIdx && (pl.g > 0 || pl.cg > 0)) || champOf(bChamp, pools.b)
+      : undefined;
+    const rPlayer = rChamp
+      ? (pools.r.players.get(rChamp) || []).find((pl) => pl.role === rIdx && (pl.g > 0 || pl.cg > 0)) || champOf(rChamp, pools.r)
+      : undefined;
+    let laneStats: { g: number; bw: number; bgd: number | null } | null = null;
+    if (bChamp && rChamp) {
+      const bCh = champMap[bChamp] || champMap[bare(bChamp)];
+      const mRows = bCh?.matchups12?.[rKey] || bCh?.matchups?.[rKey] || [];
+      const hit = mRows.find((m) => bare(m[0]) === bare(rChamp));
+      if (hit) {
+        laneStats = { g: hit[1], bw: hit[2], bgd: hit[4] ?? null };
+      } else {
+        const rCh = champMap[rChamp] || champMap[bare(rChamp)];
+        const rmRows = rCh?.matchups12?.[rKey] || rCh?.matchups?.[rKey] || [];
+        const rHit = rmRows.find((m) => bare(m[0]) === bare(bChamp));
+        if (rHit) {
+          laneStats = { g: rHit[1], bw: rHit[1] - rHit[2], bgd: rHit[4] != null ? -rHit[4] : null };
+        }
+      }
+    }
+    return { rKey, rIdx, bChamp, rChamp, bPlayer, rPlayer, laneStats };
+  });
+
+  const activeDuos: { side: Who; teamName: string; label: string; c1: string; c2: string; g: number; w: number }[] = [];
+  const checkDuos = (w: Who, tName: string, pks: string[], tend: ReturnType<typeof draftTendencies>) => {
+    for (const [c1, c2, g, wins] of tend.midJungle) {
+      if (pks.some((p) => bare(p) === bare(c1)) && pks.some((p) => bare(p) === bare(c2))) {
+        activeDuos.push({ side: w, teamName: tName, label: tl("Jungle + mid pairs"), c1, c2, g, w: wins });
+      }
+    }
+    for (const [c1, c2, g, wins] of tend.botDuos) {
+      if (pks.some((p) => bare(p) === bare(c1)) && pks.some((p) => bare(p) === bare(c2))) {
+        activeDuos.push({ side: w, teamName: tName, label: tl("Bot lane pairs"), c1, c2, g, w: wins });
+      }
+    }
+  };
+  checkDuos("b", blue.team.name, bluePicks, bTend);
+  checkDuos("r", red.team.name, redPicks, rTend);
+
+  return (
+    <Section title={`${tl("Lane by lane")} · ${tl("Matchups")}`}>
+      <div className="divide-y divide-rw-border/60 text-xs">
+        {byRole.map(({ rKey, rIdx, bChamp, rChamp, bPlayer, rPlayer, laneStats }) => (
+          <div key={rIdx} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 py-1.5">
+            <div className="flex items-center gap-2 min-w-0">
+              {bChamp ? (
+                <>
+                  <ChampIcon name={bChamp} size={24} className="shrink-0" />
+                  <div className="min-w-0">
+                    <div className="font-semibold text-rw-text truncate">{champName(bChamp)}</div>
+                    <div className="text-[10px] text-rw-muted truncate tabular-nums">
+                      {bPlayer
+                        ? bPlayer.g > 0
+                          ? `${bPlayer.name} · ${bPlayer.g}G (${winRate(bPlayer.w, bPlayer.g)})`
+                          : `${bPlayer.name} · ${tl("pocket pick")} (${bPlayer.cg}G)`
+                        : "–"}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <span className="text-rw-muted text-[11px]">–</span>
+              )}
+            </div>
+
+            <div className="flex flex-col items-center justify-center px-2 text-center shrink-0">
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-rw-muted">{roleName(rKey)}</span>
+              {bChamp && rChamp && (
+                <div className="flex items-center gap-1.5 text-[10px] tabular-nums">
+                  {laneStats ? (
+                    <span
+                      className={
+                        laneStats.bgd != null && laneStats.bgd > 50
+                          ? "text-rw-teal font-semibold"
+                          : laneStats.bgd != null && laneStats.bgd < -50
+                            ? "text-rw-red font-semibold"
+                            : "text-rw-sub"
+                      }
+                      title={tl("Average lead over the lane opponent at 15 minutes")}
+                    >
+                      {laneStats.bgd != null ? `GD@15 ${laneStats.bgd > 0 ? "+" : ""}${laneStats.bgd} · ` : ""}
+                      {winRate(laneStats.bw, laneStats.g)} ({laneStats.g}G)
+                    </span>
+                  ) : null}
+                  <HubLink
+                    to={{
+                      kind: "finder",
+                      query: `champ=${encodeURIComponent(bChamp)}&vs=${encodeURIComponent(rChamp)}&role=${encodeURIComponent(rKey)}`,
+                    }}
+                    className="text-rw-teal hover:underline"
+                  >
+                    {tl("Game finder")}
+                  </HubLink>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 min-w-0 text-right">
+              {rChamp ? (
+                <>
+                  <div className="min-w-0">
+                    <div className="font-semibold text-rw-text truncate">{champName(rChamp)}</div>
+                    <div className="text-[10px] text-rw-muted truncate tabular-nums">
+                      {rPlayer
+                        ? rPlayer.g > 0
+                          ? `${rPlayer.name} · ${rPlayer.g}G (${winRate(rPlayer.w, rPlayer.g)})`
+                          : `${rPlayer.name} · ${tl("pocket pick")} (${rPlayer.cg}G)`
+                        : "–"}
+                    </div>
+                  </div>
+                  <ChampIcon name={rChamp} size={24} className="shrink-0" />
+                </>
+              ) : (
+                <span className="text-rw-muted text-[11px]">–</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      {activeDuos.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-rw-border/60 text-[11px]">
+          {activeDuos.map((d, i) => (
+            <span
+              key={i}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border ${
+                d.side === "b" ? "border-rw-teal/40 bg-rw-teal/10 text-rw-teal" : "border-rw-red/40 bg-rw-red/10 text-rw-red"
+              }`}
+            >
+              <span className="font-semibold">{d.teamName}</span>
+              <span className="text-rw-muted">({d.label}):</span>
+              <ChampIcon name={d.c1} size={14} />
+              <span>{champName(d.c1)}</span>
+              <span>+</span>
+              <ChampIcon name={d.c2} size={14} />
+              <span>{champName(d.c2)}</span>
+              <span className="tabular-nums font-semibold">
+                {d.g}G · {winRate(d.w, d.g)}
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
+    </Section>
   );
 };
 
@@ -1269,8 +1868,9 @@ const TeamColumn: React.FC<{
   pool: Pool;
   slots: (string | null)[];
   step: number;
+  champMap?: Record<string, HubChamp | null>;
   onSelect: (i: number) => void;
-}> = ({ who, side, pool: p, slots, step, onSelect }) => {
+}> = ({ who, side, pool: p, slots, step, champMap, onSelect }) => {
   const mine = ORDER.map((o, i) => ({ ...o, i })).filter((o) => o.side === who);
   const bans1 = mine.filter((o) => o.ban && o.i < 6);
   const picks1 = mine.filter((o) => !o.ban && o.i < 12);
@@ -1279,10 +1879,11 @@ const TeamColumn: React.FC<{
   const picks = mine.filter((o) => !o.ban);
   const color = who === "b" ? "var(--rw-teal)" : "var(--rw-red)";
   const picked = picks.map((o) => slots[o.i]).filter((c): c is string => !!c);
+  const assigned = useMemo(() => assignDraftRoles(picked, p, champMap), [picked, p, champMap]);
   const count = [0, 0, 0, 0, 0];
   let unknown = 0;
   for (const c of picked) {
-    const r = roleOf(c, p);
+    const r = assigned.get(c) ?? roleOf(c, p, champMap);
     if (r == null) unknown++;
     else count[r]++;
   }
@@ -1323,8 +1924,10 @@ const TeamColumn: React.FC<{
   const pickSlot = (i: number) => {
     const c = slots[i];
     const active = step === i;
-    const r = c ? roleOf(c, p) : null;
-    const who_ = c ? champOf(c, p) : undefined;
+    const r = c ? (assigned.get(c) ?? roleOf(c, p, champMap)) : null;
+    const who_ = c
+      ? (r != null ? (p.players.get(c) || []).find((pl) => pl.role === r && (pl.g > 0 || pl.cg > 0)) : undefined) || champOf(c, p)
+      : undefined;
     const code = PICK_CODES[i] || `#${i + 1}`;
     return (
       <button
