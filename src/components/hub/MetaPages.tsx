@@ -25,7 +25,7 @@ import {
   FollowFeeds,
 } from "./ui";
 import { STable } from "../STable";
-import { navigateHub } from "../../hub/route";
+import { currentHubRoute, navigateHub } from "../../hub/route";
 import { LeagueSeasonPanel } from "./LeagueSeasonPanel";
 import { EntityHero, heroBtn } from "./EntityHero";
 
@@ -263,7 +263,16 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
 };
 
 export const LeaguePage: React.FC<{ slug: string; year?: string }> = ({ slug, year }) => {
-  const state = useLoad(() => loadLeague(slug), [slug]);
+  const state = useLoad(
+    () =>
+      loadLeague(slug).then((l) => {
+        const now = currentHubRoute();
+        if (l.u && l.u !== slug && now.kind === "league" && now.slug === slug)
+          navigateHub({ kind: "league", slug: l.u, ...(now.year ? { year: now.year } : {}) }, { replace: true });
+        return l;
+      }),
+    [slug],
+  );
   usePageTitle(state.data ? (year ? `${state.data.l} ${year}` : state.data.l) : undefined, state.data?.l);
   return <Page state={state}>{(l) => <LeagueView l={l} year={year} />}</Page>;
 };

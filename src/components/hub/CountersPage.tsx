@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadHubChamp, loadHubIndex, loadMatchups, prettySlug } from "../../hub/data";
+import { bare, loadHubChamp, loadHubIndexQuick, loadMatchups, prettySlug } from "../../hub/data";
 import { ROLES } from "../../hub/champAgg";
 import type { HubChamp, HubMatchups } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
@@ -26,7 +26,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   const slug = q.get("champ") || "";
   const role = q.get("role") || "";
   const spanParam = q.get("span") || "";
-  const index = useLoad(loadHubIndex, []);
+  const index = useLoad(loadHubIndexQuick, []);
   const data = useLoad(
     () =>
       slug

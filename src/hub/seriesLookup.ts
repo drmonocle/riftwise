@@ -3,13 +3,13 @@
  * code, then the series they played that day in the first team's series list. New results reach the hub with the
  * nightly stats update, so a match from today may not have a page yet (null).
  */
-import { findHubTeam, loadHubIndex, loadTeamSeries } from "./data";
+import { findHubTeam, loadHubIndexQuick, loadTeamSeries } from "./data";
 import type { Match } from "../types";
 
 const DAY_MS = 24 * 3600 * 1000;
 
 export async function findSeriesSlug(m: Pick<Match, "team1Name" | "team1Code" | "team2Name" | "team2Code" | "startTimeUtc">): Promise<string | null> {
-  const index = await loadHubIndex();
+  const index = await loadHubIndexQuick();
   const a = findHubTeam(index, m.team1Name, m.team1Code);
   const b = findHubTeam(index, m.team2Name, m.team2Code);
   const team = a || b;

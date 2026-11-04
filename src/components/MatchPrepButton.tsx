@@ -6,7 +6,7 @@ import React, { useState } from "react";
 import { ClipboardList } from "lucide-react";
 import { Match } from "../types";
 import { tl } from "../i18n";
-import { findHubTeam, loadHubIndex } from "../hub/data";
+import { findHubTeam, loadHubIndexQuick } from "../hub/data";
 import { navigateHub } from "../hub/route";
 
 const isTbd = (code: string, name: string) => !code || /^tbd$/i.test(code) || /^tbd$/i.test(name || "");
@@ -17,7 +17,7 @@ export const MatchPrepButton: React.FC<{ match: Match; compact?: boolean; onDone
   const open = (e: React.MouseEvent) => {
     e.stopPropagation();
     setState("busy");
-    loadHubIndex()
+    loadHubIndexQuick()
       .then((index) => {
         const a = findHubTeam(index, match.team1Name, match.team1Code);
         const b = findHubTeam(index, match.team2Name, match.team2Code);

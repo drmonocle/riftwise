@@ -588,3 +588,28 @@ func TestCalendar(t *testing.T) {
 		}
 	}
 }
+
+// Trailing markdown punctuation from AI/chat links redirects cleanly; /match/riot-<id> serves a 200 noindex page
+// and OpenGraph card instead of a 404.
+func TestRiotMatchAndMarkdownRedirect(t *testing.T) {
+	s := testSite(t)
+	if w := get(s, "/riftwise/**?utm_source=chatgpt.com"); w.Code != http.StatusMovedPermanently || w.Header().Get("Location") != "/?utm_source=chatgpt.com" {
+		t.Errorf("markdown root redirect: %d %q", w.Code, w.Header().Get("Location"))
+	}
+	if w := get(s, "/riftwise/team/t1)"); w.Code != http.StatusMovedPermanently || w.Header().Get("Location") != "/team/t1" {
+		t.Errorf("markdown path redirect: %d %q", w.Code, w.Header().Get("Location"))
+	}
+	w := get(s, "/riftwise/match/riot-113")
+	if b := w.Body.String(); w.Code != 200 || !strings.Contains(b, "T1 vs Dplus KIA – Worlds | RiftWise") || !strings.Contains(b, `content="noindex"`) || !strings.Contains(b, "og/match/riot-113.png") {
+		t.Errorf("riot-113: %d %s", w.Code, b)
+	}
+	if w := get(s, "/riftwise/match/riot-999999999"); w.Code != 200 || !strings.Contains(w.Body.String(), "Pro LoL match") || !strings.Contains(w.Body.String(), `content="noindex"`) {
+		t.Errorf("riot-999999999: %d %s", w.Code, w.Body.String())
+	}
+	og := httptest.NewRecorder()
+	s.serveOG(og, httptest.NewRequest(http.MethodGet, "/riftwise/og/match/riot-113.png", nil))
+	if og.Code != 200 || og.Header().Get("Content-Type") != "image/png" || og.Body.Len() < 1000 {
+		t.Errorf("og/match/riot-113.png: %d %s (%d bytes)", og.Code, og.Header().Get("Content-Type"), og.Body.Len())
+	}
+}
+

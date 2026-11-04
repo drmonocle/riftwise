@@ -26,6 +26,7 @@ import { CaptureContext, card, ChampIcon, fmtDate, fmtNum, HubLink, isFresh, Loa
 import { CaptureFooter, CopyPageImage, ShareButtons } from "./ShareImage";
 import { BroadcastCardButton, CardData, PoolLine, fearlessCard, playerCardData, prepOverviewCard } from "./BroadcastCard";
 import type { HubRatings } from "../../hub/types";
+import { countView } from "../../usage";
 
 const sgn = (v: number | null) => (v == null ? "–" : `${v > 0 ? "+" : ""}${v}`);
 
@@ -167,6 +168,11 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
     };
   }, [a, b, attempt]);
   usePageTitle(sides.a && sides.b ? tl("{a} vs {b}: match prep", { a: sides.a.team.name, b: sides.b.team.name }) : tl("Match prep"));
+  useEffect(() => {
+    if (!sides.a || !sides.b) return;
+    countView(`team/${sides.a.team.u}`, sides.a.team.name);
+    countView(`team/${sides.b.team.u}`, sides.b.team.name);
+  }, [sides.a, sides.b]);
   const set = (patch: Partial<PrepRoute>) => navigateHub({ kind: "prep", a: a || undefined, b: b || undefined, period: route.period, ...patch }, { replace: true });
 
   if (!a || !b)

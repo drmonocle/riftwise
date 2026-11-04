@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { X, Swords, Eye, EyeOff, Globe, Home, ClipboardList } from "lucide-react";
-import { findHubTeam, loadHubIndex } from "../hub/data";
+import { findHubTeam, loadHubIndexQuick } from "../hub/data";
 import { navigateHub } from "../hub/route";
 import { Match, CatalogData } from "../types";
 import { computeHeadToHead, h2hKey, normalizeTeamCode, pickTeamByCode, recentMeetings, H2HMeeting } from "../helpers";
@@ -283,7 +283,7 @@ const PrepButton: React.FC<{ t1: { code: string; name: string }; t2: { code: str
       disabled={state === "busy"}
       onClick={() => {
         setState("busy");
-        loadHubIndex()
+        loadHubIndexQuick()
           .then((index) => {
             const a = findHubTeam(index, t1.name, t1.code);
             const b = findHubTeam(index, t2.name, t2.code);

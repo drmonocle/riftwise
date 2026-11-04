@@ -55,7 +55,7 @@ const TRY: { label: string; to: HubRoute; icon: React.ReactNode }[] = [
   { label: "Faker Azir", to: { kind: "player", slug: "faker", tab: "champions", query: "champ=Azir" }, icon: <User className="w-3 h-3" /> },
   { label: "Heartsteel", to: { kind: "items", query: "item=heartsteel" }, icon: <Package className="w-3 h-3" /> },
   { label: `Worlds ${new Date().getFullYear()}`, to: { kind: "worlds" }, icon: <Trophy className="w-3 h-3" /> },
-  { label: `LCK ${new Date().getFullYear()}`, to: { kind: "league", slug: "lck" }, icon: <Flag className="w-3 h-3" /> },
+  { label: `LCK ${new Date().getFullYear()}`, to: { kind: "league", slug: "lol-champions-korea" }, icon: <Flag className="w-3 h-3" /> },
 ];
 
 export const HubHome: React.FC<{

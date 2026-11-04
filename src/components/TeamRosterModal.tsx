@@ -4,7 +4,7 @@ import { X, Star, ExternalLink, BarChart3 } from "lucide-react";
 import { computeHeadToHead, pickTeamByCode } from "../helpers";
 import { H2HMeter } from "./H2HMeter";
 import { tl, locale, roleName, regionName, tc } from "../i18n";
-import { findHubTeam, loadHubIndex } from "../hub/data";
+import { findHubTeam, loadHubIndexQuick } from "../hub/data";
 import { navigateHub } from "../hub/route";
 import { RiotCatalogContext } from "../hub/riotCatalog";
 import { PlayerPhoto, PhotosLink } from "./hub/ui";
@@ -53,7 +53,7 @@ const TeamStatsLink: React.FC<{ name: string; code: string; onDone: () => void }
       disabled={busy}
       onClick={() => {
         setBusy(true);
-        loadHubIndex()
+        loadHubIndexQuick()
           .then((index) => {
             const slug = findHubTeam(index, name, code);
             if (!slug) return setMissing(true);

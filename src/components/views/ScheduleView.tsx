@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Match, AppSettings, CatalogData } from "../../types";
 import { Search, Calendar, Star, Trophy, BarChart3, X } from "lucide-react";
 import { AddToCalendarMenu } from "../AddToCalendarMenu";
@@ -16,6 +16,7 @@ import { findSeriesSlug } from "../../hub/seriesLookup";
 import { RIOT_PREFIX } from "../../hub/riotMatch";
 import { navigateHub, scheduleOfPath, setScheduleAddress } from "../../hub/route";
 import { riotImg } from "../../riotImage";
+import { countSecondPage } from "../../usage";
 
 interface ScheduleViewProps {
   schedule: Match[];
@@ -54,6 +55,15 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     });
     return hasTodayMatches ? "today" : "upcoming";
   });
+  const syncedInitialRange = useRef(schedule.length > 0);
+  useEffect(() => {
+    if (syncedInitialRange.current || schedule.length === 0) return;
+    syncedInitialRange.current = true;
+    if (fromPath.results || fromPath.league || highlightMatchId) return;
+    const today = new Date().toDateString();
+    const hasTodayMatches = schedule.some((m) => !!m.startTimeUtc && new Date(m.startTimeUtc).toDateString() === today);
+    if (hasTodayMatches) setFilterRange("today");
+  }, [schedule, fromPath.results, fromPath.league, highlightMatchId]);
   const [followedOnly, setFollowedOnly] = useState(false);
   // the address follows the list and league, so what's on screen can be linked
   useEffect(() => setScheduleAddress(filterRange === "results", league), [filterRange, league]);
@@ -201,7 +211,10 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
         <div className="flex items-center gap-1.5 bg-rw-deep p-1 rounded-lg border border-rw-border">
           <button
             type="button"
-            onClick={() => setMainSubTab("matches")}
+            onClick={() => {
+              setMainSubTab("matches");
+              countSecondPage();
+            }}
             className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-semibold transition-all ${
               mainSubTab === "matches"
                 ? "bg-rw-accent text-rw-bg font-bold shadow"
@@ -213,7 +226,10 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => setMainSubTab("standings")}
+            onClick={() => {
+              setMainSubTab("standings");
+              countSecondPage();
+            }}
             className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-semibold transition-all ${
               mainSubTab === "standings"
                 ? "bg-rw-accent text-rw-bg font-bold shadow"
@@ -243,7 +259,11 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
               {(["today", "upcoming", "results"] as const).map((r) => (
                 <button
                   key={r}
-                  onClick={() => setFilterRange(r)}
+                  onClick={() => {
+                    syncedInitialRange.current = true;
+                    setFilterRange(r);
+                    countSecondPage();
+                  }}
                   className={`px-3 py-1 text-xs font-semibold rounded transition-all ${
                     filterRange === r
                       ? "bg-rw-accent text-rw-bg"
@@ -260,7 +280,10 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
               {league && (
                 <button
                   type="button"
-                  onClick={() => setLeague(null)}
+                  onClick={() => {
+                    setLeague(null);
+                    countSecondPage();
+                  }}
                   className="flex items-center gap-1 px-2.5 py-1 rounded text-xs border bg-rw-accent/20 border-rw-accent text-rw-accent whitespace-nowrap"
                   title={tl("Show every league")}
                 >
@@ -361,7 +384,10 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         title={m.blockName ? `${m.leagueName} · ${m.blockName}` : m.leagueName}
                       >
                         <span
-                          {...clickable(() => setLeague(m.leagueSlug))}
+                          {...clickable(() => {
+                            setLeague(m.leagueSlug);
+                            countSecondPage();
+                          })}
                           className="hover:text-rw-accent cursor-pointer"
                         >
                           {m.leagueName}

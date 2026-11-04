@@ -64,7 +64,7 @@ export function resolveTeamSlug(slug: string): Promise<string | null> {
     p = (async () => {
       const alias = (await loadAliases()).team[s];
       if (alias) return alias;
-      const teams = await loadHubIndex()
+      const teams = await loadHubIndexQuick()
         .then((i) => i.teams)
         .catch(() => [] as SearchTeamRow[]);
       const bare = s.replace(/-/g, "");

@@ -7,7 +7,7 @@ import React, { Suspense, useState } from "react";
 import { Gauge } from "lucide-react";
 import { Match } from "../types";
 import { tl } from "../i18n";
-import { findHubTeam, loadHubIndex } from "../hub/data";
+import { findHubTeam, loadHubIndexQuick } from "../hub/data";
 import { navigateHub } from "../hub/route";
 import { lazyPart } from "../lazyPart";
 
@@ -22,7 +22,7 @@ export const MatchOverviewButton: React.FC<{ match: Match; compact?: boolean; on
   const start = (e: React.MouseEvent) => {
     e.stopPropagation();
     setState("busy");
-    loadHubIndex()
+    loadHubIndexQuick()
       .then((index) => {
         const a = findHubTeam(index, match.team1Name, match.team1Code);
         const b = findHubTeam(index, match.team2Name, match.team2Code);

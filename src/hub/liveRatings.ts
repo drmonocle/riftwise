@@ -6,7 +6,7 @@
  */
 import type { HubRatings, RatingRow } from "./types";
 import { chanceContext, matchChance } from "./winChance";
-import { findHubTeam, loadHubIndex } from "./data";
+import { findHubTeam, loadHubIndexQuick } from "./data";
 import { recentSchedule } from "./riotMatch";
 
 const DAY = 86400_000;
@@ -73,7 +73,7 @@ export function applyResults(r: HubRatings, results: LiveResult[]): HubRatings {
 
 /** Riot's finished series of the last few days, with both teams' stats pages. */
 async function recentResults(since: number): Promise<LiveResult[]> {
-  const [schedule, index] = await Promise.all([recentSchedule(), loadHubIndex()]);
+  const [schedule, index] = await Promise.all([recentSchedule(), loadHubIndexQuick()]);
   const out: LiveResult[] = [];
   for (const m of schedule) {
     const t = Date.parse(m.startTimeUtc);

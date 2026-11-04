@@ -9,7 +9,7 @@ import type { EventLines } from "./worldsFacts";
 import type { Match } from "../types";
 import { fetchMatchGames } from "../api";
 import { feedNow, fetchLiveDetails, fetchLiveStart, fetchLiveWindow, type LiveWindow } from "../liveGame";
-import { findHubTeam, loadHubIndex, type HubIndex } from "./data";
+import { findHubTeam, loadHubIndex, loadHubIndexQuick, type HubIndex } from "./data";
 import { RIOT_PREFIX, recentSchedule } from "./riotMatch";
 import { champNameById, ddragonReady } from "./ddragon";
 
@@ -94,7 +94,7 @@ function settleWinners(games: GameLines[], wa: number, wb: number) {
  * event's first day. Null when there is nothing to add.
  */
 export async function liveLines(leagueSlug: string, have: (EventLines | null)[], main: HubEvent | null, since: string): Promise<EventLines | null> {
-  const [schedule, index] = await Promise.all([recentSchedule(), loadHubIndex(), ddragonReady()]);
+  const [schedule, quick] = await Promise.all([recentSchedule(), loadHubIndexQuick()]);
   const start = Date.parse(`${since}T00:00:00Z`) - DAY;
   // series the build already has: the same two teams within a day and a half
   const known = have.flatMap((f) => (f ? f.s.map((s) => ({ t: Date.parse(s[2].replace(" ", "T") + "Z"), k: [s[4], s[7]].sort().join("|") })) : []));
@@ -104,8 +104,8 @@ export async function liveLines(leagueSlug: string, have: (EventLines | null)[],
   const todo: { m: Match; a: string; b: string }[] = [];
   for (const m of schedule) {
     if (m.leagueSlug !== leagueSlug || m.state !== "completed" || Date.parse(m.startTimeUtc) < start) continue;
-    const a = findHubTeam(index, m.team1Name, m.team1Code);
-    const b = findHubTeam(index, m.team2Name, m.team2Code);
+    const a = findHubTeam(quick, m.team1Name, m.team1Code);
+    const b = findHubTeam(quick, m.team2Name, m.team2Code);
     if (!a || !b || a === b) continue;
     const t = Date.parse(m.startTimeUtc);
     const k = [a, b].sort().join("|");
@@ -113,6 +113,7 @@ export async function liveLines(leagueSlug: string, have: (EventLines | null)[],
     todo.push({ m, a, b });
   }
   if (!todo.length) return null;
+  const [index] = await Promise.all([loadHubIndex(), ddragonReady()]);
   // the series' games, six series at a time (a first visit can have a few dozen to fetch)
   todo.sort((x, y) => x.m.startTimeUtc.localeCompare(y.m.startTimeUtc));
   const fetched: { full: Match | null; done: Match["games"]; got: (GameLines | null)[] }[] = new Array(todo.length);

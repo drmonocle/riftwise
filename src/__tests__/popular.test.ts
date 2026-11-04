@@ -95,13 +95,16 @@ describe("page view counts", () => {
   });
 
   it("counts a page under its own name, without its tab, and not matches", async () => {
-    const { rememberRecent } = await import("../hub/recent");
+    const { rememberRecent, useRecentPages } = await import("../hub/recent");
     press();
     rememberRecent({ kind: "champ", slug: "kaisa" }, "카이사", "Kai'Sa");
     rememberRecent({ kind: "team", slug: "t1", tab: "matches" }, "T1 · Matches");
     rememberRecent({ kind: "match", slug: "worlds-2024-main-event-finals-1" }, "T1 vs BLG");
+    rememberRecent({ kind: "worlds" }, "Worlds 2026");
     vi.advanceTimersByTime(4000);
     expect(sent).toEqual([{ event: "views", pages: [{ page: "champ/kaisa", title: "Kai'Sa" }, { page: "team/t1", title: "T1" }], person: true }]);
+    expect(useRecentPages).toBeTypeOf("function");
+    expect(JSON.parse(localStorage.getItem("riftwatch_recent_pages") || "[]")[0]?.title).toBe("Worlds 2026");
   });
 
   it("counts nothing until the first real tap, click or key press, then what waited", async () => {

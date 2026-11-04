@@ -5,7 +5,7 @@ import { countView } from "../usage";
 
 const KEY = "riftwatch_recent_pages";
 const MAX = 10;
-const KINDS = new Set(["team", "player", "event", "match", "champ", "league"]);
+const KINDS = new Set(["team", "player", "event", "match", "champ", "league", "worlds", "msi", "first-stand"]);
 
 export interface RecentPage {
   route: HubRoute;

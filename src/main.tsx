@@ -7,23 +7,21 @@ import { loadSettings } from "./api";
 import { initI18n } from "./i18n";
 import { installWheelSideScroll } from "./wheelScroll";
 import { applyTheme } from "./theme";
-import { autoMove, importMovedSettings } from "./move";
+import { importMovedSettings } from "./move";
 import { STARTED_ON_HUB, URL_LANG, currentHubRoute } from "./hub/route";
 import { prefetch } from "./stats";
 import { preloadDDragon } from "./hub/ddragon";
 import { preloadPageCode } from "./components/hub/pageCode";
 
-// Settings brought over from lolworlds.com/riftwise (#import=...) are saved before anything reads them;
-// a browser's first visit to riftwise.gg goes and fetches them (the page reloads, so nothing starts here).
+// Settings brought over from lolworlds.com/riftwise (#import=...) are saved before anything reads them.
 importMovedSettings();
-const leaving = autoMove();
 
 // Colours first, so the page never flashes the wrong theme
 applyTheme(loadSettings().theme);
 installWheelSideScroll();
 
 // The pass-through service worker: offline page, alerts, and what lets browsers offer "Add to Home Screen"
-if (IS_WEB && !leaving && "serviceWorker" in navigator) {
+if (IS_WEB && "serviceWorker" in navigator) {
   navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
 }
 
@@ -33,7 +31,7 @@ if (IS_WEB && !leaving && "serviceWorker" in navigator) {
 // those waits is a round trip of up to half a second, plus the download.
 const HUB_FILE_DIR: Partial<Record<string, string>> = { player: "player", team: "team", event: "event", match: "game", champ: "champ" };
 let picturePage = false; // a page that shows champion pictures straight away
-if (IS_WEB && !leaving && STARTED_ON_HUB) {
+if (IS_WEB && STARTED_ON_HUB) {
   import("./components/views/StatsView").catch(() => {}); // a failure shows (and retries) where the page loads it
   const r = currentHubRoute();
   preloadPageCode(r.kind); // each stats page is its own download (pageCode.ts)
@@ -47,23 +45,21 @@ if (IS_WEB && !leaving && STARTED_ON_HUB) {
 const startLanguage = (URL_LANG as ReturnType<typeof loadSettings>["language"] | null) || loadSettings().language;
 // riftwise.gg/overlay: the stream overlay instead of the app (an OBS browser source)
 const overlay = IS_WEB && /^\/overlay\/?$/.test(window.location.pathname);
-if (!leaving) {
-  initI18n(startLanguage).finally(async () => {
-    // its picture lists too, once the language is known (they come with that language's names)
-    if (picturePage) preloadDDragon();
-    const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
-    if (overlay) {
-      const { Overlay } = await import("./overlay/Overlay");
-      root.render(<Overlay />);
-      return;
-    }
-    root.render(
-      <React.StrictMode>
-        <App />
-      </React.StrictMode>,
-    );
-  });
-}
+initI18n(startLanguage).finally(async () => {
+  // its picture lists too, once the language is known (they come with that language's names)
+  if (picturePage) preloadDDragon();
+  const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
+  if (overlay) {
+    const { Overlay } = await import("./overlay/Overlay");
+    root.render(<Overlay />);
+    return;
+  }
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  );
+});
 
 // The language was changed in another window (main window <-> floating HUD): follow it.
 window.addEventListener("storage", (e) => {

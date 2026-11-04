@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"html"
 	"net/http"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -218,6 +219,38 @@ func scheduleLeagues() []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+var reRiotMatch = regexp.MustCompile(`^riot-[0-9]{1,30}$`)
+
+// riotMatchEntry: a match page made from Riot's live feed (/match/riot-<id>, RiotMatch.tsx) before the nightly stats
+// build gives the series its permanent page. Served as 200 (noindex) so shared links work and show a preview card.
+func riotMatchEntry(slug string) (entry, bool) {
+	if !reRiotMatch.MatchString(slug) {
+		return entry{}, false
+	}
+	id := strings.TrimPrefix(slug, "riot-")
+	for _, e := range loadSchedule() {
+		if e.Match.ID != id || len(e.Match.Teams) < 2 {
+			continue
+		}
+		a, b := e.Match.Teams[0], e.Match.Teams[1]
+		vs := a.Name + " vs " + b.Name
+		stage := e.League.Name
+		if e.BlockName != "" {
+			stage += " · " + e.BlockName
+		}
+		return entry{
+			title: vs + " – " + e.League.Name + brand,
+			desc:  vs + " (" + stage + "): live and recent game stats, drafts, gold and damage on RiftWise.",
+			index: false,
+		}, true
+	}
+	return entry{
+		title: "Pro LoL match – live and recent stats" + brand,
+		desc:  "Live and recent professional League of Legends match stats, drafts, gold and damage on RiftWise.",
+		index: false,
+	}, true
 }
 
 // breadcrumbs: a schema.org BreadcrumbList of (name, address) pairs.

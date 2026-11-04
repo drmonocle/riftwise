@@ -6,7 +6,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, tc, tn, roleName, fmtDec, locale, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
-import { HubHit, HubIndex, loadHubIndex, loadHubPlayer, loadHubTeam, loadPlayerGames, loadTeamGames, searchHub } from "../../hub/data";
+import { HubHit, HubIndex, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadPlayerGames, loadTeamGames, searchHub } from "../../hub/data";
+import { countView } from "../../usage";
 import type { HubPlayer, HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
 import { CompareRoute, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
@@ -44,10 +45,10 @@ export const ComparePick: React.FC<{ kind: Mode; onPick: (slug: string) => void;
   const [index, setIndex] = useState<HubIndex | null>(null);
   const [sel, setSel] = useState(0);
   useEffect(() => {
-    loadHubIndex()
+    (kind === "team" ? loadHubIndexQuick : loadHubIndex)()
       .then(setIndex)
       .catch(() => {});
-  }, []);
+  }, [kind]);
   const hits: HubHit[] = index && q.trim() ? searchHub(index, q, 6)[kind] : [];
   const pick = (h: HubHit | undefined) => {
     if (!h) return;
@@ -353,6 +354,11 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
   }, [mode, a, b]);
 
   const ready = !!(a && b && info.key === forKey && logs.key === forKey && info.a && info.b && logs.a && logs.b);
+  useEffect(() => {
+    if (!ready || !info.a || !info.b) return;
+    countView(`${mode}/${info.a.u}`, info.a.name);
+    countView(`${mode}/${info.b.u}`, info.b.name);
+  }, [ready, mode, info.a, info.b]);
   const refs = (rows: (TeamGameRow | PlayerGameRow)[]) =>
     mode === "team" ? (rows as TeamGameRow[]).map(teamRowRef) : (rows as PlayerGameRow[]).map(playerRowRef);
   const options = useMemo(() => (ready ? bothOptions(refs(logs.a!), refs(logs.b!)) : []), [ready, logs]); // eslint-disable-line react-hooks/exhaustive-deps

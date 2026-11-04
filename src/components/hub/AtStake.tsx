@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { tl, locale } from "../../i18n";
 import { load } from "../../stats";
 import type { Match } from "../../types";
-import { findHubTeam, loadHubIndex, type HubIndex } from "../../hub/data";
+import { findHubTeam, loadHubIndexQuick, type HubIndex } from "../../hub/data";
 import { MatchPrepButton } from "../MatchPrepButton";
 import {
   type Note,
@@ -89,7 +89,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
     if (!wanted) return;
     let alive = true;
     Promise.all([
-      loadHubIndex(),
+      loadHubIndexQuick(),
       load<Record<string, TeamStakes>>("hub/stakes.json"),
     ])
       .then(([index, stakes]) => alive && setData({ index, stakes }))

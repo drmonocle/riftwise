@@ -29,6 +29,7 @@ import type { EventLines } from "../../hub/worldsFacts";
 import { Failed, HubLink, Loading, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
 import { JumpBar, type JumpItem } from "./PageTabs";
 import { EventBracketBlock } from "./EventPage";
+import { countView } from "../../usage";
 
 /** The three international events with a page of their own; Worlds has had a Swiss stage since 2023. */
 export type IntlKind = "worlds" | "msi" | "first-stand";
@@ -179,7 +180,12 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
   const [tab, setTab] = useState<Tab>("facts");
   const d = state.data;
   const title = d ? (d.all ? tl("{event}: every year", { event: d.name }) : d.name) : eventName(def.name);
-  usePageTitle(title);
+  usePageTitle(d ? title : undefined);
+  useEffect(() => {
+    if (!d) return;
+    if (!d.all && d.parent) countView(`event/${d.parent.u}`, d.parent.n);
+    else if (d.all && d.league.u) countView(`league/${d.league.u}`, d.league.l);
+  }, [d]);
   const thisYear = String(new Date().getFullYear());
   const swissYear = !!d && !d.all && def.swissFrom != null && Number(d.year) >= def.swissFrom;
   // MSI's double elimination and First Stand's groups: a picker when the year uses that format

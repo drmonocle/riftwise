@@ -227,9 +227,13 @@ func (s *store) serveOG(w http.ResponseWriter, r *http.Request) {
 		}
 		kind, title, desc = "stats", info[0], info[1]
 	case len(parts) == 2 && kinds[parts[0]] != "":
+		slug := strings.ToLower(parts[1])
 		s.mu.RLock()
-		e, ok := s.pages[kinds[parts[0]]][strings.ToLower(parts[1])]
+		e, ok := s.pages[kinds[parts[0]]][slug]
 		s.mu.RUnlock()
+		if !ok && kinds[parts[0]] == "game" {
+			e, ok = riotMatchEntry(slug)
+		}
 		if !ok {
 			http.NotFound(w, r)
 			return

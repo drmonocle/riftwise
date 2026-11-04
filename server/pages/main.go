@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "0.8.3" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "0.8.4" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -506,6 +506,14 @@ func (s *store) page(title, desc, canonical string, index bool, og string, about
 func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	s.refresh()
 	rest := strings.TrimPrefix(r.URL.Path, basePath)
+	if clean := strings.TrimRight(rest, "*)]'\""); clean != rest {
+		to := publicPath + strings.TrimLeft(clean, "/")
+		if r.URL.RawQuery != "" {
+			to += "?" + r.URL.RawQuery
+		}
+		http.Redirect(w, r, to, http.StatusMovedPermanently)
+		return
+	}
 	// riftwise.gg/<lang>/...: the same page in another language (i18n.go)
 	seg, lang, rest := splitLang(rest)
 	parts := strings.Split(strings.Trim(rest, "/"), "/")
@@ -608,6 +616,9 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		}
 		if !ok && kind == "league" {
 			e, ok = s.bareLeague(slug)
+		}
+		if !ok && kind == "game" && len(parts) == 2 {
+			e, ok = riotMatchEntry(slug)
 		}
 		if !ok {
 			status, title, desc, index = http.StatusNotFound, "Page not found | RiftWise", sections[""][1], false
