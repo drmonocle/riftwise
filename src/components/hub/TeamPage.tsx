@@ -554,13 +554,21 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   </td>
                   <td className={`${td} text-rw-sub`}>
                     {o.u ? (
-                      <HubLink
-                        to={{ kind: "compare", mode: "team", a: t.u, b: o.u }}
-                        className="hover:text-rw-accent hover:underline"
-                        title={tl("Head to head")}
-                      >
-                        {o.w}-{o.g - o.w}
-                      </HubLink>
+                      <span className="inline-flex items-center gap-2">
+                        <HubLink
+                          to={{ kind: "compare", mode: "team", a: t.u, b: o.u }}
+                          className="hover:text-rw-accent hover:underline"
+                          title={tl("Head to head")}
+                        >
+                          {o.w}-{o.g - o.w}
+                        </HubLink>
+                        <HubLink
+                          to={{ kind: "prep", a: t.u, b: o.u }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Match prep")}
+                        </HubLink>
+                      </span>
                     ) : (
                       `${o.w}-${o.g - o.w}`
                     )}
@@ -1002,26 +1010,36 @@ const TeamChampGames: React.FC<{
             {champName(canonical)} →
           </HubLink>
           {!hidden && totalG > 0 && (
-            <SectionCard
-              section={`${t.name} · ${champName(canonical)}`}
-              sub={`${totalW}–${totalG - totalW} (${winRate(totalW, totalG)})`}
-              name={`${t.u}-${prettySlug(canonical)}`}
-              rows={() => [
-                ...playersSummary.map((pl) => ({
-                  champ: canonical,
-                  label: `${pl.n}${pl.r ? ` (${roleName(pl.r)})` : ""}`,
-                  sub: pl.kdaGames > 0 ? `KDA ${fmtDec((pl.k + pl.a) / Math.max(pl.d, 1), 2)}` : undefined,
-                  value: `${pl.w}–${pl.g - pl.w} (${winRate(pl.w, pl.g)})`,
-                })),
-                ...filtered.slice(0, 8).map((e) => ({
-                  champ: canonical,
-                  label: `vs ${e.r[4]}`,
-                  sub: `${e.r[3]} · ${fmtDate(e.r[0])}`,
-                  value: e.r[7] ? tc("short result", "W") : tc("short result", "L"),
-                  win: e.r[7] === 1,
-                })),
-              ]}
-            />
+            <>
+              <CopyTeamChampPost
+                team={t}
+                champ={canonical}
+                totalG={totalG}
+                totalW={totalW}
+                avgGd15={avgGd15}
+                players={playersSummary}
+              />
+              <SectionCard
+                section={`${t.name} · ${champName(canonical)}`}
+                sub={`${totalW}–${totalG - totalW} (${winRate(totalW, totalG)})`}
+                name={`${t.u}-${prettySlug(canonical)}`}
+                rows={() => [
+                  ...playersSummary.map((pl) => ({
+                    champ: canonical,
+                    label: `${pl.n}${pl.r ? ` (${roleName(pl.r)})` : ""}`,
+                    sub: pl.kdaGames > 0 ? `KDA ${fmtDec((pl.k + pl.a) / Math.max(pl.d, 1), 2)}` : undefined,
+                    value: `${pl.w}–${pl.g - pl.w} (${winRate(pl.w, pl.g)})`,
+                  })),
+                  ...filtered.slice(0, 8).map((e) => ({
+                    champ: canonical,
+                    label: `vs ${e.r[4]}`,
+                    sub: `${e.r[3]} · ${fmtDate(e.r[0])}`,
+                    value: e.r[7] ? tc("short result", "W") : tc("short result", "L"),
+                    win: e.r[7] === 1,
+                  })),
+                ]}
+              />
+            </>
           )}
           <button type="button" onClick={onClose} className="text-[11px] text-rw-sub hover:text-rw-text">
             {tl("Close")}
@@ -1216,7 +1234,9 @@ const TeamChampGames: React.FC<{
                       <span className={`w-3.5 shrink-0 font-bold ${hide ? "text-rw-muted" : r[7] ? "text-rw-teal" : "text-rw-red"}`}>
                         {hide ? "?" : r[7] ? tc("short result", "W") : tc("short result", "L")}
                       </span>
-                      <ChampIcon name={canonical} size={18} />
+                      <HubLink to={{ kind: "champ", slug: prettySlug(canonical) }} className="shrink-0">
+                        <ChampIcon name={canonical} size={18} />
+                      </HubLink>
                       <span className="truncate min-w-0">
                         {who && (
                           <>
@@ -1252,7 +1272,15 @@ const TeamChampGames: React.FC<{
                       {otherPicks.length > 0 && (
                         <span className="hidden md:flex items-center gap-0.5" title={tl("Picks")}>
                           {otherPicks.map((oc, oi) => (
-                            <ChampIcon key={`${oc}-${oi}`} name={oc} size={15} />
+                            <button
+                              key={`${oc}-${oi}`}
+                              type="button"
+                              onClick={() => onSelectChamp(oc)}
+                              title={champName(oc)}
+                              className="hover:opacity-80"
+                            >
+                              <ChampIcon name={oc} size={15} />
+                            </button>
                           ))}
                         </span>
                       )}
@@ -1489,6 +1517,44 @@ const CopyTeamPost: React.FC<{ t: HubTeam }> = ({ t }) => {
   };
   return (
     <button type="button" onClick={copy} className={heroBtn()} title={tl("Copy post")}>
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
+  );
+};
+
+const CopyTeamChampPost: React.FC<{
+  team: HubTeam;
+  champ: string;
+  totalG: number;
+  totalW: number;
+  avgGd15: number | null;
+  players: { n: string; r: string; g: number; w: number }[];
+}> = ({ team, champ, totalG, totalW, avgGd15, players }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const lines: string[] = [
+      `${team.name} · ${champName(champ)}`,
+      `${tl("Games")}: ${totalW}–${totalG - totalW} (${winRate(totalW, totalG)})${avgGd15 != null ? ` · GD@15 ${avgGd15 > 0 ? "+" : ""}${avgGd15}` : ""}`,
+    ];
+    for (const pl of players.slice(0, 4)) {
+      lines.push(`• ${pl.n}${pl.r ? ` (${roleName(pl.r)})` : ""}: ${pl.w}–${pl.g - pl.w} (${winRate(pl.w, pl.g)})`);
+    }
+    lines.push(`https://riftwise.gg/team/${team.u}/champions?champ=${encodeURIComponent(champ)}`);
+    navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+      title={tl("Copy post")}
+    >
       {copied ? tl("Copied") : tl("Copy post")}
     </button>
   );

@@ -449,7 +449,13 @@ const PlayerView: React.FC<{
                         ? tc("short result", "W")
                         : tc("short result", "L")}
                     </span>
-                    <ChampIcon name={r.c} size={18} />
+                    <HubLink
+                      to={{ kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(r.c)}` }}
+                      className="shrink-0"
+                      title={tl("Every game")}
+                    >
+                      <ChampIcon name={r.c} size={18} />
+                    </HubLink>
                     <span className="truncate min-w-0">
                       <span className="text-rw-text tabular-nums">
                         {r.k}/{r.d}/{r.a}
@@ -496,7 +502,14 @@ const PlayerView: React.FC<{
                 <span className="text-rw-text text-right truncate min-w-0">
                   {fmtNum(b.v)}{" "}
                   <span className="text-rw-muted">
-                    ({champName(b.c)} vs{" "}
+                    (
+                    <HubLink
+                      to={{ kind: "champ", slug: prettySlug(b.c) }}
+                      className="text-rw-muted hover:text-rw-accent hover:underline"
+                    >
+                      {champName(b.c)}
+                    </HubLink>{" "}
+                    vs{" "}
                     {b.g ? (
                       <HubLink
                         to={{ kind: "match", slug: b.g, game: b.gn }}
@@ -561,9 +574,13 @@ const PlayerView: React.FC<{
                 className="flex items-center justify-between gap-2 min-w-0"
               >
                 <span className="flex items-center gap-1.5 min-w-0">
-                  <ChampIcon name={x.c} size={18} />
+                  <HubLink to={{ kind: "champ", slug: prettySlug(x.c) }} className="shrink-0">
+                    <ChampIcon name={x.c} size={18} />
+                  </HubLink>
                   <span className="truncate">
-                    {champName(x.c)}
+                    <HubLink to={{ kind: "champ", slug: prettySlug(x.c) }} className="hover:text-rw-accent hover:underline">
+                      {champName(x.c)}
+                    </HubLink>
                     {x.x > 1 && <span className="text-rw-accent"> ×{x.x}</span>}
                     <span className="text-rw-muted"> · {x.en}</span>
                   </span>
@@ -700,7 +717,9 @@ const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number] }> = ({
       <td className={td}>
         <span className="flex gap-0.5">
           {x.c.map((c) => (
-            <ChampIcon key={c} name={c} size={16} />
+            <HubLink key={c} to={{ kind: "champ", slug: prettySlug(c) }}>
+              <ChampIcon name={c} size={16} />
+            </HubLink>
           ))}
         </span>
       </td>
@@ -889,7 +908,9 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
             <span className="flex items-center gap-2 shrink-0">
               <span className="flex gap-0.5" title={shared.map(champName).join(", ")}>
                 {shared.slice(0, 3).map((c) => (
-                  <ChampIcon key={c} name={c} size={18} />
+                  <HubLink key={c} to={{ kind: "champ", slug: prettySlug(c) }}>
+                    <ChampIcon name={c} size={18} />
+                  </HubLink>
                 ))}
               </span>
               <HubLink
