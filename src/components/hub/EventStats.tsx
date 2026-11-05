@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { tl } from "../../i18n";
-import { loadEventLines } from "../../hub/data";
+import { loadEventLines, prettySlug } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import { eventFacts, factText, gamesOf, type Fact } from "../../hub/worldsFacts";
 import { moreEventFacts } from "../../hub/eventStats";
@@ -117,7 +117,11 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string }> = ({
         {f.rows.map((r, i) => (
           <li key={i} className="flex items-start gap-2 min-w-0">
             {!f.plain && <span className="w-4 text-rw-muted text-right shrink-0">{i + 1}.</span>}
-            {r.champ && <ChampIcon name={r.champ} size={18} className="shrink-0" />}
+            {r.champ && (
+              <HubLink to={{ kind: "champ", slug: prettySlug(r.champ) }} className="shrink-0">
+                <ChampIcon name={r.champ} size={18} />
+              </HubLink>
+            )}
             <span className="min-w-0 flex-1">
               {r.player ? (
                 <PlayerLink name={r.label} u={r.player} />

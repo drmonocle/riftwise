@@ -42,6 +42,12 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                 </button>
               ))}
             </span>
+            <CopyPlayoffOddsPost
+              eventName={e.n}
+              slug={e.u}
+              cut={cut}
+              rows={rows.slice(0, 8).map((r, idx) => `#${idx + 1} ${r.name} (${r.sw}-${r.sl}): ${tl("Top {n}", { n: cut })} ${pctText(r.top[ci])} · #1 ${pctText(r.first)}`)}
+            />
             <SectionCard
               section={tl("Playoff chances")}
               sub={`${e.n} · ${tl("Top {n}", { n: cut })}`}
@@ -113,5 +119,39 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
         </>
       )}
     </Section>
+  );
+};
+
+const CopyPlayoffOddsPost: React.FC<{
+  eventName: string;
+  slug: string;
+  cut: number;
+  rows: string[];
+}> = ({ eventName, slug, cut, rows }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const lines: string[] = [`${tl("Playoff chances")} · ${eventName} (${tl("Top {n}", { n: cut })})`];
+    for (const r of rows) {
+      lines.push(r);
+    }
+    lines.push(`https://riftwise.gg/event/${slug}`);
+    navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
+  };
+  return (
+    <button
+      type="button"
+      data-nocapture="1"
+      onClick={copy}
+      className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+      title={tl("Copy post")}
+    >
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
   );
 };

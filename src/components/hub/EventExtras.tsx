@@ -75,7 +75,23 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean; card?: {
     <Section
       title={tl("Tournament stats")}
       share="tournament-facts"
-      right={card && !hidden ? <BroadcastCardButton data={card.data} name={card.name} label={tl("Overview card")} /> : undefined}
+      right={
+        !hidden ? (
+          <span className="flex items-center gap-2">
+            <CopyExtrasPost
+              title={tl("Tournament stats")}
+              rows={[
+                `${tl("Games")}: ${fmtNum(o.g)}${o.min ? ` · ${tl("Avg game")}: ${mmss(o.min)}` : ""}${o.kills ? ` · ${tl("Kills / game")}: ${o.kills}` : ""}`,
+                ...(sideTotal ? [`${tl("Blue side wins")}: ${Math.round((o.blue / sideTotal) * 100)}% (${o.blue}-${o.red})`] : []),
+                ...(o.short ? [`${tl("Shortest game")}: ${mmss(o.short.v)} (${o.short.a} vs ${o.short.b})`] : []),
+                ...(o.long ? [`${tl("Longest game")}: ${mmss(o.long.v)} (${o.long.a} vs ${o.long.b})`] : []),
+                ...(o.bloody ? [`${tl("Most kills in a game")}: ${o.bloody.v} (${o.bloody.a} vs ${o.bloody.b})`] : []),
+              ]}
+            />
+            {card && <BroadcastCardButton data={card.data} name={card.name} label={tl("Overview card")} />}
+          </span>
+        ) : undefined
+      }
     >
       <div className="grid grid-cols-2 sm:grid-cols-4 rw-stats">
         <Stat label={tl("Games")} value={fmtNum(o.g)} />
@@ -231,21 +247,34 @@ export const EventRosters: React.FC<{ rosters: EventRoster[] }> = ({
       right={
         <span className="flex items-center gap-2">
           {rosters.length > 0 && (
-            <SectionCard
-              section={tl("Team rosters")}
-              name={tl("Team rosters")}
-              rows={() =>
-                rosters.slice(0, 12).map((t) => ({
-                  label: t.t,
-                  sub: t.r ? regionName(t.r, t.r) : undefined,
-                  value: t.p
+            <>
+              <CopyExtrasPost
+                title={tl("Team rosters")}
+                rows={rosters.slice(0, 6).map((t) => {
+                  const starters = t.p
                     .filter(([, , r]) => !/coach/i.test(r || ""))
                     .slice(0, 5)
                     .map(([n]) => n)
-                    .join(" · "),
-                }))
-              }
-            />
+                    .join(" · ");
+                  return `${t.t}${t.r ? ` (${regionName(t.r, t.r)})` : ""}: ${starters}`;
+                })}
+              />
+              <SectionCard
+                section={tl("Team rosters")}
+                name={tl("Team rosters")}
+                rows={() =>
+                  rosters.slice(0, 12).map((t) => ({
+                    label: t.t,
+                    sub: t.r ? regionName(t.r, t.r) : undefined,
+                    value: t.p
+                      .filter(([, , r]) => !/coach/i.test(r || ""))
+                      .slice(0, 5)
+                      .map(([n]) => n)
+                      .join(" · "),
+                  }))
+                }
+              />
+            </>
           )}
           {rosters.length > 4 && (
             <button
@@ -307,18 +336,24 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
     <Section
       title={tl("Region vs region")}
       right={
-        <SectionCard
-          section={tl("Region vs region")}
-          sub={e.n}
-          name={`${e.u}-regions`}
-          rows={() =>
-            e.regions!.slice(0, 10).map((r, idx) => ({
-              rank: idx + 1,
-              label: `${regionName(r.a, r.a)} vs ${regionName(r.b, r.b)}`,
-              value: `${r.wa} – ${r.wb}`,
-            }))
-          }
-        />
+        <span className="flex items-center gap-2">
+          <CopyExtrasPost
+            title={`${tl("Region vs region")} · ${e.n}`}
+            rows={e.regions.slice(0, 8).map((r) => `${regionName(r.a, r.a)} ${r.wa} – ${r.wb} ${regionName(r.b, r.b)}`)}
+          />
+          <SectionCard
+            section={tl("Region vs region")}
+            sub={e.n}
+            name={`${e.u}-regions`}
+            rows={() =>
+              e.regions!.slice(0, 10).map((r, idx) => ({
+                rank: idx + 1,
+                label: `${regionName(r.a, r.a)} vs ${regionName(r.b, r.b)}`,
+                value: `${r.wa} – ${r.wb}`,
+              }))
+            }
+          />
+        </span>
       }
     >
       <STable className="w-full text-xs">
@@ -356,5 +391,33 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
         </tbody>
       </STable>
     </Section>
+  );
+};
+
+const CopyExtrasPost: React.FC<{ title: string; rows: string[] }> = ({ title, rows }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const lines: string[] = [title];
+    for (const r of rows) {
+      lines.push(`• ${r}`);
+    }
+    lines.push(window.location.href);
+    navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+      title={tl("Copy post")}
+    >
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
   );
 };
