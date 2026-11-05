@@ -31,6 +31,9 @@ import { champName } from "../champions";
 import { useMatchRatings } from "../hub/matchRatings";
 import { gameStory } from "../gameStory";
 import { smoothPath, useWidth } from "../useWidth";
+import { navigateHub } from "../hub/route";
+import { prettySlug } from "../hub/data";
+import { SectionCard } from "./hub/BroadcastCard";
 
 const POLL_MS = 15_000;
 // the gold graph: blue side's colour, and its dragon and baron marks
@@ -308,6 +311,38 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
           {paused && <span className="ml-2 text-rw-red">{tl("Paused")}</span>}
         </span>
         <span className="flex items-center gap-2 ml-auto">
+          <SectionCard
+            section={finished ? tl("Game {n} · final", { n: game.number }) : tl("Game {n} · live", { n: game.number })}
+            name={`${left.code} vs ${right.code}`}
+            sub={[
+              match.leagueName,
+              elapsed != null ? clock(elapsed) : "",
+              `${tl("Kills")} ${left.t.totalKills}–${right.t.totalKills}`,
+              `${tl("Gold")} ${k(left.t.totalGold)}–${k(right.t.totalGold)}`,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+            rows={() => [
+              {
+                label: `${left.code} · ${tl("Gold")} ${k(left.t.totalGold)} · ${tl("Towers")} ${left.t.towers} · ${tl("Dragons")} ${left.t.dragons.length} · ${tl("Barons")} ${left.t.barons}`,
+                value: `${left.t.totalKills}–${right.t.totalKills}`,
+                note: `${right.code} · ${tl("Gold")} ${k(right.t.totalGold)} · ${tl("Towers")} ${right.t.towers} · ${tl("Dragons")} ${right.t.dragons.length} · ${tl("Barons")} ${right.t.barons}`,
+              },
+              ...ROLE_ORDER.map((role) => {
+                const lm = left.meta.find((p) => p.role === role);
+                const lf = lm ? left.t.participants.find((p) => p.participantId === lm.participantId) : undefined;
+                const rm = right.meta.find((p) => p.role === role);
+                const rf = rm ? right.t.participants.find((p) => p.participantId === rm.participantId) : undefined;
+                const lStr = lm && lf ? `${playerName(lm.summonerName)} (${champName(champNameById(lm.championId))}) ${lf.kills}/${lf.deaths}/${lf.assists} · ${lf.creepScore} CS` : left.code;
+                const rStr = rm && rf ? `${playerName(rm.summonerName)} (${champName(champNameById(rm.championId))}) ${rf.kills}/${rf.deaths}/${rf.assists} · ${rf.creepScore} CS` : right.code;
+                return {
+                  label: `${roleName(ROLE_LABEL[role])}: ${lStr}`,
+                  value: lf && rf ? `${k(lf.totalGold)} vs ${k(rf.totalGold)}` : "",
+                  note: rStr,
+                };
+              }),
+            ]}
+          />
           <Suspense fallback={null}>
             <LiveGameDraftLink match={match} gameNum={game.number} win={win} />
           </Suspense>
@@ -553,18 +588,31 @@ const PlayerCells: React.FC<{ p: PlayerRow; align: "left" | "right" }> = ({ p, a
       <div className={`flex items-start gap-2 ${right ? "flex-row-reverse text-right" : ""}`}>
         <div className="relative shrink-0">
           {icon ? (
-            <img src={icon} alt={champName(champNameById(p.meta.championId))} title={champName(champNameById(p.meta.championId))} width={28} height={28} className="rounded" />
+            <button
+              type="button"
+              onClick={() => navigateHub({ kind: "champ", slug: prettySlug(champNameById(p.meta!.championId)) })}
+              className="block rounded hover:ring-1 hover:ring-rw-accent transition-all"
+              title={champName(champNameById(p.meta.championId))}
+            >
+              <img src={icon} alt={champName(champNameById(p.meta.championId))} width={28} height={28} className="rounded" />
+            </button>
           ) : (
             <span className="w-7 h-7 inline-block rounded bg-rw-border" />
           )}
-          <span className="absolute -bottom-1 -right-1 text-[8px] bg-rw-bg rounded px-0.5 text-rw-text">{p.frame.level}</span>
+          <span className="absolute -bottom-1 -right-1 text-[8px] bg-rw-bg rounded px-0.5 text-rw-text pointer-events-none">{p.frame.level}</span>
           {health != null && health < 1 && (
-            <span className="absolute -bottom-0.5 left-0 h-0.5 rounded bg-rw-teal" style={{ width: `${Math.max(0, health) * 100}%` }} />
+            <span className="absolute -bottom-0.5 left-0 h-0.5 rounded bg-rw-teal pointer-events-none" style={{ width: `${Math.max(0, health) * 100}%` }} />
           )}
         </div>
         <div className="min-w-0 flex-1 space-y-0.5">
           <div className={`flex items-baseline gap-2 ${right ? "flex-row-reverse" : ""}`}>
-            <span className="font-semibold text-rw-text truncate">{playerName(p.meta.summonerName)}</span>
+            <button
+              type="button"
+              onClick={() => navigateHub({ kind: "player", slug: prettySlug(playerName(p.meta!.summonerName)) })}
+              className="font-semibold text-rw-text hover:text-rw-accent hover:underline truncate transition-colors"
+            >
+              {playerName(p.meta.summonerName)}
+            </button>
             <span className="font-mono font-bold text-rw-text shrink-0">
               {p.frame.kills}/{p.frame.deaths}/{p.frame.assists}
             </span>
@@ -843,10 +891,30 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
             const icon = champIcon(x.championId);
             return (
               <span className={`flex items-center gap-1.5 min-w-0 ${right ? "flex-row-reverse text-right" : ""}`}>
-                {icon && <img src={icon} alt="" width={24} height={24} className="rounded shrink-0" />}
+                {icon && (
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "champ", slug: prettySlug(champNameById(x.championId)) })}
+                    className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
+                  >
+                    <img src={icon} alt="" width={24} height={24} className="rounded" />
+                  </button>
+                )}
                 <span className="min-w-0">
-                  <span className="block truncate text-rw-text">{champName(champNameById(x.championId))}</span>
-                  <span className="block truncate text-[10px] text-rw-muted">{playerName(x.summonerName)}</span>
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "champ", slug: prettySlug(champNameById(x.championId)) })}
+                    className="block truncate text-rw-text hover:text-rw-accent hover:underline"
+                  >
+                    {champName(champNameById(x.championId))}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "player", slug: prettySlug(playerName(x.summonerName)) })}
+                    className="block truncate text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
+                  >
+                    {playerName(x.summonerName)}
+                  </button>
                 </span>
               </span>
             );
