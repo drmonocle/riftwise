@@ -13,6 +13,8 @@ import { useDDragon } from "../../hub/ddragon";
 import { ChampAggRow, ROLES, champAgg, patchCompare } from "../../hub/champAgg";
 import { SortTable, type Column } from "./SortTable";
 import { card, ChampLink, Failed, fmtNum, HubLink, Loading, useLoad, usePageTitle } from "./ui";
+import { SectionCard } from "./BroadcastCard";
+import { champName } from "../../champions";
 
 const sel = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text max-w-[14rem]";
 const pct = (v: number | null) => (v == null ? "–" : `${fmtDec(v * 100)}%`);
@@ -288,7 +290,7 @@ const LeagueTable: React.FC<{ league: string; years: string[]; q: URLSearchParam
         />
         {vs && !q.get("patch") && <span className="text-[10px] text-rw-muted">{tl("Pick a patch above to compare it with this one.")}</span>}
       </div>
-      <div className="flex flex-wrap items-baseline justify-between gap-2 text-[11px] text-rw-muted">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-rw-muted">
         <span>
           {tl("{n} games", { n: fmtNum(result.games) })}
           {vs && result.thenGames > 0 && ` · ${tl("{n} games on {patch}", { n: fmtNum(result.thenGames), patch: vs })}`}
@@ -299,7 +301,31 @@ const LeagueTable: React.FC<{ league: string; years: string[]; q: URLSearchParam
             </>
           )}
         </span>
+        {result.rows.length > 0 && (
+          <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+            <HubLink
+              to={{ kind: "tiers", query: `scope=${encodeURIComponent(league)}${q.get("patch") ? `&key=p${encodeURIComponent(q.get("patch")!)}` : year ? `&key=y${encodeURIComponent(year)}` : ""}` }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Pro tier list")} →
+            </HubLink>
+            <SectionCard
+              section={tl("Champions")}
+              name={[league.toUpperCase(), year, q.get("patch") && tl("Patch {patch}", { patch: q.get("patch")! })].filter(Boolean).join(" · ")}
+              sub={tl("{n} games", { n: fmtNum(result.games) })}
+              rows={() =>
+                result.rows.slice(0, 12).map((c) => ({
+                  label: champName(c.c),
+                  sub: `${c.p} ${tl("Picks")} · ${c.b} ${tl("Bans")}`,
+                  value: `${pct(c.presence)}${c.p >= 3 && c.wr != null ? ` · ${pct(c.wr)}` : ""}`,
+                  win: c.p >= 3 && c.wr != null ? c.wr >= 0.5 : undefined,
+                }))
+              }
+            />
+          </span>
+        )}
       </div>
+      {result.rows.length > 0 && <MetaSpotlight rows={result.rows} minWrPicks={5} />}
       {result.games === 0 ? (
         <p className="text-xs text-rw-sub py-4 text-center">{tl("No games match these filters.")}</p>
       ) : (
@@ -389,13 +415,37 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
           />
         )}
         {block && <span className="text-rw-muted">{tl("{n} games", { n: fmtNum(block.games) })}</span>}
+        {block && rows.length > 0 && (
+          <span className="ml-auto flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+            <HubLink
+              to={{ kind: "tiers", query: `key=${encodeURIComponent(key)}${scope === "all" ? "&scope=all" : ""}${roleQ ? `&role=${encodeURIComponent(roleQ)}` : ""}` }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Pro tier list")} →
+            </HubLink>
+            <SectionCard
+              section={tl("Champions")}
+              name={label(key)}
+              sub={tl("{n} games", { n: fmtNum(block.games) })}
+              rows={() =>
+                rows.slice(0, 12).map((c) => ({
+                  label: champName(c.c),
+                  sub: `${c.p} ${tl("Picks")} · ${c.b} ${tl("Bans")}`,
+                  value: `${pct(c.presence)}${c.p >= 10 && c.wr != null ? ` · ${pct(c.wr)}` : ""}`,
+                  win: c.p >= 10 && c.wr != null ? c.wr >= 0.5 : undefined,
+                }))
+              }
+            />
+          </span>
+        )}
       </div>
       {state.loading ? (
         <Loading />
       ) : state.error || !block ? (
         <Failed />
       ) : (
-        <div className={card}>
+        <div className={`${card} space-y-2.5`}>
+          {rows.length > 0 && <MetaSpotlight rows={rows} minWrPicks={10} />}
           <SortTable
             rows={emerging && thenBlock ? rows.filter((r) => r.emerging) : rows}
             columns={cols}
@@ -413,3 +463,43 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
     </>
   );
 };
+
+/** 4-card meta spotlight strip above the Champions table (#1 Presence, Picks, Bans, and Win %). */
+const MetaSpotlight: React.FC<{
+  rows: { c: string; presence: number; p: number; b: number; wr: number | null }[];
+  minWrPicks: number;
+}> = ({ rows, minWrPicks }) => {
+  const topPres = useMemo(() => [...rows].sort((a, b) => b.presence - a.presence)[0], [rows]);
+  const topPicks = useMemo(() => [...rows].sort((a, b) => b.p - a.p)[0], [rows]);
+  const topBans = useMemo(() => [...rows].sort((a, b) => b.b - a.b)[0], [rows]);
+  const topWr = useMemo(
+    () => [...rows].filter((r) => r.p >= minWrPicks && r.wr != null).sort((a, b) => (b.wr || 0) - (a.wr || 0))[0],
+    [rows, minWrPicks],
+  );
+  const cards = [
+    topPres ? { label: tl("Presence"), c: topPres.c, val: pct(topPres.presence), sub: `${topPres.p}P · ${topPres.b}B`, tone: "text-rw-accent" } : null,
+    topPicks ? { label: tl("Picks"), c: topPicks.c, val: fmtNum(topPicks.p), sub: topPicks.wr != null ? `${pct(topPicks.wr)} ${tl("Win %")}` : undefined, tone: "text-rw-text" } : null,
+    topBans && topBans.b > 0 ? { label: tl("Bans"), c: topBans.c, val: fmtNum(topBans.b), sub: `${pct(topBans.presence)} ${tl("Presence")}`, tone: "text-rw-red" } : null,
+    topWr && topWr.wr != null ? { label: tl("Win %"), c: topWr.c, val: pct(topWr.wr), sub: `${topWr.p} ${tl("Picks")}`, tone: "text-rw-teal" } : null,
+  ].filter((x): x is NonNullable<typeof x> => !!x);
+  if (cards.length < 2) return null;
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+      {cards.map((item) => (
+        <div key={item.label} className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted truncate">{item.label}</div>
+            <div className="mt-0.5 truncate">
+              <ChampLink name={item.c} size={18} />
+            </div>
+          </div>
+          <div className="text-right shrink-0">
+            <div className={`font-mono font-bold tabular-nums ${item.tone}`}>{item.val}</div>
+            {item.sub && <div className="text-[10px] text-rw-muted font-mono">{item.sub}</div>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+

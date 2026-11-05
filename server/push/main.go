@@ -28,7 +28,7 @@ import (
 )
 
 // the app's version (package.json; npm run set-version), reported by the health check
-const version = "0.8.14"
+const version = "0.8.15"
 
 func main() {
 	if len(os.Args) < 2 {

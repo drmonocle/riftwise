@@ -13,6 +13,7 @@ import { useDDragon } from "../../hub/ddragon";
 import { ROLES, champAgg } from "../../hub/champAgg";
 import { card, ChampIcon, HubLink, Loading, Section, useLoad, usePageTitle } from "./ui";
 import { loadChampGames, loadChampIndex, prettySlug } from "../../hub/data";
+import { SectionCard } from "./BroadcastCard";
 
 const TIERS: { t: string; min: number; color: string }[] = [
   { t: "S", min: 40, color: "#ff6b81" },
@@ -113,7 +114,29 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
   return (
     <div className="space-y-3">
       <div className={`${card} space-y-2`}>
-        <h1 className="text-lg font-bold text-rw-text">{tl("Pro tier list")}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-lg font-bold text-rw-text">{tl("Pro tier list")}</h1>
+          {block && block.games > 0 && (
+            <SectionCard
+              section={tl("Pro tier list")}
+              name={label(key)}
+              sub={`${block.games}G`}
+              rows={() =>
+                shown.flatMap((r) =>
+                  (byRole.get(r) || [])
+                    .filter((c) => tierOf(c.score).t === "S" || tierOf(c.score).t === "A")
+                    .slice(0, role ? 12 : 3)
+                    .map((c) => ({
+                      label: `${champName(c.c)} (${roleName(r)})`,
+                      sub: `${tierOf(c.score).t} · ${fmtDec(c.presence * 100)}% ${tl("Presence")} · ${c.p}G`,
+                      value: c.wr != null && c.p >= 5 ? `${Math.round(c.wr * 100)}%` : `${fmtDec(c.presence * 100)}%`,
+                      win: c.wr != null ? c.wr >= 0.5 : true,
+                    })),
+                )
+              }
+            />
+          )}
+        </div>
         <p className="text-[11px] text-rw-sub">
           {tl(
             "What pro teams actually play. Each champion sits in its main role, placed by its presence (picked or banned, share of games) and nudged up or down by its win rate once it has 10 picks or more. S: 40+ points, A: 25+, B: 12+, C: 5+.",
@@ -177,7 +200,28 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
       {block && (
         <div className={`grid gap-3 ${role ? "" : "sm:grid-cols-2 xl:grid-cols-5"}`}>
           {shown.map((r) => (
-            <Section key={r} title={roleName(r)} share={`riftwise-tiers-${key}-${r}`}>
+            <Section
+              key={r}
+              title={roleName(r)}
+              right={
+                (byRole.get(r) || []).length > 0 ? (
+                  <SectionCard
+                    section={`${tl("Pro tier list")} · ${roleName(r)}`}
+                    name={label(key)}
+                    sub={`${block.games}G`}
+                    rows={() =>
+                      (byRole.get(r) || []).slice(0, 12).map((c) => ({
+                        label: `${tierOf(c.score).t} · ${champName(c.c)}`,
+                        sub: `${fmtDec(c.presence * 100)}% ${tl("Presence")} · ${c.p} ${tl("Picks")}`,
+                        value: c.wr != null && c.p >= 5 ? `${Math.round(c.wr * 100)}%` : `${fmtDec(c.presence * 100)}%`,
+                        win: c.wr != null ? c.wr >= 0.5 : undefined,
+                      }))
+                    }
+                  />
+                ) : undefined
+              }
+              share={`riftwise-tiers-${key}-${r}`}
+            >
               <div className="space-y-1.5">
                 {TIERS.map((tier) => {
                   const list = (byRole.get(r) || []).filter((c) => tierOf(c.score).t === tier.t);
@@ -187,19 +231,45 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                       <span className="w-6 h-6 shrink-0 rounded flex items-center justify-center text-xs font-black text-black" style={{ background: tier.color }}>
                         {tier.t}
                       </span>
-                      <span className="flex flex-wrap gap-1 min-w-0">
-                        {list.map((c) => (
-                          <HubLink
-                            key={c.c}
-                            to={{ kind: "champ", slug: prettySlug(c.c) }}
-                            className="block rounded hover:ring-1 hover:ring-rw-accent"
-                            title={`${champName(c.c)}: ${tl("presence {p}", { p: `${fmtDec(c.presence * 100)}%` })} · ${tl("{n} picks", { n: c.p })}${
-                              c.wr != null && c.p >= 10 ? ` · ${tl("{p} win rate", { p: `${fmtDec(c.wr * 100)}%` })}` : ""
-                            }`}
-                          >
-                            <ChampIcon name={c.c} size={role ? 40 : 30} />
-                          </HubLink>
-                        ))}
+                      <span className={`flex flex-wrap ${role ? "gap-2" : "gap-1"} min-w-0 flex-1`}>
+                        {list.map((c) =>
+                          role ? (
+                            <div
+                              key={c.c}
+                              className="flex items-center gap-2 rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-1.5 text-xs hover:border-rw-accent/60"
+                            >
+                              <HubLink to={{ kind: "champ", slug: prettySlug(c.c) }} className="flex items-center gap-2 font-semibold text-rw-text hover:text-rw-accent">
+                                <ChampIcon name={c.c} size={32} />
+                                <span>{champName(c.c)}</span>
+                              </HubLink>
+                              <span className="text-[11px] font-mono tabular-nums text-rw-sub">
+                                {fmtDec(c.presence * 100)}%
+                                {c.wr != null && c.p >= 5 && (
+                                  <span className={`ml-1 font-semibold ${c.wr >= 0.52 ? "text-rw-teal" : c.wr <= 0.48 ? "text-rw-red" : "text-rw-sub"}`}>
+                                    · {Math.round(c.wr * 100)}%
+                                  </span>
+                                )}
+                              </span>
+                              <HubLink
+                                to={{ kind: "counters", query: `champ=${prettySlug(c.c)}&role=${r}` }}
+                                className="text-[10px] text-rw-accent hover:underline ml-1"
+                              >
+                                {tl("Counter-picks")}
+                              </HubLink>
+                            </div>
+                          ) : (
+                            <HubLink
+                              key={c.c}
+                              to={{ kind: "champ", slug: prettySlug(c.c) }}
+                              className="block rounded hover:ring-1 hover:ring-rw-accent"
+                              title={`${champName(c.c)}: ${tl("presence {p}", { p: `${fmtDec(c.presence * 100)}%` })} · ${tl("{n} picks", { n: c.p })}${
+                                c.wr != null && c.p >= 10 ? ` · ${tl("{p} win rate", { p: `${fmtDec(c.wr * 100)}%` })}` : ""
+                              }`}
+                            >
+                              <ChampIcon name={c.c} size={30} />
+                            </HubLink>
+                          ),
+                        )}
                       </span>
                     </div>
                   );

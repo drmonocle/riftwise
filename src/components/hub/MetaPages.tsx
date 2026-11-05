@@ -28,6 +28,8 @@ import { STable } from "../STable";
 import { currentHubRoute, navigateHub } from "../../hub/route";
 import { LeagueSeasonPanel } from "./LeagueSeasonPanel";
 import { EntityHero, heroBtn } from "./EntityHero";
+import { SectionCard } from "./BroadcastCard";
+import { champName } from "../../champions";
 
 // ── Patches ───────────────────────────────────────────────────────────────
 
@@ -48,13 +50,46 @@ export const PatchesPanel: React.FC = () => {
           <div className="grid gap-3 xl:grid-cols-2">
           {rows.slice(0, n).map((p) => (
             <div key={p.p} className={`${card} p-3`}>
-              <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2">
-                <h3 className="text-sm font-bold text-rw-text">
-                  {tl("Patch {patch}", { patch: p.p })}
-                </h3>
-                <span className="text-[11px] text-rw-muted">
-                  {fmtDate(p.from)} – {fmtDate(p.to)} ·{" "}
-                  {tn("{n} game", "{n} games", p.g)}
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <h3 className="text-sm font-bold text-rw-text">
+                    {tl("Patch {patch}", { patch: p.p })}
+                  </h3>
+                  <span className="text-[11px] text-rw-muted">
+                    {fmtDate(p.from)} – {fmtDate(p.to)} ·{" "}
+                    {tn("{n} game", "{n} games", p.g)}
+                  </span>
+                </div>
+                <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+                  <HubLink to={{ kind: "tiers", query: `key=p${p.p}` }} className="text-rw-accent hover:underline font-semibold">
+                    {tl("Pro tier list")}
+                  </HubLink>
+                  <HubLink to={{ kind: "champions", query: `key=p${p.p}` }} className="text-rw-accent hover:underline font-semibold">
+                    {tl("Champions")}
+                  </HubLink>
+                  <SectionCard
+                    section={tl("Patch {patch}", { patch: p.p })}
+                    name={`${fmtDate(p.from)} – ${fmtDate(p.to)}`}
+                    sub={tn("{n} game", "{n} games", p.g)}
+                    rows={() => [
+                      ...p.c.slice(0, 10).map(([c, pk, b, w, pr]) => ({
+                        label: champName(c),
+                        sub: tl("{p} picks · {b} bans · {wr}", {
+                          p: pk,
+                          b,
+                          wr: pk ? `${Math.round((w / pk) * 100)}%` : "–",
+                        }),
+                        value: `${Math.round(((pr ?? pk + b) / Math.max(p.g, 1)) * 100)}%`,
+                        win: pk >= 5 ? w / pk >= 0.5 : undefined,
+                      })),
+                      ...(p.up || []).slice(0, 2).map(([c, now, was]) => ({
+                        label: `▲ ${champName(c)}`,
+                        sub: p.prev ? tl("Rising since {patch}", { patch: p.prev }) : undefined,
+                        value: `${Math.round(was * 100)}% → ${Math.round(now * 100)}%`,
+                        win: true,
+                      })),
+                    ]}
+                  />
                 </span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-1 text-xs">
