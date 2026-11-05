@@ -1,6 +1,6 @@
 /** Patch history (the pro meta on every patch) and league histories (every season and its winner). */
-import React, { useMemo, useState } from "react";
-import { Crown } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Crown, ClipboardCopy } from "lucide-react";
 import { tl, tn, regionName } from "../../i18n";
 import { loadLeague, loadLeagues, loadPatches } from "../../hub/data";
 import type { HubLeague, LeagueRow, LeagueStep, PatchMove, PatchRow } from "../../hub/types";
@@ -20,12 +20,13 @@ import {
   th,
   TeamLink,
   useHidden,
+  useHiddenCheck,
   useLoad,
   usePageTitle,
   FollowFeeds,
 } from "./ui";
 import { STable } from "../STable";
-import { currentHubRoute, navigateHub } from "../../hub/route";
+import { currentHubRoute, hubShareUrl, navigateHub } from "../../hub/route";
 import { LeagueSeasonPanel } from "./LeagueSeasonPanel";
 import { EntityHero, heroBtn } from "./EntityHero";
 import { SectionCard } from "./BroadcastCard";
@@ -257,7 +258,23 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
   const list = n ? rows.slice(0, n) : rows;
   return (
     <div className={`${card} overflow-x-auto space-y-2`}>
-      {title && <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{title}</h3>}
+      <div className="flex items-center justify-between gap-2">
+        {title ? <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{title}</h3> : <span />}
+        {list.length > 0 && (
+          <SectionCard
+            section={title || tl("Leagues")}
+            name={tl("Leagues")}
+            rows={() =>
+              list.slice(0, 12).map((l) => ({
+                label: l.s ? `${l.s} · ${l.l}` : l.l,
+                sub: [l.r ? regionName(l.r, l.r) : "", l.from && l.to ? (l.from === l.to ? l.from : `${l.from}–${l.to}`) : ""].filter(Boolean).join(" · "),
+                value: `${fmtNum(l.g)} ${tl("Games")}`,
+                win: true,
+              }))
+            }
+          />
+        )}
+      </div>
       <STable className="w-full text-xs">
         <thead>
           <tr>
@@ -357,6 +374,10 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
             <HubLink to={{ kind: "champions", query: `league=${l.u}` }} className={heroBtn()}>
               {tl("Champion picks")}
             </HubLink>
+            <HubLink to={{ kind: "finder", query: `league=${l.u}${season ? `&year=${season}` : ""}` }} className={heroBtn()}>
+              {tl("Game finder")}
+            </HubLink>
+            <CopyLeaguePost l={l} season={season} />
             {/* a league still playing: its own calendar and results feed (Riot names its leagues by the short name) */}
             {l.primary && l.s && years[0] && Number(years[0]) >= new Date().getFullYear() - 1 && <FollowFeeds leagues={[l.s]} />}
           </>
@@ -404,43 +425,116 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
             </p>
           </Section>
         )}
-        <Section title={season ? tl("{year} season", { year: season }) : tl("Every tournament")}>
-          {years.length > 1 && (
-            <div className="flex flex-wrap gap-1" role="group" aria-label={tl("Season")}>
-              {[undefined, ...years].map((y) => (
-                <button
-                  key={y || "all"}
-                  type="button"
-                  onClick={() => pick(y)}
-                  aria-pressed={season === y}
-                  className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
-                    season === y ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
-                  }`}
-                >
-                  {y || tl("All seasons")}
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="overflow-x-auto">
-            <STable className="w-full text-xs">
-              <thead>
-                <tr>
-                  <th className={th}>{tl("Tournament")}</th>
-                  <th className={`${th} hidden sm:table-cell`}>{tl("Dates")}</th>
-                  <th className={th}>{tl("Winner")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {events.map((e) => (
-                  <LeagueEventRow key={e.u} e={e} />
-                ))}
-              </tbody>
-            </STable>
-          </div>
-        </Section>
+        <LeagueEventsSection l={l} season={season} years={years} events={events} pick={pick} />
       </div>
     </div>
+  );
+};
+
+const CopyLeaguePost: React.FC<{ l: HubLeague; season?: string }> = ({ l, season }) => {
+  const [state, setState] = useState<"" | "copied" | "failed">("");
+  useEffect(() => {
+    if (!state) return;
+    const t = setTimeout(() => setState(""), 2200);
+    return () => clearTimeout(t);
+  }, [state]);
+  const text = () => {
+    const years = [...new Set(l.events.map((e) => e.y))];
+    const span = years.length > 1 ? `${years[years.length - 1]}–${years[0]}` : years[0] || "";
+    const lines = [
+      `${l.s ? `${l.s} — ` : ""}${l.l}${season ? ` (${season})` : span ? ` (${span})` : ""} · ${tn("{n} tournament", "{n} tournaments", l.events.length)}`,
+    ];
+    if (l.titles.length > 0) {
+      lines.push(
+        `${tl("Most titles")}: ${l.titles
+          .slice(0, 4)
+          .map((t) => `${t.t} (${t.n})`)
+          .join(" · ")}`,
+      );
+    }
+    lines.push(hubShareUrl({ kind: "league", slug: l.u, ...(season ? { year: season } : {}) }));
+    return lines.join("\n");
+  };
+  return (
+    <button
+      type="button"
+      onClick={() => navigator.clipboard.writeText(text()).then(() => setState("copied"), () => setState("failed"))}
+      className={heroBtn()}
+      title={`${tl("Copy post")}: ${tl("Copy a ready-to-post summary with the link, for X or Discord")}`}
+      aria-label={tl("Copy post")}
+    >
+      <ClipboardCopy className="w-3.5 h-3.5" />
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
+    </button>
+  );
+};
+
+const LeagueEventsSection: React.FC<{
+  l: HubLeague;
+  season?: string;
+  years: string[];
+  events: HubLeague["events"];
+  pick: (y?: string) => void;
+}> = ({ l, season, years, events, pick }) => {
+  const isHidden = useHiddenCheck();
+  return (
+    <Section
+      title={season ? tl("{year} season", { year: season }) : tl("Every tournament")}
+      right={
+        events.length > 0 ? (
+          <SectionCard
+            section={season ? tl("{year} season", { year: season }) : tl("Every tournament")}
+            name={l.s || l.l}
+            sub={l.l}
+            rows={() =>
+              events.slice(0, 12).map((e) => {
+                const hide = isHidden(`event:${e.u}`, e.en);
+                return {
+                  label: e.n,
+                  sub: [fmtDate(e.st, false), e.en && e.en !== e.st ? fmtDate(e.en, false) : ""].filter(Boolean).join(" – "),
+                  value: e.w && !hide ? e.w : fmtDate(e.st, false),
+                  win: Boolean(e.w && !hide),
+                };
+              })
+            }
+          />
+        ) : undefined
+      }
+    >
+      {years.length > 1 && (
+        <div className="flex flex-wrap gap-1" role="group" aria-label={tl("Season")}>
+          {[undefined, ...years].map((y) => (
+            <button
+              key={y || "all"}
+              type="button"
+              onClick={() => pick(y)}
+              aria-pressed={season === y}
+              className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                season === y ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
+              }`}
+            >
+              {y || tl("All seasons")}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="overflow-x-auto">
+        <STable className="w-full text-xs">
+          <thead>
+            <tr>
+              <th className={th}>{tl("Tournament")}</th>
+              <th className={`${th} hidden sm:table-cell`}>{tl("Dates")}</th>
+              <th className={th}>{tl("Winner")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {events.map((e) => (
+              <LeagueEventRow key={e.u} e={e} />
+            ))}
+          </tbody>
+        </STable>
+      </div>
+    </Section>
   );
 };
 
