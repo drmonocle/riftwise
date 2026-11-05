@@ -3,14 +3,14 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ClipboardCopy, PlayCircle, Clock, Crown, Star, Swords } from "lucide-react";
 import { tl, tc, tk, roleName, locale, stageLabel, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
-import { loadHubSeries } from "../../hub/data";
+import { loadHubSeries, prettySlug } from "../../hub/data";
 import type { GamePlayer, HubGame, HubSeries, SideStats } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { RatingBadge } from "./BestPage";
 import { RatingBadge as PlayerRatingBadge, fmtRating, useRatingFile } from "./PlayerRating";
 import { rateLine } from "../../hub/playerRating";
 import { hubShareUrl, navigateHub } from "../../hub/route";
-import { BroadcastCardButton, gameCardData, seriesCardData } from "./BroadcastCard";
+import { BroadcastCardButton, gameCardData, SectionCard, seriesCardData } from "./BroadcastCard";
 import { buildGameDraftQuery, type GameDraftInput } from "./DraftPage";
 import { RiotGamesFor, RiotMatchPage } from "./RiotMatch";
 import { RIOT_PREFIX } from "../../hub/riotMatch";
@@ -663,20 +663,35 @@ const PlayerBars: React.FC<{ blueName: string; redName: string; blue: GamePlayer
     <div className={`${card} space-y-1.5`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Player by player")}</h3>
-        <div className="flex gap-1" role="group" aria-label={tl("Show")}>
-          {have.map(([k, label]) => (
-            <button
-              key={k}
-              type="button"
-              onClick={() => setMetric(k)}
-              aria-pressed={m === k}
-              className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
-                m === k ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1" role="group" aria-label={tl("Show")}>
+            {have.map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setMetric(k)}
+                aria-pressed={m === k}
+                className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                  m === k ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <SectionCard
+            section={`${tl("Player by player")} · ${have.find(([k]) => k === m)?.[1] || ""}`}
+            name={`${blueName} vs ${redName}`}
+            sub={`${fmt(total(blue))} vs ${fmt(total(red))}`}
+            rows={() =>
+              rows.map(({ r, b, o }) => ({
+                label: `${roleName(r)} · ${b.n} vs ${o.n}`,
+                sub: [b.c && champName(b.c), o.c && champName(o.c)].filter(Boolean).join(" vs "),
+                value: `${fmt(b[m])} – ${fmt(o[m])}`,
+                win: (b[m] || 0) >= (o[m] || 0),
+              }))
+            }
+          />
         </div>
       </div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-3 text-[10px] uppercase tracking-wider font-bold">
@@ -753,7 +768,27 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blue: Gam
     <div className="grid gap-3 lg:grid-cols-2">
       {gold.length > 0 && (
         <div className={`${card} space-y-1.5`}>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Gold and XP lead")}</h3>
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Gold and XP lead")}</h3>
+            <SectionCard
+              section={tl("Gold and XP lead")}
+              name={`${blueName} vs ${redName}`}
+              rows={() => [
+                ...gold.map(([m, v]) => ({
+                  label: `${tl("Gold")} · ${tl("{n} min", { n: m })}`,
+                  sub: v >= 0 ? blueName : redName,
+                  value: kfmt(v),
+                  win: v >= 0,
+                })),
+                ...xp.map(([m, v]) => ({
+                  label: `XP · ${tl("{n} min", { n: m })}`,
+                  sub: v >= 0 ? blueName : redName,
+                  value: kfmt(v),
+                  win: v >= 0,
+                })),
+              ]}
+            />
+          </div>
           {head}
           {gold.map(([m, v]) => (
             <LeadBar key={`g${m}`} label={tl("{n} min", { n: m })} left={m === gold[0][0] ? tl("Gold") : undefined} v={v} max={maxGold}
@@ -768,7 +803,21 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blue: Gam
       )}
       {lanes.length > 0 && (
         <div className={`${card} space-y-1.5`}>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Gold lead in each lane at 15 minutes")}</h3>
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Gold lead in each lane at 15 minutes")}</h3>
+            <SectionCard
+              section={tl("Gold lead in each lane at 15 minutes")}
+              name={`${blueName} vs ${redName}`}
+              rows={() =>
+                lanes.map(({ r, b, o }) => ({
+                  label: `${roleName(r)} · ${b!.n} vs ${o!.n}`,
+                  sub: (b!.g15 as number) >= 0 ? b!.n : o!.n,
+                  value: kfmt(b!.g15 as number),
+                  win: (b!.g15 as number) >= 0,
+                }))
+              }
+            />
+          </div>
           {head}
           {lanes.map(({ r, b, o }) => (
             <LeadBar
@@ -857,9 +906,14 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean }>
       <div className={`flex flex-wrap items-center gap-1 ${right ? "justify-end" : ""}`}>
         <span className="text-[10px] text-rw-muted uppercase mr-1">{tl("Bans")}</span>
         {st.bans.map((c, i) => (
-          <span key={i} className={`opacity-60 grayscale ${i === 3 ? "ml-2" : ""}`} title={tl("Ban {n}", { n: i + 1 })}>
+          <HubLink
+            key={i}
+            to={{ kind: "champ", slug: prettySlug(c) }}
+            className={`opacity-60 grayscale hover:opacity-100 hover:grayscale-0 transition-opacity ${i === 3 ? "ml-2" : ""}`}
+            title={`${champName(c)} · ${tl("Ban {n}", { n: i + 1 })}`}
+          >
             <ChampIcon name={c} size={20} />
-          </span>
+          </HubLink>
         ))}
       </div>
     )}
@@ -867,10 +921,15 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean }>
       <div className={`flex flex-wrap items-start gap-1 ${right ? "justify-end" : ""}`}>
         <span className="text-[10px] text-rw-muted uppercase mr-1 mt-1.5">{tl("Picks")}</span>
         {st.picks.map((c, i) => (
-          <span key={i} className={`flex flex-col items-center ${i === 3 ? "ml-2" : ""}`} title={tl("Pick {n} of the draft", { n: PICK_NO[side][i] ?? i + 1 })}>
+          <HubLink
+            key={i}
+            to={{ kind: "champ", slug: prettySlug(c) }}
+            className={`flex flex-col items-center hover:opacity-85 ${i === 3 ? "ml-2" : ""}`}
+            title={`${champName(c)} · ${tl("Pick {n} of the draft", { n: PICK_NO[side][i] ?? i + 1 })}`}
+          >
             <ChampIcon name={c} size={24} />
             <span className="text-[9px] text-rw-muted tabular-nums leading-tight">{`${side === "blue" ? "B" : "R"}${i + 1}`}</span>
-          </span>
+          </HubLink>
         ))}
       </div>
     )}
@@ -960,7 +1019,19 @@ const PlayerRow: React.FC<{ p: GamePlayer; teamKills: number; teamDmg: number; t
         {p.it && p.it.length > 0 && (
           <span className="flex items-center gap-0.5">
             {p.it.map((it, i) => (
-              <ItemIcon key={i} name={it} size={20} />
+              <HubLink
+                key={i}
+                to={{
+                  kind: "items",
+                  query: new URLSearchParams({
+                    item: prettySlug(it),
+                    ...(p.u ? { player: p.u } : {}),
+                  }).toString(),
+                }}
+                className="hover:opacity-80"
+              >
+                <ItemIcon name={it} size={20} />
+              </HubLink>
             ))}
             {p.tr && <ItemIcon name={p.tr} size={16} />}
           </span>
