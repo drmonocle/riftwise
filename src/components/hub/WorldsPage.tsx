@@ -4,7 +4,7 @@
  * roll by the chances or flip a coin, or play the rest out thousands of times). Picks stay on this device.
  */
 import React, { useEffect, useMemo, useState } from "react";
-import { Dice5, Eraser, Lock, RefreshCw, Shuffle, Sparkles, TrendingUp, Trophy } from "lucide-react";
+import { ClipboardCopy, Dice5, Eraser, Lock, RefreshCw, Shuffle, Sparkles, TrendingUp, Trophy } from "lucide-react";
 import { eventName, eventTitle, stageName, tk, tl } from "../../i18n";
 import { loadEventLines, loadHubEvent, loadHubTitles, loadLeague, loadRatings } from "../../hub/data";
 import type { EventListItem, HubEvent, HubLeague, HubRatings } from "../../hub/types";
@@ -242,10 +242,15 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
             {tl("Bracket picker")}
           </button>
         )}
-        {d?.parent && (
-          <HubLink to={{ kind: "event", slug: d.parent.u }} className={`${btn} ml-auto`}>
-            {tl("Bracket, standings and every series")}
-          </HubLink>
+        {d && (
+          <span className="flex flex-wrap items-center gap-1.5 ml-auto">
+            {d.parent && (
+              <HubLink to={{ kind: "event", slug: d.parent.u }} className={btn}>
+                {tl("Bracket, standings and every series")}
+              </HubLink>
+            )}
+            <CopyIntlPost d={d} kind={kind} title={title} />
+          </span>
         )}
       </div>
       {state.error ? (
@@ -278,6 +283,46 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
         <Pickers d={d} year={d.year} tab={tab} live={d.year === thisYear} schedule={d.year === thisYear ? schedule : undefined} />
       )}
     </div>
+  );
+};
+
+const CopyIntlPost: React.FC<{ d: Loaded; kind: IntlKind; title: string }> = ({ d, kind, title }) => {
+  const [state, setState] = useState<"" | "copied" | "failed">("");
+  useEffect(() => {
+    if (!state) return;
+    const t = setTimeout(() => setState(""), 2200);
+    return () => clearTimeout(t);
+  }, [state]);
+  const text = () => {
+    const lines = [title];
+    if (d.all && d.league.titles.length > 0) {
+      lines.push(
+        `${tl("Most titles")}: ${d.league.titles
+          .slice(0, 4)
+          .map((t) => `${t.t} (${t.n})`)
+          .join(" · ")}`,
+      );
+    } else if (d.parent?.results?.length) {
+      const podium = d.parent.results
+        .filter((r) => ["1", "2", "3"].includes(r.p))
+        .sort((a, b) => Number(a.p) - Number(b.p))
+        .slice(0, 3);
+      if (podium.length) lines.push(podium.map((r) => `#${r.p} ${r.t}`).join(" · "));
+    }
+    lines.push(hubShareUrl({ kind, ...(d.year && d.year !== d.years[0] ? { year: d.year } : {}) }));
+    return lines.join("\n");
+  };
+  return (
+    <button
+      type="button"
+      onClick={() => navigator.clipboard.writeText(text()).then(() => setState("copied"), () => setState("failed"))}
+      className={btn}
+      title={`${tl("Copy post")}: ${tl("Copy a ready-to-post summary with the link, for X or Discord")}`}
+      aria-label={tl("Copy post")}
+    >
+      <ClipboardCopy className="w-3.5 h-3.5" />
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
+    </button>
   );
 };
 
