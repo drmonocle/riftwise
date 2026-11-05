@@ -118,20 +118,28 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
           {!seriesHidden && <> · {tl("{w} won", { w: won })}</>}
         </span>
         {!seriesHidden && shown.length > 0 && (
-          <SectionCard
-            section={`${tl("Every series")} · ${teamName}`}
-            sub={`${tn("{n} series", "{n} series", rows.length)} · ${tl("{w} won", { w: won })}`}
-            name={`${slug}-series-${year}`}
-            rows={() =>
-              shown.slice(0, 10).map((r, idx) => ({
-                rank: idx + 1,
-                team: r[1],
-                label: `${teamName} vs ${r[1]}`,
-                sub: `${r[5]} · ${fmtDate(r[0])}`,
-                value: `${r[3]}-${r[4]}`,
-              }))
-            }
-          />
+          <>
+            <CopyArchivePost
+              title={`${tl("Every series")} · ${teamName}${year !== "all" ? ` (${year})` : ""}`}
+              sub={`${tn("{n} series", "{n} series", rows.length)} · ${tl("{w} won", { w: won })}`}
+              rows={shown.slice(0, 5).map((r) => `${r[3] > r[4] ? tc("short result", "W") : tc("short result", "L")} ${r[3]}-${r[4]} vs ${r[1]} · ${r[5]} (${fmtDate(r[0])})`)}
+              url={`https://riftwise.gg/team/${slug}/matches`}
+            />
+            <SectionCard
+              section={`${tl("Every series")} · ${teamName}`}
+              sub={`${tn("{n} series", "{n} series", rows.length)} · ${tl("{w} won", { w: won })}`}
+              name={`${slug}-series-${year}`}
+              rows={() =>
+                shown.slice(0, 10).map((r, idx) => ({
+                  rank: idx + 1,
+                  team: r[1],
+                  label: `${teamName} vs ${r[1]}`,
+                  sub: `${r[5]} · ${fmtDate(r[0])}`,
+                  value: `${r[3]}-${r[4]}`,
+                }))
+              }
+            />
+          </>
         )}
       </div>
       <SeriesList rows={shown} teamName={teamName} spoilerKey={`teamseries:${slug}:${year}:${q}`} />
@@ -167,20 +175,28 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
       title={tl("Every series between them")}
       right={
         !hidden && rows.length > 0 ? (
-          <SectionCard
-            section={tl("Every series between them")}
-            sub={`${aName} ${wa} – ${rows.length - wa} ${bName} · ${tl("Games {a}–{b}", { a: ga, b: gb })}`}
-            name={`h2h-series-${a}-vs-${b}`}
-            rows={() =>
-              rows.slice(0, 10).map((r, idx) => ({
-                rank: idx + 1,
-                team: r[3] > r[4] ? aName : bName,
-                label: `${aName} ${r[3]} – ${r[4]} ${bName}`,
-                sub: `${r[5]} · ${fmtDate(r[0])}`,
-                value: r[3] > r[4] ? aName : bName,
-              }))
-            }
-          />
+          <span className="flex items-center gap-2">
+            <CopyArchivePost
+              title={`${aName} vs ${bName}`}
+              sub={`${aName} ${wa} – ${rows.length - wa} ${bName} · ${tl("Games {a}–{b}", { a: ga, b: gb })}`}
+              rows={rows.slice(0, 5).map((r) => `${aName} ${r[3]}–${r[4]} ${bName} · ${r[5]} (${fmtDate(r[0])})`)}
+              url={`https://riftwise.gg/compare?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`}
+            />
+            <SectionCard
+              section={tl("Every series between them")}
+              sub={`${aName} ${wa} – ${rows.length - wa} ${bName} · ${tl("Games {a}–{b}", { a: ga, b: gb })}`}
+              name={`h2h-series-${a}-vs-${b}`}
+              rows={() =>
+                rows.slice(0, 10).map((r, idx) => ({
+                  rank: idx + 1,
+                  team: r[3] > r[4] ? aName : bName,
+                  label: `${aName} ${r[3]} – ${r[4]} ${bName}`,
+                  sub: `${r[5]} · ${fmtDate(r[0])}`,
+                  value: r[3] > r[4] ? aName : bName,
+                }))
+              }
+            />
+          </span>
         ) : undefined
       }
     >
@@ -300,20 +316,28 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }>
           {!hidden && rows.length > 0 && <> · {tl("KDA {n}", { n: fmtDec((k + a) / Math.max(d, 1), 2) })}</>}
         </span>
         {!hidden && shown.length > 0 && (
-          <SectionCard
-            section={`${tl("Every game")} · ${slug}`}
-            sub={`${tn("{n} game", "{n} games", rows.length)} · ${Math.round((won / rows.length) * 100)}%`}
-            name={`${slug}-games-${year}-${champ}`}
-            rows={() =>
-              shown.slice(0, 10).map((r, idx) => ({
-                rank: idx + 1,
-                champ: r[2],
-                label: `${champName(r[2])} (${r[3]}/${r[4]}/${r[5]}) vs ${r[8]}`,
-                sub: `${r[9]} · ${fmtDate(r[0])}`,
-                value: r[6] ? tc("short result", "W") : tc("short result", "L"),
-              }))
-            }
-          />
+          <>
+            <CopyArchivePost
+              title={`${tl("Every game")} · ${slug}${champ !== "all" ? ` · ${champName(champ)}` : ""}${year !== "all" ? ` (${year})` : ""}`}
+              sub={`${tn("{n} game", "{n} games", rows.length)} · ${Math.round((won / rows.length) * 100)}% · KDA ${fmtDec((k + a) / Math.max(d, 1), 2)}`}
+              rows={shown.slice(0, 5).map((r) => `${r[6] ? tc("short result", "W") : tc("short result", "L")} ${champName(r[2])} (${r[3]}/${r[4]}/${r[5]}) vs ${r[8]} · ${r[9]} (${fmtDate(r[0])})`)}
+              url={`https://riftwise.gg/player/${slug}/${champ !== "all" ? `champions?champ=${encodeURIComponent(champ)}` : "matches"}`}
+            />
+            <SectionCard
+              section={`${tl("Every game")} · ${slug}`}
+              sub={`${tn("{n} game", "{n} games", rows.length)} · ${Math.round((won / rows.length) * 100)}%`}
+              name={`${slug}-games-${year}-${champ}`}
+              rows={() =>
+                shown.slice(0, 10).map((r, idx) => ({
+                  rank: idx + 1,
+                  champ: r[2],
+                  label: `${champName(r[2])} (${r[3]}/${r[4]}/${r[5]}) vs ${r[8]}`,
+                  sub: `${r[9]} · ${fmtDate(r[0])}`,
+                  value: r[6] ? tc("short result", "W") : tc("short result", "L"),
+                }))
+              }
+            />
+          </>
         )}
         {hidden && <RevealButton onReveal={reveal} small />}
       </div>
@@ -401,4 +425,37 @@ export const PlayerChampGames: React.FC<{ slug: string; champ: string; year?: st
     <PlayerGamesBody slug={slug} champ={champ} year={year} />
   </Section>
 );
+
+const CopyArchivePost: React.FC<{
+  title: string;
+  sub: string;
+  rows: string[];
+  url: string;
+}> = ({ title, sub, rows, url }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const lines: string[] = [`${title} (${sub})`];
+    for (const r of rows) {
+      lines.push(`• ${r}`);
+    }
+    lines.push(url);
+    navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+      title={tl("Copy post")}
+    >
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
+  );
+};
 

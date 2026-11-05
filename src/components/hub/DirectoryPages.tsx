@@ -3,14 +3,14 @@
  * region or role, the last year played and a name. The filters stay in the address (?region=Korea&since=2025&q=t1),
  * so a list can be shared.
  */
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { tl, roleName, regionName } from "../../i18n";
 import { loadHubIndex, loadHubIndexQuick, normText, prettySlug } from "../../hub/data";
 import { navigateHub, type HubSection } from "../../hub/route";
 import type { SearchPlayerRow, SearchTeamRow } from "../../hub/types";
 import { SortTable, type Column } from "./SortTable";
 import { SectionCard } from "./BroadcastCard";
-import { card, fmtNum, Page, PlayerLink, TeamLink, useLoad, usePageTitle } from "./ui";
+import { card, fmtNum, HubLink, Page, PlayerLink, TeamLink, useLoad, usePageTitle } from "./ui";
 
 /** rows shown before "Show more" (the whole list sorts and filters either way) */
 const STEP = 200;
@@ -109,6 +109,25 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
     { key: "y", label: tl("Last played"), value: (t) => t[3] || null, className: "tabular-nums text-rw-sub" },
     { key: "g", label: tl("Games"), value: (t) => t[2], className: "tabular-nums" },
     { key: "o", label: tl("Also played as"), value: (t) => t[4] || null, render: (t) => <span className="text-rw-muted">{(t[4] || "").split(" | ").slice(0, 2).join(", ")}</span>, className: "max-w-[16rem] truncate" },
+    {
+      key: "act",
+      label: "",
+      value: () => null,
+      render: (t) => {
+        const u = t[1] || prettySlug(t[0]);
+        return (
+          <span className="inline-flex items-center gap-2 text-[11px] whitespace-nowrap">
+            <HubLink to={{ kind: "compare", mode: "team", a: u }} className="text-rw-accent hover:underline">
+              {tl("Compare")}
+            </HubLink>
+            <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(u)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Game finder")}
+            </HubLink>
+          </span>
+        );
+      },
+      className: "text-right",
+    },
   ];
   return (
     <div className="space-y-3">
@@ -124,23 +143,34 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
         <SinceSelect years={years} value={since} onChange={(v) => set("since", v === THIS_YEAR ? null : v)} />
         <NameFilter value={words} onChange={(v) => set("q", v)} placeholder={tl("Filter by name or short name…")} />
         {list.length > 0 && (
-          <SectionCard
-            section={tl("Every team")}
-            sub={region ? regionName(region, region) : tl("Every region")}
-            name={`teams-directory-${region || "all"}`}
-            rows={() =>
-              [...list]
+          <>
+            <CopyDirectoryPost
+              title={tl("Every team")}
+              sub={region ? regionName(region, region) : tl("Every region")}
+              rows={[...list]
                 .sort((a, b) => b[2] - a[2])
-                .slice(0, 10)
-                .map((t, idx) => ({
-                  rank: idx + 1,
-                  team: t[0],
-                  label: t[0],
-                  sub: [t[6] ? regionName(t[6], t[6]) : "", t[3] || ""].filter(Boolean).join(" · "),
-                  value: `${fmtNum(t[2])} ${tl("Games")}`,
-                }))
-            }
-          />
+                .slice(0, 5)
+                .map((t, idx) => `#${idx + 1} ${t[0]}${t[6] ? ` (${regionName(t[6], t[6])})` : ""} · ${fmtNum(t[2])} ${tl("Games")}`)}
+              url={`https://riftwise.gg/stats/teams${query ? `?${query}` : ""}`}
+            />
+            <SectionCard
+              section={tl("Every team")}
+              sub={region ? regionName(region, region) : tl("Every region")}
+              name={`teams-directory-${region || "all"}`}
+              rows={() =>
+                [...list]
+                  .sort((a, b) => b[2] - a[2])
+                  .slice(0, 10)
+                  .map((t, idx) => ({
+                    rank: idx + 1,
+                    team: t[0],
+                    label: t[0],
+                    sub: [t[6] ? regionName(t[6], t[6]) : "", t[3] || ""].filter(Boolean).join(" · "),
+                    value: `${fmtNum(t[2])} ${tl("Games")}`,
+                  }))
+              }
+            />
+          </>
         )}
       </Filters>
       <div className={card}>
@@ -195,6 +225,25 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
     { key: "y", label: tl("Last played"), value: (p) => p[4] || null, className: "tabular-nums text-rw-sub" },
     { key: "g", label: tl("Games"), value: (p) => p[3], className: "tabular-nums" },
     { key: "real", label: tl("Name"), value: (p) => p[6] || null, className: "text-rw-muted max-w-[12rem] truncate" },
+    {
+      key: "act",
+      label: "",
+      value: () => null,
+      render: (p) => {
+        const u = p[1] || prettySlug(p[0]);
+        return (
+          <span className="inline-flex items-center gap-2 text-[11px] whitespace-nowrap">
+            <HubLink to={{ kind: "compare", mode: "player", a: u }} className="text-rw-accent hover:underline">
+              {tl("Compare")}
+            </HubLink>
+            <HubLink to={{ kind: "items", query: `player=${encodeURIComponent(u)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Item history")}
+            </HubLink>
+          </span>
+        );
+      },
+      className: "text-right",
+    },
   ];
   return (
     <div className="space-y-3">
@@ -210,23 +259,34 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
         <SinceSelect years={years} value={since} onChange={(v) => set("since", v === THIS_YEAR ? null : v)} />
         <NameFilter value={words} onChange={(v) => set("q", v)} placeholder={tl("Filter by name or team…")} />
         {list.length > 0 && (
-          <SectionCard
-            section={tl("Every player")}
-            sub={role ? roleName(role) : tl("Every role")}
-            name={`players-directory-${role || "all"}`}
-            rows={() =>
-              [...list]
+          <>
+            <CopyDirectoryPost
+              title={tl("Every player")}
+              sub={role ? roleName(role) : tl("Every role")}
+              rows={[...list]
                 .sort((a, b) => b[3] - a[3])
-                .slice(0, 10)
-                .map((p, idx) => ({
-                  rank: idx + 1,
-                  team: p[2] || undefined,
-                  label: p[0],
-                  sub: [ROLE_OF[p[5]] ? roleName(ROLE_OF[p[5]]) : "", p[2] || "", p[4] || ""].filter(Boolean).join(" · "),
-                  value: `${fmtNum(p[3])} ${tl("Games")}`,
-                }))
-            }
-          />
+                .slice(0, 5)
+                .map((p, idx) => `#${idx + 1} ${p[0]}${p[2] ? ` (${p[2]})` : ""} · ${fmtNum(p[3])} ${tl("Games")}`)}
+              url={`https://riftwise.gg/stats/players${query ? `?${query}` : ""}`}
+            />
+            <SectionCard
+              section={tl("Every player")}
+              sub={role ? roleName(role) : tl("Every role")}
+              name={`players-directory-${role || "all"}`}
+              rows={() =>
+                [...list]
+                  .sort((a, b) => b[3] - a[3])
+                  .slice(0, 10)
+                  .map((p, idx) => ({
+                    rank: idx + 1,
+                    team: p[2] || undefined,
+                    label: p[0],
+                    sub: [ROLE_OF[p[5]] ? roleName(ROLE_OF[p[5]]) : "", p[2] || "", p[4] || ""].filter(Boolean).join(" · "),
+                    value: `${fmtNum(p[3])} ${tl("Games")}`,
+                  }))
+              }
+            />
+          </>
         )}
       </Filters>
       <div className={card}>
@@ -238,5 +298,38 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       </div>
       <ShowMore shown={Math.min(shown, list.length)} total={list.length} onMore={() => set("n", String(shown + STEP * 2))} />
     </div>
+  );
+};
+
+const CopyDirectoryPost: React.FC<{
+  title: string;
+  sub: string;
+  rows: string[];
+  url: string;
+}> = ({ title, sub, rows, url }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const lines: string[] = [`${title} · ${sub}`];
+    for (const r of rows) {
+      lines.push(r);
+    }
+    lines.push(url);
+    navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="px-2.5 py-1.5 rounded-lg border border-rw-border bg-rw-bg text-xs text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+      title={tl("Copy post")}
+    >
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
   );
 };
