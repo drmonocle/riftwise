@@ -995,6 +995,28 @@ const TeamChampGames: React.FC<{
           <HubLink to={{ kind: "champ", slug: prettySlug(canonical) }} className="text-[11px] text-rw-accent hover:underline">
             {champName(canonical)} →
           </HubLink>
+          {!hidden && totalG > 0 && (
+            <SectionCard
+              section={`${t.name} · ${champName(canonical)}`}
+              sub={`${totalW}–${totalG - totalW} (${winRate(totalW, totalG)})`}
+              name={`${t.u}-${prettySlug(canonical)}`}
+              rows={() => [
+                ...playersSummary.map((pl) => ({
+                  champ: canonical,
+                  label: `${pl.n}${pl.r ? ` (${roleName(pl.r)})` : ""}`,
+                  sub: pl.kdaGames > 0 ? `KDA ${fmtDec((pl.k + pl.a) / Math.max(pl.d, 1), 2)}` : undefined,
+                  value: `${pl.w}–${pl.g - pl.w} (${winRate(pl.w, pl.g)})`,
+                })),
+                ...filtered.slice(0, 8).map((e) => ({
+                  champ: canonical,
+                  label: `vs ${e.r[4]}`,
+                  sub: `${e.r[3]} · ${fmtDate(e.r[0])}`,
+                  value: e.r[7] ? tc("short result", "W") : tc("short result", "L"),
+                  win: e.r[7] === 1,
+                })),
+              ]}
+            />
+          )}
           <button type="button" onClick={onClose} className="text-[11px] text-rw-sub hover:text-rw-text">
             {tl("Close")}
           </button>

@@ -21,7 +21,7 @@ import { PeriodPicker, defaultPeriod } from "./PeriodStats";
 import { FearlessDepth, RosterSubPicker, Side, loadFullLogs, loadSide, needsFullLogs, swapPlayerInSide } from "./PrepPage";
 import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, Section, useLoad, usePageTitle, useRetryAttempt, retryFailedLoads } from "./ui";
 import { bare, loadHubChamp, prettySlug } from "../../hub/data";
-import { BroadcastCardButton, draftBoardCard, type BoardSide } from "./BroadcastCard";
+import { BroadcastCardButton, SectionCard, draftBoardCard, type BoardSide } from "./BroadcastCard";
 import type { HubChamp, LaneLine } from "../../hub/types";
 import { draftTendencies } from "./DraftTendencies";
 
@@ -1687,7 +1687,24 @@ const DraftMatchupPanel: React.FC<{
   checkDuos("r", red.team.name, redPicks, rTend);
 
   return (
-    <Section title={`${tl("Lane by lane")} · ${tl("Matchups")}`}>
+    <Section
+      title={`${tl("Lane by lane")} · ${tl("Matchups")}`}
+      right={
+        <SectionCard
+          section={`${tl("Lane by lane")} · ${tl("Matchups")}`}
+          sub={`${blue.team.name} vs ${red.team.name}`}
+          name={`${blue.team.name}-${red.team.name}-draft-lanes`}
+          rows={() =>
+            byRole.map(({ rKey, bChamp, rChamp, bPlayer, rPlayer, laneStats }) => ({
+              champ: bChamp || rChamp || undefined,
+              label: `${roleName(rKey)}: ${bChamp ? champName(bChamp) : "–"} vs ${rChamp ? champName(rChamp) : "–"}`,
+              sub: [bPlayer ? `${bPlayer.name} (${bPlayer.g}G)` : "", rPlayer ? `${rPlayer.name} (${rPlayer.g}G)` : ""].filter(Boolean).join(" vs ") || undefined,
+              value: laneStats ? `${winRate(laneStats.bw, laneStats.g)} (${laneStats.g}G)` : undefined,
+            }))
+          }
+        />
+      }
+    >
       <div className="divide-y divide-rw-border/60 text-xs">
         {byRole.map(({ rKey, rIdx, bChamp, rChamp, bPlayer, rPlayer, laneStats }) => (
           <div key={rIdx} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 py-1.5">
@@ -2059,7 +2076,34 @@ const PlayerPools: React.FC<{
   };
   const rows = roleFilter != null ? p.byPlayer.filter((pl) => pl.role === roleFilter) : p.byPlayer;
   return (
-    <Section title={tl("{team}: player pools", { team: side.team.name })} right={<span className={`text-[11px] ${color}`}>{tl("{n} games in this period", { n: p.games })}</span>}>
+    <Section
+      title={tl("{team}: player pools", { team: side.team.name })}
+      right={
+        <span className="flex items-center gap-2">
+          <span className={`text-[11px] ${color}`}>{tl("{n} games in this period", { n: p.games })}</span>
+          {rows.length > 0 && (
+            <SectionCard
+              section={tl("{team}: player pools", { team: side.team.name })}
+              sub={tl("{n} games in this period", { n: p.games })}
+              name={`${side.team.name}-player-pools`}
+              rows={() =>
+                rows.map((pl) => {
+                  const top = pl.champs
+                    .filter((x) => x.g > 0)
+                    .sort((a, b) => comfort(b.g, b.w) - comfort(a.g, a.w) || b.g - a.g)
+                    .slice(0, 4);
+                  return {
+                    champ: top[0]?.c,
+                    label: `${pl.name} (${roleName(ROLES[pl.role])})`,
+                    sub: top.map((x) => `${champName(x.c)} ${x.g}G (${winRate(x.w, x.g)})`).join(" · ") || tl("No games in this period"),
+                  };
+                })
+              }
+            />
+          )}
+        </span>
+      }
+    >
       {rows.length === 0 ? (
         <p className="text-xs text-rw-muted">{tl("No roster known for this team.")}</p>
       ) : (
@@ -2317,7 +2361,30 @@ const Priorities: React.FC<{
     </ul>
   );
   return (
-    <Section title={side.team.name} right={<span className={`text-[11px] ${color}`}>{tl("{n} games in this period", { n: p.games })}</span>}>
+    <Section
+      title={side.team.name}
+      right={
+        <span className="flex items-center gap-2">
+          <span className={`text-[11px] ${color}`}>{tl("{n} games in this period", { n: p.games })}</span>
+          {open.length > 0 && (
+            <SectionCard
+              section={side.team.name}
+              sub={tl("Most picked, still open")}
+              name={`${side.team.name}-priorities`}
+              rows={() =>
+                open.map(([c, [g, w]], idx) => ({
+                  rank: idx + 1,
+                  champ: c,
+                  label: champName(c),
+                  sub: (p.roles.get(c)?.size || 0) > 1 ? tl("flex") : undefined,
+                  value: `${g}G · ${winRate(w, g)}`,
+                }))
+              }
+            />
+          )}
+        </span>
+      }
+    >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
         <div className="min-w-0">
           <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Most picked, still open")}</div>

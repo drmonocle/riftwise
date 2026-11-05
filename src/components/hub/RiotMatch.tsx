@@ -7,6 +7,8 @@ import React, { useEffect, useState } from "react";
 import type { Match } from "../../types";
 import { tl, tc, stageLabel } from "../../i18n";
 import { LiveGamePanel } from "../LiveGamePanel";
+import { MatchOverviewButton } from "../MatchOverviewButton";
+import { MatchPrepButton } from "../MatchPrepButton";
 import { riotMatchById, riotMatchFor } from "../../hub/riotMatch";
 import { findSeriesSlug } from "../../hub/seriesLookup";
 import { navigateHub } from "../../hub/route";
@@ -92,12 +94,18 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
   return (
     <div className="space-y-3">
       <div className={card}>
-        <div className="text-[11px] text-rw-muted flex flex-wrap gap-x-2">
-          <span className="text-rw-accent">{m.leagueName}</span>
-          {m.blockName && <span>· {stageLabel(m.blockName)}</span>}
-          <span>· {fmtDate(m.startTimeUtc.slice(0, 10))}</span>
-          <span>· {tc("series length", "Best of {n}", { n: m.bestOf })}</span>
-          {live && <span className="text-rw-red font-bold">· {tl("LIVE")}</span>}
+        <div className="text-[11px] text-rw-muted flex flex-wrap items-center justify-between gap-2">
+          <span className="flex flex-wrap gap-x-2">
+            <span className="text-rw-accent">{m.leagueName}</span>
+            {m.blockName && <span>· {stageLabel(m.blockName)}</span>}
+            <span>· {fmtDate(m.startTimeUtc.slice(0, 10))}</span>
+            <span>· {tc("series length", "Best of {n}", { n: m.bestOf })}</span>
+            {live && <span className="text-rw-red font-bold">· {tl("LIVE")}</span>}
+          </span>
+          <span className="flex flex-wrap items-center gap-1.5">
+            <MatchOverviewButton match={m} />
+            <MatchPrepButton match={m} />
+          </span>
         </div>
         <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className={`text-right text-base sm:text-lg font-bold truncate ${!hidden && m.team1Score > m.team2Score && !live ? "text-rw-teal" : "text-rw-text"}`}>
