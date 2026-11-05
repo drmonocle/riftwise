@@ -11,6 +11,7 @@ import { loadAliases, loadBest, loadBestIndex, normText } from "../../hub/data";
 import type { BestGame, BestSeries } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
 import { card, EventLink, Failed, fmtDate, HubLink, isFresh, Loading, RevealButton, useHidden, useLoad, usePageTitle } from "./ui";
+import { SectionCard } from "./BroadcastCard";
 
 /** S 90+, A 80+, B 70+, C 55+, D below */
 export function ratingTier(r: number): "S" | "A" | "B" | "C" | "D" {
@@ -121,7 +122,35 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
   return (
     <div className="space-y-3">
       <div className={card}>
-        <h1 className="text-lg font-bold text-rw-text">{tl("Best games")}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-lg font-bold text-rw-text">{tl("Best games")}</h1>
+          {shown.length > 0 && (
+            <SectionCard
+              section={view === "series" ? `${tl("Best games")} · ${tl("Series")}` : tl("Best games")}
+              name={[lgRow ? lgRow[2] || lgRow[1] : tl("All leagues"), year || tl("All time")].filter(Boolean).join(" · ")}
+              rows={() =>
+                shown.slice(0, 10).map((r, i) => {
+                  if (view === "series") {
+                    const [rating, , date, en, , stage, a, , b, , wa, wb] = r as BestSeries;
+                    return {
+                      label: `#${i + 1} · ${a} ${wa}–${wb} ${b}`,
+                      sub: [en, stage && stageLabel(stage), fmtDate(date)].filter(Boolean).join(" · "),
+                      value: `${fmtDec(rating)} (${ratingTier(rating)})`,
+                      win: true,
+                    };
+                  }
+                  const [rating, , n, date, en, , stage, a, , b, , , min] = r as BestGame;
+                  return {
+                    label: `#${i + 1} · ${a} vs ${b} (${tl("Game {n}", { n })})`,
+                    sub: [en, stage && stageLabel(stage), min ? `${Math.round(min)}m` : null, fmtDate(date)].filter(Boolean).join(" · "),
+                    value: `${fmtDec(rating)} (${ratingTier(rating)})`,
+                    win: true,
+                  };
+                })
+              }
+            />
+          )}
+        </div>
         <p className="text-[11px] text-rw-sub mt-1 leading-relaxed">
           {tl(
             "Every pro game since 2011 rated from 0 to 100: action and pace, how close it was, its length, what was at stake (a Worlds final counts most), the series drama (a deciding game 5), comebacks and rivalries.",

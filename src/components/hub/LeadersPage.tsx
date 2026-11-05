@@ -12,6 +12,7 @@ import { ROLES } from "../../hub/champAgg";
 import { card, Loading, PlayerLink, Section, TeamLink, useLoad, usePageTitle } from "./ui";
 import { SortTable, type Column } from "./SortTable";
 import { PLAYER_METRICS } from "./Ranks";
+import { SectionCard } from "./BroadcastCard";
 
 /** the page opens on Worlds (the busiest event of the autumn; any league is one pick away) */
 const DEFAULT_LEAGUE = "world-championship";
@@ -216,7 +217,41 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
       {loading && <Loading />}
       {!loading && failed && <p className="text-xs text-rw-sub">{tl("No player numbers for this season yet.")}</p>}
       {!loading && !failed && (
-        <Section title={tl("{scope}: {n} players", { scope, n: shownRows.length })} share={`riftwise-leaders-${league}-${year}${event ? `-${event}` : ""}${role ? `-${role}` : ""}`}>
+        <Section
+          title={tl("{scope}: {n} players", { scope, n: shownRows.length })}
+          right={
+            shownRows.length > 0 ? (
+              <SectionCard
+                section={tl("Player leaderboards")}
+                name={scope}
+                sub={role ? roleName(role) : undefined}
+                rows={() => {
+                  const kdaM = PLAYER_METRICS.find((m) => m.key === "kda")!;
+                  const dpmM = PLAYER_METRICS.find((m) => m.key === "dpm")!;
+                  const wrM = PLAYER_METRICS.find((m) => m.key === "wr")!;
+                  return [...shownRows]
+                    .sort((a, b) => (kdaM.value(b) || 0) - (kdaM.value(a) || 0))
+                    .slice(0, 12)
+                    .map((p, i) => {
+                      const kda = kdaM.value(p);
+                      const dpm = dpmM.value(p);
+                      const wr = wrM.value(p);
+                      return {
+                        label: `#${i + 1} · ${p.n} (${p.t})`,
+                        sub: [roleName(p.r), `${p.g}G`, dpm != null ? `${dpmM.fmt(dpm)} DPM` : null, wr != null ? wrM.fmt(wr) : null]
+                          .filter(Boolean)
+                          .join(" · "),
+                        value: kda != null ? `${kdaM.fmt(kda)} KDA` : `${p.g}G`,
+                        win: wr != null ? wr >= 0.5 : undefined,
+                      };
+                    });
+                }}
+              />
+            ) : undefined
+          }
+          share={`riftwise-leaders-${league}-${year}${event ? `-${event}` : ""}${role ? `-${role}` : ""}`}
+        >
+          {shownRows.length >= 2 && <LeaderSpotlight rows={shownRows} />}
           {zMode && (
             <p className="text-[11px] text-rw-muted">
               {tl("z = (value − role average) ÷ role standard deviation, over the {n} players listed. +1.0 is one standard deviation better than the role's average (for deaths, fewer is better). Hover a number for the stat itself.", { n: rows.length })}
@@ -229,6 +264,47 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
           )}
         </Section>
       )}
+    </div>
+  );
+};
+
+/** 5-card spotlight strip showing the #1 player in KDA, DPM, CSM, GD@15, and KP for the current filter. */
+const LeaderSpotlight: React.FC<{ rows: EventPlayer[] }> = ({ rows }) => {
+  const keys = ["kda", "dpm", "csm", "g15", "kp"] as const;
+  const cards = useMemo(() => {
+    return keys
+      .map((k) => {
+        const m = PLAYER_METRICS.find((x) => x.key === k);
+        if (!m) return null;
+        const ranked = rows
+          .map((p) => ({ p, v: m.value(p) }))
+          .filter((x): x is { p: EventPlayer; v: number } => x.v != null && isFinite(x.v))
+          .sort((a, b) => b.v - a.v);
+        if (!ranked.length) return null;
+        return { key: k, label: m.short || m.label, top: ranked[0].p, val: m.fmt(ranked[0].v) };
+      })
+      .filter((x): x is NonNullable<typeof x> => !!x);
+  }, [rows]);
+  if (cards.length < 2) return null;
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-xs">
+      {cards.map((c) => (
+        <div key={c.key} className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted truncate">{c.label}</div>
+            <div className="mt-0.5 truncate">
+              <PlayerLink name={c.top.n} u={c.top.u} className="font-semibold text-rw-text hover:text-rw-accent" />
+            </div>
+            <div className="text-[10px] text-rw-muted truncate">
+              <TeamLink name={c.top.t} u={c.top.tu} className="text-rw-muted hover:text-rw-accent" /> · {roleName(c.top.r)}
+            </div>
+          </div>
+          <div className="text-right shrink-0">
+            <div className="font-mono font-bold tabular-nums text-rw-teal">{c.val}</div>
+            <div className="text-[10px] text-rw-muted font-mono">{c.top.g}G</div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 };

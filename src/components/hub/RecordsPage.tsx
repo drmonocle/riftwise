@@ -48,6 +48,7 @@ import {
 } from "./ui";
 
 import { STable } from "../STable";
+import { SectionCard } from "./BroadcastCard";
 
 /** Every pro pentakill: the players with the most, and the newest (spoiler mode hides fresh ones). */
 /**
@@ -101,7 +102,17 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
   const [n, setN] = useState(8);
   return (
     <>
-      <Section title={tl("Most pentakills")} share="records-most-pentakills">
+      <Section
+        title={tl("Most pentakills")}
+        right={
+          <SectionCard
+            section={tl("Most pentakills")}
+            name={tl("Records")}
+            rows={() => p.most.slice(0, 12).map((x, i) => ({ label: `#${i + 1} · ${x.n}`, value: String(x.v), win: true }))}
+          />
+        }
+        share="records-most-pentakills"
+      >
         <ol className="text-xs space-y-1.5">
           {p.most.map((x, i) => (
             <li key={i} className="flex justify-between gap-2 min-w-0">
@@ -286,12 +297,32 @@ export const RecordsPanel: React.FC = () => {
           </select>
           </span>
         );
+        const recScopeLabel = year === "all" ? tl("All time") : year;
         const gameList = (
           title: string,
           rows: HubRecords["game"]["fastest"],
           fmt: (v: number) => string,
         ) => (
-          <Section title={title} share={shareName(title)}>
+          <Section
+            title={title}
+            right={
+              rows.length > 0 ? (
+                <SectionCard
+                  section={title}
+                  name={recScopeLabel}
+                  rows={() =>
+                    rows.slice(0, 10).map((g, i) => ({
+                      label: `#${i + 1} · ${tl("{w} beat {l}", { w: g.w, l: g.w === g.a ? g.b : g.a })}`,
+                      sub: `${g.t} · ${fmtDate(g.date)}`,
+                      value: fmt(g.v),
+                      win: true,
+                    }))
+                  }
+                />
+              ) : undefined
+            }
+            share={shareName(title)}
+          >
             <ol className="text-xs space-y-1.5">
               {rows.map((g, i) => (
                 <li key={i} className="min-w-0">
@@ -333,7 +364,26 @@ export const RecordsPanel: React.FC = () => {
           rows: HubRecords["player"]["kills"],
           fmt: (v: number) => string = fmtNum,
         ) => (
-          <Section title={title} share={shareName(title)}>
+          <Section
+            title={title}
+            right={
+              rows.length > 0 ? (
+                <SectionCard
+                  section={title}
+                  name={recScopeLabel}
+                  rows={() =>
+                    rows.slice(0, 10).map((p, i) => ({
+                      label: `#${i + 1} · ${p.pl} (${champName(p.c)})`,
+                      sub: `${p.kda} vs ${p.opp} · ${p.t} · ${fmtDate(p.date)}`,
+                      value: fmt(p.v),
+                      win: true,
+                    }))
+                  }
+                />
+              ) : undefined
+            }
+            share={shareName(title)}
+          >
             <ol className="text-xs space-y-1.5">
               {rows.map((p, i) => (
                 <li key={i} className="min-w-0">
@@ -375,7 +425,19 @@ export const RecordsPanel: React.FC = () => {
           title: string,
           rows: HubRecords["career"]["games"],
         ) => (
-          <Section title={title} share={shareName(title)}>
+          <Section
+            title={title}
+            right={
+              rows.length > 0 ? (
+                <SectionCard
+                  section={title}
+                  name={tl("Career totals")}
+                  rows={() => rows.slice(0, 12).map((p, i) => ({ label: `#${i + 1} · ${p.pl}`, value: fmtNum(p.v), win: true }))}
+                />
+              ) : undefined
+            }
+            share={shareName(title)}
+          >
             <ol className="text-xs space-y-1.5">
               {rows.map((p, i) => (
                 <li key={i} className="flex justify-between gap-2 min-w-0">
