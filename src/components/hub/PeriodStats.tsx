@@ -739,6 +739,10 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
     `period:t:${slug}:${period}`,
     sel.find((r) => isFresh(r[0]))?.[0],
   );
+  const periodText = (() => {
+    const o = options.find((x) => x.key === period);
+    return !o || o.key === "all" ? tl("All time") : o.group === "basic" ? tl("Last {n} games", { n: o.label }) : o.label;
+  })();
   return (
     <Section
       title={tl("Stats for")}
@@ -748,11 +752,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
           <OnlyPicker value={only} onChange={setOnly} sides />
           {who && !hidden && (
             <BroadcastCardButton
-              data={() => {
-                const o = options.find((x) => x.key === period);
-                const label = !o || o.key === "all" ? tl("All time") : o.group === "basic" ? tl("Last {n} games", { n: o.label }) : o.label;
-                return teamSoloCardData(who, t, label);
-              }}
+              data={() => teamSoloCardData(who, t, periodText)}
               name={`${who.name}-${period}`}
               label={tl("Overview card")}
             />
@@ -871,7 +871,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                   list={t.bansVs}
                 />
               </div>
-              <DraftTendencies rows={sel} />
+              <DraftTendencies rows={sel} teamName={who?.name} periodLabel={periodText} />
               <TrendChart games={sel.map((r) => ({ date: r[0], won: r[7] }))} />
             </div>
           </div>

@@ -1503,6 +1503,41 @@ export function playerCareerCardData(p: import("../../hub/types").HubPlayer): Ca
   };
 }
 
+/** A team's full profile card: record, series, sides, power ranking, titles, objectives, and current 5-man roster. */
+export function teamCareerCardData(t: import("../../hub/types").HubTeam): CardData {
+  const list = t.roster[0]?.p ?? [];
+  const byRole = ROLES.flatMap((r) => list.find((p) => p.r === r) ?? []);
+  const five = (byRole.length >= 3 ? byRole : list.slice(0, 5)).map((p) => ({ name: p.n, slug: p.u ?? undefined, role: p.r }));
+  const rows: CardRow[] = [
+    { label: tl("Games won"), a: `${t.w.toLocaleString(locale())}-${(t.g - t.w).toLocaleString(locale())}` },
+    { label: tl("Win rate"), a: pc(wrOf(t.w, t.g)), pct: wrOf(t.w, t.g) },
+    { label: tl("Series"), a: `${t.sw}-${t.sg - t.sw}`, pct: wrOf(t.sw, t.sg) },
+  ];
+  if (t.sides && t.sides[0] + t.sides[2] > 0) {
+    rows.push({ label: tl("Blue side"), a: `${t.sides[1]}-${t.sides[0] - t.sides[1]}`, pct: wrOf(t.sides[1], t.sides[0]) });
+    rows.push({ label: tl("Red side"), a: `${t.sides[3]}-${t.sides[2] - t.sides[3]}`, pct: wrOf(t.sides[3], t.sides[2]) });
+  }
+  if (t.rating) {
+    rows.push({ label: tl("Power ranking"), a: `#${t.rating.rank ?? t.rating.lrank} (${t.rating.r})` });
+  }
+  rows.push({ label: tl("Titles"), a: String(t.titles.length) });
+  if (t.kills != null) rows.push({ label: tl("Kills / game"), a: n1(t.kills) });
+  if (t.obj) {
+    rows.push({ label: tl("Gold diff / game"), a: sg(t.obj.golddiff) });
+    rows.push({ label: tl("Towers"), a: n1(t.obj.towers) });
+  }
+  rows.push({ label: tl("Avg game"), a: t.avgMin ? mmss(t.avgMin) : "–" });
+  const fy = t.from.slice(0, 4);
+  const ty = t.to.slice(0, 4);
+  const sub = [t.region, t.rating?.league].filter(Boolean).join(" · ") || undefined;
+  return {
+    title: tl("Team card"),
+    subtitle: fy === ty ? fy : `${fy}–${ty}`,
+    a: { name: t.name, sub, champs: t.champs.slice(0, 5).map((c) => c.c), team: t.name, code: t.codes[0], roster: five },
+    rows,
+  };
+}
+
 /** A series: the score, then each game's winner, length, kills, gold, Player of the Game and both drafts. */
 export function seriesCardData(s: import("../../hub/types").HubSeries): CardData {
   const nameA = s.a.c || s.a.n;

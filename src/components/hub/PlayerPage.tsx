@@ -220,6 +220,7 @@ const PlayerView: React.FC<{
                   {tl("Compare")}
                 </HubLink>
                 <BroadcastCardButton hero data={() => playerCareerCardData(p)} name={`${p.name}-career`} label={tl("Overview card")} />
+                <CopyPlayerPost p={p} />
               </div>
             )}
             <div className="flex flex-wrap gap-x-3 gap-y-1 md:justify-end">
@@ -279,7 +280,7 @@ const PlayerView: React.FC<{
             preferAll={!!p.bio.retired || (p.clubTo ? p.clubTo.slice(0, 4) < String(new Date().getFullYear() - 1) : false)}
             who={{ name: p.name, role: p.role ? roleName(p.role) : undefined, club: p.club }}
           />
-          <PlayerRanks slug={p.u} events={p.events} has2y={!!p.g2y} />
+          <PlayerRanks slug={p.u} name={p.name} events={p.events} has2y={!!p.g2y} />
         </div>
       )}
 
@@ -901,3 +902,39 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
     </Section>
   );
 };
+
+const CopyPlayerPost: React.FC<{ p: HubPlayer }> = ({ p }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const sub = [p.role ? roleName(p.role) : null, p.club].filter(Boolean).join(" · ");
+    const lines: string[] = [
+      `${p.name}${sub ? ` (${sub})` : ""}`,
+      `${tl("Games")}: ${p.w}–${p.g - p.w} (${winRate(p.w, p.g)}) · KDA ${fmtN(p.kda)}`,
+    ];
+    if (p.titles.length > 0) {
+      lines.push(`🏆 ${tl("Titles")}: ${p.titles.length}`);
+    }
+    if (p.champs.length > 0) {
+      lines.push(
+        `${tl("Champions")}: ${p.champs
+          .slice(0, 4)
+          .map((c) => `${champName(c.c)} (${c.g})`)
+          .join(", ")}`,
+      );
+    }
+    lines.push(`https://riftwise.gg/player/${p.u}`);
+    navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
+  };
+  return (
+    <button type="button" onClick={copy} className={heroBtn()} title={tl("Copy post")}>
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
+  );
+};
+

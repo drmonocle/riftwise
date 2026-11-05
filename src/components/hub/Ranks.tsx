@@ -8,6 +8,7 @@ import { tl, tk, roleName, fmtDec } from "../../i18n";
 import { loadLeagueSeason, loadLeagues, loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y } from "../../hub/data";
 import type { EventPlayer, EventTeamStats, LeagueRow, PlayerGameRow, TeamGameRow } from "../../hub/types";
 import { isFresh, Loading, RevealButton, Section, useHidden, useLoad } from "./ui";
+import { SectionCard } from "./BroadcastCard";
 
 export interface Metric<T> {
   key: string;
@@ -546,9 +547,10 @@ function useSeasons(events: { lu?: string; date: string; g: number }[], min: num
 
 export const PlayerRanks: React.FC<{
   slug: string;
+  name?: string;
   events: { e?: string; lu?: string; date: string; g: number }[];
   has2y?: boolean;
-}> = ({ slug, events, has2y }) => {
+}> = ({ slug, name, events, has2y }) => {
   const seasons = useSeasons(events, 5);
   const [pick, setPick] = useState(() =>
     seasons[0] ? `${seasons[0][0]}|${seasons[0][1]}` : "",
@@ -573,6 +575,8 @@ export const PlayerRanks: React.FC<{
   if (!seasons.length) return null;
   const season = state.data;
   const me = season?.players.find((p) => p.u === slug);
+  const leagueLabel = (names.get(lu) || lu).replace(/\s\d{4}$/, "");
+  let cardRows: RankRow[] = [];
   let body: React.ReactNode = <Loading />;
   if (state.error)
     body = (
@@ -596,6 +600,7 @@ export const PlayerRanks: React.FC<{
       const r = place(m, me, peers);
       return r && rankRow(m, r, lastTen(games, PLAYER_GAME[m0.key], prefs.perMin));
     }).filter((x): x is RankRow => !!x);
+    if (me.g >= minG) cardRows = rows;
     body =
       me.g < minG ? (
         <p className="text-xs text-rw-muted">
@@ -613,7 +618,7 @@ export const PlayerRanks: React.FC<{
                 n: peers.length,
                 role: roleName(me.r),
                 g: minG,
-                league: (names.get(lu) || lu).replace(/\s\d{4}$/, ""),
+                league: leagueLabel,
                 year,
               },
             )}
@@ -633,6 +638,20 @@ export const PlayerRanks: React.FC<{
             onChange={setPick}
             names={names}
           />
+          {!ranksHidden && cardRows.length > 0 && (
+            <SectionCard
+              section={tl("League ranks")}
+              name={name || me?.n || slug}
+              sub={`${leagueLabel} ${year}${me?.r ? ` · ${roleName(me.r)}` : ""}`}
+              rows={() =>
+                cardRows.map((r) => ({
+                  label: r.label,
+                  sub: `${tl("League avg")} ${r.avg} · ${r.diff} (${tl("{n} of {m}", { n: r.rank, m: r.of })})`,
+                  value: `${r.text} · P${r.pct}`,
+                }))
+              }
+            />
+          )}
         </>
       }
       share={`${slug}-ranks-${lu}-${year}`}
@@ -650,9 +669,10 @@ export const PlayerRanks: React.FC<{
 
 export const TeamRanks: React.FC<{
   slug: string;
+  name?: string;
   events: { e?: string; lu?: string; date: string; g: number }[];
   has2y?: boolean;
-}> = ({ slug, events, has2y }) => {
+}> = ({ slug, name, events, has2y }) => {
   const seasons = useSeasons(events, 5);
   const [pick, setPick] = useState(() =>
     seasons[0] ? `${seasons[0][0]}|${seasons[0][1]}` : "",
@@ -677,6 +697,8 @@ export const TeamRanks: React.FC<{
   if (!seasons.length) return null;
   const season = state.data;
   const me = season?.teamStats.find((t) => t.u === slug);
+  const leagueLabel = (names.get(lu) || lu).replace(/\s\d{4}$/, "");
+  let cardRows: RankRow[] = [];
   let body: React.ReactNode = <Loading />;
   if (state.error)
     body = (
@@ -700,6 +722,7 @@ export const TeamRanks: React.FC<{
       const r = place(m, me, peers);
       return r && rankRow(m, r, lastTen(games, TEAM_GAME[m0.key], prefs.perMin));
     }).filter((x): x is RankRow => !!x);
+    cardRows = rows;
     body = (
       <>
         <Bars rows={rows} hide={prefs.hide} />
@@ -708,7 +731,7 @@ export const TeamRanks: React.FC<{
             "Compared with the {n} teams of {league} {year} (all splits and playoffs).",
             {
               n: peers.length,
-              league: (names.get(lu) || lu).replace(/\s\d{4}$/, ""),
+              league: leagueLabel,
               year,
             },
           )}
@@ -728,6 +751,20 @@ export const TeamRanks: React.FC<{
             onChange={setPick}
             names={names}
           />
+          {!ranksHidden && cardRows.length > 0 && (
+            <SectionCard
+              section={tl("League ranks")}
+              name={name || me?.t || slug}
+              sub={`${leagueLabel} ${year}`}
+              rows={() =>
+                cardRows.map((r) => ({
+                  label: r.label,
+                  sub: `${tl("League avg")} ${r.avg} · ${r.diff} (${tl("{n} of {m}", { n: r.rank, m: r.of })})`,
+                  value: `${r.text} · P${r.pct}`,
+                }))
+              }
+            />
+          )}
         </>
       }
       share={`${slug}-ranks-${lu}-${year}`}

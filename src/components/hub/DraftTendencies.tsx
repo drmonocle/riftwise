@@ -10,6 +10,7 @@ import type { TeamGameRow } from "../../hub/types";
 import { ROLES } from "../../hub/champAgg";
 import { champName } from "../../champions";
 import { ChampLink } from "./ui";
+import { SectionCard } from "./BroadcastCard";
 
 type Count = [string, number, number]; // champion, games, wins
 
@@ -217,14 +218,37 @@ const Pairs: React.FC<{ title: string; hint?: string; list: Pair[] }> = ({ title
     </div>
   ) : null;
 
-export const DraftTendencies: React.FC<{ rows: TeamGameRow[] }> = ({ rows }) => {
+export const DraftTendencies: React.FC<{ rows: TeamGameRow[]; teamName?: string; periodLabel?: string }> = ({ rows, teamName, periodLabel }) => {
   const d = useMemo(() => draftTendencies(rows), [rows]);
   if (d.games < 3) return null;
+  const roleStr = (shares: [number, number][]) =>
+    shares.length ? shares.slice(0, 2).map(([r, v]) => `${roleName(ROLES[r])} ${Math.round(v * 100)}%`).join(" · ") : "–";
+  const champStr = (list: Count[], n = 3) =>
+    list.length ? list.slice(0, n).map(([c, g, w]) => `${champName(c)} (${g} · ${winRate(w, g)})`).join(", ") : "–";
   return (
     <div className="@container space-y-2 pt-2 border-t border-rw-border">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Draft tendencies")}</h4>
-        <span className="text-[10px] text-rw-muted">{tl("{n} games with the draft order", { n: d.games })}</span>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-baseline gap-2">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Draft tendencies")}</h4>
+          <span className="text-[10px] text-rw-muted">{tl("{n} games with the draft order", { n: d.games })}</span>
+        </div>
+        {teamName && (
+          <SectionCard
+            section={tl("Draft tendencies")}
+            name={teamName}
+            sub={periodLabel ? `${periodLabel} · ${tl("{n} games", { n: d.games })}` : tl("{n} games", { n: d.games })}
+            rows={() => [
+              ...(d.b1.length ? [{ champ: d.b1[0][0], label: tl("First pick (blue)"), sub: champStr(d.b1, 3), value: `${d.b1[0][1]}G` }] : []),
+              ...(d.r12.length ? [{ champ: d.r12[0][0], label: tl("First picks (red)"), sub: champStr(d.r12, 3), value: `${d.r12[0][1]}G` }] : []),
+              ...(d.bans1.length ? [{ champ: d.bans1[0][0], label: tl("Bans, phase 1"), sub: d.bans1.slice(0, 4).map(([c, g]) => `${champName(c)} (${g})`).join(", "), value: `${d.bans1[0][1]}G` }] : []),
+              ...(d.firstRole.length ? [{ label: tl("First role locked in"), value: roleStr(d.firstRole) }] : []),
+              ...(d.r5.length ? [{ label: tl("Last pick on red (R5)"), value: roleStr(d.r5) }] : []),
+              ...(d.b45.length ? [{ label: tl("Last picks on blue (B4-B5)"), value: roleStr(d.b45) }] : []),
+              ...(d.botDuos.length ? [{ champ: d.botDuos[0][0], label: tl("Bot lane pairs"), sub: `${champName(d.botDuos[0][0])} + ${champName(d.botDuos[0][1])}`, value: `${d.botDuos[0][2]}G · ${winRate(d.botDuos[0][3], d.botDuos[0][2])}` }] : []),
+              ...(d.flex.length ? [{ champ: d.flex[0][0], label: tl("Flex picks"), sub: d.flex.slice(0, 4).map(([c]) => champName(c)).join(", "), value: `${d.flex.length}` }] : []),
+            ]}
+          />
+        )}
       </div>
       <div className="grid grid-cols-2 @3xl:grid-cols-4 gap-x-6 gap-y-3">
         <List title={tl("First pick (blue)")} hint={tl("Their first pick when on blue side (B1)")} list={d.b1} showWr />

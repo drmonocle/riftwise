@@ -21,7 +21,7 @@ import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum,
 import { ratingTextClass } from "./BestPage";
 import { Sparkline } from "./Sparkline";
 import { STable } from "../STable";
-import { SectionCard } from "./BroadcastCard";
+import { SectionCard, BroadcastCardButton, teamCareerCardData } from "./BroadcastCard";
 import { champName } from "../../champions";
 import { NextMatch } from "./NextMatch";
 import { EntityHero, heroBtn, heroLink } from "./EntityHero";
@@ -266,6 +266,8 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 <HubLink to={{ kind: "prep", a: t.u }} className={heroBtn()}>
                   {tl("Match prep")}
                 </HubLink>
+                <BroadcastCardButton hero data={() => teamCareerCardData(t)} name={`${t.name}-overview`} label={tl("Overview card")} />
+                <CopyTeamPost t={t} />
               </div>
             )}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 md:justify-end">
@@ -336,7 +338,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
             preferAll={!!t.disbanded || t.to.slice(0, 4) < String(new Date().getFullYear() - 1)}
             who={{ name: t.name, sub: [t.region, t.rating?.league].filter(Boolean).join(" · ") || undefined, code: t.codes[0], roster: t.roster[0]?.p }}
           />
-          <TeamRanks slug={t.u} events={t.events} has2y={!!t.g2y} />
+          <TeamRanks slug={t.u} name={t.name} events={t.events} has2y={!!t.g2y} />
         </div>
       )}
 
@@ -1431,5 +1433,38 @@ const TeamPlaystyleOverview: React.FC<{ t: HubTeam }> = ({ t }) => {
     </Section>
   );
 };
+
+const CopyTeamPost: React.FC<{ t: HubTeam }> = ({ t }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const lines: string[] = [
+      `${t.name}${t.region ? ` (${regionName(t.region, t.region)})` : ""}`,
+      `${tl("Games")}: ${t.w}–${t.g - t.w} (${winRate(t.w, t.g)}) · ${tl("Series")}: ${t.sw}–${t.sg - t.sw} (${winRate(t.sw, t.sg)})`,
+    ];
+    if (t.rating) {
+      lines.push(`${tl("Power ranking")}: #${t.rating.rank ?? t.rating.lrank} (${t.rating.r})`);
+    }
+    if (t.titles.length > 0) {
+      lines.push(`🏆 ${tl("Titles")}: ${t.titles.length}`);
+    }
+    if (t.roster[0]?.p.length) {
+      lines.push(`${tl("Roster")} (${t.roster[0].y}): ${t.roster[0].p.slice(0, 5).map((p) => p.n).join(" · ")}`);
+    }
+    lines.push(`https://riftwise.gg/team/${t.u}`);
+    navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
+  };
+  return (
+    <button type="button" onClick={copy} className={heroBtn()} title={tl("Copy post")}>
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
+  );
+};
+
 
 
