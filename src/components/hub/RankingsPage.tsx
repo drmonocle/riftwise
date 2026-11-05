@@ -25,7 +25,7 @@ import {
 } from "./ui";
 import { CountryFlag, countryName } from "./CountryFlag";
 import { STable } from "../STable";
-import { BroadcastCardButton, rankingsCard } from "./BroadcastCard";
+import { BroadcastCardButton, SectionCard, rankingsCard } from "./BroadcastCard";
 
 const sel =
   "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text max-w-[14rem]";
@@ -52,16 +52,47 @@ export const RankingsPage: React.FC = () => {
 const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
   const [league, setLeague] = useState("");
   const [limit, setLimit] = useState(50);
+  const [asOf, setAsOf] = useState("");
   const hist = useLoad(loadRatingsHistory, []);
+  const histDates = useMemo(() => {
+    if (!hist.data) return [];
+    const s = new Set<string>();
+    for (const pts of Object.values(hist.data)) {
+      for (const [dt] of pts) if (dt) s.add(dt);
+    }
+    return [...s].sort().reverse();
+  }, [hist.data]);
   // all leagues: top-league teams on one scale; one league: its teams ranked within it
-  const rows = useMemo(
-    () =>
-      d.teams
-        // "": top leagues of every region (one scale); "*": every team, academies and second tiers too
-        .filter((r) => (league === "*" ? true : league ? r[3] === league : r[9] === 1))
-        .map((r, i) => ({ r, rank: i + 1 })),
-    [d.teams, league],
-  );
+  const rows = useMemo(() => {
+    const filtered = d.teams.filter((r) => (league === "*" ? true : league ? r[3] === league : r[9] === 1));
+    if (!asOf || !hist.data) {
+      return filtered.map((r, i) => ({ r, rank: i + 1 }));
+    }
+    const rewound = filtered
+      .map((r) => {
+        const pts = hist.data?.[r[0]];
+        if (!pts || !pts.length) return r;
+        let pastRating = pts[0][1];
+        for (const [dt, val] of pts) {
+          if (dt <= asOf) pastRating = val;
+          else break;
+        }
+        const copy = [...r] as RatingRow;
+        copy[5] = Math.round(pastRating);
+        return copy;
+      })
+      .sort((a, b) => b[5] - a[5]);
+    return rewound.map((r, i) => ({ r, rank: i + 1 }));
+  }, [d.teams, league, asOf, hist.data]);
+  const topLeagueCards = useMemo(() => {
+    return d.leagues.slice(0, 6).map(([l, u, top4Avg, count]) => {
+      const lTeams = d.teams.filter((t) => t[3] === l).sort((a, b) => b[5] - a[5]);
+      const best = lTeams[0] || null;
+      const worst = lTeams[lTeams.length - 1] || null;
+      const short = best?.[10] || l;
+      return { l, u, short, top4Avg, count, best, minR: worst ? worst[5] : top4Avg, maxR: best ? best[5] : top4Avg };
+    });
+  }, [d.leagues, d.teams]);
   // #1 of the list shown (a league's own #1 when one league is picked)
   const top = rows[0]?.r;
   // one scale for the whole column, so a lower-rated team never shows a better chance than one above it
@@ -234,6 +265,40 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
         )}
       </div>
 
+      {topLeagueCards.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs" data-nocapture="1">
+          {topLeagueCards.map((lc) => {
+            const active = league === lc.l;
+            return (
+              <button
+                key={lc.l}
+                type="button"
+                onClick={() => setLeague(active ? "" : lc.l)}
+                title={lc.l}
+                className={`rounded-xl border p-2.5 text-left transition-colors ${
+                  active ? "border-rw-accent bg-rw-accent/15" : "border-rw-border bg-rw-surface hover:border-rw-accent/50"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <span className="font-bold text-rw-text truncate">{lc.short}</span>
+                  <span className="font-mono tabular-nums font-bold text-rw-accent">{lc.top4Avg}</span>
+                </div>
+                {lc.best && (
+                  <div className="mt-1 text-[11px] text-rw-sub truncate">
+                    #1 <span className="text-rw-text font-medium">{lc.best[1]}</span>{" "}
+                    <span className="text-rw-muted tabular-nums">({lc.best[5]})</span>
+                  </div>
+                )}
+                <div className="mt-1.5 flex items-center justify-between text-[10px] text-rw-muted tabular-nums">
+                  <span>{lc.minR}–{lc.maxR}</span>
+                  <span>{lc.count} · {tl("Teams")}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <Section
         title={tl("Power rankings")}
         share={`riftwise-power-rankings${oneLeague ? "-" + league : league === "*" ? "-all" : ""}`}
@@ -242,6 +307,21 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
             className="flex flex-wrap items-center gap-2 text-xs"
             data-nocapture="1"
           >
+            {histDates.length > 1 && (
+              <select
+                value={asOf}
+                onChange={(e) => setAsOf(e.target.value)}
+                aria-label={tl("Date")}
+                className={sel}
+              >
+                <option value="">{fmtDate(d.asof)}</option>
+                {histDates.map((dt) => (
+                  <option key={dt} value={dt}>
+                    {fmtDate(dt)}
+                  </option>
+                ))}
+              </select>
+            )}
             <select
               value={league}
               onChange={(e) => setLeague(e.target.value)}
@@ -291,11 +371,13 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               data={() =>
                 rankingsCard({
                   title: tl("Power rankings"),
-                  subtitle: oneLeague ? league : league === "*" ? tl("All leagues") : tl("Top leagues, all regions"),
+                  subtitle: [oneLeague ? league : league === "*" ? tl("All leagues") : tl("Top leagues, all regions"), asOf ? fmtDate(asOf) : null]
+                    .filter(Boolean)
+                    .join(" · "),
                   rows: rows.slice(0, 10).map(({ r }) => ({ name: r[1], league: r[10] || r[3], r: r[5], chg: r[6] })),
                 })
               }
-              name={`riftwise-power-rankings${oneLeague ? "-" + league : ""}`}
+              name={`riftwise-power-rankings${oneLeague ? "-" + league : ""}${asOf ? "-" + asOf : ""}`}
               label={tl("Overview card")}
             />
           </span>
@@ -332,6 +414,23 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
         <Section
           title={tl("League strength")}
           share="riftwise-league-strength"
+          right={
+            <SectionCard
+              section={tl("League strength")}
+              name={tl("Power rankings")}
+              sub={fmtDate(d.asof)}
+              rows={() =>
+                d.leagues.slice(0, 10).map(([l, , r, n]) => {
+                  const best = d.teams.filter((t) => t[3] === l).sort((a, b) => b[5] - a[5])[0];
+                  return {
+                    label: l,
+                    sub: best ? `#1 ${best[1]} (${best[5]}) · ${n} ${tl("Teams")}` : `${n} ${tl("Teams")}`,
+                    value: String(r),
+                  };
+                })
+              }
+            />
+          }
         >
           <p className="text-[11px] text-rw-muted">
             {tl("Average rating of each league's best four teams.")}
@@ -342,38 +441,45 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                 <tr>
                   <th className={th}>#</th>
                   <th className={th}>{tl("League")}</th>
+                  <th className={th}>#1</th>
                   <th className={`${th} text-right`}>{tl("Rating")}</th>
                   <th className={`${th} text-right`}>{tl("Teams")}</th>
                 </tr>
               </thead>
               <tbody>
-                {d.leagues.slice(0, 20).map(([l, u, r, n], i) => (
-                  <tr key={l} className="border-t border-rw-border">
-                    <td className={`${td} text-rw-muted`}>{i + 1}</td>
-                    <td className={td}>
-                      {u ? (
-                        <HubLink
-                          to={{ kind: "league", slug: u }}
-                          className="text-rw-text hover:text-rw-accent hover:underline"
-                        >
-                          {l}
-                        </HubLink>
-                      ) : (
-                        l
-                      )}
-                    </td>
-                    <td
-                      className={`${td} text-right tabular-nums font-bold text-rw-accent`}
-                    >
-                      {r}
-                    </td>
-                    <td
-                      className={`${td} text-right tabular-nums text-rw-sub`}
-                    >
-                      {n}
-                    </td>
-                  </tr>
-                ))}
+                {d.leagues.slice(0, 20).map(([l, u, r, n], i) => {
+                  const best = d.teams.filter((t) => t[3] === l).sort((a, b) => b[5] - a[5])[0];
+                  return (
+                    <tr key={l} className="border-t border-rw-border">
+                      <td className={`${td} text-rw-muted`}>{i + 1}</td>
+                      <td className={td}>
+                        {u ? (
+                          <HubLink
+                            to={{ kind: "league", slug: u }}
+                            className="text-rw-text hover:text-rw-accent hover:underline"
+                          >
+                            {l}
+                          </HubLink>
+                        ) : (
+                          l
+                        )}
+                      </td>
+                      <td className={`${td} text-rw-sub max-w-[9rem] truncate`}>
+                        {best ? <TeamLink name={best[1]} u={best[0]} /> : "–"}
+                      </td>
+                      <td
+                        className={`${td} text-right tabular-nums font-bold text-rw-accent`}
+                      >
+                        {r}
+                      </td>
+                      <td
+                        className={`${td} text-right tabular-nums text-rw-sub`}
+                      >
+                        {n}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </STable>
           </div>
