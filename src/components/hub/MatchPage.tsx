@@ -1,6 +1,6 @@
 /** One series (a "match": Bo1 to Bo5): every game's draft, scoreboard, builds, runes and objectives. */
 import React, { useEffect, useMemo, useState } from "react";
-import { PlayCircle, Clock, Crown, Star, Swords } from "lucide-react";
+import { ClipboardCopy, PlayCircle, Clock, Crown, Star, Swords } from "lucide-react";
 import { tl, tc, tk, roleName, locale, stageLabel, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
 import { loadHubSeries } from "../../hub/data";
@@ -9,7 +9,7 @@ import { useDDragon } from "../../hub/ddragon";
 import { RatingBadge } from "./BestPage";
 import { RatingBadge as PlayerRatingBadge, fmtRating, useRatingFile } from "./PlayerRating";
 import { rateLine } from "../../hub/playerRating";
-import { navigateHub } from "../../hub/route";
+import { hubShareUrl, navigateHub } from "../../hub/route";
 import { BroadcastCardButton, gameCardData, seriesCardData } from "./BroadcastCard";
 import { buildGameDraftQuery, type GameDraftInput } from "./DraftPage";
 import { RiotGamesFor, RiotMatchPage } from "./RiotMatch";
@@ -202,7 +202,10 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
               </>
             )}
             {!hidden && s.games.some((g) => g.w) && (
-              <BroadcastCardButton hero data={() => seriesCardData(s)} name={`${s.a.n}-vs-${s.b.n}-series`} label={tl("Overview card")} />
+              <>
+                <BroadcastCardButton hero data={() => seriesCardData(s)} name={`${s.a.n}-vs-${s.b.n}-series`} label={tl("Overview card")} />
+                <CopySeriesPost s={s} slug={slug} />
+              </>
             )}
           </div>
         )}
@@ -447,6 +450,9 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
             <Draft st={g.t?.red} side="red" right />
           </div>
         )}
+        {!hidden && blue.length === 5 && red.length === 5 && (
+          <GameRoleMatchups blue={blue} red={red} />
+        )}
       </div>
 
       {hidden && (blue.length > 0 || red.length > 0) && (
@@ -523,6 +529,94 @@ const LeadBar: React.FC<{ label: React.ReactNode; left?: React.ReactNode; right?
 };
 
 const ROLE_ORDER = ["Top", "Jungle", "Mid", "Bot", "Support"];
+
+/** Copy a ready-to-post series recap with game-by-game winners/MVPs and canonical link for X or Discord. */
+const CopySeriesPost: React.FC<{ s: HubSeries; slug: string }> = ({ s, slug }) => {
+  const [state, setState] = useState<"" | "copied" | "failed">("");
+  useEffect(() => {
+    if (!state) return;
+    const t = setTimeout(() => setState(""), 2200);
+    return () => clearTimeout(t);
+  }, [state]);
+  const text = () => {
+    const lines = [
+      `${s.a.n} ${s.sa}–${s.sb} ${s.b.n} — ${s.en}${s.stage ? ` (${stageLabel(s.stage)})` : ""}`,
+    ];
+    const gameSummaries = s.games
+      .filter((g) => g.w)
+      .map((g) => {
+        const wCode = g.w === 1 ? s.a.c || s.a.n : s.b.c || s.b.n;
+        const dur = g.min != null ? ` (${fmtMin(g.min)}${g.mvp ? ` · ${g.mvp.n}` : ""})` : g.mvp ? ` (${g.mvp.n})` : "";
+        return `${tc("short game", "G{n}", { n: g.n })}: ${wCode}${dur}`;
+      });
+    if (gameSummaries.length) lines.push(gameSummaries.join(" · "));
+    lines.push(hubShareUrl({ kind: "match", slug }));
+    return lines.join("\n");
+  };
+  return (
+    <button
+      type="button"
+      onClick={() => navigator.clipboard.writeText(text()).then(() => setState("copied"), () => setState("failed"))}
+      className={heroBtn()}
+      title={`${tl("Copy post")}: ${tl("Copy a ready-to-post summary with the link, for X or Discord")}`}
+      aria-label={tl("Copy post")}
+    >
+      <ClipboardCopy className="w-3.5 h-3.5 inline mr-1" />
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
+    </button>
+  );
+};
+
+/** 5-role 1v1 lane strip inside a game card, linking each lane matchup directly to /stats/compare. */
+const GameRoleMatchups: React.FC<{ blue: GamePlayer[]; red: GamePlayer[] }> = ({ blue, red }) => {
+  const pairs = ROLE_ORDER.map((r, i) => {
+    const b = blue.find((p) => p.r === r) || blue[i];
+    const rd = red.find((p) => p.r === r) || red[i];
+    return { role: r, b, r: rd };
+  }).filter((x) => x.b && x.r);
+  if (pairs.length < 5) return null;
+  return (
+    <div className="pt-2 border-t border-rw-border">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-[11px]">
+        {pairs.map(({ role, b, r }) => {
+          const inner = (
+            <>
+              <div className="flex items-center justify-between text-[9px] uppercase tracking-wider font-bold text-rw-muted">
+                <span>{roleName(role)}</span>
+                {b.u && r.u && <span className="text-rw-accent">{tl("Compare")} →</span>}
+              </div>
+              <div className="mt-1 flex items-center justify-between gap-1 min-w-0">
+                <span className="inline-flex items-center gap-1 min-w-0 truncate text-rw-side-a font-semibold">
+                  {b.c && <ChampIcon name={b.c} size={15} />}
+                  <span className="truncate">{b.n}</span>
+                </span>
+                <span className="text-[9px] text-rw-muted shrink-0">vs</span>
+                <span className="inline-flex items-center gap-1 min-w-0 truncate text-rw-side-b font-semibold justify-end">
+                  <span className="truncate">{r.n}</span>
+                  {r.c && <ChampIcon name={r.c} size={15} />}
+                </span>
+              </div>
+            </>
+          );
+          return b.u && r.u ? (
+            <HubLink
+              key={role}
+              to={{ kind: "compare", mode: "player", a: b.u, b: r.u }}
+              className="rounded-lg border border-rw-border bg-rw-bg/50 px-2 py-1.5 hover:border-rw-accent/60 hover:bg-rw-raised/60 transition-colors"
+              title={`${b.n} vs ${r.n} · ${tl("Compare")}`}
+            >
+              {inner}
+            </HubLink>
+          ) : (
+            <div key={role} className="rounded-lg border border-rw-border bg-rw-bg/40 px-2 py-1.5">
+              {inner}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 type BarMetric = "dm" | "gd" | "cs" | "v";
 

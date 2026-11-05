@@ -7,13 +7,13 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Trophy } from "lucide-react";
 import { tl, tk, roleName, regionName, eventTitle, tc, tn, fmtDec } from "../../i18n";
 import { winRate } from "../../stats";
-import { loadHubTeam, loadPlayerGames, loadTeamGames, prettySlug } from "../../hub/data";
+import { loadHubTeam, loadPlayerGames, loadTeamGames, loadTeamGames2y, prettySlug } from "../../hub/data";
 import { currentHubRoute, navigateHub, type HubRoute } from "../../hub/route";
 import { PageTabs, type PageTab } from "./PageTabs";
 import type { HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { TeamSeriesArchive } from "./Archives";
-import { PeriodPicker, QuickPeriods, TeamPeriodStats } from "./PeriodStats";
+import { PeriodPicker, QuickPeriods, TeamPeriodStats, playstyleTags } from "./PeriodStats";
 import { PeriodKey, inPeriod, periodOptions, teamAgg, teamRowRef } from "../../hub/period";
 import { TeamRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
@@ -442,6 +442,8 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
       )}
 
       {overview && rosterSection}
+
+      {overview && <TeamPlaystyleOverview t={t} />}
 
       {overview && <OwnStorylines notes={t.notes} spoilerKey={`notes:team:${t.u}`} share={`${t.u}-storylines`} />}
 
@@ -1264,4 +1266,170 @@ const EventRow: React.FC<{ x: HubTeam["events"][number]; teamName: string }> = (
     </tr>
   );
 };
+
+/** Visual playstyle & early-game DNA card on the Team Overview tab, with 16:9 card export. */
+const TeamPlaystyleOverview: React.FC<{ t: HubTeam }> = ({ t }) => {
+  const [rows, setRows] = useState<TeamGameRow[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    setRows(null);
+    const load = t.g2y ? loadTeamGames2y(t.u) : loadTeamGames(t.u);
+    load
+      .catch(() => (t.g2y ? loadTeamGames(t.u).catch(() => [] as TeamGameRow[]) : ([] as TeamGameRow[])))
+      .then((res) => alive && setRows(res));
+    return () => {
+      alive = false;
+    };
+  }, [t.u, t.g2y]);
+
+  const { periodRows, periodLabel } = useMemo(() => {
+    if (!rows || !rows.length) return { periodRows: [] as TeamGameRow[], periodLabel: "" };
+    const latestYear = t.years[t.years.length - 1]?.y;
+    if (latestYear) {
+      const yRows = rows.filter((r) => r[0].startsWith(latestYear));
+      if (yRows.length >= 12) return { periodRows: yRows, periodLabel: `${latestYear} · ${yRows.length}G` };
+    }
+    const recent = rows.slice(0, 50);
+    return { periodRows: recent, periodLabel: `${recent.length}G` };
+  }, [rows, t.years]);
+
+  const agg = useMemo(() => (periodRows.length ? teamAgg(periodRows) : null), [periodRows]);
+  const tags = useMemo(() => (agg ? playstyleTags(agg) : []), [agg]);
+  const fresh = periodRows.map((r) => r[0]).find((d) => isFresh(d));
+  const [hidden, reveal] = useHidden(`team-playstyle:${t.u}`, fresh);
+
+  if (!agg || agg.g < 10 || !agg.tl || agg.tl.n < 6) return null;
+  const e = agg.tl;
+  const signedVal = (v: number | null | undefined) => (v == null ? "–" : `${v > 0 ? "+" : ""}${fmtNum(v)}`);
+  const pctVal = (v: number | null | undefined) => (v == null ? "–" : `${fmtDec(v)}%`);
+
+  const metrics: { label: string; value: string; sub?: string; pct: number; good?: boolean }[] = [
+    {
+      label: "GD@15",
+      value: signedVal(e.gd15),
+      sub: `@10 ${signedVal(e.gd10)} · @20 ${signedVal(e.gd20)}`,
+      pct: e.gd15 == null ? 50 : Math.max(8, Math.min(96, ((e.gd15 + 1500) / 3000) * 100)),
+      good: e.gd15 != null ? e.gd15 >= 0 : undefined,
+    },
+    {
+      label: tl("Ahead at 15"),
+      value: pctVal(e.lead15),
+      sub: tl("Win {a} ahead · {b} behind", {
+        a: winRate(e.ahead[1], e.ahead[0]),
+        b: winRate(e.behind[1], e.behind[0]),
+      }),
+      pct: e.lead15 ?? 50,
+      good: e.lead15 != null ? e.lead15 >= 50 : undefined,
+    },
+    {
+      label: tl("First blood"),
+      value: pctVal(e.fb),
+      pct: e.fb ?? 50,
+      good: e.fb != null ? e.fb >= 50 : undefined,
+    },
+    {
+      label: tl("First tower"),
+      value: pctVal(e.ft),
+      pct: e.ft ?? 50,
+      good: e.ft != null ? e.ft >= 50 : undefined,
+    },
+    {
+      label: tl("First dragon"),
+      value: pctVal(e.fd),
+      pct: e.fd ?? 50,
+      good: e.fd != null ? e.fd >= 50 : undefined,
+    },
+    {
+      label: "CKPM",
+      value: agg.ckpm == null ? "–" : fmtDec(agg.ckpm, 2),
+      sub: agg.min != null ? tl("{n} min on average", { n: fmtDec(agg.min, 1) }) : tl("Kills per minute, both teams"),
+      pct: agg.ckpm == null ? 50 : Math.max(10, Math.min(96, (agg.ckpm / 1.5) * 100)),
+    },
+  ];
+
+  return (
+    <Section
+      title={`${tl("Playstyle")} · ${tl("Early game")}`}
+      right={
+        hidden ? (
+          <RevealButton onReveal={reveal} small />
+        ) : (
+          <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+            <span className="text-rw-muted font-mono">{periodLabel}</span>
+            <HubLink to={{ kind: "team", slug: t.u, tab: "stats" }} className="text-rw-accent hover:underline font-semibold">
+              {tl("Stats")} · {tl("Open →")}
+            </HubLink>
+            <SectionCard
+              section={tl("Playstyle")}
+              name={t.name}
+              sub={periodLabel}
+              rows={() => [
+                ...tags.map((x) => ({ label: x.tag, sub: x.why, win: x.good })),
+                ...metrics.map((m) => ({ label: m.label, sub: m.sub, value: m.value, win: m.good })),
+              ]}
+            />
+          </span>
+        )
+      }
+      share={`${t.u}-playstyle`}
+    >
+      {hidden ? (
+        <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
+      ) : (
+        <div className="space-y-2.5">
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {tags.map((x) => (
+                <span
+                  key={x.tag}
+                  title={x.why}
+                  className={`px-2.5 py-1 rounded-full border text-[11px] ${
+                    x.good === true
+                      ? "border-rw-teal/60 bg-rw-teal/10 text-rw-teal"
+                      : x.good === false
+                        ? "border-rw-red/60 bg-rw-red/10 text-rw-red"
+                        : "border-rw-border bg-rw-bg/60 text-rw-sub"
+                  }`}
+                >
+                  <span className="font-semibold">{x.tag}</span> <span className="text-rw-muted">· {x.why}</span>
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+            {metrics.map((m) => (
+              <div key={m.label} className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 flex flex-col justify-between gap-1.5">
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted truncate">{m.label}</div>
+                  <div
+                    className={`mt-0.5 text-sm font-bold font-mono tabular-nums ${
+                      m.good === true ? "text-rw-teal" : m.good === false ? "text-rw-red" : "text-rw-text"
+                    }`}
+                  >
+                    {m.value}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="h-1.5 rounded-full bg-rw-raised overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${
+                        m.good === true ? "bg-rw-teal" : m.good === false ? "bg-rw-red/80" : "bg-rw-accent"
+                      }`}
+                      style={{ width: `${Math.round(m.pct)}%` }}
+                    />
+                  </div>
+                  {m.sub && <div className="text-[10px] text-rw-muted truncate" title={m.sub}>{m.sub}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+          {tags.length > 0 && (
+            <p className="text-[10px] text-rw-muted">{tl("Compared with every pro team season since 2024: a label means the top or bottom fifth.")}</p>
+          )}
+        </div>
+      )}
+    </Section>
+  );
+};
+
 
