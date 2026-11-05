@@ -172,9 +172,14 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
           {(player || item || champ || year) && (
             <span className="flex flex-wrap gap-1.5 items-center">
               {who && (
-                <button type="button" onClick={() => set({ player: undefined })} className={chip} title={tl("Clear")}>
-                  {who[0]} ✕
-                </button>
+                <span className="flex items-center gap-1">
+                  <button type="button" onClick={() => set({ player: undefined })} className={chip} title={tl("Clear")}>
+                    {who[0]} ✕
+                  </button>
+                  <HubLink to={{ kind: "player", slug: player }} className="text-[11px] text-rw-accent hover:underline" title={who[0]}>
+                    →
+                  </HubLink>
+                </span>
               )}
               {itemRow && (
                 <button type="button" onClick={() => set({ item: undefined })} className={chip} title={tl("Clear")}>
@@ -182,9 +187,14 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
                 </button>
               )}
               {champ && (
-                <button type="button" onClick={() => set({ champ: undefined })} className={chip} title={tl("Clear")}>
-                  {champRow && <ChampIcon name={champRow[0]} size={16} />} {champLabel} ✕
-                </button>
+                <span className="flex items-center gap-1">
+                  <button type="button" onClick={() => set({ champ: undefined })} className={chip} title={tl("Clear")}>
+                    {champRow && <ChampIcon name={champRow[0]} size={16} />} {champLabel} ✕
+                  </button>
+                  <HubLink to={{ kind: "champ", slug: champ }} className="text-[11px] text-rw-accent hover:underline" title={champLabel}>
+                    →
+                  </HubLink>
+                </span>
               )}
               {year && (
                 <button type="button" onClick={() => set({ year: undefined })} className={chip} title={tl("Clear")}>
@@ -252,7 +262,27 @@ const PlayerItemsView: React.FC<{
         </Section>
       );
     return (
-      <Section title={label} right={<ItemIcon name={hit![0]} size={22} />}>
+      <Section
+        title={label}
+        right={
+          <span className="flex items-center gap-2">
+            <SectionCard
+              section={tl("Item history")}
+              name={`${name} · ${label}`}
+              sub={`${fmtNum(g.length)}G${scope ? ` · ${scope}` : ""}`}
+              rows={() =>
+                g.slice(0, 12).map((r) => ({
+                  label: `${champName(r[2])} ${tl("vs")} ${r[8]}`,
+                  sub: `${r[9]} · ${fmtDate(r[0], false)}`,
+                  value: `${r[3]}/${r[4]}/${r[5]}`,
+                  win: Boolean(r[6]),
+                }))
+              }
+            />
+            <ItemIcon name={hit![0]} size={22} />
+          </span>
+        }
+      >
         {scope && <p className="text-[11px] text-rw-accent">{scope}</p>}
         <p className="text-sm text-rw-text">
           <span className="font-bold text-rw-teal">{tl("Yes.")}</span>{" "}
@@ -456,7 +486,29 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
   const total = rows.reduce((s, r) => s + r.g, 0);
   const shown = all ? rows : rows.slice(0, 100);
   return (
-    <Section title={title} right={head.data ? <ItemIcon name={head.data.n} size={22} /> : undefined}>
+    <Section
+      title={title}
+      right={
+        <span className="flex items-center gap-2">
+          {rows.length > 0 && (
+            <SectionCard
+              section={title}
+              name={`${label} · ${champLabel}`}
+              sub={`${fmtNum(total)}G · ${fmtNum(rows.length)} ${tl("Players")}`}
+              rows={() =>
+                rows.slice(0, 12).map((r, i) => ({
+                  label: `#${i + 1} · ${players?.[r.k]?.[0] || "–"}`,
+                  sub: yearSpan(r.ys),
+                  value: `${fmtNum(r.g)}G`,
+                  win: true,
+                }))
+              }
+            />
+          )}
+          {head.data && <ItemIcon name={head.data.n} size={22} />}
+        </span>
+      }
+    >
       {!rows.length ? (
         <p className="text-sm text-rw-text">
           <span className="font-bold text-rw-red">{tl("No.")}</span> {tl("No pro game in the stats ended with this item.")}
@@ -515,7 +567,28 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
   const label = itemName(head.data?.n || item);
   const y = st.data;
   return (
-    <Section title={tl("Who built {item} in {year}", { item: label, year })} right={head.data ? <ItemIcon name={head.data.n} size={22} /> : undefined}>
+    <Section
+      title={tl("Who built {item} in {year}", { item: label, year })}
+      right={
+        <span className="flex items-center gap-2">
+          {y && y.p.length > 0 && (
+            <SectionCard
+              section={tl("Who built {item} in {year}", { item: label, year })}
+              name={`${label} · ${year}`}
+              sub={`${fmtNum(y.g)}G · ${fmtNum(y.np)} ${tl("Players")}`}
+              rows={() =>
+                y.p.slice(0, 12).map(([k, g], i) => ({
+                  label: `#${i + 1} · ${players?.[k]?.[0] || "–"}`,
+                  value: `${fmtNum(g)}G`,
+                  win: true,
+                }))
+              }
+            />
+          )}
+          {head.data && <ItemIcon name={head.data.n} size={22} />}
+        </span>
+      }
+    >
       {!y ? (
         <p className="text-sm text-rw-text">
           <span className="font-bold text-rw-red">{tl("No.")}</span> {tl("No pro game in the stats ended with this item.")}
@@ -569,7 +642,26 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
   const max = Math.max(1, ...list.map((r) => r[2]));
   const shown = all || f ? list : list.slice(0, 60);
   return (
-    <Section title={tl("Item stats")}>
+    <Section
+      title={tl("Item stats")}
+      right={
+        shown.length > 0 ? (
+          <SectionCard
+            section={tl("Item stats")}
+            name={tl("Item history")}
+            sub={scope || undefined}
+            rows={() =>
+              shown.slice(0, 12).map((r, i) => ({
+                label: `#${i + 1} · ${itemName(r[0])}`,
+                sub: `${fmtNum(r[2])}G · ${fmtNum(r[3])} ${tl("Players")}`,
+                value: r[4] != null ? winRate(r[4], r[2]) : `${fmtNum(r[2])}G`,
+                win: r[4] != null && r[2] ? r[4] / r[2] >= 0.5 : true,
+              }))
+            }
+          />
+        ) : undefined
+      }
+    >
       {scope && (
         <p className="text-[11px] text-rw-sub">
           <span className="text-rw-accent">{scope}</span> · {tl("Pick an item to see who built it.")}

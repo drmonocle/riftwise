@@ -7,7 +7,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { tl, tn, tc, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
-import { loadAliases, loadChampGames, loadChampIndex } from "../../hub/data";
+import { loadAliases, loadChampGames, loadChampIndex, prettySlug } from "../../hub/data";
 import type { ChampGame, ChampGamesFile, ChampPick } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
 import { SITE_URL } from "../../platform";
@@ -556,6 +556,48 @@ const FinderBody: React.FC<{
                   })
                 }
               />
+              {q.get("team") && q.get("vs") && (
+                <>
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      query: new URLSearchParams({
+                        a: teamOption(opts.teams, q.get("team")) || q.get("team")!,
+                        b: teamOption(opts.teams, q.get("vs")) || q.get("vs")!,
+                      }).toString(),
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      query: new URLSearchParams({
+                        a: teamOption(opts.teams, q.get("team")) || q.get("team")!,
+                        b: teamOption(opts.teams, q.get("vs")) || q.get("vs")!,
+                      }).toString(),
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                </>
+              )}
+              {champs[0] && q.get("vschamp") && (
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: new URLSearchParams({
+                      champ: prettySlug(champs[0]),
+                      vs: q.get("vschamp")!,
+                    }).toString(),
+                  }}
+                  className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                >
+                  {tl("Counter-pick finder")} →
+                </HubLink>
+              )}
             </div>
             <div className="overflow-x-auto">
               <STable ref={tableRef} className="w-full text-xs">
@@ -723,10 +765,10 @@ const Cohort: React.FC<{ found: Found; sideCond: boolean; champ: string; player:
         <ul className="grid grid-cols-2 gap-x-3 gap-y-1">
           {rows.map(([c, [g, w]]) => (
             <li key={c} className="flex items-center justify-between gap-1 min-w-0">
-              <span className="flex items-center gap-1 min-w-0">
+              <HubLink to={{ kind: "champ", slug: prettySlug(c) }} className="flex items-center gap-1 min-w-0 hover:text-rw-accent">
                 <ChampIcon name={c} size={16} />
-                <span className="truncate text-rw-text">{champName(c)}</span>
-              </span>
+                <span className="truncate text-rw-text hover:text-rw-accent">{champName(c)}</span>
+              </HubLink>
               <span className="text-rw-sub tabular-nums shrink-0">
                 {g}
                 {wr ? ` · ${Math.round((w / g) * 100)}%` : ` · ${Math.round((g / n) * 100)}%`}
@@ -808,12 +850,14 @@ const Picks: React.FC<{ list: ChampPick[] }> = ({ list }) => (
   <td className={td}>
     <span className="flex gap-0.5">
       {list.map((p, i) => (
-        <span
+        <HubLink
           key={`${p[0]}-${i}`}
+          to={{ kind: "champ", slug: prettySlug(p[0]) }}
           title={p[8] ? `${p[8]}: ${champName(p[0])}` : champName(p[0])}
+          className="hover:opacity-80"
         >
           <ChampIcon name={p[0]} size={20} />
-        </span>
+        </HubLink>
       ))}
     </span>
   </td>
