@@ -13,6 +13,7 @@ import { navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, Section, useLoad, usePageTitle } from "./ui";
 import { SortTable, type Column } from "./SortTable";
+import { SectionCard } from "./BroadcastCard";
 
 type Row = { c: string; role: number; g: number; w: number; gd: number | null; csd?: number | null };
 
@@ -182,6 +183,15 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               </option>
             ))}
           </select>
+          {slug && cName && (
+            <HubLink
+              to={{ kind: "champ", slug }}
+              className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-rw-accent/50 bg-rw-accent/10 text-rw-accent hover:bg-rw-accent/20 font-semibold"
+            >
+              {rawChamp && <ChampIcon name={rawChamp} size={16} />}
+              {cName} →
+            </HubLink>
+          )}
         </div>
       </div>
       {!slug && index.data && (
@@ -202,29 +212,77 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
         <>
           {(good.length > 0 || bad.length > 0) && (
             <div className="rw-span grid sm:grid-cols-2 gap-3">
-              <Section title={tl("{champ} does best against", { champ: cName })}>
-                <ul className="text-xs space-y-1">
+              <Section
+                title={tl("{champ} does best against", { champ: cName })}
+                right={
+                  <SectionCard
+                    section={tl("{champ} does best against", { champ: cName })}
+                    name={cName}
+                    sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
+                    rows={() =>
+                      good.map((x) => ({
+                        label: champName(x.c),
+                        sub: `${x.role >= 0 ? `${roleName(ROLES[x.role])} · ` : ""}${x.g}G${x.gd != null ? ` · ${x.gd > 0 ? "+" : ""}${x.gd} GD@15` : ""}`,
+                        value: `${Math.round((x.w / x.g) * 100)}%`,
+                        win: true,
+                      }))
+                    }
+                  />
+                }
+              >
+                <ul className="text-xs space-y-1.5">
                   {good.map((x) => (
                     <li key={x.c + x.role} className="flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex items-center gap-1.5 min-w-0 truncate">
                         <ChampLink name={x.c} size={18} /> <span className="text-rw-muted">{x.role >= 0 ? roleName(ROLES[x.role]) : ""}</span>
                       </span>
-                      <span className="tabular-nums text-rw-teal font-semibold">
-                        {Math.round((x.w / x.g) * 100)}% <span className="text-rw-muted font-normal">({finderLink(x.c, x.g)})</span>
+                      <span className="tabular-nums text-rw-teal font-semibold shrink-0">
+                        {Math.round((x.w / x.g) * 100)}%{" "}
+                        {x.gd != null && (
+                          <span className="text-[11px] font-mono text-rw-sub font-normal">
+                            · {x.gd > 0 ? "+" : ""}
+                            {x.gd} GD@15{" "}
+                          </span>
+                        )}
+                        <span className="text-rw-muted font-normal">({finderLink(x.c, x.g)})</span>
                       </span>
                     </li>
                   ))}
                 </ul>
               </Section>
-              <Section title={tl("{champ} struggles against", { champ: cName })}>
-                <ul className="text-xs space-y-1">
+              <Section
+                title={tl("{champ} struggles against", { champ: cName })}
+                right={
+                  <SectionCard
+                    section={tl("{champ} struggles against", { champ: cName })}
+                    name={cName}
+                    sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
+                    rows={() =>
+                      bad.map((x) => ({
+                        label: champName(x.c),
+                        sub: `${x.role >= 0 ? `${roleName(ROLES[x.role])} · ` : ""}${x.g}G${x.gd != null ? ` · ${x.gd > 0 ? "+" : ""}${x.gd} GD@15` : ""}`,
+                        value: `${Math.round((x.w / x.g) * 100)}%`,
+                        win: false,
+                      }))
+                    }
+                  />
+                }
+              >
+                <ul className="text-xs space-y-1.5">
                   {bad.map((x) => (
                     <li key={x.c + x.role} className="flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex items-center gap-1.5 min-w-0 truncate">
                         <ChampLink name={x.c} size={18} /> <span className="text-rw-muted">{x.role >= 0 ? roleName(ROLES[x.role]) : ""}</span>
                       </span>
-                      <span className="tabular-nums text-rw-red font-semibold">
-                        {Math.round((x.w / x.g) * 100)}% <span className="text-rw-muted font-normal">({finderLink(x.c, x.g)})</span>
+                      <span className="tabular-nums text-rw-red font-semibold shrink-0">
+                        {Math.round((x.w / x.g) * 100)}%{" "}
+                        {x.gd != null && (
+                          <span className="text-[11px] font-mono text-rw-sub font-normal">
+                            · {x.gd > 0 ? "+" : ""}
+                            {x.gd} GD@15{" "}
+                          </span>
+                        )}
+                        <span className="text-rw-muted font-normal">({finderLink(x.c, x.g)})</span>
                       </span>
                     </li>
                   ))}
@@ -233,7 +291,25 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
             </div>
           )}
           <div className="rw-span">
-            <Section title={tl("Every lane matchup: {champ}", { champ: cName })} share={`riftwise-counters-${slug}`}>
+            <Section
+              title={tl("Every lane matchup: {champ}", { champ: cName })}
+              right={
+                <SectionCard
+                  section={tl("Every lane matchup: {champ}", { champ: cName })}
+                  name={cName}
+                  sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
+                  rows={() =>
+                    rows.slice(0, 14).map((x) => ({
+                      label: champName(x.c),
+                      sub: `${x.role >= 0 ? `${roleName(ROLES[x.role])} · ` : ""}${x.g}G${x.gd != null ? ` · ${x.gd > 0 ? "+" : ""}${x.gd} GD@15` : ""}`,
+                      value: `${Math.round((x.w / x.g) * 100)}%`,
+                      win: x.w / x.g >= 0.5,
+                    }))
+                  }
+                />
+              }
+              share={`riftwise-counters-${slug}`}
+            >
               <p className="text-[11px] text-rw-muted">
                 {span === "12m"
                   ? `${tl("Last 12 months")} · ${tl("{n} games with a lane opponent in pro play", { n: rows.reduce((s, r) => s + r.g, 0) })}`
@@ -243,6 +319,42 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               <OeCredit />
             </Section>
           </div>
+          {data.data.ch?.duos && data.data.ch.duos.length > 0 && (
+            <div className="rw-span">
+              <Section
+                title={tl("Bot lane partners")}
+                right={
+                  <SectionCard
+                    section={tl("Bot lane partners")}
+                    name={cName}
+                    rows={() =>
+                      data.data!.ch!.duos!.slice(0, 12).map(([pc, g, w]) => ({
+                        label: champName(pc),
+                        sub: `${g}G`,
+                        value: `${Math.round((w / g) * 100)}%`,
+                        win: w / g >= 0.5,
+                      }))
+                    }
+                  />
+                }
+              >
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-xs">
+                  {data.data.ch.duos.slice(0, 10).map(([pc, g, w]) => {
+                    const wr = Math.round((w / g) * 100);
+                    return (
+                      <div key={pc} className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 flex items-center justify-between gap-2">
+                        <ChampLink name={pc} size={20} />
+                        <div className="text-right shrink-0">
+                          <div className={`font-mono font-bold tabular-nums ${wr >= 50 ? "text-rw-teal" : "text-rw-red"}`}>{wr}%</div>
+                          <div className="text-[10px] text-rw-muted font-mono">{g}G</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Section>
+            </div>
+          )}
         </>
       )}
       {slug && !data.loading && !data.data && <p className="text-xs text-rw-sub">{tl("No lane matchups for this champion yet.")}</p>}

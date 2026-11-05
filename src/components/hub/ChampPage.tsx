@@ -455,7 +455,24 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         </Section>
       )}
       {showDuos && (
-        <Section title={tl("Bot lane partners")}>
+        <Section
+          title={tl("Bot lane partners")}
+          right={
+            <SectionCard
+              section={tl("Bot lane partners")}
+              name={champName(c.name)}
+              rows={() =>
+                (c.duos || []).slice(0, 12).map(([pc, g, w]) => ({
+                  label: champName(pc),
+                  sub: `${g}G`,
+                  value: pctOf(w, g),
+                  win: w / g >= 0.5,
+                }))
+              }
+            />
+          }
+          share={`${c.u}-bot-duos`}
+        >
           <STable className="w-full text-xs">
             <thead>
               <tr>
@@ -482,22 +499,37 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
       <Section
         title={tl("Most games on {champion}", { champion: champName(c.name) })}
         right={
-          recentPlayersList.length > 0 ? (
-            <span className="flex gap-1">
-              {[false, true].map((recent) => (
-                <button
-                  key={String(recent)}
-                  type="button"
-                  onClick={() => setPlayersRecent(recent)}
-                  className={`px-2 py-0.5 rounded text-[11px] border ${
-                    recent === playersRecent ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub"
-                  }`}
-                >
-                  {recent ? tl("Last 12 months") : tl("All time")}
-                </button>
-              ))}
-            </span>
-          ) : undefined
+          <span className="flex flex-wrap items-center gap-2">
+            {recentPlayersList.length > 0 && (
+              <span className="flex gap-1">
+                {[false, true].map((recent) => (
+                  <button
+                    key={String(recent)}
+                    type="button"
+                    onClick={() => setPlayersRecent(recent)}
+                    className={`px-2 py-0.5 rounded text-[11px] border ${
+                      recent === playersRecent ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub"
+                    }`}
+                  >
+                    {recent ? tl("Last 12 months") : tl("All time")}
+                  </button>
+                ))}
+              </span>
+            )}
+            <SectionCard
+              section={tl("Most games on {champion}", { champion: champName(c.name) })}
+              name={champName(c.name)}
+              sub={playersRecent ? tl("Last 12 months") : tl("All time")}
+              rows={() =>
+                (playersRecent ? recentPlayersList : c.players).slice(0, 12).map((p) => ({
+                  label: p.n,
+                  sub: `${p.g}G · ${fmtN(p.kda)} ${tl("KDA")}`,
+                  value: winRate(p.w, p.g),
+                  win: p.w / Math.max(1, p.g) >= 0.5,
+                }))
+              }
+            />
+          </span>
         }
       >
         <STable className="w-full text-xs">
