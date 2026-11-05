@@ -448,7 +448,14 @@ const BracketNow: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Bracket
   const none = () => {};
   return (
     <div className="rw-span">
-      <Section title={tl("Bracket")}>
+      <Section
+        title={tl("Bracket")}
+        right={
+          res.matches.some((m) => m.w) ? (
+            <BroadcastCardButton data={() => msiBracketCard(res, byU, d.name, kind)} name={`${kind}-${d.year}-bracket`} label={tl("Overview card")} />
+          ) : undefined
+        }
+      >
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 items-start">
           {cols.map((c) => {
             const ms = res.matches.filter((m) => m.col === c);
@@ -1010,6 +1017,22 @@ function bracketPicksCard(ko: ReturnType<typeof runKnockout>, byU: Map<string, W
   return listCard({ section: tl("My Worlds bracket"), name: event, sub: "riftwise.gg/stats/worlds", rows });
 }
 
+function msiBracketCard(res: ReturnType<typeof runBracket>, byU: Map<string, WTeam>, event: string, kind: "msi" | "first-stand") {
+  const code = (u: string) => byU.get(u)?.c || u;
+  const rows = [
+    ...(res.champion ? [{ label: byU.get(res.champion)?.n || res.champion, sub: tl("Champion"), value: "🏆" }] : []),
+    ...res.matches
+      .slice()
+      .reverse()
+      .map((m) => ({
+        label: `${code(m.a)} vs ${code(m.b)}`,
+        sub: tl(COL_LABELS[m.col] || m.col),
+        value: m.w ? code(m.w === 1 ? m.a : m.b) : "?",
+      })),
+  ];
+  return listCard({ section: tl("Bracket"), name: event, sub: `riftwise.gg/stats/${kind}`, rows });
+}
+
 const Records: React.FC<{ rec: Record<string, [number, number]>; byU: Map<string, WTeam> }> = ({ rec, byU }) => {
   const groups = ["3-0", "3-1", "3-2", "2-3", "1-3", "0-3"].map((k) => ({ k, us: Object.keys(rec).filter((u) => rec[u].join("-") === k) })).filter((g) => g.us.length);
   if (!groups.length) return null;
@@ -1151,7 +1174,15 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
   return (
     <div className="space-y-4">
       {!live && <p className="text-[11px] text-rw-muted">{tl("Chances use today's power ratings, not the ones from that year.")}</p>}
-      <Section title={tl("Bracket picker")} share={`${kind}-${d.year}-bracket`}>
+      <Section
+        title={tl("Bracket picker")}
+        share={`${kind}-${d.year}-bracket`}
+        right={
+          res.matches.some((m) => m.w) ? (
+            <BroadcastCardButton data={() => msiBracketCard(res, byU, d.name, kind)} name={`${kind}-${d.year}-my-bracket`} label={tl("Overview card")} />
+          ) : undefined
+        }
+      >
         <p className="text-[11px] text-rw-muted">
           {kind === "msi"
             ? tl("Double elimination: a team is out after its second loss; upper-bracket losers drop to the lower bracket. Every match is best of {n}.", { n: br.nodes[0].bo })
