@@ -26,6 +26,7 @@ import { H2HMeter } from "../H2HMeter";
 import { tl, tc, locale } from "../../i18n";
 import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 import { riotImg } from "../../riotImage";
+import { prettySlug } from "../../hub/data";
 import { navigateHub } from "../../hub/route";
 import { lazyPart } from "../../lazyPart";
 import { formatMatchTime } from "../../matchTime";
@@ -538,7 +539,14 @@ const LiveMatchBlock: React.FC<{
                 : tl("Match In Progress")}
             </span>
             <span className="text-rw-sub">
-              · {m.leagueName}
+              ·{" "}
+              <button
+                type="button"
+                onClick={() => navigateHub({ kind: "league", slug: prettySlug(m.leagueSlug || m.leagueName) })}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {m.leagueName}
+              </button>
               {m.blockName ? ` · ${m.blockName}` : ""} · {tl("Best of {n}", { n: m.bestOf })}
             </span>
           </span>
@@ -828,7 +836,13 @@ const NextMatchCard: React.FC<{
       <div className={`flex flex-col items-center text-center ${compact ? "p-3" : "p-4 sm:p-6"}`}>
         {/* League & Format Badge */}
         <div className="flex items-center gap-2 text-xs text-rw-sub mb-4 font-medium">
-          <span className="font-semibold text-rw-accent">{m.leagueName}</span>
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "league", slug: prettySlug(m.leagueSlug || m.leagueName) })}
+            className="font-semibold text-rw-accent hover:underline"
+          >
+            {m.leagueName}
+          </button>
           <span>·</span>
           <span className="font-mono bg-rw-bg px-2 py-0.5 rounded border border-rw-border">{tl("Best of {n}", { n: m.bestOf })}</span>
         </div>

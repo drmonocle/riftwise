@@ -12,9 +12,12 @@ import { computeHeadToHead } from "../helpers";
 import { clickable } from "../a11y";
 import { riotImg } from "../riotImage";
 import { teamForm, useMatchRatings } from "../hub/matchRatings";
+import { prettySlug } from "../hub/data";
+import { navigateHub } from "../hub/route";
 import { AddToCalendarMenu } from "./AddToCalendarMenu";
 import { MatchPrepButton } from "./MatchPrepButton";
 import { MatchOverviewButton } from "./MatchOverviewButton";
+import { SectionCard } from "./hub/BroadcastCard";
 
 // the one-line layout once the table itself is 900 px wide; below that two or three lines a match. Every column has
 // a set width (the buttons' too: an "auto" one was empty in the header row, so its columns sat ~75 px right of the rows').
@@ -45,7 +48,21 @@ export const UpNextTable: React.FC<{
         {tl("Form")}
       </span>
       <span>{tl("Time")}</span>
-      <span />
+      <span className="flex justify-end">
+        {matches.length > 0 && (
+          <SectionCard
+            section={tl("Up Next")}
+            name={tl("Up Next")}
+            rows={() =>
+              matches.slice(0, 12).map((m) => ({
+                label: `${m.team1Name} vs ${m.team2Name}`,
+                sub: `${m.leagueName} · ${tc("short best of", "Bo{n}", { n: m.bestOf })}`,
+                value: timeOf(m.startTimeUtc),
+              }))
+            }
+          />
+        )}
+      </span>
     </div>
     {matches.map((m) => (
       <UpNextRow key={m.matchId} m={m} schedule={schedule} settings={settings} onOpenUrl={onOpenUrl} onSelectTeam={onSelectTeam} onToggleFollow={onToggleFollow} timeOf={timeOf} />
@@ -100,9 +117,14 @@ const UpNextRow: React.FC<{
   return (
     <div className={`px-3 py-2 ${GRID} flex flex-wrap items-center gap-x-3 gap-y-1`}>
       <span className="flex flex-col min-w-0 @max-[900px]:flex-1">
-        <span className="font-bold text-rw-accent text-[11px] truncate" title={m.leagueName}>
+        <button
+          type="button"
+          onClick={() => navigateHub({ kind: "league", slug: prettySlug(m.leagueSlug || m.leagueName) })}
+          className="font-bold text-rw-accent hover:underline text-[11px] truncate text-left"
+          title={m.leagueName}
+        >
           {m.leagueName}
-        </span>
+        </button>
         <span className="@max-[900px]:hidden text-rw-sub text-[10px] font-medium">{bo}</span>
       </span>
       <span className="flex items-center gap-1.5 min-w-0 @max-[900px]:order-last @max-[900px]:basis-full @min-[900px]:grid @min-[900px]:grid-cols-[minmax(0,1fr)_auto_auto_auto_minmax(0,1fr)]">
@@ -116,9 +138,14 @@ const UpNextRow: React.FC<{
         <span className="flex items-center gap-3 @min-[900px]:flex-col @min-[900px]:items-stretch @min-[900px]:gap-0.5">
           <ChanceCell m={m} />
           {h2h && (
-            <span className="font-mono tabular-nums text-rw-sub text-[10px] @min-[900px]:text-center" title={tl("All-time head-to-head, in games")}>
+            <button
+              type="button"
+              onClick={() => navigateHub({ kind: "compare", mode: "team", a: prettySlug(m.team1Name), b: prettySlug(m.team2Name) })}
+              className="font-mono tabular-nums text-rw-sub hover:text-rw-accent hover:underline text-[10px] @min-[900px]:text-center"
+              title={tl("All-time head-to-head, in games")}
+            >
               H2H {h2h.team1Wins}–{h2h.team2Wins}
-            </span>
+            </button>
           )}
           <span className="@min-[900px]:hidden">
             <FormCell m={m} schedule={schedule} hidden={settings.spoilerMode} />
