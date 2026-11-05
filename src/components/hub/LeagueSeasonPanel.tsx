@@ -8,6 +8,7 @@ import { tl, roleName } from "../../i18n";
 import { loadLeagueSeason } from "../../hub/data";
 import type { EventPlayer } from "../../hub/types";
 import { HubLink, PlayerLink, Section, TeamLink, useLoad } from "./ui";
+import { SectionCard } from "./BroadcastCard";
 import { PLAYER_METRICS } from "./Ranks";
 
 const STANDOUT = ["kda", "dpm", "g15", "csm", "vsm", "kp"];
@@ -24,13 +25,29 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
     <Section
       title={tl("{name} {year} at a glance", { name, year })}
       right={
-        <span className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-semibold">
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold">
           <HubLink to={{ kind: "leaders", query: `league=${league}&year=${year}` }} className="text-rw-accent hover:underline">
             {tl("Full leaderboard")}
           </HubLink>
           <HubLink to={{ kind: "champions", query: `league=${league}&year=${year}` }} className="text-rw-accent hover:underline">
             {tl("Champion picks")}
           </HubLink>
+          {teams.length > 0 && (
+            <SectionCard
+              section={tl("{name} {year} at a glance", { name, year })}
+              sub={tl("Teams by record")}
+              name={`${league}-${year}-glance`}
+              rows={() =>
+                teams.slice(0, 10).map((t, idx) => ({
+                  rank: idx + 1,
+                  team: t.t,
+                  label: t.t,
+                  sub: `${t.w}-${t.g - t.w}`,
+                  value: `${Math.round((t.w / Math.max(1, t.g)) * 100)}%`,
+                }))
+              }
+            />
+          )}
         </span>
       }
       share={`riftwise-${league}-${year}-glance`}

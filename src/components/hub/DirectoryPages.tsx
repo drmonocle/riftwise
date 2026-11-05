@@ -9,6 +9,7 @@ import { loadHubIndex, loadHubIndexQuick, normText, prettySlug } from "../../hub
 import { navigateHub, type HubSection } from "../../hub/route";
 import type { SearchPlayerRow, SearchTeamRow } from "../../hub/types";
 import { SortTable, type Column } from "./SortTable";
+import { SectionCard } from "./BroadcastCard";
 import { card, fmtNum, Page, PlayerLink, TeamLink, useLoad, usePageTitle } from "./ui";
 
 /** rows shown before "Show more" (the whole list sorts and filters either way) */
@@ -122,6 +123,25 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
         </select>
         <SinceSelect years={years} value={since} onChange={(v) => set("since", v === THIS_YEAR ? null : v)} />
         <NameFilter value={words} onChange={(v) => set("q", v)} placeholder={tl("Filter by name or short name…")} />
+        {list.length > 0 && (
+          <SectionCard
+            section={tl("Every team")}
+            sub={region ? regionName(region, region) : tl("Every region")}
+            name={`teams-directory-${region || "all"}`}
+            rows={() =>
+              [...list]
+                .sort((a, b) => b[2] - a[2])
+                .slice(0, 10)
+                .map((t, idx) => ({
+                  rank: idx + 1,
+                  team: t[0],
+                  label: t[0],
+                  sub: [t[6] ? regionName(t[6], t[6]) : "", t[3] || ""].filter(Boolean).join(" · "),
+                  value: `${fmtNum(t[2])} ${tl("Games")}`,
+                }))
+            }
+          />
+        )}
       </Filters>
       <div className={card}>
         {list.length ? (
@@ -183,6 +203,25 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
         </select>
         <SinceSelect years={years} value={since} onChange={(v) => set("since", v === THIS_YEAR ? null : v)} />
         <NameFilter value={words} onChange={(v) => set("q", v)} placeholder={tl("Filter by name or team…")} />
+        {list.length > 0 && (
+          <SectionCard
+            section={tl("Every player")}
+            sub={role ? roleName(role) : tl("Every role")}
+            name={`players-directory-${role || "all"}`}
+            rows={() =>
+              [...list]
+                .sort((a, b) => b[3] - a[3])
+                .slice(0, 10)
+                .map((p, idx) => ({
+                  rank: idx + 1,
+                  team: p[2] || undefined,
+                  label: p[0],
+                  sub: [ROLE_OF[p[5]] ? roleName(ROLE_OF[p[5]]) : "", p[2] || "", p[4] || ""].filter(Boolean).join(" · "),
+                  value: `${fmtNum(p[3])} ${tl("Games")}`,
+                }))
+            }
+          />
+        )}
       </Filters>
       <div className={card}>
         {list.length ? (

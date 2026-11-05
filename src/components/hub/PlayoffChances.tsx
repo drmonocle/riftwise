@@ -9,6 +9,7 @@ import { loadRatings } from "../../hub/data";
 import type { HubEvent } from "../../hub/types";
 import { playoffOdds } from "../../hub/playoffOdds";
 import { chanceShade } from "../SwissStandings";
+import { SectionCard } from "./BroadcastCard";
 import { RevealButton, Section, TeamLink, useHidden, useLoad } from "./ui";
 
 const pctText = (p: number) => (p === 0 ? "0%" : p < 0.005 ? "<1%" : p > 0.995 && p < 1 ? ">99%" : `${Math.round(p * 100)}%`);
@@ -33,12 +34,28 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
         hidden ? (
           <RevealButton onReveal={reveal} small />
         ) : (
-          <span data-nocapture="1" className="flex rounded border border-rw-border divide-x divide-rw-border overflow-hidden text-[11px]" role="group" aria-label={tl("Cut line")}>
-            {odds.cuts.map((k) => (
-              <button key={k} type="button" aria-pressed={k === cut} onClick={() => setPick(k)} className={seg(k === cut)}>
-                {tl("Top {n}", { n: k })}
-              </button>
-            ))}
+          <span className="flex flex-wrap items-center gap-2">
+            <span data-nocapture="1" className="flex rounded border border-rw-border divide-x divide-rw-border overflow-hidden text-[11px]" role="group" aria-label={tl("Cut line")}>
+              {odds.cuts.map((k) => (
+                <button key={k} type="button" aria-pressed={k === cut} onClick={() => setPick(k)} className={seg(k === cut)}>
+                  {tl("Top {n}", { n: k })}
+                </button>
+              ))}
+            </span>
+            <SectionCard
+              section={tl("Playoff chances")}
+              sub={`${e.n} · ${tl("Top {n}", { n: cut })}`}
+              name={`${e.u}-playoff-chances-top-${cut}`}
+              rows={() =>
+                rows.slice(0, 10).map((r, idx) => ({
+                  rank: idx + 1,
+                  team: r.name,
+                  label: r.name,
+                  sub: `${r.sw}-${r.sl} · #1 ${pctText(r.first)}`,
+                  value: pctText(r.top[ci]),
+                }))
+              }
+            />
           </span>
         )
       }

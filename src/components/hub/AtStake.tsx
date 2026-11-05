@@ -7,6 +7,7 @@ import { tl, locale } from "../../i18n";
 import { load } from "../../stats";
 import type { Match } from "../../types";
 import { findHubTeam, loadHubIndexQuick, type HubIndex } from "../../hub/data";
+import { MatchOverviewButton } from "../MatchOverviewButton";
 import { MatchPrepButton } from "../MatchPrepButton";
 import {
   type Note,
@@ -135,7 +136,8 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   ? tl("Live now")
                   : time(m.startTimeUtc)}
               </span>
-              <span className="ml-auto" data-nocapture="1">
+              <span className="ml-auto flex items-center gap-1" data-nocapture="1">
+                <MatchOverviewButton match={m} compact />
                 <MatchPrepButton match={m} compact />
               </span>
             </div>

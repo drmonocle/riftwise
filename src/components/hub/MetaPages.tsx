@@ -351,6 +351,12 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
             <HubLink to={{ kind: "best", query: `league=${l.u}` }} className={heroBtn(true)}>
               {tl("Best games in this league")}
             </HubLink>
+            <HubLink to={{ kind: "leaders", query: `league=${l.u}` }} className={heroBtn()}>
+              {tl("Full leaderboard")}
+            </HubLink>
+            <HubLink to={{ kind: "champions", query: `league=${l.u}` }} className={heroBtn()}>
+              {tl("Champion picks")}
+            </HubLink>
             {/* a league still playing: its own calendar and results feed (Riot names its leagues by the short name) */}
             {l.primary && l.s && years[0] && Number(years[0]) >= new Date().getFullYear() - 1 && <FollowFeeds leagues={[l.s]} />}
           </>
@@ -363,7 +369,24 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
       })()}
       <div className="grid gap-3 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] items-start [&>*:only-child]:col-span-full">
         {l.titles.length > 0 && (
-          <Section title={tl("Most titles")}>
+          <Section
+            title={tl("Most titles")}
+            right={
+              <SectionCard
+                section={tl("Most titles")}
+                sub={l.l}
+                name={`${l.u}-most-titles`}
+                rows={() =>
+                  l.titles.slice(0, 10).map((t, idx) => ({
+                    rank: idx + 1,
+                    team: t.t,
+                    label: t.t,
+                    value: String(t.n),
+                  }))
+                }
+              />
+            }
+          >
             <ul className="text-xs space-y-1">
               {l.titles.map((t) => (
                 <li key={t.t} className="flex justify-between gap-2 min-w-0">

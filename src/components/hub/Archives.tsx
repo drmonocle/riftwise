@@ -6,6 +6,7 @@ import { loadPlayerGames, loadPlayerItems, loadTeamSeries } from "../../hub/data
 import type { PlayerGameRow, TeamSeriesRow } from "../../hub/types";
 import { isFinishedItem } from "../../hub/ddragon";
 import { ratingTextClass } from "./BestPage";
+import { SectionCard } from "./BroadcastCard";
 import { ChampIcon, EventLink, Failed, fmtDate, HubLink, isFresh, ItemIcon, Loading, RevealButton, Section, TeamLink, useHidden, useLoad } from "./ui";
 
 const PAGE = 50;
@@ -116,6 +117,22 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
           {tn("{n} series", "{n} series", rows.length)}
           {!seriesHidden && <> · {tl("{w} won", { w: won })}</>}
         </span>
+        {!seriesHidden && shown.length > 0 && (
+          <SectionCard
+            section={`${tl("Every series")} · ${teamName}`}
+            sub={`${tn("{n} series", "{n} series", rows.length)} · ${tl("{w} won", { w: won })}`}
+            name={`${slug}-series-${year}`}
+            rows={() =>
+              shown.slice(0, 10).map((r, idx) => ({
+                rank: idx + 1,
+                team: r[1],
+                label: `${teamName} vs ${r[1]}`,
+                sub: `${r[5]} · ${fmtDate(r[0])}`,
+                value: `${r[3]}-${r[4]}`,
+              }))
+            }
+          />
+        )}
       </div>
       <SeriesList rows={shown} teamName={teamName} spoilerKey={`teamseries:${slug}:${year}:${q}`} />
     </div>
@@ -146,7 +163,27 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
   const ga = rows.reduce((t, r) => t + r[3], 0);
   const gb = rows.reduce((t, r) => t + r[4], 0);
   return (
-    <Section title={tl("Every series between them")}>
+    <Section
+      title={tl("Every series between them")}
+      right={
+        !hidden && rows.length > 0 ? (
+          <SectionCard
+            section={tl("Every series between them")}
+            sub={`${aName} ${wa} – ${rows.length - wa} ${bName} · ${tl("Games {a}–{b}", { a: ga, b: gb })}`}
+            name={`h2h-series-${a}-vs-${b}`}
+            rows={() =>
+              rows.slice(0, 10).map((r, idx) => ({
+                rank: idx + 1,
+                team: r[3] > r[4] ? aName : bName,
+                label: `${aName} ${r[3]} – ${r[4]} ${bName}`,
+                sub: `${r[5]} · ${fmtDate(r[0])}`,
+                value: r[3] > r[4] ? aName : bName,
+              }))
+            }
+          />
+        ) : undefined
+      }
+    >
       {rows.length === 0 ? (
         <p className="text-xs text-rw-sub">{tl("These two teams have never played each other.")}</p>
       ) : (
@@ -262,6 +299,22 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }>
           {!hidden && rows.length > 0 && <> · {tl("{pct} win rate", { pct: `${Math.round((won / rows.length) * 100)}%` })}</>}
           {!hidden && rows.length > 0 && <> · {tl("KDA {n}", { n: fmtDec((k + a) / Math.max(d, 1), 2) })}</>}
         </span>
+        {!hidden && shown.length > 0 && (
+          <SectionCard
+            section={`${tl("Every game")} · ${slug}`}
+            sub={`${tn("{n} game", "{n} games", rows.length)} · ${Math.round((won / rows.length) * 100)}%`}
+            name={`${slug}-games-${year}-${champ}`}
+            rows={() =>
+              shown.slice(0, 10).map((r, idx) => ({
+                rank: idx + 1,
+                champ: r[2],
+                label: `${champName(r[2])} (${r[3]}/${r[4]}/${r[5]}) vs ${r[8]}`,
+                sub: `${r[9]} · ${fmtDate(r[0])}`,
+                value: r[6] ? tc("short result", "W") : tc("short result", "L"),
+              }))
+            }
+          />
+        )}
         {hidden && <RevealButton onReveal={reveal} small />}
       </div>
       <ul className="text-xs space-y-1">
