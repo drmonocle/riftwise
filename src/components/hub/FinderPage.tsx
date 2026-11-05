@@ -32,6 +32,7 @@ import {
 } from "./ui";
 import { STable } from "../STable";
 import { csvSafe } from "../../helpers";
+import { SectionCard } from "./BroadcastCard";
 
 const sel =
   "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text max-w-[12rem]";
@@ -532,6 +533,29 @@ const FinderBody: React.FC<{
               >
                 {tl("CSV of all {n} games", { n: fmtNum(found.length) })}
               </button>
+              <SectionCard
+                section={tl("Game finder")}
+                name={[q.get("team"), q.get("champ") && champName(q.get("champ")!), q.get("player"), q.get("patch") && `Patch ${q.get("patch")}`]
+                  .filter(Boolean)
+                  .join(" · ") || name}
+                sub={
+                  sideCond
+                    ? `${won}-${found.length - won} (${Math.round((won / found.length) * 100)}%)`
+                    : tn("{n} game", "{n} games", found.length)
+                }
+                rows={() =>
+                  found.slice(0, 12).map(({ g, s }) => {
+                    const bWon = g[3] === 1;
+                    const winSide = sideCond ? (s === 0 ? bWon : !bWon) : undefined;
+                    return {
+                      label: `${g[10] || tl("Blue")} vs ${g[11] || tl("Red")}${g[15] ? ` (${tc("short game", "G{n}", { n: g[15] })})` : ""}`,
+                      sub: [events[g[2]]?.[1], g[1] && `P${g[1]}`, fmtDate(g[0])].filter(Boolean).join(" · "),
+                      value: g[4] != null ? `${fmtDec(g[4])}m` : bWon ? g[10] || tl("Blue") : g[11] || tl("Red"),
+                      win: winSide,
+                    };
+                  })
+                }
+              />
             </div>
             <div className="overflow-x-auto">
               <STable ref={tableRef} className="w-full text-xs">

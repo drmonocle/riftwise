@@ -12,7 +12,7 @@ import { loadWeekly } from "../../hub/data";
 import type { HubWeekly } from "../../hub/types";
 import { SITE_URL } from "../../platform";
 import { card, ChampLink, EventLink, fmtDate, HubLink, Page, PlayerLink, RevealButton, Section, TeamLink, th, td, useHidden, useLoad, usePageTitle } from "./ui";
-import { BroadcastCardButton, listCard } from "./BroadcastCard";
+import { BroadcastCardButton, listCard, SectionCard } from "./BroadcastCard";
 import { fmtRating, RatingBadge } from "./PlayerRating";
 
 // the records worth naming, with the Records page's titles
@@ -88,6 +88,50 @@ const CopyMarkdown: React.FC<{ w: HubWeekly }> = ({ w }) => {
   );
 };
 
+/** Short summary for X / Discord (with canonical link). */
+const CopyWeeklyPost: React.FC<{ w: HubWeekly; range: string }> = ({ w, range }) => {
+  const [done, setDone] = useState(false);
+  const text = () => {
+    const lines = [
+      `${tl("The week in pro League")} (${range}) — ${tn("{n} series", "{n} series", w.series)}, ${tn("{n} game", "{n} games", w.games)}`,
+    ];
+    if (w.upsets[0]) {
+      const u = w.upsets[0];
+      lines.push(`${tl("Biggest upsets")}: ${tl("{w} beat {l}", { w: u.w, l: u.l })} ${u.s} (${Math.round(u.p * 100)}%)`);
+    }
+    if (w.movers[0]) {
+      const m = w.movers[0];
+      lines.push(`${tl("Power rankings movers")}: ${m.n} (${m.chg > 0 ? "+" : ""}${m.chg} → ${m.r})`);
+    }
+    if (w.best[0]) {
+      const b = w.best[0];
+      lines.push(`${tl("Best games")}: ${b.a} vs ${b.b} (${b.r})`);
+    }
+    if (w.players?.[0]) {
+      const p = w.players[0];
+      lines.push(`${tl("Players of the week")}: ${p.n} (${p.rt.toFixed(1)})`);
+    }
+    lines.push(`${SITE_URL}stats/weekly`);
+    return lines.join("\n");
+  };
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        navigator.clipboard?.writeText(text()).then(() => {
+          setDone(true);
+          window.setTimeout(() => setDone(false), 1800);
+        })
+      }
+      title={`${tl("Copy post")}: ${tl("Copy a ready-to-post summary with the link, for X or Discord")}`}
+      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50"
+    >
+      {done ? <Check className="w-3.5 h-3.5 text-rw-teal" /> : <ClipboardCopy className="w-3.5 h-3.5" />}
+      {done ? tl("Copied") : tl("Copy post")}
+    </button>
+  );
+};
+
 export const WeeklyPage: React.FC = () => {
   usePageTitle(tl("The week in pro League"));
   const state = useLoad(loadWeekly, []);
@@ -123,6 +167,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             name={`riftwise-week-${w.to}`}
             label={tl("Overview card")}
           />
+          <CopyWeeklyPost w={w} range={range} />
           <CopyMarkdown w={w} />
         </div>
       </div>
@@ -133,7 +178,26 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
         </div>
       ) : (
         <div className="rw-span grid gap-3 md:grid-cols-2 3xl:grid-cols-3 items-start">
-          <Section title={tl("Biggest upsets")} share="weekly-upsets">
+          <Section
+            title={tl("Biggest upsets")}
+            right={
+              w.upsets.length > 0 ? (
+                <SectionCard
+                  section={tl("Biggest upsets")}
+                  name={range}
+                  rows={() =>
+                    w.upsets.map((u) => ({
+                      label: `${tl("{w} beat {l}", { w: u.w, l: u.l })} (${u.s})`,
+                      sub: `${u.t} · ${fmtDate(u.date)}`,
+                      value: pct(u.p),
+                      win: true,
+                    }))
+                  }
+                />
+              ) : undefined
+            }
+            share="weekly-upsets"
+          >
             {w.upsets.length ? (
               <ol className="text-xs space-y-1.5">
                 {w.upsets.map((u) => (
@@ -153,7 +217,26 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             )}
             <p className="text-[10px] text-rw-muted">{tl("The winner's chance before game 1, from the power rankings.")}</p>
           </Section>
-          <Section title={tl("Power rankings movers")} share="weekly-movers">
+          <Section
+            title={tl("Power rankings movers")}
+            right={
+              w.movers.length > 0 ? (
+                <SectionCard
+                  section={tl("Power rankings movers")}
+                  name={range}
+                  rows={() =>
+                    w.movers.map((m) => ({
+                      label: m.n,
+                      sub: `${m.lg} · ${m.r.toLocaleString(locale())}`,
+                      value: `${m.chg > 0 ? "▲" : "▼"}${Math.abs(m.chg)}`,
+                      win: m.chg > 0,
+                    }))
+                  }
+                />
+              ) : undefined
+            }
+            share="weekly-movers"
+          >
             {w.movers.length ? (
               <ol className="text-xs space-y-1">
                 {w.movers.map((m) => (
@@ -176,7 +259,24 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             )}
           </Section>
           {w.records.length > 0 && (
-            <Section title={tl("All-time records set")} share="weekly-records">
+            <Section
+              title={tl("All-time records set")}
+              right={
+                <SectionCard
+                  section={tl("All-time records set")}
+                  name={range}
+                  rows={() =>
+                    w.records.map((r) => ({
+                      label: tl(RECORD_TITLES[`${r.s}/${r.k}`] || r.k),
+                      sub: recordWho(r.r),
+                      value: recordValue(r.k, Number(r.r.v)),
+                      win: true,
+                    }))
+                  }
+                />
+              }
+              share="weekly-records"
+            >
               <ol className="text-xs space-y-1.5">
                 {w.records.map((r) => (
                   <li key={`${r.s}/${r.k}`} className="min-w-0">
@@ -195,7 +295,26 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
               </ol>
             </Section>
           )}
-          <Section title={tl("Best games")} share="weekly-best">
+          <Section
+            title={tl("Best games")}
+            right={
+              w.best.length > 0 ? (
+                <SectionCard
+                  section={tl("Best games")}
+                  name={range}
+                  rows={() =>
+                    w.best.map((b) => ({
+                      label: tl("{a} vs {b}, game {n}", { a: b.a, b: b.b, n: b.gn }),
+                      sub: `${b.t} · ${fmtDate(b.date)}`,
+                      value: String(b.r),
+                      win: true,
+                    }))
+                  }
+                />
+              ) : undefined
+            }
+            share="weekly-best"
+          >
             {w.best.length ? (
               <ol className="text-xs space-y-1.5">
                 {w.best.map((b) => (
@@ -215,7 +334,24 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             )}
           </Section>
           {w.players && w.players.length > 0 && (
-            <Section title={tl("Players of the week")} share="weekly-players">
+            <Section
+              title={tl("Players of the week")}
+              right={
+                <SectionCard
+                  section={tl("Players of the week")}
+                  name={range}
+                  rows={() =>
+                    w.players!.map((p, i) => ({
+                      label: `#${i + 1} · ${p.n}`,
+                      sub: [p.r ? roleName(p.r) : "", p.t, `${p.g}G`].filter(Boolean).join(" · "),
+                      value: fmtRating(p.rt),
+                      win: true,
+                    }))
+                  }
+                />
+              }
+              share="weekly-players"
+            >
               <ol className="text-xs space-y-1.5">
                 {w.players.map((p, i) => (
                   <li key={p.u || p.n} className="min-w-0">
@@ -246,7 +382,24 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             </Section>
           )}
           {w.champs && w.champs.length > 0 && (
-            <Section title={tl("Picks and bans this week")} share="weekly-champs">
+            <Section
+              title={tl("Picks and bans this week")}
+              right={
+                <SectionCard
+                  section={tl("Picks and bans this week")}
+                  name={range}
+                  rows={() =>
+                    w.champs!.slice(0, 12).map(([c, pk, bn, wn]) => ({
+                      label: champName(c),
+                      sub: `${pk} ${tl("Picks")} · ${bn} ${tl("Bans")}`,
+                      value: `${w.champGames ? `${Math.round(((pk + bn) / w.champGames) * 100)}%` : "–"}${pk ? ` · ${Math.round((wn / pk) * 100)}%` : ""}`,
+                      win: pk >= 3 ? wn / pk >= 0.5 : undefined,
+                    }))
+                  }
+                />
+              }
+              share="weekly-champs"
+            >
               <table className="w-full text-xs">
                 <thead>
                   <tr>

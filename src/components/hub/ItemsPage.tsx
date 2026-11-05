@@ -18,6 +18,7 @@ import { navigateHub } from "../../hub/route";
 import { isFinishedItem, itemName, useDDragon } from "../../hub/ddragon";
 import { card, ChampIcon, fmtDate, fmtNum, HubLink, ItemIcon, Loading, PlayerLink, Section, Stat, td, th, useHiddenCheck, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
+import { SectionCard } from "./BroadcastCard";
 
 const playerSlug = (r: SearchPlayerRow) => r[1] || prettySlug(r[0]);
 const sel = "bg-rw-bg border border-rw-border rounded px-2 py-1 text-xs text-rw-text";
@@ -276,7 +277,29 @@ const PlayerItemsView: React.FC<{
     .filter(([, g]) => g.length > 0)
     .sort((a, b) => b[1].length - a[1].length);
   return (
-    <Section title={tl("Every item {player} finished pro games with", { player: name })}>
+    <Section
+      title={tl("Every item {player} finished pro games with", { player: name })}
+      right={
+        list.length > 0 ? (
+          <SectionCard
+            section={tl("Item history")}
+            name={name}
+            sub={scope || undefined}
+            rows={() =>
+              list.slice(0, 12).map(([it, g]) => {
+                const won = g.filter((r) => r[6]).length;
+                return {
+                  label: itemName(it),
+                  sub: `${fmtNum(g.length)}G${g[0] ? ` · ${fmtDate(g[0][0], false)}` : ""}`,
+                  value: winRate(won, g.length),
+                  win: g.length ? won / g.length >= 0.5 : undefined,
+                };
+              })
+            }
+          />
+        ) : undefined
+      }
+    >
       {scope && <p className="text-[11px] text-rw-accent">{scope}</p>}
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <input type="search" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder={tl("Find an item…")} aria-label={tl("Find an item")} className={`${sel} w-48`} />
@@ -346,7 +369,27 @@ const ItemPlayersView: React.FC<{ slug: string; onPlayer: (slug: string) => void
   const it = st.data;
   const top = it.c?.[0];
   return (
-    <Section title={tl("Who built {item} most", { item: itemName(it.n) })} right={<ItemIcon name={it.n} size={22} />}>
+    <Section
+      title={tl("Who built {item} most", { item: itemName(it.n) })}
+      right={
+        <span className="flex items-center gap-2">
+          <SectionCard
+            section={tl("Who built {item} most", { item: itemName(it.n) })}
+            name={itemName(it.n)}
+            sub={`${fmtNum(it.g)}G · ${fmtNum(it.np)} ${tl("Players")}`}
+            rows={() =>
+              it.players.slice(0, 12).map(([n, , g, last], i) => ({
+                label: `#${i + 1} · ${n}`,
+                sub: fmtDate(last, false),
+                value: `${fmtNum(g)}G`,
+                win: true,
+              }))
+            }
+          />
+          <ItemIcon name={it.n} size={22} />
+        </span>
+      }
+    >
       {/* the item at a glance, then its years as columns (a column opens that year) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 rw-stats">
         <Stat label={tl("Games")} value={fmtNum(it.g)} sub={tl("ended with it")} />
