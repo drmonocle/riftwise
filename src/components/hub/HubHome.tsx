@@ -608,26 +608,31 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
 
 const chipClass = "px-2 py-0.5 rounded-full border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-line max-w-[14rem] truncate";
 
-/** The pages opened last on this device, as chips; a first visit (none yet) gets the week's most viewed instead. */
+/** The pages opened last on this device, plus the week's most viewed across all visitors. */
 const RecentPages: React.FC = () => {
   const recent = useRecentPages();
-  if (!recent.length) return <MostViewed />;
+  const recentShown = recent.slice(0, 8);
+  const recentKeys = useMemo(() => new Set(recentShown.map((r) => hubPathOf(r.route))), [recentShown]);
+  if (!recentShown.length) return <MostViewed />;
   return (
-    <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-      <span className="text-rw-muted font-semibold text-[10px] mr-1">{tl("Recently viewed")}</span>
-      {recent.slice(0, 8).map((r) => (
-        <HubLink key={hubPathOf(r.route)} to={r.route} className={chipClass}>
-          {r.title}
-        </HubLink>
-      ))}
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+        <span className="text-rw-muted font-semibold text-[10px] mr-1">{tl("Recently viewed")}</span>
+        {recentShown.map((r) => (
+          <HubLink key={hubPathOf(r.route)} to={r.route} className={chipClass}>
+            {r.title}
+          </HubLink>
+        ))}
+      </div>
+      <MostViewed exclude={recentKeys} />
     </div>
   );
 };
 
 /** The pages everyone opened most in the last seven days (src/hub/popular.ts); nothing until there are some. */
-const MostViewed: React.FC = () => {
+const MostViewed: React.FC<{ exclude?: Set<string> }> = ({ exclude }) => {
   const state = useLoad(loadPopular, []);
-  const list = (state.data || []).slice(0, 8);
+  const list = (state.data || []).filter((p) => !exclude?.has(hubPathOf(p.route))).slice(0, 8);
   if (!list.length) return null;
   return (
     <div className="flex flex-wrap items-center gap-1.5 text-[11px]">

@@ -7,15 +7,19 @@
  */
 import React, { useEffect, useState } from "react";
 import type { Match } from "../../types";
-import type { HubTeam } from "../../hub/types";
-import { tl, tc } from "../../i18n";
-import { findHubTeam, loadHubIndexQuick } from "../../hub/data";
+import type { HubTeam, TeamSeriesRow } from "../../hub/types";
+import { tl, tc, roleName } from "../../i18n";
+import { findHubTeam, loadHubIndexQuick, loadHubTeam, loadTeamSeries } from "../../hub/data";
 import { recentSchedule, RIOT_PREFIX } from "../../hub/riotMatch";
 import { useMatchRatings } from "../../hub/matchRatings";
 import { riotImg } from "../../riotImage";
 import { formatMatchTime } from "../../matchTime";
 import { MatchPrepButton } from "../MatchPrepButton";
-import { HubLink, Section, TeamLink } from "./ui";
+import { teamStarter } from "./MatchOverview";
+import { fmtDate, HubLink, Section, TeamLink } from "./ui";
+
+const ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"] as const;
+const ROLE_SHORT: Record<string, string> = { Top: "TOP", Jungle: "JGL", Mid: "MID", Bot: "BOT", Support: "SUP" };
 
 interface Coming {
   m: Match;
@@ -97,6 +101,31 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
   const chance = r?.series == null ? null : Math.round((c.us === 1 ? r.series : 1 - r.series) * 100);
   const h2h = c.opp ? t.opps.find((o) => o.u === c.opp) : undefined;
   const live = m.state === "inProgress";
+  const [oppTeam, setOppTeam] = useState<HubTeam | null>(null);
+  const [lastMeeting, setLastMeeting] = useState<TeamSeriesRow | null>(null);
+  useEffect(() => {
+    setOppTeam(null);
+    setLastMeeting(null);
+    if (!c.opp) return;
+    let alive = true;
+    loadHubTeam(c.opp)
+      .then((ot) => alive && setOppTeam(ot))
+      .catch(() => {});
+    loadTeamSeries(t.u)
+      .then((rows) => {
+        if (!alive) return;
+        const found = [...rows].filter((x) => x[2] === c.opp).sort((a, b) => (a[0] < b[0] ? 1 : -1))[0] || null;
+        setLastMeeting(found);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [c.opp, t.u]);
+  const lanePairs = oppTeam
+    ? ROLES.map((role) => ({ role, a: teamStarter(t, role), b: teamStarter(oppTeam, role) }))
+    : [];
+  const hasLanePairs = lanePairs.filter((lp) => lp.a && lp.b).length >= 3;
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px]">
@@ -147,6 +176,34 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
             <span className="font-mono tabular-nums text-rw-sub" title={tl("All-time head-to-head, in games")}>
               H2H {h2h.w}–{h2h.g - h2h.w}
             </span>
+          )}
+          {lastMeeting && lastMeeting[7] && (
+            <HubLink
+              to={{ kind: "match", slug: lastMeeting[7] }}
+              className="text-rw-accent hover:underline tabular-nums"
+              title={`${lastMeeting[5]} · ${fmtDate(lastMeeting[0])}`}
+            >
+              {tl("Last")}: {lastMeeting[3]}–{lastMeeting[4]} ({fmtDate(lastMeeting[0])}) →
+            </HubLink>
+          )}
+        </div>
+      )}
+      {hasLanePairs && (
+        <div className="flex flex-wrap items-center justify-center gap-1.5 text-[11px] pt-0.5">
+          {lanePairs.map(({ role, a, b }) =>
+            a && b ? (
+              <HubLink
+                key={role}
+                to={{ kind: "compare", mode: "player", a: a.u, b: b.u }}
+                title={tl("Compare {a} and {b}", { a: a.n, b: b.n })}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-rw-border bg-rw-bg/70 hover:border-rw-accent/60"
+              >
+                <span className="text-[9px] font-bold uppercase text-rw-accent">{ROLE_SHORT[role] || roleName(role)}</span>
+                <span className="text-rw-side-a font-medium">{a.n}</span>
+                <span className="text-rw-muted">v</span>
+                <span className="text-rw-side-b font-medium">{b.n}</span>
+              </HubLink>
+            ) : null,
           )}
         </div>
       )}

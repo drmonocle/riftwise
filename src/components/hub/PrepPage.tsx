@@ -400,6 +400,62 @@ const KeyStats: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[
   );
 };
 
+const ROLE_SHORT: Record<string, string> = { Top: "TOP", Jungle: "JGL", Mid: "MID", Bot: "BOT", Support: "SUP" };
+
+/** 5-role starting lineup quick-compare bar at the top of Match Prep: 1 click to open 1v1 Player Compare for any lane. */
+const RoleQuickCompare: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b, period }) => {
+  const pairs = ROLES.map((r, i) => ({ role: r, pa: a.players[i]?.p, pb: b.players[i]?.p }));
+  if (pairs.filter((x) => x.pa && x.pb).length < 3) return null;
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 text-xs">
+      {pairs.map(({ role, pa, pb }) => (
+        <div
+          key={role}
+          className="rounded-lg border border-rw-border bg-rw-surface px-2.5 py-1.5 flex items-center justify-between gap-2 min-w-0"
+        >
+          <span className="flex items-center gap-1.5 min-w-0 flex-1">
+            {pa ? (
+              <>
+                <PlayerPhoto name={pa.name} team={a.team.name} slug={pa.u} img={pa.img} size={22} />
+                <HubLink to={{ kind: "player", slug: pa.u }} className="font-semibold text-rw-side-a truncate hover:underline">
+                  {pa.name}
+                </HubLink>
+              </>
+            ) : (
+              <span className="text-rw-muted">–</span>
+            )}
+          </span>
+          {pa && pb ? (
+            <HubLink
+              to={{ kind: "compare", mode: "player", a: pa.u, b: pb.u, period }}
+              title={tl("Compare {a} and {b}", { a: pa.name, b: pb.name })}
+              className="px-1.5 py-0.5 rounded bg-rw-accent/15 border border-rw-accent/30 text-[9px] font-bold uppercase tracking-wider text-rw-accent hover:bg-rw-accent/25 shrink-0"
+            >
+              {ROLE_SHORT[role] || roleName(role)}
+            </HubLink>
+          ) : (
+            <span className="text-[9px] font-bold uppercase tracking-wider text-rw-muted shrink-0">
+              {ROLE_SHORT[role] || roleName(role)}
+            </span>
+          )}
+          <span className="flex items-center justify-end gap-1.5 min-w-0 flex-1">
+            {pb ? (
+              <>
+                <HubLink to={{ kind: "player", slug: pb.u }} className="font-semibold text-rw-side-b truncate text-right hover:underline">
+                  {pb.name}
+                </HubLink>
+                <PlayerPhoto name={pb.name} team={b.team.name} slug={pb.u} img={pb.img} size={22} />
+              </>
+            ) : (
+              <span className="text-rw-muted">–</span>
+            )}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 /**
  * Calculated: numbers worked out from the period's games, each with its formula and how many games it rests on.
  * Pythagorean win rate (from kills for and against), luck (actual minus Pythagorean), strength of schedule (the
@@ -603,8 +659,9 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
   };
   const body = (print: boolean) => (
     <>
-      <div id="prep-overview" className="rw-span">
+      <div id="prep-overview" className="rw-span space-y-2">
         <KeyStats a={a} b={b} ra={ra} rb={rb} ratings={ratings.data} hidden={hidden} formHidden={formHidden} />
+        <RoleQuickCompare a={a} b={b} period={period} />
       </div>
       {/* the side-by-side table, with win chances, storylines, form and calculated numbers beside it on wide screens
           (under it on smaller ones) */}

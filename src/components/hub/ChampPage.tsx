@@ -33,7 +33,7 @@ import { CountersLink } from "./CountersPage";
 import { EntityHero, heroBtn } from "./EntityHero";
 import { STable } from "../STable";
 
-import { BroadcastCardButton, champCardData } from "./BroadcastCard";
+import { BroadcastCardButton, SectionCard, champCardData } from "./BroadcastCard";
 
 export const ChampPage: React.FC<{ slug: string }> = ({ slug }) => {
   const state = useLoad(() => loadHubChamp(slug), [slug]);
@@ -285,22 +285,38 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         <Section
           title={tl("Matchups")}
           right={
-            c.matchups12 ? (
-              <span className="flex gap-1">
-                {[true, false].map((recent) => (
-                  <button
-                    key={String(recent)}
-                    type="button"
-                    onClick={() => setMuRecent(recent)}
-                    className={`px-2 py-0.5 rounded text-[11px] border ${
-                      recent === muRecent ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub"
-                    }`}
-                  >
-                    {recent ? tl("Last 12 months") : tl("All time")}
-                  </button>
-                ))}
-              </span>
-            ) : undefined
+            <span className="flex flex-wrap items-center gap-2">
+              {c.matchups12 && (
+                <span className="flex gap-1">
+                  {[true, false].map((recent) => (
+                    <button
+                      key={String(recent)}
+                      type="button"
+                      onClick={() => setMuRecent(recent)}
+                      className={`px-2 py-0.5 rounded text-[11px] border ${
+                        recent === muRecent ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub"
+                      }`}
+                    >
+                      {recent ? tl("Last 12 months") : tl("All time")}
+                    </button>
+                  ))}
+                </span>
+              )}
+              <CountersLink slug={c.u} className="text-[11px] text-rw-accent hover:underline" />
+              <SectionCard
+                section={`${tl("Matchups")} · ${roleName(muRole)}`}
+                name={champName(c.name)}
+                sub={muRecent ? tl("Last 12 months") : tl("All time")}
+                rows={() =>
+                  muRows.slice(0, 8).map(([oc, g, w, , gd]) => ({
+                    label: `vs ${champName(oc)}`,
+                    sub: gd != null ? `${tl("Games")}: ${g} · GD@15 ${signedText(gd)}` : `${tl("Games")}: ${g}`,
+                    value: pctOf(w, g),
+                    tone: w / g >= 0.5 ? ("good" as const) : ("bad" as const),
+                  }))
+                }
+              />
+            </span>
           }
         >
           {roleKeys.length > 1 && (
@@ -330,6 +346,42 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               })}
             </p>
           )}
+          {muRows.length >= 2 && (() => {
+            const minG = muRows.filter(([, g]) => g >= (muRecent ? 3 : 5));
+            const poolRows = minG.length >= 4 ? minG : muRows;
+            const byWrDesc = [...poolRows].sort((a, b) => b[2] / b[1] - a[2] / a[1] || b[1] - a[1]);
+            const byWrAsc = [...poolRows].sort((a, b) => a[2] / a[1] - b[2] / b[1] || b[1] - a[1]);
+            const bestList = byWrDesc.filter(([, g, w]) => w / g >= 0.5).slice(0, 3);
+            const worstList = byWrAsc.filter(([, g, w]) => w / g <= 0.5).slice(0, 3);
+            if (!bestList.length && !worstList.length) return null;
+            const renderBox = (heading: string, list: typeof muRows, good: boolean) => (
+              <div className="rounded-lg border border-rw-border bg-rw-bg/70 p-2.5 space-y-1.5 min-w-0">
+                <div className={`text-[10px] font-bold uppercase tracking-wider ${good ? "text-rw-teal" : "text-rw-red"}`}>{heading}</div>
+                <ul className="space-y-1 text-xs">
+                  {list.map(([oc, g, w, , gd]) => (
+                    <li key={oc} className="flex items-center justify-between gap-2 min-w-0">
+                      <ChampLink name={oc} size={18} />
+                      <span className="flex items-center gap-2 shrink-0 tabular-nums text-[11px]">
+                        <span className={`font-bold ${w / g >= 0.5 ? "text-rw-teal" : "text-rw-red"}`}>{pctOf(w, g)}</span>
+                        <span className="text-rw-muted">({w}–{g - w})</span>
+                        {gd != null && (
+                          <span className={`text-[10px] ${gd >= 0 ? "text-rw-teal" : "text-rw-red"}`} title="GD@15">
+                            {signedText(gd)}
+                          </span>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+            return (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {bestList.length > 0 && renderBox(`${tl("Matchups")} · ${tl("Win %")}`, bestList, true)}
+                {worstList.length > 0 && renderBox(tl("Counters"), worstList, false)}
+              </div>
+            );
+          })()}
           <STable className="w-full text-xs">
             <thead>
               <tr>
