@@ -22,6 +22,7 @@ import { bothOptions } from "./hub/ComparePage";
 import { defaultPeriod } from "./hub/PeriodStats";
 import { loadSide, type Side } from "./hub/PrepPage";
 import { pool, comfort, champOf, buildGameDraftQuery, type Pool } from "./hub/DraftPage";
+import { BroadcastCardButton, SectionCard, draftBoardCard } from "./hub/BroadcastCard";
 import { ChampIcon, HubLink } from "./hub/ui";
 
 const ROLE_ORDER = ["top", "jungle", "mid", "bottom", "support"];
@@ -311,13 +312,39 @@ export const LiveNextGamePreview: React.FC<{
           )}
         </div>
         {draftIntel && (
-          <HubLink
-            to={{ kind: "draft", query: draftQuery }}
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-accent hover:underline"
-          >
-            <Swords className="w-3.5 h-3.5" />
-            {tl("Draft board")} →
-          </HubLink>
+          <span className="inline-flex items-center gap-2">
+            <SectionCard
+              section={`${tl("Game {n}", { n: nextGameNum })} · ${tl("Draft board")}`}
+              sub={`${match.team1Code} vs ${match.team2Code}${fearlessUsed.length ? ` · ${tl("Fearless")} (${fearlessUsed.length})` : ""}`}
+              name={`${match.team1Code}-vs-${match.team2Code}-game${nextGameNum}-preview`}
+              rows={() =>
+                ROLE_LABELS.map((rLabel, idx) => {
+                  const ra = draftIntel.rolesA[idx];
+                  const rb = draftIntel.rolesB[idx];
+                  const topA = ra?.open
+                    .slice(0, 2)
+                    .map((pk) => `${champName(pk.c)} (${pk.g}G)`)
+                    .join(", ");
+                  const topB = rb?.open
+                    .slice(0, 2)
+                    .map((pk) => `${champName(pk.c)} (${pk.g}G)`)
+                    .join(", ");
+                  return {
+                    champ: ra?.open[0]?.c || rb?.open[0]?.c,
+                    label: `${roleName(rLabel)}: ${ra?.player || match.team1Code} vs ${rb?.player || match.team2Code}`,
+                    sub: `${match.team1Code}: ${topA || "–"} · ${match.team2Code}: ${topB || "–"}`,
+                  };
+                })
+              }
+            />
+            <HubLink
+              to={{ kind: "draft", query: draftQuery }}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-accent hover:underline"
+            >
+              <Swords className="w-3.5 h-3.5" />
+              {tl("Draft board")} →
+            </HubLink>
+          </span>
         )}
       </div>
 
@@ -528,39 +555,83 @@ export const LiveGameDraftLink: React.FC<{ match: Match; gameNum: number; win: L
     };
   }, [match, gameNum]);
 
-  if (!slugs) return null;
   const cur = extractGamePicks(match, win, gameNum);
+  if (!slugs && (!cur || (cur.team1.length === 0 && cur.team2.length === 0))) return null;
   const blueIsTeam1 = cur?.blueIsTeam1 !== false;
-  const query = buildGameDraftQuery({
-    blueSlug: blueIsTeam1 ? slugs.a : slugs.b,
-    redSlug: blueIsTeam1 ? slugs.b : slugs.a,
-    gameNum,
-    current: cur
-      ? {
-          bluePicks: (blueIsTeam1 ? cur.team1 : cur.team2).map((p) => p.c),
-          redPicks: (blueIsTeam1 ? cur.team2 : cur.team1).map((p) => p.c),
-        }
-      : null,
-    earlier: earlier.map((eg) => {
-      const b1 = eg.blueIsTeam1 !== false;
-      return {
-        blueSlug: b1 ? slugs.a : slugs.b,
-        redSlug: b1 ? slugs.b : slugs.a,
-        draft: {
-          bluePicks: (b1 ? eg.team1 : eg.team2).map((p) => p.c),
-          redPicks: (b1 ? eg.team2 : eg.team1).map((p) => p.c),
-        },
-      };
-    }),
-  });
+  const query = slugs
+    ? buildGameDraftQuery({
+        blueSlug: blueIsTeam1 ? slugs.a : slugs.b,
+        redSlug: blueIsTeam1 ? slugs.b : slugs.a,
+        gameNum,
+        current: cur
+          ? {
+              bluePicks: (blueIsTeam1 ? cur.team1 : cur.team2).map((p) => p.c),
+              redPicks: (blueIsTeam1 ? cur.team2 : cur.team1).map((p) => p.c),
+            }
+          : null,
+        earlier: earlier.map((eg) => {
+          const b1 = eg.blueIsTeam1 !== false;
+          return {
+            blueSlug: b1 ? slugs.a : slugs.b,
+            redSlug: b1 ? slugs.b : slugs.a,
+            draft: {
+              bluePicks: (b1 ? eg.team1 : eg.team2).map((p) => p.c),
+              redPicks: (b1 ? eg.team2 : eg.team1).map((p) => p.c),
+            },
+          };
+        }),
+      })
+    : "";
 
   return (
-    <HubLink
-      to={{ kind: "draft", query }}
-      className="inline-flex items-center gap-1 text-[10px] font-semibold text-rw-accent hover:underline"
-    >
-      <Swords className="w-3 h-3" />
-      {tl("Draft board")}
-    </HubLink>
+    <span className="inline-flex items-center gap-2">
+      {cur && (cur.team1.length > 0 || cur.team2.length > 0) && (
+        <BroadcastCardButton
+          data={() => {
+            const bluePicks = blueIsTeam1 ? cur.team1 : cur.team2;
+            const redPicks = blueIsTeam1 ? cur.team2 : cur.team1;
+            const mapPick = (p: { c: string; player: string; role: string }) => {
+              const rIdx = ROLE_ORDER.indexOf(p.role);
+              return {
+                c: p.c,
+                role: rIdx >= 0 ? roleName(ROLE_LABELS[rIdx]) : undefined,
+                player: p.player || undefined,
+              };
+            };
+            return draftBoardCard({
+              blue: {
+                name: blueIsTeam1 ? match.team1Name : match.team2Name,
+                bans: [],
+                picks: bluePicks.map(mapPick),
+              },
+              red: {
+                name: blueIsTeam1 ? match.team2Name : match.team1Name,
+                bans: [],
+                picks: redPicks.map(mapPick),
+              },
+              period: `${match.leagueName} · ${tl("Game {n}", { n: gameNum })}`,
+              earlier: earlier.map((eg) => {
+                const b1 = eg.blueIsTeam1 !== false;
+                return {
+                  blue: (b1 ? eg.team1 : eg.team2).map((p) => p.c),
+                  red: (b1 ? eg.team2 : eg.team1).map((p) => p.c),
+                };
+              }),
+            });
+          }}
+          name={`${match.team1Code}-vs-${match.team2Code}-game${gameNum}-draft`}
+          label={tl("Overview card")}
+        />
+      )}
+      {slugs && (
+        <HubLink
+          to={{ kind: "draft", query }}
+          className="inline-flex items-center gap-1 text-[10px] font-semibold text-rw-accent hover:underline"
+        >
+          <Swords className="w-3 h-3" />
+          {tl("Draft board")}
+        </HubLink>
+      )}
+    </span>
   );
 };

@@ -22,10 +22,10 @@ import { ComparePick, TeamRows, bothOptions } from "./ComparePage";
 import { PeriodPicker, Playstyle, TeamEarly, defaultPeriod } from "./PeriodStats";
 import { DraftTendencies } from "./DraftTendencies";
 import { pool, computeDraftSuggestions, slotsFromGameDraft, packSlots } from "./DraftPage";
-import { StoryLine, StoryList, noteText } from "./Storylines";
+import { StoryLine, StoryList, notePlainText, noteText } from "./Storylines";
 import { CaptureContext, card, ChampIcon, fmtDate, fmtNum, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, useHidden, useLoad, usePageTitle, PhotosLink, NERDFINDER_TOGETHER, useRetryAttempt, retryFailedLoads } from "./ui";
 import { CaptureFooter, CopyPageImage, ShareButtons } from "./ShareImage";
-import { BroadcastCardButton, CardData, PoolLine, fearlessCard, lineupCard, playerCardData, prepOverviewCard } from "./BroadcastCard";
+import { BroadcastCardButton, CardData, PoolLine, SectionCard, fearlessCard, lineupCard, playerCardData, prepOverviewCard } from "./BroadcastCard";
 import type { HubRatings } from "../../hub/types";
 import { countView } from "../../usage";
 
@@ -528,7 +528,27 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
     },
   ];
   return (
-    <Section title={tl("Calculated")} share={`${a.team.u}-vs-${b.team.u}-calculated`}>
+    <Section
+      title={tl("Calculated")}
+      share={`${a.team.u}-vs-${b.team.u}-calculated`}
+      right={
+        <SectionCard
+          section={tl("Calculated")}
+          sub={`${a.team.name} vs ${b.team.name}`}
+          name={`${a.team.u}-vs-${b.team.u}-calculated`}
+          rows={() =>
+            rows.map((r) => ({
+              label: r.label,
+              sub: r.how,
+              value:
+                typeof r.value === "string"
+                  ? r.value
+                  : `${tl("early")} ${signed(edge("gd10"))} · ${tl("mid")} ${signed(edge("gd15"))} · ${tl("late")} ${signed(edge("gd20"))}`,
+            }))
+          }
+        />
+      }
+    >
       <dl className="divide-y divide-rw-border/70 text-xs">
         {rows.map((r) => (
           <div key={r.label} className="py-1.5 grid grid-cols-[minmax(0,1fr)_auto] gap-x-3">
@@ -847,13 +867,16 @@ export function prepLines(a: Side, b: Side): StoryLine[] {
   const lines: StoryLine[] = [];
   const meetings = a.series.filter((r) => r[2] === b.team.u).sort((x, y) => (x[0] < y[0] ? 1 : -1));
   if (!meetings.length) {
-    lines.push({ key: "first", text: tl("First ever meeting between these teams") });
+    const t = tl("First ever meeting between these teams");
+    lines.push({ key: "first", text: t, plain: t });
   } else {
     const [date, , , won, lost, en] = meetings[0];
     const winner = won > lost ? a.team.name : b.team.name;
+    const lastTxt = tl("Last meeting: {team} won {score} ({event}, {date})", { team: winner, score: `${Math.max(won, lost)}-${Math.min(won, lost)}`, event: en, date: fmtDate(date) });
     lines.push({
       key: "last",
-      text: tl("Last meeting: {team} won {score} ({event}, {date})", { team: winner, score: `${Math.max(won, lost)}-${Math.min(won, lost)}`, event: en, date: fmtDate(date) }),
+      text: lastTxt,
+      plain: lastTxt,
       asOf: date,
     });
     const aWonFirst = meetings[0][3] > meetings[0][4];
@@ -862,17 +885,21 @@ export function prepLines(a: Side, b: Side): StoryLine[] {
       if (m[3] > m[4] !== aWonFirst) break;
       n++;
     }
-    if (n >= 2) lines.push({ key: "h2hstreak", text: tl("{team} have won the last {n} meetings", { team: aWonFirst ? a.team.name : b.team.name, n }), asOf: date });
+    if (n >= 2) {
+      const stTxt = tl("{team} have won the last {n} meetings", { team: aWonFirst ? a.team.name : b.team.name, n });
+      lines.push({ key: "h2hstreak", text: stTxt, plain: stTxt, asOf: date });
+    }
     const wa = meetings.filter((m) => m[3] > m[4]).length;
-    lines.push({ key: "h2h", text: tl("Series between them: {a} {wa}-{wb} {b}", { a: a.team.name, b: b.team.name, wa, wb: meetings.length - wa }), asOf: date });
+    const h2hTxt = tl("Series between them: {a} {wa}-{wb} {b}", { a: a.team.name, b: b.team.name, wa, wb: meetings.length - wa });
+    lines.push({ key: "h2h", text: h2hTxt, plain: h2hTxt, asOf: date });
   }
   for (const s of [a, b]) {
     for (const [i, nt] of (s.team.notes?.list || []).entries())
-      lines.push({ key: `${s.team.u}-${i}`, who: { name: s.team.name, to: { kind: "team", slug: s.team.u } }, text: noteText(nt), asOf: s.team.notes?.asOf });
+      lines.push({ key: `${s.team.u}-${i}`, who: { name: s.team.name, to: { kind: "team", slug: s.team.u } }, text: noteText(nt), plain: notePlainText(nt), champ: nt.c, asOf: s.team.notes?.asOf });
     for (const pl of s.players)
       if (pl?.p.notes)
         for (const [i, nt] of pl.p.notes.list.entries())
-          lines.push({ key: `${pl.p.u}-${i}`, who: { name: pl.p.name, to: { kind: "player", slug: pl.p.u } }, text: noteText(nt), asOf: pl.p.notes.asOf });
+          lines.push({ key: `${pl.p.u}-${i}`, who: { name: pl.p.name, to: { kind: "player", slug: pl.p.u } }, text: noteText(nt), plain: notePlainText(nt), champ: nt.c, asOf: pl.p.notes.asOf });
   }
   return lines;
 }
@@ -889,7 +916,32 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
   const fresh = [...la, ...lb].map((r) => r[0]).find((d) => isFresh(d));
   const [hidden, reveal] = useHidden(`prep-form:${a.team.u}:${b.team.u}`, fresh);
   return (
-    <Section title={tl("Form: last 10 series")} share={`${a.team.name}-vs-${b.team.name}-form`}>
+    <Section
+      title={tl("Form: last 10 series")}
+      share={`${a.team.name}-vs-${b.team.name}-form`}
+      right={
+        !hidden && (la.length > 0 || lb.length > 0) ? (
+          <SectionCard
+            section={tl("Form: last 10 series")}
+            sub={`${a.team.name} vs ${b.team.name}`}
+            name={`${a.team.name}-vs-${b.team.name}-form`}
+            rows={() =>
+              [
+                { s: a, rows: la },
+                { s: b, rows: lb },
+              ].map(({ s, rows }) => {
+                const w = rows.filter((r) => r[3] > r[4]).length;
+                return {
+                  label: s.team.name,
+                  sub: rows.map((r) => `${r[3] > r[4] ? tc("short result", "W") : tc("short result", "L")} (${r[3]}-${r[4]} vs ${r[1]})`).slice(0, 5).join(" · "),
+                  value: `${w}–${rows.length - w}`,
+                };
+              })
+            }
+          />
+        ) : undefined
+      }
+    >
       {hidden ? (
         <div className="py-2 text-center">
           <RevealButton onReveal={reveal} />
@@ -1410,6 +1462,37 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
       title={`${tl("Draft board")} · ${tl("Threats to ban")} & ${tl("Comfort picks")}`}
       right={
         <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+          <SectionCard
+            section={`${tl("Draft board")} · ${tl("Threats to ban")} & ${tl("Comfort picks")}`}
+            sub={`${a.team.name} vs ${b.team.name}`}
+            name={`${a.team.u}-vs-${b.team.u}-draft-scouting`}
+            rows={() => [
+              ...bansByA.slice(0, 2).map((x) => ({
+                champ: x.c,
+                label: `${a.team.name} · ${tl("Threats to ban")}: ${champName(x.c)}`,
+                sub: x.why,
+                value: x.stat,
+              })),
+              ...picksA.slice(0, 2).map((x) => ({
+                champ: x.c,
+                label: `${a.team.name} · ${tl("Comfort picks")}: ${champName(x.c)}`,
+                sub: x.why,
+                value: x.stat,
+              })),
+              ...bansByB.slice(0, 2).map((x) => ({
+                champ: x.c,
+                label: `${b.team.name} · ${tl("Threats to ban")}: ${champName(x.c)}`,
+                sub: x.why,
+                value: x.stat,
+              })),
+              ...picksB.slice(0, 2).map((x) => ({
+                champ: x.c,
+                label: `${b.team.name} · ${tl("Comfort picks")}: ${champName(x.c)}`,
+                sub: x.why,
+                value: x.stat,
+              })),
+            ]}
+          />
           <HubLink to={{ kind: "draft", query: preloadedQuery }} className="text-rw-accent hover:underline font-semibold">
             {tl("Draft board")} ({tl("Bans, phase 1")})
           </HubLink>
