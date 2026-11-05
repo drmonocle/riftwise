@@ -22,7 +22,7 @@ import { useDDragon } from "../../hub/ddragon";
 import { SortTable, type Column } from "./SortTable";
 import { TrendChart } from "./TrendChart";
 import { DraftTendencies } from "./DraftTendencies";
-import { BroadcastCardButton, playerCardData, teamSoloCardData, type RosterPlayer } from "./BroadcastCard";
+import { BroadcastCardButton, SectionCard, playerCardData, teamSoloCardData, type RosterPlayer } from "./BroadcastCard";
 import { fmtRating, useRatingFile } from "./PlayerRating";
 import { playerRowLine, rateLine } from "../../hub/playerRating";
 import {
@@ -245,7 +245,7 @@ export const Playstyle: React.FC<{ t: TeamAgg }> = ({ t }) => {
 };
 
 /** Win rate by what happened early: each first objective got or given up, and the gold lead at 15 in four bands. */
-export const WinWhen: React.FC<{ rows: TeamGameRow[] }> = ({ rows }) => {
+export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; periodLabel?: string }> = ({ rows, teamName, periodLabel }) => {
   const d = useMemo(() => winWhen(rows), [rows]);
   if (d.n < 10) return null;
   const label: Record<string, string> = {
@@ -269,10 +269,31 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[] }> = ({ rows }) => {
     ) : (
       <span className="text-rw-muted">–</span>
     );
+  const wrStr = ([g, w]: [number, number]) => (g ? `${Math.round((w / g) * 100)}% (${g}G)` : "–");
   const th = "px-2 py-1 font-normal text-[10px] text-rw-muted";
   return (
     <div className="space-y-1">
-      <Sub>{tl("Win rate when…")}</Sub>
+      <div className="flex items-center justify-between gap-2">
+        <Sub>{tl("Win rate when…")}</Sub>
+        <SectionCard
+          section={teamName ? `${teamName} · ${tl("Win rate when…")}` : tl("Win rate when…")}
+          sub={periodLabel}
+          name={`${teamName || "team"}-win-when`}
+          rows={() => [
+            ...d.firsts.map((x) => ({
+              label: label[x.key],
+              sub: `${tl("Opponent got it")}: ${wrStr(x.lost)}`,
+              value: wrStr(x.got),
+              win: x.got[0] > 0 ? x.got[1] / x.got[0] >= 0.5 : undefined,
+            })),
+            ...d.gold.map((x) => ({
+              label: `${tl("Gold at 15 minutes")} · ${label[x.key]}`,
+              value: wrStr([x.g, x.w]),
+              win: x.g > 0 ? x.w / x.g >= 0.5 : undefined,
+            })),
+          ]}
+        />
+      </div>
       <div className="grid gap-4 sm:grid-cols-2 items-start">
         <table className="w-full text-xs">
           <thead>
@@ -670,6 +691,25 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
               />
             )}
           </div>
+          {agg.champs.length > 0 && (
+            <div className="flex items-center justify-between gap-2">
+              <Sub>{tl("Champions")}</Sub>
+              <SectionCard
+                section={who ? `${who.name} · ${tl("Champions")}` : tl("Champions")}
+                sub={periodText}
+                name={`${slug}-champions-${period}`}
+                rows={() =>
+                  agg.champs.slice(0, 10).map((c, idx) => ({
+                    rank: idx + 1,
+                    champ: c.c,
+                    label: c.c,
+                    sub: `${c.g}G · KDA ${fmtN(c.kda)}${c.gd15 != null ? ` · GD@15 ${signed(c.gd15)}` : ""}`,
+                    value: winRate(c.w, c.g),
+                  }))
+                }
+              />
+            </div>
+          )}
           <SortTable
             rows={agg.champs}
             columns={cols}
@@ -841,7 +881,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
             <div className="space-y-4 min-w-0">
               <TeamEarly t={t} />
               <Playstyle t={t} />
-              <WinWhen rows={sel} />
+              <WinWhen rows={sel} teamName={who?.name} periodLabel={periodText} />
             </div>
             <div className="space-y-4 min-w-0">
               <div className="grid sm:grid-cols-3 gap-4">

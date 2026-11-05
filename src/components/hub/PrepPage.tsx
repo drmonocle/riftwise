@@ -835,7 +835,7 @@ const Tendencies: React.FC<{ side: Side; rows: TeamGameRow[]; periodLabel: strin
     <Section title={tl("{team}: tendencies", { team: side.team.name })} right={<span className="text-[11px] text-rw-sub">{periodLabel}</span>} share={`${side.team.u}-tendencies-${periodLabel}`}>
       <Playstyle t={t} />
       <TeamEarly t={t} />
-      <DraftTendencies rows={rows} />
+      <DraftTendencies rows={rows} teamName={side.team.name} periodLabel={periodLabel} />
     </Section>
   );
 };
