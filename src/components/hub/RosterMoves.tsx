@@ -8,7 +8,7 @@ import React, { useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { tl, roleName } from "../../i18n";
 import { loadLeagues, loadMoves } from "../../hub/data";
-import { fmtDate, PlayerLink, TeamLink, useLoad } from "./ui";
+import { fmtDate, HubLink, PlayerLink, TeamLink, useLoad } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 
 export const RosterMoves: React.FC = () => {
@@ -39,18 +39,24 @@ export const RosterMoves: React.FC = () => {
             </button>
           ))}
           {list.length > 0 && (
-            <SectionCard
-              section={tl("Roster moves")}
-              name={all ? tl("All leagues") : tl("Top leagues")}
-              sub={fmtDate(moves.data.since)}
-              rows={() =>
-                list.slice(0, 12).map((m) => ({
-                  label: `${m.n}${m.r ? ` (${roleName(m.r)})` : ""}`,
-                  sub: `${m.from.n} → ${m.to.n}${m.lu && name.get(m.lu) ? ` · ${name.get(m.lu)}` : ""}`,
-                  value: fmtDate(m.d, false),
-                }))
-              }
-            />
+            <>
+              <CopyMovesPost
+                sub={all ? tl("All leagues") : tl("Top leagues")}
+                rows={list.slice(0, 6).map((m) => `${m.n}${m.r ? ` (${roleName(m.r)})` : ""}: ${m.from.n} → ${m.to.n} (${fmtDate(m.d, false)})`)}
+              />
+              <SectionCard
+                section={tl("Roster moves")}
+                name={all ? tl("All leagues") : tl("Top leagues")}
+                sub={fmtDate(moves.data.since)}
+                rows={() =>
+                  list.slice(0, 12).map((m) => ({
+                    label: `${m.n}${m.r ? ` (${roleName(m.r)})` : ""}`,
+                    sub: `${m.from.n} → ${m.to.n}${m.lu && name.get(m.lu) ? ` · ${name.get(m.lu)}` : ""}`,
+                    value: fmtDate(m.d, false),
+                  }))
+                }
+              />
+            </>
           )}
         </div>
       </div>
@@ -74,7 +80,11 @@ export const RosterMoves: React.FC = () => {
               <ArrowRight className="w-3 h-3 shrink-0 text-rw-accent" />
               <TeamLink name={m.to.n} u={m.to.u} className="text-rw-text hover:text-rw-accent truncate" />
             </span>
-            {m.lu && name.get(m.lu) && <span className="text-[10px] text-rw-muted">{name.get(m.lu)}</span>}
+            {m.lu && name.get(m.lu) && (
+              <HubLink to={{ kind: "league", slug: m.lu }} className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline">
+                {name.get(m.lu)}
+              </HubLink>
+            )}
           </li>
         ))}
         {!list.length && <li className="py-2 text-rw-muted">{tl("No moves in the top leagues yet. See every league.")}</li>}
@@ -86,5 +96,33 @@ export const RosterMoves: React.FC = () => {
         </button>
       )}
     </div>
+  );
+};
+
+const CopyMovesPost: React.FC<{ sub: string; rows: string[] }> = ({ sub, rows }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const lines: string[] = [`${tl("Roster moves")} · ${sub}`];
+    for (const r of rows) {
+      lines.push(`• ${r}`);
+    }
+    lines.push("https://riftwise.gg");
+    navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+      title={tl("Copy post")}
+    >
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
   );
 };

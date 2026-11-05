@@ -639,18 +639,25 @@ export const PlayerRanks: React.FC<{
             names={names}
           />
           {!ranksHidden && cardRows.length > 0 && (
-            <SectionCard
-              section={tl("League ranks")}
-              name={name || me?.n || slug}
-              sub={`${leagueLabel} ${year}${me?.r ? ` · ${roleName(me.r)}` : ""}`}
-              rows={() =>
-                cardRows.map((r) => ({
-                  label: r.label,
-                  sub: `${tl("League avg")} ${r.avg} · ${r.diff} (${tl("{n} of {m}", { n: r.rank, m: r.of })})`,
-                  value: `${r.text} · P${r.pct}`,
-                }))
-              }
-            />
+            <>
+              <CopyRanksPost
+                title={`${name || me?.n || slug} · ${leagueLabel} ${year}${me?.r ? ` (${roleName(me.r)})` : ""}`}
+                rows={cardRows}
+                url={`https://riftwise.gg/player/${slug}/stats`}
+              />
+              <SectionCard
+                section={tl("League ranks")}
+                name={name || me?.n || slug}
+                sub={`${leagueLabel} ${year}${me?.r ? ` · ${roleName(me.r)}` : ""}`}
+                rows={() =>
+                  cardRows.map((r) => ({
+                    label: r.label,
+                    sub: `${tl("League avg")} ${r.avg} · ${r.diff} (${tl("{n} of {m}", { n: r.rank, m: r.of })})`,
+                    value: `${r.text} · P${r.pct}`,
+                  }))
+                }
+              />
+            </>
           )}
         </>
       }
@@ -752,18 +759,25 @@ export const TeamRanks: React.FC<{
             names={names}
           />
           {!ranksHidden && cardRows.length > 0 && (
-            <SectionCard
-              section={tl("League ranks")}
-              name={name || me?.t || slug}
-              sub={`${leagueLabel} ${year}`}
-              rows={() =>
-                cardRows.map((r) => ({
-                  label: r.label,
-                  sub: `${tl("League avg")} ${r.avg} · ${r.diff} (${tl("{n} of {m}", { n: r.rank, m: r.of })})`,
-                  value: `${r.text} · P${r.pct}`,
-                }))
-              }
-            />
+            <>
+              <CopyRanksPost
+                title={`${name || me?.t || slug} · ${leagueLabel} ${year}`}
+                rows={cardRows}
+                url={`https://riftwise.gg/team/${slug}/stats`}
+              />
+              <SectionCard
+                section={tl("League ranks")}
+                name={name || me?.t || slug}
+                sub={`${leagueLabel} ${year}`}
+                rows={() =>
+                  cardRows.map((r) => ({
+                    label: r.label,
+                    sub: `${tl("League avg")} ${r.avg} · ${r.diff} (${tl("{n} of {m}", { n: r.rank, m: r.of })})`,
+                    value: `${r.text} · P${r.pct}`,
+                  }))
+                }
+              />
+            </>
           )}
         </>
       }
@@ -811,3 +825,37 @@ export function useTeamPercentiles(
     return { league: (names.get(pick[0]) || pick[0]).replace(/\s\d{4}$/, ""), year: pick[1], n: peers.length, pct };
   }, [state.data, pick, slug, names]);
 }
+
+const CopyRanksPost: React.FC<{
+  title: string;
+  rows: RankRow[];
+  url: string;
+}> = ({ title, rows, url }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const top = [...rows].sort((a, b) => b.pct - a.pct).slice(0, 6);
+    const lines: string[] = [`${tl("League ranks")} · ${title}`];
+    for (const r of top) {
+      lines.push(`• ${r.label}: ${r.text} (P${r.pct}, ${tl("{n} of {m}", { n: r.rank, m: r.of })})`);
+    }
+    lines.push(url);
+    navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
+  };
+  return (
+    <button
+      type="button"
+      data-nocapture="1"
+      onClick={copy}
+      className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+      title={tl("Copy post")}
+    >
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
+  );
+};

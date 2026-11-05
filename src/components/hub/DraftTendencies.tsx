@@ -3,7 +3,7 @@
  * bans, which role they lock in first and keep for last, which roles they pick in each phase, flex picks
  * (champions they played in two roles), their most played lane pairs, and how deep each role's pool is (Fearless).
  */
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { winRate } from "../../stats";
 import type { TeamGameRow } from "../../hub/types";
@@ -233,21 +233,34 @@ export const DraftTendencies: React.FC<{ rows: TeamGameRow[]; teamName?: string;
           <span className="text-[10px] text-rw-muted">{tl("{n} games with the draft order", { n: d.games })}</span>
         </div>
         {teamName && (
-          <SectionCard
-            section={tl("Draft tendencies")}
-            name={teamName}
-            sub={periodLabel ? `${periodLabel} · ${tl("{n} games", { n: d.games })}` : tl("{n} games", { n: d.games })}
-            rows={() => [
-              ...(d.b1.length ? [{ champ: d.b1[0][0], label: tl("First pick (blue)"), sub: champStr(d.b1, 3), value: `${d.b1[0][1]}G` }] : []),
-              ...(d.r12.length ? [{ champ: d.r12[0][0], label: tl("First picks (red)"), sub: champStr(d.r12, 3), value: `${d.r12[0][1]}G` }] : []),
-              ...(d.bans1.length ? [{ champ: d.bans1[0][0], label: tl("Bans, phase 1"), sub: d.bans1.slice(0, 4).map(([c, g]) => `${champName(c)} (${g})`).join(", "), value: `${d.bans1[0][1]}G` }] : []),
-              ...(d.firstRole.length ? [{ label: tl("First role locked in"), value: roleStr(d.firstRole) }] : []),
-              ...(d.r5.length ? [{ label: tl("Last pick on red (R5)"), value: roleStr(d.r5) }] : []),
-              ...(d.b45.length ? [{ label: tl("Last picks on blue (B4-B5)"), value: roleStr(d.b45) }] : []),
-              ...(d.botDuos.length ? [{ champ: d.botDuos[0][0], label: tl("Bot lane pairs"), sub: `${champName(d.botDuos[0][0])} + ${champName(d.botDuos[0][1])}`, value: `${d.botDuos[0][2]}G · ${winRate(d.botDuos[0][3], d.botDuos[0][2])}` }] : []),
-              ...(d.flex.length ? [{ champ: d.flex[0][0], label: tl("Flex picks"), sub: d.flex.slice(0, 4).map(([c]) => champName(c)).join(", "), value: `${d.flex.length}` }] : []),
-            ]}
-          />
+          <span className="flex items-center gap-2">
+            <CopyDraftTendenciesPost
+              teamName={teamName}
+              sub={periodLabel ? `${periodLabel} · ${tl("{n} games", { n: d.games })}` : tl("{n} games", { n: d.games })}
+              rows={[
+                ...(d.b1.length ? [`${tl("First pick (blue)")}: ${champStr(d.b1, 3)}`] : []),
+                ...(d.r12.length ? [`${tl("First picks (red)")}: ${champStr(d.r12, 3)}`] : []),
+                ...(d.bans1.length ? [`${tl("Bans, phase 1")}: ${d.bans1.slice(0, 4).map(([c, g]) => `${champName(c)} (${g})`).join(", ")}`] : []),
+                ...(d.firstRole.length ? [`${tl("First role locked in")}: ${roleStr(d.firstRole)}`] : []),
+                ...(d.flex.length ? [`${tl("Flex picks")}: ${d.flex.slice(0, 4).map(([c]) => champName(c)).join(", ")}`] : []),
+              ]}
+            />
+            <SectionCard
+              section={tl("Draft tendencies")}
+              name={teamName}
+              sub={periodLabel ? `${periodLabel} · ${tl("{n} games", { n: d.games })}` : tl("{n} games", { n: d.games })}
+              rows={() => [
+                ...(d.b1.length ? [{ champ: d.b1[0][0], label: tl("First pick (blue)"), sub: champStr(d.b1, 3), value: `${d.b1[0][1]}G` }] : []),
+                ...(d.r12.length ? [{ champ: d.r12[0][0], label: tl("First picks (red)"), sub: champStr(d.r12, 3), value: `${d.r12[0][1]}G` }] : []),
+                ...(d.bans1.length ? [{ champ: d.bans1[0][0], label: tl("Bans, phase 1"), sub: d.bans1.slice(0, 4).map(([c, g]) => `${champName(c)} (${g})`).join(", "), value: `${d.bans1[0][1]}G` }] : []),
+                ...(d.firstRole.length ? [{ label: tl("First role locked in"), value: roleStr(d.firstRole) }] : []),
+                ...(d.r5.length ? [{ label: tl("Last pick on red (R5)"), value: roleStr(d.r5) }] : []),
+                ...(d.b45.length ? [{ label: tl("Last picks on blue (B4-B5)"), value: roleStr(d.b45) }] : []),
+                ...(d.botDuos.length ? [{ champ: d.botDuos[0][0], label: tl("Bot lane pairs"), sub: `${champName(d.botDuos[0][0])} + ${champName(d.botDuos[0][1])}`, value: `${d.botDuos[0][2]}G · ${winRate(d.botDuos[0][3], d.botDuos[0][2])}` }] : []),
+                ...(d.flex.length ? [{ champ: d.flex[0][0], label: tl("Flex picks"), sub: d.flex.slice(0, 4).map(([c]) => champName(c)).join(", "), value: `${d.flex.length}` }] : []),
+              ]}
+            />
+          </span>
         )}
       </div>
       <div className="grid grid-cols-2 @3xl:grid-cols-4 gap-x-6 gap-y-3">
@@ -296,5 +309,37 @@ export const DraftTendencies: React.FC<{ rows: TeamGameRow[]; teamName?: string;
         </div>
       )}
     </div>
+  );
+};
+
+const CopyDraftTendenciesPost: React.FC<{
+  teamName: string;
+  sub: string;
+  rows: string[];
+}> = ({ teamName, sub, rows }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const lines: string[] = [`${tl("Draft tendencies")} · ${teamName} (${sub})`];
+    for (const r of rows) {
+      lines.push(`• ${r}`);
+    }
+    lines.push("https://riftwise.gg");
+    navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+      title={tl("Copy post")}
+    >
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
   );
 };
