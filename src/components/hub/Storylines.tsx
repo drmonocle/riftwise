@@ -2,11 +2,12 @@
  * Storylines: milestones within reach, streaks, unbeaten runs (worked out by each stats build into the team / player files and
  * hub/notes.json), written out as sentences a caster can read on air. Spoiler mode hides them while they use fresh games.
  */
-import React from "react";
+import React, { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { tl, tn } from "../../i18n";
 import { champName } from "../../champions";
 import { load } from "../../stats";
+import { prettySlug } from "../../hub/data";
 import { ChampIcon, HubLink, RevealButton, Section, fmtNum, useHidden, useLoad, GRID_COLS, useColumns } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 
@@ -77,10 +78,12 @@ export function notePlainText(nt: Note): string {
 }
 
 export function noteText(nt: Note): React.ReactNode {
-  if (nt.k === "champ") {
+  if ((nt.k === "champ" || nt.k === "crec" || nt.k === "cms") && nt.c) {
     return (
       <span className="inline-flex items-center gap-1 flex-wrap">
-        <ChampIcon name={nt.c} size={16} />
+        <HubLink to={{ kind: "champ", slug: prettySlug(nt.c) }} title={champName(nt.c)}>
+          <ChampIcon name={nt.c} size={16} />
+        </HubLink>
         {notePlainText(nt)}
       </span>
     );
@@ -153,17 +156,20 @@ export const StoryList: React.FC<{
           <span className="flex items-center gap-2">
             {right}
             {!hidden && plainLines.length > 0 && (
-              <SectionCard
-                section={title || tl("Storylines")}
-                name={share || "storylines"}
-                rows={() =>
-                  plainLines.slice(0, 10).map((l) => ({
-                    champ: l.champ,
-                    label: l.who ? l.who.name : l.plain!,
-                    sub: l.who ? l.plain : undefined,
-                  }))
-                }
-              />
+              <>
+                <SectionCard
+                  section={title || tl("Storylines")}
+                  name={share || "storylines"}
+                  rows={() =>
+                    plainLines.slice(0, 10).map((l) => ({
+                      champ: l.champ,
+                      label: l.who ? l.who.name : l.plain!,
+                      sub: l.who ? l.plain : undefined,
+                    }))
+                  }
+                />
+                <CopyStorylinesPost title={title || tl("Storylines")} lines={plainLines} />
+              </>
             )}
           </span>
         ) : undefined
@@ -205,5 +211,36 @@ export const HomeStorylines: React.FC = () => {
         asOf: r.asOf,
       }))}
     />
+  );
+};
+
+const CopyStorylinesPost: React.FC<{ title: string; lines: StoryLine[] }> = ({ title, lines }) => {
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+  const copy = () => {
+    const out = [
+      title,
+      ...lines.slice(0, 5).map((l) => `• ${l.who ? `${l.who.name}: ` : ""}${l.plain}`),
+      typeof window !== "undefined" ? window.location.href : "https://riftwise.gg",
+    ];
+    navigator.clipboard?.writeText(out.join("\n")).then(
+      () => {
+        setState("copied");
+        setTimeout(() => setState("idle"), 1600);
+      },
+      () => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2000);
+      },
+    );
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title={tl("Copy a ready-to-post summary with the link, for X or Discord")}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-surface text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+    >
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
+    </button>
   );
 };

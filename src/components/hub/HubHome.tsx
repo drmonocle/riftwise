@@ -35,6 +35,7 @@ import { SwissStandings } from "../SwissStandings";
 import { INTL_EVENTS, intlMatchNow } from "../../intlNow";
 import { LatestResults } from "../IdleHome";
 import { prettySlug } from "../../hub/data";
+import { BroadcastCardButton, SectionCard, rankingsCard } from "./BroadcastCard";
 import type { TabKey } from "../Navigation";
 
 /** the panel that matters most on the page: a brighter edge and a soft glow (the card's look, its own border colour) */
@@ -184,7 +185,25 @@ export const HubHome: React.FC<{
         <section className={`${hot} flex flex-col`}>
           <div className="flex items-center justify-between gap-2 mb-2">
             <h2 className="font-head text-lg font-bold text-rw-text flex items-center gap-2"><TrendingUp className="w-4 h-4 text-rw-accent" />{tl("Power rankings")}</h2>
-            <span className="text-[10px] text-rw-muted">{tl("30-day change")}</span>
+            <span className="flex items-center gap-2">
+              <span className="text-[10px] text-rw-muted">{tl("30-day change")}</span>
+              {ratings.data && ratings.data.teams.length > 0 && (
+                <BroadcastCardButton
+                  data={() =>
+                    rankingsCard({
+                      title: tl("Power rankings"),
+                      subtitle: tl("Top leagues, all regions"),
+                      rows: ratings.data!.teams
+                        .filter((t) => t[9] === 1)
+                        .sort((a, b) => b[5] - a[5])
+                        .slice(0, 10)
+                        .map((r) => ({ name: r[1], league: r[10] || r[3], r: r[5], chg: r[6] })),
+                    })
+                  }
+                  name="riftwise-power-rankings"
+                />
+              )}
+            </span>
           </div>
           <TopTeams rows={ratings.data?.teams} n={5} ranked />
           <HubLink to={{ kind: "rankings" }} className={more}>{tl("Every active team on one scale →")}</HubLink>
@@ -321,7 +340,13 @@ const FeaturedMatch: React.FC<{
             <span className="font-head font-semibold uppercase tracking-wider text-rw-accent">{formatMatchTime(m.startTimeUtc)}</span>
           )}
           <span className="text-rw-muted">
-            {m.leagueName}
+            {m.leagueSlug ? (
+              <HubLink to={{ kind: "league", slug: m.leagueSlug }} className="hover:text-rw-accent hover:underline">
+                {m.leagueName}
+              </HubLink>
+            ) : (
+              m.leagueName
+            )}
             {m.blockName ? ` · ${m.blockName}` : ""} · {tl("Best of {n}", { n: m.bestOf })}
           </span>
         </span>
@@ -575,7 +600,30 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
   return (
     <Section
       title={tl("Players of the month")}
-      right={hidden ? <RevealButton onReveal={reveal} small /> : <HubLink to={{ kind: "about" }} className="text-[11px] text-rw-accent hover:underline">{tl("How the rating works")}</HubLink>}
+      right={
+        hidden ? (
+          <RevealButton onReveal={reveal} small />
+        ) : (
+          <span className="flex items-center gap-2" data-nocapture="1">
+            <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-accent hover:underline">
+              {tl("Player leaderboards")}
+            </HubLink>
+            <SectionCard
+              section={tl("Players of the month")}
+              name="RiftWise"
+              sub={from ? fmtDate(from) : undefined}
+              rows={() =>
+                rows.slice(0, 10).map((p, i) => ({
+                  label: `#${i + 1} · ${p.n}`,
+                  sub: [p.r ? roleName(p.r) : "", p.t, `${p.g}G`].filter(Boolean).join(" · "),
+                  value: String(Math.round(p.rt)),
+                  win: true,
+                }))
+              }
+            />
+          </span>
+        )
+      }
     >
       {hidden ? (
         <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
@@ -727,7 +775,22 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
   }, [list, scope, q]);
   if (rows.length === 0) return <p className="text-xs text-rw-sub py-6 text-center">{tl("No tournaments match.")}</p>;
   return (
-    <div className={`${card} overflow-x-auto`}>
+    <div className={`${card} space-y-2 overflow-x-auto`}>
+      <div className="flex items-center justify-end" data-nocapture="1">
+        <SectionCard
+          section={tl("Tournaments")}
+          name={scope === "main" ? tl("Main leagues & internationals") : tl("Everything")}
+          sub={`${rows.length}`}
+          rows={() =>
+            rows.slice(0, 12).map((e) => ({
+              label: e.n,
+              sub: [e.r ? regionName(e.r, e.r) : null, fmtDate(e.st, false)].filter(Boolean).join(" · "),
+              value: e.w || (e.g ? `${e.g}G` : "–"),
+              win: !!e.w,
+            }))
+          }
+        />
+      </div>
       <STable className="w-full text-xs">
         <thead>
           <tr>
