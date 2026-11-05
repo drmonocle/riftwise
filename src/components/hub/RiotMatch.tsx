@@ -12,8 +12,32 @@ import { MatchPrepButton } from "../MatchPrepButton";
 import { riotMatchById, riotMatchFor } from "../../hub/riotMatch";
 import { findSeriesSlug } from "../../hub/seriesLookup";
 import { navigateHub } from "../../hub/route";
+import { prettySlug } from "../../hub/data";
 import type { HubSeries } from "../../hub/types";
-import { card, fmtDate, Loading, RevealButton, useHidden, usePageTitle } from "./ui";
+import { card, fmtDate, HubLink, Loading, RevealButton, useHidden, usePageTitle } from "./ui";
+
+const CopyRiotMatchPost: React.FC<{ match: Match }> = ({ match }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const url = typeof window !== "undefined" ? window.location.href : "https://riftwise.gg";
+    const head = `${match.team1Name} ${match.team1Score}–${match.team2Score} ${match.team2Name} (${match.leagueName}${match.blockName ? ` · ${stageLabel(match.blockName)}` : ""} · ${fmtDate(match.startTimeUtc.slice(0, 10))})`;
+    const text = `${head}\n${url}`;
+    navigator.clipboard?.writeText(text).then(() => {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    });
+  };
+  return (
+    <button
+      type="button"
+      data-nocapture="1"
+      onClick={copy}
+      className="px-2 py-1 rounded border border-rw-border bg-rw-surface text-[11px] font-semibold text-rw-sub hover:text-rw-text hover:border-rw-accent/60 transition-colors"
+    >
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
+  );
+};
 
 const REFRESH_MS = 60_000;
 
@@ -103,21 +127,26 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
             {live && <span className="text-rw-red font-bold">· {tl("LIVE")}</span>}
           </span>
           <span className="flex flex-wrap items-center gap-1.5">
+            {!hidden && <CopyRiotMatchPost match={m} />}
             <MatchOverviewButton match={m} />
             <MatchPrepButton match={m} />
           </span>
         </div>
         <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className={`text-right text-base sm:text-lg font-bold truncate ${!hidden && m.team1Score > m.team2Score && !live ? "text-rw-teal" : "text-rw-text"}`}>
-            <span className="sm:hidden">{m.team1Code}</span>
-            <span className="hidden sm:inline">{m.team1Name}</span>
+            <HubLink to={{ kind: "team", slug: prettySlug(m.team1Name) }} className="hover:text-rw-accent">
+              <span className="sm:hidden">{m.team1Code}</span>
+              <span className="hidden sm:inline">{m.team1Name}</span>
+            </HubLink>
           </div>
           <div className="text-2xl font-black text-rw-text tabular-nums text-center min-w-[4.5rem]">
             {hidden ? "?" : m.team1Score} <span className="text-rw-muted/60">–</span> {hidden ? "?" : m.team2Score}
           </div>
           <div className={`text-base sm:text-lg font-bold truncate ${!hidden && m.team2Score > m.team1Score && !live ? "text-rw-teal" : "text-rw-text"}`}>
-            <span className="sm:hidden">{m.team2Code}</span>
-            <span className="hidden sm:inline">{m.team2Name}</span>
+            <HubLink to={{ kind: "team", slug: prettySlug(m.team2Name) }} className="hover:text-rw-accent">
+              <span className="sm:hidden">{m.team2Code}</span>
+              <span className="hidden sm:inline">{m.team2Name}</span>
+            </HubLink>
           </div>
         </div>
         {hidden && (

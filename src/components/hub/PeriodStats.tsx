@@ -53,6 +53,28 @@ const Sub: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </div>
 );
 
+const CopyPeriodTextPost: React.FC<{ buildText: () => string }> = ({ buildText }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const url = typeof window !== "undefined" ? window.location.href : "https://riftwise.gg";
+    const text = `${buildText()}\n${url}`;
+    navigator.clipboard?.writeText(text).then(() => {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    });
+  };
+  return (
+    <button
+      type="button"
+      data-nocapture="1"
+      onClick={copy}
+      className="px-2 py-1 rounded border border-rw-border bg-rw-surface text-[11px] font-semibold text-rw-sub hover:text-rw-text hover:border-rw-accent/60 transition-colors"
+    >
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
+  );
+};
+
 /** A player's early game from Oracle's Elixir: leads over the lane opponent, first blood, warding. */
 export const PlayerEarly: React.FC<{
   t: PlayerTl;
@@ -275,24 +297,36 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; periodL
     <div className="space-y-1">
       <div className="flex items-center justify-between gap-2">
         <Sub>{tl("Win rate when…")}</Sub>
-        <SectionCard
-          section={teamName ? `${teamName} · ${tl("Win rate when…")}` : tl("Win rate when…")}
-          sub={periodLabel}
-          name={`${teamName || "team"}-win-when`}
-          rows={() => [
-            ...d.firsts.map((x) => ({
-              label: label[x.key],
-              sub: `${tl("Opponent got it")}: ${wrStr(x.lost)}`,
-              value: wrStr(x.got),
-              win: x.got[0] > 0 ? x.got[1] / x.got[0] >= 0.5 : undefined,
-            })),
-            ...d.gold.map((x) => ({
-              label: `${tl("Gold at 15 minutes")} · ${label[x.key]}`,
-              value: wrStr([x.g, x.w]),
-              win: x.g > 0 ? x.w / x.g >= 0.5 : undefined,
-            })),
-          ]}
-        />
+        <div className="flex flex-wrap items-center gap-1.5">
+          <CopyPeriodTextPost
+            buildText={() => {
+              const head = `${teamName ? `${teamName} · ` : ""}${tl("Win rate when…")}${periodLabel ? ` (${periodLabel})` : ""}`;
+              const lines = [
+                ...d.firsts.map((x) => `• ${label[x.key]}: ${wrStr(x.got)} (${tl("Opponent got it")}: ${wrStr(x.lost)})`),
+                ...d.gold.map((x) => `• ${tl("Gold at 15 minutes")} · ${label[x.key]}: ${wrStr([x.g, x.w])}`),
+              ];
+              return [head, ...lines].join("\n");
+            }}
+          />
+          <SectionCard
+            section={teamName ? `${teamName} · ${tl("Win rate when…")}` : tl("Win rate when…")}
+            sub={periodLabel}
+            name={`${teamName || "team"}-win-when`}
+            rows={() => [
+              ...d.firsts.map((x) => ({
+                label: label[x.key],
+                sub: `${tl("Opponent got it")}: ${wrStr(x.lost)}`,
+                value: wrStr(x.got),
+                win: x.got[0] > 0 ? x.got[1] / x.got[0] >= 0.5 : undefined,
+              })),
+              ...d.gold.map((x) => ({
+                label: `${tl("Gold at 15 minutes")} · ${label[x.key]}`,
+                value: wrStr([x.g, x.w]),
+                win: x.g > 0 ? x.w / x.g >= 0.5 : undefined,
+              })),
+            ]}
+          />
+        </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 items-start">
         <table className="w-full text-xs">
@@ -603,6 +637,18 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
         <>
           <PeriodPicker options={options} value={period} onChange={setPeriod} />
           <OnlyPicker value={only} onChange={setOnly} />
+          {!hidden && (
+            <CopyPeriodTextPost
+              buildText={() => {
+                const head = `${who?.name || slug} — ${tl("Stats for")} ${periodText} (${agg.w}-${agg.g - agg.w}, ${winRate(agg.w, agg.g)})`;
+                const stats = `KDA ${fmtN(agg.kda)}${agg.csm != null ? ` · CS/m ${agg.csm}` : ""}${agg.dpm != null ? ` · DPM ${fmtNum(agg.dpm)}` : ""}${agg.tl?.gd15 != null ? ` · GD@15 ${signed(agg.tl.gd15)}` : ""}`;
+                const champs = agg.champs
+                  .slice(0, 5)
+                  .map((c) => `• ${c.c}: ${c.w}-${c.g - c.w} (${winRate(c.w, c.g)}, KDA ${fmtN(c.kda)})`);
+                return [head, stats, ...champs].join("\n");
+              }}
+            />
+          )}
           {who && !hidden && (
             <BroadcastCardButton data={() => playerCardData({ ...who, slug }, agg, periodText)} name={`${who.name}-${period}`} />
           )}
@@ -790,6 +836,18 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
         <>
           <PeriodPicker options={options} value={period} onChange={setPeriod} />
           <OnlyPicker value={only} onChange={setOnly} sides />
+          {!hidden && (
+            <CopyPeriodTextPost
+              buildText={() => {
+                const head = `${who?.name || slug} — ${tl("Stats for")} ${periodText} (${t.w}-${t.g - t.w}, ${winRate(t.w, t.g)})`;
+                const stats = `Blue ${winRate(t.blue[1], t.blue[0])} / Red ${winRate(t.red[1], t.red[0])}${t.tl?.gd15 != null ? ` · GD@15 ${signed(t.tl.gd15)}` : ""}${t.dragShare != null ? ` · DRA% ${pct(t.dragShare)}` : ""}${t.baronShare != null ? ` · Baron% ${pct(t.baronShare)}` : ""}`;
+                const picks = t.picks
+                  .slice(0, 5)
+                  .map(([c, n, w]) => `• ${c}: ${n}G (${winRate(w, n)})`);
+                return [head, stats, ...picks].join("\n");
+              }}
+            />
+          )}
           {who && !hidden && (
             <BroadcastCardButton
               data={() => teamSoloCardData(who, t, periodText)}
