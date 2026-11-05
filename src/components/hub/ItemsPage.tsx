@@ -266,6 +266,12 @@ const PlayerItemsView: React.FC<{
         title={label}
         right={
           <span className="flex items-center gap-2">
+            <CopyItemsPost
+              title={`${name} · ${label}`}
+              sub={`${fmtNum(g.length)}G${scope ? ` · ${scope}` : ""}`}
+              rows={g.slice(0, 5).map((r) => `${r[6] ? tc("short result", "W") : tc("short result", "L")} ${champName(r[2])} (${r[3]}/${r[4]}/${r[5]}) ${tl("vs")} ${r[8]} · ${fmtDate(r[0], false)}`)}
+              picks={picks}
+            />
             <SectionCard
               section={tl("Item history")}
               name={`${name} · ${label}`}
@@ -311,22 +317,33 @@ const PlayerItemsView: React.FC<{
       title={tl("Every item {player} finished pro games with", { player: name })}
       right={
         list.length > 0 ? (
-          <SectionCard
-            section={tl("Item history")}
-            name={name}
-            sub={scope || undefined}
-            rows={() =>
-              list.slice(0, 12).map(([it, g]) => {
+          <span className="flex items-center gap-2">
+            <CopyItemsPost
+              title={tl("Every item {player} finished pro games with", { player: name })}
+              sub={scope || undefined}
+              rows={list.slice(0, 5).map(([it, g]) => {
                 const won = g.filter((r) => r[6]).length;
-                return {
-                  label: itemName(it),
-                  sub: `${fmtNum(g.length)}G${g[0] ? ` · ${fmtDate(g[0][0], false)}` : ""}`,
-                  value: winRate(won, g.length),
-                  win: g.length ? won / g.length >= 0.5 : undefined,
-                };
-              })
-            }
-          />
+                return `${itemName(it)}: ${fmtNum(g.length)}G (${winRate(won, g.length)})`;
+              })}
+              picks={picks}
+            />
+            <SectionCard
+              section={tl("Item history")}
+              name={name}
+              sub={scope || undefined}
+              rows={() =>
+                list.slice(0, 12).map(([it, g]) => {
+                  const won = g.filter((r) => r[6]).length;
+                  return {
+                    label: itemName(it),
+                    sub: `${fmtNum(g.length)}G${g[0] ? ` · ${fmtDate(g[0][0], false)}` : ""}`,
+                    value: winRate(won, g.length),
+                    win: g.length ? won / g.length >= 0.5 : undefined,
+                  };
+                })
+              }
+            />
+          </span>
         ) : undefined
       }
     >
@@ -369,7 +386,9 @@ const PlayerItemsView: React.FC<{
                 <td className={`${td} max-sm:hidden`}>
                   <span className="flex gap-0.5">
                     {topChamps(g, 4).map(([c]) => (
-                      <ChampIcon key={c} name={c} size={16} />
+                      <HubLink key={c} to={{ kind: "champ", slug: prettySlug(c) }}>
+                        <ChampIcon name={c} size={16} />
+                      </HubLink>
                     ))}
                   </span>
                 </td>
@@ -403,6 +422,12 @@ const ItemPlayersView: React.FC<{ slug: string; onPlayer: (slug: string) => void
       title={tl("Who built {item} most", { item: itemName(it.n) })}
       right={
         <span className="flex items-center gap-2">
+          <CopyItemsPost
+            title={tl("Who built {item} most", { item: itemName(it.n) })}
+            sub={`${fmtNum(it.g)}G · ${fmtNum(it.np)} ${tl("Players")}`}
+            rows={it.players.slice(0, 5).map(([n, , g, last], i) => `#${i + 1} ${n}: ${fmtNum(g)}G (${fmtDate(last, false)})`)}
+            picks={{ player: "", item: slug, champ: "", year: "" }}
+          />
           <SectionCard
             section={tl("Who built {item} most", { item: itemName(it.n) })}
             name={itemName(it.n)}
@@ -491,19 +516,27 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
       right={
         <span className="flex items-center gap-2">
           {rows.length > 0 && (
-            <SectionCard
-              section={title}
-              name={`${label} · ${champLabel}`}
-              sub={`${fmtNum(total)}G · ${fmtNum(rows.length)} ${tl("Players")}`}
-              rows={() =>
-                rows.slice(0, 12).map((r, i) => ({
-                  label: `#${i + 1} · ${players?.[r.k]?.[0] || "–"}`,
-                  sub: yearSpan(r.ys),
-                  value: `${fmtNum(r.g)}G`,
-                  win: true,
-                }))
-              }
-            />
+            <>
+              <CopyItemsPost
+                title={title}
+                sub={`${fmtNum(total)}G · ${fmtNum(rows.length)} ${tl("Players")}`}
+                rows={rows.slice(0, 5).map((r, i) => `#${i + 1} ${players?.[r.k]?.[0] || "–"}: ${fmtNum(r.g)}G (${yearSpan(r.ys)})`)}
+                picks={picks}
+              />
+              <SectionCard
+                section={title}
+                name={`${label} · ${champLabel}`}
+                sub={`${fmtNum(total)}G · ${fmtNum(rows.length)} ${tl("Players")}`}
+                rows={() =>
+                  rows.slice(0, 12).map((r, i) => ({
+                    label: `#${i + 1} · ${players?.[r.k]?.[0] || "–"}`,
+                    sub: yearSpan(r.ys),
+                    value: `${fmtNum(r.g)}G`,
+                    win: true,
+                  }))
+                }
+              />
+            </>
           )}
           {head.data && <ItemIcon name={head.data.n} size={22} />}
         </span>
@@ -572,18 +605,26 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
       right={
         <span className="flex items-center gap-2">
           {y && y.p.length > 0 && (
-            <SectionCard
-              section={tl("Who built {item} in {year}", { item: label, year })}
-              name={`${label} · ${year}`}
-              sub={`${fmtNum(y.g)}G · ${fmtNum(y.np)} ${tl("Players")}`}
-              rows={() =>
-                y.p.slice(0, 12).map(([k, g], i) => ({
-                  label: `#${i + 1} · ${players?.[k]?.[0] || "–"}`,
-                  value: `${fmtNum(g)}G`,
-                  win: true,
-                }))
-              }
-            />
+            <>
+              <CopyItemsPost
+                title={tl("Who built {item} in {year}", { item: label, year })}
+                sub={`${fmtNum(y.g)}G · ${fmtNum(y.np)} ${tl("Players")}`}
+                rows={y.p.slice(0, 5).map(([k, g], i) => `#${i + 1} ${players?.[k]?.[0] || "–"}: ${fmtNum(g)}G`)}
+                picks={picks}
+              />
+              <SectionCard
+                section={tl("Who built {item} in {year}", { item: label, year })}
+                name={`${label} · ${year}`}
+                sub={`${fmtNum(y.g)}G · ${fmtNum(y.np)} ${tl("Players")}`}
+                rows={() =>
+                  y.p.slice(0, 12).map(([k, g], i) => ({
+                    label: `#${i + 1} · ${players?.[k]?.[0] || "–"}`,
+                    value: `${fmtNum(g)}G`,
+                    win: true,
+                  }))
+                }
+              />
+            </>
           )}
           {head.data && <ItemIcon name={head.data.n} size={22} />}
         </span>
@@ -646,19 +687,27 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
       title={tl("Item stats")}
       right={
         shown.length > 0 ? (
-          <SectionCard
-            section={tl("Item stats")}
-            name={tl("Item history")}
-            sub={scope || undefined}
-            rows={() =>
-              shown.slice(0, 12).map((r, i) => ({
-                label: `#${i + 1} · ${itemName(r[0])}`,
-                sub: `${fmtNum(r[2])}G · ${fmtNum(r[3])} ${tl("Players")}`,
-                value: r[4] != null ? winRate(r[4], r[2]) : `${fmtNum(r[2])}G`,
-                win: r[4] != null && r[2] ? r[4] / r[2] >= 0.5 : true,
-              }))
-            }
-          />
+          <span className="flex items-center gap-2">
+            <CopyItemsPost
+              title={tl("Item stats")}
+              sub={scope || undefined}
+              rows={shown.slice(0, 5).map((r, i) => `#${i + 1} ${itemName(r[0])}: ${fmtNum(r[2])}G${r[4] != null ? ` (${winRate(r[4], r[2])})` : ""}`)}
+              picks={{ player: "", item: "", champ: "", year: "" }}
+            />
+            <SectionCard
+              section={tl("Item stats")}
+              name={tl("Item history")}
+              sub={scope || undefined}
+              rows={() =>
+                shown.slice(0, 12).map((r, i) => ({
+                  label: `#${i + 1} · ${itemName(r[0])}`,
+                  sub: `${fmtNum(r[2])}G · ${fmtNum(r[3])} ${tl("Players")}`,
+                  value: r[4] != null ? winRate(r[4], r[2]) : `${fmtNum(r[2])}G`,
+                  win: r[4] != null && r[2] ? r[4] / r[2] >= 0.5 : true,
+                }))
+              }
+            />
+          </span>
         ) : undefined
       }
     >
@@ -713,7 +762,13 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
                   <td className={`${td} max-sm:hidden`}>
                     <span className="flex gap-0.5">
                       {(r[5] || []).map((c) => (
-                        <ChampIcon key={c} name={c} size={18} />
+                        <HubLink
+                          key={c}
+                          to={{ kind: "items", query: new URLSearchParams({ item: r[1], champ: prettySlug(c) }).toString() }}
+                          title={`${itemName(r[0])} · ${champName(c)}`}
+                        >
+                          <ChampIcon name={c} size={18} />
+                        </HubLink>
                       ))}
                     </span>
                   </td>
@@ -865,9 +920,9 @@ const topChamps = (games: PlayerGameRow[], n: number): [string, number][] => {
 const ChampSpread: React.FC<{ games: PlayerGameRow[] }> = ({ games }) => (
   <div className="flex flex-wrap gap-2 text-[11px] text-rw-sub">
     {topChamps(games, 8).map(([c, n]) => (
-      <span key={c} className="flex items-center gap-1">
+      <HubLink key={c} to={{ kind: "champ", slug: prettySlug(c) }} className="flex items-center gap-1 hover:text-rw-accent">
         <ChampIcon name={c} size={16} /> {champName(c)} {n}
-      </span>
+      </HubLink>
     ))}
   </div>
 );
@@ -888,7 +943,9 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                 <span className={`w-3.5 shrink-0 font-bold ${hide ? "text-rw-muted" : r[6] ? "text-rw-teal" : "text-rw-red"}`}>
                   {hide ? "?" : r[6] ? tc("short result", "W") : tc("short result", "L")}
                 </span>
-                <ChampIcon name={r[2]} size={18} />
+                <HubLink to={{ kind: "champ", slug: prettySlug(r[2]) }} className="shrink-0">
+                  <ChampIcon name={r[2]} size={18} />
+                </HubLink>
                 <span className="truncate min-w-0">
                   <span className="text-rw-text tabular-nums">{hide ? "–" : `${r[3]}/${r[4]}/${r[5]}`}</span>{" "}
                   <HubLink to={{ kind: "match", slug: r[1], ...(r[22] ? { game: r[22] } : {}) }}>
@@ -908,5 +965,43 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
         </button>
       )}
     </>
+  );
+};
+
+const CopyItemsPost: React.FC<{
+  title: string;
+  sub?: string;
+  rows: string[];
+  picks: Picks;
+}> = ({ title, sub, rows, picks }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const lines: string[] = [`${title}${sub ? ` (${sub})` : ""}`];
+    for (const r of rows) {
+      lines.push(`• ${r}`);
+    }
+    const qs = new URLSearchParams();
+    if (picks.player) qs.set("player", picks.player);
+    if (picks.item) qs.set("item", picks.item);
+    if (picks.champ) qs.set("champ", picks.champ);
+    if (picks.year) qs.set("year", picks.year);
+    lines.push(`https://riftwise.gg/stats/items${qs.toString() ? `?${qs.toString()}` : ""}`);
+    navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+      title={tl("Copy post")}
+    >
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
   );
 };

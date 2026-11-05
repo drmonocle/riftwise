@@ -556,6 +556,14 @@ const FinderBody: React.FC<{
                   })
                 }
               />
+              <CopyFinderPost
+                found={found}
+                events={events}
+                q={q}
+                sideCond={sideCond}
+                won={won}
+                avg={avg}
+              />
               {q.get("team") && q.get("vs") && (
                 <>
                   <HubLink
@@ -636,7 +644,16 @@ const FinderBody: React.FC<{
                       <td
                         className={`${td} text-rw-muted max-w-[12rem] truncate`}
                       >
-                        {events[g[2]]?.[1] || ""}
+                        {events[g[2]]?.[0] ? (
+                          <HubLink
+                            to={{ kind: "event", slug: events[g[2]][0] }}
+                            className="hover:text-rw-accent hover:underline"
+                          >
+                            {events[g[2]][1]}
+                          </HubLink>
+                        ) : (
+                          events[g[2]]?.[1] || ""
+                        )}
                       </td>
                       <TeamCell
                         name={g[10]}
@@ -862,3 +879,59 @@ const Picks: React.FC<{ list: ChampPick[] }> = ({ list }) => (
     </span>
   </td>
 );
+
+const CopyFinderPost: React.FC<{
+  found: Found;
+  events: [string, string][];
+  q: Q;
+  sideCond: boolean;
+  won: number;
+  avg: number | null;
+}> = ({ found, events, q, sideCond, won, avg }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const parts = [
+      q.get("team"),
+      q.get("vs") && `vs ${q.get("vs")}`,
+      q.get("champ") && champName(q.get("champ")!),
+      q.get("vschamp") && `vs ${champName(q.get("vschamp")!)}`,
+      q.get("player"),
+      q.get("patch") && `Patch ${q.get("patch")}`,
+    ].filter(Boolean);
+    const lines: string[] = [
+      `${tl("Game finder")}${parts.length ? ` · ${parts.join(" · ")}` : ""}`,
+      [
+        tn("{n} game", "{n} games", found.length),
+        sideCond ? `${won}–${found.length - won} (${Math.round((won / found.length) * 100)}%)` : null,
+        avg != null ? `${fmtDec(avg)}m` : null,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    ];
+    for (const { g } of found.slice(0, 5)) {
+      const winner = (g[3] === 1 ? g[10] : g[11]) || (g[3] === 1 ? tl("Blue") : tl("Red"));
+      lines.push(
+        `• ${g[10] || tl("Blue")} vs ${g[11] || tl("Red")} → ${winner}${events[g[2]]?.[1] ? ` (${events[g[2]][1]})` : ""}`,
+      );
+    }
+    const qs = q.toString();
+    lines.push(`${SITE_URL}stats/finder${qs ? `?${qs}` : ""}`);
+    navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+      title={tl("Copy post")}
+    >
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
+  );
+};
