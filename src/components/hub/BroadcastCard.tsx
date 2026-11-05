@@ -1012,6 +1012,130 @@ export function fearlessCard(d: { aName: string; bName: string; rows: { role: st
   };
 }
 
+export interface LineupPlayer {
+  name: string;
+  slug?: string;
+  img?: string;
+  stats: PlayerAgg | null;
+}
+
+/** 5v5 starting lineups card: all 5 role matchups on one 16:9 image with photos, KDA, DPM, GD@15, and top 3 champions. */
+export function lineupCard(d: {
+  aName: string;
+  bName: string;
+  rows: { role: string; a: LineupPlayer | null; b: LineupPlayer | null; h2h?: [number, number] | null }[];
+  period: string;
+}): CardData {
+  const cell = (x: LineupPlayer | null, opp: LineupPlayer | null, teamName: string, right: boolean, sideColor: string) => {
+    if (!x) return <div style={{ textAlign: right ? "right" : "left" }}>{none}</div>;
+    const s = x.stats;
+    const os = opp?.stats ?? null;
+    const wr = s && s.g ? Math.round((s.w / s.g) * 100) : null;
+    const owr = os && os.g ? Math.round((os.w / os.g) * 100) : null;
+    const statItem = (label: string, val: string | null, v: number | null | undefined, ov: number | null | undefined) => {
+      if (!val || val === "–") return null;
+      const better = v != null && ov != null && v > ov;
+      return (
+        <span key={label} style={{ display: "inline-flex", alignItems: "baseline", gap: 4, fontVariantNumeric: "tabular-nums" }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--rw-muted)", textTransform: "uppercase" }}>{label}</span>
+          <span style={{ fontSize: 17, fontWeight: 800, color: better ? sideColor : "var(--rw-text)" }}>{val}</span>
+        </span>
+      );
+    };
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexDirection: right ? "row-reverse" : "row", minWidth: 0 }}>
+        <CardPhoto name={x.name} team={teamName} slug={x.slug} img={x.img} size={72} noLogo ringColor={sideColor} />
+        <div style={{ flex: 1, minWidth: 0, textAlign: right ? "right" : "left" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10, justifyContent: right ? "flex-end" : "flex-start", flexWrap: "wrap" }}>
+            <span style={{ fontSize: 24, fontWeight: 800, color: sideColor, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {x.name}
+            </span>
+            {s && <span style={{ fontSize: 15, fontWeight: 600, color: "var(--rw-sub)" }}>{tl("{n} games", { n: s.g })}</span>}
+          </div>
+          {s && (
+            <div style={{ display: "flex", gap: 12, marginTop: 4, justifyContent: right ? "flex-end" : "flex-start", flexWrap: "wrap" }}>
+              {statItem("WR", wr != null ? `${wr}%` : null, wr, owr)}
+              {statItem("KDA", fmtDec(s.kda, 2), s.kda, os?.kda)}
+              {statItem("DPM", s.dpm != null ? String(Math.round(s.dpm)) : null, s.dpm, os?.dpm)}
+              {statItem("GD@15", sg(s.tl?.gd15), s.tl?.gd15, os?.tl?.gd15)}
+            </div>
+          )}
+        </div>
+        {s && s.champs.length > 0 && (
+          <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+            {s.champs.slice(0, 3).map((c) => chip(c.c, c.g, 32))}
+          </div>
+        )}
+      </div>
+    );
+  };
+  return {
+    title: tl("Lane by lane"),
+    subtitle: `${d.aName} vs ${d.bName} · ${d.period}`,
+    a: { name: d.aName },
+    rows: [],
+    marks: [{ name: d.aName }, { name: d.bName }],
+    body: (
+      <div style={{ marginTop: 12, display: "grid", gap: 8, flex: 1, alignContent: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 1fr", gap: 16, fontSize: 30, fontWeight: 800, alignItems: "center", padding: "0 12px" }}>
+          <span style={{ color: A_COLOR, display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+            <CardLogo name={d.aName} size={50} badge />
+            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.aName}</span>
+          </span>
+          <span />
+          <span style={{ color: B_COLOR, display: "flex", alignItems: "center", gap: 14, justifyContent: "flex-end", minWidth: 0 }}>
+            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.bName}</span>
+            <CardLogo name={d.bName} size={50} badge />
+          </span>
+        </div>
+        {d.rows.map((r) => (
+          <div
+            key={r.role}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 140px 1fr",
+              gap: 16,
+              alignItems: "center",
+              background: "var(--rw-surface)",
+              border: "1px solid var(--rw-border)",
+              borderRadius: 10,
+              padding: "7px 14px",
+            }}
+          >
+            {cell(r.a, r.b, d.aName, false, A_COLOR)}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+              <span
+                style={{
+                  ...caption,
+                  fontSize: 15,
+                  textAlign: "center",
+                  color: "var(--rw-text)",
+                  fontWeight: 800,
+                  background: "var(--rw-bg)",
+                  border: "1px solid var(--rw-border)",
+                  borderRadius: 8,
+                  padding: "4px 10px",
+                  width: "100%",
+                }}
+              >
+                {roleName(r.role)}
+              </span>
+              {r.h2h && r.h2h[0] + r.h2h[1] > 0 && (
+                <span style={{ fontSize: 14, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>
+                  <span style={{ color: A_COLOR }}>{r.h2h[0]}</span>
+                  <span style={{ color: "var(--rw-muted)" }}> – </span>
+                  <span style={{ color: B_COLOR }}>{r.h2h[1]}</span>
+                </span>
+              )}
+            </div>
+            {cell(r.b, r.a, d.bName, true, B_COLOR)}
+          </div>
+        ))}
+      </div>
+    ),
+  };
+}
+
 type Draft = ReturnType<typeof draftTendencies>;
 
 /** Both teams' drafts side by side: first picks, red openers, phase 1 bans, counter-pick roles, bot duos, flex picks. */

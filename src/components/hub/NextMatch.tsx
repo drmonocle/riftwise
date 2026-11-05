@@ -15,6 +15,7 @@ import { useMatchRatings } from "../../hub/matchRatings";
 import { riotImg } from "../../riotImage";
 import { formatMatchTime } from "../../matchTime";
 import { MatchPrepButton } from "../MatchPrepButton";
+import { MatchOverviewButton } from "../MatchOverviewButton";
 import { teamStarter } from "./MatchOverview";
 import { fmtDate, HubLink, Section, TeamLink } from "./ui";
 
@@ -209,6 +210,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
       )}
       <div className="flex flex-wrap items-center justify-center gap-2">
         <MatchPrepButton match={m} />
+        <MatchOverviewButton match={m} />
         <HubLink
           to={{ kind: "match", slug: RIOT_PREFIX + m.matchId }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"

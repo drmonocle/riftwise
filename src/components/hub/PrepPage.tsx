@@ -25,7 +25,7 @@ import { pool, computeDraftSuggestions, slotsFromGameDraft, packSlots } from "./
 import { StoryLine, StoryList, noteText } from "./Storylines";
 import { CaptureContext, card, ChampIcon, fmtDate, fmtNum, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, useHidden, useLoad, usePageTitle, PhotosLink, NERDFINDER_TOGETHER, useRetryAttempt, retryFailedLoads } from "./ui";
 import { CaptureFooter, CopyPageImage, ShareButtons } from "./ShareImage";
-import { BroadcastCardButton, CardData, PoolLine, fearlessCard, playerCardData, prepOverviewCard } from "./BroadcastCard";
+import { BroadcastCardButton, CardData, PoolLine, fearlessCard, lineupCard, playerCardData, prepOverviewCard } from "./BroadcastCard";
 import type { HubRatings } from "../../hub/types";
 import { countView } from "../../usage";
 
@@ -1202,7 +1202,37 @@ const Lanes: React.FC<{
     );
   };
   return (
-    <Section title={tl("Lane by lane")} right={<span className="text-[11px] text-rw-sub">{periodLabel}</span>} share={`${title}-lanes-${periodLabel}`}>
+    <Section
+      title={tl("Lane by lane")}
+      right={
+        <span className="flex items-center gap-2">
+          <span className="text-[11px] text-rw-sub">{periodLabel}</span>
+          <BroadcastCardButton
+            data={() =>
+              lineupCard({
+                aName: a.team.name,
+                bName: b.team.name,
+                rows: ROLES.map((role, i) => {
+                  const pa = a.players[i];
+                  const pb = b.players[i];
+                  const h2h = pa && pb ? playerHeadToHead(pa.log, pb.log) : null;
+                  return {
+                    role,
+                    a: pa ? { name: pa.p.name, slug: pa.p.u, img: pa.p.img, stats: stats(pa) } : null,
+                    b: pb ? { name: pb.p.name, slug: pb.p.u, img: pb.p.img, stats: stats(pb) } : null,
+                    h2h: h2h && h2h.g > 0 ? [h2h.w, h2h.g - h2h.w] : null,
+                  };
+                }),
+                period: periodLabel,
+              })
+            }
+            name={`${title}-lineups`}
+            label={tl("Overview card")}
+          />
+        </span>
+      }
+      share={`${title}-lanes-${periodLabel}`}
+    >
       {/* one lane a row, or two / three side by side when the section is wide (one lane a row left most of it empty) */}
       <div className="@container">
         <ul className="grid @min-[60rem]:grid-cols-2 @min-[96rem]:grid-cols-3 gap-x-8">
