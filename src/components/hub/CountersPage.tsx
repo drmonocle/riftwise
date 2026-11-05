@@ -25,6 +25,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   useDDragon();
   const q = new URLSearchParams(query || "");
   const slug = q.get("champ") || "";
+  const vsParam = q.get("vs") || "";
   const role = q.get("role") || "";
   const spanParam = q.get("span") || "";
   const index = useLoad(loadHubIndexQuick, []);
@@ -48,10 +49,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
     navigateHub({ kind: "counters", query: next.toString() }, { replace: true });
   };
   const [inputVal, setInputVal] = useState("");
+  const [vsInput, setVsInput] = useState("");
   useEffect(() => {
     if (data.data?.m?.c) setInputVal(champName(data.data.m.c));
     else if (!slug) setInputVal("");
   }, [data.data?.m?.c, slug]);
+  useEffect(() => {
+    setVsInput(vsParam ? champName(vsParam) : "");
+  }, [vsParam]);
   const matchChamp = (raw: string) => {
     const b = bare(raw.trim());
     if (!b) return undefined;
@@ -118,6 +123,35 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   const sampleFloor = span === "12m" ? Math.max(minG, 3) : Math.max(minG, 8);
   const good = rows.filter((x) => x.g >= sampleFloor).sort((a, b) => b.w / b.g - a.w / a.g).slice(0, 5);
   const bad = rows.filter((x) => x.g >= sampleFloor).sort((a, b) => a.w / a.g - b.w / b.g).slice(0, 5);
+  const vsMatch = useMemo(() => {
+    const d = data.data;
+    if (!d || !vsParam) return null;
+    const b = bare(vsParam);
+    const allRows: Row[] = [];
+    if (span === "12m" && d.ch?.matchups12) {
+      ROLES.forEach((rName, rIdx) => {
+        for (const [opp, g, w, , gd, csd] of d.ch?.matchups12?.[rName] || []) {
+          if (bare(opp) === b || bare(champName(opp)) === b) {
+            allRows.push({ c: opp, role: rIdx, g, w, gd: gd ?? null, csd: csd ?? null });
+          }
+        }
+      });
+    }
+    if (allRows.length === 0) {
+      for (const [c, r, g, w, gd] of d.m.vs) {
+        if (bare(c) === b || bare(champName(c)) === b) {
+          allRows.push({ c, role: r, g, w, gd });
+        }
+      }
+    }
+    if (allRows.length === 0) return null;
+    const oppCanon = allRows[0].c;
+    const totalG = allRows.reduce((s, r) => s + r.g, 0);
+    const totalW = allRows.reduce((s, r) => s + r.w, 0);
+    const gdRows = allRows.filter((r) => r.gd != null);
+    const avgGd = gdRows.length > 0 ? Math.round(gdRows.reduce((s, r) => s + (r.gd || 0) * r.g, 0) / gdRows.reduce((s, r) => s + r.g, 0)) : null;
+    return { oppCanon, totalG, totalW, avgGd, roles: allRows };
+  }, [data.data, vsParam, span]);
   return (
     <div className="rw-page">
       <div className={`rw-span ${card} space-y-2`}>
@@ -145,7 +179,33 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 if (hit) set({ champ: champSlug(hit) });
               }
             }}
-            className={`${sel} w-48`}
+            className={`${sel} w-44`}
+          />
+          <span className="text-rw-muted">{tl("vs")}</span>
+          <input
+            list="rw-champ-list"
+            placeholder={tl("Lane opponent")}
+            aria-label={tl("Lane opponent")}
+            value={vsInput}
+            onChange={(e) => {
+              const v = e.target.value;
+              setVsInput(v);
+              if (!v.trim()) {
+                set({ vs: undefined });
+                return;
+              }
+              const exact = (index.data?.champs || []).find(
+                (c) => bare(c[0]) === bare(v.trim()) || bare(champName(c[0])) === bare(v.trim()),
+              );
+              if (exact) set({ vs: exact[0] });
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                const hit = matchChamp(vsInput);
+                if (hit) set({ vs: hit[0] });
+              }
+            }}
+            className={`${sel} w-44`}
           />
           <datalist id="rw-champ-list">
             {(index.data?.champs || []).map((c) => (
@@ -210,6 +270,71 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
       {slug && data.loading && <Loading />}
       {slug && data.data && (
         <>
+          {vsMatch && (
+            <div className="rw-span">
+              <Section
+                title={`${cName} ${tl("vs")} ${champName(vsMatch.oppCanon)}`}
+                right={
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => set({ champ: prettySlug(vsMatch.oppCanon), vs: rawChamp })}
+                      className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+                    >
+                      ⇄ {champName(vsMatch.oppCanon)} {tl("vs")} {cName}
+                    </button>
+                    <SectionCard
+                      section={tl("Matchups")}
+                      name={`${cName} vs ${champName(vsMatch.oppCanon)}`}
+                      sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
+                      rows={() => [
+                        {
+                          label: `${cName} vs ${champName(vsMatch.oppCanon)}`,
+                          sub: `${vsMatch.totalG}G · ${vsMatch.totalW}W–${vsMatch.totalG - vsMatch.totalW}L${vsMatch.avgGd != null ? ` · ${vsMatch.avgGd > 0 ? "+" : ""}${vsMatch.avgGd} GD@15` : ""}`,
+                          value: `${Math.round((vsMatch.totalW / vsMatch.totalG) * 100)}%`,
+                          win: vsMatch.totalW / vsMatch.totalG >= 0.5,
+                        },
+                        ...vsMatch.roles.map((r) => ({
+                          label: r.role >= 0 ? roleName(ROLES[r.role]) : tl("Every role"),
+                          sub: `${r.g}G · ${r.w}W–${r.g - r.w}L${r.gd != null ? ` · ${r.gd > 0 ? "+" : ""}${r.gd} GD@15` : ""}`,
+                          value: `${Math.round((r.w / r.g) * 100)}%`,
+                          win: r.w / r.g >= 0.5,
+                        })),
+                      ]}
+                    />
+                  </div>
+                }
+              >
+                <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-rw-border bg-rw-bg/50 px-4 py-3 text-xs">
+                  <div className="flex items-center gap-3">
+                    {rawChamp && <ChampIcon name={rawChamp} size={36} />}
+                    <div>
+                      <div className="font-bold text-sm text-rw-text">
+                        {cName} <span className="text-rw-muted font-normal">{tl("vs")}</span> {champName(vsMatch.oppCanon)}
+                      </div>
+                      <div className="text-[11px] text-rw-sub font-mono">
+                        {vsMatch.totalW}W–{vsMatch.totalG - vsMatch.totalW}L ({finderLink(vsMatch.oppCanon, vsMatch.totalG)} {tl("Games")})
+                        {vsMatch.avgGd != null && ` · ${vsMatch.avgGd > 0 ? "+" : ""}${vsMatch.avgGd} GD@15`}
+                      </div>
+                    </div>
+                    <ChampIcon name={vsMatch.oppCanon} size={36} />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {vsMatch.roles.map((r) => {
+                      const wr = Math.round((r.w / r.g) * 100);
+                      return (
+                        <div key={r.role} className="rounded-lg border border-rw-border bg-rw-surface px-2.5 py-1.5 text-center">
+                          <div className="text-[10px] text-rw-muted uppercase">{r.role >= 0 ? roleName(ROLES[r.role]) : tl("Role")}</div>
+                          <div className={`font-mono font-bold ${wr >= 50 ? "text-rw-teal" : "text-rw-red"}`}>{wr}%</div>
+                          <div className="text-[10px] font-mono text-rw-sub">{r.g}G{r.gd != null ? ` · ${r.gd > 0 ? "+" : ""}${r.gd} GD@15` : ""}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </Section>
+            </div>
+          )}
           {(good.length > 0 || bad.length > 0) && (
             <div className="rw-span grid sm:grid-cols-2 gap-3">
               <Section

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { groupRank, searchHub, type HubIndex } from "../hub/data";
 import type { HubSearchKind } from "../hub/data";
-import { champPairShortcuts } from "../components/hub/HubSearch";
+import { champPairShortcuts, matchupShortcuts } from "../components/hub/HubSearch";
 
 // A tiny search index shaped like hub/search/*.json
 const index: HubIndex = {
@@ -21,7 +21,10 @@ const index: HubIndex = {
     ["MSI 2026", "msi-2026", "2026", "Mid-Season Invitational", "P", "2026-07-12", 71],
     ["RDAG 2022 West Asia", "", "2022", "", "S", "2022-05-01", 32],
   ],
-  champs: [["Ahri", "", 14477]],
+  champs: [
+    ["Ahri", "", 14477],
+    ["Azir", "", 12000],
+  ],
   leagues: [],
 };
 
@@ -81,5 +84,13 @@ describe("stats search", () => {
       tab: "champions",
       query: "champ=Ahri",
     });
+  });
+
+  it("links champion vs champion searches to Counter-pick finder and Game finder", () => {
+    const cvc = matchupShortcuts(index, "Ahri vs Azir");
+    expect(cvc.map((s) => s.route)).toEqual([
+      { kind: "counters", query: "champ=ahri&vs=Azir" },
+      { kind: "finder", query: "champ=Ahri&vschamp=Azir" },
+    ]);
   });
 });

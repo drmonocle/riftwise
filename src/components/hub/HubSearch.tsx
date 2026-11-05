@@ -43,6 +43,8 @@ export function matchupShortcuts(index: HubIndex, q: string): Shortcut[] {
   const tb = hb.team[0];
   const pa = ha.player[0];
   const pb = hb.player[0];
+  const ca = ha.champ[0];
+  const cb = hb.champ[0];
   // teams when both sides name one (the better match of the two kinds wins a tie: "faker" is a player)
   const teams = good(ta) && good(tb) && ta.slug !== tb.slug && !((pa?.score ?? 9) < (ta.score ?? 9) && (pb?.score ?? 9) < (tb.score ?? 9));
   if (teams) {
@@ -55,6 +57,23 @@ export function matchupShortcuts(index: HubIndex, q: string): Shortcut[] {
   if (good(pa) && good(pb) && pa.slug !== pb.slug)
     return [
       { key: "compare", route: { kind: "compare", mode: "player", a: pa.slug, b: pb.slug }, label: tl("Compare {a} and {b}", { a: pa.name, b: pb.name }), sub: tl("Side by side, over any period"), icon: <GitCompare className="w-3.5 h-3.5" /> },
+    ];
+  if (good(ca) && good(cb) && ca.slug !== cb.slug)
+    return [
+      {
+        key: "counters",
+        route: { kind: "counters", query: `champ=${encodeURIComponent(ca.slug)}&vs=${encodeURIComponent(cb.name)}` },
+        label: `${champName(ca.name)} vs ${champName(cb.name)} · ${tl("Matchups")}`,
+        sub: tl("Every pro lane matchup, by champion"),
+        icon: <Swords className="w-3.5 h-3.5" />,
+      },
+      {
+        key: "finder",
+        route: { kind: "finder", query: `champ=${encodeURIComponent(ca.name)}&vschamp=${encodeURIComponent(cb.name)}` },
+        label: `${tl("Game finder")}: ${champName(ca.name)} vs ${champName(cb.name)}`,
+        sub: tl("Any game by team, champion, player"),
+        icon: <Compass className="w-3.5 h-3.5" />,
+      },
     ];
   return [];
 }
