@@ -4,11 +4,11 @@
  * browser (blind-pick rate and first picks come from the draft order). Filters live in the address, so a view
  * can be shared: /stats/champions?league=lck&year=2026&patch=26.18&role=Mid
  */
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { tl, roleName, fmtDec } from "../../i18n";
 import { ChampionStats, StatsMeta, loadChampionStats } from "../../stats";
 import { loadAliases, loadChampGames, loadChampIndex } from "../../hub/data";
-import { navigateHub } from "../../hub/route";
+import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { ChampAggRow, ROLES, champAgg, patchCompare } from "../../hub/champAgg";
 import { SortTable, type Column } from "./SortTable";
@@ -322,6 +322,11 @@ const LeagueTable: React.FC<{ league: string; years: string[]; q: URLSearchParam
                 }))
               }
             />
+            <CopyChampsPost
+              title={[tl("Champions"), league.toUpperCase(), year, q.get("patch") && tl("Patch {patch}", { patch: q.get("patch")! })].filter(Boolean).join(" · ")}
+              rows={result.rows}
+              query={q.toString()}
+            />
           </span>
         )}
       </div>
@@ -436,6 +441,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
                 }))
               }
             />
+            <CopyChampsPost title={`${tl("Champions")} · ${label(key)}`} rows={rows} query={q.toString()} />
           </span>
         )}
       </div>
@@ -500,6 +506,42 @@ const MetaSpotlight: React.FC<{
         </div>
       ))}
     </div>
+  );
+};
+
+const CopyChampsPost: React.FC<{
+  title: string;
+  rows: { c: string; presence: number; p: number; b: number; wr: number | null }[];
+  query?: string;
+}> = ({ title, rows, query }) => {
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+  const copy = () => {
+    const top = [...rows].sort((a, b) => b.presence - a.presence).slice(0, 5);
+    const lines = [
+      title,
+      ...top.map((c, i) => `#${i + 1} ${champName(c.c)} — ${pct(c.presence)} ${tl("Presence")} (${c.p}P / ${c.b}B${c.p >= 5 && c.wr != null ? `, ${pct(c.wr)} ${tl("Win %")}` : ""})`),
+      hubShareUrl({ kind: "champions", ...(query ? { query } : {}) }),
+    ];
+    navigator.clipboard?.writeText(lines.join("\n")).then(
+      () => {
+        setState("copied");
+        setTimeout(() => setState("idle"), 1600);
+      },
+      () => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2000);
+      },
+    );
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title={tl("Copy a ready-to-post summary with the link, for X or Discord")}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-surface text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+    >
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
+    </button>
   );
 };
 

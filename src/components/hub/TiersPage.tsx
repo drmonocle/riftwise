@@ -4,11 +4,11 @@
  * picks. From the same files as the Champions page (champions/<key>.json, top leagues or all leagues).
  * Address: /stats/tiers?key=p26.20&scope=all&role=Mid
  */
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { tl, roleName, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
 import { ChampRow, ChampionStats, StatsMeta, loadChampionStats } from "../../stats";
-import { navigateHub } from "../../hub/route";
+import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { ROLES, champAgg } from "../../hub/champAgg";
 import { card, ChampIcon, HubLink, Loading, Section, useLoad, usePageTitle } from "./ui";
@@ -117,24 +117,27 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-lg font-bold text-rw-text">{tl("Pro tier list")}</h1>
           {block && block.games > 0 && (
-            <SectionCard
-              section={tl("Pro tier list")}
-              name={label(key)}
-              sub={`${block.games}G`}
-              rows={() =>
-                shown.flatMap((r) =>
-                  (byRole.get(r) || [])
-                    .filter((c) => tierOf(c.score).t === "S" || tierOf(c.score).t === "A")
-                    .slice(0, role ? 12 : 3)
-                    .map((c) => ({
-                      label: `${champName(c.c)} (${roleName(r)})`,
-                      sub: `${tierOf(c.score).t} · ${fmtDec(c.presence * 100)}% ${tl("Presence")} · ${c.p}G`,
-                      value: c.wr != null && c.p >= 5 ? `${Math.round(c.wr * 100)}%` : `${fmtDec(c.presence * 100)}%`,
-                      win: c.wr != null ? c.wr >= 0.5 : true,
-                    })),
-                )
-              }
-            />
+            <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+              <SectionCard
+                section={tl("Pro tier list")}
+                name={label(key)}
+                sub={`${block.games}G`}
+                rows={() =>
+                  shown.flatMap((r) =>
+                    (byRole.get(r) || [])
+                      .filter((c) => tierOf(c.score).t === "S" || tierOf(c.score).t === "A")
+                      .slice(0, role ? 12 : 3)
+                      .map((c) => ({
+                        label: `${champName(c.c)} (${roleName(r)})`,
+                        sub: `${tierOf(c.score).t} · ${fmtDec(c.presence * 100)}% ${tl("Presence")} · ${c.p}G`,
+                        value: c.wr != null && c.p >= 5 ? `${Math.round(c.wr * 100)}%` : `${fmtDec(c.presence * 100)}%`,
+                        win: c.wr != null ? c.wr >= 0.5 : true,
+                      })),
+                  )
+                }
+              />
+              <CopyTiersPost title={`${tl("Pro tier list")} · ${label(key)} (${block.games}G)`} byRole={byRole} shown={shown} query={query} />
+            </span>
           )}
         </div>
         <p className="text-[11px] text-rw-sub">
@@ -281,5 +284,42 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
         </div>
       )}
     </div>
+  );
+};
+
+const CopyTiersPost: React.FC<{ title: string; byRole: Map<string, Ranked[]>; shown: string[]; query?: string }> = ({ title, byRole, shown, query }) => {
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+  const copy = () => {
+    const lines = [
+      title,
+      ...shown
+        .map((r) => {
+          const top = (byRole.get(r) || []).slice(0, 3);
+          if (!top.length) return null;
+          return `${roleName(r)}: ${top.map((c) => `${champName(c.c)} (${tierOf(c.score).t}, ${fmtDec(c.presence * 100)}%)`).join(", ")}`;
+        })
+        .filter((x): x is string => !!x),
+      hubShareUrl({ kind: "tiers", ...(query ? { query } : {}) }),
+    ];
+    navigator.clipboard?.writeText(lines.join("\n")).then(
+      () => {
+        setState("copied");
+        setTimeout(() => setState("idle"), 1600);
+      },
+      () => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2000);
+      },
+    );
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title={tl("Copy a ready-to-post summary with the link, for X or Discord")}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-surface text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+    >
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
+    </button>
   );
 };

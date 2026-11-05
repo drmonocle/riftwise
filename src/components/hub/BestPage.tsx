@@ -9,7 +9,7 @@ import { PlayCircle } from "lucide-react";
 import { tl, tn, tc, stageLabel, fmtDec } from "../../i18n";
 import { loadAliases, loadBest, loadBestIndex, normText } from "../../hub/data";
 import type { BestGame, BestSeries } from "../../hub/types";
-import { navigateHub } from "../../hub/route";
+import { hubShareUrl, navigateHub } from "../../hub/route";
 import { card, EventLink, Failed, fmtDate, HubLink, isFresh, Loading, RevealButton, useHidden, useLoad, usePageTitle } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 
@@ -125,30 +125,40 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-lg font-bold text-rw-text">{tl("Best games")}</h1>
           {shown.length > 0 && (
-            <SectionCard
-              section={view === "series" ? `${tl("Best games")} · ${tl("Series")}` : tl("Best games")}
-              name={[lgRow ? lgRow[2] || lgRow[1] : tl("All leagues"), year || tl("All time")].filter(Boolean).join(" · ")}
-              rows={() =>
-                shown.slice(0, 10).map((r, i) => {
-                  if (view === "series") {
-                    const [rating, , date, en, , stage, a, , b, , wa, wb] = r as BestSeries;
+            <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+              <SectionCard
+                section={view === "series" ? `${tl("Best games")} · ${tl("Series")}` : tl("Best games")}
+                name={[lgRow ? lgRow[2] || lgRow[1] : tl("All leagues"), year || tl("All time")].filter(Boolean).join(" · ")}
+                rows={() =>
+                  shown.slice(0, 10).map((r, i) => {
+                    if (view === "series") {
+                      const [rating, , date, en, , stage, a, , b, , wa, wb] = r as BestSeries;
+                      return {
+                        label: `#${i + 1} · ${a} ${wa}–${wb} ${b}`,
+                        sub: [en, stage && stageLabel(stage), fmtDate(date)].filter(Boolean).join(" · "),
+                        value: `${fmtDec(rating)} (${ratingTier(rating)})`,
+                        win: true,
+                      };
+                    }
+                    const [rating, , n, date, en, , stage, a, , b, , , min] = r as BestGame;
                     return {
-                      label: `#${i + 1} · ${a} ${wa}–${wb} ${b}`,
-                      sub: [en, stage && stageLabel(stage), fmtDate(date)].filter(Boolean).join(" · "),
+                      label: `#${i + 1} · ${a} vs ${b} (${tl("Game {n}", { n })})`,
+                      sub: [en, stage && stageLabel(stage), min ? `${Math.round(min)}m` : null, fmtDate(date)].filter(Boolean).join(" · "),
                       value: `${fmtDec(rating)} (${ratingTier(rating)})`,
                       win: true,
                     };
-                  }
-                  const [rating, , n, date, en, , stage, a, , b, , , min] = r as BestGame;
-                  return {
-                    label: `#${i + 1} · ${a} vs ${b} (${tl("Game {n}", { n })})`,
-                    sub: [en, stage && stageLabel(stage), min ? `${Math.round(min)}m` : null, fmtDate(date)].filter(Boolean).join(" · "),
-                    value: `${fmtDec(rating)} (${ratingTier(rating)})`,
-                    win: true,
-                  };
-                })
-              }
-            />
+                  })
+                }
+              />
+              <CopyBestPost
+                title={[view === "series" ? `${tl("Best games")} · ${tl("Series")}` : tl("Best games"), lgRow ? lgRow[2] || lgRow[1] : tl("All leagues"), year || tl("All time")]
+                  .filter(Boolean)
+                  .join(" · ")}
+                view={view}
+                rows={shown}
+                query={q.toString()}
+              />
+            </span>
           )}
         </div>
         <p className="text-[11px] text-rw-sub mt-1 leading-relaxed">
@@ -363,5 +373,43 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
       </td>
       <td className="py-2 pr-1 text-rw-muted whitespace-nowrap text-right hidden sm:table-cell">{fmtDate(date)}</td>
     </tr>
+  );
+};
+
+const CopyBestPost: React.FC<{ title: string; view: "games" | "series"; rows: (BestGame | BestSeries)[]; query?: string }> = ({ title, view, rows, query }) => {
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+  const copy = () => {
+    const lines = [
+      title,
+      ...rows.slice(0, 5).map((r, i) => {
+        if (view === "series") {
+          const [rating, , , en, , , a, , b, , wa, wb] = r as BestSeries;
+          return `#${i + 1} ${a} ${wa}–${wb} ${b} (${en}) — ${fmtDec(rating)} (${ratingTier(rating)})`;
+        }
+        const [rating, , n, , en, , , a, , b] = r as BestGame;
+        return `#${i + 1} ${a} vs ${b} (${tl("Game {n}", { n })} · ${en}) — ${fmtDec(rating)} (${ratingTier(rating)})`;
+      }),
+      hubShareUrl({ kind: "best", ...(query ? { query } : {}) }),
+    ];
+    navigator.clipboard?.writeText(lines.join("\n")).then(
+      () => {
+        setState("copied");
+        setTimeout(() => setState("idle"), 1600);
+      },
+      () => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2000);
+      },
+    );
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title={tl("Copy a ready-to-post summary with the link, for X or Discord")}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-surface text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+    >
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
+    </button>
   );
 };

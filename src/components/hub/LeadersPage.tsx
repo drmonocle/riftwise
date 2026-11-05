@@ -7,7 +7,7 @@ import React, { useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { loadHubEvent, loadLeagues, loadLeagueSeason } from "../../hub/data";
 import type { EventPlayer, LeagueRow } from "../../hub/types";
-import { navigateHub } from "../../hub/route";
+import { hubShareUrl, navigateHub } from "../../hub/route";
 import { ROLES } from "../../hub/champAgg";
 import { card, Loading, PlayerLink, Section, TeamLink, useLoad, usePageTitle } from "./ui";
 import { SortTable, type Column } from "./SortTable";
@@ -221,32 +221,35 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
           title={tl("{scope}: {n} players", { scope, n: shownRows.length })}
           right={
             shownRows.length > 0 ? (
-              <SectionCard
-                section={tl("Player leaderboards")}
-                name={scope}
-                sub={role ? roleName(role) : undefined}
-                rows={() => {
-                  const kdaM = PLAYER_METRICS.find((m) => m.key === "kda")!;
-                  const dpmM = PLAYER_METRICS.find((m) => m.key === "dpm")!;
-                  const wrM = PLAYER_METRICS.find((m) => m.key === "wr")!;
-                  return [...shownRows]
-                    .sort((a, b) => (kdaM.value(b) || 0) - (kdaM.value(a) || 0))
-                    .slice(0, 12)
-                    .map((p, i) => {
-                      const kda = kdaM.value(p);
-                      const dpm = dpmM.value(p);
-                      const wr = wrM.value(p);
-                      return {
-                        label: `#${i + 1} · ${p.n} (${p.t})`,
-                        sub: [roleName(p.r), `${p.g}G`, dpm != null ? `${dpmM.fmt(dpm)} DPM` : null, wr != null ? wrM.fmt(wr) : null]
-                          .filter(Boolean)
-                          .join(" · "),
-                        value: kda != null ? `${kdaM.fmt(kda)} KDA` : `${p.g}G`,
-                        win: wr != null ? wr >= 0.5 : undefined,
-                      };
-                    });
-                }}
-              />
+              <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+                <SectionCard
+                  section={tl("Player leaderboards")}
+                  name={scope}
+                  sub={role ? roleName(role) : undefined}
+                  rows={() => {
+                    const kdaM = PLAYER_METRICS.find((m) => m.key === "kda")!;
+                    const dpmM = PLAYER_METRICS.find((m) => m.key === "dpm")!;
+                    const wrM = PLAYER_METRICS.find((m) => m.key === "wr")!;
+                    return [...shownRows]
+                      .sort((a, b) => (kdaM.value(b) || 0) - (kdaM.value(a) || 0))
+                      .slice(0, 12)
+                      .map((p, i) => {
+                        const kda = kdaM.value(p);
+                        const dpm = dpmM.value(p);
+                        const wr = wrM.value(p);
+                        return {
+                          label: `#${i + 1} · ${p.n} (${p.t})`,
+                          sub: [roleName(p.r), `${p.g}G`, dpm != null ? `${dpmM.fmt(dpm)} DPM` : null, wr != null ? wrM.fmt(wr) : null]
+                            .filter(Boolean)
+                            .join(" · "),
+                          value: kda != null ? `${kdaM.fmt(kda)} KDA` : `${p.g}G`,
+                          win: wr != null ? wr >= 0.5 : undefined,
+                        };
+                      });
+                  }}
+                />
+                <CopyLeadersPost scope={scope} role={role} rows={shownRows} query={query} />
+              </span>
             ) : undefined
           }
           share={`riftwise-leaders-${league}-${year}${event ? `-${event}` : ""}${role ? `-${role}` : ""}`}
@@ -306,5 +309,49 @@ const LeaderSpotlight: React.FC<{ rows: EventPlayer[] }> = ({ rows }) => {
         </div>
       ))}
     </div>
+  );
+};
+
+const CopyLeadersPost: React.FC<{ scope: string; role: string; rows: EventPlayer[]; query?: string }> = ({ scope, role, rows, query }) => {
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+  const copy = () => {
+    const keys = ["kda", "dpm", "csm", "g15", "kp"] as const;
+    const leaders = keys
+      .map((k) => {
+        const m = PLAYER_METRICS.find((x) => x.key === k);
+        if (!m) return null;
+        const ranked = rows
+          .map((p) => ({ p, v: m.value(p) }))
+          .filter((x): x is { p: EventPlayer; v: number } => x.v != null && isFinite(x.v))
+          .sort((a, b) => b.v - a.v);
+        if (!ranked.length) return null;
+        return `${m.short || m.label}: ${ranked[0].p.n} (${ranked[0].p.t}) — ${m.fmt(ranked[0].v)}`;
+      })
+      .filter((x): x is string => !!x);
+    const lines = [
+      `${tl("Player leaderboards")} · ${scope}${role ? ` · ${roleName(role)}` : ""}`,
+      ...leaders,
+      hubShareUrl({ kind: "leaders", ...(query ? { query } : {}) }),
+    ];
+    navigator.clipboard?.writeText(lines.join("\n")).then(
+      () => {
+        setState("copied");
+        setTimeout(() => setState("idle"), 1600);
+      },
+      () => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2000);
+      },
+    );
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title={tl("Copy a ready-to-post summary with the link, for X or Discord")}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-surface text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+    >
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
+    </button>
   );
 };

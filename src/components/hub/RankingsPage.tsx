@@ -6,6 +6,7 @@
 import React, { useMemo, useState } from "react";
 import { tl, tn } from "../../i18n";
 import { loadRatings, loadRatingsHistory } from "../../hub/data";
+import { hubShareUrl } from "../../hub/route";
 import { Sparkline } from "./Sparkline";
 import type { HubRatings, RatingRow } from "../../hub/types";
 import { chanceContext, matchChance, pct, seriesChance } from "../../hub/winChance";
@@ -380,6 +381,12 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               name={`riftwise-power-rankings${oneLeague ? "-" + league : ""}${asOf ? "-" + asOf : ""}`}
               label={tl("Overview card")}
             />
+            <CopyRankingsPost
+              subtitle={[oneLeague ? league : league === "*" ? tl("All leagues") : tl("Top leagues, all regions"), asOf ? fmtDate(asOf) : fmtDate(d.asof)]
+                .filter(Boolean)
+                .join(" · ")}
+              rows={rows}
+            />
           </span>
         }
       >
@@ -603,5 +610,39 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
         )}
       </p>
     </div>
+  );
+};
+
+const CopyRankingsPost: React.FC<{ subtitle: string; rows: { r: RatingRow; rank: number }[] }> = ({ subtitle, rows }) => {
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+  const copy = () => {
+    const lines = [
+      `${tl("Power rankings")} · ${subtitle}`,
+      ...rows.slice(0, 5).map(({ r, rank }) => {
+        const chg = r[6] != null && r[6] !== 0 ? ` (${r[6] > 0 ? `+${r[6]}` : r[6]})` : "";
+        return `#${rank} ${r[1]} (${r[10] || r[3]}) — ${r[5]}${chg}`;
+      }),
+      hubShareUrl({ kind: "rankings" }),
+    ];
+    navigator.clipboard?.writeText(lines.join("\n")).then(
+      () => {
+        setState("copied");
+        setTimeout(() => setState("idle"), 1600);
+      },
+      () => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2000);
+      },
+    );
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title={tl("Copy a ready-to-post summary with the link, for X or Discord")}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-surface text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+    >
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
+    </button>
   );
 };

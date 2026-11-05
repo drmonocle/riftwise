@@ -10,7 +10,7 @@ import {
 } from "../../stats";
 import { tl, tk, tc, eventTitle, fmtDec } from "../../i18n";
 import { champName, useChampionNames } from "../../champions";
-import { loadHubMeta, loadHubRecords, loadHubTitles, loadRecordsYear } from "../../hub/data";
+import { loadHubMeta, loadHubRecords, loadHubTitles, loadRecordsYear, prettySlug } from "../../hub/data";
 import type { HubRecords, HubRecordsYear, HubTitle } from "../../hub/types";
 import {
   CompareRoute,
@@ -130,7 +130,26 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
           )}
         </p>
       </Section>
-      <Section title={tl("Latest pentakills")} share="records-latest-pentakills">
+      <Section
+        title={tl("Latest pentakills")}
+        right={
+          p.recent.length > 0 ? (
+            <SectionCard
+              section={tl("Latest pentakills")}
+              name={tl("Records")}
+              rows={() =>
+                p.recent.slice(0, 10).map((x) => ({
+                  label: `${x.n} (${champName(x.c)})`,
+                  sub: `${x.a} vs ${x.b} · ${x.t} · ${fmtDate(x.date)}`,
+                  value: x.x > 1 ? `×${x.x}` : "5K",
+                  win: true,
+                }))
+              }
+            />
+          ) : undefined
+        }
+        share="records-latest-pentakills"
+      >
         <ol className="text-xs space-y-1.5">
           {p.recent.slice(0, n).map((x, i) => (
             <PentaRow key={i} x={x} />
@@ -161,10 +180,14 @@ const PentaRow: React.FC<{
           <RevealButton onReveal={reveal} small />
         ) : (
           <>
-            <ChampIcon name={x.c} size={18} />
+            <HubLink to={{ kind: "champ", slug: prettySlug(x.c) }} title={champName(x.c)}>
+              <ChampIcon name={x.c} size={18} />
+            </HubLink>
             <span className="truncate">
               <PlayerLink name={x.n} u={x.u} />{" "}
-              <span className="text-rw-sub">{champName(x.c)}</span>
+              <HubLink to={{ kind: "champ", slug: prettySlug(x.c) }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {champName(x.c)}
+              </HubLink>
               {x.x > 1 && <span className="text-rw-accent"> ×{x.x}</span>}{" "}
               {x.g ? (
                 <HubLink
@@ -223,7 +246,24 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
     .sort((a, b) => b.share - a.share);
   if (!rows.length) return null;
   return (
-    <Section title={tl("Closest to falling")} share="records-closest-to-falling">
+    <Section
+      title={tl("Closest to falling")}
+      right={
+        <SectionCard
+          section={tl("Closest to falling")}
+          name={label}
+          rows={() =>
+            rows.map((r) => ({
+              label: r.title,
+              sub: tl("Record {value} ({who}) · best this year {best} ({by})", { value: r.fmt(r.rec), who: r.recBy, best: r.fmt(r.best), by: r.bestBy }),
+              value: `${Math.round(r.share * 100)}%`,
+              win: r.share >= 1,
+            }))
+          }
+        />
+      }
+      share="records-closest-to-falling"
+    >
       <p className="text-[11px] text-rw-muted">{tl("Each record next to the best of {year} so far.", { year: label })}</p>
       <ol className="text-xs space-y-1.5">
         {rows.map((r) => (
@@ -394,7 +434,9 @@ export const RecordsPanel: React.FC = () => {
                     <PlayerLink name={p.pl} u={p.u} />
                     <span className="text-rw-sub">
                       {" "}
-                      {champName(p.c)}{" "}
+                      <HubLink to={{ kind: "champ", slug: prettySlug(p.c) }} className="hover:text-rw-accent hover:underline">
+                        {champName(p.c)}
+                      </HubLink>{" "}
                       {p.g ? (
                         <HubLink
                           to={{ kind: "match", slug: p.g, game: p.gn }}
@@ -455,7 +497,10 @@ export const RecordsPanel: React.FC = () => {
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h1 className="text-lg font-bold text-rw-text">{year === "all" ? tl("Records") : tl("{year} records", { year })}</h1>
-              {yearPick}
+              <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+                {yearPick}
+                <CopyRecordsPost year={year} r={r} />
+              </span>
             </div>
             {year !== "all" && yearState.loading && <Loading />}
             <p className="text-[11px] text-rw-muted">
@@ -488,7 +533,26 @@ export const RecordsPanel: React.FC = () => {
                 <PentakillRecords p={r.pentas} />
               )}
               {year === "all" && (
-              <Section title={tl("Longest win streaks")} share="records-longest-win-streaks">
+              <Section
+                title={tl("Longest win streaks")}
+                right={
+                  r.team.streaks.length > 0 ? (
+                    <SectionCard
+                      section={tl("Longest win streaks")}
+                      name={tl("Records")}
+                      rows={() =>
+                        r.team.streaks.slice(0, 10).map((t, i) => ({
+                          label: `#${i + 1} · ${t.team}`,
+                          sub: tl("ended {date}", { date: fmtDate(t.date) }),
+                          value: tl("{n} games", { n: t.v }),
+                          win: true,
+                        }))
+                      }
+                    />
+                  ) : undefined
+                }
+                share="records-longest-win-streaks"
+              >
                 <ol className="text-xs space-y-1.5">
                   {r.team.streaks.map((t, i) => (
                     <li key={i} className="flex justify-between gap-2 min-w-0">
@@ -509,6 +573,22 @@ export const RecordsPanel: React.FC = () => {
                 title={tl(
                   "Most international titles (Worlds, MSI, First Stand)",
                 )}
+                right={
+                  r.team.titles.length > 0 ? (
+                    <SectionCard
+                      section={tl("Most international titles (Worlds, MSI, First Stand)")}
+                      name={tl("Records")}
+                      rows={() =>
+                        r.team.titles.slice(0, 10).map((t, i) => ({
+                          label: `#${i + 1} · ${t.team}`,
+                          sub: t.worlds ? tl("{n} Worlds", { n: t.worlds }) : undefined,
+                          value: tl("{n} total", { n: t.v }),
+                          win: true,
+                        }))
+                      }
+                    />
+                  ) : undefined
+                }
                 share="records-most-international-titles"
               >
                 <ol className="text-xs space-y-1.5">
@@ -623,7 +703,30 @@ export const TitlesPanel: React.FC = () => {
             )
             .slice(0, 300);
           return (
-            <div className={`${card} overflow-x-auto`}>
+            <div className={`${card} space-y-2 overflow-x-auto`}>
+              {rows.length > 0 && (
+                <div className="flex items-center justify-end gap-2" data-nocapture="1">
+                  <SectionCard
+                    section={tl("Titles")}
+                    name={tl(TITLE_FILTERS.find((f) => f.key === kind)?.label || kind)}
+                    sub={search.trim() || undefined}
+                    rows={() =>
+                      rows.slice(0, 12).map((x) => ({
+                        label: `${x.as} · ${eventTitle(x.t)}`,
+                        sub: `${x.score} vs ${x.l} · ${fmtDate(x.date)}`,
+                        value: x.score,
+                        win: true,
+                      }))
+                    }
+                  />
+                  <CopyTitlesPost
+                    title={`${tl("Titles")} · ${tl(TITLE_FILTERS.find((f) => f.key === kind)?.label || kind)}`}
+                    rows={rows}
+                    kind={kind}
+                    search={search}
+                  />
+                </div>
+              )}
               <STable className="w-full text-xs">
                 <thead>
                   <tr>
@@ -669,5 +772,80 @@ export const TitlesPanel: React.FC = () => {
         }}
       </Page>
     </div>
+  );
+};
+
+const CopyRecordsPost: React.FC<{ year: string; r: HubRecords }> = ({ year, r }) => {
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+  const copy = () => {
+    const f = r.game.fastest[0];
+    const l = r.game.longest[0];
+    const k = r.player.kills[0];
+    const d = r.player.dmg[0];
+    const p = r.pentas?.most[0];
+    const lines = [
+      year === "all" ? tl("All-time pro records") : tl("{year} records", { year }),
+      f ? `${tl("Fastest wins")}: ${mmss(f.v)} — ${tl("{w} beat {l}", { w: f.w, l: f.w === f.a ? f.b : f.a })} (${f.t})` : null,
+      l ? `${tl("Longest games")}: ${mmss(l.v)} — ${tl("{w} beat {l}", { w: l.w, l: l.w === l.a ? l.b : l.a })} (${l.t})` : null,
+      k ? `${tl("Most kills by one player")}: ${fmtNum(k.v)} — ${k.pl} (${champName(k.c)}, ${k.kda} vs ${k.opp})` : null,
+      d ? `${tl("Most damage in a game")}: ${fmtNum(d.v)} — ${d.pl} (${champName(d.c)} vs ${d.opp})` : null,
+      p && year === "all" ? `${tl("Most pentakills")}: ${p.v} — ${p.n}` : null,
+      hubShareUrl({ kind: "records", ...(year !== "all" ? { query: `year=${year}` } : {}) }),
+    ].filter((x): x is string => !!x);
+    navigator.clipboard?.writeText(lines.join("\n")).then(
+      () => {
+        setState("copied");
+        setTimeout(() => setState("idle"), 1600);
+      },
+      () => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2000);
+      },
+    );
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title={tl("Copy a ready-to-post summary with the link, for X or Discord")}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-surface text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+    >
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
+    </button>
+  );
+};
+
+const CopyTitlesPost: React.FC<{ title: string; rows: HubTitle[]; kind: string; search: string }> = ({ title, rows, kind, search }) => {
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+  const copy = () => {
+    const q = new URLSearchParams();
+    if (kind && kind !== "International") q.set("kind", kind);
+    if (search.trim()) q.set("q", search.trim());
+    const qs = q.toString();
+    const lines = [
+      title,
+      ...rows.slice(0, 5).map((x) => `${eventTitle(x.t)}: ${x.as} (${x.score} vs ${x.l})`),
+      hubShareUrl({ kind: "titles", ...(qs ? { query: qs } : {}) }),
+    ];
+    navigator.clipboard?.writeText(lines.join("\n")).then(
+      () => {
+        setState("copied");
+        setTimeout(() => setState("idle"), 1600);
+      },
+      () => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2000);
+      },
+    );
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title={tl("Copy a ready-to-post summary with the link, for X or Discord")}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-surface text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+    >
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
+    </button>
   );
 };
