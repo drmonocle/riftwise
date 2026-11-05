@@ -433,7 +433,7 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
             </HubLink>
           ) : !played && r.au && r.bu ? (
             <HubLink to={{ kind: "prep", a: r.au, b: r.bu }} className="text-rw-accent hover:underline">
-              {tl("Prep")}
+              {tl("Match prep")}
             </HubLink>
           ) : null}
         </span>

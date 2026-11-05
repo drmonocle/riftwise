@@ -185,7 +185,13 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
   const columns: Column<SearchPlayerRow>[] = [
     { key: "n", label: tl("Player"), value: (p) => p[0].toLowerCase(), render: (p) => <PlayerLink name={p[0]} u={p[1] || prettySlug(p[0])} /> },
     { key: "r", label: tl("Role"), value: (p) => (ROLE_OF[p[5]] ? roleName(ROLE_OF[p[5]]) : null), className: "text-rw-sub" },
-    { key: "t", label: tl("Last team"), value: (p) => p[2] || null, className: "text-rw-sub max-w-[12rem] truncate" },
+    {
+      key: "t",
+      label: tl("Last team"),
+      value: (p) => p[2] || null,
+      render: (p) => (p[2] ? <TeamLink name={p[2]} u={prettySlug(p[2])} /> : null),
+      className: "text-rw-sub max-w-[12rem] truncate",
+    },
     { key: "y", label: tl("Last played"), value: (p) => p[4] || null, className: "tabular-nums text-rw-sub" },
     { key: "g", label: tl("Games"), value: (p) => p[3], className: "tabular-nums" },
     { key: "real", label: tl("Name"), value: (p) => p[6] || null, className: "text-rw-muted max-w-[12rem] truncate" },

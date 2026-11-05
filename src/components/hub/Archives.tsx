@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, tn, tc, roleName, stageLabel, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
-import { loadPlayerGames, loadPlayerItems, loadTeamSeries } from "../../hub/data";
+import { loadPlayerGames, loadPlayerItems, loadTeamSeries, prettySlug } from "../../hub/data";
 import type { PlayerGameRow, TeamSeriesRow } from "../../hub/types";
 import { isFinishedItem } from "../../hub/ddragon";
 import { ratingTextClass } from "./BestPage";
@@ -328,7 +328,9 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }>
                 <span className={`w-3.5 shrink-0 font-bold ${hide ? "text-rw-muted" : r[6] ? "text-rw-teal" : "text-rw-red"}`}>
                   {hide ? "?" : r[6] ? tc("short result", "W") : tc("short result", "L")}
                 </span>
-                <ChampIcon name={r[2]} size={18} />
+                <HubLink to={{ kind: "champ", slug: prettySlug(r[2]) }} className="hover:opacity-80" title={champName(r[2])}>
+                  <ChampIcon name={r[2]} size={18} />
+                </HubLink>
                 <span className="truncate min-w-0">
                   <span className="text-rw-text tabular-nums">{hide ? "?/?/?" : `${r[3]}/${r[4]}/${r[5]}`}</span>{" "}
                   <span className="text-rw-sub">
@@ -357,7 +359,13 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }>
             {its && its.length > 0 && (
               <div className="flex flex-wrap items-center gap-0.5 mt-0.5 pl-5" aria-label={tl("Items")}>
                 {its.map((it) => (
-                  <ItemIcon key={it} name={it} size={18} />
+                  <HubLink
+                    key={it}
+                    to={{ kind: "items", query: new URLSearchParams({ player: slug, item: prettySlug(it) }).toString() }}
+                    className="hover:opacity-80"
+                  >
+                    <ItemIcon name={it} size={18} />
+                  </HubLink>
                 ))}
               </div>
             )}
