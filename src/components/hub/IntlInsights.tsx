@@ -396,7 +396,28 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         </Section>
       )}
       {trend && trend.regions.length > 0 && trend.years.length > 1 && (
-        <Section title={tl("Regions year by year")}>
+        <Section
+          title={tl("Regions year by year")}
+          right={
+            <SectionCard
+              section={tl("Regions year by year")}
+              name={name}
+              rows={() =>
+                trend.regions.map((code) => {
+                  const rows = trend.years.map((y) => y.rows.find((x) => x.code === code)).filter((x): x is NonNullable<typeof x> => !!x);
+                  const w = rows.reduce((s, r) => s + r.ow, 0);
+                  const l = rows.reduce((s, r) => s + r.ol, 0);
+                  return {
+                    label: regionLabel(code),
+                    sub: `${w}-${l}`,
+                    value: w + l > 0 ? `${Math.round((w / (w + l)) * 100)}%` : "–",
+                    win: w >= l,
+                  };
+                })
+              }
+            />
+          }
+        >
           <p className="text-[11px] text-rw-muted">{tl("Each region's series win rate against other regions.")}</p>
           <div className="overflow-x-auto">
             <table className="text-xs">

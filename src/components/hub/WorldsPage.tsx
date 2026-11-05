@@ -338,13 +338,27 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
     <>
       {ko && (
         <div className="rw-span">
-          <Section title={tl("Knockouts")}>
+          <Section
+            title={tl("Knockouts")}
+            right={
+              ko.qf.some((m) => m.w) ? (
+                <BroadcastCardButton data={() => bracketPicksCard(ko, byU, d.name)} name={`worlds-${d.year}-knockouts`} label={tl("Overview card")} />
+              ) : undefined
+            }
+          >
             <Bracket ko={ko} byU={byU} onPick={(m, u) => onPick?.("ko", m, u)} readOnly={!onPick} />
           </Section>
         </div>
       )}
       <div className="rw-span">
-        <Section title={tl("Swiss stage")}>
+        <Section
+          title={tl("Swiss stage")}
+          right={
+            Object.keys(swiss.rec).length > 0 ? (
+              <BroadcastCardButton data={() => swissPicksCard(swiss.rec, byU, d.name)} name={`worlds-${d.year}-swiss`} label={tl("Overview card")} />
+            ) : undefined
+          }
+        >
           {onPick && <p className="text-[11px] text-rw-sub">{tl("Pick a winner to play the rest out in the picker.")}</p>}
           {/* a phone gets the records first and only the round being played (TV, 2026-10-28: the five rounds one under
               another are a long scroll); every round is a tap away */}

@@ -158,7 +158,29 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[] }> =
   }, [files, years]);
   if (t.cols.length < 3 || !t.rows.length) return null;
   return (
-    <Section title={tl("Region strength over time")}>
+    <Section
+      title={tl("Region strength over time")}
+      right={
+        <SectionCard
+          section={tl("Region strength over time")}
+          name={tl("Regions")}
+          sub={`${t.cols[0]}–${t.cols[t.cols.length - 1]}`}
+          rows={() =>
+            t.rows.slice(0, 10).map((c) => {
+              const vals = [...t.cells.get(c)!.values()];
+              const w = vals.reduce((s, [a]) => s + a, 0);
+              const l = vals.reduce((s, [, b]) => s + b, 0);
+              return {
+                label: regionLabel(c),
+                sub: `${w}-${l} (${t.cells.get(c)!.size} ${tl("Years")})`,
+                value: w + l > 0 ? `${Math.round((w / (w + l)) * 100)}%` : "–",
+                win: w >= l,
+              };
+            })
+          }
+        />
+      }
+    >
       <div className="overflow-x-auto">
         <table className="text-xs">
           <thead className="text-[10px] text-rw-muted">

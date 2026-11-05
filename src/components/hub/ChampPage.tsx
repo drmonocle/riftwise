@@ -184,7 +184,13 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 .join(" · ")}
             </p>
           }
-          aside={<CountersLink slug={c.u} className={heroBtn(true)} />}
+          aside={
+            <div className="flex flex-wrap gap-2 md:justify-end">
+              <CountersLink slug={c.u} className={heroBtn(true)} />
+              <BroadcastCardButton hero data={() => champCardData(c, champName(c.name))} name={`${c.u}-pro-play`} label={tl("Overview card")} />
+              <CopyChampPost c={c} />
+            </div>
+          }
           stats={[
             { label: tl("Picks"), value: fmtNum(c.p) },
             { label: tl("Bans"), value: fmtNum(c.b) },
@@ -200,22 +206,43 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         <Section
           title={tl("Pro builds in the last 12 months")}
           right={
-            buildRoles.length > 1 ? (
-              <span className="flex flex-wrap gap-1">
-                {["", ...buildRoles].map((r) => (
-                  <button
-                    key={r || "all"}
-                    type="button"
-                    onClick={() => setBuildRole(r)}
-                    className={`px-2 py-0.5 rounded text-[11px] border ${
-                      r === buildRole ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub"
-                    }`}
-                  >
-                    {r ? roleName(r) : tl("All roles")}
-                  </button>
-                ))}
-              </span>
-            ) : undefined
+            <span className="flex flex-wrap items-center gap-2">
+              {buildRoles.length > 1 && (
+                <span className="flex flex-wrap gap-1">
+                  {["", ...buildRoles].map((r) => (
+                    <button
+                      key={r || "all"}
+                      type="button"
+                      onClick={() => setBuildRole(r)}
+                      className={`px-2 py-0.5 rounded text-[11px] border ${
+                        r === buildRole ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub"
+                      }`}
+                    >
+                      {r ? roleName(r) : tl("All roles")}
+                    </button>
+                  ))}
+                </span>
+              )}
+              <SectionCard
+                section={tl("Pro builds in the last 12 months")}
+                name={champName(c.name)}
+                sub={[buildRole ? roleName(buildRole) : tl("All roles"), `${fmtNum(activeBuilds.g)}G`].join(" · ")}
+                rows={() => [
+                  ...items.slice(0, 6).map(([it, g, w]) => ({
+                    label: itemName(it),
+                    sub: `${tl("Items")} · ${pctOf(g, activeBuilds.g)}`,
+                    value: pctOf(w, g),
+                    win: w / Math.max(g, 1) >= 0.5,
+                  })),
+                  ...activeBuilds.keys.slice(0, 3).map(([k, g, w]) => ({
+                    label: runeName(k),
+                    sub: `${tl("Keystones")} · ${pctOf(g, activeBuilds.g)}`,
+                    value: pctOf(w, g),
+                    win: w / Math.max(g, 1) >= 0.5,
+                  })),
+                ]}
+              />
+            </span>
           }
         >
           <p className="text-[11px] text-rw-muted">
@@ -560,11 +587,32 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         right={
           recentHidden ? (
             <RevealButton onReveal={revealRecent} small />
-          ) : usedOnly ? (
-            <button type="button" onClick={() => setUsed(null)} className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-rw-accent text-rw-accent text-[11px]" title={tl("Show every game")}>
-              {tl("With {name}", { name: usedName })} ✕
-            </button>
-          ) : undefined
+          ) : (
+            <span className="flex flex-wrap items-center gap-2">
+              {usedOnly && (
+                <button type="button" onClick={() => setUsed(null)} className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-rw-accent text-rw-accent text-[11px]" title={tl("Show every game")}>
+                  {tl("With {name}", { name: usedName })} ✕
+                </button>
+              )}
+              <SectionCard
+                section={tl("Latest pro games")}
+                name={champName(c.name)}
+                sub={usedOnly ? tl("With {name}", { name: usedName }) : undefined}
+                rows={() =>
+                  c.recent
+                    .filter(usedIn)
+                    .slice(0, 10)
+                    .map((r) => ({
+                      win: !!r.win,
+                      champ: c.name,
+                      label: `${r.n} (${r.k}/${r.d}/${r.a}) vs ${r.opp}`,
+                      sub: r.en,
+                      value: fmtDate(r.date, false),
+                    }))
+                }
+              />
+            </span>
+          )
         }
       >
         <span id="champ-latest" />
@@ -609,7 +657,23 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
       {/* the champion's history in pro play after what most people come for (TV, 2026-10-28): builds, matchups, who
           plays it and its latest games first */}
       {c.slots && Object.keys(c.slots).length > 0 && (
-        <Section title={tl("By pick order")}>
+        <Section
+          title={tl("By pick order")}
+          right={
+            <SectionCard
+              section={tl("By pick order")}
+              name={champName(c.name)}
+              rows={() =>
+                Object.entries(c.slots!).map(([slot, [g, w]]) => ({
+                  label: slot,
+                  sub: tl("{n} games", { n: fmtNum(g) }),
+                  value: g >= 5 ? pctOf(w, g) : "–",
+                  win: g >= 5 ? w / g >= 0.5 : undefined,
+                }))
+              }
+            />
+          }
+        >
           <p className="text-[11px] text-rw-muted">{tl("Games and win rate by where it was picked in the draft (B = blue side, R = red side), every pro game with the pick order known.")}</p>
           <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
             {Object.entries(c.slots).map(([slot, [g, w]]) => (
@@ -624,7 +688,28 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
       )}
 
       {c.patches && c.patches.length > 0 && (
-        <Section title={tl("Recent patches")} right={c.patches.length >= 3 ? <PatchTrend patches={c.patches} /> : undefined}>
+        <Section
+          title={tl("Recent patches")}
+          right={
+            <span className="flex items-center gap-2">
+              {c.patches.length >= 3 && <PatchTrend patches={c.patches} />}
+              <SectionCard
+                section={tl("Recent patches")}
+                name={champName(c.name)}
+                rows={() =>
+                  c.patches!.map((p) => {
+                    const pres = (p.pr ?? p.pk + p.b) / Math.max(p.g, 1);
+                    return {
+                      label: `${tl("Patch")} ${p.p}`,
+                      sub: `${p.pk} ${tl("Picks")} · ${p.b} ${tl("Bans")}`,
+                      value: `${Math.round(pres * 100)}% · ${p.pk ? pctOf(p.w, p.pk) : "–"}`,
+                    };
+                  })
+                }
+              />
+            </span>
+          }
+        >
           <div className="space-y-1">
             {c.patches.map((p, i) => {
               const pres = (p.pr ?? p.pk + p.b) / Math.max(p.g, 1);
@@ -655,7 +740,22 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
 
       <Section
         title={tl("By year")}
-        right={<BroadcastCardButton data={() => champCardData(c, champName(c.name))} name={`${c.u}-pro-play`} label={tl("Overview card")} />}
+        right={
+          <span className="flex items-center gap-2">
+            <BroadcastCardButton data={() => champCardData(c, champName(c.name))} name={`${c.u}-pro-play`} label={tl("Overview card")} />
+            <SectionCard
+              section={tl("By year")}
+              name={champName(c.name)}
+              rows={() =>
+                [...c.years].reverse().map((y) => ({
+                  label: y.y,
+                  sub: `${fmtNum(y.p)} ${tl("Picks")} · ${fmtNum(y.b)} ${tl("Bans")}`,
+                  value: y.p ? winRate(y.w, y.p) : "–",
+                }))
+              }
+            />
+          </span>
+        }
       >
         <div className="space-y-1">
           {c.years.map((y) => (
@@ -680,4 +780,42 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
     </div>
   );
 };
+
+const CopyChampPost: React.FC<{ c: HubChamp }> = ({ c }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const label = champName(c.name);
+    const totalRoles = c.roles.reduce((s, r) => s + r.p, 0) || 1;
+    const roleStr = c.roles
+      .filter((r) => r.p / totalRoles >= 0.05)
+      .map((r) => `${roleName(r.r)} ${Math.round((r.p / totalRoles) * 100)}%`)
+      .join(" · ");
+    const lines: string[] = [
+      `${label}${roleStr ? ` (${roleStr})` : ""}`,
+      `${tl("Picks")}: ${fmtNum(c.p)} · ${tl("Bans")}: ${fmtNum(c.b)} · ${tl("Win %")}: ${winRate(c.w, c.p)}`,
+    ];
+    if (c.players.length > 0) {
+      lines.push(
+        `${tl("Most games on {champion}", { champion: label })}: ${c.players
+          .slice(0, 4)
+          .map((p) => `${p.n} (${p.g}G · ${winRate(p.w, p.g)})`)
+          .join(", ")}`,
+      );
+    }
+    lines.push(`https://riftwise.gg/champion/${c.u}`);
+    navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
+  };
+  return (
+    <button type="button" onClick={copy} className={heroBtn()} title={tl("Copy post")}>
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
+  );
+};
+
 

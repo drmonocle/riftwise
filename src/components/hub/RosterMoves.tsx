@@ -9,6 +9,7 @@ import { ArrowRight } from "lucide-react";
 import { tl, roleName } from "../../i18n";
 import { loadLeagues, loadMoves } from "../../hub/data";
 import { fmtDate, PlayerLink, TeamLink, useLoad } from "./ui";
+import { SectionCard } from "./BroadcastCard";
 
 export const RosterMoves: React.FC = () => {
   const moves = useLoad(loadMoves, []);
@@ -25,7 +26,7 @@ export const RosterMoves: React.FC = () => {
         <h2 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
           {tl("Roster moves")}
         </h2>
-        <div className="flex gap-1 text-[11px]" role="group" aria-label={tl("Leagues")}>
+        <div className="flex flex-wrap items-center gap-2 text-[11px]" role="group" aria-label={tl("Leagues")}>
           {[false, true].map((v) => (
             <button
               key={String(v)}
@@ -37,6 +38,20 @@ export const RosterMoves: React.FC = () => {
               {v ? tl("All leagues") : tl("Top leagues")}
             </button>
           ))}
+          {list.length > 0 && (
+            <SectionCard
+              section={tl("Roster moves")}
+              name={all ? tl("All leagues") : tl("Top leagues")}
+              sub={fmtDate(moves.data.since)}
+              rows={() =>
+                list.slice(0, 12).map((m) => ({
+                  label: `${m.n}${m.r ? ` (${roleName(m.r)})` : ""}`,
+                  sub: `${m.from.n} → ${m.to.n}${m.lu && name.get(m.lu) ? ` · ${name.get(m.lu)}` : ""}`,
+                  value: fmtDate(m.d, false),
+                }))
+              }
+            />
+          )}
         </div>
       </div>
       <p className="text-[11px] text-rw-muted">
