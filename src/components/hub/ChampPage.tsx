@@ -187,6 +187,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
           aside={
             <div className="flex flex-wrap gap-2 md:justify-end">
               <CountersLink slug={c.u} className={heroBtn(true)} />
+              <HubLink to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}` }} className={heroBtn()}>
+                {tl("Game finder")}
+              </HubLink>
+              <HubLink to={{ kind: "items", query: `champ=${encodeURIComponent(c.name)}` }} className={heroBtn()}>
+                {tl("Item history")}
+              </HubLink>
               <BroadcastCardButton hero data={() => champCardData(c, champName(c.name))} name={`${c.u}-pro-play`} label={tl("Overview card")} />
               <CopyChampPost c={c} />
             </div>
@@ -574,7 +580,19 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 <td className={td}>
                   <PlayerLink name={p.n} u={p.u} />
                 </td>
-                <td className={`${td} text-rw-sub`}>{p.g}</td>
+                <td className={`${td} text-rw-sub`}>
+                  <HubLink
+                    to={
+                      p.u
+                        ? { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(c.name)}` }
+                        : { kind: "finder", query: `player=${encodeURIComponent(p.n)}&champ=${encodeURIComponent(c.name)}` }
+                    }
+                    className="hover:text-rw-accent hover:underline"
+                    title={tl("Game finder")}
+                  >
+                    {p.g}
+                  </HubLink>
+                </td>
                 <td className={`${td} text-rw-sub`}>{winRate(p.w, p.g)}</td>
                 <td className={`${td} text-rw-sub`}>{fmtN(p.kda)}</td>
               </tr>
@@ -639,7 +657,13 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     {r.stt && <RuneIcon name={r.stt} size={14} />}
                     <span className="w-1" />
                     {r.it.map((it, j) => (
-                      <ItemIcon key={j} name={it} size={18} />
+                      <HubLink
+                        key={j}
+                        to={{ kind: "items", query: `item=${prettySlug(it)}&champ=${encodeURIComponent(c.name)}` }}
+                        title={itemName(it)}
+                      >
+                        <ItemIcon name={it} size={18} />
+                      </HubLink>
                     ))}
                     <span className="w-1" />
                     {(r.sp || []).map((sp) => (
@@ -717,7 +741,9 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               const d = before ? Math.round((pres - (before.pr ?? before.pk + before.b) / Math.max(before.g, 1)) * 100) : null;
               return (
                 <div key={p.p} className="grid grid-cols-[3.5rem_1fr_2.5rem_auto] items-center gap-2 text-xs">
-                  <span className="text-rw-text font-semibold">{p.p}</span>
+                  <HubLink to={{ kind: "champions", query: `key=p${encodeURIComponent(p.p)}` }} className="text-rw-text hover:text-rw-accent hover:underline font-semibold">
+                    {p.p}
+                  </HubLink>
                   <div className="h-2.5 bg-rw-bg rounded overflow-hidden">
                     <div className="h-full bg-rw-accent/70" style={{ width: `${(pres / maxPatch) * 100}%` }} />
                   </div>
@@ -760,7 +786,9 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         <div className="space-y-1">
           {c.years.map((y) => (
             <div key={y.y} className="grid grid-cols-[3rem_1fr_auto] items-center gap-2 text-xs">
-              <span className="text-rw-text font-semibold">{y.y}</span>
+              <HubLink to={{ kind: "champions", query: `key=y${encodeURIComponent(y.y)}` }} className="text-rw-text hover:text-rw-accent hover:underline font-semibold">
+                {y.y}
+              </HubLink>
               <div className="h-3 bg-rw-bg rounded overflow-hidden flex" title={`${y.p} / ${y.b}`}>
                 <div className="bg-rw-teal/70" style={{ width: `${(y.p / maxYear) * 100}%` }} />
                 <div className="bg-rw-red/50" style={{ width: `${(y.b / maxYear) * 100}%` }} />

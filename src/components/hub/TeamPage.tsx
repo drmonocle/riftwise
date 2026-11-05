@@ -266,11 +266,17 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 <HubLink to={{ kind: "prep", a: t.u }} className={heroBtn()}>
                   {tl("Match prep")}
                 </HubLink>
+                <HubLink to={{ kind: "draft", query: `teams=${t.u}` }} className={heroBtn()}>
+                  {tl("Draft board")}
+                </HubLink>
                 <BroadcastCardButton hero data={() => teamCareerCardData(t)} name={`${t.name}-overview`} label={tl("Overview card")} />
                 <CopyTeamPost t={t} />
               </div>
             )}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 md:justify-end">
+              <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(t.name)}` }} className={heroLink}>
+                {tl("Game finder")}
+              </HubLink>
               <PhotosLink q={t.name} className={heroLink} />
               {/* its own calendar and results feed, while it still plays (the schedule only has current teams) */}
               {!t.disbanded && Date.now() - Date.parse(t.to) < 180 * 86_400_000 && <FollowFeeds teams={[t.name]} />}

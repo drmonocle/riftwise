@@ -236,6 +236,9 @@ const PlayerView: React.FC<{
                 <Package className="w-3.5 h-3.5" />
                 {tl("Item history")}
               </HubLink>
+              <HubLink to={{ kind: "finder", query: `player=${encodeURIComponent(p.name)}` }} className={heroLink}>
+                {tl("Game finder")}
+              </HubLink>
             </div>
           </>
         }
