@@ -8,7 +8,7 @@ import { Trophy, ExternalLink, Package } from "lucide-react";
 import { tl, tk, tc, roleName, eventTitle, regionName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { loadHubPlayer, loadPlayerGames } from "../../hub/data";
+import { loadHubChamp, loadHubPlayer, loadPlayerGames, prettySlug } from "../../hub/data";
 import { currentHubRoute, type HubRoute } from "../../hub/route";
 import type { HubPlayer } from "../../hub/types";
 import { type PeriodKey, inPeriod, periodOptions, playerAgg, playerRowRef } from "../../hub/period";
@@ -20,7 +20,7 @@ import { BroadcastCardButton, SectionCard, playerCareerCardData } from "./Broadc
 import { PlayerRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
 import { localCountry } from "./CountryFlag";
-import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerPhoto, RevealButton, Section, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink } from "./ui";
+import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerLink, PlayerPhoto, RevealButton, Section, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink } from "./ui";
 import { EntityHero, heroBtn, heroLink } from "./EntityHero";
 import { useTeamLogo } from "../../hub/riotCatalog";
 import { ratingTextClass } from "./BestPage";
@@ -339,27 +339,7 @@ const PlayerView: React.FC<{
 
       {tab === "career" && (
       <div className="rw-span grid gap-3 md:grid-cols-2 items-start">
-        <Section
-          title={tl("Teams")}
-          right={<SectionCard section={tl("Teams")} name={p.name} sub={cardSub} rows={() => p.teams.map((x) => ({ label: x.n, sub: `${x.from.slice(0, 4)}–${x.to.slice(0, 4)}`, value: `${x.w}-${x.g - x.w}` }))} />}
-        >
-          <ul className="text-xs space-y-1">
-            {p.teams.map((t) => (
-              <li key={t.n} className="flex justify-between gap-2 min-w-0">
-                <span className="truncate min-w-0">
-                  <TeamLink name={t.n} u={t.u} />
-                </span>
-                <HubLink
-                  to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${t.to.slice(0, 4)}` }}
-                  className="text-rw-muted hover:text-rw-accent hover:underline shrink-0"
-                  title={`${tl("Stats for")} ${t.to.slice(0, 4)}`}
-                >
-                  {t.from.slice(0, 4)}–{t.to.slice(0, 4)} · {t.w}-{t.g - t.w}
-                </HubLink>
-              </li>
-            ))}
-          </ul>
-        </Section>
+        <CareerTimeline p={p} cardSub={cardSub} />
         <Section
           title={tl("By year")}
           right={
@@ -534,6 +514,13 @@ const PlayerView: React.FC<{
       )}
 
       {overview && <OwnStorylines notes={p.notes} spoilerKey={`notes:player:${p.u}`} share={`${p.u}-storylines`} />}
+
+      {overview && (
+        <div className="rw-span grid gap-3 md:grid-cols-2 items-start">
+          <CareerTimeline p={p} cardSub={cardSub} />
+          <SimilarPlayers p={p} cardSub={cardSub} />
+        </div>
+      )}
 
       {overview && p.titles.length > 0 && (
         <Section
@@ -714,5 +701,203 @@ const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number] }> = ({
         </span>
       </td>
     </tr>
+  );
+};
+
+/** Visual career stint & transfer timeline: team logos, year spans, win-rate bars, titles won during each stint, and 1-click era stats. */
+const CareerTimeline: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardSub }) => {
+  if (!p.teams.length) return null;
+  const maxG = Math.max(1, ...p.teams.map((t) => t.g));
+  return (
+    <Section
+      title={tl("Teams")}
+      right={
+        <SectionCard
+          section={tl("Teams")}
+          name={p.name}
+          sub={cardSub}
+          rows={() =>
+            p.teams.map((x) => {
+              const fy = x.from.slice(0, 4);
+              const ty = x.to.slice(0, 4);
+              return { label: x.n, sub: fy === ty ? fy : `${fy}–${ty}`, value: `${x.w}-${x.g - x.w} (${winRate(x.w, x.g)})` };
+            })
+          }
+        />
+      }
+    >
+      <ol className="relative border-l-2 border-rw-border ml-2.5 pl-4 space-y-2.5 text-xs">
+        {p.teams.map((t, idx) => {
+          const isCurrent = idx === 0 && !p.bio.retired && t.n === p.club;
+          const fy = t.from.slice(0, 4);
+          const ty = t.to.slice(0, 4);
+          const yrLabel = fy === ty ? fy : `${fy}–${ty}`;
+          const stintTitles = p.titles.filter((ti) => ti.date >= t.from && ti.date <= t.to);
+          const wrPct = t.g > 0 ? Math.round((t.w / t.g) * 100) : 0;
+          return (
+            <li key={`${t.n}-${t.from}`} className="relative min-w-0">
+              <span
+                className={`absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full border-2 ${
+                  isCurrent ? "bg-rw-accent border-rw-accent shadow-[0_0_8px_var(--rw-accent)]" : "bg-rw-bg border-rw-sub"
+                }`}
+                aria-hidden="true"
+              />
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <span className="flex items-center gap-2 min-w-0">
+                  <TeamLogo name={t.n} size={20} />
+                  <TeamLink name={t.n} u={t.u} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
+                  <span className="text-[11px] text-rw-muted tabular-nums shrink-0">{yrLabel}</span>
+                </span>
+                <HubLink
+                  to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${ty}` }}
+                  className="text-[11px] font-mono tabular-nums text-rw-sub hover:text-rw-accent hover:underline shrink-0"
+                  title={`${tl("Stats for")} ${ty}`}
+                >
+                  {t.w}–{t.g - t.w} ({wrPct}%)
+                </HubLink>
+              </div>
+              <div className="mt-1 flex items-center gap-2">
+                <div className="flex-1 h-1.5 bg-rw-bg rounded overflow-hidden flex" title={`${t.w}W – ${t.g - t.w}L`}>
+                  <div className="bg-rw-teal/75" style={{ width: `${(t.w / maxG) * 100}%` }} />
+                  <div className="bg-rw-red/50" style={{ width: `${((t.g - t.w) / maxG) * 100}%` }} />
+                </div>
+                {stintTitles.length > 0 && (
+                  <span
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-rw-accent shrink-0"
+                    title={stintTitles.map((x) => `${eventTitle(x.t)} (${x.date.slice(0, 4)})`).join(" · ")}
+                  >
+                    <Trophy className="w-3 h-3" />
+                    {stintTitles.length}
+                  </span>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </Section>
+  );
+};
+
+interface PeerMatch {
+  peer: HubPlayer;
+  sim: number;
+  shared: string[];
+}
+
+/** Playstyle & champion-pool nearest neighbors in the same role, with 1-click Player Compare links. */
+const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardSub }) => {
+  const [peers, setPeers] = useState<PeerMatch[] | null>(null);
+  useEffect(() => {
+    setPeers(null);
+    const sig = p.champs.slice(0, 4);
+    if (!sig.length) return;
+    let alive = true;
+    Promise.all(sig.map((c) => loadHubChamp(prettySlug(c.c)).catch(() => null)))
+      .then(async (champFiles) => {
+        if (!alive) return;
+        const candScore = new Map<string, number>();
+        for (let i = 0; i < champFiles.length; i++) {
+          const cf = champFiles[i];
+          if (!cf) continue;
+          const weight = 4 - i;
+          for (const pl of [...(cf.players12 || []), ...cf.players]) {
+            if (!pl.u || pl.u === p.u) continue;
+            candScore.set(pl.u, (candScore.get(pl.u) || 0) + weight * Math.min(pl.g, 40));
+          }
+        }
+        const topSlugs = [...candScore.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10)
+          .map(([u]) => u);
+        const loaded = (await Promise.all(topSlugs.map((u) => loadHubPlayer(u).catch(() => null)))).filter(
+          (x): x is HubPlayer => !!x && x.u !== p.u,
+        );
+        if (!alive) return;
+        const sameRole = loaded.filter((x) => !p.role || !x.role || x.role === p.role);
+        const pool = sameRole.length >= 3 ? sameRole : loaded;
+        const myMap = new Map(p.champs.slice(0, 12).map((c) => [c.c, c.g / Math.max(p.g, 1)]));
+        const myNorm = Math.sqrt([...myMap.values()].reduce((s, v) => s + v * v, 0)) || 1;
+        const scored: PeerMatch[] = pool.map((peer) => {
+          const theirMap = new Map(peer.champs.slice(0, 12).map((c) => [c.c, c.g / Math.max(peer.g, 1)]));
+          const theirNorm = Math.sqrt([...theirMap.values()].reduce((s, v) => s + v * v, 0)) || 1;
+          let dot = 0;
+          const shared: string[] = [];
+          for (const [c, v] of myMap) {
+            const tv = theirMap.get(c);
+            if (tv != null) {
+              dot += v * tv;
+              shared.push(c);
+            }
+          }
+          const poolSim = dot / (myNorm * theirNorm);
+          // Stat similarity across KDA, Win%, CSM, DPM
+          const wrDiff = Math.abs(p.w / Math.max(p.g, 1) - peer.w / Math.max(peer.g, 1));
+          const kdaDiff = Math.abs((p.kda || 3) - (peer.kda || 3)) / 5;
+          const csmDiff = p.csm != null && peer.csm != null ? Math.abs(p.csm - peer.csm) / 4 : 0.1;
+          const dpmDiff = p.dpm != null && peer.dpm != null ? Math.abs(p.dpm - peer.dpm) / 300 : 0.1;
+          const statSim = Math.max(0, 1 - (wrDiff + kdaDiff + csmDiff + dpmDiff) / 4);
+          const sim = Math.min(99, Math.round((poolSim * 0.55 + statSim * 0.45) * 100));
+          return { peer, sim, shared: shared.slice(0, 4) };
+        });
+        scored.sort((a, b) => b.sim - a.sim);
+        if (alive) setPeers(scored.slice(0, 5));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [p]);
+
+  if (!peers || !peers.length) return null;
+  return (
+    <Section
+      title={`${tl("Compare")} · ${p.role ? roleName(p.role) : tl("Players")}`}
+      right={
+        <SectionCard
+          section={`${tl("Compare")} · ${p.role ? roleName(p.role) : tl("Players")}`}
+          name={p.name}
+          sub={cardSub}
+          rows={() =>
+            peers.map(({ peer, shared }) => ({
+              label: peer.name,
+              sub: [peer.club, shared.slice(0, 3).map(champName).join(", ")].filter(Boolean).join(" · "),
+              value: `KDA ${fmtN(peer.kda)} · ${winRate(peer.w, peer.g)}`,
+            }))
+          }
+        />
+      }
+    >
+      <ul className="space-y-2 text-xs">
+        {peers.map(({ peer, shared }) => (
+          <li key={peer.u} className="flex items-center justify-between gap-2 min-w-0">
+            <span className="flex items-center gap-2 min-w-0">
+              <PlayerPhoto name={peer.name} team={peer.club} slug={peer.u} img={peer.img} size={26} />
+              <span className="min-w-0 truncate">
+                <PlayerLink name={peer.name} u={peer.u} />
+                {peer.club && <span className="text-rw-muted text-[11px]"> · {peer.club}</span>}
+                <span className="block text-[10px] text-rw-sub tabular-nums">
+                  {winRate(peer.w, peer.g)} · KDA {fmtN(peer.kda)}
+                  {peer.dpm != null ? ` · ${fmtNum(peer.dpm)} DPM` : ""}
+                </span>
+              </span>
+            </span>
+            <span className="flex items-center gap-2 shrink-0">
+              <span className="flex gap-0.5" title={shared.map(champName).join(", ")}>
+                {shared.slice(0, 3).map((c) => (
+                  <ChampIcon key={c} name={c} size={18} />
+                ))}
+              </span>
+              <HubLink
+                to={{ kind: "compare", mode: "player", a: p.u, b: peer.u }}
+                className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+              >
+                {tl("Compare")}
+              </HubLink>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 };
