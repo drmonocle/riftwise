@@ -16,6 +16,8 @@ import {
 import { tl, tc, locale, regionName } from "../../i18n";
 import { STable } from "../STable";
 import { riotImg } from "../../riotImage";
+import { navigateHub } from "../../hub/route";
+import { SectionCard } from "../hub/BroadcastCard";
 
 interface StandingsViewProps {
   schedule: Match[];
@@ -187,6 +189,15 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
               {tournamentStatus(tournamentInfo)}
             </span>
           )}
+          {activeLeague && (
+            <button
+              type="button"
+              onClick={() => navigateHub({ kind: "league", slug: activeLeague })}
+              className="text-[11px] font-semibold text-rw-accent hover:underline"
+            >
+              {tl("Full history and stats")} →
+            </button>
+          )}
           {standings && standings.stages.length > 1 && (
             <div className="flex items-center gap-1 bg-rw-deep p-1 rounded-lg border border-rw-border ml-auto overflow-x-auto max-w-full">
               {standings.stages.map((st, i) => (
@@ -240,11 +251,30 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
           {stage.sections.map((sec, si) =>
             sec.type === "group" ? (
               <div key={si} className="bg-rw-panel border border-rw-border rounded-xl overflow-hidden">
-                {(stage.sections.length > 1 || sec.name !== stage.name) && sec.name && (
-                  <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-rw-accent border-b border-rw-border bg-rw-bg">
-                    {sec.name}
-                  </div>
-                )}
+                <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-rw-accent border-b border-rw-border bg-rw-bg flex items-center justify-between gap-2">
+                  <span>{sec.name || stage.name}</span>
+                  {!hideResults && (
+                    <SectionCard
+                      section={sec.name || stage.name}
+                      name={tournamentInfo ? prettyTournament(tournamentInfo) : activeLeague.toUpperCase()}
+                      sub={stage.name}
+                      rows={() =>
+                        sec.rows.flatMap((row) =>
+                          row.teams.map((team) => {
+                            const played = team.wins + team.losses + team.ties;
+                            return {
+                              rank: String(row.rank),
+                              label: team.name,
+                              sub: team.code,
+                              value: `${team.wins}–${team.losses}${team.ties > 0 ? `–${team.ties}` : ""}`,
+                              note: played > 0 ? `${Math.round((team.wins / played) * 100)}%` : "",
+                            };
+                          }),
+                        )
+                      }
+                    />
+                  )}
+                </div>
                 <STable className="w-full text-left text-xs">
                   <thead className="bg-rw-bg border-b border-rw-border text-rw-sub font-bold uppercase tracking-wider text-[11px]">
                     <tr>

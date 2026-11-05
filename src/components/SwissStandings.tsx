@@ -7,6 +7,7 @@ import type { Match } from "../types";
 import { tl } from "../i18n";
 import { navigateHub } from "../hub/route";
 import { swissNow, type SwissNow } from "../hub/swissNow";
+import { SectionCard } from "./hub/BroadcastCard";
 
 /** a cell's shade: teal for likely, red for unlikely, stronger the surer (theme colours) */
 export const chanceShade = (p: number) =>
@@ -42,28 +43,52 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-3 py-2 border-b border-rw-border">
         <h2 className="font-head text-[13px] font-bold uppercase tracking-[0.12em] text-rw-sub">{tl("Worlds Swiss stage: standings")}</h2>
         <span className="text-[11px] text-rw-muted font-mono tabular-nums">{tl("{n} of {m} series played", { n: d.played, m: d.total })}</span>
-        <button
-          type="button"
-          onClick={() => {
-            navigateHub({ kind: "worlds" });
-            onOpen();
-          }}
-          className="ml-auto text-[11px] font-semibold text-rw-accent hover:underline"
-        >
-          {tl("Swiss picker →")}
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <SectionCard
+            section={tl("Worlds Swiss stage: standings")}
+            name={tl("Worlds Swiss stage: standings")}
+            sub={tl("{n} of {m} series played", { n: d.played, m: d.total })}
+            rows={() =>
+              d.rows.map((r) => ({
+                label: r.name,
+                sub: r.code,
+                value: `${r.w}–${r.l}`,
+                note: `${Math.round(r.adv * 100)}%`,
+              }))
+            }
+          />
+          <button
+            type="button"
+            onClick={() => {
+              navigateHub({ kind: "worlds" });
+              onOpen();
+            }}
+            className="text-[11px] font-semibold text-rw-accent hover:underline"
+          >
+            {tl("Swiss picker →")}
+          </button>
+        </div>
       </div>
       <div className={`grid grid-cols-2 ${narrow ? "" : "sm:grid-cols-4"} gap-x-4 px-3 py-2`}>
         {d.rows.map((r) => (
-          <div key={r.u} className="flex items-center gap-2 py-0.5 border-b border-rw-border/40 min-w-0" title={r.name}>
-            <span className="font-semibold text-rw-text truncate flex-1 min-w-0">{r.code}</span>
+          <button
+            key={r.u}
+            type="button"
+            onClick={() => {
+              navigateHub({ kind: "team", slug: r.u });
+              onOpen();
+            }}
+            className="flex items-center gap-2 py-0.5 border-b border-rw-border/40 min-w-0 text-left hover:text-rw-accent transition-colors"
+            title={r.name}
+          >
+            <span className="font-semibold text-rw-text hover:text-rw-accent truncate flex-1 min-w-0">{r.code}</span>
             <span className="font-mono tabular-nums text-rw-sub">
               {r.w}–{r.l}
             </span>
             <span className="font-mono tabular-nums text-[11px] w-10 text-center rounded-sm text-rw-text" style={chanceShade(r.adv)}>
               {Math.round(r.adv * 100)}%
             </span>
-          </div>
+          </button>
         ))}
       </div>
       <p className="px-3 pb-2 text-[10px] text-rw-muted">

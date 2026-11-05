@@ -11,6 +11,8 @@ import { isRevealed, setRevealed } from "../revealed";
 import { navigateHub } from "../hub/route";
 import { loadRatings } from "../hub/data";
 import { useLoad } from "./hub/ui";
+import { SectionCard } from "./hub/BroadcastCard";
+import { MatchOverviewButton } from "./MatchOverviewButton";
 import { riotImg } from "../riotImage";
 import { clickable, OPEN_TAB_EVENT } from "../a11y";
 
@@ -88,6 +90,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               {m.team2Image && <img {...riotImg(m.team2Image, 40)} alt="" className="w-5 h-5 object-contain shrink-0" loading="lazy" />}
               <span className={`flex-1 min-w-0 truncate ${w2 ? "font-bold text-rw-text" : "text-rw-sub"}`}>{m.team2Name}</span>
               <span className="w-16 shrink-0 text-right text-[11px] text-rw-muted">{when(m.startTimeUtc)}</span>
+              {shown && <MatchOverviewButton match={m} compact />}
             </li>
           );
         })}
@@ -109,9 +112,23 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
     <section className="space-y-2">
       <div className="flex items-center justify-between">
         <h2 className={HEAD}>{tl("Power rankings")}</h2>
-        <button type="button" onClick={() => open()} className="text-rw-accent hover:underline text-[11px] font-medium">
-          {tl("Every team →")}
-        </button>
+        <div className="flex items-center gap-2">
+          <SectionCard
+            section={tl("Power rankings")}
+            name={tl("Power rankings")}
+            rows={() =>
+              top.map((t, i) => ({
+                rank: String(i + 1),
+                label: t[1],
+                sub: t[10] || t[3] || "",
+                value: String(Math.round(t[5])),
+              }))
+            }
+          />
+          <button type="button" onClick={() => open()} className="text-rw-accent hover:underline text-[11px] font-medium">
+            {tl("Every team →")}
+          </button>
+        </div>
       </div>
       <ol className="border border-rw-border rounded-xl bg-rw-panel rw-lit divide-y divide-rw-border overflow-hidden">
         {top.map((t, i) => (

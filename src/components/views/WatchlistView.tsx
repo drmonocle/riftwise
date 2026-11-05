@@ -10,6 +10,8 @@ import { DiscordFeed } from "../DiscordFeed";
 import { searchAlias, isNonLatin } from "../../searchAliases";
 import { mainPlayerEntries } from "../../helpers";
 import { riotImg } from "../../riotImage";
+import { navigateHub } from "../../hub/route";
+import { prettySlug } from "../../hub/data";
 
 interface WatchlistViewProps {
   settings: AppSettings;
@@ -408,7 +410,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                         </div>
                       )}
                       <div>
-                        <div className="font-bold text-xs text-rw-text">{team.name}</div>
+                        <button
+                          type="button"
+                          onClick={() => navigateHub({ kind: "team", slug: prettySlug(team.name) })}
+                          className="font-bold text-xs text-rw-text hover:text-rw-accent hover:underline text-left transition-colors"
+                        >
+                          {team.name}
+                        </button>
                         <div className="text-[11px] text-rw-muted">
                           {team.league ? `${team.league} · ` : ""}
                           {team.code}
@@ -454,7 +462,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                               <span className="text-[10px] font-mono px-1.5 rounded bg-rw-deep text-rw-teal min-w-12 text-center whitespace-nowrap shrink-0">
                                 {roleName(p.role)}
                               </span>
-                              <span className="text-rw-text font-semibold">{p.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => navigateHub({ kind: "player", slug: prettySlug(p.name) })}
+                                className="text-rw-text font-semibold hover:text-rw-accent hover:underline text-left transition-colors"
+                              >
+                                {p.name}
+                              </button>
                               {p.realName && <span className="text-rw-muted">({p.realName})</span>}
                             </div>
                             <button
@@ -508,7 +522,16 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     </span>
                     <div>
                       <div className="font-bold text-xs text-rw-text flex items-center gap-1.5">
-                        <span>{player.name}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigateHub({ kind: "player", slug: prettySlug(player.name) });
+                          }}
+                          className="hover:text-rw-accent hover:underline text-left transition-colors"
+                        >
+                          {player.name}
+                        </button>
                         {player.realName && (
                           <span className="text-[10px] font-normal text-rw-muted">
                             · {player.realName}
@@ -516,7 +539,16 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                         )}
                       </div>
                       <div className="text-[10px] text-rw-muted">
-                        {player.teamName} ({player.teamCode})
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigateHub({ kind: "team", slug: prettySlug(player.teamName || player.teamCode) });
+                          }}
+                          className="hover:text-rw-accent hover:underline text-left transition-colors"
+                        >
+                          {player.teamName} ({player.teamCode})
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -668,7 +700,16 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       </div>
                     )}
                     <div>
-                      <div className="font-semibold text-xs text-rw-text">{league.name}</div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigateHub({ kind: "league", slug: league.slug });
+                        }}
+                        className="font-semibold text-xs text-rw-text hover:text-rw-accent hover:underline text-left transition-colors"
+                      >
+                        {league.name}
+                      </button>
                       <div className="text-[10px] text-rw-muted uppercase">{league.region ? regionName(league.region) : tl("Global")}</div>
                     </div>
                   </div>
