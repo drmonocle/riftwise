@@ -3,8 +3,10 @@ import { CatalogData, Match, AppSettings, PlayerEntry } from "../types";
 import { X, Star, ExternalLink, BarChart3 } from "lucide-react";
 import { computeHeadToHead, pickTeamByCode } from "../helpers";
 import { H2HMeter } from "./H2HMeter";
+import { MatchOverviewButton } from "./MatchOverviewButton";
+import { MatchPrepButton } from "./MatchPrepButton";
 import { tl, locale, roleName, regionName, tc } from "../i18n";
-import { findHubTeam, loadHubIndexQuick } from "../hub/data";
+import { findHubTeam, loadHubIndexQuick, prettySlug } from "../hub/data";
 import { navigateHub } from "../hub/route";
 import { RiotCatalogContext } from "../hub/riotCatalog";
 import { PlayerPhoto, PhotosLink } from "./hub/ui";
@@ -225,9 +227,16 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           <PlayerPhoto name={p.name} team={displayName} img={p.image} size={44} />
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
-                              <span className="font-bold text-sm text-rw-text group-hover:text-rw-accent transition-colors truncate">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigateHub({ kind: "player", slug: prettySlug(p.name) });
+                                  onClose();
+                                }}
+                                className="font-bold text-sm text-rw-text hover:text-rw-accent hover:underline transition-colors truncate text-left"
+                              >
                                 {p.name}
-                              </span>
+                              </button>
                               <PhotosLink q={p.name} iconOnly className="text-rw-muted hover:text-rw-accent shrink-0" />
                               <span
                                 className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${colors.bg} ${colors.text} ${colors.border}`}
@@ -292,16 +301,20 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           </div>
                           {h2h && <H2HMeter team1Code={teamCode} team2Code={oppCode} h2h={h2h} matchId={m.matchId} />}
                         </div>
-                        {m.state === "inProgress" ? (
-                          <div className="text-right font-mono text-[11px] font-bold text-rw-red">{tl("LIVE")}</div>
-                        ) : (
-                          <div className="text-right font-mono text-[11px] text-rw-teal">
-                            {new Date(m.startTimeUtc).toLocaleDateString(locale(), {
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </div>
-                        )}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <MatchOverviewButton match={m} compact onDone={onClose} />
+                          <MatchPrepButton match={m} compact onDone={onClose} />
+                          {m.state === "inProgress" ? (
+                            <div className="text-right font-mono text-[11px] font-bold text-rw-red">{tl("LIVE")}</div>
+                          ) : (
+                            <div className="text-right font-mono text-[11px] text-rw-teal">
+                              {new Date(m.startTimeUtc).toLocaleDateString(locale(), {
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })}

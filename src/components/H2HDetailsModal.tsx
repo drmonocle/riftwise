@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { X, Swords, Eye, EyeOff, Globe, Home, ClipboardList } from "lucide-react";
+import { X, Swords, Eye, EyeOff, Globe, Home, ClipboardList, GitCompare } from "lucide-react";
 import { findHubTeam, loadHubIndexQuick } from "../hub/data";
 import { navigateHub } from "../hub/route";
 import { Match, CatalogData } from "../types";
@@ -7,6 +7,7 @@ import { computeHeadToHead, h2hKey, normalizeTeamCode, pickTeamByCode, recentMee
 import { fetchH2HSeries, H2HSeriesEntry } from "../api";
 import { H2HBar, T1_COLOR, T2_COLOR } from "./H2HMeter";
 import { fmtDate } from "./hub/ui";
+import { SectionCard } from "./hub/BroadcastCard";
 import { tl, tn } from "../i18n";
 import { riotImg } from "../riotImage";
 
@@ -170,15 +171,54 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
             <Swords className="w-3.5 h-3.5 text-rw-teal" />
             {tl("All-time head-to-head")}
           </div>
-          <button
-            ref={closeRef}
-            type="button"
-            onClick={onClose}
-            aria-label={tl("Close")}
-            className="p-1.5 -m-0.5 rounded text-rw-muted hover:text-rw-text hover:bg-rw-border"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            {h2h && !hideTotals && (
+              <SectionCard
+                section={`${c1} vs ${c2} · ${tl("All-time head-to-head")}`}
+                sub={tl("{n} games · all tournaments", { n: total })}
+                name={`${c1}-vs-${c2}-h2h`}
+                rows={() => [
+                  {
+                    label: tl("All-time head-to-head"),
+                    sub: `${t1.name} vs ${t2.name}`,
+                    value: `${c1} ${h2h.team1Wins} – ${h2h.team2Wins} ${c2}`,
+                  },
+                  ...(intl[0] + intl[1] > 0
+                    ? [
+                        {
+                          label: tl("Worlds · MSI · First Stand"),
+                          value: `${c1} ${intl[0]} – ${intl[1]} ${c2}`,
+                        },
+                      ]
+                    : []),
+                  ...(domestic[0] + domestic[1] > 0
+                    ? [
+                        {
+                          label: tl("Domestic & other events"),
+                          value: `${c1} ${domestic[0]} – ${domestic[1]} ${c2}`,
+                        },
+                      ]
+                    : []),
+                  ...(revealed
+                    ? meetings.slice(0, 6).map((m) => ({
+                        label: m.tournament,
+                        sub: fmtDate(m.date),
+                        value: `${c1} ${m.team1Score} – ${m.team2Score} ${c2}`,
+                      }))
+                    : []),
+                ]}
+              />
+            )}
+            <button
+              ref={closeRef}
+              type="button"
+              onClick={onClose}
+              aria-label={tl("Close")}
+              className="p-1.5 -m-0.5 rounded text-rw-muted hover:text-rw-text hover:bg-rw-border"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         <div className="p-4 space-y-4">
@@ -273,30 +313,55 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
   );
 };
 
-/** "Match prep": opens the stats hub's prep page for these two teams (when both are in the stats). */
+/** "Match prep" + "Draft board" + "Compare": opens the stats hub's tools for these two teams (when both are in the stats). */
 const PrepButton: React.FC<{ t1: { code: string; name: string }; t2: { code: string; name: string }; onDone: () => void }> = ({ t1, t2, onDone }) => {
   const [state, setState] = useState<"" | "busy" | "missing">("");
   if (state === "missing") return null;
+  const openRoute = (dest: (a: string, b: string) => void) => {
+    setState("busy");
+    loadHubIndexQuick()
+      .then((index) => {
+        const a = findHubTeam(index, t1.name, t1.code);
+        const b = findHubTeam(index, t2.name, t2.code);
+        if (!a || !b) return setState("missing");
+        dest(a, b);
+        onDone();
+      })
+      .catch(() => setState("missing"));
+  };
   return (
-    <button
-      type="button"
-      disabled={state === "busy"}
-      onClick={() => {
-        setState("busy");
-        loadHubIndexQuick()
-          .then((index) => {
-            const a = findHubTeam(index, t1.name, t1.code);
-            const b = findHubTeam(index, t2.name, t2.code);
-            if (!a || !b) return setState("missing");
-            navigateHub({ kind: "prep", a, b });
-            onDone();
-          })
-          .catch(() => setState("missing"));
-      }}
-      className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-rw-accent/40 text-rw-accent text-xs font-semibold hover:bg-rw-accent/10 disabled:opacity-60"
-    >
-      <ClipboardList className="w-3.5 h-3.5" />
-      {tl("Match prep: form, drafts, lanes and storylines")}
-    </button>
+    <div className="space-y-1.5">
+      <button
+        type="button"
+        disabled={state === "busy"}
+        onClick={() => openRoute((a, b) => navigateHub({ kind: "prep", a, b }))}
+        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-rw-accent/40 text-rw-accent text-xs font-semibold hover:bg-rw-accent/10 disabled:opacity-60"
+      >
+        <ClipboardList className="w-3.5 h-3.5" />
+        {tl("Match prep: form, drafts, lanes and storylines")}
+      </button>
+      <div className="grid grid-cols-2 gap-1.5">
+        <button
+          type="button"
+          disabled={state === "busy"}
+          onClick={() =>
+            openRoute((a, b) => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}` }))
+          }
+          className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/40 text-xs font-semibold disabled:opacity-60"
+        >
+          <Swords className="w-3.5 h-3.5" />
+          {tl("Draft board")}
+        </button>
+        <button
+          type="button"
+          disabled={state === "busy"}
+          onClick={() => openRoute((a, b) => navigateHub({ kind: "compare", mode: "team", a, b }))}
+          className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/40 text-xs font-semibold disabled:opacity-60"
+        >
+          <GitCompare className="w-3.5 h-3.5" />
+          {tl("Compare")}
+        </button>
+      </div>
+    </div>
   );
 };
