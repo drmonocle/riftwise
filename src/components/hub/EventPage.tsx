@@ -3,8 +3,8 @@
  * (results and prize money, the bracket, standings), Matches (every series by stage), Stats (leaders, player and team
  * tables, the stat cards), Champions and Teams (rosters).
  */
-import React, { useMemo, useState } from "react";
-import { Trophy, MapPin, CalendarDays, Coins, Download, Sparkles } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Trophy, MapPin, CalendarDays, Coins, Download, Sparkles, ClipboardCopy } from "lucide-react";
 import { downloadEventCsv, downloadStagesCsv } from "./DownloadsPage";
 import { BracketBoard, type BracketColumn } from "../BracketBoard";
 import { localCountry } from "./CountryFlag";
@@ -17,7 +17,8 @@ import { EventPlayerStats, EventTeamStatsTable } from "./EventTables";
 import { EventFacts, EventRosters, RegionalRecords } from "./EventExtras";
 import { EventStatsSection } from "./EventStats";
 import { PlayoffChances } from "./PlayoffChances";
-import { SectionCard, eventCardData } from "./BroadcastCard";
+import { BroadcastCardButton, SectionCard, eventCardData } from "./BroadcastCard";
+import { hubShareUrl, type HubRoute } from "../../hub/route";
 import {
   card,
   ChampLink,
@@ -43,7 +44,6 @@ import { ratingTextClass } from "./BestPage";
 import { STable } from "../STable";
 import { JumpBar, PageTabs, type JumpItem, type PageTab } from "./PageTabs";
 import { EntityHero, heroBtn, heroLink } from "./EntityHero";
-import type { HubRoute } from "../../hub/route";
 
 /** The Stats tab's parts, for its "jump to" row (JumpBar leaves out the ones a tournament doesn't have) */
 const STATS_JUMPS: JumpItem[] = [
@@ -170,20 +170,44 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
           ) : undefined
         }
         aside={
-          (e.games || 0) > 0 ? (
-            <button
-              type="button"
-              onClick={() =>
-                (e.whole && e.children?.length
-                  ? downloadStagesCsv(e.u, e.children.map((c) => c.u), onOpenUrl)
-                  : downloadEventCsv(e.u, onOpenUrl)
-                ).catch(() => {})
-              }
-              className={heroBtn()}
-            >
-              <Download className="w-3.5 h-3.5" />
-              {tl("Download every game (CSV)")}
-            </button>
+          (e.games || 0) > 0 || (!resultsHidden && e.overview) ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {!resultsHidden && e.overview && (
+                <BroadcastCardButton
+                  hero
+                  name={`${e.u}-overview`}
+                  label={tl("Overview card")}
+                  data={() =>
+                    eventCardData({
+                      name: eventTitle(e.n),
+                      when: [e.start && fmtDate(e.start), e.end && e.end !== e.start && fmtDate(e.end)].filter(Boolean).join(" – ") || undefined,
+                      podium: (e.results || [])
+                        .filter((r) => ["1", "2", "3"].includes(r.p))
+                        .sort((x, y) => Number(x.p) - Number(y.p))
+                        .map((r) => r.t)
+                        .slice(0, 3),
+                      o: e.overview!,
+                    })
+                  }
+                />
+              )}
+              {!resultsHidden && (e.games || 0) > 0 && <CopyEventPost e={e} />}
+              {(e.games || 0) > 0 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    (e.whole && e.children?.length
+                      ? downloadStagesCsv(e.u, e.children.map((c) => c.u), onOpenUrl)
+                      : downloadEventCsv(e.u, onOpenUrl)
+                    ).catch(() => {})
+                  }
+                  className={heroBtn()}
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {tl("Download every game (CSV)")}
+                </button>
+              )}
+            </div>
           ) : undefined
         }
         stats={
@@ -322,7 +346,27 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
         <div className={`${tabbed && tab === "champions" ? "rw-span " : ""}grid gap-3 md:grid-cols-2`}>
           {on("champions") && e.champs && e.champs.length > 0 && <EventChamps e={e} />}
           {on("teams") && e.teams && e.teams.length > 0 && (
-            <Section title={tl("Teams")}>
+            <Section
+              title={tl("Teams")}
+              right={
+                !resultsHidden ? (
+                  <SectionCard
+                    section={tl("Teams")}
+                    sub={eventTitle(e.n)}
+                    name={`${e.u}-teams`}
+                    rows={() =>
+                      e.teams!.slice(0, 12).map((t, idx) => ({
+                        rank: idx + 1,
+                        label: t.t,
+                        sub: `${t.w}-${t.g - t.w} ${tl("Games")}`,
+                        value: `${t.sw}-${t.sg - t.sw}`,
+                        win: t.sg ? t.sw / t.sg >= 0.5 : undefined,
+                      }))
+                    }
+                  />
+                ) : undefined
+              }
+            >
               <STable className="w-full text-xs">
                 <thead>
                   <tr>
@@ -383,11 +427,15 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
               {r.r.toFixed(0)}
             </span>
           )}
-          {r.g && !hideResult && (
+          {r.g && !hideResult ? (
             <HubLink to={{ kind: "match", slug: r.g }} className="text-rw-accent hover:underline">
               {tl("Details")}
             </HubLink>
-          )}
+          ) : !played && r.au && r.bu ? (
+            <HubLink to={{ kind: "prep", a: r.au, b: r.bu }} className="text-rw-accent hover:underline">
+              {tl("Prep")}
+            </HubLink>
+          ) : null}
         </span>
       </div>
     </div>
@@ -557,6 +605,24 @@ const StageLists: React.FC<{ stages: Stage[] }> = ({ stages }) => {
               <option value="r">{tl("Top rated")}</option>
             </select>
           )}
+          {shown.length > 0 && (
+            <SectionCard
+              section={tl("Matches")}
+              name={stageLabel(st.name) || tl("Matches")}
+              rows={() =>
+                shown.slice(0, 12).map((r) => {
+                  const hide = isHidden(seriesKey(r), r.date);
+                  const played = r.sa != null && r.sb != null;
+                  return {
+                    label: `${r.a} vs ${r.b}`,
+                    sub: fmtDate(r.date, false),
+                    value: played ? (hide ? "–" : `${r.sa}–${r.sb}`) : fmtDate(r.date, false),
+                    win: !hide && played ? r.w === 1 : undefined,
+                  };
+                })
+              }
+            />
+          )}
         </span>
       }
     >
@@ -700,6 +766,49 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
       </ol>
       <p className="text-[10px] text-rw-muted">{tl("Players who played at least 40% of the most games anyone played here.")}</p>
     </Section>
+  );
+};
+
+const CopyEventPost: React.FC<{ e: HubEvent }> = ({ e }) => {
+  const [state, setState] = useState<"" | "copied" | "failed">("");
+  useEffect(() => {
+    if (!state) return;
+    const t = setTimeout(() => setState(""), 2200);
+    return () => clearTimeout(t);
+  }, [state]);
+  const text = () => {
+    const podium = (e.results || [])
+      .filter((r) => ["1", "2", "3"].includes(r.p))
+      .sort((x, y) => Number(x.p) - Number(y.p))
+      .slice(0, 3);
+    const lines = [
+      `${eventTitle(e.n)}${e.games ? ` — ${fmtNum(e.games)} ${tl("Games")}${e.series ? ` · ${fmtNum(e.series)} ${tl("Series")}` : ""}` : ""}`,
+    ];
+    if (podium.length > 0) {
+      lines.push(podium.map((r) => `#${r.p} ${r.t}${r.usd ? ` (${fmtUsd(r.usd)})` : ""}`).join(" · "));
+    }
+    if (e.champs && e.champs.length > 0) {
+      lines.push(
+        `${tl("Champions")}: ${e.champs
+          .slice(0, 3)
+          .map((c) => `${c.c} (${c.p}P/${c.b}B)`)
+          .join(", ")}`,
+      );
+    }
+    lines.push(hubShareUrl({ kind: "event", slug: e.u }));
+    return lines.join("\n");
+  };
+  return (
+    <button
+      type="button"
+      onClick={() => navigator.clipboard.writeText(text()).then(() => setState("copied"), () => setState("failed"))}
+      className={heroBtn()}
+      title={`${tl("Copy post")}: ${tl("Copy a ready-to-post summary with the link, for X or Discord")}`}
+      aria-label={tl("Copy post")}
+    >
+      <ClipboardCopy className="w-3.5 h-3.5" />
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
+    </button>
   );
 };
 
