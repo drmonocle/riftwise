@@ -967,6 +967,15 @@ const Board: React.FC<{
           <HubLink to={{ kind: "prep", a: blue.team.u, b: red.team.u, period }} className="text-rw-accent hover:underline">
             {tl("Match prep")}
           </HubLink>
+          <HubLink to={{ kind: "compare", mode: "team", a: blue.team.u, b: red.team.u, period }} className="text-rw-accent hover:underline">
+            {tl("Compare")}
+          </HubLink>
+          <HubLink
+            to={{ kind: "finder", query: `team=${encodeURIComponent(blue.team.name)}&vs=${encodeURIComponent(red.team.name)}` }}
+            className="text-rw-accent hover:underline"
+          >
+            {tl("Game finder")}
+          </HubLink>
         </div>
       </div>
 
@@ -2253,7 +2262,19 @@ const ChampInfo: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Side; 
   taken,
   hideTaken = true,
 }) => (
-  <Section title={champName(c)}>
+  <Section
+    title={champName(c)}
+    right={
+      <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+        <HubLink to={{ kind: "champ", slug: prettySlug(c) }} className="text-rw-accent hover:underline font-semibold">
+          {champName(c)} →
+        </HubLink>
+        <HubLink to={{ kind: "counters", query: `champ=${prettySlug(c)}` }} className="text-rw-accent hover:underline font-semibold">
+          {tl("Counter-picks")} →
+        </HubLink>
+      </span>
+    }
+  >
     <div className="grid sm:grid-cols-2 gap-3 text-xs">
       {(
         [

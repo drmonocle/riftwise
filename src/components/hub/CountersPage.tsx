@@ -9,7 +9,7 @@ import { champName } from "../../champions";
 import { bare, loadHubChamp, loadHubIndexQuick, loadMatchups, prettySlug } from "../../hub/data";
 import { ROLES } from "../../hub/champAgg";
 import type { HubChamp, HubMatchups } from "../../hub/types";
-import { navigateHub } from "../../hub/route";
+import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, Section, useLoad, usePageTitle } from "./ui";
 import { SortTable, type Column } from "./SortTable";
@@ -275,7 +275,13 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               <Section
                 title={`${cName} ${tl("vs")} ${champName(vsMatch.oppCanon)}`}
                 right={
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <HubLink
+                      to={{ kind: "finder", query: `champ=${encodeURIComponent(rawChamp)}&vschamp=${encodeURIComponent(vsMatch.oppCanon)}` }}
+                      className="px-2 py-0.5 rounded border border-rw-accent/50 bg-rw-accent/10 text-[11px] font-semibold text-rw-accent hover:bg-rw-accent/20"
+                    >
+                      {tl("Game finder")} →
+                    </HubLink>
                     <button
                       type="button"
                       onClick={() => set({ champ: prettySlug(vsMatch.oppCanon), vs: rawChamp })}
@@ -302,22 +308,41 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         })),
                       ]}
                     />
+                    <CopyMatchupPost
+                      cName={cName}
+                      oppName={champName(vsMatch.oppCanon)}
+                      spanLabel={span === "12m" ? tl("Last 12 months") : tl("All time")}
+                      vsMatch={vsMatch}
+                      query={q.toString()}
+                    />
                   </div>
                 }
               >
                 <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-rw-border bg-rw-bg/50 px-4 py-3 text-xs">
                   <div className="flex items-center gap-3">
-                    {rawChamp && <ChampIcon name={rawChamp} size={36} />}
+                    {rawChamp && (
+                      <HubLink to={{ kind: "champ", slug }} title={cName}>
+                        <ChampIcon name={rawChamp} size={36} />
+                      </HubLink>
+                    )}
                     <div>
                       <div className="font-bold text-sm text-rw-text">
-                        {cName} <span className="text-rw-muted font-normal">{tl("vs")}</span> {champName(vsMatch.oppCanon)}
+                        <HubLink to={{ kind: "champ", slug }} className="hover:text-rw-accent hover:underline">
+                          {cName}
+                        </HubLink>{" "}
+                        <span className="text-rw-muted font-normal">{tl("vs")}</span>{" "}
+                        <HubLink to={{ kind: "champ", slug: prettySlug(vsMatch.oppCanon) }} className="hover:text-rw-accent hover:underline">
+                          {champName(vsMatch.oppCanon)}
+                        </HubLink>
                       </div>
                       <div className="text-[11px] text-rw-sub font-mono">
                         {vsMatch.totalW}W–{vsMatch.totalG - vsMatch.totalW}L ({finderLink(vsMatch.oppCanon, vsMatch.totalG)} {tl("Games")})
                         {vsMatch.avgGd != null && ` · ${vsMatch.avgGd > 0 ? "+" : ""}${vsMatch.avgGd} GD@15`}
                       </div>
                     </div>
-                    <ChampIcon name={vsMatch.oppCanon} size={36} />
+                    <HubLink to={{ kind: "champ", slug: prettySlug(vsMatch.oppCanon) }} title={champName(vsMatch.oppCanon)}>
+                      <ChampIcon name={vsMatch.oppCanon} size={36} />
+                    </HubLink>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
                     {vsMatch.roles.map((r) => {
@@ -419,19 +444,28 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
             <Section
               title={tl("Every lane matchup: {champ}", { champ: cName })}
               right={
-                <SectionCard
-                  section={tl("Every lane matchup: {champ}", { champ: cName })}
-                  name={cName}
-                  sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
-                  rows={() =>
-                    rows.slice(0, 14).map((x) => ({
-                      label: champName(x.c),
-                      sub: `${x.role >= 0 ? `${roleName(ROLES[x.role])} · ` : ""}${x.g}G${x.gd != null ? ` · ${x.gd > 0 ? "+" : ""}${x.gd} GD@15` : ""}`,
-                      value: `${Math.round((x.w / x.g) * 100)}%`,
-                      win: x.w / x.g >= 0.5,
-                    }))
-                  }
-                />
+                <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+                  <SectionCard
+                    section={tl("Every lane matchup: {champ}", { champ: cName })}
+                    name={cName}
+                    sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
+                    rows={() =>
+                      rows.slice(0, 14).map((x) => ({
+                        label: champName(x.c),
+                        sub: `${x.role >= 0 ? `${roleName(ROLES[x.role])} · ` : ""}${x.g}G${x.gd != null ? ` · ${x.gd > 0 ? "+" : ""}${x.gd} GD@15` : ""}`,
+                        value: `${Math.round((x.w / x.g) * 100)}%`,
+                        win: x.w / x.g >= 0.5,
+                      }))
+                    }
+                  />
+                  <CopyCountersPost
+                    cName={cName}
+                    spanLabel={span === "12m" ? tl("Last 12 months") : tl("All time")}
+                    good={good}
+                    bad={bad}
+                    query={q.toString()}
+                  />
+                </span>
               }
               share={`riftwise-counters-${slug}`}
             >
@@ -493,3 +527,75 @@ export const CountersLink: React.FC<{ slug: string; role?: string; className?: s
     {tl("Counter-picks")}
   </HubLink>
 );
+
+const CopyMatchupPost: React.FC<{
+  cName: string;
+  oppName: string;
+  spanLabel: string;
+  vsMatch: { totalG: number; totalW: number; avgGd: number | null; roles: Row[] };
+  query?: string;
+}> = ({ cName, oppName, spanLabel, vsMatch, query }) => {
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+  const copy = () => {
+    const wr = Math.round((vsMatch.totalW / vsMatch.totalG) * 100);
+    const lines = [
+      `${cName} vs ${oppName} · ${spanLabel}`,
+      `${vsMatch.totalW}W–${vsMatch.totalG - vsMatch.totalW}L (${wr}% · ${vsMatch.totalG}G)${vsMatch.avgGd != null ? ` · ${vsMatch.avgGd > 0 ? "+" : ""}${vsMatch.avgGd} GD@15` : ""}`,
+      ...vsMatch.roles.map((r) => `${r.role >= 0 ? roleName(ROLES[r.role]) : tl("Role")}: ${Math.round((r.w / r.g) * 100)}% (${r.g}G${r.gd != null ? `, ${r.gd > 0 ? "+" : ""}${r.gd} GD@15` : ""})`),
+      hubShareUrl({ kind: "counters", ...(query ? { query } : {}) }),
+    ];
+    navigator.clipboard?.writeText(lines.join("\n")).then(
+      () => {
+        setState("copied");
+        setTimeout(() => setState("idle"), 1600);
+      },
+      () => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2000);
+      },
+    );
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title={tl("Copy a ready-to-post summary with the link, for X or Discord")}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-surface text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+    >
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
+    </button>
+  );
+};
+
+const CopyCountersPost: React.FC<{ cName: string; spanLabel: string; good: Row[]; bad: Row[]; query?: string }> = ({ cName, spanLabel, good, bad, query }) => {
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+  const copy = () => {
+    const fmt = (x: Row) => `${champName(x.c)} (${Math.round((x.w / x.g) * 100)}%, ${x.g}G${x.gd != null ? `, ${x.gd > 0 ? "+" : ""}${x.gd} GD@15` : ""})`;
+    const lines = [
+      `${tl("Counter-pick finder")}: ${cName} (${spanLabel})`,
+      good.length > 0 ? `${tl("{champ} does best against", { champ: cName })}: ${good.slice(0, 3).map(fmt).join(" · ")}` : null,
+      bad.length > 0 ? `${tl("{champ} struggles against", { champ: cName })}: ${bad.slice(0, 3).map(fmt).join(" · ")}` : null,
+      hubShareUrl({ kind: "counters", ...(query ? { query } : {}) }),
+    ].filter((x): x is string => !!x);
+    navigator.clipboard?.writeText(lines.join("\n")).then(
+      () => {
+        setState("copied");
+        setTimeout(() => setState("idle"), 1600);
+      },
+      () => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2000);
+      },
+    );
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title={tl("Copy a ready-to-post summary with the link, for X or Discord")}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-surface text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+    >
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
+    </button>
+  );
+};
