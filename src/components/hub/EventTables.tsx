@@ -91,23 +91,33 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
       title={tl("Player stats")}
       share={`${e.u}-players`}
       right={
-        <SectionCard
-          section={tl("Player stats")}
-          sub={`${e.n} · ${role === "All" ? tl("All roles") : roleName(role)}`}
-          name={`${e.u}-player-stats-${role}`}
-          rows={() =>
-            [...rows]
+        <span className="flex items-center gap-2">
+          <CopyEventTablePost
+            title={`${tl("Player stats")} · ${e.n} (${role === "All" ? tl("All roles") : roleName(role)})`}
+            rows={[...rows]
               .sort((a, b) => (per(b.k + b.a, Math.max(b.d, 1), 2) || 0) - (per(a.k + a.a, Math.max(a.d, 1), 2) || 0))
-              .slice(0, 10)
-              .map((p, idx) => ({
-                rank: idx + 1,
-                team: p.t,
-                label: p.n,
-                sub: `${p.t} · ${roleName(p.r)} · ${pct(per(p.w, p.g, 3))}`,
-                value: `${per(p.k + p.a, Math.max(p.d, 1), 2) ?? "–"} KDA`,
-              }))
-          }
-        />
+              .slice(0, 6)
+              .map((p, idx) => `#${idx + 1} ${p.n} (${p.t}, ${roleName(p.r)}): ${per(p.k + p.a, Math.max(p.d, 1), 2) ?? "–"} KDA · ${pct(per(p.w, p.g, 3))}`)}
+            url={`https://riftwise.gg/event/${e.u}`}
+          />
+          <SectionCard
+            section={tl("Player stats")}
+            sub={`${e.n} · ${role === "All" ? tl("All roles") : roleName(role)}`}
+            name={`${e.u}-player-stats-${role}`}
+            rows={() =>
+              [...rows]
+                .sort((a, b) => (per(b.k + b.a, Math.max(b.d, 1), 2) || 0) - (per(a.k + a.a, Math.max(a.d, 1), 2) || 0))
+                .slice(0, 10)
+                .map((p, idx) => ({
+                  rank: idx + 1,
+                  team: p.t,
+                  label: p.n,
+                  sub: `${p.t} · ${roleName(p.r)} · ${pct(per(p.w, p.g, 3))}`,
+                  value: `${per(p.k + p.a, Math.max(p.d, 1), 2) ?? "–"} KDA`,
+                }))
+            }
+          />
+        </span>
       }
     >
       <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
@@ -213,23 +223,33 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
       title={tl("Team stats")}
       share={`${e.u}-teams`}
       right={
-        <SectionCard
-          section={tl("Team stats")}
-          sub={e.n}
-          name={`${e.u}-team-stats`}
-          rows={() =>
-            [...rows]
+        <span className="flex items-center gap-2">
+          <CopyEventTablePost
+            title={`${tl("Team stats")} · ${e.n}`}
+            rows={[...rows]
               .sort((a, b) => (per(b.w, b.g, 3) || 0) - (per(a.w, a.g, 3) || 0))
-              .slice(0, 10)
-              .map((t, idx) => ({
-                rank: idx + 1,
-                team: t.t,
-                label: t.t,
-                sub: `${t.w}-${t.g - t.w} · ${per(t.min, t.g) ?? "–"} min`,
-                value: pct(per(t.w, t.g, 3)),
-              }))
-          }
-        />
+              .slice(0, 6)
+              .map((t, idx) => `#${idx + 1} ${t.t}: ${t.w}-${t.g - t.w} (${pct(per(t.w, t.g, 3))}) · ${per(t.min, t.g) ?? "–"}m`)}
+            url={`https://riftwise.gg/event/${e.u}`}
+          />
+          <SectionCard
+            section={tl("Team stats")}
+            sub={e.n}
+            name={`${e.u}-team-stats`}
+            rows={() =>
+              [...rows]
+                .sort((a, b) => (per(b.w, b.g, 3) || 0) - (per(a.w, a.g, 3) || 0))
+                .slice(0, 10)
+                .map((t, idx) => ({
+                  rank: idx + 1,
+                  team: t.t,
+                  label: t.t,
+                  sub: `${t.w}-${t.g - t.w} · ${per(t.min, t.g) ?? "–"} min`,
+                  value: pct(per(t.w, t.g, 3)),
+                }))
+            }
+          />
+        </span>
       }
     >
       {teams.length > 2 && (
@@ -259,5 +279,38 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
       <p className="text-[10px] text-rw-muted">{tl("Per game, games with a full scoreboard only.")}</p>
       {early && <OeCredit />}
     </Section>
+  );
+};
+
+const CopyEventTablePost: React.FC<{
+  title: string;
+  rows: string[];
+  url: string;
+}> = ({ title, rows, url }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const lines: string[] = [title];
+    for (const r of rows) {
+      lines.push(r);
+    }
+    lines.push(url);
+    navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
+  };
+  return (
+    <button
+      type="button"
+      data-nocapture="1"
+      onClick={copy}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+      title={tl("Copy post")}
+    >
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
   );
 };

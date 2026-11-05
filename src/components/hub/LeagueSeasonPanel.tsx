@@ -3,7 +3,7 @@
  * players on the main stats (the top three of each, among players with 30% of the most games), and links to the
  * full leaderboard, the season's champion picks and the tier list.
  */
-import React from "react";
+import React, { useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { loadLeagueSeason } from "../../hub/data";
 import type { EventPlayer } from "../../hub/types";
@@ -32,21 +32,34 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
           <HubLink to={{ kind: "champions", query: `league=${league}&year=${year}` }} className="text-rw-accent hover:underline">
             {tl("Champion picks")}
           </HubLink>
+          <HubLink to={{ kind: "tiers", query: `league=${league}&year=${year}` }} className="text-rw-accent hover:underline">
+            {tl("Tier list")}
+          </HubLink>
+          <HubLink to={{ kind: "finder", query: `league=${league}&year=${year}` }} className="text-rw-accent hover:underline">
+            {tl("Game finder")}
+          </HubLink>
           {teams.length > 0 && (
-            <SectionCard
-              section={tl("{name} {year} at a glance", { name, year })}
-              sub={tl("Teams by record")}
-              name={`${league}-${year}-glance`}
-              rows={() =>
-                teams.slice(0, 10).map((t, idx) => ({
-                  rank: idx + 1,
-                  team: t.t,
-                  label: t.t,
-                  sub: `${t.w}-${t.g - t.w}`,
-                  value: `${Math.round((t.w / Math.max(1, t.g)) * 100)}%`,
-                }))
-              }
-            />
+            <>
+              <CopyLeagueGlancePost
+                title={tl("{name} {year} at a glance", { name, year })}
+                league={league}
+                teams={teams}
+              />
+              <SectionCard
+                section={tl("{name} {year} at a glance", { name, year })}
+                sub={tl("Teams by record")}
+                name={`${league}-${year}-glance`}
+                rows={() =>
+                  teams.slice(0, 10).map((t, idx) => ({
+                    rank: idx + 1,
+                    team: t.t,
+                    label: t.t,
+                    sub: `${t.w}-${t.g - t.w}`,
+                    value: `${Math.round((t.w / Math.max(1, t.g)) * 100)}%`,
+                  }))
+                }
+              />
+            </>
           )}
         </span>
       }
@@ -108,5 +121,37 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
         )}
       </div>
     </Section>
+  );
+};
+
+const CopyLeagueGlancePost: React.FC<{
+  title: string;
+  league: string;
+  teams: { t: string; w: number; g: number }[];
+}> = ({ title, league, teams }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const lines: string[] = [title];
+    for (const [idx, t] of teams.slice(0, 6).entries()) {
+      lines.push(`#${idx + 1} ${t.t}: ${t.w}–${t.g - t.w} (${Math.round((t.w / Math.max(1, t.g)) * 100)}%)`);
+    }
+    lines.push(`https://riftwise.gg/league/${league}`);
+    navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] font-normal text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+      title={tl("Copy post")}
+    >
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
   );
 };
