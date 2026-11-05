@@ -3,9 +3,10 @@
  * Cinderella runs, and for every year together finals, players' titles, each year in numbers, regions year by year
  * and how the host did. Shown under the facts on the Facts tab.
  */
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { tl } from "../../i18n";
 import { champName } from "../../champions";
+import { prettySlug } from "../../hub/data";
 import type { EventLines } from "../../hub/worldsFacts";
 import { cinderella, comebacks, editionYear, finals, finalsRecords, hosts, playerTitles, runs, swissRuns, upsets, yearLines, type FileRef, type Run } from "../../hub/intlInsights";
 import { ChampIcon, HubLink, PlayerLink, Section, TeamLink } from "./ui";
@@ -77,7 +78,15 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
       <Section
         key="upsets"
         title={tl("Biggest upsets")}
-        right={<SectionCard section={tl("Biggest upsets")} name={name} rows={() => up.games.map((u) => ({ label: `${u.winner} beat ${u.loser}`, sub: `${all ? yearOnly(u.year) + " · " : ""}${u.stage} · ${tl("Game {n}", { n: u.n ?? 1 })}`, value: `${u.chance}%` }))} />}
+        right={
+          <span className="flex items-center gap-2">
+            <CopyInsightPost
+              title={`${tl("Biggest upsets")} · ${name}`}
+              rows={up.games.slice(0, 5).map((u) => `${u.winner} ${tl("beat")} ${u.loser} (${u.chance}%) · ${all ? yearOnly(u.year) + " · " : ""}${u.stage}`)}
+            />
+            <SectionCard section={tl("Biggest upsets")} name={name} rows={() => up.games.map((u) => ({ label: `${u.winner} beat ${u.loser}`, sub: `${all ? yearOnly(u.year) + " · " : ""}${u.stage} · ${tl("Game {n}", { n: u.n ?? 1 })}`, value: `${u.chance}%` }))} />
+          </span>
+        }
       >
         <p className="text-[11px] text-rw-muted">{tl("Wins by the team the power ratings gave the smallest chance before the game.")}</p>
         <List>
@@ -121,7 +130,15 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
       <Section
         key="comebacks"
         title={tl("Biggest comebacks")}
-        right={<SectionCard section={tl("Biggest comebacks")} name={name} rows={() => cb.map((c) => ({ label: `${c.winner} beat ${c.loser}`, sub: `${all ? yearOnly(c.year) + " · " : ""}${c.stage}`, value: `-${k(c.behind)}` }))} />}
+        right={
+          <span className="flex items-center gap-2">
+            <CopyInsightPost
+              title={`${tl("Biggest comebacks")} · ${name}`}
+              rows={cb.slice(0, 5).map((c) => `${c.winner} ${tl("beat")} ${c.loser} (−${k(c.behind)} @15) · ${all ? yearOnly(c.year) + " · " : ""}${c.stage}`)}
+            />
+            <SectionCard section={tl("Biggest comebacks")} name={name} rows={() => cb.map((c) => ({ label: `${c.winner} beat ${c.loser}`, sub: `${all ? yearOnly(c.year) + " · " : ""}${c.stage}`, value: `-${k(c.behind)}` }))} />
+          </span>
+        }
       >
         <p className="text-[11px] text-rw-muted">{tl("Games won from furthest behind in gold at 15 minutes.")}</p>
         <List>
@@ -285,7 +302,15 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
       <Section
         key="players"
         title={tl("Players with the most titles")}
-        right={<SectionCard section={tl("Players with the most titles")} name={name} rows={() => titles.map((p) => ({ label: p.name, sub: p.titles.map(yearOnly).join(", "), value: tl("{n} titles", { n: p.titles.length }) }))} />}
+        right={
+          <span className="flex items-center gap-2">
+            <CopyInsightPost
+              title={`${tl("Players with the most titles")} · ${name}`}
+              rows={titles.slice(0, 6).map((p) => `${p.name}: ${tl("{n} titles", { n: p.titles.length })} (${p.titles.map(yearOnly).sort().join(", ")})`)}
+            />
+            <SectionCard section={tl("Players with the most titles")} name={name} rows={() => titles.map((p) => ({ label: p.name, sub: p.titles.map(yearOnly).join(", "), value: tl("{n} titles", { n: p.titles.length }) }))} />
+          </span>
+        }
       >
         <List>
           {titles.map((p) => (
@@ -333,11 +358,17 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         <Section
           title={tl("Year by year")}
           right={
-            <SectionCard
-              section={tl("Year by year")}
-              name={name}
-              rows={() => ys.map((y) => ({ label: yearOnly(y.year), sub: `${y.top ? champName(y.top[0]) : "–"} · ${tl("blue {p}%", { p: y.blue ?? "–" })}`, value: mmss(y.min) }))}
-            />
+            <span className="flex items-center gap-2">
+              <CopyInsightPost
+                title={`${tl("Year by year")} · ${name}`}
+                rows={ys.slice(0, 6).map((y) => `${yearOnly(y.year)}: ${y.games}G · ${mmss(y.min)} · ${y.top ? champName(y.top[0]) : "–"}`)}
+              />
+              <SectionCard
+                section={tl("Year by year")}
+                name={name}
+                rows={() => ys.map((y) => ({ label: yearOnly(y.year), sub: `${y.top ? champName(y.top[0]) : "–"} · ${tl("blue {p}%", { p: y.blue ?? "–" })}`, value: mmss(y.min) }))}
+              />
+            </span>
           }
         >
           <div className="overflow-x-auto">
@@ -366,23 +397,23 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     <td className="px-2 py-1 text-right tabular-nums">{y.kills ?? "–"}</td>
                     <td className="px-2 py-1">
                       {y.top ? (
-                        <span className="flex items-center gap-1">
+                        <HubLink to={{ kind: "champ", slug: prettySlug(y.top[0]) }} className="flex items-center gap-1 hover:text-rw-accent">
                           <ChampIcon name={y.top[0]} size={16} />
                           {champName(y.top[0])} <span className="text-rw-muted">· {y.top[1]}</span>
-                        </span>
+                        </HubLink>
                       ) : (
                         "–"
                       )}
                     </td>
                     <td className="px-2 py-1">
                       {y.best ? (
-                        <span className="flex items-center gap-1">
+                        <HubLink to={{ kind: "champ", slug: prettySlug(y.best[0]) }} className="flex items-center gap-1 hover:text-rw-accent">
                           <ChampIcon name={y.best[0]} size={16} />
                           {champName(y.best[0])}{" "}
                           <span className="text-rw-muted">
                             · {y.best[2]}-{y.best[1] - y.best[2]}
                           </span>
-                        </span>
+                        </HubLink>
                       ) : (
                         "–"
                       )}
@@ -399,23 +430,34 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         <Section
           title={tl("Regions year by year")}
           right={
-            <SectionCard
-              section={tl("Regions year by year")}
-              name={name}
-              rows={() =>
-                trend.regions.map((code) => {
+            <span className="flex items-center gap-2">
+              <CopyInsightPost
+                title={`${tl("Regions year by year")} · ${name}`}
+                rows={trend.regions.slice(0, 6).map((code) => {
                   const rows = trend.years.map((y) => y.rows.find((x) => x.code === code)).filter((x): x is NonNullable<typeof x> => !!x);
                   const w = rows.reduce((s, r) => s + r.ow, 0);
                   const l = rows.reduce((s, r) => s + r.ol, 0);
-                  return {
-                    label: regionLabel(code),
-                    sub: `${w}-${l}`,
-                    value: w + l > 0 ? `${Math.round((w / (w + l)) * 100)}%` : "–",
-                    win: w >= l,
-                  };
-                })
-              }
-            />
+                  return `${regionLabel(code)}: ${w}-${l} (${w + l > 0 ? `${Math.round((w / (w + l)) * 100)}%` : "–"})`;
+                })}
+              />
+              <SectionCard
+                section={tl("Regions year by year")}
+                name={name}
+                rows={() =>
+                  trend.regions.map((code) => {
+                    const rows = trend.years.map((y) => y.rows.find((x) => x.code === code)).filter((x): x is NonNullable<typeof x> => !!x);
+                    const w = rows.reduce((s, r) => s + r.ow, 0);
+                    const l = rows.reduce((s, r) => s + r.ol, 0);
+                    return {
+                      label: regionLabel(code),
+                      sub: `${w}-${l}`,
+                      value: w + l > 0 ? `${Math.round((w / (w + l)) * 100)}%` : "–",
+                      win: w >= l,
+                    };
+                  })
+                }
+              />
+            </span>
           }
         >
           <p className="text-[11px] text-rw-muted">{tl("Each region's series win rate against other regions.")}</p>
@@ -463,5 +505,33 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         </Section>
       )}
     </>
+  );
+};
+
+const CopyInsightPost: React.FC<{ title: string; rows: string[] }> = ({ title, rows }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const lines: string[] = [title];
+    for (const r of rows) {
+      lines.push(`• ${r}`);
+    }
+    lines.push(window.location.href);
+    navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+      title={tl("Copy post")}
+    >
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
   );
 };

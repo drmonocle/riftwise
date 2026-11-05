@@ -3,7 +3,7 @@
  * and games won, the record against other regions, the best finish and (all years) titles and finals, plus the region
  * against region records. From the event's lines files (each team's region and final place, builds from 2026-10-23 on).
  */
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { tl, regionName } from "../../i18n";
 import type { EventLines } from "../../hub/worldsFacts";
 import { Section } from "./ui";
@@ -132,7 +132,7 @@ export function regionStats(files: (EventLines | null)[], years: string[]) {
  * regions, edition by edition, as shaded percentages (teal above 50%, red below; the record on hover). Regions in at
  * least three editions, the most series against other regions first.
  */
-const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[] }> = ({ files, years }) => {
+const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; name: string }> = ({ files, years, name }) => {
   const t = useMemo(() => {
     // an edition has several stage files: group them by year
     const byYear = new Map<string, number[]>();
@@ -161,24 +161,35 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[] }> =
     <Section
       title={tl("Region strength over time")}
       right={
-        <SectionCard
-          section={tl("Region strength over time")}
-          name={tl("Regions")}
-          sub={`${t.cols[0]}–${t.cols[t.cols.length - 1]}`}
-          rows={() =>
-            t.rows.slice(0, 10).map((c) => {
+        <span className="flex items-center gap-2">
+          <CopyRegionStatsPost
+            title={`${tl("Region strength over time")} · ${name}`}
+            rows={t.rows.slice(0, 6).map((c) => {
               const vals = [...t.cells.get(c)!.values()];
               const w = vals.reduce((s, [a]) => s + a, 0);
               const l = vals.reduce((s, [, b]) => s + b, 0);
-              return {
-                label: regionLabel(c),
-                sub: `${w}-${l} (${t.cells.get(c)!.size} ${tl("Years")})`,
-                value: w + l > 0 ? `${Math.round((w / (w + l)) * 100)}%` : "–",
-                win: w >= l,
-              };
-            })
-          }
-        />
+              return `${regionLabel(c)}: ${w}-${l} (${w + l > 0 ? `${Math.round((w / (w + l)) * 100)}%` : "–"})`;
+            })}
+          />
+          <SectionCard
+            section={tl("Region strength over time")}
+            name={tl("Regions")}
+            sub={`${t.cols[0]}–${t.cols[t.cols.length - 1]}`}
+            rows={() =>
+              t.rows.slice(0, 10).map((c) => {
+                const vals = [...t.cells.get(c)!.values()];
+                const w = vals.reduce((s, [a]) => s + a, 0);
+                const l = vals.reduce((s, [, b]) => s + b, 0);
+                return {
+                  label: regionLabel(c),
+                  sub: `${w}-${l} (${t.cells.get(c)!.size} ${tl("Years")})`,
+                  value: w + l > 0 ? `${Math.round((w / (w + l)) * 100)}%` : "–",
+                  win: w >= l,
+                };
+              })
+            }
+          />
+        </span>
       }
     >
       <div className="overflow-x-auto">
@@ -242,17 +253,23 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
       <Section
         title={tl("Regions")}
         right={
-          <SectionCard
-            section={tl("Regions")}
-            name={name}
-            rows={() =>
-              list.map((r) => ({
-                label: regionLabel(r.code),
-                sub: `${tl("Series {w}-{l}", { w: r.sw, l: r.sl })} · ${tl("vs other regions {w}-{l}", { w: r.ow, l: r.ol })}`,
-                value: all ? tl("{n} titles", { n: r.titles }) : bestText(r.best),
-              }))
-            }
-          />
+          <span className="flex items-center gap-2">
+            <CopyRegionStatsPost
+              title={`${tl("Regions")} · ${name}`}
+              rows={list.slice(0, 6).map((r) => `${regionLabel(r.code)}: ${tl("Series {w}-{l}", { w: r.sw, l: r.sl })} · ${all ? tl("{n} titles", { n: r.titles }) : bestText(r.best)}`)}
+            />
+            <SectionCard
+              section={tl("Regions")}
+              name={name}
+              rows={() =>
+                list.map((r) => ({
+                  label: regionLabel(r.code),
+                  sub: `${tl("Series {w}-{l}", { w: r.sw, l: r.sl })} · ${tl("vs other regions {w}-{l}", { w: r.ow, l: r.ol })}`,
+                  value: all ? tl("{n} titles", { n: r.titles }) : bestText(r.best),
+                }))
+              }
+            />
+          </span>
         }
       >
         <div className="overflow-x-auto">
@@ -308,11 +325,17 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
         <Section
           title={tl("Region vs region")}
           right={
-            <SectionCard
-              section={tl("Region vs region")}
-              name={name}
-              rows={() => pairs.map((p) => ({ label: `${regionLabel(p.a)} vs ${regionLabel(p.b)}`, value: `${p.wa}-${p.wb}` }))}
-            />
+            <span className="flex items-center gap-2">
+              <CopyRegionStatsPost
+                title={`${tl("Region vs region")} · ${name}`}
+                rows={pairs.slice(0, 6).map((p) => `${regionLabel(p.a)} ${p.wa}–${p.wb} ${regionLabel(p.b)}`)}
+              />
+              <SectionCard
+                section={tl("Region vs region")}
+                name={name}
+                rows={() => pairs.map((p) => ({ label: `${regionLabel(p.a)} vs ${regionLabel(p.b)}`, value: `${p.wa}-${p.wb}` }))}
+              />
+            </span>
           }
         >
           <ul className="text-xs space-y-1">
@@ -337,7 +360,35 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
         </Section>
       )}
     </div>
-    {all && <RegionTrend files={files} years={years} />}
+    {all && <RegionTrend files={files} years={years} name={name} />}
     </>
+  );
+};
+
+const CopyRegionStatsPost: React.FC<{ title: string; rows: string[] }> = ({ title, rows }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const lines: string[] = [title];
+    for (const r of rows) {
+      lines.push(`• ${r}`);
+    }
+    lines.push(window.location.href);
+    navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+      title={tl("Copy post")}
+    >
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
   );
 };
