@@ -278,18 +278,27 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             {/* Search & Followed Toggle */}
             <div className="flex items-center gap-2 flex-1 max-w-xs justify-end">
               {league && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLeague(null);
-                    countSecondPage();
-                  }}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded text-xs border bg-rw-accent/20 border-rw-accent text-rw-accent whitespace-nowrap"
-                  title={tl("Show every league")}
-                >
-                  {schedule.find((m) => m.leagueSlug === league)?.leagueName || league}
-                  <X className="w-3 h-3" />
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "league", slug: league })}
+                    className="px-2 py-1 rounded text-[11px] font-semibold text-rw-accent hover:underline whitespace-nowrap"
+                  >
+                    {tl("Full history and stats")} →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLeague(null);
+                      countSecondPage();
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded text-xs border bg-rw-accent/20 border-rw-accent text-rw-accent whitespace-nowrap"
+                    title={tl("Show every league")}
+                  >
+                    {schedule.find((m) => m.leagueSlug === league)?.leagueName || league}
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
               )}
               <button
                 onClick={() => setFollowedOnly(!followedOnly)}
@@ -377,8 +386,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     <div className="flex items-center gap-2 min-w-0 @min-[36rem]:w-56 @min-[56rem]:w-72 shrink @min-[36rem]:shrink-0 order-1">
                       <span className="font-mono text-xs text-rw-teal font-bold shrink-0">{timeStr}</span>
                       {m.state === "unstarted" && <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />}
-                      {m.state !== "completed" && <MatchPrepButton match={m} compact />}
-                      {m.state !== "completed" && <MatchOverviewButton match={m} compact />}
+                      <MatchPrepButton match={m} compact />
+                      <MatchOverviewButton match={m} compact />
                       <span
                         className={`text-[11px] text-rw-sub truncate font-medium ${oneLeague ? "@max-[36rem]:hidden" : ""}`}
                         title={m.blockName ? `${m.leagueName} · ${m.blockName}` : m.leagueName}

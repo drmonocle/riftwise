@@ -5,6 +5,8 @@ import { Radio, Play, ExternalLink, Flame, Star, Moon, ChevronDown } from "lucid
 import { tl, tn, locale, stageName } from "../../i18n";
 import { lazyPart } from "../../lazyPart";
 import { PartBoundary } from "../PartBoundary";
+import { navigateHub } from "../../hub/route";
+import { prettySlug } from "../../hub/data";
 // Loaded with the stats hub code, only when the 24/7 tab is opened
 const StreamBracket = lazyPart(() => import("../hub/StreamBracket").then((m) => m.StreamBracket));
 
@@ -94,33 +96,41 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
   const Matchup: React.FC<{ e: StreamEvent; big?: boolean }> = ({ e, big }) =>
     e.team1 && e.team2 ? (
       <span className={`flex items-center ${big ? "gap-3" : "gap-1.5"} min-w-0`}>
-        <span className={`flex items-center ${big ? "gap-2" : "gap-1.5"}`}>
+        <button
+          type="button"
+          onClick={() => navigateHub({ kind: "team", slug: prettySlug(e.team1!) })}
+          className={`flex items-center ${big ? "gap-2" : "gap-1.5"} hover:text-rw-accent transition-colors`}
+        >
           <Logo code={e.team1} size={big ? 36 : 16} />
           <span
-            className={`font-bold ${big ? "text-2xl" : "text-xs"} ${
+            className={`font-bold ${big ? "text-2xl" : "text-xs"} hover:underline ${
               settings.followedTeams.includes(e.team1) ? "text-rw-accent" : "text-rw-text"
             }`}
           >
             {e.team1}
           </span>
-        </span>
+        </button>
         <span className={`text-rw-muted ${big ? "text-sm" : "text-[11px]"}`}>{tl("vs")}</span>
-        <span className={`flex items-center ${big ? "gap-2" : "gap-1.5"}`}>
+        <button
+          type="button"
+          onClick={() => navigateHub({ kind: "team", slug: prettySlug(e.team2!) })}
+          className={`flex items-center ${big ? "gap-2" : "gap-1.5"} hover:text-rw-accent transition-colors`}
+        >
           <Logo code={e.team2} size={big ? 36 : 16} />
           <span
-            className={`font-bold ${big ? "text-2xl" : "text-xs"} ${
+            className={`font-bold ${big ? "text-2xl" : "text-xs"} hover:underline ${
               settings.followedTeams.includes(e.team2) ? "text-rw-accent" : "text-rw-text"
             }`}
           >
             {e.team2}
           </span>
-        </span>
+        </button>
       </span>
     ) : (
       <span className={`font-semibold text-rw-text ${big ? "text-xl" : "text-xs"}`}>{e.name || tl("Broadcast segment")}</span>
     );
 
-  const WatchButtons: React.FC = () => (
+  const WatchButtons: React.FC<{ active?: StreamEvent | null }> = ({ active }) => (
     <div className="flex flex-wrap items-center gap-2">
       <button
         onClick={() => onOpenUrl(TWITCH_URL)}
@@ -134,6 +144,15 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
       >
         <Play className="w-3.5 h-3.5 fill-current" /> YouTube
       </button>
+      {active?.team1 && active?.team2 && (
+        <button
+          type="button"
+          onClick={() => navigateHub({ kind: "prep", a: prettySlug(active.team1!), b: prettySlug(active.team2!) })}
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-accent"
+        >
+          {tl("Match prep")}
+        </button>
+      )}
       <button
         onClick={() => onOpenUrl("https://lolworlds.com/schedule")}
         className="flex items-center gap-1 px-2 py-1.5 text-xs text-rw-sub hover:text-rw-text"
@@ -287,7 +306,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
             </div>
           )}
 
-          <WatchButtons />
+          <WatchButtons active={current || next} />
         </div>
 
         {/* Up next, once */}
