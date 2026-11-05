@@ -22,7 +22,7 @@ import {
 import { RatingBadge } from "./BestPage";
 import { localCountry } from "./CountryFlag";
 import { STable } from "../STable";
-import { BroadcastCardButton, type CardData } from "./BroadcastCard";
+import { BroadcastCardButton, SectionCard, type CardData } from "./BroadcastCard";
 
 const mmss = (m: number) => {
   const s = Math.round(m * 60);
@@ -281,7 +281,23 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
 }) => {
   if (!e.regions || e.regions.length === 0 || hidden) return null;
   return (
-    <Section title={tl("Region vs region")}>
+    <Section
+      title={tl("Region vs region")}
+      right={
+        <SectionCard
+          section={tl("Region vs region")}
+          sub={e.n}
+          name={`${e.u}-regions`}
+          rows={() =>
+            e.regions!.slice(0, 10).map((r, idx) => ({
+              rank: idx + 1,
+              label: `${regionName(r.a, r.a)} vs ${regionName(r.b, r.b)}`,
+              value: `${r.wa} – ${r.wb}`,
+            }))
+          }
+        />
+      }
+    >
       <STable className="w-full text-xs">
         <thead>
           <tr>

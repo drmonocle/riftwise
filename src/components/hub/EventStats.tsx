@@ -10,6 +10,7 @@ import { loadEventLines } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import { eventFacts, factText, gamesOf, type Fact } from "../../hub/worldsFacts";
 import { moreEventFacts } from "../../hub/eventStats";
+import { SectionCard } from "./BroadcastCard";
 import { ChampIcon, CopyLinkButton, HubLink, PlayerLink, RevealButton, Section, TeamLink, useHidden, useLoad } from "./ui";
 
 const btn =
@@ -89,6 +90,20 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string }> = ({
       share={shareId}
       right={
         <span className="flex items-center gap-1">
+          <SectionCard
+            section={f.title}
+            sub={f.headline}
+            name={shareId}
+            rows={() =>
+              f.rows.slice(0, 10).map((r, idx) => ({
+                rank: f.plain ? undefined : idx + 1,
+                champ: r.champ,
+                label: r.label,
+                sub: r.sub,
+                value: r.value,
+              }))
+            }
+          />
           <CopyLinkButton url={`${link}#${shareId}`} />
           <button type="button" className={btn} onClick={copy} aria-label={tl("Copy as text")}>
             {copied ? <Check className="w-3.5 h-3.5 text-rw-teal" /> : <Copy className="w-3.5 h-3.5" />}

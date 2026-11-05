@@ -17,7 +17,7 @@ import { EventPlayerStats, EventTeamStatsTable } from "./EventTables";
 import { EventFacts, EventRosters, RegionalRecords } from "./EventExtras";
 import { EventStatsSection } from "./EventStats";
 import { PlayoffChances } from "./PlayoffChances";
-import { eventCardData } from "./BroadcastCard";
+import { SectionCard, eventCardData } from "./BroadcastCard";
 import {
   card,
   ChampLink,
@@ -205,7 +205,24 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
       {on("") && e.results && e.results.length > 0 && (
         <Section
           title={e.resultsFrom === "event" ? tl("Final standings (whole event)") : tl("Final standings")}
-          right={resultsHidden ? <RevealButton onReveal={revealResults} small /> : undefined}
+          right={
+            resultsHidden ? (
+              <RevealButton onReveal={revealResults} small />
+            ) : (
+              <SectionCard
+                section={e.resultsFrom === "event" ? tl("Final standings (whole event)") : tl("Final standings")}
+                sub={eventTitle(e.n)}
+                name={`${e.u}-final-standings`}
+                rows={() =>
+                  e.results!.slice(0, 10).map((r) => ({
+                    team: r.t,
+                    label: `${r.p}. ${r.t}`,
+                    value: r.usd ? fmtUsd(r.usd) : r.p,
+                  }))
+                }
+              />
+            )
+          }
         >
           {resultsHidden ? (
             <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
@@ -573,7 +590,28 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
   const hide = hideAll || hidden;
   const ties = rows.some((r) => r.st);
   return (
-    <Section title={name} right={hidden && !hideAll ? <RevealButton onReveal={reveal} small /> : undefined}>
+    <Section
+      title={name}
+      right={
+        hidden && !hideAll ? (
+          <RevealButton onReveal={reveal} small />
+        ) : !hide ? (
+          <SectionCard
+            section={name}
+            name={`standings-${name}`}
+            rows={() =>
+              rows.slice(0, 10).map((r, idx) => ({
+                rank: r.pl && r.pl > 0 ? r.pl : idx + 1,
+                team: r.t,
+                label: r.t,
+                sub: r.gw != null ? `${r.gw}-${r.gl ?? 0}` : undefined,
+                value: `${r.sw ?? 0}-${r.sl ?? 0}${ties ? `-${r.st ?? 0}` : ""}`,
+              }))
+            }
+          />
+        ) : undefined
+      }
+    >
       <STable className="w-full text-xs">
         <thead>
           <tr>
@@ -613,7 +651,25 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
   const [k, setK] = useState<(typeof keys)[number]>(keys[0]);
   const rows = e.leaders?.[k] || [];
   return (
-    <Section title={tl("Player leaders")}>
+    <Section
+      title={tl("Player leaders")}
+      right={
+        <SectionCard
+          section={`${tl("Player leaders")} · ${tl(LEADER_TITLES[k])}`}
+          sub={eventTitle(e.n)}
+          name={`${e.u}-leaders-${k}`}
+          rows={() =>
+            rows.slice(0, 10).map((r, idx) => ({
+              rank: idx + 1,
+              team: r.t,
+              label: r.n,
+              sub: `${r.t} · ${tn("{n} game", "{n} games", r.g)}`,
+              value: fmtNum(r.v),
+            }))
+          }
+        />
+      }
+    >
       <div className="flex flex-wrap gap-1">
         {keys.map((x) => (
           <button
@@ -662,7 +718,28 @@ const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
       </HubLink>
     ) : undefined;
   return (
-    <Section title={tl("Champions")} right={more}>
+    <Section
+      title={tl("Champions")}
+      right={
+        <span className="flex flex-wrap items-center gap-2">
+          {more}
+          <SectionCard
+            section={tl("Champions")}
+            sub={eventTitle(e.n)}
+            name={`${e.u}-champions`}
+            rows={() =>
+              rows.slice(0, 10).map((c, idx) => ({
+                rank: idx + 1,
+                champ: c.c,
+                label: c.c,
+                sub: `${c.p} P · ${c.b} B · ${c.p ? winRate(c.w, c.p) : "–"}`,
+                value: games ? `${Math.round(((c.p + c.b) / games) * 100)}%` : `${c.p}`,
+              }))
+            }
+          />
+        </span>
+      }
+    >
       <STable className="w-full text-xs">
         <thead>
           <tr>

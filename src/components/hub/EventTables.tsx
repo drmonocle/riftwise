@@ -3,6 +3,7 @@ import React, { useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import type { EventPlayer, EventTeamStats, HubEvent } from "../../hub/types";
 import { ChampIcon, HubLink, OeCredit, PlayerLink, Section, TeamLink, fmtNum } from "./ui";
+import { SectionCard } from "./BroadcastCard";
 import { Column, SortTable, per } from "./SortTable";
 
 const ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"];
@@ -82,7 +83,29 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
   const early = players.some((p) => p.tn || p.fbn);
   if (early) cols.splice(cols.length - 1, 0, ...playerEarlyCols());
   return (
-    <Section title={tl("Player stats")} share={`${e.u}-players`}>
+    <Section
+      title={tl("Player stats")}
+      share={`${e.u}-players`}
+      right={
+        <SectionCard
+          section={tl("Player stats")}
+          sub={`${e.n} · ${role === "All" ? tl("All roles") : roleName(role)}`}
+          name={`${e.u}-player-stats-${role}`}
+          rows={() =>
+            [...rows]
+              .sort((a, b) => (per(b.k + b.a, Math.max(b.d, 1), 2) || 0) - (per(a.k + a.a, Math.max(a.d, 1), 2) || 0))
+              .slice(0, 10)
+              .map((p, idx) => ({
+                rank: idx + 1,
+                team: p.t,
+                label: p.n,
+                sub: `${p.t} · ${roleName(p.r)} · ${pct(per(p.w, p.g, 3))}`,
+                value: `${per(p.k + p.a, Math.max(p.d, 1), 2) ?? "–"} KDA`,
+              }))
+          }
+        />
+      }
+    >
       <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
         {["All", ...ROLES].map((r) => (
           <button
@@ -174,7 +197,29 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
   if (early) cols.push(...teamEarlyCols());
   const pair = rows.length === 2 && rows[0].u && rows[1].u ? [rows[0].u, rows[1].u] : null;
   return (
-    <Section title={tl("Team stats")} share={`${e.u}-teams`}>
+    <Section
+      title={tl("Team stats")}
+      share={`${e.u}-teams`}
+      right={
+        <SectionCard
+          section={tl("Team stats")}
+          sub={e.n}
+          name={`${e.u}-team-stats`}
+          rows={() =>
+            [...rows]
+              .sort((a, b) => (per(b.w, b.g, 3) || 0) - (per(a.w, a.g, 3) || 0))
+              .slice(0, 10)
+              .map((t, idx) => ({
+                rank: idx + 1,
+                team: t.t,
+                label: t.t,
+                sub: `${t.w}-${t.g - t.w} · ${per(t.min, t.g) ?? "–"} min`,
+                value: pct(per(t.w, t.g, 3)),
+              }))
+          }
+        />
+      }
+    >
       {teams.length > 2 && (
         <div className="flex flex-wrap items-center gap-2 text-xs" data-nocapture="1">
           <input

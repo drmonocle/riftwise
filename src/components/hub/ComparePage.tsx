@@ -4,12 +4,13 @@
  * (/stats/compare?teams=t1,gen-g&p=y2026) so it can be shared.
  */
 import React, { useEffect, useMemo, useState } from "react";
+import { Check, Copy } from "lucide-react";
 import { tl, tc, tn, roleName, fmtDec, locale, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { HubHit, HubIndex, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadPlayerGames, loadTeamGames, searchHub } from "../../hub/data";
 import { countView } from "../../usage";
 import type { HubPlayer, HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
-import { CompareRoute, navigateHub } from "../../hub/route";
+import { CompareRoute, hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import {
   PeriodKey,
@@ -29,7 +30,8 @@ import {
 import { HeadToHeadSeries } from "./Archives";
 import { PeriodPicker, QuickPeriods } from "./PeriodStats";
 import { DraftTendencies, draftTendencies } from "./DraftTendencies";
-import { BroadcastCardButton, draftCard, playerCardData, teamCardData } from "./BroadcastCard";
+import { BroadcastCardButton, SectionCard, draftCard, playerCardData, teamCardData } from "./BroadcastCard";
+import { teamStarter } from "./MatchOverview";
 import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, isFresh, Loading, OeCredit, PhotosLink, PlayerPhoto, RevealButton, Section, td, TeamLogo, useHidden, usePageTitle } from "./ui";
 import { useTeamPercentiles } from "./Ranks";
 import { STable } from "../STable";
@@ -528,6 +530,39 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
   );
 };
 
+const COMPARE_ROLES: { role: string; short: string }[] = [
+  { role: "Top", short: "TOP" },
+  { role: "Jungle", short: "JGL" },
+  { role: "Mid", short: "MID" },
+  { role: "Bot", short: "BOT" },
+  { role: "Support", short: "SUP" },
+];
+
+const CopyComparePost: React.FC<{ title: string; lines: string[]; url: string }> = ({ title, lines, url }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    const text = [title, ...lines, url].filter(Boolean).join("\n");
+    navigator.clipboard
+      ?.writeText(text)
+      .then(() => {
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1800);
+      })
+      .catch(() => {});
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title={tl("Copy post")}
+      className="px-2 py-0.5 rounded bg-rw-surface hover:bg-rw-border border border-rw-border text-[11px] font-semibold text-rw-sub hover:text-rw-text inline-flex items-center gap-1"
+    >
+      {copied ? <Check className="w-3 h-3 text-rw-teal" /> : <Copy className="w-3 h-3" />}
+      {copied ? tl("Copied") : tl("Copy post")}
+    </button>
+  );
+};
+
 export const TeamRows: React.FC<{
   x: HubTeam;
   y: HubTeam;
@@ -547,6 +582,10 @@ export const TeamRows: React.FC<{
   const pc = (key: string) => ({ pa: PX?.pct[key] ?? null, pb: PY?.pct[key] ?? null });
   const drafts = useMemo(() => ({ A: draftTendencies(ra), B: draftTendencies(rb) }), [ra, rb]);
   const wr = (w: number, g: number) => (g ? w / g : null);
+  const rolePairs = useMemo(
+    () => COMPARE_ROLES.map(({ role, short }) => ({ role, short, pa: teamStarter(x, role), pb: teamStarter(y, role) })).filter((r) => r.pa && r.pb),
+    [x, y],
+  );
   // the side-by-side rows (their order and which show are the viewer's: CompareRows)
   const gOverview = tl("Overview");
   const gEarly = tl("Early game");
@@ -621,6 +660,12 @@ export const TeamRows: React.FC<{
         })}
       </p>
     ) : null;
+  const postLines = [
+    h2h.g > 0 ? `H2H: ${x.name} ${h2h.w}–${h2h.g - h2h.w} ${y.name}` : "",
+    `${tl("Win rate")}: ${winRate(A.w, A.g)} (${A.w}-${A.g - A.w}) vs ${winRate(B.w, B.g)} (${B.w}-${B.g - B.w})`,
+    A.tl || B.tl ? `GD@15: ${sgn(A.tl?.gd15 ?? null)} vs ${sgn(B.tl?.gd15 ?? null)} · FB: ${pct(A.tl?.fb ?? null)} vs ${pct(B.tl?.fb ?? null)}` : "",
+    `DRA%: ${pct(A.dragShare)} vs ${pct(B.dragShare)} · ${tl("Baron%")}: ${pct(A.baronShare)} vs ${pct(B.baronShare)}`,
+  ];
   return (
     <>
       <Section
@@ -628,6 +673,7 @@ export const TeamRows: React.FC<{
         right={
           <span className="flex flex-wrap items-center justify-end gap-2">
             <span className="text-[11px] text-rw-sub whitespace-nowrap">{periodLabel}</span>
+            <CopyComparePost title={`${x.name} vs ${y.name} · ${periodLabel}`} lines={postLines} url={hubShareUrl({ kind: "compare", mode: "team", a: x.u, b: y.u })} />
             <BroadcastCardButton data={() => teamCardData(x, y, A, B, periodLabel, chance)} name={`${x.name}-vs-${y.name}`} label={tl("Overview card")} />
             {drafts.A.games >= 3 && drafts.B.games >= 3 && (
               <BroadcastCardButton
@@ -650,6 +696,24 @@ export const TeamRows: React.FC<{
             <TeamLogo name={y.name} sizeClass="w-9 h-9 lg:w-12 lg:h-12 2xl:w-16 2xl:h-16" />
           </span>
         </div>
+        {rolePairs.length > 0 && (
+          <div data-nocapture="1" className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 pt-1">
+            {rolePairs.map(({ role, short, pa, pb }) => (
+              <HubLink
+                key={role}
+                to={{ kind: "compare", mode: "player", a: pa!.u, b: pb!.u }}
+                className="flex flex-col items-center justify-center px-2 py-1.5 rounded-lg bg-rw-bg/70 hover:bg-rw-raised border border-rw-border/70 hover:border-rw-accent/50 transition-colors min-w-0"
+              >
+                <span className="text-[9px] font-bold uppercase tracking-wider text-rw-muted">{short}</span>
+                <span className="w-full flex items-center justify-between gap-1 text-[11px] font-semibold min-w-0 mt-0.5">
+                  <span className="truncate text-rw-side-a">{pa!.n}</span>
+                  <span className="text-rw-muted text-[9px] shrink-0">vs</span>
+                  <span className="truncate text-rw-side-b text-right">{pb!.n}</span>
+                </span>
+              </HubLink>
+            ))}
+          </div>
+        )}
         <CompareRows rows={rows} pctNote={pctNote} />
         <TeamRadar rows={rows} a={x.name} b={y.name} />
         {(A.tl || B.tl) && <OeCredit />}
@@ -659,7 +723,27 @@ export const TeamRows: React.FC<{
           { n: x.name, t: A, rows: ra },
           { n: y.name, t: B, rows: rb },
         ].map((s) => (
-          <Section key={s.n} title={tl("Most picked: {team}", { team: s.n })} share={`${s.n}-draft-${periodLabel}`}>
+          <Section
+            key={s.n}
+            title={tl("Most picked: {team}", { team: s.n })}
+            share={`${s.n}-draft-${periodLabel}`}
+            right={
+              <SectionCard
+                section={tl("Most picked: {team}", { team: s.n })}
+                sub={periodLabel}
+                name={`${s.n}-picks-${periodLabel}`}
+                rows={() =>
+                  s.t.picks.slice(0, 10).map(([c, n, w], idx) => ({
+                    rank: idx + 1,
+                    champ: c,
+                    label: c,
+                    sub: tn("{n} game", "{n} games", n),
+                    value: winRate(w, n),
+                  }))
+                }
+              />
+            }
+          >
             <ul className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
               {s.t.picks.slice(0, 10).map(([c, n, w]) => (
                 <li key={c} className="flex justify-between gap-2 min-w-0">
@@ -755,6 +839,12 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
         ] as RowSpec[])
       : []),
   ];
+  const postLines = [
+    h2h.g > 0 ? `H2H: ${x.name} ${h2h.w}–${h2h.g - h2h.w} ${y.name}` : "",
+    `${tl("Win rate")}: ${winRate(A.w, A.g)} (${A.w}-${A.g - A.w}) vs ${winRate(B.w, B.g)} (${B.w}-${B.g - B.w})`,
+    `KDA: ${fmtN(A.kda)} vs ${fmtN(B.kda)} · DPM: ${A.dpm != null ? fmtNum(A.dpm) : "–"} vs ${B.dpm != null ? fmtNum(B.dpm) : "–"}`,
+    A.tl || B.tl ? `GD@15: ${sgn(A.tl?.gd15 ?? null)} vs ${sgn(B.tl?.gd15 ?? null)} · CSD@15: ${sgn(A.tl?.csd15 ?? null)} vs ${sgn(B.tl?.csd15 ?? null)}` : "",
+  ];
   return (
     <>
       <Section
@@ -762,6 +852,7 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
         right={
           <span className="flex flex-wrap items-center justify-end gap-2">
             <span className="text-[11px] text-rw-sub whitespace-nowrap">{periodLabel}</span>
+            <CopyComparePost title={`${x.name} vs ${y.name} · ${periodLabel}`} lines={postLines} url={hubShareUrl({ kind: "compare", mode: "player", a: x.u, b: y.u })} />
             <BroadcastCardButton
               data={() =>
                 playerCardData(
@@ -800,7 +891,26 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
           { n: x.name, p: A },
           { n: y.name, p: B },
         ].map((s) => (
-          <Section key={s.n} title={tl("Champions: {player}", { player: s.n })}>
+          <Section
+            key={s.n}
+            title={tl("Champions: {player}", { player: s.n })}
+            right={
+              <SectionCard
+                section={tl("Champions: {player}", { player: s.n })}
+                sub={periodLabel}
+                name={`${s.n}-champs-${periodLabel}`}
+                rows={() =>
+                  s.p.champs.slice(0, 8).map((c, idx) => ({
+                    rank: idx + 1,
+                    champ: c.c,
+                    label: c.c,
+                    sub: `${c.g} · ${fmtN(c.kda)} KDA`,
+                    value: winRate(c.w, c.g),
+                  }))
+                }
+              />
+            }
+          >
             <ul className="text-xs space-y-1">
               {s.p.champs.slice(0, 8).map((c) => (
                 <li key={c.c} className="flex justify-between gap-2 min-w-0">
@@ -815,7 +925,25 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
         ))}
       </div>
       {shared.length > 0 && (
-        <Section title={tl("Champions both played")}>
+        <Section
+          title={tl("Champions both played")}
+          right={
+            <SectionCard
+              section={tl("Champions both played")}
+              sub={`${x.name} vs ${y.name} · ${periodLabel}`}
+              name={`${x.name}-vs-${y.name}-shared-champs`}
+              rows={() =>
+                shared.map(({ c, o }, idx) => ({
+                  rank: idx + 1,
+                  champ: c.c,
+                  label: c.c,
+                  sub: `${x.name}: ${c.g} (${winRate(c.w, c.g)})`,
+                  value: `${y.name}: ${o.g} (${winRate(o.w, o.g)})`,
+                }))
+              }
+            />
+          }
+        >
           <STable className="w-full text-xs">
             <tbody>
               {shared.map(({ c, o }) => (
@@ -878,7 +1006,29 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
   }, [shown]);
   if (meetings.length === 0) return null;
   return (
-    <Section title={tl("Head to head")} right={hidden ? <RevealButton onReveal={reveal} small /> : undefined}>
+    <Section
+      title={tl("Head to head")}
+      right={
+        hidden ? (
+          <RevealButton onReveal={reveal} small />
+        ) : (
+          <SectionCard
+            section={`${tl("Head to head")} · ${aName} vs ${bName}`}
+            sub={`${aName} ${s.w} – ${s.l} ${bName}`}
+            name={`h2h-${aName}-vs-${bName}`}
+            rows={() =>
+              shown.slice(0, 10).map((m, idx) => ({
+                rank: idx + 1,
+                champ: m.a[2],
+                label: `${m.a[2]} (${m.a[3]}/${m.a[4]}/${m.a[5]}) vs ${m.b[2]} (${m.b[3]}/${m.b[4]}/${m.b[5]})`,
+                sub: `${m.a[9]} · ${fmtDate(m.a[0])}`,
+                value: m.a[6] ? aName : bName,
+              }))
+            }
+          />
+        )
+      }
+    >
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
         <div className={`${card} py-2`}>
           <div className="text-[10px] text-rw-muted">{tl("Games")}</div>
@@ -1071,7 +1221,29 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
           <PeriodPicker options={options} value={period} onChange={(p) => set({ period: p })} />
         </span>
       </div>
-      <Section title={`${tl("Compare")} · ${periodLabel}`} share={`riftwise-compare-${slugs.join("-")}`}>
+      <Section
+        title={`${tl("Compare")} · ${periodLabel}`}
+        share={`riftwise-compare-${slugs.join("-")}`}
+        right={
+          <SectionCard
+            section={`${tl("Compare")} · ${periodLabel}`}
+            sub={rows.map((r) => r.info.name).join(" · ")}
+            name={`compare-${slugs.join("-")}`}
+            rows={() =>
+              rows.map((r, idx) => {
+                const agg = aggs[idx];
+                return {
+                  rank: idx + 1,
+                  team: mode === "team" ? r.info.name : undefined,
+                  label: r.info.name,
+                  sub: mode === "team" ? `${agg.w}-${agg.g - agg.w} · GD@15 ${sgn(agg.tl?.gd15 ?? null)}` : `${agg.w}-${agg.g - agg.w} · ${fmtN((agg as PlayerAgg).kda)} KDA`,
+                  value: winRate(agg.w, agg.g),
+                };
+              })
+            }
+          />
+        }
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
