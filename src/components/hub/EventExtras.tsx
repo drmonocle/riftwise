@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import { Flame, Crown, Timer, Swords } from "lucide-react";
 import { tl, tk, roleName, regionName } from "../../i18n";
+import { prettySlug } from "../../hub/data";
+import { champName } from "../../champions";
 import type {
   EventOverview,
   EventRoster,
@@ -176,7 +178,9 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean; card?: {
           <ul className="space-y-1">
             {o.pentas.map((p, i) => (
               <li key={i} className="flex items-center gap-1.5">
-                <ChampIcon name={p.c} size={16} />
+                <HubLink to={{ kind: "champ", slug: prettySlug(p.c) }} className="hover:opacity-80" title={champName(p.c)}>
+                  <ChampIcon name={p.c} size={16} />
+                </HubLink>
                 <PlayerLink name={p.n} u={p.u} />
                 {p.x > 1 && <span className="text-rw-accent">×{p.x}</span>}
                 {p.g && (
@@ -225,17 +229,36 @@ export const EventRosters: React.FC<{ rosters: EventRoster[] }> = ({
     <Section
       title={tl("Team rosters")}
       right={
-        rosters.length > 4 ? (
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            className="text-[11px] text-rw-accent hover:underline"
-          >
-            {open
-              ? tl("Show fewer")
-              : tl("Show all {n}", { n: rosters.length })}
-          </button>
-        ) : undefined
+        <span className="flex items-center gap-2">
+          {rosters.length > 0 && (
+            <SectionCard
+              section={tl("Team rosters")}
+              name={tl("Team rosters")}
+              rows={() =>
+                rosters.slice(0, 12).map((t) => ({
+                  label: t.t,
+                  sub: t.r ? regionName(t.r, t.r) : undefined,
+                  value: t.p
+                    .filter(([, , r]) => !/coach/i.test(r || ""))
+                    .slice(0, 5)
+                    .map(([n]) => n)
+                    .join(" · "),
+                }))
+              }
+            />
+          )}
+          {rosters.length > 4 && (
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {open
+                ? tl("Show fewer")
+                : tl("Show all {n}", { n: rosters.length })}
+            </button>
+          )}
+        </span>
       }
     >
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">

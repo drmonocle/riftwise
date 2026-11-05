@@ -1,6 +1,8 @@
 /** gol.gg-style stat tables for one tournament: every player and every team, sortable by any column. */
 import React, { useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
+import { prettySlug } from "../../hub/data";
+import { champName } from "../../champions";
 import type { EventPlayer, EventTeamStats, HubEvent } from "../../hub/types";
 import { ChampIcon, HubLink, OeCredit, PlayerLink, Section, TeamLink, fmtNum } from "./ui";
 import { SectionCard } from "./BroadcastCard";
@@ -72,7 +74,9 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
       render: (p) => (
         <span className="flex items-center gap-0.5">
           {p.c.map((c) => (
-            <ChampIcon key={c} name={c} size={16} />
+            <HubLink key={c} to={{ kind: "champ", slug: prettySlug(c) }} className="hover:opacity-80" title={champName(c)}>
+              <ChampIcon name={c} size={16} />
+            </HubLink>
           ))}
           {p.nc > p.c.length && <span className="text-[10px] text-rw-muted ml-0.5">+{p.nc - p.c.length}</span>}
         </span>
@@ -125,6 +129,14 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
           aria-label={tl("Filter by name or team…")}
           className="bg-rw-bg border border-rw-border rounded px-2 py-1 text-[11px] text-rw-text w-40"
         />
+        {rows.length === 2 && rows[0].u && rows[1].u && (
+          <HubLink
+            to={{ kind: "compare", mode: "player", a: rows[0].u, b: rows[1].u, period: `e:${e.u}` }}
+            className="text-rw-accent hover:underline font-semibold"
+          >
+            {tl("Compare")} →
+          </HubLink>
+        )}
         {maxG >= 3 && (
           <label className="flex items-center gap-1 ml-auto text-rw-sub cursor-pointer">
             <input type="checkbox" checked={regular} onChange={(ev) => setRegular(ev.target.checked)} />
