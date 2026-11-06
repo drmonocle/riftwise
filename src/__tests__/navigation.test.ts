@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { hubPath, parseHubPath } from "../hub/route";
 import { rateLine, profile, type RatingFile } from "../hub/playerRating";
+import { filterBuiltSeasons } from "../components/hub/Ranks";
 import { champPairShortcuts, matchupShortcuts, pageShortcuts } from "../components/hub/HubSearch";
 import { groupOf, MENU, MENU_ITEMS } from "../components/hub/menu";
 import { NAV_GROUP } from "../components/navGroups";
@@ -33,6 +34,24 @@ describe("page tabs in the address", () => {
     expect(parseHubPath("/stats/players", "?role=Mid&since=2024")).toEqual({ kind: "players", query: "role=Mid&since=2024" });
     expect(parseHubPath("/stats/teams", "")).toEqual({ kind: "teams" });
     expect(hubPath({ kind: "teams", query: "region=Korea" })).toBe("/stats/teams?region=Korea");
+    expect(parseHubPath("/stats/data", "?year=2018")).toEqual({ kind: "data", query: "year=2018" });
+    expect(hubPath({ kind: "data", query: "league=lck&year=2026" })).toBe("/stats/data?league=lck&year=2026");
+  });
+});
+
+describe("built league seasons filter", () => {
+  const events = [
+    { lu: "lck", date: "2026-03-01", g: 18 },
+    { lu: "cyber-games-arena", date: "2015-05-01", g: 12 },
+    { lu: "unlisted-student-league", date: "2024-02-01", g: 10 },
+  ];
+  it("waits until leagues.json is loaded and excludes leagues without built season files", () => {
+    expect(filterBuiltSeasons(events, 5, null)).toEqual([]);
+    const leagues = [
+      { l: "LCK", u: "lck", r: "Korea", pr: 1, g: 5000, e: 20, f: "2012", t: "2026", sy: ["2026", "2025"] },
+      { l: "Cyber Games Arena", u: "cyber-games-arena", r: null, pr: 0, g: 50, e: 2, f: "2015", t: "2015", sy: [] },
+    ];
+    expect(filterBuiltSeasons(events, 5, leagues)).toEqual([["lck", "2026", 18]]);
   });
 });
 

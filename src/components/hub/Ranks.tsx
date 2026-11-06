@@ -532,17 +532,26 @@ const useLeagueNames = () => {
 };
 
 /** The seasons a player's or team's events span that have a whole-season file (builds since 0.7.45 list them in
- *  leagues.json as `sy`; before that every season is assumed to have one), at least `min` games each. */
+ *  leagues.json as `sy`; before that every season is assumed to have one), at least `min` games each. While
+ *  leagues.json is still loading (`leagues === null`), returns `[]` so we never request non-existent leagueyear files. */
+export function filterBuiltSeasons(
+  events: { lu?: string; date: string; g: number }[],
+  min: number,
+  leagues: Pick<LeagueRow, "u" | "sy">[] | null,
+): [string, string, number][] {
+  if (!leagues) return [];
+  const hasSy = leagues.some((l) => l.sy !== undefined);
+  const sy = new Map(leagues.map((l) => [l.u, l.sy]));
+  return seasonsOf(events).filter((s) => {
+    if (s[2] < min) return false;
+    const years = sy.get(s[0]);
+    return hasSy ? !!years && years.includes(s[1]) : !years || years.includes(s[1]);
+  });
+}
+
 function useSeasons(events: { lu?: string; date: string; g: number }[], min: number): [string, string, number][] {
   const leagues = useLoad(loadLeagues, []);
-  return useMemo(() => {
-    const sy = new Map((leagues.data || []).map((l: LeagueRow) => [l.u, l.sy]));
-    return seasonsOf(events).filter((s) => {
-      if (s[2] < min) return false;
-      const years = sy.get(s[0]);
-      return !years || years.includes(s[1]);
-    });
-  }, [events, min, leagues.data]);
+  return useMemo(() => filterBuiltSeasons(events, min, leagues.data), [events, min, leagues.data]);
 }
 
 export const PlayerRanks: React.FC<{

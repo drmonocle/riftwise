@@ -140,7 +140,7 @@ export function loadHubIndexQuick(): Promise<HubIndex> {
       load<SearchTeamRow[]>("hub/search/teams.json"),
       load<SearchEventRow[]>("hub/search/events.json"),
       load<SearchChampRow[]>("hub/search/champs.json"),
-      load<import("./types").LeagueRow[]>("hub/leagues.json").catch(() => []),
+      loadLeagues().catch(() => []),
     ])
       .then(([teams, events, champs, leagues]) => ({ teams, players: [] as SearchPlayerRow[], events, champs, leagues }))
       .catch((e) => {
@@ -159,7 +159,7 @@ export function loadHubIndex(): Promise<HubIndex> {
       load<SearchPlayerRow[]>("hub/search/players.json"),
       load<SearchEventRow[]>("hub/search/events.json"),
       load<SearchChampRow[]>("hub/search/champs.json"),
-      load<import("./types").LeagueRow[]>("hub/leagues.json").catch(() => []),
+      loadLeagues().catch(() => []),
     ])
       .then(([teams, players, events, champs, leagues]) => ({ teams, players, events, champs, leagues }))
       .catch((e) => {
@@ -418,11 +418,33 @@ export function findHubTeam(index: HubIndex, name: string, code?: string): strin
 export const loadTeamSeries = (slug: string) => teamFile<import("./types").TeamSeriesRow[]>("teamseries", slug);
 export const loadPlayerGames = (slug: string) => load<import("./types").PlayerGameRow[]>(`hub/playergames/${slug}.json`);
 export const loadTeamGames = (slug: string) => teamFile<import("./types").TeamGameRow[]>("teamgames", slug);
-export const loadLeagueSeason = (league: string, year: string) => load<import("./types").LeagueSeason>(`hub/leagueyear/${league}/${year}.json`);
+const seasonCache = new Map<string, Promise<import("./types").LeagueSeason>>();
+export const loadLeagueSeason = (league: string, year: string): Promise<import("./types").LeagueSeason> => {
+  const key = `${league}/${year}`;
+  let p = seasonCache.get(key);
+  if (!p) {
+    if (seasonCache.size >= 32) seasonCache.clear();
+    p = load<import("./types").LeagueSeason>(`hub/leagueyear/${key}.json`).catch((e) => {
+      seasonCache.delete(key);
+      throw e;
+    });
+    seasonCache.set(key, p);
+  }
+  return p;
+};
 export const loadChampIndex = () => load<import("./types").ChampLeagueIndex[]>("hub/champgames/index.json");
 export const loadChampGames = (league: string, year: string) => load<import("./types").ChampGamesFile>(`hub/champgames/${league}/${year}.json`);
 export const loadPatches = () => load<import("./types").PatchRow[]>("hub/patches.json");
-export const loadLeagues = () => load<import("./types").LeagueRow[]>("hub/leagues.json");
+let leaguesPromise: Promise<import("./types").LeagueRow[]> | null = null;
+export const loadLeagues = (): Promise<import("./types").LeagueRow[]> => {
+  if (!leaguesPromise) {
+    leaguesPromise = load<import("./types").LeagueRow[]>("hub/leagues.json").catch((e) => {
+      leaguesPromise = null;
+      throw e;
+    });
+  }
+  return leaguesPromise;
+};
 /** roster moves of the last five months (builds from 2026-10-24 on; older builds have none) */
 export const loadMoves = () => load<import("./types").RosterMovesFile>("hub/moves.json");
 export const loadLeague = withAlias<import("./types").HubLeague>("league");

@@ -599,6 +599,19 @@ func TestRiotMatchAndMarkdownRedirect(t *testing.T) {
 	if w := get(s, "/riftwise/team/t1)"); w.Code != http.StatusMovedPermanently || w.Header().Get("Location") != "/team/t1" {
 		t.Errorf("markdown path redirect: %d %q", w.Code, w.Header().Get("Location"))
 	}
+	for _, c := range [][2]string{
+		{"/riftwise/player/faker/null", "/player/faker"},
+		{"/riftwise/zh-tw/player/faker/null", "/zh-tw/player/faker"},
+		{"/riftwise/zh-tw/team/null", "/zh-tw/"},
+		{"/riftwise/team/undefined", "/"},
+		{"/riftwise/stats/download?year=2018", "/stats/data?year=2018"},
+		{"/riftwise/stats/data/download", "/stats/data"},
+		{"/riftwise/stats/data/2018", "/stats/data?year=2018"},
+	} {
+		if w := get(s, c[0]); w.Code != http.StatusMovedPermanently || w.Header().Get("Location") != c[1] {
+			t.Errorf("%s -> %d %q, want 301 %q", c[0], w.Code, w.Header().Get("Location"), c[1])
+		}
+	}
 	w := get(s, "/riftwise/match/riot-113")
 	if b := w.Body.String(); w.Code != 200 || !strings.Contains(b, "T1 vs Dplus KIA – Worlds | RiftWise") || !strings.Contains(b, `content="noindex"`) || !strings.Contains(b, "og/match/riot-113.png") {
 		t.Errorf("riot-113: %d %s", w.Code, b)

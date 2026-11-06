@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "0.8.50" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "0.8.51" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -517,6 +517,29 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	// riftwise.gg/<lang>/...: the same page in another language (i18n.go)
 	seg, lang, rest := splitLang(rest)
 	parts := strings.Split(strings.Trim(rest, "/"), "/")
+	langRoot := publicPath + map[bool]string{true: seg + "/", false: ""}[seg != ""]
+	// Broken crawler relative links (/player/kazze/null, /zh-tw/team/null) and guessed download URLs
+	// (/stats/download, /stats/data/download, /stats/data/2018) forward to the canonical page.
+	if len(parts) == 2 && kinds[parts[0]] != "" && (parts[1] == "null" || parts[1] == "undefined") {
+		http.Redirect(w, r, langRoot, http.StatusMovedPermanently)
+		return
+	}
+	if len(parts) == 3 && kinds[parts[0]] != "" && (parts[2] == "null" || parts[2] == "undefined") {
+		http.Redirect(w, r, langRoot+parts[0]+"/"+parts[1], http.StatusMovedPermanently)
+		return
+	}
+	if parts[0] == "stats" && ((len(parts) == 2 && (parts[1] == "download" || parts[1] == "downloads" || parts[1] == "csv")) || (len(parts) == 3 && parts[1] == "data")) {
+		to := langRoot + "stats/data"
+		q := r.URL.RawQuery
+		if len(parts) == 3 && isYear(parts[2]) && q == "" {
+			q = "year=" + parts[2]
+		}
+		if q != "" {
+			to += "?" + q
+		}
+		http.Redirect(w, r, to, http.StatusMovedPermanently)
+		return
+	}
 	status, title, desc, index, og, summary := http.StatusOK, "", "", true, "", ""
 	var about map[string]any
 	var extra *intlPage

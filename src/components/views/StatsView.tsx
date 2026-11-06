@@ -71,7 +71,7 @@ type SectionKind = HubRoute["kind"];
 const OWN_H1 = new Set(["home", "worlds", "msi", "first-stand", "rankings", "records", "prep", "draft", "finder", "best", "counters", "items", "leaders", "tiers", "team", "player", "event", "champ", "league", "match", "aboutme"]);
 
 /** pages whose address carries what they show (teams, filters): their link is worth copying */
-const LINKABLE = new Set<SectionKind>(["prep", "draft", "finder", "compare", "best", "champions", "counters", "items", "leaders", "tiers", "teams", "players"]);
+const LINKABLE = new Set<SectionKind>(["prep", "draft", "finder", "compare", "best", "champions", "counters", "items", "leaders", "tiers", "teams", "players", "data"]);
 
 /** pages that are one big table: kept at the two-column width on very wide screens (App.css .rw-capped) */
 const CAPPED_KINDS = new Set(["weekly", "tournaments", "leagues", "rankings", "titles", "best", "champions", "patches", "data", "finder", "counters", "items", "leaders", "teams", "players"]);
@@ -236,7 +236,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
             <Loading />
           ))}
         {route.kind === "records" && <RecordsPanel />}
-        {route.kind === "data" && <DownloadsPage onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
+        {route.kind === "data" && <DownloadsPage onOpenUrl={IS_WEB ? undefined : onOpenUrl} query={"query" in route ? route.query : undefined} />}
         {route.kind === "about" && <AboutPage onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
         {route.kind === "prep" && <PrepPage route={route as PrepRoute} />}
         {route.kind === "rankings" && <RankingsPage />}
