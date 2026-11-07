@@ -24,6 +24,7 @@ import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum,
 import { EntityHero, heroBtn, heroLink } from "./EntityHero";
 import { useTeamLogo } from "../../hub/riotCatalog";
 import { ratingTextClass } from "./BestPage";
+import { KdaBar, PlayerOpponents, WinBar } from "./OpponentChart";
 import { STable } from "../STable";
 
 const BEST_LABEL: Record<string, string> = {
@@ -377,10 +378,12 @@ const PlayerView: React.FC<{
                   </td>
                   <td className={`${td} text-rw-sub`}>
                     <HubLink to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${y.y}` }} className="hover:text-rw-accent hover:underline">
-                      {y.w}-{y.g - y.w}
+                      <WinBar w={y.w} g={y.g} showRecord />
                     </HubLink>
                   </td>
-                  <td className={`${td} text-rw-sub`}>{fmtN(y.kda)}</td>
+                  <td className={`${td} text-rw-sub`}>
+                    <KdaBar kda={y.kda} />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -530,6 +533,12 @@ const PlayerView: React.FC<{
       </div>
       )}
 
+      {overview && (
+        <div className="rw-span">
+          <PlayerOpponents slug={p.u} name={p.name} has2y={!!p.g2y} cardSub={cardSub} />
+        </div>
+      )}
+
       {overview && <OwnStorylines notes={p.notes} spoilerKey={`notes:player:${p.u}`} share={`${p.u}-storylines`} />}
 
       {overview && (
@@ -668,8 +677,12 @@ const PlayerChampionsTab: React.FC<{
                     <ChampLink name={c.c} size={18} />
                   </td>
                   <td className={`${td} text-rw-sub`}>{c.g}</td>
-                  <td className={`${td} text-rw-sub`}>{winRate(c.w, c.g)}</td>
-                  <td className={`${td} text-rw-sub`}>{fmtN(c.kda)}</td>
+                  <td className={`${td} text-rw-sub`}>
+                    <WinBar w={c.w} g={c.g} />
+                  </td>
+                  <td className={`${td} text-rw-sub`}>
+                    <KdaBar kda={c.kda} />
+                  </td>
                   <td className={`${td} text-rw-muted`}>
                     {c.k} / {c.d} / {c.a}
                   </td>

@@ -247,6 +247,7 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }>
   const owned = useLoad(() => loadPlayerItems(slug).catch(() => null), [slug]);
   const [year, setYear] = useState(startYear || "all");
   const [champ, setChamp] = useState(startChamp || "all");
+  const [opp, setOpp] = useState("all");
   const [order, setOrder] = useState<"d" | "r">("d");
   const [n, setN] = useState(PAGE);
   useEffect(() => {
@@ -275,8 +276,16 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }>
     for (const r of data) if (r[2]) count.set(r[2], (count.get(r[2]) || 0) + 1);
     return [...count.entries()].sort((x, y) => y[1] - x[1]);
   }, [data]);
-  const rows = useMemo(() => data.filter((r: PlayerGameRow) => (year === "all" || r[0].startsWith(year)) && (champ === "all" || r[2] === champ)), [data, year, champ]);
-  const [hidden, reveal] = useHidden(`playergames:${slug}:${year}:${champ}`, rows.find((r) => isFresh(r[0]))?.[0]);
+  const opps = useMemo(() => {
+    const count = new Map<string, number>();
+    for (const r of data) if (r[8]) count.set(r[8], (count.get(r[8]) || 0) + 1);
+    return [...count.entries()].sort((x, y) => y[1] - x[1]);
+  }, [data]);
+  const rows = useMemo(
+    () => data.filter((r: PlayerGameRow) => (year === "all" || r[0].startsWith(year)) && (champ === "all" || r[2] === champ) && (opp === "all" || r[8] === opp)),
+    [data, year, champ, opp],
+  );
+  const [hidden, reveal] = useHidden(`playergames:${slug}:${year}:${champ}:${opp}`, rows.find((r) => isFresh(r[0]))?.[0]);
   const shown = useMemo(
     () => (order === "r" ? rows.filter((r) => r[23] != null && !(hidden && isFresh(r[0]))).sort((x, y) => (y[23] || 0) - (x[23] || 0)) : rows),
     [rows, order, hidden],
@@ -303,6 +312,14 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }>
           {champs.map(([c, cnt]) => (
             <option key={c} value={c}>
               {champName(c)} ({cnt})
+            </option>
+          ))}
+        </select>
+        <select value={opp} onChange={(e) => { setOpp(e.target.value); setN(PAGE); }} aria-label={tl("Opponent")} className={`${select} max-w-[13rem]`}>
+          <option value="all">{tl("Against: anyone")}</option>
+          {opps.map(([o, cnt]) => (
+            <option key={o} value={o}>
+              {o} ({cnt})
             </option>
           ))}
         </select>

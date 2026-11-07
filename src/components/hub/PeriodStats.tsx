@@ -25,6 +25,7 @@ import { DraftTendencies } from "./DraftTendencies";
 import { BroadcastCardButton, SectionCard, playerCardData, teamSoloCardData, type RosterPlayer } from "./BroadcastCard";
 import { fmtRating, useRatingFile } from "./PlayerRating";
 import { playerRowLine, rateLine } from "../../hub/playerRating";
+import { KdaBar, PlayerOpponents, TeamPeriodOpponents, WinBar } from "./OpponentChart";
 import {
   ChampLink,
   Loading,
@@ -581,9 +582,14 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
       key: "w",
       label: tl("Win %"),
       value: (c) => (hidden ? null : c.w / c.g),
-      render: (c) => (hidden ? "–" : winRate(c.w, c.g)),
+      render: (c) => (hidden ? "–" : <WinBar w={c.w} g={c.g} />),
     },
-    { key: "kda", label: tl("KDA"), value: (c) => c.kda },
+    {
+      key: "kda",
+      label: tl("KDA"),
+      value: (c) => c.kda,
+      render: (c) => <KdaBar kda={c.kda} />,
+    },
     {
       key: "kdaa",
       label: "K / D / A",
@@ -762,6 +768,12 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
             initial={{ key: "g", desc: true }}
             rowKey={(c) => c.c}
             copyName={`${slug}-champions`}
+          />
+          <PlayerOpponents
+            slug={slug}
+            name={who?.name || slug}
+            rows={sel}
+            cardSub={periodText}
           />
           <p className="text-[10px] text-rw-muted">
             {tl("Games with a full scoreboard only.")}
@@ -973,6 +985,12 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
               <TrendChart games={sel.map((r) => ({ date: r[0], won: r[7] }))} />
             </div>
           </div>
+          <TeamPeriodOpponents
+            teamSlug={slug}
+            teamName={who?.name || slug}
+            rows={sel}
+            cardSub={periodText}
+          />
           {t.sg < t.g && (
             <p className="text-[10px] text-rw-muted">
               {tl(

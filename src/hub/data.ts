@@ -89,8 +89,16 @@ async function teamFile<T>(dir: string, slug: string): Promise<T> {
   }
 }
 
+const PLAYER_SLUG_ALIASES: Record<string, string> = {
+  thebausffs: "baus",
+  bausffs: "baus",
+  thebaus: "baus",
+  rekky: "rekkles",
+};
+const resolvePlayerSlug = (slug: string) => PLAYER_SLUG_ALIASES[slug.toLowerCase()] || slug;
+
 export const loadHubTeam = (slug: string) => teamFile<HubTeam>("team", slug);
-export const loadHubPlayer = (slug: string) => load<HubPlayer>(`hub/player/${slug}.json`);
+export const loadHubPlayer = (slug: string) => load<HubPlayer>(`hub/player/${resolvePlayerSlug(slug)}.json`);
 export const loadHubEvent = (slug: string) => load<HubEvent>(`hub/event/${slug}.json`);
 export const loadHubSeries = (slug: string) => load<HubSeries>(`hub/game/${slug}.json`);
 export const loadHubChamp = (slug: string) => load<HubChamp>(`hub/champ/${slug}.json`);
@@ -416,7 +424,7 @@ export function findHubTeam(index: HubIndex, name: string, code?: string): strin
 }
 
 export const loadTeamSeries = (slug: string) => teamFile<import("./types").TeamSeriesRow[]>("teamseries", slug);
-export const loadPlayerGames = (slug: string) => load<import("./types").PlayerGameRow[]>(`hub/playergames/${slug}.json`);
+export const loadPlayerGames = (slug: string) => load<import("./types").PlayerGameRow[]>(`hub/playergames/${resolvePlayerSlug(slug)}.json`);
 export const loadTeamGames = (slug: string) => teamFile<import("./types").TeamGameRow[]>("teamgames", slug);
 const seasonCache = new Map<string, Promise<import("./types").LeagueSeason>>();
 export const loadLeagueSeason = (league: string, year: string): Promise<import("./types").LeagueSeason> => {
@@ -461,7 +469,20 @@ export const loadBestIndex = () => load<import("./types").BestIndex>("hub/best/i
 export const loadRecordsYear = (year: string) => load<import("./types").HubRecordsYear>(`hub/records/${year}.json`);
 export const loadMatchups = (slug: string) => load<import("./types").HubMatchups>(`hub/matchups/${slug}.json`);
 /** The item history (/stats/items): one player's items, one item's players, and every item */
-export const loadPlayerItems = (slug: string) => load<import("./types").PlayerItems>(`hub/playeritems/${slug}.json`);
+const playerItemsCache = new Map<string, Promise<import("./types").PlayerItems>>();
+export const loadPlayerItems = (slug: string): Promise<import("./types").PlayerItems> => {
+  const key = resolvePlayerSlug(slug);
+  let p = playerItemsCache.get(key);
+  if (!p) {
+    if (playerItemsCache.size >= 32) playerItemsCache.clear();
+    p = load<import("./types").PlayerItems>(`hub/playeritems/${key}.json`).catch((e) => {
+      if (!(e instanceof MissingFile)) playerItemsCache.delete(key);
+      throw e;
+    });
+    playerItemsCache.set(key, p);
+  }
+  return p;
+};
 export const loadHubItem = (slug: string) => load<import("./types").HubItem>(`hub/items/${slug}.json`);
 export const loadHubItemChamp = (item: string, champ: string) => load<import("./types").HubItemChamp>(`hub/items/${item}/c/${champ}.json`);
 export const loadHubItemYear = (item: string, year: string) => load<import("./types").HubItemYear>(`hub/items/${item}/y/${year}.json`);
@@ -469,7 +490,20 @@ export const loadItemIndex = () => load<import("./types").ItemIndexRow[]>("hub/i
 /** top-league teams' ratings over the last 120 days: slug -> [date, rating][] */
 export const loadRatingsHistory = () => load<Record<string, [string, number][]>>("hub/ratings-history.json");
 /** a player's last two years of games (smaller than the full log; not every player has one) */
-export const loadPlayerGames2y = (slug: string) => load<import("./types").PlayerGameRow[]>(`hub/playergames2y/${slug}.json`);
+const playerGames2yCache = new Map<string, Promise<import("./types").PlayerGameRow[]>>();
+export const loadPlayerGames2y = (slug: string): Promise<import("./types").PlayerGameRow[]> => {
+  const key = resolvePlayerSlug(slug);
+  let p = playerGames2yCache.get(key);
+  if (!p) {
+    if (playerGames2yCache.size >= 32) playerGames2yCache.clear();
+    p = load<import("./types").PlayerGameRow[]>(`hub/playergames2y/${key}.json`).catch((e) => {
+      if (!(e instanceof MissingFile)) playerGames2yCache.delete(key);
+      throw e;
+    });
+    playerGames2yCache.set(key, p);
+  }
+  return p;
+};
 /** a team's last two years of games (only teams whose page says g2y have one) */
 export const loadTeamGames2y = (slug: string) => load<import("./types").TeamGameRow[]>(`hub/teamgames2y/${slug}.json`);
 /** The best-rated games and series: all time, a year, a league, or a league's year. */

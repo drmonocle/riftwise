@@ -20,12 +20,17 @@ const ALIASES: Record<string, string> = {
   閃電狼: "Flash Wolves", 中信: "CTBC",
   // Japanese
   フェイカー: "Faker",
+  // Streamer handles & community nicknames
+  thebausffs: "Baus", bausffs: "Baus", thebaus: "Baus",
+  rekky: "Rekkles", sally: "Caedrel",
+  lr: "Los Ratones", ratones: "Los Ratones",
+  kcorp: "Karmine Corp",
 };
 
-/** The Latin name to search for, if the query is a known nickname in another alphabet. */
+/** The Latin name to search for, if the query is a known nickname in another alphabet or handle. */
 export function searchAlias(query: string): string {
   const q = query.trim();
-  return ALIASES[q] || ALIASES[q.toUpperCase()] || query;
+  return ALIASES[q] || ALIASES[q.toLowerCase()] || ALIASES[q.toUpperCase()] || query;
 }
 
 /** True when the text has no Latin letters or digits (Hangul, Chinese, Japanese...). */

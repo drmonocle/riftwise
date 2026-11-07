@@ -6,6 +6,10 @@ describe("native-script search", () => {
     expect(searchAlias("페이커")).toBe("Faker");
     expect(searchAlias(" 티원 ")).toBe("T1");
     expect(searchAlias("b站")).toBe("Bilibili");
+    expect(searchAlias("thebausffs")).toBe("Baus");
+    expect(searchAlias("Thebausffs")).toBe("Baus");
+    expect(searchAlias("LR")).toBe("Los Ratones");
+    expect(searchAlias("rekky")).toBe("Rekkles");
     expect(searchAlias("Faker")).toBe("Faker");
     expect(searchAlias("unknown")).toBe("unknown");
   });

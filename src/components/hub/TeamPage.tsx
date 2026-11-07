@@ -20,6 +20,7 @@ import { OwnStorylines } from "./Storylines";
 import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, fmtUsdShort, HubLink, isFresh, Loading, Page, PlayerLink, PlayerPhoto, RevealButton, Section, Stat, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink, FollowFeeds } from "./ui";
 import { ratingTextClass } from "./BestPage";
 import { Sparkline } from "./Sparkline";
+import { TeamOpponentsChart, WinBar } from "./OpponentChart";
 import { STable } from "../STable";
 import { SectionCard, BroadcastCardButton, teamCareerCardData } from "./BroadcastCard";
 import { champName } from "../../champions";
@@ -440,7 +441,9 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                       {y.w}-{y.g - y.w}
                     </HubLink>
                   </td>
-                  <td className={`${td} text-rw-sub`}>{winRate(y.w, y.g)}</td>
+                  <td className={`${td} text-rw-sub`}>
+                    <WinBar w={y.w} g={y.g} />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -452,6 +455,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
       {overview && rosterSection}
 
       {overview && <TeamPlaystyleOverview t={t} />}
+
+      {overview && t.opps.length > 0 && (
+        <div className="rw-span">
+          <TeamOpponentsChart teamSlug={t.u} teamName={t.name} opps={t.opps} cardSub={cardSub} compact />
+        </div>
+      )}
 
       {overview && <OwnStorylines notes={t.notes} spoilerKey={`notes:team:${t.u}`} share={`${t.u}-storylines`} />}
 
@@ -525,62 +534,9 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
       {tab === "history" && rosterSection}
 
       {tab === "matches" && (
-      <Section
-        title={tl("Against other teams")}
-        right={
-          <SectionCard
-            section={tl("Against other teams")}
-            name={t.name}
-            sub={tl("Most games against")}
-            rows={() => [...t.opps].sort((a, b) => b.g - a.g).map((o) => ({ label: o.n, sub: `${o.w}-${o.g - o.w}`, value: winRate(o.w, o.g) }))}
-          />
-        }
-      >
-        <div className="overflow-x-auto max-h-[36rem]">
-          <STable className="w-full text-xs">
-            <thead>
-              <tr>
-                <th className={th}>{tl("Opponent")}</th>
-                <th className={th}>{tl("Games")}</th>
-                <th className={th}>{tl("Win %")}</th>
-                <th className={th}>{tl("Last met")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {t.opps.map((o) => (
-                <tr key={o.n} className="border-t border-rw-border">
-                  <td className={td}>
-                    <TeamLink name={o.n} u={o.u} />
-                  </td>
-                  <td className={`${td} text-rw-sub`}>
-                    {o.u ? (
-                      <span className="inline-flex items-center gap-2">
-                        <HubLink
-                          to={{ kind: "compare", mode: "team", a: t.u, b: o.u }}
-                          className="hover:text-rw-accent hover:underline"
-                          title={tl("Head to head")}
-                        >
-                          {o.w}-{o.g - o.w}
-                        </HubLink>
-                        <HubLink
-                          to={{ kind: "prep", a: t.u, b: o.u }}
-                          className="text-[11px] text-rw-accent hover:underline"
-                        >
-                          {tl("Match prep")}
-                        </HubLink>
-                      </span>
-                    ) : (
-                      `${o.w}-${o.g - o.w}`
-                    )}
-                  </td>
-                  <td className={`${td} text-rw-sub`}>{winRate(o.w, o.g)}</td>
-                  <td className={`${td} text-rw-muted`} data-sort={o.last}>{fmtDate(o.last)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </STable>
+        <div className="rw-span">
+          <TeamOpponentsChart teamSlug={t.u} teamName={t.name} opps={t.opps} cardSub={tl("Most games against")} />
         </div>
-      </Section>
       )}
 
       {tab === "champions" && (
