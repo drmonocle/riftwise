@@ -474,7 +474,8 @@ def main() -> None:
 
     # Per-game player sums, used to check the team numbers before a game can hold a record
     psum = defaultdict(lambda: defaultdict(lambda: [0, 0, 0, 0, 0]))  # gid -> team -> [kills, gold, rows, gold rows, deaths]
-    for r in con.execute("SELECT game_id, team, kills, deaths, gold FROM player_game_stats"):
+    max_cs = defaultdict(int)
+    for r in con.execute("SELECT game_id, team, kills, deaths, gold, cs FROM player_game_stats"):
         team = pteam.get(r["game_id"], {}).get(r["team"])
         if not team:
             continue
@@ -484,23 +485,37 @@ def main() -> None:
         s[2] += 1
         s[3] += 1 if r["gold"] is not None else 0
         s[4] += r["deaths"] or 0
+        if (r["cs"] or 0) > max_cs[r["game_id"]]:
+            max_cs[r["game_id"]] = r["cs"] or 0
 
-    # Team kills: the catalog has "0-0" (or nothing) for some games it never got a score for. Take the team
-    # stats table's numbers, else the ten players' (when each side's kills are the other side's deaths), else none
+    # Team kills: the catalog has "0-0" (or nothing) for some games it never got a score for, or a corrupted team
+    # score that disagrees with the 10-player scoreboard. Take the team stats table's numbers, else the ten players'.
     for gid, g in games.items():
-        if g["k1"] is not None and not (g["k1"] == 0 and g["k2"] == 0):
-            continue
         ts = tstats.get(gid)
+        # Clear fake 30:00 placeholder durations when Leaguepedia has no gamelength and player CS exceeds 16 CS/m at 30m
+        if g["min"] == 30.0 and not (ts and ts.get("gamelength")) and max_cs.get(gid, 0) > 480:
+            g["min"] = 0
+            checks["placeholder 30:00 durations cleared (no gamelength in team stats)"] += 1
+        ps = psum.get(gid) or {}
+        a, b = ps.get(g["t1"]), ps.get(g["t2"])
+        has_10 = bool(a and b and a[2] == 5 and b[2] == 5 and a[0] + b[0] > 0)
+        if g["k1"] is not None and not (g["k1"] == 0 and g["k2"] == 0):
+            if has_10 and (abs(g["k1"] - a[0]) > 2 or abs(g["k2"] - b[0]) > 2):
+                g["k1"], g["k2"] = a[0], b[0]
+                g["tk"] = a[0] + b[0]
+                checks["team kills reconciled with the 10-player scoreboard"] += 1
+            continue
         k1 = k2 = None
         if ts and ts.get("team1_kills") is not None and ts.get("team2_kills") is not None and ts["team1_kills"] + ts["team2_kills"] > 0:
             k1, k2 = ts["team1_kills"], ts["team2_kills"]
-            checks["team kills taken from the team stats table"] += 1
-        else:
-            ps = psum.get(gid) or {}
-            a, b = ps.get(g["t1"]), ps.get(g["t2"])
-            if a and b and a[2] == 5 and b[2] == 5 and a[0] + b[0] > 0 and a[0] == b[4] and b[0] == a[4]:
+            if has_10 and (abs(k1 - a[0]) > 2 or abs(k2 - b[0]) > 2):
                 k1, k2 = a[0], b[0]
-                checks["team kills added from the players' scoreboard"] += 1
+                checks["team kills reconciled with the 10-player scoreboard"] += 1
+            else:
+                checks["team kills taken from the team stats table"] += 1
+        elif has_10 and a[0] == b[4] and b[0] == a[4]:
+            k1, k2 = a[0], b[0]
+            checks["team kills added from the players' scoreboard"] += 1
         g["k1"], g["k2"] = k1, k2
         g["tk"] = k1 + k2 if k1 is not None else None
 
@@ -741,7 +756,7 @@ def main() -> None:
         fid = team_of(team, g["date"])
         won = 1 if g["w"] == team else 0
         k, d, a = r["kills"] or 0, r["deaths"] or 0, r["assists"] or 0
-        champ = champ_name(r["champion"]) or ""
+        champ = champ_name(r["champion"], gid, r["role"]) or ""
         p = players[page]
         p["g"] += 1
         p["w"] += won

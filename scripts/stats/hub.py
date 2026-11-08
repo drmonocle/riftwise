@@ -194,15 +194,20 @@ def build(ctx) -> dict:
         if r["tournament_name"]:
             tname_to_op.setdefault(r["tournament_name"], op)
         key = (r["match_id"] or r["game_id"], r["game_number"] or 1)
-        g = games_by_op[op].get(key)
+        g0 = games_by_op[op].get(key)
+        g = g0
         moved = False
         if g is not None and g["t1"] and g["t2"] and r["team1"] and r["team2"] and not same_pair(g["t1"], g["t2"], r["team1"], r["team2"]):
             # Leaguepedia renumbered the series (NA LCS 2013 Spring semifinals 1 and 2 are swapped between the two
             # tables): this game belongs to the series with its teams, the same game number, within two days
             g = next((x for x in games_by_op[op].values() if x["n"] == key[1] and x["t1"] and x["t2"]
-                      and same_pair(x["t1"], x["t2"], r["team1"], r["team2"]) and near_day(x["date"], r["date_utc"])), None)
+                      and same_pair(x["t1"], x["t2"], r["team1"], r["team2"]) and near_day(x["date"], r["date_utc"])
+                      and not (x["gid"] and x["gid"] != r["game_id"] and x["gid"] in ctx.games
+                               and same_pair(x["t1"], x["t2"], ctx.games[x["gid"]]["t1"], ctx.games[x["gid"]]["t2"]))), None)
             if g is None:
                 continue  # not found: leave both alone rather than mix this game into the other series
+            if g0["gid"] == r["game_id"] and g is not g0:
+                g0["gid"] = None
             renumbered += 1
             moved = True
         if g is None and r["game_id"] in by_catalog_id:
@@ -271,11 +276,19 @@ def build(ctx) -> dict:
     for gid, places in by_gid.items():
         if len(places) < 2:
             continue
-        keep = next((p for p in places if p[1][0] == ctx.games[gid]["match"]), places[0])
+        cg = ctx.games[gid]
+        matching = [p for p in places if p[2]["t1"] and p[2]["t2"] and same_pair(p[2]["t1"], p[2]["t2"], cg["t1"], cg["t2"])]
+        pool = matching or places
+        keep = next((p for p in pool if p[1][0] == cg["match"]), pool[0])
         for op, key, g in places:
-            if key != keep[1] and same_pair(g["t1"], g["t2"], keep[2]["t1"], keep[2]["t2"]) and g["date"][:10] == keep[2]["date"][:10]:
+            if key == keep[1] and op == keep[0]:
+                continue
+            if same_pair(g["t1"], g["t2"], keep[2]["t1"], keep[2]["t2"]) and g["date"][:10] == keep[2]["date"][:10]:
                 del games_by_op[op][key]
                 emptied.add(key[0])
+                shared += 1
+            else:
+                g["gid"] = None
                 shared += 1
     emptied -= {k[0] for gm in games_by_op.values() for k in gm}
     checks["hub: games listed twice with one scoreboard (kept once)"] = shared
@@ -764,7 +777,7 @@ def build(ctx) -> dict:
                     d_ = dict(r)
                     d_["team"] = team_
                     d_["page_key"] = ctx.names.page(r["page_key"], team_)
-                    d_["champion"] = champ_name(r["champion"])
+                    d_["champion"] = champ_name(r["champion"], gid_, r["role"])
                     d_["keystone"] = rune_name(r["keystone"])
                     fixed.append(d_)
             if fixed:
@@ -816,6 +829,14 @@ def build(ctx) -> dict:
         for mid, glist in series.items():
             glist.sort(key=lambda g: g["n"])
             s = sched.get(mid)
+            if s and glist:
+                ga = glist[0]["sa"] or glist[0]["t1"]
+                gb = glist[0]["sb"] or glist[0]["t2"]
+                d0 = (glist[0]["date"] or s["date"] or "")[:10] or "0000"
+                if ga and gb and (not s["a"] or not s["b"] or s["a"] == "TBD" or s["b"] == "TBD" or (
+                        not same_pair(s["a"], s["b"], ga, gb)
+                        and {ctx.team_of(s["a"], d0), ctx.team_of(s["b"], d0)} != {ctx.team_of(ga, d0), ctx.team_of(gb, d0)})):
+                    s = None
             # Series teams: MatchSchedule order, else all_games' series order, else the first game's sides
             a = (s and s["a"]) or (glist and (glist[0]["sa"] or glist[0]["t1"]))
             b = (s and s["b"]) or (glist and (glist[0]["sb"] or glist[0]["t2"]))
@@ -997,10 +1018,14 @@ def build(ctx) -> dict:
                         mine = [r for r in g_rows if r["team"] == name]
                         if len(mine) == 5:
                             sd = sides.setdefault(side, {})
-                            if sd.get("k") is None and all(r["kills"] is not None for r in mine):
-                                sd["k"] = sum(r["kills"] for r in mine)
+                            if all(r["kills"] is not None for r in mine):
+                                pk = sum(r["kills"] for r in mine)
+                                if sd.get("k") is None or abs(sd["k"] - pk) > 2:
+                                    sd["k"] = pk
                             if sd.get("gold") is None and all(r["gold"] is not None for r in mine):
                                 sd["gold"] = sum(r["gold"] for r in mine)
+                            if sd.get("picks") and len(sd["picks"]) != len(set(sd["picks"])):
+                                sd["picks"] = [r["champion"] for r in mine if r["champion"]]
                     # Oracle's Elixir's numbers for this game (leads at 15, firsts, plates...), when it has the game
                     oe_g = timeline.pick(oe.get((mid, g["n"])), {r["champion"] for r in g_rows if r["champion"]})
                     oe_side = {}

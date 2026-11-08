@@ -112,6 +112,20 @@ def copies_check() -> str:
     return ""
 
 
+def data_fixes_check() -> str:
+    """Known Leaguepedia same-side duplicate champion fixes in names.champ_name."""
+    sys.path.insert(0, STATS)
+    import names
+
+    if names.champ_name("Morgana", "Champions/2012 Season/Spring_Finals_1_G2", "Support") != "Janna":
+        return "expected Janna for Champions 2012 Spring Finals G2 Support"
+    if names.champ_name("Morgana", "Champions/2012 Season/Spring_Finals_1_G2", "Mid") != "Morgana":
+        return "expected Morgana for Champions 2012 Spring Finals G2 Mid"
+    if names.champ_name("Trundle", "LPL/2016 Season/Spring Season_Week 7_1_G1", "Support") is not None:
+        return "expected None for duplicated Trundle Support in LPL 2016 Spring W7_1 G1"
+    return ""
+
+
 def main() -> int:
     bad = rating_check()
     if bad:
@@ -120,6 +134,10 @@ def main() -> int:
     bad = copies_check()
     if bad:
         print(f"FAIL: VOD copies: {bad}")
+        return 1
+    bad = data_fixes_check()
+    if bad:
+        print(f"FAIL: data fixes: {bad}")
         return 1
     keep = "--keep" in sys.argv
     out_dir = sys.argv[sys.argv.index("--out") + 1] if "--out" in sys.argv else None

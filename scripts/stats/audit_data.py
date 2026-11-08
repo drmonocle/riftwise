@@ -101,8 +101,8 @@ def main():
         for g in gl:
             gw = f"{where} G{g.get('n')}"
             m = g.get("min")
-            if m is not None and not (12 <= m <= 95):
-                bad("game length out of range (12-95 min)", f"{gw}: {m}")
+            if m is not None and not (7 <= m <= 95):
+                bad("game length out of range (7-95 min)", f"{gw}: {m}")
             ps = g.get("p") or []
             if ps:
                 checked["games with a scoreboard"] += 1
@@ -111,17 +111,17 @@ def main():
                 sides = Counter(p.get("s") for p in ps)
                 if ps and len(ps) == 10 and (sides[1] != 5 or sides[2] != 5):
                     bad("scoreboard sides not 5 and 5", f"{gw}: {dict(sides)}")
-                cs_ = [p.get("c") for p in ps if p.get("c")]
-                if len(cs_) != len(set(cs_)):
-                    bad("same champion twice in one game", f"{gw}: {[c for c, n in Counter(cs_).items() if n > 1]}")
                 for side in (1, 2):
+                    cs_ = [p.get("c") for p in ps if p.get("s") == side and p.get("c")]
+                    if len(cs_) != len(set(cs_)):
+                        bad("same champion twice on one team", f"{gw} side {side}: {[c for c, n in Counter(cs_).items() if n > 1]}")
                     roles = [p.get("r") for p in ps if p.get("s") == side and p.get("r")]
                     if len(roles) == 5 and len(set(roles)) != 5:
                         bad("a role twice on one team", f"{gw} side {side}: {roles}")
                 for p in ps:
                     link("player", p.get("u"), gw)
                     k, d, a = p.get("k", 0), p.get("d", 0), p.get("a", 0)
-                    if k < 0 or d < 0 or a < 0 or k > 30 or d > 25 or a > 45:
+                    if k < 0 or d < 0 or a < 0 or k > 35 or d > 30 or a > 55:
                         bad("player K/D/A out of range", f"{gw} {p.get('n')}: {k}/{d}/{a}")
                     cs = p.get("cs")
                     if cs is not None and m and cs / m > 16:

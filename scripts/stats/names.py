@@ -138,9 +138,21 @@ def blue_red(team1, team2, t1, t2) -> tuple:
 NOT_CHAMPS = {"", "missing data", "none", "unknown", "tbd", "null", "-", "loss of ban", "no ban"}
 CHAMP_FIX = {"fiddlesticks": "Fiddlesticks"}  # Leaguepedia has both "FiddleSticks" and "Fiddlesticks"
 
+# Leaguepedia ScoreboardPlayers rows where a teammate's champion was entered twice on the same side:
+# Champions 2012 Spring Finals G2 is Janna on Liquipedia; the other three have no independent draft record,
+# so the duplicated row's champion is cleared rather than counting the wrong champion twice.
+CHAMP_ROW_FIXES = {
+    ("Champions/2012 Season/Spring_Finals_1_G2", "Support"): "Janna",
+    ("LPL/2016 Season/Spring Season_Week 7_1_G1", "Support"): None,
+    ("2015 Demacia Cup/Summer Season_Round of 32_6_G2", "Top"): None,
+    ("Saigon_Jokers_Saigon_Fantastic_Five_2014-08-19_123000_4", "Top"): None,
+}
 
-def champ_name(c):
+
+def champ_name(c, game_id=None, role=None):
     """A champion name as one spelling, or None for placeholders ("Missing Data", "None")."""
+    if game_id and (game_id, role) in CHAMP_ROW_FIXES:
+        return CHAMP_ROW_FIXES[(game_id, role)]
     c = (c or "").strip()
     if c.lower() in NOT_CHAMPS:
         return None
