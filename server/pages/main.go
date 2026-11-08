@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "0.8.53" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "0.8.54" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -609,8 +609,8 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	var extra *intlPage
 
 	switch {
-	case lang != "" && parts[0] == "":
-		// a language's home page (riftwise.gg/ko/): the stats front page; English's (/) is the plain index.html
+	case parts[0] == "":
+		// the home page (riftwise.gg/ and riftwise.gg/ko/): the stats front page with <meta name="rw-stats">
 		title, desc, og = sections[""][0]+" | RiftWise", sections[""][1], "og/home.png"
 	case parts[0] == "stats" && len(parts) == 1:
 		// the stats front page became the site's home (0.8.0): one address for it, with the search it was opened with

@@ -10,38 +10,12 @@ import { tl, tn, tc, stageLabel, fmtDec } from "../../i18n";
 import { loadAliases, loadBest, loadBestIndex, normText } from "../../hub/data";
 import type { BestGame, BestSeries } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
-import { card, EventLink, Failed, fmtDate, HubLink, isFresh, Loading, RevealButton, useHidden, useLoad, usePageTitle } from "./ui";
+import { card, EventLink, Failed, fmtDate, HubLink, isFresh, Loading, RatingBadge, ratingTextClass, ratingTier, RevealButton, useHidden, useLoad, usePageTitle } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 
-/** S 90+, A 80+, B 70+, C 55+, D below */
-export function ratingTier(r: number): "S" | "A" | "B" | "C" | "D" {
-  return r >= 90 ? "S" : r >= 80 ? "A" : r >= 70 ? "B" : r >= 55 ? "C" : "D";
-}
-const TIER_TEXT: Record<string, string> = { S: "text-amber-300", A: "text-rw-accent", B: "text-rw-teal", C: "text-rw-sub", D: "text-rw-muted" };
-/** The tier's text colour, for a rating shown as a bare number (bracket boxes). */
-export const ratingTextClass = (r: number) => TIER_TEXT[ratingTier(r)];
+export { ratingTier, ratingTextClass, RatingBadge };
 const TIERS = ["S", "A", "B", "C", "D"] as const;
 const TIER_FLOOR: Record<string, number> = { S: 90, A: 80, B: 70, C: 55, D: 0 };
-const TIER_CLASS: Record<string, string> = {
-  S: "bg-amber-400/20 text-amber-300 border-amber-400/50",
-  A: "bg-rw-accent/20 text-rw-accent border-rw-accent/50",
-  B: "bg-rw-teal/15 text-rw-teal border-rw-teal/40",
-  C: "bg-rw-raised text-rw-sub border-rw-border",
-  D: "bg-rw-raised text-rw-muted border-rw-border",
-};
-
-export const RatingBadge: React.FC<{ r: number; className?: string }> = ({ r, className = "" }) => {
-  const t = ratingTier(r);
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] font-bold tabular-nums ${TIER_CLASS[t]} ${className}`}
-      title={tl("Game rating {r} of 100 (tier {t})", { r: fmtDec(r), t })}
-    >
-      {fmtDec(r)}
-      <span className="font-semibold">{t}</span>
-    </span>
-  );
-};
 
 const sel = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-xs text-rw-text max-w-full";
 const tabBtn = (on: boolean) =>

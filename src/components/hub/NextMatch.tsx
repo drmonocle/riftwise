@@ -9,14 +9,13 @@ import React, { useEffect, useState } from "react";
 import type { Match } from "../../types";
 import type { HubTeam, TeamSeriesRow } from "../../hub/types";
 import { tl, tc, roleName } from "../../i18n";
-import { findHubTeam, loadHubIndexQuick, loadHubTeam, loadTeamSeries } from "../../hub/data";
+import { findHubTeam, loadHubIndexQuick, loadHubTeam, loadTeamSeries, teamStarter } from "../../hub/data";
 import { recentSchedule, RIOT_PREFIX } from "../../hub/riotMatch";
 import { useMatchRatings } from "../../hub/matchRatings";
 import { riotImg } from "../../riotImage";
 import { formatMatchTime } from "../../matchTime";
 import { MatchPrepButton } from "../MatchPrepButton";
 import { MatchOverviewButton } from "../MatchOverviewButton";
-import { teamStarter } from "./MatchOverview";
 import { fmtDate, HubLink, Section, TeamLink } from "./ui";
 
 const ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"] as const;

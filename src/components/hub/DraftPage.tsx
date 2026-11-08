@@ -20,19 +20,14 @@ import { ComparePick, bothOptions } from "./ComparePage";
 import { PeriodPicker, defaultPeriod } from "./PeriodStats";
 import { FearlessDepth, RosterSubPicker, Side, loadFullLogs, loadSide, needsFullLogs, swapPlayerInSide } from "./PrepPage";
 import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, Section, useLoad, usePageTitle, useRetryAttempt, retryFailedLoads } from "./ui";
-import { bare, loadHubChamp, prettySlug } from "../../hub/data";
+import { bare, buildGameDraftQuery, DRAFT_ORDER as ORDER, type GameDraftInput, type GameDraftQueryInput, loadHubChamp, packHistory, packSlots, type PastGame, prettySlug, slotsFromGameDraft } from "../../hub/data";
 import { BroadcastCardButton, SectionCard, draftBoardCard, type BoardSide } from "./BroadcastCard";
 import type { HubChamp, LaneLine } from "../../hub/types";
 import { draftTendencies } from "./DraftTendencies";
 
+export { ORDER, packSlots, packHistory, slotsFromGameDraft, buildGameDraftQuery };
+export type { PastGame, GameDraftInput, GameDraftQueryInput };
 type Who = "b" | "r";
-/** Tournament draft order: who acts and whether it's a ban or a pick. */
-export const ORDER: { side: Who; ban: boolean }[] = [
-  ...(["b", "r", "b", "r", "b", "r"] as Who[]).map((side) => ({ side, ban: true })),
-  ...(["b", "r", "r", "b", "b", "r"] as Who[]).map((side) => ({ side, ban: false })),
-  ...(["r", "b", "r", "b"] as Who[]).map((side) => ({ side, ban: true })),
-  ...(["r", "b", "b", "r"] as Who[]).map((side) => ({ side, ban: false })),
-];
 
 export interface PlayerOnChamp {
   c: string;
@@ -253,7 +248,6 @@ const parseSlots = (s: string | null): (string | null)[] => {
   while (out.length < SLOTS) out.push(null);
   return out.slice(0, SLOTS);
 };
-export const packSlots = (slots: (string | null)[]) => (slots.some((s) => s) ? slots.map((s) => s || "").join(",") : "");
 const parseList = (s: string | null) => (s || "").split(",").map((x) => x.trim()).filter(Boolean);
 
 const CHAMP_ALIAS: Record<string, string> = {
@@ -303,11 +297,6 @@ export function isChampTaken(c: string, taken: Set<string>): boolean {
   return false;
 }
 
-export interface PastGame {
-  blue: string;
-  red: string;
-  slots: (string | null)[];
-}
 const parseHistory = (s: string | null): PastGame[] =>
   (s || "")
     .split(";")
@@ -316,30 +305,6 @@ const parseHistory = (s: string | null): PastGame[] =>
       const [blue, red, rest] = e.split("~");
       return { blue, red, slots: parseSlots(rest || "") };
     });
-export const packHistory = (h: PastGame[]) => h.map((g) => `${g.blue}~${g.red}~${g.slots.map((s) => s || "").join(",")}`).join(";");
-
-export interface GameDraftInput {
-  blueBans?: (string | null | undefined)[];
-  redBans?: (string | null | undefined)[];
-  bluePicks?: (string | null | undefined)[];
-  redPicks?: (string | null | undefined)[];
-}
-
-/** Maps a game's Blue/Red bans & picks into the 20 tournament-order Draft Board slots. */
-export function slotsFromGameDraft(g: GameDraftInput): (string | null)[] {
-  const out: (string | null)[] = ORDER.map(() => null);
-  let bb = 0;
-  let rb = 0;
-  let bp = 0;
-  let rp = 0;
-  ORDER.forEach((o, i) => {
-    if (o.side === "b" && o.ban) out[i] = g.blueBans?.[bb++]?.trim() || null;
-    else if (o.side === "r" && o.ban) out[i] = g.redBans?.[rb++]?.trim() || null;
-    else if (o.side === "b" && !o.ban) out[i] = g.bluePicks?.[bp++]?.trim() || null;
-    else if (o.side === "r" && !o.ban) out[i] = g.redPicks?.[rp++]?.trim() || null;
-  });
-  return out;
-}
 
 /**
  * Swaps Blue and Red ban/pick slots so clicking "Swap sides" moves each team's already-entered bans and picks
@@ -391,52 +356,6 @@ export function nextDraftSlot(slots: (string | null)[], currentStep: number, sam
   return null;
 }
 
-export interface GameDraftQueryInput {
-  blueSlug: string;
-  redSlug: string;
-  period?: string;
-  gameNum?: number;
-  current?: GameDraftInput | null;
-  earlier?: {
-    blueSlug: string;
-    redSlug: string;
-    draft: GameDraftInput;
-  }[];
-}
-
-/**
- * Builds the `/stats/draft?...` query string that loads a specific game (`gameNum`) onto the Draft Board:
- * - `teams=blueSlug,redSlug` (matching the Blue and Red sides of that game)
- * - `g=gameNum` (which game of the series is loaded on the board)
- * - `d=<20-slot-csv>` (that game's bans and picks loaded directly onto the board)
- * - `u=<earlier-picks-csv>` (champions picked in games 1..gameNum-1 locked in Fearless mode)
- * - `h=<PastGame-history>` (each earlier game's Blue/Red teams and picks shown in the Fearless history)
- */
-export function buildGameDraftQuery(input: GameDraftQueryInput): string {
-  const parts: string[] = [`teams=${encodeURIComponent(input.blueSlug)},${encodeURIComponent(input.redSlug)}`];
-  if (input.period && input.period !== "all") parts.push(`p=${encodeURIComponent(input.period)}`);
-  if (input.gameNum != null && input.gameNum >= 1) parts.push(`g=${encodeURIComponent(String(input.gameNum))}`);
-  if (input.current) {
-    const d = packSlots(slotsFromGameDraft(input.current));
-    if (d) parts.push(`d=${encodeURIComponent(d)}`);
-  }
-  if (input.earlier && input.earlier.length > 0) {
-    const usedSet = new Set<string>();
-    const history: PastGame[] = [];
-    for (const eg of input.earlier) {
-      const slots = slotsFromGameDraft(eg.draft);
-      for (const c of [...(eg.draft.bluePicks || []), ...(eg.draft.redPicks || [])]) {
-        if (c && c.trim()) usedSet.add(c.trim());
-      }
-      if (slots.some((s) => s)) {
-        history.push({ blue: eg.blueSlug, red: eg.redSlug, slots });
-      }
-    }
-    if (usedSet.size > 0) parts.push(`u=${encodeURIComponent([...usedSet].join(","))}`);
-    if (history.length > 0) parts.push(`h=${encodeURIComponent(packHistory(history))}`);
-  }
-  return parts.join("&");
-}
 
 export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
   useDDragon();

@@ -5,10 +5,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Download } from "lucide-react";
 import { tl, tn } from "../../i18n";
-import { load, loadText, statsFileUrl } from "../../stats";
+import { load } from "../../stats";
 import { IS_WEB, SITE_URL } from "../../platform";
+import { downloadEventCsv, downloadStagesCsv, joinCsvs, saveCsv } from "../../hub/data";
 import { navigateHub } from "../../hub/route";
 import { card, Failed, fmtNum, Loading, Section, useLoad, usePageTitle } from "./ui";
+
+export { saveCsv, downloadEventCsv, downloadStagesCsv };
 
 interface DownloadLeague {
   u: string;
@@ -21,57 +24,6 @@ interface DownloadLeague {
 }
 
 const loadDownloads = () => load<DownloadLeague[]>("hub/csv/index.json");
-
-/** Save text as a file (web), or open the file's address in the browser (desktop app). */
-export async function saveCsv(name: string, text: string) {
-  const url = URL.createObjectURL(new Blob(["﻿" + text], { type: "text/csv;charset=utf-8" }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
-}
-
-/** One tournament's CSV: downloaded on the web, opened in the browser from the desktop app. */
-export async function downloadEventCsv(slug: string, onOpenUrl?: (url: string) => void) {
-  if (!IS_WEB && onOpenUrl) {
-    onOpenUrl(await statsFileUrl(`hub/csv/${slug}.csv`));
-    return;
-  }
-  await saveCsv(`${slug}.csv`, await loadText(`hub/csv/${slug}.csv`));
-}
-
-/** Join multiple tournament CSV files in the browser (up to 6 at a time), keeping the header row once. */
-async function joinCsvs(slugs: string[], onProgress?: (done: number, total: number) => void): Promise<string> {
-  const raw = new Array<string>(slugs.length).fill("");
-  let next = 0;
-  let done = 0;
-  const worker = async () => {
-    while (next < slugs.length) {
-      const idx = next++;
-      raw[idx] = await loadText(`hub/csv/${slugs[idx]}.csv`);
-      done++;
-      onProgress?.(done, slugs.length);
-    }
-  };
-  await Promise.all(Array.from({ length: Math.min(6, slugs.length) }, () => worker()));
-  const parts: string[] = [];
-  for (const text of raw) {
-    if (!text) continue;
-    parts.push(parts.length === 0 ? text.replace(/\n+$/, "") : text.slice(text.indexOf("\n") + 1).replace(/\n+$/, ""));
-  }
-  return parts.length ? parts.join("\n") + "\n" : "";
-}
-
-/** A whole event's CSV (Worlds = Play-In + Main Event): its stages' files in one, the header once. */
-export async function downloadStagesCsv(name: string, slugs: string[], onOpenUrl?: (url: string) => void) {
-  if (!IS_WEB && onOpenUrl) {
-    onOpenUrl(`${SITE_URL}stats/data`);
-    return;
-  }
-  const csv = await joinCsvs(slugs).catch(() => "");
-  if (csv) await saveCsv(`${name}.csv`, csv);
-}
 
 export const CSV_COLUMNS =
   "date, league, tournament, stage, patch, series, game, url, side, position (top / jungle / mid / bot / support / team), player, team, opponent, champion, pick_order, result, length_sec, kills, deaths, assists, team_kills, team_deaths, cs, gold, damage, vision, dragons, opp_dragons, barons, opp_barons, towers, opp_towers, heralds, void_grubs, ban1-5, pick1-5";

@@ -5,12 +5,11 @@
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { Trophy, MapPin, CalendarDays, Coins, Download, Sparkles, ClipboardCopy } from "lucide-react";
-import { downloadEventCsv, downloadStagesCsv } from "./DownloadsPage";
 import { BracketBoard, type BracketColumn } from "../BracketBoard";
 import { localCountry } from "./CountryFlag";
 import { tl, tn, tk, regionName, stageLabel, eventTitle } from "../../i18n";
 import { winRate } from "../../stats";
-import { loadHubEvent } from "../../hub/data";
+import { downloadEventCsv, downloadStagesCsv, loadHubEvent } from "../../hub/data";
 import type { HubEvent, SeriesRow, Stage, StandingRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { EventPlayerStats, EventTeamStatsTable } from "./EventTables";
@@ -40,8 +39,8 @@ import {
   useHiddenCheck,
   useLoad,
   usePageTitle,
+  ratingTextClass,
 } from "./ui";
-import { ratingTextClass } from "./BestPage";
 import { STable } from "../STable";
 import { JumpBar, PageTabs, type JumpItem, type PageTab } from "./PageTabs";
 import { EntityHero, heroBtn, heroLink } from "./EntityHero";

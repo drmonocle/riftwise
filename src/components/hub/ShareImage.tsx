@@ -5,7 +5,6 @@
  */
 import React, { useState } from "react";
 import { ImageDown, Images } from "lucide-react";
-import { toBlob } from "html-to-image";
 import { tl } from "../../i18n";
 import { IS_WEB } from "../../platform";
 import { withFullImages } from "../../riotImage";
@@ -14,6 +13,7 @@ export async function capture(node: HTMLElement, wholePage = false): Promise<Blo
   node.classList.add("rw-capturing");
   if (wholePage) node.classList.add("rw-capturing-page");
   try {
+    const { toBlob } = await import("html-to-image");
     const cs = getComputedStyle(document.documentElement);
     const bg = wholePage
       ? cs.getPropertyValue("--rw-bg").trim() || "#120f2b"

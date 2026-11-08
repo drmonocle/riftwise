@@ -48,9 +48,7 @@ const OLD_USER = (() => {
   }
 })();
 import { ArrowDownToLine, WifiOff, AlertTriangle, X } from "lucide-react";
-import { ShortcutsDialog } from "./components/ShortcutsDialog";
 import { countSecondPage, countVisit } from "./usage";
-import { TeamBubbles } from "./components/TeamBubbles";
 import { DESKTOP_DOWNLOAD_URL, IS_DESKTOP, IS_WEB, IS_WINDOWS_BROWSER, matchIdFromHash } from "./platform";
 import { clearMovedNote, movedHere } from "./move";
 import { reconcileLiveAndSchedule, playKickoffChime, applyH2HData, loadBundledH2H, streamPhase } from "./helpers";
@@ -58,19 +56,18 @@ import { OPEN_H2H_EVENT, OpenH2HDetail } from "./components/H2HMeter";
 import { Header } from "./components/Header";
 import { MATCH_TABS, TabKey } from "./components/Navigation";
 import { MatchesBar } from "./components/MatchesBar";
-import { LiveView } from "./components/views/LiveView";
 import { tl, locale } from "./i18n";
 import { statsUpdatedAt } from "./stats";
 import { syncPush } from "./push";
-import { STARTED_ON_HUB, navigateHub, onHubRoute, syncFromLocation, syncTabAddress, tabAddress, tabOfPath, BASE } from "./hub/route";
+import { STARTED_ON_HUB, currentHubRoute, navigateHub, onHubRoute, syncFromLocation, syncTabAddress, tabAddress, tabOfPath, BASE } from "./hub/route";
 import { dedication } from "./dedication";
 import { lazyPart } from "./lazyPart";
 import { PartBoundary } from "./components/PartBoundary";
 import { startSync, SYNC_EVENT } from "./sync";
-// The stats hub is big and most visits are for live scores, so its code loads when first opened.
+// Each top-level view and modal loads on first use so the initial app shell stays lean.
 const StatsView = lazyPart(() => import("./components/views/StatsView").then((m) => m.StatsView));
+const LiveView = lazyPart(() => import("./components/views/LiveView").then((m) => m.LiveView));
 const HubSearch = lazyPart(() => import("./components/hub/HubSearch").then((m) => m.HubSearch));
-// tabs and pop-ups past the first screen: each loads when first opened (Live comes with the app)
 const ScheduleView = lazyPart(() => import("./components/views/ScheduleView").then((m) => m.ScheduleView));
 const StreamView = lazyPart(() => import("./components/views/StreamView").then((m) => m.StreamView));
 const WatchlistView = lazyPart(() => import("./components/views/WatchlistView").then((m) => m.WatchlistView));
@@ -78,6 +75,8 @@ const NewsView = lazyPart(() => import("./components/views/NewsView").then((m) =
 const SettingsView = lazyPart(() => import("./components/views/SettingsView").then((m) => m.SettingsView));
 const H2HDetailsModal = lazyPart(() => import("./components/H2HDetailsModal").then((m) => m.H2HDetailsModal));
 const TeamRosterModal = lazyPart(() => import("./components/TeamRosterModal").then((m) => m.TeamRosterModal));
+const TeamBubbles = lazyPart(() => import("./components/TeamBubbles").then((m) => m.TeamBubbles));
+const ShortcutsDialog = lazyPart(() => import("./components/ShortcutsDialog").then((m) => m.ShortcutsDialog));
 const lazyFallback = (
   <div className="py-10 text-center text-xs text-rw-sub" role="status">
     …
@@ -616,14 +615,15 @@ export default function App() {
   // The stats database is rebuilt whenever new games come in: keep its time in the footer current
   useEffect(() => {
     let alive = true;
-    const check = () =>
-      statsUpdatedAt(true).then((t) => {
+    const check = (force: boolean) =>
+      statsUpdatedAt(force).then((t) => {
         if (alive && t) setDbUpdated(t);
       });
-    check();
-    const timer = window.setInterval(check, 10 * 60_000);
+    const initTimer = window.setTimeout(() => check(false), 1500);
+    const timer = window.setInterval(() => check(true), 10 * 60_000);
     return () => {
       alive = false;
+      window.clearTimeout(initTimer);
       window.clearInterval(timer);
     };
   }, []);
@@ -654,7 +654,13 @@ export default function App() {
       if (!document.hidden) refreshData();
     };
 
-    loop();
+    // On deep stats pages (/player/..., /team/...), let the page's own code and JSON finish first
+    const deferInitialMs = IS_WEB && STARTED_ON_HUB && currentHubRoute().kind !== "home" ? 600 : 0;
+    if (deferInitialMs > 0) {
+      timer = window.setTimeout(loop, deferInitialMs);
+    } else {
+      loop();
+    }
     document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
@@ -895,7 +901,11 @@ export default function App() {
   return (
     <div className="rw-app isolate flex flex-col h-screen w-screen bg-rw-bg text-rw-text overflow-hidden select-none">
       {/* the floating team logos, behind everything (isolate keeps them above the app's background) */}
-      <TeamBubbles matches={schedule} on={settings.bubbles === true && !settings.compactMode} />
+      {settings.bubbles === true && !settings.compactMode && (
+        <LazyPart quiet>
+          <TeamBubbles matches={schedule} on />
+        </LazyPart>
+      )}
       {/* Keyboard users: the first Tab offers a jump past the header and tabs straight to the page */}
       <a
         href="#rw-main"
@@ -1034,19 +1044,21 @@ export default function App() {
       {/* Main Content View Container */}
       <main id="rw-main" tabIndex={-1} className="flex-1 overflow-hidden relative outline-none">
         {activeTab === "live" && (
-          <LiveView
-            matches={liveMatches}
-            schedule={schedule}
-            settings={settings}
-            catalog={catalog}
-            onOpenUrl={handleOpenUrl}
-            onSelectTab={selectTab}
-            onUpdateSettings={handleUpdateSettings}
-            onSelectTeam={openTeam}
-            highlightMatchId={highlightMatchId}
-            isLoading={lastSync === null && !syncFailed}
-            liveShows={liveShows}
-          />
+          <LazyPart>
+            <LiveView
+              matches={liveMatches}
+              schedule={schedule}
+              settings={settings}
+              catalog={catalog}
+              onOpenUrl={handleOpenUrl}
+              onSelectTab={selectTab}
+              onUpdateSettings={handleUpdateSettings}
+              onSelectTeam={openTeam}
+              highlightMatchId={highlightMatchId}
+              isLoading={lastSync === null && !syncFailed}
+              liveShows={liveShows}
+            />
+          </LazyPart>
         )}
         {activeTab === "schedule" && (
 <LazyPart>
@@ -1266,7 +1278,11 @@ export default function App() {
           </button>}
         </div>
       </footer>
-      {shortcutsOpen && <ShortcutsDialog onClose={closeShortcuts} />}
+      {shortcutsOpen && (
+        <LazyPart quiet>
+          <ShortcutsDialog onClose={closeShortcuts} />
+        </LazyPart>
+      )}
     </div>
   );
 }

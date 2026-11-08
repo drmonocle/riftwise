@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { CalendarPlus, Check, Clock, Eye, Link2, SearchX, Camera, RefreshCw, Rss } from "lucide-react";
 import { MissingFile } from "../../stats";
-import { tl, locale } from "../../i18n";
+import { tl, locale, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
 import { HubRoute, currentHubRoute, hubPath, navigateHub } from "../../hub/route";
 import { rememberRecent } from "../../hub/recent";
@@ -641,3 +641,32 @@ export const FollowFeeds: React.FC<{ teams?: string[]; leagues?: string[] }> = (
     </span>
   );
 };
+
+/** S 90+, A 80+, B 70+, C 55+, D below */
+export function ratingTier(r: number): "S" | "A" | "B" | "C" | "D" {
+  return r >= 90 ? "S" : r >= 80 ? "A" : r >= 70 ? "B" : r >= 55 ? "C" : "D";
+}
+const TIER_TEXT: Record<string, string> = { S: "text-amber-300", A: "text-rw-accent", B: "text-rw-teal", C: "text-rw-sub", D: "text-rw-muted" };
+/** The tier's text colour, for a rating shown as a bare number (bracket boxes). */
+export const ratingTextClass = (r: number) => TIER_TEXT[ratingTier(r)];
+const TIER_CLASS: Record<string, string> = {
+  S: "bg-amber-400/20 text-amber-300 border-amber-400/50",
+  A: "bg-rw-accent/20 text-rw-accent border-rw-accent/50",
+  B: "bg-rw-teal/15 text-rw-teal border-rw-teal/40",
+  C: "bg-rw-raised text-rw-sub border-rw-border",
+  D: "bg-rw-raised text-rw-muted border-rw-border",
+};
+
+export const RatingBadge: React.FC<{ r: number; className?: string }> = ({ r, className = "" }) => {
+  const t = ratingTier(r);
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] font-bold tabular-nums ${TIER_CLASS[t]} ${className}`}
+      title={tl("Game rating {r} of 100 (tier {t})", { r: fmtDec(r), t })}
+    >
+      {fmtDec(r)}
+      <span className="font-semibold">{t}</span>
+    </span>
+  );
+};
+

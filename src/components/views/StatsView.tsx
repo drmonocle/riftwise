@@ -103,8 +103,10 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
   useChampionNames();
   useDDragon();
   const route = useHubRoute();
-  const statsMeta = useLoad<StatsMeta>(loadStatsMeta, []);
-  const hubMeta = useLoad(loadHubMeta, []);
+  const needsStatsMeta = route.kind === "champions" || route.kind === "tiers";
+  const needsHubMeta = route.kind === "tournaments";
+  const statsMeta = useLoad<StatsMeta | null>(() => (needsStatsMeta ? loadStatsMeta() : Promise.resolve(null)), [needsStatsMeta]);
+  const hubMeta = useLoad(() => (needsHubMeta ? loadHubMeta() : Promise.resolve(null)), [needsHubMeta]);
   const pageTitle = useCurrentTitle(route);
   const scroller = useRef<HTMLDivElement>(null);
   // the open group's pages are one sideways row on phones: keep the open page in view

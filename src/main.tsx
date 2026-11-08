@@ -30,14 +30,29 @@ if (IS_WEB && "serviceWorker" in navigator) {
 // page then finds them already on their way (same module, same file cache). On a slow phone connection each of
 // those waits is a round trip of up to half a second, plus the download.
 const HUB_FILE_DIR: Partial<Record<string, string>> = { player: "player", team: "team", event: "event", match: "game", champ: "champ" };
+const HUB_KIND_PREFETCH: Partial<Record<string, string[]>> = {
+  home: ["hub/home.json", "hub/meta.json", "hub/ratings.json", "hub/leagues.json", "hub/weekly.json"],
+  tournaments: ["hub/meta.json"],
+  champions: ["meta.json"],
+  tiers: ["meta.json"],
+  rankings: ["hub/ratings.json"],
+  weekly: ["hub/weekly.json"],
+  records: ["hub/records.json"],
+  titles: ["hub/titles.json"],
+  leagues: ["hub/leagues.json"],
+  patches: ["hub/patches.json"],
+};
 let picturePage = false; // a page that shows champion pictures straight away
 if (IS_WEB && STARTED_ON_HUB) {
   import("./components/views/StatsView").catch(() => {}); // a failure shows (and retries) where the page loads it
   const r = currentHubRoute();
   preloadPageCode(r.kind); // each stats page is its own download (pageCode.ts)
   const dir = HUB_FILE_DIR[r.kind];
-  prefetch(["meta.json", "hub/meta.json", ...(dir && "slug" in r ? [`hub/${dir}/${r.slug}.json`] : [])]);
-  picturePage = !!dir;
+  const files = [...(HUB_KIND_PREFETCH[r.kind] || []), ...(dir && "slug" in r ? [`hub/${dir}/${r.slug}.json`] : [])];
+  if (files.length > 0) prefetch(files);
+  picturePage = !!dir || r.kind === "home" || r.kind === "champions" || r.kind === "tiers";
+} else if (IS_WEB) {
+  import("./components/views/LiveView").catch(() => {});
 }
 
 // The language is loaded before the first render, so every screen can simply call tl().

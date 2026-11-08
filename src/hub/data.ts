@@ -2,7 +2,8 @@
  * Stats hub data: page files and the search lists, from the stats build (rebuilt when the database changes) (stats/<version>/hub/).
  * Every page fetches only its own small file.
  */
-import { load, MissingFile } from "../stats";
+import { load, loadText, MissingFile, statsFileUrl } from "../stats";
+import { IS_WEB, SITE_URL } from "../platform";
 import { searchAlias } from "../searchAliases";
 import { normalizeTeamCode } from "../helpers";
 import type {
@@ -589,3 +590,151 @@ export const loadRatings = (): Promise<import("./types").HubRatings> => {
   }
   return ratingsLive.p;
 };
+
+/** Starting player for a role on a team (`t.starters` first, else most-played on the latest roster). */
+export function teamStarter(t: HubTeam, role: string): { n: string; u: string } | null {
+  const st = t.starters?.find((x) => x[2] === role);
+  if (st && st[1]) return { n: st[0], u: st[1] };
+  const p = (t.roster[0]?.p || []).filter((x) => x.r === role && x.u).sort((a, b) => b.g - a.g)[0];
+  return p && p.u ? { n: p.n, u: p.u } : null;
+}
+
+type DraftSide = "b" | "r";
+/** Tournament draft order: who acts and whether it's a ban or a pick. */
+export const DRAFT_ORDER: { side: DraftSide; ban: boolean }[] = [
+  ...(["b", "r", "b", "r", "b", "r"] as DraftSide[]).map((side) => ({ side, ban: true })),
+  ...(["b", "r", "r", "b", "b", "r"] as DraftSide[]).map((side) => ({ side, ban: false })),
+  ...(["r", "b", "r", "b"] as DraftSide[]).map((side) => ({ side, ban: true })),
+  ...(["r", "b", "b", "r"] as DraftSide[]).map((side) => ({ side, ban: false })),
+];
+
+export interface PastGame {
+  blue: string;
+  red: string;
+  slots: (string | null)[];
+}
+
+export const packSlots = (slots: (string | null)[]) => (slots.some((s) => s) ? slots.map((s) => s || "").join(",") : "");
+export const packHistory = (h: PastGame[]) => h.map((g) => `${g.blue}~${g.red}~${g.slots.map((s) => s || "").join(",")}`).join(";");
+
+export interface GameDraftInput {
+  blueBans?: (string | null | undefined)[];
+  redBans?: (string | null | undefined)[];
+  bluePicks?: (string | null | undefined)[];
+  redPicks?: (string | null | undefined)[];
+}
+
+/** Maps a game's Blue/Red bans & picks into the 20 tournament-order Draft Board slots. */
+export function slotsFromGameDraft(g: GameDraftInput): (string | null)[] {
+  const out: (string | null)[] = DRAFT_ORDER.map(() => null);
+  let bb = 0;
+  let rb = 0;
+  let bp = 0;
+  let rp = 0;
+  DRAFT_ORDER.forEach((o, i) => {
+    if (o.side === "b" && o.ban) out[i] = g.blueBans?.[bb++]?.trim() || null;
+    else if (o.side === "r" && o.ban) out[i] = g.redBans?.[rb++]?.trim() || null;
+    else if (o.side === "b" && !o.ban) out[i] = g.bluePicks?.[bp++]?.trim() || null;
+    else if (o.side === "r" && !o.ban) out[i] = g.redPicks?.[rp++]?.trim() || null;
+  });
+  return out;
+}
+
+export interface GameDraftQueryInput {
+  blueSlug: string;
+  redSlug: string;
+  period?: string;
+  gameNum?: number;
+  current?: GameDraftInput | null;
+  earlier?: {
+    blueSlug: string;
+    redSlug: string;
+    draft: GameDraftInput;
+  }[];
+}
+
+/**
+ * Builds the `/stats/draft?...` query string that loads a specific game (`gameNum`) onto the Draft Board:
+ * - `teams=blueSlug,redSlug` (matching the Blue and Red sides of that game)
+ * - `g=gameNum` (which game of the series is loaded on the board)
+ * - `d=<20-slot-csv>` (that game's bans and picks loaded directly onto the board)
+ * - `u=<earlier-picks-csv>` (champions picked in games 1..gameNum-1 locked in Fearless mode)
+ * - `h=<PastGame-history>` (each earlier game's Blue/Red teams and picks shown in the Fearless history)
+ */
+export function buildGameDraftQuery(input: GameDraftQueryInput): string {
+  const parts: string[] = [`teams=${encodeURIComponent(input.blueSlug)},${encodeURIComponent(input.redSlug)}`];
+  if (input.period && input.period !== "all") parts.push(`p=${encodeURIComponent(input.period)}`);
+  if (input.gameNum != null && input.gameNum >= 1) parts.push(`g=${encodeURIComponent(String(input.gameNum))}`);
+  if (input.current) {
+    const d = packSlots(slotsFromGameDraft(input.current));
+    if (d) parts.push(`d=${encodeURIComponent(d)}`);
+  }
+  if (input.earlier && input.earlier.length > 0) {
+    const usedSet = new Set<string>();
+    const history: PastGame[] = [];
+    for (const eg of input.earlier) {
+      const slots = slotsFromGameDraft(eg.draft);
+      for (const c of [...(eg.draft.bluePicks || []), ...(eg.draft.redPicks || [])]) {
+        if (c && c.trim()) usedSet.add(c.trim());
+      }
+      if (slots.some((s) => s)) {
+        history.push({ blue: eg.blueSlug, red: eg.redSlug, slots });
+      }
+    }
+    if (usedSet.size > 0) parts.push(`u=${encodeURIComponent([...usedSet].join(","))}`);
+    if (history.length > 0) parts.push(`h=${encodeURIComponent(packHistory(history))}`);
+  }
+  return parts.join("&");
+}
+
+/** Save text as a file (web), or open the file's address in the browser (desktop app). */
+export async function saveCsv(name: string, text: string) {
+  const url = URL.createObjectURL(new Blob(["\ufeff" + text], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+/** One tournament's CSV: downloaded on the web, opened in the browser from the desktop app. */
+export async function downloadEventCsv(slug: string, onOpenUrl?: (url: string) => void) {
+  if (!IS_WEB && onOpenUrl) {
+    onOpenUrl(await statsFileUrl(`hub/csv/${slug}.csv`));
+    return;
+  }
+  await saveCsv(`${slug}.csv`, await loadText(`hub/csv/${slug}.csv`));
+}
+
+/** Join multiple tournament CSV files in the browser (up to 6 at a time), keeping the header row once. */
+export async function joinCsvs(slugs: string[], onProgress?: (done: number, total: number) => void): Promise<string> {
+  const raw = new Array<string>(slugs.length).fill("");
+  let next = 0;
+  let done = 0;
+  const worker = async () => {
+    while (next < slugs.length) {
+      const idx = next++;
+      raw[idx] = await loadText(`hub/csv/${slugs[idx]}.csv`);
+      done++;
+      onProgress?.(done, slugs.length);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(6, slugs.length) }, () => worker()));
+  const parts: string[] = [];
+  for (const text of raw) {
+    if (!text) continue;
+    parts.push(parts.length === 0 ? text.replace(/\n+$/, "") : text.slice(text.indexOf("\n") + 1).replace(/\n+$/, ""));
+  }
+  return parts.length ? parts.join("\n") + "\n" : "";
+}
+
+/** A whole event's CSV (Worlds = Play-In + Main Event): its stages' files in one, the header once. */
+export async function downloadStagesCsv(name: string, slugs: string[], onOpenUrl?: (url: string) => void) {
+  if (!IS_WEB && onOpenUrl) {
+    onOpenUrl(`${SITE_URL}stats/data`);
+    return;
+  }
+  const csv = await joinCsvs(slugs).catch(() => "");
+  if (csv) await saveCsv(`${name}.csv`, csv);
+}
+

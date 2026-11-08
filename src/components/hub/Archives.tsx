@@ -5,9 +5,8 @@ import { champName } from "../../champions";
 import { loadPlayerGames, loadPlayerItems, loadTeamSeries, prettySlug } from "../../hub/data";
 import type { PlayerGameRow, TeamSeriesRow } from "../../hub/types";
 import { isFinishedItem } from "../../hub/ddragon";
-import { ratingTextClass } from "./BestPage";
 import { SectionCard } from "./BroadcastCard";
-import { ChampIcon, EventLink, Failed, fmtDate, HubLink, isFresh, ItemIcon, Loading, RevealButton, Section, TeamLink, useHidden, useLoad } from "./ui";
+import { ChampIcon, EventLink, Failed, fmtDate, HubLink, isFresh, ItemIcon, Loading, ratingTextClass, RevealButton, Section, TeamLink, useHidden, useLoad } from "./ui";
 
 const PAGE = 50;
 const select = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text";

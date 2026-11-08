@@ -6,7 +6,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MonitorPlay } from "lucide-react";
-import { toBlob } from "html-to-image";
 import { tl, tc, locale, roleName, fmtDec, stageLabel, eventTitle } from "../../i18n";
 import { IS_WEB } from "../../platform";
 import { ChampIcon } from "./ui";
@@ -582,6 +581,7 @@ export const BroadcastCardButton: React.FC<{ data: () => CardData; name: string;
           new Promise((r) => setTimeout(r, 4000)),
         ]);
         if (!ref.current) throw new Error("no card");
+        const { toBlob } = await import("html-to-image");
         const bg = getComputedStyle(document.documentElement).getPropertyValue("--rw-bg").trim() || "#120f2b";
         const blob = await toBlob(ref.current.firstElementChild as HTMLElement, { width: W, height: H, pixelRatio: 1, backgroundColor: bg, skipFonts: true });
         if (!blob) throw new Error("no image");

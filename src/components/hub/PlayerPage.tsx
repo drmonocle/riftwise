@@ -20,10 +20,9 @@ import { BroadcastCardButton, SectionCard, playerCareerCardData } from "./Broadc
 import { PlayerRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
 import { localCountry } from "./CountryFlag";
-import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerLink, PlayerPhoto, RevealButton, Section, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink } from "./ui";
+import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerLink, PlayerPhoto, ratingTextClass, RevealButton, Section, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink } from "./ui";
 import { EntityHero, heroBtn, heroLink } from "./EntityHero";
 import { useTeamLogo } from "../../hub/riotCatalog";
-import { ratingTextClass } from "./BestPage";
 import { KdaBar, PlayerOpponents, WinBar } from "./OpponentChart";
 import { STable } from "../STable";
 

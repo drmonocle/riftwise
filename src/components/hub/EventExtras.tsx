@@ -18,10 +18,10 @@ import {
   Stat,
   TeamLink,
   fmtNum,
+  RatingBadge,
   td,
   th,
 } from "./ui";
-import { RatingBadge } from "./BestPage";
 import { localCountry } from "./CountryFlag";
 import { STable } from "../STable";
 import { BroadcastCardButton, SectionCard, type CardData } from "./BroadcastCard";

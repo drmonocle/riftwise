@@ -8,8 +8,8 @@ import { createPortal } from "react-dom";
 import { ClipboardList, X } from "lucide-react";
 import type { Match } from "../../types";
 import { tl, tc, roleName } from "../../i18n";
-import { loadHubTeam, loadRatings, loadTeamSeries } from "../../hub/data";
-import type { HubTeam, TeamSeriesRow } from "../../hub/types";
+import { loadHubTeam, loadRatings, loadTeamSeries, teamStarter } from "../../hub/data";
+import type { TeamSeriesRow } from "../../hub/types";
 import { pct } from "../../hub/winChance";
 import { navigateHub } from "../../hub/route";
 import { Change } from "./RankingsPage";
@@ -17,15 +17,10 @@ import { chancesOf, prepLines, rankText, type Side } from "./PrepPage";
 import { BroadcastCardButton, prepOverviewCard } from "./BroadcastCard";
 import { fmtDate, isFresh, Loading, RevealButton, useHidden, useLoad } from "./ui";
 
+export { teamStarter };
+
 const ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"] as const;
 const ROLE_SHORT: Record<string, string> = { Top: "TOP", Jungle: "JGL", Mid: "MID", Bot: "BOT", Support: "SUP" };
-
-export function teamStarter(t: HubTeam, role: string): { n: string; u: string } | null {
-  const st = t.starters?.find((x) => x[2] === role);
-  if (st && st[1]) return { n: st[0], u: st[1] };
-  const p = (t.roster[0]?.p || []).filter((x) => x.r === role && x.u).sort((a, b) => b.g - a.g)[0];
-  return p && p.u ? { n: p.n, u: p.u } : null;
-}
 
 const lastSeries = (s: Side, n: number) => [...s.series].sort((x, y) => (x[0] < y[0] ? 1 : -1)).slice(0, n);
 

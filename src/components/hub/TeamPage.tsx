@@ -17,8 +17,7 @@ import { PeriodPicker, QuickPeriods, TeamPeriodStats, playstyleTags } from "./Pe
 import { PeriodKey, inPeriod, periodOptions, teamAgg, teamRowRef } from "../../hub/period";
 import { TeamRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
-import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, fmtUsdShort, HubLink, isFresh, Loading, Page, PlayerLink, PlayerPhoto, RevealButton, Section, Stat, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink, FollowFeeds } from "./ui";
-import { ratingTextClass } from "./BestPage";
+import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, fmtUsdShort, HubLink, isFresh, Loading, Page, PlayerLink, PlayerPhoto, ratingTextClass, RevealButton, Section, Stat, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink, FollowFeeds } from "./ui";
 import { Sparkline } from "./Sparkline";
 import { TeamOpponentsChart, WinBar } from "./OpponentChart";
 import { STable } from "../STable";

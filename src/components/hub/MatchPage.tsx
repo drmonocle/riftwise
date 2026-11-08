@@ -3,18 +3,16 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ClipboardCopy, PlayCircle, Clock, Crown, Star, Swords } from "lucide-react";
 import { tl, tc, tk, roleName, locale, stageLabel, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
-import { loadHubSeries, prettySlug } from "../../hub/data";
+import { buildGameDraftQuery, type GameDraftInput, loadHubSeries, prettySlug } from "../../hub/data";
 import type { GamePlayer, HubGame, HubSeries, SideStats } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
-import { RatingBadge } from "./BestPage";
 import { RatingBadge as PlayerRatingBadge, fmtRating, useRatingFile } from "./PlayerRating";
 import { rateLine } from "../../hub/playerRating";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { BroadcastCardButton, gameCardData, SectionCard, seriesCardData } from "./BroadcastCard";
-import { buildGameDraftQuery, type GameDraftInput } from "./DraftPage";
 import { RiotGamesFor, RiotMatchPage } from "./RiotMatch";
 import { RIOT_PREFIX } from "../../hub/riotMatch";
-import { card, ChampIcon, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, OeCredit, Page, PlayerLink, RevealButton, RuneIcon, SpellIcon, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
+import { card, ChampIcon, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, OeCredit, Page, PlayerLink, RatingBadge, RevealButton, RuneIcon, SpellIcon, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
 import { heroBtn } from "./EntityHero";
 
 export function extractHubGameDraft(g: HubGame): GameDraftInput {
