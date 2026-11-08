@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { nameFits } from "../hub/popular";
+import { cleanPopularTitle, nameFits } from "../hub/popular";
 
 // The stats home's "Most viewed this week": pages are counted once a day per browser, a few at a time, and a name
 // only shows when it is that page's own name.
@@ -15,6 +15,9 @@ describe("most viewed names", () => {
     expect(nameFits("faker", "Buy cheap coins")).toBe(false);
     expect(nameFits("faker", "")).toBe(false);
     expect(nameFits("kaisa", "카이사")).toBe(false); // a name in another language: champion pages count the English one
+    expect(cleanPopularTitle("Neon eSports (Brazilian Team)")).toBe("Neon eSports");
+    expect(cleanPopularTitle("LYON (2024 American Team)")).toBe("LYON");
+    expect(cleanPopularTitle("Worlds 2026")).toBe("Worlds 2026");
   });
 });
 

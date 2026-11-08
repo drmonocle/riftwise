@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "0.8.52" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "0.8.53" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -59,6 +59,48 @@ func setPublic(u string) {
 // Path segment -> seo file kind
 var kinds = map[string]string{"team": "team", "player": "player", "tournament": "event", "match": "game", "champion": "champ", "league": "league"}
 var kindPath = map[string]string{"team": "team", "player": "player", "event": "tournament", "game": "match", "champ": "champion", "league": "league"}
+var legacyEntityPath = map[string]string{"event": "tournament", "champ": "champion", "game": "match"}
+
+var playerSlugAliases = map[string]string{
+	"thebausffs": "baus",
+	"bausffs":    "baus",
+	"thebaus":    "baus",
+	"rekky":      "rekkles",
+}
+
+var earlyWorldsAliases = map[string]string{
+	"worlds-2011": "worlds-season-1",
+	"worlds-2012": "worlds-season-2",
+	"worlds-2013": "worlds-season-3",
+}
+
+func resolveAliasSlug(kind, slug string) string {
+	switch kind {
+	case "player":
+		return playerSlugAliases[slug]
+	case "event":
+		s := slug
+		for _, p := range [][2]string{
+			{"lol-world-championship-", "worlds-"},
+			{"world-championship-", "worlds-"},
+			{"lol-mid-season-invitational-", "msi-"},
+			{"mid-season-invitational-", "msi-"},
+			{"first-stand-tournament-", "first-stand-"},
+		} {
+			if rest, ok := strings.CutPrefix(s, p[0]); ok && len(rest) >= 4 && isYear(rest[:4]) {
+				s = p[1] + rest
+				break
+			}
+		}
+		if w, ok := earlyWorldsAliases[s]; ok {
+			s = w
+		}
+		if s != slug {
+			return s
+		}
+	}
+	return ""
+}
 
 // Every build has these; league.tsv only exists in builds from 2026-10 on, so it's optional.
 var requiredKinds = []string{"team", "player", "event", "game", "champ"}
@@ -540,6 +582,28 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, to, http.StatusMovedPermanently)
 		return
 	}
+	if len(parts) == 1 && parts[0] == "compare" {
+		to := langRoot + "stats/compare"
+		q := r.URL.Query()
+		if q.Get("teams") == "" && q.Get("players") == "" && (q.Get("a") != "" || q.Get("b") != "") {
+			to += "?teams=" + q.Get("a") + "," + q.Get("b")
+			if p := q.Get("p"); p != "" {
+				to += "&p=" + p
+			}
+		} else if r.URL.RawQuery != "" {
+			to += "?" + r.URL.RawQuery
+		}
+		http.Redirect(w, r, to, http.StatusMovedPermanently)
+		return
+	}
+	if canon, ok := legacyEntityPath[parts[0]]; ok && (len(parts) == 2 || len(parts) == 3) && parts[1] != "" {
+		to := langRoot + canon + "/" + strings.ToLower(parts[1]) + yearSuffix(parts)
+		if r.URL.RawQuery != "" {
+			to += "?" + r.URL.RawQuery
+		}
+		http.Redirect(w, r, to, http.StatusMovedPermanently)
+		return
+	}
 	status, title, desc, index, og, summary := http.StatusOK, "", "", true, "", ""
 	var about map[string]any
 	var extra *intlPage
@@ -633,8 +697,15 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		e, ok := s.pages[kind][slug]
 		to := s.alias[kind][slug]
 		s.mu.RUnlock()
-		if !ok && to != "" && to != slug && (kind == "team" || kind == "league") {
-			http.Redirect(w, r, publicPath+parts[0]+"/"+to+yearSuffix(parts), http.StatusMovedPermanently)
+		if !ok && to == "" {
+			to = resolveAliasSlug(kind, slug)
+		}
+		if !ok && to != "" && to != slug && (kind == "team" || kind == "league" || kind == "event" || kind == "player") {
+			target := langRoot + parts[0] + "/" + to + yearSuffix(parts)
+			if r.URL.RawQuery != "" {
+				target += "?" + r.URL.RawQuery
+			}
+			http.Redirect(w, r, target, http.StatusMovedPermanently)
 			return
 		}
 		if !ok && kind == "league" {

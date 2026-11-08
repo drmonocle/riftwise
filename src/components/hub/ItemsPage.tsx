@@ -61,7 +61,12 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
   usePageTitle(tl("Item history"));
   useDDragon();
   const q = new URLSearchParams(query || "");
-  const picks: Picks = { player: q.get("player") || "", item: q.get("item") || "", champ: q.get("champ") || "", year: q.get("year") || "" };
+  const picks: Picks = {
+    player: prettySlug(q.get("player") || ""),
+    item: prettySlug(q.get("item") || ""),
+    champ: prettySlug(q.get("champ") || ""),
+    year: q.get("year") || "",
+  };
   const { player, item, champ, year } = picks;
   const queryWith = (patch: Partial<Record<keyof Picks, string | undefined>>) => {
     const next = new URLSearchParams(query || "");

@@ -59,7 +59,12 @@ const QUERY_SECTIONS: HubSection[] = ["champions", "finder", "draft", "best", "c
 const ENTITY_PATH: Record<HubEntity, string> = {
   team: "team", player: "player", event: "tournament", match: "match", champ: "champion", league: "league",
 };
-const PATH_ENTITY: Record<string, HubEntity> = Object.fromEntries(Object.entries(ENTITY_PATH).map(([k, v]) => [v, k as HubEntity]));
+const PATH_ENTITY: Record<string, HubEntity> = {
+  ...Object.fromEntries(Object.entries(ENTITY_PATH).map(([k, v]) => [v, k as HubEntity])),
+  event: "event",
+  champ: "champ",
+  game: "match",
+};
 
 const ROOT: string = (import.meta.env.BASE_URL || "/").replace(/\/?$/, "/");
 
@@ -97,6 +102,7 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
   // the site's home is the stats front page (0.8.0); /stats is its old address
   if (parts.length === 0) return HUB_HOME;
   if (parts[0] === "about" && parts.length === 1) return { kind: "aboutme" };
+  if (parts[0] === "compare" && parts.length === 1) return { kind: "compare", ...parseCompare(search) };
   if (parts[0] === "stats") {
     if (parts.length === 1) return HUB_HOME;
     if ((SECTIONS as string[]).includes(parts[1])) {
@@ -137,6 +143,11 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
 /** ?teams=a,b&p=y2026 -> who is compared over which period */
 function parseCompare(search: string): { mode?: "team" | "player"; a?: string; b?: string; period?: string; more?: string[] } {
   const q = new URLSearchParams(search);
+  if (!q.has("players") && !q.has("teams") && (q.has("a") || q.has("b"))) {
+    const a = (q.get("a") || "").trim().toLowerCase() || undefined;
+    const b = (q.get("b") || "").trim().toLowerCase() || undefined;
+    return { mode: "team", a, b, period: q.get("p") || undefined };
+  }
   const mode = q.has("players") ? "player" : q.has("teams") ? "team" : undefined;
   if (!mode) return {};
   const [a, b, ...more] = (q.get(mode === "player" ? "players" : "teams") || "").split(",").map((x) => x.trim().toLowerCase());

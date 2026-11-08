@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { hubPath, parseHubPath } from "../hub/route";
+import { resolveEventSlug, resolveLeagueSlug } from "../hub/data";
 import { rateLine, profile, type RatingFile } from "../hub/playerRating";
 import { filterBuiltSeasons } from "../components/hub/Ranks";
 import { champPairShortcuts, matchupShortcuts, pageShortcuts } from "../components/hub/HubSearch";
@@ -36,6 +37,16 @@ describe("page tabs in the address", () => {
     expect(hubPath({ kind: "teams", query: "region=Korea" })).toBe("/stats/teams?region=Korea");
     expect(parseHubPath("/stats/data", "?year=2018")).toEqual({ kind: "data", query: "year=2018" });
     expect(hubPath({ kind: "data", query: "league=lck&year=2026" })).toBe("/stats/data?league=lck&year=2026");
+  });
+  it("resolves legacy and alternate entity/compare URLs and slug aliases", () => {
+    expect(parseHubPath("/event/worlds-2026-main-event", "")).toEqual({ kind: "event", slug: "worlds-2026-main-event" });
+    expect(parseHubPath("/champ/ahri", "")).toEqual({ kind: "champ", slug: "ahri" });
+    expect(parseHubPath("/compare", "?a=t1&b=geng")).toEqual({ kind: "compare", mode: "team", a: "t1", b: "geng" });
+    expect(resolveLeagueSlug("worlds")).toBe("world-championship");
+    expect(resolveLeagueSlug("lck")).toBe("lol-champions-korea");
+    expect(resolveEventSlug("world-championship-2016")).toBe("worlds-2016");
+    expect(resolveEventSlug("lol-world-championship-2013")).toBe("worlds-season-3");
+    expect(resolveEventSlug("mid-season-invitational-2024")).toBe("msi-2024");
   });
 });
 

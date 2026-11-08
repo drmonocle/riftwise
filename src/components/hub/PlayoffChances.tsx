@@ -134,7 +134,7 @@ const CopyPlayoffOddsPost: React.FC<{
     for (const r of rows) {
       lines.push(r);
     }
-    lines.push(`https://riftwise.gg/event/${slug}`);
+    lines.push(`https://riftwise.gg/tournament/${slug}`);
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {

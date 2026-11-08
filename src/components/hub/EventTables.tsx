@@ -7,6 +7,7 @@ import type { EventPlayer, EventTeamStats, HubEvent } from "../../hub/types";
 import { ChampIcon, HubLink, OeCredit, PlayerLink, Section, TeamLink, fmtNum } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 import { Column, SortTable, per } from "./SortTable";
+import { WinBar, KdaBar } from "./OpponentChart";
 
 const ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"];
 const pct = (n: number | null) => (n === null ? "–" : `${Math.round(n * 100)}%`);
@@ -54,8 +55,13 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
     { key: "t", label: tl("Team"), value: (p) => p.t.toLowerCase(), render: (p) => <span className="max-w-[8rem] truncate inline-block align-bottom"><TeamLink name={p.t} u={p.tu} /></span> },
     { key: "r", label: tl("Role"), value: (p) => ROLES.indexOf(p.r), render: (p) => <span className="text-rw-muted">{roleName(p.r)}</span> },
     { key: "g", label: tl("Games"), value: (p) => p.g },
-    { key: "wr", label: tl("Win %"), value: (p) => per(p.w, p.g, 3), render: (p) => pct(per(p.w, p.g, 3)) },
-    { key: "kda", label: tl("KDA"), value: (p) => per(p.k + p.a, Math.max(p.d, 1), 2) },
+    { key: "wr", label: tl("Win %"), value: (p) => per(p.w, p.g, 3), render: (p) => <WinBar w={p.w} g={p.g} /> },
+    {
+      key: "kda",
+      label: tl("KDA"),
+      value: (p) => per(p.k + p.a, Math.max(p.d, 1), 2),
+      render: (p) => <KdaBar kda={per(p.k + p.a, Math.max(p.d, 1), 2) ?? 0} />,
+    },
     { key: "k", label: "K", title: tl("Kills per game"), value: (p) => per(p.k, p.g) },
     { key: "d", label: "D", title: tl("Deaths per game"), value: (p) => per(p.d, p.g) },
     { key: "a", label: "A", title: tl("Assists per game"), value: (p) => per(p.a, p.g) },
@@ -98,7 +104,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
               .sort((a, b) => (per(b.k + b.a, Math.max(b.d, 1), 2) || 0) - (per(a.k + a.a, Math.max(a.d, 1), 2) || 0))
               .slice(0, 6)
               .map((p, idx) => `#${idx + 1} ${p.n} (${p.t}, ${roleName(p.r)}): ${per(p.k + p.a, Math.max(p.d, 1), 2) ?? "–"} KDA · ${pct(per(p.w, p.g, 3))}`)}
-            url={`https://riftwise.gg/event/${e.u}`}
+            url={`https://riftwise.gg/tournament/${e.u}/stats`}
           />
           <SectionCard
             section={tl("Player stats")}
@@ -176,7 +182,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
   const all: Column<EventTeamStats>[] = [
     { key: "t", label: tl("Team"), value: (t) => t.t.toLowerCase(), render: (t) => <TeamLink name={t.t} u={t.u} /> },
     { key: "g", label: tl("Games"), value: (t) => t.g },
-    { key: "wr", label: tl("Win %"), value: (t) => per(t.w, t.g, 3), render: (t) => pct(per(t.w, t.g, 3)) },
+    { key: "wr", label: tl("Win %"), value: (t) => per(t.w, t.g, 3), render: (t) => <WinBar w={t.w} g={t.g} /> },
     { key: "min", label: tl("Avg game"), value: (t) => per(t.min, t.g), render: (t) => tl("{n} min", { n: per(t.min, t.g) ?? "–" }) },
     { key: "kd", label: "K:D", title: tl("Kills per death"), value: (t) => per(t.k, Math.max(t.d, 1), 2) },
     { key: "k", label: tl("Kills"), title: tl("Kills per game"), value: (t) => per(t.k, t.g) },
@@ -230,7 +236,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
               .sort((a, b) => (per(b.w, b.g, 3) || 0) - (per(a.w, a.g, 3) || 0))
               .slice(0, 6)
               .map((t, idx) => `#${idx + 1} ${t.t}: ${t.w}-${t.g - t.w} (${pct(per(t.w, t.g, 3))}) · ${per(t.min, t.g) ?? "–"}m`)}
-            url={`https://riftwise.gg/event/${e.u}`}
+            url={`https://riftwise.gg/tournament/${e.u}/stats`}
           />
           <SectionCard
             section={tl("Team stats")}

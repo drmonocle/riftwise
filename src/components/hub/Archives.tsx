@@ -180,7 +180,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
               title={`${aName} vs ${bName}`}
               sub={`${aName} ${wa} – ${rows.length - wa} ${bName} · ${tl("Games {a}–{b}", { a: ga, b: gb })}`}
               rows={rows.slice(0, 5).map((r) => `${aName} ${r[3]}–${r[4]} ${bName} · ${r[5]} (${fmtDate(r[0])})`)}
-              url={`https://riftwise.gg/compare?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`}
+              url={`https://riftwise.gg/stats/compare?teams=${encodeURIComponent(a)},${encodeURIComponent(b)}`}
             />
             <SectionCard
               section={tl("Every series between them")}

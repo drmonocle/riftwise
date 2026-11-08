@@ -279,6 +279,24 @@ func TestUnknownAndOldNames(t *testing.T) {
 	if w.Code != 301 || w.Header().Get("Location") != "/league/world-championship" {
 		t.Errorf("league short name: %d %q", w.Code, w.Header().Get("Location"))
 	}
+	if w := get(s, "/riftwise/zh-cn/league/worlds"); w.Code != 301 || w.Header().Get("Location") != "/zh-cn/league/world-championship" {
+		t.Errorf("localized league short name: %d %q", w.Code, w.Header().Get("Location"))
+	}
+	if w := get(s, "/riftwise/event/worlds-2025"); w.Code != 301 || w.Header().Get("Location") != "/tournament/worlds-2025" {
+		t.Errorf("legacy event path: %d %q", w.Code, w.Header().Get("Location"))
+	}
+	if w := get(s, "/riftwise/compare?a=t1&b=geng"); w.Code != 301 || w.Header().Get("Location") != "/stats/compare?teams=t1,geng" {
+		t.Errorf("legacy compare path: %d %q", w.Code, w.Header().Get("Location"))
+	}
+	if w := get(s, "/riftwise/tournament/world-championship-2016"); w.Code != 301 || w.Header().Get("Location") != "/tournament/worlds-2016" {
+		t.Errorf("event alias: %d %q", w.Code, w.Header().Get("Location"))
+	}
+	if w := get(s, "/riftwise/tournament/worlds-2013"); w.Code != 301 || w.Header().Get("Location") != "/tournament/worlds-season-3" {
+		t.Errorf("early worlds alias: %d %q", w.Code, w.Header().Get("Location"))
+	}
+	if w := get(s, "/riftwise/player/thebausffs"); w.Code != 301 || w.Header().Get("Location") != "/player/baus" {
+		t.Errorf("player alias: %d %q", w.Code, w.Header().Get("Location"))
+	}
 	if w := get(s, "/riftwise/stats/tournaments/2019"); w.Code != 200 || !strings.Contains(w.Body.String(), "in 2019") {
 		t.Errorf("tournaments of a year: %d", w.Code)
 	}

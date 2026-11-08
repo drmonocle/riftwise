@@ -34,6 +34,7 @@ import { EntityHero, heroBtn } from "./EntityHero";
 import { STable } from "../STable";
 
 import { BroadcastCardButton, SectionCard, champCardData } from "./BroadcastCard";
+import { WinBar, KdaBar } from "./OpponentChart";
 
 export const ChampPage: React.FC<{ slug: string }> = ({ slug }) => {
   const state = useLoad(() => loadHubChamp(slug), [slug]);
@@ -190,7 +191,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               <HubLink to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}` }} className={heroBtn()}>
                 {tl("Game finder")}
               </HubLink>
-              <HubLink to={{ kind: "items", query: `champ=${encodeURIComponent(c.name)}` }} className={heroBtn()}>
+              <HubLink to={{ kind: "items", query: `champ=${prettySlug(c.name)}` }} className={heroBtn()}>
                 {tl("Item history")}
               </HubLink>
               <BroadcastCardButton hero data={() => champCardData(c, champName(c.name))} name={`${c.u}-pro-play`} label={tl("Overview card")} />
@@ -454,7 +455,9 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                       {g}
                     </HubLink>
                   </td>
-                  <td className={`${td} ${w / g >= 0.5 ? "text-rw-teal" : "text-rw-red"}`}>{pctOf(w, g)}</td>
+                  <td className={td} data-sort={g ? w / g : 0}>
+                    <WinBar w={w} g={g} />
+                  </td>
                   {muLane && (
                     <>
                       <td className={td} data-sort={gd ?? ""}>
@@ -521,7 +524,9 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     <ChampLink name={pc} size={16} />
                   </td>
                   <td className={`${td} text-rw-sub`}>{g}</td>
-                  <td className={`${td} ${w / g >= 0.5 ? "text-rw-teal" : "text-rw-red"}`}>{pctOf(w, g)}</td>
+                  <td className={td} data-sort={g ? w / g : 0}>
+                    <WinBar w={w} g={g} />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -593,8 +598,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     {p.g}
                   </HubLink>
                 </td>
-                <td className={`${td} text-rw-sub`}>{winRate(p.w, p.g)}</td>
-                <td className={`${td} text-rw-sub`}>{fmtN(p.kda)}</td>
+                <td className={td} data-sort={p.g ? p.w / p.g : 0}>
+                  <WinBar w={p.w} g={p.g} />
+                </td>
+                <td className={td} data-sort={p.kda}>
+                  <KdaBar kda={p.kda} />
+                </td>
               </tr>
             ))}
           </tbody>
@@ -659,7 +668,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     {r.it.map((it, j) => (
                       <HubLink
                         key={j}
-                        to={{ kind: "items", query: `item=${prettySlug(it)}&champ=${encodeURIComponent(c.name)}` }}
+                        to={{ kind: "items", query: `item=${prettySlug(it)}&champ=${prettySlug(c.name)}` }}
                         title={itemName(it)}
                       >
                         <ItemIcon name={it} size={18} />

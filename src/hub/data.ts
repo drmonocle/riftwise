@@ -42,15 +42,52 @@ export const loadAliases = () =>
     .then((a): Aliases => ({ team: a.team || {}, league: a.league || {} }))
     .catch((): Aliases => ({ team: {}, league: {} }));
 
+const LEAGUE_SLUG_ALIASES: Record<string, string> = {
+  worlds: "world-championship",
+  wc: "world-championship",
+  msi: "mid-season-invitational",
+  fst: "first-stand",
+  lck: "lol-champions-korea",
+  ogn: "lol-champions-korea",
+  lpl: "tencent-lol-pro-league",
+  lec: "lol-emea-championship",
+  "eu-lcs": "lol-emea-championship",
+  eulcs: "lol-emea-championship",
+  lcs: "league-of-legends-championship-series",
+  "na-lcs": "league-of-legends-championship-series",
+  nalcs: "league-of-legends-championship-series",
+  pcs: "pacific-championship-series",
+  vcs: "vietnam-championship-series",
+  cblol: "circuit-brazilian-league-of-legends",
+  ljl: "lol-japan-league",
+  lla: "liga-latinoamerica",
+  lco: "lol-circuit-oceania",
+  tcl: "turkish-championship-league",
+  lcl: "lol-continental-league",
+  lckc: "lck-challengers-league",
+  lckcl: "lck-challengers-league",
+  ldl: "lol-development-league",
+};
+export const resolveLeagueSlug = (slug: string): string => LEAGUE_SLUG_ALIASES[slug.toLowerCase()] || slug;
+
 /** A page file; for an old team slug or a league's short name ("lck", "worlds"), the current page's. */
 const withAlias =
   <T>(kind: keyof Aliases) =>
-  (slug: string): Promise<T> =>
-    load<T>(`hub/${kind}/${slug}.json`).catch(async (err) => {
+  (slug: string): Promise<T> => {
+    const first = kind === "league" ? resolveLeagueSlug(slug) : slug;
+    return load<T>(`hub/${kind}/${first}.json`).catch(async (err) => {
+      if (first !== slug) {
+        try {
+          return await load<T>(`hub/${kind}/${slug}.json`);
+        } catch {
+          // fall through to alias.json
+        }
+      }
       const to = (await loadAliases())[kind][slug.toLowerCase()];
-      if (to && to !== slug) return load<T>(`hub/${kind}/${to}.json`);
+      if (to && to !== first && to !== slug) return load<T>(`hub/${kind}/${to}.json`);
       throw err;
     });
+  };
 
 /**
  * The build's slug for a team address it doesn't have: an old team slug (alias.json), the name without its dashes
@@ -95,15 +132,29 @@ const PLAYER_SLUG_ALIASES: Record<string, string> = {
   thebaus: "baus",
   rekky: "rekkles",
 };
-const resolvePlayerSlug = (slug: string) => PLAYER_SLUG_ALIASES[slug.toLowerCase()] || slug;
+export const resolvePlayerSlug = (slug: string) => PLAYER_SLUG_ALIASES[slug.toLowerCase()] || slug;
+
+const EVENT_EARLY_WORLDS: Record<string, string> = {
+  "worlds-2011": "worlds-season-1",
+  "worlds-2012": "worlds-season-2",
+  "worlds-2013": "worlds-season-3",
+};
+export function resolveEventSlug(slug: string): string {
+  const s = slug
+    .toLowerCase()
+    .replace(/^(?:lol-)?world-championship-(\d{4}\b.*)/, "worlds-$1")
+    .replace(/^(?:lol-)?mid-season-invitational-(\d{4}\b.*)/, "msi-$1")
+    .replace(/^first-stand-tournament-(\d{4}\b.*)/, "first-stand-$1");
+  return EVENT_EARLY_WORLDS[s] || s;
+}
 
 export const loadHubTeam = (slug: string) => teamFile<HubTeam>("team", slug);
 export const loadHubPlayer = (slug: string) => load<HubPlayer>(`hub/player/${resolvePlayerSlug(slug)}.json`);
-export const loadHubEvent = (slug: string) => load<HubEvent>(`hub/event/${slug}.json`);
+export const loadHubEvent = (slug: string) => load<HubEvent>(`hub/event/${resolveEventSlug(slug)}.json`);
 export const loadHubSeries = (slug: string) => load<HubSeries>(`hub/game/${slug}.json`);
-export const loadHubChamp = (slug: string) => load<HubChamp>(`hub/champ/${slug}.json`);
+export const loadHubChamp = (slug: string) => load<HubChamp>(`hub/champ/${prettySlug(slug)}.json`);
 /** Every game scoreboard of a Worlds / MSI / First Stand event in one file (Worlds page facts). */
-export const loadEventLines = (slug: string) => load<import("./worldsFacts").EventLines>(`hub/lines/${slug}.json`);
+export const loadEventLines = (slug: string) => load<import("./worldsFacts").EventLines>(`hub/lines/${resolveEventSlug(slug)}.json`);
 export const loadEventsOfYear = (year: string) => load<EventListItem[]>(`hub/events/${year}.json`);
 
 // ── Search ────────────────────────────────────────────────────────────────
@@ -428,14 +479,28 @@ export const loadPlayerGames = (slug: string) => load<import("./types").PlayerGa
 export const loadTeamGames = (slug: string) => teamFile<import("./types").TeamGameRow[]>("teamgames", slug);
 const seasonCache = new Map<string, Promise<import("./types").LeagueSeason>>();
 export const loadLeagueSeason = (league: string, year: string): Promise<import("./types").LeagueSeason> => {
-  const key = `${league}/${year}`;
+  const first = resolveLeagueSlug(league);
+  const key = `${first}/${year}`;
   let p = seasonCache.get(key);
   if (!p) {
     if (seasonCache.size >= 32) seasonCache.clear();
-    p = load<import("./types").LeagueSeason>(`hub/leagueyear/${key}.json`).catch((e) => {
-      seasonCache.delete(key);
-      throw e;
-    });
+    p = load<import("./types").LeagueSeason>(`hub/leagueyear/${key}.json`)
+      .catch(async (e) => {
+        if (first !== league) {
+          try {
+            return await load<import("./types").LeagueSeason>(`hub/leagueyear/${league}/${year}.json`);
+          } catch {
+            // fall through
+          }
+        }
+        const to = (await loadAliases()).league[league.toLowerCase()];
+        if (to && to !== first && to !== league) return load<import("./types").LeagueSeason>(`hub/leagueyear/${to}/${year}.json`);
+        throw e;
+      })
+      .catch((e) => {
+        seasonCache.delete(key);
+        throw e;
+      });
     seasonCache.set(key, p);
   }
   return p;
@@ -483,9 +548,10 @@ export const loadPlayerItems = (slug: string): Promise<import("./types").PlayerI
   }
   return p;
 };
-export const loadHubItem = (slug: string) => load<import("./types").HubItem>(`hub/items/${slug}.json`);
-export const loadHubItemChamp = (item: string, champ: string) => load<import("./types").HubItemChamp>(`hub/items/${item}/c/${champ}.json`);
-export const loadHubItemYear = (item: string, year: string) => load<import("./types").HubItemYear>(`hub/items/${item}/y/${year}.json`);
+export const loadHubItem = (slug: string) => load<import("./types").HubItem>(`hub/items/${prettySlug(slug)}.json`);
+export const loadHubItemChamp = (item: string, champ: string) =>
+  load<import("./types").HubItemChamp>(`hub/items/${prettySlug(item)}/c/${prettySlug(champ)}.json`);
+export const loadHubItemYear = (item: string, year: string) => load<import("./types").HubItemYear>(`hub/items/${prettySlug(item)}/y/${year}.json`);
 export const loadItemIndex = () => load<import("./types").ItemIndexRow[]>("hub/items/index.json");
 /** top-league teams' ratings over the last 120 days: slug -> [date, rating][] */
 export const loadRatingsHistory = () => load<Record<string, [string, number][]>>("hub/ratings-history.json");

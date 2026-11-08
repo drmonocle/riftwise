@@ -25,6 +25,11 @@ export function nameFits(slug: string, title: string): boolean {
   return !!s && (s === slug || slug.startsWith(`${s}-`));
 }
 
+/** Strips Leaguepedia disambiguation notes ("Neon eSports (Brazilian Team)" -> "Neon eSports") after nameFits verified the slug. */
+export function cleanPopularTitle(title: string): string {
+  return (title || "").replace(/\s*\([^()]*\)\s*$/, "").trim();
+}
+
 let cache: Promise<PopularPage[]> | null = null;
 
 /** the most viewed pages (never fails: an empty list when the counter can't be reached) */
@@ -36,7 +41,9 @@ export function loadPopular(): Promise<PopularPage[]> {
         (j.pages || [])
           .map((p) => {
             const [kind, slug] = (p.page || "").split("/");
-            return KINDS.has(kind) && slug && nameFits(slug, p.title || "") ? { route: { kind, slug } as HubRoute, title: p.title, views: p.n } : null;
+            return KINDS.has(kind) && slug && nameFits(slug, p.title || "")
+              ? { route: { kind, slug } as HubRoute, title: cleanPopularTitle(p.title), views: p.n }
+              : null;
           })
           .filter((p): p is PopularPage => !!p),
       )

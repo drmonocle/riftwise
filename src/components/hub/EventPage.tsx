@@ -18,6 +18,7 @@ import { EventFacts, EventRosters, RegionalRecords } from "./EventExtras";
 import { EventStatsSection } from "./EventStats";
 import { PlayoffChances } from "./PlayoffChances";
 import { BroadcastCardButton, SectionCard, eventCardData } from "./BroadcastCard";
+import { WinBar } from "./OpponentChart";
 import { hubShareUrl, type HubRoute } from "../../hub/route";
 import {
   card,
@@ -381,8 +382,12 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                       <td className={`${td} max-w-[12rem] truncate`}>
                         <TeamLink name={t.t} u={t.u} />
                       </td>
-                      <td className={`${td} text-rw-sub`}>{resultsHidden ? "–" : `${t.sw}-${t.sg - t.sw}`}</td>
-                      <td className={`${td} text-rw-sub`}>{resultsHidden ? "–" : `${t.w}-${t.g - t.w}`}</td>
+                      <td className={`${td} text-rw-sub`} data-sort={t.sg ? t.sw / t.sg : 0}>
+                        {resultsHidden ? "–" : `${t.sw}-${t.sg - t.sw}`}
+                      </td>
+                      <td className={`${td} text-rw-sub`} data-sort={t.g ? t.w / t.g : 0}>
+                        {resultsHidden ? "–" : <WinBar w={t.w} g={t.g} showRecord />}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -716,6 +721,7 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
   const keys = (["kda", "kills", "csm", "dpm", "pool"] as const).filter((k) => e.leaders?.[k]?.length);
   const [k, setK] = useState<(typeof keys)[number]>(keys[0]);
   const rows = e.leaders?.[k] || [];
+  const maxV = Math.max(1, ...rows.map((r) => r.v || 0));
   return (
     <Section
       title={tl("Player leaders")}
@@ -751,18 +757,25 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
         ))}
       </div>
       <ol className="text-xs space-y-1">
-        {rows.map((r, i) => (
-          <li key={r.n + i} className="flex items-center justify-between gap-2 min-w-0">
-            <span className="truncate min-w-0">
-              <span className="text-rw-muted mr-1.5 tabular-nums">{i + 1}.</span>
-              <PlayerLink name={r.n} u={r.u} />
-              <span className="text-rw-muted"> · {r.t}</span>
-            </span>
-            <span className="shrink-0 text-rw-sub tabular-nums">
-              <span className="text-rw-accent font-bold">{fmtNum(r.v)}</span> · {tn("{n} game", "{n} games", r.g)}
-            </span>
-          </li>
-        ))}
+        {rows.map((r, i) => {
+          const pct = Math.max(4, Math.min(100, Math.round(((r.v || 0) / maxV) * 100)));
+          return (
+            <li key={r.n + i} className="relative overflow-hidden rounded px-2 py-1 flex items-center justify-between gap-2 min-w-0">
+              <span
+                className="pointer-events-none absolute inset-y-0 left-0 rounded"
+                style={{ width: `${pct}%`, background: i === 0 ? "rgba(216,184,120,0.16)" : "rgba(130,170,255,0.08)" }}
+              />
+              <span className="relative truncate min-w-0">
+                <span className={`mr-1.5 tabular-nums ${i === 0 ? "text-rw-accent font-bold" : "text-rw-muted"}`}>{i + 1}.</span>
+                <PlayerLink name={r.n} u={r.u} />
+                <span className="text-rw-muted"> · {r.t}</span>
+              </span>
+              <span className="relative shrink-0 text-rw-sub tabular-nums">
+                <span className="text-rw-accent font-bold">{fmtNum(r.v)}</span> · {tn("{n} game", "{n} games", r.g)}
+              </span>
+            </li>
+          );
+        })}
       </ol>
       <p className="text-[10px] text-rw-muted">{tl("Players who played at least 40% of the most games anyone played here.")}</p>
     </Section>
@@ -860,17 +873,33 @@ const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
           </tr>
         </thead>
         <tbody>
-          {rows.map((c) => (
-            <tr key={c.c} className="border-t border-rw-border">
-              <td className={`${td} max-w-[9rem]`}>
-                <ChampLink name={c.c} size={18} />
-              </td>
-              <td className={`${td} text-rw-sub`}>{games ? `${Math.round(((c.p + c.b) / games) * 100)}%` : "–"}</td>
-              <td className={`${td} text-rw-sub`}>{c.p}</td>
-              <td className={`${td} text-rw-sub`}>{c.b}</td>
-              <td className={`${td} text-rw-sub`}>{c.p ? winRate(c.w, c.p) : "–"}</td>
-            </tr>
-          ))}
+          {rows.map((c) => {
+            const presPct = games ? Math.min(100, Math.round(((c.p + c.b) / games) * 100)) : 0;
+            return (
+              <tr key={c.c} className="border-t border-rw-border">
+                <td className={`${td} max-w-[9rem]`}>
+                  <ChampLink name={c.c} size={18} />
+                </td>
+                <td className={`${td} text-rw-sub`} data-sort={games ? (c.p + c.b) / games : 0}>
+                  {games ? (
+                    <span className="inline-flex flex-col gap-0.5 min-w-[3.25rem]">
+                      <span className="tabular-nums font-medium">{presPct}%</span>
+                      <span className="h-1 w-12 rounded-full bg-rw-border/70 overflow-hidden">
+                        <span className="block h-full rounded-full bg-rw-accent" style={{ width: `${presPct}%` }} />
+                      </span>
+                    </span>
+                  ) : (
+                    "–"
+                  )}
+                </td>
+                <td className={`${td} text-rw-sub`}>{c.p}</td>
+                <td className={`${td} text-rw-sub`}>{c.b}</td>
+                <td className={`${td} text-rw-sub`} data-sort={c.p ? c.w / c.p : -1}>
+                  {c.p ? <WinBar w={c.w} g={c.p} /> : "–"}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </STable>
     </Section>
