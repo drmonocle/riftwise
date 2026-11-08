@@ -131,12 +131,16 @@ def build(ctx) -> dict:
     for r in con.execute(
         "SELECT OverviewPage, Place, Place_Number, Team, Prize_USD, Showmatch, Phase FROM lp_tournament_results WHERE Team IS NOT NULL AND Team != ''"
     ):
-        results[r["OverviewPage"]].append(dict(r))
+        d_res = dict(r)
+        d_res["Team"] = canon_team(clean(d_res["Team"]), None, r["OverviewPage"])
+        results[r["OverviewPage"]].append(d_res)
     standings = defaultdict(list)
     for r in con.execute(
         "SELECT OverviewPage, Team, N, Place, WinSeries, LossSeries, TieSeries, WinGames, LossGames, Points FROM lp_standings ORDER BY rowid"
     ):
-        standings[r["OverviewPage"]].append(dict(r))
+        d_st = dict(r)
+        d_st["Team"] = canon_team(clean(d_st["Team"]), None, r["OverviewPage"])
+        standings[r["OverviewPage"]].append(d_st)
 
     # -- every game: all_games (weekly, everything Leaguepedia knows) + matches (nightly, newest) --
     games_by_op = defaultdict(dict)  # op -> (match_id, n) -> game
@@ -151,17 +155,23 @@ def build(ctx) -> dict:
     ):
         if ctx.is_show(r["overview_page"], r["tournament_name"]) or (r["match_id"], r["game_number"]) in ctx.dupes.rows:
             continue  # (a game the catalog has twice: build_stats.duplicates)
-        games_by_op[r["overview_page"]][(r["match_id"], r["game_number"])] = {
+        dt_ag = (r["date_utc"] or "")[:16]
+        op_ag = r["overview_page"]
+        t1_ag = canon_team(r["team1"], dt_ag, op_ag)
+        t2_ag = canon_team(r["team2"], dt_ag, op_ag)
+        w_ag = canon_team(r["winner"], dt_ag, op_ag)
+        games_by_op[op_ag][(r["match_id"], r["game_number"])] = {
             "mid": r["match_id"], "n": r["game_number"] or 1, "status": r["status"], "tname": r["tournament_name"],
-            "date": (r["date_utc"] or "")[:16], "patch": r["patch"] or r["patch_inferred"], "t1": r["team1"], "t2": r["team2"],
-            "w": r["winner"] if r["winner"] in (r["team1"], r["team2"]) else None,
-            "sa": r["series_team1"], "sb": r["series_team2"], "bo": r["best_of"], "remake": r["is_remake"], "ff": r["ff"],
+            "date": dt_ag, "patch": r["patch"] or r["patch_inferred"], "t1": t1_ag, "t2": t2_ag,
+            "w": w_ag if w_ag in (t1_ag, t2_ag) else None,
+            "sa": canon_team(r["series_team1"], dt_ag, op_ag), "sb": canon_team(r["series_team2"], dt_ag, op_ag),
+            "bo": r["best_of"], "remake": r["is_remake"], "ff": r["ff"],
             "vod": unesc(r["vod_url"]), "gid": r["catalog_game_id"] if r["has_stats"] else None, "mvp": r["mvp"] or None,
             # the same VOD at the draft and at the game's start (Leaguepedia's timestamps)
             "vpb": unesc(r["vod_pb"]), "vgs": unesc(r["vod_game_start"]),
         }
         if r["catalog_game_id"]:
-            by_catalog_id[r["catalog_game_id"]] = (r["overview_page"], (r["match_id"], r["game_number"]))
+            by_catalog_id[r["catalog_game_id"]] = (op_ag, (r["match_id"], r["game_number"]))
     added_new = 0
     renumbered = 0
     winner_fixed = 0
@@ -183,6 +193,7 @@ def build(ctx) -> dict:
     linked_by_id = 0
     filled_new = 0
     tname_to_op = {}
+    op_series_team_fix = defaultdict(dict)  # (op, mid) -> {all_games team name: matches canonical team name}
     for r in con.execute(
         """SELECT game_id, match_id, game_number, tournament_name, overview_page, stage_tab, date_utc, patch, team1, team2,
                   winner, best_of, vod_url, mepi_rating, duration_minutes, team1_kills, team2_kills
@@ -193,23 +204,37 @@ def build(ctx) -> dict:
             continue
         if r["tournament_name"]:
             tname_to_op.setdefault(r["tournament_name"], op)
+        dt_m = (r["date_utc"] or "")[:16]
+        mt1 = canon_team(r["team1"], dt_m, op)
+        mt2 = canon_team(r["team2"], dt_m, op)
+        mw_raw = canon_team(r["winner"], dt_m, op)
+        mw = mw_raw if mw_raw in (mt1, mt2) else None
         key = (r["match_id"] or r["game_id"], r["game_number"] or 1)
         g0 = games_by_op[op].get(key)
         g = g0
         moved = False
-        if g is not None and g["t1"] and g["t2"] and r["team1"] and r["team2"] and not same_pair(g["t1"], g["t2"], r["team1"], r["team2"]):
+        if g is not None and g["t1"] and g["t2"] and mt1 and mt2 and not same_pair(g["t1"], g["t2"], mt1, mt2):
             # Leaguepedia renumbered the series (NA LCS 2013 Spring semifinals 1 and 2 are swapped between the two
             # tables): this game belongs to the series with its teams, the same game number, within two days
             g = next((x for x in games_by_op[op].values() if x["n"] == key[1] and x["t1"] and x["t2"]
-                      and same_pair(x["t1"], x["t2"], r["team1"], r["team2"]) and near_day(x["date"], r["date_utc"])
+                      and same_pair(x["t1"], x["t2"], mt1, mt2) and near_day(x["date"], dt_m)
                       and not (x["gid"] and x["gid"] != r["game_id"] and x["gid"] in ctx.games
                                and same_pair(x["t1"], x["t2"], ctx.games[x["gid"]]["t1"], ctx.games[x["gid"]]["t2"]))), None)
             if g is None:
-                continue  # not found: leave both alone rather than mix this game into the other series
-            if g0["gid"] == r["game_id"] and g is not g0:
-                g0["gid"] = None
-            renumbered += 1
-            moved = True
+                # When one team matches on the same catalog_game_id and no other series in the event has these two teams,
+                # the other team was renamed between MatchSchedule and ScoreboardGames (keep g0); otherwise detach g0's gid.
+                if g0["gid"] == r["game_id"] and (same_team(g0["t1"], mt1) or same_team(g0["t2"], mt2)
+                                                  or same_team(g0["t1"], mt2) or same_team(g0["t2"], mt1)):
+                    g = g0
+                else:
+                    if g0["gid"] == r["game_id"]:
+                        g0["gid"] = None
+                    continue
+            else:
+                if g0["gid"] == r["game_id"] and g is not g0:
+                    g0["gid"] = None
+                renumbered += 1
+                moved = True
         if g is None and r["game_id"] in by_catalog_id:
             # the same game under another series id ("Season 1 World Championship_rebuilt_..." for "..._Bracket Stage_2",
             # "Third-Place Match" for "Third-Place match"): one game, not a second copy of it
@@ -218,13 +243,30 @@ def build(ctx) -> dict:
             linked_by_id += 1 if g is not None else 0
         if g:
             g["mepi"] = r["mepi_rating"]
-            g["m_min"], g["m_k"] = r["duration_minutes"], {r["team1"]: r["team1_kills"], r["team2"]: r["team2_kills"]}
+            g["m_min"], g["m_k"] = r["duration_minutes"], {mt1: r["team1_kills"], mt2: r["team2_kills"]}
             if not g["vod"] and r["vod_url"]:
                 g["vod"] = unesc(r["vod_url"])
             if (moved or not g["gid"] or g["gid"] not in ctx.games) and r["game_id"] in ctx.games:
                 # (after a renumbering, all_games points each series at the other one's scoreboard: this game's wins)
                 g["gid"] = r["game_id"]
-            mw = r["winner"] if r["winner"] in (r["team1"], r["team2"]) else None
+            if g["t1"] and g["t2"] and mt1 and mt2 and g["gid"] == r["game_id"] and {g["t1"], g["t2"]} != {mt1, mt2}:
+                m_t = match_teams([g["t1"], g["t2"]], mt1, mt2)
+                if len(m_t) == 1 and g["t1"] != g["t2"] and mt1 != mt2:
+                    if g["t1"] in m_t:
+                        m_t[g["t2"]] = mt2 if m_t[g["t1"]] == mt1 else mt1
+                    elif g["t2"] in m_t:
+                        m_t[g["t1"]] = mt2 if m_t[g["t2"]] == mt1 else mt1
+                if g["t1"] in m_t and g["t2"] in m_t and m_t[g["t1"]] != m_t[g["t2"]]:
+                    for old_t, new_t in m_t.items():
+                        if old_t != new_t:
+                            op_series_team_fix[(op, g["mid"])][old_t] = new_t
+                    g["t1"], g["t2"] = m_t[g["t1"]], m_t[g["t2"]]
+                    if g["w"] in m_t:
+                        g["w"] = m_t[g["w"]]
+                    if g["sa"] in m_t:
+                        g["sa"] = m_t[g["sa"]]
+                    if g["sb"] in m_t:
+                        g["sb"] = m_t[g["sb"]]
             if mw and g["w"] and g["t1"] and g["t2"] and g["gid"] == r["game_id"] and not same_team(g["w"], mw):
                 # Leaguepedia's schedule and scoreboard name different winners (35 games): the scoreboard's is the
                 # team that took more towers and inhibitors in 26 of 27 that can be told, and the players' careers
@@ -233,21 +275,28 @@ def build(ctx) -> dict:
                 if to:
                     g["w"] = to
                     winner_fixed += 1
-            if not (g["t1"] and g["t2"]) and r["team1"] and r["team2"]:
+            if not (g["t1"] and g["t2"]) and mt1 and mt2:
                 # played in the last days: all_games has the slot, matches has who played and won
-                g.update({"t1": r["team1"], "t2": r["team2"], "date": (r["date_utc"] or g["date"])[:16],
-                          "w": r["winner"] if r["winner"] in (r["team1"], r["team2"]) else None, "status": "full"})
+                g.update({"t1": mt1, "t2": mt2, "date": (dt_m or g["date"])[:16],
+                          "w": mw, "status": "full"})
                 g["patch"] = g["patch"] or r["patch"]
                 filled_new += 1
             continue
         games_by_op[op][key] = {
-            "mid": key[0], "n": key[1], "status": "full", "tname": r["tournament_name"], "date": (r["date_utc"] or "")[:16],
-            "patch": r["patch"], "t1": r["team1"], "t2": r["team2"], "w": r["winner"] if r["winner"] in (r["team1"], r["team2"]) else None,
+            "mid": key[0], "n": key[1], "status": "full", "tname": r["tournament_name"], "date": dt_m,
+            "patch": r["patch"], "t1": mt1, "t2": mt2, "w": mw,
             "sa": None, "sb": None, "bo": r["best_of"], "remake": 0, "ff": 0, "vod": unesc(r["vod_url"]),
             "gid": r["game_id"] if r["game_id"] in ctx.games else None, "tab": html.unescape(r["stage_tab"] or "") or None, "mepi": r["mepi_rating"],
-            "m_min": r["duration_minutes"], "m_k": {r["team1"]: r["team1_kills"], r["team2"]: r["team2_kills"]},
+            "m_min": r["duration_minutes"], "m_k": {mt1: r["team1_kills"], mt2: r["team2_kills"]},
         }
         added_new += 1
+    if op_series_team_fix:
+        for (op_f, mid_f), fix_m in op_series_team_fix.items():
+            for (m_k, _n_k), g_f in games_by_op.get(op_f, {}).items():
+                if m_k == mid_f:
+                    for fld in ("t1", "t2", "w", "sa", "sb"):
+                        if g_f.get(fld) in fix_m:
+                            g_f[fld] = fix_m[g_f[fld]]
     checks["hub: games newer than all_games (from matches)"] = added_new
     checks["hub: matches games moved to their renumbered series"] = renumbered
     checks["hub: game winners taken from the scoreboard (schedule disagreed)"] = winner_fixed
@@ -314,10 +363,10 @@ def build(ctx) -> dict:
     for r in con.execute(
         "SELECT OverviewPage, Team, Link, Role, Flag, N_PlayerInTeam FROM lp_tournament_players WHERE Team IS NOT NULL AND Link IS NOT NULL"
     ):
-        rosters[r[0]][r[1]].append((r[2], r[3] or "", r[4] or "", num(r[5]) or 99))
+        rosters[r[0]][canon_team(clean(r[1]), None, r[0])].append((r[2], r[3] or "", r[4] or "", num(r[5]) or 99))
     roster_region = {}
     for r in con.execute("SELECT OverviewPage, Team, Region FROM lp_tournament_rosters WHERE Region IS NOT NULL AND Region != ''"):
-        roster_region[(r[0], r[1])] = region_code(r[2])
+        roster_region[(r[0], canon_team(clean(r[1]), None, r[0]))] = region_code(r[2])
 
     # -- series order, stage and score from Leaguepedia's MatchSchedule (sidecar database) --
     sched = {}
@@ -329,9 +378,14 @@ def build(ctx) -> dict:
                 """SELECT MatchId, OverviewPage, Tab, N_TabInPage, N_MatchInTab, BestOf, Team1, Team2, Team1Score, Team2Score,
                           Winner, DateTime_UTC, FF, IsTiebreaker FROM lp_match_schedule WHERE MatchId IS NOT NULL"""
             ):
+                dt_s = (r[11] or "")[:16]
+                op_s = r[1]
+                tfix_s = op_series_team_fix.get((op_s, r[0]), {})
+                sa_s = canon_team(clean(r[6]), dt_s, op_s)
+                sb_s = canon_team(clean(r[7]), dt_s, op_s)
                 s = {
-                    "mid": r[0], "op": r[1], "tab": html.unescape(r[2] or ""), "ntab": num(r[3]), "n": num(r[4]), "bo": num(r[5]),
-                    "a": clean(r[6]), "b": clean(r[7]), "sa": num(r[8]), "sb": num(r[9]), "w": str(r[10] or ""), "date": (r[11] or "")[:16],
+                    "mid": r[0], "op": op_s, "tab": html.unescape(r[2] or ""), "ntab": num(r[3]), "n": num(r[4]), "bo": num(r[5]),
+                    "a": tfix_s.get(sa_s, sa_s), "b": tfix_s.get(sb_s, sb_s), "sa": num(r[8]), "sb": num(r[9]), "w": str(r[10] or ""), "date": dt_s,
                     "ff": r[12], "tb": r[13],
                 }
                 if s["mid"] in ctx.dupes.series or s["mid"] in emptied:
@@ -740,6 +794,7 @@ def build(ctx) -> dict:
                 "pick4", "pick5"]
     POS = {"Top": "top", "Jungle": "jungle", "Mid": "mid", "Bot": "bot", "Support": "support"}
     t_games = defaultdict(list)        # fid -> every game: see teamgames/<slug>.json
+    t_games_meta = defaultdict(list)   # fid -> (date_time, mid, gn, team_name, opp_fid, opp_name) per t_games row
 
     for op in ops:
         info = lp_tourn.get(op) or {}
@@ -815,6 +870,7 @@ def build(ctx) -> dict:
         regions = defaultdict(lambda: [0, 0])  # (region a, region b) sorted -> series won by a, by b
         tc = defaultdict(lambda: [0, 0, 0])  # champion -> picks, wins, bans
         tteam = defaultdict(lambda: {"g": 0, "w": 0, "sg": 0, "sw": 0, "name": None})
+        ev_team = defaultdict(lambda: {"g": 0, "w": 0, "sg": 0, "sw": 0, "names": Counter()})
         stage_rows = defaultdict(list)
         n_stats_games = 0
         csv_rows = []
@@ -944,17 +1000,6 @@ def build(ctx) -> dict:
                     if g["w"] and not g["remake"]:
                         facts["g"] += 1
                         facts["blue" if g["w"] == g["t1"] else "red"] += 1
-                        for name, side_won in ((g["t1"], g["w"] == g["t1"]), (g["t2"], g["w"] == g["t2"])):
-                            tr = team_ref(name, g["date"])
-                            if tr[1]:
-                                fid = ctx.team_of(name, g["date"][:10] if g["date"] else "0000")
-                                sd4 = t_side[fid]
-                                if name == g["t1"]:
-                                    sd4[0] += 1
-                                    sd4[1] += 1 if side_won else 0
-                                else:
-                                    sd4[2] += 1
-                                    sd4[3] += 1 if side_won else 0
                     # the player comes from this game's scoreboard (one champion per game), so Leaguepedia's
                     # other spellings ("Scary Jerry" for ScaryJerry, an old name like "GotzY" for Aeon) still link
                     penta_by_champ = ({r["champion"]: r["page_key"] for r in prow.get(g["gid"], []) if r["champion"] and r["page_key"]}
@@ -988,7 +1033,7 @@ def build(ctx) -> dict:
                                 v = t[f"{pre}_{f}"]
                                 if v is not None and (f != "kills" or t_kills_ok):
                                     sd[key] = v
-                            sd["bans"] = champs(t[f"{pre}_bans"])
+                            sd["bans"] = list(dict.fromkeys(champs(t[f"{pre}_bans"])))
                             sd["picks"] = champs(t[f"{pre}_picks"])
                         if sb is not None:
                             p2 = "Team1" if s_pre[side] == "team1" else "Team2"
@@ -1006,7 +1051,7 @@ def build(ctx) -> dict:
                         if dr is not None:
                             # The draft's Team1 is usually blue; matched by name (never both sides to one team)
                             dpre = d_pre[side]
-                            bans, picks = champs(dr[f"{dpre}_bans"]), champs(dr[f"{dpre}_picks"])
+                            bans, picks = list(dict.fromkeys(champs(dr[f"{dpre}_bans"]))), champs(dr[f"{dpre}_picks"])
                             if bans:
                                 sd["bans"] = bans
                             if picks:
@@ -1025,6 +1070,8 @@ def build(ctx) -> dict:
                             if sd.get("gold") is None and all(r["gold"] is not None for r in mine):
                                 sd["gold"] = sum(r["gold"] for r in mine)
                             if sd.get("picks") and len(sd["picks"]) != len(set(sd["picks"])):
+                                sd["picks"] = [r["champion"] for r in mine if r["champion"]]
+                            elif not sd.get("picks") and sum(1 for r in mine if r["champion"]) == 5:
                                 sd["picks"] = [r["champion"] for r in mine if r["champion"]]
                     # Oracle's Elixir's numbers for this game (leads at 15, firsts, plates...), when it has the game
                     oe_g = timeline.pick(oe.get((mid, g["n"])), {r["champion"] for r in g_rows if r["champion"]})
@@ -1096,13 +1143,6 @@ def build(ctx) -> dict:
                             facts["drakes"][dk] += n_dk
                         if sd.get("elders"):
                             facts["drakes"]["elder"] += sd["elders"]
-                    if any((sd or {}).get("bans") for sd in sides.values()):
-                        # bans against each team (what the other side banned)
-                        for side, name, other in (("blue", g["t1"], "red"), ("red", g["t2"], "blue")):
-                            if team_ref(name, g["date"])[1]:
-                                fid = ctx.team_of(name, g["date"][:10] if g["date"] else "0000")
-                                for ch in sides.get(other, {}).get("bans", []):
-                                    t_bans_vs[fid][ch] += 1
                     if (sides.get("blue") or {}).get("gold") is not None and (sides.get("red") or {}).get("gold") is not None:
                         g["_gold"] = (sides["blue"]["gold"], sides["red"]["gold"])
                         for side, name, other in (("blue", g["t1"], "red"), ("red", g["t2"], "blue")):
@@ -1125,21 +1165,45 @@ def build(ctx) -> dict:
                             z["tow"] += sd.get("towers") or 0
                             z["her"] += sd.get("heralds") or 0
                             z["grub"] += sd.get("grubs") or 0
-                    if g["t1"] and g["t2"] and g["w"]:
-                        pick_role = {(r["team"], r["champion"]): ROLE_ORDER.get(r["role"] or "", -1)
-                                     for r in (prow.get(gid, []) if gid else []) if r["champion"]}
-                        for side, name, other_name in (("blue", g["t1"], g["t2"]), ("red", g["t2"], g["t1"])):
-                            if not team_ref(name, g["date"])[1]:
-                                continue
-                            sd, od = sides.get(side, {}), sides.get("red" if side == "blue" else "blue", {})
-                            t_games[ctx.team_of(name, g["date"][:10] if g["date"] else "0000")].append([
-                                g["date"][:10], gslug, eslug, en, other_name, team_ref(other_name, g["date"])[1], side[0],
-                                1 if g["w"] == name else 0, item.get("min"), sd.get("k"), od.get("k"), sd.get("gold"), od.get("gold"),
-                                sd.get("drag"), od.get("drag"), sd.get("barons"), od.get("barons"), sd.get("towers"), od.get("towers"),
-                                sd.get("bans") or [], sd.get("picks") or [], od.get("bans") or [],
-                                [pick_role.get((name, ch), -1) for ch in (sd.get("picks") or [])], oe_side.get(side),
-                                [gd15_of.get((name, ch)) for ch in (sd.get("picks") or [])] if gd15_of else None,
-                                item.get("patch") or None])
+                    if g["t1"] and g["t2"] and g["w"] and not g["remake"] and not g["ff"] and g["t1"] != g["t2"]:
+                        d_g = g["date"][:10] if g["date"] else "0000"
+                        f1_g = ctx.team_of(g["t1"], d_g, op)
+                        f2_g = ctx.team_of(g["t2"], d_g, op)
+                        if f1_g != f2_g:
+                            pick_role = {(r["team"], r["champion"]): ROLE_ORDER.get(r["role"] or "", -1)
+                                         for r in (prow.get(gid, []) if gid else []) if r["champion"]}
+                            for side, name, fid, other_name, other_fid in (
+                                ("blue", g["t1"], f1_g, g["t2"], f2_g),
+                                ("red", g["t2"], f2_g, g["t1"], f1_g),
+                            ):
+                                if not team_slug.get(fid):
+                                    continue
+                                won_g = 1 if g["w"] == name else 0
+                                sd4 = t_side[fid]
+                                if side == "blue":
+                                    sd4[0] += 1
+                                    sd4[1] += won_g
+                                else:
+                                    sd4[2] += 1
+                                    sd4[3] += won_g
+                                sd, od = sides.get(side, {}), sides.get("red" if side == "blue" else "blue", {})
+                                for ch in od.get("bans") or []:
+                                    t_bans_vs[fid][ch] += 1
+                                t_games[fid].append([
+                                    d_g, gslug, eslug, en, other_name, team_slug.get(other_fid), side[0],
+                                    won_g, item.get("min"), sd.get("k"), od.get("k"), sd.get("gold"), od.get("gold"),
+                                    sd.get("drag"), od.get("drag"), sd.get("barons"), od.get("barons"), sd.get("towers"), od.get("towers"),
+                                    sd.get("bans") or [], sd.get("picks") or [], od.get("bans") or [],
+                                    [pick_role.get((name, ch), -1) for ch in (sd.get("picks") or [])], oe_side.get(side),
+                                    [gd15_of.get((name, ch)) for ch in (sd.get("picks") or [])] if gd15_of else None,
+                                    item.get("patch") or None])
+                                t_games_meta[fid].append((
+                                    (g["date"] or "")[:19], mid, g["n"] or 0, name, other_fid, other_name,
+                                ))
+                                ev_t = ev_team[fid]
+                                ev_t["g"] += 1
+                                ev_t["w"] += won_g
+                                ev_t["names"][name] += 1
                     rows = prow.get(gid, []) if gid else []
                     # one ban per champion per game, never a champion that was picked (bans written twice, blind picks)
                     game_bans = {ch for sd in sides.values() for ch in sd.get("bans", [])} - {
@@ -1539,10 +1603,14 @@ def build(ctx) -> dict:
                 if played:
                     x["sg"] += 1
                     x["sw"] += 1 if mine > theirs else 0
-                if u and played:
-                    fid = ctx.team_of(name, date[:10] if date else "0000")
+                if u and played and au != bu:
+                    fid = ctx.team_of(name, date[:10] if date else "0000", op)
                     latest_heap(t_recent[fid], (date, gslug or "", opp, mine, theirs, en, eslug, s_rating), 15)
                     t_series[u].append((date[:10], opp, opp_u, mine, theirs, en, eslug, gslug, tab or "", name, s_rating))
+                    ev_t = ev_team[fid]
+                    ev_t["sg"] += 1
+                    ev_t["sw"] += 1 if mine > theirs else 0
+                    ev_t["names"][name] += 1
             if played and (wa or wb):
                 ca, cb = h2h_code(a, date, ac), h2h_code(b, date, bc)
                 if ca and cb and ca != cb and "TBD" not in (ca, cb):
@@ -1726,17 +1794,18 @@ def build(ctx) -> dict:
                 **({"pl": place_of.get(team)} if res_from == "this" else {"_pp": place_of.get(team), "_pe": base_of(op)}),
                 **({"lu": league_slug.get(lg_ev)} if lg_ev else {}),
             })
-        for (name, u), x in tteam.items():
-            if not u:
+        for fid, x in ev_team.items():
+            u = team_slug.get(fid)
+            if not u or (not x["g"] and not x["sg"]):
                 continue
-            fid = ctx.team_of(name, (last_date or "0000")[:10])
-            usd = next((r.get("usd") for r in res_out if r["t"] == name and res_from == "this"), None)
-            # prize listed on the whole event: shown later on this team's last stage of it
-            pusd = next((r.get("usd") for r in res_out if r["t"] == name and res_from == "event"), None)
+            name = x["names"].most_common(1)[0][0] if x["names"] else ctx.fr_name.get(fid, "")
+            res_match = next((r for r in res_out if r.get("u") == u or r["t"] in x["names"] or r["t"] == name), None)
+            pl_val = res_match["p"] if res_match else None
+            usd_val = res_match.get("usd") if res_match else None
             t_events[fid].append({"e": eslug, "en": en, "date": end, "as": name, "g": x["g"], "w": x["w"], "sg": x["sg"],
-                                  "sw": x["sw"], **({"pl": place_of.get(name)} if res_from == "this" else {}),
-                                  **({"usd": usd} if usd else {}),
-                                  **({"_pu": pusd, "_pp": place_of.get(name), "_pe": base_of(op)} if res_from == "event" else {}),
+                                  "sw": x["sw"], **({"pl": pl_val} if res_from == "this" and pl_val else {}),
+                                  **({"usd": usd_val} if res_from == "this" and usd_val else {}),
+                                  **({"_pu": usd_val, "_pp": pl_val, "_pe": base_of(op)} if res_from == "event" else {}),
                                   **({"lu": league_slug.get(lg_ev)} if lg_ev else {})})
 
         winner_row = next((r for r in res_out if r["p"] == "1"), None)
@@ -2021,13 +2090,65 @@ def build(ctx) -> dict:
     stakes_player = {}  # player slug -> (notes as of, notes)
     search_teams = []
     alias = {}
-    for fid, t in ctx.teams.items():
+    written_ts = set()
+    for fid in sorted(ctx.fr_name, key=lambda f: str(f)):
         u = team_slug.get(fid)
-        if not u or t["g"] < 1:
+        tg_all = t_games.get(fid, [])
+        if not u or not tg_all:
             continue
+        t = ctx.teams.get(fid) or {"obj": {}, "obj_g": 0}
         name = ctx.fr_name[fid]
-        eras = sorted(ctx.fr_eras[fid], key=lambda e: e["from"], reverse=True)
-        for old_n in [e["n"] for e in eras] + EXTRA_OLD_NAMES.get(name, []):
+        tg_meta = t_games_meta.get(fid, [])
+        g_cnt = len(tg_all)
+        w_cnt = sum(r[7] for r in tg_all)
+        from_dt = min(r[0] for r in tg_all)
+        to_dt = max(r[0] for r in tg_all)
+        eras_map = defaultdict(lambda: {"from": "9999", "to": "0000", "g": 0})
+        years_map = defaultdict(lambda: {"g": 0, "w": 0, "names": Counter()})
+        opps_map = defaultdict(lambda: {"g": 0, "w": 0, "names": Counter()})
+        ch_cnt, ch_w = Counter(), Counter()
+        bans_by_cnt, bans_vs_cnt = Counter(), Counter()
+        min_sum = 0.0
+        min_n = 0
+        k_sum = d_sum = kd_n = 0
+        blue_g = blue_w = red_g = red_w = 0
+        for r, (_dt_full, _mid, _gn, tname_g, opp_fid, opp_name_g) in zip(tg_all, tg_meta):
+            d_g, won_g, side_c, rmin_g, rk, rok = r[0], r[7], r[6], r[8], r[9], r[10]
+            if side_c == "b":
+                blue_g += 1
+                blue_w += won_g
+            else:
+                red_g += 1
+                red_w += won_g
+            e_m = eras_map[tname_g]
+            e_m["from"] = min(e_m["from"], d_g)
+            e_m["to"] = max(e_m["to"], d_g)
+            e_m["g"] += 1
+            y_m = years_map[d_g[:4]]
+            y_m["g"] += 1
+            y_m["w"] += won_g
+            y_m["names"][tname_g] += 1
+            if opp_fid != fid:
+                o_m = opps_map[opp_fid]
+                o_m["g"] += 1
+                o_m["w"] += won_g
+                o_m["names"][opp_name_g] += 1
+            if rmin_g:
+                min_sum += rmin_g
+                min_n += 1
+            if rk is not None and rok is not None:
+                k_sum += rk
+                d_sum += rok
+                kd_n += 1
+            for c_p in r[20] or []:
+                ch_cnt[c_p] += 1
+                ch_w[c_p] += won_g
+            for c_b in r[19] or []:
+                bans_by_cnt[c_b] += 1
+            for c_bv in r[21] or []:
+                bans_vs_cnt[c_bv] += 1
+        eras = sorted([{"n": n_e, **v_e} for n_e, v_e in eras_map.items()], key=lambda e: e["from"], reverse=True)
+        for old_n in [e["n"] for e in eras] + [e["n"] for e in ctx.fr_eras.get(fid, [])] + EXTRA_OLD_NAMES.get(name, []):
             s_old = pretty(old_n)
             if s_old and s_old != u and s_old not in team_slug.values():
                 alias[s_old] = u
@@ -2037,9 +2158,12 @@ def build(ctx) -> dict:
             c = str(c_cand or "").strip()
             if c and c.lower() not in (x.lower() for x in codes) and c.lower() != show_team(name).lower():
                 codes.append(c)
-        ss = ctx.team_series.get(fid, [])
-        sw = sum(1 for x in ss if (x["fa"] if x["w"] == x["a"] else x["fb"]) == fid)
-        og = t["obj_g"]
+        ts_rows = sorted(t_series.get(u, []), key=lambda r: r[0], reverse=True)
+        out.json(f"teamseries/{u}.json", [list(r) for r in ts_rows])
+        written_ts.add(u)
+        sg_cnt = len(ts_rows)
+        sw_cnt = sum(1 for r in ts_rows if r[3] > r[4])
+        og = t.get("obj_g", 0)
         roster = []
         for year in sorted(ctx.team_players[fid], reverse=True)[:12]:
             top = ctx.team_players[fid][year].most_common(10)
@@ -2047,7 +2171,7 @@ def build(ctx) -> dict:
                                              "r": ctx.team_roles[fid][pg].most_common(1)[0][0]} for pg, n in top if n >= 3]})
         recent = sorted(t_recent.get(fid, []), reverse=True)
         tevents = sorted(t_events.get(fid, []), key=lambda x: x["date"] or "", reverse=True)
-        tg_rows = sorted(t_games.get(fid, []), key=lambda r: (r[0], r[1]), reverse=True)
+        tg_rows = sorted(tg_all, key=lambda r: (r[0], r[1]), reverse=True)
         t_has2y = False
         if tg_rows:
             out.json(f"teamgames/{u}.json", tg_rows)
@@ -2065,32 +2189,49 @@ def build(ctx) -> dict:
                     x.setdefault("usd", pu)
                 if pp:
                     x["pl"] = pp
+        cur_streak = 0
+        best_streak = None
+        for r, (dt_full, mid_g, gn_g, _tn_g, _of_g, _on_g) in sorted(
+            zip(tg_all, tg_meta), key=lambda pair: (pair[1][0] or pair[0][0], pair[1][1] or "", pair[1][2] or 0)
+        ):
+            if r[7]:
+                cur_streak += 1
+                if not best_streak or cur_streak > best_streak[0]:
+                    best_streak = (cur_streak, r[0])
+            else:
+                cur_streak = 0
+        opps_out = sorted(
+            ({"n": ctx.fr_name.get(o) or v["names"].most_common(1)[0][0], "u": team_slug.get(o), "g": v["g"], "w": v["w"]}
+             for o, v in opps_map.items()),
+            key=lambda x: -x["g"],
+        )[:60]
         obj = {
             "name": name, "u": u, "region": lpt.get("Region"), "codes": codes, "rating": team_rating.get(fid),
             # the team's rating over the last year, [date, rating] (builds from 2026-10-18 on)
             **({"rh": [[p[0], p[1]] for p in rating_hist.get(u, [])]} if len(rating_hist.get(u, [])) > 1 else {}),
             "disbanded": 1 if lpt.get("IsDisbanded") else 0,
-            "g": t["g"], "w": t["w"], "sg": len(ss), "sw": sw, "from": t["from"], "to": t["to"],
+            "g": g_cnt, "w": w_cnt, "sg": sg_cnt, "sw": sw_cnt, "from": from_dt, "to": to_dt,
             "names": [{"n": e["n"], "from": e["from"], "to": e["to"], "g": e["g"]} for e in eras],
-            "avgMin": r1(t["min"] / t["g"]) if t["g"] else 0,
-            "kills": r1(t["kills"] / t["kg"]) if t["kg"] else None, "deaths": r1(t["deaths"] / t["kg"]) if t["kg"] else None,
+            "avgMin": r1(min_sum / min_n) if min_n else 0,
+            "kills": r1(k_sum / kd_n) if kd_n else None, "deaths": r1(d_sum / kd_n) if kd_n else None,
             "obj": {f: r2(t["obj"][f] / og) for f in ("dragons", "barons", "towers", "heralds", "golddiff")} if og else None,
-            "years": [{"y": y, "g": v["g"], "w": v["w"], "as": v["names"].most_common(1)[0][0]} for y, v in sorted(t["years"].items(), reverse=True)],
+            "years": [{"y": y, "g": v["g"], "w": v["w"], "as": v["names"].most_common(1)[0][0]} for y, v in sorted(years_map.items(), reverse=True)],
             "recent": [{"date": r[0][:10], "g": r[1] or None, "opp": r[2], "us": r[3], "them": r[4], "en": r[5], "e": r[6],
                         **({"r": r[7]} if r[7] is not None else {})} for r in recent],
-            "opps": sorted(({"n": ctx.fr_name[o], "u": team_slug.get(o), **v} for o, v in t["opps"].items()), key=lambda x: -x["g"])[:60],
-            "champs": [{"c": c, "g": n, "w": t["champ_w"][c]} for c, n in t["champs"].most_common(30)],
-            "bans": [{"c": c, "g": n} for c, n in t["bans_by"].most_common(15)],
+            "opps": opps_out,
+            "champs": [{"c": c, "g": n, "w": ch_w[c]} for c, n in ch_cnt.most_common(30)],
+            "bans": [{"c": c, "g": n} for c, n in bans_by_cnt.most_common(15)],
             "events": tevents,
             "titles": [{**{k: v for k, v in x.items() if k not in ("fid", "s")}, "e": tname_slug.get(x["t"])} for x in ctx.titles_by_team.get(fid, [])],
-            "bestStreak": {"n": t["best_streak"][0], "date": t["best_streak"][1]} if t["best_streak"] else None,
+            "bestStreak": {"n": best_streak[0], "date": best_streak[1]} if best_streak else None,
             "roster": roster,
             "earnings": round(team_earnings.get(fid, 0)),
-            "sides": t_side.get(fid),
-            "bansVs": [{"c": c, "g": n} for c, n in t_bans_vs.get(fid, Counter()).most_common(15)],
+            "sides": [blue_g, blue_w, red_g, red_w],
+            "bansVs": [{"c": c, "g": n} for c, n in bans_vs_cnt.most_common(15)],
         }
         # -- storylines -------------------------------------------------------------------------
-        notes = milestone_notes({"wins": t["w"], "games": t["g"]})
+        notes = milestone_notes({"wins": w_cnt, "games": g_cnt})
+        ss = ctx.team_series.get(fid, [])
         ss_sorted = sorted(ss, key=lambda x: (x["date"], x["id"]))
         if ss_sorted:
             won_last = (ss_sorted[-1]["fa"] if ss_sorted[-1]["w"] == ss_sorted[-1]["a"] else ss_sorted[-1]["fb"]) == fid
@@ -2111,7 +2252,7 @@ def build(ctx) -> dict:
                     gl = sum(x["wb"] if x["fa"] == fid else x["wa"] for x in here)
                     notes.append({"k": "evunb", "e": last_s["t"], "n": len(here), "gw": gw, "gl": gl})
         this_year = today[:4]
-        tg_sorted = sorted(t_games.get(fid, []), key=lambda r: r[0])
+        tg_sorted = sorted(tg_all, key=lambda r: r[0])
         # form over the last 10 games (when the series streak doesn't already say it)
         last10 = tg_sorted[-10:]
         if len(last10) == 10 and not any(nt["k"] == "streak" for nt in notes):
@@ -2123,7 +2264,7 @@ def build(ctx) -> dict:
         if comebacks >= 2:
             notes.append({"k": "comeback", "n": comebacks, "y": this_year})
         side_rec = {"b": [0, 0], "r": [0, 0]}
-        for r in t_games.get(fid, []):
+        for r in tg_all:
             if r[0][:4] == this_year:
                 side_rec[r[6]][0] += 1
                 side_rec[r[6]][1] += r[7]
@@ -2131,14 +2272,14 @@ def build(ctx) -> dict:
             if g_s >= 6 and w_s == g_s:
                 notes.append({"k": "side", "side": sd_k, "n": g_s, "y": this_year})
         if notes:
-            as_of = max([x["date"] for x in ss_sorted[-1:]] + [t["to"] or ""])[:10]
+            as_of = max([x["date"] for x in ss_sorted[-1:]] + [to_dt or ""])[:10]
             obj["notes"] = {"asOf": as_of, "list": notes}
-            if (t["to"] or "") >= notes_cut:
+            if (to_dt or "") >= notes_cut:
                 lu_last = next((x.get("lu") for x in tevents if x.get("lu")), None)
                 for nt in notes:
                     all_notes.append((note_score(nt), lu_last, {**nt, "t": "team", "name": name, "u": u, "asOf": as_of}))
         starters = []
-        if (t["to"] or "") >= active_cut:
+        if (to_dt or "") >= active_cut:
             year_pages = ctx.team_players[fid].get(max(ctx.team_players[fid])) if ctx.team_players[fid] else {}
             last_for = {pg: max((v["to"] for v in ctx.players[pg]["teams"].values() if v["fid"] == fid), default="")
                         for pg in (year_pages or {}) if pg in ctx.players}
@@ -2156,25 +2297,27 @@ def build(ctx) -> dict:
         out.json(f"team/{u}.json", obj)
         old_names = list(dict.fromkeys(
             [show_team(e["n"]) for e in eras if show_team(e["n"]) != show_team(name)]
+            + [show_team(e["n"]) for e in ctx.fr_eras.get(fid, []) if show_team(e["n"]) != show_team(name)]
             + [x for x in EXTRA_OLD_NAMES.get(name, []) if x.lower() != show_team(name).lower()]
         ))
-        search_teams.append([name, short_slug(name, u), t["g"], t["to"][:4],
+        search_teams.append([name, short_slug(name, u), g_cnt, to_dt[:4],
                              " | ".join(old_names), " | ".join(codes),
                              lpt.get("Region") or ""])
         titles = obj["titles"]
         worlds = sum(1 for x in titles if x["kind"] == "Worlds")
-        bits = [f"{t['w']:,}-{t['g'] - t['w']:,} in {t['g']:,} pro games ({t['from'][:4]}–{t['to'][:4]})"]
+        bits = [f"{w_cnt:,}-{g_cnt - w_cnt:,} in {g_cnt:,} pro games ({from_dt[:4]}–{to_dt[:4]})"]
         if titles:
             bits.append(f"{len(titles)} titles" + (f" incl. {worlds} Worlds" if worlds else ""))
         seo["team"].append((u, f"{name} – stats, roster and history | {SITE}",
                             f"{name}{' (' + ', '.join(codes[:2]) + ')' if codes else ''}: {'; '.join(bits)}. Roster by year, head-to-head records, tournaments and champion picks.",
-                            1 if t["g"] >= SEO_MIN_GAMES else 0, team_summary(name, t, obj, worlds)))
+                            1 if g_cnt >= SEO_MIN_GAMES else 0, team_summary(name, obj, obj, worlds)))
     search_teams.sort(key=lambda x: -x[2])
 
     # Every series of each team (results archive, Compare's head-to-head list): newest first
     for u, rows in t_series.items():
-        rows.sort(key=lambda r: r[0], reverse=True)
-        out.json(f"teamseries/{u}.json", [list(r) for r in rows])
+        if u not in written_ts:
+            rows.sort(key=lambda r: r[0], reverse=True)
+            out.json(f"teamseries/{u}.json", [list(r) for r in rows])
 
     # -- player pages -------------------------------------------------------------------------
     def whole_event_places(evs):

@@ -43,7 +43,7 @@ import urllib.request
 from collections import Counter, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from names import PlayerNames, canon_team, champ_name, match_teams, show_team, show_teams, team_key  # noqa: E402
+from names import PlayerNames, canon_team, champ_name, learn_team_case, match_teams, show_team, show_teams, team_key  # noqa: E402
 
 MIN_SEARCH_GAMES = 10     # teams / players with fewer games get no page
 RECORD_MIN_MINUTES = 14   # shorter "games" are remakes or forfeits
@@ -408,6 +408,23 @@ def main() -> None:
     def is_show(op, tname):
         return levels.get(op) in SHOWMATCH_LEVELS or bool(SHOWMATCH_NAME.search(tname or "") or SHOWMATCH_NAME.search(op or ""))
 
+    t_counts = Counter()
+    for tbl in ("matches", "all_games"):
+        try:
+            for a_, b_ in con.execute(f"SELECT team1, team2 FROM {tbl}"):
+                if a_:
+                    t_counts[a_] += 1
+                if b_:
+                    t_counts[b_] += 1
+        except sqlite3.Error:
+            pass
+    try:
+        lp_t_names = [r[0] for r in con.execute("SELECT Name FROM lp_teams WHERE Name IS NOT NULL")]
+    except sqlite3.Error:
+        lp_t_names = []
+    checks["team names merged (same name, other case)"] = learn_team_case(t_counts, lp_t_names)
+    del t_counts, lp_t_names
+
     dupes = duplicates(con)
     for gid, kept in sorted(dupes.copies.items()):
         print(f"left out, a VOD copy of a Leaguepedia game: {gid} (kept: {kept})")
@@ -433,9 +450,9 @@ def main() -> None:
             "date": (r["date_utc"] or "")[:10],
             "year": (r["date_utc"] or "0000")[:4],
             "patch": (r["patch"] or "").strip(),
-            "t1": canon_team(r["team1"]),
-            "t2": canon_team(r["team2"]),
-            "w": canon_team(r["winner"]),
+            "t1": canon_team(r["team1"], r["date_utc"], r["overview_page"]),
+            "t2": canon_team(r["team2"], r["date_utc"], r["overview_page"]),
+            "w": canon_team(r["winner"], r["date_utc"], r["overview_page"]),
             "min": r["duration_minutes"] or 0,
             "k1": r["team1_kills"],
             "k2": r["team2_kills"],
@@ -599,8 +616,8 @@ def main() -> None:
     for fid, lst in fr_eras.items():
         fr_games[fid] = sum(e["g"] for e in lst)
 
-    def team_of(name, date):
-        return lineage.team(canon_team(name), date)
+    def team_of(name, date, op=None):
+        return lineage.team(canon_team(name, date, op), date)
 
     def tslug(fid):
         return slug(show_team(fr_name[fid])) if fr_games[fid] >= MIN_SEARCH_GAMES else None

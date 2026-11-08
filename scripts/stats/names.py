@@ -21,18 +21,69 @@ TEAM_NAMES = {
     "Lyon Gaming (2017 Latin America North Team)": "Lyon Gaming",
 }
 
-# Case-only team name spellings in the catalog that belong to the same team
+# Case-only and cross-table alias team name spellings in the catalog that belong to the same team
 TEAM_FIX = {
     "Dplus KIA": "Dplus Kia",
     "Dplus KIA Challengers": "Dplus Kia Challengers",
     "Dplus KIA Youth": "Dplus Kia Youth",
     "ASSET ESPORT": "Asset Esport",
+    "CLG Prime": "Counter Logic Gaming",
+    "Team VDS": "Victorious Demons",
+    "Inside Games Academy": "Inside Games Challengers",
+    "XTGN": "XT Gurb Nation",
+    "Panathinaikos AC eSports": "Panathinaikos Esports",
+    "Holnapkitalalom": "Holnap Kitalálom",
+    "Akademia Górniczo-Hutnicza w Krakowie": "Aghresorzy Akademia Górniczo-Hutnicza",
+    "Determined Gaming": "To Be Determined",
+    "TEAM ELMILLOR": "Team Elmiillor",
+    "Debion Gaming": "Doinb Best Gaming",
+    "University of Melbourne": "Melbourne University Esports",
+    "Gravy": "Team Gravy",
+    "Empyreans": "World Class Empyreans",
+    "EYES ON U Europe": "EYES ON U",
 }
+_TEAM_CASE = {}
 
 
-def canon_team(name):
-    """Canonical spelling for a team name when tables differ only in case ('Dplus KIA' -> 'Dplus Kia')."""
-    return TEAM_FIX.get(name, name) if name else name
+def learn_team_case(counts: dict, lp_teams=()) -> int:
+    """Maps team names that differ only in case across matches, all_games, and lp_teams to one canonical spelling."""
+    by_lower = {}
+    for n, c in counts.items():
+        if n:
+            by_lower.setdefault(n.lower(), []).append((c, n))
+    lp_lower = {}
+    for n in lp_teams:
+        if n:
+            lp_lower.setdefault(n.lower(), set()).add(n)
+    _TEAM_CASE.clear()
+    for low, lst in by_lower.items():
+        if len(lst) < 2:
+            continue
+        fixed = [TEAM_FIX[n] for _, n in lst if n in TEAM_FIX]
+        if fixed:
+            best = fixed[0]
+        else:
+            lp = [n for n in (lp_lower.get(low) or ()) if n != n.lower()] or list(lp_lower.get(low) or ())
+            if len(lp) == 1:
+                best = lp[0]
+            else:
+                best = max(lst, key=lambda x: (x[1] != x[1].lower(), x[0], x[1]))[1]
+        for _, n in lst:
+            if n != best:
+                _TEAM_CASE[n] = best
+    return len(_TEAM_CASE)
+
+
+def canon_team(name, date=None, op=None):
+    """Canonical spelling for a team name across tables (case differences, redirects, and RNG academy disambiguation)."""
+    if not name:
+        return name
+    n = TEAM_FIX.get(name) or _TEAM_CASE.get(name, name)
+    if n == "Royal Club" and (date or "")[:10] >= "2016-12-17":
+        return "Royal Club (RNG academy)"
+    if n == "Star Horn Royal Club" and op and "LSPL" in op:
+        return "Star Horn Royal Club (RNG academy)"
+    return n
 
 
 # Historical names and short tags that Leaguepedia's TeamRenames / Teams tables omit or file under a disambiguated

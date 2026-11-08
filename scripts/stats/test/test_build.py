@@ -113,7 +113,7 @@ def copies_check() -> str:
 
 
 def data_fixes_check() -> str:
-    """Known Leaguepedia same-side duplicate champion fixes in names.champ_name."""
+    """Known Leaguepedia same-side duplicate champion fixes in names.champ_name and cross-table team canonicalization."""
     sys.path.insert(0, STATS)
     import names
 
@@ -123,6 +123,19 @@ def data_fixes_check() -> str:
         return "expected Morgana for Champions 2012 Spring Finals G2 Mid"
     if names.champ_name("Trundle", "LPL/2016 Season/Spring Season_Week 7_1_G1", "Support") is not None:
         return "expected None for duplicated Trundle Support in LPL 2016 Spring W7_1 G1"
+    if names.canon_team("Royal Club", "2020-05-01", "LDL/2020 Season/Spring") != "Royal Club (RNG academy)":
+        return "expected Royal Club (RNG academy) for 2020 LDL Royal Club"
+    if names.canon_team("Royal Club", "2013-10-04", "Season 3 World Championship") != "Royal Club":
+        return "expected Royal Club for 2013 Worlds Royal Club"
+    if names.canon_team("Star Horn Royal Club", "2015-06-01", "2015 LSPL Summer") != "Star Horn Royal Club (RNG academy)":
+        return "expected Star Horn Royal Club (RNG academy) for 2015 LSPL Star Horn Royal Club"
+    if names.canon_team("Star Horn Royal Club", "2014-10-19", "2014 Season World Championship") != "Star Horn Royal Club":
+        return "expected Star Horn Royal Club for 2014 Worlds Star Horn Royal Club"
+    if names.canon_team("CLG Prime") != "Counter Logic Gaming" or names.canon_team("Team VDS") != "Victorious Demons":
+        return "expected CLG Prime -> Counter Logic Gaming and Team VDS -> Victorious Demons"
+    names.learn_team_case({"amigas pedrolo": 5, "Amigas Pedrolo": 5}, ["Amigas Pedrolo"])
+    if names.canon_team("amigas pedrolo") != "Amigas Pedrolo":
+        return "expected learn_team_case to canonicalize amigas pedrolo -> Amigas Pedrolo"
     return ""
 
 

@@ -174,11 +174,17 @@ def main():
             if v is not None and g >= 20 and not (lo <= v <= hi):
                 bad(f"player {key} out of range ({lo}-{hi})", f"{where}: {v}")
         yg = sum(y.get("g", 0) for y in p.get("years") or [])
-        if p.get("years") and yg != g:
-            bad("player's years don't add up to their games", f"{where}: years {yg} vs {g}")
+        yw = sum(y.get("w", 0) for y in p.get("years") or [])
+        if p.get("years") and (yg, yw) != (g, w):
+            bad("player's years don't add up to their games", f"{where}: years {yg}/{yw} vs {g}/{w}")
         tg = sum(t.get("g", 0) for t in p.get("teams") or [])
-        if p.get("teams") and tg != g:
-            bad("player's teams don't add up to their games", f"{where}: teams {tg} vs {g}")
+        tw = sum(t.get("w", 0) for t in p.get("teams") or [])
+        if p.get("teams") and (tg, tw) != (g, w):
+            bad("player's teams don't add up to their games", f"{where}: teams {tg}/{tw} vs {g}/{w}")
+        eg = sum(e.get("g", 0) for e in p.get("events") or [])
+        ew = sum(e.get("w", 0) for e in p.get("events") or [])
+        if p.get("events") and (eg, ew) != (g, w):
+            bad("player's events don't add up to their games", f"{where}: events {eg}/{ew} vs {g}/{w}")
         for t in p.get("teams") or []:
             link("team", t.get("u"), where)
         for r in p.get("recent") or []:
@@ -187,22 +193,77 @@ def main():
             link("event", e.get("e"), where)
     # -- teams -------------------------------------------------------------------------------------
     order = sorted(teams)
-    for slug, t in zip(order, pool.map(lambda x: load(os.path.join(hub, "team", x + ".json")), order)):
+
+    def team_and_logs(x):
+        try:
+            tg = load(os.path.join(hub, "teamgames", x + ".json"))
+        except FileNotFoundError:
+            tg = None
+        try:
+            ts = load(os.path.join(hub, "teamseries", x + ".json"))
+        except FileNotFoundError:
+            ts = None
+        return load(os.path.join(hub, "team", x + ".json")), tg, ts
+
+    for slug, (t, tg_log, ts_log) in zip(order, pool.map(team_and_logs, order)):
         where = f"team/{slug}"
-        if t.get("w", 0) > t.get("g", 0):
+        g, w, sg, sw = t.get("g", 0), t.get("w", 0), t.get("sg", 0), t.get("sw", 0)
+        if w > g:
             bad("team with more wins than games", where)
-        if t.get("sw", 0) > t.get("sg", 0):
+        if sw > sg:
             bad("team with more series wins than series", where)
+        if tg_log is not None:
+            checked["team game logs"] += 1
+            lg, lw = len(tg_log), sum(1 for r in tg_log if r[7] == 1)
+            if (lg, lw) != (g, w):
+                bad("team's game log doesn't match their games and wins", f"{where}: log {lg}/{lw} vs page {g}/{w}")
+        else:
+            bad("team's game log missing", where)
+        if ts_log is not None:
+            checked["team series logs"] += 1
+            lsg, lsw = len(ts_log), sum(1 for r in ts_log if (r[3] or 0) > (r[4] or 0))
+            if (lsg, lsw) != (sg, sw):
+                bad("team's series log doesn't match their series and wins", f"{where}: log {lsg}/{lsw} vs page {sg}/{sw}")
+        sd = t.get("sides")
+        if not sd or len(sd) != 4 or (sd[0] + sd[2], sd[1] + sd[3]) != (g, w):
+            bad("team's blue/red sides don't add up to their games", f"{where}: sides {sd} vs {g}/{w}")
         yg = sum(y.get("g", 0) for y in t.get("years") or [])
-        if t.get("years") and yg != t.get("g", 0):
-            bad("team's years don't add up to their games", f"{where}: years {yg} vs {t.get('g')}")
+        yw = sum(y.get("w", 0) for y in t.get("years") or [])
+        if t.get("years") and (yg, yw) != (g, w):
+            bad("team's years don't add up to their games", f"{where}: years {yg}/{yw} vs {g}/{w}")
+        ng = sum(n.get("g", 0) for n in t.get("names") or [])
+        if t.get("names") and ng != g:
+            bad("team's names don't add up to their games", f"{where}: names {ng} vs {g}")
+        ev_list = t.get("events") or []
+        eg = sum(e.get("g", 0) for e in ev_list)
+        ew = sum(e.get("w", 0) for e in ev_list)
+        esg = sum(e.get("sg", 0) for e in ev_list)
+        esw = sum(e.get("sw", 0) for e in ev_list)
+        if (eg, ew) != (g, w):
+            bad("team's events don't add up to their games", f"{where}: events {eg}/{ew} vs {g}/{w}")
+        if (esg, esw) != (sg, sw):
+            bad("team's events don't add up to their series", f"{where}: events {esg}/{esw} vs {sg}/{sw}")
+        ev_slugs = [e.get("e") for e in ev_list if e.get("e")]
+        if len(ev_slugs) != len(set(ev_slugs)):
+            bad("team's events list a tournament twice", f"{where}: {[k for k, v in Counter(ev_slugs).items() if v > 1]}")
         for r in t.get("recent") or []:
             link("game", r.get("g"), where)
-        for e in t.get("events") or []:
+        for e in ev_list:
             link("event", e.get("e") or e.get("u"), where)
         for ro in t.get("roster") or []:
             for pl in ro.get("p") or []:
                 link("player", pl.get("u"), where)
+    # -- champions ---------------------------------------------------------------------------------
+    order = sorted(champs)
+    for slug, c in zip(order, pool.map(lambda x: load(os.path.join(hub, "champ", x + ".json")), order)):
+        where = f"champ/{slug}"
+        cp, cw, cb = c.get("p", 0), c.get("w", 0), c.get("b", 0)
+        csd = c.get("side") or [0, 0, 0, 0]
+        if (csd[0] + csd[2], csd[1] + csd[3]) != (cp, cw):
+            bad("champion's blue/red sides don't add up to their picks and wins", f"{where}: {csd} vs {cp}/{cw}")
+        cys = c.get("years") or []
+        if (sum(y.get("p", 0) for y in cys), sum(y.get("w", 0) for y in cys), sum(y.get("b", 0) for y in cys)) != (cp, cw, cb):
+            bad("champion's years don't add up to their picks, wins and bans", where)
     # -- events ------------------------------------------------------------------------------------
     order = sorted(events)
     for slug, e in zip(order, pool.map(lambda x: load(os.path.join(hub, "event", x + ".json")), order)):
@@ -283,7 +344,8 @@ def main():
     if "--json" in sys.argv:
         with open(sys.argv[sys.argv.index("--json") + 1], "w", encoding="utf-8") as f:
             json.dump({"version": latest["version"], "checked": checked, "counts": counts, "examples": findings}, f, indent=1, ensure_ascii=False)
-    hard = [c for c in counts if c.startswith(("broken link", "series score above", "series winner", "wrong champion"))]
+    hard = [c for c in counts if c.startswith(("broken link", "series score above", "series winner", "wrong champion",
+                                               "player's", "team's", "champion's"))]
     sys.exit(1 if hard else 0)
 
 
