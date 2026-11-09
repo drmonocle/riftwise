@@ -28,6 +28,7 @@ import { playerRowLine, rateLine } from "../../hub/playerRating";
 import { KdaBar, PlayerOpponents, TeamPeriodOpponents, WinBar } from "./OpponentChart";
 import {
   ChampLink,
+  HubLink,
   Loading,
   OeCredit,
   RevealButton,
@@ -283,15 +284,22 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; periodL
     b0: tl("Behind, under 2,000"),
     b2: tl("2,000+ gold behind"),
   };
-  const wrCell = ([g, w]: [number, number]) =>
-    g ? (
-      <span className="font-mono tabular-nums">
-        <span className={w / g >= 0.5 ? "text-rw-teal" : "text-rw-red"}>{Math.round((w / g) * 100)}%</span>
-        <span className="text-rw-muted text-[10px]"> ({g})</span>
+  const wrCell = ([g, w]: [number, number]) => {
+    if (!g) return <span className="text-rw-muted">–</span>;
+    const pctVal = Math.round((w / g) * 100);
+    const good = w / g >= 0.5;
+    return (
+      <span className="inline-flex items-center justify-end gap-1.5 font-mono tabular-nums">
+        <span className="w-10 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
+          <span className={`block h-full rounded-full ${good ? "bg-rw-teal/80" : "bg-rw-red/75"}`} style={{ width: `${Math.max(4, pctVal)}%` }} />
+        </span>
+        <span>
+          <span className={`font-semibold ${good ? "text-rw-teal" : "text-rw-red"}`}>{pctVal}%</span>
+          <span className="text-rw-muted text-[10px]"> ({g})</span>
+        </span>
       </span>
-    ) : (
-      <span className="text-rw-muted">–</span>
     );
+  };
   const wrStr = ([g, w]: [number, number]) => (g ? `${Math.round((w / g) * 100)}% (${g}G)` : "–");
   const th = "px-2 py-1 font-normal text-[10px] text-rw-muted";
   return (
@@ -570,6 +578,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
     sel.find((r) => isFresh(r[0]))?.[0],
   );
   const detail = agg.csm != null;
+  const maxChampG = Math.max(1, ...agg.champs.map((c) => c.g));
   const cols: Column<(typeof agg.champs)[number]>[] = [
     {
       key: "c",
@@ -577,7 +586,24 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
       value: (c) => c.c,
       render: (c) => <ChampLink name={c.c} size={18} />,
     },
-    { key: "g", label: tl("Games"), value: (c) => c.g },
+    {
+      key: "g",
+      label: tl("Games"),
+      value: (c) => c.g,
+      render: (c) => (
+        <span className="inline-flex items-center gap-1.5 tabular-nums">
+          <span className="w-10 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
+            <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(6, Math.round((c.g / maxChampG) * 100))}%` }} />
+          </span>
+          <HubLink
+            to={{ kind: "player", slug, tab: "champions", query: `champ=${encodeURIComponent(c.c)}&p=${encodeURIComponent(period)}` }}
+            className="hover:text-rw-accent hover:underline"
+          >
+            {c.g}
+          </HubLink>
+        </span>
+      ),
+    },
     {
       key: "w",
       label: tl("Win %"),
@@ -795,25 +821,37 @@ export const TeamPeriodStats: React.FC<{ slug: string; has2y?: boolean; who?: Te
   return <TeamPeriodView slug={slug} rows={rows} who={who} preferAll={preferAll} />;
 };
 
-const ChampCounts: React.FC<{ title: string; list: [string, number][] }> = ({
+const ChampCounts: React.FC<{ title: string; list: [string, number][]; tone?: "ban" | "banVs" }> = ({
   title,
   list,
-}) =>
-  list.length ? (
+  tone = "ban",
+}) => {
+  if (!list.length) return null;
+  const maxN = Math.max(1, ...list.map(([, n]) => n));
+  return (
     <div className="min-w-0">
       <div className="text-[10px] font-semibold text-rw-muted mb-1">
         {title}
       </div>
       <ul className="text-xs space-y-1">
         {list.map(([c, n]) => (
-          <li key={c} className="flex justify-between gap-2 min-w-0">
+          <li key={c} className="flex items-center justify-between gap-2 min-w-0">
             <ChampLink name={c} size={16} />
-            <span className="text-rw-sub tabular-nums shrink-0">{n}</span>
+            <span className="inline-flex items-center gap-1.5 shrink-0 tabular-nums">
+              <span className="w-10 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block">
+                <span
+                  className={`block h-full rounded-full ${tone === "banVs" ? "bg-rw-red/70" : "bg-rw-accent/65"}`}
+                  style={{ width: `${Math.max(8, Math.round((n / maxN) * 100))}%` }}
+                />
+              </span>
+              <span className="text-rw-sub w-5 text-right">{n}</span>
+            </span>
           </li>
         ))}
       </ul>
     </div>
-  ) : null;
+  );
+};
 
 const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWho; preferAll?: boolean }> = ({
   slug,
@@ -955,30 +993,52 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
             </div>
             <div className="space-y-4 min-w-0">
               <div className="grid sm:grid-cols-3 gap-4">
-                {t.picks.length > 0 && (
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-semibold text-rw-muted mb-1">
-                      {tl("Most picked champions")}
+                {t.picks.length > 0 && (() => {
+                  const maxPickN = Math.max(1, ...t.picks.map(([, n]) => n));
+                  return (
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-semibold text-rw-muted mb-1">
+                        {tl("Most picked champions")}
+                      </div>
+                      <ul className="text-xs space-y-1">
+                        {t.picks.map(([c, n, w]) => {
+                          const good = n > 0 && w / n >= 0.5;
+                          return (
+                            <li
+                              key={c}
+                              className="flex items-center justify-between gap-2 min-w-0"
+                            >
+                              <ChampLink name={c} size={16} />
+                              <span className="inline-flex items-center gap-1.5 text-rw-sub tabular-nums shrink-0">
+                                <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block">
+                                  <span
+                                    className="block h-full bg-rw-teal/75 rounded-full"
+                                    style={{ width: `${Math.max(8, Math.round((n / maxPickN) * 100))}%` }}
+                                  />
+                                </span>
+                                <HubLink
+                                  to={{ kind: "team", slug, tab: "champions", query: `champ=${encodeURIComponent(c)}&p=${encodeURIComponent(period)}` }}
+                                  className="hover:text-rw-accent hover:underline"
+                                >
+                                  {n}
+                                </HubLink>
+                                <span className="text-rw-muted">·</span>
+                                <span className={`w-9 text-right ${good ? "text-rw-teal font-semibold" : "text-rw-red"}`}>
+                                  {winRate(w, n)}
+                                </span>
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
                     </div>
-                    <ul className="text-xs space-y-1">
-                      {t.picks.map(([c, n, w]) => (
-                        <li
-                          key={c}
-                          className="flex items-center justify-between gap-2 min-w-0"
-                        >
-                          <ChampLink name={c} size={16} />
-                          <span className="text-rw-sub tabular-nums shrink-0">
-                            {n} · {winRate(w, n)}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                <ChampCounts title={tl("Most banned by them")} list={t.bans} />
+                  );
+                })()}
+                <ChampCounts title={tl("Most banned by them")} list={t.bans} tone="ban" />
                 <ChampCounts
                   title={tl("Most banned against them")}
                   list={t.bansVs}
+                  tone="banVs"
                 />
               </div>
               <DraftTendencies rows={sel} teamName={who?.name} periodLabel={periodText} />

@@ -12,20 +12,25 @@ import { WinBar, KdaBar } from "./OpponentChart";
 const ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"];
 const pct = (n: number | null) => (n === null ? "–" : `${Math.round(n * 100)}%`);
 const signed = (v: number | null) => (v == null ? "–" : <span className={v >= 0 ? "text-rw-teal" : "text-rw-red"}>{`${v > 0 ? "+" : ""}${fmtNum(v)}`}</span>);
+const shareTone = (v: number | null, hi = 0.52, lo = 0.48) => {
+  if (v == null) return "–";
+  const c = v >= hi ? "text-rw-teal font-semibold" : v <= lo ? "text-rw-red" : "";
+  return <span className={c}>{pct(v)}</span>;
+};
 
 /** Oracle's Elixir columns for the player table (leads over the lane opponent at 15, first blood). */
 const playerEarlyCols = (): Column<EventPlayer>[] => [
   { key: "g15", label: "GD@15", title: tl("Gold lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? per(p.g15 || 0, p.tn, 0) : null), render: (p) => signed(p.tn ? per(p.g15 || 0, p.tn, 0) : null) },
   { key: "c15", label: "CSD@15", title: tl("CS lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? per(p.c15 || 0, p.tn, 1) : null), render: (p) => signed(p.tn ? per(p.c15 || 0, p.tn, 1) : null) },
   { key: "x15", label: "XPD@15", title: tl("XP lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? per(p.x15 || 0, p.tn, 0) : null), render: (p) => signed(p.tn ? per(p.x15 || 0, p.tn, 0) : null) },
-  { key: "fbp", label: tl("FB%"), title: tl("Took part in first blood (kill or assist)"), value: (p) => (p.fbn ? per(p.fbp || 0, p.fbn, 3) : null), render: (p) => (p.fbn ? pct(per(p.fbp || 0, p.fbn, 3)) : "–") },
+  { key: "fbp", label: tl("FB%"), title: tl("Took part in first blood (kill or assist)"), value: (p) => (p.fbn ? per(p.fbp || 0, p.fbn, 3) : null), render: (p) => (p.fbn ? shareTone(per(p.fbp || 0, p.fbn, 3), 0.3, 0.12) : "–") },
 ];
 
 /** Oracle's Elixir columns for the team table. */
 const teamEarlyCols = (): Column<EventTeamStats>[] => [
   { key: "g15", label: "GD@15", title: tl("Gold lead at 15 minutes"), value: (t) => (t.tn ? per(t.g15 || 0, t.tn, 0) : null), render: (t) => signed(t.tn ? per(t.g15 || 0, t.tn, 0) : null) },
-  { key: "fb", label: tl("FB%"), title: tl("First blood rate"), value: (t) => (t.fbn ? per(t.fb || 0, t.fbn, 3) : null), render: (t) => (t.fbn ? pct(per(t.fb || 0, t.fbn, 3)) : "–") },
-  { key: "ft", label: tl("FT%"), title: tl("First tower rate"), value: (t) => (t.fbn ? per(t.ft || 0, t.fbn, 3) : null), render: (t) => (t.fbn ? pct(per(t.ft || 0, t.fbn, 3)) : "–") },
+  { key: "fb", label: tl("FB%"), title: tl("First blood rate"), value: (t) => (t.fbn ? per(t.fb || 0, t.fbn, 3) : null), render: (t) => (t.fbn ? shareTone(per(t.fb || 0, t.fbn, 3)) : "–") },
+  { key: "ft", label: tl("FT%"), title: tl("First tower rate"), value: (t) => (t.fbn ? per(t.ft || 0, t.fbn, 3) : null), render: (t) => (t.fbn ? shareTone(per(t.ft || 0, t.fbn, 3)) : "–") },
   { key: "pl", label: tl("Plates"), title: tl("Turret plates taken per game"), value: (t) => (t.pln ? per(t.pl || 0, t.pln, 1) : null) },
 ];
 
@@ -54,7 +59,19 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
     { key: "n", label: tl("Player"), value: (p) => p.n.toLowerCase(), render: (p) => <PlayerLink name={p.n} u={p.u} /> },
     { key: "t", label: tl("Team"), value: (p) => p.t.toLowerCase(), render: (p) => <span className="max-w-[8rem] truncate inline-block align-bottom"><TeamLink name={p.t} u={p.tu} /></span> },
     { key: "r", label: tl("Role"), value: (p) => ROLES.indexOf(p.r), render: (p) => <span className="text-rw-muted">{roleName(p.r)}</span> },
-    { key: "g", label: tl("Games"), value: (p) => p.g },
+    {
+      key: "g",
+      label: tl("Games"),
+      value: (p) => p.g,
+      render: (p) => (
+        <span className="inline-flex items-center gap-1.5 tabular-nums">
+          <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
+            <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(8, Math.round((p.g / Math.max(1, maxG)) * 100))}%` }} />
+          </span>
+          <span>{p.g}</span>
+        </span>
+      ),
+    },
     { key: "wr", label: tl("Win %"), value: (p) => per(p.w, p.g, 3), render: (p) => <WinBar w={p.w} g={p.g} /> },
     {
       key: "kda",
@@ -65,12 +82,12 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
     { key: "k", label: "K", title: tl("Kills per game"), value: (p) => per(p.k, p.g) },
     { key: "d", label: "D", title: tl("Deaths per game"), value: (p) => per(p.d, p.g) },
     { key: "a", label: "A", title: tl("Assists per game"), value: (p) => per(p.a, p.g) },
-    { key: "kp", label: "KP", title: tl("Kill participation"), value: (p) => per(p.k + p.a, p.tk, 3), render: (p) => pct(per(p.k + p.a, p.tk, 3)) },
+    { key: "kp", label: "KP", title: tl("Kill participation"), value: (p) => per(p.k + p.a, p.tk, 3), render: (p) => shareTone(per(p.k + p.a, p.tk, 3), 0.72, 0.58) },
     { key: "csm", label: tl("CS/m"), title: tl("CS per minute"), value: (p) => per(p.cs, p.min) },
     { key: "gpm", label: tl("GPM"), title: tl("Gold per minute"), value: (p) => per(p.gold, p.min, 0) },
     { key: "dpm", label: tl("DPM"), title: tl("Damage per minute"), value: (p) => (p.dmg ? per(p.dmg, p.dm ?? p.min, 0) : null) },
     { key: "vpm", label: tl("VS/m"), title: tl("Vision score per minute"), value: (p) => per(p.vis, p.vmin, 2) },
-    { key: "dmgs", label: tl("DMG%"), title: tl("Share of the team's damage to champions"), value: (p) => (p.td ? per(p.sd || 0, p.td, 3) : null), render: (p) => (p.td ? pct(per(p.sd || 0, p.td, 3)) : "–") },
+    { key: "dmgs", label: tl("DMG%"), title: tl("Share of the team's damage to champions"), value: (p) => (p.td ? per(p.sd || 0, p.td, 3) : null), render: (p) => (p.td ? shareTone(per(p.sd || 0, p.td, 3), 0.26, 0.1) : "–") },
     { key: "golds", label: tl("Gold%"), title: tl("Share of the team's gold"), value: (p) => (p.tg ? per(p.sg || 0, p.tg, 3) : null), render: (p) => (p.tg ? pct(per(p.sg || 0, p.tg, 3)) : "–") },
     { key: "viss", label: tl("VS%"), title: tl("Share of the team's vision score"), value: (p) => (p.tv ? per(p.sv || 0, p.tv, 3) : null), render: (p) => (p.tv ? pct(per(p.sv || 0, p.tv, 3)) : "–") },
     {
@@ -179,12 +196,35 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
     return !terms.length ? teams : teams.filter((t) => terms.some((term) => t.t.toLowerCase().includes(term)));
   }, [teams, search]);
   if (teams.length === 0 || hidden) return null;
+  const maxTeamG = Math.max(1, ...teams.map((t) => t.g));
   const all: Column<EventTeamStats>[] = [
     { key: "t", label: tl("Team"), value: (t) => t.t.toLowerCase(), render: (t) => <TeamLink name={t.t} u={t.u} /> },
-    { key: "g", label: tl("Games"), value: (t) => t.g },
+    {
+      key: "g",
+      label: tl("Games"),
+      value: (t) => t.g,
+      render: (t) => (
+        <span className="inline-flex items-center gap-1.5 tabular-nums">
+          <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
+            <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(8, Math.round((t.g / maxTeamG) * 100))}%` }} />
+          </span>
+          <span>{t.g}</span>
+        </span>
+      ),
+    },
     { key: "wr", label: tl("Win %"), value: (t) => per(t.w, t.g, 3), render: (t) => <WinBar w={t.w} g={t.g} /> },
     { key: "min", label: tl("Avg game"), value: (t) => per(t.min, t.g), render: (t) => tl("{n} min", { n: per(t.min, t.g) ?? "–" }) },
-    { key: "kd", label: "K:D", title: tl("Kills per death"), value: (t) => per(t.k, Math.max(t.d, 1), 2) },
+    {
+      key: "kd",
+      label: "K:D",
+      title: tl("Kills per death"),
+      value: (t) => per(t.k, Math.max(t.d, 1), 2),
+      render: (t) => {
+        const v = per(t.k, Math.max(t.d, 1), 2);
+        if (v == null) return "–";
+        return <span className={v >= 1.15 ? "text-rw-teal font-semibold" : v <= 0.85 ? "text-rw-red" : ""}>{v}</span>;
+      },
+    },
     { key: "k", label: tl("Kills"), title: tl("Kills per game"), value: (t) => per(t.k, t.g) },
     { key: "d", label: tl("Deaths"), title: tl("Deaths per game"), value: (t) => per(t.d, t.g) },
     { key: "gpm", label: tl("GPM"), title: tl("Team gold per minute"), value: (t) => (t.gold ? per(t.gold, t.min, 0) : null) },
@@ -210,9 +250,9 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
       },
     },
     { key: "drag", label: tl("Dragons"), title: tl("Dragons per game"), value: (t) => per(t.drag, t.g, 2) },
-    { key: "drap", label: tl("DRA%"), title: tl("Share of all dragons taken in their games"), value: (t) => (t.odrag != null && t.drag + t.odrag ? per(t.drag, t.drag + t.odrag, 3) : null), render: (t) => (t.odrag != null && t.drag + t.odrag ? pct(per(t.drag, t.drag + t.odrag, 3)) : "–") },
+    { key: "drap", label: tl("DRA%"), title: tl("Share of all dragons taken in their games"), value: (t) => (t.odrag != null && t.drag + t.odrag ? per(t.drag, t.drag + t.odrag, 3) : null), render: (t) => (t.odrag != null && t.drag + t.odrag ? shareTone(per(t.drag, t.drag + t.odrag, 3)) : "–") },
     { key: "bar", label: tl("Barons"), title: tl("Barons per game"), value: (t) => per(t.bar, t.g, 2) },
-    { key: "barp", label: tl("Baron%"), title: tl("Share of all barons taken in their games"), value: (t) => (t.obar != null && t.bar + t.obar ? per(t.bar, t.bar + t.obar, 3) : null), render: (t) => (t.obar != null && t.bar + t.obar ? pct(per(t.bar, t.bar + t.obar, 3)) : "–") },
+    { key: "barp", label: tl("Baron%"), title: tl("Share of all barons taken in their games"), value: (t) => (t.obar != null && t.bar + t.obar ? per(t.bar, t.bar + t.obar, 3) : null), render: (t) => (t.obar != null && t.bar + t.obar ? shareTone(per(t.bar, t.bar + t.obar, 3)) : "–") },
     { key: "tow", label: tl("Towers"), title: tl("Towers per game"), value: (t) => per(t.tow, t.g, 1) },
     { key: "tl", label: tl("Lost"), title: tl("Towers lost per game"), value: (t) => (t.tl != null ? per(t.tl, t.g, 1) : null) },
     { key: "csm", label: tl("CS/m"), title: tl("Team CS per minute"), value: (t) => (t.pmin ? per(t.cs || 0, t.pmin, 1) : null) },

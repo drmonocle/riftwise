@@ -640,6 +640,7 @@ const PlayerChampionsTab: React.FC<{
     return playerAgg(rows);
   }, [log.data, period]);
   const champs = agg ? agg.champs : p.champs;
+  const maxChampG = Math.max(1, ...champs.map((c) => c.g));
   return (
     <div className={`${gamesOn ? "" : "rw-span "}space-y-3`}>
       {options.length > 0 && (
@@ -680,7 +681,14 @@ const PlayerChampionsTab: React.FC<{
                   <td className={`${td} max-w-[10rem]`}>
                     <ChampLink name={c.c} size={18} />
                   </td>
-                  <td className={`${td} text-rw-sub`}>{c.g}</td>
+                  <td className={`${td} text-rw-sub`} data-sort={c.g}>
+                    <span className="inline-flex items-center gap-1.5 tabular-nums">
+                      <span className="w-10 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
+                        <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(6, Math.round((c.g / maxChampG) * 100))}%` }} />
+                      </span>
+                      <span>{c.g}</span>
+                    </span>
+                  </td>
                   <td className={`${td} text-rw-sub`}>
                     <WinBar w={c.w} g={c.g} />
                   </td>
@@ -726,10 +734,12 @@ const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number] }> = ({
       >
         {hidden ? <RevealButton onReveal={reveal} small /> : x.pl || "–"}
       </td>
-      <td className={`${td} text-rw-sub`}>
-        {hidden ? x.g : `${x.w}-${x.g - x.w}`}
+      <td className={`${td} text-rw-sub`} data-sort={hidden ? x.g : x.g ? x.w / x.g : 0}>
+        {hidden ? x.g : <WinBar w={x.w} g={x.g} showRecord />}
       </td>
-      <td className={`${td} text-rw-sub`}>{fmtN(x.kda)}</td>
+      <td className={`${td} text-rw-sub`} data-sort={x.kda}>
+        <KdaBar kda={x.kda} />
+      </td>
       <td className={`${td} text-rw-sub`}>{x.csm ?? "–"}</td>
       <td className={td}>
         <span className="flex gap-0.5">

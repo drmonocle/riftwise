@@ -483,45 +483,53 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               </tr>
             </thead>
             <tbody>
-              {muRows.map(([oc, g, w, tn, gd, cs, xp, ahead]) => (
-                <tr key={oc} className="border-t border-rw-border">
-                  <td className={`${td} max-w-[10rem]`}>
-                    <ChampLink name={oc} size={16} />
-                  </td>
-                  <td className={`${td} text-rw-sub`}>
-                    <HubLink
-                      to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&vschamp=${encodeURIComponent(oc)}` }}
-                      className="hover:text-rw-accent hover:underline"
-                      title={tl("Game finder")}
-                    >
-                      {g}
-                    </HubLink>
-                  </td>
-                  <td className={td} data-sort={g ? w / g : 0}>
-                    <WinBar w={w} g={g} />
-                  </td>
-                  {muLane && (
-                    <>
-                      <td className={td} data-sort={gd ?? ""}>
-                        <Lead v={gd} />
-                      </td>
-                      <td className={td} data-sort={cs ?? ""}>
-                        <Lead v={cs} />
-                      </td>
-                      <td className={td} data-sort={xp ?? ""}>
-                        <Lead v={xp} />
-                      </td>
-                      <td
-                        className={`${td} ${tn && ahead != null ? (ahead / tn >= 0.5 ? "text-rw-teal" : "text-rw-red") : "text-rw-muted"}`}
-                        data-sort={tn && ahead != null ? ahead / tn : ""}
-                        title={tn ? tl("{n} games with timelines", { n: tn }) : undefined}
-                      >
-                        {tn && ahead != null ? pctOf(ahead, tn) : "–"}
-                      </td>
-                    </>
-                  )}
-                </tr>
-              ))}
+              {(() => {
+                const maxMuG = Math.max(1, ...muRows.map((x) => x[1]));
+                return muRows.map(([oc, g, w, tn, gd, cs, xp, ahead]) => (
+                  <tr key={oc} className="border-t border-rw-border">
+                    <td className={`${td} max-w-[10rem]`}>
+                      <ChampLink name={oc} size={16} />
+                    </td>
+                    <td className={`${td} text-rw-sub`} data-sort={g}>
+                      <span className="inline-flex items-center gap-1.5 tabular-nums">
+                        <span className="w-10 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
+                          <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(6, Math.round((g / maxMuG) * 100))}%` }} />
+                        </span>
+                        <HubLink
+                          to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&vschamp=${encodeURIComponent(oc)}` }}
+                          className="hover:text-rw-accent hover:underline"
+                          title={tl("Game finder")}
+                        >
+                          {g}
+                        </HubLink>
+                      </span>
+                    </td>
+                    <td className={td} data-sort={g ? w / g : 0}>
+                      <WinBar w={w} g={g} />
+                    </td>
+                    {muLane && (
+                      <>
+                        <td className={td} data-sort={gd ?? ""}>
+                          <Lead v={gd} />
+                        </td>
+                        <td className={td} data-sort={cs ?? ""}>
+                          <Lead v={cs} />
+                        </td>
+                        <td className={td} data-sort={xp ?? ""}>
+                          <Lead v={xp} />
+                        </td>
+                        <td
+                          className={`${td} ${tn && ahead != null ? (ahead / tn >= 0.5 ? "text-rw-teal" : "text-rw-red") : "text-rw-muted"}`}
+                          data-sort={tn && ahead != null ? ahead / tn : ""}
+                          title={tn ? tl("{n} games with timelines", { n: tn }) : undefined}
+                        >
+                          {tn && ahead != null ? pctOf(ahead, tn) : "–"}
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                ));
+              })()}
             </tbody>
           </STable>
           <p className="text-[10px] text-rw-muted">
@@ -560,17 +568,28 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               </tr>
             </thead>
             <tbody>
-              {(c.duos || []).slice(0, 15).map(([pc, g, w]) => (
-                <tr key={pc} className="border-t border-rw-border">
-                  <td className={`${td} max-w-[10rem]`}>
-                    <ChampLink name={pc} size={16} />
-                  </td>
-                  <td className={`${td} text-rw-sub`}>{g}</td>
-                  <td className={td} data-sort={g ? w / g : 0}>
-                    <WinBar w={w} g={g} />
-                  </td>
-                </tr>
-              ))}
+              {(() => {
+                const duos = (c.duos || []).slice(0, 15);
+                const maxDuoG = Math.max(1, ...duos.map((x) => x[1]));
+                return duos.map(([pc, g, w]) => (
+                  <tr key={pc} className="border-t border-rw-border">
+                    <td className={`${td} max-w-[10rem]`}>
+                      <ChampLink name={pc} size={16} />
+                    </td>
+                    <td className={`${td} text-rw-sub`} data-sort={g}>
+                      <span className="inline-flex items-center gap-1.5 tabular-nums">
+                        <span className="w-10 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
+                          <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(6, Math.round((g / maxDuoG) * 100))}%` }} />
+                        </span>
+                        <span>{g}</span>
+                      </span>
+                    </td>
+                    <td className={td} data-sort={g ? w / g : 0}>
+                      <WinBar w={w} g={g} />
+                    </td>
+                  </tr>
+                ));
+              })()}
             </tbody>
           </STable>
         </Section>
@@ -622,32 +641,41 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
             </tr>
           </thead>
           <tbody>
-            {(playersRecent ? recentPlayersList : c.players).slice(0, 25).map((p) => (
-              <tr key={p.n + p.u} className="border-t border-rw-border">
-                <td className={td}>
-                  <PlayerLink name={p.n} u={p.u} />
-                </td>
-                <td className={`${td} text-rw-sub`}>
-                  <HubLink
-                    to={
-                      p.u
-                        ? { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(c.name)}` }
-                        : { kind: "finder", query: `player=${encodeURIComponent(p.n)}&champ=${encodeURIComponent(c.name)}` }
-                    }
-                    className="hover:text-rw-accent hover:underline"
-                    title={tl("Game finder")}
-                  >
-                    {p.g}
-                  </HubLink>
-                </td>
-                <td className={td} data-sort={p.g ? p.w / p.g : 0}>
-                  <WinBar w={p.w} g={p.g} />
-                </td>
-                <td className={td} data-sort={p.kda}>
-                  <KdaBar kda={p.kda} />
-                </td>
-              </tr>
-            ))}
+            {(() => {
+              const pList = (playersRecent ? recentPlayersList : c.players).slice(0, 25);
+              const maxPG = Math.max(1, ...pList.map((x) => x.g));
+              return pList.map((p) => (
+                <tr key={p.n + p.u} className="border-t border-rw-border">
+                  <td className={td}>
+                    <PlayerLink name={p.n} u={p.u} />
+                  </td>
+                  <td className={`${td} text-rw-sub`} data-sort={p.g}>
+                    <span className="inline-flex items-center gap-1.5 tabular-nums">
+                      <span className="w-10 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
+                        <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(6, Math.round((p.g / maxPG) * 100))}%` }} />
+                      </span>
+                      <HubLink
+                        to={
+                          p.u
+                            ? { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(c.name)}` }
+                            : { kind: "finder", query: `player=${encodeURIComponent(p.n)}&champ=${encodeURIComponent(c.name)}` }
+                        }
+                        className="hover:text-rw-accent hover:underline"
+                        title={tl("Game finder")}
+                      >
+                        {p.g}
+                      </HubLink>
+                    </span>
+                  </td>
+                  <td className={td} data-sort={p.g ? p.w / p.g : 0}>
+                    <WinBar w={p.w} g={p.g} />
+                  </td>
+                  <td className={td} data-sort={p.kda}>
+                    <KdaBar kda={p.kda} />
+                  </td>
+                </tr>
+              ));
+            })()}
           </tbody>
         </STable>
       </Section>
@@ -751,13 +779,24 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         >
           <p className="text-[11px] text-rw-muted">{tl("Games and win rate by where it was picked in the draft (B = blue side, R = red side), every pro game with the pick order known.")}</p>
           <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-            {Object.entries(c.slots).map(([slot, [g, w]]) => (
-              <div key={slot} className="rounded-lg border border-rw-border bg-rw-bg px-2 py-1.5 text-center">
-                <div className={`text-xs font-bold ${slot.startsWith("B") ? "text-[#4a9eff]" : "text-rw-red"}`}>{slot}</div>
-                <div className="text-sm font-semibold text-rw-text tabular-nums">{g >= 5 ? pctOf(w, g) : "–"}</div>
-                <div className="text-[10px] text-rw-muted">{tl("{n} games", { n: fmtNum(g) })}</div>
-              </div>
-            ))}
+            {Object.entries(c.slots).map(([slot, [g, w]]) => {
+              const wrPct = g > 0 ? Math.round((w / g) * 100) : 0;
+              const good = g >= 5 && w / g >= 0.5;
+              return (
+                <div key={slot} className="rounded-lg border border-rw-border bg-rw-bg px-2 py-1.5 text-center space-y-1">
+                  <div className={`text-xs font-bold ${slot.startsWith("B") ? "text-[#4a9eff]" : "text-rw-red"}`}>{slot}</div>
+                  <div className={`text-sm font-semibold tabular-nums ${g >= 5 ? (good ? "text-rw-teal" : "text-rw-red") : "text-rw-text"}`}>
+                    {g >= 5 ? pctOf(w, g) : "–"}
+                  </div>
+                  {g >= 5 && (
+                    <div className="h-1 bg-rw-raised rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full ${good ? "bg-rw-teal/80" : "bg-rw-red/75"}`} style={{ width: `${Math.max(6, wrPct)}%` }} />
+                    </div>
+                  )}
+                  <div className="text-[10px] text-rw-muted">{tl("{n} games", { n: fmtNum(g) })}</div>
+                </div>
+              );
+            })}
           </div>
         </Section>
       )}
