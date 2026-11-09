@@ -1119,7 +1119,7 @@ def build(ctx) -> dict:
                             sd = sides.setdefault(side, {})
                             if all(r["kills"] is not None for r in mine):
                                 pk = sum(r["kills"] for r in mine)
-                                if sd.get("k") is None or abs(sd["k"] - pk) > 2:
+                                if sd.get("k") != pk:
                                     sd["k"] = pk
                             if sd.get("gold") is None and all(r["gold"] is not None for r in mine):
                                 sd["gold"] = sum(r["gold"] for r in mine)
@@ -2507,6 +2507,7 @@ def build(ctx) -> dict:
                               "lu": next((e.get("lu") for e in obj.get("events") or [] if e.get("tu") == clubs[0]["u"] and e.get("lu")), None)})
         club_of[page] = (obj.get("club") or "", obj.get("clubU"))
         out.json(f"player/{u}.json", obj)
+        at = defaultdict(list)
         if games:
             out.json(f"playergames/{u}.json", [list(r) for r in games])
             if has2y:
@@ -2514,12 +2515,10 @@ def build(ctx) -> dict:
             # the item history: each item the player finished a game holding, with the games (rows of the log above)
             items_p = p_items.get(page, [])
             if len(items_p) == len(rows_p):
-                at = defaultdict(list)
                 for pos, i in enumerate(order):
                     for it in set(items_p[i]):  # two of an item in one inventory is still one game
                         at[it].append(pos)
                 if at:
-                    out.json(f"playeritems/{u}.json", sorted(([it, pos] for it, pos in at.items()), key=lambda x: (-len(x[1]), x[0])))
                     for it, pos in at.items():
                         item_players[it].append((len(pos), games[pos[0]][0], name, u))
                         s_it = pretty(it)
@@ -2534,6 +2533,9 @@ def build(ctx) -> dict:
                         for c_, ys in by_c.items():
                             if c_:
                                 item_champ[(s_it, c_)].append((u, sum(ys.values()), *(x for y_ in sorted(ys) for x in (y_, ys[y_]))))
+        else:
+            out.json(f"playergames/{u}.json", [])
+        out.json(f"playeritems/{u}.json", sorted(([it, pos] for it, pos in at.items()), key=lambda x: (-len(x[1]), x[0])))
         search_players.append([name, short_slug(name, u), club, p["g"], last_date[:4], (role or "")[:1],
                                " ".join(x for x in (bio.get("Name"), bio.get("NativeName")) if x) if p["g"] >= 50 else ""])
         search_us.append(u)

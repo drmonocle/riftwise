@@ -44,8 +44,8 @@ func testSite(t *testing.T) *store {
 	files := map[string]string{
 		"team":   "t1\tT1 – stats | RiftWise\tT1: 1,216-644 & more <b>\t1\nsmall-team\tSmall – stats | RiftWise\tFew games\t0\nbig-team\tBig – stats | RiftWise\tBig.\t1\tBig has played 1,860 <pro> games.\n",
 		"player": "faker\tFaker – pro stats | RiftWise\tFaker, Mid for T1.\t1\n",
-		"event":  "worlds-2025\tWorlds 2025 | RiftWise\tWorlds 2025.\t1\n",
-		"game":   "worlds-2025-finals-1\tT1 vs KT | RiftWise\tT1 vs KT.\t1\n",
+		"event":  "worlds-2025\tWorlds 2025 | RiftWise\tWorlds 2025.\t1\nworlds-2026\tWorlds 2026 | RiftWise\tWorlds 2026.\t1\n",
+		"game":   "worlds-2025-finals-1\tT1 vs KT | RiftWise\tT1 vs KT.\t1\nmsi-2024-main-event-finals-1\tGEN vs BLG | RiftWise\tGEN vs BLG.\t1\n",
 		"champ":  "ahri\tAhri in pro play | RiftWise\tAhri.\t1\n",
 		"league": "lck\tLCK – every season | RiftWise\tLCK.\t1\n",
 	}
@@ -625,6 +625,16 @@ func TestRiotMatchAndMarkdownRedirect(t *testing.T) {
 		{"/riftwise/stats/download?year=2018", "/stats/data?year=2018"},
 		{"/riftwise/stats/data/download", "/stats/data"},
 		{"/riftwise/stats/data/2018", "/stats/data?year=2018"},
+		{"/riftwise/match/worlds-2025-finals-1/5", "/match/worlds-2025-finals-1?g=5"},
+		{"/riftwise/match/worlds-2025-finals-5", "/match/worlds-2025-finals-1?g=5"},
+		{"/riftwise/match/msi-2024-finals-5", "/match/msi-2024-main-event-finals-1?g=5"},
+		{"/riftwise/match/t1-vs-kt-worlds-2025-finals-1", "/match/worlds-2025-finals-1"},
+		{"/riftwise/match/bilibili-gaming-vs-t1-worlds-2026-semifinals-2", "/tournament/worlds-2026"},
+		{"/riftwise/team/t1-772a4", "/team/t1"},
+		{"/riftwise/team/t1-2013-2013", "/team/t1"},
+		{"/riftwise/player/faker-f8c97", "/player/faker"},
+		{"/riftwise/player/faker/tournament-NA+LCS+2013", "/player/faker"},
+		{"/riftwise/player/faker/data", "/player/faker"},
 	} {
 		if w := get(s, c[0]); w.Code != http.StatusMovedPermanently || w.Header().Get("Location") != c[1] {
 			t.Errorf("%s -> %d %q, want 301 %q", c[0], w.Code, w.Header().Get("Location"), c[1])

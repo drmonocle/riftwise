@@ -173,6 +173,10 @@ def main():
                     if any(q < 0 or q >= lg for q in q_list):
                         bad("player's item log points outside their game log", f"{where} ({it_name})")
                         break
+            else:
+                bad("player's item log missing", where)
+        else:
+            bad("player's game log missing", where)
         if w > g:
             bad("player with more wins than games", f"{where}: {w}/{g}")
         if g and p.get("kda") is not None:

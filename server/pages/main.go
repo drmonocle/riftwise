@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "0.8.57" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "0.8.58" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -62,17 +62,21 @@ var kindPath = map[string]string{"team": "team", "player": "player", "event": "t
 var legacyEntityPath = map[string]string{"event": "tournament", "champ": "champion", "game": "match"}
 
 var playerSlugAliases = map[string]string{
-	"thebausffs": "baus",
-	"bausffs":    "baus",
-	"thebaus":    "baus",
-	"rekky":      "rekkles",
+	"thebausffs":         "baus",
+	"bausffs":            "baus",
+	"thebaus":            "baus",
+	"rekky":              "rekkles",
+	"reven-antonio-pino": "reven",
 }
 
 var earlyWorldsAliases = map[string]string{
-	"worlds-2011": "worlds-season-1",
-	"worlds-2012": "worlds-season-2",
-	"worlds-2013": "worlds-season-3",
+	"worlds-2011":  "worlds-season-1",
+	"worlds-2012":  "worlds-season-2",
+	"worlds-2013":  "worlds-season-3",
+	"lck-cup-2024": "lck-cup-2025",
 }
+
+var reHexSuffix = regexp.MustCompile(`^(.*)-[0-9a-f]{5}$`)
 
 func resolveAliasSlug(kind, slug string) string {
 	switch kind {
@@ -100,6 +104,118 @@ func resolveAliasSlug(kind, slug string) string {
 		}
 	}
 	return ""
+}
+
+// resolveSlugFallback strips legacy 5-char disambiguation hashes (dplus-kia-772a4 -> dplus-kia) and repeated year
+// suffixes (hong-kong-attitude-2013-2013 -> hong-kong-attitude) when the base slug exists in the loaded build.
+func (s *store) resolveSlugFallback(kind, slug string) string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	check := func(cand string) string {
+		if cand == "" || cand == slug {
+			return ""
+		}
+		if _, ok := s.pages[kind][cand]; ok {
+			return cand
+		}
+		if a := s.alias[kind][cand]; a != "" {
+			return a
+		}
+		return ""
+	}
+	if m := reHexSuffix.FindStringSubmatch(slug); m != nil {
+		if got := check(m[1]); got != "" {
+			return got
+		}
+	}
+	if len(slug) > 10 && slug[len(slug)-5] == '-' && slug[len(slug)-10] == '-' && isYear(slug[len(slug)-4:]) && slug[len(slug)-4:] == slug[len(slug)-9:len(slug)-5] {
+		if got := check(slug[:len(slug)-5]); got != "" {
+			return got
+		}
+		if got := check(slug[:len(slug)-10]); got != "" {
+			return got
+		}
+	}
+	return ""
+}
+
+// resolveMatchRedirect resolves guessed / search-engine match URLs:
+//   - /match/worlds-2024-main-event-finals-5 -> /match/worlds-2024-main-event-finals-1?g=5
+//   - /match/msi-2024-finals-5               -> /match/msi-2024-main-event-finals-1?g=5
+//   - /match/bilibili-gaming-vs-t1-worlds-2026-semifinals-2 -> match slug if played, else /tournament/worlds-2026
+func (s *store) resolveMatchRedirect(slug string) (targetPath, query string) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	games := s.pages["game"]
+	events := s.pages["event"]
+	matchCand := func(c string) string {
+		if _, ok := games[c]; ok {
+			return c
+		}
+		if !strings.Contains(c, "-main-event-") {
+			for _, st := range []string{"-finals-", "-semifinals-", "-quarterfinals-", "-bracket-stage-", "-knockout-stage-", "-playoffs-"} {
+				if i := strings.Index(c, st); i > 0 {
+					withMain := c[:i] + "-main-event" + c[i:]
+					if _, ok := games[withMain]; ok {
+						return withMain
+					}
+				}
+			}
+		}
+		return ""
+	}
+	if m := matchCand(slug); m != "" && m != slug {
+		return "match/" + m, ""
+	}
+	if len(slug) > 2 && slug[len(slug)-2] == '-' && slug[len(slug)-1] >= '2' && slug[len(slug)-1] <= '5' {
+		if m := matchCand(slug[:len(slug)-2] + "-1"); m != "" {
+			return "match/" + m, "g=" + slug[len(slug)-1:]
+		}
+	}
+	if i := strings.Index(slug, "-vs-"); i > 0 {
+		tail := slug[i+4:]
+		norm := tail
+		for _, pair := range [][2]string{
+			{"-semifinal", "-semifinals-1"},
+			{"-quarterfinal", "-quarterfinals-1"},
+			{"-final", "-finals-1"},
+			{"-semifinals", "-semifinals-1"},
+			{"-quarterfinals", "-quarterfinals-1"},
+			{"-finals", "-finals-1"},
+		} {
+			if strings.HasSuffix(norm, pair[0]) {
+				norm = strings.TrimSuffix(norm, pair[0]) + pair[1]
+				break
+			}
+		}
+		for _, src := range []string{tail, norm} {
+			for p := 0; p < len(src); p++ {
+				if p > 0 && src[p-1] != '-' {
+					continue
+				}
+				sub := src[p:]
+				if m := matchCand(sub); m != "" {
+					return "match/" + m, ""
+				}
+				if len(sub) > 2 && sub[len(sub)-2] == '-' && sub[len(sub)-1] >= '2' && sub[len(sub)-1] <= '5' {
+					if m := matchCand(sub[:len(sub)-2] + "-1"); m != "" {
+						return "match/" + m, "g=" + sub[len(sub)-1:]
+					}
+				}
+			}
+		}
+		// Match not played yet: fall back to the tournament page if a known event slug appears after -vs-.
+		parts := strings.Split(tail, "-")
+		for start := 0; start < len(parts); start++ {
+			for end := len(parts); end > start+1; end-- {
+				candEv := strings.Join(parts[start:end], "-")
+				if _, ok := events[candEv]; ok {
+					return "tournament/" + candEv, ""
+				}
+			}
+		}
+	}
+	return "", ""
 }
 
 // Every build has these; league.tsv only exists in builds from 2026-10 on, so it's optional.
@@ -570,6 +686,14 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, langRoot+parts[0]+"/"+parts[1], http.StatusMovedPermanently)
 		return
 	}
+	if len(parts) == 3 && parts[0] == "match" && len(parts[2]) == 1 && parts[2][0] >= '1' && parts[2][0] <= '9' {
+		http.Redirect(w, r, langRoot+"match/"+strings.ToLower(parts[1])+"?g="+parts[2], http.StatusMovedPermanently)
+		return
+	}
+	if len(parts) == 3 && (parts[0] == "player" || parts[0] == "team") && (strings.HasPrefix(strings.ToLower(parts[2]), "tournament-") || strings.ToLower(parts[2]) == "data") {
+		http.Redirect(w, r, langRoot+parts[0]+"/"+strings.ToLower(parts[1]), http.StatusMovedPermanently)
+		return
+	}
 	if parts[0] == "stats" && ((len(parts) == 2 && (parts[1] == "download" || parts[1] == "downloads" || parts[1] == "csv")) || (len(parts) == 3 && parts[1] == "data")) {
 		to := langRoot + "stats/data"
 		q := r.URL.RawQuery
@@ -700,6 +824,9 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		if !ok && to == "" {
 			to = resolveAliasSlug(kind, slug)
 		}
+		if !ok && to == "" {
+			to = s.resolveSlugFallback(kind, slug)
+		}
 		if !ok && to != "" && to != slug && (kind == "team" || kind == "league" || kind == "event" || kind == "player") {
 			target := langRoot + parts[0] + "/" + to + yearSuffix(parts)
 			if r.URL.RawQuery != "" {
@@ -707,6 +834,20 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 			}
 			http.Redirect(w, r, target, http.StatusMovedPermanently)
 			return
+		}
+		if !ok && kind == "game" && len(parts) == 2 {
+			if tPath, tQuery := s.resolveMatchRedirect(slug); tPath != "" {
+				target := langRoot + tPath
+				q := r.URL.RawQuery
+				if tQuery != "" && q == "" {
+					q = tQuery
+				}
+				if q != "" {
+					target += "?" + q
+				}
+				http.Redirect(w, r, target, http.StatusMovedPermanently)
+				return
+			}
 		}
 		if !ok && kind == "league" {
 			e, ok = s.bareLeague(slug)

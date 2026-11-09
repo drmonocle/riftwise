@@ -131,6 +131,8 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
   const qStr = (kind === "team" || kind === "player") && keptQ.toString() ? keptQ.toString() : undefined;
   // a league page can open at one season: /league/lck/2025
   if (kind === "league" && parts.length === 3 && /^\d{4}$/.test(parts[2])) return { kind, slug: parts[1].toLowerCase(), year: parts[2] };
+  // a match page can open at one of its games via /match/<slug>/5 as well as ?g=5
+  if (kind === "match" && parts.length === 3 && /^[1-9]$/.test(parts[2])) return { kind, slug: parts[1].toLowerCase(), game: Number(parts[2]) };
   // one tab of a team's, player's or tournament's page: /team/t1/matches
   if (kind && isTabbed(kind) && parts.length === 3 && parts[1] && (ENTITY_TABS[kind] as readonly string[]).includes(parts[2].toLowerCase()))
     return { kind, slug: parts[1].toLowerCase(), tab: parts[2].toLowerCase(), ...(qStr ? { query: qStr } : {}) };
