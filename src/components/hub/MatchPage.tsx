@@ -231,6 +231,186 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
   );
 };
 
+/** Whole-series MVP & macro totals strip for multi-game series (Bo3/Bo5). */
+const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
+  const ratingFile = useRatingFile();
+  const summary = useMemo(() => {
+    let aKills = 0;
+    let bKills = 0;
+    let aGold = 0;
+    let bGold = 0;
+    let aTowers = 0;
+    let bTowers = 0;
+    let totalMin = 0;
+    let minCount = 0;
+    const players = new Map<
+      string,
+      {
+        n: string;
+        u: string | null;
+        teamSide: 1 | 2;
+        k: number;
+        d: number;
+        a: number;
+        g: number;
+        rtSum: number;
+        rtCount: number;
+        champs: string[];
+      }
+    >();
+
+    for (const g of s.games) {
+      const aIsBlue = g.blue === "a";
+      const bSt = g.t?.blue;
+      const rSt = g.t?.red;
+      const blueP = (g.p || []).filter((p) => p.s === 1);
+      const redP = (g.p || []).filter((p) => p.s === 2);
+      const bk = bSt?.k ?? blueP.reduce((acc, p) => acc + p.k, 0);
+      const rk = rSt?.k ?? redP.reduce((acc, p) => acc + p.k, 0);
+      const bg = bSt?.gold ?? blueP.reduce((acc, p) => acc + (p.gd || 0), 0);
+      const rg = rSt?.gold ?? redP.reduce((acc, p) => acc + (p.gd || 0), 0);
+      const bt = bSt?.towers || 0;
+      const rt = rSt?.towers || 0;
+      aKills += aIsBlue ? bk : rk;
+      bKills += aIsBlue ? rk : bk;
+      aGold += aIsBlue ? bg : rg;
+      bGold += aIsBlue ? rg : bg;
+      aTowers += aIsBlue ? bt : rt;
+      bTowers += aIsBlue ? rt : bt;
+      if (g.min != null) {
+        totalMin += g.min;
+        minCount++;
+      }
+
+      if (!g.p || !g.p.length) continue;
+      const year = (g.date || s.date || "").slice(0, 4);
+      const blueWon = (g.w === 1 && aIsBlue) || (g.w === 2 && !aIsBlue);
+      const redWon = g.w !== 0 && !blueWon;
+      const sumSide = (side: number, f: (p: GamePlayer) => number | undefined) =>
+        (g.p || []).filter((p) => p.s === side).reduce((acc, p) => acc + (f(p) || 0), 0);
+
+      for (const p of g.p) {
+        const key = (p.u || p.n).toLowerCase();
+        const teamSide: 1 | 2 = (p.s === 1 ? aIsBlue : !aIsBlue) ? 1 : 2;
+        const cur = players.get(key) || {
+          n: p.n,
+          u: p.u,
+          teamSide,
+          k: 0,
+          d: 0,
+          a: 0,
+          g: 0,
+          rtSum: 0,
+          rtCount: 0,
+          champs: [],
+        };
+        cur.k += p.k;
+        cur.d += p.d;
+        cur.a += p.a;
+        cur.g += 1;
+        if (p.c && !cur.champs.includes(p.c)) cur.champs.push(p.c);
+        if (ratingFile && g.min && g.w) {
+          const val = rateLine(
+            {
+              year,
+              role: p.r || "",
+              won: p.s === 1 ? blueWon : redWon,
+              k: p.k,
+              d: p.d,
+              a: p.a,
+              cs: p.cs,
+              gold: p.gd,
+              dmg: p.dm,
+              vision: p.v,
+              min: g.min,
+              teamK: sumSide(p.s, (x) => x.k),
+              teamDmg: p.dm != null ? sumSide(p.s, (x) => x.dm) : null,
+              teamGold: p.gd != null ? sumSide(p.s, (x) => x.gd) : null,
+              teamVision: p.v != null ? sumSide(p.s, (x) => x.v) : null,
+            },
+            ratingFile,
+          );
+          if (val != null) {
+            cur.rtSum += val;
+            cur.rtCount += 1;
+          }
+        }
+        players.set(key, cur);
+      }
+    }
+
+    const eligible = [...players.values()].filter((p) => p.rtCount >= Math.min(2, minCount));
+    const winnerPool = s.w === 1 || s.w === 2 ? eligible.filter((p) => p.teamSide === s.w) : [];
+    const pool = winnerPool.length ? winnerPool : eligible;
+    pool.sort((a, b) => b.rtSum / b.rtCount - a.rtSum / a.rtCount || (b.k + b.a) - (a.k + a.a));
+    const mvp = pool[0] ? { ...pool[0], avgRt: pool[0].rtSum / pool[0].rtCount } : null;
+    return { aKills, bKills, aGold, bGold, aTowers, bTowers, totalMin, minCount, mvp };
+  }, [s, ratingFile]);
+
+  const { aKills, bKills, aGold, bGold, aTowers, bTowers, totalMin, minCount, mvp } = summary;
+  if (aKills + bKills === 0 && !mvp) return null;
+  const codeA = s.a.c || s.a.n;
+  const codeB = s.b.c || s.b.n;
+  const macros = [
+    aKills + bKills > 0 ? { label: tl("Kills"), a: aKills, b: bKills, fmt: (v: number) => String(v) } : null,
+    aGold + bGold > 0 ? { label: tl("Gold"), a: aGold, b: bGold, fmt: (v: number) => fmtGold(v) } : null,
+    aTowers + bTowers > 0 ? { label: tl("Towers"), a: aTowers, b: bTowers, fmt: (v: number) => String(v) } : null,
+  ].filter((x): x is NonNullable<typeof x> => !!x);
+
+  return (
+    <div className={`${card} !py-2.5 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4 items-center text-xs`}>
+      {mvp && (
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-rw-border/70 bg-rw-bg/40 px-2.5 py-1.5 min-w-0">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-rw-teal">
+              <Star className="w-3 h-3 fill-current shrink-0" />
+              <span className="truncate">{tl("Top rated:")}</span>
+            </div>
+            <div className="mt-0.5 flex items-center gap-1.5 min-w-0">
+              <PlayerLink name={mvp.n} u={mvp.u} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
+              <span className="text-[10px] text-rw-muted font-mono tabular-nums shrink-0">
+                {mvp.k}/{mvp.d}/{mvp.a}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="inline-flex items-center gap-0.5">
+              {mvp.champs.slice(0, 4).map((c) => (
+                <ChampIcon key={c} name={c} size={16} />
+              ))}
+            </span>
+            <PlayerRatingBadge v={mvp.avgRt} top />
+          </div>
+        </div>
+      )}
+      {macros.map((m) => {
+        const sum = m.a + m.b;
+        const aPct = sum > 0 ? Math.round((m.a / sum) * 100) : 50;
+        return (
+          <div key={m.label} className="rounded-lg border border-rw-border/70 bg-rw-bg/40 px-2.5 py-1.5 space-y-1">
+            <div className="flex items-center justify-between text-[10px] font-mono tabular-nums">
+              <span className="font-bold text-rw-side-a">
+                {codeA} {m.fmt(m.a)}
+              </span>
+              <span className="font-sans text-[9px] font-bold uppercase tracking-wider text-rw-muted">
+                {m.label}
+                {m.label === tl("Kills") && minCount > 0 ? ` · ${fmtMin(totalMin)}` : ""}
+              </span>
+              <span className="font-bold text-rw-side-b">
+                {m.fmt(m.b)} {codeB}
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full overflow-hidden flex bg-rw-raised">
+              <div className="h-full bg-rw-side-a" style={{ width: `${aPct}%` }} />
+              <div className="h-full bg-rw-side-b" style={{ width: `${100 - aPct}%` }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 /** The game tabs and the game on screen. */
 const SeriesGames: React.FC<{
   s: HubSeries;
@@ -262,6 +442,7 @@ const SeriesGames: React.FC<{
     : [];
   return (
     <>
+      {!hidden && s.games.length >= 2 && <SeriesSummaryStrip s={s} />}
       {tabs > 1 && (
         <div className="flex flex-wrap gap-1.5" role="tablist">
           {Array.from({ length: tabs }, (_, i) => s.games[i]).map((g, i) => (
@@ -1036,6 +1217,7 @@ const Scoreboard: React.FC<{
   const totalK = players.reduce((s, p) => s + p.k, 0);
   const totalDmg = players.reduce((s, p) => s + (p.dm || 0), 0);
   const totalGold = players.reduce((s, p) => s + (p.gd || 0), 0);
+  const maxDmg = Math.max(1, ...players.map((p) => p.dm || 0));
   return (
     <section className={`${card} p-3 min-w-0`} style={{ borderTopColor: color, borderTopWidth: 2 }}>
       <h3 className="text-xs font-bold text-rw-text mb-2 flex items-center gap-2">
@@ -1045,24 +1227,48 @@ const Scoreboard: React.FC<{
       </h3>
       <div className="space-y-2">
         {players.map((p, i) => (
-          <PlayerRow key={i} p={p} teamKills={totalK} teamDmg={totalDmg} teamGold={totalGold} minutes={minutes} rating={ratings?.get(p)} top={p === top} />
+          <PlayerRow
+            key={i}
+            p={p}
+            teamKills={totalK}
+            teamDmg={totalDmg}
+            teamGold={totalGold}
+            maxDmg={maxDmg}
+            sideColor={color}
+            minutes={minutes}
+            rating={ratings?.get(p)}
+            top={p === top}
+          />
         ))}
       </div>
     </section>
   );
 };
 
-const PlayerRow: React.FC<{ p: GamePlayer; teamKills: number; teamDmg: number; teamGold: number; minutes?: number | null; rating?: number; top?: boolean }> = ({
+const PlayerRow: React.FC<{
+  p: GamePlayer;
+  teamKills: number;
+  teamDmg: number;
+  teamGold: number;
+  maxDmg: number;
+  sideColor: string;
+  minutes?: number | null;
+  rating?: number;
+  top?: boolean;
+}> = ({
   p,
   teamKills,
   teamDmg,
   teamGold,
+  maxDmg,
+  sideColor,
   minutes,
   rating,
   top,
 }) => {
   const kp = teamKills ? Math.round(((p.k + p.a) / teamKills) * 100) : null;
   const csm = p.cs != null && minutes ? fmtDec(p.cs / minutes) : null;
+  const dmgBarW = p.dm != null && maxDmg > 0 ? Math.max(3, Math.round((p.dm / maxDmg) * 100)) : 0;
   return (
     <div className="border-t border-rw-border pt-2 first:border-0 first:pt-0 text-xs">
       <div className="flex items-center gap-2 min-w-0">
@@ -1152,6 +1358,11 @@ const PlayerRow: React.FC<{ p: GamePlayer; teamKills: number; teamDmg: number; t
           {p.v != null && <> · {tl("{n} vision", { n: p.v })}</>}
         </span>
       </div>
+      {dmgBarW > 0 && teamDmg > 0 && (
+        <div className="mt-1 h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+          <div className="h-full rounded-full" style={{ width: `${dmgBarW}%`, background: sideColor, opacity: top ? 0.95 : 0.72 }} />
+        </div>
+      )}
       {(() => {
         const bits = [
           minutes && p.dm != null ? `${fmtNum(Math.round(p.dm / minutes))} ${tl("DPM")}` : null,

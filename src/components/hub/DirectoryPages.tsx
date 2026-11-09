@@ -102,12 +102,26 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
         (!w || normText(`${t[0]} | ${t[4]} | ${t[5]}`).includes(w)),
     );
   }, [rows, region, since, words]);
+  const maxGames = useMemo(() => Math.max(1, ...list.map((t) => t[2] || 0)), [list]);
   const columns: Column<SearchTeamRow>[] = [
     { key: "n", label: tl("Team"), value: (t) => t[0].toLowerCase(), render: (t) => <TeamLink name={t[0]} u={t[1] || prettySlug(t[0])} /> },
     { key: "c", label: tl("Short name"), value: (t) => (t[5] || "").split(" | ")[0] || null, className: "text-rw-sub" },
     { key: "r", label: tl("Region"), value: (t) => (t[6] ? regionName(t[6], t[6]) : null), className: "text-rw-sub max-w-[10rem] truncate" },
     { key: "y", label: tl("Last played"), value: (t) => t[3] || null, className: "tabular-nums text-rw-sub" },
-    { key: "g", label: tl("Games"), value: (t) => t[2], className: "tabular-nums" },
+    {
+      key: "g",
+      label: tl("Games"),
+      value: (t) => t[2],
+      render: (t) => (
+        <div className="min-w-[4.25rem] space-y-0.5">
+          <div className="tabular-nums text-rw-text">{fmtNum(t[2])}</div>
+          <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+            <div className="h-full rounded-full bg-rw-accent/65" style={{ width: `${Math.max(4, Math.round(((t[2] || 0) / maxGames) * 100))}%` }} />
+          </div>
+        </div>
+      ),
+      className: "tabular-nums",
+    },
     { key: "o", label: tl("Also played as"), value: (t) => t[4] || null, render: (t) => <span className="text-rw-muted">{(t[4] || "").split(" | ").slice(0, 2).join(", ")}</span>, className: "max-w-[16rem] truncate" },
     {
       key: "act",
@@ -212,6 +226,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
         (!w || normText(`${p[0]} | ${p[2]} | ${p[6]}`).includes(w)),
     );
   }, [rows, role, since, words]);
+  const maxGames = useMemo(() => Math.max(1, ...list.map((p) => p[3] || 0)), [list]);
   const columns: Column<SearchPlayerRow>[] = [
     { key: "n", label: tl("Player"), value: (p) => p[0].toLowerCase(), render: (p) => <PlayerLink name={p[0]} u={p[1] || prettySlug(p[0])} /> },
     { key: "r", label: tl("Role"), value: (p) => (ROLE_OF[p[5]] ? roleName(ROLE_OF[p[5]]) : null), className: "text-rw-sub" },
@@ -223,7 +238,20 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       className: "text-rw-sub max-w-[12rem] truncate",
     },
     { key: "y", label: tl("Last played"), value: (p) => p[4] || null, className: "tabular-nums text-rw-sub" },
-    { key: "g", label: tl("Games"), value: (p) => p[3], className: "tabular-nums" },
+    {
+      key: "g",
+      label: tl("Games"),
+      value: (p) => p[3],
+      render: (p) => (
+        <div className="min-w-[4.25rem] space-y-0.5">
+          <div className="tabular-nums text-rw-text">{fmtNum(p[3])}</div>
+          <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+            <div className="h-full rounded-full bg-rw-accent/65" style={{ width: `${Math.max(4, Math.round(((p[3] || 0) / maxGames) * 100))}%` }} />
+          </div>
+        </div>
+      ),
+      className: "tabular-nums",
+    },
     { key: "real", label: tl("Name"), value: (p) => p[6] || null, className: "text-rw-muted max-w-[12rem] truncate" },
     {
       key: "act",

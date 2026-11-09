@@ -372,37 +372,43 @@ const PlayerItemsView: React.FC<{
           </tr>
         </thead>
         <tbody>
-          {list.map(([it, g]) => {
-            const won = g.filter((r) => r[6]).length;
-            return (
-              <tr key={it} className="border-t border-rw-border">
-                <td className={`${td} max-w-[14rem]`}>
-                  <button type="button" onClick={() => onItem(prettySlug(it))} className="flex items-center gap-1.5 min-w-0 text-left hover:text-rw-accent" title={tl("Show the games")}>
-                    <ItemIcon name={it} size={18} />
-                    <span className="truncate">{itemName(it)}</span>
-                  </button>
-                </td>
-                <td className={`${td} tabular-nums text-rw-sub`} data-sort={g.length}>
-                  {fmtNum(g.length)}
-                </td>
-                <td className={`${td} tabular-nums text-rw-sub`} data-sort={g.length ? won / g.length : 0}>
-                  {winRate(won, g.length)}
-                </td>
-                <td className={`${td} max-sm:hidden`}>
-                  <span className="flex gap-0.5">
-                    {topChamps(g, 4).map(([c]) => (
-                      <HubLink key={c} to={{ kind: "champ", slug: prettySlug(c) }}>
-                        <ChampIcon name={c} size={16} />
-                      </HubLink>
-                    ))}
-                  </span>
-                </td>
-                <td className={`${td} text-rw-muted whitespace-nowrap`} data-sort={g[0]?.[0] || ""}>
-                  {g[0] ? fmtDate(g[0][0], false) : ""}
-                </td>
-              </tr>
-            );
-          })}
+          {(() => {
+            const maxG = Math.max(1, ...list.map(([, g]) => g.length));
+            return list.map(([it, g]) => {
+              const won = g.filter((r) => r[6]).length;
+              const wr = g.length ? won / g.length : 0;
+              const wrTone = g.length >= 3 ? (wr >= 0.55 ? "text-rw-teal font-semibold" : wr <= 0.45 ? "text-rw-red" : "text-rw-text") : "text-rw-sub";
+              return (
+                <tr key={it} className="border-t border-rw-border">
+                  <td className={`${td} max-w-[14rem]`}>
+                    <button type="button" onClick={() => onItem(prettySlug(it))} className="flex items-center gap-1.5 min-w-0 text-left hover:text-rw-accent" title={tl("Show the games")}>
+                      <ItemIcon name={it} size={18} />
+                      <span className="truncate">{itemName(it)}</span>
+                    </button>
+                  </td>
+                  <td className={`${td} tabular-nums text-rw-sub w-24`} data-sort={g.length}>
+                    {fmtNum(g.length)}
+                    <span className="block h-1 mt-0.5 rounded-sm bg-rw-accent/55" style={{ width: `${Math.max(4, Math.round((g.length / maxG) * 100))}%` }} aria-hidden="true" />
+                  </td>
+                  <td className={`${td} tabular-nums ${wrTone}`} data-sort={wr}>
+                    {winRate(won, g.length)}
+                  </td>
+                  <td className={`${td} max-sm:hidden`}>
+                    <span className="flex gap-0.5">
+                      {topChamps(g, 4).map(([c]) => (
+                        <HubLink key={c} to={{ kind: "champ", slug: prettySlug(c) }}>
+                          <ChampIcon name={c} size={16} />
+                        </HubLink>
+                      ))}
+                    </span>
+                  </td>
+                  <td className={`${td} text-rw-muted whitespace-nowrap`} data-sort={g[0]?.[0] || ""}>
+                    {g[0] ? fmtDate(g[0][0], false) : ""}
+                  </td>
+                </tr>
+              );
+            });
+          })()}
         </tbody>
       </STable>
       {!list.length && <p className="text-[11px] text-rw-muted">{tl("No item fits.")}</p>}
@@ -470,20 +476,26 @@ const ItemPlayersView: React.FC<{ slug: string; onPlayer: (slug: string) => void
           </tr>
         </thead>
         <tbody>
-          {it.players.map(([n, u, g, last]) => (
-            <tr key={u} className="border-t border-rw-border">
-              <td className={td}>
-                <PlayerLink name={n} u={u} />
-              </td>
-              <td className={`${td} tabular-nums text-rw-sub`}>{fmtNum(g)}</td>
-              <td className={`${td} text-rw-muted whitespace-nowrap`} data-sort={last}>
-                {fmtDate(last, false)}
-              </td>
-              <td className={`${td} text-right`}>
-                <TheirGames onClick={() => onPlayer(u)} />
-              </td>
-            </tr>
-          ))}
+          {(() => {
+            const maxG = Math.max(1, it.players[0]?.[2] || 1);
+            return it.players.map(([n, u, g, last]) => (
+              <tr key={u} className="border-t border-rw-border">
+                <td className={td}>
+                  <PlayerLink name={n} u={u} />
+                </td>
+                <td className={`${td} tabular-nums text-rw-sub w-28`} data-sort={g}>
+                  {fmtNum(g)}
+                  <span className="block h-1 mt-0.5 rounded-sm bg-rw-accent/55" style={{ width: `${Math.max(4, Math.round((g / maxG) * 100))}%` }} aria-hidden="true" />
+                </td>
+                <td className={`${td} text-rw-muted whitespace-nowrap`} data-sort={last}>
+                  {fmtDate(last, false)}
+                </td>
+                <td className={`${td} text-right`}>
+                  <TheirGames onClick={() => onPlayer(u)} />
+                </td>
+              </tr>
+            ));
+          })()}
         </tbody>
       </STable>
     </Section>
@@ -761,8 +773,16 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
                   <td className={`${td} tabular-nums text-rw-sub max-sm:hidden`} data-sort={r[3]}>
                     {fmtNum(r[3])}
                   </td>
-                  <td className={`${td} tabular-nums text-rw-sub`} data-sort={r[4] != null && r[2] ? r[4] / r[2] : 0}>
-                    {r[4] != null ? winRate(r[4], r[2]) : "–"}
+                  <td className={`${td} tabular-nums`} data-sort={r[4] != null && r[2] ? r[4] / r[2] : 0}>
+                    {r[4] != null && r[2] ? (
+                      (() => {
+                        const wr = r[4] / r[2];
+                        const tone = r[2] >= 10 ? (wr >= 0.55 ? "text-rw-teal font-semibold" : wr <= 0.45 ? "text-rw-red" : "text-rw-text") : "text-rw-sub";
+                        return <span className={tone}>{winRate(r[4], r[2])}</span>;
+                      })()
+                    ) : (
+                      "–"
+                    )}
                   </td>
                   <td className={`${td} max-sm:hidden`}>
                     <span className="flex gap-0.5">

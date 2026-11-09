@@ -238,22 +238,35 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             share="weekly-movers"
           >
             {w.movers.length ? (
-              <ol className="text-xs space-y-1">
-                {w.movers.map((m) => (
-                  <li key={m.u} className="flex items-baseline justify-between gap-2 min-w-0">
-                    <span className="truncate">
-                      <TeamLink name={m.n} u={m.u} /> <span className="text-[10px] text-rw-muted">{m.lg}</span>
-                    </span>
-                    <span className="font-num tabular-nums shrink-0">
-                      <span className={m.chg > 0 ? "text-rw-teal font-bold" : "text-rw-red font-bold"}>
-                        {m.chg > 0 ? "▲" : "▼"}
-                        {Math.abs(m.chg)}
-                      </span>{" "}
-                      <span className="text-rw-muted">{m.r.toLocaleString(locale())}</span>
-                    </span>
-                  </li>
-                ))}
-              </ol>
+              (() => {
+                const maxChg = Math.max(1, ...w.movers.map((m) => Math.abs(m.chg)));
+                return (
+                  <ol className="text-xs space-y-1.5">
+                    {w.movers.map((m) => (
+                      <li key={m.u} className="space-y-0.5 min-w-0">
+                        <div className="flex items-baseline justify-between gap-2 min-w-0">
+                          <span className="truncate">
+                            <TeamLink name={m.n} u={m.u} /> <span className="text-[10px] text-rw-muted">{m.lg}</span>
+                          </span>
+                          <span className="font-num tabular-nums shrink-0">
+                            <span className={m.chg > 0 ? "text-rw-teal font-bold" : "text-rw-red font-bold"}>
+                              {m.chg > 0 ? "▲" : "▼"}
+                              {Math.abs(m.chg)}
+                            </span>{" "}
+                            <span className="text-rw-muted">{m.r.toLocaleString(locale())}</span>
+                          </span>
+                        </div>
+                        <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                          <div
+                            className={`h-full rounded-full ${m.chg > 0 ? "bg-rw-teal/75" : "bg-rw-red/65"}`}
+                            style={{ width: `${Math.max(8, Math.round((Math.abs(m.chg) / maxChg) * 100))}%` }}
+                          />
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                );
+              })()
             ) : (
               <p className="text-xs text-rw-sub">{tl("Not enough rating history yet.")}</p>
             )}
@@ -411,17 +424,50 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {w.champs.map(([c, pk, bn, wn]) => (
-                    <tr key={c} className="border-t border-rw-border">
-                      <td className={`${td} max-w-[9rem]`}>
-                        <ChampLink name={c} size={18} />
-                      </td>
-                      <td className={`${td} tabular-nums text-rw-sub`}>{w.champGames ? `${Math.round(((pk + bn) / w.champGames) * 100)}%` : "–"}</td>
-                      <td className={`${td} tabular-nums text-rw-sub`}>{pk}</td>
-                      <td className={`${td} tabular-nums text-rw-sub`}>{bn}</td>
-                      <td className={`${td} tabular-nums text-rw-sub`}>{pk ? `${Math.round((wn / pk) * 100)}%` : "–"}</td>
-                    </tr>
-                  ))}
+                  {w.champs.map(([c, pk, bn, wn]) => {
+                    const cg = Math.max(w.champGames || 1, 1);
+                    const presPct = w.champGames ? Math.min(100, Math.round(((pk + bn) / cg) * 100)) : null;
+                    const pickW = Math.min(100, Math.round((pk / cg) * 100));
+                    const banW = Math.min(100 - pickW, Math.round((bn / cg) * 100));
+                    const wrPct = pk ? Math.round((wn / pk) * 100) : null;
+                    const wrTone = pk >= 3 && wrPct != null ? (wrPct >= 53 ? "text-rw-teal font-semibold" : wrPct <= 47 ? "text-rw-red" : "text-rw-text") : "text-rw-sub";
+                    return (
+                      <tr key={c} className="border-t border-rw-border">
+                        <td className={`${td} max-w-[9rem]`}>
+                          <ChampLink name={c} size={18} />
+                        </td>
+                        <td className={`${td} tabular-nums`}>
+                          {presPct != null ? (
+                            <div className="min-w-[3.75rem] space-y-0.5">
+                              <div className="font-semibold text-rw-text">{presPct}%</div>
+                              <div className="h-1 rounded-full bg-rw-raised overflow-hidden flex" aria-hidden="true">
+                                <div className="h-full bg-rw-teal/80" style={{ width: `${pickW}%` }} />
+                                <div className="h-full bg-rw-red/65" style={{ width: `${banW}%` }} />
+                              </div>
+                            </div>
+                          ) : (
+                            "–"
+                          )}
+                        </td>
+                        <td className={`${td} tabular-nums text-rw-sub`}>{pk}</td>
+                        <td className={`${td} tabular-nums text-rw-sub`}>{bn}</td>
+                        <td className={`${td} tabular-nums`}>
+                          {wrPct != null ? (
+                            <div className="min-w-[3.25rem] space-y-0.5">
+                              <div className={wrTone}>{wrPct}%</div>
+                              {pk >= 3 && (
+                                <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                                  <div className={`h-full rounded-full ${wrPct >= 50 ? "bg-rw-teal/75" : "bg-rw-red/65"}`} style={{ width: `${Math.max(6, wrPct)}%` }} />
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            "–"
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
               <p className="text-[10px] text-rw-muted">{tn("Picked or banned in the week's {n} game.", "Picked or banned in the week's {n} games.", w.champGames || 0)}</p>
