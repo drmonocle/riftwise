@@ -578,13 +578,15 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
             {g.mvp && !hidden && (
               <span className="flex items-center gap-1 text-rw-accent">
                 <Crown className="w-3 h-3" />
-                {tl("Player of the Game:")} <PlayerLink name={g.mvp.n} u={g.mvp.u} className="text-rw-accent hover:underline font-semibold" />
+                {tl("Player of the Game:")} <PlayerPhoto name={g.mvp.n} slug={g.mvp.u ?? undefined} size={15} />
+                <PlayerLink name={g.mvp.n} u={g.mvp.u} className="text-rw-accent hover:underline font-semibold" />
               </span>
             )}
             {top && !hidden && (
               <span className="flex items-center gap-1 text-rw-teal" title={tl("RiftWise rating: how well they played this game (6 is average)")}>
                 <Star className="w-3 h-3 fill-current" />
-                {tl("Top rated:")} <PlayerLink name={top[0].n} u={top[0].u} className="text-rw-teal hover:underline font-semibold" />
+                {tl("Top rated:")} <PlayerPhoto name={top[0].n} slug={top[0].u ?? undefined} size={15} />
+                <PlayerLink name={top[0].n} u={top[0].u} className="text-rw-teal hover:underline font-semibold" />
                 <span className="tabular-nums">{fmtRating(top[1])}</span>
               </span>
             )}
@@ -783,11 +785,13 @@ const GameRoleMatchups: React.FC<{ blue: GamePlayer[]; red: GamePlayer[] }> = ({
               <div className="mt-1 flex items-center justify-between gap-1 min-w-0">
                 <span className="inline-flex items-center gap-1 min-w-0 truncate text-rw-side-a font-semibold">
                   {b.c && <ChampIcon name={b.c} size={15} />}
+                  <PlayerPhoto name={b.n} slug={b.u ?? undefined} size={14} linkFallback={false} />
                   <span className="truncate">{b.n}</span>
                 </span>
                 <span className="text-[9px] text-rw-muted shrink-0">vs</span>
                 <span className="inline-flex items-center gap-1 min-w-0 truncate text-rw-side-b font-semibold justify-end">
                   <span className="truncate">{r.n}</span>
+                  <PlayerPhoto name={r.n} slug={r.u ?? undefined} size={14} linkFallback={false} />
                   {r.c && <ChampIcon name={r.c} size={15} />}
                 </span>
               </div>
@@ -1257,6 +1261,7 @@ const Scoreboard: React.FC<{
           <PlayerRow
             key={i}
             p={p}
+            teamName={name}
             teamKills={totalK}
             teamDmg={totalDmg}
             teamGold={totalGold}
@@ -1274,6 +1279,7 @@ const Scoreboard: React.FC<{
 
 const PlayerRow: React.FC<{
   p: GamePlayer;
+  teamName?: string;
   teamKills: number;
   teamDmg: number;
   teamGold: number;
@@ -1284,6 +1290,7 @@ const PlayerRow: React.FC<{
   top?: boolean;
 }> = ({
   p,
+  teamName,
   teamKills,
   teamDmg,
   teamGold,
@@ -1302,6 +1309,7 @@ const PlayerRow: React.FC<{
         {p.c && <ChampIcon name={p.c} size={30} />}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 min-w-0">
+            <PlayerPhoto name={p.n} team={teamName} slug={p.u ?? undefined} size={16} />
             <PlayerLink name={p.n} u={p.u} className="font-semibold text-rw-text hover:text-rw-accent hover:underline truncate" />
             {p.r && <span className="text-[10px] text-rw-muted shrink-0">{roleName(p.r)}</span>}
           </div>

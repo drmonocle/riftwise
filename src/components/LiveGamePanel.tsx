@@ -34,6 +34,7 @@ import { smoothPath, useWidth } from "../useWidth";
 import { navigateHub } from "../hub/route";
 import { prettySlug } from "../hub/data";
 import { SectionCard } from "./hub/BroadcastCard";
+import { PlayerPhoto, TeamLogo } from "./hub/ui";
 
 const POLL_MS = 15_000;
 // the gold graph: blue side's colour, and its dragon and baron marks
@@ -273,8 +274,22 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
     ? win.gameMetadata.blueTeamMetadata.esportsTeamId === match.team1Id
     : (win.gameMetadata.blueTeamMetadata.participantMetadata[0]?.summonerName || "").toUpperCase().startsWith(match.team1Code.toUpperCase() + " ");
   const sides = [
-    { code: blueIsTeam1 ? match.team1Code : match.team2Code, t: frame.blueTeam, meta: win.gameMetadata.blueTeamMetadata.participantMetadata, color: "#3fa7ff" },
-    { code: blueIsTeam1 ? match.team2Code : match.team1Code, t: frame.redTeam, meta: win.gameMetadata.redTeamMetadata.participantMetadata, color: "var(--rw-red)" },
+    {
+      name: blueIsTeam1 ? match.team1Name : match.team2Name,
+      code: blueIsTeam1 ? match.team1Code : match.team2Code,
+      img: blueIsTeam1 ? match.team1Image : match.team2Image,
+      t: frame.blueTeam,
+      meta: win.gameMetadata.blueTeamMetadata.participantMetadata,
+      color: "#3fa7ff",
+    },
+    {
+      name: blueIsTeam1 ? match.team2Name : match.team1Name,
+      code: blueIsTeam1 ? match.team2Code : match.team1Code,
+      img: blueIsTeam1 ? match.team2Image : match.team1Image,
+      t: frame.redTeam,
+      meta: win.gameMetadata.redTeamMetadata.participantMetadata,
+      color: "var(--rw-red)",
+    },
   ];
   // Team 1 on the left like the scoreboard above
   const [left, right] = blueIsTeam1 ? sides : [sides[1], sides[0]];
@@ -389,7 +404,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
   );
 };
 
-type SideInfo = { code: string; t: LiveFrame["blueTeam"]; meta: LiveParticipantMeta[]; color: string };
+type SideInfo = { name: string; code: string; img?: string; t: LiveFrame["blueTeam"]; meta: LiveParticipantMeta[]; color: string };
 
 /** Both teams' gold, kills, towers, dragons (by type), barons, inhibitors and CS, and the left team's difference. */
 const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | null }> = ({ left, right, minutes }) => {
@@ -439,7 +454,10 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
             return (
               <tr key={x.code} className="border-t border-rw-border/60">
                 <td className="px-2 py-1.5 text-left font-bold text-rw-text whitespace-nowrap" style={{ boxShadow: `inset 3px 0 0 ${x.color}` }} title={x.color === "#3fa7ff" ? tl("Blue side") : tl("Red side")}>
-                  {x.code}
+                  <span className="inline-flex items-center gap-1.5">
+                    <TeamLogo name={x.name} code={x.code} src={x.img} size={15} className="shrink-0" />
+                    <span>{x.code}</span>
+                  </span>
                 </td>
                 {cols.map((c) => {
                   const ahead = c.v(x) > c.v(other);
@@ -569,7 +587,7 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
             const lShare = lf && rf && lf.totalGold + rf.totalGold > 0 ? Math.round((lf.totalGold / (lf.totalGold + rf.totalGold)) * 100) : 50;
             return (
               <tr key={role} className="border-t border-rw-border/60">
-                <PlayerCells p={l[i]} align="left" />
+                <PlayerCells p={l[i]} teamName={left.name} align="left" />
                 <td className="px-1 text-center text-[9px] uppercase text-rw-muted min-w-14 whitespace-nowrap align-middle">
                   <div>{roleName(ROLE_LABEL[role])}</div>
                   {gd != null && (
@@ -586,7 +604,7 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
                     </div>
                   )}
                 </td>
-                <PlayerCells p={r[i]} align="right" />
+                <PlayerCells p={r[i]} teamName={right.name} align="right" />
               </tr>
             );
           })}
@@ -598,12 +616,13 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
 
 type PlayerRow = { meta?: LiveParticipantMeta; frame?: LiveFrame["blueTeam"]["participants"][number]; det?: LiveDetailsParticipant };
 
-const PlayerCells: React.FC<{ p: PlayerRow; align: "left" | "right" }> = ({ p, align }) => {
+const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "right" }> = ({ p, teamName, align }) => {
   if (!p.meta || !p.frame) return <td className="py-1" />;
   const icon = champIcon(p.meta.championId);
   const items = (p.det?.items || []).filter((id) => id > 0).slice(0, 7);
   const right = align === "right";
   const health = p.frame.maxHealth > 0 ? p.frame.currentHealth / p.frame.maxHealth : null;
+  const pName = playerName(p.meta.summonerName);
   return (
     <td className="py-1.5 align-top">
       <div className={`flex items-start gap-2 ${right ? "flex-row-reverse text-right" : ""}`}>
@@ -626,13 +645,14 @@ const PlayerCells: React.FC<{ p: PlayerRow; align: "left" | "right" }> = ({ p, a
           )}
         </div>
         <div className="min-w-0 flex-1 space-y-0.5">
-          <div className={`flex items-baseline gap-2 ${right ? "flex-row-reverse" : ""}`}>
+          <div className={`flex items-center gap-1.5 ${right ? "flex-row-reverse" : ""}`}>
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "player", slug: prettySlug(playerName(p.meta!.summonerName)) })}
-              className="font-semibold text-rw-text hover:text-rw-accent hover:underline truncate transition-colors"
+              onClick={() => navigateHub({ kind: "player", slug: prettySlug(pName) })}
+              className={`inline-flex items-center gap-1 font-semibold text-rw-text hover:text-rw-accent hover:underline truncate transition-colors ${right ? "flex-row-reverse" : ""}`}
             >
-              {playerName(p.meta.summonerName)}
+              <PlayerPhoto name={pName} team={teamName} size={15} linkFallback={false} />
+              <span className="truncate">{pName}</span>
             </button>
             <span className="font-mono font-bold text-rw-text shrink-0">
               {p.frame.kills}/{p.frame.deaths}/{p.frame.assists}
@@ -889,8 +909,18 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
   const blueIsTeam1 = match.team1Id
     ? meta.blueTeamMetadata.esportsTeamId === match.team1Id
     : (meta.blueTeamMetadata.participantMetadata[0]?.summonerName || "").toUpperCase().startsWith(match.team1Code.toUpperCase() + " ");
-  const blue = { code: blueIsTeam1 ? match.team1Code : match.team2Code, meta: meta.blueTeamMetadata.participantMetadata };
-  const red = { code: blueIsTeam1 ? match.team2Code : match.team1Code, meta: meta.redTeamMetadata.participantMetadata };
+  const blue = {
+    name: blueIsTeam1 ? match.team1Name : match.team2Name,
+    code: blueIsTeam1 ? match.team1Code : match.team2Code,
+    img: blueIsTeam1 ? match.team1Image : match.team2Image,
+    meta: meta.blueTeamMetadata.participantMetadata,
+  };
+  const red = {
+    name: blueIsTeam1 ? match.team2Name : match.team1Name,
+    code: blueIsTeam1 ? match.team2Code : match.team1Code,
+    img: blueIsTeam1 ? match.team2Image : match.team1Image,
+    meta: meta.redTeamMetadata.participantMetadata,
+  };
   const [left, right] = blueIsTeam1 ? [blue, red] : [red, blue];
   const byRole = (m: LiveParticipantMeta[]) => [...m].sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role));
   const l = byRole(left.meta);
@@ -910,14 +940,21 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
         </span>
       </div>
       <div className="grid grid-cols-[1fr_auto_1fr] gap-x-2 gap-y-1 items-center">
-        <span className="font-bold text-rw-text">{left.code}</span>
+        <span className="inline-flex items-center gap-1.5 font-bold text-rw-text">
+          <TeamLogo name={left.name} code={left.code} src={left.img} size={15} className="shrink-0" />
+          <span>{left.code}</span>
+        </span>
         <span />
-        <span className="font-bold text-rw-text text-right">{right.code}</span>
+        <span className="inline-flex items-center justify-end gap-1.5 font-bold text-rw-text text-right">
+          <span>{right.code}</span>
+          <TeamLogo name={right.name} code={right.code} src={right.img} size={15} className="shrink-0" />
+        </span>
         {l.map((p, i) => {
           const q = r[i];
-          const cell = (x: LiveParticipantMeta | undefined, right: boolean) => {
+          const cell = (x: LiveParticipantMeta | undefined, teamName: string, right: boolean) => {
             if (!x) return <span />;
             const icon = champIcon(x.championId);
+            const pName = playerName(x.summonerName);
             return (
               <span className={`flex items-center gap-1.5 min-w-0 ${right ? "flex-row-reverse text-right" : ""}`}>
                 {icon && (
@@ -939,10 +976,11 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "player", slug: prettySlug(playerName(x.summonerName)) })}
-                    className="block truncate text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
+                    onClick={() => navigateHub({ kind: "player", slug: prettySlug(pName) })}
+                    className={`inline-flex items-center gap-1 truncate text-[10px] text-rw-muted hover:text-rw-accent hover:underline ${right ? "flex-row-reverse" : ""}`}
                   >
-                    {playerName(x.summonerName)}
+                    <PlayerPhoto name={pName} team={teamName} size={13} linkFallback={false} />
+                    <span className="truncate">{pName}</span>
                   </button>
                 </span>
               </span>
@@ -950,9 +988,9 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
           };
           return (
             <React.Fragment key={i}>
-              {cell(p, false)}
+              {cell(p, left.name, false)}
               <span className="text-[10px] text-rw-muted text-center w-12">{roleName(ROLE_LABEL[p.role] || p.role)}</span>
-              {cell(q, true)}
+              {cell(q, right.name, true)}
             </React.Fragment>
           );
         })}

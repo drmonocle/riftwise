@@ -12,11 +12,10 @@ import { tl, tc, roleName } from "../../i18n";
 import { findHubTeam, loadHubIndexQuick, loadHubTeam, loadTeamSeries, teamStarter } from "../../hub/data";
 import { recentSchedule, RIOT_PREFIX } from "../../hub/riotMatch";
 import { useMatchRatings } from "../../hub/matchRatings";
-import { riotImg } from "../../riotImage";
 import { formatMatchTime } from "../../matchTime";
 import { MatchPrepButton } from "../MatchPrepButton";
 import { MatchOverviewButton } from "../MatchOverviewButton";
-import { fmtDate, HubLink, Section, TeamLink } from "./ui";
+import { fmtDate, HubLink, PlayerPhoto, Section, TeamLink, TeamLogo } from "./ui";
 
 const ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"] as const;
 const ROLE_SHORT: Record<string, string> = { Top: "TOP", Jungle: "JGL", Mid: "MID", Bot: "BOT", Support: "SUP" };
@@ -68,11 +67,12 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
           {rest.map((c) => {
             const [, them] = sides(c);
             return (
-              <li key={c.m.matchId} className="flex justify-between gap-2 min-w-0">
-                <span className="truncate min-w-0">
-                  <span className="text-rw-sub">{tl("vs")} </span>
-                  <TeamLink name={them.name} u={c.opp} />
-                  <span className="text-rw-muted"> · {[c.m.leagueName, c.m.blockName].filter(Boolean).join(" · ")}</span>
+              <li key={c.m.matchId} className="flex items-center justify-between gap-2 min-w-0">
+                <span className="inline-flex items-center gap-1.5 truncate min-w-0">
+                  <span className="text-rw-sub">{tl("vs")}</span>
+                  <TeamLogo name={them.name} code={them.code} src={them.img} size={15} className="shrink-0" />
+                  <TeamLink name={them.name} u={c.opp} className="truncate hover:text-rw-accent" />
+                  <span className="text-rw-muted truncate">· {[c.m.leagueName, c.m.blockName].filter(Boolean).join(" · ")}</span>
                 </span>
                 <span className="text-rw-muted shrink-0">{formatMatchTime(c.m.startTimeUtc)}</span>
               </li>
@@ -90,9 +90,6 @@ function sides({ m, us }: Coming) {
   const two = { code: m.team2Code, name: m.team2Name, img: m.team2Image };
   return us === 1 ? [one, two] : [two, one];
 }
-
-const Logo: React.FC<{ img?: string }> = ({ img }) =>
-  img ? <img {...riotImg(img, 64)} alt="" className="w-8 h-8 object-contain shrink-0" loading="lazy" /> : <span className="w-8 h-8 shrink-0" aria-hidden="true" />;
 
 const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
   const { m } = c;
@@ -148,11 +145,11 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
         <span className="flex items-center gap-2 min-w-0 justify-end flex-1">
           <span className="font-bold text-sm text-rw-text truncate max-sm:hidden">{t.name}</span>
           <span className="font-bold text-sm text-rw-text sm:hidden">{ours.code || t.name}</span>
-          <Logo img={ours.img} />
+          <TeamLogo name={t.name} code={ours.code} src={ours.img} size={32} className="shrink-0" />
         </span>
         <span className="text-rw-sub text-xs shrink-0">{tl("vs")}</span>
         <span className="flex items-center gap-2 min-w-0 flex-1">
-          <Logo img={them.img} />
+          <TeamLogo name={them.name} code={them.code} src={them.img} size={32} className="shrink-0" />
           <span className="font-bold text-sm truncate min-w-0 max-sm:hidden">
             <TeamLink name={them.name} u={c.opp} />
           </span>
@@ -207,9 +204,11 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-rw-border bg-rw-bg/70 hover:border-rw-accent/60"
               >
                 <span className="text-[9px] font-bold uppercase text-rw-accent">{ROLE_SHORT[role] || roleName(role)}</span>
+                <PlayerPhoto name={a.n} team={t.name} slug={a.u} size={14} linkFallback={false} />
                 <span className="text-rw-side-a font-medium">{a.n}</span>
                 <span className="text-rw-muted">v</span>
                 <span className="text-rw-side-b font-medium">{b.n}</span>
+                <PlayerPhoto name={b.n} team={them.name} slug={b.u} size={14} linkFallback={false} />
               </HubLink>
             ) : null,
           )}

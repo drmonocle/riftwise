@@ -15,7 +15,7 @@ import { navigateHub } from "../../hub/route";
 import { Change } from "./RankingsPage";
 import { chancesOf, prepLines, rankText, type Side } from "./PrepPage";
 import { BroadcastCardButton, prepOverviewCard } from "./BroadcastCard";
-import { fmtDate, isFresh, Loading, RevealButton, useHidden, useLoad } from "./ui";
+import { fmtDate, isFresh, Loading, PlayerPhoto, RevealButton, TeamLogo, useHidden, useLoad } from "./ui";
 
 export { teamStarter };
 
@@ -114,7 +114,10 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
     });
   const team = (s: Side, right: boolean) => (
     <div className={`min-w-0 ${right ? "text-right" : ""}`}>
-      <div className={`text-sm font-extrabold truncate ${right ? "text-rw-side-b" : "text-rw-side-a"}`}>{s.team.name}</div>
+      <div className={`text-sm font-extrabold flex items-center gap-1.5 min-w-0 ${right ? "flex-row-reverse text-rw-side-b" : "text-rw-side-a"}`}>
+        <TeamLogo name={s.team.name} size={20} className="shrink-0" />
+        <span className="truncate">{s.team.name}</span>
+      </div>
       {s.team.rating && (
         <div className="text-[11px] text-rw-sub">
           {rankText(s.team)} · <Change v={s.team.rating.chg30} /> {tl("in 30 days")}
@@ -194,11 +197,17 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   title={tl("Compare {a} and {b}", { a: a.n, b: b.n })}
                   className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-2 py-1 rounded border border-rw-border/80 bg-rw-bg/70 hover:border-rw-accent/60 text-[11px] transition-colors"
                 >
-                  <span className="font-semibold text-rw-side-a truncate text-right">{a.n}</span>
+                  <span className="inline-flex items-center justify-end gap-1.5 font-semibold text-rw-side-a min-w-0">
+                    <PlayerPhoto name={a.n} team={x.team.name} slug={a.u} size={18} linkFallback={false} />
+                    <span className="truncate">{a.n}</span>
+                  </span>
                   <span className="text-[9px] font-bold uppercase tracking-wider text-rw-accent px-1.5 py-0.5 rounded bg-rw-accent/10 min-w-10 text-center">
                     {ROLE_SHORT[role] || roleName(role)}
                   </span>
-                  <span className="font-semibold text-rw-side-b truncate text-left">{b.n}</span>
+                  <span className="inline-flex items-center gap-1.5 font-semibold text-rw-side-b min-w-0">
+                    <span className="truncate">{b.n}</span>
+                    <PlayerPhoto name={b.n} team={y.team.name} slug={b.u} size={18} linkFallback={false} />
+                  </span>
                 </button>
               );
             })}

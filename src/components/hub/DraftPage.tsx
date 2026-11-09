@@ -32,6 +32,7 @@ type Who = "b" | "r";
 export interface PlayerOnChamp {
   c: string;
   name: string;
+  u?: string | null;
   /** roster slot = role index (0 top .. 4 support) */
   role: number;
   /** this period: games, wins, KDA, average gold lead over the lane opponent at 15 (Oracle's Elixir games) */
@@ -126,6 +127,7 @@ export function pool(side: Side, period: PeriodKey, sideOnly?: "b" | "r"): Pool 
       const row: PlayerOnChamp = {
         c,
         name: pl.p.name,
+        u: pl.p.u,
         role,
         g: x[0],
         w: x[1],
@@ -1644,12 +1646,19 @@ const DraftMatchupPanel: React.FC<{
                   <ChampIcon name={bChamp} size={24} className="shrink-0" />
                   <div className="min-w-0">
                     <div className="font-semibold text-rw-text truncate">{champName(bChamp)}</div>
-                    <div className="text-[10px] text-rw-muted truncate tabular-nums">
-                      {bPlayer
-                        ? bPlayer.g > 0
-                          ? `${bPlayer.name} · ${bPlayer.g}G (${winRate(bPlayer.w, bPlayer.g)})`
-                          : `${bPlayer.name} · ${tl("pocket pick")} (${bPlayer.cg}G)`
-                        : "–"}
+                    <div className="text-[10px] text-rw-muted truncate tabular-nums flex items-center gap-1">
+                      {bPlayer ? (
+                        <>
+                          <PlayerPhoto name={bPlayer.name} team={blue.team.name} slug={bPlayer.u ?? undefined} size={13} />
+                          <span className="truncate">
+                            {bPlayer.g > 0
+                              ? `${bPlayer.name} · ${bPlayer.g}G (${winRate(bPlayer.w, bPlayer.g)})`
+                              : `${bPlayer.name} · ${tl("pocket pick")} (${bPlayer.cg}G)`}
+                          </span>
+                        </>
+                      ) : (
+                        "–"
+                      )}
                     </div>
                   </div>
                 </>
@@ -1703,12 +1712,19 @@ const DraftMatchupPanel: React.FC<{
                 <>
                   <div className="min-w-0">
                     <div className="font-semibold text-rw-text truncate">{champName(rChamp)}</div>
-                    <div className="text-[10px] text-rw-muted truncate tabular-nums">
-                      {rPlayer
-                        ? rPlayer.g > 0
-                          ? `${rPlayer.name} · ${rPlayer.g}G (${winRate(rPlayer.w, rPlayer.g)})`
-                          : `${rPlayer.name} · ${tl("pocket pick")} (${rPlayer.cg}G)`
-                        : "–"}
+                    <div className="text-[10px] text-rw-muted truncate tabular-nums flex items-center justify-end gap-1">
+                      {rPlayer ? (
+                        <>
+                          <span className="truncate">
+                            {rPlayer.g > 0
+                              ? `${rPlayer.name} · ${rPlayer.g}G (${winRate(rPlayer.w, rPlayer.g)})`
+                              : `${rPlayer.name} · ${tl("pocket pick")} (${rPlayer.cg}G)`}
+                          </span>
+                          <PlayerPhoto name={rPlayer.name} team={red.team.name} slug={rPlayer.u ?? undefined} size={13} />
+                        </>
+                      ) : (
+                        "–"
+                      )}
                     </div>
                   </div>
                   <ChampIcon name={rChamp} size={24} className="shrink-0" />
@@ -2249,7 +2265,8 @@ const ChampInfo: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Side; 
               .map((x) => {
                 const full = s.players[x.role]?.full;
                 return (
-                  <div key={x.name} className="text-rw-text">
+                  <div key={x.name} className="text-rw-text flex flex-wrap items-center gap-x-1">
+                    <PlayerPhoto name={x.name} team={s.team.name} slug={x.u ?? undefined} size={15} />
                     <span className="font-semibold">{x.name}</span>:{" "}
                     {x.g ? (
                       <>

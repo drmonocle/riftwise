@@ -23,7 +23,7 @@ import { defaultPeriod } from "./hub/PeriodStats";
 import { loadSide, type Side } from "./hub/PrepPage";
 import { pool, comfort, champOf, buildGameDraftQuery, type Pool } from "./hub/DraftPage";
 import { BroadcastCardButton, SectionCard, draftBoardCard } from "./hub/BroadcastCard";
-import { ChampIcon, HubLink } from "./hub/ui";
+import { ChampIcon, HubLink, PlayerPhoto, TeamLogo } from "./hub/ui";
 
 const ROLE_ORDER = ["top", "jungle", "mid", "bottom", "support"];
 const ROLE_LABELS = ["Top", "Jungle", "Mid", "Bot", "Support"];
@@ -368,6 +368,7 @@ export const LiveNextGamePreview: React.FC<{
                 </span>
                 <div className="flex flex-wrap items-center justify-end gap-2 min-w-0">
                   <span className="inline-flex items-center gap-1">
+                    <TeamLogo name={match.team1Name} code={match.team1Code} src={match.team1Image} size={14} className="shrink-0" />
                     <span className="text-[10px] font-bold text-rw-side-a">{match.team1Code}</span>
                     {g.team1.map((p) => (
                       <span key={p.c} title={`${champName(p.c)} (${p.player})`} className="opacity-75 grayscale-[35%]">
@@ -377,6 +378,7 @@ export const LiveNextGamePreview: React.FC<{
                   </span>
                   <span className="text-rw-border">·</span>
                   <span className="inline-flex items-center gap-1">
+                    <TeamLogo name={match.team2Name} code={match.team2Code} src={match.team2Image} size={14} className="shrink-0" />
                     <span className="text-[10px] font-bold text-rw-side-b">{match.team2Code}</span>
                     {g.team2.map((p) => (
                       <span key={p.c} title={`${champName(p.c)} (${p.player})`} className="opacity-75 grayscale-[35%]">
@@ -402,13 +404,14 @@ export const LiveNextGamePreview: React.FC<{
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             {[
-              { code: match.team1Code, slug: draftIntel.slugA, bans: draftIntel.bansA, tone: "text-rw-side-a" },
-              { code: match.team2Code, slug: draftIntel.slugB, bans: draftIntel.bansB, tone: "text-rw-side-b" },
+              { name: match.team1Name, code: match.team1Code, img: match.team1Image, slug: draftIntel.slugA, bans: draftIntel.bansA, tone: "text-rw-side-a" },
+              { name: match.team2Name, code: match.team2Code, img: match.team2Image, slug: draftIntel.slugB, bans: draftIntel.bansB, tone: "text-rw-side-b" },
             ].map((side) => (
               <div key={side.code} className="rounded border border-rw-border/70 bg-rw-surface/60 px-2.5 py-1.5 space-y-1">
                 <div className="text-[10px] font-bold flex items-center justify-between">
-                  <span className={side.tone}>
-                    {side.code} · {tl("Threats to ban")}
+                  <span className={`inline-flex items-center gap-1.5 ${side.tone}`}>
+                    <TeamLogo name={side.name} code={side.code} src={side.img} size={14} className="shrink-0" />
+                    <span>{side.code} · {tl("Threats to ban")}</span>
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-1">
@@ -450,11 +453,13 @@ export const LiveNextGamePreview: React.FC<{
               const renderPicks = (
                 row: typeof ra,
                 teamSlug: string,
+                teamName: string,
                 alignRight: boolean,
               ) => (
                 <div className={`flex flex-wrap items-center gap-1 min-w-0 ${alignRight ? "justify-end" : ""}`}>
                   {row.player && (
-                    <span className={`font-semibold text-rw-text text-[11px] shrink-0 ${alignRight ? "order-last ml-1" : "mr-1"}`}>
+                    <span className={`inline-flex items-center gap-1 font-semibold text-rw-text text-[11px] shrink-0 ${alignRight ? "order-last ml-1 flex-row-reverse" : "mr-1"}`}>
+                      <PlayerPhoto name={row.player} team={teamName} slug={row.u ?? undefined} size={16} />
                       {row.u ? (
                         <HubLink to={{ kind: "player", slug: row.u, tab: "champions" }} className="hover:text-rw-accent">
                           {row.player}
@@ -504,11 +509,11 @@ export const LiveNextGamePreview: React.FC<{
               );
               return (
                 <div key={rLabel} className="py-1.5 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                  {renderPicks(ra, draftIntel.slugA, false)}
+                  {renderPicks(ra, draftIntel.slugA, match.team1Name, false)}
                   <span className="text-[9px] uppercase font-mono text-rw-muted text-center w-12 shrink-0">
                     {roleName(rLabel)}
                   </span>
-                  {renderPicks(rb, draftIntel.slugB, true)}
+                  {renderPicks(rb, draftIntel.slugB, match.team2Name, true)}
                 </div>
               );
             })}
