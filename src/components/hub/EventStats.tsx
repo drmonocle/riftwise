@@ -11,7 +11,7 @@ import { hubShareUrl } from "../../hub/route";
 import { eventFacts, factText, gamesOf, type Fact } from "../../hub/worldsFacts";
 import { moreEventFacts } from "../../hub/eventStats";
 import { SectionCard } from "./BroadcastCard";
-import { ChampIcon, CopyLinkButton, HubLink, PlayerLink, RevealButton, Section, TeamLink, useHidden, useLoad } from "./ui";
+import { ChampIcon, CopyLinkButton, HubLink, PlayerLink, PlayerPhoto, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad } from "./ui";
 
 const btn =
   "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50 disabled:opacity-50";
@@ -135,11 +135,15 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string }> = ({
                   />
                 )}
                 {!f.plain && <span className="relative w-4 text-rw-muted text-right shrink-0">{i + 1}.</span>}
-                {r.champ && (
+                {r.champ ? (
                   <HubLink to={{ kind: "champ", slug: prettySlug(r.champ) }} className="relative shrink-0">
                     <ChampIcon name={r.champ} size={18} />
                   </HubLink>
-                )}
+                ) : r.player ? (
+                  <PlayerPhoto name={r.label} slug={r.player} size={18} />
+                ) : r.team ? (
+                  <TeamLogo name={r.label} size={16} />
+                ) : null}
                 <span className="relative min-w-0 flex-1">
                   {r.player ? (
                     <PlayerLink name={r.label} u={r.player} />

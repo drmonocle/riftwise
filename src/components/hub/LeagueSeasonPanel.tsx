@@ -7,7 +7,7 @@ import React, { useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { loadLeagueSeason } from "../../hub/data";
 import type { EventPlayer } from "../../hub/types";
-import { HubLink, PlayerLink, Section, TeamLink, useLoad } from "./ui";
+import { HubLink, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo, useLoad } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 import { PLAYER_METRICS } from "./Ranks";
 
@@ -74,9 +74,10 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                 const wrPct = Math.round((t.w / Math.max(1, t.g)) * 100);
                 return (
                   <li key={t.u || t.t} className="flex items-center justify-between gap-2 min-w-0">
-                    <span className="truncate">
-                      <span className="text-rw-muted tabular-nums w-5 inline-block">{i + 1}</span>
-                      <TeamLink name={t.t} u={t.u} className="text-rw-text hover:text-rw-accent" />
+                    <span className="inline-flex items-center gap-1.5 truncate min-w-0">
+                      <span className="text-rw-muted tabular-nums w-4 inline-block shrink-0">{i + 1}</span>
+                      <TeamLogo name={t.t} size={15} />
+                      <TeamLink name={t.t} u={t.u} className="text-rw-text hover:text-rw-accent truncate" />
                     </span>
                     <span className="inline-flex items-center gap-1.5 tabular-nums text-rw-sub shrink-0">
                       <span>
@@ -120,9 +121,10 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                           const barPct = Math.max(12, Math.min(100, Math.round((Math.abs(v) / maxV) * 100)));
                           return (
                             <li key={`${p.u || p.n}-${p.t}`} className="flex items-center justify-between gap-2 min-w-0">
-                              <span className="truncate">
-                                <PlayerLink name={p.n} u={p.u} className="text-rw-text hover:text-rw-accent" />{" "}
-                                <span className="text-[10px] text-rw-muted">{roleName(p.r)}</span>
+                              <span className="inline-flex items-center gap-1.5 truncate min-w-0">
+                                <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={16} />
+                                <PlayerLink name={p.n} u={p.u} className="text-rw-text hover:text-rw-accent truncate" />{" "}
+                                <span className="text-[10px] text-rw-muted shrink-0">{roleName(p.r)}</span>
                               </span>
                               <span className="inline-flex items-center gap-1.5 tabular-nums text-rw-sub shrink-0">
                                 <span>{m.fmt(v)}</span>

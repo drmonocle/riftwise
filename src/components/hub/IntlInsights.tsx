@@ -9,7 +9,7 @@ import { champName } from "../../champions";
 import { prettySlug } from "../../hub/data";
 import type { EventLines } from "../../hub/worldsFacts";
 import { cinderella, comebacks, editionYear, finals, finalsRecords, hosts, playerTitles, runs, swissRuns, upsets, yearLines, type FileRef, type Run } from "../../hub/intlInsights";
-import { ChampIcon, HubLink, PlayerLink, Section, TeamLink } from "./ui";
+import { ChampIcon, HubLink, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 import { RegionFlag, regionLabel, regionStats } from "./RegionStats";
 
@@ -208,8 +208,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
           <List>
             {sorted.map((r) => (
               <li key={r.u} className="flex items-center justify-between gap-2 min-w-0">
-                <span className="truncate min-w-0">
-                  <TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent" />
+                <span className="inline-flex items-center gap-1.5 truncate min-w-0">
+                  <TeamLogo name={r.team} size={15} />
+                  <TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent truncate" />
                 </span>
                 <span className="flex items-center gap-2 shrink-0">
                   {chip(r.path)}
@@ -228,7 +229,12 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
   const runRow = (r: Run, i: number, show: "chance" | "place") => (
     <Item
       key={i}
-      left={<TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent" />}
+      left={
+        <span className="inline-flex items-center gap-1.5 min-w-0">
+          <TeamLogo name={r.team} size={15} />
+          <TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent truncate" />
+        </span>
+      }
       sub={`${all ? yearOnly(r.year) + " · " : ""}${placeText(r.place)}${r.chance != null ? ` · ${tl("avg. chance {p}%", { p: r.chance })}` : ""}`}
       right={show === "chance" && r.chance != null ? `${r.chance}%` : placeText(r.place)}
     />
@@ -285,7 +291,12 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             return (
               <Item
                 key={r.u}
-                left={<TeamLink name={r.name} u={r.u} className="text-rw-text hover:text-rw-accent" />}
+                left={
+                  <span className="inline-flex items-center gap-1.5 min-w-0">
+                    <TeamLogo name={r.name} size={15} />
+                    <TeamLink name={r.name} u={r.u} className="text-rw-text hover:text-rw-accent truncate" />
+                  </span>
+                }
                 sub={tl("{w} won · {l} lost", { w: r.won, l: r.n - r.won })}
                 right={
                   <span className="inline-flex items-center gap-1.5">
@@ -307,7 +318,17 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             <h4 className="text-[10px] font-bold uppercase tracking-wider text-rw-muted pt-2">{tl("Most finals lost")}</h4>
             <List>
               {fin.mostLost.slice(0, 5).map((r) => (
-                <Item key={r.u} left={<TeamLink name={r.name} u={r.u} className="text-rw-text hover:text-rw-accent" />} sub={r.years.map(yearOnly).join(", ")} right={r.n} />
+                <Item
+                  key={r.u}
+                  left={
+                    <span className="inline-flex items-center gap-1.5 min-w-0">
+                      <TeamLogo name={r.name} size={15} />
+                      <TeamLink name={r.name} u={r.u} className="text-rw-text hover:text-rw-accent truncate" />
+                    </span>
+                  }
+                  sub={r.years.map(yearOnly).join(", ")}
+                  right={r.n}
+                />
               ))}
             </List>
           </>
@@ -346,7 +367,12 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             return titles.map((p) => (
               <Item
                 key={p.u || p.name}
-                left={<PlayerLink name={p.name} u={p.u} className="text-rw-text hover:text-rw-accent" />}
+                left={
+                  <span className="inline-flex items-center gap-1.5 min-w-0">
+                    <PlayerPhoto name={p.name} slug={p.u ?? undefined} size={18} />
+                    <PlayerLink name={p.name} u={p.u} className="text-rw-text hover:text-rw-accent truncate" />
+                  </span>
+                }
                 sub={`${p.titles.map(yearOnly).sort().join(", ")} · ${tl("{n} finals", { n: p.finals })}`}
                 right={
                   <span className="inline-flex items-center gap-1.5">

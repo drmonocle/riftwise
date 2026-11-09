@@ -11,6 +11,7 @@ import { HubLink } from "./ui";
 export interface HeroStat {
   label: string;
   value: React.ReactNode;
+  icon?: React.ReactNode;
   sub?: React.ReactNode;
   /** the cell opens this page */
   to?: HubRoute;
@@ -43,6 +44,7 @@ const Cell: React.FC<{ s: HeroStat }> = ({ s }) => {
     <>
       <div className="font-head text-[12px] font-semibold uppercase tracking-[0.06em] text-rw-muted truncate">{s.label}</div>
       <div className="flex items-center gap-2 min-w-0 my-0.5">
+        {s.icon && <span className="shrink-0">{s.icon}</span>}
         <span className="font-num text-[20px] sm:text-[24px] font-bold leading-tight text-rw-text truncate tabular-nums">{s.value}</span>
         {s.corner && <span className="shrink-0">{s.corner}</span>}
       </div>

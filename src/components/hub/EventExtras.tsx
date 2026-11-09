@@ -14,15 +14,17 @@ import {
   ChampIcon,
   HubLink,
   PlayerLink,
+  PlayerPhoto,
   Section,
   Stat,
   TeamLink,
+  TeamLogo,
   fmtNum,
   RatingBadge,
   td,
   th,
 } from "./ui";
-import { localCountry } from "./CountryFlag";
+import { CountryFlag, localCountry } from "./CountryFlag";
 import { STable } from "../STable";
 import { BroadcastCardButton, SectionCard, type CardData } from "./BroadcastCard";
 
@@ -277,6 +279,7 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean; card?: {
               const maxM = Math.max(1, ...o.mvp.map((m) => m.v));
               return o.mvp.map((m) => (
                 <span key={m.n} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-rw-border bg-rw-bg/50">
+                  <PlayerPhoto name={m.n} slug={m.u ?? undefined} size={16} />
                   <PlayerLink name={m.n} u={m.u} />
                   <span className="w-6 h-1 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
                     <span className="h-full bg-rw-accent/85 rounded-full" style={{ width: `${Math.round((m.v / maxM) * 100)}%` }} />
@@ -356,25 +359,33 @@ export const EventRosters: React.FC<{ rosters: EventRoster[] }> = ({
             key={t.t}
             className="bg-rw-bg border border-rw-border rounded-lg p-2 text-xs min-w-0"
           >
-            <div className="font-semibold mb-1 truncate">
+            <div className="font-semibold mb-1.5 flex items-center gap-1.5 truncate">
+              <TeamLogo name={t.t} size={16} />
               <TeamLink name={t.t} u={t.u} />
               {t.r && (
-                <span className="text-rw-muted text-[10px] ml-1">{regionName(t.r, t.r)}</span>
+                <span className="text-rw-muted text-[10px] ml-0.5">{regionName(t.r, t.r)}</span>
               )}
             </div>
-            <ul className="space-y-0.5">
+            <ul className="space-y-1">
               {t.p.map(([n, u, role, flag], i) => (
-                <li key={i} className="flex justify-between gap-2 min-w-0">
-                  <span className="truncate min-w-0">
+                <li key={i} className="flex items-center justify-between gap-2 min-w-0">
+                  <span className="inline-flex items-center gap-1.5 truncate min-w-0">
+                    <PlayerPhoto name={n} team={t.t} slug={u ?? undefined} size={16} />
                     <PlayerLink name={n} u={u} />
                   </span>
-                  <span className="text-rw-muted shrink-0 text-[10px]">
+                  <span className="inline-flex items-center gap-1 text-rw-muted shrink-0 text-[10px]">
                     {role
                       ? /coach/i.test(role)
                         ? tl("Coach")
                         : roleName(role)
                       : ""}
-                    {flag ? ` · ${localCountry(flag)}` : ""}
+                    {flag ? (
+                      <>
+                        {role ? " · " : ""}
+                        <CountryFlag cc={flag} />
+                        <span>{localCountry(flag)}</span>
+                      </>
+                    ) : null}
                   </span>
                 </li>
               ))}
@@ -432,7 +443,7 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
                 <td className={`${td} text-rw-text`}>
                   {regionName(r.a, r.a)} vs {regionName(r.b, r.b)}
                 </td>
-                <td className={`${td} tabular-nums`}>
+                <td className={`${td} tabular-nums`} data-sort={r.wa - r.wb}>
                   <span className="inline-flex items-center gap-2">
                     <span>
                       <span

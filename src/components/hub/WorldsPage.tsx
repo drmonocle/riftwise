@@ -484,7 +484,17 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                 <td className={`px-2 py-1 ${w >= 3 ? "text-rw-teal font-semibold" : l >= 3 ? "text-rw-red" : "text-rw-sub"}`}>
                   {w >= 3 ? tl("through") : l >= 3 ? tl("out") : tl("Still in")}
                 </td>
-                <td className="px-2 py-1 text-rw-sub whitespace-nowrap">{opp ? `${tl("vs")} ${byU.get(opp)?.c || opp}` : ""}</td>
+                <td className="px-2 py-1 text-rw-sub whitespace-nowrap">
+                  {opp ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span>{tl("vs")}</span>
+                      <TeamLogo name={byU.get(opp)?.n || opp} code={byU.get(opp)?.c} src={byU.get(opp)?.img} size={14} className="shrink-0" />
+                      <span>{byU.get(opp)?.c || opp}</span>
+                    </span>
+                  ) : (
+                    ""
+                  )}
+                </td>
               </tr>
             );
           })}
@@ -732,6 +742,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                 <td className="px-2 py-1">
                   <span className="flex items-center gap-1.5 min-w-0">
                     <Trophy className="w-3 h-3 text-rw-accent shrink-0" />
+                    <TeamLogo name={x.as} size={16} className="shrink-0" />
                     <TeamLink name={x.as} u={x.u} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
                   </span>
                   {/* phones: the final and the runner-up under the champion instead of two more columns */}
@@ -761,7 +772,16 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                     );
                   })()}
                 </td>
-                <td className="px-2 py-1 text-rw-sub max-sm:hidden">{x.l}</td>
+                <td className="px-2 py-1 text-rw-sub max-sm:hidden">
+                  {x.l ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <TeamLogo name={x.l} size={15} className="shrink-0" />
+                      <span>{x.l}</span>
+                    </span>
+                  ) : (
+                    ""
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -1028,23 +1048,32 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
 
 const TeamButton: React.FC<{ u: string; t?: WTeam; won: boolean; lost: boolean; p: number; locked: boolean; score?: number | null; onPick: () => void }> = ({
   u, t, won, lost, p, locked, score, onPick,
-}) => (
-  <button
-    type="button"
-    disabled={locked}
-    onClick={onPick}
-    aria-pressed={won}
-    className={`w-full flex items-center gap-1.5 px-1.5 py-1 rounded-md text-left min-w-0 ${
-      won ? "bg-rw-accent/15 text-rw-text font-semibold" : lost ? "text-rw-muted" : "text-rw-sub hover:bg-rw-surface hover:text-rw-text"
-    } ${locked ? "cursor-default" : ""}`}
-  >
-    <TeamLogo name={t?.n || u} code={t?.c} src={t?.img} size={18} className="shrink-0" />
-    <span className="truncate flex-1" title={t?.n}>
-      {t?.c || u}
-    </span>
-    {score != null ? <span className="font-bold">{score}</span> : <span className="text-[10px] text-rw-muted">{pctText(p)}</span>}
-  </button>
-);
+}) => {
+  const pct = Math.max(0, Math.min(100, Math.round(p * 100)));
+  return (
+    <button
+      type="button"
+      disabled={locked}
+      onClick={onPick}
+      aria-pressed={won}
+      className={`relative overflow-hidden w-full flex items-center gap-1.5 px-1.5 py-1 rounded-md text-left min-w-0 ${
+        won ? "bg-rw-accent/15 text-rw-text font-semibold" : lost ? "text-rw-muted" : "text-rw-sub hover:bg-rw-surface hover:text-rw-text"
+      } ${locked ? "cursor-default" : ""}`}
+    >
+      {score == null && !won && !lost && pct > 0 && (
+        <span
+          className="pointer-events-none absolute inset-y-0 left-0 rounded-md"
+          style={{ width: `${pct}%`, background: p >= 0.5 ? "rgba(45,212,191,0.08)" : "rgba(130,170,255,0.04)" }}
+        />
+      )}
+      <TeamLogo name={t?.n || u} code={t?.c} src={t?.img} size={18} className="relative shrink-0" />
+      <span className="relative truncate flex-1" title={t?.n}>
+        {t?.c || u}
+      </span>
+      {score != null ? <span className="relative font-bold">{score}</span> : <span className="relative text-[10px] text-rw-muted">{pctText(p)}</span>}
+    </button>
+  );
+};
 
 const MatchBox: React.FC<{ m: WMatch; byU: Map<string, WTeam>; onPick: (u: string) => void; readOnly?: boolean }> = ({ m, byU, onPick, readOnly }) => {
   const locked = readOnly || m.from === "real";
@@ -1119,7 +1148,17 @@ const Records: React.FC<{ rec: Record<string, [number, number]>; byU: Map<string
           <div className={`text-[11px] font-bold ${g.k.startsWith("3") ? "text-rw-teal" : "text-rw-red"}`}>
             {g.k} {g.k.startsWith("3") ? tl("through") : tl("out")}
           </div>
-          <div className="text-xs text-rw-sub">{g.us.map((u) => byU.get(u)?.c || u).join(", ")}</div>
+          <div className="flex flex-wrap gap-1 mt-0.5 text-xs text-rw-sub">
+            {g.us.map((u) => {
+              const t = byU.get(u);
+              return (
+                <span key={u} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rw-surface border border-rw-border/60">
+                  <TeamLogo name={t?.n || u} code={t?.c} src={t?.img} size={13} className="shrink-0" />
+                  <span>{t?.c || u}</span>
+                </span>
+              );
+            })}
+          </div>
         </div>
       ))}
     </div>

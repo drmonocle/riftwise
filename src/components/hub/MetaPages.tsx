@@ -19,6 +19,7 @@ import {
   td,
   th,
   TeamLink,
+  TeamLogo,
   useHidden,
   useHiddenCheck,
   useLoad,
@@ -292,6 +293,7 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
   const [n, setN] = useState(limit || 0);
   const list = n ? rows.slice(0, n) : rows;
   const maxG = Math.max(1, ...list.map((l) => l.g || 0));
+  const maxN = Math.max(1, ...list.map((l) => l.n || 0));
   return (
     <div className={`${card} overflow-x-auto space-y-2`}>
       <div className="flex items-center justify-between gap-2">
@@ -324,6 +326,7 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
         <tbody>
           {list.map((l) => {
             const gPct = Math.max(6, Math.round(((l.g || 0) / maxG) * 100));
+            const nPct = Math.max(6, Math.round(((l.n || 0) / maxN) * 100));
             return (
               <tr key={l.u} className="border-t border-rw-border">
                 <td className={`${td} max-w-[22rem]`}>
@@ -336,8 +339,15 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
                   {l.h && l.h.length > 1 && <HistoryChain steps={l.h} current={l.u} small />}
                 </td>
                 <td className={`${td} text-rw-sub`}>{l.r ? regionName(l.r, l.r) : ""}</td>
-                <td className={`${td} text-rw-muted`}>{l.from && l.to ? (l.from === l.to ? l.from : `${l.from}–${l.to}`) : ""}</td>
-                <td className={`${td} text-rw-sub tabular-nums`}>{l.n}</td>
+                <td className={`${td} text-rw-muted`} data-sort={l.from || ""}>{l.from && l.to ? (l.from === l.to ? l.from : `${l.from}–${l.to}`) : ""}</td>
+                <td className={`${td} text-rw-sub tabular-nums`} data-sort={l.n}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span>{l.n}</span>
+                    <span className="hidden sm:inline-block w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
+                      <span className="block h-full rounded-full bg-rw-teal/65" style={{ width: `${nPct}%` }} />
+                    </span>
+                  </span>
+                </td>
                 <td className={`${td} text-rw-muted tabular-nums`} data-sort={l.g}>
                   <span className="inline-flex items-center gap-1.5">
                     <span>{fmtNum(l.g)}</span>
@@ -448,7 +458,14 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
           { label: tl("Tournaments"), value: fmtNum(l.events.length) },
           totalGames > 0 ? { label: tl("Games"), value: fmtNum(totalGames) } : null,
           years.length > 0 ? { label: tl("Years"), value: years.length > 1 ? `${years[years.length - 1]}–${years[0]}` : years[0] } : null,
-          l.titles.length > 0 ? { label: tl("Most titles"), value: `${l.titles[0].t} (${l.titles[0].n})` } : null,
+          l.titles.length > 0
+            ? {
+                label: tl("Most titles"),
+                value: `${l.titles[0].t} (${l.titles[0].n})`,
+                icon: <TeamLogo name={l.titles[0].t} size={20} />,
+                to: l.titles[0].u ? { kind: "team", slug: l.titles[0].u } : undefined,
+              }
+            : null,
         ]}
       />
       {/* the chosen season, else the newest one that has a whole-season file (l.seasons, builds since 0.7.45) */}
@@ -479,8 +496,9 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
             <ul className="text-xs space-y-1.5">
               {l.titles.map((t) => (
                 <li key={t.t} className="space-y-0.5 min-w-0">
-                  <div className="flex justify-between gap-2 min-w-0">
-                    <span className="truncate">
+                  <div className="flex items-center justify-between gap-2 min-w-0">
+                    <span className="inline-flex items-center gap-1.5 truncate min-w-0">
+                      <TeamLogo name={t.t} size={16} />
                       <TeamLink name={t.t} u={t.u} />
                     </span>
                     <span className="text-rw-accent font-bold tabular-nums shrink-0">{t.n}</span>
@@ -632,8 +650,9 @@ const LeagueEventRow: React.FC<{ e: HubLeague["events"][number] }> = ({
           hidden ? (
             <RevealButton onReveal={reveal} small />
           ) : (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1.5">
               {!e.rs && <Crown className="w-3 h-3 text-rw-accent shrink-0" />}
+              <TeamLogo name={e.w} size={15} />
               <TeamLink name={e.w} u={e.wu} />
               {e.rs ? <StandingsFirst /> : null}
             </span>
