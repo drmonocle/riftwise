@@ -7,7 +7,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { tl, tk, roleName, fmtDec } from "../../i18n";
 import { loadLeagueSeason, loadLeagues, loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y } from "../../hub/data";
 import type { EventPlayer, EventTeamStats, LeagueRow, PlayerGameRow, TeamGameRow } from "../../hub/types";
-import { isFresh, Loading, RevealButton, Section, useHidden, useLoad } from "./ui";
+import type { HubRoute } from "../../hub/route";
+import { HubLink, isFresh, Loading, RevealButton, Section, useHidden, useLoad } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 
 export interface Metric<T> {
@@ -395,7 +396,7 @@ const RankControls: React.FC<{ prefs: RankPrefs; set: (p: RankPrefs) => void }> 
   );
 };
 
-const Bars: React.FC<{ rows: RankRow[]; hide: ColId[] }> = ({ rows, hide }) => {
+const Bars: React.FC<{ rows: RankRow[]; hide: ColId[]; rankTo?: (r: RankRow) => HubRoute }> = ({ rows, hide, rankTo }) => {
   // Percentile dots: a hairline track per stat with a dot at its percentile (the number in it), red at the bottom of
   // the league, plain in the middle, teal at the top; then the value and rank, the league's average, the difference
   // and the last ten games. Long names ("Gold lead over the lane opponent at 15 minutes") wrap instead of being cut;
@@ -453,7 +454,14 @@ const Bars: React.FC<{ rows: RankRow[]; hide: ColId[] }> = ({ rows, hide }) => {
             <span className="order-2 sm:order-3 tabular-nums text-rw-text whitespace-nowrap text-right">
               {r.text}{" "}
               <span className="text-rw-muted">
-                · {tl("{n} of {m}", { n: r.rank, m: r.of })}
+                ·{" "}
+                {rankTo ? (
+                  <HubLink to={rankTo(r)} className="hover:text-rw-accent hover:underline">
+                    {tl("{n} of {m}", { n: r.rank, m: r.of })}
+                  </HubLink>
+                ) : (
+                  tl("{n} of {m}", { n: r.rank, m: r.of })
+                )}
               </span>
             </span>
           )}
@@ -623,18 +631,30 @@ export const PlayerRanks: React.FC<{
         </p>
       ) : (
         <>
-          <Bars rows={rows} hide={prefs.hide} />
+          <Bars
+            rows={rows}
+            hide={prefs.hide}
+            rankTo={(r) => ({
+              kind: "leaders",
+              query: new URLSearchParams({ league: lu, year, role: me.r, stat: r.key }).toString(),
+            })}
+          />
           <p className="text-[10px] text-rw-muted">
-            {tl(
-              "Compared with the {n} {role} players with {g}+ games in {league} {year} (all splits and playoffs).",
-              {
-                n: peers.length,
-                role: roleName(me.r),
-                g: minG,
-                league: leagueLabel,
-                year,
-              },
-            )}
+            <HubLink
+              to={{ kind: "leaders", query: new URLSearchParams({ league: lu, year, role: me.r }).toString() }}
+              className="hover:text-rw-accent hover:underline"
+            >
+              {tl(
+                "Compared with the {n} {role} players with {g}+ games in {league} {year} (all splits and playoffs).",
+                {
+                  n: peers.length,
+                  role: roleName(me.r),
+                  g: minG,
+                  league: leagueLabel,
+                  year,
+                },
+              )}
+            </HubLink>
           </p>
         </>
       );
@@ -745,16 +765,22 @@ export const TeamRanks: React.FC<{
     cardRows = rows;
     body = (
       <>
-        <Bars rows={rows} hide={prefs.hide} />
+        <Bars
+          rows={rows}
+          hide={prefs.hide}
+          rankTo={() => ({ kind: "league", slug: lu, year })}
+        />
         <p className="text-[10px] text-rw-muted">
-          {tl(
-            "Compared with the {n} teams of {league} {year} (all splits and playoffs).",
-            {
-              n: peers.length,
-              league: leagueLabel,
-              year,
-            },
-          )}
+          <HubLink to={{ kind: "league", slug: lu, year }} className="hover:text-rw-accent hover:underline">
+            {tl(
+              "Compared with the {n} teams of {league} {year} (all splits and playoffs).",
+              {
+                n: peers.length,
+                league: leagueLabel,
+                year,
+              },
+            )}
+          </HubLink>
         </p>
       </>
     );

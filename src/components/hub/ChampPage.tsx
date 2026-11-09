@@ -186,8 +186,17 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
             <p>
               {c.roles
                 .filter((r) => r.p / totalRoles >= 0.05)
-                .map((r) => `${roleName(r.r)} ${Math.round((r.p / totalRoles) * 100)}%`)
-                .join(" · ")}
+                .map((r, i) => (
+                  <React.Fragment key={r.r}>
+                    {i > 0 && " · "}
+                    <HubLink
+                      to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&role=${encodeURIComponent(r.r)}` }}
+                      className="hover:text-rw-accent hover:underline"
+                    >
+                      {`${roleName(r.r)} ${Math.round((r.p / totalRoles) * 100)}%`}
+                    </HubLink>
+                  </React.Fragment>
+                ))}
             </p>
           }
           aside={
@@ -208,16 +217,19 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               label: tl("Picks"),
               value: fmtNum(c.p),
               bar: c.p + c.b > 0 ? { pct: Math.round((c.p / (c.p + c.b)) * 100), tone: "teal" } : undefined,
+              to: { kind: "finder", query: `champ=${encodeURIComponent(c.name)}` },
             },
             {
               label: tl("Bans"),
               value: fmtNum(c.b),
               bar: c.p + c.b > 0 ? { pct: Math.round((c.b / (c.p + c.b)) * 100), tone: "red" } : undefined,
+              to: { kind: "finder", query: `ban=${encodeURIComponent(c.name)}` },
             },
             {
               label: tl("Win %"),
               value: winRate(c.w, c.p),
               bar: c.p > 0 ? { pct: Math.round((c.w / c.p) * 100), tone: c.w / c.p >= 0.5 ? "teal" : "red" } : undefined,
+              to: { kind: "finder", query: `champ=${encodeURIComponent(c.name)}&result=win` },
             },
             c.side && c.side[0] + c.side[2] > 0
               ? {
@@ -228,6 +240,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     split: [c.side[0] ? c.side[1] / c.side[0] : 0, c.side[2] ? c.side[3] / c.side[2] : 0],
                     splitColors: ["bg-[#4a9eff]/85", "bg-rw-red/80"],
                   },
+                  to: { kind: "finder", query: `champ=${encodeURIComponent(c.name)}&side=blue` },
                 }
               : null,
           ]}

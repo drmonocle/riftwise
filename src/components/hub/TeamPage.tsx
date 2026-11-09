@@ -309,12 +309,14 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   value: `${fmtNum(t.w)}–${fmtNum(t.g - t.w)}`,
                   sub: tl("{pct} win rate", { pct: winRate(t.w, t.g) }),
                   bar: t.g > 0 ? { split: [t.w, t.g - t.w] } : undefined,
+                  to: { kind: "finder", query: `team=${encodeURIComponent(t.u)}` } as HubRoute,
                 },
                 {
                   label: tl("Series"),
                   value: `${t.sw}–${t.sg - t.sw}`,
                   sub: tl("{pct} won", { pct: winRate(t.sw, t.sg) }),
                   bar: t.sg > 0 ? { split: [t.sw, t.sg - t.sw] } : undefined,
+                  to: to("series"),
                 },
                 t.rating
                   ? {
@@ -336,14 +338,15 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     worlds || msi || firstStand
                       ? [tl("{n} Worlds", { n: worlds }), tl("{n} MSI", { n: msi }), firstStand ? tl("{n} First Stand", { n: firstStand }) : ""].filter(Boolean).join(" · ")
                       : tl("finals won"),
+                  to: t.titles.length > 0 ? ({ kind: "titles" } as HubRoute) : to("history"),
                 },
                 t.earnings
-                  ? { label: tl("Prize money"), value: fmtUsdShort(t.earnings), title: fmtUsd(t.earnings), sub: `${fmtUsd(t.earnings)} · ${tl("as listed in US dollars")}` }
+                  ? { label: tl("Prize money"), value: fmtUsdShort(t.earnings), title: fmtUsd(t.earnings), sub: `${fmtUsd(t.earnings)} · ${tl("as listed in US dollars")}`, to: to("history") }
                   : null,
-                { label: tl("Best streak"), value: t.bestStreak ? tl("{n} wins", { n: t.bestStreak.n }) : "–", sub: t.bestStreak ? fmtDate(t.bestStreak.date) : undefined },
-                { label: tl("Avg game"), value: tl("{n} min", { n: t.avgMin }) },
-                t.kills != null ? { label: tl("Kills / game"), value: t.kills, sub: tl("{n} deaths", { n: t.deaths ?? 0 }) } : null,
-                t.obj ? { label: tl("Dragons / game"), value: t.obj.dragons, sub: tl("{n} barons", { n: t.obj.barons }) } : null,
+                { label: tl("Best streak"), value: t.bestStreak ? tl("{n} wins", { n: t.bestStreak.n }) : "–", sub: t.bestStreak ? fmtDate(t.bestStreak.date) : undefined, to: to("series") },
+                { label: tl("Avg game"), value: tl("{n} min", { n: t.avgMin }), to: to("stats") },
+                t.kills != null ? { label: tl("Kills / game"), value: t.kills, sub: tl("{n} deaths", { n: t.deaths ?? 0 }), to: to("stats") } : null,
+                t.obj ? { label: tl("Dragons / game"), value: t.obj.dragons, sub: tl("{n} barons", { n: t.obj.barons }), to: to("stats") } : null,
                 t.sides && t.sides[0] + t.sides[2] > 0
                   ? {
                       label: tl("Blue / red side"),
@@ -353,6 +356,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                         split: [t.sides[0] ? t.sides[1] / t.sides[0] : 0, t.sides[2] ? t.sides[3] / t.sides[2] : 0],
                         splitColors: ["bg-[#4a9eff]/85", "bg-rw-red/80"],
                       },
+                      to: to("stats"),
                     }
                   : null,
                 t.obj
@@ -360,6 +364,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                       label: tl("Gold diff / game"),
                       value: `${t.obj.golddiff >= 0 ? "+" : ""}${fmtNum(Math.round(t.obj.golddiff))}`,
                       sub: tl("{n} towers", { n: t.obj.towers }),
+                      to: to("stats"),
                     }
                   : null,
               ]

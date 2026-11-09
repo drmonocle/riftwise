@@ -39,6 +39,8 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
   const year = (askedYear && (!row?.sy?.length || row.sy.includes(askedYear)) ? askedYear : "") || years[0] || row?.to || String(new Date().getFullYear());
   const event = q.get("event") || "";
   const role = q.get("role") || "";
+  const statParam = q.get("stat") || "";
+  const statMetric = PLAYER_METRICS.find((m) => m.key === statParam);
   const waitingForLeagues = !askedYear && league !== DEFAULT_LEAGUE && leagues.loading && !leagues.data;
   const season = useLoad(
     () => (waitingForLeagues ? Promise.resolve(null) : loadLeagueSeason(league, year)),
@@ -331,14 +333,21 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
           }
           share={`riftwise-leaders-${league}-${year}${event ? `-${event}` : ""}${role ? `-${role}` : ""}`}
         >
-          {shownRows.length >= 2 && <LeaderSpotlight rows={shownRows} />}
+          {shownRows.length >= 2 && <LeaderSpotlight rows={shownRows} activeStat={statMetric?.key} onPickStat={(k) => set({ stat: k })} />}
           {zMode && (
             <p className="text-[11px] text-rw-muted">
               {tl("z = (value − role average) ÷ role standard deviation, over the {n} players listed. +1.0 is one standard deviation better than the role's average (for deaths, fewer is better). Hover a number for the stat itself.", { n: rows.length })}
             </p>
           )}
           {shownRows.length ? (
-            <SortTable rows={shownRows} columns={columns} initial={{ key: "kda", desc: true }} rowKey={(p) => `${p.u || p.n}-${p.t}-${p.r}`} copyName={`riftwise-leaders-${league}-${year}`} />
+            <SortTable
+              key={`${statMetric?.key || "kda"}:${zMode ? "z" : "v"}`}
+              rows={shownRows}
+              columns={columns}
+              initial={statMetric ? { key: statMetric.key, desc: zMode ? true : !statMetric.low } : { key: "kda", desc: true }}
+              rowKey={(p) => `${p.u || p.n}-${p.t}-${p.r}`}
+              copyName={`riftwise-leaders-${league}-${year}`}
+            />
           ) : (
             <p className="text-xs text-rw-sub">{tl("No player has that many games here. Lower the minimum.")}</p>
           )}
@@ -349,7 +358,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
 };
 
 /** 5-card spotlight strip showing the #1 player in KDA, DPM, CSM, GD@15, and KP for the current filter. */
-const LeaderSpotlight: React.FC<{ rows: EventPlayer[] }> = ({ rows }) => {
+const LeaderSpotlight: React.FC<{ rows: EventPlayer[]; activeStat?: string; onPickStat?: (key: string) => void }> = ({ rows, activeStat, onPickStat }) => {
   const keys = ["kda", "dpm", "csm", "g15", "kp"] as const;
   const cards = useMemo(() => {
     return keys
@@ -369,11 +378,26 @@ const LeaderSpotlight: React.FC<{ rows: EventPlayer[] }> = ({ rows }) => {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-xs">
       {cards.map((c) => (
-        <div key={c.key} className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 flex items-center justify-between gap-2">
+        <div
+          key={c.key}
+          className={`rounded-lg border bg-rw-bg/50 px-2.5 py-2 flex items-center justify-between gap-2 ${
+            activeStat === c.key ? "border-rw-accent" : "border-rw-border"
+          }`}
+        >
           <div className="flex items-center gap-2 min-w-0">
             <PlayerPhoto name={c.top.n} team={c.top.t} slug={c.top.u ?? undefined} size={22} />
             <div className="min-w-0">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted truncate">{c.label}</div>
+              {onPickStat ? (
+                <button
+                  type="button"
+                  onClick={() => onPickStat(c.key)}
+                  className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted hover:text-rw-accent truncate block text-left"
+                >
+                  {c.label}
+                </button>
+              ) : (
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted truncate">{c.label}</div>
+              )}
               <div className="mt-0.5 truncate">
                 <PlayerLink name={c.top.n} u={c.top.u} className="font-semibold text-rw-text hover:text-rw-accent" />
               </div>

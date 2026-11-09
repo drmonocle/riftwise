@@ -308,7 +308,7 @@ const PlayerItemsView: React.FC<{
             last: fmtDate(g[0][0]),
           })}
         </p>
-        <ChampSpread games={g} />
+        <ChampSpread games={g} picks={picks} />
         <GameList games={g} spoilerKey={`items:${slug}`} />
         {whoBuilt(label)}
       </Section>
@@ -409,7 +409,19 @@ const PlayerItemsView: React.FC<{
                   <td className={`${td} max-sm:hidden`}>
                     <span className="flex gap-0.5">
                       {topChamps(g, 4).map(([c]) => (
-                        <HubLink key={c} to={{ kind: "champ", slug: prettySlug(c) }}>
+                        <HubLink
+                          key={c}
+                          to={{
+                            kind: "items",
+                            query: new URLSearchParams({
+                              player: slug,
+                              item: prettySlug(it),
+                              champ: prettySlug(c),
+                              ...(year ? { year } : {}),
+                            }).toString(),
+                          }}
+                          title={`${name} · ${itemName(it)} · ${champName(c)}`}
+                        >
                           <ChampIcon name={c} size={16} />
                         </HubLink>
                       ))}
@@ -1012,10 +1024,26 @@ const topChamps = (games: PlayerGameRow[], n: number): [string, number][] => {
 };
 
 /** Which champions the games were on. */
-const ChampSpread: React.FC<{ games: PlayerGameRow[] }> = ({ games }) => (
+const ChampSpread: React.FC<{ games: PlayerGameRow[]; picks?: Picks }> = ({ games, picks }) => (
   <div className="flex flex-wrap gap-2 text-[11px] text-rw-sub">
     {topChamps(games, 8).map(([c, n]) => (
-      <HubLink key={c} to={{ kind: "champ", slug: prettySlug(c) }} className="flex items-center gap-1 hover:text-rw-accent">
+      <HubLink
+        key={c}
+        to={
+          picks?.player && picks?.item && !picks.champ
+            ? {
+                kind: "items",
+                query: new URLSearchParams({
+                  player: picks.player,
+                  item: picks.item,
+                  champ: prettySlug(c),
+                  ...(picks.year ? { year: picks.year } : {}),
+                }).toString(),
+              }
+            : { kind: "champ", slug: prettySlug(c) }
+        }
+        className="flex items-center gap-1 hover:text-rw-accent"
+      >
         <ChampIcon name={c} size={16} /> {champName(c)} {n}
       </HubLink>
     ))}

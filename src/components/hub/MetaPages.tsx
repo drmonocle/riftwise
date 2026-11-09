@@ -475,8 +475,14 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
           </>
         }
         stats={[
-          { label: tl("Tournaments"), value: fmtNum(l.events.length) },
-          totalGames > 0 ? { label: tl("Games"), value: fmtNum(totalGames) } : null,
+          { label: tl("Tournaments"), value: fmtNum(l.events.length), to: { kind: "tournaments" } },
+          totalGames > 0
+            ? {
+                label: tl("Games"),
+                value: fmtNum(totalGames),
+                to: { kind: "finder", query: `league=${encodeURIComponent(l.u)}${season ? `&year=${encodeURIComponent(season)}` : ""}` },
+              }
+            : null,
           years.length > 0 ? { label: tl("Years"), value: years.length > 1 ? `${years[years.length - 1]}–${years[0]}` : years[0] } : null,
           l.titles.length > 0
             ? {

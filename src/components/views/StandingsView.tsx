@@ -17,7 +17,7 @@ import { tl, tc, locale, regionName } from "../../i18n";
 import { STable } from "../STable";
 import { riotImg } from "../../riotImage";
 import { navigateHub } from "../../hub/route";
-import { resolveLeagueSlug } from "../../hub/data";
+import { prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { SectionCard } from "../hub/BroadcastCard";
 import { useTeamLogo } from "../hub/ui";
 
@@ -528,15 +528,32 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
         <span>
           {match.state === "inProgress" ? <span className="text-rw-red">{tl("Live")}</span> : match.state === "completed" ? (masked ? tl("Final · hidden") : tl("Final")) : tl("Upcoming")}
         </span>
-        {!masked && match.state !== "unstarted" && match.teams.length === 2 && (match.teams[0].gameWins + match.teams[1].gameWins) > 0 && (
-          <span className="w-10 h-1 rounded-full bg-rw-border/70 overflow-hidden inline-flex gap-[1px] shrink-0" aria-hidden="true">
-            <span
-              className="h-full bg-rw-teal/80"
-              style={{ width: `${Math.round((match.teams[0].gameWins / (match.teams[0].gameWins + match.teams[1].gameWins)) * 100)}%` }}
-            />
-            <span className="h-full flex-1 bg-rw-rose/70" />
-          </span>
-        )}
+        <span className="inline-flex items-center gap-1.5">
+          {match.teams.length === 2 && match.teams.every((t) => t.code && t.code !== "TBD") && (
+            <button
+              type="button"
+              onClick={() =>
+                navigateHub({
+                  kind: "prep",
+                  a: prettySlug(match.teams[0].name || match.teams[0].code),
+                  b: prettySlug(match.teams[1].name || match.teams[1].code),
+                })
+              }
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Match prep")}
+            </button>
+          )}
+          {!masked && match.state !== "unstarted" && match.teams.length === 2 && (match.teams[0].gameWins + match.teams[1].gameWins) > 0 && (
+            <span className="w-10 h-1 rounded-full bg-rw-border/70 overflow-hidden inline-flex gap-[1px] shrink-0" aria-hidden="true">
+              <span
+                className="h-full bg-rw-teal/80"
+                style={{ width: `${Math.round((match.teams[0].gameWins / (match.teams[0].gameWins + match.teams[1].gameWins)) * 100)}%` }}
+              />
+              <span className="h-full flex-1 bg-rw-rose/70" />
+            </span>
+          )}
+        </span>
       </div>
     </div>
   );

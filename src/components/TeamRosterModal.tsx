@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { CatalogData, Match, AppSettings, PlayerEntry } from "../types";
-import { X, Star, ExternalLink, BarChart3 } from "lucide-react";
+import { X, Star, ExternalLink, BarChart3, GitCompare } from "lucide-react";
 import { computeHeadToHead, pickTeamByCode } from "../helpers";
 import { H2HMeter } from "./H2HMeter";
 import { MatchOverviewButton } from "./MatchOverviewButton";
@@ -51,27 +51,39 @@ const TeamStatsLink: React.FC<{ name: string; code: string; onDone: () => void }
   const [busy, setBusy] = useState(false);
   const [missing, setMissing] = useState(false);
   if (missing) return null;
+  const openRoute = (dest: (slug: string) => void) => {
+    setBusy(true);
+    loadHubIndexQuick()
+      .then((index) => {
+        const slug = findHubTeam(index, name, code);
+        if (!slug) return setMissing(true);
+        dest(slug);
+        onDone();
+      })
+      .catch(() => setMissing(true))
+      .finally(() => setBusy(false));
+  };
   return (
-    <button
-      type="button"
-      disabled={busy}
-      onClick={() => {
-        setBusy(true);
-        loadHubIndexQuick()
-          .then((index) => {
-            const slug = findHubTeam(index, name, code);
-            if (!slug) return setMissing(true);
-            navigateHub({ kind: "team", slug });
-            onDone();
-          })
-          .catch(() => setMissing(true))
-          .finally(() => setBusy(false));
-      }}
-      className="mt-1.5 flex items-center gap-1 text-[11px] text-rw-accent hover:underline disabled:opacity-60"
-    >
-      <BarChart3 className="w-3 h-3" />
-      {tl("Full history and stats")}
-    </button>
+    <div className="mt-1.5 flex flex-wrap items-center gap-3">
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => openRoute((slug) => navigateHub({ kind: "team", slug }))}
+        className="flex items-center gap-1 text-[11px] text-rw-accent hover:underline disabled:opacity-60"
+      >
+        <BarChart3 className="w-3 h-3" />
+        {tl("Full history and stats")}
+      </button>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => openRoute((slug) => navigateHub({ kind: "compare", mode: "team", a: slug }))}
+        className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
+      >
+        <GitCompare className="w-3 h-3" />
+        {tl("Compare")}
+      </button>
+    </div>
   );
 };
 

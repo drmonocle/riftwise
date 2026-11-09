@@ -269,24 +269,33 @@ const PlayerView: React.FC<{
                   value: `${fmtNum(p.w)}–${fmtNum(p.g - p.w)}`,
                   sub: tl("{pct} win rate", { pct: winRate(p.w, p.g) }),
                   bar: p.g > 0 ? { split: [p.w, p.g - p.w] } : undefined,
+                  to: to("matches"),
                 },
                 {
                   label: tl("KDA"),
                   value: fmtN(p.kda),
                   sub: `${fmtNum(p.k)} / ${fmtNum(p.d)} / ${fmtNum(p.a)}`,
                   bar: p.kda > 0 ? { pct: Math.min(100, Math.round((p.kda / 6) * 100)), tone: p.kda >= 4 ? "teal" : p.kda < 2.5 ? "red" : "accent" } : undefined,
+                  to: to("stats"),
                 },
                 {
                   label: tl("Titles"),
                   value: p.titles.length,
                   sub: `${tl("{n} Worlds", { n: p.titles.filter((x) => x.kind === "Worlds").length })} · ${tl("{n} MSI", { n: p.titles.filter((x) => x.kind === "MSI").length })}`,
+                  to: p.titles.length > 0 ? { kind: "titles" } : to("career"),
                 },
-                { label: tl("Champions"), value: p.nChamps, sub: p.champs[0] ? tl("most: {champion}", { champion: champName(p.champs[0].c) }) : undefined },
+                {
+                  label: tl("Champions"),
+                  value: p.nChamps,
+                  sub: p.champs[0] ? tl("most: {champion}", { champion: champName(p.champs[0].c) }) : undefined,
+                  to: to("champions"),
+                },
                 p.csm != null || p.gpm != null
                   ? {
                       label: [p.csm != null ? tl("CS / min") : null, p.gpm != null ? tl("Gold / min") : null].filter(Boolean).join(" · "),
                       value: [p.csm != null ? fmtN(p.csm) : null, p.gpm != null ? fmtNum(p.gpm) : null].filter(Boolean).join(" · "),
                       sub: p.dpm != null ? `${tl("Damage / min")} ${fmtNum(p.dpm)}` : undefined,
+                      to: to("stats"),
                     }
                   : null,
                 p.mvp
@@ -294,9 +303,10 @@ const PlayerView: React.FC<{
                       label: tl("Player of the Game"),
                       value: fmtNum(p.mvp),
                       sub: pentas ? `${tl("Pentakills")} ${pentas}` : tl("awards (where recorded)"),
+                      to: to("stats"),
                     }
                   : pentas
-                    ? { label: tl("Pentakills"), value: pentas, sub: tl("fully recorded from 2018") }
+                    ? { label: tl("Pentakills"), value: pentas, sub: tl("fully recorded from 2018"), to: to("stats") }
                     : null,
               ]
             : undefined

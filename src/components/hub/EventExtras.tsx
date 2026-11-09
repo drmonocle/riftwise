@@ -83,8 +83,9 @@ const GameLine: React.FC<{
   ) : null;
 
 /** gol.gg-style "tournament data": averages, side wins, dragons, notable games, pentakills, Player of the Game. */
-export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean; card?: { data: () => CardData; name: string } }> = ({
+export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: boolean; card?: { data: () => CardData; name: string } }> = ({
   o,
+  slug,
   hidden,
   card,
 }) => {
@@ -116,7 +117,18 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean; card?: {
       }
     >
       <div className="grid grid-cols-2 sm:grid-cols-4 rw-stats">
-        <Stat label={tl("Games")} value={fmtNum(o.g)} />
+        <Stat
+          label={tl("Games")}
+          value={
+            slug ? (
+              <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}` }} className="hover:text-rw-accent hover:underline" title={tl("Game finder")}>
+                {fmtNum(o.g)}
+              </HubLink>
+            ) : (
+              fmtNum(o.g)
+            )
+          }
+        />
         <Stat label={tl("Avg game")} value={o.min ? mmss(o.min) : "–"} />
         <Stat label={tl("Kills / game")} value={o.kills || "–"} />
         <Stat
@@ -457,7 +469,7 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
             const pctA = total > 0 ? Math.round((r.wa / total) * 100) : 50;
             return (
               <tr key={r.a + r.b} className="border-t border-rw-border">
-                <td className={`${td} text-rw-text`}>
+                <td className={`${td} text-rw-text`} data-sort={regionName(r.a, r.a)}>
                   <span className="inline-flex items-center gap-1.5 flex-wrap">
                     <RegionFlag code={r.a} />
                     <span>{regionName(r.a, r.a)}</span>
@@ -486,10 +498,13 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
                       </span>
                     </span>
                     {total > 0 && (
-                      <span className="w-16 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
-                        <span className={`h-full ${r.wa > r.wb ? "bg-rw-teal/85" : "bg-rw-sub/65"}`} style={{ width: `${pctA}%` }} />
-                        <span className={`h-full ${r.wb > r.wa ? "bg-rw-teal/85" : "bg-rw-sub/65"}`} style={{ width: `${100 - pctA}%` }} />
-                      </span>
+                      <>
+                        <span className="w-16 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
+                          <span className={`h-full ${r.wa > r.wb ? "bg-rw-teal/85" : "bg-rw-sub/65"}`} style={{ width: `${pctA}%` }} />
+                          <span className={`h-full ${r.wb > r.wa ? "bg-rw-teal/85" : "bg-rw-sub/65"}`} style={{ width: `${100 - pctA}%` }} />
+                        </span>
+                        <span className="text-[11px] text-rw-muted font-mono">({pctA}%)</span>
+                      </>
                     )}
                   </span>
                 </td>

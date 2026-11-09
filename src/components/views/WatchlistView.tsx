@@ -596,20 +596,32 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     </div>
                   </div>
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      togglePlayer(player.name);
-                    }}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors ${
-                      isFollowed
-                        ? "bg-rw-teal text-rw-bg"
-                        : "bg-rw-deep border border-rw-border text-rw-muted hover:text-rw-text"
-                    }`}
-                  >
-                    {isFollowed ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                    <span>{isFollowed ? tl("Following") : tl("Follow")}</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigateHub({ kind: "compare", mode: "player", a: prettySlug(player.name) });
+                      }}
+                      className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors"
+                    >
+                      {tl("Compare")}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        togglePlayer(player.name);
+                      }}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors ${
+                        isFollowed
+                          ? "bg-rw-teal text-rw-bg"
+                          : "bg-rw-deep border border-rw-border text-rw-muted hover:text-rw-text"
+                      }`}
+                    >
+                      {isFollowed ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                      <span>{isFollowed ? tl("Following") : tl("Follow")}</span>
+                    </button>
+                  </div>
                 </div>
               );
             })}

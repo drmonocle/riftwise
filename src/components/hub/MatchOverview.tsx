@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { ClipboardList, X } from "lucide-react";
+import { ClipboardList, GitCompare, Swords, X } from "lucide-react";
 import type { Match } from "../../types";
 import { tl, tc, roleName } from "../../i18n";
 import { loadHubTeam, loadRatings, loadTeamSeries, teamStarter } from "../../hub/data";
@@ -232,9 +232,17 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               <span className="text-rw-sub">{tl("Head to head (series)")}</span>
               <span className="font-bold tabular-nums">
                 {meetings.length ? (
-                  <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      navigateHub({ kind: "compare", mode: "team", a: x.team.u, b: y.team.u });
+                    }}
+                    className="hover:underline"
+                    title={tl("Compare")}
+                  >
                     <span className="text-rw-side-a">{h2hWins}</span> – <span className="text-rw-side-b">{meetings.length - h2hWins}</span>
-                  </>
+                  </button>
                 ) : (
                   "–"
                 )}
@@ -311,14 +319,38 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
         </div>
       )}
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-rw-border pt-3">
-        <button
-          type="button"
-          onClick={onPrep}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
-        >
-          <ClipboardList className="w-3.5 h-3.5" />
-          {tl("Full match prep")}
-        </button>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onPrep}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+          >
+            <ClipboardList className="w-3.5 h-3.5" />
+            {tl("Full match prep")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(x.team.u)},${encodeURIComponent(y.team.u)}` });
+            }}
+            className="flex items-center gap-1 px-2 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+          >
+            <Swords className="w-3.5 h-3.5" />
+            {tl("Draft board")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              navigateHub({ kind: "compare", mode: "team", a: x.team.u, b: y.team.u });
+            }}
+            className="flex items-center gap-1 px-2 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+          >
+            <GitCompare className="w-3.5 h-3.5" />
+            {tl("Compare")}
+          </button>
+        </div>
         <BroadcastCardButton data={card} name={`${x.team.name}-vs-${y.team.name}-overview`} label={tl("Overview card")} />
       </div>
     </>

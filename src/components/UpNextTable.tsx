@@ -214,8 +214,13 @@ const FormCell: React.FC<{ m: Match; schedule: Match[]; hidden: boolean }> = ({ 
   }, [m.matchId, hidden]);
   if (hidden) return <span className="text-rw-muted text-[10px]" title={tl("Hidden while spoiler mode is on.")}>–</span>;
   if (!form || (!form[0].length && !form[1].length)) return <span className="text-rw-muted">–</span>;
-  const row = (f: ("W" | "L")[], code: string) => (
-    <span className="flex gap-px" title={`${code}: ${f.join(" ")}`}>
+  const row = (f: ("W" | "L")[], code: string, name: string) => (
+    <button
+      type="button"
+      onClick={() => navigateHub({ kind: "team", slug: prettySlug(name || code), tab: "series" })}
+      className="flex gap-px hover:opacity-80"
+      title={`${code}: ${f.join(" ")}`}
+    >
       {f.map((x, i) => (
         <span
           key={i}
@@ -224,12 +229,12 @@ const FormCell: React.FC<{ m: Match; schedule: Match[]; hidden: boolean }> = ({ 
           {x === "W" ? tc("short result", "W") : tc("short result", "L")}
         </span>
       ))}
-    </span>
+    </button>
   );
   return (
     <span className="flex flex-col gap-px" aria-label={tl("Last five series, newest first")}>
-      {row(form[0], m.team1Code)}
-      {row(form[1], m.team2Code)}
+      {row(form[0], m.team1Code, m.team1Name)}
+      {row(form[1], m.team2Code, m.team2Name)}
     </span>
   );
 };

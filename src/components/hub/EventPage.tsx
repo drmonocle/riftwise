@@ -215,9 +215,14 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
         stats={
           (e.games || 0) > 0
             ? [
-                { label: tl("Games"), value: fmtNum(e.games || 0), sub: e.statsGames ? tl("{n} with full stats", { n: fmtNum(e.statsGames) }) : undefined },
-                { label: tl("Series"), value: fmtNum(e.series || 0) },
-                { label: tl("Teams"), value: e.teams?.length || "–" },
+                {
+                  label: tl("Games"),
+                  value: fmtNum(e.games || 0),
+                  sub: e.statsGames ? tl("{n} with full stats", { n: fmtNum(e.statsGames) }) : undefined,
+                  to: { kind: "finder", query: `event=${encodeURIComponent(e.u)}` },
+                },
+                { label: tl("Series"), value: fmtNum(e.series || 0), to: tabbed ? to("matches") : undefined },
+                { label: tl("Teams"), value: e.teams?.length || "–", to: tabbed ? to("teams") : undefined },
               ]
             : undefined
         }
@@ -306,6 +311,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
       {on("") && e.overview && (
         <EventFacts
           o={e.overview}
+          slug={e.u}
           hidden={resultsHidden}
           card={{
             name: `${e.u}-overview`,

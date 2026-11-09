@@ -120,7 +120,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                 return (
                   <div key={m.key} className="min-w-0">
                     <div className="text-[11px] font-semibold text-rw-accent truncate" title={m.label}>
-                      <HubLink to={{ kind: "leaders", query: `league=${league}&year=${year}` }} className="hover:underline">
+                      <HubLink to={{ kind: "leaders", query: `league=${league}&year=${year}&stat=${m.key}` }} className="hover:underline">
                         {m.label}
                       </HubLink>
                     </div>
