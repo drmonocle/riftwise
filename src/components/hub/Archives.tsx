@@ -6,6 +6,7 @@ import { loadPlayerGames, loadPlayerItems, loadTeamSeries, prettySlug } from "..
 import type { PlayerGameRow, TeamSeriesRow } from "../../hub/types";
 import { isFinishedItem } from "../../hub/ddragon";
 import { SectionCard } from "./BroadcastCard";
+import { KdaBar, WinBar } from "./OpponentChart";
 import { ChampIcon, EventLink, Failed, fmtDate, HubLink, isFresh, ItemIcon, Loading, ratingTextClass, RevealButton, Section, TeamLink, useHidden, useLoad } from "./ui";
 
 const PAGE = 50;
@@ -112,9 +113,12 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
           aria-label={tl("Filter by opponent or tournament…")}
           className={`${select} flex-1 min-w-[10rem] placeholder-rw-muted`}
         />
-        <span className="text-[11px] text-rw-sub">
-          {tn("{n} series", "{n} series", rows.length)}
-          {!seriesHidden && <> · {tl("{w} won", { w: won })}</>}
+        <span
+          className="inline-flex items-center gap-2 text-[11px] text-rw-sub"
+          title={!seriesHidden && rows.length > 0 ? tl("{w} won", { w: won }) : undefined}
+        >
+          <span>{tn("{n} series", "{n} series", rows.length)}</span>
+          {!seriesHidden && rows.length > 0 && <WinBar w={won} g={rows.length} showRecord />}
         </span>
         {!seriesHidden && shown.length > 0 && (
           <>
@@ -203,12 +207,44 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
         <p className="text-xs text-rw-sub">{tl("These two teams have never played each other.")}</p>
       ) : (
         <>
-          <p className="text-sm font-bold text-rw-text">
-            {hidden ? tn("{n} series", "{n} series", rows.length) : `${aName} ${wa} – ${rows.length - wa} ${bName}`}
-            {!hidden && (
-              <span className="ml-2 text-xs font-normal text-rw-sub tabular-nums">{tl("Games {a}–{b}", { a: ga, b: gb })}</span>
-            )}
-          </p>
+          {hidden ? (
+            <p className="text-sm font-bold text-rw-text">{tn("{n} series", "{n} series", rows.length)}</p>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="rounded-lg border border-rw-border bg-rw-bg/60 px-2.5 py-2 space-y-1">
+                <div className="flex items-center justify-between text-xs font-bold tabular-nums">
+                  <span className="text-rw-side-a truncate">
+                    {aName} {wa}
+                  </span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">{tl("Series")}</span>
+                  <span className="text-rw-side-b truncate text-right">
+                    {rows.length - wa} {bName}
+                  </span>
+                </div>
+                <div className="h-2 rounded-full bg-rw-raised overflow-hidden flex gap-[2px]">
+                  <div className="h-full bg-rw-side-a/85" style={{ width: `${Math.round((wa / Math.max(1, rows.length)) * 100)}%` }} />
+                  <div className="h-full flex-1 bg-rw-side-b/85" />
+                </div>
+              </div>
+              {ga + gb > 0 && (
+                <div className="rounded-lg border border-rw-border bg-rw-bg/60 px-2.5 py-2 space-y-1">
+                  <div className="flex items-center justify-between text-xs font-bold tabular-nums">
+                    <span className="text-rw-side-a truncate">
+                      {aName} {ga}
+                    </span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">{tl("Games")}</span>
+                    <span className="text-rw-side-b truncate text-right">
+                      {gb} {bName}
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-rw-raised overflow-hidden flex gap-[2px]">
+                    <div className="h-full bg-rw-side-a/85" style={{ width: `${Math.round((ga / Math.max(1, ga + gb)) * 100)}%` }} />
+                    <div className="h-full flex-1 bg-rw-side-b/85" />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           {all.length > 3 && (
             <div className="flex flex-wrap items-center gap-2">
               <select value={year} onChange={(e) => setYear(e.target.value)} aria-label={tl("Year")} className={select}>
@@ -326,10 +362,13 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }>
           <option value="d">{tl("Newest first")}</option>
           <option value="r">{tl("Top rated")}</option>
         </select>
-        <span className="text-[11px] text-rw-sub">
-          {tn("{n} game", "{n} games", rows.length)}
-          {!hidden && rows.length > 0 && <> · {tl("{pct} win rate", { pct: `${Math.round((won / rows.length) * 100)}%` })}</>}
-          {!hidden && rows.length > 0 && <> · {tl("KDA {n}", { n: fmtDec((k + a) / Math.max(d, 1), 2) })}</>}
+        <span
+          className="inline-flex flex-wrap items-center gap-2 text-[11px] text-rw-sub"
+          title={!hidden && rows.length > 0 ? tl("KDA {n}", { n: fmtDec((k + a) / Math.max(d, 1), 2) }) : undefined}
+        >
+          <span>{tn("{n} game", "{n} games", rows.length)}</span>
+          {!hidden && rows.length > 0 && <WinBar w={won} g={rows.length} />}
+          {!hidden && rows.length > 0 && <KdaBar kda={Number(((k + a) / Math.max(d, 1)).toFixed(2))} />}
         </span>
         {!hidden && shown.length > 0 && (
           <>

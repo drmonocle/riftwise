@@ -744,17 +744,29 @@ export const TeamRows: React.FC<{
             }
           >
             <ul className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-              {s.t.picks.slice(0, 10).map(([c, n, w]) => (
-                <li key={c} className="flex justify-between gap-2 min-w-0">
-                  <ChampLink name={c} size={16} />
-                  <span
-                    className="text-rw-muted shrink-0 tabular-nums"
-                    title={`${tn("{n} game", "{n} games", n)} · ${tl("{pct} win rate", { pct: winRate(w, n) })}`}
-                  >
-                    {n} · {winRate(w, n)}
-                  </span>
-                </li>
-              ))}
+              {(() => {
+                const topPicks = s.t.picks.slice(0, 10);
+                const maxPickN = Math.max(1, ...topPicks.map(([, n]) => n));
+                return topPicks.map(([c, n, w]) => {
+                  const good = n > 0 && w / n >= 0.5;
+                  return (
+                    <li key={c} className="flex items-center justify-between gap-2 min-w-0">
+                      <ChampLink name={c} size={16} />
+                      <span
+                        className="inline-flex items-center gap-1.5 text-rw-sub shrink-0 tabular-nums"
+                        title={`${tn("{n} game", "{n} games", n)} · ${tl("{pct} win rate", { pct: winRate(w, n) })}`}
+                      >
+                        <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
+                          <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(8, Math.round((n / maxPickN) * 100))}%` }} />
+                        </span>
+                        <span>{n}</span>
+                        <span className="text-rw-muted">·</span>
+                        <span className={`w-9 text-right ${good ? "text-rw-teal font-semibold" : "text-rw-red"}`}>{winRate(w, n)}</span>
+                      </span>
+                    </li>
+                  );
+                });
+              })()}
             </ul>
             <DraftTendencies rows={s.rows} />
           </Section>
@@ -911,14 +923,27 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
             }
           >
             <ul className="text-xs space-y-1">
-              {s.p.champs.slice(0, 8).map((c) => (
-                <li key={c.c} className="flex justify-between gap-2 min-w-0">
-                  <ChampLink name={c.c} size={16} />
-                  <span className="text-rw-muted shrink-0 tabular-nums">
-                    {c.g} · {winRate(c.w, c.g)} · {fmtN(c.kda)} KDA
-                  </span>
-                </li>
-              ))}
+              {(() => {
+                const topChamps = s.p.champs.slice(0, 8);
+                const maxChampG = Math.max(1, ...topChamps.map((c) => c.g));
+                return topChamps.map((c) => {
+                  const good = c.g > 0 && c.w / c.g >= 0.5;
+                  return (
+                    <li key={c.c} className="flex items-center justify-between gap-2 min-w-0">
+                      <ChampLink name={c.c} size={16} />
+                      <span className="inline-flex items-center gap-1.5 text-rw-sub shrink-0 tabular-nums">
+                        <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
+                          <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(8, Math.round((c.g / maxChampG) * 100))}%` }} />
+                        </span>
+                        <span>{c.g}</span>
+                        <span className="text-rw-muted">·</span>
+                        <span className={`w-9 text-right ${good ? "text-rw-teal font-semibold" : "text-rw-red"}`}>{winRate(c.w, c.g)}</span>
+                        <span className="text-rw-muted">· {fmtN(c.kda)} KDA</span>
+                      </span>
+                    </li>
+                  );
+                });
+              })()}
             </ul>
           </Section>
         ))}
@@ -1029,17 +1054,29 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
       }
     >
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-        <div className={`${card} py-2`}>
+        <div className={`${card} py-2 space-y-1`}>
           <div className="text-[10px] text-rw-muted">{tl("Games")}</div>
           <div className="font-bold text-rw-text tabular-nums">
             {aName} {s.w} – {s.l} {bName}
           </div>
+          {s.w + s.l > 0 && (
+            <div className="h-1.5 rounded-full bg-rw-raised overflow-hidden flex gap-[2px]">
+              <div className="h-full bg-rw-side-a/85" style={{ width: `${Math.round((s.w / Math.max(1, s.w + s.l)) * 100)}%` }} />
+              <div className="h-full flex-1 bg-rw-side-b/85" />
+            </div>
+          )}
         </div>
-        <div className={`${card} py-2`}>
+        <div className={`${card} py-2 space-y-1`}>
           <div className="text-[10px] text-rw-muted">{tl("Series")}</div>
           <div className="font-bold text-rw-text tabular-nums">
             {s.sw} – {s.sl}
           </div>
+          {s.sw + s.sl > 0 && (
+            <div className="h-1.5 rounded-full bg-rw-raised overflow-hidden flex gap-[2px]">
+              <div className="h-full bg-rw-side-a/85" style={{ width: `${Math.round((s.sw / Math.max(1, s.sw + s.sl)) * 100)}%` }} />
+              <div className="h-full flex-1 bg-rw-side-b/85" />
+            </div>
+          )}
         </div>
         {s.gd15 != null && (
           <div className={`${card} py-2`} title={tl("{name}'s gold lead over the other at 15 minutes, in the {n} games they faced each other in lane", { name: aName, n: s.lane })}>
