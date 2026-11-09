@@ -69,18 +69,30 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
         {teams.length > 0 && (
           <div className="min-w-0">
             <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Teams by record")}</div>
-            <ol className="text-xs space-y-0.5">
-              {teams.slice(0, 12).map((t, i) => (
-                <li key={t.u || t.t} className="flex justify-between gap-2 min-w-0">
-                  <span className="truncate">
-                    <span className="text-rw-muted tabular-nums w-5 inline-block">{i + 1}</span>
-                    <TeamLink name={t.t} u={t.u} className="text-rw-text hover:text-rw-accent" />
-                  </span>
-                  <span className="tabular-nums text-rw-sub shrink-0">
-                    {t.w}-{t.g - t.w} <span className="text-rw-muted">({Math.round((t.w / Math.max(1, t.g)) * 100)}%)</span>
-                  </span>
-                </li>
-              ))}
+            <ol className="text-xs space-y-1">
+              {teams.slice(0, 12).map((t, i) => {
+                const wrPct = Math.round((t.w / Math.max(1, t.g)) * 100);
+                return (
+                  <li key={t.u || t.t} className="flex items-center justify-between gap-2 min-w-0">
+                    <span className="truncate">
+                      <span className="text-rw-muted tabular-nums w-5 inline-block">{i + 1}</span>
+                      <TeamLink name={t.t} u={t.u} className="text-rw-text hover:text-rw-accent" />
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 tabular-nums text-rw-sub shrink-0">
+                      <span>
+                        {t.w}-{t.g - t.w}{" "}
+                        <span className={wrPct >= 55 ? "text-rw-teal font-semibold" : wrPct <= 45 ? "text-rw-red" : "text-rw-muted"}>({wrPct}%)</span>
+                      </span>
+                      <span className="w-9 h-1 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
+                        <span
+                          className={`block h-full rounded-full ${wrPct >= 55 ? "bg-rw-teal/80" : wrPct <= 45 ? "bg-rw-red/75" : "bg-rw-sub/60"}`}
+                          style={{ width: `${Math.max(6, wrPct)}%` }}
+                        />
+                      </span>
+                    </span>
+                  </li>
+                );
+              })}
             </ol>
             <p className="text-[10px] text-rw-muted mt-1">{tl("Games won and lost over the whole season (all splits and playoffs).")}</p>
           </div>
@@ -101,16 +113,27 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                     <div className="text-[11px] font-semibold text-rw-accent truncate" title={m.label}>
                       {m.label}
                     </div>
-                    <ol className="text-xs">
-                      {top.map(({ p, v }) => (
-                        <li key={`${p.u || p.n}-${p.t}`} className="flex justify-between gap-2 min-w-0">
-                          <span className="truncate">
-                            <PlayerLink name={p.n} u={p.u} className="text-rw-text hover:text-rw-accent" />{" "}
-                            <span className="text-[10px] text-rw-muted">{roleName(p.r)}</span>
-                          </span>
-                          <span className="tabular-nums text-rw-sub shrink-0">{m.fmt(v)}</span>
-                        </li>
-                      ))}
+                    <ol className="text-xs space-y-0.5">
+                      {(() => {
+                        const maxV = Math.max(0.01, ...top.map((x) => Math.abs(x.v)));
+                        return top.map(({ p, v }) => {
+                          const barPct = Math.max(12, Math.min(100, Math.round((Math.abs(v) / maxV) * 100)));
+                          return (
+                            <li key={`${p.u || p.n}-${p.t}`} className="flex items-center justify-between gap-2 min-w-0">
+                              <span className="truncate">
+                                <PlayerLink name={p.n} u={p.u} className="text-rw-text hover:text-rw-accent" />{" "}
+                                <span className="text-[10px] text-rw-muted">{roleName(p.r)}</span>
+                              </span>
+                              <span className="inline-flex items-center gap-1.5 tabular-nums text-rw-sub shrink-0">
+                                <span>{m.fmt(v)}</span>
+                                <span className="w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
+                                  <span className="block h-full rounded-full bg-rw-accent/70" style={{ width: `${barPct}%` }} />
+                                </span>
+                              </span>
+                            </li>
+                          );
+                        });
+                      })()}
                     </ol>
                   </div>
                 );

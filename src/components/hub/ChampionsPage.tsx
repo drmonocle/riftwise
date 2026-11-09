@@ -304,6 +304,8 @@ const LeagueTable: React.FC<{
   if (!file.data || !result) return <Failed />;
   const eventName = eventSlug ? file.data.events.find(([s]) => s === eventSlug)?.[1] : null;
   type LRow = ChampAggRow & Delta;
+  const maxLPicks = Math.max(1, ...result.rows.map((r) => r.p || 0));
+  const maxLBans = Math.max(1, ...result.rows.map((r) => r.b || 0));
   const cols: Column<LRow>[] = [
     { key: "c", label: tl("Champion"), value: (c) => c.c, render: (c) => <ChampLink name={c.c} size={18} /> },
     { key: "role", label: tl("Role"), value: (c) => c.role, render: (c) => <span className="text-rw-muted">{c.role >= 0 ? roleName(ROLES[c.role]) : "–"}</span> },
@@ -314,8 +316,32 @@ const LeagueTable: React.FC<{
       render: (c) => <PresenceCell presence={c.presence} p={c.p} b={c.b} games={result.games} />,
     },
     ...(vs && result.thenGames ? deltaColumns<LRow>(vs) : []),
-    { key: "p", label: tl("Picks"), value: (c) => c.p },
-    { key: "b", label: tl("Bans"), value: (c) => c.b },
+    {
+      key: "p",
+      label: tl("Picks"),
+      value: (c) => c.p,
+      render: (c) => (
+        <span className="inline-flex flex-col gap-0.5 min-w-[2.5rem] tabular-nums">
+          <span>{c.p}</span>
+          <span className="h-1 w-9 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+            <span className="block h-full rounded-full bg-rw-teal/75" style={{ width: `${c.p > 0 ? Math.max(6, Math.round((c.p / maxLPicks) * 100)) : 0}%` }} />
+          </span>
+        </span>
+      ),
+    },
+    {
+      key: "b",
+      label: tl("Bans"),
+      value: (c) => c.b,
+      render: (c) => (
+        <span className="inline-flex flex-col gap-0.5 min-w-[2.5rem] tabular-nums">
+          <span>{c.b}</span>
+          <span className="h-1 w-9 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+            <span className="block h-full rounded-full bg-rw-red/65" style={{ width: `${c.b > 0 ? Math.max(6, Math.round((c.b / maxLBans) * 100)) : 0}%` }} />
+          </span>
+        </span>
+      ),
+    },
     {
       key: "wr",
       label: tl("Win %"),
@@ -323,7 +349,23 @@ const LeagueTable: React.FC<{
       render: (c) => <WinRateCell wr={c.wr} p={c.p} minPicks={3} />,
     },
     { key: "kda", label: tl("KDA"), value: (c) => c.kda },
-    { key: "blind", label: tl("Blind%"), title: tl("Share of picks made before the enemy laner was picked"), value: (c) => c.blind, render: (c) => pct(c.blind) },
+    {
+      key: "blind",
+      label: tl("Blind%"),
+      title: tl("Share of picks made before the enemy laner was picked"),
+      value: (c) => c.blind,
+      render: (c) =>
+        c.blind == null ? (
+          "–"
+        ) : (
+          <span className="inline-flex flex-col gap-0.5 min-w-[3rem] tabular-nums">
+            <span>{pct(c.blind)}</span>
+            <span className="h-1 w-10 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+              <span className="block h-full rounded-full bg-rw-accent/70" style={{ width: `${Math.max(4, Math.min(100, Math.round(c.blind * 100)))}%` }} />
+            </span>
+          </span>
+        ),
+    },
     { key: "fp", label: "B1", title: tl("First pick of the draft (blue side)"), value: (c) => c.fp || null, render: (c) => (c.fp ? c.fp : "–") },
     { key: "csm", label: tl("CS/m"), title: tl("CS per minute"), value: (c) => c.csm },
     { key: "gpm", label: tl("GPM"), title: tl("Gold per minute"), value: (c) => c.gpm },
@@ -428,6 +470,8 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
   const label = (k: string) =>
     k === "all" ? tl("All time (2011 to today)") : k.startsWith("p") ? tl("Patch {patch}", { patch: k.slice(1) }) : tl("Year {year}", { year: k.slice(1) });
   type Row = (typeof rows)[number];
+  const maxOPicks = useMemo(() => Math.max(1, ...rows.map((r) => r.p || 0)), [rows]);
+  const maxOBans = useMemo(() => Math.max(1, ...rows.map((r) => r.b || 0)), [rows]);
   const cols: Column<Row>[] = [
     { key: "c", label: tl("Champion"), value: (c) => c.c, render: (c) => <ChampLink name={c.c} size={18} /> },
     { key: "role", label: tl("Role"), value: (c) => c.role || "", render: (c) => <span className="text-rw-muted">{c.role ? roleName(c.role) : "–"}</span> },
@@ -438,8 +482,32 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
       render: (c) => <PresenceCell presence={c.presence} p={c.p} b={c.b} games={block?.games || 1} />,
     },
     ...(thenBlock ? deltaColumns<Row>(label(vs)) : []),
-    { key: "p", label: tl("Picks"), value: (c) => c.p },
-    { key: "b", label: tl("Bans"), value: (c) => c.b },
+    {
+      key: "p",
+      label: tl("Picks"),
+      value: (c) => c.p,
+      render: (c) => (
+        <span className="inline-flex flex-col gap-0.5 min-w-[2.75rem] tabular-nums">
+          <span>{fmtNum(c.p)}</span>
+          <span className="h-1 w-9 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+            <span className="block h-full rounded-full bg-rw-teal/75" style={{ width: `${c.p > 0 ? Math.max(6, Math.round((c.p / maxOPicks) * 100)) : 0}%` }} />
+          </span>
+        </span>
+      ),
+    },
+    {
+      key: "b",
+      label: tl("Bans"),
+      value: (c) => c.b,
+      render: (c) => (
+        <span className="inline-flex flex-col gap-0.5 min-w-[2.75rem] tabular-nums">
+          <span>{fmtNum(c.b)}</span>
+          <span className="h-1 w-9 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+            <span className="block h-full rounded-full bg-rw-red/65" style={{ width: `${c.b > 0 ? Math.max(6, Math.round((c.b / maxOBans) * 100)) : 0}%` }} />
+          </span>
+        </span>
+      ),
+    },
     {
       key: "wr",
       label: tl("Win %"),

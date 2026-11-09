@@ -200,17 +200,24 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
           >
             {w.upsets.length ? (
               <ol className="text-xs space-y-1.5">
-                {w.upsets.map((u) => (
-                  <li key={u.g} className="min-w-0">
-                    <div className="truncate">
-                      <span className="text-rw-accent font-bold mr-1">{pct(u.p)}</span>
-                      <HubLink to={{ kind: "match", slug: u.g }}>{tl("{w} beat {l}", { w: u.w, l: u.l })}</HubLink> <span className="text-rw-sub">{u.s}</span>
-                    </div>
-                    <div className="text-[10px] text-rw-muted truncate">
-                      <EventLink name={u.t} u={u.e} className="text-rw-muted hover:text-rw-accent hover:underline" /> · {fmtDate(u.date)}
-                    </div>
-                  </li>
-                ))}
+                {w.upsets.map((u) => {
+                  const winPct = Math.max(4, Math.min(96, Math.round(u.p * 100)));
+                  return (
+                    <li key={u.g} className="space-y-0.5 min-w-0">
+                      <div className="truncate">
+                        <span className="text-rw-accent font-bold mr-1 tabular-nums">{pct(u.p)}</span>
+                        <HubLink to={{ kind: "match", slug: u.g }}>{tl("{w} beat {l}", { w: u.w, l: u.l })}</HubLink> <span className="text-rw-sub">{u.s}</span>
+                      </div>
+                      <div className="text-[10px] text-rw-muted truncate">
+                        <EventLink name={u.t} u={u.e} className="text-rw-muted hover:text-rw-accent hover:underline" /> · {fmtDate(u.date)}
+                      </div>
+                      <div className="h-1 rounded-full bg-rw-raised overflow-hidden flex" aria-hidden="true">
+                        <div className="h-full bg-rw-accent/85" style={{ width: `${winPct}%` }} />
+                        <div className="h-full bg-rw-sub/25" style={{ width: `${100 - winPct}%` }} />
+                      </div>
+                    </li>
+                  );
+                })}
               </ol>
             ) : (
               <p className="text-xs text-rw-sub">{tl("No upsets this week: the favourites won.")}</p>
@@ -331,13 +338,16 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             {w.best.length ? (
               <ol className="text-xs space-y-1.5">
                 {w.best.map((b) => (
-                  <li key={`${b.g}-${b.gn}`} className="min-w-0">
+                  <li key={`${b.g}-${b.gn}`} className="space-y-0.5 min-w-0">
                     <div className="truncate">
-                      <span className="text-rw-accent font-bold mr-1">{b.r}</span>
+                      <span className="text-rw-accent font-bold mr-1 tabular-nums">{b.r}</span>
                       <HubLink to={{ kind: "match", slug: b.g, game: b.gn }}>{tl("{a} vs {b}, game {n}", { a: b.a, b: b.b, n: b.gn })}</HubLink>
                     </div>
                     <div className="text-[10px] text-rw-muted truncate">
                       <EventLink name={b.t} u={b.e} className="text-rw-muted hover:text-rw-accent hover:underline" /> · {fmtDate(b.date)}
+                    </div>
+                    <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                      <div className="h-full rounded-full bg-rw-accent/75" style={{ width: `${Math.max(10, Math.min(100, b.r))}%` }} />
                     </div>
                   </li>
                 ))}
@@ -482,8 +492,22 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     <span className={`flex-1 min-w-0 text-right truncate ${r.sa > r.sb ? "font-bold text-rw-text" : "text-rw-sub"}`}>
                       <TeamLink name={r.a} u={r.au} />
                     </span>
-                    <HubLink to={{ kind: "match", slug: r.g }} className="font-num tabular-nums font-bold w-10 text-center shrink-0 hover:text-rw-accent">
-                      {r.sa}–{r.sb}
+                    <HubLink to={{ kind: "match", slug: r.g }} className="inline-flex flex-col items-center justify-center w-11 shrink-0 hover:text-rw-accent gap-0.5">
+                      <span className="font-num tabular-nums font-bold text-center leading-none">
+                        {r.sa}–{r.sb}
+                      </span>
+                      {r.sa + r.sb > 0 && (
+                        <span className="w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden flex" aria-hidden="true">
+                          <span
+                            className={`h-full ${r.sa > r.sb ? "bg-rw-teal/85" : "bg-rw-sub/55"}`}
+                            style={{ width: `${Math.round((r.sa / (r.sa + r.sb)) * 100)}%` }}
+                          />
+                          <span
+                            className={`h-full ${r.sb > r.sa ? "bg-rw-teal/85" : "bg-rw-sub/35"}`}
+                            style={{ width: `${100 - Math.round((r.sa / (r.sa + r.sb)) * 100)}%` }}
+                          />
+                        </span>
+                      )}
                     </HubLink>
                     <span className={`flex-1 min-w-0 truncate ${r.sb > r.sa ? "font-bold text-rw-text" : "text-rw-sub"}`}>
                       <TeamLink name={r.b} u={r.bu} />

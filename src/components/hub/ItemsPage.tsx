@@ -391,7 +391,17 @@ const PlayerItemsView: React.FC<{
                     <span className="block h-1 mt-0.5 rounded-sm bg-rw-accent/55" style={{ width: `${Math.max(4, Math.round((g.length / maxG) * 100))}%` }} aria-hidden="true" />
                   </td>
                   <td className={`${td} tabular-nums ${wrTone}`} data-sort={wr}>
-                    {winRate(won, g.length)}
+                    <div className="min-w-[3.25rem] space-y-0.5">
+                      <div>{winRate(won, g.length)}</div>
+                      {g.length >= 2 && (
+                        <div className="h-1 w-10 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                          <div
+                            className={`h-full rounded-full ${wr >= 0.55 ? "bg-rw-teal/80" : wr <= 0.45 ? "bg-rw-red/75" : "bg-rw-sub/55"}`}
+                            style={{ width: `${Math.max(6, Math.min(100, Math.round(wr * 100)))}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className={`${td} max-sm:hidden`}>
                     <span className="flex gap-0.5">
@@ -578,18 +588,24 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
               </tr>
             </thead>
             <tbody>
-              {shown.map((r) => {
-                const p = players?.[r.k];
-                const u = p ? playerSlug(p) : "";
-                return (
-                  <tr key={r.k} className="border-t border-rw-border">
-                    <td className={td}>{p ? <PlayerLink name={p[0]} u={u} /> : "–"}</td>
-                    <td className={`${td} tabular-nums text-rw-sub`}>{fmtNum(r.g)}</td>
-                    <td className={`${td} text-rw-muted max-sm:hidden`}>{yearSpan(r.ys)}</td>
-                    <td className={`${td} text-right`}>{u && <TheirGames onClick={() => onPlayer(u)} />}</td>
-                  </tr>
-                );
-              })}
+              {(() => {
+                const maxG = Math.max(1, shown[0]?.g || 1);
+                return shown.map((r) => {
+                  const p = players?.[r.k];
+                  const u = p ? playerSlug(p) : "";
+                  return (
+                    <tr key={r.k} className="border-t border-rw-border">
+                      <td className={td}>{p ? <PlayerLink name={p[0]} u={u} /> : "–"}</td>
+                      <td className={`${td} tabular-nums text-rw-sub w-28`} data-sort={r.g}>
+                        {fmtNum(r.g)}
+                        <span className="block h-1 mt-0.5 rounded-sm bg-rw-accent/55" style={{ width: `${Math.max(4, Math.round((r.g / maxG) * 100))}%` }} aria-hidden="true" />
+                      </td>
+                      <td className={`${td} text-rw-muted max-sm:hidden`}>{yearSpan(r.ys)}</td>
+                      <td className={`${td} text-right`}>{u && <TheirGames onClick={() => onPlayer(u)} />}</td>
+                    </tr>
+                  );
+                });
+              })()}
             </tbody>
           </STable>
           {rows.length > shown.length && (
@@ -667,17 +683,23 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
               </tr>
             </thead>
             <tbody>
-              {y.p.map(([k, g]) => {
-                const p = players?.[k];
-                const u = p ? playerSlug(p) : "";
-                return (
-                  <tr key={k} className="border-t border-rw-border">
-                    <td className={td}>{p ? <PlayerLink name={p[0]} u={u} /> : "–"}</td>
-                    <td className={`${td} tabular-nums text-rw-sub`}>{fmtNum(g)}</td>
-                    <td className={`${td} text-right`}>{u && <TheirGames onClick={() => onPlayer(u)} />}</td>
-                  </tr>
-                );
-              })}
+              {(() => {
+                const maxG = Math.max(1, y.p[0]?.[1] || 1);
+                return y.p.map(([k, g]) => {
+                  const p = players?.[k];
+                  const u = p ? playerSlug(p) : "";
+                  return (
+                    <tr key={k} className="border-t border-rw-border">
+                      <td className={td}>{p ? <PlayerLink name={p[0]} u={u} /> : "–"}</td>
+                      <td className={`${td} tabular-nums text-rw-sub w-28`} data-sort={g}>
+                        {fmtNum(g)}
+                        <span className="block h-1 mt-0.5 rounded-sm bg-rw-accent/55" style={{ width: `${Math.max(4, Math.round((g / maxG) * 100))}%` }} aria-hidden="true" />
+                      </td>
+                      <td className={`${td} text-right`}>{u && <TheirGames onClick={() => onPlayer(u)} />}</td>
+                    </tr>
+                  );
+                });
+              })()}
             </tbody>
           </STable>
         </>
@@ -770,15 +792,28 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
                     {fmtNum(r[2])}
                     <span className="block h-1 mt-0.5 rounded-sm bg-rw-accent/50" style={{ width: `${Math.max(2, (r[2] / max) * 100)}%` }} aria-hidden="true" />
                   </td>
-                  <td className={`${td} tabular-nums text-rw-sub max-sm:hidden`} data-sort={r[3]}>
+                  <td className={`${td} tabular-nums text-rw-sub max-sm:hidden w-24`} data-sort={r[3]}>
                     {fmtNum(r[3])}
+                    <span className="block h-1 mt-0.5 rounded-sm bg-rw-sub/45" style={{ width: `${Math.max(4, Math.min(100, Math.round((r[3] / Math.max(1, shown[0]?.[3] || 1)) * 100)))}%` }} aria-hidden="true" />
                   </td>
                   <td className={`${td} tabular-nums`} data-sort={r[4] != null && r[2] ? r[4] / r[2] : 0}>
                     {r[4] != null && r[2] ? (
                       (() => {
                         const wr = r[4] / r[2];
                         const tone = r[2] >= 10 ? (wr >= 0.55 ? "text-rw-teal font-semibold" : wr <= 0.45 ? "text-rw-red" : "text-rw-text") : "text-rw-sub";
-                        return <span className={tone}>{winRate(r[4], r[2])}</span>;
+                        return (
+                          <div className="min-w-[3.25rem] space-y-0.5">
+                            <span className={tone}>{winRate(r[4], r[2])}</span>
+                            {r[2] >= 5 && (
+                              <div className="h-1 w-10 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                                <div
+                                  className={`h-full rounded-full ${wr >= 0.55 ? "bg-rw-teal/80" : wr <= 0.45 ? "bg-rw-red/75" : "bg-rw-sub/55"}`}
+                                  style={{ width: `${Math.max(6, Math.min(100, Math.round(wr * 100)))}%` }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
                       })()
                     ) : (
                       "–"
