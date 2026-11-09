@@ -244,26 +244,34 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                           role ? (
                             <div
                               key={c.c}
-                              className="flex items-center gap-2 rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-1.5 text-xs hover:border-rw-accent/60"
+                              className="flex flex-col gap-1 rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-1.5 text-xs hover:border-rw-accent/60"
                             >
-                              <HubLink to={{ kind: "champ", slug: prettySlug(c.c) }} className="flex items-center gap-2 font-semibold text-rw-text hover:text-rw-accent">
-                                <ChampIcon name={c.c} size={32} />
-                                <span>{champName(c.c)}</span>
-                              </HubLink>
-                              <span className="text-[11px] font-mono tabular-nums text-rw-sub">
-                                {fmtDec(c.presence * 100)}%
-                                {c.wr != null && c.p >= 5 && (
-                                  <span className={`ml-1 font-semibold ${c.wr >= 0.52 ? "text-rw-teal" : c.wr <= 0.48 ? "text-rw-red" : "text-rw-sub"}`}>
-                                    · {Math.round(c.wr * 100)}%
-                                  </span>
-                                )}
-                              </span>
-                              <HubLink
-                                to={{ kind: "counters", query: `champ=${prettySlug(c.c)}&role=${r}` }}
-                                className="text-[10px] text-rw-accent hover:underline ml-1"
-                              >
-                                {tl("Counter-picks")}
-                              </HubLink>
+                              <div className="flex items-center gap-2">
+                                <HubLink to={{ kind: "champ", slug: prettySlug(c.c) }} className="flex items-center gap-2 font-semibold text-rw-text hover:text-rw-accent">
+                                  <ChampIcon name={c.c} size={32} />
+                                  <span>{champName(c.c)}</span>
+                                </HubLink>
+                                <span className="text-[11px] font-mono tabular-nums text-rw-sub">
+                                  {fmtDec(c.presence * 100)}%
+                                  {c.wr != null && c.p >= 5 && (
+                                    <span className={`ml-1 font-semibold ${c.wr >= 0.52 ? "text-rw-teal" : c.wr <= 0.48 ? "text-rw-red" : "text-rw-sub"}`}>
+                                      · {Math.round(c.wr * 100)}%
+                                    </span>
+                                  )}
+                                </span>
+                                <HubLink
+                                  to={{ kind: "counters", query: `champ=${prettySlug(c.c)}&role=${r}` }}
+                                  className="text-[10px] text-rw-accent hover:underline ml-1"
+                                >
+                                  {tl("Counter-picks")}
+                                </HubLink>
+                              </div>
+                              {block.games > 0 && (
+                                <div className="h-1 bg-rw-raised rounded-full overflow-hidden flex" title={`${c.p} ${tl("Picks")} · ${c.b} ${tl("Bans")}`}>
+                                  <div className="bg-rw-teal/75" style={{ width: `${Math.min(100, (c.p / block.games) * 100)}%` }} />
+                                  <div className="bg-rw-red/60" style={{ width: `${Math.min(100, (c.b / block.games) * 100)}%` }} />
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <HubLink

@@ -151,8 +151,10 @@ export function draftTendencies(rows: TeamGameRow[]) {
   };
 }
 
-const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boolean }> = ({ title, hint, list, showWr }) =>
-  list.length ? (
+const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boolean }> = ({ title, hint, list, showWr }) => {
+  if (!list.length) return null;
+  const maxN = Math.max(1, ...list.map(([, n]) => n));
+  return (
     <div className="min-w-0">
       <div className="text-[10px] font-semibold text-rw-muted" title={hint}>
         {title}
@@ -160,29 +162,51 @@ const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boo
       {/* what the numbers are: games (and win rate) */}
       <div className="text-[10px] text-rw-muted mb-1">{showWr ? tl("games · win rate") : tl("games")}</div>
       <ul className="text-xs space-y-1">
-        {list.map(([c, n, w]) => (
-          <li key={c} className="flex justify-between gap-2 min-w-0">
-            <ChampLink name={c} size={16} />
-            <span className="text-rw-sub tabular-nums shrink-0">
-              {n}
-              {showWr ? ` · ${winRate(w, n)}` : ""}
-            </span>
-          </li>
-        ))}
+        {list.map(([c, n, w]) => {
+          const good = n > 0 && w / n >= 0.5;
+          return (
+            <li key={c} className="flex items-center justify-between gap-2 min-w-0">
+              <ChampLink name={c} size={16} />
+              <span className="inline-flex items-center gap-1.5 text-rw-sub tabular-nums shrink-0">
+                <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
+                  <span
+                    className={`block h-full rounded-full ${showWr ? "bg-rw-teal/75" : "bg-rw-accent/65"}`}
+                    style={{ width: `${Math.max(8, Math.round((n / maxN) * 100))}%` }}
+                  />
+                </span>
+                <span>{n}</span>
+                {showWr && (
+                  <>
+                    <span className="text-rw-muted">·</span>
+                    <span className={`w-9 text-right ${good ? "text-rw-teal font-semibold" : "text-rw-red"}`}>{winRate(w, n)}</span>
+                  </>
+                )}
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </div>
-  ) : null;
+  );
+};
 
 const RoleLine: React.FC<{ title: string; shares: [number, number][] }> = ({ title, shares }) =>
   shares.length ? (
     <>
       <dt className="text-[10px] font-semibold text-rw-muted self-center">{title}</dt>
-      <dd className="text-xs text-rw-text flex flex-wrap gap-x-3">
-        {shares.slice(0, 3).map(([r, v]) => (
-          <span key={r} className="whitespace-nowrap">
-            {roleName(ROLES[r])} <span className="tabular-nums text-rw-sub">{Math.round(v * 100)}%</span>
-          </span>
-        ))}
+      <dd className="text-xs text-rw-text flex flex-wrap gap-x-3 gap-y-1">
+        {shares.slice(0, 3).map(([r, v]) => {
+          const pctVal = Math.round(v * 100);
+          return (
+            <span key={r} className="inline-flex items-center gap-1.5 whitespace-nowrap">
+              <span>{roleName(ROLES[r])}</span>
+              <span className="w-7 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
+                <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(6, Math.min(100, pctVal))}%` }} />
+              </span>
+              <span className="tabular-nums text-rw-sub">{pctVal}%</span>
+            </span>
+          );
+        })}
       </dd>
     </>
   ) : null;
@@ -190,33 +214,47 @@ const RoleLine: React.FC<{ title: string; shares: [number, number][] }> = ({ tit
 /** [champion a, champion b, games, wins, their combined gold lead at 15 or null] */
 type Pair = [string, string, number, number, number | null];
 
-const Pairs: React.FC<{ title: string; hint?: string; list: Pair[] }> = ({ title, hint, list }) =>
-  list.length ? (
+const Pairs: React.FC<{ title: string; hint?: string; list: Pair[] }> = ({ title, hint, list }) => {
+  if (!list.length) return null;
+  const maxN = Math.max(1, ...list.map(([, , n]) => n));
+  return (
     <div className="min-w-0">
       <div className="text-[10px] font-semibold text-rw-muted mb-1" title={hint}>
         {title}
       </div>
       <ul className="text-xs space-y-1">
-        {list.map(([a, b, n, w, gd]) => (
-          <li key={`${a}-${b}`} className="flex justify-between gap-2 min-w-0">
-            <span className="flex items-center gap-1 min-w-0" title={`${champName(a)} + ${champName(b)}`}>
-              <ChampLink name={a} size={18} showName={false} />
-              <span className="text-rw-muted">+</span>
-              <ChampLink name={b} size={18} showName={false} />
-            </span>
-            <span className="text-rw-sub tabular-nums shrink-0">
-              {n} · {winRate(w, n)}
-              {gd != null && (
-                <span title={tl("Their combined gold lead over the lane opponents at 15 minutes")}>
-                  {` · ${gd > 0 ? "+" : ""}${gd}`}
+        {list.map(([a, b, n, w, gd]) => {
+          const good = n > 0 && w / n >= 0.5;
+          return (
+            <li key={`${a}-${b}`} className="flex items-center justify-between gap-2 min-w-0">
+              <span className="flex items-center gap-1 min-w-0" title={`${champName(a)} + ${champName(b)}`}>
+                <ChampLink name={a} size={18} showName={false} />
+                <span className="text-rw-muted">+</span>
+                <ChampLink name={b} size={18} showName={false} />
+              </span>
+              <span className="inline-flex items-center gap-1 text-rw-sub tabular-nums shrink-0">
+                <span className="w-7 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
+                  <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(8, Math.round((n / maxN) * 100))}%` }} />
                 </span>
-              )}
-            </span>
-          </li>
-        ))}
+                <span>{n}</span>
+                <span className="text-rw-muted">·</span>
+                <span className={good ? "text-rw-teal font-semibold" : "text-rw-red"}>{winRate(w, n)}</span>
+                {gd != null && (
+                  <span
+                    className={gd >= 0 ? "text-rw-teal" : "text-rw-red"}
+                    title={tl("Their combined gold lead over the lane opponents at 15 minutes")}
+                  >
+                    {` · ${gd > 0 ? "+" : ""}${gd}`}
+                  </span>
+                )}
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </div>
-  ) : null;
+  );
+};
 
 export const DraftTendencies: React.FC<{ rows: TeamGameRow[]; teamName?: string; periodLabel?: string }> = ({ rows, teamName, periodLabel }) => {
   const d = useMemo(() => draftTendencies(rows), [rows]);

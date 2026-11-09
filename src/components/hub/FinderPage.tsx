@@ -775,41 +775,64 @@ const Cohort: React.FC<{ found: Found; sideCond: boolean; champ: string; player:
     };
   }, [found, sideCond, champ, player]);
   const n = found.length;
-  const list = (title: string, rows: [string, [number, number]][], wr: boolean) =>
-    rows.length ? (
+  const list = (title: string, rows: [string, [number, number]][], wr: boolean) => {
+    if (!rows.length) return null;
+    const maxG = Math.max(1, ...rows.map(([, [g]]) => g));
+    return (
       <div className="min-w-0">
         <div className="text-[10px] font-semibold text-rw-muted mb-1">{title}</div>
-        <ul className="grid grid-cols-2 gap-x-3 gap-y-1">
-          {rows.map(([c, [g, w]]) => (
-            <li key={c} className="flex items-center justify-between gap-1 min-w-0">
-              <HubLink to={{ kind: "champ", slug: prettySlug(c) }} className="flex items-center gap-1 min-w-0 hover:text-rw-accent">
-                <ChampIcon name={c} size={16} />
-                <span className="truncate text-rw-text hover:text-rw-accent">{champName(c)}</span>
-              </HubLink>
-              <span className="text-rw-sub tabular-nums shrink-0">
-                {g}
-                {wr ? ` · ${Math.round((w / g) * 100)}%` : ` · ${Math.round((g / n) * 100)}%`}
-              </span>
-            </li>
-          ))}
+        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
+          {rows.map(([c, [g, w]]) => {
+            const pctVal = wr ? Math.round((w / g) * 100) : Math.round((g / n) * 100);
+            const good = wr && g > 0 && w / g >= 0.5;
+            return (
+              <li key={c} className="flex items-center justify-between gap-1.5 min-w-0">
+                <HubLink to={{ kind: "champ", slug: prettySlug(c) }} className="flex items-center gap-1 min-w-0 hover:text-rw-accent">
+                  <ChampIcon name={c} size={16} />
+                  <span className="truncate text-rw-text hover:text-rw-accent">{champName(c)}</span>
+                </HubLink>
+                <span className="inline-flex items-center gap-1.5 text-rw-sub tabular-nums shrink-0">
+                  <span className="w-7 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden lg:inline-block shrink-0">
+                    <span
+                      className={`block h-full rounded-full ${wr ? "bg-rw-teal/75" : "bg-rw-accent/65"}`}
+                      style={{ width: `${Math.max(8, Math.round((g / maxG) * 100))}%` }}
+                    />
+                  </span>
+                  <span>{g}</span>
+                  <span className="text-rw-muted">·</span>
+                  <span className={`w-8 text-right ${wr ? (good ? "text-rw-teal font-semibold" : "text-rw-red") : ""}`}>{pctVal}%</span>
+                </span>
+              </li>
+            );
+          })}
         </ul>
       </div>
-    ) : null;
+    );
+  };
+  const bluePct = Math.round((d.blueW / Math.max(1, n)) * 100);
   return (
     <div className="space-y-2 pb-2 border-b border-rw-border text-xs">
-      <p className="text-rw-sub">
-        {tl("Blue side won {p}", { p: `${Math.round((d.blueW / n) * 100)}%` })}
-        {d.kpg != null && ` · ${tl("{n} kills per game", { n: fmtDec(d.kpg) })}`}
-        {d.ckpm != null && ` · ${tl("{n} kills per minute", { n: fmtDec(d.ckpm, 2) })}`}
-        {d.gd15 != null && (
-          <span title={tl("{n} games with timelines (Oracle's Elixir)", { n: d.gdn })}>
-            {" · "}
-            {champ || player
-              ? tl("their lane at 15: {gd} gold", { gd: `${d.gd15 > 0 ? "+" : ""}${fmtNum(d.gd15)}` })
-              : tl("their gold lead at 15: {gd}", { gd: `${d.gd15 > 0 ? "+" : ""}${fmtNum(d.gd15)}` })}
-          </span>
+      <div className="space-y-1">
+        <p className="text-rw-sub">
+          {tl("Blue side won {p}", { p: `${bluePct}%` })}
+          {d.kpg != null && ` · ${tl("{n} kills per game", { n: fmtDec(d.kpg) })}`}
+          {d.ckpm != null && ` · ${tl("{n} kills per minute", { n: fmtDec(d.ckpm, 2) })}`}
+          {d.gd15 != null && (
+            <span title={tl("{n} games with timelines (Oracle's Elixir)", { n: d.gdn })}>
+              {" · "}
+              {champ || player
+                ? tl("their lane at 15: {gd} gold", { gd: `${d.gd15 > 0 ? "+" : ""}${fmtNum(d.gd15)}` })
+                : tl("their gold lead at 15: {gd}", { gd: `${d.gd15 > 0 ? "+" : ""}${fmtNum(d.gd15)}` })}
+            </span>
+          )}
+        </p>
+        {n > 0 && (
+          <div className="h-1.5 max-w-xs rounded-full bg-rw-bg overflow-hidden flex gap-[2px]" title={`${tl("Blue")}: ${bluePct}% · ${tl("Red")}: ${100 - bluePct}%`}>
+            <div className="h-full bg-[#4a9eff]/85" style={{ width: `${bluePct}%` }} />
+            <div className="h-full flex-1 bg-rw-red/80" />
+          </div>
         )}
-      </p>
+      </div>
       <div className="grid sm:grid-cols-2 gap-4">
         {list(sideCond ? tl("Their most picked (games · win %)") : tl("Most picked (games · win %)"), d.picks, true)}
         {list(sideCond ? tl("Their most banned (games · share)") : tl("Most banned (games · share)"), d.bans, false)}
