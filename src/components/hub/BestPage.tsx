@@ -7,7 +7,7 @@
 import React, { useMemo, useState } from "react";
 import { PlayCircle } from "lucide-react";
 import { tl, tn, tc, stageLabel, fmtDec } from "../../i18n";
-import { loadAliases, loadBest, loadBestIndex, normText } from "../../hub/data";
+import { loadAliases, loadBest, loadBestIndex, normText, resolveLeagueSlug } from "../../hub/data";
 import type { BestGame, BestSeries } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { card, EventLink, Failed, fmtDate, HubLink, isFresh, Loading, RatingBadge, ratingTextClass, ratingTier, RevealButton, useHidden, useLoad, usePageTitle } from "./ui";
@@ -29,16 +29,20 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
   const aliases = useLoad(loadAliases, []);
   // ?league=lck / worlds work too: a short name (index) or a league alias
   const asked = (q.get("league") || "").toLowerCase();
+  const canonAsked = resolveLeagueSlug(asked);
   const league = !asked
     ? ""
-    : index.data?.leagues.find((l) => l[0] === asked)?.[0] ||
+    : index.data?.leagues.find((l) => l[0] === asked || l[0] === canonAsked)?.[0] ||
       index.data?.leagues.find((l) => (l[2] || "").toLowerCase() === asked)?.[0] ||
       aliases.data?.league[asked] ||
-      asked;
+      canonAsked;
   const lgRow = index.data?.leagues.find((l) => l[0] === league);
   const years = (lgRow ? lgRow[4] : index.data?.years) || [];
   const year = q.get("year") && years.includes(q.get("year")!) ? q.get("year")! : "";
-  const file = useLoad(() => loadBest(year || undefined, league || undefined), [year, league]);
+  const file = useLoad(
+    () => (asked && !index.data && !index.error ? Promise.resolve({ g: [], s: [] }) : loadBest(year || undefined, lgRow ? lgRow[0] : undefined)),
+    [year, lgRow?.[0] || "", Boolean(index.data), Boolean(index.error), asked],
+  );
   // filters on the list itself (also synced to the address): tiers, games with a VOD, a team
   const [tiers, setTiers] = useState<Set<string>>(() => new Set((q.get("tier") || "").split(",").filter(Boolean)));
   const [vodOnly, setVodOnly] = useState(() => q.get("vod") === "1");

@@ -77,7 +77,7 @@ import leagues_info
 import player_rating as prating
 import ratings as team_ratings
 import timeline
-from names import EXTRA_CODES, EXTRA_OLD_NAMES, blue_red, canon_team, champ_name, match_teams, show_team
+from names import EXTRA_CODES, EXTRA_OLD_NAMES, TEAM_FIX, blue_red, canon_team, champ_name, match_teams, show_team
 
 SITE = "RiftWise"
 RECENT_EVENT_DAYS = 30        # event and series descriptions leave the winner out while this fresh
@@ -521,6 +521,7 @@ def build(ctx) -> dict:
     seo = defaultdict(list)
     n_series_pages = 0
     used_gslugs = set()
+    game_alias = {}
     # Game ratings (MEPI, 0-100, Antigravity's engine on the catalog: matches.mepi_rating) for the Best games page
     best_games, best_series = [], []
     # the weekly recap (hub/weekly.json): the last seven days' series in top leagues and international events, and
@@ -815,6 +816,7 @@ def build(ctx) -> dict:
         # gets the scoreboards and the series isn't counted twice.
         sb_mids = sorted(m for m in series if "scoreboard" in m.lower() and series[m])
         other_mids = sorted(m for m in series if "scoreboard" not in m.lower())
+        sb_merged = defaultdict(list)
         if sb_mids and other_mids:
             used_omids = set()
             for smid in sb_mids:
@@ -860,6 +862,7 @@ def build(ctx) -> dict:
                         if s_o and s_o.get("tab") and (not g.get("tab") or "scoreboard" in (g.get("tab") or "").lower()):
                             g["tab"] = s_o["tab"]
                     series[omid] = series.pop(smid)
+                    sb_merged[omid].append(smid)
                     checks["hub: Scoreboards series linked to their bracket series"] += 1
 
         stat_ids = [g["gid"] for lst in series.values() for g in lst if g["gid"]]
@@ -1023,6 +1026,11 @@ def build(ctx) -> dict:
                 if gslug in used_gslugs:
                     gslug = f"{gslug}-{short_hash(mid)}"
                 used_gslugs.add(gslug)
+                for smid in sb_merged.get(mid, ()):
+                    s_rest = smid[len(op) + 1:] if smid.startswith(op + "_") else smid
+                    old_sb_slug = f"{eslug}-{pretty(s_rest) or short_hash(smid)}"[:110].strip("-")
+                    if old_sb_slug and old_sb_slug != gslug and old_sb_slug not in used_gslugs:
+                        game_alias[old_sb_slug] = gslug
                 for g in glist:
                     if g["gid"]:
                         gid_slug[g["gid"]] = gslug
@@ -2145,6 +2153,7 @@ def build(ctx) -> dict:
     search_teams = []
     alias = {}
     written_ts = set()
+    written_team_slugs = {team_slug[fid] for fid in ctx.fr_name if team_slug.get(fid) and t_games.get(fid)}
     for fid in sorted(ctx.fr_name, key=lambda f: str(f)):
         u = team_slug.get(fid)
         tg_all = t_games.get(fid, [])
@@ -2204,7 +2213,7 @@ def build(ctx) -> dict:
         eras = sorted([{"n": n_e, **v_e} for n_e, v_e in eras_map.items()], key=lambda e: e["from"], reverse=True)
         for old_n in [e["n"] for e in eras] + [e["n"] for e in ctx.fr_eras.get(fid, [])] + EXTRA_OLD_NAMES.get(name, []):
             s_old = pretty(old_n)
-            if s_old and s_old != u and s_old not in team_slug.values():
+            if s_old and s_old != u and s_old not in written_team_slugs:
                 alias[s_old] = u
         lpt = lp_team.get(name) or {}
         codes = []
@@ -3100,6 +3109,20 @@ def build(ctx) -> dict:
     # addresses work (the page service 301s them, the app follows them). A shared short name goes to the team with the
     # most games; a real team slug or an old slug always wins.
     team_slugs_all = {r[1] or pretty(r[0]) for r in search_teams}
+    for raw_n, canon_n in TEAM_FIX.items():
+        s_old = pretty(raw_n)
+        if not s_old or s_old in team_slugs_all:
+            continue
+        u_canon = team_slug.get(ctx.team_of(canon_n, "9999"))
+        if u_canon and u_canon in team_slugs_all and s_old != u_canon:
+            alias.setdefault(s_old, u_canon)
+    for fid_0, n_0 in ctx.fr_name.items():
+        u_0 = team_slug.get(fid_0)
+        if not u_0 or u_0 in team_slugs_all:
+            continue
+        u_canon = team_slug.get(ctx.team_of(canon_team(n_0), "9999"))
+        if u_canon and u_canon in team_slugs_all and u_0 != u_canon:
+            alias.setdefault(u_0, u_canon)
     n_short = 0
     for r in sorted(search_teams, key=lambda r: -r[2]):
         u_t = r[1] or pretty(r[0])
@@ -3111,7 +3134,8 @@ def build(ctx) -> dict:
                 alias[k] = u_t
                 n_short += 1
     checks["hub: team short-name addresses"] = n_short
-    out.json("alias.json", {"team": alias, "league": league_alias})
+    game_alias = {k: v for k, v in game_alias.items() if k not in used_gslugs and v in used_gslugs}
+    out.json("alias.json", {"team": alias, "league": league_alias, "game": game_alias})
 
     years = sorted((y for y in events_by_year if y.isdigit()), reverse=True)
     latest_major = [x for y in years[:2] for x in events_by_year[y]

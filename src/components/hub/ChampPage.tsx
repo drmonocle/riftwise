@@ -35,6 +35,7 @@ import { STable } from "../STable";
 
 import { BroadcastCardButton, SectionCard, champCardData } from "./BroadcastCard";
 import { WinBar, KdaBar } from "./OpponentChart";
+import { ChampVisualOverview } from "./VisualAnalytics";
 
 export const ChampPage: React.FC<{ slug: string }> = ({ slug }) => {
   const state = useLoad(() => loadHubChamp(slug), [slug]);
@@ -209,6 +210,8 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         />
       </div>
 
+      <ChampVisualOverview c={c} />
+
       {c.builds && c.builds.g > 0 && activeBuilds && (
         <Section
           title={tl("Pro builds in the last 12 months")}
@@ -258,51 +261,90 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
           <div className="grid gap-3 md:grid-cols-3">
             <div>
               <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Items")}</div>
-              <ul className="space-y-1 text-xs">
-                {items.map(([it, g, w]) => (
-                  <li key={it}>
-                    <button type="button" onClick={() => pickUsed("item", it)} className={pickRow(usedOnly?.kind === "item" && usedOnly.v === it)} title={tl("Show the latest pro games with it")}>
-                    <ItemIcon name={it} size={22} />
-                    <span className="truncate flex-1 text-rw-text">{itemName(it)}</span>
-                    <span className="text-rw-sub tabular-nums shrink-0">{pctOf(g, activeBuilds.g)}</span>
-                    <span className="text-rw-muted tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
-                    </button>
-                  </li>
-                ))}
+              <ul className="space-y-1.5 text-xs">
+                {items.map(([it, g, w]) => {
+                  const sharePct = Math.min(100, Math.round((g / Math.max(1, activeBuilds.g)) * 100));
+                  const wrColor = g >= 5 ? (w / g >= 0.52 ? "text-rw-teal font-semibold" : w / g <= 0.48 ? "text-rw-red" : "text-rw-sub") : "text-rw-muted";
+                  return (
+                    <li key={it}>
+                      <button type="button" onClick={() => pickUsed("item", it)} className={pickRow(usedOnly?.kind === "item" && usedOnly.v === it)} title={tl("Show the latest pro games with it")}>
+                        <ItemIcon name={it} size={22} />
+                        <span className="flex-1 min-w-0">
+                          <span className="flex items-center justify-between gap-2">
+                            <span className="truncate text-rw-text">{itemName(it)}</span>
+                            <span className="flex items-center gap-2 shrink-0 tabular-nums">
+                              <span className="text-rw-sub">{pctOf(g, activeBuilds.g)}</span>
+                              <span className={`${wrColor} w-10 text-right`}>{pctOf(w, g)}</span>
+                            </span>
+                          </span>
+                          <span className="block h-1 mt-0.5 rounded-full bg-rw-raised overflow-hidden">
+                            <span className="block h-full rounded-full bg-rw-accent/80" style={{ width: `${Math.max(4, sharePct)}%` }} />
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
             <div>
               <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Keystones")}</div>
-              <ul className="space-y-1 text-xs">
-                {activeBuilds.keys.map(([k, g, w]) => (
-                  <li key={k}>
-                    <button type="button" onClick={() => pickUsed("key", k)} className={pickRow(usedOnly?.kind === "key" && usedOnly.v === k)} title={tl("Show the latest pro games with it")}>
-                    <RuneIcon name={k} size={22} />
-                    <span className="truncate flex-1 text-rw-text">{runeName(k)}</span>
-                    <span className="text-rw-sub tabular-nums shrink-0">{pctOf(g, activeBuilds.g)}</span>
-                    <span className="text-rw-muted tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
-                    </button>
-                  </li>
-                ))}
+              <ul className="space-y-1.5 text-xs">
+                {activeBuilds.keys.map(([k, g, w]) => {
+                  const sharePct = Math.min(100, Math.round((g / Math.max(1, activeBuilds.g)) * 100));
+                  const wrColor = g >= 5 ? (w / g >= 0.52 ? "text-rw-teal font-semibold" : w / g <= 0.48 ? "text-rw-red" : "text-rw-sub") : "text-rw-muted";
+                  return (
+                    <li key={k}>
+                      <button type="button" onClick={() => pickUsed("key", k)} className={pickRow(usedOnly?.kind === "key" && usedOnly.v === k)} title={tl("Show the latest pro games with it")}>
+                        <RuneIcon name={k} size={22} />
+                        <span className="flex-1 min-w-0">
+                          <span className="flex items-center justify-between gap-2">
+                            <span className="truncate text-rw-text">{runeName(k)}</span>
+                            <span className="flex items-center gap-2 shrink-0 tabular-nums">
+                              <span className="text-rw-sub">{pctOf(g, activeBuilds.g)}</span>
+                              <span className={`${wrColor} w-10 text-right`}>{pctOf(w, g)}</span>
+                            </span>
+                          </span>
+                          <span className="block h-1 mt-0.5 rounded-full bg-rw-raised overflow-hidden">
+                            <span className="block h-full rounded-full bg-rw-accent/80" style={{ width: `${Math.max(4, sharePct)}%` }} />
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
             <div>
               <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Summoner spells")}</div>
-              <ul className="space-y-1 text-xs">
-                {activeBuilds.spells.map(([sp, g, w]) => (
-                  <li key={sp}>
-                    <button type="button" onClick={() => pickUsed("spells", sp)} className={pickRow(usedOnly?.kind === "spells" && usedOnly.v === sp)} title={tl("Show the latest pro games with it")}>
-                    <span className="flex gap-0.5">
-                      {sp.split(" + ").map((x) => (
-                        <SpellIcon key={x} name={x} size={20} />
-                      ))}
-                    </span>
-                    <span className="truncate flex-1 text-rw-text">{sp.split(" + ").map(spellName).join(" + ")}</span>
-                    <span className="text-rw-sub tabular-nums shrink-0">{pctOf(g, activeBuilds.g)}</span>
-                    <span className="text-rw-muted tabular-nums shrink-0 w-10 text-right">{pctOf(w, g)}</span>
-                    </button>
-                  </li>
-                ))}
+              <ul className="space-y-1.5 text-xs">
+                {activeBuilds.spells.map(([sp, g, w]) => {
+                  const sharePct = Math.min(100, Math.round((g / Math.max(1, activeBuilds.g)) * 100));
+                  const wrColor = g >= 5 ? (w / g >= 0.52 ? "text-rw-teal font-semibold" : w / g <= 0.48 ? "text-rw-red" : "text-rw-sub") : "text-rw-muted";
+                  return (
+                    <li key={sp}>
+                      <button type="button" onClick={() => pickUsed("spells", sp)} className={pickRow(usedOnly?.kind === "spells" && usedOnly.v === sp)} title={tl("Show the latest pro games with it")}>
+                        <span className="flex gap-0.5 shrink-0">
+                          {sp.split(" + ").map((x) => (
+                            <SpellIcon key={x} name={x} size={20} />
+                          ))}
+                        </span>
+                        <span className="flex-1 min-w-0">
+                          <span className="flex items-center justify-between gap-2">
+                            <span className="truncate text-rw-text">{sp.split(" + ").map(spellName).join(" + ")}</span>
+                            <span className="flex items-center gap-2 shrink-0 tabular-nums">
+                              <span className="text-rw-sub">{pctOf(g, activeBuilds.g)}</span>
+                              <span className={`${wrColor} w-10 text-right`}>{pctOf(w, g)}</span>
+                            </span>
+                          </span>
+                          <span className="block h-1 mt-0.5 rounded-full bg-rw-raised overflow-hidden">
+                            <span className="block h-full rounded-full bg-rw-accent/80" style={{ width: `${Math.max(4, sharePct)}%` }} />
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </div>

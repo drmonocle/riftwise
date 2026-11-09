@@ -93,25 +93,43 @@ export const PatchesPanel: React.FC = () => {
                   />
                 </span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-1 text-xs">
-                {p.c.map(([c, pk, b, w, pr]) => (
-                  <div
-                    key={c}
-                    className="flex items-center justify-between gap-1 min-w-0"
-                  >
-                    <ChampLink name={c} size={18} />
-                    <span
-                      className="text-rw-sub tabular-nums shrink-0"
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-2 text-xs">
+                {p.c.map(([c, pk, b, w, pr]) => {
+                  const presPct = Math.min(100, Math.round(((pr ?? pk + b) / Math.max(p.g, 1)) * 100));
+                  const pickPct = Math.min(100, Math.round((pk / Math.max(p.g, 1)) * 100));
+                  const banPct = Math.min(100 - pickPct, Math.round((b / Math.max(p.g, 1)) * 100));
+                  const wrPct = pk ? Math.round((w / pk) * 100) : null;
+                  return (
+                    <div
+                      key={c}
+                      className="rounded-lg border border-rw-border/60 bg-rw-bg/40 px-2 py-1.5 space-y-1 min-w-0"
                       title={tl("{p} picks · {b} bans · {wr}", {
                         p: pk,
                         b,
-                        wr: pk ? `${Math.round((w / pk) * 100)}%` : "–",
+                        wr: wrPct != null ? `${wrPct}%` : "–",
                       })}
                     >
-                      {Math.round(((pr ?? pk + b) / Math.max(p.g, 1)) * 100)}%
-                    </span>
-                  </div>
-                ))}
+                      <div className="flex items-center justify-between gap-1 min-w-0">
+                        <ChampLink name={c} size={18} />
+                        <span className="text-rw-text font-semibold tabular-nums shrink-0">{presPct}%</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-rw-raised overflow-hidden flex">
+                        <div className="h-full bg-rw-teal/80" style={{ width: `${pickPct}%` }} />
+                        <div className="h-full bg-rw-red/65" style={{ width: `${banPct}%` }} />
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-rw-muted tabular-nums">
+                        <span>
+                          {pk} {tl("Picks")} · {b} {tl("Bans")}
+                        </span>
+                        {wrPct != null && (
+                          <span className={pk >= 5 ? (wrPct >= 52 ? "text-rw-teal font-semibold" : wrPct <= 48 ? "text-rw-red" : "text-rw-sub") : ""}>
+                            {wrPct}%
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
               {p.prev && ((p.up?.length || 0) > 0 || (p.down?.length || 0) > 0) && (
                 <div className="grid sm:grid-cols-2 gap-x-4 gap-y-2 mt-2 pt-2 border-t border-rw-border">
@@ -331,6 +349,8 @@ export const LeaguePage: React.FC<{ slug: string; year?: string }> = ({ slug, ye
 
 const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
   const years = [...new Set(l.events.map((e) => e.y))];
+  const totalGames = useMemo(() => l.events.reduce((s, e) => s + (e.g || 0), 0), [l.events]);
+  const maxTitles = useMemo(() => Math.max(1, ...l.titles.map((t) => t.n)), [l.titles]);
   // /league/<slug>/<year>: one season's tournaments (a year the league didn't play shows them all)
   const season = year && years.includes(year) ? year : undefined;
   const events = season ? l.events.filter((e) => e.y === season) : l.events;
@@ -365,9 +385,11 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
         }
         aside={
           <>
-            <HubLink to={{ kind: "best", query: `league=${l.u}` }} className={heroBtn(true)}>
-              {tl("Best games in this league")}
-            </HubLink>
+            {totalGames >= 20 && (
+              <HubLink to={{ kind: "best", query: `league=${l.u}` }} className={heroBtn(true)}>
+                {tl("Best games in this league")}
+              </HubLink>
+            )}
             <HubLink to={{ kind: "leaders", query: `league=${l.u}` }} className={heroBtn()}>
               {tl("Full leaderboard")}
             </HubLink>
@@ -382,6 +404,12 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
             {l.primary && l.s && years[0] && Number(years[0]) >= new Date().getFullYear() - 1 && <FollowFeeds leagues={[l.s]} />}
           </>
         }
+        stats={[
+          { label: tl("Tournaments"), value: fmtNum(l.events.length) },
+          totalGames > 0 ? { label: tl("Games"), value: fmtNum(totalGames) } : null,
+          years.length > 0 ? { label: tl("Years"), value: years.length > 1 ? `${years[years.length - 1]}–${years[0]}` : years[0] } : null,
+          l.titles.length > 0 ? { label: tl("Most titles"), value: `${l.titles[0].t} (${l.titles[0].n})` } : null,
+        ]}
       />
       {/* the chosen season, else the newest one that has a whole-season file (l.seasons, builds since 0.7.45) */}
       {(() => {
@@ -408,13 +436,18 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
               />
             }
           >
-            <ul className="text-xs space-y-1">
+            <ul className="text-xs space-y-1.5">
               {l.titles.map((t) => (
-                <li key={t.t} className="flex justify-between gap-2 min-w-0">
-                  <span className="truncate">
-                    <TeamLink name={t.t} u={t.u} />
-                  </span>
-                  <span className="text-rw-accent font-bold shrink-0">{t.n}</span>
+                <li key={t.t} className="space-y-0.5 min-w-0">
+                  <div className="flex justify-between gap-2 min-w-0">
+                    <span className="truncate">
+                      <TeamLink name={t.t} u={t.u} />
+                    </span>
+                    <span className="text-rw-accent font-bold tabular-nums shrink-0">{t.n}</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-rw-raised overflow-hidden">
+                    <div className="h-full rounded-full bg-rw-accent/75" style={{ width: `${Math.max(6, Math.round((t.n / maxTitles) * 100))}%` }} />
+                  </div>
                 </li>
               ))}
             </ul>

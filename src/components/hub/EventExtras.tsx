@@ -39,6 +39,15 @@ const DRAKE: Record<string, string> = {
   chemtech: tk("Chemtech"),
   elder: tk("Elder"),
 };
+const DRAKE_COLOR: Record<string, string> = {
+  infernal: "#ef4444",
+  mountain: "#d97706",
+  ocean: "#0ea5e9",
+  cloud: "#a855f7",
+  hextech: "#3b82f6",
+  chemtech: "#22c55e",
+  elder: "#f59e0b",
+};
 
 const GameLine: React.FC<{
   label: string;
@@ -70,7 +79,10 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean; card?: {
   card,
 }) => {
   const sideTotal = o.blue + o.red;
+  const bluePct = sideTotal > 0 ? Math.round((o.blue / sideTotal) * 100) : 50;
+  const redPct = sideTotal > 0 ? 100 - bluePct : 50;
   const drakes = Object.entries(o.drakes).sort((a, b) => b[1] - a[1]);
+  const totalDrakes = drakes.reduce((s, [, n]) => s + n, 0) || 1;
   return (
     <Section
       title={tl("Tournament stats")}
@@ -111,6 +123,25 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean; card?: {
           }
         />
       </div>
+      {!hidden && sideTotal > 0 && (
+        <div className="rounded-lg border border-rw-border bg-rw-bg/50 px-3 py-2 space-y-1.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold flex items-center gap-1.5" style={{ color: "#4a9eff" }}>
+              <span className="w-2 h-2 rounded-full inline-block" style={{ background: "#4a9eff" }} />
+              {tl("Blue side")} · {bluePct}% <span className="text-rw-muted font-normal">({o.blue})</span>
+            </span>
+            <span className="font-bold flex items-center gap-1.5" style={{ color: "var(--rw-red)" }}>
+              <span className="text-rw-muted font-normal">({o.red})</span> {redPct}% · {tl("Red side")}
+              <span className="w-2 h-2 rounded-full inline-block" style={{ background: "var(--rw-red)" }} />
+            </span>
+          </div>
+          <div className="relative h-2 rounded-full bg-rw-raised overflow-hidden flex">
+            <div className="h-full" style={{ width: `${bluePct}%`, background: "#4a9eff" }} />
+            <div className="h-full" style={{ width: `${redPct}%`, background: "var(--rw-red)" }} />
+            <div className="absolute inset-y-0 left-1/2 w-0.5 -ml-px bg-rw-bg/90" />
+          </div>
+        </div>
+      )}
       {!hidden && (
         <ul className="text-xs space-y-1 mt-1">
           {o.best && (
@@ -172,17 +203,40 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean; card?: {
         </ul>
       )}
       {drakes.length > 0 && (
-        <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-rw-sub">
-          <span className="text-rw-muted flex items-center gap-1">
-            <Flame className="w-3 h-3" />
-            {tl("Dragons taken:")}
-          </span>
-          {drakes.map(([k, n]) => (
-            <span key={k}>
-              {tl(DRAKE[k] || k)}{" "}
-              <span className="text-rw-text font-semibold">{n}</span>
+        <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-3 py-2 space-y-1.5">
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="text-rw-muted flex items-center gap-1 font-semibold">
+              <Flame className="w-3 h-3 text-rw-accent" />
+              {tl("Dragons taken:")}
             </span>
-          ))}
+            <span className="font-mono text-rw-sub tabular-nums">{fmtNum(totalDrakes)}</span>
+          </div>
+          <div className="h-2 rounded-full bg-rw-raised overflow-hidden flex gap-px">
+            {drakes.map(([k, n]) => (
+              <div
+                key={k}
+                className="h-full"
+                style={{
+                  width: `${Math.max(2, (n / totalDrakes) * 100)}%`,
+                  background: DRAKE_COLOR[k.toLowerCase()] || "var(--rw-accent)",
+                }}
+                title={`${tl(DRAKE[k] || k)}: ${n} (${Math.round((n / totalDrakes) * 100)}%)`}
+              />
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-rw-sub">
+            {drakes.map(([k, n]) => (
+              <span key={k} className="inline-flex items-center gap-1">
+                <span
+                  className="w-2 h-2 rounded-full inline-block"
+                  style={{ background: DRAKE_COLOR[k.toLowerCase()] || "var(--rw-accent)" }}
+                />
+                {tl(DRAKE[k] || k)}{" "}
+                <span className="text-rw-text font-semibold tabular-nums">{n}</span>
+                <span className="text-rw-muted text-[10px] tabular-nums">({Math.round((n / totalDrakes) * 100)}%)</span>
+              </span>
+            ))}
+          </div>
         </div>
       )}
       {!hidden && o.pentas.length > 0 && (

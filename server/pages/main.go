@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "0.8.58" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "0.8.59" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -439,9 +439,10 @@ func (s *store) refresh() {
 	var a struct {
 		Team   map[string]string `json:"team"`
 		League map[string]string `json:"league"`
+		Game   map[string]string `json:"game"`
 	}
 	if b, err := os.ReadFile(filepath.Join(hub, "alias.json")); err == nil && json.Unmarshal(b, &a) == nil {
-		alias["team"], alias["league"] = a.Team, a.League
+		alias["team"], alias["league"], alias["game"] = a.Team, a.League, a.Game
 	}
 	// worlds.json, worlds.2025.json, msi.all.json... -> "worlds", "worlds/2025", "msi/all"
 	intl := map[string]intlPage{}
@@ -827,7 +828,7 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		if !ok && to == "" {
 			to = s.resolveSlugFallback(kind, slug)
 		}
-		if !ok && to != "" && to != slug && (kind == "team" || kind == "league" || kind == "event" || kind == "player") {
+		if !ok && to != "" && to != slug && (kind == "team" || kind == "league" || kind == "event" || kind == "player" || kind == "game") {
 			target := langRoot + parts[0] + "/" + to + yearSuffix(parts)
 			if r.URL.RawQuery != "" {
 				target += "?" + r.URL.RawQuery

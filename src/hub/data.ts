@@ -37,11 +37,11 @@ const slugOf = (name: string, slug: string) => slug || prettySlug(name);
 
 export const loadHubMeta = () => load<HubMeta>("hub/meta.json");
 export const loadHubHome = () => load<HubHome>("hub/home.json");
-type Aliases = { team: Record<string, string>; league: Record<string, string> };
+type Aliases = { team: Record<string, string>; league: Record<string, string>; game: Record<string, string> };
 export const loadAliases = () =>
   load<Partial<Aliases>>("hub/alias.json")
-    .then((a): Aliases => ({ team: a.team || {}, league: a.league || {} }))
-    .catch((): Aliases => ({ team: {}, league: {} }));
+    .then((a): Aliases => ({ team: a.team || {}, league: a.league || {}, game: a.game || {} }))
+    .catch((): Aliases => ({ team: {}, league: {}, game: {} }));
 
 const LEAGUE_SLUG_ALIASES: Record<string, string> = {
   worlds: "world-championship",
@@ -152,7 +152,7 @@ export function resolveEventSlug(slug: string): string {
 export const loadHubTeam = (slug: string) => teamFile<HubTeam>("team", slug);
 export const loadHubPlayer = (slug: string) => load<HubPlayer>(`hub/player/${resolvePlayerSlug(slug)}.json`);
 export const loadHubEvent = (slug: string) => load<HubEvent>(`hub/event/${resolveEventSlug(slug)}.json`);
-export const loadHubSeries = (slug: string) => load<HubSeries>(`hub/game/${slug}.json`);
+export const loadHubSeries = withAlias<HubSeries>("game");
 export const loadHubChamp = (slug: string) => load<HubChamp>(`hub/champ/${prettySlug(slug)}.json`);
 /** Every game scoreboard of a Worlds / MSI / First Stand event in one file (Worlds page facts). */
 export const loadEventLines = (slug: string) => load<import("./worldsFacts").EventLines>(`hub/lines/${resolveEventSlug(slug)}.json`);

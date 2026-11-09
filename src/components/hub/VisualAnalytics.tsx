@@ -9,7 +9,7 @@ import { tl, tc, roleName, fmtDec, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { loadPlayerGames, loadPlayerGames2y, prettySlug } from "../../hub/data";
-import type { HubPlayer, HubTeam, PlayerGameRow, PlayerTimeline } from "../../hub/types";
+import type { HubChamp, HubPlayer, HubTeam, PlayerGameRow, PlayerTimeline } from "../../hub/types";
 import { playerAgg, type PlayerAgg } from "../../hub/period";
 import { playerRowLine, rateLine } from "../../hub/playerRating";
 import { fmtRating, useRatingFile } from "./PlayerRating";
@@ -1107,3 +1107,337 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
     </div>
   );
 };
+
+/** Champion Meta Presence Trajectory (16 patches) + Role, Side & @15 Early-Game Profile on ChampPage. */
+export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const [box, W] = useWidth<HTMLDivElement>();
+  const gradId = useId().replace(/[^a-z0-9]/gi, "");
+
+  const patches = useMemo(() => (c.patches || []).slice(0, 16).reverse(), [c.patches]);
+  const totalRoles = useMemo(() => c.roles.reduce((s, r) => s + r.p, 0) || 1, [c.roles]);
+  const topRoles = useMemo(() => c.roles.filter((r) => r.p / totalRoles >= 0.02).slice(0, 5), [c.roles, totalRoles]);
+  const primaryRole = topRoles[0]?.r || "";
+  const lane = (c.lane12 && c.lane12[primaryRole]) || (c.lane && c.lane[primaryRole]) || null;
+
+  const blueG = c.side?.[0] || 0;
+  const blueW = c.side?.[1] || 0;
+  const redG = c.side?.[2] || 0;
+  const redW = c.side?.[3] || 0;
+  const hasSides = blueG + redG >= 5;
+  const blueWr = blueG ? (blueW / blueG) * 100 : 0;
+  const redWr = redG ? (redW / redG) * 100 : 0;
+
+  if (patches.length < 3 && topRoles.length === 0 && !hasSides) return null;
+
+  const L = 34;
+  const R = 12;
+  const T = 12;
+  const CH = 112;
+  const H = T + CH + 24;
+  const pw = Math.max(W - L - R, 120);
+  const step = patches.length > 1 ? pw / (patches.length - 1) : pw;
+  const cx = (i: number) => L + (patches.length > 1 ? i * step : pw / 2);
+  const cy = (pctVal: number) => T + CH * (1 - clamp(pctVal, 0, 100) / 100);
+
+  const presPts: [number, number][] = patches.map((p, i) => {
+    const prPct = ((p.pr ?? p.pk + p.b) / Math.max(1, p.g)) * 100;
+    return [cx(i), cy(prPct)];
+  });
+  const wrPts: [number, number][] = [];
+  patches.forEach((p, i) => {
+    if (p.pk >= 3) {
+      wrPts.push([cx(i), cy((p.w / p.pk) * 100)]);
+    }
+  });
+
+  const selIdx = hoverIdx != null && patches[hoverIdx] ? hoverIdx : patches.length - 1;
+  const sel = patches[selIdx];
+  const selPres = sel ? Math.round(((sel.pr ?? sel.pk + sel.b) / Math.max(1, sel.g)) * 100) : 0;
+  const selWr = sel && sel.pk > 0 ? Math.round((sel.w / sel.pk) * 100) : null;
+
+  return (
+    <div className="rw-span">
+      <Section
+        title={`${tl("Recent patches")} · ${tl("Blue / red side")}`}
+        share={`${c.u}-meta-profile`}
+        right={
+          <SectionCard
+            section={`${tl("Recent patches")} · ${champName(c.name)}`}
+            name={champName(c.name)}
+            sub={`${fmtNum(c.p)} ${tl("Picks")} · ${fmtNum(c.b)} ${tl("Bans")} · ${winRate(c.w, c.p)}`}
+            rows={() => [
+              ...topRoles.slice(0, 3).map((r) => ({
+                label: roleName(r.r),
+                sub: `${fmtNum(r.p)} ${tl("Picks")}`,
+                value: `${Math.round((r.p / totalRoles) * 100)}%`,
+                win: true,
+              })),
+              ...patches
+                .slice(-5)
+                .reverse()
+                .map((p) => {
+                  const pr = Math.round(((p.pr ?? p.pk + p.b) / Math.max(1, p.g)) * 100);
+                  return {
+                    label: tl("Patch {patch}", { patch: p.p }),
+                    sub: `${p.pk} ${tl("Picks")} · ${p.b} ${tl("Bans")}`,
+                    value: `${pr}% · ${p.pk ? winRate(p.w, p.pk) : "–"}`,
+                    win: p.pk >= 3 ? p.w / p.pk >= 0.5 : undefined,
+                  };
+                }),
+            ]}
+          />
+        }
+      >
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] items-start">
+          {/* Left column: Interactive 16-patch presence & win rate chart */}
+          {patches.length >= 3 && (
+            <div className="space-y-2 min-w-0">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className="text-rw-muted flex items-center gap-3">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-2.5 h-0.5 bg-rw-accent inline-block" />
+                    <span>{tl("Presence")}</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-2.5 h-0.5 bg-rw-teal inline-block" />
+                    <span>{tl("Win %")}</span>
+                  </span>
+                </span>
+                <span className="text-[11px] text-rw-sub font-mono">
+                  {patches[0].p} → {patches[patches.length - 1].p}
+                </span>
+              </div>
+
+              <div ref={box} className="w-full select-none">
+                <svg
+                  width={W}
+                  height={H}
+                  className="block overflow-visible cursor-crosshair"
+                  onPointerMove={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const idx = Math.round((e.clientX - rect.left - L) / Math.max(1, step));
+                    setHoverIdx(Math.max(0, Math.min(patches.length - 1, idx)));
+                  }}
+                  onPointerLeave={() => setHoverIdx(null)}
+                >
+                  <defs>
+                    <linearGradient id={`cpres-${gradId}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" style={{ stopColor: "var(--rw-accent)", stopOpacity: 0.28 }} />
+                      <stop offset="100%" style={{ stopColor: "var(--rw-accent)", stopOpacity: 0.0 }} />
+                    </linearGradient>
+                  </defs>
+
+                  {[0, 50, 100].map((v) => (
+                    <g key={v}>
+                      <line
+                        x1={L}
+                        x2={L + pw}
+                        y1={cy(v)}
+                        y2={cy(v)}
+                        style={{ stroke: "var(--rw-line)" }}
+                        strokeDasharray={v === 50 ? "3 3" : undefined}
+                        strokeWidth={1}
+                      />
+                      <text x={L - 5} y={cy(v) + 3} textAnchor="end" className="font-num" style={{ fill: "var(--rw-muted)", fontSize: 9.5 }}>
+                        {v}%
+                      </text>
+                    </g>
+                  ))}
+
+                  {presPts.length >= 2 && (
+                    <>
+                      <path
+                        d={`${smoothPath(presPts)} L ${presPts[presPts.length - 1][0].toFixed(1)},${(T + CH).toFixed(1)} L ${presPts[0][0].toFixed(1)},${(T + CH).toFixed(1)} Z`}
+                        fill={`url(#cpres-${gradId})`}
+                      />
+                      <path d={smoothPath(presPts)} fill="none" style={{ stroke: "var(--rw-accent)" }} strokeWidth={2.2} />
+                    </>
+                  )}
+
+                  {wrPts.length >= 2 && (
+                    <path d={smoothPath(wrPts)} fill="none" style={{ stroke: "var(--rw-teal)" }} strokeWidth={1.6} strokeDasharray="4 3" />
+                  )}
+
+                  {patches.map((p, i) => {
+                    const prPct = ((p.pr ?? p.pk + p.b) / Math.max(1, p.g)) * 100;
+                    const x = cx(i);
+                    const y = cy(prPct);
+                    const active = i === selIdx;
+                    const showLbl = i === 0 || i === patches.length - 1 || i === Math.floor(patches.length / 2) || active;
+                    return (
+                      <g key={p.p}>
+                        {active && (
+                          <line x1={x} x2={x} y1={T} y2={T + CH} style={{ stroke: "var(--rw-accent)", opacity: 0.45 }} strokeDasharray="2 2" />
+                        )}
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r={active ? 4.5 : 2.8}
+                          style={{
+                            fill: "var(--rw-accent)",
+                            stroke: active ? "var(--rw-text)" : "var(--rw-card)",
+                          }}
+                          strokeWidth={active ? 1.8 : 1.2}
+                        />
+                        {p.pk >= 3 && (
+                          <circle
+                            cx={x}
+                            cy={cy((p.w / p.pk) * 100)}
+                            r={active ? 3.8 : 2.3}
+                            style={{
+                              fill: p.w / p.pk >= 0.5 ? "var(--rw-teal)" : "var(--rw-red)",
+                              stroke: "var(--rw-card)",
+                            }}
+                            strokeWidth={1}
+                          />
+                        )}
+                        {showLbl && (
+                          <text
+                            x={x}
+                            y={T + CH + 15}
+                            textAnchor={i === 0 ? "start" : i === patches.length - 1 ? "end" : "middle"}
+                            className="font-num"
+                            style={{
+                              fill: active ? "var(--rw-accent)" : "var(--rw-muted)",
+                              fontSize: 9.5,
+                              fontWeight: active ? 700 : 500,
+                            }}
+                          >
+                            {p.p}
+                          </text>
+                        )}
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+
+              {sel && (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-rw-border bg-rw-bg/60 px-3 py-1.5 text-xs">
+                  <span className="flex items-center gap-2 min-w-0">
+                    <HubLink
+                      to={{ kind: "champions", query: `key=p${encodeURIComponent(sel.p)}` }}
+                      className="font-bold text-rw-accent hover:underline"
+                    >
+                      {tl("Patch {patch}", { patch: sel.p })}
+                    </HubLink>
+                    <span className="text-rw-sub tabular-nums">
+                      {tl("{pres} presence · {p} picks · {wr}", {
+                        pres: `${selPres}%`,
+                        p: sel.pk,
+                        wr: selWr != null ? `${selWr}%` : "–",
+                      })}
+                    </span>
+                  </span>
+                  <span className="text-rw-muted tabular-nums text-[11px]">
+                    {sel.b} {tl("Bans")} · {sel.g} {tl("Games")}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Right column: Role distribution, Blue/Red side win rates & @15 lane profile */}
+          <div className="space-y-3 min-w-0">
+            {topRoles.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">{tl("Role")}</div>
+                <div className="space-y-1">
+                  {topRoles.map((r) => {
+                    const share = Math.round((r.p / totalRoles) * 100);
+                    return (
+                      <div key={r.r} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-2 text-xs">
+                        <span className="font-semibold text-rw-text truncate">{roleName(r.r)}</span>
+                        <div className="h-2 rounded-full bg-rw-raised overflow-hidden">
+                          <div className="h-full rounded-full bg-rw-accent" style={{ width: `${Math.max(4, share)}%` }} />
+                        </div>
+                        <span className="font-mono tabular-nums text-rw-sub text-[11px] min-w-[5.5rem] text-right">
+                          {share}% <span className="text-rw-muted">({fmtNum(r.p)})</span>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {hasSides && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold flex items-center gap-1.5" style={{ color: "#4a9eff" }}>
+                      <span className="w-2 h-2 rounded-full inline-block" style={{ background: "#4a9eff" }} />
+                      {tl("Blue side")}
+                    </span>
+                    <span className="font-mono tabular-nums text-rw-text font-bold">{winRate(blueW, blueG)}</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-rw-raised overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${Math.round(blueWr)}%`, background: "#4a9eff" }} />
+                  </div>
+                  <div className="text-[10px] text-rw-muted font-mono tabular-nums">
+                    {blueW}W – {blueG - blueW}L ({fmtNum(blueG)}G)
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold flex items-center gap-1.5" style={{ color: "var(--rw-red)" }}>
+                      <span className="w-2 h-2 rounded-full inline-block" style={{ background: "var(--rw-red)" }} />
+                      {tl("Red side")}
+                    </span>
+                    <span className="font-mono tabular-nums text-rw-text font-bold">{winRate(redW, redG)}</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-rw-raised overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${Math.round(redWr)}%`, background: "var(--rw-red)" }} />
+                  </div>
+                  <div className="text-[10px] text-rw-muted font-mono tabular-nums">
+                    {redW}W – {redG - redW}L ({fmtNum(redG)}G)
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {lane && lane[2] >= 5 && (
+              <div className="grid grid-cols-4 gap-2">
+                <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2 py-1.5">
+                  <div className="text-[10px] uppercase tracking-wider text-rw-muted">GD@15</div>
+                  <div className={`text-xs font-bold font-mono tabular-nums ${(lane[3] || 0) >= 0 ? "text-rw-teal" : "text-rw-red"}`}>
+                    {signed(lane[3])}
+                  </div>
+                  <div className="text-[10px] text-rw-muted truncate">{roleName(primaryRole)}</div>
+                </div>
+                <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2 py-1.5">
+                  <div className="text-[10px] uppercase tracking-wider text-rw-muted">CSD@15</div>
+                  <div className={`text-xs font-bold font-mono tabular-nums ${(lane[4] || 0) >= 0 ? "text-rw-teal" : "text-rw-red"}`}>
+                    {signed(lane[4])}
+                  </div>
+                  <div className="text-[10px] text-rw-muted truncate">{roleName(primaryRole)}</div>
+                </div>
+                <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2 py-1.5">
+                  <div className="text-[10px] uppercase tracking-wider text-rw-muted">XPD@15</div>
+                  <div className={`text-xs font-bold font-mono tabular-nums ${(lane[5] || 0) >= 0 ? "text-rw-teal" : "text-rw-red"}`}>
+                    {signed(lane[5])}
+                  </div>
+                  <div className="text-[10px] text-rw-muted truncate">{roleName(primaryRole)}</div>
+                </div>
+                <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2 py-1.5">
+                  <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Lane %")}</div>
+                  <div
+                    className={`text-xs font-bold font-mono tabular-nums ${
+                      (lane[6] || 0) / Math.max(1, lane[2]) >= 0.5 ? "text-rw-teal" : "text-rw-red"
+                    }`}
+                  >
+                    {Math.round(((lane[6] || 0) / Math.max(1, lane[2])) * 100)}%
+                  </div>
+                  <div className="text-[10px] text-rw-muted truncate">{fmtNum(lane[2])}G</div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </Section>
+    </div>
+  );
+};
+

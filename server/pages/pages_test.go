@@ -54,7 +54,7 @@ func testSite(t *testing.T) *store {
 	}
 	must(os.MkdirAll(filepath.Join(hub, "seo", "pages"), 0o755))
 	must(os.WriteFile(filepath.Join(hub, "seo", "pages", "worlds.2025.json"), []byte(`{"title": "Worlds 2025: results | RiftWise", "desc": "T1 won Worlds 2025.", "html": "<h2>Final standings</h2><ol><li>T1</li></ol>", "ld": [{"@type": "SportsEvent", "name": "League of Legends World Championship 2025"}]}`), 0o644))
-	must(os.WriteFile(filepath.Join(hub, "alias.json"), []byte(`{"team": {"sk-telecom-t1": "t1"}, "league": {"worlds": "world-championship"}}`), 0o644))
+	must(os.WriteFile(filepath.Join(hub, "alias.json"), []byte(`{"team": {"sk-telecom-t1": "t1"}, "league": {"worlds": "world-championship"}, "game": {"worlds-2025-scoreboards-1": "worlds-2025-finals-1"}}`), 0o644))
 	// a league with tournaments but no games: a page of its own, not in league.tsv
 	must(os.MkdirAll(filepath.Join(hub, "league"), 0o755))
 	must(os.WriteFile(filepath.Join(hub, "league", "tiny-league.json"), []byte(`{"l": "Tiny League", "u": "tiny-league", "events": [{"n": "Tiny 2022"}, {"n": "Tiny 2023"}]}`), 0o644))
@@ -626,6 +626,7 @@ func TestRiotMatchAndMarkdownRedirect(t *testing.T) {
 		{"/riftwise/stats/data/download", "/stats/data"},
 		{"/riftwise/stats/data/2018", "/stats/data?year=2018"},
 		{"/riftwise/match/worlds-2025-finals-1/5", "/match/worlds-2025-finals-1?g=5"},
+		{"/riftwise/match/worlds-2025-scoreboards-1", "/match/worlds-2025-finals-1"},
 		{"/riftwise/match/worlds-2025-finals-5", "/match/worlds-2025-finals-1?g=5"},
 		{"/riftwise/match/msi-2024-finals-5", "/match/msi-2024-main-event-finals-1?g=5"},
 		{"/riftwise/match/t1-vs-kt-worlds-2025-finals-1", "/match/worlds-2025-finals-1"},
