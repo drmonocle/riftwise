@@ -139,8 +139,19 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
               <span className="hidden sm:inline">{m.team1Name}</span>
             </HubLink>
           </div>
-          <div className="text-2xl font-black text-rw-text tabular-nums text-center min-w-[4.5rem]">
-            {hidden ? "?" : m.team1Score} <span className="text-rw-muted/60">–</span> {hidden ? "?" : m.team2Score}
+          <div className="flex flex-col items-center gap-1 min-w-[4.5rem]">
+            <div className="text-2xl font-black text-rw-text tabular-nums text-center leading-none">
+              {hidden ? "?" : m.team1Score} <span className="text-rw-muted/60">–</span> {hidden ? "?" : m.team2Score}
+            </div>
+            {!hidden && (m.team1Score ?? 0) + (m.team2Score ?? 0) > 0 && (
+              <span className="w-12 h-1 rounded-full bg-rw-border/70 overflow-hidden flex gap-[1px]" aria-hidden="true">
+                <span
+                  className="h-full bg-rw-teal/80"
+                  style={{ width: `${Math.round(((m.team1Score ?? 0) / ((m.team1Score ?? 0) + (m.team2Score ?? 0))) * 100)}%` }}
+                />
+                <span className="h-full flex-1 bg-rw-rose/70" />
+              </span>
+            )}
           </div>
           <div className={`text-base sm:text-lg font-bold truncate ${!hidden && m.team2Score > m.team1Score && !live ? "text-rw-teal" : "text-rw-text"}`}>
             <HubLink to={{ kind: "team", slug: prettySlug(m.team2Name) }} className="hover:text-rw-accent">

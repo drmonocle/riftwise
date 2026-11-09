@@ -378,6 +378,15 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                           <Matchup e={e} />
                         </span>
                         <span className="flex items-center gap-1.5 shrink-0">
+                          {e.team1 && e.team2 && (
+                            <button
+                              type="button"
+                              onClick={() => navigateHub({ kind: "prep", a: prettySlug(e.team1!), b: prettySlug(e.team2!) })}
+                              className="hidden sm:inline text-[10px] text-rw-sub hover:text-rw-accent hover:underline"
+                            >
+                              {tl("Match prep")}
+                            </button>
+                          )}
                           {fol && <Star className="w-3.5 h-3.5 text-rw-accent fill-current" aria-label={tl("A team you follow")} />}
                           {e.isBanger && <Flame className="w-3.5 h-3.5 text-[#ff4655] fill-current" aria-label={tl("Banger")} />}
                           {day === tl("Today") && <span className="text-[10px] font-mono text-rw-muted min-w-14 whitespace-nowrap text-right">{relTime(e.utcIso, now)}</span>}

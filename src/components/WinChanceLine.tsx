@@ -43,13 +43,13 @@ export const WinChanceLine: React.FC<{ match: Match }> = ({ match }) => {
 };
 
 /** "T1 · #3 · 1816": a team's code, its power rank (worldwide among top-league teams, else in its league) and rating. */
-export const TeamRatingSub: React.FC<{ match: Match; side: "a" | "b"; align?: "left" | "right" }> = ({ match, side, align = "left" }) => {
+export const TeamRatingSub: React.FC<{ match: Match; side: "a" | "b"; align?: "left" | "right" | "center" }> = ({ match, side, align = "left" }) => {
   const r = useMatchRatings(match);
   const code = side === "a" ? match.team1Code : match.team2Code;
   const s = r?.[side];
   return (
     <div
-      className={`text-[11px] text-rw-sub font-mono tabular-nums font-medium whitespace-nowrap ${align === "right" ? "text-right" : ""}`}
+      className={`text-[11px] text-rw-sub font-mono tabular-nums font-medium whitespace-nowrap ${align === "right" ? "text-right" : align === "center" ? "text-center" : ""}`}
       title={
         s
           ? s.world != null

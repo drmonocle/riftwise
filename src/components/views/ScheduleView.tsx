@@ -446,16 +446,27 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           {showScore ? (
                             <div
                               onClick={() => settings.spoilerMode && toggleReveal(m.matchId)}
-                              className={`text-xs ${
+                              className={`flex flex-col items-center gap-0.5 text-xs ${
                                 settings.spoilerMode
                                   ? "cursor-pointer hover:text-rw-accent bg-rw-bg px-2 py-0.5 rounded border border-rw-border"
                                   : ""
                               }`}
                               title={settings.spoilerMode ? tl("Click to re-hide score") : undefined}
                             >
-                              <span className="text-rw-text">
-                                {m.team1Score} : {m.team2Score}
+                              <span className="text-rw-text tabular-nums">
+                                <span className={m.team1Score > m.team2Score ? "text-rw-teal" : ""}>{m.team1Score}</span>
+                                <span className="text-rw-muted"> : </span>
+                                <span className={m.team2Score > m.team1Score ? "text-rw-teal" : ""}>{m.team2Score}</span>
                               </span>
+                              {(m.team1Score ?? 0) + (m.team2Score ?? 0) > 0 && (
+                                <span className="w-10 h-1 rounded-full bg-rw-border/70 overflow-hidden flex gap-[1px]" aria-hidden="true">
+                                  <span
+                                    className="h-full bg-rw-side-a/80"
+                                    style={{ width: `${Math.round(((m.team1Score ?? 0) / ((m.team1Score ?? 0) + (m.team2Score ?? 0))) * 100)}%` }}
+                                  />
+                                  <span className="h-full flex-1 bg-rw-side-b/80" />
+                                </span>
+                              )}
                             </div>
                           ) : (m.state === "completed" || isLive) && settings.spoilerMode ? (
                             <button

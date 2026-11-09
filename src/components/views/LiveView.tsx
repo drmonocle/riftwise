@@ -566,6 +566,15 @@ const LiveMatchBlock: React.FC<{
                 <span className="font-num text-[34px] sm:text-[44px] font-bold leading-none text-rw-text tabular-nums whitespace-nowrap">
                   {m.team1Score} <span className="text-rw-muted/60">–</span> {m.team2Score}
                 </span>
+                {(m.team1Score ?? 0) + (m.team2Score ?? 0) > 0 && (
+                  <span className="mt-1 w-14 sm:w-16 h-1 rounded-full bg-rw-border/70 overflow-hidden flex gap-[1px]" aria-hidden="true">
+                    <span
+                      className="h-full bg-rw-side-a/80"
+                      style={{ width: `${Math.round(((m.team1Score ?? 0) / ((m.team1Score ?? 0) + (m.team2Score ?? 0))) * 100)}%` }}
+                    />
+                    <span className="h-full flex-1 bg-rw-side-b/80" />
+                  </span>
+                )}
                 {settings.spoilerMode && (
                   <span className="text-[9px] text-rw-sub opacity-80 group-hover:opacity-100 tracking-tight mt-1">{tl("Revealed (hide)")}</span>
                 )}
@@ -775,7 +784,7 @@ const NextMatchCard: React.FC<{
   compact?: boolean;
 }> = ({ match: m, tag, countdown, delayed, lateMin, show, schedule, settings, onToggleFollow, onSelectTeam, onOpenUrl, compact }) => {
   const logo = compact ? "w-10 h-10" : "w-14 h-14 sm:w-16 sm:h-16";
-  const team = (code: string, name: string, image: string | undefined) => {
+  const team = (code: string, name: string, image: string | undefined, side: "a" | "b") => {
     const followed = settings.followedTeams.includes(code);
     const open = () => onSelectTeam?.(code, name);
     const follow = followed ? tl("Unfollow {name}", { name: code }) : tl("Follow {name}", { name: code });
@@ -819,8 +828,8 @@ const NextMatchCard: React.FC<{
             <Star className={`w-3.5 h-3.5 ${followed ? "fill-rw-accent" : ""}`} />
           </button>
         </div>
-        <div {...clickable(open)} className="text-xs text-rw-sub hover:text-rw-accent cursor-pointer font-mono font-medium">
-          {code}
+        <div {...clickable(open)} className="hover:text-rw-accent cursor-pointer">
+          <TeamRatingSub match={m} side={side} align="center" />
         </div>
       </div>
     );
@@ -849,13 +858,18 @@ const NextMatchCard: React.FC<{
 
         {/* Matchup */}
         <div className={`flex items-center justify-center w-full my-2 ${compact ? "gap-3" : "gap-3 sm:gap-12"}`}>
-          {team(m.team1Code, m.team1Name, m.team1Image)}
+          {team(m.team1Code, m.team1Name, m.team1Image, "a")}
           <div className="flex flex-col items-center">
             <span className="text-xs font-bold text-rw-sub bg-rw-bg border border-rw-border px-2.5 py-1 rounded-full uppercase tracking-widest font-mono">
               {tl("VS")}
             </span>
           </div>
-          {team(m.team2Code, m.team2Name, m.team2Image)}
+          {team(m.team2Code, m.team2Name, m.team2Image, "b")}
+        </div>
+
+        {/* Pre-series win chance from power rankings */}
+        <div className="mt-2 w-full max-w-md">
+          <WinChanceLine match={m} />
         </div>
 
         {/* Head-to-Head Record Banner */}

@@ -327,16 +327,38 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                               {hideResults ? (
                                 <span className="text-rw-muted">? – ?</span>
                               ) : (
-                                <>
-                                  <span className="text-rw-teal">{team.wins}</span>
-                                  <span className="text-rw-muted mx-1">–</span>
-                                  <span className="text-rw-red">{team.losses}</span>
-                                  {team.ties > 0 && <span className="text-rw-sub text-xs"> – {team.ties}</span>}
-                                </>
+                                <span className="inline-flex flex-col items-center gap-0.5">
+                                  <span>
+                                    <span className="text-rw-teal">{team.wins}</span>
+                                    <span className="text-rw-muted mx-1">–</span>
+                                    <span className="text-rw-red">{team.losses}</span>
+                                    {team.ties > 0 && <span className="text-rw-sub text-xs"> – {team.ties}</span>}
+                                  </span>
+                                  {played > 0 && (
+                                    <span className="w-10 h-1 rounded-full bg-rw-border/70 overflow-hidden flex gap-[1px]" aria-hidden="true">
+                                      <span className="h-full bg-rw-teal/80" style={{ width: `${Math.round((team.wins / played) * 100)}%` }} />
+                                      <span className="h-full flex-1 bg-rw-red/70" />
+                                    </span>
+                                  )}
+                                </span>
                               )}
                             </td>
                             <td className={`py-2.5 px-3 text-center font-mono text-xs hidden sm:table-cell ${!hideResults && played > 0 && team.wins / played >= 0.5 ? "text-rw-teal font-semibold" : "text-rw-sub"}`}>
-                              {hideResults ? "–" : played > 0 ? `${Math.round((team.wins / played) * 100)}%` : "–"}
+                              {hideResults ? (
+                                "–"
+                              ) : played > 0 ? (
+                                <span className="inline-flex items-center justify-center gap-1.5">
+                                  <span className="w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
+                                    <span
+                                      className={`block h-full rounded-full ${team.wins / played >= 0.5 ? "bg-rw-teal/80" : "bg-rw-red/70"}`}
+                                      style={{ width: `${Math.max(4, Math.min(100, Math.round((team.wins / played) * 100)))}%` }}
+                                    />
+                                  </span>
+                                  <span>{Math.round((team.wins / played) * 100)}%</span>
+                                </span>
+                              ) : (
+                                "–"
+                              )}
                             </td>
                           </tr>
                         );
@@ -495,8 +517,19 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
           </div>
         );
       })}
-      <div className="text-[9px] text-rw-muted pt-0.5">
-        {match.state === "inProgress" ? <span className="text-rw-red">{tl("Live")}</span> : match.state === "completed" ? (masked ? tl("Final · hidden") : tl("Final")) : tl("Upcoming")}
+      <div className="flex items-center justify-between gap-2 text-[9px] text-rw-muted pt-0.5">
+        <span>
+          {match.state === "inProgress" ? <span className="text-rw-red">{tl("Live")}</span> : match.state === "completed" ? (masked ? tl("Final · hidden") : tl("Final")) : tl("Upcoming")}
+        </span>
+        {!masked && match.state !== "unstarted" && match.teams.length === 2 && (match.teams[0].gameWins + match.teams[1].gameWins) > 0 && (
+          <span className="w-10 h-1 rounded-full bg-rw-border/70 overflow-hidden inline-flex gap-[1px] shrink-0" aria-hidden="true">
+            <span
+              className="h-full bg-rw-teal/80"
+              style={{ width: `${Math.round((match.teams[0].gameWins / (match.teams[0].gameWins + match.teams[1].gameWins)) * 100)}%` }}
+            />
+            <span className="h-full flex-1 bg-rw-rose/70" />
+          </span>
+        )}
       </div>
     </div>
   );
