@@ -72,9 +72,17 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                   <span className="text-rw-sub">{tl("vs")}</span>
                   <TeamLogo name={them.name} code={them.code} src={them.img} size={15} className="shrink-0" />
                   <TeamLink name={them.name} u={c.opp} className="truncate hover:text-rw-accent" />
-                  <span className="text-rw-muted truncate">· {[c.m.leagueName, c.m.blockName].filter(Boolean).join(" · ")}</span>
+                  <span className="text-rw-muted truncate">
+                    ·{" "}
+                    <HubLink to={{ kind: "league", slug: prettySlug(c.m.leagueSlug || c.m.leagueName) }} className="hover:text-rw-accent hover:underline">
+                      {c.m.leagueName}
+                    </HubLink>
+                    {c.m.blockName ? ` · ${c.m.blockName}` : ""}
+                  </span>
                 </span>
-                <span className="text-rw-muted shrink-0">{formatMatchTime(c.m.startTimeUtc)}</span>
+                <HubLink to={{ kind: "match", slug: RIOT_PREFIX + c.m.matchId }} className="text-rw-muted hover:text-rw-accent hover:underline shrink-0">
+                  {formatMatchTime(c.m.startTimeUtc)}
+                </HubLink>
               </li>
             );
           })}

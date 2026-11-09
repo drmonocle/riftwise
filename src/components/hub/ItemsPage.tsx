@@ -16,7 +16,7 @@ import { loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemI
 import type { ItemIndexRow, PlayerGameRow, SearchPlayerRow } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
 import { isFinishedItem, itemName, useDDragon } from "../../hub/ddragon";
-import { card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, Loading, PlayerLink, PlayerPhoto, Section, Stat, td, TeamLink, TeamLogo, th, useHiddenCheck, useLoad, usePageTitle } from "./ui";
+import { card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, Loading, PlayerLink, PlayerPhoto, ratingTextClass, Section, Stat, td, TeamLink, TeamLogo, th, useHiddenCheck, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
 import { SectionCard } from "./BroadcastCard";
 
@@ -220,7 +220,7 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
       ) : item && year ? (
         <ItemYearView picks={picks} players={people.data?.players} onPlayer={(s) => set({ player: s })} onChamp={(c) => set({ champ: prettySlug(c) })} />
       ) : item ? (
-        <ItemPlayersView slug={item} onPlayer={(s) => set({ player: s })} onChamp={(c) => set({ champ: prettySlug(c) })} onYear={(y) => set({ year: y })} />
+        <ItemPlayersView slug={item} players={people.data?.players} onPlayer={(s) => set({ player: s })} onChamp={(c) => set({ champ: prettySlug(c) })} onYear={(y) => set({ year: y })} />
       ) : (
         <ItemStats loading={items.loading} rows={items.data ?? undefined} scope={scope} to={(slug) => ({ kind: "items", query: queryWith({ item: slug }) })} />
       )}
@@ -430,13 +430,21 @@ const PlayerItemsView: React.FC<{
 };
 
 /** One item's players, most games first, with the champions and years it was built on and in; picking one narrows. */
-const ItemPlayersView: React.FC<{ slug: string; onPlayer: (slug: string) => void; onChamp: (champ: string) => void; onYear: (year: string) => void }> = ({
+const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onPlayer: (slug: string) => void; onChamp: (champ: string) => void; onYear: (year: string) => void }> = ({
   slug,
+  players,
   onPlayer,
   onChamp,
   onYear,
 }) => {
   const st = useLoad(() => loadHubItem(slug), [slug]);
+  const teamBySlug = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const r of players || []) {
+      if (r[2]) m.set(playerSlug(r), r[2]);
+    }
+    return m;
+  }, [players]);
   if (st.loading) return <Loading />;
   if (!st.data) return <p className="text-xs text-rw-sub rw-span">{tl("No pro game in the stats ended with this item.")}</p>;
   const it = st.data;
@@ -495,8 +503,9 @@ const ItemPlayersView: React.FC<{ slug: string; onPlayer: (slug: string) => void
               <tr key={u} className="border-t border-rw-border">
                 <td className={td}>
                   <span className="inline-flex items-center gap-1.5 min-w-0">
-                    <PlayerPhoto name={n} slug={u} size={16} />
+                    <PlayerPhoto name={n} team={teamBySlug.get(u)} slug={u} size={16} />
                     <PlayerLink name={n} u={u} />
+                    {teamBySlug.get(u) && <TeamLogo name={teamBySlug.get(u)!} size={13} />}
                   </span>
                 </td>
                 <td className={`${td} tabular-nums text-rw-sub w-28`} data-sort={g}>
@@ -606,6 +615,7 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                           <span className="inline-flex items-center gap-1.5 min-w-0">
                             <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={u} size={16} />
                             <PlayerLink name={p[0]} u={u} />
+                            {p[2] && <TeamLogo name={p[2]} size={13} />}
                           </span>
                         ) : (
                           "–"
@@ -615,7 +625,7 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                         {fmtNum(r.g)}
                         <span className="block h-1 mt-0.5 rounded-sm bg-rw-accent/55" style={{ width: `${Math.max(4, Math.round((r.g / maxG) * 100))}%` }} aria-hidden="true" />
                       </td>
-                      <td className={`${td} text-rw-muted max-sm:hidden`}>{yearSpan(r.ys)}</td>
+                      <td className={`${td} text-rw-muted max-sm:hidden`} data-sort={r.ys[r.ys.length - 1] || 0}>{yearSpan(r.ys)}</td>
                       <td className={`${td} text-right`}>{u && <TheirGames onClick={() => onPlayer(u)} />}</td>
                     </tr>
                   );
@@ -710,6 +720,7 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                           <span className="inline-flex items-center gap-1.5 min-w-0">
                             <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={u} size={16} />
                             <PlayerLink name={p[0]} u={u} />
+                            {p[2] && <TeamLogo name={p[2]} size={13} />}
                           </span>
                         ) : (
                           "–"
@@ -1050,7 +1061,14 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                   </span>
                 </span>
               </span>
-              <span className="text-rw-muted shrink-0">{fmtDate(r[0], false)}</span>
+              <span className="flex items-center gap-2 text-rw-muted shrink-0">
+                {!hide && r[23] != null && (
+                  <span className={`tabular-nums font-semibold ${ratingTextClass(r[23])}`} title={tl("Game rating")}>
+                    {r[23].toFixed(0)}
+                  </span>
+                )}
+                <span>{fmtDate(r[0], false)}</span>
+              </span>
             </li>
           );
         })}

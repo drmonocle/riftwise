@@ -7,6 +7,8 @@ import { MatchOverviewButton } from "./MatchOverviewButton";
 import { MatchPrepButton } from "./MatchPrepButton";
 import { tl, locale, roleName, regionName, tc } from "../i18n";
 import { findHubTeam, loadHubIndexQuick, prettySlug, resolveLeagueSlug } from "../hub/data";
+import { findSeriesSlug } from "../hub/seriesLookup";
+import { RIOT_PREFIX } from "../hub/riotMatch";
 import { navigateHub } from "../hub/route";
 import { RiotCatalogContext } from "../hub/riotCatalog";
 import { PlayerPhoto, PhotosLink, TeamLogo, useTeamLogo } from "./hub/ui";
@@ -334,7 +336,17 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             <span>({oppCode})</span>
                           </div>
                           <div className="text-[10px] text-rw-sub">
-                            {m.leagueName} · {tc("short best of", "Bo{n}", { n: m.bestOf })}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) });
+                                onClose();
+                              }}
+                              className="hover:text-rw-accent hover:underline"
+                            >
+                              {m.leagueName}
+                            </button>{" "}
+                            · {tc("short best of", "Bo{n}", { n: m.bestOf })}
                           </div>
                           {h2h && <H2HMeter team1Code={teamCode} team2Code={oppCode} h2h={h2h} matchId={m.matchId} />}
                         </div>
@@ -439,10 +451,22 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                               <span className="h-full flex-1 bg-rw-red/70" />
                             </span>
                           )}
-                          <div className="font-mono font-bold text-xs text-rw-text tabular-nums">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              findSeriesSlug(m)
+                                .catch(() => null)
+                                .then((slug) => {
+                                  navigateHub({ kind: "match", slug: slug || RIOT_PREFIX + m.matchId });
+                                  onClose();
+                                });
+                            }}
+                            className="font-mono font-bold text-xs text-rw-text hover:text-rw-accent hover:underline tabular-nums"
+                            title={tl("Details")}
+                          >
                             <span className={won ? "text-rw-teal" : ""}>{myScore}</span> -{" "}
                             <span className={!won ? "text-rw-red" : ""}>{oppScore}</span>
-                          </div>
+                          </button>
                           <MatchOverviewButton match={m} compact onDone={onClose} />
                         </div>
                       </div>

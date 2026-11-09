@@ -227,10 +227,10 @@ const Pairs: React.FC<{ title: string; hint?: string; list: Pair[] }> = ({ title
           const good = n > 0 && w / n >= 0.5;
           return (
             <li key={`${a}-${b}`} className="flex items-center justify-between gap-2 min-w-0">
-              <span className="flex items-center gap-1 min-w-0" title={`${champName(a)} + ${champName(b)}`}>
-                <ChampLink name={a} size={18} showName={false} />
+              <span className="flex items-center gap-1 min-w-0 truncate" title={`${champName(a)} + ${champName(b)}`}>
+                <ChampLink name={a} size={18} />
                 <span className="text-rw-muted">+</span>
-                <ChampLink name={b} size={18} showName={false} />
+                <ChampLink name={b} size={18} />
               </span>
               <span className="inline-flex items-center gap-1 text-rw-sub tabular-nums shrink-0">
                 <span className="w-7 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">

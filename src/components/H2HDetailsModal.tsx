@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { X, Swords, Eye, EyeOff, Globe, Home, ClipboardList, GitCompare } from "lucide-react";
-import { findHubTeam, loadHubIndexQuick } from "../hub/data";
+import { findHubTeam, loadHubIndexQuick, prettySlug } from "../hub/data";
 import { navigateHub } from "../hub/route";
 import { Match, CatalogData } from "../types";
 import { computeHeadToHead, h2hKey, normalizeTeamCode, pickTeamByCode, recentMeetings, H2HMeeting } from "../helpers";
@@ -291,7 +291,16 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                       className="flex items-center justify-between gap-2 text-[11px] px-2.5 py-1.5 rounded bg-rw-bg border border-rw-border"
                     >
                       <div className="min-w-0">
-                        <div className="text-rw-text truncate">{m.tournament}</div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigateHub({ kind: "event", slug: prettySlug(m.tournament) });
+                            onClose();
+                          }}
+                          className="text-rw-text hover:text-rw-accent hover:underline truncate block max-w-full text-left"
+                        >
+                          {m.tournament}
+                        </button>
                         <div className="text-[10px] text-rw-muted font-mono">{fmtDate(m.date)}</div>
                       </div>
                       {revealed ? (

@@ -10,6 +10,8 @@ import { tl, tc, locale } from "../i18n";
 import { isRevealed, setRevealed } from "../revealed";
 import { navigateHub } from "../hub/route";
 import { loadRatings, prettySlug, resolveLeagueSlug } from "../hub/data";
+import { findSeriesSlug } from "../hub/seriesLookup";
+import { RIOT_PREFIX } from "../hub/riotMatch";
 import { TeamLogo, useLoad } from "./hub/ui";
 import { SectionCard } from "./hub/BroadcastCard";
 import { MatchOverviewButton } from "./MatchOverviewButton";
@@ -79,14 +81,23 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               <button
                 type="button"
                 onClick={() => navigateHub({ kind: "team", slug: prettySlug(m.team1Name || m.team1Code) })}
-                className={`flex-1 min-w-0 text-right truncate hover:text-rw-accent hover:underline transition-colors ${w1 ? "font-bold text-rw-text" : "text-rw-sub"}`}
+                className={`flex-1 min-w-0 inline-flex items-center justify-end gap-2 text-right truncate hover:text-rw-accent hover:underline transition-colors ${w1 ? "font-bold text-rw-text" : "text-rw-sub"}`}
               >
-                {m.team1Name}
+                <span className="truncate">{m.team1Name}</span>
+                <TeamLogo name={m.team1Name} code={m.team1Code} src={m.team1Image} size={20} className="shrink-0" />
               </button>
-              <TeamLogo name={m.team1Name} code={m.team1Code} src={m.team1Image} size={20} />
               {shown ? (
-                <span className="inline-flex flex-col items-center justify-center w-12 shrink-0 gap-0.5">
-                  <span className="font-num tabular-nums font-bold text-rw-text text-center leading-none">
+                <button
+                  type="button"
+                  onClick={() => {
+                    findSeriesSlug(m)
+                      .catch(() => null)
+                      .then((slug) => navigateHub({ kind: "match", slug: slug || RIOT_PREFIX + m.matchId }));
+                  }}
+                  className="inline-flex flex-col items-center justify-center w-12 shrink-0 gap-0.5 hover:opacity-80"
+                  title={tl("Details")}
+                >
+                  <span className="font-num tabular-nums font-bold text-rw-text hover:text-rw-accent hover:underline text-center leading-none">
                     {m.team1Score}–{m.team2Score}
                   </span>
                   {m.team1Score + m.team2Score > 0 && (
@@ -101,7 +112,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
                       />
                     </span>
                   )}
-                </span>
+                </button>
               ) : (
                 <button
                   type="button"
@@ -111,13 +122,13 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
                   {tl("Reveal")}
                 </button>
               )}
-              <TeamLogo name={m.team2Name} code={m.team2Code} src={m.team2Image} size={20} />
               <button
                 type="button"
                 onClick={() => navigateHub({ kind: "team", slug: prettySlug(m.team2Name || m.team2Code) })}
-                className={`flex-1 min-w-0 text-left truncate hover:text-rw-accent hover:underline transition-colors ${w2 ? "font-bold text-rw-text" : "text-rw-sub"}`}
+                className={`flex-1 min-w-0 inline-flex items-center gap-2 text-left truncate hover:text-rw-accent hover:underline transition-colors ${w2 ? "font-bold text-rw-text" : "text-rw-sub"}`}
               >
-                {m.team2Name}
+                <TeamLogo name={m.team2Name} code={m.team2Code} src={m.team2Image} size={20} className="shrink-0" />
+                <span className="truncate">{m.team2Name}</span>
               </button>
               <span className="w-16 shrink-0 text-right text-[11px] text-rw-muted">{when(m.startTimeUtc)}</span>
               {shown && <MatchOverviewButton match={m} compact />}

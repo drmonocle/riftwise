@@ -293,10 +293,10 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                         const played = team.wins + team.losses + team.ties;
                         return (
                           <tr key={`${row.rank}-${team.code}`} className={`hover:bg-rw-raised/60 transition-colors group ${isFollowed ? "bg-rw-accent/5" : ""}`}>
-                            <td className="py-2.5 px-3 text-center font-bold font-mono">
+                            <td className="py-2.5 px-3 text-center font-bold font-mono" data-sort={row.rank}>
                               <RankBadge rank={row.rank} />
                             </td>
-                            <td className="py-2.5 px-3">
+                            <td className="py-2.5 px-3" data-sort={team.name}>
                               <div className="flex items-center gap-2.5 min-w-0">
                                 <TeamLogo code={team.code} image={team.image} onClick={() => onSelectTeam(team.code, team.name)} />
                                 <button
@@ -325,7 +325,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                 <span className="hidden sm:inline text-[11px] font-mono text-rw-sub">{team.code}</span>
                               </div>
                             </td>
-                            <td className="py-2.5 px-3 text-center font-mono font-bold text-sm whitespace-nowrap">
+                            <td className="py-2.5 px-3 text-center font-mono font-bold text-sm whitespace-nowrap" data-sort={hideResults ? 0 : team.wins * 1000 - team.losses}>
                               {hideResults ? (
                                 <span className="text-rw-muted">? – ?</span>
                               ) : (
@@ -345,7 +345,10 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                 </span>
                               )}
                             </td>
-                            <td className={`py-2.5 px-3 text-center font-mono text-xs hidden sm:table-cell ${!hideResults && played > 0 && team.wins / played >= 0.5 ? "text-rw-teal font-semibold" : "text-rw-sub"}`}>
+                            <td
+                              className={`py-2.5 px-3 text-center font-mono text-xs hidden sm:table-cell ${!hideResults && played > 0 && team.wins / played >= 0.5 ? "text-rw-teal font-semibold" : "text-rw-sub"}`}
+                              data-sort={hideResults || played === 0 ? -1 : Math.round((team.wins / played) * 1000)}
+                            >
                               {hideResults ? (
                                 "–"
                               ) : played > 0 ? (

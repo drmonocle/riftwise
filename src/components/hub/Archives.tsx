@@ -31,9 +31,18 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; spoilerKey
           return (
             <li key={i} className="flex items-center justify-between gap-2 min-w-0">
               <span className="truncate min-w-0">
-                <span className={`font-bold tabular-nums ${hide ? "text-rw-muted" : won ? "text-rw-teal" : "text-rw-red"}`}>
-                  {hide ? "?" : `${won ? tc("short result", "W") : tc("short result", "L")} ${r[3]}-${r[4]}`}
-                </span>{" "}
+                {!hide && r[7] ? (
+                  <HubLink
+                    to={{ kind: "match", slug: r[7] }}
+                    className={`font-bold tabular-nums hover:underline ${won ? "text-rw-teal" : "text-rw-red"}`}
+                  >
+                    {`${won ? tc("short result", "W") : tc("short result", "L")} ${r[3]}-${r[4]}`}
+                  </HubLink>
+                ) : (
+                  <span className={`font-bold tabular-nums ${hide ? "text-rw-muted" : won ? "text-rw-teal" : "text-rw-red"}`}>
+                    {hide ? "?" : `${won ? tc("short result", "W") : tc("short result", "L")} ${r[3]}-${r[4]}`}
+                  </span>
+                )}{" "}
                 {showOpp && (
                   <>
                     vs{" "}
@@ -419,7 +428,16 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }>
                   <ChampIcon name={r[2]} size={18} />
                 </HubLink>
                 <span className="truncate min-w-0">
-                  <span className="text-rw-text tabular-nums">{hide ? "?/?/?" : `${r[3]}/${r[4]}/${r[5]}`}</span>{" "}
+                  {!hide && r[1] ? (
+                    <HubLink
+                      to={{ kind: "match", slug: r[1], game: r[22] || undefined }}
+                      className="text-rw-text tabular-nums hover:text-rw-accent hover:underline"
+                    >
+                      {`${r[3]}/${r[4]}/${r[5]}`}
+                    </HubLink>
+                  ) : (
+                    <span className="text-rw-text tabular-nums">{hide ? "?/?/?" : `${r[3]}/${r[4]}/${r[5]}`}</span>
+                  )}{" "}
                   <span className="text-rw-sub inline-flex items-center gap-1 align-baseline">
                     <span>vs</span>
                     <TeamLogo name={r[8]} size={13} />

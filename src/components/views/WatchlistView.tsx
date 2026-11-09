@@ -552,9 +552,16 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                 >
                   <div className="flex items-center gap-2.5">
                     <PlayerPhoto name={player.name} team={player.teamName} img={player.image} size={32} linkFallback={false} />
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-rw-deep border border-rw-border text-rw-teal min-w-14 text-center whitespace-nowrap shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSearch((prev) => (prev.toLowerCase() === player.role.toLowerCase() ? "" : player.role));
+                      }}
+                      className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-rw-deep border border-rw-border text-rw-teal hover:border-rw-accent min-w-14 text-center whitespace-nowrap shrink-0"
+                    >
                       {roleName(player.role)}
-                    </span>
+                    </button>
                     <div>
                       <div className="font-bold text-xs text-rw-text flex items-center gap-1.5">
                         <button
@@ -651,8 +658,22 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     <span className="text-xl">{region.badge}</span>
                     <div>
                       <div className="font-bold text-xs text-rw-text">{regionName(region.code, region.name)}</div>
-                      <div className="text-[10px] text-rw-muted">
-                        {region.leagues.map((l) => tl(l)).join(" · ")}
+                      <div className="text-[10px] text-rw-muted flex flex-wrap items-center gap-x-1">
+                        {region.leagues.map((l, idx) => (
+                          <React.Fragment key={l}>
+                            {idx > 0 && <span>·</span>}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigateHub({ kind: "league", slug: resolveLeagueSlug(l) });
+                              }}
+                              className="hover:text-rw-accent hover:underline"
+                            >
+                              {tl(l)}
+                            </button>
+                          </React.Fragment>
+                        ))}
                       </div>
                     </div>
                   </div>

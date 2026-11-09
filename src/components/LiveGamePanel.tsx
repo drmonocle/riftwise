@@ -362,7 +362,13 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
             <LiveGameDraftLink match={match} gameNum={game.number} win={win} />
           </Suspense>
           {win.gameMetadata.patchVersion && (
-            <span className="text-[10px] text-rw-muted">{tl("Patch {patch}", { patch: win.gameMetadata.patchVersion.split(".").slice(0, 2).join(".") })}</span>
+            <button
+              type="button"
+              onClick={() => navigateHub({ kind: "champions", query: `key=p${win.gameMetadata.patchVersion!.split(".").slice(0, 2).join(".")}` })}
+              className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
+            >
+              {tl("Patch {patch}", { patch: win.gameMetadata.patchVersion.split(".").slice(0, 2).join(".") })}
+            </button>
           )}
         </span>
       </div>
