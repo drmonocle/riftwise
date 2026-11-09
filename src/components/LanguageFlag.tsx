@@ -58,9 +58,13 @@ export const LanguageFlag: React.FC<{ onUpdateSettings: (s: Partial<AppSettings>
         >
           {LANGUAGES.map((l) => (
             <li key={l.code} role="option" aria-selected={l.code === lang}>
-              <button
-                type="button"
-                onClick={() => pick(l.code)}
+              <a
+                href={IS_WEB ? langAddress(l.code) : "#"}
+                onClick={(e) => {
+                  if (IS_WEB && (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0)) return;
+                  e.preventDefault();
+                  pick(l.code);
+                }}
                 className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-xs text-left hover:bg-rw-raised ${
                   l.code === lang ? "text-rw-accent font-semibold" : "text-rw-text"
                 }`}
@@ -68,7 +72,7 @@ export const LanguageFlag: React.FC<{ onUpdateSettings: (s: Partial<AppSettings>
                 <Flag lang={l.code} className="w-5 h-[13px] rounded-[2px] shrink-0" />
                 <span className="flex-1">{l.name}</span>
                 {l.code === lang && <Check className="w-3.5 h-3.5" />}
-              </button>
+              </a>
             </li>
           ))}
         </ul>

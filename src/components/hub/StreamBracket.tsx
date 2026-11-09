@@ -110,8 +110,9 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
       });
     }
     const shows = mine.filter((e) => e.type !== "special");
-    const streamDone = shows.length > 0 && shows.every((e) => nextStart(e) <= now);
-    return { status, streamDone };
+    const airedCount = shows.filter((e) => nextStart(e) <= now).length;
+    const streamDone = shows.length > 0 && airedCount === shows.length;
+    return { status, streamDone, airedCount, totalCount: shows.length };
   }, [events, stages, which, now]);
 
   if (!which || !LEAGUE[which.event] || failed) return null;
@@ -152,11 +153,24 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           </button>
         )}
       </div>
-      <p className="text-[11px] text-rw-muted">
-        {airing.streamDone
-          ? tl("The stream has shown this whole event, so every result is visible.")
-          : tl("Results show up here once the stream has aired them, so nothing is spoiled.")}
-      </p>
+      <div className="space-y-1">
+        <p className="text-[11px] text-rw-muted">
+          {airing.streamDone
+            ? tl("The stream has shown this whole event, so every result is visible.")
+            : tl("Results show up here once the stream has aired them, so nothing is spoiled.")}
+        </p>
+        {airing.totalCount > 0 && (
+          <div className="flex items-center gap-2 text-[10px] text-rw-muted tabular-nums">
+            <div className="h-1.5 w-32 rounded-full bg-rw-bg overflow-hidden">
+              <div
+                className="h-full rounded-full bg-rw-teal/70"
+                style={{ width: `${Math.round((airing.airedCount / airing.totalCount) * 100)}%` }}
+              />
+            </div>
+            <span>{`${airing.airedCount} / ${airing.totalCount}`}</span>
+          </div>
+        )}
+      </div>
       {stages.length > 1 && (
         <div className="flex flex-wrap gap-1.5">
           {stages.map((s, i) => (
@@ -201,6 +215,17 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
       ))}
       <p className="text-[11px] text-rw-muted">
         <EventLink name={tl("Full stats for {event}", { event: ev.n })} u={ev.u} className="text-rw-accent hover:underline" />
+        {(which.event === "Worlds" || which.event === "MSI" || which.event === "First Stand") && (
+          <>
+            {" · "}
+            <HubLink
+              to={{ kind: which.event === "Worlds" ? "worlds" : which.event === "MSI" ? "msi" : "first-stand", year: which.year }}
+              className="text-rw-accent hover:underline"
+            >
+              {`${which.event} ${which.year}`}
+            </HubLink>
+          </>
+        )}
         {" · "}
         <HubLink to={{ kind: "home" }} className="text-rw-accent hover:underline">
           {tl("Pro Stats")}
