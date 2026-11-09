@@ -16,7 +16,7 @@ import { loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemI
 import type { ItemIndexRow, PlayerGameRow, SearchPlayerRow } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
 import { isFinishedItem, itemName, useDDragon } from "../../hub/ddragon";
-import { card, ChampIcon, fmtDate, fmtNum, HubLink, ItemIcon, Loading, PlayerLink, PlayerPhoto, Section, Stat, td, th, useHiddenCheck, useLoad, usePageTitle } from "./ui";
+import { card, ChampIcon, fmtDate, fmtNum, HubLink, ItemIcon, Loading, PlayerLink, PlayerPhoto, Section, Stat, td, TeamLogo, th, useHiddenCheck, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
 import { SectionCard } from "./BroadcastCard";
 
@@ -1032,8 +1032,13 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                 </HubLink>
                 <span className="truncate min-w-0">
                   <span className="text-rw-text tabular-nums">{hide ? "–" : `${r[3]}/${r[4]}/${r[5]}`}</span>{" "}
-                  <HubLink to={{ kind: "match", slug: r[1], ...(r[22] ? { game: r[22] } : {}) }}>
-                    {tl("vs")} {r[8]}
+                  <HubLink
+                    to={{ kind: "match", slug: r[1], ...(r[22] ? { game: r[22] } : {}) }}
+                    className="inline-flex items-center gap-1"
+                  >
+                    <span>{tl("vs")}</span>
+                    <TeamLogo name={r[8]} size={13} />
+                    <span>{r[8]}</span>
                   </HubLink>
                   <span className="text-rw-muted"> · {r[9]}</span>
                 </span>

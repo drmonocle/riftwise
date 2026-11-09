@@ -10,7 +10,6 @@ import type { AppSettings, Match } from "../types";
 import { tl, tc } from "../i18n";
 import { computeHeadToHead } from "../helpers";
 import { clickable } from "../a11y";
-import { riotImg } from "../riotImage";
 import { teamForm, useMatchRatings } from "../hub/matchRatings";
 import { prettySlug } from "../hub/data";
 import { navigateHub } from "../hub/route";
@@ -18,6 +17,7 @@ import { AddToCalendarMenu } from "./AddToCalendarMenu";
 import { MatchPrepButton } from "./MatchPrepButton";
 import { MatchOverviewButton } from "./MatchOverviewButton";
 import { SectionCard } from "./hub/BroadcastCard";
+import { TeamLogo } from "./hub/ui";
 
 // the one-line layout once the table itself is 900 px wide; below that two or three lines a match. Every column has
 // a set width (the buttons' too: an "auto" one was empty in the header row, so its columns sat ~75 px right of the rows').
@@ -111,9 +111,11 @@ const UpNextRow: React.FC<{
       </span>
     );
   };
-  // an empty square when Riot has no logo, so the "vs" stays in line with the other rows'
-  const logo = (image: string | undefined) =>
-    image ? <img {...riotImg(image, 40)} alt="" className="w-5 h-5 object-contain shrink-0" loading="lazy" /> : <span className="w-5 h-5 shrink-0" aria-hidden="true" />;
+  const logo = (name: string, code: string, image: string | undefined) => (
+    <span className="w-5 h-5 shrink-0 inline-flex items-center justify-center">
+      <TeamLogo name={name} code={code} src={image} size={20} />
+    </span>
+  );
   return (
     <div className={`px-3 py-2 ${GRID} flex flex-wrap items-center gap-x-3 gap-y-1`}>
       <span className="flex flex-col min-w-0 @max-[900px]:flex-1">
@@ -129,9 +131,9 @@ const UpNextRow: React.FC<{
       </span>
       <span className="flex items-center gap-1.5 min-w-0 @max-[900px]:order-last @max-[900px]:basis-full @min-[900px]:grid @min-[900px]:grid-cols-[minmax(0,1fr)_auto_auto_auto_minmax(0,1fr)]">
         {team(m.team1Code, m.team1Name, true)}
-        {logo(m.team1Image)}
+        {logo(m.team1Name, m.team1Code, m.team1Image)}
         <span className="text-rw-sub">{tl("vs")}</span>
-        {logo(m.team2Image)}
+        {logo(m.team2Name, m.team2Code, m.team2Image)}
         {team(m.team2Code, m.team2Name, false)}
       </span>
       <span className="@max-[900px]:order-last @max-[900px]:basis-full @min-[900px]:contents">

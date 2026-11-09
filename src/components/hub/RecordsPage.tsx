@@ -194,6 +194,7 @@ const PentaRow: React.FC<{
             <HubLink to={{ kind: "champ", slug: prettySlug(x.c) }} title={champName(x.c)}>
               <ChampIcon name={x.c} size={18} />
             </HubLink>
+            <PlayerPhoto name={x.n} slug={x.u ?? undefined} size={16} />
             <span className="truncate">
               <PlayerLink name={x.n} u={x.u} />{" "}
               <HubLink to={{ kind: "champ", slug: prettySlug(x.c) }} className="text-rw-sub hover:text-rw-accent hover:underline">
@@ -203,13 +204,21 @@ const PentaRow: React.FC<{
               {x.g ? (
                 <HubLink
                   to={{ kind: "match", slug: x.g, game: x.gn }}
-                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                  className="inline-flex items-center gap-1 text-rw-sub hover:text-rw-accent hover:underline"
                 >
-                  {x.a} vs {x.b}
+                  <TeamLogo name={x.a} size={13} />
+                  <span>{x.a}</span>
+                  <span>vs</span>
+                  <TeamLogo name={x.b} size={13} />
+                  <span>{x.b}</span>
                 </HubLink>
               ) : (
-                <span className="text-rw-sub">
-                  {x.a} vs {x.b}
+                <span className="inline-flex items-center gap-1 text-rw-sub">
+                  <TeamLogo name={x.a} size={13} />
+                  <span>{x.a}</span>
+                  <span>vs</span>
+                  <TeamLogo name={x.b} size={13} />
+                  <span>{x.b}</span>
                 </span>
               )}
             </span>
@@ -385,25 +394,29 @@ export const RecordsPanel: React.FC = () => {
                     : Math.max(8, Math.min(100, Math.round((g.v / maxV) * 100)));
                   return (
                     <li key={i} className="space-y-0.5 min-w-0">
-                      <div className="truncate">
-                        <span className="text-rw-accent font-bold mr-1 tabular-nums">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-rw-accent font-bold tabular-nums shrink-0">
                           {fmt(g.v)}
                         </span>
-                        {g.g ? (
-                          <HubLink to={{ kind: "match", slug: g.g, game: g.gn }}>
-                            {tl("{w} beat {l}", {
-                              w: g.w,
-                              l: g.w === g.a ? g.b : g.a,
-                            })}
-                          </HubLink>
-                        ) : (
-                          <span className="text-rw-text">
-                            {tl("{w} beat {l}", {
-                              w: g.w,
-                              l: g.w === g.a ? g.b : g.a,
-                            })}
-                          </span>
-                        )}
+                        <TeamLogo name={g.w} size={14} />
+                        <span className="truncate min-w-0">
+                          {g.g ? (
+                            <HubLink to={{ kind: "match", slug: g.g, game: g.gn }}>
+                              {tl("{w} beat {l}", {
+                                w: g.w,
+                                l: g.w === g.a ? g.b : g.a,
+                              })}
+                            </HubLink>
+                          ) : (
+                            <span className="text-rw-text">
+                              {tl("{w} beat {l}", {
+                                w: g.w,
+                                l: g.w === g.a ? g.b : g.a,
+                              })}
+                            </span>
+                          )}
+                        </span>
+                        <TeamLogo name={g.w === g.a ? g.b : g.a} size={14} />
                       </div>
                       <div className="text-[10px] text-rw-muted truncate">
                         <EventLink
@@ -459,6 +472,7 @@ export const RecordsPanel: React.FC = () => {
                         <HubLink to={{ kind: "champ", slug: prettySlug(p.c) }} title={champName(p.c)} className="shrink-0">
                           <ChampIcon name={p.c} size={18} />
                         </HubLink>
+                        <PlayerPhoto name={p.pl} slug={p.u ?? undefined} size={16} />
                         <div className="truncate min-w-0">
                           <span className="text-rw-accent font-bold mr-1 tabular-nums">
                             {fmt(p.v)}
@@ -482,14 +496,18 @@ export const RecordsPanel: React.FC = () => {
                           </span>
                         </div>
                       </div>
-                      <div className="text-[10px] text-rw-muted truncate">
-                        vs {p.opp} ·{" "}
-                        <EventLink
-                          name={p.t}
-                          u={p.e}
-                          className="text-rw-muted hover:text-rw-accent hover:underline"
-                        />{" "}
-                        · {fmtDate(p.date)}
+                      <div className="flex items-center gap-1 text-[10px] text-rw-muted truncate">
+                        <span>vs</span>
+                        <TeamLogo name={p.opp} size={12} />
+                        <span className="truncate">
+                          {p.opp} ·{" "}
+                          <EventLink
+                            name={p.t}
+                            u={p.e}
+                            className="text-rw-muted hover:text-rw-accent hover:underline"
+                          />{" "}
+                          · {fmtDate(p.date)}
+                        </span>
                       </div>
                       <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
                         <div className="h-full rounded-full bg-rw-accent/70" style={{ width: `${barPct}%` }} />

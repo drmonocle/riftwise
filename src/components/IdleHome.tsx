@@ -13,7 +13,6 @@ import { loadRatings } from "../hub/data";
 import { TeamLogo, useLoad } from "./hub/ui";
 import { SectionCard } from "./hub/BroadcastCard";
 import { MatchOverviewButton } from "./MatchOverviewButton";
-import { riotImg } from "../riotImage";
 import { clickable, OPEN_TAB_EVENT } from "../a11y";
 
 const HEAD = "font-head text-[13px] font-bold uppercase tracking-[0.12em] text-rw-sub";
@@ -73,7 +72,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
                 </span>
               )}
               <span className={`flex-1 min-w-0 text-right truncate ${w1 ? "font-bold text-rw-text" : "text-rw-sub"}`}>{m.team1Name}</span>
-              {m.team1Image && <img {...riotImg(m.team1Image, 40)} alt="" className="w-5 h-5 object-contain shrink-0" loading="lazy" />}
+              <TeamLogo name={m.team1Name} code={m.team1Code} src={m.team1Image} size={20} />
               {shown ? (
                 <span className="inline-flex flex-col items-center justify-center w-12 shrink-0 gap-0.5">
                   <span className="font-num tabular-nums font-bold text-rw-text text-center leading-none">
@@ -101,7 +100,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
                   {tl("Reveal")}
                 </button>
               )}
-              {m.team2Image && <img {...riotImg(m.team2Image, 40)} alt="" className="w-5 h-5 object-contain shrink-0" loading="lazy" />}
+              <TeamLogo name={m.team2Name} code={m.team2Code} src={m.team2Image} size={20} />
               <span className={`flex-1 min-w-0 truncate ${w2 ? "font-bold text-rw-text" : "text-rw-sub"}`}>{m.team2Name}</span>
               <span className="w-16 shrink-0 text-right text-[11px] text-rw-muted">{when(m.startTimeUtc)}</span>
               {shown && <MatchOverviewButton match={m} compact />}

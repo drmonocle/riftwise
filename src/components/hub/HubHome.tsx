@@ -166,7 +166,10 @@ export const HubHome: React.FC<{
                 <li key={p.u || p.n} className="flex items-center gap-2 min-w-0">
                   <PlayerPhoto name={p.n} team={p.t} slug={p.u || undefined} size={24} />
                   <PlayerLink name={p.n} u={p.u} className="font-semibold truncate" />
-                  <span className="text-rw-muted truncate ml-auto">{[p.r ? roleName(p.r) : "", p.t].filter(Boolean).join(" · ")}</span>
+                  <span className="inline-flex items-center gap-1 text-rw-muted truncate ml-auto">
+                    {p.t && <TeamLogo name={p.t} size={13} />}
+                    <span className="truncate">{[p.r ? roleName(p.r) : "", p.t].filter(Boolean).join(" · ")}</span>
+                  </span>
                 </li>
               ))}
             </ul>
@@ -658,9 +661,10 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                 <li key={p.u || p.n} className="flex items-center gap-2 min-w-0">
                   <span className="w-3 text-right text-rw-muted tabular-nums shrink-0">{i + 1}</span>
                   <PlayerPhoto name={p.n} team={p.t} slug={p.u || undefined} size={26} />
-                  <span className="truncate min-w-0">
+                  <span className="inline-flex items-center gap-1 truncate min-w-0">
                     <PlayerLink name={p.n} u={p.u} />
-                    <span className="text-rw-muted"> · {[p.r ? roleName(p.r) : "", p.t].filter(Boolean).join(" · ")}</span>
+                    {p.t && <TeamLogo name={p.t} size={13} />}
+                    <span className="text-rw-muted truncate">· {[p.r ? roleName(p.r) : "", p.t].filter(Boolean).join(" · ")}</span>
                   </span>
                   <span className="ml-auto flex items-center gap-2 shrink-0">
                     <span className="hidden sm:inline-flex w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden shrink-0">

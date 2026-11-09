@@ -11,7 +11,7 @@ import { champName } from "../../champions";
 import { loadWeekly } from "../../hub/data";
 import type { HubWeekly } from "../../hub/types";
 import { SITE_URL } from "../../platform";
-import { card, ChampLink, EventLink, fmtDate, HubLink, Page, PlayerLink, PlayerPhoto, RevealButton, Section, TeamLink, TeamLogo, th, td, useHidden, useLoad, usePageTitle } from "./ui";
+import { card, ChampIcon, ChampLink, EventLink, fmtDate, HubLink, Page, PlayerLink, PlayerPhoto, RevealButton, Section, TeamLink, TeamLogo, th, td, useHidden, useLoad, usePageTitle } from "./ui";
 import { BroadcastCardButton, listCard, SectionCard } from "./BroadcastCard";
 import { fmtRating, RatingBadge } from "./PlayerRating";
 
@@ -204,9 +204,14 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   const winPct = Math.max(4, Math.min(96, Math.round(u.p * 100)));
                   return (
                     <li key={u.g} className="space-y-0.5 min-w-0">
-                      <div className="truncate">
-                        <span className="text-rw-accent font-bold mr-1 tabular-nums">{pct(u.p)}</span>
-                        <HubLink to={{ kind: "match", slug: u.g }}>{tl("{w} beat {l}", { w: u.w, l: u.l })}</HubLink> <span className="text-rw-sub">{u.s}</span>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-rw-accent font-bold tabular-nums shrink-0">{pct(u.p)}</span>
+                        <TeamLogo name={u.w} size={14} />
+                        <span className="truncate min-w-0">
+                          <HubLink to={{ kind: "match", slug: u.g }}>{tl("{w} beat {l}", { w: u.w, l: u.l })}</HubLink>{" "}
+                          <span className="text-rw-sub">{u.s}</span>
+                        </span>
+                        <TeamLogo name={u.l} size={14} />
                       </div>
                       <div className="text-[10px] text-rw-muted truncate">
                         <EventLink name={u.t} u={u.e} className="text-rw-muted hover:text-rw-accent hover:underline" /> · {fmtDate(u.date)}
@@ -340,9 +345,13 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
               <ol className="text-xs space-y-1.5">
                 {w.best.map((b) => (
                   <li key={`${b.g}-${b.gn}`} className="space-y-0.5 min-w-0">
-                    <div className="truncate">
-                      <span className="text-rw-accent font-bold mr-1 tabular-nums">{b.r}</span>
-                      <HubLink to={{ kind: "match", slug: b.g, game: b.gn }}>{tl("{a} vs {b}, game {n}", { a: b.a, b: b.b, n: b.gn })}</HubLink>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-rw-accent font-bold tabular-nums shrink-0">{b.r}</span>
+                      <TeamLogo name={b.a} size={14} />
+                      <HubLink to={{ kind: "match", slug: b.g, game: b.gn }} className="truncate">
+                        {tl("{a} vs {b}, game {n}", { a: b.a, b: b.b, n: b.gn })}
+                      </HubLink>
+                      <TeamLogo name={b.b} size={14} />
                     </div>
                     <div className="text-[10px] text-rw-muted truncate">
                       <EventLink name={b.t} u={b.e} className="text-rw-muted hover:text-rw-accent hover:underline" /> · {fmtDate(b.date)}
@@ -384,15 +393,20 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         <span className="text-rw-muted tabular-nums">{i + 1}.</span>
                         <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
                         <PlayerLink name={p.n} u={p.u} />
+                        {p.t && <TeamLogo name={p.t} size={13} />}
                         <span className="text-rw-muted truncate">· {[p.r ? roleName(p.r) : "", p.t].filter(Boolean).join(" · ")}</span>
                       </span>
                       <RatingBadge v={p.rt} title={tl("Average RiftWise rating over {n} games (6 is an average game)", { n: p.g })} />
                     </div>
                     {p.best && (
-                      <div className="text-[10px] text-rw-muted truncate">
-                        {tl("Best: {rating} on {champion} vs {team}", { rating: fmtRating(p.best.rt), champion: champName(p.best.c), team: p.best.opp })}
-                        {" · "}
-                        <HubLink to={{ kind: "match", slug: p.best.g, game: p.best.gn }}>{tl("the game")}</HubLink>
+                      <div className="flex items-center gap-1 text-[10px] text-rw-muted truncate">
+                        <ChampIcon name={p.best.c} size={12} />
+                        <span className="truncate">
+                          {tl("Best: {rating} on {champion} vs {team}", { rating: fmtRating(p.best.rt), champion: champName(p.best.c), team: p.best.opp })}
+                          {" · "}
+                          <HubLink to={{ kind: "match", slug: p.best.g, game: p.best.gn }}>{tl("the game")}</HubLink>
+                        </span>
+                        <TeamLogo name={p.best.opp} size={12} />
                       </div>
                     )}
                   </li>
