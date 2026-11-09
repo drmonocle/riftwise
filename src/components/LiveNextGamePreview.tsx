@@ -16,7 +16,7 @@ import { winRate } from "../stats";
 import { champName } from "../champions";
 import { fetchLiveStart, type LiveParticipantMeta, type LiveWindow } from "../liveGame";
 import { champNameById, useDDragon } from "../hub/ddragon";
-import { findHubTeam, loadHubIndex, loadHubIndexQuick } from "../hub/data";
+import { findHubTeam, loadHubIndex, loadHubIndexQuick, prettySlug } from "../hub/data";
 import { teamRowRef } from "../hub/period";
 import { bothOptions } from "./hub/ComparePage";
 import { defaultPeriod } from "./hub/PeriodStats";
@@ -368,22 +368,42 @@ export const LiveNextGamePreview: React.FC<{
                 </span>
                 <div className="flex flex-wrap items-center justify-end gap-2 min-w-0">
                   <span className="inline-flex items-center gap-1">
-                    <TeamLogo name={match.team1Name} code={match.team1Code} src={match.team1Image} size={14} className="shrink-0" />
-                    <span className="text-[10px] font-bold text-rw-side-a">{match.team1Code}</span>
+                    <HubLink
+                      to={{ kind: "team", slug: draftIntel?.slugA || prettySlug(match.team1Name || match.team1Code) }}
+                      className="inline-flex items-center gap-1 text-[10px] font-bold text-rw-side-a hover:underline"
+                    >
+                      <TeamLogo name={match.team1Name} code={match.team1Code} src={match.team1Image} size={14} className="shrink-0" />
+                      <span>{match.team1Code}</span>
+                    </HubLink>
                     {g.team1.map((p) => (
-                      <span key={p.c} title={`${champName(p.c)} (${p.player})`} className="opacity-75 grayscale-[35%]">
+                      <HubLink
+                        key={p.c}
+                        to={{ kind: "champ", slug: prettySlug(p.c) }}
+                        title={`${champName(p.c)} (${p.player})`}
+                        className="opacity-75 grayscale-[35%] hover:opacity-100 hover:grayscale-0 transition-all"
+                      >
                         <ChampIcon name={p.c} size={18} />
-                      </span>
+                      </HubLink>
                     ))}
                   </span>
                   <span className="text-rw-border">·</span>
                   <span className="inline-flex items-center gap-1">
-                    <TeamLogo name={match.team2Name} code={match.team2Code} src={match.team2Image} size={14} className="shrink-0" />
-                    <span className="text-[10px] font-bold text-rw-side-b">{match.team2Code}</span>
+                    <HubLink
+                      to={{ kind: "team", slug: draftIntel?.slugB || prettySlug(match.team2Name || match.team2Code) }}
+                      className="inline-flex items-center gap-1 text-[10px] font-bold text-rw-side-b hover:underline"
+                    >
+                      <TeamLogo name={match.team2Name} code={match.team2Code} src={match.team2Image} size={14} className="shrink-0" />
+                      <span>{match.team2Code}</span>
+                    </HubLink>
                     {g.team2.map((p) => (
-                      <span key={p.c} title={`${champName(p.c)} (${p.player})`} className="opacity-75 grayscale-[35%]">
+                      <HubLink
+                        key={p.c}
+                        to={{ kind: "champ", slug: prettySlug(p.c) }}
+                        title={`${champName(p.c)} (${p.player})`}
+                        className="opacity-75 grayscale-[35%] hover:opacity-100 hover:grayscale-0 transition-all"
+                      >
                         <ChampIcon name={p.c} size={18} />
-                      </span>
+                      </HubLink>
                     ))}
                   </span>
                 </div>
@@ -410,8 +430,11 @@ export const LiveNextGamePreview: React.FC<{
               <div key={side.code} className="rounded border border-rw-border/70 bg-rw-surface/60 px-2.5 py-1.5 space-y-1">
                 <div className="text-[10px] font-bold flex items-center justify-between">
                   <span className={`inline-flex items-center gap-1.5 ${side.tone}`}>
-                    <TeamLogo name={side.name} code={side.code} src={side.img} size={14} className="shrink-0" />
-                    <span>{side.code} · {tl("Threats to ban")}</span>
+                    <HubLink to={{ kind: "team", slug: side.slug }} className="inline-flex items-center gap-1.5 hover:underline">
+                      <TeamLogo name={side.name} code={side.code} src={side.img} size={14} className="shrink-0" />
+                      <span>{side.code}</span>
+                    </HubLink>
+                    <span>· {tl("Threats to ban")}</span>
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-1">

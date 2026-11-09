@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ClipboardCopy, Dice5, Eraser, Lock, RefreshCw, Shuffle, Sparkles, TrendingUp, Trophy } from "lucide-react";
 import { eventName, eventTitle, stageName, tk, tl } from "../../i18n";
-import { loadEventLines, loadHubEvent, loadHubTitles, loadLeague, loadRatings } from "../../hub/data";
+import { loadEventLines, loadHubEvent, loadHubTitles, loadLeague, loadRatings, prettySlug } from "../../hub/data";
 import type { EventListItem, HubEvent, HubLeague, HubRatings } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import {
@@ -486,11 +486,11 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                 </td>
                 <td className="px-2 py-1 text-rw-sub whitespace-nowrap">
                   {opp ? (
-                    <span className="inline-flex items-center gap-1.5">
+                    <HubLink to={{ kind: "team", slug: opp }} className="inline-flex items-center gap-1.5 hover:text-rw-accent">
                       <span>{tl("vs")}</span>
                       <TeamLogo name={byU.get(opp)?.n || opp} code={byU.get(opp)?.c} src={byU.get(opp)?.img} size={14} className="shrink-0" />
                       <span>{byU.get(opp)?.c || opp}</span>
-                    </span>
+                    </HubLink>
                   ) : (
                     ""
                   )}
@@ -692,12 +692,12 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
   if (!list.length) return null;
   const shown = hidden ? list.slice(1) : list;
   // back-to-back and longer runs by the same organisation (its stats page, whatever it was called then)
-  const runs: { team: string; from: string; to: string; n: number }[] = [];
+  const runs: { team: string; u?: string | null; from: string; to: string; n: number }[] = [];
   const old = [...shown].reverse();
   for (let i = 0; i < old.length; ) {
     let j = i;
     while (j + 1 < old.length && old[j + 1].u && old[j + 1].u === old[i].u && Number(old[j + 1].y) - Number(old[j].y) <= 2) j++;
-    if (j > i) runs.push({ team: old[j].as, from: old[i].y, to: old[j].y, n: j - i + 1 });
+    if (j > i) runs.push({ team: old[j].as, u: old[j].u, from: old[i].y, to: old[j].y, n: j - i + 1 });
     i = j + 1;
   }
   return (
@@ -776,7 +776,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                   {x.l ? (
                     <span className="inline-flex items-center gap-1.5">
                       <TeamLogo name={x.l} size={15} className="shrink-0" />
-                      <span>{x.l}</span>
+                      <TeamLink name={x.l} u={prettySlug(x.l)} className="hover:text-rw-accent" />
                     </span>
                   ) : (
                     ""
@@ -788,13 +788,19 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
         </table>
       </div>
       {runs.length > 0 && (
-        <p className="text-[11px] text-rw-sub">
-          {tl("Won it in a row:")}{" "}
+        <p className="text-[11px] text-rw-sub flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span>{tl("Won it in a row:")}</span>
           {runs
             .slice()
             .reverse()
-            .map((r) => `${r.team} (${r.from}–${r.to}, ${r.n})`)
-            .join(" · ")}
+            .map((r, idx) => (
+              <span key={`${r.team}-${r.from}-${idx}`} className="inline-flex items-center gap-1">
+                {idx > 0 && <span className="text-rw-muted mr-1">·</span>}
+                <TeamLogo name={r.team} size={13} className="shrink-0" />
+                <TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent" />
+                <span>({r.from}–{r.to}, {r.n})</span>
+              </span>
+            ))}
         </p>
       )}
     </Section>
@@ -1152,10 +1158,14 @@ const Records: React.FC<{ rec: Record<string, [number, number]>; byU: Map<string
             {g.us.map((u) => {
               const t = byU.get(u);
               return (
-                <span key={u} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rw-surface border border-rw-border/60">
+                <HubLink
+                  key={u}
+                  to={{ kind: "team", slug: u }}
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rw-surface border border-rw-border/60 hover:border-rw-accent/60 hover:text-rw-text transition-colors"
+                >
                   <TeamLogo name={t?.n || u} code={t?.c} src={t?.img} size={13} className="shrink-0" />
                   <span>{t?.c || u}</span>
-                </span>
+                </HubLink>
               );
             })}
           </div>

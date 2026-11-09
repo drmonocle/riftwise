@@ -454,10 +454,14 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
             return (
               <tr key={x.code} className="border-t border-rw-border/60">
                 <td className="px-2 py-1.5 text-left font-bold text-rw-text whitespace-nowrap" style={{ boxShadow: `inset 3px 0 0 ${x.color}` }} title={x.color === "#3fa7ff" ? tl("Blue side") : tl("Red side")}>
-                  <span className="inline-flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "team", slug: prettySlug(x.name || x.code) })}
+                    className="inline-flex items-center gap-1.5 hover:text-rw-accent hover:underline transition-colors"
+                  >
                     <TeamLogo name={x.name} code={x.code} src={x.img} size={15} className="shrink-0" />
                     <span>{x.code}</span>
-                  </span>
+                  </button>
                 </td>
                 {cols.map((c) => {
                   const ahead = c.v(x) > c.v(other);
@@ -940,15 +944,23 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
         </span>
       </div>
       <div className="grid grid-cols-[1fr_auto_1fr] gap-x-2 gap-y-1 items-center">
-        <span className="inline-flex items-center gap-1.5 font-bold text-rw-text">
+        <button
+          type="button"
+          onClick={() => navigateHub({ kind: "team", slug: prettySlug(left.name || left.code) })}
+          className="inline-flex items-center gap-1.5 font-bold text-rw-text hover:text-rw-accent hover:underline transition-colors text-left"
+        >
           <TeamLogo name={left.name} code={left.code} src={left.img} size={15} className="shrink-0" />
           <span>{left.code}</span>
-        </span>
+        </button>
         <span />
-        <span className="inline-flex items-center justify-end gap-1.5 font-bold text-rw-text text-right">
+        <button
+          type="button"
+          onClick={() => navigateHub({ kind: "team", slug: prettySlug(right.name || right.code) })}
+          className="inline-flex items-center justify-end gap-1.5 font-bold text-rw-text text-right hover:text-rw-accent hover:underline transition-colors"
+        >
           <span>{right.code}</span>
           <TeamLogo name={right.name} code={right.code} src={right.img} size={15} className="shrink-0" />
-        </span>
+        </button>
         {l.map((p, i) => {
           const q = r[i];
           const cell = (x: LiveParticipantMeta | undefined, teamName: string, right: boolean) => {

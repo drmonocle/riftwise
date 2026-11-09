@@ -251,8 +251,8 @@ const GROUPS: { kind: HubSearchKind; label: string; icon: React.ReactNode }[] = 
 /** Searches to try, shown before anything is typed: each kind of thing the box understands. */
 const TRY: { text: string; icon: React.ReactNode }[] = [
   { text: "T1 vs Gen.G", icon: <Swords className="w-3 h-3" /> },
-  { text: "Faker Azir", icon: <User className="w-3 h-3" /> },
-  { text: "Heartsteel", icon: <Package className="w-3 h-3" /> },
+  { text: "Faker Azir", icon: <ChampIcon name="Azir" size={13} /> },
+  { text: "Heartsteel", icon: <ItemIcon name="Heartsteel" size={13} /> },
   { text: `Worlds ${new Date().getFullYear()}`, icon: <Trophy className="w-3 h-3" /> },
   { text: `LCK ${new Date().getFullYear()}`, icon: <Flag className="w-3 h-3" /> },
   { text: "Chovy vs Faker", icon: <GitCompare className="w-3 h-3" /> },
@@ -773,12 +773,19 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
                         {h.matched && <span className="text-rw-muted truncate">({h.kind === "team" ? tl("was {name}", { name: h.matched }) : h.matched})</span>}
                       </span>
                       <span className="flex items-center gap-1.5 shrink-0 max-w-[55%] min-w-0">
-                        <span className="text-rw-muted text-[11px] truncate">
-                          {h.kind === "player"
-                            ? [h.role ? roleName(h.role) : "", h.sub, h.year].filter(Boolean).join(" · ")
-                            : h.kind === "champ"
-                              ? tl("{n} pro picks", { n: fmtNum(h.games) })
-                              : h.sub}
+                        <span className="text-rw-muted text-[11px] truncate inline-flex items-center gap-1 min-w-0">
+                          {h.kind === "player" ? (
+                            <>
+                              {h.role ? <span>{roleName(h.role)}{h.sub || h.year ? " ·" : ""}</span> : null}
+                              {h.sub && <TeamLogo name={h.sub} size={12} />}
+                              {h.sub && <span className="truncate">{h.sub}{h.year ? ` · ${h.year}` : ""}</span>}
+                              {!h.sub && h.year && <span>{h.year}</span>}
+                            </>
+                          ) : h.kind === "champ" ? (
+                            tl("{n} pro picks", { n: fmtNum(h.games) })
+                          ) : (
+                            h.sub
+                          )}
                         </span>
                         {canChain && fill && (
                           <button

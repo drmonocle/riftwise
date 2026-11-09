@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { tl, locale } from "../../i18n";
 import { load } from "../../stats";
 import type { Match } from "../../types";
-import { findHubTeam, loadHubIndexQuick, type HubIndex } from "../../hub/data";
+import { findHubTeam, loadHubIndexQuick, prettySlug, type HubIndex } from "../../hub/data";
 import { MatchOverviewButton } from "../MatchOverviewButton";
 import { MatchPrepButton } from "../MatchPrepButton";
 import {
@@ -15,7 +15,7 @@ import {
   StoryBullets,
   noteText,
 } from "./Storylines";
-import { GRID_COLS, Section, TeamLogo, useColumns } from "./ui";
+import { GRID_COLS, HubLink, Section, TeamLogo, useColumns } from "./ui";
 import { WinChanceLine } from "../WinChanceLine";
 
 /** hub/stakes.json: team slug -> its storylines and its starters' (name, slug, role, as of, notes) */
@@ -127,11 +127,21 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
           <div key={m.matchId} className="space-y-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs border-b border-rw-border pb-1">
               <span className="inline-flex items-center gap-1 font-bold text-rw-text">
-                <TeamLogo name={m.team1Name || m.team1Code} sizeClass="w-3.5 h-3.5" />
-                <span>{m.team1Code}</span>
+                <HubLink
+                  to={{ kind: "team", slug: findHubTeam(data.index, m.team1Name, m.team1Code) || prettySlug(m.team1Name || m.team1Code) }}
+                  className="inline-flex items-center gap-1 hover:text-rw-accent"
+                >
+                  <TeamLogo name={m.team1Name || m.team1Code} code={m.team1Code} src={m.team1Image} sizeClass="w-3.5 h-3.5" />
+                  <span>{m.team1Code}</span>
+                </HubLink>
                 <span className="text-rw-muted font-normal">vs</span>
-                <TeamLogo name={m.team2Name || m.team2Code} sizeClass="w-3.5 h-3.5" />
-                <span>{m.team2Code}</span>
+                <HubLink
+                  to={{ kind: "team", slug: findHubTeam(data.index, m.team2Name, m.team2Code) || prettySlug(m.team2Name || m.team2Code) }}
+                  className="inline-flex items-center gap-1 hover:text-rw-accent"
+                >
+                  <TeamLogo name={m.team2Name || m.team2Code} code={m.team2Code} src={m.team2Image} sizeClass="w-3.5 h-3.5" />
+                  <span>{m.team2Code}</span>
+                </HubLink>
               </span>
               <span className="text-rw-muted">
                 {m.leagueName} ·{" "}

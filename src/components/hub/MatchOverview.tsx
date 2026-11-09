@@ -114,10 +114,17 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
     });
   const team = (s: Side, right: boolean) => (
     <div className={`min-w-0 ${right ? "text-right" : ""}`}>
-      <div className={`text-sm font-extrabold flex items-center gap-1.5 min-w-0 ${right ? "flex-row-reverse text-rw-side-b" : "text-rw-side-a"}`}>
+      <button
+        type="button"
+        onClick={() => {
+          onClose();
+          navigateHub({ kind: "team", slug: s.team.u });
+        }}
+        className={`w-full text-sm font-extrabold flex items-center gap-1.5 min-w-0 hover:underline transition-colors ${right ? "flex-row-reverse text-rw-side-b" : "text-rw-side-a"}`}
+      >
         <TeamLogo name={s.team.name} size={20} className="shrink-0" />
         <span className="truncate">{s.team.name}</span>
-      </div>
+      </button>
       {s.team.rating && (
         <div className="text-[11px] text-rw-sub">
           {rankText(s.team)} · <Change v={s.team.rating.chg30} /> {tl("in 30 days")}

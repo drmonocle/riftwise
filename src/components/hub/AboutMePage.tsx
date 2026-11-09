@@ -2,7 +2,7 @@
 import React from "react";
 import { tl, tk } from "../../i18n";
 import { dedication } from "../../dedication";
-import { card, HubLink, Section, usePageTitle } from "./ui";
+import { card, HubLink, PlayerPhoto, Section, TeamLogo, usePageTitle } from "./ui";
 
 const LINKS: [string, string][] = [
   ["https://drmonocle.com/", tk("My website")],
@@ -99,9 +99,14 @@ export const AboutMePage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ o
               <HubLink
                 key={name}
                 to={to}
-                className="px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-semibold text-rw-text hover:text-rw-accent"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-semibold text-rw-text hover:text-rw-accent"
               >
-                {name}
+                {to.kind === "team" ? (
+                  <TeamLogo name={name} code={name} size={13} />
+                ) : (
+                  <PlayerPhoto name={name} slug={to.slug} size={14} linkFallback={false} />
+                )}
+                <span>{name}</span>
               </HubLink>
             ))}
           </div>
