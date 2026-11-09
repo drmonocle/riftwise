@@ -9,7 +9,7 @@ import { IS_WEB, OLD_SITE_URL, SITE_URL } from "./platform";
 // (lolworlds.com/riftwise, which keeps answering) if riftwise.gg can't be reached.
 // (vite preview on this PC passes /stats on to the server, or serves a local build.)
 let STATS_BASE =
-  IS_WEB && typeof window !== "undefined" && /^riftwise\.gg$|^localhost$|^127\.0\.0\.1$/.test(window.location.hostname)
+  IS_WEB && typeof window !== "undefined" && /^riftwise\.gg$|^localhost$|^127\.0\.0\.1$/.test(window.location?.hostname || "")
     ? "/stats"
     : `${SITE_URL}stats`;
 let statsFallback: string | null = IS_WEB ? null : `${OLD_SITE_URL}stats`;

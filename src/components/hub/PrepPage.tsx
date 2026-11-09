@@ -1193,7 +1193,19 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
         {ROLES.map((r, i) => (
           <li key={r} className="grid grid-cols-[1fr_auto_1fr] items-start gap-3 py-2">
             {cell(pools.a[i], false)}
-            <span className="text-[10px] uppercase tracking-wider font-bold text-rw-accent text-center min-w-14 px-1 whitespace-nowrap pt-0.5">{roleName(r)}</span>
+            <span className="text-[10px] uppercase tracking-wider font-bold text-rw-accent text-center min-w-14 px-1 whitespace-nowrap pt-0.5">
+              {pools.a[i]?.slug && pools.b[i]?.slug ? (
+                <HubLink
+                  to={{ kind: "compare", mode: "player", a: pools.a[i]!.slug, b: pools.b[i]!.slug, period }}
+                  className="hover:underline"
+                  title={tl("Compare {a} and {b}", { a: pools.a[i]!.name, b: pools.b[i]!.name })}
+                >
+                  {roleName(r)}
+                </HubLink>
+              ) : (
+                roleName(r)
+              )}
+            </span>
             {cell(pools.b[i], true)}
           </li>
         ))}
@@ -1621,7 +1633,7 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
         <div className="space-y-2 min-w-0">
           <div className="font-bold text-rw-side-a flex items-center gap-1.5 min-w-0">
             <TeamLogo name={a.team.name} size={16} />
-            <span className="truncate">{a.team.name}</span>
+            <TeamLink name={a.team.name} u={a.team.u} className="truncate hover:underline" />
           </div>
           <div className="space-y-1">
             <div className="text-[10px] font-semibold text-rw-muted">
@@ -1639,7 +1651,7 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
         <div className="space-y-2 min-w-0">
           <div className="font-bold text-rw-side-b flex items-center gap-1.5 min-w-0">
             <TeamLogo name={b.team.name} size={16} />
-            <span className="truncate">{b.team.name}</span>
+            <TeamLink name={b.team.name} u={b.team.u} className="truncate hover:underline" />
           </div>
           <div className="space-y-1">
             <div className="text-[10px] font-semibold text-rw-muted">

@@ -1122,8 +1122,12 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
           <ul className="text-xs grid sm:grid-cols-2 gap-x-4 gap-y-1">
             {s.top.map((p) => (
               <li key={p.ca + p.cb} className="flex items-center gap-1.5 min-w-0">
-                <ChampIcon name={p.ca} size={18} />
-                <ChampIcon name={p.cb} size={18} />
+                <HubLink to={{ kind: "champ", slug: prettySlug(p.ca) }} className="shrink-0">
+                  <ChampIcon name={p.ca} size={18} />
+                </HubLink>
+                <HubLink to={{ kind: "champ", slug: prettySlug(p.cb) }} className="shrink-0">
+                  <ChampIcon name={p.cb} size={18} />
+                </HubLink>
                 <span className="truncate text-rw-sub">
                   <ChampLink name={p.ca} /> vs <ChampLink name={p.cb} />
                 </span>
@@ -1143,12 +1147,16 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
               <HubLink to={{ kind: "champ", slug: prettySlug(m.a[2]) }}>
                 <ChampIcon name={m.a[2]} size={18} />
               </HubLink>
-              <span className="tabular-nums text-rw-text">{m.a[3]}/{m.a[4]}/{m.a[5]}</span>
+              <HubLink to={{ kind: "match", slug: m.a[1], game: m.a[22] || undefined }} className="tabular-nums text-rw-text hover:text-rw-accent hover:underline">
+                {m.a[3]}/{m.a[4]}/{m.a[5]}
+              </HubLink>
               <span className="text-rw-muted">vs</span>
               <HubLink to={{ kind: "champ", slug: prettySlug(m.b[2]) }}>
                 <ChampIcon name={m.b[2]} size={18} />
               </HubLink>
-              <span className="tabular-nums text-rw-sub">{m.b[3]}/{m.b[4]}/{m.b[5]}</span>
+              <HubLink to={{ kind: "match", slug: m.a[1], game: m.a[22] || undefined }} className="tabular-nums text-rw-sub hover:text-rw-accent hover:underline">
+                {m.b[3]}/{m.b[4]}/{m.b[5]}
+              </HubLink>
               <span className="truncate text-rw-muted">
                 · <EventLink name={m.a[9]} u={m.a[11]} className="text-rw-muted hover:text-rw-accent hover:underline" />
               </span>

@@ -16,7 +16,7 @@ import { loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemI
 import type { ItemIndexRow, PlayerGameRow, SearchPlayerRow } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
 import { isFinishedItem, itemName, useDDragon } from "../../hub/ddragon";
-import { card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, Loading, PlayerLink, PlayerPhoto, Section, Stat, td, TeamLogo, th, useHiddenCheck, useLoad, usePageTitle } from "./ui";
+import { card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, Loading, PlayerLink, PlayerPhoto, Section, Stat, td, TeamLink, TeamLogo, th, useHiddenCheck, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
 import { SectionCard } from "./BroadcastCard";
 
@@ -1030,17 +1030,21 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                 <HubLink to={{ kind: "champ", slug: prettySlug(r[2]) }} className="shrink-0">
                   <ChampIcon name={r[2]} size={18} />
                 </HubLink>
-                <span className="truncate min-w-0">
-                  <span className="text-rw-text tabular-nums">{hide ? "–" : `${r[3]}/${r[4]}/${r[5]}`}</span>{" "}
-                  <HubLink
-                    to={{ kind: "match", slug: r[1], ...(r[22] ? { game: r[22] } : {}) }}
-                    className="inline-flex items-center gap-1"
-                  >
-                    <span>{tl("vs")}</span>
-                    <TeamLogo name={r[8]} size={13} />
-                    <span>{r[8]}</span>
-                  </HubLink>
-                  <span className="text-rw-muted">
+                <span className="truncate min-w-0 inline-flex items-center gap-1">
+                  {r[1] ? (
+                    <HubLink
+                      to={{ kind: "match", slug: r[1], ...(r[22] ? { game: r[22] } : {}) }}
+                      className="text-rw-text hover:text-rw-accent hover:underline tabular-nums shrink-0"
+                    >
+                      {hide ? "–" : `${r[3]}/${r[4]}/${r[5]}`}
+                    </HubLink>
+                  ) : (
+                    <span className="text-rw-text tabular-nums shrink-0">{hide ? "–" : `${r[3]}/${r[4]}/${r[5]}`}</span>
+                  )}
+                  <span className="text-rw-muted shrink-0">{tl("vs")}</span>
+                  <TeamLogo name={r[8]} size={13} />
+                  <TeamLink name={r[8]} className="truncate" />
+                  <span className="text-rw-muted truncate">
                     {" · "}
                     <EventLink name={r[9]} u={r[11]} className="text-rw-muted hover:text-rw-accent hover:underline" />
                   </span>

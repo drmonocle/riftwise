@@ -401,14 +401,14 @@ const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
           <div key={m.label} className="rounded-lg border border-rw-border/70 bg-rw-bg/40 px-2.5 py-1.5 space-y-1">
             <div className="flex items-center justify-between text-[10px] font-mono tabular-nums">
               <span className="font-bold text-rw-side-a">
-                {codeA} {m.fmt(m.a)}
+                <TeamLink name={codeA} u={s.a.u} className="hover:underline" /> {m.fmt(m.a)}
               </span>
               <span className="font-sans text-[9px] font-bold uppercase tracking-wider text-rw-muted">
                 {m.label}
                 {m.label === tl("Kills") && minCount > 0 ? ` · ${fmtMin(totalMin)}` : ""}
               </span>
               <span className="font-bold text-rw-side-b">
-                {m.fmt(m.b)} {codeB}
+                {m.fmt(m.b)} <TeamLink name={codeB} u={s.b.u} className="hover:underline" />
               </span>
             </div>
             <div className="h-1.5 rounded-full overflow-hidden flex bg-rw-raised">
@@ -971,11 +971,11 @@ const PlayerBars: React.FC<{
 
         <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-3 text-[10px] uppercase tracking-wider font-bold">
           <span className="truncate text-right" style={{ color: BLUE }}>
-            {blueName} · {fmt(total(blue))}
+            <TeamLink name={blueName} className="hover:underline" /> · {fmt(total(blue))}
           </span>
           <span />
           <span className="truncate" style={{ color: RED }}>
-            {redName} · {fmt(total(red))}
+            <TeamLink name={redName} className="hover:underline" /> · {fmt(total(red))}
           </span>
         </div>
         {rows.map(({ r, b, o }) => {
@@ -1054,11 +1054,11 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blue: Gam
   const head = (
     <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)] gap-2 text-[10px] uppercase tracking-wider font-bold">
       <span className="truncate text-right" style={{ color: BLUE }}>
-        {blueName}
+        <TeamLink name={blueName} className="hover:underline" />
       </span>
       <span />
       <span className="truncate" style={{ color: RED }}>
-        {redName}
+        <TeamLink name={redName} className="hover:underline" />
       </span>
     </div>
   );

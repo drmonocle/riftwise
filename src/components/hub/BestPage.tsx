@@ -10,7 +10,7 @@ import { tl, tn, tc, stageLabel, fmtDec } from "../../i18n";
 import { loadAliases, loadBest, loadBestIndex, normText, resolveLeagueSlug } from "../../hub/data";
 import type { BestGame, BestSeries } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
-import { card, EventLink, Failed, fmtDate, HubLink, isFresh, Loading, RatingBadge, ratingTextClass, ratingTier, RevealButton, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
+import { card, EventLink, Failed, fmtDate, HubLink, isFresh, Loading, RatingBadge, ratingTextClass, ratingTier, RevealButton, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 
 export { ratingTier, ratingTextClass, RatingBadge };
@@ -258,28 +258,36 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
   );
 };
 
-const Team: React.FC<{ name: string; won: boolean }> = ({ name, won }) => (
+const Team: React.FC<{ name: string; u?: string | null; won: boolean }> = ({ name, u, won }) => (
   <span className={`inline-flex items-center gap-1 ${won ? "font-bold text-rw-teal" : "text-rw-text"}`}>
     <TeamLogo name={name} size={15} />
-    <span>{name}</span>
+    <TeamLink name={name} u={u} className={won ? "font-bold text-rw-teal hover:underline" : "text-rw-text hover:text-rw-accent hover:underline"} />
   </span>
 );
 
 const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
-  const [rating, slug, n, date, en, eslug, stage, a, , b, , w, min, ka, kb, vod] = r;
+  const [rating, slug, n, date, en, eslug, stage, a, aSlug, b, bSlug, w, min, ka, kb, vod] = r;
   const totalK = ka != null && kb != null ? ka + kb : 0;
   const pctKa = totalK > 0 && ka != null ? Math.round((ka / totalK) * 100) : 50;
   return (
     <tr className="border-t border-rw-border/60 first:border-t-0 hover:bg-rw-raised/50">
       <td className="py-2 pr-2 text-rw-muted tabular-nums w-8 text-right">{rank}</td>
       <td className="py-2 pr-3 w-16">
-        <RatingBadge r={rating} />
+        <HubLink to={{ kind: "match", slug, game: n }} className="inline-block">
+          <RatingBadge r={rating} />
+        </HubLink>
       </td>
       <td className="py-2 pr-3 sm:min-w-[12rem]">
-        <HubLink to={{ kind: "match", slug, game: n }} className="hover:underline">
-          <Team name={a} won={w === 1} /> <span className="text-rw-muted">vs</span> <Team name={b} won={w === 2} />
-          <span className="text-rw-sub"> · {tl("Game {n}", { n })}</span>
-        </HubLink>
+        <div className="inline-flex flex-wrap items-center gap-x-1.5">
+          <Team name={a} u={aSlug} won={w === 1} />
+          <HubLink to={{ kind: "match", slug, game: n }} className="text-rw-muted hover:text-rw-accent hover:underline">
+            vs
+          </HubLink>
+          <Team name={b} u={bSlug} won={w === 2} />
+          <HubLink to={{ kind: "match", slug, game: n }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            · {tl("Game {n}", { n })}
+          </HubLink>
+        </div>
         <div className="text-[10px] text-rw-muted mt-0.5 sm:hidden">
           <EventLink name={en} u={eslug} className="hover:text-rw-accent hover:underline" />
           {stage ? ` · ${stageLabel(stage)}` : ""} · {fmtDate(date)}
@@ -318,19 +326,21 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
 };
 
 const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
-  const [rating, slug, date, en, eslug, stage, a, , b, , wa, wb, bestN, games, , perGame] = r;
+  const [rating, slug, date, en, eslug, stage, a, aSlug, b, bSlug, wa, wb, bestN, games, , perGame] = r;
   const totalS = wa + wb;
   const pctWa = totalS > 0 ? Math.round((wa / totalS) * 100) : 50;
   return (
     <tr className="border-t border-rw-border/60 first:border-t-0 hover:bg-rw-raised/50">
       <td className="py-2 pr-2 text-rw-muted tabular-nums w-8 text-right">{rank}</td>
       <td className="py-2 pr-3 w-16">
-        <RatingBadge r={rating} />
+        <HubLink to={{ kind: "match", slug }} className="inline-block">
+          <RatingBadge r={rating} />
+        </HubLink>
       </td>
       <td className="py-2 pr-3 sm:min-w-[12rem]">
-        <HubLink to={{ kind: "match", slug }} className="hover:underline inline-flex flex-wrap items-center gap-x-1.5">
-          <Team name={a} won={wa > wb} />
-          <span className="inline-flex items-center gap-1 tabular-nums text-rw-text font-semibold">
+        <div className="inline-flex flex-wrap items-center gap-x-1.5">
+          <Team name={a} u={aSlug} won={wa > wb} />
+          <HubLink to={{ kind: "match", slug }} className="inline-flex items-center gap-1 tabular-nums text-rw-text hover:text-rw-accent hover:underline font-semibold">
             <span>{wa}–{wb}</span>
             {totalS > 0 && (
               <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
@@ -338,9 +348,9 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
                 <span className={`h-full ${wb > wa ? "bg-rw-teal/85" : "bg-rw-sub/65"}`} style={{ width: `${100 - pctWa}%` }} />
               </span>
             )}
-          </span>
-          <Team name={b} won={wb > wa} />
-        </HubLink>
+          </HubLink>
+          <Team name={b} u={bSlug} won={wb > wa} />
+        </div>
         <div className="text-[10px] text-rw-muted mt-0.5 sm:hidden">
           <EventLink name={en} u={eslug} className="hover:text-rw-accent hover:underline" />
           {stage ? ` · ${stageLabel(stage)}` : ""} · {fmtDate(date)}

@@ -231,8 +231,11 @@ export async function loadBundledCatalog(): Promise<CatalogData> {
 
 export function saveCatalog(catalog: CatalogData): void {
   try {
+    if (typeof localStorage === "undefined") return;
     localStorage.setItem("riftwatch_catalog", JSON.stringify({ ...catalog, lang: currentLang(), regions: "en" }));
-    window.dispatchEvent(new CustomEvent("riftwatch_catalog_updated", { detail: catalog }));
+    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+      window.dispatchEvent(new CustomEvent("riftwatch_catalog_updated", { detail: catalog }));
+    }
   } catch (e) {
     console.error("Failed to save catalog:", e);
   }

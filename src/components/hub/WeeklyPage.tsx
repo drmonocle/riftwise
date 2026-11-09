@@ -8,10 +8,11 @@ import React, { useState } from "react";
 import { ClipboardCopy, Check } from "lucide-react";
 import { tl, tn, locale, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { loadWeekly } from "../../hub/data";
+import { loadWeekly, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import type { HubWeekly } from "../../hub/types";
 import { SITE_URL } from "../../platform";
 import { card, ChampIcon, ChampLink, EventLink, fmtDate, HubLink, Page, PlayerLink, PlayerPhoto, RevealButton, Section, TeamLink, TeamLogo, th, td, useHidden, useLoad, usePageTitle } from "./ui";
+import { STable } from "../STable";
 import { BroadcastCardButton, listCard, SectionCard } from "./BroadcastCard";
 import { fmtRating, RatingBadge } from "./PlayerRating";
 
@@ -205,11 +206,15 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   return (
                     <li key={u.g} className="space-y-0.5 min-w-0">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-rw-accent font-bold tabular-nums shrink-0">{pct(u.p)}</span>
+                        <HubLink to={{ kind: "match", slug: u.g }} className="text-rw-accent font-bold tabular-nums shrink-0 hover:underline">
+                          {pct(u.p)}
+                        </HubLink>
                         <TeamLogo name={u.w} size={14} />
                         <span className="truncate min-w-0">
                           <HubLink to={{ kind: "match", slug: u.g }}>{tl("{w} beat {l}", { w: u.w, l: u.l })}</HubLink>{" "}
-                          <span className="text-rw-sub">{u.s}</span>
+                          <HubLink to={{ kind: "match", slug: u.g }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                            {u.s}
+                          </HubLink>
                         </span>
                         <TeamLogo name={u.l} size={14} />
                       </div>
@@ -259,7 +264,10 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         <div className="flex items-baseline justify-between gap-2 min-w-0">
                           <span className="inline-flex items-center gap-1.5 truncate min-w-0">
                             <TeamLogo name={m.n} size={15} />
-                            <TeamLink name={m.n} u={m.u} /> <span className="text-[10px] text-rw-muted">{m.lg}</span>
+                            <TeamLink name={m.n} u={m.u} />{" "}
+                            <HubLink to={{ kind: "league", slug: resolveLeagueSlug(m.lg) }} className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline">
+                              {m.lg}
+                            </HubLink>
                           </span>
                           <span className="font-num tabular-nums shrink-0">
                             <span className={m.chg > 0 ? "text-rw-teal font-bold" : "text-rw-red font-bold"}>
@@ -346,7 +354,9 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                 {w.best.map((b) => (
                   <li key={`${b.g}-${b.gn}`} className="space-y-0.5 min-w-0">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-rw-accent font-bold tabular-nums shrink-0">{b.r}</span>
+                      <HubLink to={{ kind: "match", slug: b.g, game: b.gn }} className="text-rw-accent font-bold tabular-nums shrink-0 hover:underline">
+                        {b.r}
+                      </HubLink>
                       <TeamLogo name={b.a} size={14} />
                       <HubLink to={{ kind: "match", slug: b.g, game: b.gn }} className="truncate">
                         {tl("{a} vs {b}, game {n}", { a: b.a, b: b.b, n: b.gn })}
@@ -408,7 +418,9 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     </div>
                     {p.best && (
                       <div className="flex items-center gap-1 text-[10px] text-rw-muted truncate">
-                        <ChampIcon name={p.best.c} size={12} />
+                        <HubLink to={{ kind: "champ", slug: prettySlug(p.best.c) }} title={champName(p.best.c)} className="shrink-0">
+                          <ChampIcon name={p.best.c} size={12} />
+                        </HubLink>
                         <span className="truncate">
                           {tl("Best: {rating} on {champion} vs {team}", { rating: fmtRating(p.best.rt), champion: champName(p.best.c), team: p.best.opp })}
                           {" · "}
@@ -447,7 +459,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
               }
               share="weekly-champs"
             >
-              <table className="w-full text-xs">
+              <STable className="w-full text-xs">
                 <thead>
                   <tr>
                     <th className={th}>{tl("Champion")}</th>
@@ -470,7 +482,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         <td className={`${td} max-w-[9rem]`}>
                           <ChampLink name={c} size={18} />
                         </td>
-                        <td className={`${td} tabular-nums`}>
+                        <td className={`${td} tabular-nums`} data-sort={presPct ?? -1}>
                           {presPct != null ? (
                             <div className="min-w-[3.75rem] space-y-0.5">
                               <div className="font-semibold text-rw-text">{presPct}%</div>
@@ -483,9 +495,9 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                             "–"
                           )}
                         </td>
-                        <td className={`${td} tabular-nums text-rw-sub`}>{pk}</td>
-                        <td className={`${td} tabular-nums text-rw-sub`}>{bn}</td>
-                        <td className={`${td} tabular-nums`}>
+                        <td className={`${td} tabular-nums text-rw-sub`} data-sort={pk}>{pk}</td>
+                        <td className={`${td} tabular-nums text-rw-sub`} data-sort={bn}>{bn}</td>
+                        <td className={`${td} tabular-nums`} data-sort={wrPct ?? -1}>
                           {wrPct != null ? (
                             <div className="min-w-[3.25rem] space-y-0.5">
                               <div className={wrTone}>{wrPct}%</div>
@@ -503,7 +515,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     );
                   })}
                 </tbody>
-              </table>
+              </STable>
               <p className="text-[10px] text-rw-muted">{tn("Picked or banned in the week's {n} game.", "Picked or banned in the week's {n} games.", w.champGames || 0)}</p>
             </Section>
           )}

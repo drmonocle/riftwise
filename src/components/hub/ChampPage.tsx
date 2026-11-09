@@ -760,10 +760,16 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     </span>
                     <PlayerPhoto name={r.n} team={r.team} slug={r.u ?? undefined} size={16} />
                     <PlayerLink name={r.n} u={r.u} />
-                    <span className="text-rw-sub tabular-nums shrink-0">{r.k}/{r.d}/{r.a}</span>
+                    {r.g ? (
+                      <HubLink to={{ kind: "match", slug: r.g, game: r.gn }} className="text-rw-sub hover:text-rw-accent hover:underline tabular-nums shrink-0">
+                        {r.k}/{r.d}/{r.a}
+                      </HubLink>
+                    ) : (
+                      <span className="text-rw-sub tabular-nums shrink-0">{r.k}/{r.d}/{r.a}</span>
+                    )}
                     <span className="text-rw-muted shrink-0">vs</span>
                     <TeamLogo name={r.opp} size={14} />
-                    {r.g ? <HubLink to={{ kind: "match", slug: r.g, game: r.gn }} className="truncate">{r.opp}</HubLink> : <TeamLink name={r.opp} className="truncate" />}
+                    <TeamLink name={r.opp} className="truncate" />
                   </span>
                   <span className="text-rw-muted shrink-0">{fmtDate(r.date, false)}</span>
                 </div>

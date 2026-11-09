@@ -116,7 +116,22 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       ),
     },
     { key: "c", label: tl("Short name"), value: (t) => (t[5] || "").split(" | ")[0] || null, className: "text-rw-sub" },
-    { key: "r", label: tl("Region"), value: (t) => (t[6] ? regionName(t[6], t[6]) : null), className: "text-rw-sub max-w-[10rem] truncate" },
+    {
+      key: "r",
+      label: tl("Region"),
+      value: (t) => (t[6] ? regionName(t[6], t[6]) : null),
+      render: (t) =>
+        t[6] ? (
+          <button
+            type="button"
+            onClick={() => set("region", region === t[6] ? null : t[6])}
+            className="text-rw-sub hover:text-rw-accent hover:underline truncate max-w-full"
+          >
+            {regionName(t[6], t[6])}
+          </button>
+        ) : null,
+      className: "text-rw-sub max-w-[10rem] truncate",
+    },
     { key: "y", label: tl("Last played"), value: (t) => t[3] || null, className: "tabular-nums text-rw-sub" },
     {
       key: "g",
@@ -249,7 +264,22 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
         </span>
       ),
     },
-    { key: "r", label: tl("Role"), value: (p) => (ROLE_OF[p[5]] ? roleName(ROLE_OF[p[5]]) : null), className: "text-rw-sub" },
+    {
+      key: "r",
+      label: tl("Role"),
+      value: (p) => (ROLE_OF[p[5]] ? roleName(ROLE_OF[p[5]]) : null),
+      render: (p) =>
+        ROLE_OF[p[5]] ? (
+          <button
+            type="button"
+            onClick={() => set("role", role === ROLE_OF[p[5]] ? null : ROLE_OF[p[5]])}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {roleName(ROLE_OF[p[5]])}
+          </button>
+        ) : null,
+      className: "text-rw-sub",
+    },
     {
       key: "t",
       label: tl("Last team"),

@@ -104,7 +104,24 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   const hasCsd = useMemo(() => rows.some((r) => r.csd != null), [rows]);
   const columns: Column<Row>[] = [
     { key: "c", label: tl("Lane opponent"), value: (x) => champName(x.c), render: (x) => <ChampLink name={x.c} size={18} /> },
-    { key: "role", label: tl("Role"), value: (x) => x.role, render: (x) => (x.role >= 0 ? roleName(ROLES[x.role]) : "–"), className: "text-rw-sub" },
+    {
+      key: "role",
+      label: tl("Role"),
+      value: (x) => x.role,
+      render: (x) =>
+        x.role >= 0 ? (
+          <button
+            type="button"
+            onClick={() => set({ role: role === ROLES[x.role] ? undefined : ROLES[x.role] })}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {roleName(ROLES[x.role])}
+          </button>
+        ) : (
+          "–"
+        ),
+      className: "text-rw-sub",
+    },
     {
       key: "g",
       label: tl("Games"),

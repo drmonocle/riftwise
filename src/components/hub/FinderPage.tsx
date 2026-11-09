@@ -681,7 +681,19 @@ const FinderBody: React.FC<{
                           )}
                         </span>
                       </td>
-                      <td className={`${td} text-rw-sub`} data-sort={patchSort(g[1])}>{g[1]}</td>
+                      <td className={`${td} text-rw-sub`} data-sort={patchSort(g[1])}>
+                        {g[1] ? (
+                          <button
+                            type="button"
+                            onClick={() => setQ({ patch: q.get("patch") === g[1] ? undefined : g[1] })}
+                            className="text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {g[1]}
+                          </button>
+                        ) : (
+                          ""
+                        )}
+                      </td>
                       <td className={`${td} text-rw-sub tabular-nums`}>
                         {g[4] != null ? fmtDec(g[4]) : ""}
                       </td>

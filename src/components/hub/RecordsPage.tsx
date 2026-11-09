@@ -200,27 +200,34 @@ const PentaRow: React.FC<{
               <HubLink to={{ kind: "champ", slug: prettySlug(x.c) }} className="text-rw-sub hover:text-rw-accent hover:underline">
                 {champName(x.c)}
               </HubLink>
-              {x.x > 1 && <span className="text-rw-accent"> ×{x.x}</span>}{" "}
-              {x.g ? (
-                <HubLink
-                  to={{ kind: "match", slug: x.g, game: x.gn }}
-                  className="inline-flex items-center gap-1 text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  <TeamLogo name={x.a} size={13} />
-                  <span>{x.a}</span>
+              {x.x > 1 && (
+                x.g ? (
+                  <HubLink
+                    to={{ kind: "match", slug: x.g, game: x.gn }}
+                    className="text-rw-accent hover:underline"
+                  >
+                    {" "}×{x.x}
+                  </HubLink>
+                ) : (
+                  <span className="text-rw-accent"> ×{x.x}</span>
+                )
+              )}{" "}
+              <span className="inline-flex items-center gap-1 text-rw-sub">
+                <TeamLogo name={x.a} size={13} />
+                <TeamLink name={x.a} />
+                {x.g ? (
+                  <HubLink
+                    to={{ kind: "match", slug: x.g, game: x.gn }}
+                    className="text-rw-muted hover:text-rw-accent hover:underline"
+                  >
+                    vs
+                  </HubLink>
+                ) : (
                   <span>vs</span>
-                  <TeamLogo name={x.b} size={13} />
-                  <span>{x.b}</span>
-                </HubLink>
-              ) : (
-                <span className="inline-flex items-center gap-1 text-rw-sub">
-                  <TeamLogo name={x.a} size={13} />
-                  <TeamLink name={x.a} />
-                  <span>vs</span>
-                  <TeamLogo name={x.b} size={13} />
-                  <TeamLink name={x.b} />
-                </span>
-              )}
+                )}
+                <TeamLogo name={x.b} size={13} />
+                <TeamLink name={x.b} />
+              </span>
             </span>
           </>
         )}
@@ -231,7 +238,17 @@ const PentaRow: React.FC<{
           u={x.e}
           className="text-rw-muted hover:text-rw-accent hover:underline"
         />{" "}
-        · {fmtDate(x.date)}
+        ·{" "}
+        {x.g ? (
+          <HubLink
+            to={{ kind: "match", slug: x.g, game: x.gn }}
+            className="text-rw-muted hover:text-rw-accent hover:underline"
+          >
+            {fmtDate(x.date)}
+          </HubLink>
+        ) : (
+          fmtDate(x.date)
+        )}
       </div>
     </li>
   );
@@ -395,9 +412,18 @@ export const RecordsPanel: React.FC = () => {
                   return (
                     <li key={i} className="space-y-0.5 min-w-0">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-rw-accent font-bold tabular-nums shrink-0">
-                          {fmt(g.v)}
-                        </span>
+                        {g.g ? (
+                          <HubLink
+                            to={{ kind: "match", slug: g.g, game: g.gn }}
+                            className="text-rw-accent font-bold tabular-nums shrink-0 hover:underline"
+                          >
+                            {fmt(g.v)}
+                          </HubLink>
+                        ) : (
+                          <span className="text-rw-accent font-bold tabular-nums shrink-0">
+                            {fmt(g.v)}
+                          </span>
+                        )}
                         <TeamLogo name={g.w} size={14} />
                         <span className="truncate min-w-0">
                           {g.g ? (
@@ -424,7 +450,17 @@ export const RecordsPanel: React.FC = () => {
                           u={g.e}
                           className="text-rw-muted hover:text-rw-accent hover:underline"
                         />{" "}
-                        · {fmtDate(g.date)}
+                        ·{" "}
+                        {g.g ? (
+                          <HubLink
+                            to={{ kind: "match", slug: g.g, game: g.gn }}
+                            className="text-rw-muted hover:text-rw-accent hover:underline"
+                          >
+                            {fmtDate(g.date)}
+                          </HubLink>
+                        ) : (
+                          fmtDate(g.date)
+                        )}
                       </div>
                       <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
                         <div className="h-full rounded-full bg-rw-accent/70" style={{ width: `${barPct}%` }} />
@@ -474,9 +510,18 @@ export const RecordsPanel: React.FC = () => {
                         </HubLink>
                         <PlayerPhoto name={p.pl} slug={p.u ?? undefined} size={16} />
                         <div className="truncate min-w-0">
-                          <span className="text-rw-accent font-bold mr-1 tabular-nums">
-                            {fmt(p.v)}
-                          </span>
+                          {p.g ? (
+                            <HubLink
+                              to={{ kind: "match", slug: p.g, game: p.gn }}
+                              className="text-rw-accent font-bold mr-1 tabular-nums hover:underline"
+                            >
+                              {fmt(p.v)}
+                            </HubLink>
+                          ) : (
+                            <span className="text-rw-accent font-bold mr-1 tabular-nums">
+                              {fmt(p.v)}
+                            </span>
+                          )}
                           <PlayerLink name={p.pl} u={p.u} />
                           <span className="text-rw-sub">
                             {" "}
@@ -506,7 +551,17 @@ export const RecordsPanel: React.FC = () => {
                             u={p.e}
                             className="text-rw-muted hover:text-rw-accent hover:underline"
                           />{" "}
-                          · {fmtDate(p.date)}
+                          ·{" "}
+                          {p.g ? (
+                            <HubLink
+                              to={{ kind: "match", slug: p.g, game: p.gn }}
+                              className="text-rw-muted hover:text-rw-accent hover:underline"
+                            >
+                              {fmtDate(p.date)}
+                            </HubLink>
+                          ) : (
+                            fmtDate(p.date)
+                          )}
                         </span>
                       </div>
                       <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">

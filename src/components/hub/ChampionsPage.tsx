@@ -308,7 +308,23 @@ const LeagueTable: React.FC<{
   const maxLBans = Math.max(1, ...result.rows.map((r) => r.b || 0));
   const cols: Column<LRow>[] = [
     { key: "c", label: tl("Champion"), value: (c) => c.c, render: (c) => <ChampLink name={c.c} size={18} /> },
-    { key: "role", label: tl("Role"), value: (c) => c.role, render: (c) => <span className="text-rw-muted">{c.role >= 0 ? roleName(ROLES[c.role]) : "–"}</span> },
+    {
+      key: "role",
+      label: tl("Role"),
+      value: (c) => c.role,
+      render: (c) =>
+        c.role >= 0 ? (
+          <button
+            type="button"
+            onClick={() => setQ({ role: roleQ === ROLES[c.role] ? undefined : ROLES[c.role] })}
+            className="text-rw-muted hover:text-rw-accent hover:underline"
+          >
+            {roleName(ROLES[c.role])}
+          </button>
+        ) : (
+          <span className="text-rw-muted">–</span>
+        ),
+    },
     {
       key: "presence",
       label: tl("Presence"),
@@ -474,7 +490,23 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
   const maxOBans = useMemo(() => Math.max(1, ...rows.map((r) => r.b || 0)), [rows]);
   const cols: Column<Row>[] = [
     { key: "c", label: tl("Champion"), value: (c) => c.c, render: (c) => <ChampLink name={c.c} size={18} /> },
-    { key: "role", label: tl("Role"), value: (c) => c.role || "", render: (c) => <span className="text-rw-muted">{c.role ? roleName(c.role) : "–"}</span> },
+    {
+      key: "role",
+      label: tl("Role"),
+      value: (c) => c.role || "",
+      render: (c) =>
+        c.role ? (
+          <button
+            type="button"
+            onClick={() => setQ({ role: roleQ === c.role ? undefined : c.role || undefined })}
+            className="text-rw-muted hover:text-rw-accent hover:underline"
+          >
+            {roleName(c.role)}
+          </button>
+        ) : (
+          <span className="text-rw-muted">–</span>
+        ),
+    },
     {
       key: "presence",
       label: tl("Presence"),

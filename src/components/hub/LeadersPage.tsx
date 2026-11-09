@@ -116,7 +116,21 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
         </span>
       ),
     },
-    { key: "r", label: tl("Role"), value: (p) => ROLES.indexOf(p.r), render: (p) => roleName(p.r), className: "text-rw-sub" },
+    {
+      key: "r",
+      label: tl("Role"),
+      value: (p) => ROLES.indexOf(p.r),
+      render: (p) => (
+        <button
+          type="button"
+          onClick={() => set({ role: role === p.r ? undefined : p.r })}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {roleName(p.r)}
+        </button>
+      ),
+      className: "text-rw-sub",
+    },
     {
       key: "g",
       label: tl("Games"),

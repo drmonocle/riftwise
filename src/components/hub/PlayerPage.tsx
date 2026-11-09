@@ -491,18 +491,21 @@ const PlayerView: React.FC<{
                       <ChampIcon name={r.c} size={18} />
                     </HubLink>
                     <span className="inline-flex items-center gap-1.5 truncate min-w-0">
-                      <span className="text-rw-text tabular-nums shrink-0">
-                        {r.k}/{r.d}/{r.a}
-                      </span>
-                      <span className="text-rw-muted shrink-0">vs</span>
-                      <TeamLogo name={r.opp} size={15} />
                       {r.g ? (
-                        <HubLink to={{ kind: "match", slug: r.g, game: r.gn }} className="truncate">
-                          {r.opp}
+                        <HubLink
+                          to={{ kind: "match", slug: r.g, game: r.gn }}
+                          className="text-rw-text hover:text-rw-accent hover:underline tabular-nums shrink-0"
+                        >
+                          {r.k}/{r.d}/{r.a}
                         </HubLink>
                       ) : (
-                        <TeamLink name={r.opp} className="text-rw-sub hover:text-rw-accent hover:underline truncate" />
+                        <span className="text-rw-text tabular-nums shrink-0">
+                          {r.k}/{r.d}/{r.a}
+                        </span>
                       )}
+                      <span className="text-rw-muted shrink-0">vs</span>
+                      <TeamLogo name={r.opp} size={15} />
+                      <TeamLink name={r.opp} className="text-rw-sub hover:text-rw-accent hover:underline truncate" />
                       {r.en && (
                         <span className="text-rw-muted truncate">
                           · <EventLink name={r.en} u={p.events.find((ev) => ev.en === r.en)?.e} className="text-rw-muted hover:text-rw-accent hover:underline" />
@@ -541,7 +544,16 @@ const PlayerView: React.FC<{
                   {BEST_LABEL[k] ? tl(BEST_LABEL[k]) : k}
                 </span>
                 <span className="text-rw-text text-right truncate min-w-0 inline-flex items-center gap-1 justify-end">
-                  <span className="font-semibold text-rw-accent">{fmtNum(b.v)}</span>
+                  {b.g ? (
+                    <HubLink
+                      to={{ kind: "match", slug: b.g, game: b.gn }}
+                      className="font-semibold text-rw-accent hover:underline"
+                    >
+                      {fmtNum(b.v)}
+                    </HubLink>
+                  ) : (
+                    <span className="font-semibold text-rw-accent">{fmtNum(b.v)}</span>
+                  )}
                   <span className="text-rw-muted inline-flex items-center gap-1 truncate">
                     (
                     <HubLink
@@ -553,16 +565,7 @@ const PlayerView: React.FC<{
                     </HubLink>
                     <span>vs</span>
                     <TeamLogo name={b.opp} size={13} />
-                    {b.g ? (
-                      <HubLink
-                        to={{ kind: "match", slug: b.g, game: b.gn }}
-                        className="text-rw-muted hover:text-rw-accent hover:underline truncate"
-                      >
-                        {b.opp}
-                      </HubLink>
-                    ) : (
-                      <TeamLink name={b.opp} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
-                    )}
+                    <TeamLink name={b.opp} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
                     , {b.date.slice(0, 4)})
                   </span>
                 </span>

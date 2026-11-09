@@ -414,16 +414,21 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
               {t.recent.map((r, i) => (
                 <li key={i} className="flex justify-between gap-2 min-w-0">
                   <span className="inline-flex items-center gap-1.5 truncate min-w-0">
-                    <span className={`shrink-0 ${r.us > r.them ? "text-rw-teal font-bold" : "text-rw-red font-bold"}`}>
-                      {r.us > r.them ? tc("short result", "W") : tc("short result", "L")} {r.us}-{r.them}
-                    </span>
+                    {r.g ? (
+                      <HubLink
+                        to={{ kind: "match", slug: r.g }}
+                        className={`shrink-0 hover:underline ${r.us > r.them ? "text-rw-teal font-bold" : "text-rw-red font-bold"}`}
+                      >
+                        {r.us > r.them ? tc("short result", "W") : tc("short result", "L")} {r.us}-{r.them}
+                      </HubLink>
+                    ) : (
+                      <span className={`shrink-0 ${r.us > r.them ? "text-rw-teal font-bold" : "text-rw-red font-bold"}`}>
+                        {r.us > r.them ? tc("short result", "W") : tc("short result", "L")} {r.us}-{r.them}
+                      </span>
+                    )}
                     <span className="text-rw-muted shrink-0">vs</span>
                     <TeamLogo name={r.opp} size={15} />
-                    {r.g ? (
-                      <HubLink to={{ kind: "match", slug: r.g }} className="truncate">{r.opp}</HubLink>
-                    ) : (
-                      <TeamLink name={r.opp} u={t.opps.find((o) => o.n === r.opp)?.u || prettySlug(r.opp)} className="truncate" />
-                    )}
+                    <TeamLink name={r.opp} u={t.opps.find((o) => o.n === r.opp)?.u || prettySlug(r.opp)} className="truncate" />
                     <span className="text-rw-muted truncate">
                       · <EventLink name={r.en} u={r.e} className="text-rw-muted hover:text-rw-accent hover:underline" />
                     </span>
