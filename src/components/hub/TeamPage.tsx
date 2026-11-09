@@ -275,6 +275,19 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
               </div>
             )}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 md:justify-end">
+              {!overview && (
+                <>
+                  <HubLink to={{ kind: "compare", mode: "team", a: t.u }} className={heroLink}>
+                    {tl("Compare")}
+                  </HubLink>
+                  <HubLink to={{ kind: "prep", a: t.u }} className={heroLink}>
+                    {tl("Match prep")}
+                  </HubLink>
+                  <HubLink to={{ kind: "draft", query: `teams=${t.u}` }} className={heroLink}>
+                    {tl("Draft board")}
+                  </HubLink>
+                </>
+              )}
               <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(t.name)}` }} className={heroLink}>
                 {tl("Game finder")}
               </HubLink>

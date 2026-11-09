@@ -225,6 +225,11 @@ const PlayerView: React.FC<{
               </div>
             )}
             <div className="flex flex-wrap gap-x-3 gap-y-1 md:justify-end">
+              {!overview && (
+                <HubLink to={{ kind: "compare", mode: "player", a: p.u }} className={heroLink}>
+                  {tl("Compare")}
+                </HubLink>
+              )}
               {overview &&
                 links.map(([label, url]) => (
                   <button key={label} type="button" onClick={() => onOpenUrl(url)} className={heroLink}>
