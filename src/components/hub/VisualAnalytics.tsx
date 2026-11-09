@@ -1,0 +1,1109 @@
+/**
+ * Visual analytics cards for Player and Team Overview tabs:
+ *  - PlayerPlaystyleOverview: role-contextualized 6-metric visual DNA bars + automatic playstyle tags + 20-game rolling form SVG chart
+ *  - SignatureChampsGrid: visual mastery cards with circular SVG win-rate rings for a player's signature champions
+ *  - TeamFormAndSideCard: rolling series form trajectory SVG + Blue vs Red side & objective control breakdown
+ */
+import React, { useEffect, useId, useMemo, useState } from "react";
+import { tl, tc, roleName, fmtDec, fmtN } from "../../i18n";
+import { winRate } from "../../stats";
+import { champName } from "../../champions";
+import { loadPlayerGames, loadPlayerGames2y, prettySlug } from "../../hub/data";
+import type { HubPlayer, HubTeam, PlayerGameRow, PlayerTimeline } from "../../hub/types";
+import { playerAgg, type PlayerAgg } from "../../hub/period";
+import { playerRowLine, rateLine } from "../../hub/playerRating";
+import { fmtRating, useRatingFile } from "./PlayerRating";
+import { SectionCard } from "./BroadcastCard";
+import { KdaBar } from "./OpponentChart";
+import {
+  ChampIcon,
+   fmtDate,
+  fmtNum,
+  HubLink,
+  isFresh,
+  RevealButton,
+  Section,
+  useHidden,
+} from "./ui";
+import { smoothPath, useWidth } from "../../useWidth";
+
+const clamp = (v: number, lo = 6, hi = 96) => Math.max(lo, Math.min(hi, v));
+const signed = (v: number | null | undefined) => (v == null ? "–" : `${v > 0 ? "+" : ""}${fmtNum(v)}`);
+const pct = (v: number | null | undefined) => (v == null ? "–" : `${fmtDec(v)}%`);
+
+/** Role-aware playstyle tags derived from a player's aggregated stats and Oracle's Elixir timeline. */
+export function playerPlaystyleTags(agg: PlayerAgg, role: string, careerChamps: number): { tag: string; why: string; good?: boolean }[] {
+  if (agg.g < 8) return [];
+  const out: { tag: string; why: string; good?: boolean }[] = [];
+  const r = role.toLowerCase();
+  const isSup = r.startsWith("sup");
+  const isJng = r.startsWith("jun") || r === "jng";
+
+  if (agg.tl && agg.tl.n >= 5 && agg.tl.gd15 != null) {
+    const thresh = isSup ? 220 : 350;
+    if (agg.tl.gd15 >= thresh) {
+      out.push({
+        tag: tl("Strong early game"),
+        why: tl("{n} gold ahead at 15 minutes on average", { n: `+${fmtNum(agg.tl.gd15)}` }),
+        good: true,
+      });
+    } else if (agg.tl.gd15 <= -thresh) {
+      out.push({
+        tag: tl("Slow starters"),
+        why: tl("{n} gold behind at 15 minutes on average", { n: fmtNum(-agg.tl.gd15) }),
+        good: false,
+      });
+    }
+  }
+
+  if (agg.dmgShare != null) {
+    const carryThresh = isSup ? 12 : isJng ? 19 : 26.5;
+    if (agg.dmgShare >= carryThresh) {
+      out.push({
+        tag: tl("Damage / min"),
+        why: `${tl("{p} of team damage", { p: `${fmtDec(agg.dmgShare)}%` })}${agg.dpm != null ? ` · ${fmtNum(agg.dpm)} ${tl("DPM")}` : ""}`,
+        good: true,
+      });
+    }
+  }
+
+  if (agg.kp != null && agg.kp >= (isSup || isJng ? 74 : 68)) {
+    out.push({
+      tag: tl("Kill participation"),
+      why: `${fmtDec(agg.kp)}% KP`,
+      good: true,
+    });
+  }
+
+  const dpg = agg.g > 0 ? agg.d / agg.g : 99;
+  if (dpg <= (isSup ? 2.2 : 1.85) && agg.kda >= 4.2) {
+    out.push({
+      tag: tl("KDA"),
+      why: `KDA ${fmtN(agg.kda)} · ${fmtDec(dpg, 1)} D/G`,
+      good: true,
+    });
+  }
+
+  if (agg.tl?.fbPart != null && agg.tl.fbPart >= 32) {
+    out.push({
+      tag: tl("First blood"),
+      why: `${fmtDec(agg.tl.fbPart)}%`,
+      good: true,
+    });
+  }
+
+  if (agg.champs.length >= 14 || careerChamps >= 55) {
+    out.push({
+      tag: tl("Champions"),
+      why: tl("{n} champions played", { n: Math.max(agg.champs.length, careerChamps) }),
+      good: true,
+    });
+  }
+
+  return out.slice(0, 5);
+}
+
+/** Shared hook to load a player's 2-year or full game log once on the Overview tab. */
+export function usePlayerOverviewRows(slug: string, has2y: boolean): PlayerGameRow[] | null {
+  const [rows, setRows] = useState<PlayerGameRow[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    setRows(null);
+    const load = has2y ? loadPlayerGames2y(slug) : loadPlayerGames(slug);
+    load
+      .catch(() => (has2y ? loadPlayerGames(slug).catch(() => [] as PlayerGameRow[]) : ([] as PlayerGameRow[])))
+      .then((res) => {
+        if (alive) setRows(res);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [slug, has2y]);
+  return rows;
+}
+
+/** Player Playstyle DNA & Role Benchmarks + Rolling 20-Game Form Trajectory on the Player Overview tab. */
+export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardSub }) => {
+  const rows = usePlayerOverviewRows(p.u, !!p.g2y);
+  const { periodRows, periodLabel } = useMemo(() => {
+    if (!rows || !rows.length) return { periodRows: [] as PlayerGameRow[], periodLabel: "" };
+    const latestYear = p.years[p.years.length - 1]?.y;
+    if (latestYear) {
+      const yRows = rows.filter((r) => r[0].startsWith(latestYear));
+      if (yRows.length >= 10) return { periodRows: yRows, periodLabel: `${latestYear} · ${yRows.length}G` };
+    }
+    const recent = rows.slice(0, 50);
+    return { periodRows: recent, periodLabel: `${recent.length}G` };
+  }, [rows, p.years]);
+
+  const agg = useMemo(() => (periodRows.length ? playerAgg(periodRows) : null), [periodRows]);
+  const tags = useMemo(() => (agg ? playerPlaystyleTags(agg, p.role, p.nChamps) : []), [agg, p.role, p.nChamps]);
+  const fresh = periodRows.map((r) => r[0]).find((d) => isFresh(d));
+  const [hidden, reveal] = useHidden(`player-visual:${p.u}`, fresh);
+
+  if (!rows || !rows.length || !agg || agg.g < 5) return null;
+
+  const r = p.role.toLowerCase();
+  const isSup = r.startsWith("sup");
+  const isJng = r.startsWith("jun") || r === "jng";
+  const dpg = agg.g ? agg.d / agg.g : 0;
+  const kpg = agg.g ? agg.k / agg.g : 0;
+  const apg = agg.g ? agg.a / agg.g : 0;
+  const eff = agg.dmgShare != null && agg.goldShare != null ? Math.round((agg.dmgShare - agg.goldShare) * 10) / 10 : null;
+
+  const metrics: { label: string; value: string; sub?: string; pct: number; good?: boolean }[] = [
+    {
+      label: tl("KDA"),
+      value: fmtN(agg.kda),
+      sub: `${fmtDec(kpg, 1)} / ${fmtDec(dpg, 1)} / ${fmtDec(apg, 1)}`,
+      pct: clamp((agg.kda / 6.5) * 100),
+      good: agg.kda >= 4.0 ? true : agg.kda < 2.5 ? false : undefined,
+    },
+    {
+      label: tl("Kill participation"),
+      value: pct(agg.kp),
+      sub: `${tl("{p} win rate", { p: winRate(agg.w, agg.g) })} (${agg.w}-${agg.g - agg.w})`,
+      pct: agg.kp != null ? clamp(((agg.kp - 40) / 45) * 100) : 50,
+      good: agg.kp != null ? (agg.kp >= (isSup || isJng ? 70 : 64) ? true : agg.kp < 52 ? false : undefined) : undefined,
+    },
+    {
+      label: tl("Damage share"),
+      value: agg.dmgShare != null ? pct(agg.dmgShare) : agg.dpm != null ? `${fmtNum(agg.dpm)} DPM` : "–",
+      sub: [
+        agg.dpm != null ? `${fmtNum(agg.dpm)} ${tl("DPM")}` : null,
+        eff != null ? `${tl("DMG% − Gold%")} ${signed(eff)}%` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ") || undefined,
+      pct:
+        agg.dmgShare != null
+          ? clamp((agg.dmgShare / (isSup ? 16 : isJng ? 24 : 34)) * 100)
+          : agg.dpm != null
+            ? clamp((agg.dpm / 850) * 100)
+            : 50,
+      good:
+        agg.dmgShare != null
+          ? agg.dmgShare >= (isSup ? 10 : isJng ? 17 : 25)
+            ? true
+            : undefined
+          : undefined,
+    },
+    {
+      label: "GD@15",
+      value: agg.tl?.gd15 != null ? signed(agg.tl.gd15) : "–",
+      sub:
+        agg.tl && (agg.tl.csd15 != null || agg.tl.xpd15 != null)
+          ? `CS ${signed(agg.tl.csd15)} · XP ${signed(agg.tl.xpd15)}`
+          : tl("Average lead over the lane opponent at 15 minutes"),
+      pct: agg.tl?.gd15 != null ? clamp(((agg.tl.gd15 + 1000) / 2000) * 100) : 50,
+      good: agg.tl?.gd15 != null ? (agg.tl.gd15 >= 150 ? true : agg.tl.gd15 <= -250 ? false : undefined) : undefined,
+    },
+    {
+      label: isSup ? tl("VS / min") : tl("CS / min"),
+      value: isSup
+        ? agg.vsm != null
+          ? fmtDec(agg.vsm, 2)
+          : "–"
+        : agg.csm != null
+          ? fmtN(agg.csm)
+          : "–",
+      sub: isSup
+        ? [agg.visShare != null ? tl("{p} of team vision", { p: pct(agg.visShare) }) : null, agg.tl?.cw != null ? `${fmtDec(agg.tl.cw, 1)} ${tl("Control wards")}` : null]
+            .filter(Boolean)
+            .join(" · ") || undefined
+        : [agg.gpm != null ? `${fmtNum(agg.gpm)} ${tl("Gold / min")}` : null, agg.goldShare != null ? `${pct(agg.goldShare)} ${tl("Gold%")}` : null]
+            .filter(Boolean)
+            .join(" · ") || undefined,
+      pct: isSup
+        ? agg.vsm != null
+          ? clamp((agg.vsm / 3.6) * 100)
+          : 50
+        : agg.csm != null
+          ? clamp(((agg.csm - (isJng ? 4.5 : 6.0)) / (isJng ? 3.5 : 4.2)) * 100)
+          : 50,
+      good: isSup
+        ? agg.vsm != null && agg.vsm >= 2.6
+          ? true
+          : undefined
+        : agg.csm != null && agg.csm >= (isJng ? 6.5 : 8.6)
+          ? true
+          : undefined,
+    },
+    {
+      label: agg.tl?.fbPart != null ? tl("First blood") : tl("Champions"),
+      value: agg.tl?.fbPart != null ? pct(agg.tl.fbPart) : String(agg.champs.length),
+      sub:
+        agg.tl?.fbPart != null
+          ? tl("{n} champions played", { n: agg.champs.length })
+          : `${tl("Career")} ${p.nChamps}`,
+      pct: agg.tl?.fbPart != null ? clamp((agg.tl.fbPart / 55) * 100) : clamp((agg.champs.length / 18) * 100),
+      good: agg.tl?.fbPart != null ? (agg.tl.fbPart >= 28 ? true : undefined) : agg.champs.length >= 10 ? true : undefined,
+    },
+  ];
+
+  return (
+    <>
+      <div className="rw-span">
+        <Section
+          title={`${tl("Playstyle")} · ${tl("Early game")}`}
+          share={`${p.u}-playstyle`}
+          right={
+            hidden ? (
+              <RevealButton onReveal={reveal} small />
+            ) : (
+              <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+                <span className="text-rw-muted font-mono">{periodLabel}</span>
+                <HubLink to={{ kind: "player", slug: p.u, tab: "stats" }} className="text-rw-accent hover:underline font-semibold">
+                  {tl("Stats")} · {tl("Open →")}
+                </HubLink>
+                <SectionCard
+                  section={`${tl("Playstyle")} · ${periodLabel}`}
+                  name={p.name}
+                  sub={cardSub}
+                  rows={() => [
+                    ...tags.map((x) => ({ label: x.tag, sub: x.why, win: x.good })),
+                    ...metrics.map((m) => ({ label: m.label, sub: m.sub, value: m.value, win: m.good })),
+                  ]}
+                />
+              </span>
+            )
+          }
+        >
+          {hidden ? (
+            <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
+          ) : (
+            <div className="space-y-2.5">
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {tags.map((x) => (
+                    <span
+                      key={x.tag}
+                      title={x.why}
+                      className={`px-2.5 py-1 rounded-full border text-[11px] ${
+                        x.good === true
+                          ? "border-rw-teal/60 bg-rw-teal/10 text-rw-teal"
+                          : x.good === false
+                            ? "border-rw-red/60 bg-rw-red/10 text-rw-red"
+                            : "border-rw-border bg-rw-bg/60 text-rw-sub"
+                      }`}
+                    >
+                      <span className="font-semibold">{x.tag}</span> <span className="text-rw-muted">· {x.why}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                {metrics.map((m) => (
+                  <div key={m.label} className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 flex flex-col justify-between gap-1.5">
+                    <div>
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted truncate">{m.label}</div>
+                      <div
+                        className={`mt-0.5 text-sm font-bold font-mono tabular-nums ${
+                          m.good === true ? "text-rw-teal" : m.good === false ? "text-rw-red" : "text-rw-text"
+                        }`}
+                      >
+                        {m.value}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="h-1.5 rounded-full bg-rw-raised overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${
+                            m.good === true ? "bg-rw-teal" : m.good === false ? "bg-rw-red/80" : "bg-rw-accent"
+                          }`}
+                          style={{ width: `${Math.round(m.pct)}%` }}
+                        />
+                      </div>
+                      {m.sub && (
+                        <div className="text-[10px] text-rw-muted truncate" title={m.sub}>
+                          {m.sub}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </Section>
+      </div>
+
+      <div className="rw-span">
+        <PlayerFormChart p={p} rows={rows} cardSub={cardSub} />
+      </div>
+    </>
+  );
+};
+
+type FormMetric = "rating" | "kda" | "gd15";
+
+/** Interactive 20-game rolling form & rating trajectory chart on the Player Overview tab. */
+const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?: string }> = ({ p, rows, cardSub }) => {
+  const ratingFile = useRatingFile();
+  const [metric, setMetric] = useState<FormMetric>("rating");
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const [box, W] = useWidth<HTMLDivElement>();
+  const gradId = useId().replace(/[^a-z0-9]/gi, "");
+
+  const recent20 = useMemo(() => rows.slice(0, 20).reverse(), [rows]);
+  const fresh = recent20.map((r) => r[0]).find((d) => isFresh(d));
+  const [hidden, reveal] = useHidden(`player-form:${p.u}`, fresh);
+
+  const points = useMemo(() => {
+    return recent20.map((r) => {
+      const rt = r[23] != null ? r[23] : ratingFile ? rateLine(playerRowLine(r), ratingFile) : null;
+      const kda = Number(((r[3] + r[5]) / Math.max(1, r[4])).toFixed(2));
+      const tlRow = r[21] as PlayerTimeline | null | undefined;
+      const gd15 = tlRow && tlRow[3] != null ? tlRow[3] : null;
+      return {
+        row: r,
+        date: r[0],
+        seriesSlug: r[1],
+        champ: r[2],
+        k: r[3],
+        d: r[4],
+        a: r[5],
+        won: r[6] === 1,
+        team: r[7],
+        opp: r[8],
+        event: r[9],
+        gn: r[22],
+        rating: rt,
+        kda,
+        gd15,
+      };
+    });
+  }, [recent20, ratingFile, p.role]);
+
+  const hasRating = points.filter((x) => x.rating != null).length >= 5;
+  const hasGd15 = points.filter((x) => x.gd15 != null).length >= 5;
+  const activeMetric: FormMetric =
+    metric === "rating" && !hasRating ? "kda" : metric === "gd15" && !hasGd15 ? (hasRating ? "rating" : "kda") : metric;
+
+  if (points.length < 5) return null;
+
+  const valOf = (pt: (typeof points)[number]): number | null =>
+    activeMetric === "rating" ? pt.rating : activeMetric === "gd15" ? pt.gd15 : pt.kda;
+
+  const validVals = points.map(valOf).filter((v): v is number => v != null);
+  if (validVals.length < 4) return null;
+
+  const minV =
+    activeMetric === "rating"
+      ? Math.min(3.5, ...validVals)
+      : activeMetric === "gd15"
+        ? Math.min(-1200, ...validVals)
+        : 0;
+  const maxV =
+    activeMetric === "rating"
+      ? Math.max(8.8, ...validVals)
+      : activeMetric === "gd15"
+        ? Math.max(1200, ...validVals)
+        : Math.max(8, ...validVals);
+  const baseLine = activeMetric === "rating" ? 6.0 : activeMetric === "gd15" ? 0 : 3.0;
+
+  const L = 34;
+  const R = 12;
+  const T = 12;
+  const CH = 112;
+  const H = T + CH + 26;
+  const pw = Math.max(W - L - R, 120);
+  const step = points.length > 1 ? pw / (points.length - 1) : pw;
+  const cx = (i: number) => L + (points.length > 1 ? i * step : pw / 2);
+  const cy = (v: number) => T + CH * (1 - (v - minV) / Math.max(0.001, maxV - minV));
+
+  // 5-game rolling average curve
+  const rollingPts: [number, number][] = [];
+  const rawPts: [number, number][] = [];
+  points.forEach((pt, i) => {
+    const v = valOf(pt);
+    if (v != null) rawPts.push([cx(i), cy(v)]);
+    const winSlice = points
+      .slice(Math.max(0, i - 4), i + 1)
+      .map(valOf)
+      .filter((x): x is number => x != null);
+    if (winSlice.length >= 2) {
+      const avg = winSlice.reduce((s, x) => s + x, 0) / winSlice.length;
+      rollingPts.push([cx(i), cy(avg)]);
+    }
+  });
+
+  const winsCount = points.filter((x) => x.won).length;
+  const avgVal = validVals.reduce((s, x) => s + x, 0) / validVals.length;
+  const fmtMetric = (v: number | null) =>
+    v == null ? "–" : activeMetric === "rating" ? fmtRating(v) : activeMetric === "gd15" ? signed(Math.round(v)) : fmtN(v);
+
+  const selectedIdx = hoverIdx != null && points[hoverIdx] ? hoverIdx : points.length - 1;
+  const sel = points[selectedIdx];
+
+  return (
+    <Section
+      title={`${tl("Form over time")} · ${tl("Last {n} games", { n: points.length })}`}
+      share={`${p.u}-form`}
+      right={
+        hidden ? (
+          <RevealButton onReveal={reveal} small />
+        ) : (
+          <span className="flex flex-wrap items-center gap-1.5 text-[11px]" data-nocapture="1">
+            {(
+              [
+                hasRating ? ["rating", tl("Rating")] : null,
+                ["kda", tl("KDA")],
+                hasGd15 ? ["gd15", "GD@15"] : null,
+              ].filter(Boolean) as [FormMetric, string][]
+            ).map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setMetric(k)}
+                className={`px-2 py-0.5 rounded-full border font-semibold ${
+                  activeMetric === k
+                    ? "bg-rw-accent text-rw-bg border-rw-accent"
+                    : "border-rw-border text-rw-sub hover:text-rw-text"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+            <SectionCard
+              section={`${tl("Recent games")} (${points.length}G)`}
+              name={p.name}
+              sub={`${winsCount}-${points.length - winsCount} (${winRate(winsCount, points.length)}) · ${
+                activeMetric === "rating" ? tl("Rating") : activeMetric === "gd15" ? "GD@15" : tl("KDA")
+              } ${fmtMetric(avgVal)}`}
+              rows={() =>
+                [...points]
+                  .reverse()
+                  .slice(0, 10)
+                  .map((pt) => ({
+                    champ: pt.champ,
+                    win: pt.won,
+                    label: `${champName(pt.champ)} vs ${pt.opp}`,
+                    sub: `${pt.k}/${pt.d}/${pt.a} · ${pt.event}`,
+                    value: fmtMetric(valOf(pt)),
+                  }))
+              }
+            />
+          </span>
+        )
+      }
+    >
+      {hidden ? (
+        <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="font-semibold text-rw-text tabular-nums">
+                {winsCount}W – {points.length - winsCount}L{" "}
+                <span className="text-rw-sub">({winRate(winsCount, points.length)})</span>
+              </span>
+              <span className="text-rw-sub tabular-nums">
+                {activeMetric === "rating" ? tl("Rating") : activeMetric === "gd15" ? "GD@15" : tl("KDA")}:{" "}
+                <span className="font-bold text-rw-accent">{fmtMetric(avgVal)}</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-[10px] text-rw-muted">
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-rw-teal inline-block" /> {tc("short result", "W")}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-rw-red inline-block" /> {tc("short result", "L")}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-3 h-0.5 bg-rw-accent inline-block rounded" /> 5G avg
+              </span>
+            </div>
+          </div>
+
+          <div ref={box} className="relative select-none">
+            <svg
+              width={W}
+              height={H}
+              viewBox={`0 0 ${W} ${H}`}
+              className="block w-full touch-pan-y"
+              role="img"
+              aria-label={tl("Form over time")}
+              onPointerMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const idx = Math.round((e.clientX - rect.left - L) / Math.max(1, step));
+                setHoverIdx(Math.max(0, Math.min(points.length - 1, idx)));
+              }}
+              onPointerLeave={() => setHoverIdx(null)}
+            >
+              <defs>
+                <linearGradient id={`${gradId}-fill`} gradientUnits="userSpaceOnUse" x1={0} y1={T} x2={0} y2={T + CH}>
+                  <stop offset="0" style={{ stopColor: "var(--rw-accent)", stopOpacity: 0.24 }} />
+                  <stop offset="1" style={{ stopColor: "var(--rw-accent)", stopOpacity: 0.0 }} />
+                </linearGradient>
+              </defs>
+
+              {/* Horizontal reference lines */}
+              {[minV, baseLine, maxV].map((v, idx) => (
+                <g key={idx}>
+                  <line
+                    x1={L}
+                    x2={L + pw}
+                    y1={cy(v)}
+                    y2={cy(v)}
+                    strokeDasharray={v === baseLine ? "3 3" : undefined}
+                    style={{ stroke: v === baseLine ? "var(--rw-line)" : "var(--rw-border)" }}
+                    strokeWidth={1}
+                  />
+                  <text
+                    x={L - 5}
+                    y={cy(v) + 3}
+                    textAnchor="end"
+                    className="font-num"
+                    style={{ fill: "var(--rw-muted)", fontSize: 9 }}
+                  >
+                    {fmtMetric(v)}
+                  </text>
+                </g>
+              ))}
+
+              {/* Area and faint game-to-game line */}
+              {rawPts.length > 1 && (
+                <>
+                  <path
+                    d={`${smoothPath(rawPts)} L${rawPts[rawPts.length - 1][0].toFixed(1)},${T + CH} L${rawPts[0][0].toFixed(1)},${T + CH} Z`}
+                    style={{ fill: `url(#${gradId}-fill)` }}
+                  />
+                  <path
+                    d={smoothPath(rawPts)}
+                    fill="none"
+                    style={{ stroke: "var(--rw-sub)", strokeOpacity: 0.45 }}
+                    strokeWidth={1.25}
+                  />
+                </>
+              )}
+
+              {/* 5-game rolling average curve */}
+              {rollingPts.length > 1 && (
+                <path
+                  d={smoothPath(rollingPts)}
+                  fill="none"
+                  style={{ stroke: "var(--rw-accent)" }}
+                  strokeWidth={2.25}
+                  strokeLinecap="round"
+                />
+              )}
+
+              {/* Active vertical guide */}
+              {sel && valOf(sel) != null && (
+                <line
+                  x1={cx(selectedIdx)}
+                  x2={cx(selectedIdx)}
+                  y1={T}
+                  y2={T + CH}
+                  style={{ stroke: "var(--rw-accent)", strokeOpacity: 0.5 }}
+                  strokeWidth={1}
+                />
+              )}
+
+              {/* Game nodes */}
+              {points.map((pt, i) => {
+                const v = valOf(pt);
+                if (v == null) return null;
+                const active = i === selectedIdx;
+                return (
+                  <circle
+                    key={i}
+                    cx={cx(i)}
+                    cy={cy(v)}
+                    r={active ? 5 : 3.5}
+                    style={{
+                      fill: pt.won ? "var(--rw-teal)" : "var(--rw-red)",
+                      stroke: active ? "var(--rw-text)" : "var(--rw-surface)",
+                    }}
+                    strokeWidth={active ? 2 : 1.5}
+                  />
+                );
+              })}
+
+              {/* Date endpoints */}
+              <text x={L} y={H - 4} textAnchor="start" className="font-num" style={{ fill: "var(--rw-muted)", fontSize: 9 }}>
+                {points[0]?.date}
+              </text>
+              <text x={L + pw} y={H - 4} textAnchor="end" className="font-num" style={{ fill: "var(--rw-muted)", fontSize: 9 }}>
+                {points[points.length - 1]?.date}
+              </text>
+            </svg>
+          </div>
+
+          {/* Champion strip along the 20 games */}
+          <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${points.length}, minmax(0, 1fr))` }}>
+            {points.map((pt, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setHoverIdx(i)}
+                onMouseEnter={() => setHoverIdx(i)}
+                title={`${pt.won ? "W" : "L"} · ${champName(pt.champ)} (${pt.k}/${pt.d}/${pt.a}) vs ${pt.opp}`}
+                className={`flex flex-col items-center py-1 rounded border transition-colors ${
+                  i === selectedIdx
+                    ? "border-rw-accent bg-rw-accent/15"
+                    : pt.won
+                      ? "border-rw-teal/30 bg-rw-teal/5 hover:border-rw-teal/60"
+                      : "border-rw-red/30 bg-rw-red/5 hover:border-rw-red/60"
+                }`}
+              >
+                <ChampIcon name={pt.champ} size={16} />
+                <span className={`mt-0.5 text-[9px] font-bold tabular-nums leading-none ${pt.won ? "text-rw-teal" : "text-rw-red"}`}>
+                  {pt.won ? tc("short result", "W") : tc("short result", "L")}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Selected game detail bar */}
+          {sel && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-rw-border bg-rw-bg/60 px-3 py-1.5 text-xs">
+              <span className="flex flex-wrap items-center gap-2 min-w-0">
+                <span className={`font-bold ${sel.won ? "text-rw-teal" : "text-rw-red"}`}>
+                  {sel.won ? tc("short result", "W") : tc("short result", "L")}
+                </span>
+                <ChampIcon name={sel.champ} size={18} />
+                <span className="font-semibold text-rw-text">{champName(sel.champ)}</span>
+                <span className="font-mono font-bold text-rw-text tabular-nums">
+                  {sel.k}/{sel.d}/{sel.a}
+                </span>
+                {sel.rating != null && (
+                  <span className="text-rw-teal font-mono font-semibold tabular-nums">
+                    ★ {fmtRating(sel.rating)}
+                  </span>
+                )}
+                {sel.gd15 != null && (
+                  <span className={`font-mono text-[11px] tabular-nums ${sel.gd15 >= 0 ? "text-rw-teal" : "text-rw-red"}`}>
+                    GD@15 {signed(sel.gd15)}
+                  </span>
+                )}
+                <span className="text-rw-sub truncate">
+                  vs {sel.opp} · {sel.event}
+                </span>
+              </span>
+              <span className="flex items-center gap-2 shrink-0 text-rw-muted">
+                <span>{fmtDate(sel.date)}</span>
+                {sel.seriesSlug && (
+                  <HubLink
+                    to={{ kind: "match", slug: sel.seriesSlug, game: sel.gn }}
+                    className="text-rw-accent font-semibold hover:underline"
+                  >
+                    {tl("Details")} →
+                  </HubLink>
+                )}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+    </Section>
+  );
+};
+
+/** Signature Champions Visual Mastery Cards on the Player Overview tab. */
+export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardSub }) => {
+  const topChamps = p.champs.slice(0, 6);
+  if (topChamps.length === 0) return null;
+
+  const R = 21;
+  const C = 2 * Math.PI * R;
+
+  return (
+    <div className="rw-span">
+      <Section
+        title={tl("Most played champions")}
+        share={`${p.u}-signature-champs`}
+        right={
+          <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+            <HubLink to={{ kind: "player", slug: p.u, tab: "champions" }} className="text-rw-accent hover:underline font-semibold">
+              {tl("Show all {n}", { n: p.nChamps })} →
+            </HubLink>
+            <SectionCard
+              section={tl("Most played champions")}
+              name={p.name}
+              sub={cardSub}
+              rows={() =>
+                topChamps.map((c) => ({
+                  champ: c.c,
+                  win: c.w / Math.max(1, c.g) >= 0.5,
+                  label: champName(c.c),
+                  sub: `${c.w}-${c.g - c.w} (${winRate(c.w, c.g)})`,
+                  value: `KDA ${fmtN(c.kda)}`,
+                }))
+              }
+            />
+          </span>
+        }
+      >
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          {topChamps.map((c, idx) => {
+            const wr = c.g > 0 ? c.w / c.g : 0;
+            const ringColor = wr >= 0.6 ? "var(--rw-teal)" : wr >= 0.5 ? "var(--rw-accent)" : "var(--rw-red)";
+            const dash = C * wr;
+            const kpg = c.g ? (c.k / c.g).toFixed(1) : "0";
+            const dpg = c.g ? (c.d / c.g).toFixed(1) : "0";
+            const apg = c.g ? (c.a / c.g).toFixed(1) : "0";
+            return (
+              <HubLink
+                key={c.c}
+                to={{ kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(c.c)}` }}
+                className="group rounded-xl border border-rw-border bg-rw-bg/50 hover:border-rw-accent/60 hover:bg-rw-raised/60 p-2.5 flex flex-col justify-between gap-2 transition-colors"
+                title={`${p.name} · ${champName(c.c)} (${c.w}-${c.g - c.w})`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="relative w-12 h-12 shrink-0 flex items-center justify-center">
+                    <svg width={48} height={48} viewBox="0 0 48 48" className="absolute inset-0 -rotate-90">
+                      <circle cx={24} cy={24} r={R} fill="none" stroke="var(--rw-raised)" strokeWidth={3.5} />
+                      <circle
+                        cx={24}
+                        cy={24}
+                        r={R}
+                        fill="none"
+                        stroke={ringColor}
+                        strokeWidth={3.5}
+                        strokeDasharray={`${dash.toFixed(1)} ${C.toFixed(1)}`}
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <ChampIcon name={c.c} size={32} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] font-mono text-rw-muted">#{idx + 1}</span>
+                      <span className="text-xs font-bold text-rw-text group-hover:text-rw-accent truncate">
+                        {champName(c.c)}
+                      </span>
+                    </div>
+                    <div className="text-xs font-bold font-mono tabular-nums" style={{ color: ringColor }}>
+                      {winRate(c.w, c.g)}{" "}
+                      <span className="text-[10px] font-normal text-rw-sub">
+                        ({c.w}-{c.g - c.w})
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-rw-muted tabular-nums">
+                      {tl("{n} games", { n: c.g })}
+                    </div>
+                  </div>
+                </div>
+                <div className="pt-1.5 border-t border-rw-border/60 flex items-center justify-between gap-1 text-[10px]">
+                  <KdaBar kda={c.kda} />
+                  <span className="text-rw-muted font-mono tabular-nums">
+                    {kpg}/{dpg}/{apg}
+                  </span>
+                </div>
+              </HubLink>
+            );
+          })}
+        </div>
+      </Section>
+    </div>
+  );
+};
+
+/** Rolling Series Form Trajectory + Blue/Red Side & Objective Control card on the Team Overview tab. */
+export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = ({ t, cardSub }) => {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const [box, W] = useWidth<HTMLDivElement>();
+  const series = useMemo(() => t.recent.slice(0, 16).reverse(), [t.recent]);
+  const [hidden, reveal] = useHidden(`team-form-side:${t.u}`, t.recent[0]?.date);
+
+  const hasSides = t.sides && (t.sides[0] + t.sides[2] > 0);
+  if (series.length < 3 && !hasSides) return null;
+
+  const seriesWins = series.filter((s) => s.us > s.them).length;
+  const gameWins = series.reduce((a, s) => a + s.us, 0);
+  const gameLosses = series.reduce((a, s) => a + s.them, 0);
+
+  // Current streak from newest series (t.recent is newest-first)
+  let streakN = 0;
+  let streakWon: boolean | null = null;
+  for (const s of t.recent) {
+    if (s.us === s.them) continue;
+    const won = s.us > s.them;
+    if (streakWon === null) {
+      streakWon = won;
+      streakN = 1;
+    } else if (won === streakWon) {
+      streakN++;
+    } else {
+      break;
+    }
+  }
+
+  const L = 24;
+  const R = 8;
+  const T = 10;
+  const CH = 86;
+  const H = T + CH + 20;
+  const pw = Math.max(W - L - R, 120);
+  const bw = series.length > 0 ? pw / series.length : pw;
+  const midY = T + CH / 2;
+
+  const selIdx = hoverIdx != null && series[hoverIdx] ? hoverIdx : series.length - 1;
+  const sel = series[selIdx];
+
+  const blueG = t.sides ? t.sides[0] : 0;
+  const blueW = t.sides ? t.sides[1] : 0;
+  const redG = t.sides ? t.sides[2] : 0;
+  const redW = t.sides ? t.sides[3] : 0;
+  const blueWr = blueG > 0 ? (blueW / blueG) * 100 : 0;
+  const redWr = redG > 0 ? (redW / redG) * 100 : 0;
+
+  return (
+    <div className="rw-span">
+      <Section
+        title={`${tl("Form over time")} · ${tl("Blue / red side")}`}
+        share={`${t.u}-form-sides`}
+        right={
+          hidden ? (
+            <RevealButton onReveal={reveal} small />
+          ) : (
+            <SectionCard
+              section={`${tl("Recent series")} & ${tl("Blue / red side")}`}
+              name={t.name}
+              sub={cardSub}
+              rows={() => [
+                ...(series.length > 0
+                  ? [
+                      {
+                        label: tl("Recent series"),
+                        sub: `${gameWins}-${gameLosses} ${tl("Games")}`,
+                        value: `${seriesWins}-${series.length - seriesWins} (${winRate(seriesWins, series.length)})`,
+                        win: seriesWins * 2 >= series.length,
+                      },
+                    ]
+                  : []),
+                ...(hasSides
+                  ? [
+                      {
+                        label: tl("Blue side"),
+                        sub: `${blueW}-${blueG - blueW}`,
+                        value: winRate(blueW, blueG),
+                        win: blueWr >= 50,
+                      },
+                      {
+                        label: tl("Red side"),
+                        sub: `${redW}-${redG - redW}`,
+                        value: winRate(redW, redG),
+                        win: redWr >= 50,
+                      },
+                    ]
+                  : []),
+                ...(t.obj
+                  ? [
+                      {
+                        label: `${tl("Dragons")} · ${tl("Barons")} · ${tl("Towers")}`,
+                        sub: tl("Per game"),
+                        value: `${fmtDec(t.obj.dragons, 2)} · ${fmtDec(t.obj.barons, 2)} · ${fmtDec(t.obj.towers, 1)}`,
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+          )
+        }
+      >
+        {hidden ? (
+          <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2 items-start">
+            {/* Left column: Rolling Series Form Trajectory */}
+            {series.length >= 3 && (
+              <div className="space-y-2 min-w-0">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">
+                      {tl("Recent series")} ({series.length})
+                    </span>
+                    <span className="font-bold text-rw-text tabular-nums">
+                      {seriesWins}W – {series.length - seriesWins}L
+                    </span>
+                    <span className="text-rw-muted tabular-nums text-[11px]">
+                      ({gameWins}–{gameLosses} {tl("Games")})
+                    </span>
+                  </div>
+                  {streakN >= 2 && streakWon != null && (
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold border tabular-nums ${
+                        streakWon
+                          ? "border-rw-teal/60 bg-rw-teal/10 text-rw-teal"
+                          : "border-rw-red/60 bg-rw-red/10 text-rw-red"
+                      }`}
+                    >
+                      {streakN}
+                      {streakWon ? tc("short result", "W") : tc("short result", "L")}
+                    </span>
+                  )}
+                </div>
+
+                <div ref={box} className="relative select-none">
+                  <svg
+                    width={W}
+                    height={H}
+                    viewBox={`0 0 ${W} ${H}`}
+                    className="block w-full touch-pan-y"
+                    role="img"
+                    aria-label={tl("Recent series")}
+                    onPointerMove={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const idx = Math.floor((e.clientX - rect.left - L) / Math.max(1, bw));
+                      setHoverIdx(Math.max(0, Math.min(series.length - 1, idx)));
+                    }}
+                    onPointerLeave={() => setHoverIdx(null)}
+                  >
+                    <line x1={L} x2={L + pw} y1={midY} y2={midY} style={{ stroke: "var(--rw-line)" }} strokeWidth={1} />
+                    <text x={L - 4} y={T + 8} textAnchor="end" className="font-num" style={{ fill: "var(--rw-teal)", fontSize: 9 }}>
+                      {tc("short result", "W")}
+                    </text>
+                    <text x={L - 4} y={T + CH - 2} textAnchor="end" className="font-num" style={{ fill: "var(--rw-red)", fontSize: 9 }}>
+                      {tc("short result", "L")}
+                    </text>
+
+                    {series.map((s, i) => {
+                      const diff = s.us - s.them;
+                      const won = diff > 0;
+                      const mag = Math.min(3, Math.max(1, Math.abs(diff)));
+                      const barH = (mag / 3) * (CH / 2 - 6);
+                      const colW = Math.max(6, Math.min(24, bw * 0.68));
+                      const x0 = L + (i + 0.5) * bw - colW / 2;
+                      const y0 = won ? midY - barH : midY;
+                      const active = i === selIdx;
+                      return (
+                        <g key={i}>
+                          <rect
+                            x={x0}
+                            y={y0}
+                            width={colW}
+                            height={Math.max(3, barH)}
+                            rx={3}
+                            style={{
+                              fill: won ? "var(--rw-teal)" : "var(--rw-red)",
+                              opacity: active ? 1 : 0.78,
+                              stroke: active ? "var(--rw-text)" : "none",
+                            }}
+                            strokeWidth={active ? 1.5 : 0}
+                          />
+                          <text
+                            x={L + (i + 0.5) * bw}
+                            y={won ? y0 - 3 : y0 + barH + 9}
+                            textAnchor="middle"
+                            className="font-num"
+                            style={{ fill: active ? "var(--rw-text)" : "var(--rw-muted)", fontSize: 8.5, fontWeight: active ? 700 : 500 }}
+                          >
+                            {s.us}-{s.them}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+
+                {sel && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-rw-border bg-rw-bg/60 px-3 py-1.5 text-xs">
+                    <span className="flex items-center gap-2 min-w-0 truncate">
+                      <span className={`font-bold tabular-nums ${sel.us > sel.them ? "text-rw-teal" : "text-rw-red"}`}>
+                        {sel.us > sel.them ? tc("short result", "W") : tc("short result", "L")} {sel.us}–{sel.them}
+                      </span>
+                      <span className="text-rw-text font-semibold truncate">vs {sel.opp}</span>
+                      <span className="text-rw-muted truncate">· {sel.en}</span>
+                    </span>
+                    <span className="flex items-center gap-2 shrink-0 text-rw-muted">
+                      <span>{fmtDate(sel.date, false)}</span>
+                      {sel.g && (
+                        <HubLink to={{ kind: "match", slug: sel.g }} className="text-rw-accent font-semibold hover:underline">
+                          {tl("Details")} →
+                        </HubLink>
+                      )}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Right column: Blue vs Red Side & Objective Control */}
+            <div className="space-y-3 min-w-0">
+              {hasSides && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-rw-muted">
+                    <span>{tl("Blue / red side")}</span>
+                    <span className="font-mono text-rw-sub normal-case">
+                      {blueWr >= redWr
+                        ? `${tl("Blue side")} +${fmtDec(blueWr - redWr, 1)}%`
+                        : `${tl("Red side")} +${fmtDec(redWr - blueWr, 1)}%`}
+                    </span>
+                  </div>
+
+                  {/* Blue Side Bar */}
+                  <div className="rounded-lg border border-rw-border bg-rw-bg/50 px-3 py-2 space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold flex items-center gap-1.5" style={{ color: "#4a9eff" }}>
+                        <span className="w-2 h-2 rounded-full inline-block" style={{ background: "#4a9eff" }} />
+                        {tl("Blue side")}
+                      </span>
+                      <span className="font-mono tabular-nums text-rw-text font-bold">
+                        {winRate(blueW, blueG)}{" "}
+                        <span className="text-rw-muted font-normal text-[11px]">
+                          ({blueW}W – {blueG - blueW}L · {blueG}G)
+                        </span>
+                      </span>
+                    </div>
+                    <div className="h-2 rounded-full bg-rw-raised overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${Math.round(blueWr)}%`, background: "#4a9eff" }} />
+                    </div>
+                  </div>
+
+                  {/* Red Side Bar */}
+                  <div className="rounded-lg border border-rw-border bg-rw-bg/50 px-3 py-2 space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold flex items-center gap-1.5" style={{ color: "var(--rw-red)" }}>
+                        <span className="w-2 h-2 rounded-full inline-block" style={{ background: "var(--rw-red)" }} />
+                        {tl("Red side")}
+                      </span>
+                      <span className="font-mono tabular-nums text-rw-text font-bold">
+                        {winRate(redW, redG)}{" "}
+                        <span className="text-rw-muted font-normal text-[11px]">
+                          ({redW}W – {redG - redW}L · {redG}G)
+                        </span>
+                      </span>
+                    </div>
+                    <div className="h-2 rounded-full bg-rw-raised overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${Math.round(redWr)}%`, background: "var(--rw-red)" }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {t.obj && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2.5 py-1.5">
+                    <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Dragons")}</div>
+                    <div className="text-sm font-bold font-mono text-rw-text tabular-nums">{fmtDec(t.obj.dragons, 2)}</div>
+                    <div className="text-[10px] text-rw-muted">{tl("Per game")}</div>
+                  </div>
+                  <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2.5 py-1.5">
+                    <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Barons")}</div>
+                    <div className="text-sm font-bold font-mono text-rw-text tabular-nums">{fmtDec(t.obj.barons, 2)}</div>
+                    <div className="text-[10px] text-rw-muted">{tl("Per game")}</div>
+                  </div>
+                  <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2.5 py-1.5">
+                    <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Towers")}</div>
+                    <div className="text-sm font-bold font-mono text-rw-text tabular-nums">{fmtDec(t.obj.towers, 1)}</div>
+                    <div className="text-[10px] text-rw-muted">{tl("Per game")}</div>
+                  </div>
+                  <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2.5 py-1.5">
+                    <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Gold diff")}</div>
+                    <div className={`text-sm font-bold font-mono tabular-nums ${t.obj.golddiff >= 0 ? "text-rw-teal" : "text-rw-red"}`}>
+                      {signed(Math.round(t.obj.golddiff))}
+                    </div>
+                    <div className="text-[10px] text-rw-muted">{t.avgMin ? `${fmtDec(t.avgMin, 1)}m` : tl("Per game")}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Section>
+    </div>
+  );
+};

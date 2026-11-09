@@ -24,6 +24,7 @@ import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum,
 import { EntityHero, heroBtn, heroLink } from "./EntityHero";
 import { useTeamLogo } from "../../hub/riotCatalog";
 import { KdaBar, PlayerOpponents, WinBar } from "./OpponentChart";
+import { PlayerVisualOverview, SignatureChampsGrid } from "./VisualAnalytics";
 import { STable } from "../STable";
 
 const BEST_LABEL: Record<string, string> = {
@@ -531,6 +532,10 @@ const PlayerView: React.FC<{
         </Section>
       </div>
       )}
+
+      {overview && <PlayerVisualOverview p={p} cardSub={cardSub} />}
+
+      {overview && <SignatureChampsGrid p={p} cardSub={cardSub} />}
 
       {overview && (
         <div className="rw-span">

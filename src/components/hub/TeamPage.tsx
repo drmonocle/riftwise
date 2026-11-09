@@ -20,6 +20,7 @@ import { OwnStorylines } from "./Storylines";
 import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, fmtUsdShort, HubLink, isFresh, Loading, Page, PlayerLink, PlayerPhoto, ratingTextClass, RevealButton, Section, Stat, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink, FollowFeeds } from "./ui";
 import { Sparkline } from "./Sparkline";
 import { TeamOpponentsChart, WinBar } from "./OpponentChart";
+import { TeamFormAndSideCard } from "./VisualAnalytics";
 import { STable } from "../STable";
 import { SectionCard, BroadcastCardButton, teamCareerCardData } from "./BroadcastCard";
 import { champName } from "../../champions";
@@ -451,9 +452,15 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
       </div>
       )}
 
-      {overview && rosterSection}
+      {overview && <div className="rw-span">{rosterSection}</div>}
 
-      {overview && <TeamPlaystyleOverview t={t} />}
+      {overview && (
+        <div className="rw-span">
+          <TeamPlaystyleOverview t={t} />
+        </div>
+      )}
+
+      {overview && <TeamFormAndSideCard t={t} cardSub={cardSub} />}
 
       {overview && t.opps.length > 0 && (
         <div className="rw-span">

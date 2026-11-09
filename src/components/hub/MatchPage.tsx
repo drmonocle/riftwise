@@ -12,7 +12,7 @@ import { hubShareUrl, navigateHub } from "../../hub/route";
 import { BroadcastCardButton, gameCardData, SectionCard, seriesCardData } from "./BroadcastCard";
 import { RiotGamesFor, RiotMatchPage } from "./RiotMatch";
 import { RIOT_PREFIX } from "../../hub/riotMatch";
-import { card, ChampIcon, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, OeCredit, Page, PlayerLink, RatingBadge, RevealButton, RuneIcon, SpellIcon, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
+import { card, ChampIcon, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, OeCredit, Page, PlayerLink, RatingBadge, RevealButton, RuneIcon, Section, SpellIcon, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
 import { heroBtn } from "./EntityHero";
 
 export function extractHubGameDraft(g: HubGame): GameDraftInput {
@@ -466,7 +466,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
         </div>
       )}
       {!hidden && <Leads g={g} blueName={blueTeam.n} redName={redTeam.n} blue={blue} red={red} />}
-      {!hidden && <PlayerBars blueName={blueTeam.n} redName={redTeam.n} blue={blue} red={red} minutes={g.min ?? undefined} />}
+      {!hidden && <PlayerBars g={g} blueName={blueTeam.n} redName={redTeam.n} blue={blue} red={red} minutes={g.min ?? undefined} ratings={ratings} />}
       {g.st !== "f" && !g.p && (
         <p className="text-[11px] text-rw-muted text-center">
           {g.st === "r" ? tl("Only the result of this game is known.") : tl("No result or stats were recorded for this game.")}
@@ -616,37 +616,74 @@ const GameRoleMatchups: React.FC<{ blue: GamePlayer[]; red: GamePlayer[] }> = ({
   );
 };
 
-type BarMetric = "dm" | "gd" | "cs" | "v";
+type BarMetric = "dm" | "gd" | "rt" | "kp" | "cs" | "v";
 
 /**
- * Each lane's two players side by side for one number from the scoreboard (damage to champions, gold, CS, vision):
- * blue's bar grows left, red's right, all on one scale. Needs only the scoreboard, so a game has it as soon as
- * Leaguepedia does (the leads above need Oracle's Elixir, a day or two later).
+ * Each lane's two players side by side for one number from the scoreboard (damage to champions, gold, rating, K+A, CS, vision):
+ * blue's bar grows left, red's right, all on one scale, plus a team-wide macro tug-of-war strip.
  */
-const PlayerBars: React.FC<{ blueName: string; redName: string; blue: GamePlayer[]; red: GamePlayer[]; minutes?: number }> = ({
-  blueName,
-  redName,
-  blue,
-  red,
-  minutes,
-}) => {
+const PlayerBars: React.FC<{
+  g: HubGame;
+  blueName: string;
+  redName: string;
+  blue: GamePlayer[];
+  red: GamePlayer[];
+  minutes?: number;
+  ratings?: Map<GamePlayer, number>;
+}> = ({ g, blueName, redName, blue, red, minutes, ratings }) => {
   const [metric, setMetric] = useState<BarMetric>("dm");
+  const getVal = (p: GamePlayer, k: BarMetric): number | undefined => {
+    if (k === "rt") return ratings?.get(p);
+    if (k === "kp") return p.k + p.a;
+    return p[k];
+  };
   const metrics: [BarMetric, string][] = [
     ["dm", tl("Damage")],
     ["gd", tl("Gold")],
+    ["rt", tl("Rating")],
+    ["kp", "K + A"],
     ["cs", "CS"],
     ["v", tl("Vision")],
   ];
-  const have = metrics.filter(([k]) => [...blue, ...red].some((p) => p[k] != null));
+  const have = metrics.filter(([k]) => [...blue, ...red].some((p) => getVal(p, k) != null));
   const m = have.some(([k]) => k === metric) ? metric : have[0]?.[0];
   if (!m || blue.length !== 5 || red.length !== 5) return null;
   const rows = ROLE_ORDER.map((r, i) => ({ r, b: blue.find((p) => p.r === r) || blue[i], o: red.find((p) => p.r === r) || red[i] }));
-  const max = Math.max(1, ...rows.flatMap((x) => [x.b[m] || 0, x.o[m] || 0]));
-  const total = (list: GamePlayer[]) => list.reduce((t, p) => t + (p[m] || 0), 0);
-  const fmt = (v: number | undefined) => (v == null ? "–" : m === "dm" || m === "gd" ? fmtGold(v) : String(v));
-  const perMin = (v: number | undefined) => (v != null && minutes ? (m === "cs" ? fmtDec(v / minutes) : Math.round(v / minutes)) : null);
+  const max = Math.max(1, ...rows.flatMap((x) => [getVal(x.b, m) || 0, getVal(x.o, m) || 0]));
+  const total = (list: GamePlayer[]) =>
+    m === "rt"
+      ? list.reduce((t, p) => t + (getVal(p, m) || 0), 0) / Math.max(1, list.filter((p) => getVal(p, m) != null).length)
+      : list.reduce((t, p) => t + (getVal(p, m) || 0), 0);
+  const fmt = (v: number | undefined) =>
+    v == null ? "–" : m === "dm" || m === "gd" ? fmtGold(v) : m === "rt" ? fmtRating(v) : String(Math.round(v));
+  const perMin = (v: number | undefined) =>
+    v != null && minutes && (m === "dm" || m === "gd" || m === "cs" || m === "v")
+      ? m === "cs" || m === "v"
+        ? fmtDec(v / minutes)
+        : Math.round(v / minutes)
+      : null;
+
+  // Team Macro Tug-of-War summary items
+  const bSt = g.t?.blue;
+  const rSt = g.t?.red;
+  const bDmg = blue.reduce((s, p) => s + (p.dm || 0), 0);
+  const rDmg = red.reduce((s, p) => s + (p.dm || 0), 0);
+  const bGold = bSt?.gold ?? blue.reduce((s, p) => s + (p.gd || 0), 0);
+  const rGold = rSt?.gold ?? red.reduce((s, p) => s + (p.gd || 0), 0);
+  const bKills = bSt?.k ?? blue.reduce((s, p) => s + p.k, 0);
+  const rKills = rSt?.k ?? red.reduce((s, p) => s + p.k, 0);
+  const macroItems = (
+    [
+      bKills + rKills > 0 ? { label: tl("Kills"), b: bKills, r: rKills, fmt: (x: number) => String(x) } : null,
+      bGold + rGold > 0 ? { label: tl("Gold"), b: bGold, r: rGold, fmt: (x: number) => fmtGold(x) } : null,
+      bDmg + rDmg > 0 ? { label: tl("Damage"), b: bDmg, r: rDmg, fmt: (x: number) => fmtGold(x) } : null,
+      bSt?.towers != null && rSt?.towers != null ? { label: tl("Towers"), b: bSt.towers, r: rSt.towers, fmt: (x: number) => String(x) } : null,
+      bSt?.drag != null && rSt?.drag != null ? { label: tl("Dragons"), b: bSt.drag, r: rSt.drag, fmt: (x: number) => String(x) } : null,
+    ].filter(Boolean) as { label: string; b: number; r: number; fmt: (x: number) => string }[]
+  );
+
   const side = (p: GamePlayer, right: boolean) => {
-    const v = p[m];
+    const v = getVal(p, m);
     const w = v ? (v / max) * 100 : 0;
     return (
       <div className={`flex items-center gap-2 min-w-0 ${right ? "" : "flex-row-reverse"}`}>
@@ -658,11 +695,12 @@ const PlayerBars: React.FC<{ blueName: string; redName: string; blue: GamePlayer
     );
   };
   return (
-    <div className={`${card} space-y-1.5`}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Player by player")}</h3>
-        <div className="flex items-center gap-2">
-          <div className="flex gap-1" role="group" aria-label={tl("Show")}>
+    <Section
+      title={tl("Player by player")}
+      share={`game-${g.n}-bars`}
+      right={
+        <div className="flex flex-wrap items-center gap-2" data-nocapture="1">
+          <div className="flex flex-wrap gap-1" role="group" aria-label={tl("Show")}>
             {have.map(([k, label]) => (
               <button
                 key={k}
@@ -685,56 +723,98 @@ const PlayerBars: React.FC<{ blueName: string; redName: string; blue: GamePlayer
               rows.map(({ r, b, o }) => ({
                 label: `${roleName(r)} · ${b.n} vs ${o.n}`,
                 sub: [b.c && champName(b.c), o.c && champName(o.c)].filter(Boolean).join(" vs "),
-                value: `${fmt(b[m])} – ${fmt(o[m])}`,
-                win: (b[m] || 0) >= (o[m] || 0),
+                value: `${fmt(getVal(b, m))} – ${fmt(getVal(o, m))}`,
+                win: (getVal(b, m) || 0) >= (getVal(o, m) || 0),
               }))
             }
           />
         </div>
-      </div>
-      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-3 text-[10px] uppercase tracking-wider font-bold">
-        <span className="truncate text-right" style={{ color: BLUE }}>
-          {blueName} · {fmt(total(blue))}
-        </span>
-        <span />
-        <span className="truncate" style={{ color: RED }}>
-          {redName} · {fmt(total(red))}
-        </span>
-      </div>
-      {rows.map(({ r, b, o }) => (
-        <div
-          key={r}
-          className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3"
-          title={`${roleName(r)}: ${b.n} ${fmt(b[m])}${perMin(b[m]) != null ? ` (${perMin(b[m])}/min)` : ""} · ${o.n} ${fmt(o[m])}${
-            perMin(o[m]) != null ? ` (${perMin(o[m])}/min)` : ""
-          }`}
-        >
-          <div className="min-w-0">
-            <div className="text-[10px] text-rw-sub truncate text-right">
-              {b.c && <ChampIcon name={b.c} size={14} />} {b.n}
-            </div>
-            {side(b, false)}
+      }
+    >
+      <div className="space-y-2.5">
+        {/* Team Macro Tug-of-War Summary Strip */}
+        {macroItems.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pb-2 border-b border-rw-border/70">
+            {macroItems.map((it) => {
+              const sum = it.b + it.r;
+              const bPct = sum > 0 ? Math.round((it.b / sum) * 100) : 50;
+              return (
+                <div key={it.label} className="rounded-lg border border-rw-border/70 bg-rw-bg/40 px-2.5 py-1.5 space-y-1">
+                  <div className="flex items-center justify-between text-[10px] font-mono tabular-nums">
+                    <span className="font-bold" style={{ color: BLUE }}>
+                      {it.fmt(it.b)}
+                    </span>
+                    <span className="font-sans text-[9px] font-bold uppercase tracking-wider text-rw-muted">{it.label}</span>
+                    <span className="font-bold" style={{ color: RED }}>
+                      {it.fmt(it.r)}
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full overflow-hidden flex bg-rw-raised">
+                    <div style={{ width: `${bPct}%`, background: BLUE }} />
+                    <div style={{ width: `${100 - bPct}%`, background: RED }} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          {b.u && o.u ? (
-            <HubLink
-              to={{ kind: "compare", mode: "player", a: b.u, b: o.u }}
-              className="text-[9px] text-rw-muted hover:text-rw-accent hover:underline text-center w-12"
-              title={`${tl("Compare")}: ${b.n} vs ${o.n}`}
-            >
-              {roleName(r)}
-            </HubLink>
-          ) : (
-            <span className="text-[9px] text-rw-muted text-center w-12">{roleName(r)}</span>
-          )}
-          <div className="min-w-0">
-            <div className="text-[10px] text-rw-sub truncate">
-              {o.n} {o.c && <ChampIcon name={o.c} size={14} />}
-            </div>
-            {side(o, true)}
-          </div>
+        )}
+
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-3 text-[10px] uppercase tracking-wider font-bold">
+          <span className="truncate text-right" style={{ color: BLUE }}>
+            {blueName} · {fmt(total(blue))}
+          </span>
+          <span />
+          <span className="truncate" style={{ color: RED }}>
+            {redName} · {fmt(total(red))}
+          </span>
         </div>
-      ))}
-    </div>
+        {rows.map(({ r, b, o }) => {
+          const bv = getVal(b, m);
+          const ov = getVal(o, m);
+          const duelSum = (bv || 0) + (ov || 0);
+          const bShare = duelSum > 0 ? Math.round(((bv || 0) / duelSum) * 100) : 50;
+          return (
+            <div
+              key={r}
+              className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3"
+              title={`${roleName(r)}: ${b.n} ${fmt(bv)}${perMin(bv) != null ? ` (${perMin(bv)}/min)` : ""} · ${o.n} ${fmt(ov)}${
+                perMin(ov) != null ? ` (${perMin(ov)}/min)` : ""
+              }`}
+            >
+              <div className="min-w-0">
+                <div className="text-[10px] text-rw-sub truncate text-right">
+                  {b.c && <ChampIcon name={b.c} size={14} />} {b.n}
+                </div>
+                {side(b, false)}
+              </div>
+              <div className="flex flex-col items-center w-14 shrink-0">
+                {b.u && o.u ? (
+                  <HubLink
+                    to={{ kind: "compare", mode: "player", a: b.u, b: o.u }}
+                    className="text-[9px] text-rw-muted hover:text-rw-accent hover:underline text-center"
+                    title={`${tl("Compare")}: ${b.n} vs ${o.n}`}
+                  >
+                    {roleName(r)}
+                  </HubLink>
+                ) : (
+                  <span className="text-[9px] text-rw-muted text-center">{roleName(r)}</span>
+                )}
+                <div className="mt-0.5 w-full h-1 rounded-full overflow-hidden flex bg-rw-raised">
+                  <div style={{ width: `${bShare}%`, background: BLUE }} />
+                  <div style={{ width: `${100 - bShare}%`, background: RED }} />
+                </div>
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] text-rw-sub truncate">
+                  {o.n} {o.c && <ChampIcon name={o.c} size={14} />}
+                </div>
+                {side(o, true)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Section>
   );
 };
 
@@ -765,9 +845,10 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blue: Gam
   return (
     <div className="grid gap-3 lg:grid-cols-2">
       {gold.length > 0 && (
-        <div className={`${card} space-y-1.5`}>
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Gold and XP lead")}</h3>
+        <Section
+          title={tl("Gold and XP lead")}
+          share={`game-${g.n}-leads`}
+          right={
             <SectionCard
               section={tl("Gold and XP lead")}
               name={`${blueName} vs ${redName}`}
@@ -786,23 +867,27 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blue: Gam
                 })),
               ]}
             />
+          }
+        >
+          <div className="space-y-1.5">
+            {head}
+            {gold.map(([m, v]) => (
+              <LeadBar key={`g${m}`} label={tl("{n} min", { n: m })} left={m === gold[0][0] ? tl("Gold") : undefined} v={v} max={maxGold}
+                tip={tl("Gold lead at {n} minutes: {lead}", { n: m, lead: `${v >= 0 ? blueName : redName} ${kfmt(Math.abs(v))}` })} />
+            ))}
+            {xp.map(([m, v]) => (
+              <LeadBar key={`x${m}`} label={tl("{n} min", { n: m })} left={m === xp[0][0] ? "XP" : undefined} v={v} max={maxXp}
+                tip={tl("XP lead at {n} minutes: {lead}", { n: m, lead: `${v >= 0 ? blueName : redName} ${kfmt(Math.abs(v))}` })} />
+            ))}
+            <OeCredit />
           </div>
-          {head}
-          {gold.map(([m, v]) => (
-            <LeadBar key={`g${m}`} label={tl("{n} min", { n: m })} left={m === gold[0][0] ? tl("Gold") : undefined} v={v} max={maxGold}
-              tip={tl("Gold lead at {n} minutes: {lead}", { n: m, lead: `${v >= 0 ? blueName : redName} ${kfmt(Math.abs(v))}` })} />
-          ))}
-          {xp.map(([m, v]) => (
-            <LeadBar key={`x${m}`} label={tl("{n} min", { n: m })} left={m === xp[0][0] ? "XP" : undefined} v={v} max={maxXp}
-              tip={tl("XP lead at {n} minutes: {lead}", { n: m, lead: `${v >= 0 ? blueName : redName} ${kfmt(Math.abs(v))}` })} />
-          ))}
-          <OeCredit />
-        </div>
+        </Section>
       )}
       {lanes.length > 0 && (
-        <div className={`${card} space-y-1.5`}>
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Gold lead in each lane at 15 minutes")}</h3>
+        <Section
+          title={tl("Gold lead in each lane at 15 minutes")}
+          share={`game-${g.n}-lanes`}
+          right={
             <SectionCard
               section={tl("Gold lead in each lane at 15 minutes")}
               name={`${blueName} vs ${redName}`}
@@ -815,23 +900,26 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blue: Gam
                 }))
               }
             />
+          }
+        >
+          <div className="space-y-1.5">
+            {head}
+            {lanes.map(({ r, b, o }) => (
+              <LeadBar
+                key={r}
+                label={roleName(r)}
+                left={b!.n}
+                right={o!.n}
+                v={b!.g15 as number}
+                max={maxLane}
+                tip={tl("{role} at 15 minutes: {lead}", {
+                  role: roleName(r),
+                  lead: `${(b!.g15 as number) >= 0 ? b!.n : o!.n} ${kfmt(Math.abs(b!.g15 as number))}`,
+                })}
+              />
+            ))}
           </div>
-          {head}
-          {lanes.map(({ r, b, o }) => (
-            <LeadBar
-              key={r}
-              label={roleName(r)}
-              left={b!.n}
-              right={o!.n}
-              v={b!.g15 as number}
-              max={maxLane}
-              tip={tl("{role} at 15 minutes: {lead}", {
-                role: roleName(r),
-                lead: `${(b!.g15 as number) >= 0 ? b!.n : o!.n} ${kfmt(Math.abs(b!.g15 as number))}`,
-              })}
-            />
-          ))}
-        </div>
+        </Section>
       )}
     </div>
   );

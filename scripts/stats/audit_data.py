@@ -148,9 +148,13 @@ def main():
             log = load(os.path.join(hub, "playergames", x + ".json"))
         except FileNotFoundError:
             log = None
-        return load(os.path.join(hub, "player", x + ".json")), log
+        try:
+            it_log = load(os.path.join(hub, "playeritems", x + ".json"))
+        except FileNotFoundError:
+            it_log = None
+        return load(os.path.join(hub, "player", x + ".json")), log, it_log
 
-    for slug, (p, log) in zip(order, pool.map(player_and_log, order)):
+    for slug, (p, log, it_log) in zip(order, pool.map(player_and_log, order)):
         where = f"player/{slug}"
         g, w, k, d, a = p.get("g", 0), p.get("w", 0), p.get("k", 0), p.get("d", 0), p.get("a", 0)
         # the career line and the game log are built separately: they must agree
@@ -163,6 +167,12 @@ def main():
                 bad("player's game log doesn't match their games and wins", f"{where}: log {lg} games {lw} wins, page {g}/{w}")
             elif (lk, ld, la) != (k, d, a):
                 bad("player's game log doesn't match their K/D/A", f"{where}: log {lk}/{ld}/{la}, page {k}/{d}/{a}")
+            if it_log is not None:
+                checked["player item logs"] += 1
+                for it_name, q_list in it_log:
+                    if any(q < 0 or q >= lg for q in q_list):
+                        bad("player's item log points outside their game log", f"{where} ({it_name})")
+                        break
         if w > g:
             bad("player with more wins than games", f"{where}: {w}/{g}")
         if g and p.get("kda") is not None:
@@ -270,12 +280,52 @@ def main():
         where = f"event/{slug}"
         o = e.get("overview") or {}
         if o and o.get("g") is not None and o.get("blue") is not None and o["g"] != o["blue"] + o.get("red", 0):
-            bad("tournament games don't match blue + red wins", f"{where}: {o['g']} vs {o['blue']}+{o.get('red')}")
+            bad("event's games don't match blue + red wins", f"{where}: {o['g']} vs {o['blue']}+{o.get('red')}")
+        empty_bracket = []
+        sb_series = []
         for st in e.get("stages") or []:
             for r in st.get("series") or []:
                 link("game", r.get("g"), where)
                 link("team", r.get("au"), where)
                 link("team", r.get("bu"), where)
+                gslug_r = r.get("g") or ""
+                if "-scoreboards-" in gslug_r and r.get("au") and r.get("bu"):
+                    sb_series.append((gslug_r, {r["au"], r["bu"]}, (r.get("date") or "")[:10]))
+                elif not gslug_r and r.get("au") and r.get("bu"):
+                    empty_bracket.append(({r["au"], r["bu"]}, (r.get("date") or "")[:10]))
+        if empty_bracket and sb_series:
+            for gslug_r, pair_sb, d_sb in sb_series:
+                for pair_eb, d_eb in empty_bracket:
+                    if pair_sb == pair_eb:
+                        try:
+                            dd = abs((datetime.date.fromisoformat(d_sb) - datetime.date.fromisoformat(d_eb)).days) if d_sb and d_eb else 0
+                        except ValueError:
+                            dd = 0
+                        if dd <= 3:
+                            bad("event's Scoreboards series not linked to its bracket series", f"{where}: {gslug_r}")
+                            break
+        for t in e.get("teams") or []:
+            link("team", t.get("u"), where)
+            if t.get("w", 0) > t.get("g", 0) or t.get("sw", 0) > t.get("sg", 0):
+                bad("event's team has more wins than games or series", f"{where}: {t.get('t')}")
+        for pl in e.get("players") or []:
+            link("player", pl.get("u"), where)
+            if pl.get("w", 0) > pl.get("g", 0):
+                bad("event's player has more wins than games", f"{where}: {pl.get('n')}")
+        if e.get("ln"):
+            lp_path = os.path.join(hub, "lines", slug + ".json")
+            if not os.path.exists(lp_path):
+                bad("event's lines file missing", where)
+            else:
+                checked["event line files"] += 1
+                ln = load(lp_path)
+                lg_cnt = len(ln.get("g") or [])
+                if lg_cnt != e.get("statsGames", 0):
+                    bad("event's lines game count doesn't match statsGames", f"{where}: {lg_cnt} vs {e.get('statsGames')}")
+                for pr in ln.get("p") or []:
+                    if pr[0] < 0 or pr[0] >= lg_cnt:
+                        bad("event's lines player row points outside games", where)
+                        break
         for r in e.get("results") or []:
             link("team", r.get("u"), where)
         for tbl in e.get("standings") or []:
@@ -283,6 +333,40 @@ def main():
             if pls != sorted(pls):
                 at = next(i for i in range(1, len(pls)) if pls[i] < pls[i - 1])
                 bad("standings not in place order", f"{where} {tbl.get('name')}: ... {pls[max(0, at - 3):at + 3]}")
+    # -- leagues and H2H ---------------------------------------------------------------------------
+    leagues_index = load(os.path.join(hub, "leagues.json"))
+    for lrow in leagues_index:
+        lu = lrow.get("u")
+        where = f"league/{lu}"
+        link("league", lu, "leagues.json")
+        if lu in leagues:
+            checked["league pages"] += 1
+            ld = load(os.path.join(hub, "league", lu + ".json"))
+            ev_list_l = ld.get("events") or []
+            ev_g_sum = sum(ev.get("g") or 0 for ev in ev_list_l)
+            if ev_g_sum != lrow.get("g", 0):
+                bad("league's events don't add up to its games", f"{where}: {ev_g_sum} vs {lrow.get('g')}")
+            if len(ev_list_l) != lrow.get("n", 0):
+                bad("league's event count doesn't match leagues.json", f"{where}: {len(ev_list_l)} vs {lrow.get('n')}")
+            for ev in ev_list_l:
+                link("event", ev.get("u"), where)
+            for tr in ld.get("titles") or []:
+                link("team", tr.get("u"), where)
+    h2h_path = os.path.join(hub, "h2h", "base.json")
+    if os.path.exists(h2h_path):
+        h2h = load(h2h_path)
+        for k_pair, v_pair in (h2h.get("pairs") or {}).items():
+            checked["h2h pairs"] += 1
+            parts_p = k_pair.split("__")
+            if len(parts_p) != 2 or parts_p[0] >= parts_p[1]:
+                bad("h2h pair not in canonical order or self-match", k_pair)
+            if (v_pair[0] or 0) < 0 or (v_pair[1] or 0) < 0:
+                bad("h2h pair has negative wins", f"{k_pair}: {v_pair}")
+            sr_pair = (h2h.get("series") or {}).get(k_pair)
+            if sr_pair:
+                intl_p = sr_pair.get("intl") or [0, 0]
+                if intl_p[0] > v_pair[0] or intl_p[1] > v_pair[1]:
+                    bad("h2h international wins exceed total wins", f"{k_pair}: intl {intl_p} vs {v_pair}")
     # -- titles: the big international winners ------------------------------------------------------
     try:
         titles = load(os.path.join(hub, "titles.json"))
@@ -345,7 +429,7 @@ def main():
         with open(sys.argv[sys.argv.index("--json") + 1], "w", encoding="utf-8") as f:
             json.dump({"version": latest["version"], "checked": checked, "counts": counts, "examples": findings}, f, indent=1, ensure_ascii=False)
     hard = [c for c in counts if c.startswith(("broken link", "series score above", "series winner", "wrong champion",
-                                               "player's", "team's", "champion's"))]
+                                               "player's", "team's", "champion's", "event's", "league's", "h2h "))]
     sys.exit(1 if hard else 0)
 
 

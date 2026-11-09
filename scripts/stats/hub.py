@@ -809,6 +809,59 @@ def build(ctx) -> dict:
         for s in sched_by_op.get(op, []):
             series.setdefault(s["mid"], [])
 
+        # Older Leaguepedia tournaments (2012-2018 IEM, GPL, CBLOL, LSPL, Regional Finals) often file their bracket
+        # schedule under _Quarterfinals_1 / _Finals_1 (with no scoreboard link) and their scoreboards under
+        # _Scoreboards_1..N: attach each Scoreboards series to its matching bracket/schedule series so the bracket
+        # gets the scoreboards and the series isn't counted twice.
+        sb_mids = sorted(m for m in series if "scoreboard" in m.lower() and series[m])
+        other_mids = sorted(m for m in series if "scoreboard" not in m.lower())
+        if sb_mids and other_mids:
+            used_omids = set()
+            for smid in sb_mids:
+                sg = series[smid]
+                g0 = next((g for g in sg if g["t1"] and g["t2"]), sg[0])
+                st1, st2 = g0["t1"] or g0["sa"], g0["t2"] or g0["sb"]
+                sd0 = (g0["date"] or "")[:10]
+                if not st1 or not st2:
+                    continue
+                sfa, sfb = ctx.team_of(st1, sd0 or "0000", op), ctx.team_of(st2, sd0 or "0000", op)
+                cands = []
+                for omid in other_mids:
+                    if omid in used_omids:
+                        continue
+                    og = series[omid]
+                    if any(g["gid"] for g in og):
+                        continue
+                    s_o = sched.get(omid)
+                    ot1 = (s_o and s_o["a"]) or next((g["t1"] or g["sa"] for g in og if g["t1"] or g["sa"]), None)
+                    ot2 = (s_o and s_o["b"]) or next((g["t2"] or g["sb"] for g in og if g["t2"] or g["sb"]), None)
+                    if not ot1 or not ot2 or ot1 == "TBD" or ot2 == "TBD":
+                        continue
+                    od0 = ((s_o and s_o["date"]) or (og[0]["date"] if og else "") or "")[:10]
+                    ofa = ctx.team_of(ot1, od0 or sd0 or "0000", op)
+                    ofb = ctx.team_of(ot2, od0 or sd0 or "0000", op)
+                    if not (same_pair(st1, st2, ot1, ot2) or (sfa != sfb and {sfa, sfb} == {ofa, ofb})):
+                        continue
+                    try:
+                        dd = abs((datetime.date.fromisoformat(sd0) - datetime.date.fromisoformat(od0)).days) if sd0 and od0 else 0
+                    except ValueError:
+                        dd = 0
+                    score_ok = bool(s_o and s_o["sa"] is not None and s_o["sb"] is not None and len(sg) == (s_o["sa"] or 0) + (s_o["sb"] or 0))
+                    if dd <= 3 or (dd <= 10 and score_ok):
+                        cands.append((dd, 0 if score_ok else 1, omid))
+                if cands:
+                    cands.sort()
+                    omid = cands[0][2]
+                    used_omids.add(omid)
+                    s_o = sched.get(omid)
+                    for g in sg:
+                        g["sb_mid"] = g["mid"]
+                        g["mid"] = omid
+                        if s_o and s_o.get("tab") and (not g.get("tab") or "scoreboard" in (g.get("tab") or "").lower()):
+                            g["tab"] = s_o["tab"]
+                    series[omid] = series.pop(smid)
+                    checks["hub: Scoreboards series linked to their bracket series"] += 1
+
         stat_ids = [g["gid"] for lst in series.values() for g in lst if g["gid"]]
         prow = defaultdict(list)
         trow = {}
@@ -844,7 +897,7 @@ def build(ctx) -> dict:
                 if g_:
                     g_["gid"] = None
                 checks["hub: scoreboards of other teams left out"] += 1
-        mids = list(series)
+        mids = sorted(set(series) | {g["sb_mid"] for lst in series.values() for g in lst if g.get("sb_mid")})
         sbg = {}
         drafts = {}
         for part in chunks(mids):
@@ -1002,9 +1055,10 @@ def build(ctx) -> dict:
                         facts["blue" if g["w"] == g["t1"] else "red"] += 1
                     # the player comes from this game's scoreboard (one champion per game), so Leaguepedia's
                     # other spellings ("Scary Jerry" for ScaryJerry, an old name like "GotzY" for Aeon) still link
+                    g_mid = g.get("sb_mid") or mid
                     penta_by_champ = ({r["champion"]: r["page_key"] for r in prow.get(g["gid"], []) if r["champion"] and r["page_key"]}
-                                      if g["gid"] and (mid, g["n"]) in pentas else {})
-                    for page, ch, cnt in pentas.get((mid, g["n"]), []):
+                                      if g["gid"] and ((g_mid, g["n"]) in pentas or (mid, g["n"]) in pentas) else {})
+                    for page, ch, cnt in pentas.get((g_mid, g["n"])) or pentas.get((mid, g["n"]), []):
                         page = penta_by_champ.get(ch) or canon_page(page)
                         facts["pentas"].append({"n": ctx.pname(page), "u": player_slug.get(page), "c": ch, "g": gslug, "x": cnt, "gn": g["n"]})
                         p_pentas[page].append((g["date"][:10], ch, gslug, en, cnt, g["n"]))
@@ -1015,8 +1069,8 @@ def build(ctx) -> dict:
                     if base:
                         item["min"] = rmin(base["min"]) if base["min"] else None
                     t = trow.get(gid) if gid else None
-                    sb = sbg.get((mid, g["n"]))
-                    dr = drafts.get((mid, g["n"]))
+                    sb = sbg.get((g_mid, g["n"])) or sbg.get((mid, g["n"]))
+                    dr = drafts.get((g_mid, g["n"])) or drafts.get((mid, g["n"]))
                     sides = {}
                     draft_order = {}  # side -> its picks in pick order (only the draft table has it; the team table is in role order)
                     t_pre = dict(zip(("blue", "red"), blue_red(t["team1"], t["team2"], g["t1"], g["t2"]))) if t is not None else {}
@@ -1074,7 +1128,7 @@ def build(ctx) -> dict:
                             elif not sd.get("picks") and sum(1 for r in mine if r["champion"]) == 5:
                                 sd["picks"] = [r["champion"] for r in mine if r["champion"]]
                     # Oracle's Elixir's numbers for this game (leads at 15, firsts, plates...), when it has the game
-                    oe_g = timeline.pick(oe.get((mid, g["n"])), {r["champion"] for r in g_rows if r["champion"]})
+                    oe_g = timeline.pick(oe.get((g_mid, g["n"])) or oe.get((mid, g["n"])), {r["champion"] for r in g_rows if r["champion"]})
                     oe_side = {}
                     oe_team_side = {}  # team -> its side in Oracle's Elixir's rows (tells blind-pick mirror champions apart)
                     if oe_g:
