@@ -444,7 +444,21 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
         <TeamLogo name={name} size={14} />
         <TeamLink name={name} u={u} className={`truncate ${!hidden && won ? "text-rw-text font-bold hover:underline" : "text-rw-sub hover:text-rw-text hover:underline"}`} />
       </span>
-      <span className={`tabular-nums font-bold shrink-0 ${!hidden && won ? "text-rw-teal" : "text-rw-muted"}`}>{played ? (hidden ? "?" : score) : ""}</span>
+      <span className={`tabular-nums font-bold shrink-0 ${!hidden && won ? "text-rw-teal" : "text-rw-muted"}`}>
+        {played ? (
+          hidden ? (
+            "?"
+          ) : r.g && !hideResult ? (
+            <HubLink to={{ kind: "match", slug: r.g }} className="hover:underline">
+              {score}
+            </HubLink>
+          ) : (
+            score
+          )
+        ) : (
+          ""
+        )}
+      </span>
     </div>
   );
   return (
@@ -948,8 +962,19 @@ const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
                     "–"
                   )}
                 </td>
-                <td className={`${td} text-rw-sub`}>{c.p}</td>
-                <td className={`${td} text-rw-sub`}>{c.b}</td>
+                <td className={`${td} text-rw-sub`} data-sort={c.p}>
+                  {c.p > 0 ? (
+                    <HubLink
+                      to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&champ=${encodeURIComponent(c.c)}` }}
+                      className="hover:text-rw-accent hover:underline"
+                    >
+                      {c.p}
+                    </HubLink>
+                  ) : (
+                    c.p
+                  )}
+                </td>
+                <td className={`${td} text-rw-sub`} data-sort={c.b}>{c.b}</td>
                 <td className={`${td} text-rw-sub`} data-sort={c.p ? c.w / c.p : -1}>
                   {c.p ? <WinBar w={c.w} g={c.p} /> : "–"}
                 </td>

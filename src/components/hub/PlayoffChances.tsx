@@ -11,6 +11,7 @@ import { playoffOdds } from "../../hub/playoffOdds";
 import { chanceShade } from "../SwissStandings";
 import { SectionCard } from "./BroadcastCard";
 import { RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad } from "./ui";
+import { STable } from "../STable";
 
 const pctText = (p: number) => (p === 0 ? "0%" : p < 0.005 ? "<1%" : p > 0.995 && p < 1 ? ">99%" : `${Math.round(p * 100)}%`);
 
@@ -73,7 +74,7 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
         <>
           <div className="overflow-x-auto">
             {/* fixed layout: the number columns keep their width, the team names take the rest and truncate (phones) */}
-            <table className="w-full text-xs table-fixed">
+            <STable className="w-full text-xs table-fixed">
               <thead>
                 <tr>
                   <th className={`${th} text-left`}>{tl("Team")}</th>
@@ -96,7 +97,7 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                         {r.unrated && <span className="text-rw-muted shrink-0" title={tl("No power rating yet: played at the table's median rating")}> *</span>}
                       </span>
                     </td>
-                    <td className="px-1.5 sm:px-2 py-1 text-right tabular-nums text-rw-sub whitespace-nowrap">
+                    <td className="px-1.5 sm:px-2 py-1 text-right tabular-nums text-rw-sub whitespace-nowrap" data-sort={r.sw * 100 - r.sl}>
                       <span className="inline-flex items-center justify-end gap-1.5">
                         {r.sw + r.sl > 0 && (
                           <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
@@ -109,13 +110,13 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                         </span>
                       </span>
                     </td>
-                    <td className="px-2 py-1 text-right tabular-nums text-rw-muted max-sm:hidden">{r.left}</td>
-                    <td className="px-1 py-0.5 text-right">
+                    <td className="px-2 py-1 text-right tabular-nums text-rw-muted max-sm:hidden" data-sort={r.left}>{r.left}</td>
+                    <td className="px-1 py-0.5 text-right" data-sort={r.first}>
                       <span className="inline-block min-w-[3rem] rounded-sm px-1.5 py-0.5 text-center tabular-nums text-rw-sub" style={chanceShade(r.first)}>
                         {pctText(r.first)}
                       </span>
                     </td>
-                    <td className="px-1 py-0.5 text-right">
+                    <td className="px-1 py-0.5 text-right" data-sort={r.top[ci]}>
                       <span className="inline-block min-w-[3rem] rounded-sm px-1.5 py-0.5 text-center tabular-nums text-rw-text" style={chanceShade(r.top[ci])}>
                         {pctText(r.top[ci])}
                       </span>
@@ -123,7 +124,7 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </STable>
           </div>
           <p className="text-[10px] text-rw-muted">
             {tl(

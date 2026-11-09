@@ -149,6 +149,10 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string }> = ({
                     <PlayerLink name={r.label} u={r.player} />
                   ) : r.team ? (
                     <TeamLink name={r.label} u={r.team} />
+                  ) : r.champ ? (
+                    <HubLink to={{ kind: "champ", slug: prettySlug(r.champ) }} className="hover:text-rw-accent hover:underline">
+                      {r.label}
+                    </HubLink>
                   ) : r.match ? (
                     <HubLink to={{ kind: "match", slug: r.match.slug, game: r.match.game }} className="hover:text-rw-accent hover:underline">
                       {r.label}
@@ -158,7 +162,16 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string }> = ({
                   )}
                   {r.sub && <span className="block text-[11px] text-rw-muted break-words">{r.sub}</span>}
                 </span>
-                <span className="relative font-bold text-rw-accent shrink-0 tabular-nums">{r.value}</span>
+                {r.match ? (
+                  <HubLink
+                    to={{ kind: "match", slug: r.match.slug, game: r.match.game }}
+                    className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums"
+                  >
+                    {r.value}
+                  </HubLink>
+                ) : (
+                  <span className="relative font-bold text-rw-accent shrink-0 tabular-nums">{r.value}</span>
+                )}
               </li>
             );
           });

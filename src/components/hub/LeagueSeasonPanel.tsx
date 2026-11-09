@@ -112,7 +112,9 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                 return (
                   <div key={m.key} className="min-w-0">
                     <div className="text-[11px] font-semibold text-rw-accent truncate" title={m.label}>
-                      {m.label}
+                      <HubLink to={{ kind: "leaders", query: `league=${league}&year=${year}` }} className="hover:underline">
+                        {m.label}
+                      </HubLink>
                     </div>
                     <ol className="text-xs space-y-0.5">
                       {(() => {
@@ -123,6 +125,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                             <li key={`${p.u || p.n}-${p.t}`} className="flex items-center justify-between gap-2 min-w-0">
                               <span className="inline-flex items-center gap-1.5 truncate min-w-0">
                                 <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={16} />
+                                {p.t && <TeamLogo name={p.t} size={13} />}
                                 <PlayerLink name={p.n} u={p.u} className="text-rw-text hover:text-rw-accent truncate" />{" "}
                                 <span className="text-[10px] text-rw-muted shrink-0">{roleName(p.r)}</span>
                               </span>

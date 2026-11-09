@@ -673,9 +673,18 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                   <ChampIcon name={sel.champ} size={18} />
                   <span>{champName(sel.champ)}</span>
                 </HubLink>
-                <span className="font-mono font-bold text-rw-text tabular-nums">
-                  {sel.k}/{sel.d}/{sel.a}
-                </span>
+                {sel.seriesSlug ? (
+                  <HubLink
+                    to={{ kind: "match", slug: sel.seriesSlug, game: sel.gn }}
+                    className="font-mono font-bold text-rw-text hover:text-rw-accent hover:underline tabular-nums"
+                  >
+                    {sel.k}/{sel.d}/{sel.a}
+                  </HubLink>
+                ) : (
+                  <span className="font-mono font-bold text-rw-text tabular-nums">
+                    {sel.k}/{sel.d}/{sel.a}
+                  </span>
+                )}
                 {sel.rating != null && (
                   <span className="text-rw-teal font-mono font-semibold tabular-nums">
                     ★ {fmtRating(sel.rating)}
@@ -1014,9 +1023,18 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                 {sel && (
                   <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-rw-border bg-rw-bg/60 px-3 py-1.5 text-xs">
                     <span className="flex items-center gap-1.5 min-w-0 truncate">
-                      <span className={`font-bold tabular-nums ${sel.us > sel.them ? "text-rw-teal" : "text-rw-red"}`}>
-                        {sel.us > sel.them ? tc("short result", "W") : tc("short result", "L")} {sel.us}–{sel.them}
-                      </span>
+                      {sel.g ? (
+                        <HubLink
+                          to={{ kind: "match", slug: sel.g }}
+                          className={`font-bold tabular-nums hover:underline ${sel.us > sel.them ? "text-rw-teal" : "text-rw-red"}`}
+                        >
+                          {sel.us > sel.them ? tc("short result", "W") : tc("short result", "L")} {sel.us}–{sel.them}
+                        </HubLink>
+                      ) : (
+                        <span className={`font-bold tabular-nums ${sel.us > sel.them ? "text-rw-teal" : "text-rw-red"}`}>
+                          {sel.us > sel.them ? tc("short result", "W") : tc("short result", "L")} {sel.us}–{sel.them}
+                        </span>
+                      )}
                       <span className="text-rw-muted">vs</span>
                       <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
                       <TeamLink name={sel.opp} u={t.opps.find((o) => o.n === sel.opp)?.u || prettySlug(sel.opp)} />

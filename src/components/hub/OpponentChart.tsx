@@ -15,6 +15,7 @@ import type { HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
 import { smoothPath } from "../../useWidth";
 import { SectionCard } from "./BroadcastCard";
 import { RatingBadge, fmtRating, useRatingFile } from "./PlayerRating";
+import { STable } from "../STable";
 import { ChampIcon, EventLink, HubLink, Section, TeamLink, TeamLogo, fmtDate, fmtNum, td, th, useHiddenCheck, useLoad } from "./ui";
 
 /** Visual win-rate progress bar + colored percentage for instant recognition in any table. */
@@ -794,9 +795,18 @@ export const PlayerOpponents: React.FC<{
                     <HubLink to={{ kind: "champ", slug: prettySlug(g[2]) }} title={champName(g[2])} className="shrink-0">
                       <ChampIcon name={g[2]} size={17} />
                     </HubLink>
-                    <span className="tabular-nums text-rw-text font-medium">
-                      {g[3]}/{g[4]}/{g[5]}
-                    </span>
+                    {g[1] ? (
+                      <HubLink
+                        to={{ kind: "match", slug: g[1], game: g[22] || undefined }}
+                        className="tabular-nums text-rw-text hover:text-rw-accent hover:underline font-medium"
+                      >
+                        {g[3]}/{g[4]}/{g[5]}
+                      </HubLink>
+                    ) : (
+                      <span className="tabular-nums text-rw-text font-medium">
+                        {g[3]}/{g[4]}/{g[5]}
+                      </span>
+                    )}
                     <EventLink name={g[9]} u={g[11]} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
                   </span>
                   <span className="flex items-center gap-2 shrink-0 text-rw-muted tabular-nums">
@@ -831,7 +841,7 @@ export const PlayerOpponents: React.FC<{
 
       {/* Opponent breakdown table with visual Win % and KDA bars */}
       <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+        <STable className="w-full text-xs">
           <thead>
             <tr>
               <th className={th}>{tl("Opponent")}</th>
@@ -861,7 +871,7 @@ export const PlayerOpponents: React.FC<{
                       <TeamLink name={o.opp} u={o.u} className="text-rw-text hover:text-rw-accent hover:underline truncate" />
                     </span>
                   </td>
-                  <td className={`${td} text-rw-sub tabular-nums`}>
+                  <td className={`${td} text-rw-sub tabular-nums`} data-sort={o.g}>
                     <span className="inline-flex items-center gap-1.5">
                       <span className="hidden sm:inline-block w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
                         <span
@@ -877,23 +887,23 @@ export const PlayerOpponents: React.FC<{
                       </span>
                     </span>
                   </td>
-                  <td className={td}>
+                  <td className={td} data-sort={o.g ? o.w / o.g : -1}>
                     <WinBar w={o.w} g={o.g} />
                   </td>
                   {hasRating && (
-                    <td className={td}>{o.rating != null ? <RatingBadge v={o.rating} /> : <span className="text-rw-muted">–</span>}</td>
+                    <td className={td} data-sort={o.rating ?? -1}>{o.rating != null ? <RatingBadge v={o.rating} /> : <span className="text-rw-muted">–</span>}</td>
                   )}
-                  <td className={td}>
+                  <td className={td} data-sort={o.kda}>
                     <KdaBar
                       kda={o.kda}
                       sub={`${(o.k / o.g).toFixed(1)}/${(o.d / o.g).toFixed(1)}/${(o.a / o.g).toFixed(1)}`}
                     />
                   </td>
                   {hasDpm && (
-                    <td className={`${td} text-rw-sub tabular-nums`}>{o.dpm != null ? fmtNum(o.dpm) : "–"}</td>
+                    <td className={`${td} text-rw-sub tabular-nums`} data-sort={o.dpm ?? -1}>{o.dpm != null ? fmtNum(o.dpm) : "–"}</td>
                   )}
                   {hasGd15 && (
-                    <td className={`${td} tabular-nums`}>
+                    <td className={`${td} tabular-nums`} data-sort={o.gd15 ?? -99999}>
                       {o.gd15 != null ? (
                         <span className={o.gd15 >= 0 ? "text-rw-teal font-semibold" : "text-rw-red"}>
                           {o.gd15 > 0 ? `+${fmtNum(o.gd15)}` : fmtNum(o.gd15)}
@@ -903,7 +913,7 @@ export const PlayerOpponents: React.FC<{
                       )}
                     </td>
                   )}
-                  <td className={td} onClick={(e) => e.stopPropagation()}>
+                  <td className={td} data-sort={o.champs.length} onClick={(e) => e.stopPropagation()}>
                     <span className="inline-flex items-center gap-0.5">
                       {o.champs.slice(0, 4).map((c) => (
                         <HubLink
@@ -921,7 +931,7 @@ export const PlayerOpponents: React.FC<{
               );
             })}
           </tbody>
-        </table>
+        </STable>
       </div>
     </Section>
   );
@@ -1035,7 +1045,7 @@ export const TeamOpponentsChart: React.FC<{
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+        <STable className="w-full text-xs">
           <thead>
             <tr>
               <th className={th}>{tl("Opponent")}</th>
@@ -1057,7 +1067,7 @@ export const TeamOpponentsChart: React.FC<{
                     <TeamLink name={o.n} u={o.u} />
                   </span>
                 </td>
-                <td className={`${td} text-rw-sub tabular-nums`}>
+                <td className={`${td} text-rw-sub tabular-nums`} data-sort={o.g}>
                   <span className="inline-flex items-center gap-1.5">
                     <span className="hidden sm:inline-block w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
                       <span
@@ -1073,10 +1083,10 @@ export const TeamOpponentsChart: React.FC<{
                     </span>
                   </span>
                 </td>
-                <td className={td}>
+                <td className={td} data-sort={o.g ? o.w / o.g : -1}>
                   <WinBar w={o.w} g={o.g} />
                 </td>
-                <td className={`${td} text-rw-muted tabular-nums`}>{fmtDate(o.last)}</td>
+                <td className={`${td} text-rw-muted tabular-nums`} data-sort={o.last || ""}>{fmtDate(o.last)}</td>
                 <td className={`${td} text-right whitespace-nowrap`}>
                   {o.u && (
                     <span className="inline-flex items-center gap-2">
@@ -1092,7 +1102,7 @@ export const TeamOpponentsChart: React.FC<{
               </tr>
             ))}
           </tbody>
-        </table>
+        </STable>
       </div>
     </Section>
   );
@@ -1231,7 +1241,7 @@ export const TeamPeriodOpponents: React.FC<{
         />
       )}
       <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+        <STable className="w-full text-xs">
           <thead>
             <tr>
               <th className={th}>{tl("Opponent")}</th>
@@ -1259,7 +1269,7 @@ export const TeamPeriodOpponents: React.FC<{
                       <TeamLink name={o.opp} u={o.u} />
                     </span>
                   </td>
-                  <td className={`${td} text-rw-sub tabular-nums`}>
+                  <td className={`${td} text-rw-sub tabular-nums`} data-sort={o.g}>
                     <span className="inline-flex items-center gap-1.5">
                       <span className="hidden sm:inline-block w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
                         <span
@@ -1275,11 +1285,11 @@ export const TeamPeriodOpponents: React.FC<{
                       </span>
                     </span>
                   </td>
-                  <td className={td}>
+                  <td className={td} data-sort={o.g ? o.w / o.g : -1}>
                     <WinBar w={o.w} g={o.g} />
                   </td>
                   {hasGd15 && (
-                    <td className={`${td} tabular-nums`}>
+                    <td className={`${td} tabular-nums`} data-sort={o.gd15 ?? -99999}>
                       {o.gd15 != null ? (
                         <span className={o.gd15 >= 0 ? "text-rw-teal font-semibold" : "text-rw-red"}>
                           {o.gd15 > 0 ? `+${fmtNum(o.gd15)}` : fmtNum(o.gd15)}
@@ -1289,7 +1299,7 @@ export const TeamPeriodOpponents: React.FC<{
                       )}
                     </td>
                   )}
-                  <td className={`${td} text-rw-muted tabular-nums`}>{fmtDate(o.last)}</td>
+                  <td className={`${td} text-rw-muted tabular-nums`} data-sort={o.last || ""}>{fmtDate(o.last)}</td>
                   {teamName && (
                     <td className={`${td} text-right whitespace-nowrap`} onClick={(e) => e.stopPropagation()}>
                       {o.u && (
@@ -1316,7 +1326,7 @@ export const TeamPeriodOpponents: React.FC<{
               );
             })}
           </tbody>
-        </table>
+        </STable>
       </div>
     </Section>
   );

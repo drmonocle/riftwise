@@ -78,7 +78,20 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
         </span>
       ),
     },
-    { key: "r", label: tl("Role"), value: (p) => ROLES.indexOf(p.r), render: (p) => <span className="text-rw-muted">{roleName(p.r)}</span> },
+    {
+      key: "r",
+      label: tl("Role"),
+      value: (p) => ROLES.indexOf(p.r),
+      render: (p) => (
+        <button
+          type="button"
+          onClick={() => setRole(role === p.r ? "All" : p.r)}
+          className="text-rw-muted hover:text-rw-accent hover:underline"
+        >
+          {roleName(p.r)}
+        </button>
+      ),
+    },
     {
       key: "g",
       label: tl("Games"),
@@ -88,7 +101,12 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
           <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
             <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(8, Math.round((p.g / Math.max(1, maxG)) * 100))}%` }} />
           </span>
-          <span>{p.g}</span>
+          <HubLink
+            to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(p.u || p.n)}` }}
+            className="hover:text-rw-accent hover:underline"
+          >
+            {p.g}
+          </HubLink>
         </span>
       ),
     },
@@ -238,7 +256,12 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
           <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
             <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(8, Math.round((t.g / maxTeamG) * 100))}%` }} />
           </span>
-          <span>{t.g}</span>
+          <HubLink
+            to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(t.u || t.t)}` }}
+            className="hover:text-rw-accent hover:underline"
+          >
+            {t.g}
+          </HubLink>
         </span>
       ),
     },

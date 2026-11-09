@@ -10,6 +10,7 @@ import { prettySlug } from "../../hub/data";
 import type { EventLines } from "../../hub/worldsFacts";
 import { cinderella, comebacks, editionYear, finals, finalsRecords, hosts, playerTitles, runs, swissRuns, upsets, yearLines, type FileRef, type Run } from "../../hub/intlInsights";
 import { ChampIcon, HubLink, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo } from "./ui";
+import { STable } from "../STable";
 import { SectionCard } from "./BroadcastCard";
 import { RegionFlag, regionLabel, regionStats } from "./RegionStats";
 
@@ -103,7 +104,11 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 </HubLink>
               }
               sub={`${all ? yearOnly(u.year) + " · " : ""}${u.stage} · ${tl("Game {n}", { n: u.n ?? 1 })}`}
-              right={`${u.chance}%`}
+              right={
+                <HubLink to={{ kind: "match", slug: u.series, game: u.n }} className="hover:underline">
+                  {u.chance}%
+                </HubLink>
+              }
             />
           ))}
         </List>
@@ -123,7 +128,11 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     </HubLink>
                   }
                   sub={`${all ? yearOnly(u.year) + " · " : ""}${u.stage}`}
-                  right={`${u.chance}%`}
+                  right={
+                    <HubLink to={{ kind: "match", slug: u.series }} className="hover:underline">
+                      {u.chance}%
+                    </HubLink>
+                  }
                 />
               ))}
             </List>
@@ -165,12 +174,12 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 }
                 sub={`${all ? yearOnly(c.year) + " · " : ""}${c.stage} · ${tl("Game {n}", { n: c.n })}`}
                 right={
-                  <span className="inline-flex items-center gap-1.5">
+                  <HubLink to={{ kind: "match", slug: c.series, game: c.n }} className="inline-flex items-center gap-1.5 hover:underline">
                     <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
                       <span className="h-full bg-rw-red/80 rounded-full" style={{ width: `${Math.round((c.behind / maxBehind) * 100)}%` }} />
                     </span>
                     <span>−{k(c.behind)}</span>
-                  </span>
+                  </HubLink>
                 }
               />
             ));
@@ -489,7 +498,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
           }
         >
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <STable className="w-full text-xs">
               <thead className="text-[10px] text-rw-muted">
                 <tr>
                   <th className="px-2 py-1 text-left">{tl("Year")}</th>
@@ -509,8 +518,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   const maxG = Math.max(1, ...ys.map((y) => y.games));
                   return ys.map((y) => (
                     <tr key={y.year} className="border-t border-rw-border whitespace-nowrap">
-                      <td className="px-2 py-1 text-rw-text font-semibold">{yearOnly(y.year)}</td>
-                      <td className="px-2 py-1 text-right tabular-nums">
+                      <td className="px-2 py-1 text-rw-text font-semibold" data-sort={editionYear(y.year) || 0}>{yearOnly(y.year)}</td>
+                      <td className="px-2 py-1 text-right tabular-nums" data-sort={y.games}>
                         <span className="inline-flex items-center justify-end gap-1.5">
                           <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
                             <span className="h-full bg-rw-accent/75 rounded-full" style={{ width: `${Math.round((y.games / maxG) * 100)}%` }} />
@@ -518,7 +527,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                           <span className="w-7 text-right">{y.games}</span>
                         </span>
                       </td>
-                      <td className="px-2 py-1 text-right tabular-nums">
+                      <td className="px-2 py-1 text-right tabular-nums" data-sort={y.blue ?? -1}>
                         {y.blue == null ? (
                           "–"
                         ) : (
@@ -531,8 +540,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                           </span>
                         )}
                       </td>
-                      <td className="px-2 py-1 text-right tabular-nums">{mmss(y.min)}</td>
-                      <td className="px-2 py-1 text-right tabular-nums">{y.kills ?? "–"}</td>
+                      <td className="px-2 py-1 text-right tabular-nums" data-sort={y.min ?? -1}>{mmss(y.min)}</td>
+                      <td className="px-2 py-1 text-right tabular-nums" data-sort={y.kills ?? -1}>{y.kills ?? "–"}</td>
                       <td className="px-2 py-1">
                         {y.top ? (
                           <HubLink to={{ kind: "champ", slug: prettySlug(y.top[0]) }} className="flex items-center gap-1 hover:text-rw-accent">
@@ -556,12 +565,12 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                           "–"
                         )}
                       </td>
-                      <td className="px-2 py-1 text-right tabular-nums text-rw-sub">{tl("{t} teams · {p} players", { t: y.newTeams, p: y.newPlayers })}</td>
+                      <td className="px-2 py-1 text-right tabular-nums text-rw-sub" data-sort={y.newTeams * 100 + y.newPlayers}>{tl("{t} teams · {p} players", { t: y.newTeams, p: y.newPlayers })}</td>
                     </tr>
                   ));
                 })()}
               </tbody>
-            </table>
+            </STable>
           </div>
         </Section>
       )}

@@ -7,6 +7,7 @@ import React, { useMemo, useState } from "react";
 import { tl, regionName } from "../../i18n";
 import type { EventLines } from "../../hub/worldsFacts";
 import { Section } from "./ui";
+import { STable } from "../STable";
 import { SectionCard } from "./BroadcastCard";
 import { chanceShade } from "../SwissStandings";
 
@@ -275,7 +276,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
         }
       >
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <STable className="w-full text-xs">
             <thead className="text-[10px] text-rw-muted">
               <tr>
                 <th className="px-2 py-1 text-left">{tl("Region")}</th>
@@ -303,8 +304,8 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                         <span className="truncate text-rw-text font-semibold">{regionLabel(r.code)}</span>
                       </span>
                     </td>
-                    <td className={cell}>{r.teams}</td>
-                    <td className={cell}>
+                    <td className={cell} data-sort={r.teams}>{r.teams}</td>
+                    <td className={cell} data-sort={r.sw * 1000 - r.sl}>
                       <span className="inline-flex items-center justify-end gap-1.5">
                         {sPct != null && (
                           <span className="hidden sm:inline-block w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
@@ -317,7 +318,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                         <span>{r.sw}-{r.sl}</span>
                       </span>
                     </td>
-                    <td className={cell}>
+                    <td className={cell} data-sort={gPct ?? -1}>
                       <span className="inline-flex items-center justify-end gap-1.5">
                         {gPct != null && (
                           <span className="hidden sm:inline-block w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
@@ -333,7 +334,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                         </span>
                       </span>
                     </td>
-                    <td className={cell}>
+                    <td className={cell} data-sort={oPct ?? -1}>
                       {r.ow + r.ol ? (
                         <span className="inline-flex items-center justify-end gap-1.5">
                           {oPct != null && (
@@ -352,9 +353,9 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                         "–"
                       )}
                     </td>
-                    <td className={`${cell} ${r.best === 1 ? "text-rw-accent font-bold" : ""}`}>{bestText(r.best)}</td>
+                    <td className={`${cell} ${r.best === 1 ? "text-rw-accent font-bold" : ""}`} data-sort={r.best ? -r.best : -999}>{bestText(r.best)}</td>
                     {all && (
-                      <td className={`${cell} font-bold ${r.titles ? "text-rw-accent" : "text-rw-muted"}`}>
+                      <td className={`${cell} font-bold ${r.titles ? "text-rw-accent" : "text-rw-muted"}`} data-sort={r.titles}>
                         <span className="inline-flex items-center justify-end gap-1.5">
                           {tBar > 0 && (
                             <span className="hidden sm:inline-block w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
@@ -366,7 +367,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                       </td>
                     )}
                     {all && (
-                      <td className={cell}>
+                      <td className={cell} data-sort={r.finals}>
                         <span className="inline-flex items-center justify-end gap-1.5">
                           {fBar > 0 && (
                             <span className="hidden sm:inline-block w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
@@ -381,7 +382,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 );
               })}
             </tbody>
-          </table>
+          </STable>
         </div>
       </Section>
       {pairs.length > 0 && (

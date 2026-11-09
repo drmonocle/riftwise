@@ -55,7 +55,9 @@ export const PatchesPanel: React.FC = () => {
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <div className="flex flex-wrap items-baseline gap-2">
                   <h3 className="text-sm font-bold text-rw-text">
-                    {tl("Patch {patch}", { patch: p.p })}
+                    <HubLink to={{ kind: "champions", query: `key=p${p.p}` }} className="hover:text-rw-accent hover:underline">
+                      {tl("Patch {patch}", { patch: p.p })}
+                    </HubLink>
                   </h3>
                   <span className="text-[11px] text-rw-muted">
                     {fmtDate(p.from)} – {fmtDate(p.to)} ·{" "}
@@ -330,12 +332,10 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
             return (
               <tr key={l.u} className="border-t border-rw-border">
                 <td className={`${td} max-w-[22rem]`}>
-                  <div className="flex items-baseline gap-2 min-w-0">
+                  <HubLink to={{ kind: "league", slug: l.u }} className="flex items-baseline gap-2 min-w-0 hover:underline">
                     {l.s && <span className="shrink-0 font-bold text-rw-accent">{l.s}</span>}
-                    <HubLink to={{ kind: "league", slug: l.u }} className="truncate">
-                      {l.l}
-                    </HubLink>
-                  </div>
+                    <span className="truncate">{l.l}</span>
+                  </HubLink>
                   {l.h && l.h.length > 1 && <HistoryChain steps={l.h} current={l.u} small />}
                 </td>
                 <td className={`${td} text-rw-sub`}>{l.r ? regionName(l.r, l.r) : ""}</td>

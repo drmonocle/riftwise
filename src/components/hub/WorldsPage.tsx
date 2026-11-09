@@ -28,6 +28,7 @@ import { liveLines } from "../../hub/liveLines";
 import type { EventLines } from "../../hub/worldsFacts";
 import { Failed, HubLink, Loading, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
 import { JumpBar, type JumpItem } from "./PageTabs";
+import { STable } from "../STable";
 import { EventBracketBlock } from "./EventPage";
 import { countView } from "../../usage";
 
@@ -442,7 +443,7 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
   const rows = Object.keys(rec).sort((a, b) => rec[b][0] - rec[a][0] || rec[a][1] - rec[b][1] || (byU.get(a)?.n || a).localeCompare(byU.get(b)?.n || b));
   return (
     <div className="overflow-x-auto max-w-full">
-      <table className="w-full text-xs">
+      <STable className="w-full text-xs">
         <thead className="text-[10px] text-rw-muted">
           <tr>
             <th className="px-2 py-1 text-left">{tl("Team")}</th>
@@ -466,7 +467,7 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                     <TeamLink name={t?.c || t?.n || u} u={u} className="hover:text-rw-accent sm:hidden" />
                   </span>
                 </td>
-                <td className="px-2 py-1 text-center tabular-nums font-bold">
+                <td className="px-2 py-1 text-center tabular-nums font-bold" data-sort={w * 10 - l}>
                   <span className="inline-flex items-center gap-1.5">
                     <span>
                       {w}-{l}
@@ -481,7 +482,7 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                     </span>
                   </span>
                 </td>
-                <td className={`px-2 py-1 ${w >= 3 ? "text-rw-teal font-semibold" : l >= 3 ? "text-rw-red" : "text-rw-sub"}`}>
+                <td className={`px-2 py-1 ${w >= 3 ? "text-rw-teal font-semibold" : l >= 3 ? "text-rw-red" : "text-rw-sub"}`} data-sort={w >= 3 ? 2 : l >= 3 ? 0 : 1}>
                   {w >= 3 ? tl("through") : l >= 3 ? tl("out") : tl("Still in")}
                 </td>
                 <td className="px-2 py-1 text-rw-sub whitespace-nowrap">
@@ -499,7 +500,7 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
             );
           })}
         </tbody>
-      </table>
+      </STable>
     </div>
   );
 };
@@ -718,7 +719,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
         </p>
       )}
       <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+        <STable className="w-full text-xs">
           <thead className="text-[10px] text-rw-muted">
             <tr>
               <th className="px-2 py-1 text-left">{tl("Year")}</th>
@@ -730,7 +731,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
           <tbody>
             {shown.map((x) => (
               <tr key={x.e || x.y} className={`border-t border-rw-border ${x.y === current ? "bg-rw-accent/10" : ""}`}>
-                <td className="px-2 py-1 tabular-nums">
+                <td className="px-2 py-1 tabular-nums" data-sort={x.y}>
                   {x.e ? (
                     <HubLink to={{ kind: "event", slug: x.e }} className="text-rw-sub hover:text-rw-accent hover:underline">
                       {x.y}
@@ -755,13 +756,20 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                 <td className="px-2 py-1 text-center tabular-nums font-bold max-sm:hidden">
                   {(() => {
                     const m = /^(\d+)\s*[-–]\s*(\d+)$/.exec(x.score || "");
-                    if (!m) return x.score;
+                    const scoreNode = x.e ? (
+                      <HubLink to={{ kind: "event", slug: x.e }} className="hover:text-rw-accent hover:underline">
+                        {x.score}
+                      </HubLink>
+                    ) : (
+                      <span>{x.score}</span>
+                    );
+                    if (!m) return scoreNode;
                     const wa = Number(m[1]);
                     const wb = Number(m[2]);
                     const tot = wa + wb;
                     return (
                       <span className="inline-flex items-center gap-1.5">
-                        <span>{x.score}</span>
+                        {scoreNode}
                         {tot > 0 && (
                           <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
                             <span className="h-full bg-rw-teal/85" style={{ width: `${Math.round((wa / tot) * 100)}%` }} />
@@ -785,7 +793,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
               </tr>
             ))}
           </tbody>
-        </table>
+        </STable>
       </div>
       {runs.length > 0 && (
         <p className="text-[11px] text-rw-sub flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -1229,7 +1237,7 @@ const OddsTable: React.FC<{ odds: Record<string, TeamOdds>; teams: WTeam[] }> = 
   };
   return (
     <div className="overflow-x-auto max-w-full">
-      <table className="w-full text-xs">
+      <STable className="w-full text-xs">
         <thead className="text-[10px] text-rw-muted">
           <tr>
             <th className="px-2 py-1 text-left">{tl("Team")}</th>
@@ -1251,16 +1259,16 @@ const OddsTable: React.FC<{ odds: Record<string, TeamOdds>; teams: WTeam[] }> = 
                     <TeamLink name={t.n} u={t.u} className="truncate hover:text-rw-accent" />
                   </span>
                 </td>
-                <td className={cell}>{barCell(o.r30)}</td>
-                <td className={cell}>{barCell(o.adv)}</td>
-                <td className={cell}>{barCell(o.sf)}</td>
-                <td className={cell}>{barCell(o.final)}</td>
-                <td className={`${cell} font-bold text-rw-accent`}>{barCell(o.win, true)}</td>
+                <td className={cell} data-sort={o.r30}>{barCell(o.r30)}</td>
+                <td className={cell} data-sort={o.adv}>{barCell(o.adv)}</td>
+                <td className={cell} data-sort={o.sf}>{barCell(o.sf)}</td>
+                <td className={cell} data-sort={o.final}>{barCell(o.final)}</td>
+                <td className={`${cell} font-bold text-rw-accent`} data-sort={o.win}>{barCell(o.win, true)}</td>
               </tr>
             );
           })}
         </tbody>
-      </table>
+      </STable>
     </div>
   );
 };
@@ -1408,7 +1416,7 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
         </div>
         {odds && (
           <div className="overflow-x-auto max-w-full">
-            <table className="w-full text-xs">
+            <STable className="w-full text-xs">
               <thead className="text-[10px] text-rw-muted">
                 <tr>
                   <th className="px-2 py-1 text-left">{tl("Team")}</th>
@@ -1434,7 +1442,7 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                         const pct = Math.max(0, Math.min(100, Math.round(x * 100)));
                         const isWin = k === br.reach.length;
                         return (
-                          <td key={k} className={`px-2 py-1 text-right tabular-nums ${isWin ? "font-bold text-rw-accent" : ""}`}>
+                          <td key={k} className={`px-2 py-1 text-right tabular-nums ${isWin ? "font-bold text-rw-accent" : ""}`} data-sort={x}>
                             <span className="inline-flex items-center justify-end gap-1.5">
                               {pct > 0 && (
                                 <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
@@ -1449,7 +1457,7 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                     </tr>
                   ))}
               </tbody>
-            </table>
+            </STable>
           </div>
         )}
       </Section>

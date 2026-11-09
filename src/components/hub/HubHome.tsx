@@ -363,9 +363,19 @@ const FeaturedMatch: React.FC<{
         {team(m.team1Code, m.team1Name, m.team1Image, false)}
         <div className="text-center">
           {showScore ? (
-            <span className="font-num text-3xl sm:text-4xl font-bold text-rw-text tabular-nums">
-              {m.team1Score} – {m.team2Score}
-            </span>
+            live && onSelectTab ? (
+              <button
+                type="button"
+                onClick={() => onSelectTab("live")}
+                className="font-num text-3xl sm:text-4xl font-bold text-rw-text hover:text-rw-accent tabular-nums"
+              >
+                {m.team1Score} – {m.team2Score}
+              </button>
+            ) : (
+              <span className="font-num text-3xl sm:text-4xl font-bold text-rw-text tabular-nums">
+                {m.team1Score} – {m.team2Score}
+              </span>
+            )
           ) : (
             <span className="text-xs font-bold text-rw-sub bg-rw-bg border border-rw-border px-2.5 py-1 rounded-full uppercase tracking-widest font-num">{tl("VS")}</span>
           )}
@@ -434,7 +444,7 @@ const EventNow: React.FC<{ intl?: Match; schedule?: Match[]; settings?: AppSetti
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <Eyebrow>{ev ? tl("Happening now") : tl("Tournaments")}</Eyebrow>
-          <h2 className="font-head text-2xl font-bold text-rw-text leading-tight mt-1">{title}</h2>
+          <h2 {...clickable(open)} className="font-head text-2xl font-bold text-rw-text hover:text-rw-accent cursor-pointer leading-tight mt-1">{title}</h2>
           {ev && running[0] && <p className="text-[11px] text-rw-muted font-num">{line(running[0])}</p>}
         </div>
         {ev && (
@@ -818,12 +828,12 @@ export const EventsBrowse: React.FC<{ year?: string; meta: HubMeta | null; onYea
           className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1.5 text-rw-text placeholder-rw-muted flex-1 min-w-[10rem]"
         />
       </div>
-      <Page state={state}>{(list) => <EventsTable list={list} scope={scope} q={q} />}</Page>
+      <Page state={state}>{(list) => <EventsTable list={list} scope={scope} q={q} onSetQ={setQ} />}</Page>
     </div>
   );
 };
 
-const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: string }> = ({ list, scope, q }) => {
+const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: string; onSetQ?: (q: string) => void }> = ({ list, scope, q, onSetQ }) => {
   const rows = useMemo(() => {
     const qq = q.trim().toLowerCase();
     return list.filter((e) => {
@@ -863,7 +873,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
         </thead>
         <tbody>
           {rows.map((e) => (
-            <BrowseRow key={e.u} e={e} maxG={maxG} />
+            <BrowseRow key={e.u} e={e} maxG={maxG} q={q} onSetQ={onSetQ} />
           ))}
         </tbody>
       </STable>
@@ -871,7 +881,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
   );
 };
 
-const BrowseRow: React.FC<{ e: EventListItem; maxG: number }> = ({ e, maxG }) => {
+const BrowseRow: React.FC<{ e: EventListItem; maxG: number; q?: string; onSetQ?: (q: string) => void }> = ({ e, maxG, q = "", onSetQ }) => {
   const [hidden, reveal] = useHidden(`event:${e.u}`, e.en);
   return (
     <tr className="border-t border-rw-border">
@@ -882,7 +892,23 @@ const BrowseRow: React.FC<{ e: EventListItem; maxG: number }> = ({ e, maxG }) =>
         {fmtDate(e.st, false)}
         {e.en && e.en !== e.st ? ` – ${fmtDate(e.en, false)}` : ""}
       </td>
-      <td className={`${td} text-rw-sub max-w-[8rem] truncate hidden sm:table-cell`}>{e.r ? regionName(e.r, e.r) : ""}</td>
+      <td className={`${td} text-rw-sub max-w-[8rem] truncate hidden sm:table-cell`}>
+        {e.r ? (
+          onSetQ ? (
+            <button
+              type="button"
+              onClick={() => onSetQ(q.trim().toLowerCase() === e.r!.toLowerCase() ? "" : e.r!)}
+              className="text-rw-sub hover:text-rw-accent hover:underline truncate max-w-full"
+            >
+              {regionName(e.r, e.r)}
+            </button>
+          ) : (
+            regionName(e.r, e.r)
+          )
+        ) : (
+          ""
+        )}
+      </td>
       <td className={`${td} max-w-[18rem] truncate`}>
         {e.w ? (
           hidden ? (
