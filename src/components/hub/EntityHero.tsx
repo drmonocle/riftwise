@@ -17,6 +17,13 @@ export interface HeroStat {
   title?: string;
   /** drawn beside the value (a sparkline) */
   corner?: React.ReactNode;
+  /** optional visual bar (single 0-100 pct bar or dual [a, b] split bar) */
+  bar?: {
+    pct?: number;
+    tone?: "accent" | "teal" | "red";
+    split?: [number, number];
+    splitColors?: [string, string];
+  };
 }
 
 /** A button in a page's top card; `primary` for the one most people want. */
@@ -31,6 +38,7 @@ export const heroBtn = (primary = false) =>
 export const heroLink = "inline-flex items-center gap-1 text-[13px] text-rw-accent hover:underline";
 
 const Cell: React.FC<{ s: HeroStat }> = ({ s }) => {
+  const splitTotal = s.bar?.split ? s.bar.split[0] + s.bar.split[1] : 0;
   const body = (
     <>
       <div className="font-head text-[12px] font-semibold uppercase tracking-[0.06em] text-rw-muted truncate">{s.label}</div>
@@ -38,6 +46,29 @@ const Cell: React.FC<{ s: HeroStat }> = ({ s }) => {
         <span className="font-num text-[20px] sm:text-[24px] font-bold leading-tight text-rw-text truncate tabular-nums">{s.value}</span>
         {s.corner && <span className="shrink-0">{s.corner}</span>}
       </div>
+      {s.bar && (splitTotal > 0 || s.bar.pct != null) && (
+        <div className="h-1.5 rounded-full bg-rw-bg overflow-hidden flex my-1" aria-hidden="true">
+          {s.bar.split && splitTotal > 0 ? (
+            <>
+              <div
+                className={s.bar.splitColors?.[0] || "bg-rw-teal/80"}
+                style={{ width: `${(s.bar.split[0] / splitTotal) * 100}%` }}
+              />
+              <div
+                className={s.bar.splitColors?.[1] || "bg-rw-red/65"}
+                style={{ width: `${(s.bar.split[1] / splitTotal) * 100}%` }}
+              />
+            </>
+          ) : s.bar.pct != null ? (
+            <div
+              className={`rounded-full ${
+                s.bar.tone === "teal" ? "bg-rw-teal/80" : s.bar.tone === "red" ? "bg-rw-red/75" : "bg-rw-accent/80"
+              }`}
+              style={{ width: `${Math.max(4, Math.min(100, s.bar.pct))}%` }}
+            />
+          ) : null}
+        </div>
+      )}
       {s.sub != null && s.sub !== "" && <div className="text-[12px] text-rw-sub line-clamp-2">{s.sub}</div>}
     </>
   );

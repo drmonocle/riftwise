@@ -74,7 +74,9 @@ const URL_LANGS: Record<string, string> = {
   es: "es", "pt-br": "pt-BR", ko: "ko", vi: "vi", "zh-cn": "zh-CN", "zh-tw": "zh-TW", ja: "ja", fr: "fr", de: "de", tr: "tr",
 };
 const startSeg =
-  IS_WEB && typeof window !== "undefined" ? (new RegExp(`^${ROOT}([A-Za-z-]+)(?:/|$)`).exec(window.location.pathname)?.[1] || "").toLowerCase() : "";
+  IS_WEB && typeof window !== "undefined" && window.location?.pathname
+    ? (new RegExp(`^${ROOT}([A-Za-z-]+)(?:/|$)`).exec(window.location.pathname)?.[1] || "").toLowerCase()
+    : "";
 /** The language the address asks for (null: none, or the desktop app). */
 export const URL_LANG: string | null = URL_LANGS[startSeg] || null;
 
@@ -85,13 +87,13 @@ export const BASE: string = URL_LANG ? `${ROOT}${startSeg}/` : ROOT;
 /** This page's address in another language (English: no prefix), for the language pickers. */
 export function langAddress(code: string): string {
   const seg = Object.keys(URL_LANGS).find((k) => URL_LANGS[k] === code);
-  const tail = window.location.pathname.slice(BASE.length) + window.location.search + window.location.hash;
+  const tail = (window.location?.pathname || "").slice(BASE.length) + (window.location?.search || "") + (window.location?.hash || "");
   return `${ROOT}${seg ? `${seg}/` : ""}${tail}`;
 }
 
 /** The hub page an address points at, or null when it isn't one (the live scores page, say). */
 export function parseHubPath(pathname: string, search = ""): HubRoute | null {
-  if (!pathname.startsWith(BASE)) return null;
+  if (!pathname || !pathname.startsWith(BASE)) return null;
   const parts = pathname.slice(BASE.length).split("/").filter(Boolean).map((p) => {
     try {
       return decodeURIComponent(p);
@@ -188,7 +190,7 @@ export const sameRoute = (a: HubRoute, b: HubRoute) => hubPath(a) === hubPath(b)
 
 // ── The current page ──────────────────────────────────────────────────────
 
-const atStart = IS_WEB && typeof window !== "undefined" ? parseHubPath(window.location.pathname, window.location.search) : null;
+const atStart = IS_WEB && typeof window !== "undefined" && window.location?.pathname ? parseHubPath(window.location.pathname, window.location.search || "") : null;
 let current: HubRoute = atStart || HUB_HOME;
 const desktopStack: HubRoute[] = [];
 const listeners = new Set<() => void>();

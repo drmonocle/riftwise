@@ -263,8 +263,18 @@ const PlayerView: React.FC<{
         stats={
           overview
             ? [
-                { label: tl("Games"), value: `${fmtNum(p.w)}–${fmtNum(p.g - p.w)}`, sub: tl("{pct} win rate", { pct: winRate(p.w, p.g) }) },
-                { label: tl("KDA"), value: fmtN(p.kda), sub: `${fmtNum(p.k)} / ${fmtNum(p.d)} / ${fmtNum(p.a)}` },
+                {
+                  label: tl("Games"),
+                  value: `${fmtNum(p.w)}–${fmtNum(p.g - p.w)}`,
+                  sub: tl("{pct} win rate", { pct: winRate(p.w, p.g) }),
+                  bar: p.g > 0 ? { split: [p.w, p.g - p.w] } : undefined,
+                },
+                {
+                  label: tl("KDA"),
+                  value: fmtN(p.kda),
+                  sub: `${fmtNum(p.k)} / ${fmtNum(p.d)} / ${fmtNum(p.a)}`,
+                  bar: p.kda > 0 ? { pct: Math.min(100, Math.round((p.kda / 6) * 100)), tone: p.kda >= 4 ? "teal" : p.kda < 2.5 ? "red" : "accent" } : undefined,
+                },
                 {
                   label: tl("Titles"),
                   value: p.titles.length,

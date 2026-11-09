@@ -202,11 +202,31 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
             </div>
           }
           stats={[
-            { label: tl("Picks"), value: fmtNum(c.p) },
-            { label: tl("Bans"), value: fmtNum(c.b) },
-            { label: tl("Win %"), value: winRate(c.w, c.p) },
+            {
+              label: tl("Picks"),
+              value: fmtNum(c.p),
+              bar: c.p + c.b > 0 ? { pct: Math.round((c.p / (c.p + c.b)) * 100), tone: "teal" } : undefined,
+            },
+            {
+              label: tl("Bans"),
+              value: fmtNum(c.b),
+              bar: c.p + c.b > 0 ? { pct: Math.round((c.b / (c.p + c.b)) * 100), tone: "red" } : undefined,
+            },
+            {
+              label: tl("Win %"),
+              value: winRate(c.w, c.p),
+              bar: c.p > 0 ? { pct: Math.round((c.w / c.p) * 100), tone: c.w / c.p >= 0.5 ? "teal" : "red" } : undefined,
+            },
             c.side && c.side[0] + c.side[2] > 0
-              ? { label: tl("Blue / red side"), value: `${pctOf(c.side[1], c.side[0])} / ${pctOf(c.side[3], c.side[2])}`, sub: tl("win rate on each side") }
+              ? {
+                  label: tl("Blue / red side"),
+                  value: `${pctOf(c.side[1], c.side[0])} / ${pctOf(c.side[3], c.side[2])}`,
+                  sub: tl("win rate on each side"),
+                  bar: {
+                    split: [c.side[0] ? c.side[1] / c.side[0] : 0, c.side[2] ? c.side[3] / c.side[2] : 0],
+                    splitColors: ["bg-[#4a9eff]/85", "bg-rw-red/80"],
+                  },
+                }
               : null,
           ]}
         />

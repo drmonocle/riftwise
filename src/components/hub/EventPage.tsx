@@ -29,12 +29,14 @@ import {
   HubLink,
   Page,
   PlayerLink,
+  PlayerPhoto,
   RevealButton,
   Section,
   Stat,
   td,
   th,
   TeamLink,
+  TeamLogo,
   useHidden,
   useHiddenCheck,
   useLoad,
@@ -263,7 +265,10 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                         {r.p}
                       </td>
                       <td className={td}>
-                        <TeamLink name={r.t} u={r.u} />
+                        <span className="inline-flex items-center gap-1.5 min-w-0">
+                          <TeamLogo name={r.t} size={16} />
+                          <TeamLink name={r.t} u={r.u} />
+                        </span>
                       </td>
                       <td className={`${td} text-right text-rw-muted`} data-sort={r.usd || 0}>
                         {r.usd ? (
@@ -398,8 +403,11 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                 <tbody>
                   {e.teams.map((t) => (
                     <tr key={t.t} className="border-t border-rw-border">
-                      <td className={`${td} max-w-[12rem] truncate`}>
-                        <TeamLink name={t.t} u={t.u} />
+                      <td className={`${td} max-w-[12rem]`}>
+                        <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
+                          <TeamLogo name={t.t} size={16} />
+                          <TeamLink name={t.t} u={t.u} className="truncate" />
+                        </span>
                       </td>
                       <td className={`${td} text-rw-sub`} data-sort={t.sg ? t.sw / t.sg : 0}>
                         {resultsHidden ? "–" : t.sg ? <WinBar w={t.sw} g={t.sg} showRecord /> : `${t.sw}-${t.sg - t.sw}`}
@@ -432,10 +440,11 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
   const played = r.sa != null && r.sb != null;
   const line = (name: string, u: string | null, score: number | null, won: boolean) => (
     <div className="flex items-center justify-between gap-2 min-w-0">
-      <span className={`truncate ${!hidden && won ? "text-rw-text font-bold" : "text-rw-sub"}`}>
-        <TeamLink name={name} u={u} className={!hidden && won ? "text-rw-text font-bold hover:underline" : "text-rw-sub hover:text-rw-text hover:underline"} />
+      <span className={`inline-flex items-center gap-1.5 truncate min-w-0 ${!hidden && won ? "text-rw-text font-bold" : "text-rw-sub"}`}>
+        <TeamLogo name={name} size={14} />
+        <TeamLink name={name} u={u} className={`truncate ${!hidden && won ? "text-rw-text font-bold hover:underline" : "text-rw-sub hover:text-rw-text hover:underline"}`} />
       </span>
-      <span className={`tabular-nums font-bold ${!hidden && won ? "text-rw-teal" : "text-rw-muted"}`}>{played ? (hidden ? "?" : score) : ""}</span>
+      <span className={`tabular-nums font-bold shrink-0 ${!hidden && won ? "text-rw-teal" : "text-rw-muted"}`}>{played ? (hidden ? "?" : score) : ""}</span>
     </div>
   );
   return (
@@ -714,11 +723,14 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
         <tbody>
           {rows.map((r, i) => (
             <tr key={r.t + i} className="border-t border-rw-border">
-              <td className={`${td} text-rw-muted`}>{hide || r.pl === 0 ? "–" : r.pl ?? i + 1}</td>
-              <td className={`${td} max-w-[11rem] truncate`}>
-                <TeamLink name={r.t} u={r.u} />
+              <td className={`${td} text-rw-muted`} data-sort={r.pl ?? i + 1}>{hide || r.pl === 0 ? "–" : r.pl ?? i + 1}</td>
+              <td className={`${td} max-w-[11rem]`}>
+                <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
+                  <TeamLogo name={r.t} size={16} />
+                  <TeamLink name={r.t} u={r.u} className="truncate" />
+                </span>
               </td>
-              <td className={`${td} text-rw-sub tabular-nums`}>
+              <td className={`${td} text-rw-sub tabular-nums`} data-sort={hide ? 0 : (r.sw ?? 0) + (r.sl ?? 0) > 0 ? (r.sw ?? 0) / ((r.sw ?? 0) + (r.sl ?? 0)) : 0}>
                 {hide ? (
                   "–"
                 ) : !ties && (r.sw ?? 0) + (r.sl ?? 0) > 0 ? (
@@ -727,7 +739,7 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
                   `${r.sw ?? 0}-${r.sl ?? 0}${ties ? `-${r.st ?? 0}` : ""}`
                 )}
               </td>
-              <td className={`${td} text-rw-muted tabular-nums`}>
+              <td className={`${td} text-rw-muted tabular-nums`} data-sort={hide || r.gw == null ? 0 : r.gw + (r.gl ?? 0) > 0 ? r.gw / (r.gw + (r.gl ?? 0)) : 0}>
                 {hide || r.gw == null ? (
                   "–"
                 ) : r.gw + (r.gl ?? 0) > 0 ? (
@@ -800,10 +812,13 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
                 className="pointer-events-none absolute inset-y-0 left-0 rounded"
                 style={{ width: `${pct}%`, background: i === 0 ? "rgba(216,184,120,0.16)" : "rgba(130,170,255,0.08)" }}
               />
-              <span className="relative truncate min-w-0">
-                <span className={`mr-1.5 tabular-nums ${i === 0 ? "text-rw-accent font-bold" : "text-rw-muted"}`}>{i + 1}.</span>
+              <span className="relative inline-flex items-center gap-1.5 truncate min-w-0">
+                <span className={`w-4 shrink-0 tabular-nums ${i === 0 ? "text-rw-accent font-bold" : "text-rw-muted"}`}>{i + 1}.</span>
+                <PlayerPhoto name={r.n} team={r.t} slug={r.u ?? undefined} size={20} />
                 <PlayerLink name={r.n} u={r.u} />
-                <span className="text-rw-muted"> · {r.t}</span>
+                <span className="text-rw-muted shrink-0">·</span>
+                <TeamLogo name={r.t} size={14} />
+                <span className="text-rw-muted truncate">{r.t}</span>
               </span>
               <span className="relative shrink-0 text-rw-sub tabular-nums">
                 <span className="text-rw-accent font-bold">{fmtNum(r.v)}</span> · {tn("{n} game", "{n} games", r.g)}

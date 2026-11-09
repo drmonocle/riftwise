@@ -304,8 +304,18 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
         stats={
           overview
             ? [
-                { label: tl("Games"), value: `${fmtNum(t.w)}–${fmtNum(t.g - t.w)}`, sub: tl("{pct} win rate", { pct: winRate(t.w, t.g) }) },
-                { label: tl("Series"), value: `${t.sw}–${t.sg - t.sw}`, sub: tl("{pct} won", { pct: winRate(t.sw, t.sg) }) },
+                {
+                  label: tl("Games"),
+                  value: `${fmtNum(t.w)}–${fmtNum(t.g - t.w)}`,
+                  sub: tl("{pct} win rate", { pct: winRate(t.w, t.g) }),
+                  bar: t.g > 0 ? { split: [t.w, t.g - t.w] } : undefined,
+                },
+                {
+                  label: tl("Series"),
+                  value: `${t.sw}–${t.sg - t.sw}`,
+                  sub: tl("{pct} won", { pct: winRate(t.sw, t.sg) }),
+                  bar: t.sg > 0 ? { split: [t.sw, t.sg - t.sw] } : undefined,
+                },
                 t.rating
                   ? {
                       label: tl("Power ranking"),
@@ -339,6 +349,10 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                       label: tl("Blue / red side"),
                       value: `${winRate(t.sides[1], t.sides[0])} / ${winRate(t.sides[3], t.sides[2])}`,
                       sub: tl("{b} blue games · {r} red", { b: fmtNum(t.sides[0]), r: fmtNum(t.sides[2]) }),
+                      bar: {
+                        split: [t.sides[0] ? t.sides[1] / t.sides[0] : 0, t.sides[2] ? t.sides[3] / t.sides[2] : 0],
+                        splitColors: ["bg-[#4a9eff]/85", "bg-rw-red/80"],
+                      },
                     }
                   : null,
                 t.obj
