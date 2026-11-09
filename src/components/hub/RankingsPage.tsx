@@ -130,6 +130,9 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
     const p = trend(r);
     return p && p.length > 1 ? p[p.length - 1][1] - p[0][1] : r[6];
   };
+  const maxRowRating = useMemo(() => Math.max(1500, ...rows.map((x) => x.r[5])), [rows]);
+  const minRowRating = useMemo(() => Math.min(1100, ...rows.map((x) => x.r[5])) - 40, [rows]);
+  const maxRowGames = useMemo(() => Math.max(1, ...rows.map((x) => x.r[7] || 0)), [rows]);
   const columns: Column<Row>[] = [
     {
       key: "rank",
@@ -176,6 +179,17 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       key: "rating",
       label: tl("Rating"),
       value: (x) => x.r[5],
+      render: (x) => {
+        const w = Math.max(10, Math.min(100, Math.round(((x.r[5] - minRowRating) / Math.max(1, maxRowRating - minRowRating)) * 100)));
+        return (
+          <span className="inline-flex flex-col gap-0.5 min-w-[3.25rem]">
+            <span>{x.r[5]}</span>
+            <span className="h-1 w-11 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
+              <span className="block h-full rounded-full bg-rw-accent/80" style={{ width: `${w}%` }} />
+            </span>
+          </span>
+        );
+      },
       className: "tabular-nums font-bold text-rw-accent",
     },
     {
@@ -204,7 +218,16 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       value: (x) => vs1(x.r),
       render: (x) => {
         const v = vs1(x.r);
-        return v == null ? "–" : pct(v);
+        if (v == null) return "–";
+        const p = Math.max(4, Math.min(100, Math.round(v * 100)));
+        return (
+          <span className="inline-flex flex-col gap-0.5 min-w-[2.75rem]">
+            <span>{pct(v)}</span>
+            <span className="h-1 w-10 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
+              <span className={`block h-full rounded-full ${v >= 0.45 ? "bg-rw-teal/75" : "bg-rw-sub/55"}`} style={{ width: `${p}%` }} />
+            </span>
+          </span>
+        );
       },
       className: "tabular-nums text-rw-sub",
     },
@@ -213,7 +236,17 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       label: tl("Games"),
       title: tl("Pro games rated"),
       value: (x) => x.r[7],
-      render: (x) => fmtNum(x.r[7]),
+      render: (x) => {
+        const w = Math.max(6, Math.min(100, Math.round(((x.r[7] || 0) / maxRowGames) * 100)));
+        return (
+          <span className="inline-flex flex-col gap-0.5 min-w-[2.75rem]">
+            <span>{fmtNum(x.r[7])}</span>
+            <span className="h-1 w-10 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
+              <span className="block h-full rounded-full bg-rw-sub/55" style={{ width: `${w}%` }} />
+            </span>
+          </span>
+        );
+      },
       className: "tabular-nums text-rw-sub",
     },
     {
@@ -545,7 +578,12 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                     <td
                       className={`${td} text-right tabular-nums font-bold text-rw-text`}
                     >
-                      {pct(won)}
+                      <span className="inline-flex items-center justify-end gap-1.5">
+                        <span className="hidden sm:inline-block w-10 h-1 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
+                          <span className="block h-full rounded-full bg-rw-teal/80" style={{ width: `${Math.max(6, Math.min(100, Math.round(won * 100)))}%` }} />
+                        </span>
+                        <span>{pct(won)}</span>
+                      </span>
                     </td>
                   </tr>
                 ))}

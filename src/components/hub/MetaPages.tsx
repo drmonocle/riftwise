@@ -161,15 +161,32 @@ const Movers: React.FC<{ title: string; list: PatchMove[]; up?: boolean }> = ({ 
     <div className="min-w-0">
       <div className={`text-[10px] uppercase tracking-wider font-bold mb-1 ${up ? "text-rw-teal" : "text-rw-red"}`}>{title}</div>
       <ul className="text-xs space-y-1">
-        {list.map(([c, now, was, w, pk]) => (
-          <li key={c} className="flex items-center justify-between gap-2 min-w-0">
-            <ChampLink name={c} size={18} />
-            <span className="tabular-nums shrink-0 text-rw-sub" title={tl("Presence: picked or banned in this share of games")}>
-              {Math.round(was * 100)}% → <span className="text-rw-text font-semibold">{Math.round(now * 100)}%</span>
-              {pk >= 5 && <span className="text-rw-muted"> · {tl("{pct} won", { pct: `${Math.round((w / pk) * 100)}%` })}</span>}
-            </span>
-          </li>
-        ))}
+        {list.map(([c, now, was, w, pk]) => {
+          const nowPct = Math.round(now * 100);
+          const wrPct = pk ? Math.round((w / pk) * 100) : 0;
+          return (
+            <li key={c} className="space-y-0.5 min-w-0">
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <ChampLink name={c} size={18} />
+                <span className="tabular-nums shrink-0 text-rw-sub" title={tl("Presence: picked or banned in this share of games")}>
+                  {Math.round(was * 100)}% → <span className={`font-semibold ${up ? "text-rw-teal" : "text-rw-red"}`}>{nowPct}%</span>
+                  {pk >= 5 && (
+                    <span className={wrPct >= 53 ? "text-rw-teal font-medium" : wrPct <= 47 ? "text-rw-red" : "text-rw-muted"}>
+                      {" "}
+                      · {tl("{pct} won", { pct: `${wrPct}%` })}
+                    </span>
+                  )}
+                </span>
+              </div>
+              <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                <div
+                  className={`h-full rounded-full ${up ? "bg-rw-teal/75" : "bg-rw-red/70"}`}
+                  style={{ width: `${Math.max(6, Math.min(100, nowPct))}%` }}
+                />
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </div>
   ) : (
@@ -274,6 +291,7 @@ const LeagueLists: React.FC<{ rows: LeagueRow[]; scope: LeagueScope; q: string }
 const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number }> = ({ title, rows, limit }) => {
   const [n, setN] = useState(limit || 0);
   const list = n ? rows.slice(0, n) : rows;
+  const maxG = Math.max(1, ...list.map((l) => l.g || 0));
   return (
     <div className={`${card} overflow-x-auto space-y-2`}>
       <div className="flex items-center justify-between gap-2">
@@ -304,23 +322,33 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
           </tr>
         </thead>
         <tbody>
-          {list.map((l) => (
-            <tr key={l.u} className="border-t border-rw-border">
-              <td className={`${td} max-w-[22rem]`}>
-                <div className="flex items-baseline gap-2 min-w-0">
-                  {l.s && <span className="shrink-0 font-bold text-rw-accent">{l.s}</span>}
-                  <HubLink to={{ kind: "league", slug: l.u }} className="truncate">
-                    {l.l}
-                  </HubLink>
-                </div>
-                {l.h && l.h.length > 1 && <HistoryChain steps={l.h} current={l.u} small />}
-              </td>
-              <td className={`${td} text-rw-sub`}>{l.r ? regionName(l.r, l.r) : ""}</td>
-              <td className={`${td} text-rw-muted`}>{l.from && l.to ? (l.from === l.to ? l.from : `${l.from}–${l.to}`) : ""}</td>
-              <td className={`${td} text-rw-sub`}>{l.n}</td>
-              <td className={`${td} text-rw-muted`}>{fmtNum(l.g)}</td>
-            </tr>
-          ))}
+          {list.map((l) => {
+            const gPct = Math.max(6, Math.round(((l.g || 0) / maxG) * 100));
+            return (
+              <tr key={l.u} className="border-t border-rw-border">
+                <td className={`${td} max-w-[22rem]`}>
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    {l.s && <span className="shrink-0 font-bold text-rw-accent">{l.s}</span>}
+                    <HubLink to={{ kind: "league", slug: l.u }} className="truncate">
+                      {l.l}
+                    </HubLink>
+                  </div>
+                  {l.h && l.h.length > 1 && <HistoryChain steps={l.h} current={l.u} small />}
+                </td>
+                <td className={`${td} text-rw-sub`}>{l.r ? regionName(l.r, l.r) : ""}</td>
+                <td className={`${td} text-rw-muted`}>{l.from && l.to ? (l.from === l.to ? l.from : `${l.from}–${l.to}`) : ""}</td>
+                <td className={`${td} text-rw-sub tabular-nums`}>{l.n}</td>
+                <td className={`${td} text-rw-muted tabular-nums`} data-sort={l.g}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span>{fmtNum(l.g)}</span>
+                    <span className="hidden sm:inline-block w-10 h-1 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
+                      <span className="block h-full rounded-full bg-rw-accent/65" style={{ width: `${gPct}%` }} />
+                    </span>
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </STable>
       {n > 0 && rows.length > n && (

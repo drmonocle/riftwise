@@ -348,132 +348,154 @@ export const RecordsPanel: React.FC = () => {
           title: string,
           rows: HubRecords["game"]["fastest"],
           fmt: (v: number) => string,
-        ) => (
-          <Section
-            title={title}
-            right={
-              rows.length > 0 ? (
-                <SectionCard
-                  section={title}
-                  name={recScopeLabel}
-                  rows={() =>
-                    rows.slice(0, 10).map((g, i) => ({
-                      label: `#${i + 1} · ${tl("{w} beat {l}", { w: g.w, l: g.w === g.a ? g.b : g.a })}`,
-                      sub: `${g.t} · ${fmtDate(g.date)}`,
-                      value: fmt(g.v),
-                      win: true,
-                    }))
-                  }
-                />
-              ) : undefined
-            }
-            share={shareName(title)}
-          >
-            <ol className="text-xs space-y-1.5">
-              {rows.map((g, i) => (
-                <li key={i} className="min-w-0">
-                  <div className="truncate">
-                    <span className="text-rw-accent font-bold mr-1">
-                      {fmt(g.v)}
-                    </span>
-                    {g.g ? (
-                      <HubLink to={{ kind: "match", slug: g.g, game: g.gn }}>
-                        {tl("{w} beat {l}", {
-                          w: g.w,
-                          l: g.w === g.a ? g.b : g.a,
-                        })}
-                      </HubLink>
-                    ) : (
-                      <span className="text-rw-text">
-                        {tl("{w} beat {l}", {
-                          w: g.w,
-                          l: g.w === g.a ? g.b : g.a,
-                        })}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[10px] text-rw-muted truncate">
-                    <EventLink
-                      name={g.t}
-                      u={g.e}
-                      className="text-rw-muted hover:text-rw-accent hover:underline"
-                    />{" "}
-                    · {fmtDate(g.date)}
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </Section>
-        );
+        ) => {
+          const minV = Math.min(...rows.map((g) => g.v || 1));
+          const maxV = Math.max(1, ...rows.map((g) => g.v || 1));
+          const lowerIsBetter = rows.length > 1 && rows[0].v < rows[rows.length - 1].v;
+          return (
+            <Section
+              title={title}
+              right={
+                rows.length > 0 ? (
+                  <SectionCard
+                    section={title}
+                    name={recScopeLabel}
+                    rows={() =>
+                      rows.slice(0, 10).map((g, i) => ({
+                        label: `#${i + 1} · ${tl("{w} beat {l}", { w: g.w, l: g.w === g.a ? g.b : g.a })}`,
+                        sub: `${g.t} · ${fmtDate(g.date)}`,
+                        value: fmt(g.v),
+                        win: true,
+                      }))
+                    }
+                  />
+                ) : undefined
+              }
+              share={shareName(title)}
+            >
+              <ol className="text-xs space-y-1.5">
+                {rows.map((g, i) => {
+                  const barPct = lowerIsBetter
+                    ? Math.max(8, Math.min(100, Math.round((minV / Math.max(g.v, 0.01)) * 100)))
+                    : Math.max(8, Math.min(100, Math.round((g.v / maxV) * 100)));
+                  return (
+                    <li key={i} className="space-y-0.5 min-w-0">
+                      <div className="truncate">
+                        <span className="text-rw-accent font-bold mr-1 tabular-nums">
+                          {fmt(g.v)}
+                        </span>
+                        {g.g ? (
+                          <HubLink to={{ kind: "match", slug: g.g, game: g.gn }}>
+                            {tl("{w} beat {l}", {
+                              w: g.w,
+                              l: g.w === g.a ? g.b : g.a,
+                            })}
+                          </HubLink>
+                        ) : (
+                          <span className="text-rw-text">
+                            {tl("{w} beat {l}", {
+                              w: g.w,
+                              l: g.w === g.a ? g.b : g.a,
+                            })}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-rw-muted truncate">
+                        <EventLink
+                          name={g.t}
+                          u={g.e}
+                          className="text-rw-muted hover:text-rw-accent hover:underline"
+                        />{" "}
+                        · {fmtDate(g.date)}
+                      </div>
+                      <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                        <div className="h-full rounded-full bg-rw-accent/70" style={{ width: `${barPct}%` }} />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </Section>
+          );
+        };
         const playerList = (
           title: string,
           rows: HubRecords["player"]["kills"],
           fmt: (v: number) => string = fmtNum,
-        ) => (
-          <Section
-            title={title}
-            right={
-              rows.length > 0 ? (
-                <SectionCard
-                  section={title}
-                  name={recScopeLabel}
-                  rows={() =>
-                    rows.slice(0, 10).map((p, i) => ({
-                      label: `#${i + 1} · ${p.pl} (${champName(p.c)})`,
-                      sub: `${p.kda} vs ${p.opp} · ${p.t} · ${fmtDate(p.date)}`,
-                      value: fmt(p.v),
-                      win: true,
-                    }))
-                  }
-                />
-              ) : undefined
-            }
-            share={shareName(title)}
-          >
-            <ol className="text-xs space-y-1.5">
-              {rows.map((p, i) => (
-                <li key={i} className="min-w-0">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <HubLink to={{ kind: "champ", slug: prettySlug(p.c) }} title={champName(p.c)} className="shrink-0">
-                      <ChampIcon name={p.c} size={18} />
-                    </HubLink>
-                    <div className="truncate min-w-0">
-                      <span className="text-rw-accent font-bold mr-1 tabular-nums">
-                        {fmt(p.v)}
-                      </span>
-                      <PlayerLink name={p.pl} u={p.u} />
-                      <span className="text-rw-sub">
-                        {" "}
-                        <HubLink to={{ kind: "champ", slug: prettySlug(p.c) }} className="hover:text-rw-accent hover:underline">
-                          {champName(p.c)}
-                        </HubLink>{" "}
-                        {p.g ? (
-                          <HubLink
-                            to={{ kind: "match", slug: p.g, game: p.gn }}
-                            className="text-rw-sub hover:text-rw-accent hover:underline"
-                          >
-                            {p.kda}
-                          </HubLink>
-                        ) : (
-                          p.kda
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-[10px] text-rw-muted truncate">
-                    vs {p.opp} ·{" "}
-                    <EventLink
-                      name={p.t}
-                      u={p.e}
-                      className="text-rw-muted hover:text-rw-accent hover:underline"
-                    />{" "}
-                    · {fmtDate(p.date)}
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </Section>
-        );
+        ) => {
+          const maxV = Math.max(1, rows[0]?.v || 1);
+          return (
+            <Section
+              title={title}
+              right={
+                rows.length > 0 ? (
+                  <SectionCard
+                    section={title}
+                    name={recScopeLabel}
+                    rows={() =>
+                      rows.slice(0, 10).map((p, i) => ({
+                        label: `#${i + 1} · ${p.pl} (${champName(p.c)})`,
+                        sub: `${p.kda} vs ${p.opp} · ${p.t} · ${fmtDate(p.date)}`,
+                        value: fmt(p.v),
+                        win: true,
+                      }))
+                    }
+                  />
+                ) : undefined
+              }
+              share={shareName(title)}
+            >
+              <ol className="text-xs space-y-1.5">
+                {rows.map((p, i) => {
+                  const barPct = Math.max(8, Math.min(100, Math.round((p.v / maxV) * 100)));
+                  return (
+                    <li key={i} className="space-y-0.5 min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <HubLink to={{ kind: "champ", slug: prettySlug(p.c) }} title={champName(p.c)} className="shrink-0">
+                          <ChampIcon name={p.c} size={18} />
+                        </HubLink>
+                        <div className="truncate min-w-0">
+                          <span className="text-rw-accent font-bold mr-1 tabular-nums">
+                            {fmt(p.v)}
+                          </span>
+                          <PlayerLink name={p.pl} u={p.u} />
+                          <span className="text-rw-sub">
+                            {" "}
+                            <HubLink to={{ kind: "champ", slug: prettySlug(p.c) }} className="hover:text-rw-accent hover:underline">
+                              {champName(p.c)}
+                            </HubLink>{" "}
+                            {p.g ? (
+                              <HubLink
+                                to={{ kind: "match", slug: p.g, game: p.gn }}
+                                className="text-rw-sub hover:text-rw-accent hover:underline"
+                              >
+                                {p.kda}
+                              </HubLink>
+                            ) : (
+                              p.kda
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-[10px] text-rw-muted truncate">
+                        vs {p.opp} ·{" "}
+                        <EventLink
+                          name={p.t}
+                          u={p.e}
+                          className="text-rw-muted hover:text-rw-accent hover:underline"
+                        />{" "}
+                        · {fmtDate(p.date)}
+                      </div>
+                      <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                        <div className="h-full rounded-full bg-rw-accent/70" style={{ width: `${barPct}%` }} />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </Section>
+          );
+        };
         const careerList = (
           title: string,
           rows: HubRecords["career"]["games"],
@@ -573,17 +595,25 @@ export const RecordsPanel: React.FC = () => {
                 share="records-longest-win-streaks"
               >
                 <ol className="text-xs space-y-1.5">
-                  {r.team.streaks.map((t, i) => (
-                    <li key={i} className="flex justify-between gap-2 min-w-0">
-                      <TeamLink name={t.team} u={t.u} />
-                      <span className="text-rw-muted">
-                        <span className="text-rw-accent font-bold">
-                          {tl("{n} games", { n: t.v })}
-                        </span>{" "}
-                        · {tl("ended {date}", { date: fmtDate(t.date) })}
-                      </span>
-                    </li>
-                  ))}
+                  {(() => {
+                    const maxStreak = Math.max(1, r.team.streaks[0]?.v || 1);
+                    return r.team.streaks.map((t, i) => (
+                      <li key={i} className="space-y-0.5 min-w-0">
+                        <div className="flex justify-between gap-2 min-w-0">
+                          <TeamLink name={t.team} u={t.u} />
+                          <span className="text-rw-muted shrink-0">
+                            <span className="text-rw-accent font-bold tabular-nums">
+                              {tl("{n} games", { n: t.v })}
+                            </span>{" "}
+                            · {tl("ended {date}", { date: fmtDate(t.date) })}
+                          </span>
+                        </div>
+                        <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                          <div className="h-full rounded-full bg-rw-teal/75" style={{ width: `${Math.max(8, Math.round((t.v / maxStreak) * 100))}%` }} />
+                        </div>
+                      </li>
+                    ));
+                  })()}
                 </ol>
               </Section>
               )}
@@ -611,19 +641,27 @@ export const RecordsPanel: React.FC = () => {
                 share="records-most-international-titles"
               >
                 <ol className="text-xs space-y-1.5">
-                  {r.team.titles.map((t, i) => (
-                    <li key={i} className="flex justify-between gap-2 min-w-0">
-                      <TeamLink name={t.team} u={t.u} />
-                      <span className="text-rw-muted">
-                        {t.worlds
-                          ? tl("{n} Worlds", { n: t.worlds }) + " · "
-                          : ""}
-                        <span className="text-rw-accent font-bold">
-                          {tl("{n} total", { n: t.v })}
-                        </span>
-                      </span>
-                    </li>
-                  ))}
+                  {(() => {
+                    const maxTitles = Math.max(1, r.team.titles[0]?.v || 1);
+                    return r.team.titles.map((t, i) => (
+                      <li key={i} className="space-y-0.5 min-w-0">
+                        <div className="flex justify-between gap-2 min-w-0">
+                          <TeamLink name={t.team} u={t.u} />
+                          <span className="text-rw-muted shrink-0">
+                            {t.worlds
+                              ? tl("{n} Worlds", { n: t.worlds }) + " · "
+                              : ""}
+                            <span className="text-rw-accent font-bold tabular-nums">
+                              {tl("{n} total", { n: t.v })}
+                            </span>
+                          </span>
+                        </div>
+                        <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                          <div className="h-full rounded-full bg-rw-accent/75" style={{ width: `${Math.max(8, Math.round((t.v / maxTitles) * 100))}%` }} />
+                        </div>
+                      </li>
+                    ));
+                  })()}
                 </ol>
               </Section>
               )}
@@ -776,8 +814,26 @@ export const TitlesPanel: React.FC = () => {
                           </span>
                         )}
                       </td>
-                      <td className={`${td} text-rw-sub`}>
-                        {x.score} vs {x.l}
+                       <td className={`${td} text-rw-sub`}>
+                        {(() => {
+                          const m = /^(\d+)\s*[–-]\s*(\d+)$/.exec(x.score || "");
+                          const sw = m ? Number(m[1]) : 0;
+                          const sl = m ? Number(m[2]) : 0;
+                          const wPct = sw + sl > 0 ? Math.round((sw / (sw + sl)) * 100) : 0;
+                          return (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span>
+                                {x.score} vs {x.l}
+                              </span>
+                              {sw + sl > 0 && (
+                                <span className="hidden sm:inline-flex w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
+                                  <span className="h-full bg-rw-teal/85" style={{ width: `${wPct}%` }} />
+                                  <span className="h-full bg-rw-red/70" style={{ width: `${100 - wPct}%` }} />
+                                </span>
+                              )}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className={`${td} text-rw-muted`} data-sort={x.date}>
                         {fmtDate(x.date)}
