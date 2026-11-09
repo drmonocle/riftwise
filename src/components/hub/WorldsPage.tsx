@@ -753,7 +753,13 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                     </span>
                   )}
                 </td>
-                <td className="px-2 py-1 text-center tabular-nums font-bold max-sm:hidden">
+                <td
+                  className="px-2 py-1 text-center tabular-nums font-bold max-sm:hidden"
+                  data-sort={(() => {
+                    const m = /^(\d+)\s*[-–]\s*(\d+)$/.exec(x.score || "");
+                    return m ? Number(m[1]) * 10 - Number(m[2]) : 0;
+                  })()}
+                >
                   {(() => {
                     const m = /^(\d+)\s*[-–]\s*(\d+)$/.exec(x.score || "");
                     const scoreNode = x.e ? (

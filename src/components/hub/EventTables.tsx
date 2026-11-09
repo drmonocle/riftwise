@@ -139,7 +139,18 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
               <ChampIcon name={c} size={16} />
             </HubLink>
           ))}
-          {p.nc > p.c.length && <span className="text-[10px] text-rw-muted ml-0.5">+{p.nc - p.c.length}</span>}
+          {p.nc > p.c.length && (
+            <HubLink
+              to={
+                p.u
+                  ? { kind: "player", slug: p.u, tab: "champions", query: `p=e:${encodeURIComponent(e.u)}` }
+                  : { kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(p.n)}` }
+              }
+              className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline ml-0.5"
+            >
+              +{p.nc - p.c.length}
+            </HubLink>
+          )}
         </span>
       ),
     },

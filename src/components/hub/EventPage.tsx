@@ -254,13 +254,20 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
             <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
           ) : (
             <STable className="w-full text-xs">
+              <thead>
+                <tr>
+                  <th className={`${th} w-12`}>#</th>
+                  <th className={th}>{tl("Team")}</th>
+                  <th className={`${th} text-right`}>{tl("Place")}</th>
+                </tr>
+              </thead>
               <tbody>
                 {(() => {
                   const shown = e.results.slice(0, 32);
                   const maxUsd = Math.max(0, ...shown.map((r) => r.usd || 0));
                   return shown.map((r, i) => (
                     <tr key={i} className="border-t border-rw-border first:border-0">
-                      <td className={`${td} w-12 font-bold ${r.p === "1" ? "text-rw-accent" : "text-rw-sub"}`}>
+                      <td className={`${td} w-12 font-bold ${r.p === "1" ? "text-rw-accent" : "text-rw-sub"}`} data-sort={Number(r.p.replace(/\D.*$/, "")) || i + 1}>
                         {r.p === "1" && <Trophy className="w-3 h-3 inline mr-1" />}
                         {r.p}
                       </td>
@@ -835,7 +842,13 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
                 <TeamLink name={r.t} u={e.teams?.find((tm) => tm.t === r.t)?.u} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
               </span>
               <span className="relative shrink-0 text-rw-sub tabular-nums">
-                <span className="text-rw-accent font-bold">{fmtNum(r.v)}</span> · {tn("{n} game", "{n} games", r.g)}
+                <span className="text-rw-accent font-bold">{fmtNum(r.v)}</span> ·{" "}
+                <HubLink
+                  to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(r.u || r.n)}` }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {tn("{n} game", "{n} games", r.g)}
+                </HubLink>
               </span>
             </li>
           );
@@ -974,7 +987,18 @@ const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
                     c.p
                   )}
                 </td>
-                <td className={`${td} text-rw-sub`} data-sort={c.b}>{c.b}</td>
+                <td className={`${td} text-rw-sub`} data-sort={c.b}>
+                  {c.b > 0 ? (
+                    <HubLink
+                      to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&ban=${encodeURIComponent(c.c)}` }}
+                      className="hover:text-rw-accent hover:underline"
+                    >
+                      {c.b}
+                    </HubLink>
+                  ) : (
+                    c.b
+                  )}
+                </td>
                 <td className={`${td} text-rw-sub`} data-sort={c.p ? c.w / c.p : -1}>
                   {c.p ? <WinBar w={c.w} g={c.p} /> : "–"}
                 </td>

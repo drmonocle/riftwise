@@ -821,10 +821,12 @@ export const TeamPeriodStats: React.FC<{ slug: string; has2y?: boolean; who?: Te
   return <TeamPeriodView slug={slug} rows={rows} who={who} preferAll={preferAll} />;
 };
 
-const ChampCounts: React.FC<{ title: string; list: [string, number][]; tone?: "ban" | "banVs" }> = ({
+const ChampCounts: React.FC<{ title: string; list: [string, number][]; tone?: "ban" | "banVs"; slug?: string; period?: string }> = ({
   title,
   list,
   tone = "ban",
+  slug,
+  period,
 }) => {
   if (!list.length) return null;
   const maxN = Math.max(1, ...list.map(([, n]) => n));
@@ -844,7 +846,16 @@ const ChampCounts: React.FC<{ title: string; list: [string, number][]; tone?: "b
                   style={{ width: `${Math.max(8, Math.round((n / maxN) * 100))}%` }}
                 />
               </span>
-              <span className="text-rw-sub w-5 text-right">{n}</span>
+              {slug ? (
+                <HubLink
+                  to={{ kind: "team", slug, tab: "champions", query: `champ=${encodeURIComponent(c)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                  className="text-rw-sub w-5 text-right hover:text-rw-accent hover:underline"
+                >
+                  {n}
+                </HubLink>
+              ) : (
+                <span className="text-rw-sub w-5 text-right">{n}</span>
+              )}
             </span>
           </li>
         ))}
@@ -1034,11 +1045,13 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                     </div>
                   );
                 })()}
-                <ChampCounts title={tl("Most banned by them")} list={t.bans} tone="ban" />
+                <ChampCounts title={tl("Most banned by them")} list={t.bans} tone="ban" slug={slug} period={period} />
                 <ChampCounts
                   title={tl("Most banned against them")}
                   list={t.bansVs}
                   tone="banVs"
+                  slug={slug}
+                  period={period}
                 />
               </div>
               <DraftTendencies rows={sel} teamName={who?.name} periodLabel={periodText} />

@@ -774,13 +774,21 @@ export const PlayerOpponents: React.FC<{
                 · {expanded.w}–{expanded.g - expanded.w} ({Math.round((expanded.w / expanded.g) * 100)}%) · KDA {expanded.kda.toFixed(2)}
               </span>
             </span>
-            <button
-              type="button"
-              onClick={() => setSelectedOpp(null)}
-              className="text-[11px] text-rw-muted hover:text-rw-accent"
-            >
-              {tl("Close")}
-            </button>
+            <span className="flex items-center gap-2">
+              <HubLink
+                to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&team=${encodeURIComponent(expanded.u || expanded.opp)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")}
+              </HubLink>
+              <button
+                type="button"
+                onClick={() => setSelectedOpp(null)}
+                className="text-[11px] text-rw-muted hover:text-rw-accent"
+              >
+                {tl("Close")}
+              </button>
+            </span>
           </div>
           <ul className="space-y-1 max-h-52 overflow-y-auto pr-1">
             {expanded.games.map((g, idx) => {
@@ -924,7 +932,15 @@ export const PlayerOpponents: React.FC<{
                           <ChampIcon name={c.c} size={17} />
                         </HubLink>
                       ))}
-                      {o.champs.length > 4 && <span className="text-[10px] text-rw-muted ml-0.5">+{o.champs.length - 4}</span>}
+                      {o.champs.length > 4 && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOpp(isSel ? null : o.opp)}
+                          className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline ml-0.5"
+                        >
+                          +{o.champs.length - 4}
+                        </button>
+                      )}
                     </span>
                   </td>
                 </tr>
@@ -1056,51 +1072,57 @@ export const TeamOpponentsChart: React.FC<{
             </tr>
           </thead>
           <tbody>
-            {shown.map((o) => (
-              <tr
-                key={o.n}
-                className={`border-t border-rw-border ${selectedOpp === o.n ? "bg-rw-accent/10" : "hover:bg-rw-raised/40"}`}
-              >
-                <td className={`${td} max-w-[13rem] truncate`}>
-                  <span className="inline-flex items-center gap-1.5 min-w-0">
-                    <TeamLogo name={o.n} size={18} />
-                    <TeamLink name={o.n} u={o.u} />
-                  </span>
-                </td>
-                <td className={`${td} text-rw-sub tabular-nums`} data-sort={o.g}>
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="hidden sm:inline-block w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
-                      <span
-                        className="block h-full rounded-full bg-rw-accent/80"
-                        style={{ width: `${Math.max(6, Math.round((o.g / maxTeamOppG) * 100))}%` }}
-                      />
+            {shown.map((o) => {
+              const isSelected = selectedOpp === o.n;
+              return (
+                <tr
+                  key={o.n}
+                  onClick={() => setSelectedOpp(isSelected ? null : o.n)}
+                  className={`border-t border-rw-border cursor-pointer transition-colors ${
+                    isSelected ? "bg-rw-accent/15 ring-1 ring-inset ring-rw-accent/50" : "hover:bg-rw-raised/40"
+                  }`}
+                >
+                  <td className={`${td} max-w-[13rem] truncate`}>
+                    <span className="inline-flex items-center gap-1.5 min-w-0" onClick={(e) => e.stopPropagation()}>
+                      <TeamLogo name={o.n} size={18} />
+                      <TeamLink name={o.n} u={o.u} />
                     </span>
-                    <span>
-                      <span className="font-semibold text-rw-text">{o.g}</span>{" "}
-                      <span className="text-[11px] text-rw-muted">
-                        ({o.w}–{o.g - o.w})
+                  </td>
+                  <td className={`${td} text-rw-sub tabular-nums`} data-sort={o.g}>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="hidden sm:inline-block w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
+                        <span
+                          className="block h-full rounded-full bg-rw-accent/80"
+                          style={{ width: `${Math.max(6, Math.round((o.g / maxTeamOppG) * 100))}%` }}
+                        />
+                      </span>
+                      <span>
+                        <span className="font-semibold text-rw-text">{o.g}</span>{" "}
+                        <span className="text-[11px] text-rw-muted">
+                          ({o.w}–{o.g - o.w})
+                        </span>
                       </span>
                     </span>
-                  </span>
-                </td>
-                <td className={td} data-sort={o.g ? o.w / o.g : -1}>
-                  <WinBar w={o.w} g={o.g} />
-                </td>
-                <td className={`${td} text-rw-muted tabular-nums`} data-sort={o.last || ""}>{fmtDate(o.last)}</td>
-                <td className={`${td} text-right whitespace-nowrap`}>
-                  {o.u && (
-                    <span className="inline-flex items-center gap-2">
-                      <HubLink to={{ kind: "prep", a: teamSlug, b: o.u }} className="text-rw-accent hover:underline">
-                        {tl("Match prep")}
-                      </HubLink>
-                      <HubLink to={{ kind: "compare", mode: "team", a: teamSlug, b: o.u }} className="text-rw-muted hover:text-rw-accent hover:underline">
-                        {tl("Compare")}
-                      </HubLink>
-                    </span>
-                  )}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className={td} data-sort={o.g ? o.w / o.g : -1}>
+                    <WinBar w={o.w} g={o.g} />
+                  </td>
+                  <td className={`${td} text-rw-muted tabular-nums`} data-sort={o.last || ""}>{fmtDate(o.last)}</td>
+                  <td className={`${td} text-right whitespace-nowrap`} onClick={(e) => e.stopPropagation()}>
+                    {o.u && (
+                      <span className="inline-flex items-center gap-2">
+                        <HubLink to={{ kind: "prep", a: teamSlug, b: o.u }} className="text-rw-accent hover:underline">
+                          {tl("Match prep")}
+                        </HubLink>
+                        <HubLink to={{ kind: "compare", mode: "team", a: teamSlug, b: o.u }} className="text-rw-muted hover:text-rw-accent hover:underline">
+                          {tl("Compare")}
+                        </HubLink>
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </STable>
       </div>

@@ -610,7 +610,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         >
           <p className="text-[11px] text-rw-muted">{tl("Each region's series win rate against other regions.")}</p>
           <div className="overflow-x-auto">
-            <table className="text-xs">
+            <STable className="w-full text-xs">
               <thead className="text-[10px] text-rw-muted">
                 <tr>
                   <th className="px-2 py-1 text-left">{tl("Region")}</th>
@@ -637,6 +637,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       return (
                         <td
                           key={y.y}
+                          data-sort={pct ?? -1}
                           className="px-1.5 py-1 text-center tabular-nums"
                           title={r ? `${r.ow}-${r.ol}` : undefined}
                           style={pct == null ? undefined : { background: `color-mix(in srgb, ${pct >= 50 ? "var(--rw-teal)" : "var(--rw-red)"} ${Math.round(Math.abs(pct - 50) * 1.2)}%, transparent)` }}
@@ -648,7 +649,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </STable>
           </div>
         </Section>
       )}

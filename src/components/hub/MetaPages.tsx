@@ -61,7 +61,9 @@ export const PatchesPanel: React.FC = () => {
                   </h3>
                   <span className="text-[11px] text-rw-muted">
                     {fmtDate(p.from)} – {fmtDate(p.to)} ·{" "}
-                    {tn("{n} game", "{n} games", p.g)}
+                    <HubLink to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}` }} className="hover:text-rw-accent hover:underline">
+                      {tn("{n} game", "{n} games", p.g)}
+                    </HubLink>
                   </span>
                 </div>
                 <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
@@ -122,7 +124,19 @@ export const PatchesPanel: React.FC = () => {
                       </div>
                       <div className="flex items-center justify-between text-[10px] text-rw-muted tabular-nums">
                         <span>
-                          {pk} {tl("Picks")} · {b} {tl("Bans")}
+                          <HubLink
+                            to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}&champ=${encodeURIComponent(c)}` }}
+                            className="hover:text-rw-accent hover:underline"
+                          >
+                            {pk} {tl("Picks")}
+                          </HubLink>{" "}
+                          ·{" "}
+                          <HubLink
+                            to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}&ban=${encodeURIComponent(c)}` }}
+                            className="hover:text-rw-accent hover:underline"
+                          >
+                            {b} {tl("Bans")}
+                          </HubLink>
                         </span>
                         {wrPct != null && (
                           <span className={pk >= 5 ? (wrPct >= 52 ? "text-rw-teal font-semibold" : wrPct <= 48 ? "text-rw-red" : "text-rw-sub") : ""}>
@@ -350,7 +364,13 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
                 </td>
                 <td className={`${td} text-rw-muted tabular-nums`} data-sort={l.g}>
                   <span className="inline-flex items-center gap-1.5">
-                    <span>{fmtNum(l.g)}</span>
+                    {l.g > 0 ? (
+                      <HubLink to={{ kind: "finder", query: `league=${encodeURIComponent(l.u)}` }} className="hover:text-rw-accent hover:underline">
+                        {fmtNum(l.g)}
+                      </HubLink>
+                    ) : (
+                      <span>{fmtNum(l.g)}</span>
+                    )}
                     <span className="hidden sm:inline-block w-10 h-1 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
                       <span className="block h-full rounded-full bg-rw-accent/65" style={{ width: `${gPct}%` }} />
                     </span>

@@ -1779,9 +1779,12 @@ const DraftMatchupPanel: React.FC<{
                 <ChampIcon name={d.c2} size={14} />
                 <span>{champName(d.c2)}</span>
               </HubLink>
-              <span className="tabular-nums font-semibold">
+              <HubLink
+                to={{ kind: "finder", query: `team=${encodeURIComponent(d.teamName)}&champ=${encodeURIComponent(`${d.c1},${d.c2}`)}` }}
+                className="tabular-nums font-semibold hover:underline"
+              >
                 {d.g}G · {winRate(d.w, d.g)}
-              </span>
+              </HubLink>
             </span>
           ))}
         </div>
@@ -2206,7 +2209,15 @@ const LaneCounters: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Sid
             {gd != null && gd > 0 ? "+" : ""}
             {gd}
           </span>
-          <span>· {winRate(w, g)}</span>
+          <span>
+            ·{" "}
+            <HubLink
+              to={{ kind: "finder", query: `champ=${encodeURIComponent(c)}&vs=${encodeURIComponent(oc)}&role=${encodeURIComponent(role)}` }}
+              className="hover:text-rw-accent hover:underline"
+            >
+              {winRate(w, g)}
+            </HubLink>
+          </span>
           {g > 0 && (
             <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
               <span className="h-full bg-rw-teal/85" style={{ width: `${wrPct}%` }} />
@@ -2281,11 +2292,29 @@ const ChampInfo: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Side; 
               <TeamLink name={s.team.name} u={s.team.u} className="truncate hover:underline" />
             </div>
             <div className="text-rw-sub">
-              {pk ? tl("Picked {n} times, won {pct}", { n: pk[0], pct: winRate(pk[1], pk[0]) }) : tl("Not picked in this period")}
+              {pk ? (
+                <HubLink
+                  to={{ kind: "finder", query: `team=${encodeURIComponent(s.team.name)}&champ=${encodeURIComponent(c)}` }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {tl("Picked {n} times, won {pct}", { n: pk[0], pct: winRate(pk[1], pk[0]) })}
+                </HubLink>
+              ) : (
+                tl("Not picked in this period")
+              )}
               {roles.length > 0 && ` (${roles.join(" / ")})`}
             </div>
             <div className="text-rw-sub">
-              {tl("Banned it {n} times · banned against them {m} times", { n: p.bans.get(c) || 0, m: p.bansVs.get(c) || 0 })}
+              {(p.bans.get(c) || 0) + (p.bansVs.get(c) || 0) > 0 ? (
+                <HubLink
+                  to={{ kind: "finder", query: `team=${encodeURIComponent(s.team.name)}&ban=${encodeURIComponent(c)}` }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {tl("Banned it {n} times · banned against them {m} times", { n: p.bans.get(c) || 0, m: p.bansVs.get(c) || 0 })}
+                </HubLink>
+              ) : (
+                tl("Banned it {n} times · banned against them {m} times", { n: p.bans.get(c) || 0, m: p.bansVs.get(c) || 0 })
+              )}
             </div>
             {(p.players.get(c) || [])
               .sort((a, b) => b.g - a.g || b.cg - a.cg)

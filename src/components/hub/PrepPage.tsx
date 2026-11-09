@@ -341,11 +341,12 @@ const EloFormula: React.FC<{ a: HubTeam; b: HubTeam; ratings: HubRatings; p: num
  * The matchup at a glance, one row a team: win rate and record this period, power rank and rating, gold difference
  * per game, average game length, the series between them and the last ten series.
  */
-const KeyStats: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[]; ratings: HubRatings | null | undefined; hidden: boolean; formHidden: boolean }> = ({
+const KeyStats: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[]; period: PeriodKey; ratings: HubRatings | null | undefined; hidden: boolean; formHidden: boolean }> = ({
   a,
   b,
   ra,
   rb,
+  period,
   ratings,
   hidden,
   formHidden,
@@ -363,13 +364,72 @@ const KeyStats: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[
     const r = ratings ? Math.round(liveRating(ratings, t.u, t.rating.r)) : t.rating.r;
     return `#${t.rating.rank ?? t.rating.lrank} · ${r}`;
   };
-  const cols: [string, string, (x: Side, X: ReturnType<typeof teamAgg>, y: Side) => string, "period" | "form" | "always"][] = [
-    [tl("Win rate"), tl("Games won and lost this period"), (_x, X) => (X.g ? `${Math.round((X.w / X.g) * 100)}% · ${X.w}–${X.g - X.w}` : "–"), "period"],
-    [tl("Power rank"), tl("Rank (worldwide among top-league teams, else in its league) and power rating"), (x) => rank(x.team), "always"],
+  const cols: [string, string, (x: Side, X: ReturnType<typeof teamAgg>, y: Side) => React.ReactNode, "period" | "form" | "always"][] = [
+    [
+      tl("Win rate"),
+      tl("Games won and lost this period"),
+      (x, X) =>
+        X.g ? (
+          <HubLink
+            to={{ kind: "team", slug: x.team.u, tab: "stats", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+            className="hover:text-rw-accent hover:underline"
+          >
+            {`${Math.round((X.w / X.g) * 100)}% · ${X.w}–${X.g - X.w}`}
+          </HubLink>
+        ) : (
+          "–"
+        ),
+      "period",
+    ],
+    [
+      tl("Power rank"),
+      tl("Rank (worldwide among top-league teams, else in its league) and power rating"),
+      (x) =>
+        x.team.rating ? (
+          <HubLink to={{ kind: "rankings" }} className="hover:text-rw-accent hover:underline">
+            {rank(x.team)}
+          </HubLink>
+        ) : (
+          rank(x.team)
+        ),
+      "always",
+    ],
     [tl("Gold diff / game"), tl("Average gold difference at the end of the game"), (_x, X) => (X.gd != null ? `${X.gd > 0 ? "+" : ""}${fmtNum(X.gd)}` : "–"), "period"],
     [tl("Avg game"), tl("Average game length, minutes"), (_x, X) => (X.min != null ? fmtDec(X.min) : "–"), "period"],
-    [tl("Head to head (series)"), tl("Every series between them, all time"), (x, _X, y) => wl(meet(x, y)), "form"],
-    [tl("Last 10 series"), tl("Series won and lost, the last ten"), (x) => wl(last10(x)), "form"],
+    [
+      tl("Head to head (series)"),
+      tl("Every series between them, all time"),
+      (x, _X, y) => {
+        const v = wl(meet(x, y));
+        return v !== "–" ? (
+          <button
+            type="button"
+            onClick={() => document.getElementById("prep-h2h")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            className="hover:text-rw-accent hover:underline font-mono tabular-nums"
+          >
+            {v}
+          </button>
+        ) : (
+          v
+        );
+      },
+      "form",
+    ],
+    [
+      tl("Last 10 series"),
+      tl("Series won and lost, the last ten"),
+      (x) => {
+        const v = wl(last10(x));
+        return v !== "–" ? (
+          <HubLink to={{ kind: "team", slug: x.team.u, tab: "matches" }} className="hover:text-rw-accent hover:underline">
+            {v}
+          </HubLink>
+        ) : (
+          v
+        );
+      },
+      "form",
+    ],
   ];
   const cell = (side: Side, X: ReturnType<typeof teamAgg>, other: Side, c: (typeof cols)[number]) =>
     (c[3] === "period" && hidden) || (c[3] === "form" && formHidden) ? "?" : c[2](side, X, other);
@@ -748,7 +808,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
   const body = (print: boolean) => (
     <>
       <div id="prep-overview" className="rw-span space-y-2">
-        <KeyStats a={a} b={b} ra={ra} rb={rb} ratings={ratings.data} hidden={hidden} formHidden={formHidden} />
+        <KeyStats a={a} b={b} ra={ra} rb={rb} period={period} ratings={ratings.data} hidden={hidden} formHidden={formHidden} />
         <RoleQuickCompare a={a} b={b} period={period} />
       </div>
       {/* the side-by-side table, with win chances, storylines, form and calculated numbers beside it on wide screens
@@ -1323,13 +1383,25 @@ const Lanes: React.FC<{
             {h2h && h2h.g > 0 && (
               <>
                 <span className={`${val} text-right ${h2h.w > h2h.g - h2h.w ? "text-rw-side-a font-semibold" : "text-rw-sub"}`}>
-                  {h2h.w}W ({Math.round((h2h.w / h2h.g) * 100)}%)
+                  {pa?.p.u && pb?.p.u ? (
+                    <HubLink to={{ kind: "compare", mode: "player", a: pa.p.u, b: pb.p.u, period }} className="hover:text-rw-accent hover:underline">
+                      {h2h.w}W ({Math.round((h2h.w / h2h.g) * 100)}%)
+                    </HubLink>
+                  ) : (
+                    `${h2h.w}W (${Math.round((h2h.w / h2h.g) * 100)}%)`
+                  )}
                 </span>
                 <span className={`${val} text-rw-muted text-center w-16`} title={tl("Head to head")}>
                   {tl("Head to head")}
                 </span>
                 <span className={`${val} ${h2h.g - h2h.w > h2h.w ? "text-rw-side-b font-semibold" : "text-rw-sub"}`}>
-                  {h2h.g - h2h.w}W ({Math.round(((h2h.g - h2h.w) / h2h.g) * 100)}%)
+                  {pa?.p.u && pb?.p.u ? (
+                    <HubLink to={{ kind: "compare", mode: "player", a: pa.p.u, b: pb.p.u, period }} className="hover:text-rw-accent hover:underline">
+                      {h2h.g - h2h.w}W ({Math.round(((h2h.g - h2h.w) / h2h.g) * 100)}%)
+                    </HubLink>
+                  ) : (
+                    `${h2h.g - h2h.w}W (${Math.round(((h2h.g - h2h.w) / h2h.g) * 100)}%)`
+                  )}
                 </span>
               </>
             )}
@@ -1355,11 +1427,33 @@ const Lanes: React.FC<{
                   </React.Fragment>
                 );
               })}
-            <span className={`${val} text-right text-rw-sub`}>{pool(sa)}</span>
+            <span className={`${val} text-right text-rw-sub`}>
+              {pa?.p.u && sa?.champs.length ? (
+                <HubLink
+                  to={{ kind: "player", slug: pa.p.u, tab: "champions", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {pool(sa)}
+                </HubLink>
+              ) : (
+                pool(sa)
+              )}
+            </span>
             <span className={`${val} text-rw-muted text-center w-16`} title={tl("Champions played in this period (in brackets: 2+ games)")}>
               {tl("Pool")}
             </span>
-            <span className={`${val} text-rw-sub`}>{pool(sb)}</span>
+            <span className={`${val} text-rw-sub`}>
+              {pb?.p.u && sb?.champs.length ? (
+                <HubLink
+                  to={{ kind: "player", slug: pb.p.u, tab: "champions", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {pool(sb)}
+                </HubLink>
+              ) : (
+                pool(sb)
+              )}
+            </span>
           </div>
         ) : (
           <div className="text-[11px] text-rw-muted text-center">{tl("No games in this period")}</div>

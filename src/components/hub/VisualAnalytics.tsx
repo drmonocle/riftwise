@@ -1385,7 +1385,19 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                     </span>
                   </span>
                   <span className="text-rw-muted tabular-nums text-[11px]">
-                    {sel.b} {tl("Bans")} · {sel.g} {tl("Games")}
+                    <HubLink
+                      to={{ kind: "finder", query: `patch=${encodeURIComponent(sel.p)}&ban=${encodeURIComponent(c.name)}` }}
+                      className="hover:text-rw-accent hover:underline"
+                    >
+                      {sel.b} {tl("Bans")}
+                    </HubLink>{" "}
+                    ·{" "}
+                    <HubLink
+                      to={{ kind: "finder", query: `patch=${encodeURIComponent(sel.p)}` }}
+                      className="hover:text-rw-accent hover:underline"
+                    >
+                      {sel.g} {tl("Games")}
+                    </HubLink>
                   </span>
                 </div>
               )}

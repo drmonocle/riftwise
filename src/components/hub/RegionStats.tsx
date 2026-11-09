@@ -194,7 +194,7 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; nam
       }
     >
       <div className="overflow-x-auto">
-        <table className="text-xs">
+        <STable className="text-xs">
           <thead className="text-[10px] text-rw-muted">
             <tr>
               <th className="px-2 py-1 text-left font-normal">{tl("Region")}</th>
@@ -216,10 +216,10 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; nam
                 </td>
                 {t.cols.map((y) => {
                   const wl = t.cells.get(c)!.get(y);
-                  if (!wl) return <td key={y} className="px-0.5 py-1 text-center text-rw-muted">–</td>;
+                  if (!wl) return <td key={y} data-sort={-1} className="px-0.5 py-1 text-center text-rw-muted">–</td>;
                   const p = wl[0] / (wl[0] + wl[1]);
                   return (
-                    <td key={y} className="px-0.5 py-0.5 text-center">
+                    <td key={y} data-sort={Math.round(p * 100)} className="px-0.5 py-0.5 text-center">
                       <span
                         className={`block min-w-[2.5rem] rounded-sm px-1 py-0.5 tabular-nums text-rw-text ${wl[0] + wl[1] < 3 ? "opacity-45" : ""}`}
                         style={chanceShade(p)}
@@ -233,7 +233,7 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; nam
               </tr>
             ))}
           </tbody>
-        </table>
+        </STable>
       </div>
       <p className="text-[10px] text-rw-muted">
         {tl("Each edition: the share of series a region's teams won against teams from other regions (hover for the record). Teal above 50%, red below; faded when fewer than 3 series.")}

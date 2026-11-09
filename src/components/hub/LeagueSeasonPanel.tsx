@@ -81,7 +81,15 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                     </span>
                     <span className="inline-flex items-center gap-1.5 tabular-nums text-rw-sub shrink-0">
                       <span>
-                        {t.w}-{t.g - t.w}{" "}
+                        <HubLink
+                          to={{
+                            kind: "finder",
+                            query: `league=${encodeURIComponent(league)}&year=${encodeURIComponent(year)}&team=${encodeURIComponent(t.u || t.t)}`,
+                          }}
+                          className="hover:text-rw-accent hover:underline"
+                        >
+                          {t.w}-{t.g - t.w}
+                        </HubLink>{" "}
                         <span className={wrPct >= 55 ? "text-rw-teal font-semibold" : wrPct <= 45 ? "text-rw-red" : "text-rw-muted"}>({wrPct}%)</span>
                       </span>
                       <span className="w-9 h-1 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
@@ -130,7 +138,15 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                                 <span className="text-[10px] text-rw-muted shrink-0">{roleName(p.r)}</span>
                               </span>
                               <span className="inline-flex items-center gap-1.5 tabular-nums text-rw-sub shrink-0">
-                                <span>{m.fmt(v)}</span>
+                                <HubLink
+                                  to={{
+                                    kind: "finder",
+                                    query: `league=${encodeURIComponent(league)}&year=${encodeURIComponent(year)}&player=${encodeURIComponent(p.u || p.n)}`,
+                                  }}
+                                  className="hover:text-rw-accent hover:underline"
+                                >
+                                  {m.fmt(v)}
+                                </HubLink>
                                 <span className="w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
                                   <span className="block h-full rounded-full bg-rw-accent/70" style={{ width: `${barPct}%` }} />
                                 </span>

@@ -700,7 +700,12 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                     <span className="hidden sm:inline-flex w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden shrink-0">
                       <span className="h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.round((p.g / maxG) * 100)}%` }} />
                     </span>
-                    <span className="text-[10px] text-rw-muted tabular-nums">{tn("{n} game", "{n} games", p.g)}</span>
+                    <HubLink
+                      to={{ kind: "finder", query: `player=${encodeURIComponent(p.u || p.n)}` }}
+                      className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline tabular-nums"
+                    >
+                      {tn("{n} game", "{n} games", p.g)}
+                    </HubLink>
                     <RatingBadge v={p.rt} />
                   </span>
                 </li>
@@ -927,7 +932,9 @@ const BrowseRow: React.FC<{ e: EventListItem; maxG: number; q?: string; onSetQ?:
       <td className={`${td} text-rw-muted`} data-sort={e.g || 0}>
         {e.g ? (
           <span className="inline-flex items-center gap-1.5 tabular-nums">
-            <span className="w-5 text-right">{e.g}</span>
+            <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }} className="w-5 text-right hover:text-rw-accent hover:underline">
+              {e.g}
+            </HubLink>
             <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
               <span className="h-full bg-rw-accent/75 rounded-full" style={{ width: `${Math.round((e.g / maxG) * 100)}%` }} />
             </span>
