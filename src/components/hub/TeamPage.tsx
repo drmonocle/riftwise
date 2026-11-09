@@ -530,7 +530,11 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   {x.as !== t.name && <span className="text-rw-muted"> ({tl("as {name}", { name: x.as })})</span>}
                 </span>
                 <span className="text-rw-muted shrink-0 inline-flex items-center gap-1.5">
-                  <span className="tabular-nums">{x.score}</span>
+                  {x.e ? (
+                    <EventLink name={x.score} u={x.e} className="tabular-nums font-semibold text-rw-text hover:text-rw-accent hover:underline" />
+                  ) : (
+                    <span className="tabular-nums">{x.score}</span>
+                  )}
                   <span>vs</span>
                   <TeamLogo name={x.l} size={14} />
                   <TeamLink name={x.l} u={t.opps.find((o) => o.n === x.l)?.u || prettySlug(x.l)} />
@@ -1272,9 +1276,18 @@ const TeamChampGames: React.FC<{
                 return (
                   <li key={i} className="flex items-center justify-between gap-2 min-w-0 py-0.5 border-t border-rw-border/40 first:border-t-0">
                     <span className="flex items-center gap-1.5 min-w-0">
-                      <span className={`w-3.5 shrink-0 font-bold ${hide ? "text-rw-muted" : r[7] ? "text-rw-teal" : "text-rw-red"}`}>
-                        {hide ? "?" : r[7] ? tc("short result", "W") : tc("short result", "L")}
-                      </span>
+                      {!hide && r[1] ? (
+                        <HubLink
+                          to={{ kind: "match", slug: r[1] }}
+                          className={`w-3.5 shrink-0 font-bold hover:underline ${r[7] ? "text-rw-teal" : "text-rw-red"}`}
+                        >
+                          {r[7] ? tc("short result", "W") : tc("short result", "L")}
+                        </HubLink>
+                      ) : (
+                        <span className={`w-3.5 shrink-0 font-bold ${hide ? "text-rw-muted" : r[7] ? "text-rw-teal" : "text-rw-red"}`}>
+                          {hide ? "?" : r[7] ? tc("short result", "W") : tc("short result", "L")}
+                        </span>
+                      )}
                       <HubLink to={{ kind: "champ", slug: prettySlug(canonical) }} className="shrink-0">
                         <ChampIcon name={canonical} size={18} />
                       </HubLink>
@@ -1288,7 +1301,13 @@ const TeamChampGames: React.FC<{
                               <span className="font-semibold text-rw-text">{who.n}</span>
                             )}{" "}
                             {who.k != null && (
-                              <span className="text-rw-text tabular-nums">{hide ? "?/?/?" : `${who.k}/${who.d}/${who.a}`}</span>
+                              !hide && r[1] ? (
+                                <HubLink to={{ kind: "match", slug: r[1] }} className="text-rw-text hover:text-rw-accent hover:underline tabular-nums">
+                                  {who.k}/{who.d}/{who.a}
+                                </HubLink>
+                              ) : (
+                                <span className="text-rw-text tabular-nums">{hide ? "?/?/?" : `${who.k}/${who.d}/${who.a}`}</span>
+                              )
                             )}{" "}
                           </>
                         )}
@@ -1359,7 +1378,10 @@ const EventRow: React.FC<{ x: HubTeam["events"][number]; teamName: string }> = (
         <EventLink name={x.en} u={x.e} />
         {x.as && x.as !== teamName && <span className="text-rw-muted text-[10px]"> {tl("as {name}", { name: x.as })}</span>}
       </td>
-      <td className={`${td} ${x.pl === "1" ? "text-rw-accent font-bold" : "text-rw-sub"}`}>
+      <td
+        className={`${td} ${x.pl === "1" ? "text-rw-accent font-bold" : "text-rw-sub"}`}
+        data-sort={hidden ? 999 : parseInt(x.pl || "999", 10) || 999}
+      >
         {hidden ? <RevealButton onReveal={reveal} small /> : x.pl || "–"}
       </td>
       <td className={`${td} text-rw-sub`} data-sort={hidden ? x.sg : x.sg ? x.sw / x.sg : 0}>

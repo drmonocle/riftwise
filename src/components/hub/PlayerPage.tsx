@@ -476,13 +476,24 @@ const PlayerView: React.FC<{
                   className="flex items-center justify-between gap-2 min-w-0"
                 >
                   <span className="flex items-center gap-1.5 min-w-0">
-                    <span
-                      className={`w-3.5 shrink-0 font-bold ${r.win ? "text-rw-teal" : "text-rw-red"}`}
-                    >
-                      {r.win
-                        ? tc("short result", "W")
-                        : tc("short result", "L")}
-                    </span>
+                    {r.g ? (
+                      <HubLink
+                        to={{ kind: "match", slug: r.g, game: r.gn }}
+                        className={`w-3.5 shrink-0 font-bold hover:underline ${r.win ? "text-rw-teal" : "text-rw-red"}`}
+                      >
+                        {r.win
+                          ? tc("short result", "W")
+                          : tc("short result", "L")}
+                      </HubLink>
+                    ) : (
+                      <span
+                        className={`w-3.5 shrink-0 font-bold ${r.win ? "text-rw-teal" : "text-rw-red"}`}
+                      >
+                        {r.win
+                          ? tc("short result", "W")
+                          : tc("short result", "L")}
+                      </span>
+                    )}
                     <HubLink
                       to={{ kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(r.c)}` }}
                       className="shrink-0"
@@ -732,7 +743,14 @@ const PlayerChampionsTab: React.FC<{
                       <span className="w-10 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
                         <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(6, Math.round((c.g / maxChampG) * 100))}%` }} />
                       </span>
-                      <span>{c.g}</span>
+                      <button
+                        type="button"
+                        onClick={() => onSelectChamp(c.c)}
+                        className="hover:text-rw-accent hover:underline"
+                        title={tl("Every game")}
+                      >
+                        {c.g}
+                      </button>
                     </span>
                   </td>
                   <td className={`${td} text-rw-sub`} data-sort={c.g ? c.w / c.g : 0}>
@@ -780,6 +798,7 @@ const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number] }> = ({
       </td>
       <td
         className={`${td} ${x.pl === "1" ? "text-rw-accent font-bold" : "text-rw-sub"}`}
+        data-sort={hidden ? 999 : parseInt(x.pl || "999", 10) || 999}
       >
         {hidden ? <RevealButton onReveal={reveal} small /> : x.pl || "–"}
       </td>
@@ -789,7 +808,7 @@ const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number] }> = ({
       <td className={`${td} text-rw-sub`} data-sort={x.kda}>
         <KdaBar kda={x.kda} />
       </td>
-      <td className={`${td} text-rw-sub`}>{x.csm ?? "–"}</td>
+      <td className={`${td} text-rw-sub`} data-sort={x.csm ?? -1}>{x.csm ?? "–"}</td>
       <td className={td}>
         <span className="flex gap-0.5">
           {x.c.map((c) => (

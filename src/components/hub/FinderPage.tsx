@@ -524,6 +524,8 @@ const FinderBody: React.FC<{
               sideCond={sideCond}
               champ={champs[0] || ""}
               player={q.get("player") || ""}
+              onPick={(c) => setChamp(0, champs[0] === c ? "" : c)}
+              onBan={(c) => setQ({ ban: q.get("ban") === c ? undefined : c })}
             />
             <div className="flex flex-wrap items-center gap-2">
               <TableExport tableRef={tableRef} name={name} />
@@ -694,7 +696,7 @@ const FinderBody: React.FC<{
                           ""
                         )}
                       </td>
-                      <td className={`${td} text-rw-sub tabular-nums`}>
+                      <td className={`${td} text-rw-sub tabular-nums`} data-sort={g[4] ?? -1}>
                         {g[4] != null ? fmtDec(g[4]) : ""}
                       </td>
                       <Picks list={g[5]} />
@@ -739,7 +741,14 @@ const tally = (m: Map<string, [number, number]>, n: number) =>
  * What the games found add up to: blue side's record, kills per game, and the most picked and banned champions.
  * With a condition on one side ("T1", "on red", "with Azir"), picks and bans are that side's and the win rate is theirs.
  */
-const Cohort: React.FC<{ found: Found; sideCond: boolean; champ: string; player: string }> = ({ found, sideCond, champ, player }) => {
+const Cohort: React.FC<{
+  found: Found;
+  sideCond: boolean;
+  champ: string;
+  player: string;
+  onPick?: (c: string) => void;
+  onBan?: (c: string) => void;
+}> = ({ found, sideCond, champ, player, onPick, onBan }) => {
   const d = useMemo(() => {
     let blueW = 0, kills = 0, kg = 0, kMin = 0, gd = 0, gdn = 0;
     const picks = new Map<string, [number, number]>();
@@ -820,7 +829,18 @@ const Cohort: React.FC<{ found: Found; sideCond: boolean; champ: string; player:
                       style={{ width: `${Math.max(8, Math.round((g / maxG) * 100))}%` }}
                     />
                   </span>
-                  <span>{g}</span>
+                  {(wr ? onPick : onBan) ? (
+                    <button
+                      type="button"
+                      onClick={() => (wr ? onPick?.(c) : onBan?.(c))}
+                      className="hover:text-rw-accent hover:underline"
+                      title={wr ? tl("With champion") : tl("Bans")}
+                    >
+                      {g}
+                    </button>
+                  ) : (
+                    <span>{g}</span>
+                  )}
                   <span className="text-rw-muted">·</span>
                   <span className={`w-8 text-right ${wr ? (good ? "text-rw-teal font-semibold" : "text-rw-red") : ""}`}>{pctVal}%</span>
                 </span>

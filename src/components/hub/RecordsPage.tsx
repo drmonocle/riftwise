@@ -124,7 +124,12 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
                   <PlayerPhoto name={x.n} slug={x.u ?? undefined} size={16} />
                   <PlayerLink name={x.n} u={x.u} />
                 </span>
-                <span className="text-rw-accent font-bold tabular-nums">{x.v}</span>
+                <HubLink
+                  to={{ kind: "player", slug: x.u || prettySlug(x.n) }}
+                  className="text-rw-accent font-bold tabular-nums hover:underline"
+                >
+                  {x.v}
+                </HubLink>
               </div>
               <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
                 <div className="h-full rounded-full bg-rw-accent/70" style={{ width: `${Math.max(8, Math.round((x.v / maxPenta) * 100))}%` }} />
@@ -601,9 +606,16 @@ export const RecordsPanel: React.FC = () => {
                         <PlayerPhoto name={p.pl} slug={p.u ?? undefined} size={16} />
                         <PlayerLink name={p.pl} u={p.u} />
                       </span>
-                      <span className="text-rw-accent font-bold tabular-nums">
+                      <HubLink
+                        to={{
+                          kind: "player",
+                          slug: p.u || prettySlug(p.pl),
+                          ...(title === tl("Biggest champion pools") ? { tab: "champions" } : {}),
+                        }}
+                        className="text-rw-accent font-bold tabular-nums hover:underline"
+                      >
                         {fmtNum(p.v)}
-                      </span>
+                      </HubLink>
                     </div>
                     <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
                       <div className="h-full rounded-full bg-rw-accent/70" style={{ width: `${Math.max(8, Math.round((p.v / maxV) * 100))}%` }} />
@@ -904,7 +916,13 @@ export const TitlesPanel: React.FC = () => {
                           </span>
                         )}
                       </td>
-                       <td className={`${td} text-rw-sub`}>
+                       <td
+                        className={`${td} text-rw-sub`}
+                        data-sort={(() => {
+                          const m = /^(\d+)\s*[–-]\s*(\d+)$/.exec(x.score || "");
+                          return m ? Number(m[1]) * 100 - Number(m[2]) : 0;
+                        })()}
+                       >
                         {(() => {
                           const m = /^(\d+)\s*[–-]\s*(\d+)$/.exec(x.score || "");
                           const sw = m ? Number(m[1]) : 0;
@@ -913,7 +931,14 @@ export const TitlesPanel: React.FC = () => {
                           return (
                             <span className="inline-flex items-center gap-1.5">
                               <span className="inline-flex items-center gap-1">
-                                <span>{x.score} vs</span>
+                                <span>
+                                  {x.e ? (
+                                    <EventLink name={x.score} u={x.e} className="font-semibold text-rw-text hover:text-rw-accent hover:underline tabular-nums" />
+                                  ) : (
+                                    x.score
+                                  )}{" "}
+                                  vs
+                                </span>
                                 <TeamLogo name={x.l} size={14} />
                                 <TeamLink name={x.l} />
                               </span>

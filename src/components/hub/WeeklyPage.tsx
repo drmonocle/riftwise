@@ -495,8 +495,32 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                             "–"
                           )}
                         </td>
-                        <td className={`${td} tabular-nums text-rw-sub`} data-sort={pk}>{pk}</td>
-                        <td className={`${td} tabular-nums text-rw-sub`} data-sort={bn}>{bn}</td>
+                        <td className={`${td} tabular-nums text-rw-sub`} data-sort={pk}>
+                          {pk > 0 ? (
+                            <HubLink
+                              to={{ kind: "finder", query: `champ=${encodeURIComponent(c)}` }}
+                              className="hover:text-rw-accent hover:underline"
+                              title={tl("Game finder")}
+                            >
+                              {pk}
+                            </HubLink>
+                          ) : (
+                            pk
+                          )}
+                        </td>
+                        <td className={`${td} tabular-nums text-rw-sub`} data-sort={bn}>
+                          {bn > 0 ? (
+                            <HubLink
+                              to={{ kind: "finder", query: `ban=${encodeURIComponent(c)}` }}
+                              className="hover:text-rw-accent hover:underline"
+                              title={tl("Game finder")}
+                            >
+                              {bn}
+                            </HubLink>
+                          ) : (
+                            bn
+                          )}
+                        </td>
                         <td className={`${td} tabular-nums`} data-sort={wrPct ?? -1}>
                           {wrPct != null ? (
                             <div className="min-w-[3.25rem] space-y-0.5">

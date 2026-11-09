@@ -438,7 +438,10 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         <div key={r.role} className="rounded-lg border border-rw-border bg-rw-surface px-2.5 py-1.5 text-center">
                           <div className="text-[10px] text-rw-muted uppercase">{r.role >= 0 ? roleName(ROLES[r.role]) : tl("Role")}</div>
                           <div className={`font-mono font-bold ${wr >= 50 ? "text-rw-teal" : "text-rw-red"}`}>{wr}%</div>
-                          <div className="text-[10px] font-mono text-rw-sub">{r.g}G{r.gd != null ? ` · ${r.gd > 0 ? "+" : ""}${r.gd} GD@15` : ""}</div>
+                          <div className="text-[10px] font-mono text-rw-sub">
+                            {finderLink(vsMatch.oppCanon, r.g)}G
+                            {r.gd != null ? ` · ${r.gd > 0 ? "+" : ""}${r.gd} GD@15` : ""}
+                          </div>
                         </div>
                       );
                     })}
@@ -609,7 +612,13 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           <ChampLink name={pc} size={20} />
                           <div className="text-right shrink-0">
                             <div className={`font-mono font-bold tabular-nums ${wr >= 50 ? "text-rw-teal" : "text-rw-red"}`}>{wr}%</div>
-                            <div className="text-[10px] text-rw-muted font-mono">{g}G</div>
+                            <HubLink
+                              to={{ kind: "finder", query: `champ=${encodeURIComponent(`${cName},${pc}`)}` }}
+                              className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline font-mono block"
+                              title={tl("Game finder")}
+                            >
+                              {g}G
+                            </HubLink>
                           </div>
                         </div>
                         <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">

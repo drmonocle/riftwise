@@ -574,7 +574,14 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                 {hidden ? "–" : fmtMin(g.min)}
               </span>
             )}
-            {g.patch && <span>{tl("Patch {patch}", { patch: g.patch })}</span>}
+            {g.patch && (
+              <HubLink
+                to={{ kind: "champions", query: `key=p${g.patch}` }}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {tl("Patch {patch}", { patch: g.patch })}
+              </HubLink>
+            )}
             {g.date && <span>{new Date(`${g.date.replace(" ", "T")}Z`).toLocaleString(locale(), { dateStyle: "medium", timeStyle: "short" })}</span>}
             {g.ff ? <span className="text-rw-accent">{tl("Forfeit")}</span> : null}
             {g.mvp && !hidden && (

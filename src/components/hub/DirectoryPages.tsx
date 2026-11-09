@@ -132,14 +132,35 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
         ) : null,
       className: "text-rw-sub max-w-[10rem] truncate",
     },
-    { key: "y", label: tl("Last played"), value: (t) => t[3] || null, className: "tabular-nums text-rw-sub" },
+    {
+      key: "y",
+      label: tl("Last played"),
+      value: (t) => t[3] || null,
+      render: (t) =>
+        t[3] ? (
+          <button
+            type="button"
+            onClick={() => set("since", since === t[3] ? "all" : t[3])}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {t[3]}
+          </button>
+        ) : null,
+      className: "tabular-nums text-rw-sub",
+    },
     {
       key: "g",
       label: tl("Games"),
       value: (t) => t[2],
       render: (t) => (
         <div className="min-w-[4.25rem] space-y-0.5">
-          <div className="tabular-nums text-rw-text">{fmtNum(t[2])}</div>
+          <HubLink
+            to={{ kind: "finder", query: `team=${encodeURIComponent(t[1] || prettySlug(t[0]))}` }}
+            className="tabular-nums text-rw-text hover:text-rw-accent hover:underline block"
+            title={tl("Game finder")}
+          >
+            {fmtNum(t[2])}
+          </HubLink>
           <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
             <div className="h-full rounded-full bg-rw-accent/65" style={{ width: `${Math.max(4, Math.round(((t[2] || 0) / maxGames) * 100))}%` }} />
           </div>
@@ -293,14 +314,35 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
         ) : null,
       className: "text-rw-sub max-w-[12rem] truncate",
     },
-    { key: "y", label: tl("Last played"), value: (p) => p[4] || null, className: "tabular-nums text-rw-sub" },
+    {
+      key: "y",
+      label: tl("Last played"),
+      value: (p) => p[4] || null,
+      render: (p) =>
+        p[4] ? (
+          <button
+            type="button"
+            onClick={() => set("since", since === p[4] ? "all" : p[4])}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {p[4]}
+          </button>
+        ) : null,
+      className: "tabular-nums text-rw-sub",
+    },
     {
       key: "g",
       label: tl("Games"),
       value: (p) => p[3],
       render: (p) => (
         <div className="min-w-[4.25rem] space-y-0.5">
-          <div className="tabular-nums text-rw-text">{fmtNum(p[3])}</div>
+          <HubLink
+            to={{ kind: "finder", query: `player=${encodeURIComponent(p[1] || prettySlug(p[0]))}` }}
+            className="tabular-nums text-rw-text hover:text-rw-accent hover:underline block"
+            title={tl("Game finder")}
+          >
+            {fmtNum(p[3])}
+          </HubLink>
           <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
             <div className="h-full rounded-full bg-rw-accent/65" style={{ width: `${Math.max(4, Math.round(((p[3] || 0) / maxGames) * 100))}%` }} />
           </div>

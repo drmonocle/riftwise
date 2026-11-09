@@ -9,7 +9,7 @@ import { loadAliases, loadHubEvent, loadLeagues, loadLeagueSeason, resolveLeague
 import type { EventPlayer, LeagueRow } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { ROLES } from "../../hub/champAgg";
-import { card, Loading, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo, useLoad, usePageTitle } from "./ui";
+import { card, HubLink, Loading, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo, useLoad, usePageTitle } from "./ui";
 import { SortTable, type Column } from "./SortTable";
 import { PLAYER_METRICS } from "./Ranks";
 import { SectionCard } from "./BroadcastCard";
@@ -137,7 +137,21 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
       value: (p) => p.g,
       render: (p) => (
         <span className="inline-flex items-center gap-1.5 tabular-nums">
-          <span className="w-5 text-right">{p.g}</span>
+          <HubLink
+            to={{
+              kind: "finder",
+              query: new URLSearchParams({
+                ...(league ? { league } : {}),
+                ...(year ? { year } : {}),
+                ...(event ? { event } : {}),
+                player: p.u || p.n,
+              }).toString(),
+            }}
+            className="w-5 text-right hover:text-rw-accent hover:underline"
+            title={tl("Game finder")}
+          >
+            {p.g}
+          </HubLink>
           <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
             <span className="h-full bg-rw-accent/75 rounded-full" style={{ width: `${Math.round((p.g / maxG) * 100)}%` }} />
           </span>
@@ -372,7 +386,13 @@ const LeaderSpotlight: React.FC<{ rows: EventPlayer[] }> = ({ rows }) => {
           </div>
           <div className="text-right shrink-0">
             <div className="font-mono font-bold tabular-nums text-rw-teal">{c.val}</div>
-            <div className="text-[10px] text-rw-muted font-mono">{c.top.g}G</div>
+            <HubLink
+              to={{ kind: "finder", query: `player=${encodeURIComponent(c.top.u || c.top.n)}` }}
+              className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline font-mono block"
+              title={tl("Game finder")}
+            >
+              {c.top.g}G
+            </HubLink>
           </div>
         </div>
       ))}

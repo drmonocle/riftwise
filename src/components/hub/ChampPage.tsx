@@ -606,7 +606,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                           <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(6, Math.round((g / maxDuoG) * 100))}%` }} />
                         </span>
                         <HubLink
-                          to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}` }}
+                          to={{ kind: "finder", query: `champ=${encodeURIComponent(`${c.name},${pc}`)}` }}
                           className="hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
                         >
@@ -674,11 +674,20 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
             {(() => {
               const pList = (playersRecent ? recentPlayersList : c.players).slice(0, 25);
               const maxPG = Math.max(1, ...pList.map((x) => x.g));
-              return pList.map((p) => (
+              const teamByPlayer = new Map<string, string>();
+              for (const r of c.recent) {
+                if (r.team && (r.u || r.n) && !teamByPlayer.has(r.u || r.n)) {
+                  teamByPlayer.set(r.u || r.n, r.team);
+                }
+              }
+              return pList.map((p) => {
+                const pTeam = teamByPlayer.get(p.u || p.n);
+                return (
                 <tr key={p.n + p.u} className="border-t border-rw-border">
                   <td className={td}>
                     <span className="inline-flex items-center gap-1.5 min-w-0">
-                      <PlayerPhoto name={p.n} slug={p.u ?? undefined} size={20} />
+                      <PlayerPhoto name={p.n} team={pTeam} slug={p.u ?? undefined} size={20} />
+                      {pTeam && <TeamLogo name={pTeam} size={13} />}
                       <PlayerLink name={p.n} u={p.u} />
                     </span>
                   </td>
@@ -707,7 +716,8 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     <KdaBar kda={p.kda} />
                   </td>
                 </tr>
-              ));
+                );
+              });
             })()}
           </tbody>
         </STable>
@@ -755,10 +765,20 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               <li key={i} className="min-w-0">
                 <div className="flex items-center justify-between gap-2 min-w-0">
                   <span className="inline-flex items-center gap-1.5 truncate min-w-0">
-                    <span className={`font-bold shrink-0 ${r.win ? "text-rw-teal" : "text-rw-red"}`}>
-                      {r.win ? tc("short result", "W") : tc("short result", "L")}
-                    </span>
+                    {r.g ? (
+                      <HubLink
+                        to={{ kind: "match", slug: r.g, game: r.gn }}
+                        className={`font-bold shrink-0 hover:underline ${r.win ? "text-rw-teal" : "text-rw-red"}`}
+                      >
+                        {r.win ? tc("short result", "W") : tc("short result", "L")}
+                      </HubLink>
+                    ) : (
+                      <span className={`font-bold shrink-0 ${r.win ? "text-rw-teal" : "text-rw-red"}`}>
+                        {r.win ? tc("short result", "W") : tc("short result", "L")}
+                      </span>
+                    )}
                     <PlayerPhoto name={r.n} team={r.team} slug={r.u ?? undefined} size={16} />
+                    {r.team && <TeamLogo name={r.team} size={13} />}
                     <PlayerLink name={r.n} u={r.u} />
                     {r.g ? (
                       <HubLink to={{ kind: "match", slug: r.g, game: r.gn }} className="text-rw-sub hover:text-rw-accent hover:underline tabular-nums shrink-0">

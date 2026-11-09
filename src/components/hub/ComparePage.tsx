@@ -31,7 +31,7 @@ import { HeadToHeadSeries } from "./Archives";
 import { PeriodPicker, QuickPeriods } from "./PeriodStats";
 import { DraftTendencies, draftTendencies } from "./DraftTendencies";
 import { BroadcastCardButton, SectionCard, draftCard, playerCardData, teamCardData } from "./BroadcastCard";
-import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, isFresh, Loading, OeCredit, PhotosLink, PlayerPhoto, RevealButton, Section, td, TeamLogo, useHidden, usePageTitle } from "./ui";
+import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, isFresh, Loading, OeCredit, PhotosLink, PlayerPhoto, ratingTextClass, RevealButton, Section, td, TeamLogo, th, useHidden, usePageTitle } from "./ui";
 import { useTeamPercentiles } from "./Ranks";
 import { STable } from "../STable";
 import { Radar } from "./Radar";
@@ -783,7 +783,13 @@ export const TeamRows: React.FC<{
                         <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
                           <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(8, Math.round((n / maxPickN) * 100))}%` }} />
                         </span>
-                        <span>{n}</span>
+                        <HubLink
+                          to={{ kind: "finder", query: `team=${encodeURIComponent(s.n)}&champ=${encodeURIComponent(c)}` }}
+                          className="hover:text-rw-accent hover:underline"
+                          title={tl("Game finder")}
+                        >
+                          {n}
+                        </HubLink>
                         <span className="text-rw-muted">·</span>
                         <span className={`w-9 text-right ${good ? "text-rw-teal font-semibold" : "text-rw-red"}`}>{winRate(w, n)}</span>
                       </span>
@@ -927,8 +933,8 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
       </Section>
       <div className="grid sm:grid-cols-2 gap-3">
         {[
-          { n: x.name, p: A },
-          { n: y.name, p: B },
+          { n: x.name, u: x.u, p: A },
+          { n: y.name, u: y.u, p: B },
         ].map((s) => (
           <Section
             key={s.n}
@@ -963,7 +969,13 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
                         <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
                           <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(8, Math.round((c.g / maxChampG) * 100))}%` }} />
                         </span>
-                        <span>{c.g}</span>
+                        <HubLink
+                          to={{ kind: "player", slug: s.u, tab: "champions", query: `champ=${encodeURIComponent(c.c)}` }}
+                          className="hover:text-rw-accent hover:underline"
+                          title={tl("Every game")}
+                        >
+                          {c.g}
+                        </HubLink>
                         <span className="text-rw-muted">·</span>
                         <span className={`w-9 text-right ${good ? "text-rw-teal font-semibold" : "text-rw-red"}`}>{winRate(c.w, c.g)}</span>
                         <span className="text-rw-muted">· {fmtN(c.kda)} KDA</span>
@@ -997,19 +1009,40 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
           }
         >
           <STable className="w-full text-xs">
+            <thead>
+              <tr>
+                <th className={`${th} text-right text-rw-side-a`}>{x.name}</th>
+                <th className={`${th} text-center`}>{tl("Champion")}</th>
+                <th className={`${th} text-rw-side-b`}>{y.name}</th>
+              </tr>
+            </thead>
             <tbody>
               {shared.map(({ c, o }) => (
                 <tr key={c.c} className="border-t border-rw-border">
-                  <td className={`${td} text-right tabular-nums w-2/5`}>
-                    {c.g} · {winRate(c.w, c.g)} · {fmtN(c.kda)}
+                  <td className={`${td} text-right tabular-nums w-2/5`} data-sort={c.g}>
+                    <HubLink
+                      to={{ kind: "player", slug: x.u, tab: "champions", query: `champ=${encodeURIComponent(c.c)}` }}
+                      className="hover:text-rw-accent hover:underline"
+                      title={tl("Every game")}
+                    >
+                      {c.g}
+                    </HubLink>{" "}
+                    · {winRate(c.w, c.g)} · {fmtN(c.kda)}
                   </td>
-                  <td className={`${td} text-center`}>
+                  <td className={`${td} text-center`} data-sort={c.c}>
                     <span className="inline-flex justify-center">
                       <ChampLink name={c.c} size={16} />
                     </span>
                   </td>
-                  <td className={`${td} tabular-nums w-2/5`}>
-                    {o.g} · {winRate(o.w, o.g)} · {fmtN(o.kda)}
+                  <td className={`${td} tabular-nums w-2/5`} data-sort={o.g}>
+                    <HubLink
+                      to={{ kind: "player", slug: y.u, tab: "champions", query: `champ=${encodeURIComponent(c.c)}` }}
+                      className="hover:text-rw-accent hover:underline"
+                      title={tl("Every game")}
+                    >
+                      {o.g}
+                    </HubLink>{" "}
+                    · {winRate(o.w, o.g)} · {fmtN(o.kda)}
                   </td>
                 </tr>
               ))}
@@ -1162,6 +1195,11 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
               </span>
             </span>
             <span className="flex items-center gap-2 shrink-0 text-rw-muted">
+              {m.a[23] != null && (
+                <span className={`tabular-nums font-semibold ${ratingTextClass(m.a[23])}`} title={tl("Game rating")}>
+                  {m.a[23].toFixed(0)}
+                </span>
+              )}
               {fmtDate(m.a[0])}
               <HubLink to={{ kind: "match", slug: m.a[1], game: m.a[22] || undefined }} className="text-rw-accent hover:underline">
                 {tl("Details")}
