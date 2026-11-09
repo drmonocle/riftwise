@@ -1014,7 +1014,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                       </span>
                       <span className="text-rw-muted">vs</span>
                       <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
-                      <TeamLink name={sel.opp} u={sel.ou} />
+                      <TeamLink name={sel.opp} />
                       <span className="text-rw-muted truncate">· {sel.en}</span>
                     </span>
                     <span className="flex items-center gap-2 shrink-0 text-rw-muted">
