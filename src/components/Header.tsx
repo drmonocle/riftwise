@@ -3,12 +3,12 @@ import { AppSettings, Match, StreamEvent, StreamStatus, AppUpdateInfo, LiveShow 
 import { Radio, RefreshCw, Eye, EyeOff, Heart, Sparkles, Minimize2, Maximize2, Search, Settings } from "lucide-react";
 import { formatStreamHeaderTitle, streamPhase } from "../helpers";
 import { APP_VERSION } from "../version";
-import { IS_DESKTOP } from "../platform";
+import { IS_DESKTOP, IS_WEB } from "../platform";
 import { tl, tn } from "../i18n";
 import { LanguageFlag } from "./LanguageFlag";
 import { lazyPart } from "../lazyPart";
 import { Navigation, TabKey } from "./Navigation";
-import { navigateHub, useHubRoute } from "../hub/route";
+import { hubPath, navigateHub, useHubRoute } from "../hub/route";
 // the stats search box (loaded with the stats code; a look-alike box stands in until then)
 const HubSearch = lazyPart(() => import("./hub/HubSearch").then((m) => m.HubSearch));
 
@@ -116,15 +116,19 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="rw-header select-none">
       <div className="px-3 sm:px-4 py-2 flex items-center gap-x-2 min-[400px]:gap-x-3">
         {/* Brand: the front page */}
-        <button
-          type="button"
-          onClick={() => navigateHub({ kind: "home" })}
+        <a
+          href={IS_WEB ? hubPath({ kind: "home" }) : "#"}
+          onClick={(e) => {
+            if (IS_WEB && (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0)) return;
+            e.preventDefault();
+            navigateHub({ kind: "home" });
+          }}
           className="flex items-baseline shrink-0 rounded"
           title={`RiftWise v${APP_VERSION}`}
           aria-label={tl("RiftWise home")}
         >
           <span className="rw-logo font-extrabold text-base min-[360px]:text-lg tracking-wider">RIFTWISE</span>
-        </button>
+        </a>
         <div className="hidden tab:block shrink-0">
           <Navigation activeTab={activeTab} onSelectTab={onSelectTab} liveCount={liveMatches.length} />
         </div>

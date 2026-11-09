@@ -8,6 +8,7 @@ import { HubRoute, currentHubRoute, hubPath, navigateHub } from "../../hub/route
 import { rememberRecent } from "../../hub/recent";
 import { champIcon, itemIcon, itemName, runeIcon, runeName, spellIcon, spellName } from "../../hub/ddragon";
 import { prefetchHub, prettySlug } from "../../hub/data";
+import { preloadPageCode } from "./pageCode";
 import { IS_WEB, SITE_URL } from "../../platform";
 import { CaptureFooter, ShareButtons } from "./ShareImage";
 import { usePlayerPicture, useTeamLogo } from "../../hub/riotCatalog";
@@ -96,9 +97,13 @@ export const Loading: React.FC = () => {
 
 // a link the pointer only passes over isn't fetched: wait a moment first
 let prefetchTimer = 0;
+function prefetchNow(to: HubRoute) {
+  preloadPageCode(to.kind);
+  prefetchHub(to);
+}
 function prefetchSoon(to: HubRoute) {
   window.clearTimeout(prefetchTimer);
-  prefetchTimer = window.setTimeout(() => prefetchHub(to), 80);
+  prefetchTimer = window.setTimeout(() => prefetchNow(to), 80);
 }
 
 // loaded when it's needed: HubSearch itself uses this file's links
@@ -298,7 +303,7 @@ export const HubLink: React.FC<{
     onMouseEnter={() => prefetchSoon(to)}
     onMouseMove={onMouseMove}
     onFocus={() => prefetchSoon(to)}
-    onTouchStart={() => prefetchHub(to)}
+    onTouchStart={() => prefetchNow(to)}
     onClick={(e) => {
       if (IS_WEB && (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0)) return;
       e.preventDefault();

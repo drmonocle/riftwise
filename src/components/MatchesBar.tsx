@@ -35,7 +35,12 @@ export const MatchesBar: React.FC<{ activeTab: TabKey; onSelectTab: (tab: TabKey
           >
             {it.icon}
             {it.label}
-            {it.tab === "live" && liveCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-rw-red animate-pulse" aria-hidden="true" />}
+            {it.tab === "live" && liveCount > 0 && (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-rw-red" title={tl("{n} live now", { n: liveCount })}>
+                <span className="w-1.5 h-1.5 rounded-full bg-rw-red animate-pulse" aria-hidden="true" />
+                {liveCount}
+              </span>
+            )}
             {it.tab === "stream" && streamLive && <span className="w-1.5 h-1.5 rounded-full bg-rw-teal animate-pulse" aria-hidden="true" />}
           </button>
         );

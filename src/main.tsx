@@ -29,18 +29,37 @@ if (IS_WEB && "serviceWorker" in navigator) {
 // own data file now, alongside the language file, instead of one after the other once the app has drawn. The
 // page then finds them already on their way (same module, same file cache). On a slow phone connection each of
 // those waits is a round trip of up to half a second, plus the download.
-const HUB_FILE_DIR: Partial<Record<string, string>> = { player: "player", team: "team", event: "event", match: "game", champ: "champ" };
+const HUB_FILE_DIR: Partial<Record<string, string>> = {
+  player: "player",
+  team: "team",
+  event: "event",
+  match: "game",
+  champ: "champ",
+  league: "league",
+};
 const HUB_KIND_PREFETCH: Partial<Record<string, string[]>> = {
   home: ["hub/home.json", "hub/meta.json", "hub/ratings.json", "hub/leagues.json", "hub/weekly.json"],
   tournaments: ["hub/meta.json"],
-  champions: ["meta.json"],
-  tiers: ["meta.json"],
+  champions: ["meta.json", "hub/leagues.json", "hub/alias.json"],
+  tiers: ["meta.json", "hub/leagues.json", "hub/alias.json"],
   rankings: ["hub/ratings.json"],
   weekly: ["hub/weekly.json"],
   records: ["hub/records.json"],
   titles: ["hub/titles.json"],
   leagues: ["hub/leagues.json"],
+  league: ["hub/leagues.json"],
   patches: ["hub/patches.json"],
+  teams: ["hub/search/teams.json", "hub/leagues.json"],
+  players: ["hub/search/players.json", "hub/search/teams.json", "hub/leagues.json"],
+  items: ["hub/items/index.json"],
+  leaders: ["hub/leagues.json", "hub/alias.json"],
+  best: ["hub/best/index.json", "hub/best/all.json", "hub/leagues.json", "hub/alias.json"],
+  finder: ["hub/leagues.json", "hub/alias.json"],
+  counters: ["hub/search/teams.json", "hub/search/events.json", "hub/search/champs.json", "hub/leagues.json"],
+  worlds: ["hub/league/world-championship.json", "hub/titles.json", "hub/ratings.json"],
+  msi: ["hub/league/mid-season-invitational.json", "hub/titles.json", "hub/ratings.json"],
+  "first-stand": ["hub/league/first-stand.json", "hub/titles.json", "hub/ratings.json"],
+  team: ["hub/ratings.json"],
 };
 let picturePage = false; // a page that shows champion pictures straight away
 if (IS_WEB && STARTED_ON_HUB) {
@@ -50,7 +69,18 @@ if (IS_WEB && STARTED_ON_HUB) {
   const dir = HUB_FILE_DIR[r.kind];
   const files = [...(HUB_KIND_PREFETCH[r.kind] || []), ...(dir && "slug" in r ? [`hub/${dir}/${r.slug}.json`] : [])];
   if (files.length > 0) prefetch(files);
-  picturePage = !!dir || r.kind === "home" || r.kind === "champions" || r.kind === "tiers";
+  picturePage =
+    !!dir ||
+    r.kind === "home" ||
+    r.kind === "champions" ||
+    r.kind === "tiers" ||
+    r.kind === "items" ||
+    r.kind === "counters" ||
+    r.kind === "best" ||
+    r.kind === "weekly" ||
+    r.kind === "worlds" ||
+    r.kind === "msi" ||
+    r.kind === "first-stand";
 } else if (IS_WEB) {
   import("./components/views/LiveView").catch(() => {});
 }

@@ -525,11 +525,33 @@ export const loadLeague = withAlias<import("./types").HubLeague>("league");
 
 /** Starts loading a hub page's file before it's opened (pointer on its link); the page then finds it ready. */
 export function prefetchHub(r: import("./route").HubRoute): void {
-  if (!("slug" in r)) return;
-  const go: Record<string, ((s: string) => Promise<unknown>) | undefined> = {
-    team: loadHubTeam, player: loadHubPlayer, event: loadHubEvent, match: loadHubSeries, champ: loadHubChamp, league: loadLeague,
+  if ("slug" in r) {
+    const go: Record<string, ((s: string) => Promise<unknown>) | undefined> = {
+      team: loadHubTeam, player: loadHubPlayer, event: loadHubEvent, match: loadHubSeries, champ: loadHubChamp, league: loadLeague,
+    };
+    go[r.kind]?.(r.slug).catch(() => {});
+    if (r.kind === "team") loadRatings().catch(() => {});
+    return;
+  }
+  const byKind: Record<string, (() => Promise<unknown>) | undefined> = {
+    home: loadHubHome,
+    tournaments: loadHubMeta,
+    weekly: loadWeekly,
+    records: loadHubRecords,
+    titles: loadHubTitles,
+    rankings: loadRatings,
+    leagues: loadLeagues,
+    patches: loadPatches,
+    teams: loadHubIndexQuick,
+    players: loadHubIndex,
+    items: loadItemIndex,
+    best: () => Promise.all([loadBestIndex(), loadBest()]),
+    counters: loadHubIndexQuick,
+    worlds: () => Promise.all([loadLeague("world-championship"), loadHubTitles(), loadRatings()]),
+    msi: () => Promise.all([loadLeague("mid-season-invitational"), loadHubTitles(), loadRatings()]),
+    "first-stand": () => Promise.all([loadLeague("first-stand"), loadHubTitles(), loadRatings()]),
   };
-  go[r.kind]?.(r.slug).catch(() => {});
+  byKind[r.kind]?.().catch(() => {});
 }
 export const loadBestIndex = () => load<import("./types").BestIndex>("hub/best/index.json");
 export const loadRecordsYear = (year: string) => load<import("./types").HubRecordsYear>(`hub/records/${year}.json`);

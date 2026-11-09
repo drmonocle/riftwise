@@ -7,8 +7,15 @@ import React from "react";
 import { tl } from "../i18n";
 import { IS_WEB } from "../platform";
 import { HubRoute, hubPath, navigateHub, useHubRoute } from "../hub/route";
-import { prefetchHub } from "../hub/data";
 import { NAV_GROUP } from "./navGroups";
+import { preloadPageCode } from "./hub/pageCode";
+
+const prefetch = (r: HubRoute) => {
+  preloadPageCode(r.kind);
+  import("../hub/data")
+    .then((m) => m.prefetchHub(r))
+    .catch(() => {});
+};
 
 export type TabKey = "live" | "schedule" | "stats" | "stream" | "watchlist" | "news" | "settings";
 
@@ -57,8 +64,8 @@ export const Navigation: React.FC<{
           <a
             key={it.key}
             href={IS_WEB ? hubPath(it.route) : "#"}
-            onMouseEnter={() => prefetchHub(it.route!)}
-            onFocus={() => prefetchHub(it.route!)}
+            onMouseEnter={() => prefetch(it.route!)}
+            onFocus={() => prefetch(it.route!)}
             onClick={(e) => {
               if (IS_WEB && (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0)) return;
               e.preventDefault();
