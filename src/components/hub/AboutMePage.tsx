@@ -83,6 +83,28 @@ export const AboutMePage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ o
               {tl("See that game")}
             </HubLink>
           </p>
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {(
+              [
+                [{ kind: "team", slug: "tsm" }, "TSM"],
+                [{ kind: "team", slug: "flyquest" }, "FlyQuest"],
+                [{ kind: "player", slug: "inspired" }, "Inspired"],
+                [{ kind: "player", slug: "massu" }, "Massu"],
+                [{ kind: "player", slug: "faker" }, "Faker"],
+                [{ kind: "player", slug: "zeus" }, "Zeus"],
+                [{ kind: "team", slug: "t1" }, "T1"],
+                [{ kind: "team", slug: "bilibili-gaming" }, "BLG"],
+              ] as const
+            ).map(([to, name]) => (
+              <HubLink
+                key={name}
+                to={to}
+                className="px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-semibold text-rw-text hover:text-rw-accent"
+              >
+                {name}
+              </HubLink>
+            ))}
+          </div>
         </div>
       </Section>
 

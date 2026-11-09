@@ -1,15 +1,23 @@
 /** "How we count": where the numbers come from, what each stat means, known gaps, and how to report a wrong number. */
 import React from "react";
-import { tl } from "../../i18n";
+import { tl, tk } from "../../i18n";
 import { HubLink, Section, usePageTitle } from "./ui";
+import { JumpBar } from "./PageTabs";
 
 export { FEEDBACK_EMAIL as REPORT_EMAIL, reportUrl } from "../../feedback";
 import { FEEDBACK_EMAIL as REPORT_EMAIL, reportUrl } from "../../feedback";
 
 
-const Term: React.FC<{ t: string; children: React.ReactNode }> = ({ t, children }) => (
+const Term: React.FC<{ t: string; bar?: number; barColor?: string; children: React.ReactNode }> = ({ t, bar, barColor = "bg-rw-accent/70", children }) => (
   <div className="grid sm:grid-cols-[9rem_1fr] gap-x-3 gap-y-0.5 py-1.5 border-t border-rw-border first:border-t-0">
-    <dt className="font-bold text-rw-text">{t}</dt>
+    <dt className="font-bold text-rw-text">
+      <div>{t}</div>
+      {bar != null && bar > 0 && (
+        <div className="h-1 w-24 rounded-full bg-rw-bg overflow-hidden mt-1">
+          <div className={`h-full rounded-full ${barColor}`} style={{ width: `${Math.min(100, Math.round(bar * 100))}%` }} />
+        </div>
+      )}
+    </dt>
     <dd className="text-rw-sub">{children}</dd>
   </div>
 );
@@ -32,7 +40,16 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
   };
   return (
     <div className="space-y-3 text-xs leading-relaxed">
-      <Section title={tl("Where the numbers come from")}>
+      <JumpBar
+        items={[
+          { id: "sources", label: tk("Where the numbers come from") },
+          { id: "stats", label: tk("The stats") },
+          { id: "game-rating", label: tk("Game rating") },
+          { id: "rating", label: tk("Player rating") },
+          { id: "data", label: tk("Use the data") },
+        ]}
+      />
+      <Section title={tl("Where the numbers come from")} id="sources">
         <ul className="list-disc pl-4 space-y-1 text-rw-sub">
           <li>{tl("Leaguepedia (lol.fandom.com): every pro game since 2011, with scoreboards, drafts, rosters, results and prize money. Shared under the CC BY-SA 3.0 license.")}</li>
           <li>
@@ -54,7 +71,7 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
           <li>{tl("Per-game, per-minute and share numbers use games with a full scoreboard only.")}</li>
         </ul>
       </Section>
-      <Section title={tl("The stats")}>
+      <Section title={tl("The stats")} id="stats">
         <dl>
           <Term t="KDA">{tl("(kills + assists) ÷ deaths, with deaths counted as at least 1.")}</Term>
           <Term t="KP">{tl("Kill participation: (kills + assists) ÷ the team's kills.")}</Term>
@@ -82,25 +99,25 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
           </Term>
         </dl>
       </Section>
-      <Section title={tl("Game rating")}>
+      <Section title={tl("Game rating")} id="game-rating">
         <p className="text-rw-sub mb-2">
           {tl("Every pro game gets a rating from 0 to 100 for how good it was to watch. It adds up eight things:")}
         </p>
         <dl>
-          <Term t={tl("Action")}>{tl("Up to 22.5 points: kills per minute, with extra credit when teams fight over Barons and Elder Dragons.")}</Term>
-          <Term t={tl("How close")}>
+          <Term t={tl("Action")} bar={22.5 / 40}>{tl("Up to 22.5 points: kills per minute, with extra credit when teams fight over Barons and Elder Dragons.")}</Term>
+          <Term t={tl("How close")} bar={13.5 / 40}>
             {tl("Up to 13.5 points: kills, gold and objectives close to even, games still level at 20 or 25 minutes, and wins by the team with fewer kills.")}
           </Term>
-          <Term t={tl("Length")}>{tl("Up to 9 points: full marks from about 28 to 44 minutes; longer games keep them when they stay eventful.")}</Term>
-          <Term t={tl("Base races")}>{tl("Up to 4.5 points: both teams breaking inhibitors, Baron and Elder fights, pentakills.")}</Term>
-          <Term t={tl("Stakes")}>
+          <Term t={tl("Length")} bar={9 / 40}>{tl("Up to 9 points: full marks from about 28 to 44 minutes; longer games keep them when they stay eventful.")}</Term>
+          <Term t={tl("Base races")} bar={4.5 / 40}>{tl("Up to 4.5 points: both teams breaking inhibitors, Baron and Elder fights, pentakills.")}</Term>
+          <Term t={tl("Stakes")} bar={40 / 40}>
             {tl("Up to 40 points: a Worlds final counts most (40), then Worlds semifinals (37), the MSI final (35.5), Worlds quarterfinals (34) and the big leagues' finals (31). Academy and second-tier leagues count least.")}
           </Term>
-          <Term t={tl("Series drama")}>
+          <Term t={tl("Series drama")} bar={15 / 40}>
             {tl("Up to 15 points: a deciding Game 5 (most of all after coming back from 0–2), must-win games, and a little less for the first games of a 3–0 sweep.")}
           </Term>
-          <Term t={tl("Rivalries")}>{tl("Up to 4.5 points: famous clashes like T1 vs KT, LCK vs LPL knockouts and the best teams of each region meeting.")}</Term>
-          <Term t={tl("Comebacks")}>{tl("Up to 5 points: winning from far behind in gold, with less gold, or after losing inhibitors.")}</Term>
+          <Term t={tl("Rivalries")} bar={4.5 / 40}>{tl("Up to 4.5 points: famous clashes like T1 vs KT, LCK vs LPL knockouts and the best teams of each region meeting.")}</Term>
+          <Term t={tl("Comebacks")} bar={5 / 40}>{tl("Up to 5 points: winning from far behind in gold, with less gold, or after losing inhibitors.")}</Term>
         </dl>
         <p className="text-rw-sub mt-2">
           {tl("Tiers: S 90+, A 80+, B 70+, C 55+, D below. Only about 1 game in 2,000 reaches S.")} {tl("A series counts its best game most, then its best three games and all of them; a 3-2 gets a little more, a sweep a little less.")}{" "}
@@ -114,12 +131,12 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
           {tl("Every player in every game with a full scoreboard gets a rating from 0 to 10 for how well they played; 6 is an average game. It compares six numbers with players of the same role in the same year, so a support isn't judged on damage and old, slower games aren't held against new ones:")}
         </p>
         <dl>
-          <Term t="KP">{tl("Kill participation: 25% of the rating's form part.")}</Term>
-          <Term t={tl("DMG%")}>{tl("Share of the team's damage to champions: 25%.")}</Term>
-          <Term t={tl("Gold%")}>{tl("Share of the team's gold: 15%.")}</Term>
-          <Term t={tl("CS/m")}>{tl("Creep score per minute: 10%.")}</Term>
-          <Term t={tl("VS%")}>{tl("Share of the team's vision score: 5%.")}</Term>
-          <Term t={tl("Deaths")}>{tl("Deaths per minute, fewer is better: 20%.")}</Term>
+          <Term t="KP" bar={25 / 25} barColor="bg-rw-teal/70">{tl("Kill participation: 25% of the rating's form part.")}</Term>
+          <Term t={tl("DMG%")} bar={25 / 25} barColor="bg-rw-teal/70">{tl("Share of the team's damage to champions: 25%.")}</Term>
+          <Term t={tl("Gold%")} bar={15 / 25} barColor="bg-rw-teal/70">{tl("Share of the team's gold: 15%.")}</Term>
+          <Term t={tl("CS/m")} bar={10 / 25} barColor="bg-rw-teal/70">{tl("Creep score per minute: 10%.")}</Term>
+          <Term t={tl("VS%")} bar={5 / 25} barColor="bg-rw-teal/70">{tl("Share of the team's vision score: 5%.")}</Term>
+          <Term t={tl("Deaths")} bar={20 / 25} barColor="bg-rw-teal/70">{tl("Deaths per minute, fewer is better: 20%.")}</Term>
         </dl>
         <p className="text-rw-sub mt-2">
           {tl("Each number is measured in spreads from the role's average, and the form part is scaled so about two in three games land within a point of 6. A win adds half a point, a loss takes half a point off. The rating uses only the scoreboard, so it can't see vision denial, macro calls or the shotcalling behind a fight.")}{" "}
@@ -145,7 +162,7 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
           </a>
         </p>
       </Section>
-      <Section title={tl("Use the data")}>
+      <Section title={tl("Use the data")} id="data">
         <p className="text-rw-sub">
           {tl("Free to use, also in videos, articles and broadcasts. Please credit RiftWise (riftwise.gg) and Leaguepedia, and Oracle's Elixir for early-game numbers.")}{" "}
           <HubLink to={{ kind: "data" }} className="text-rw-accent hover:underline font-semibold">

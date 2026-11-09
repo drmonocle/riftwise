@@ -99,9 +99,15 @@ export const STable: React.FC<React.TableHTMLAttributes<HTMLTableElement> & { re
   const rows = body ? kids(body) : [];
   // the rows in the order to show: the sorted keys first, then anything new (until the next sort)
   const byKey = new Map(rows.map((r) => [String(r.key), r]));
-  const shown = order
+  const rawShown = order
     ? [...order.filter((k) => byKey.has(k)).map((k) => byKey.get(k)!), ...rows.filter((r) => !order.includes(String(r.key)))]
     : rows;
+  const shown = rawShown.map((r) => {
+    if (r.type !== "tr") return r;
+    const cls = (r.props as { className?: string }).className || "";
+    if (cls.includes("hover:")) return r;
+    return React.cloneElement(r, { className: `${cls} hover:bg-rw-raised/40 transition-colors`.trim() });
+  });
 
   const sortRows = (s: { col: number; desc: boolean }) => {
     const tb = ref.current?.tBodies[0];
