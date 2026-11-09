@@ -467,7 +467,19 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                   </span>
                 </td>
                 <td className="px-2 py-1 text-center tabular-nums font-bold">
-                  {w}-{l}
+                  <span className="inline-flex items-center gap-1.5">
+                    <span>
+                      {w}-{l}
+                    </span>
+                    <span className="hidden sm:inline-flex items-center gap-0.5">
+                      {Array.from({ length: w }).map((_, idx) => (
+                        <span key={`w-${idx}`} className="w-1.5 h-1.5 rounded-full bg-rw-teal" />
+                      ))}
+                      {Array.from({ length: l }).map((_, idx) => (
+                        <span key={`l-${idx}`} className="w-1.5 h-1.5 rounded-full bg-rw-red" />
+                      ))}
+                    </span>
+                  </span>
                 </td>
                 <td className={`px-2 py-1 ${w >= 3 ? "text-rw-teal font-semibold" : l >= 3 ? "text-rw-red" : "text-rw-sub"}`}>
                   {w >= 3 ? tl("through") : l >= 3 ? tl("out") : tl("Still in")}
@@ -729,7 +741,26 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                     </span>
                   )}
                 </td>
-                <td className="px-2 py-1 text-center tabular-nums font-bold max-sm:hidden">{x.score}</td>
+                <td className="px-2 py-1 text-center tabular-nums font-bold max-sm:hidden">
+                  {(() => {
+                    const m = /^(\d+)\s*[-–]\s*(\d+)$/.exec(x.score || "");
+                    if (!m) return x.score;
+                    const wa = Number(m[1]);
+                    const wb = Number(m[2]);
+                    const tot = wa + wb;
+                    return (
+                      <span className="inline-flex items-center gap-1.5">
+                        <span>{x.score}</span>
+                        {tot > 0 && (
+                          <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
+                            <span className="h-full bg-rw-teal/85" style={{ width: `${Math.round((wa / tot) * 100)}%` }} />
+                            <span className="h-full bg-rw-sub/65" style={{ width: `${100 - Math.round((wa / tot) * 100)}%` }} />
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })()}
+                </td>
                 <td className="px-2 py-1 text-rw-sub max-sm:hidden">{x.l}</td>
               </tr>
             ))}
@@ -1134,6 +1165,19 @@ const Bracket: React.FC<{ ko: ReturnType<typeof runKnockout>; byU: Map<string, W
 const OddsTable: React.FC<{ odds: Record<string, TeamOdds>; teams: WTeam[] }> = ({ odds, teams }) => {
   const rows = teams.slice().sort((a, b) => odds[b.u].win - odds[a.u].win || odds[b.u].adv - odds[a.u].adv);
   const cell = "px-2 py-1 text-right tabular-nums";
+  const barCell = (v: number, accent = false) => {
+    const pct = Math.max(0, Math.min(100, Math.round(v * 100)));
+    return (
+      <span className="inline-flex items-center justify-end gap-1.5">
+        {pct > 0 && (
+          <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
+            <span className={`h-full rounded-full ${accent ? "bg-rw-accent" : "bg-rw-teal/80"}`} style={{ width: `${Math.max(8, pct)}%` }} />
+          </span>
+        )}
+        <span className="w-9 text-right">{pctText(v)}</span>
+      </span>
+    );
+  };
   return (
     <div className="overflow-x-auto max-w-full">
       <table className="w-full text-xs">
@@ -1158,11 +1202,11 @@ const OddsTable: React.FC<{ odds: Record<string, TeamOdds>; teams: WTeam[] }> = 
                     <TeamLink name={t.n} u={t.u} className="truncate hover:text-rw-accent" />
                   </span>
                 </td>
-                <td className={cell}>{pctText(o.r30)}</td>
-                <td className={cell}>{pctText(o.adv)}</td>
-                <td className={cell}>{pctText(o.sf)}</td>
-                <td className={cell}>{pctText(o.final)}</td>
-                <td className={`${cell} font-bold text-rw-accent`}>{pctText(o.win)}</td>
+                <td className={cell}>{barCell(o.r30)}</td>
+                <td className={cell}>{barCell(o.adv)}</td>
+                <td className={cell}>{barCell(o.sf)}</td>
+                <td className={cell}>{barCell(o.final)}</td>
+                <td className={`${cell} font-bold text-rw-accent`}>{barCell(o.win, true)}</td>
               </tr>
             );
           })}
@@ -1337,11 +1381,22 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                           <TeamLink name={t.n} u={t.u} className="truncate hover:text-rw-accent" />
                         </span>
                       </td>
-                      {odds[t.u].map((x, k) => (
-                        <td key={k} className={`px-2 py-1 text-right tabular-nums ${k === br.reach.length ? "font-bold text-rw-accent" : ""}`}>
-                          {pctText(x)}
-                        </td>
-                      ))}
+                      {odds[t.u].map((x, k) => {
+                        const pct = Math.max(0, Math.min(100, Math.round(x * 100)));
+                        const isWin = k === br.reach.length;
+                        return (
+                          <td key={k} className={`px-2 py-1 text-right tabular-nums ${isWin ? "font-bold text-rw-accent" : ""}`}>
+                            <span className="inline-flex items-center justify-end gap-1.5">
+                              {pct > 0 && (
+                                <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
+                                  <span className={`h-full rounded-full ${isWin ? "bg-rw-accent" : "bg-rw-teal/80"}`} style={{ width: `${Math.max(8, pct)}%` }} />
+                                </span>
+                              )}
+                              <span className="w-9 text-right">{pctText(x)}</span>
+                            </span>
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
               </tbody>

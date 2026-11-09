@@ -142,18 +142,28 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
       >
         <p className="text-[11px] text-rw-muted">{tl("Games won from furthest behind in gold at 15 minutes.")}</p>
         <List>
-          {cb.map((c, i) => (
-            <Item
-              key={i}
-              left={
-                <HubLink to={{ kind: "match", slug: c.series, game: c.n }} className="text-rw-text hover:text-rw-accent">
-                  {c.winner} <span className="text-rw-muted">{tl("beat")}</span> {c.loser}
-                </HubLink>
-              }
-              sub={`${all ? yearOnly(c.year) + " · " : ""}${c.stage} · ${tl("Game {n}", { n: c.n })}`}
-              right={`−${k(c.behind)}`}
-            />
-          ))}
+          {(() => {
+            const maxBehind = Math.max(1, ...cb.map((c) => c.behind));
+            return cb.map((c, i) => (
+              <Item
+                key={i}
+                left={
+                  <HubLink to={{ kind: "match", slug: c.series, game: c.n }} className="text-rw-text hover:text-rw-accent">
+                    {c.winner} <span className="text-rw-muted">{tl("beat")}</span> {c.loser}
+                  </HubLink>
+                }
+                sub={`${all ? yearOnly(c.year) + " · " : ""}${c.stage} · ${tl("Game {n}", { n: c.n })}`}
+                right={
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
+                      <span className="h-full bg-rw-red/80 rounded-full" style={{ width: `${Math.round((c.behind / maxBehind) * 100)}%` }} />
+                    </span>
+                    <span>−{k(c.behind)}</span>
+                  </span>
+                }
+              />
+            ));
+          })()}
         </List>
       </Section>,
     );
@@ -270,9 +280,27 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
       >
         <h4 className="text-[10px] font-bold uppercase tracking-wider text-rw-muted">{tl("Most finals")}</h4>
         <List>
-          {fin.mostReached.slice(0, 6).map((r) => (
-            <Item key={r.u} left={<TeamLink name={r.name} u={r.u} className="text-rw-text hover:text-rw-accent" />} sub={tl("{w} won · {l} lost", { w: r.won, l: r.n - r.won })} right={r.n} />
-          ))}
+          {fin.mostReached.slice(0, 6).map((r) => {
+            const wrPct = r.n > 0 ? Math.round((r.won / r.n) * 100) : 0;
+            return (
+              <Item
+                key={r.u}
+                left={<TeamLink name={r.name} u={r.u} className="text-rw-text hover:text-rw-accent" />}
+                sub={tl("{w} won · {l} lost", { w: r.won, l: r.n - r.won })}
+                right={
+                  <span className="inline-flex items-center gap-1.5">
+                    {r.n > 0 && (
+                      <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
+                        <span className="h-full bg-rw-teal/85" style={{ width: `${wrPct}%` }} />
+                        <span className="h-full bg-rw-red/75" style={{ width: `${100 - wrPct}%` }} />
+                      </span>
+                    )}
+                    <span>{r.n}</span>
+                  </span>
+                }
+              />
+            );
+          })}
         </List>
         {fin.mostLost.length > 0 && (
           <>
@@ -313,14 +341,24 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         }
       >
         <List>
-          {titles.map((p) => (
-            <Item
-              key={p.u || p.name}
-              left={<PlayerLink name={p.name} u={p.u} className="text-rw-text hover:text-rw-accent" />}
-              sub={`${p.titles.map(yearOnly).sort().join(", ")} · ${tl("{n} finals", { n: p.finals })}`}
-              right={p.titles.length}
-            />
-          ))}
+          {(() => {
+            const maxTitles = Math.max(1, ...titles.map((p) => p.titles.length));
+            return titles.map((p) => (
+              <Item
+                key={p.u || p.name}
+                left={<PlayerLink name={p.name} u={p.u} className="text-rw-text hover:text-rw-accent" />}
+                sub={`${p.titles.map(yearOnly).sort().join(", ")} · ${tl("{n} finals", { n: p.finals })}`}
+                right={
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
+                      <span className="h-full bg-rw-accent/85 rounded-full" style={{ width: `${Math.round((p.titles.length / maxTitles) * 100)}%` }} />
+                    </span>
+                    <span>{p.titles.length}</span>
+                  </span>
+                }
+              />
+            ));
+          })()}
         </List>
       </Section>,
     );
@@ -388,39 +426,61 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 </tr>
               </thead>
               <tbody>
-                {ys.map((y) => (
-                  <tr key={y.year} className="border-t border-rw-border whitespace-nowrap">
-                    <td className="px-2 py-1 text-rw-text font-semibold">{yearOnly(y.year)}</td>
-                    <td className="px-2 py-1 text-right tabular-nums">{y.games}</td>
-                    <td className="px-2 py-1 text-right tabular-nums">{y.blue == null ? "–" : `${y.blue}%`}</td>
-                    <td className="px-2 py-1 text-right tabular-nums">{mmss(y.min)}</td>
-                    <td className="px-2 py-1 text-right tabular-nums">{y.kills ?? "–"}</td>
-                    <td className="px-2 py-1">
-                      {y.top ? (
-                        <HubLink to={{ kind: "champ", slug: prettySlug(y.top[0]) }} className="flex items-center gap-1 hover:text-rw-accent">
-                          <ChampIcon name={y.top[0]} size={16} />
-                          {champName(y.top[0])} <span className="text-rw-muted">· {y.top[1]}</span>
-                        </HubLink>
-                      ) : (
-                        "–"
-                      )}
-                    </td>
-                    <td className="px-2 py-1">
-                      {y.best ? (
-                        <HubLink to={{ kind: "champ", slug: prettySlug(y.best[0]) }} className="flex items-center gap-1 hover:text-rw-accent">
-                          <ChampIcon name={y.best[0]} size={16} />
-                          {champName(y.best[0])}{" "}
-                          <span className="text-rw-muted">
-                            · {y.best[2]}-{y.best[1] - y.best[2]}
+                {(() => {
+                  const maxG = Math.max(1, ...ys.map((y) => y.games));
+                  return ys.map((y) => (
+                    <tr key={y.year} className="border-t border-rw-border whitespace-nowrap">
+                      <td className="px-2 py-1 text-rw-text font-semibold">{yearOnly(y.year)}</td>
+                      <td className="px-2 py-1 text-right tabular-nums">
+                        <span className="inline-flex items-center justify-end gap-1.5">
+                          <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
+                            <span className="h-full bg-rw-accent/75 rounded-full" style={{ width: `${Math.round((y.games / maxG) * 100)}%` }} />
                           </span>
-                        </HubLink>
-                      ) : (
-                        "–"
-                      )}
-                    </td>
-                    <td className="px-2 py-1 text-right tabular-nums text-rw-sub">{tl("{t} teams · {p} players", { t: y.newTeams, p: y.newPlayers })}</td>
-                  </tr>
-                ))}
+                          <span className="w-7 text-right">{y.games}</span>
+                        </span>
+                      </td>
+                      <td className="px-2 py-1 text-right tabular-nums">
+                        {y.blue == null ? (
+                          "–"
+                        ) : (
+                          <span className="inline-flex items-center justify-end gap-1.5">
+                            <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
+                              <span className="h-full" style={{ width: `${y.blue}%`, background: "#4a9eff" }} />
+                              <span className="h-full" style={{ width: `${100 - y.blue}%`, background: "var(--rw-red)" }} />
+                            </span>
+                            <span className="w-8 text-right">{y.blue}%</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-2 py-1 text-right tabular-nums">{mmss(y.min)}</td>
+                      <td className="px-2 py-1 text-right tabular-nums">{y.kills ?? "–"}</td>
+                      <td className="px-2 py-1">
+                        {y.top ? (
+                          <HubLink to={{ kind: "champ", slug: prettySlug(y.top[0]) }} className="flex items-center gap-1 hover:text-rw-accent">
+                            <ChampIcon name={y.top[0]} size={16} />
+                            {champName(y.top[0])} <span className="text-rw-muted">· {y.top[1]}</span>
+                          </HubLink>
+                        ) : (
+                          "–"
+                        )}
+                      </td>
+                      <td className="px-2 py-1">
+                        {y.best ? (
+                          <HubLink to={{ kind: "champ", slug: prettySlug(y.best[0]) }} className="flex items-center gap-1 hover:text-rw-accent">
+                            <ChampIcon name={y.best[0]} size={16} />
+                            {champName(y.best[0])}{" "}
+                            <span className="text-rw-muted">
+                              · {y.best[2]}-{y.best[1] - y.best[2]}
+                            </span>
+                          </HubLink>
+                        ) : (
+                          "–"
+                        )}
+                      </td>
+                      <td className="px-2 py-1 text-right tabular-nums text-rw-sub">{tl("{t} teams · {p} players", { t: y.newTeams, p: y.newPlayers })}</td>
+                    </tr>
+                  ));
+                })()}
               </tbody>
             </table>
           </div>

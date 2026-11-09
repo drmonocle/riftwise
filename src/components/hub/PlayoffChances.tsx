@@ -94,10 +94,24 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                       {r.unrated && <span className="text-rw-muted" title={tl("No power rating yet: played at the table's median rating")}> *</span>}
                     </td>
                     <td className="px-1.5 sm:px-2 py-1 text-right tabular-nums text-rw-sub whitespace-nowrap">
-                      {r.sw}-{r.sl}
+                      <span className="inline-flex items-center justify-end gap-1.5">
+                        {r.sw + r.sl > 0 && (
+                          <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
+                            <span className="h-full bg-rw-teal/85" style={{ width: `${Math.round((r.sw / (r.sw + r.sl)) * 100)}%` }} />
+                            <span className="h-full bg-rw-red/75" style={{ width: `${100 - Math.round((r.sw / (r.sw + r.sl)) * 100)}%` }} />
+                          </span>
+                        )}
+                        <span>
+                          {r.sw}-{r.sl}
+                        </span>
+                      </span>
                     </td>
                     <td className="px-2 py-1 text-right tabular-nums text-rw-muted max-sm:hidden">{r.left}</td>
-                    <td className="px-1.5 sm:px-2 py-1 text-right tabular-nums text-rw-sub">{pctText(r.first)}</td>
+                    <td className="px-1 py-0.5 text-right">
+                      <span className="inline-block min-w-[3rem] rounded-sm px-1.5 py-0.5 text-center tabular-nums text-rw-sub" style={chanceShade(r.first)}>
+                        {pctText(r.first)}
+                      </span>
+                    </td>
                     <td className="px-1 py-0.5 text-right">
                       <span className="inline-block min-w-[3rem] rounded-sm px-1.5 py-0.5 text-center tabular-nums text-rw-text" style={chanceShade(r.top[ci])}>
                         {pctText(r.top[ci])}
