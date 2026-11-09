@@ -190,7 +190,29 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
             {status?.message && nextLine && <p className="text-xs text-rw-teal">{nextLine}</p>}
             {phase.lastAired && (
               <p className="text-[11px] text-rw-muted">
-                {tl("Last aired:")} {phase.lastAired.team1 && phase.lastAired.team2 ? `${phase.lastAired.team1} vs ${phase.lastAired.team2}, ` : ""}
+                {tl("Last aired:")}{" "}
+                {phase.lastAired.team1 && phase.lastAired.team2 ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => navigateHub({ kind: "team", slug: prettySlug(phase.lastAired!.team1!) })}
+                      className="text-rw-text hover:text-rw-accent hover:underline font-medium"
+                    >
+                      {phase.lastAired.team1}
+                    </button>{" "}
+                    vs{" "}
+                    <button
+                      type="button"
+                      onClick={() => navigateHub({ kind: "team", slug: prettySlug(phase.lastAired!.team2!) })}
+                      className="text-rw-text hover:text-rw-accent hover:underline font-medium"
+                    >
+                      {phase.lastAired.team2}
+                    </button>
+                    ,{" "}
+                  </>
+                ) : (
+                  ""
+                )}
                 {streamEventTitle(phase.lastAired)}
                 {phase.lastAired.stage ? ` ${stageName(phase.lastAired.stage)}` : ""}
               </p>

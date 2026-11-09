@@ -169,9 +169,10 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean; card?: {
                 ) : (
                   <span className="text-rw-text inline-flex items-center gap-1">
                     <TeamLogo name={o.best.a} size={13} />
-                    <span>{o.best.a} vs</span>
+                    <TeamLink name={o.best.a} />
+                    <span>vs</span>
                     <TeamLogo name={o.best.b} size={13} />
-                    <span>{o.best.b}</span>
+                    <TeamLink name={o.best.b} />
                   </span>
                 )}
               </span>

@@ -748,7 +748,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                   {/* phones: the final and the runner-up under the champion instead of two more columns */}
                   {x.l && (
                     <span className="sm:hidden block pl-[18px] text-[10px] text-rw-sub tabular-nums">
-                      {x.score} {tl("vs")} {x.l}
+                      {x.score} {tl("vs")} <TeamLink name={x.l} u={prettySlug(x.l)} className="hover:text-rw-accent hover:underline" />
                     </span>
                   )}
                 </td>

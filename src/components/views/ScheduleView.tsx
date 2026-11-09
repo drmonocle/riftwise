@@ -13,6 +13,7 @@ import { tl, locale, clockOptions, tc } from "../../i18n";
 import { searchAlias } from "../../searchAliases";
 import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 import { findSeriesSlug } from "../../hub/seriesLookup";
+import { resolveLeagueSlug } from "../../hub/data";
 import { RIOT_PREFIX } from "../../hub/riotMatch";
 import { navigateHub, scheduleOfPath, setScheduleAddress } from "../../hub/route";
 import { riotImg } from "../../riotImage";
@@ -282,7 +283,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "league", slug: league })}
+                    onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(league) })}
                     className="px-2 py-1 rounded text-[11px] font-semibold text-rw-accent hover:underline whitespace-nowrap"
                   >
                     {tl("Full history and stats")} →

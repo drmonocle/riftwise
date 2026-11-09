@@ -375,11 +375,12 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 <Item
                   key={i}
                   left={
-                    <span className="inline-flex items-center gap-1">
+                    <span className="inline-flex items-center gap-1 min-w-0">
                       <TeamLogo name={l[0].winner} size={14} />
-                      <span>{l[0].winner} vs</span>
+                      <TeamLink name={l[0].winner} className="text-rw-text hover:text-rw-accent hover:underline" />
+                      <span className="text-rw-muted">vs</span>
                       <TeamLogo name={l[0].loser} size={14} />
-                      <span>{l[0].loser}</span>
+                      <TeamLink name={l[0].loser} className="text-rw-text hover:text-rw-accent hover:underline" />
                     </span>
                   }
                   sub={l.map((f) => `${yearOnly(f.year)}: ${f.winner} ${f.score}`).join(" · ")}
@@ -456,7 +457,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   <span className="inline-flex items-center gap-1 truncate text-rw-muted">
                     <span>·</span>
                     <TeamLogo name={h.team} size={14} />
-                    <span className="truncate">{h.team}</span>
+                    <TeamLink name={h.team} className="truncate text-rw-muted hover:text-rw-accent hover:underline" />
                   </span>
                 )}
               </span>

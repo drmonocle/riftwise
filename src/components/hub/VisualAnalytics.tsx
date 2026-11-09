@@ -666,9 +666,12 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                 <span className={`font-bold ${sel.won ? "text-rw-teal" : "text-rw-red"}`}>
                   {sel.won ? tc("short result", "W") : tc("short result", "L")}
                 </span>
-                <ChampIcon name={sel.champ} size={18} />
-                <HubLink to={{ kind: "champ", slug: prettySlug(sel.champ) }} className="font-semibold text-rw-text hover:text-rw-accent hover:underline">
-                  {champName(sel.champ)}
+                <HubLink
+                  to={{ kind: "champ", slug: prettySlug(sel.champ) }}
+                  className="inline-flex items-center gap-1.5 font-semibold text-rw-text hover:text-rw-accent hover:underline"
+                >
+                  <ChampIcon name={sel.champ} size={18} />
+                  <span>{champName(sel.champ)}</span>
                 </HubLink>
                 <span className="font-mono font-bold text-rw-text tabular-nums">
                   {sel.k}/{sel.d}/{sel.a}

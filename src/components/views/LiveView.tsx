@@ -26,7 +26,7 @@ import { H2HMeter } from "../H2HMeter";
 import { tl, tc, locale } from "../../i18n";
 import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 import { riotImg } from "../../riotImage";
-import { prettySlug } from "../../hub/data";
+import { prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { navigateHub } from "../../hub/route";
 import { lazyPart } from "../../lazyPart";
 import { formatMatchTime } from "../../matchTime";
@@ -543,7 +543,7 @@ const LiveMatchBlock: React.FC<{
               ·{" "}
               <button
                 type="button"
-                onClick={() => navigateHub({ kind: "league", slug: prettySlug(m.leagueSlug || m.leagueName) })}
+                onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) })}
                 className="hover:text-rw-accent hover:underline"
               >
                 {m.leagueName}
@@ -851,7 +851,7 @@ const NextMatchCard: React.FC<{
         <div className="flex items-center gap-2 text-xs text-rw-sub mb-4 font-medium">
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "league", slug: prettySlug(m.leagueSlug || m.leagueName) })}
+            onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) })}
             className="font-semibold text-rw-accent hover:underline"
           >
             {m.leagueName}

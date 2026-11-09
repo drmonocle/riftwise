@@ -9,7 +9,7 @@ import { Match, AppSettings } from "../types";
 import { tl, tc, locale } from "../i18n";
 import { isRevealed, setRevealed } from "../revealed";
 import { navigateHub } from "../hub/route";
-import { loadRatings, prettySlug } from "../hub/data";
+import { loadRatings, prettySlug, resolveLeagueSlug } from "../hub/data";
 import { TeamLogo, useLoad } from "./hub/ui";
 import { SectionCard } from "./hub/BroadcastCard";
 import { MatchOverviewButton } from "./MatchOverviewButton";
@@ -69,7 +69,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               {!oneEvent && (
                 <button
                   type="button"
-                  onClick={() => navigateHub({ kind: "league", slug: prettySlug(m.leagueSlug || m.leagueName) })}
+                  onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) })}
                   className="w-24 shrink-0 text-[11px] text-rw-muted hover:text-rw-accent hover:underline truncate text-left transition-colors"
                   title={m.leagueName}
                 >
@@ -171,7 +171,21 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
                 <span className="w-4 text-rw-muted font-num tabular-nums">{i + 1}</span>
                 <TeamLogo name={t[1]} code={t[2]} size={16} />
                 <span className="font-semibold text-rw-text flex-1 min-w-0 truncate">{t[1]}</span>
-                <span className="text-[11px] text-rw-muted">{t[10] || t[3]}</span>
+                {t[4] ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigateHub({ kind: "league", slug: t[4]! });
+                      onSelectTab("stats");
+                    }}
+                    className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
+                  >
+                    {t[10] || t[3]}
+                  </button>
+                ) : (
+                  <span className="text-[11px] text-rw-muted">{t[10] || t[3]}</span>
+                )}
                 <span className="inline-flex items-center justify-end gap-1.5 w-24 text-right">
                   <span className="hidden sm:inline-block w-10 h-1.5 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
                     <span className="block h-full rounded-full bg-rw-accent/75" style={{ width: `${pct}%` }} />

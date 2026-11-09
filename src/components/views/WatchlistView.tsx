@@ -11,7 +11,7 @@ import { searchAlias, isNonLatin } from "../../searchAliases";
 import { mainPlayerEntries } from "../../helpers";
 import { riotImg } from "../../riotImage";
 import { navigateHub } from "../../hub/route";
-import { prettySlug } from "../../hub/data";
+import { prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { PlayerPhoto, TeamLogo } from "../hub/ui";
 
 interface WatchlistViewProps {
@@ -433,7 +433,18 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                           {team.name}
                         </button>
                         <div className="text-[11px] text-rw-muted">
-                          {team.league ? `${team.league} · ` : ""}
+                          {team.league ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(team.league) })}
+                                className="hover:text-rw-accent hover:underline"
+                              >
+                                {team.league}
+                              </button>
+                              {" · "}
+                            </>
+                          ) : null}
                           {team.code}
                         </div>
                       </div>
@@ -729,7 +740,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigateHub({ kind: "league", slug: league.slug });
+                          navigateHub({ kind: "league", slug: resolveLeagueSlug(league.slug) });
                         }}
                         className="font-semibold text-xs text-rw-text hover:text-rw-accent hover:underline text-left transition-colors"
                       >

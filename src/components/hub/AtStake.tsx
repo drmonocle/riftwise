@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { tl, locale } from "../../i18n";
 import { load } from "../../stats";
 import type { Match } from "../../types";
-import { findHubTeam, loadHubIndexQuick, prettySlug, type HubIndex } from "../../hub/data";
+import { findHubTeam, loadHubIndexQuick, prettySlug, resolveLeagueSlug, type HubIndex } from "../../hub/data";
 import { MatchOverviewButton } from "../MatchOverviewButton";
 import { MatchPrepButton } from "../MatchPrepButton";
 import {
@@ -144,7 +144,17 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                 </HubLink>
               </span>
               <span className="text-rw-muted">
-                {m.leagueName} ·{" "}
+                {m.leagueSlug || m.leagueName ? (
+                  <HubLink
+                    to={{ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) }}
+                    className="hover:text-rw-accent hover:underline"
+                  >
+                    {m.leagueName}
+                  </HubLink>
+                ) : (
+                  m.leagueName
+                )}{" "}
+                ·{" "}
                 {m.state === "inProgress"
                   ? tl("Live now")
                   : time(m.startTimeUtc)}

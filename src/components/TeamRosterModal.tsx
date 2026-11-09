@@ -6,7 +6,7 @@ import { H2HMeter } from "./H2HMeter";
 import { MatchOverviewButton } from "./MatchOverviewButton";
 import { MatchPrepButton } from "./MatchPrepButton";
 import { tl, locale, roleName, regionName, tc } from "../i18n";
-import { findHubTeam, loadHubIndexQuick, prettySlug } from "../hub/data";
+import { findHubTeam, loadHubIndexQuick, prettySlug, resolveLeagueSlug } from "../hub/data";
 import { navigateHub } from "../hub/route";
 import { RiotCatalogContext } from "../hub/riotCatalog";
 import { PlayerPhoto, PhotosLink, TeamLogo, useTeamLogo } from "./hub/ui";
@@ -166,7 +166,16 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
             )}
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-extrabold text-rw-text">{displayName}</h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigateHub({ kind: "team", slug: prettySlug(displayName) });
+                    onClose();
+                  }}
+                  className="text-xl font-extrabold text-rw-text hover:text-rw-accent hover:underline text-left transition-colors"
+                >
+                  {displayName}
+                </button>
                 <button
                   type="button"
                   onClick={() => onToggleTeamFollow(upperCode)}
@@ -183,7 +192,21 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                 <span className="font-mono font-bold text-rw-teal bg-rw-teal/10 px-2 py-0.5 rounded border border-rw-teal/30">
                   {upperCode}
                 </span>
-                {catalogTeam?.league && <span>· {catalogTeam.league}</span>}
+                {catalogTeam?.league && (
+                  <span>
+                    ·{" "}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigateHub({ kind: "league", slug: resolveLeagueSlug(catalogTeam.league) });
+                        onClose();
+                      }}
+                      className="hover:text-rw-accent hover:underline"
+                    >
+                      {catalogTeam.league}
+                    </button>
+                  </span>
+                )}
                 {catalogTeam?.region && <span>· {regionName(catalogTeam.region)}</span>}
               </div>
               <TeamStatsLink name={displayName} code={upperCode} onDone={onClose} />
@@ -298,7 +321,16 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           <div className="font-semibold text-rw-text inline-flex items-center gap-1.5">
                             <span>vs</span>
                             <TeamLogo name={opp} code={oppCode} size={14} />
-                            <span className="text-rw-accent">{opp}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigateHub({ kind: "team", slug: prettySlug(opp) });
+                                onClose();
+                              }}
+                              className="text-rw-accent hover:underline text-left"
+                            >
+                              {opp}
+                            </button>
                             <span>({oppCode})</span>
                           </div>
                           <div className="text-[10px] text-rw-sub">
@@ -354,7 +386,16 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           <span className="font-semibold text-rw-text inline-flex items-center gap-1.5">
                             <span>vs</span>
                             <TeamLogo name={oppName} size={14} />
-                            <span>{oppName}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigateHub({ kind: "team", slug: prettySlug(oppName) });
+                                onClose();
+                              }}
+                              className="hover:text-rw-accent hover:underline text-left"
+                            >
+                              {oppName}
+                            </button>
                           </span>
                           <span className="text-[10px] text-rw-sub">{tl("Result hidden (spoiler mode)")}</span>
                         </div>
@@ -379,7 +420,16 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           <span className="font-semibold text-rw-text truncate inline-flex items-center gap-1.5">
                             <span>vs</span>
                             <TeamLogo name={oppName} size={14} />
-                            <span className="truncate">{oppName}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigateHub({ kind: "team", slug: prettySlug(oppName) });
+                                onClose();
+                              }}
+                              className="truncate hover:text-rw-accent hover:underline text-left"
+                            >
+                              {oppName}
+                            </button>
                           </span>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">

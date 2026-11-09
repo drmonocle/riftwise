@@ -17,6 +17,7 @@ import { tl, tc, locale, regionName } from "../../i18n";
 import { STable } from "../STable";
 import { riotImg } from "../../riotImage";
 import { navigateHub } from "../../hub/route";
+import { resolveLeagueSlug } from "../../hub/data";
 import { SectionCard } from "../hub/BroadcastCard";
 import { useTeamLogo } from "../hub/ui";
 
@@ -193,7 +194,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
           {activeLeague && (
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "league", slug: activeLeague })}
+              onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(activeLeague) })}
               className="text-[11px] font-semibold text-rw-accent hover:underline"
             >
               {tl("Full history and stats")} →

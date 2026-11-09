@@ -11,7 +11,7 @@ import { tl, tc } from "../i18n";
 import { computeHeadToHead } from "../helpers";
 import { clickable } from "../a11y";
 import { teamForm, useMatchRatings } from "../hub/matchRatings";
-import { prettySlug } from "../hub/data";
+import { prettySlug, resolveLeagueSlug } from "../hub/data";
 import { navigateHub } from "../hub/route";
 import { AddToCalendarMenu } from "./AddToCalendarMenu";
 import { MatchPrepButton } from "./MatchPrepButton";
@@ -121,7 +121,7 @@ const UpNextRow: React.FC<{
       <span className="flex flex-col min-w-0 @max-[900px]:flex-1">
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "league", slug: prettySlug(m.leagueSlug || m.leagueName) })}
+          onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) })}
           className="font-bold text-rw-accent hover:underline text-[11px] truncate text-left"
           title={m.leagueName}
         >
