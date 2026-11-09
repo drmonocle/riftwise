@@ -141,10 +141,21 @@ const UpNextRow: React.FC<{
             <button
               type="button"
               onClick={() => navigateHub({ kind: "compare", mode: "team", a: prettySlug(m.team1Name), b: prettySlug(m.team2Name) })}
-              className="font-mono tabular-nums text-rw-sub hover:text-rw-accent hover:underline text-[10px] @min-[900px]:text-center"
+              className="inline-flex items-center justify-center gap-1.5 font-mono tabular-nums text-rw-sub hover:text-rw-accent hover:underline text-[10px] @min-[900px]:text-center"
               title={tl("All-time head-to-head, in games")}
             >
-              H2H {h2h.team1Wins}–{h2h.team2Wins}
+              <span>
+                H2H {h2h.team1Wins}–{h2h.team2Wins}
+              </span>
+              {h2h.team1Wins + h2h.team2Wins > 0 && (
+                <span className="w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden inline-flex gap-[1px] shrink-0" aria-hidden="true">
+                  <span
+                    className="h-full bg-rw-side-a/80"
+                    style={{ width: `${Math.round((h2h.team1Wins / (h2h.team1Wins + h2h.team2Wins)) * 100)}%` }}
+                  />
+                  <span className="h-full flex-1 bg-rw-side-b/80" />
+                </span>
+              )}
             </button>
           )}
           <span className="@min-[900px]:hidden">

@@ -42,7 +42,14 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
     <section className="rounded-xl border border-rw-border bg-rw-panel rw-lit text-xs">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-3 py-2 border-b border-rw-border">
         <h2 className="font-head text-[13px] font-bold uppercase tracking-[0.12em] text-rw-sub">{tl("Worlds Swiss stage: standings")}</h2>
-        <span className="text-[11px] text-rw-muted font-mono tabular-nums">{tl("{n} of {m} series played", { n: d.played, m: d.total })}</span>
+        <span className="inline-flex items-center gap-1.5 text-[11px] text-rw-muted font-mono tabular-nums">
+          <span>{tl("{n} of {m} series played", { n: d.played, m: d.total })}</span>
+          {d.total > 0 && (
+            <span className="w-12 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
+              <span className="block h-full rounded-full bg-rw-accent/80" style={{ width: `${Math.round((d.played / d.total) * 100)}%` }} />
+            </span>
+          )}
+        </span>
         <div className="ml-auto flex items-center gap-2">
           <SectionCard
             section={tl("Worlds Swiss stage: standings")}
@@ -82,8 +89,18 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
             title={r.name}
           >
             <span className="font-semibold text-rw-text hover:text-rw-accent truncate flex-1 min-w-0">{r.code}</span>
-            <span className="font-mono tabular-nums text-rw-sub">
-              {r.w}–{r.l}
+            <span className="inline-flex items-center gap-1 font-mono tabular-nums text-rw-sub">
+              <span className="hidden sm:inline-flex items-center gap-0.5" aria-hidden="true">
+                {Array.from({ length: r.w }).map((_, i) => (
+                  <span key={`w${i}`} className="w-1.5 h-1.5 rounded-full bg-rw-teal/85" />
+                ))}
+                {Array.from({ length: r.l }).map((_, i) => (
+                  <span key={`l${i}`} className="w-1.5 h-1.5 rounded-full bg-rw-rose/75" />
+                ))}
+              </span>
+              <span>
+                {r.w}–{r.l}
+              </span>
             </span>
             <span className="font-mono tabular-nums text-[11px] w-10 text-center rounded-sm text-rw-text" style={chanceShade(r.adv)}>
               {Math.round(r.adv * 100)}%

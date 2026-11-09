@@ -352,24 +352,35 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                       );
                     }
 
+                    const tot = myScore + oppScore;
+                    const myShare = tot > 0 ? Math.round((myScore / tot) * 100) : 50;
                     return (
                       <div
                         key={m.matchId}
-                        className="p-2.5 rounded-lg bg-rw-bg border border-rw-border flex items-center justify-between text-xs"
+                        className="p-2.5 rounded-lg bg-rw-bg border border-rw-border flex items-center justify-between gap-2 text-xs"
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
                           <span
-                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${
                               won ? "bg-rw-teal/20 text-rw-teal" : "bg-rw-red/20 text-rw-red"
                             }`}
                           >
                             <span className="uppercase">{won ? tl("Win") : tl("Loss")}</span>
                           </span>
-                          <span className="font-semibold text-rw-text">vs {oppName}</span>
+                          <span className="font-semibold text-rw-text truncate">vs {oppName}</span>
                         </div>
-                        <div className="font-mono font-bold text-xs text-rw-text">
-                          <span className={won ? "text-rw-teal" : ""}>{myScore}</span> -{" "}
-                          <span className={!won ? "text-rw-red" : ""}>{oppScore}</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {tot > 0 && (
+                            <span className="hidden sm:inline-flex w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden gap-[1px] shrink-0" aria-hidden="true">
+                              <span className="h-full bg-rw-teal/80" style={{ width: `${myShare}%` }} />
+                              <span className="h-full flex-1 bg-rw-red/70" />
+                            </span>
+                          )}
+                          <div className="font-mono font-bold text-xs text-rw-text tabular-nums">
+                            <span className={won ? "text-rw-teal" : ""}>{myScore}</span> -{" "}
+                            <span className={!won ? "text-rw-red" : ""}>{oppScore}</span>
+                          </div>
+                          <MatchOverviewButton match={m} compact onDone={onClose} />
                         </div>
                       </div>
                     );

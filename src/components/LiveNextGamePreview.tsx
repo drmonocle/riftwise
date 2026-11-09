@@ -464,30 +464,42 @@ export const LiveNextGamePreview: React.FC<{
                       )}
                     </span>
                   )}
-                  {row.open.map((pk) => (
-                    <HubLink
-                      key={pk.c}
-                      to={
-                        row.u
-                          ? { kind: "player", slug: row.u, tab: "champions", query: `champ=${encodeURIComponent(pk.c)}` }
-                          : { kind: "team", slug: teamSlug, tab: "champions", query: `champ=${encodeURIComponent(pk.c)}` }
-                      }
-                      title={
-                        pk.pocket
-                          ? `${champName(pk.c)} · ${tl("pocket pick")} (${pk.g}G · ${winRate(pk.w, pk.g)})`
-                          : `${champName(pk.c)} (${pk.g}G · ${winRate(pk.w, pk.g)})`
-                      }
-                      className={`inline-flex items-center gap-1 rounded border px-1 py-0.5 text-[10px] hover:border-rw-accent ${
-                        pk.pocket ? "border-dashed border-rw-border/80 bg-rw-bg/50" : "border-rw-border bg-rw-bg"
-                      }`}
-                    >
-                      <ChampIcon name={pk.c} size={15} />
-                      <span className="text-rw-text hidden sm:inline">{champName(pk.c)}</span>
-                      <span className="text-rw-muted tabular-nums text-[9px]">
-                        {pk.g}G {winRate(pk.w, pk.g)}
-                      </span>
-                    </HubLink>
-                  ))}
+                  {row.open.map((pk) => {
+                    const wrPct = pk.g > 0 ? Math.round((pk.w / pk.g) * 100) : 0;
+                    return (
+                      <HubLink
+                        key={pk.c}
+                        to={
+                          row.u
+                            ? { kind: "player", slug: row.u, tab: "champions", query: `champ=${encodeURIComponent(pk.c)}` }
+                            : { kind: "team", slug: teamSlug, tab: "champions", query: `champ=${encodeURIComponent(pk.c)}` }
+                        }
+                        title={
+                          pk.pocket
+                            ? `${champName(pk.c)} · ${tl("pocket pick")} (${pk.g}G · ${winRate(pk.w, pk.g)})`
+                            : `${champName(pk.c)} (${pk.g}G · ${winRate(pk.w, pk.g)})`
+                        }
+                        className={`relative overflow-hidden inline-flex items-center gap-1 rounded border px-1 py-0.5 text-[10px] hover:border-rw-accent ${
+                          pk.pocket ? "border-dashed border-rw-border/80 bg-rw-bg/50" : "border-rw-border bg-rw-bg"
+                        }`}
+                      >
+                        <ChampIcon name={pk.c} size={15} />
+                        <span className="text-rw-text hidden sm:inline">{champName(pk.c)}</span>
+                        <span className="tabular-nums text-[9px]">
+                          <span className="text-rw-muted">{pk.g}G </span>
+                          <span className={pk.w * 2 >= pk.g ? "text-rw-teal font-semibold" : "text-rw-muted"}>{winRate(pk.w, pk.g)}</span>
+                        </span>
+                        {pk.g > 0 && (
+                          <span className="absolute inset-x-0 bottom-0 h-[1.5px] bg-rw-border/60" aria-hidden="true">
+                            <span
+                              className={`block h-full ${pk.w * 2 >= pk.g ? "bg-rw-teal/80" : "bg-rw-rose/70"}`}
+                              style={{ width: `${Math.max(6, Math.min(100, wrPct))}%` }}
+                            />
+                          </span>
+                        )}
+                      </HubLink>
+                    );
+                  })}
                 </div>
               );
               return (

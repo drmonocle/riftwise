@@ -279,6 +279,8 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
               <ul className="space-y-1">
                 {meetings.map((m, i) => {
                   const t1Won = m.team1Score > m.team2Score;
+                  const tot = m.team1Score + m.team2Score;
+                  const share1 = tot > 0 ? Math.round((m.team1Score / tot) * 100) : 50;
                   return (
                     <li
                       key={`${m.date}-${m.tournament}-${i}`}
@@ -289,11 +291,19 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                         <div className="text-[10px] text-rw-muted font-mono">{fmtDate(m.date)}</div>
                       </div>
                       {revealed ? (
-                        <div className="font-mono font-bold shrink-0">
-                          <span style={{ color: T1_COLOR }}>{c1} {m.team1Score}</span>
-                          <span className="text-rw-muted"> – </span>
-                          <span style={{ color: T2_COLOR }}>{m.team2Score} {c2}</span>
-                          <span className="ml-2 text-[10px] font-sans font-semibold" style={{ color: t1Won ? T1_COLOR : T2_COLOR }}>
+                        <div className="inline-flex items-center gap-2 font-mono font-bold shrink-0">
+                          {tot > 0 && (
+                            <span className="hidden sm:inline-flex w-9 h-1 rounded-full bg-rw-border/70 overflow-hidden gap-[1px] shrink-0" aria-hidden="true">
+                              <span className="h-full" style={{ width: `${share1}%`, backgroundColor: T1_COLOR }} />
+                              <span className="h-full flex-1" style={{ backgroundColor: T2_COLOR }} />
+                            </span>
+                          )}
+                          <span>
+                            <span style={{ color: T1_COLOR }}>{c1} {m.team1Score}</span>
+                            <span className="text-rw-muted"> – </span>
+                            <span style={{ color: T2_COLOR }}>{m.team2Score} {c2}</span>
+                          </span>
+                          <span className="text-[10px] font-sans font-semibold" style={{ color: t1Won ? T1_COLOR : T2_COLOR }}>
                             {tl("{team} won", { team: t1Won ? c1 : c2 })}
                           </span>
                         </div>
