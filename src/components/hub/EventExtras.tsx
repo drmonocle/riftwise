@@ -59,15 +59,21 @@ const GameLine: React.FC<{
   r ? (
     <li className="flex flex-wrap items-baseline justify-between gap-x-2 min-w-0">
       <span className="text-rw-sub shrink-0">{label}</span>
-      <span className="min-w-0 text-right">
-        <span className="text-rw-accent font-bold">{value}</span>{" "}
+      <span className="min-w-0 text-right inline-flex items-center gap-1 flex-wrap justify-end">
+        <span className="text-rw-accent font-bold">{value}</span>
         {r.g ? (
-          <HubLink to={{ kind: "match", slug: r.g, game: r.n }}>
-            {r.a} vs {r.b}
+          <HubLink to={{ kind: "match", slug: r.g, game: r.n }} className="inline-flex items-center gap-1">
+            <TeamLogo name={r.a} size={13} />
+            <span>{r.a} vs</span>
+            <TeamLogo name={r.b} size={13} />
+            <span>{r.b}</span>
           </HubLink>
         ) : (
-          <span className="text-rw-text">
-            {r.a} vs {r.b}
+          <span className="text-rw-text inline-flex items-center gap-1">
+            <TeamLogo name={r.a} size={13} />
+            <span>{r.a} vs</span>
+            <TeamLogo name={r.b} size={13} />
+            <span>{r.b}</span>
           </span>
         )}
       </span>
@@ -149,15 +155,21 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean; card?: {
           {o.best && (
             <li className="flex flex-wrap items-baseline justify-between gap-x-2 min-w-0">
               <span className="text-rw-sub shrink-0">{tl("Best game")}</span>
-              <span className="min-w-0 text-right">
-                <RatingBadge r={o.best.v} />{" "}
+              <span className="min-w-0 text-right inline-flex items-center gap-1 flex-wrap justify-end">
+                <RatingBadge r={o.best.v} />
                 {o.best.g ? (
-                  <HubLink to={{ kind: "match", slug: o.best.g, game: o.best.n }}>
-                    {o.best.a} vs {o.best.b} · {tl("Game {n}", { n: o.best.n })}
+                  <HubLink to={{ kind: "match", slug: o.best.g, game: o.best.n }} className="inline-flex items-center gap-1">
+                    <TeamLogo name={o.best.a} size={13} />
+                    <span>{o.best.a} vs</span>
+                    <TeamLogo name={o.best.b} size={13} />
+                    <span>{o.best.b} · {tl("Game {n}", { n: o.best.n })}</span>
                   </HubLink>
                 ) : (
-                  <span className="text-rw-text">
-                    {o.best.a} vs {o.best.b}
+                  <span className="text-rw-text inline-flex items-center gap-1">
+                    <TeamLogo name={o.best.a} size={13} />
+                    <span>{o.best.a} vs</span>
+                    <TeamLogo name={o.best.b} size={13} />
+                    <span>{o.best.b}</span>
                   </span>
                 )}
               </span>
@@ -183,14 +195,15 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean; card?: {
               <span className="text-rw-sub shrink-0">
                 {tl("Best farming game")}
               </span>
-              <span className="min-w-0 text-right">
+              <span className="min-w-0 text-right inline-flex items-center gap-1 flex-wrap justify-end">
                 <span className="text-rw-accent font-bold">
                   {tl("{n} CS/min", { n: o.farm.v })}
-                </span>{" "}
-                <PlayerLink name={o.farm.n} u={o.farm.u} />{" "}
+                </span>
+                <PlayerPhoto name={o.farm.n} slug={o.farm.u ?? undefined} size={15} />
+                <PlayerLink name={o.farm.n} u={o.farm.u} />
                 <span className="text-rw-muted">
                   ({o.farm.cs} CS, {mmss(o.farm.min)})
-                </span>{" "}
+                </span>
                 {o.farm.g && (
                   <HubLink
                     to={{ kind: "match", slug: o.farm.g, game: o.farm.gn }}
@@ -253,6 +266,7 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean; card?: {
                 <HubLink to={{ kind: "champ", slug: prettySlug(p.c) }} className="hover:opacity-80" title={champName(p.c)}>
                   <ChampIcon name={p.c} size={16} />
                 </HubLink>
+                <PlayerPhoto name={p.n} slug={p.u ?? undefined} size={16} />
                 <PlayerLink name={p.n} u={p.u} />
                 {p.x > 1 && <span className="text-rw-accent">×{p.x}</span>}
                 {p.g && (

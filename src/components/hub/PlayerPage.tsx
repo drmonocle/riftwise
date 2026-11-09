@@ -192,11 +192,12 @@ const PlayerView: React.FC<{
                 ))}
             </p>
             {p.club && (
-              <p>
+              <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                <TeamLogo name={p.club} size={15} />
                 <TeamLink name={p.club} u={p.clubU} className="font-semibold text-rw-text hover:text-rw-accent hover:underline" />{" "}
-                {tl("(last game {date})", { date: fmtDate(p.clubTo) })}
-                {p.bio.contract && <> · {tl("Contract until {date}", { date: fmtDate(p.bio.contract) })}</>}
-                {p.bio.res && <> · {tl("Residency: {region}", { region: regionName(p.bio.res, p.bio.res) })}</>}
+                <span>{tl("(last game {date})", { date: fmtDate(p.clubTo) })}</span>
+                {p.bio.contract && <span>· {tl("Contract until {date}", { date: fmtDate(p.bio.contract) })}</span>}
+                {p.bio.res && <span>· {tl("Residency: {region}", { region: regionName(p.bio.res, p.bio.res) })}</span>}
               </p>
             )}
           </>
@@ -534,26 +535,28 @@ const PlayerView: React.FC<{
                 <span className="text-rw-sub shrink-0">
                   {BEST_LABEL[k] ? tl(BEST_LABEL[k]) : k}
                 </span>
-                <span className="text-rw-text text-right truncate min-w-0">
-                  {fmtNum(b.v)}{" "}
-                  <span className="text-rw-muted">
+                <span className="text-rw-text text-right truncate min-w-0 inline-flex items-center gap-1 justify-end">
+                  <span className="font-semibold text-rw-accent">{fmtNum(b.v)}</span>
+                  <span className="text-rw-muted inline-flex items-center gap-1 truncate">
                     (
                     <HubLink
                       to={{ kind: "champ", slug: prettySlug(b.c) }}
-                      className="text-rw-muted hover:text-rw-accent hover:underline"
+                      className="inline-flex items-center gap-1 text-rw-muted hover:text-rw-accent hover:underline"
                     >
-                      {champName(b.c)}
-                    </HubLink>{" "}
-                    vs{" "}
+                      <ChampIcon name={b.c} size={14} />
+                      <span>{champName(b.c)}</span>
+                    </HubLink>
+                    <span>vs</span>
+                    <TeamLogo name={b.opp} size={13} />
                     {b.g ? (
                       <HubLink
                         to={{ kind: "match", slug: b.g, game: b.gn }}
-                        className="text-rw-muted hover:text-rw-accent hover:underline"
+                        className="text-rw-muted hover:text-rw-accent hover:underline truncate"
                       >
                         {b.opp}
                       </HubLink>
                     ) : (
-                      b.opp
+                      <span className="truncate">{b.opp}</span>
                     )}
                     , {b.date.slice(0, 4)})
                   </span>
@@ -758,8 +761,11 @@ const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number] }> = ({
       <td className={`${td} max-w-[13rem] truncate`}>
         <EventLink name={x.en} u={x.e} />
       </td>
-      <td className={`${td} max-w-[8rem] truncate`}>
-        <TeamLink name={x.t} u={x.tu} />
+      <td className={`${td} max-w-[9rem]`}>
+        <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
+          <TeamLogo name={x.t} size={14} />
+          <TeamLink name={x.t} u={x.tu} className="truncate" />
+        </span>
       </td>
       <td
         className={`${td} ${x.pl === "1" ? "text-rw-accent font-bold" : "text-rw-sub"}`}

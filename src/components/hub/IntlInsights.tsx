@@ -94,8 +94,12 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             <Item
               key={i}
               left={
-                <HubLink to={{ kind: "match", slug: u.series, game: u.n }} className="text-rw-text hover:text-rw-accent">
-                  {u.winner} <span className="text-rw-muted">{tl("beat")}</span> {u.loser}
+                <HubLink to={{ kind: "match", slug: u.series, game: u.n }} className="inline-flex items-center gap-1 text-rw-text hover:text-rw-accent">
+                  <TeamLogo name={u.winner} size={14} />
+                  <span>{u.winner}</span>
+                  <span className="text-rw-muted">{tl("beat")}</span>
+                  <TeamLogo name={u.loser} size={14} />
+                  <span>{u.loser}</span>
                 </HubLink>
               }
               sub={`${all ? yearOnly(u.year) + " · " : ""}${u.stage} · ${tl("Game {n}", { n: u.n ?? 1 })}`}
@@ -111,8 +115,11 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 <Item
                   key={i}
                   left={
-                    <HubLink to={{ kind: "match", slug: u.series }} className="text-rw-text hover:text-rw-accent">
-                      {u.winner} {u.score} {u.loser}
+                    <HubLink to={{ kind: "match", slug: u.series }} className="inline-flex items-center gap-1 text-rw-text hover:text-rw-accent">
+                      <TeamLogo name={u.winner} size={14} />
+                      <span>{u.winner} {u.score}</span>
+                      <TeamLogo name={u.loser} size={14} />
+                      <span>{u.loser}</span>
                     </HubLink>
                   }
                   sub={`${all ? yearOnly(u.year) + " · " : ""}${u.stage}`}
@@ -148,8 +155,12 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               <Item
                 key={i}
                 left={
-                  <HubLink to={{ kind: "match", slug: c.series, game: c.n }} className="text-rw-text hover:text-rw-accent">
-                    {c.winner} <span className="text-rw-muted">{tl("beat")}</span> {c.loser}
+                  <HubLink to={{ kind: "match", slug: c.series, game: c.n }} className="inline-flex items-center gap-1 text-rw-text hover:text-rw-accent">
+                    <TeamLogo name={c.winner} size={14} />
+                    <span>{c.winner}</span>
+                    <span className="text-rw-muted">{tl("beat")}</span>
+                    <TeamLogo name={c.loser} size={14} />
+                    <span>{c.loser}</span>
                   </HubLink>
                 }
                 sub={`${all ? yearOnly(c.year) + " · " : ""}${c.stage} · ${tl("Game {n}", { n: c.n })}`}
@@ -338,7 +349,19 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             <h4 className="text-[10px] font-bold uppercase tracking-wider text-rw-muted pt-2">{tl("Rematches in the final")}</h4>
             <List>
               {fin.repeats.map((l, i) => (
-                <Item key={i} left={`${l[0].winner} vs ${l[0].loser}`} sub={l.map((f) => `${yearOnly(f.year)}: ${f.winner} ${f.score}`).join(" · ")} right={`×${l.length}`} />
+                <Item
+                  key={i}
+                  left={
+                    <span className="inline-flex items-center gap-1">
+                      <TeamLogo name={l[0].winner} size={14} />
+                      <span>{l[0].winner} vs</span>
+                      <TeamLogo name={l[0].loser} size={14} />
+                      <span>{l[0].loser}</span>
+                    </span>
+                  }
+                  sub={l.map((f) => `${yearOnly(f.year)}: ${f.winner} ${f.score}`).join(" · ")}
+                  right={`×${l.length}`}
+                />
               ))}
             </List>
           </>
@@ -406,7 +429,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 <span className="tabular-nums text-rw-muted w-9">{yearOnly(h.year)}</span>
                 {h.region && <RegionFlag code={h.region} />}
                 <span className="truncate text-rw-text">{h.country}</span>
-                {h.team && <span className="truncate text-rw-muted">· {h.team}</span>}
+                {h.team && (
+                  <span className="inline-flex items-center gap-1 truncate text-rw-muted">
+                    <span>·</span>
+                    <TeamLogo name={h.team} size={14} />
+                    <span className="truncate">{h.team}</span>
+                  </span>
+                )}
               </span>
               <span className={`shrink-0 font-semibold ${h.best === 1 ? "text-rw-accent" : "text-rw-sub"}`}>{h.region ? placeText(h.best) : "–"}</span>
             </li>

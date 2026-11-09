@@ -8,7 +8,7 @@ import React, { useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { tl, roleName } from "../../i18n";
 import { loadLeagues, loadMoves } from "../../hub/data";
-import { fmtDate, HubLink, PlayerLink, TeamLink, TeamLogo, useLoad } from "./ui";
+import { fmtDate, HubLink, PlayerLink, PlayerPhoto, TeamLink, TeamLogo, useLoad } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 
 export const RosterMoves: React.FC = () => {
@@ -71,9 +71,10 @@ export const RosterMoves: React.FC = () => {
         {list.slice(0, shown).map((m) => (
           <li key={`${m.u}-${m.d}`} className="py-1.5 border-b border-rw-border break-inside-avoid flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
             <span className="text-rw-muted tabular-nums w-20 shrink-0">{fmtDate(m.d, false)}</span>
-            <span className="min-w-0">
+            <span className="inline-flex items-center gap-1.5 min-w-0">
+              <PlayerPhoto name={m.n} team={m.to.n} slug={m.u} size={18} />
               <PlayerLink name={m.n} u={m.u} className="font-semibold text-rw-text hover:text-rw-accent" />
-              {m.r && <span className="text-rw-muted"> · {roleName(m.r)}</span>}
+              {m.r && <span className="text-rw-muted">· {roleName(m.r)}</span>}
             </span>
             <span className="flex items-center gap-1.5 min-w-0 text-rw-sub">
               <span className="inline-flex items-center gap-1 min-w-0">

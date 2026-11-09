@@ -4,7 +4,7 @@ import { tl, roleName } from "../../i18n";
 import { prettySlug } from "../../hub/data";
 import { champName } from "../../champions";
 import type { EventPlayer, EventTeamStats, HubEvent } from "../../hub/types";
-import { ChampIcon, HubLink, OeCredit, PlayerLink, Section, TeamLink, fmtNum } from "./ui";
+import { ChampIcon, HubLink, OeCredit, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo, fmtNum } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 import { Column, SortTable, per } from "./SortTable";
 import { WinBar, KdaBar } from "./OpponentChart";
@@ -56,8 +56,28 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
   }, [players, role, regular, minG, maxG, search]);
   if (players.length === 0) return null;
   const cols: Column<EventPlayer>[] = [
-    { key: "n", label: tl("Player"), value: (p) => p.n.toLowerCase(), render: (p) => <PlayerLink name={p.n} u={p.u} /> },
-    { key: "t", label: tl("Team"), value: (p) => p.t.toLowerCase(), render: (p) => <span className="max-w-[8rem] truncate inline-block align-bottom"><TeamLink name={p.t} u={p.tu} /></span> },
+    {
+      key: "n",
+      label: tl("Player"),
+      value: (p) => p.n.toLowerCase(),
+      render: (p) => (
+        <span className="inline-flex items-center gap-1.5 min-w-0">
+          <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
+          <PlayerLink name={p.n} u={p.u} />
+        </span>
+      ),
+    },
+    {
+      key: "t",
+      label: tl("Team"),
+      value: (p) => p.t.toLowerCase(),
+      render: (p) => (
+        <span className="inline-flex items-center gap-1.5 max-w-[9rem] truncate align-bottom">
+          <TeamLogo name={p.t} size={14} />
+          <TeamLink name={p.t} u={p.tu} className="truncate" />
+        </span>
+      ),
+    },
     { key: "r", label: tl("Role"), value: (p) => ROLES.indexOf(p.r), render: (p) => <span className="text-rw-muted">{roleName(p.r)}</span> },
     {
       key: "g",
@@ -198,7 +218,17 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
   if (teams.length === 0 || hidden) return null;
   const maxTeamG = Math.max(1, ...teams.map((t) => t.g));
   const all: Column<EventTeamStats>[] = [
-    { key: "t", label: tl("Team"), value: (t) => t.t.toLowerCase(), render: (t) => <TeamLink name={t.t} u={t.u} /> },
+    {
+      key: "t",
+      label: tl("Team"),
+      value: (t) => t.t.toLowerCase(),
+      render: (t) => (
+        <span className="inline-flex items-center gap-1.5 min-w-0">
+          <TeamLogo name={t.t} size={15} />
+          <TeamLink name={t.t} u={t.u} />
+        </span>
+      ),
+    },
     {
       key: "g",
       label: tl("Games"),

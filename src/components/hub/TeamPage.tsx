@@ -1271,9 +1271,10 @@ const TeamChampGames: React.FC<{
                       <HubLink to={{ kind: "champ", slug: prettySlug(canonical) }} className="shrink-0">
                         <ChampIcon name={canonical} size={18} />
                       </HubLink>
-                      <span className="truncate min-w-0">
+                      <span className="inline-flex items-center gap-1 truncate min-w-0">
                         {who && (
                           <>
+                            <PlayerPhoto name={who.n} team={t.name} slug={who.u ?? undefined} size={15} />
                             {who.u ? (
                               <PlayerLink name={who.n} u={who.u} className="font-semibold text-rw-text hover:text-rw-accent" />
                             ) : (
@@ -1284,11 +1285,15 @@ const TeamChampGames: React.FC<{
                             )}{" "}
                           </>
                         )}
-                        <span className="text-rw-sub">
-                          vs {r[4]}
-                          {roleStr ? ` · ${roleName(roleStr)}` : ""}
+                        <span className="text-rw-sub inline-flex items-center gap-1">
+                          <span>vs</span>
+                          <TeamLogo name={r[4]} size={13} />
+                          <span>
+                            {r[4]}
+                            {roleStr ? ` · ${roleName(roleStr)}` : ""}
+                          </span>
                         </span>{" "}
-                        <span className="text-rw-muted">
+                        <span className="text-rw-muted truncate">
                           · <EventLink name={r[3]} u={r[2]} className="text-rw-muted hover:text-rw-accent hover:underline" />
                         </span>
                       </span>

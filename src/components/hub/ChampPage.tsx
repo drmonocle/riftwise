@@ -750,6 +750,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     <span className={`font-bold shrink-0 ${r.win ? "text-rw-teal" : "text-rw-red"}`}>
                       {r.win ? tc("short result", "W") : tc("short result", "L")}
                     </span>
+                    <PlayerPhoto name={r.n} slug={r.u ?? undefined} size={16} />
                     <PlayerLink name={r.n} u={r.u} />
                     <span className="text-rw-sub tabular-nums shrink-0">{r.k}/{r.d}/{r.a}</span>
                     <span className="text-rw-muted shrink-0">vs</span>

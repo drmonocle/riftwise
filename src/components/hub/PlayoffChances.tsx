@@ -10,7 +10,7 @@ import type { HubEvent } from "../../hub/types";
 import { playoffOdds } from "../../hub/playoffOdds";
 import { chanceShade } from "../SwissStandings";
 import { SectionCard } from "./BroadcastCard";
-import { RevealButton, Section, TeamLink, useHidden, useLoad } from "./ui";
+import { RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad } from "./ui";
 
 const pctText = (p: number) => (p === 0 ? "0%" : p < 0.005 ? "<1%" : p > 0.995 && p < 1 ? ">99%" : `${Math.round(p * 100)}%`);
 
@@ -90,8 +90,11 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                 {rows.map((r) => (
                   <tr key={r.u} className="border-t border-rw-border">
                     <td className="px-1.5 sm:px-2 py-1 truncate">
-                      <TeamLink name={r.name} u={r.u} />
-                      {r.unrated && <span className="text-rw-muted" title={tl("No power rating yet: played at the table's median rating")}> *</span>}
+                      <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
+                        <TeamLogo name={r.name} size={15} />
+                        <TeamLink name={r.name} u={r.u} className="truncate" />
+                        {r.unrated && <span className="text-rw-muted shrink-0" title={tl("No power rating yet: played at the table's median rating")}> *</span>}
+                      </span>
                     </td>
                     <td className="px-1.5 sm:px-2 py-1 text-right tabular-nums text-rw-sub whitespace-nowrap">
                       <span className="inline-flex items-center justify-end gap-1.5">
