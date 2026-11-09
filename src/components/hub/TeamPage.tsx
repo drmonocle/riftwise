@@ -422,9 +422,11 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     {r.g ? (
                       <HubLink to={{ kind: "match", slug: r.g }} className="truncate">{r.opp}</HubLink>
                     ) : (
-                      <span className="text-rw-text truncate">{r.opp}</span>
+                      <TeamLink name={r.opp} u={t.opps.find((o) => o.n === r.opp)?.u || prettySlug(r.opp)} className="truncate" />
                     )}
-                    <span className="text-rw-muted truncate">· {r.en}</span>
+                    <span className="text-rw-muted truncate">
+                      · <EventLink name={r.en} u={r.e} className="text-rw-muted hover:text-rw-accent hover:underline" />
+                    </span>
                   </span>
                   <span className="text-rw-muted shrink-0 flex items-center gap-2">
                     {r.r != null && (
@@ -526,7 +528,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   <span className="tabular-nums">{x.score}</span>
                   <span>vs</span>
                   <TeamLogo name={x.l} size={14} />
-                  <span>{x.l}</span>
+                  <TeamLink name={x.l} u={t.opps.find((o) => o.n === x.l)?.u || prettySlug(x.l)} />
                 </span>
               </li>
             ))}
@@ -1288,10 +1290,8 @@ const TeamChampGames: React.FC<{
                         <span className="text-rw-sub inline-flex items-center gap-1">
                           <span>vs</span>
                           <TeamLogo name={r[4]} size={13} />
-                          <span>
-                            {r[4]}
-                            {roleStr ? ` · ${roleName(roleStr)}` : ""}
-                          </span>
+                          <TeamLink name={r[4]} u={r[5]} />
+                          {roleStr && <span>· {roleName(roleStr)}</span>}
                         </span>{" "}
                         <span className="text-rw-muted truncate">
                           · <EventLink name={r[3]} u={r[2]} className="text-rw-muted hover:text-rw-accent hover:underline" />

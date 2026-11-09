@@ -404,7 +404,7 @@ const PlayerView: React.FC<{
                   <td className={`${td} text-rw-sub max-w-[9rem]`}>
                     <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
                       <TeamLogo name={y.team} size={15} />
-                      <span className="truncate">{y.team}</span>
+                      <TeamLink name={y.team} u={p.teams.find((t) => t.n === y.team)?.u} className="truncate" />
                     </span>
                   </td>
                   <td className={`${td} text-rw-sub`} data-sort={y.g ? y.w / y.g : 0}>
@@ -501,7 +501,12 @@ const PlayerView: React.FC<{
                           {r.opp}
                         </HubLink>
                       ) : (
-                        <span className="text-rw-sub truncate">{r.opp}</span>
+                        <TeamLink name={r.opp} className="text-rw-sub hover:text-rw-accent hover:underline truncate" />
+                      )}
+                      {r.en && (
+                        <span className="text-rw-muted truncate">
+                          · <EventLink name={r.en} u={p.events.find((ev) => ev.en === r.en)?.e} className="text-rw-muted hover:text-rw-accent hover:underline" />
+                        </span>
                       )}
                     </span>
                   </span>
@@ -556,7 +561,7 @@ const PlayerView: React.FC<{
                         {b.opp}
                       </HubLink>
                     ) : (
-                      <span className="truncate">{b.opp}</span>
+                      <TeamLink name={b.opp} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
                     )}
                     , {b.date.slice(0, 4)})
                   </span>
@@ -630,7 +635,10 @@ const PlayerView: React.FC<{
                       {champName(x.c)}
                     </HubLink>
                     {x.x > 1 && <span className="text-rw-accent"> ×{x.x}</span>}
-                    <span className="text-rw-muted"> · {x.en}</span>
+                    <span className="text-rw-muted">
+                      {" · "}
+                      <EventLink name={x.en} u={p.events.find((ev) => ev.en === x.en)?.e} className="text-rw-muted hover:text-rw-accent hover:underline" />
+                    </span>
                   </span>
                 </span>
                 <span className="flex items-center gap-2 shrink-0 text-rw-muted">
@@ -963,7 +971,12 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
               <PlayerPhoto name={peer.name} team={peer.club} slug={peer.u} img={peer.img} size={26} />
               <span className="min-w-0 truncate">
                 <PlayerLink name={peer.name} u={peer.u} />
-                {peer.club && <span className="text-rw-muted text-[11px]"> · {peer.club}</span>}
+                {peer.club && (
+                  <span className="text-rw-muted text-[11px] inline-flex items-center gap-1 ml-1">
+                    · <TeamLogo name={peer.club} size={12} />
+                    <TeamLink name={peer.club} u={peer.clubU} className="text-rw-muted hover:text-rw-accent hover:underline" />
+                  </span>
+                )}
                 <span className="block text-[10px] text-rw-sub tabular-nums">
                   {winRate(peer.w, peer.g)} · KDA {fmtN(peer.kda)}
                   {peer.dpm != null ? ` · ${fmtNum(peer.dpm)} DPM` : ""}

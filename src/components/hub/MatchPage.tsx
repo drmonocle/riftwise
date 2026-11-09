@@ -385,7 +385,9 @@ const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="inline-flex items-center gap-0.5">
               {mvp.champs.slice(0, 4).map((c) => (
-                <ChampIcon key={c} name={c} size={16} />
+                <HubLink key={c} to={{ kind: "champ", slug: prettySlug(c) }} className="hover:opacity-80" title={champName(c)}>
+                  <ChampIcon name={c} size={16} />
+                </HubLink>
               ))}
             </span>
             <PlayerRatingBadge v={mvp.avgRt} top />
@@ -653,8 +655,8 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
       )}
       {!hidden && (blue.length > 0 || red.length > 0) && (
         <div className="grid gap-3 lg:grid-cols-2">
-          <Scoreboard name={blueTeam.n} side="blue" players={blue} hidden={hidden} won={blueWon} minutes={g.min} ratings={ratings} top={top?.[0]} />
-          <Scoreboard name={redTeam.n} side="red" players={red} hidden={hidden} won={redWon} minutes={g.min} ratings={ratings} top={top?.[0]} />
+          <Scoreboard name={blueTeam.n} u={blueTeam.u} side="blue" players={blue} hidden={hidden} won={blueWon} minutes={g.min} ratings={ratings} top={top?.[0]} />
+          <Scoreboard name={redTeam.n} u={redTeam.u} side="red" players={red} hidden={hidden} won={redWon} minutes={g.min} ratings={ratings} top={top?.[0]} />
         </div>
       )}
       {!hidden && <Leads g={g} blueName={blueTeam.n} redName={redTeam.n} blue={blue} red={red} />}
@@ -990,8 +992,13 @@ const PlayerBars: React.FC<{
               }`}
             >
               <div className="min-w-0">
-                <div className="text-[10px] text-rw-sub truncate text-right">
-                  {b.c && <ChampIcon name={b.c} size={14} />} {b.n}
+                <div className="text-[10px] text-rw-sub truncate text-right inline-flex items-center justify-end gap-1 w-full">
+                  {b.c && (
+                    <HubLink to={{ kind: "champ", slug: prettySlug(b.c) }} className="shrink-0 hover:opacity-80" title={champName(b.c)}>
+                      <ChampIcon name={b.c} size={14} />
+                    </HubLink>
+                  )}
+                  <PlayerLink name={b.n} u={b.u} className="truncate hover:text-rw-accent hover:underline" />
                 </div>
                 {side(b, false)}
               </div>
@@ -1013,8 +1020,13 @@ const PlayerBars: React.FC<{
                 </div>
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] text-rw-sub truncate">
-                  {o.n} {o.c && <ChampIcon name={o.c} size={14} />}
+                <div className="text-[10px] text-rw-sub truncate inline-flex items-center gap-1 w-full">
+                  <PlayerLink name={o.n} u={o.u} className="truncate hover:text-rw-accent hover:underline" />
+                  {o.c && (
+                    <HubLink to={{ kind: "champ", slug: prettySlug(o.c) }} className="shrink-0 hover:opacity-80" title={champName(o.c)}>
+                      <ChampIcon name={o.c} size={14} />
+                    </HubLink>
+                  )}
                 </div>
                 {side(o, true)}
               </div>
@@ -1116,8 +1128,18 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blue: Gam
               <LeadBar
                 key={r}
                 label={roleName(r)}
-                left={b!.n}
-                right={o!.n}
+                left={
+                  <span className="inline-flex items-center justify-end gap-1 min-w-0 max-w-full">
+                    {b!.c && <ChampIcon name={b!.c} size={13} />}
+                    <PlayerLink name={b!.n} u={b!.u} className="truncate hover:text-rw-accent hover:underline" />
+                  </span>
+                }
+                right={
+                  <span className="inline-flex items-center gap-1 min-w-0 max-w-full">
+                    <PlayerLink name={o!.n} u={o!.u} className="truncate hover:text-rw-accent hover:underline" />
+                    {o!.c && <ChampIcon name={o!.c} size={13} />}
+                  </span>
+                }
                 v={b!.g15 as number}
                 max={maxLane}
                 tip={tl("{role} at 15 minutes: {lead}", {
@@ -1235,6 +1257,7 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean }>
 
 const Scoreboard: React.FC<{
   name: string;
+  u?: string | null;
   side: "blue" | "red";
   players: GamePlayer[];
   hidden: boolean;
@@ -1242,7 +1265,7 @@ const Scoreboard: React.FC<{
   minutes?: number | null;
   ratings?: Map<GamePlayer, number>;
   top?: GamePlayer;
-}> = ({ name, side, players, hidden, won, minutes, ratings, top }) => {
+}> = ({ name, u, side, players, hidden, won, minutes, ratings, top }) => {
   const color = side === "blue" ? "#4a9eff" : "var(--rw-red)";
   const totalK = players.reduce((s, p) => s + p.k, 0);
   const totalDmg = players.reduce((s, p) => s + (p.dm || 0), 0);
@@ -1253,7 +1276,7 @@ const Scoreboard: React.FC<{
       <h3 className="text-xs font-bold text-rw-text mb-2 flex items-center gap-2">
         <span className="w-1 h-3.5 rounded-sm shrink-0" style={{ background: color }} aria-hidden="true" />
         <TeamLogo name={name} size={16} />
-        {name}
+        <TeamLink name={name} u={u} className="text-rw-text hover:underline truncate" />
         {!hidden && won && <span className="text-[10px] text-rw-teal">{tl("Victory")}</span>}
       </h3>
       <div className="space-y-2">
@@ -1306,7 +1329,11 @@ const PlayerRow: React.FC<{
   return (
     <div className="border-t border-rw-border pt-2 first:border-0 first:pt-0 text-xs">
       <div className="flex items-center gap-2 min-w-0">
-        {p.c && <ChampIcon name={p.c} size={30} />}
+        {p.c && (
+          <HubLink to={{ kind: "champ", slug: prettySlug(p.c) }} className="shrink-0 hover:opacity-85" title={champName(p.c)}>
+            <ChampIcon name={p.c} size={30} />
+          </HubLink>
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 min-w-0">
             <PlayerPhoto name={p.n} team={teamName} slug={p.u ?? undefined} size={16} />

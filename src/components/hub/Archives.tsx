@@ -219,11 +219,11 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                 <div className="flex items-center justify-between text-xs font-bold tabular-nums">
                   <span className="inline-flex items-center gap-1.5 text-rw-side-a truncate min-w-0">
                     <TeamLogo name={aName} size={15} />
-                    <span className="truncate">{aName}</span> {wa}
+                    <TeamLink name={aName} u={a} className="truncate hover:underline" /> {wa}
                   </span>
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">{tl("Series")}</span>
                   <span className="inline-flex items-center justify-end gap-1.5 text-rw-side-b truncate text-right min-w-0">
-                    {rows.length - wa} <span className="truncate">{bName}</span>
+                    {rows.length - wa} <TeamLink name={bName} u={b} className="truncate hover:underline" />
                     <TeamLogo name={bName} size={15} />
                   </span>
                 </div>
@@ -237,11 +237,11 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                   <div className="flex items-center justify-between text-xs font-bold tabular-nums">
                     <span className="inline-flex items-center gap-1.5 text-rw-side-a truncate min-w-0">
                       <TeamLogo name={aName} size={15} />
-                      <span className="truncate">{aName}</span> {ga}
+                      <TeamLink name={aName} u={a} className="truncate hover:underline" /> {ga}
                     </span>
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">{tl("Games")}</span>
                     <span className="inline-flex items-center justify-end gap-1.5 text-rw-side-b truncate text-right min-w-0">
-                      {gb} <span className="truncate">{bName}</span>
+                      {gb} <TeamLink name={bName} u={b} className="truncate hover:underline" />
                       <TeamLogo name={bName} size={15} />
                     </span>
                   </div>
@@ -423,7 +423,7 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }>
                   <span className="text-rw-sub inline-flex items-center gap-1 align-baseline">
                     <span>vs</span>
                     <TeamLogo name={r[8]} size={13} />
-                    <span>{r[8]}</span>
+                    <TeamLink name={r[8]} />
                     {r[10] ? ` · ${roleName(r[10])}` : ""}
                   </span>{" "}
                   <span className="text-rw-muted">

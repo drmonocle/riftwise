@@ -10,6 +10,7 @@ import {
   card,
   ChampIcon,
   ChampLink,
+  EventLink,
   fmtDate,
   fmtNum,
   HubLink,
@@ -24,6 +25,7 @@ import {
   SpellIcon,
   Stat,
   td,
+  TeamLink,
   TeamLogo,
   th,
   useHidden,
@@ -603,7 +605,13 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                         <span className="w-10 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
                           <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(6, Math.round((g / maxDuoG) * 100))}%` }} />
                         </span>
-                        <span>{g}</span>
+                        <HubLink
+                          to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}` }}
+                          className="hover:text-rw-accent hover:underline"
+                          title={tl("Game finder")}
+                        >
+                          {g}
+                        </HubLink>
                       </span>
                     </td>
                     <td className={td} data-sort={g ? w / g : 0}>
@@ -750,12 +758,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     <span className={`font-bold shrink-0 ${r.win ? "text-rw-teal" : "text-rw-red"}`}>
                       {r.win ? tc("short result", "W") : tc("short result", "L")}
                     </span>
-                    <PlayerPhoto name={r.n} slug={r.u ?? undefined} size={16} />
+                    <PlayerPhoto name={r.n} team={r.team} slug={r.u ?? undefined} size={16} />
                     <PlayerLink name={r.n} u={r.u} />
                     <span className="text-rw-sub tabular-nums shrink-0">{r.k}/{r.d}/{r.a}</span>
                     <span className="text-rw-muted shrink-0">vs</span>
                     <TeamLogo name={r.opp} size={14} />
-                    {r.g ? <HubLink to={{ kind: "match", slug: r.g, game: r.gn }} className="truncate">{r.opp}</HubLink> : <span className="truncate">{r.opp}</span>}
+                    {r.g ? <HubLink to={{ kind: "match", slug: r.g, game: r.gn }} className="truncate">{r.opp}</HubLink> : <TeamLink name={r.opp} className="truncate" />}
                   </span>
                   <span className="text-rw-muted shrink-0">{fmtDate(r.date, false)}</span>
                 </div>
@@ -779,7 +787,9 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     ))}
                   </div>
                 )}
-                <div className="text-[10px] text-rw-muted truncate">{r.en}</div>
+                <div className="text-[10px] text-rw-muted truncate">
+                  <EventLink name={r.en} className="text-rw-muted hover:text-rw-accent hover:underline" />
+                </div>
               </li>
             ))}
           </ul>
