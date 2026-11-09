@@ -139,7 +139,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   ? tl("Live now")
                   : time(m.startTimeUtc)}
               </span>
-              <WinChanceLine team1={m.team1Code} team2={m.team2Code} bestOf={m.bestOf} align="left" />
+              <WinChanceLine match={m} />
               <span className="ml-auto flex items-center gap-1" data-nocapture="1">
                 <MatchOverviewButton match={m} compact />
                 <MatchPrepButton match={m} compact />
