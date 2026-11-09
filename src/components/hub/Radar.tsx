@@ -48,16 +48,29 @@ export const Radar: React.FC<{ axes: string[]; sides: [RadarSide, RadarSide]; no
             <polygon points={shape(s.values)} className={cls[k]} strokeWidth={1.5} strokeLinejoin="round" />
             {s.values.map((v, i) => {
               const [x, y] = at(i, Math.min(100, v ?? 50));
-              return <circle key={i} cx={x} cy={y} r={2.2} className={dot[k]} />;
+              return (
+                <circle key={i} cx={x} cy={y} r={2.5} className={dot[k]}>
+                  <title>{`${s.name} · ${axes[i]}: ${v != null ? Math.round(v) : "–"}`}</title>
+                </circle>
+              );
             })}
           </g>
         ))}
         {axes.map((a, i) => {
           const [x, y] = at(i, 125);
           const anchor = Math.abs(x - C) < 6 ? "middle" : x > C ? "start" : "end";
+          const v0 = sides[0]?.values[i];
+          const v1 = sides[1]?.values[i];
           return (
             <text key={a} x={x} y={y} textAnchor={anchor} dominantBaseline="middle" className="fill-rw-sub text-[9px]">
-              {a}
+              <tspan x={x} dy="-3">
+                {a}
+              </tspan>
+              <tspan x={x} dy="10" className="font-mono text-[8px]">
+                <tspan className="fill-rw-side-a font-bold">{v0 != null ? Math.round(v0) : "–"}</tspan>
+                <tspan className="fill-rw-muted"> · </tspan>
+                <tspan className="fill-rw-side-b font-bold">{v1 != null ? Math.round(v1) : "–"}</tspan>
+              </tspan>
             </text>
           );
         })}

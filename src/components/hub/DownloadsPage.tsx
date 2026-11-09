@@ -9,7 +9,7 @@ import { load } from "../../stats";
 import { IS_WEB, SITE_URL } from "../../platform";
 import { downloadEventCsv, downloadStagesCsv, joinCsvs, saveCsv } from "../../hub/data";
 import { navigateHub } from "../../hub/route";
-import { card, Failed, fmtNum, Loading, Section, useLoad, usePageTitle } from "./ui";
+import { card, EventLink, Failed, fmtNum, Loading, Section, useLoad, usePageTitle } from "./ui";
 
 export { saveCsv, downloadEventCsv, downloadStagesCsv };
 
@@ -241,6 +241,10 @@ const YearDownloads: React.FC<{
 
 const LeagueYears: React.FC<{ league: DownloadLeague; initialYear?: string; onOpenUrl?: (url: string) => void }> = ({ league, initialYear, onOpenUrl }) => {
   const years = useMemo(() => Object.keys(league.y).sort().reverse(), [league]);
+  const maxYearGames = useMemo(
+    () => Math.max(1, ...years.map((y) => (league.y[y] || []).reduce((s, e) => s + e[2], 0))),
+    [league, years],
+  );
   const [open, setOpen] = useState<string | null>(initialYear || null);
   useEffect(() => {
     if (initialYear && league.y[initialYear]) setOpen(initialYear);
@@ -275,8 +279,14 @@ const LeagueYears: React.FC<{ league: DownloadLeague; initialYear?: string; onOp
         return (
           <div key={y} className="border-t border-rw-border py-1.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <button type="button" onClick={() => setOpen(open === y ? null : y)} className="text-left">
-                <span className="font-bold text-rw-text">{y}</span>{" "}
+              <button type="button" onClick={() => setOpen(open === y ? null : y)} className="text-left inline-flex items-center gap-2">
+                <span className="font-bold text-rw-text">{y}</span>
+                <span className="hidden sm:inline-block w-12 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
+                  <span
+                    className="block h-full rounded-full bg-rw-accent/80"
+                    style={{ width: `${Math.max(6, Math.round((games / maxYearGames) * 100))}%` }}
+                  />
+                </span>
                 <span className="text-rw-muted">
                   · {tn("{n} game", "{n} games", games)} · {tn("{n} tournament", "{n} tournaments", evs.length)}
                 </span>
@@ -295,7 +305,8 @@ const LeagueYears: React.FC<{ league: DownloadLeague; initialYear?: string; onOp
                 {evs.map(([slug, name, g]) => (
                   <li key={slug} className="flex items-center justify-between gap-2">
                     <span className="truncate text-rw-sub">
-                      {name} <span className="text-rw-muted">· {tn("{n} game", "{n} games", g)}</span>
+                      <EventLink name={name} u={slug} className="text-rw-text hover:text-rw-accent hover:underline" />{" "}
+                      <span className="text-rw-muted">· {tn("{n} game", "{n} games", g)}</span>
                     </span>
                     <button type="button" onClick={() => downloadEventCsv(slug, onOpenUrl)} className="text-rw-accent hover:underline shrink-0">
                       CSV

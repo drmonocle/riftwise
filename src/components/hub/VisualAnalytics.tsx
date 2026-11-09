@@ -685,7 +685,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                 <span className="inline-flex items-center gap-1.5 text-rw-sub truncate">
                   <span>vs</span>
                   <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
-                  <TeamLink name={sel.opp} />
+                  <TeamLink name={sel.opp} u={prettySlug(sel.opp)} />
                   <span>· {sel.event}</span>
                 </span>
               </span>
@@ -1014,7 +1014,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                       </span>
                       <span className="text-rw-muted">vs</span>
                       <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
-                      <TeamLink name={sel.opp} />
+                      <TeamLink name={sel.opp} u={prettySlug(sel.opp)} />
                       <span className="text-rw-muted truncate">· {sel.en}</span>
                     </span>
                     <span className="flex items-center gap-2 shrink-0 text-rw-muted">

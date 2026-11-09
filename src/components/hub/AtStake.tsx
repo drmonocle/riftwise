@@ -15,7 +15,8 @@ import {
   StoryBullets,
   noteText,
 } from "./Storylines";
-import { GRID_COLS, Section, useColumns } from "./ui";
+import { GRID_COLS, Section, TeamLogo, useColumns } from "./ui";
+import { WinChanceLine } from "../WinChanceLine";
 
 /** hub/stakes.json: team slug -> its storylines and its starters' (name, slug, role, as of, notes) */
 interface TeamStakes {
@@ -125,10 +126,12 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
         {blocks.map(({ m, lines }) => (
           <div key={m.matchId} className="space-y-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs border-b border-rw-border pb-1">
-              <span className="font-bold text-rw-text">
-                {m.team1Code}{" "}
-                <span className="text-rw-muted font-normal">vs</span>{" "}
-                {m.team2Code}
+              <span className="inline-flex items-center gap-1 font-bold text-rw-text">
+                <TeamLogo name={m.team1Name || m.team1Code} sizeClass="w-3.5 h-3.5" />
+                <span>{m.team1Code}</span>
+                <span className="text-rw-muted font-normal">vs</span>
+                <TeamLogo name={m.team2Name || m.team2Code} sizeClass="w-3.5 h-3.5" />
+                <span>{m.team2Code}</span>
               </span>
               <span className="text-rw-muted">
                 {m.leagueName} ·{" "}
@@ -136,6 +139,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   ? tl("Live now")
                   : time(m.startTimeUtc)}
               </span>
+              <WinChanceLine team1={m.team1Code} team2={m.team2Code} bestOf={m.bestOf} align="left" />
               <span className="ml-auto flex items-center gap-1" data-nocapture="1">
                 <MatchOverviewButton match={m} compact />
                 <MatchPrepButton match={m} compact />

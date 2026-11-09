@@ -146,7 +146,7 @@ export function SortTable<T>({
         </thead>
         <tbody>
           {sorted.map((r, i) => (
-            <tr key={rowKey(r, i)} className="border-t border-rw-border">
+            <tr key={rowKey(r, i)} className="border-t border-rw-border hover:bg-rw-raised/40 transition-colors">
               {columns.map((c) => (
                 <td key={c.key} className={`${td} ${c.className || ""}`}>
                   {c.render ? c.render(r) : cell(c.value(r))}
