@@ -479,17 +479,58 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
   const pb = pyth(B);
   const sa = sos(ra);
   const sb = sos(rb);
+  const pka = perKill(A);
+  const pkb = perKill(B);
   const edge = (k: "gd10" | "gd15" | "gd20") => (A.tl?.[k] != null && B.tl?.[k] != null ? (A.tl[k] as number) - (B.tl[k] as number) : null);
   const signed = (v: number | null) => (v == null ? "–" : `${v > 0 ? "+" : v < 0 ? "−" : "±"}${fmtNum(Math.abs(v))}`);
   const tone = (v: number | null) => (v == null ? "text-rw-muted" : v > 0 ? "text-rw-teal" : v < 0 ? "text-rw-red" : "text-rw-sub");
-  const rows: { label: string; value: React.ReactNode; how: string }[] = [
+  const phaseBadge = (label: string, v: number | null) => {
+    const cls =
+      v == null
+        ? "bg-rw-raised text-rw-muted border-rw-border"
+        : v > 0
+          ? "bg-rw-teal/15 text-rw-teal border-rw-teal/30 font-semibold"
+          : v < 0
+            ? "bg-rw-red/15 text-rw-red border-rw-red/30 font-semibold"
+            : "bg-rw-raised text-rw-sub border-rw-border";
+    return (
+      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] ${cls}`}>
+        <span>{label}</span>
+        <span>{signed(v)}</span>
+      </span>
+    );
+  };
+  const sideBar = (va: number | null | undefined, vb: number | null | undefined) => {
+    if (va == null || vb == null || va <= 0 || vb <= 0 || va + vb <= 0) return null;
+    const pctA = Math.round((va / (va + vb)) * 100);
+    return (
+      <span className="inline-flex w-16 h-1.5 rounded-full bg-rw-border/60 overflow-hidden shrink-0 align-middle ml-2">
+        <span className="h-full bg-rw-side-a/85" style={{ width: `${pctA}%` }} />
+        <span className="h-full bg-rw-side-b/85" style={{ width: `${100 - pctA}%` }} />
+      </span>
+    );
+  };
+  const rows: { label: string; value: React.ReactNode; textValue?: string; how: string }[] = [
     {
       label: tl("Pythagorean win rate"),
-      value: `${a.team.name} ${pa != null ? fmtDec(pa * 100) + "%" : "–"} · ${b.team.name} ${pb != null ? fmtDec(pb * 100) + "%" : "–"}`,
+      textValue: `${a.team.name} ${pa != null ? fmtDec(pa * 100) + "%" : "–"} · ${b.team.name} ${pb != null ? fmtDec(pb * 100) + "%" : "–"}`,
+      value: (
+        <span className="inline-flex items-center justify-end flex-wrap gap-y-0.5">
+          <span className={pa != null && pb != null && pa > pb ? "text-rw-side-a font-semibold" : ""}>
+            {a.team.name} {pa != null ? fmtDec(pa * 100) + "%" : "–"}
+          </span>
+          <span className="mx-1 text-rw-muted">·</span>
+          <span className={pa != null && pb != null && pb > pa ? "text-rw-side-b font-semibold" : ""}>
+            {b.team.name} {pb != null ? fmtDec(pb * 100) + "%" : "–"}
+          </span>
+          {sideBar(pa, pb)}
+        </span>
+      ),
       how: tl("K² / (K² + D²), kills for and against per game · {a} and {b} games with a full scoreboard", { a: A.sg, b: B.sg }),
     },
     {
       label: tl("Luck (actual − expected)"),
+      textValue: `${pa != null && A.g ? signed(Math.round((A.w / A.g - pa) * 1000) / 10) : "–"} · ${pb != null && B.g ? signed(Math.round((B.w / B.g - pb) * 1000) / 10) : "–"}`,
       value: (
         <>
           <span className={tone(pa != null && A.g ? A.w / A.g - pa : null)}>{pa != null && A.g ? signed(Math.round((A.w / A.g - pa) * 1000) / 10) : "–"}</span>
@@ -501,24 +542,43 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
     },
     {
       label: tl("Strength of schedule"),
-      value: `${sa ? sa.v : "–"} · ${sb ? sb.v : "–"}`,
+      textValue: `${sa ? sa.v : "–"} · ${sb ? sb.v : "–"}`,
+      value: (
+        <span className="inline-flex items-center justify-end">
+          <span className={sa && sb && sa.v > sb.v ? "text-rw-side-a font-semibold" : ""}>{sa ? sa.v : "–"}</span>
+          <span className="mx-1 text-rw-muted">·</span>
+          <span className={sa && sb && sb.v > sa.v ? "text-rw-side-b font-semibold" : ""}>{sb ? sb.v : "–"}</span>
+          {sideBar(sa?.v, sb?.v)}
+        </span>
+      ),
       how: tl("average current power rating of the opponents they played this period · {a} and {b} games against rated teams", { a: sa?.n ?? 0, b: sb?.n ?? 0 }),
     },
     {
       label: tl("Gold lead per kill of lead"),
-      value: `${a.team.name} ${perKill(A) ?? "–"} · ${b.team.name} ${perKill(B) ?? "–"}`,
+      textValue: `${a.team.name} ${pka ?? "–"} · ${b.team.name} ${pkb ?? "–"}`,
+      value: (
+        <span className="inline-flex items-center justify-end flex-wrap gap-y-0.5">
+          <span className={pka != null && pkb != null && pka > pkb ? "text-rw-side-a font-semibold" : ""}>
+            {a.team.name} {pka ?? "–"}
+          </span>
+          <span className="mx-1 text-rw-muted">·</span>
+          <span className={pka != null && pkb != null && pkb > pka ? "text-rw-side-b font-semibold" : ""}>
+            {b.team.name} {pkb ?? "–"}
+          </span>
+          {sideBar(pka, pkb)}
+        </span>
+      ),
       how: tl("gold difference per game ÷ (kills − deaths) per game: how much gold each kill of advantage turns into"),
     },
     {
       label: tl("Edge by phase ({team})", { team: a.team.name }),
+      textValue: `${tl("early")} ${signed(edge("gd10"))} · ${tl("mid")} ${signed(edge("gd15"))} · ${tl("late")} ${signed(edge("gd20"))}`,
       value: (
-        <>
-          <span className={tone(edge("gd10"))}>{tl("early")} {signed(edge("gd10"))}</span>
-          {" · "}
-          <span className={tone(edge("gd15"))}>{tl("mid")} {signed(edge("gd15"))}</span>
-          {" · "}
-          <span className={tone(edge("gd20"))}>{tl("late")} {signed(edge("gd20"))}</span>
-        </>
+        <span className="inline-flex flex-wrap items-center justify-end gap-1">
+          {phaseBadge(tl("early"), edge("gd10"))}
+          {phaseBadge(tl("mid"), edge("gd15"))}
+          {phaseBadge(tl("late"), edge("gd20"))}
+        </span>
       ),
       how: tl("their average gold lead at 10, 15 and 20 minutes minus {team}'s · {a} and {b} games with timelines (Oracle's Elixir)", {
         team: b.team.name,
@@ -540,10 +600,7 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
             rows.map((r) => ({
               label: r.label,
               sub: r.how,
-              value:
-                typeof r.value === "string"
-                  ? r.value
-                  : `${tl("early")} ${signed(edge("gd10"))} · ${tl("mid")} ${signed(edge("gd15"))} · ${tl("late")} ${signed(edge("gd20"))}`,
+              value: r.textValue || (typeof r.value === "string" ? r.value : ""),
             }))
           }
         />
@@ -953,12 +1010,19 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
             { s: b, rows: lb },
           ].map(({ s, rows }) => {
             const w = rows.filter((r) => r[3] > r[4]).length;
+            const wrPct = rows.length ? Math.round((w / rows.length) * 100) : 0;
             return (
               // the ten squares stay together: one line beside the name in a side column, their own line on a phone
               <div key={s.team.u} className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
                 <span className="w-24 truncate font-semibold text-rw-text" title={s.team.name}>{s.team.name}</span>
-                <span className="text-rw-sub w-10 tabular-nums">
-                  {w}-{rows.length - w}
+                <span className="inline-flex items-center gap-1 w-20 tabular-nums shrink-0">
+                  <span className="text-rw-sub">{w}-{rows.length - w}</span>
+                  {rows.length > 0 && (
+                    <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0" title={`${wrPct}%`}>
+                      <span className="h-full bg-rw-teal/85" style={{ width: `${wrPct}%` }} />
+                      <span className="h-full bg-rw-red/75" style={{ width: `${100 - wrPct}%` }} />
+                    </span>
+                  )}
                 </span>
                 <span className="flex gap-0.5">
                   {rows.map((r) => {
@@ -1049,22 +1113,36 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
       <span className="text-rw-muted">–</span>
     ) : (
       <div className={`min-w-0 space-y-1 ${right ? "text-right" : ""}`}>
-        <div className={`text-[11px] ${x.deep === minDeep ? "text-rw-red font-bold" : "text-rw-sub"}`}>
-          {x.name} · {tl("{n} with 2+ games", { n: x.deep })}
-          {x.deep === minDeep && ` · ${tl("pinch point")}`}
+        <div className={`text-[11px] flex flex-wrap items-center gap-1.5 ${right ? "justify-end" : ""} ${x.deep === minDeep ? "text-rw-red font-bold" : "text-rw-sub"}`}>
+          <span>
+            {x.name} · {tl("{n} with 2+ games", { n: x.deep })}
+            {x.deep === minDeep && ` · ${tl("pinch point")}`}
+          </span>
+          <span className="inline-flex gap-0.5 items-center shrink-0" title={`${Math.min(x.deep, 5)}/5`}>
+            {[0, 1, 2, 3, 4].map((slot) => (
+              <span
+                key={slot}
+                className={`w-2 h-1.5 rounded-sm ${slot < x.deep ? (x.deep === minDeep ? "bg-rw-red/85" : "bg-rw-teal/85") : "bg-rw-border/60"}`}
+              />
+            ))}
+          </span>
         </div>
         <div className={`flex flex-wrap gap-1 ${right ? "justify-end" : ""}`}>
-          {x.list.slice(0, 10).map(([c, [g, w]]) => (
-            <HubLink
-              key={c}
-              to={{ kind: "player", slug: x.slug, tab: "champions", query: `champ=${encodeURIComponent(c)}` }}
-              className={`flex items-center gap-0.5 text-[10px] hover:text-rw-accent hover:underline ${g >= 2 ? "text-rw-sub" : "text-rw-muted opacity-60"}`}
-              title={`${champName(c)} · ${g} · ${winRate(w, g)}`}
-            >
-              <ChampIcon name={c} size={18} />
-              {g}
-            </HubLink>
-          ))}
+          {x.list.slice(0, 10).map(([c, [g, w]]) => {
+            const wr = g ? w / g : 0;
+            const toneCls = g < 2 ? "text-rw-muted opacity-60" : wr >= 0.6 ? "text-rw-teal font-semibold" : wr < 0.45 ? "text-rw-red" : "text-rw-sub";
+            return (
+              <HubLink
+                key={c}
+                to={{ kind: "player", slug: x.slug, tab: "champions", query: `champ=${encodeURIComponent(c)}` }}
+                className={`flex items-center gap-0.5 text-[10px] hover:text-rw-accent hover:underline ${toneCls}`}
+                title={`${champName(c)} · ${g} · ${winRate(w, g)}`}
+              >
+                <ChampIcon name={c} size={18} />
+                {g}
+              </HubLink>
+            );
+          })}
           {x.list.length > 10 && <span className="text-[10px] text-rw-muted self-center">+{x.list.length - 10}</span>}
         </div>
       </div>
@@ -1226,11 +1304,19 @@ const Lanes: React.FC<{
               .filter(([, va, vb]) => va != null || vb != null)
               .map(([label, va, vb, f, hint]) => {
                 const better = va != null && vb != null && va !== vb ? (va > vb ? "a" : "b") : null;
+                const hasBar = va != null && vb != null && va > 0 && vb > 0 && !label.includes("@15");
+                const pctA = hasBar ? Math.round((va / (va + vb)) * 100) : 50;
                 return (
                   <React.Fragment key={label}>
                     <span className={`${val} text-right ${better === "a" ? "text-rw-side-a font-semibold" : "text-rw-sub"}`}>{va != null ? f(va) : "–"}</span>
-                    <span className={`${val} text-rw-muted text-center w-16`} title={hint}>
-                      {label}
+                    <span className={`${val} text-rw-muted text-center w-16 flex flex-col items-center justify-center`} title={hint}>
+                      <span>{label}</span>
+                      {hasBar && (
+                        <span className="w-12 h-1 rounded-full bg-rw-border/60 overflow-hidden flex mt-0.5">
+                          <span className="h-full bg-rw-side-a/80" style={{ width: `${pctA}%` }} />
+                          <span className="h-full bg-rw-side-b/80" style={{ width: `${100 - pctA}%` }} />
+                        </span>
+                      )}
                     </span>
                     <span className={`${val} ${better === "b" ? "text-rw-side-b font-semibold" : "text-rw-sub"}`}>{vb != null ? f(vb) : "–"}</span>
                   </React.Fragment>

@@ -264,6 +264,8 @@ const Team: React.FC<{ name: string; won: boolean }> = ({ name, won }) => (
 
 const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
   const [rating, slug, n, date, en, eslug, stage, a, , b, , w, min, ka, kb, vod] = r;
+  const totalK = ka != null && kb != null ? ka + kb : 0;
+  const pctKa = totalK > 0 && ka != null ? Math.round((ka / totalK) * 100) : 50;
   return (
     <tr className="border-t border-rw-border/60 first:border-t-0 hover:bg-rw-raised/50">
       <td className="py-2 pr-2 text-rw-muted tabular-nums w-8 text-right">{rank}</td>
@@ -279,8 +281,18 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
           <EventLink name={en} u={eslug} className="hover:text-rw-accent hover:underline" />
           {stage ? ` · ${stageLabel(stage)}` : ""} · {fmtDate(date)}
         </div>
-        <div className="text-[10px] text-rw-muted mt-0.5 flex flex-wrap gap-x-2">
-          {ka != null && kb != null && <span className="tabular-nums">{tl("{a}–{b} kills", { a: ka, b: kb })}</span>}
+        <div className="text-[10px] text-rw-muted mt-0.5 flex flex-wrap items-center gap-x-2">
+          {ka != null && kb != null && (
+            <span className="inline-flex items-center gap-1.5 tabular-nums">
+              <span>{tl("{a}–{b} kills", { a: ka, b: kb })}</span>
+              {totalK > 0 && (
+                <span className="w-12 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
+                  <span className={`h-full ${w === 1 ? "bg-rw-teal/85" : "bg-rw-sub/65"}`} style={{ width: `${pctKa}%` }} />
+                  <span className={`h-full ${w === 2 ? "bg-rw-teal/85" : "bg-rw-sub/65"}`} style={{ width: `${100 - pctKa}%` }} />
+                </span>
+              )}
+            </span>
+          )}
           {min ? <span className="tabular-nums">{tl("{n} min", { n: Math.round(min) })}</span> : null}
           {vod ? (
             <HubLink
@@ -304,6 +316,8 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
 
 const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
   const [rating, slug, date, en, eslug, stage, a, , b, , wa, wb, bestN, games, , perGame] = r;
+  const totalS = wa + wb;
+  const pctWa = totalS > 0 ? Math.round((wa / totalS) * 100) : 50;
   return (
     <tr className="border-t border-rw-border/60 first:border-t-0 hover:bg-rw-raised/50">
       <td className="py-2 pr-2 text-rw-muted tabular-nums w-8 text-right">{rank}</td>
@@ -311,8 +325,17 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
         <RatingBadge r={rating} />
       </td>
       <td className="py-2 pr-3 sm:min-w-[12rem]">
-        <HubLink to={{ kind: "match", slug }} className="hover:underline">
-          <Team name={a} won={wa > wb} /> <span className="tabular-nums text-rw-text font-semibold">{wa}–{wb}</span>{" "}
+        <HubLink to={{ kind: "match", slug }} className="hover:underline inline-flex flex-wrap items-center gap-x-1.5">
+          <Team name={a} won={wa > wb} />
+          <span className="inline-flex items-center gap-1 tabular-nums text-rw-text font-semibold">
+            <span>{wa}–{wb}</span>
+            {totalS > 0 && (
+              <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
+                <span className={`h-full ${wa > wb ? "bg-rw-teal/85" : "bg-rw-sub/65"}`} style={{ width: `${pctWa}%` }} />
+                <span className={`h-full ${wb > wa ? "bg-rw-teal/85" : "bg-rw-sub/65"}`} style={{ width: `${100 - pctWa}%` }} />
+              </span>
+            )}
+          </span>
           <Team name={b} won={wb > wa} />
         </HubLink>
         <div className="text-[10px] text-rw-muted mt-0.5 sm:hidden">

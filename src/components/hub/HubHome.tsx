@@ -489,25 +489,33 @@ const LatestTournaments: React.FC<{ latest: EventListItem[] }> = ({ latest }) =>
 const TopTeams: React.FC<{ rows?: RatingRow[]; n: number; ranked?: boolean }> = ({ rows, n, ranked }) => {
   const top = useMemo(() => (rows || []).filter((t) => t[9] === 1).sort((a, b) => b[5] - a[5]).slice(0, n), [rows, n]);
   if (!top.length) return <p className="text-xs text-rw-muted">…</p>;
+  const maxR = Math.max(1600, ...top.map((t) => t[5]));
+  const minR = Math.min(1350, ...top.map((t) => t[5]));
   return (
     <ol className="text-xs space-y-1.5">
-      {top.map((t, i) => (
-        <li key={t[0]} className="flex items-center gap-2 min-w-0">
-          {ranked && <span className="w-3 text-rw-muted font-num tabular-nums shrink-0">{i + 1}</span>}
-          <TeamLogo name={t[1]} code={t[2]} size={22} />
-          <TeamLink name={t[1]} u={t[0]} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
-          <span className="ml-auto flex items-center gap-2 shrink-0">
-            {!ranked && <span className="text-rw-muted">{t[10] || t[3]}</span>}
-            <span className="font-num tabular-nums font-bold text-rw-text">{Math.round(t[5])}</span>
-            {ranked && t[6] != null && (
-              <span className={`font-num tabular-nums text-[11px] w-9 text-right ${t[6] >= 0 ? "text-rw-accent" : "text-rw-muted"}`}>
-                {t[6] >= 0 ? "+" : ""}
-                {Math.round(t[6])}
+      {top.map((t, i) => {
+        const barPct = Math.round(Math.max(12, Math.min(100, ((t[5] - (minR - 50)) / Math.max(1, maxR - (minR - 50))) * 100)));
+        return (
+          <li key={t[0]} className="flex items-center gap-2 min-w-0">
+            {ranked && <span className="w-3 text-rw-muted font-num tabular-nums shrink-0">{i + 1}</span>}
+            <TeamLogo name={t[1]} code={t[2]} size={22} />
+            <TeamLink name={t[1]} u={t[0]} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
+            <span className="ml-auto flex items-center gap-2 shrink-0">
+              {!ranked && <span className="text-rw-muted">{t[10] || t[3]}</span>}
+              <span className="hidden sm:inline-flex w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden shrink-0">
+                <span className="h-full bg-rw-accent/80 rounded-full" style={{ width: `${barPct}%` }} />
               </span>
-            )}
-          </span>
-        </li>
-      ))}
+              <span className="font-num tabular-nums font-bold text-rw-text">{Math.round(t[5])}</span>
+              {ranked && t[6] != null && (
+                <span className={`font-num tabular-nums text-[11px] w-9 text-right ${t[6] >= 0 ? "text-rw-accent" : "text-rw-muted"}`}>
+                  {t[6] >= 0 ? "+" : ""}
+                  {Math.round(t[6])}
+                </span>
+              )}
+            </span>
+          </li>
+        );
+      })}
     </ol>
   );
 };
@@ -518,20 +526,33 @@ const PatchMovers: React.FC = () => {
   const p = (state.data || []).find((x) => (x.up && x.up.length) || (x.down && x.down.length));
   const before = p ? (state.data || []).find((x) => x.p === p.prev) : undefined;
   const rows: { m: PatchMove; up: boolean }[] = p ? [...(p.up || []).slice(0, 2).map((m) => ({ m, up: true })), ...(p.down || []).slice(0, 1).map((m) => ({ m, up: false }))] : [];
+  const maxDelta = Math.max(0.05, ...rows.map(({ m }) => Math.abs(m[1] - m[2])));
   return (
     <>
       <ul className="text-xs space-y-1.5">
         {rows.map(({ m, up }) => {
           const [c, now, was] = m;
           const wr = winChange(m, before);
+          const deltaPct = Math.round(Math.max(12, Math.min(100, (Math.abs(now - was) / maxDelta) * 100)));
+          const wrTone = wr.now == null ? "" : wr.now >= 0.55 ? "text-rw-teal font-semibold" : wr.now < 0.45 ? "text-rw-red" : "text-rw-sub";
           return (
             <li key={c} className="flex items-center gap-2 min-w-0">
               <ChampIcon name={c} size={22} />
               <HubLink to={{ kind: "champ", slug: prettySlug(c) }} className="font-semibold text-rw-text hover:text-rw-accent truncate">
                 {champName(c)}
               </HubLink>
-              <span className={`ml-auto font-num tabular-nums text-[11px] whitespace-nowrap ${up ? "text-rw-accent" : "text-rw-muted"}`}>
-                {up ? "▲" : "▼"} {Math.round(Math.abs(now - was) * 100)}%{wr.now != null ? ` · ${Math.round(wr.now * 100)}% ${tl("WR")}` : ""}
+              <span className="ml-auto flex items-center gap-1.5 font-num tabular-nums text-[11px] whitespace-nowrap shrink-0">
+                <span className="hidden sm:inline-flex w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden shrink-0">
+                  <span className={`h-full rounded-full ${up ? "bg-rw-teal/85" : "bg-rw-red/75"}`} style={{ width: `${deltaPct}%` }} />
+                </span>
+                <span className={up ? "text-rw-accent" : "text-rw-muted"}>
+                  {up ? "▲" : "▼"} {Math.round(Math.abs(now - was) * 100)}%
+                </span>
+                {wr.now != null && (
+                  <span className={wrTone}>
+                    · {Math.round(wr.now * 100)}% {tl("WR")}
+                  </span>
+                )}
               </span>
             </li>
           );
@@ -630,20 +651,27 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
       ) : (
         <>
           <ol className="space-y-1.5 text-xs">
-            {rows.slice(0, 6).map((p, i) => (
-              <li key={p.u || p.n} className="flex items-center gap-2 min-w-0">
-                <span className="w-3 text-right text-rw-muted tabular-nums shrink-0">{i + 1}</span>
-                <PlayerPhoto name={p.n} team={p.t} slug={p.u || undefined} size={26} />
-                <span className="truncate min-w-0">
-                  <PlayerLink name={p.n} u={p.u} />
-                  <span className="text-rw-muted"> · {[p.r ? roleName(p.r) : "", p.t].filter(Boolean).join(" · ")}</span>
-                </span>
-                <span className="ml-auto flex items-center gap-2 shrink-0">
-                  <span className="text-[10px] text-rw-muted tabular-nums">{tn("{n} game", "{n} games", p.g)}</span>
-                  <RatingBadge v={p.rt} />
-                </span>
-              </li>
-            ))}
+            {(() => {
+              const shown = rows.slice(0, 6);
+              const maxG = Math.max(1, ...shown.map((p) => p.g));
+              return shown.map((p, i) => (
+                <li key={p.u || p.n} className="flex items-center gap-2 min-w-0">
+                  <span className="w-3 text-right text-rw-muted tabular-nums shrink-0">{i + 1}</span>
+                  <PlayerPhoto name={p.n} team={p.t} slug={p.u || undefined} size={26} />
+                  <span className="truncate min-w-0">
+                    <PlayerLink name={p.n} u={p.u} />
+                    <span className="text-rw-muted"> · {[p.r ? roleName(p.r) : "", p.t].filter(Boolean).join(" · ")}</span>
+                  </span>
+                  <span className="ml-auto flex items-center gap-2 shrink-0">
+                    <span className="hidden sm:inline-flex w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden shrink-0">
+                      <span className="h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.round((p.g / maxG) * 100)}%` }} />
+                    </span>
+                    <span className="text-[10px] text-rw-muted tabular-nums">{tn("{n} game", "{n} games", p.g)}</span>
+                    <RatingBadge v={p.rt} />
+                  </span>
+                </li>
+              ));
+            })()}
           </ol>
           <p className="text-[10px] text-rw-muted">
             {tl("Average RiftWise rating since {date} in the top leagues and international events (at least {n} games).", { date: fmtDate(from), n: 6 })}
@@ -774,6 +802,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
     });
   }, [list, scope, q]);
   if (rows.length === 0) return <p className="text-xs text-rw-sub py-6 text-center">{tl("No tournaments match.")}</p>;
+  const maxG = Math.max(1, ...rows.map((e) => e.g || 0));
   return (
     <div className={`${card} space-y-2 overflow-x-auto`}>
       <div className="flex items-center justify-end" data-nocapture="1">
@@ -803,7 +832,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
         </thead>
         <tbody>
           {rows.map((e) => (
-            <BrowseRow key={e.u} e={e} />
+            <BrowseRow key={e.u} e={e} maxG={maxG} />
           ))}
         </tbody>
       </STable>
@@ -811,7 +840,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
   );
 };
 
-const BrowseRow: React.FC<{ e: EventListItem }> = ({ e }) => {
+const BrowseRow: React.FC<{ e: EventListItem; maxG: number }> = ({ e, maxG }) => {
   const [hidden, reveal] = useHidden(`event:${e.u}`, e.en);
   return (
     <tr className="border-t border-rw-border">
@@ -827,7 +856,18 @@ const BrowseRow: React.FC<{ e: EventListItem }> = ({ e }) => {
         {e.w ? hidden ? <RevealButton onReveal={reveal} small /> : <TeamLink name={e.w} u={e.wu} /> : ""}
         {e.w && !hidden && e.rs ? <> <StandingsFirst /></> : null}
       </td>
-      <td className={`${td} text-rw-muted`}>{e.g || ""}</td>
+      <td className={`${td} text-rw-muted`} data-sort={e.g || 0}>
+        {e.g ? (
+          <span className="inline-flex items-center gap-1.5 tabular-nums">
+            <span className="w-5 text-right">{e.g}</span>
+            <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
+              <span className="h-full bg-rw-accent/75 rounded-full" style={{ width: `${Math.round((e.g / maxG) * 100)}%` }} />
+            </span>
+          </span>
+        ) : (
+          ""
+        )}
+      </td>
     </tr>
   );
 };
