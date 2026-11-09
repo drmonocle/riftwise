@@ -99,6 +99,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
     return v == null || !st ? null : (v - st.mean) / st.sd;
   };
 
+  const maxG = useMemo(() => Math.max(1, ...shownRows.map((p) => p.g)), [shownRows]);
   const columns: Column<EventPlayer>[] = [
     {
       key: "n",
@@ -112,7 +113,20 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
       ),
     },
     { key: "r", label: tl("Role"), value: (p) => ROLES.indexOf(p.r), render: (p) => roleName(p.r), className: "text-rw-sub" },
-    { key: "g", label: tl("Games"), value: (p) => p.g, className: "tabular-nums text-rw-sub" },
+    {
+      key: "g",
+      label: tl("Games"),
+      value: (p) => p.g,
+      render: (p) => (
+        <span className="inline-flex items-center gap-1.5 tabular-nums">
+          <span className="w-5 text-right">{p.g}</span>
+          <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
+            <span className="h-full bg-rw-accent/75 rounded-full" style={{ width: `${Math.round((p.g / maxG) * 100)}%` }} />
+          </span>
+        </span>
+      ),
+      className: "tabular-nums text-rw-sub",
+    },
     ...PLAYER_METRICS.map<Column<EventPlayer>>((m) => ({
       key: m.key,
       label: m.short || m.label,
@@ -125,18 +139,25 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
         const z = zOf(m.key, p, v);
         const good = z == null ? 0 : m.low ? -z : z;
         if (!zMode) {
+          if (m.key === "wr") {
+            const pct = Math.max(0, Math.min(100, Math.round(v * 100)));
+            const tone = v >= 0.55 ? "text-rw-teal font-semibold" : v <= 0.45 ? "text-rw-red" : "";
+            return (
+              <span className="inline-flex items-center gap-1.5 tabular-nums">
+                <span className={`w-9 text-right ${tone}`}>{m.fmt(v)}</span>
+                <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
+                  <span className="h-full bg-rw-teal/85" style={{ width: `${pct}%` }} />
+                  <span className="h-full bg-rw-red/75" style={{ width: `${100 - pct}%` }} />
+                </span>
+              </span>
+            );
+          }
           const tone =
-            m.key === "wr"
-              ? v >= 0.55
-                ? "text-rw-teal font-semibold"
-                : v <= 0.45
-                  ? "text-rw-red"
-                  : ""
-              : good >= 1.25
-                ? "text-rw-teal font-semibold"
-                : good <= -1.25
-                  ? "text-rw-red"
-                  : "";
+            good >= 1.25
+              ? "text-rw-teal font-semibold"
+              : good <= -1.25
+                ? "text-rw-red"
+                : "";
           return tone ? <span className={tone}>{m.fmt(v)}</span> : m.fmt(v);
         }
         if (z == null) return "–";

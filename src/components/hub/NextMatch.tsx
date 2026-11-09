@@ -173,8 +173,16 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
             </span>
           )}
           {h2h && (
-            <span className="font-mono tabular-nums text-rw-sub" title={tl("All-time head-to-head, in games")}>
-              H2H {h2h.w}–{h2h.g - h2h.w}
+            <span className="inline-flex items-center gap-1.5 font-mono tabular-nums text-rw-sub" title={tl("All-time head-to-head, in games")}>
+              <span>
+                H2H {h2h.w}–{h2h.g - h2h.w}
+              </span>
+              {h2h.g > 0 && (
+                <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
+                  <span className="h-full bg-rw-side-a/85" style={{ width: `${Math.round((h2h.w / h2h.g) * 100)}%` }} />
+                  <span className="h-full bg-rw-side-b/85" style={{ width: `${100 - Math.round((h2h.w / h2h.g) * 100)}%` }} />
+                </span>
+              )}
             </span>
           )}
           {lastMeeting && lastMeeting[7] && (

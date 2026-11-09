@@ -1659,31 +1659,39 @@ const DraftMatchupPanel: React.FC<{
             <div className="flex flex-col items-center justify-center px-2 text-center shrink-0">
               <span className="text-[10px] uppercase tracking-wider font-semibold text-rw-muted">{roleName(rKey)}</span>
               {bChamp && rChamp && (
-                <div className="flex items-center gap-1.5 text-[10px] tabular-nums">
-                  {laneStats ? (
-                    <span
-                      className={
-                        laneStats.bgd != null && laneStats.bgd > 50
-                          ? "text-rw-teal font-semibold"
-                          : laneStats.bgd != null && laneStats.bgd < -50
-                            ? "text-rw-red font-semibold"
-                            : "text-rw-sub"
-                      }
-                      title={tl("Average lead over the lane opponent at 15 minutes")}
+                <div className="flex flex-col items-center gap-0.5 text-[10px] tabular-nums">
+                  <div className="flex items-center gap-1.5">
+                    {laneStats ? (
+                      <span
+                        className={
+                          laneStats.bgd != null && laneStats.bgd > 50
+                            ? "text-rw-teal font-semibold"
+                            : laneStats.bgd != null && laneStats.bgd < -50
+                              ? "text-rw-red font-semibold"
+                              : "text-rw-sub"
+                        }
+                        title={tl("Average lead over the lane opponent at 15 minutes")}
+                      >
+                        {laneStats.bgd != null ? `GD@15 ${laneStats.bgd > 0 ? "+" : ""}${laneStats.bgd} · ` : ""}
+                        {winRate(laneStats.bw, laneStats.g)} ({laneStats.g}G)
+                      </span>
+                    ) : null}
+                    <HubLink
+                      to={{
+                        kind: "finder",
+                        query: `champ=${encodeURIComponent(bChamp)}&vs=${encodeURIComponent(rChamp)}&role=${encodeURIComponent(rKey)}`,
+                      }}
+                      className="text-rw-accent hover:underline"
                     >
-                      {laneStats.bgd != null ? `GD@15 ${laneStats.bgd > 0 ? "+" : ""}${laneStats.bgd} · ` : ""}
-                      {winRate(laneStats.bw, laneStats.g)} ({laneStats.g}G)
+                      {tl("Game finder")}
+                    </HubLink>
+                  </div>
+                  {laneStats && laneStats.g > 0 && (
+                    <span className="w-16 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex">
+                      <span className="h-full bg-rw-side-a/85" style={{ width: `${Math.round((laneStats.bw / laneStats.g) * 100)}%` }} />
+                      <span className="h-full bg-rw-side-b/85" style={{ width: `${100 - Math.round((laneStats.bw / laneStats.g) * 100)}%` }} />
                     </span>
-                  ) : null}
-                  <HubLink
-                    to={{
-                      kind: "finder",
-                      query: `champ=${encodeURIComponent(bChamp)}&vs=${encodeURIComponent(rChamp)}&role=${encodeURIComponent(rKey)}`,
-                    }}
-                    className="text-rw-accent hover:underline"
-                  >
-                    {tl("Game finder")}
-                  </HubLink>
+                  )}
                 </div>
               )}
             </div>
@@ -2126,6 +2134,8 @@ const LaneCounters: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Sid
       .filter((x): x is NonNullable<typeof x> => !!x);
   const line = (x: LaneLine) => {
     const [oc, g, w, , gd] = x;
+    const wrPct = g ? Math.round((w / g) * 100) : 0;
+    const gdTone = gd == null ? "text-rw-sub" : gd > 50 ? "text-rw-teal font-semibold" : gd < -50 ? "text-rw-red font-semibold" : "text-rw-sub";
     return (
       <li key={oc} className="flex items-center justify-between gap-2 min-w-0">
         <span className="flex items-center gap-1 min-w-0">
@@ -2140,9 +2150,18 @@ const LaneCounters: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Sid
             </span>
           ))}
         </span>
-        <span className="tabular-nums text-rw-sub shrink-0" title={tl("{n} games against it", { n: g })}>
-          {gd != null && gd > 0 ? "+" : ""}
-          {gd} · {winRate(w, g)}
+        <span className="inline-flex items-center gap-1.5 tabular-nums text-rw-sub shrink-0" title={tl("{n} games against it", { n: g })}>
+          <span className={gdTone}>
+            {gd != null && gd > 0 ? "+" : ""}
+            {gd}
+          </span>
+          <span>· {winRate(w, g)}</span>
+          {g > 0 && (
+            <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
+              <span className="h-full bg-rw-teal/85" style={{ width: `${wrPct}%` }} />
+              <span className="h-full bg-rw-red/75" style={{ width: `${100 - wrPct}%` }} />
+            </span>
+          )}
         </span>
       </li>
     );
@@ -2277,29 +2296,42 @@ const Priorities: React.FC<{
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6);
   const color = who === "b" ? "text-rw-side-a" : "text-rw-side-b";
-  const list = (rows: [string, string][]) => (
-    <ul className="space-y-1">
-      {rows.map(([c, v]) => (
-        <li key={c}>
-          <button type="button" onClick={() => onPick(c)} className="flex items-center justify-between gap-2 w-full text-left hover:bg-rw-bg rounded px-1">
-            <span className="flex items-center gap-1.5 min-w-0">
-              <ChampIcon name={c} size={18} />
-              <span className="truncate text-rw-text">{champName(c)}</span>
-              {(p.roles.get(c)?.size || 0) > 1 && (
-                <span
-                  className="text-[9px] font-bold uppercase px-1 rounded bg-rw-accent/20 text-rw-accent shrink-0"
-                  title={[...(p.roles.get(c) || [])].map((r) => roleName(ROLES[r])).join(" / ")}
-                >
-                  {tl("flex")}
+  const barTone = who === "b" ? "bg-rw-side-a/75" : "bg-rw-side-b/75";
+  const list = (rows: { c: string; n: number; w?: number; v: string }[], barCls: string) => {
+    const maxN = Math.max(1, ...rows.map((r) => r.n));
+    return (
+      <ul className="space-y-1">
+        {rows.map(({ c, n, w, v }) => {
+          const wr = w != null && n > 0 ? w / n : null;
+          const wrCls = wr == null ? "text-rw-sub" : wr >= 0.6 ? "text-rw-teal font-semibold" : wr < 0.45 ? "text-rw-red" : "text-rw-sub";
+          return (
+            <li key={c}>
+              <button type="button" onClick={() => onPick(c)} className="flex items-center justify-between gap-2 w-full text-left hover:bg-rw-bg rounded px-1">
+                <span className="flex items-center gap-1.5 min-w-0">
+                  <ChampIcon name={c} size={18} />
+                  <span className="truncate text-rw-text">{champName(c)}</span>
+                  {(p.roles.get(c)?.size || 0) > 1 && (
+                    <span
+                      className="text-[9px] font-bold uppercase px-1 rounded bg-rw-accent/20 text-rw-accent shrink-0"
+                      title={[...(p.roles.get(c) || [])].map((r) => roleName(ROLES[r])).join(" / ")}
+                    >
+                      {tl("flex")}
+                    </span>
+                  )}
                 </span>
-              )}
-            </span>
-            <span className="text-rw-sub tabular-nums shrink-0">{v}</span>
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
+                <span className="inline-flex items-center gap-1.5 tabular-nums shrink-0">
+                  <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
+                    <span className={`h-full rounded-full ${barCls}`} style={{ width: `${Math.round((n / maxN) * 100)}%` }} />
+                  </span>
+                  <span className={wrCls}>{v}</span>
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  };
   return (
     <Section
       title={side.team.name}
@@ -2328,15 +2360,24 @@ const Priorities: React.FC<{
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
         <div className="min-w-0">
           <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Most picked, still open")}</div>
-          {list(open.map(([c, [g, w]]) => [c, `${g} · ${winRate(w, g)}`]))}
+          {list(
+            open.map(([c, [g, w]]) => ({ c, n: g, w, v: `${g} · ${winRate(w, g)}` })),
+            barTone,
+          )}
         </div>
         <div className="min-w-0">
           <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Their usual bans")}</div>
-          {list(bans.map(([c, n]) => [c, String(n)]))}
+          {list(
+            bans.map(([c, n]) => ({ c, n, v: String(n) })),
+            "bg-rw-red/75",
+          )}
         </div>
         <div className="min-w-0">
           <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Banned against them")}</div>
-          {list(vs.map(([c, n]) => [c, String(n)]))}
+          {list(
+            vs.map(([c, n]) => ({ c, n, v: String(n) })),
+            "bg-rw-red/75",
+          )}
         </div>
       </div>
     </Section>
