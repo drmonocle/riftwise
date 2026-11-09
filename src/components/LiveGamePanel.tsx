@@ -558,17 +558,38 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
       <table className="w-full text-[11px] min-w-[20rem] table-fixed">
         <colgroup>
           <col />
-          <col className="w-12" />
+          <col className="w-14" />
           <col />
         </colgroup>
         <tbody>
-          {ROLE_ORDER.map((role, i) => (
-            <tr key={role} className="border-t border-rw-border/60">
-              <PlayerCells p={l[i]} align="left" />
-              <td className="px-1 text-center text-[9px] uppercase text-rw-muted min-w-12 whitespace-nowrap">{roleName(ROLE_LABEL[role])}</td>
-              <PlayerCells p={r[i]} align="right" />
-            </tr>
-          ))}
+          {ROLE_ORDER.map((role, i) => {
+            const lf = l[i].frame;
+            const rf = r[i].frame;
+            const gd = lf && rf ? lf.totalGold - rf.totalGold : null;
+            const lShare = lf && rf && lf.totalGold + rf.totalGold > 0 ? Math.round((lf.totalGold / (lf.totalGold + rf.totalGold)) * 100) : 50;
+            return (
+              <tr key={role} className="border-t border-rw-border/60">
+                <PlayerCells p={l[i]} align="left" />
+                <td className="px-1 text-center text-[9px] uppercase text-rw-muted min-w-14 whitespace-nowrap align-middle">
+                  <div>{roleName(ROLE_LABEL[role])}</div>
+                  {gd != null && (
+                    <div
+                      className={`font-mono text-[10px] font-semibold tabular-nums normal-case ${gd > 150 ? "text-rw-teal" : gd < -150 ? "text-rw-red" : "text-rw-muted"}`}
+                      title={tl("{a} minus {b}", { a: left.code, b: right.code })}
+                    >
+                      {gd === 0 ? "0" : `${gd > 0 ? "+" : "−"}${k(Math.abs(gd))}`}
+                    </div>
+                  )}
+                  {gd != null && (
+                    <div className="w-10 h-1 mx-auto mt-0.5 rounded-full bg-rw-side-b/60 overflow-hidden" aria-hidden="true">
+                      <div className="h-full bg-rw-side-a/85" style={{ width: `${lShare}%` }} />
+                    </div>
+                  )}
+                </td>
+                <PlayerCells p={r[i]} align="right" />
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -625,7 +646,15 @@ const PlayerCells: React.FC<{ p: PlayerRow; align: "left" | "right" }> = ({ p, a
               <>
                 {" "}
                 <span className="text-rw-muted whitespace-nowrap">· KP {Math.round(p.det.killParticipation * 100)}%</span>{" "}
-                <span className="text-rw-muted whitespace-nowrap">· DMG {Math.round(p.det.championDamageShare * 100)}%</span>
+                <span className="text-rw-muted whitespace-nowrap inline-flex items-center gap-1">
+                  · DMG {Math.round(p.det.championDamageShare * 100)}%
+                  <span className="inline-block w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
+                    <span
+                      className="block h-full rounded-full bg-rw-accent/80"
+                      style={{ width: `${Math.min(100, Math.max(6, Math.round(p.det.championDamageShare * 200)))}%` }}
+                    />
+                  </span>
+                </span>
               </>
             )}
           </div>

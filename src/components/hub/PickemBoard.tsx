@@ -131,32 +131,49 @@ export const PickemBoard: React.FC<{
       {note && <p className="text-xs text-rw-teal">{note}</p>}
       {board && <p className="text-xs text-rw-sub">{sub}</p>}
       {rows.length > 0 ? (
-        <ol className="text-xs divide-y divide-rw-border border border-rw-border rounded-lg overflow-hidden">
-          {rows.map((r, i) => (
-            <li key={i} className={`flex items-center gap-3 px-3 py-1.5 ${r.me ? "bg-rw-accent/10" : ""}`}>
-              <span className="w-6 text-rw-muted font-num tabular-nums text-right">{r.rank}</span>
-              {r.rank === 1 && <Trophy className="w-3.5 h-3.5 text-rw-accent shrink-0" />}
-              <span className={`flex-1 min-w-0 truncate ${r.me ? "font-bold text-rw-text" : r.name ? "text-rw-text" : "text-rw-muted italic"}`}>
-                {shownName(r)}
-                {r.me && r.hidden && <EyeOff className="w-3 h-3 inline ml-1.5 text-rw-muted" aria-label={tl("Hidden from others")} />}
-              </span>
-              <span className="text-[11px] text-rw-muted font-num tabular-nums">
-                {r.right}/{r.scored}
-              </span>
-              <span className="font-num tabular-nums font-bold text-rw-accent w-10 text-right">{r.score}</span>
-            </li>
-          ))}
-          {me && !rows.some((r) => r.me) && (
-            <li className="flex items-center gap-3 px-3 py-1.5 bg-rw-accent/10">
-              <span className="w-6 text-rw-muted font-num tabular-nums text-right">{me.rank}</span>
-              <span className="flex-1 min-w-0 truncate font-bold text-rw-text">{me.name}</span>
-              <span className="text-[11px] text-rw-muted font-num tabular-nums">
-                {me.right}/{me.scored}
-              </span>
-              <span className="font-num tabular-nums font-bold text-rw-accent w-10 text-right">{me.score}</span>
-            </li>
-          )}
-        </ol>
+        (() => {
+          const maxScore = Math.max(1, ...rows.map((r) => r.score), me?.score || 0);
+          const renderRow = (r: PickemRow, key: React.Key, forceMe?: boolean) => {
+            const isMe = forceMe || r.me;
+            const accPct = r.scored > 0 ? Math.round((r.right / r.scored) * 100) : 0;
+            const scorePct = Math.max(6, Math.round((r.score / maxScore) * 100));
+            return (
+              <li key={key} className={`flex items-center gap-3 px-3 py-1.5 ${isMe ? "bg-rw-accent/10" : ""}`}>
+                <span className="w-6 text-rw-muted font-num tabular-nums text-right">{r.rank}</span>
+                {r.rank === 1 && <Trophy className="w-3.5 h-3.5 text-rw-accent shrink-0" />}
+                <span className={`flex-1 min-w-0 truncate ${isMe ? "font-bold text-rw-text" : r.name ? "text-rw-text" : "text-rw-muted italic"}`}>
+                  {shownName(r)}
+                  {isMe && r.hidden && <EyeOff className="w-3 h-3 inline ml-1.5 text-rw-muted" aria-label={tl("Hidden from others")} />}
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-[11px] text-rw-muted font-num tabular-nums">
+                  <span>
+                    {r.right}/{r.scored}
+                  </span>
+                  {r.scored > 0 && (
+                    <span className="hidden sm:inline-block w-10 h-1 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
+                      <span
+                        className={`block h-full rounded-full ${accPct >= 60 ? "bg-rw-teal/80" : accPct <= 40 ? "bg-rw-red/75" : "bg-rw-sub/60"}`}
+                        style={{ width: `${Math.max(6, accPct)}%` }}
+                      />
+                    </span>
+                  )}
+                </span>
+                <span className="inline-flex items-center justify-end gap-1.5 w-20 text-right">
+                  <span className="hidden sm:inline-block w-10 h-1.5 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
+                    <span className="block h-full rounded-full bg-rw-accent/80" style={{ width: `${scorePct}%` }} />
+                  </span>
+                  <span className="font-num tabular-nums font-bold text-rw-accent w-8 text-right">{r.score}</span>
+                </span>
+              </li>
+            );
+          };
+          return (
+            <ol className="text-xs divide-y divide-rw-border border border-rw-border rounded-lg overflow-hidden">
+              {rows.map((r, i) => renderRow(r, i))}
+              {me && !rows.some((r) => r.me) && renderRow(me, "me", true)}
+            </ol>
+          );
+        })()
       ) : (
         board && <p className="text-xs text-rw-sub">{tl("Nobody has entered yet. Be the first.")}</p>
       )}

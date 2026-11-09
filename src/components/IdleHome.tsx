@@ -75,8 +75,22 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               <span className={`flex-1 min-w-0 text-right truncate ${w1 ? "font-bold text-rw-text" : "text-rw-sub"}`}>{m.team1Name}</span>
               {m.team1Image && <img {...riotImg(m.team1Image, 40)} alt="" className="w-5 h-5 object-contain shrink-0" loading="lazy" />}
               {shown ? (
-                <span className="font-num tabular-nums font-bold text-rw-text w-12 text-center shrink-0">
-                  {m.team1Score}–{m.team2Score}
+                <span className="inline-flex flex-col items-center justify-center w-12 shrink-0 gap-0.5">
+                  <span className="font-num tabular-nums font-bold text-rw-text text-center leading-none">
+                    {m.team1Score}–{m.team2Score}
+                  </span>
+                  {m.team1Score + m.team2Score > 0 && (
+                    <span className="w-9 h-1 rounded-full bg-rw-border/70 overflow-hidden flex" aria-hidden="true">
+                      <span
+                        className={`h-full ${w1 ? "bg-rw-teal/85" : "bg-rw-sub/55"}`}
+                        style={{ width: `${Math.round((m.team1Score / (m.team1Score + m.team2Score)) * 100)}%` }}
+                      />
+                      <span
+                        className={`h-full ${w2 ? "bg-rw-teal/85" : "bg-rw-sub/35"}`}
+                        style={{ width: `${100 - Math.round((m.team1Score / (m.team1Score + m.team2Score)) * 100)}%` }}
+                      />
+                    </span>
+                  )}
                 </span>
               ) : (
                 <button
@@ -131,14 +145,26 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
         </div>
       </div>
       <ol className="border border-rw-border rounded-xl bg-rw-panel rw-lit divide-y divide-rw-border overflow-hidden">
-        {top.map((t, i) => (
-          <li key={t[0]} {...clickable(() => open(t[0]))} className="flex items-center gap-3 px-3 py-1.5 text-xs cursor-pointer hover:bg-rw-raised">
-            <span className="w-4 text-rw-muted font-num tabular-nums">{i + 1}</span>
-            <span className="font-semibold text-rw-text flex-1 min-w-0 truncate">{t[1]}</span>
-            <span className="text-[11px] text-rw-muted">{t[10] || t[3]}</span>
-            <span className="font-num tabular-nums font-bold text-rw-accent w-12 text-right">{Math.round(t[5])}</span>
-          </li>
-        ))}
+        {(() => {
+          const maxElo = Math.max(1500, ...top.map((t) => t[5]));
+          const minElo = Math.min(1200, ...top.map((t) => t[5])) - 40;
+          return top.map((t, i) => {
+            const pct = Math.max(12, Math.min(100, Math.round(((t[5] - minElo) / Math.max(1, maxElo - minElo)) * 100)));
+            return (
+              <li key={t[0]} {...clickable(() => open(t[0]))} className="flex items-center gap-3 px-3 py-1.5 text-xs cursor-pointer hover:bg-rw-raised">
+                <span className="w-4 text-rw-muted font-num tabular-nums">{i + 1}</span>
+                <span className="font-semibold text-rw-text flex-1 min-w-0 truncate">{t[1]}</span>
+                <span className="text-[11px] text-rw-muted">{t[10] || t[3]}</span>
+                <span className="inline-flex items-center justify-end gap-1.5 w-24 text-right">
+                  <span className="hidden sm:inline-block w-10 h-1.5 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
+                    <span className="block h-full rounded-full bg-rw-accent/75" style={{ width: `${pct}%` }} />
+                  </span>
+                  <span className="font-num tabular-nums font-bold text-rw-accent w-10 text-right">{Math.round(t[5])}</span>
+                </span>
+              </li>
+            );
+          });
+        })()}
       </ol>
     </section>
   );

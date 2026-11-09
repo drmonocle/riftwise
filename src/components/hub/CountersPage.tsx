@@ -381,8 +381,34 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       </div>
                       <div className="text-[11px] text-rw-sub font-mono">
                         {vsMatch.totalW}W–{vsMatch.totalG - vsMatch.totalW}L ({finderLink(vsMatch.oppCanon, vsMatch.totalG)} {tl("Games")})
-                        {vsMatch.avgGd != null && ` · ${vsMatch.avgGd > 0 ? "+" : ""}${vsMatch.avgGd} GD@15`}
+                        {vsMatch.avgGd != null && (
+                          <span className={vsMatch.avgGd > 150 ? "text-rw-teal" : vsMatch.avgGd < -150 ? "text-rw-red" : ""}>
+                            {" "}
+                            · {vsMatch.avgGd > 0 ? "+" : ""}
+                            {vsMatch.avgGd} GD@15
+                          </span>
+                        )}
                       </div>
+                      {vsMatch.totalG > 0 && (
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className={`font-mono text-[11px] font-bold tabular-nums ${vsMatch.totalW / vsMatch.totalG >= 0.5 ? "text-rw-teal" : "text-rw-sub"}`}>
+                            {Math.round((vsMatch.totalW / vsMatch.totalG) * 100)}%
+                          </span>
+                          <div className="w-28 h-1.5 rounded-full bg-rw-border/70 overflow-hidden flex" aria-hidden="true">
+                            <div
+                              className="h-full bg-rw-teal/85"
+                              style={{ width: `${Math.round((vsMatch.totalW / vsMatch.totalG) * 100)}%` }}
+                            />
+                            <div
+                              className="h-full bg-rw-red/75"
+                              style={{ width: `${100 - Math.round((vsMatch.totalW / vsMatch.totalG) * 100)}%` }}
+                            />
+                          </div>
+                          <span className={`font-mono text-[11px] font-bold tabular-nums ${vsMatch.totalW / vsMatch.totalG < 0.5 ? "text-rw-red" : "text-rw-sub"}`}>
+                            {100 - Math.round((vsMatch.totalW / vsMatch.totalG) * 100)}%
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <HubLink to={{ kind: "champ", slug: prettySlug(vsMatch.oppCanon) }} title={champName(vsMatch.oppCanon)}>
                       <ChampIcon name={vsMatch.oppCanon} size={36} />
@@ -425,23 +451,31 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 }
               >
                 <ul className="text-xs space-y-1.5">
-                  {good.map((x) => (
-                    <li key={x.c + x.role} className="flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-1.5 min-w-0 truncate">
-                        <ChampLink name={x.c} size={18} /> <span className="text-rw-muted">{x.role >= 0 ? roleName(ROLES[x.role]) : ""}</span>
-                      </span>
-                      <span className="tabular-nums text-rw-teal font-semibold shrink-0">
-                        {Math.round((x.w / x.g) * 100)}%{" "}
-                        {x.gd != null && (
-                          <span className="text-[11px] font-mono text-rw-sub font-normal">
-                            · {x.gd > 0 ? "+" : ""}
-                            {x.gd} GD@15{" "}
+                  {good.map((x) => {
+                    const wr = Math.round((x.w / x.g) * 100);
+                    return (
+                      <li key={x.c + x.role} className="space-y-0.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="flex items-center gap-1.5 min-w-0 truncate">
+                            <ChampLink name={x.c} size={18} /> <span className="text-rw-muted">{x.role >= 0 ? roleName(ROLES[x.role]) : ""}</span>
                           </span>
-                        )}
-                        <span className="text-rw-muted font-normal">({finderLink(x.c, x.g)})</span>
-                      </span>
-                    </li>
-                  ))}
+                          <span className="tabular-nums text-rw-teal font-semibold shrink-0">
+                            {wr}%{" "}
+                            {x.gd != null && (
+                              <span className="text-[11px] font-mono text-rw-sub font-normal">
+                                · {x.gd > 0 ? "+" : ""}
+                                {x.gd} GD@15{" "}
+                              </span>
+                            )}
+                            <span className="text-rw-muted font-normal">({finderLink(x.c, x.g)})</span>
+                          </span>
+                        </div>
+                        <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                          <div className="h-full rounded-full bg-rw-teal/75" style={{ width: `${Math.max(8, Math.min(100, wr))}%` }} />
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               </Section>
               <Section
@@ -463,23 +497,31 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 }
               >
                 <ul className="text-xs space-y-1.5">
-                  {bad.map((x) => (
-                    <li key={x.c + x.role} className="flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-1.5 min-w-0 truncate">
-                        <ChampLink name={x.c} size={18} /> <span className="text-rw-muted">{x.role >= 0 ? roleName(ROLES[x.role]) : ""}</span>
-                      </span>
-                      <span className="tabular-nums text-rw-red font-semibold shrink-0">
-                        {Math.round((x.w / x.g) * 100)}%{" "}
-                        {x.gd != null && (
-                          <span className="text-[11px] font-mono text-rw-sub font-normal">
-                            · {x.gd > 0 ? "+" : ""}
-                            {x.gd} GD@15{" "}
+                  {bad.map((x) => {
+                    const wr = Math.round((x.w / x.g) * 100);
+                    return (
+                      <li key={x.c + x.role} className="space-y-0.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="flex items-center gap-1.5 min-w-0 truncate">
+                            <ChampLink name={x.c} size={18} /> <span className="text-rw-muted">{x.role >= 0 ? roleName(ROLES[x.role]) : ""}</span>
                           </span>
-                        )}
-                        <span className="text-rw-muted font-normal">({finderLink(x.c, x.g)})</span>
-                      </span>
-                    </li>
-                  ))}
+                          <span className="tabular-nums text-rw-red font-semibold shrink-0">
+                            {wr}%{" "}
+                            {x.gd != null && (
+                              <span className="text-[11px] font-mono text-rw-sub font-normal">
+                                · {x.gd > 0 ? "+" : ""}
+                                {x.gd} GD@15{" "}
+                              </span>
+                            )}
+                            <span className="text-rw-muted font-normal">({finderLink(x.c, x.g)})</span>
+                          </span>
+                        </div>
+                        <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                          <div className="h-full rounded-full bg-rw-red/75" style={{ width: `${Math.max(8, Math.min(100, wr))}%` }} />
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               </Section>
             </div>
@@ -545,11 +587,19 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                   {data.data.ch.duos.slice(0, 10).map(([pc, g, w]) => {
                     const wr = Math.round((w / g) * 100);
                     return (
-                      <div key={pc} className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 flex items-center justify-between gap-2">
-                        <ChampLink name={pc} size={20} />
-                        <div className="text-right shrink-0">
-                          <div className={`font-mono font-bold tabular-nums ${wr >= 50 ? "text-rw-teal" : "text-rw-red"}`}>{wr}%</div>
-                          <div className="text-[10px] text-rw-muted font-mono">{g}G</div>
+                      <div key={pc} className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <ChampLink name={pc} size={20} />
+                          <div className="text-right shrink-0">
+                            <div className={`font-mono font-bold tabular-nums ${wr >= 50 ? "text-rw-teal" : "text-rw-red"}`}>{wr}%</div>
+                            <div className="text-[10px] text-rw-muted font-mono">{g}G</div>
+                          </div>
+                        </div>
+                        <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                          <div
+                            className={`h-full rounded-full ${wr >= 50 ? "bg-rw-teal/75" : "bg-rw-red/70"}`}
+                            style={{ width: `${Math.max(8, Math.min(100, wr))}%` }}
+                          />
                         </div>
                       </div>
                     );
