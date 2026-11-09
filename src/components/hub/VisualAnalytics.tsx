@@ -154,13 +154,14 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
   const apg = agg.g ? agg.a / agg.g : 0;
   const eff = agg.dmgShare != null && agg.goldShare != null ? Math.round((agg.dmgShare - agg.goldShare) * 10) / 10 : null;
 
-  const metrics: { label: string; value: string; sub?: string; pct: number; good?: boolean }[] = [
+  const metrics: { label: string; value: string; sub?: string; pct: number; good?: boolean; tab: "stats" | "matches" | "champions" }[] = [
     {
       label: tl("KDA"),
       value: fmtN(agg.kda),
       sub: `${fmtDec(kpg, 1)} / ${fmtDec(dpg, 1)} / ${fmtDec(apg, 1)}`,
       pct: clamp((agg.kda / 6.5) * 100),
       good: agg.kda >= 4.0 ? true : agg.kda < 2.5 ? false : undefined,
+      tab: "stats",
     },
     {
       label: tl("Kill participation"),
@@ -168,6 +169,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
       sub: `${tl("{p} win rate", { p: winRate(agg.w, agg.g) })} (${agg.w}-${agg.g - agg.w})`,
       pct: agg.kp != null ? clamp(((agg.kp - 40) / 45) * 100) : 50,
       good: agg.kp != null ? (agg.kp >= (isSup || isJng ? 70 : 64) ? true : agg.kp < 52 ? false : undefined) : undefined,
+      tab: "matches",
     },
     {
       label: tl("Damage share"),
@@ -190,6 +192,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
             ? true
             : undefined
           : undefined,
+      tab: "stats",
     },
     {
       label: "GD@15",
@@ -200,6 +203,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
           : tl("Average lead over the lane opponent at 15 minutes"),
       pct: agg.tl?.gd15 != null ? clamp(((agg.tl.gd15 + 1000) / 2000) * 100) : 50,
       good: agg.tl?.gd15 != null ? (agg.tl.gd15 >= 150 ? true : agg.tl.gd15 <= -250 ? false : undefined) : undefined,
+      tab: "stats",
     },
     {
       label: isSup ? tl("VS / min") : tl("CS / min"),
@@ -231,6 +235,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
         : agg.csm != null && agg.csm >= (isJng ? 6.5 : 8.6)
           ? true
           : undefined,
+      tab: "stats",
     },
     {
       label: agg.tl?.fbPart != null ? tl("First blood") : tl("Champions"),
@@ -241,6 +246,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
           : `${tl("Career")} ${p.nChamps}`,
       pct: agg.tl?.fbPart != null ? clamp((agg.tl.fbPart / 55) * 100) : clamp((agg.champs.length / 18) * 100),
       good: agg.tl?.fbPart != null ? (agg.tl.fbPart >= 28 ? true : undefined) : agg.champs.length >= 10 ? true : undefined,
+      tab: "champions",
     },
   ];
 
@@ -297,7 +303,11 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
               )}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                 {metrics.map((m) => (
-                  <div key={m.label} className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 flex flex-col justify-between gap-1.5">
+                  <HubLink
+                    key={m.label}
+                    to={{ kind: "player", slug: p.u, tab: m.tab }}
+                    className="rounded-lg border border-rw-border bg-rw-bg/50 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-2.5 py-2 flex flex-col justify-between gap-1.5 transition-colors"
+                  >
                     <div>
                       <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted truncate">{m.label}</div>
                       <div
@@ -323,7 +333,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                         </div>
                       )}
                     </div>
-                  </div>
+                  </HubLink>
                 ))}
               </div>
             </div>
@@ -685,18 +695,30 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                     {sel.k}/{sel.d}/{sel.a}
                   </span>
                 )}
-                {sel.rating != null && (
-                  <span className="text-rw-teal font-mono font-semibold tabular-nums">
-                    ★ {fmtRating(sel.rating)}
-                  </span>
-                )}
-                {sel.gd15 != null && (
-                  <span className={`font-mono text-[11px] tabular-nums ${sel.gd15 >= 0 ? "text-rw-teal" : "text-rw-red"}`}>
-                    GD@15 {signed(sel.gd15)}
-                  </span>
-                )}
-                <span className="inline-flex items-center gap-1.5 text-rw-sub truncate">
-                  <span>vs</span>
+                  {sel.rating != null && (
+                    sel.seriesSlug ? (
+                      <HubLink
+                        to={{ kind: "match", slug: sel.seriesSlug, game: sel.gn }}
+                        className="text-rw-teal font-mono font-semibold tabular-nums hover:underline"
+                        title={tl("Game rating")}
+                      >
+                        ★ {fmtRating(sel.rating)}
+                      </HubLink>
+                    ) : (
+                      <span className="text-rw-teal font-mono font-semibold tabular-nums">
+                        ★ {fmtRating(sel.rating)}
+                      </span>
+                    )
+                  )}
+                  {sel.gd15 != null && (
+                    <span className={`font-mono text-[11px] tabular-nums ${sel.gd15 >= 0 ? "text-rw-teal" : "text-rw-red"}`}>
+                      GD@15 {signed(sel.gd15)}
+                    </span>
+                  )}
+                  <span className="inline-flex items-center gap-1.5 text-rw-sub truncate">
+                    <HubLink to={{ kind: "player", slug: p.u, tab: "opponents" }} className="hover:text-rw-accent hover:underline">
+                      vs
+                    </HubLink>
                   <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
                   <TeamLink name={sel.opp} u={prettySlug(sel.opp)} />
                   <span className="text-rw-muted">·</span>
@@ -1074,7 +1096,10 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                   </div>
 
                   {/* Blue Side Bar */}
-                  <div className="rounded-lg border border-rw-border bg-rw-bg/50 px-3 py-2 space-y-1">
+                  <HubLink
+                    to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&side=blue` }}
+                    className="block rounded-lg border border-rw-border bg-rw-bg/50 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-3 py-2 space-y-1 transition-colors"
+                  >
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-bold flex items-center gap-1.5" style={{ color: "#4a9eff" }}>
                         <span className="w-2 h-2 rounded-full inline-block" style={{ background: "#4a9eff" }} />
@@ -1090,10 +1115,13 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                     <div className="h-2 rounded-full bg-rw-raised overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${Math.round(blueWr)}%`, background: "#4a9eff" }} />
                     </div>
-                  </div>
+                  </HubLink>
 
                   {/* Red Side Bar */}
-                  <div className="rounded-lg border border-rw-border bg-rw-bg/50 px-3 py-2 space-y-1">
+                  <HubLink
+                    to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&side=red` }}
+                    className="block rounded-lg border border-rw-border bg-rw-bg/50 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-3 py-2 space-y-1 transition-colors"
+                  >
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-bold flex items-center gap-1.5" style={{ color: "var(--rw-red)" }}>
                         <span className="w-2 h-2 rounded-full inline-block" style={{ background: "var(--rw-red)" }} />
@@ -1109,7 +1137,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                     <div className="h-2 rounded-full bg-rw-raised overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${Math.round(redWr)}%`, background: "var(--rw-red)" }} />
                     </div>
-                  </div>
+                  </HubLink>
                 </div>
               )}
 
@@ -1434,7 +1462,10 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
 
             {hasSides && (
               <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 space-y-1">
+                <HubLink
+                  to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&side=blue` }}
+                  className="block rounded-lg border border-rw-border bg-rw-bg/50 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-2.5 py-2 space-y-1 transition-colors"
+                >
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-bold flex items-center gap-1.5" style={{ color: "#4a9eff" }}>
                       <span className="w-2 h-2 rounded-full inline-block" style={{ background: "#4a9eff" }} />
@@ -1448,9 +1479,12 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                   <div className="text-[10px] text-rw-muted font-mono tabular-nums">
                     {blueW}W – {blueG - blueW}L ({fmtNum(blueG)}G)
                   </div>
-                </div>
+                </HubLink>
 
-                <div className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 space-y-1">
+                <HubLink
+                  to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&side=red` }}
+                  className="block rounded-lg border border-rw-border bg-rw-bg/50 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-2.5 py-2 space-y-1 transition-colors"
+                >
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-bold flex items-center gap-1.5" style={{ color: "var(--rw-red)" }}>
                       <span className="w-2 h-2 rounded-full inline-block" style={{ background: "var(--rw-red)" }} />
@@ -1464,34 +1498,46 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                   <div className="text-[10px] text-rw-muted font-mono tabular-nums">
                     {redW}W – {redG - redW}L ({fmtNum(redG)}G)
                   </div>
-                </div>
+                </HubLink>
               </div>
             )}
 
             {lane && lane[2] >= 5 && (
               <div className="grid grid-cols-4 gap-2">
-                <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2 py-1.5">
+                <HubLink
+                  to={{ kind: "counters", query: `champ=${encodeURIComponent(c.name)}&role=${encodeURIComponent(primaryRole)}` }}
+                  className="block rounded-lg border border-rw-border bg-rw-bg/40 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-2 py-1.5 transition-colors"
+                >
                   <div className="text-[10px] uppercase tracking-wider text-rw-muted">GD@15</div>
                   <div className={`text-xs font-bold font-mono tabular-nums ${(lane[3] || 0) >= 0 ? "text-rw-teal" : "text-rw-red"}`}>
                     {signed(lane[3])}
                   </div>
                   <div className="text-[10px] text-rw-muted truncate">{roleName(primaryRole)}</div>
-                </div>
-                <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2 py-1.5">
+                </HubLink>
+                <HubLink
+                  to={{ kind: "counters", query: `champ=${encodeURIComponent(c.name)}&role=${encodeURIComponent(primaryRole)}` }}
+                  className="block rounded-lg border border-rw-border bg-rw-bg/40 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-2 py-1.5 transition-colors"
+                >
                   <div className="text-[10px] uppercase tracking-wider text-rw-muted">CSD@15</div>
                   <div className={`text-xs font-bold font-mono tabular-nums ${(lane[4] || 0) >= 0 ? "text-rw-teal" : "text-rw-red"}`}>
                     {signed(lane[4])}
                   </div>
                   <div className="text-[10px] text-rw-muted truncate">{roleName(primaryRole)}</div>
-                </div>
-                <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2 py-1.5">
+                </HubLink>
+                <HubLink
+                  to={{ kind: "counters", query: `champ=${encodeURIComponent(c.name)}&role=${encodeURIComponent(primaryRole)}` }}
+                  className="block rounded-lg border border-rw-border bg-rw-bg/40 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-2 py-1.5 transition-colors"
+                >
                   <div className="text-[10px] uppercase tracking-wider text-rw-muted">XPD@15</div>
                   <div className={`text-xs font-bold font-mono tabular-nums ${(lane[5] || 0) >= 0 ? "text-rw-teal" : "text-rw-red"}`}>
                     {signed(lane[5])}
                   </div>
                   <div className="text-[10px] text-rw-muted truncate">{roleName(primaryRole)}</div>
-                </div>
-                <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2 py-1.5">
+                </HubLink>
+                <HubLink
+                  to={{ kind: "counters", query: `champ=${encodeURIComponent(c.name)}&role=${encodeURIComponent(primaryRole)}` }}
+                  className="block rounded-lg border border-rw-border bg-rw-bg/40 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-2 py-1.5 transition-colors"
+                >
                   <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Lane %")}</div>
                   <div
                     className={`text-xs font-bold font-mono tabular-nums ${
@@ -1501,7 +1547,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                     {Math.round(((lane[6] || 0) / Math.max(1, lane[2])) * 100)}%
                   </div>
                   <div className="text-[10px] text-rw-muted truncate">{fmtNum(lane[2])}G</div>
-                </div>
+                </HubLink>
               </div>
             )}
           </div>

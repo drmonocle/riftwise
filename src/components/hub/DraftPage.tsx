@@ -17,7 +17,7 @@ import { championList, useDDragon } from "../../hub/ddragon";
 import { ROLES } from "../../hub/champAgg";
 import { PeriodKey, inPeriod, kdaOf, playerRowRef, teamRowRef } from "../../hub/period";
 import { ComparePick, bothOptions } from "./ComparePage";
-import { PeriodPicker, defaultPeriod } from "./PeriodStats";
+import { PeriodPicker, QuickPeriods, defaultPeriod } from "./PeriodStats";
 import { FearlessDepth, RosterSubPicker, Side, loadFullLogs, loadSide, needsFullLogs, swapPlayerInSide } from "./PrepPage";
 import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo, useLoad, usePageTitle, useRetryAttempt, retryFailedLoads } from "./ui";
 import { bare, buildGameDraftQuery, DRAFT_ORDER as ORDER, type GameDraftInput, type GameDraftQueryInput, loadHubChamp, packHistory, packSlots, type PastGame, prettySlug, slotsFromGameDraft } from "../../hub/data";
@@ -847,6 +847,7 @@ const Board: React.FC<{
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-rw-muted">{tl("Pools from")}</span>
           <PeriodPicker options={options} value={period} onChange={onPeriod} />
+          <QuickPeriods options={options} value={period} onChange={onPeriod} />
           <label
             className="flex items-center gap-1 text-rw-sub cursor-pointer"
             title={`${tl("Blue side only")} / ${tl("Red side only")}`}
@@ -1705,6 +1706,16 @@ const DraftMatchupPanel: React.FC<{
                     ) : null}
                     <HubLink
                       to={{
+                        kind: "counters",
+                        query: `champ=${prettySlug(bChamp)}&vs=${encodeURIComponent(rChamp)}&role=${encodeURIComponent(rKey)}`,
+                      }}
+                      className="text-rw-muted hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Counter-picks")}
+                    </HubLink>
+                    <span>·</span>
+                    <HubLink
+                      to={{
                         kind: "finder",
                         query: `champ=${encodeURIComponent(bChamp)}&vs=${encodeURIComponent(rChamp)}&role=${encodeURIComponent(rKey)}`,
                       }}
@@ -2205,10 +2216,14 @@ const LaneCounters: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Sid
           ))}
         </span>
         <span className="inline-flex items-center gap-1.5 tabular-nums text-rw-sub shrink-0" title={tl("{n} games against it", { n: g })}>
-          <span className={gdTone}>
+          <HubLink
+            to={{ kind: "counters", query: `champ=${prettySlug(c)}&vs=${encodeURIComponent(oc)}&role=${encodeURIComponent(role)}` }}
+            className={`${gdTone} hover:underline`}
+            title={tl("Counter-picks")}
+          >
             {gd != null && gd > 0 ? "+" : ""}
             {gd}
-          </span>
+          </HubLink>
           <span>
             ·{" "}
             <HubLink

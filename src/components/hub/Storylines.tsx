@@ -103,6 +103,26 @@ export function noteText(nt: Note): React.ReactNode {
       </span>
     );
   }
+  if (nt.k === "evunb" && nt.e) {
+    return (
+      <HubLink
+        to={{ kind: "tournaments", query: `q=${encodeURIComponent(nt.e)}` }}
+        className="hover:text-rw-accent hover:underline"
+      >
+        {plain}
+      </HubLink>
+    );
+  }
+  if (nt.k === "penta") {
+    return (
+      <HubLink
+        to={{ kind: "records", ...(nt.y ? { query: `year=${encodeURIComponent(nt.y)}` } : {}) }}
+        className="hover:text-rw-accent hover:underline"
+      >
+        {plain}
+      </HubLink>
+    );
+  }
   return plain || null;
 }
 

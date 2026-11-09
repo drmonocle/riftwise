@@ -32,6 +32,7 @@ import {
   Loading,
   OeCredit,
   RevealButton,
+  STable,
   Section,
   Stat,
   fmtNum,
@@ -338,7 +339,7 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; periodL
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 items-start">
-        <table className="w-full text-xs">
+        <STable className="w-full text-xs">
           <thead>
             <tr>
               <th className={`${th} text-left`} />
@@ -349,14 +350,14 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; periodL
           <tbody>
             {d.firsts.map((x) => (
               <tr key={x.key} className="border-t border-rw-border/60">
-                <td className="px-2 py-1 text-rw-sub">{label[x.key]}</td>
-                <td className="px-2 py-1 text-right">{wrCell(x.got)}</td>
-                <td className="px-2 py-1 text-right">{wrCell(x.lost)}</td>
+                <td className="px-2 py-1 text-rw-sub" data-sort={label[x.key]}>{label[x.key]}</td>
+                <td className="px-2 py-1 text-right" data-sort={x.got[0] ? x.got[1] / x.got[0] : -1}>{wrCell(x.got)}</td>
+                <td className="px-2 py-1 text-right" data-sort={x.lost[0] ? x.lost[1] / x.lost[0] : -1}>{wrCell(x.lost)}</td>
               </tr>
             ))}
           </tbody>
-        </table>
-        <table className="w-full text-xs">
+        </STable>
+        <STable className="w-full text-xs">
           <thead>
             <tr>
               <th className={`${th} text-left`}>{tl("Gold at 15 minutes")}</th>
@@ -366,12 +367,12 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; periodL
           <tbody>
             {d.gold.map((x) => (
               <tr key={x.key} className="border-t border-rw-border/60">
-                <td className="px-2 py-1 text-rw-sub">{label[x.key]}</td>
-                <td className="px-2 py-1 text-right">{wrCell([x.g, x.w])}</td>
+                <td className="px-2 py-1 text-rw-sub" data-sort={label[x.key]}>{label[x.key]}</td>
+                <td className="px-2 py-1 text-right" data-sort={x.g ? x.w / x.g : -1}>{wrCell([x.g, x.w])}</td>
               </tr>
             ))}
           </tbody>
-        </table>
+        </STable>
       </div>
       <p className="text-[10px] text-rw-muted">
         {tl("Win rate (games in brackets) over the {n} games of this period with timelines (Oracle's Elixir). From 2,000+ behind at 15 is their comeback rate.", { n: d.n })}
@@ -700,12 +701,14 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
               label={tl("Games")}
               value={`${agg.w}-${agg.g - agg.w}`}
               sub={tl("{p} win rate", { p: winRate(agg.w, agg.g) })}
+              to={{ kind: "player", slug, tab: "matches" }}
             />
             {rated && (
               <Stat
                 label={tl("Rating")}
                 value={fmtRating(rated.avg)}
                 sub={tl("best {r} · 6 is an average game", { r: fmtRating(rated.best) })}
+                to={{ kind: "leaders" }}
               />
             )}
             <Stat
@@ -757,6 +760,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 .slice(0, 2)
                 .map((r) => roleName(r))
                 .join(" · ")}
+              to={{ kind: "player", slug, tab: "champions" }}
             />
           </div>
           <div className="grid gap-4 xl:grid-cols-2 items-start [&>*:only-child]:col-span-full">
@@ -932,6 +936,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
               label={tl("Games")}
               value={`${t.w}-${t.g - t.w}`}
               sub={tl("{p} win rate", { p: winRate(t.w, t.g) })}
+              to={{ kind: "team", slug, tab: "matches" }}
             />
             <Stat
               label={tl("Blue / red side")}
@@ -940,6 +945,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                 b: t.blue[0],
                 r: t.red[0],
               })}
+              to={{ kind: "finder", query: `team=${encodeURIComponent(slug)}` }}
             />
             <Stat
               label={tl("Avg game")}
@@ -994,6 +1000,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
               label={tl("Champions")}
               value={t.nPicks}
               sub={tl("different champions picked")}
+              to={{ kind: "team", slug, tab: "champions" }}
             />
           </div>
           <div className="grid gap-4 xl:grid-cols-2 items-start">

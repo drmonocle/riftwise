@@ -208,7 +208,7 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; nam
           <tbody>
             {t.rows.map((c) => (
               <tr key={c} className="border-t border-rw-border">
-                <td className="px-2 py-1">
+                <td className="px-2 py-1" data-sort={regionLabel(c)}>
                   <span className="flex items-center gap-1.5 whitespace-nowrap">
                     <RegionFlag code={c} />
                     <span className="text-rw-text font-semibold">{regionLabel(c)}</span>
@@ -298,7 +298,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 const fBar = r.finals > 0 ? Math.max(6, Math.round((r.finals / maxFinals) * 100)) : 0;
                 return (
                   <tr key={r.code} className="border-t border-rw-border">
-                    <td className="px-2 py-1">
+                    <td className="px-2 py-1" data-sort={regionLabel(r.code)}>
                       <span className="flex items-center gap-1.5 min-w-0">
                         <RegionFlag code={r.code} />
                         <span className="truncate text-rw-text font-semibold">{regionLabel(r.code)}</span>

@@ -459,7 +459,7 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
             const opp = next.get(u);
             return (
               <tr key={u} className="border-t border-rw-border">
-                <td className="px-2 py-1">
+                <td className="px-2 py-1" data-sort={t?.n || u}>
                   {/* the short name on a phone, so the next opponent fits beside it */}
                   <span className="flex items-center gap-1.5 min-w-0">
                     <TeamLogo name={t?.n || u} code={t?.c} src={t?.img} size={16} className="shrink-0" />
@@ -485,13 +485,17 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                 <td className={`px-2 py-1 ${w >= 3 ? "text-rw-teal font-semibold" : l >= 3 ? "text-rw-red" : "text-rw-sub"}`} data-sort={w >= 3 ? 2 : l >= 3 ? 0 : 1}>
                   {w >= 3 ? tl("through") : l >= 3 ? tl("out") : tl("Still in")}
                 </td>
-                <td className="px-2 py-1 text-rw-sub whitespace-nowrap">
+                <td className="px-2 py-1 text-rw-sub whitespace-nowrap" data-sort={opp ? byU.get(opp)?.c || opp : ""}>
                   {opp ? (
-                    <HubLink to={{ kind: "team", slug: opp }} className="inline-flex items-center gap-1.5 hover:text-rw-accent">
-                      <span>{tl("vs")}</span>
-                      <TeamLogo name={byU.get(opp)?.n || opp} code={byU.get(opp)?.c} src={byU.get(opp)?.img} size={14} className="shrink-0" />
-                      <span>{byU.get(opp)?.c || opp}</span>
-                    </HubLink>
+                    <span className="inline-flex items-center gap-1.5">
+                      <HubLink to={{ kind: "prep", a: u, b: opp }} className="text-rw-muted hover:text-rw-accent hover:underline" title={tl("Match prep")}>
+                        {tl("vs")}
+                      </HubLink>
+                      <HubLink to={{ kind: "team", slug: opp }} className="inline-flex items-center gap-1.5 hover:text-rw-accent">
+                        <TeamLogo name={byU.get(opp)?.n || opp} code={byU.get(opp)?.c} src={byU.get(opp)?.img} size={14} className="shrink-0" />
+                        <span>{byU.get(opp)?.c || opp}</span>
+                      </HubLink>
+                    </span>
                   ) : (
                     ""
                   )}
@@ -740,7 +744,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                     x.y
                   )}
                 </td>
-                <td className="px-2 py-1">
+                <td className="px-2 py-1" data-sort={x.as}>
                   <span className="flex items-center gap-1.5 min-w-0">
                     <Trophy className="w-3 h-3 text-rw-accent shrink-0" />
                     <TeamLogo name={x.as} size={16} className="shrink-0" />
@@ -749,7 +753,15 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                   {/* phones: the final and the runner-up under the champion instead of two more columns */}
                   {x.l && (
                     <span className="sm:hidden block pl-[18px] text-[10px] text-rw-sub tabular-nums">
-                      {x.score} {tl("vs")} <TeamLink name={x.l} u={prettySlug(x.l)} className="hover:text-rw-accent hover:underline" />
+                      {x.score}{" "}
+                      <HubLink
+                        to={{ kind: "compare", mode: "team", a: x.u || prettySlug(x.as), b: prettySlug(x.l) }}
+                        className="text-rw-muted hover:text-rw-accent hover:underline"
+                        title={tl("Compare")}
+                      >
+                        {tl("vs")}
+                      </HubLink>{" "}
+                      <TeamLink name={x.l} u={prettySlug(x.l)} className="hover:text-rw-accent hover:underline" />
                     </span>
                   )}
                 </td>
@@ -786,7 +798,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                     );
                   })()}
                 </td>
-                <td className="px-2 py-1 text-rw-sub max-sm:hidden">
+                <td className="px-2 py-1 text-rw-sub max-sm:hidden" data-sort={x.l || ""}>
                   {x.l ? (
                     <span className="inline-flex items-center gap-1.5">
                       <TeamLogo name={x.l} size={15} className="shrink-0" />
@@ -1259,7 +1271,7 @@ const OddsTable: React.FC<{ odds: Record<string, TeamOdds>; teams: WTeam[] }> = 
             const o = odds[t.u];
             return (
               <tr key={t.u} className="border-t border-rw-border">
-                <td className="px-2 py-1">
+                <td className="px-2 py-1" data-sort={t.n}>
                   <span className="flex items-center gap-1.5 min-w-0">
                     <TeamLogo name={t.n} code={t.c} src={t.img} size={16} className="shrink-0" />
                     <TeamLink name={t.n} u={t.u} className="truncate hover:text-rw-accent" />
@@ -1438,7 +1450,7 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                   .sort((a, b) => odds[b.u][br.reach.length] - odds[a.u][br.reach.length])
                   .map((t) => (
                     <tr key={t.u} className="border-t border-rw-border">
-                      <td className="px-2 py-1">
+                      <td className="px-2 py-1" data-sort={t.n}>
                         <span className="flex items-center gap-1.5 min-w-0">
                           <TeamLogo name={t.n} code={t.c} src={t.img} size={16} className="shrink-0" />
                           <TeamLink name={t.n} u={t.u} className="truncate hover:text-rw-accent" />

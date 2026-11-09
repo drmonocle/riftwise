@@ -45,7 +45,17 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; spoilerKey
                 )}{" "}
                 {showOpp && (
                   <>
-                    vs{" "}
+                    {r[2] && teamName ? (
+                      <HubLink
+                        to={{ kind: "compare", mode: "team", a: prettySlug(teamName), b: r[2] }}
+                        className="text-rw-muted hover:text-rw-accent hover:underline"
+                        title={tl("Compare")}
+                      >
+                        vs
+                      </HubLink>
+                    ) : (
+                      "vs"
+                    )}{" "}
                     <span className="inline-flex items-center gap-1 align-baseline">
                       <TeamLogo name={r[1]} size={13} />
                       <TeamLink name={r[1]} u={r[2]} />
@@ -191,7 +201,16 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
       title={tl("Every series between them")}
       right={
         !hidden && rows.length > 0 ? (
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center gap-2 text-[11px]">
+            <HubLink to={{ kind: "prep", a, b }} className="text-rw-accent hover:underline font-semibold">
+              {tl("Match prep")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "draft", query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}` }}
+              className="text-rw-muted hover:text-rw-accent hover:underline"
+            >
+              {tl("Draft board")} →
+            </HubLink>
             <CopyArchivePost
               title={`${aName} vs ${bName}`}
               sub={`${aName} ${wa} – ${rows.length - wa} ${bName} · ${tl("Games {a}–{b}", { a: ga, b: gb })}`}
@@ -451,9 +470,19 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }>
               </span>
               <span className="flex items-center gap-2 shrink-0 text-rw-muted">
                 {!hide && r[23] != null && (
-                  <span className={`tabular-nums font-semibold ${ratingTextClass(r[23])}`} title={tl("Game rating")}>
-                    {r[23].toFixed(0)}
-                  </span>
+                  r[1] ? (
+                    <HubLink
+                      to={{ kind: "match", slug: r[1], game: r[22] || undefined }}
+                      className={`tabular-nums font-semibold hover:underline ${ratingTextClass(r[23])}`}
+                      title={tl("Game rating")}
+                    >
+                      {r[23].toFixed(0)}
+                    </HubLink>
+                  ) : (
+                    <span className={`tabular-nums font-semibold ${ratingTextClass(r[23])}`} title={tl("Game rating")}>
+                      {r[23].toFixed(0)}
+                    </span>
+                  )
                 )}
                 {fmtDate(r[0])}
                 {r[1] && (

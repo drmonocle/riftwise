@@ -530,7 +530,12 @@ const TopTeams: React.FC<{ rows?: RatingRow[]; n: number; ranked?: boolean }> = 
               <span className="hidden sm:inline-flex w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden shrink-0">
                 <span className="h-full bg-rw-accent/80 rounded-full" style={{ width: `${barPct}%` }} />
               </span>
-              <span className="font-num tabular-nums font-bold text-rw-text">{Math.round(t[5])}</span>
+              <HubLink
+                to={{ kind: "rankings", ...(t[3] ? { query: `league=${encodeURIComponent(t[3])}` } : {}) }}
+                className="font-num tabular-nums font-bold text-rw-text hover:text-rw-accent hover:underline"
+              >
+                {Math.round(t[5])}
+              </HubLink>
               {ranked && t[6] != null && (
                 <span className={`font-num tabular-nums text-[11px] w-9 text-right ${t[6] >= 0 ? "text-rw-accent" : "text-rw-muted"}`}>
                   {t[6] >= 0 ? "+" : ""}
@@ -570,9 +575,15 @@ const PatchMovers: React.FC = () => {
                 <span className="hidden sm:inline-flex w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden shrink-0">
                   <span className={`h-full rounded-full ${up ? "bg-rw-teal/85" : "bg-rw-red/75"}`} style={{ width: `${deltaPct}%` }} />
                 </span>
-                <span className={up ? "text-rw-accent" : "text-rw-muted"}>
+                <HubLink
+                  to={{
+                    kind: "champions",
+                    ...(p ? { query: `key=p${encodeURIComponent(p.p)}${p.prev ? `&vs=p${encodeURIComponent(p.prev)}` : ""}` } : {}),
+                  }}
+                  className={`hover:underline ${up ? "text-rw-accent" : "text-rw-muted"}`}
+                >
                   {up ? "▲" : "▼"} {Math.round(Math.abs(now - was) * 100)}%
-                </span>
+                </HubLink>
                 {wr.now != null && (
                   <span className={wrTone}>
                     · {Math.round(wr.now * 100)}% {tl("WR")}
@@ -706,7 +717,12 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                     >
                       {tn("{n} game", "{n} games", p.g)}
                     </HubLink>
-                    <RatingBadge v={p.rt} />
+                    <HubLink
+                      to={{ kind: "player", slug: p.u || prettySlug(p.n), tab: "matches" }}
+                      title={tl("Recent games")}
+                    >
+                      <RatingBadge v={p.rt} />
+                    </HubLink>
                   </span>
                 </li>
               ));
@@ -890,14 +906,14 @@ const BrowseRow: React.FC<{ e: EventListItem; maxG: number; q?: string; onSetQ?:
   const [hidden, reveal] = useHidden(`event:${e.u}`, e.en);
   return (
     <tr className="border-t border-rw-border">
-      <td className={`${td} max-w-[16rem] truncate`}>
+      <td className={`${td} max-w-[16rem] truncate`} data-sort={e.n}>
         <EventLink name={e.n} u={e.u} />
       </td>
       <td className={`${td} text-rw-muted`} data-sort={e.st}>
         {fmtDate(e.st, false)}
         {e.en && e.en !== e.st ? ` – ${fmtDate(e.en, false)}` : ""}
       </td>
-      <td className={`${td} text-rw-sub max-w-[8rem] truncate hidden sm:table-cell`}>
+      <td className={`${td} text-rw-sub max-w-[8rem] truncate hidden sm:table-cell`} data-sort={e.r ? regionName(e.r, e.r) : ""}>
         {e.r ? (
           onSetQ ? (
             <button
@@ -914,7 +930,7 @@ const BrowseRow: React.FC<{ e: EventListItem; maxG: number; q?: string; onSetQ?:
           ""
         )}
       </td>
-      <td className={`${td} max-w-[18rem] truncate`}>
+      <td className={`${td} max-w-[18rem] truncate`} data-sort={e.w && !hidden ? e.w : ""}>
         {e.w ? (
           hidden ? (
             <RevealButton onReveal={reveal} small />

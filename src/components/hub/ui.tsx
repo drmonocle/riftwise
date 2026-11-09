@@ -153,17 +153,26 @@ export function Page<T>({ state, children }: { state: Loaded<T>; children: (data
 
 // ── Layout ────────────────────────────────────────────────────────────────
 
-export const Stat: React.FC<{ label: string; value: React.ReactNode; sub?: React.ReactNode }> = ({ label, value, sub }) => (
-  <div className="bg-rw-bg border border-rw-border rounded-lg px-3 py-2 min-w-0">
-    <div className="text-[10px] text-rw-muted font-semibold truncate">{label}</div>
-    <div className="text-base font-bold text-rw-text truncate tabular-nums">{value}</div>
-    {sub && (
-      <div className="text-[10px] text-rw-sub line-clamp-2" title={typeof sub === "string" ? sub : undefined}>
-        {sub}
-      </div>
-    )}
-  </div>
-);
+export const Stat: React.FC<{ label: string; value: React.ReactNode; sub?: React.ReactNode; to?: HubRoute }> = ({ label, value, sub, to }) => {
+  const inner = (
+    <>
+      <div className="text-[10px] text-rw-muted font-semibold truncate">{label}</div>
+      <div className="text-base font-bold text-rw-text truncate tabular-nums">{value}</div>
+      {sub && (
+        <div className="text-[10px] text-rw-sub line-clamp-2" title={typeof sub === "string" ? sub : undefined}>
+          {sub}
+        </div>
+      )}
+    </>
+  );
+  return to ? (
+    <HubLink to={to} className="block bg-rw-bg border border-rw-border hover:border-rw-accent/60 hover:bg-rw-raised/40 rounded-lg px-3 py-2 min-w-0 transition-colors">
+      {inner}
+    </HubLink>
+  ) : (
+    <div className="bg-rw-bg border border-rw-border rounded-lg px-3 py-2 min-w-0">{inner}</div>
+  );
+};
 
 /** The credit Oracle's Elixir's data asks for (free for non-commercial use with credit), under every early-game block. */
 export const OeCredit: React.FC<{ n?: number }> = ({ n }) => (

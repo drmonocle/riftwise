@@ -873,7 +873,7 @@ export const PlayerOpponents: React.FC<{
                     isSel ? "bg-rw-accent/10" : "hover:bg-rw-raised/40"
                   }`}
                 >
-                  <td className={`${td} max-w-[12rem] truncate`}>
+                  <td className={`${td} max-w-[12rem] truncate`} data-sort={o.opp}>
                     <span className="inline-flex items-center gap-1.5 min-w-0" onClick={(e) => e.stopPropagation()}>
                       <TeamLogo name={o.opp} size={18} />
                       <TeamLink name={o.opp} u={o.u} className="text-rw-text hover:text-rw-accent hover:underline truncate" />
@@ -888,7 +888,14 @@ export const PlayerOpponents: React.FC<{
                         />
                       </span>
                       <span>
-                        <span className="font-semibold text-rw-text">{o.g}</span>{" "}
+                        <HubLink
+                          to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&vsteam=${encodeURIComponent(o.u || prettySlug(o.opp))}` }}
+                          onNavigate={() => {}}
+                          className="font-semibold text-rw-text hover:text-rw-accent hover:underline"
+                          title={tl("Game finder")}
+                        >
+                          <span onClick={(e) => e.stopPropagation()}>{o.g}</span>
+                        </HubLink>{" "}
                         <span className="text-[11px] text-rw-muted">
                           ({o.w}–{o.g - o.w})
                         </span>
@@ -1082,7 +1089,7 @@ export const TeamOpponentsChart: React.FC<{
                     isSelected ? "bg-rw-accent/15 ring-1 ring-inset ring-rw-accent/50" : "hover:bg-rw-raised/40"
                   }`}
                 >
-                  <td className={`${td} max-w-[13rem] truncate`}>
+                  <td className={`${td} max-w-[13rem] truncate`} data-sort={o.n}>
                     <span className="inline-flex items-center gap-1.5 min-w-0" onClick={(e) => e.stopPropagation()}>
                       <TeamLogo name={o.n} size={18} />
                       <TeamLink name={o.n} u={o.u} />
@@ -1097,7 +1104,13 @@ export const TeamOpponentsChart: React.FC<{
                         />
                       </span>
                       <span>
-                        <span className="font-semibold text-rw-text">{o.g}</span>{" "}
+                        <HubLink
+                          to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vsteam=${encodeURIComponent(o.u || prettySlug(o.n))}` }}
+                          className="font-semibold text-rw-text hover:text-rw-accent hover:underline"
+                          title={tl("Game finder")}
+                        >
+                          <span onClick={(e) => e.stopPropagation()}>{o.g}</span>
+                        </HubLink>{" "}
                         <span className="text-[11px] text-rw-muted">
                           ({o.w}–{o.g - o.w})
                         </span>
@@ -1285,7 +1298,7 @@ export const TeamPeriodOpponents: React.FC<{
                     isSelected ? "bg-rw-accent/15 ring-1 ring-inset ring-rw-accent/50" : "hover:bg-rw-raised/40"
                   }`}
                 >
-                  <td className={`${td} max-w-[13rem] truncate`}>
+                  <td className={`${td} max-w-[13rem] truncate`} data-sort={o.opp}>
                     <span className="inline-flex items-center gap-1.5 min-w-0" onClick={(e) => e.stopPropagation()}>
                       <TeamLogo name={o.opp} size={18} />
                       <TeamLink name={o.opp} u={o.u} />

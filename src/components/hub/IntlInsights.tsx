@@ -387,7 +387,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     <span className="inline-flex items-center gap-1 min-w-0">
                       <TeamLogo name={l[0].winner} size={14} />
                       <TeamLink name={l[0].winner} className="text-rw-text hover:text-rw-accent hover:underline" />
-                      <span className="text-rw-muted">vs</span>
+                      <HubLink
+                        to={{ kind: "compare", mode: "team", a: prettySlug(l[0].winner), b: prettySlug(l[0].loser) }}
+                        className="text-rw-muted hover:text-rw-accent hover:underline"
+                        title={tl("Compare")}
+                      >
+                        vs
+                      </HubLink>
                       <TeamLogo name={l[0].loser} size={14} />
                       <TeamLink name={l[0].loser} className="text-rw-text hover:text-rw-accent hover:underline" />
                     </span>
@@ -542,7 +548,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       </td>
                       <td className="px-2 py-1 text-right tabular-nums" data-sort={y.min ?? -1}>{mmss(y.min)}</td>
                       <td className="px-2 py-1 text-right tabular-nums" data-sort={y.kills ?? -1}>{y.kills ?? "–"}</td>
-                      <td className="px-2 py-1">
+                      <td className="px-2 py-1" data-sort={y.top ? y.top[1] : -1}>
                         {y.top ? (
                           <HubLink to={{ kind: "champ", slug: prettySlug(y.top[0]) }} className="flex items-center gap-1 hover:text-rw-accent">
                             <ChampIcon name={y.top[0]} size={16} />
@@ -552,7 +558,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                           "–"
                         )}
                       </td>
-                      <td className="px-2 py-1">
+                      <td className="px-2 py-1" data-sort={y.best && y.best[1] ? y.best[2] / y.best[1] : -1}>
                         {y.best ? (
                           <HubLink to={{ kind: "champ", slug: prettySlug(y.best[0]) }} className="flex items-center gap-1 hover:text-rw-accent">
                             <ChampIcon name={y.best[0]} size={16} />
@@ -624,7 +630,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               <tbody>
                 {trend.regions.map((code) => (
                   <tr key={code} className="border-t border-rw-border">
-                    <td className="px-2 py-1 whitespace-nowrap">
+                    <td className="px-2 py-1 whitespace-nowrap" data-sort={regionLabel(code)}>
                       <span className="flex items-center gap-1.5">
                         <RegionFlag code={code} />
                         {regionLabel(code)}
