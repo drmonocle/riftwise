@@ -5,6 +5,8 @@
 import React from "react";
 import { Radio, Star } from "lucide-react";
 import { tl } from "../i18n";
+import { IS_WEB } from "../platform";
+import { tabAddress } from "../hub/route";
 import type { TabKey } from "./Navigation";
 
 export const MatchesBar: React.FC<{ activeTab: TabKey; onSelectTab: (tab: TabKey) => void; liveCount: number; streamLive: boolean }> = ({
@@ -24,10 +26,14 @@ export const MatchesBar: React.FC<{ activeTab: TabKey; onSelectTab: (tab: TabKey
       {items.map((it) => {
         const on = activeTab === it.tab;
         return (
-          <button
+          <a
             key={it.tab}
-            type="button"
-            onClick={() => onSelectTab(it.tab)}
+            href={IS_WEB ? tabAddress(it.tab) : "#"}
+            onClick={(e) => {
+              if (IS_WEB && (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0)) return;
+              e.preventDefault();
+              onSelectTab(it.tab);
+            }}
             aria-current={on ? "page" : undefined}
             className={`flex items-center gap-1.5 h-8 px-3 rounded-full border text-xs font-semibold whitespace-nowrap shrink-0 transition-colors ${
               on ? "bg-rw-accent/10 text-rw-accent border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50"
@@ -42,7 +48,7 @@ export const MatchesBar: React.FC<{ activeTab: TabKey; onSelectTab: (tab: TabKey
               </span>
             )}
             {it.tab === "stream" && streamLive && <span className="w-1.5 h-1.5 rounded-full bg-rw-teal animate-pulse" aria-hidden="true" />}
-          </button>
+          </a>
         );
       })}
     </nav>

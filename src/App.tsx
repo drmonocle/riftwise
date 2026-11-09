@@ -59,7 +59,7 @@ import { MatchesBar } from "./components/MatchesBar";
 import { tl, locale } from "./i18n";
 import { statsUpdatedAt } from "./stats";
 import { syncPush } from "./push";
-import { STARTED_ON_HUB, currentHubRoute, navigateHub, onHubRoute, syncFromLocation, syncTabAddress, tabAddress, tabOfPath, BASE } from "./hub/route";
+import { STARTED_ON_HUB, currentHubRoute, hubPath, navigateHub, onHubRoute, syncFromLocation, syncTabAddress, tabAddress, tabOfPath, BASE } from "./hub/route";
 import { dedication } from "./dedication";
 import { lazyPart } from "./lazyPart";
 import { PartBoundary } from "./components/PartBoundary";
@@ -1216,12 +1216,28 @@ export default function App() {
             {tl("Shortcuts")} <kbd className="font-num">?</kbd>
           </button>
           {/* the pages that left the top bar: news sources, the 24/7 stream, the Windows app, support */}
-          <button type="button" onClick={() => selectTab("news")} className={`hover:text-rw-accent whitespace-nowrap hidden sm:inline ${activeTab === "news" ? "text-rw-accent" : ""}`}>
+          <a
+            href={IS_WEB ? tabAddress("news") : "#"}
+            onClick={(e) => {
+              if (IS_WEB && (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0)) return;
+              e.preventDefault();
+              selectTab("news");
+            }}
+            className={`hover:text-rw-accent whitespace-nowrap hidden sm:inline ${activeTab === "news" ? "text-rw-accent" : ""}`}
+          >
             {tl("News")}
-          </button>
-          <button type="button" onClick={() => selectTab("stream")} className={`hover:text-rw-accent whitespace-nowrap hidden sm:inline ${activeTab === "stream" ? "text-rw-accent" : ""}`}>
+          </a>
+          <a
+            href={IS_WEB ? tabAddress("stream") : "#"}
+            onClick={(e) => {
+              if (IS_WEB && (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0)) return;
+              e.preventDefault();
+              selectTab("stream");
+            }}
+            className={`hover:text-rw-accent whitespace-nowrap hidden sm:inline ${activeTab === "stream" ? "text-rw-accent" : ""}`}
+          >
             {tl("24/7 stream")}
-          </button>
+          </a>
           {IS_WEB && IS_WINDOWS_BROWSER && (
             <a href={DESKTOP_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" className="hover:text-rw-accent whitespace-nowrap hidden md:inline" title={tl("Download RiftWise for Windows (free, about 4 MB, no installer)")}>
               {tl("Windows app")}
@@ -1250,13 +1266,17 @@ export default function App() {
           >
             {tl("Feedback")}
           </a>
-          <button
-            type="button"
-            onClick={() => navigateHub({ kind: "aboutme" })}
+          <a
+            href={IS_WEB ? hubPath({ kind: "aboutme" }) : "#"}
+            onClick={(e) => {
+              if (IS_WEB && (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0)) return;
+              e.preventDefault();
+              navigateHub({ kind: "aboutme" });
+            }}
             className={`hover:text-rw-accent whitespace-nowrap max-sm:py-2.5 max-sm:-my-2.5 ${settings.spoilerMode ? "hidden sm:inline" : ""}`}
           >
             {tl("About")}
-          </button>
+          </a>
           <span
             onClick={() => handleOpenUrl("https://drmonocle.com")}
             className="hover:text-rw-accent cursor-pointer whitespace-nowrap hidden sm:inline"

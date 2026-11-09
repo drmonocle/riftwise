@@ -6,7 +6,7 @@
 import React from "react";
 import { tl } from "../i18n";
 import { IS_WEB } from "../platform";
-import { HubRoute, hubPath, navigateHub, useHubRoute } from "../hub/route";
+import { HubRoute, hubPath, navigateHub, tabAddress, useHubRoute } from "../hub/route";
 import { NAV_GROUP } from "./navGroups";
 import { preloadPageCode } from "./hub/pageCode";
 
@@ -77,7 +77,17 @@ export const Navigation: React.FC<{
             {it.label}
           </a>
         ) : (
-          <button key={it.key} type="button" onClick={() => onSelectTab(it.tab!)} aria-current={it.on ? "page" : undefined} className={cls(it.on)}>
+          <a
+            key={it.key}
+            href={IS_WEB ? tabAddress(it.tab!) : "#"}
+            onClick={(e) => {
+              if (IS_WEB && (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0)) return;
+              e.preventDefault();
+              onSelectTab(it.tab!);
+            }}
+            aria-current={it.on ? "page" : undefined}
+            className={cls(it.on)}
+          >
             {it.label}
             {liveCount > 0 && (
               <span className="flex items-center gap-1 text-[10px] font-bold text-rw-red" title={tl("{n} live now", { n: liveCount })}>
@@ -85,7 +95,7 @@ export const Navigation: React.FC<{
                 {liveCount}
               </span>
             )}
-          </button>
+          </a>
         ),
       )}
     </nav>
