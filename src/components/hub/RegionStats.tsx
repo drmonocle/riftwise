@@ -246,6 +246,8 @@ const bestText = (p: number | null) => (p == null ? "–" : p === 1 ? tl("Won it
 export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string[]; all: boolean; name: string }> = ({ files, years, all, name }) => {
   const { list, pairs } = useMemo(() => regionStats(files, years), [files, years]);
   if (!list.length) return null;
+  const maxTitles = Math.max(1, ...list.map((r) => r.titles));
+  const maxFinals = Math.max(1, ...list.map((r) => r.finals));
   const cell = "px-2 py-1 text-right tabular-nums whitespace-nowrap";
   return (
     <>
@@ -287,36 +289,97 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
               </tr>
             </thead>
             <tbody>
-              {list.map((r) => (
-                <tr key={r.code} className="border-t border-rw-border">
-                  <td className="px-2 py-1">
-                    <span className="flex items-center gap-1.5 min-w-0">
-                      <RegionFlag code={r.code} />
-                      <span className="truncate text-rw-text font-semibold">{regionLabel(r.code)}</span>
-                    </span>
-                  </td>
-                  <td className={cell}>{r.teams}</td>
-                  <td className={cell}>
-                    {r.sw}-{r.sl}
-                  </td>
-                  <td className={cell}>
-                    {r.gw}-{r.gl}
-                    <span className="text-rw-muted"> · {pctOf(r.gw, r.gl) ?? "–"}%</span>
-                  </td>
-                  <td className={cell}>
-                    {r.ow + r.ol ? (
-                      <>
-                        {r.ow}-{r.ol} <span className="text-rw-muted">· {pctOf(r.ow, r.ol)}%</span>
-                      </>
-                    ) : (
-                      "–"
+              {list.map((r) => {
+                const sPct = pctOf(r.sw, r.sl);
+                const gPct = pctOf(r.gw, r.gl);
+                const oPct = pctOf(r.ow, r.ol);
+                const tBar = r.titles > 0 ? Math.max(6, Math.round((r.titles / maxTitles) * 100)) : 0;
+                const fBar = r.finals > 0 ? Math.max(6, Math.round((r.finals / maxFinals) * 100)) : 0;
+                return (
+                  <tr key={r.code} className="border-t border-rw-border">
+                    <td className="px-2 py-1">
+                      <span className="flex items-center gap-1.5 min-w-0">
+                        <RegionFlag code={r.code} />
+                        <span className="truncate text-rw-text font-semibold">{regionLabel(r.code)}</span>
+                      </span>
+                    </td>
+                    <td className={cell}>{r.teams}</td>
+                    <td className={cell}>
+                      <span className="inline-flex items-center justify-end gap-1.5">
+                        {sPct != null && (
+                          <span className="hidden sm:inline-block w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
+                            <span
+                              className={`block h-full rounded-full ${sPct >= 50 ? "bg-rw-teal/80" : "bg-rw-rose/70"}`}
+                              style={{ width: `${Math.max(4, Math.min(100, sPct))}%` }}
+                            />
+                          </span>
+                        )}
+                        <span>{r.sw}-{r.sl}</span>
+                      </span>
+                    </td>
+                    <td className={cell}>
+                      <span className="inline-flex items-center justify-end gap-1.5">
+                        {gPct != null && (
+                          <span className="hidden sm:inline-block w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
+                            <span
+                              className={`block h-full rounded-full ${gPct >= 50 ? "bg-rw-teal/80" : "bg-rw-rose/70"}`}
+                              style={{ width: `${Math.max(4, Math.min(100, gPct))}%` }}
+                            />
+                          </span>
+                        )}
+                        <span>
+                          {r.gw}-{r.gl}
+                          <span className="text-rw-muted"> · {gPct ?? "–"}%</span>
+                        </span>
+                      </span>
+                    </td>
+                    <td className={cell}>
+                      {r.ow + r.ol ? (
+                        <span className="inline-flex items-center justify-end gap-1.5">
+                          {oPct != null && (
+                            <span className="hidden sm:inline-block w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
+                              <span
+                                className={`block h-full rounded-full ${oPct >= 50 ? "bg-rw-teal/80" : "bg-rw-rose/70"}`}
+                                style={{ width: `${Math.max(4, Math.min(100, oPct))}%` }}
+                              />
+                            </span>
+                          )}
+                          <span>
+                            {r.ow}-{r.ol} <span className={oPct != null && oPct >= 50 ? "text-rw-teal font-semibold" : "text-rw-muted"}>· {oPct}%</span>
+                          </span>
+                        </span>
+                      ) : (
+                        "–"
+                      )}
+                    </td>
+                    <td className={`${cell} ${r.best === 1 ? "text-rw-accent font-bold" : ""}`}>{bestText(r.best)}</td>
+                    {all && (
+                      <td className={`${cell} font-bold ${r.titles ? "text-rw-accent" : "text-rw-muted"}`}>
+                        <span className="inline-flex items-center justify-end gap-1.5">
+                          {tBar > 0 && (
+                            <span className="hidden sm:inline-block w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
+                              <span className="block h-full rounded-full bg-rw-accent/80" style={{ width: `${tBar}%` }} />
+                            </span>
+                          )}
+                          <span>{r.titles}</span>
+                        </span>
+                      </td>
                     )}
-                  </td>
-                  <td className={`${cell} ${r.best === 1 ? "text-rw-accent font-bold" : ""}`}>{bestText(r.best)}</td>
-                  {all && <td className={`${cell} font-bold ${r.titles ? "text-rw-accent" : "text-rw-muted"}`}>{r.titles}</td>}
-                  {all && <td className={cell}>{r.finals}</td>}
-                </tr>
-              ))}
+                    {all && (
+                      <td className={cell}>
+                        <span className="inline-flex items-center justify-end gap-1.5">
+                          {fBar > 0 && (
+                            <span className="hidden sm:inline-block w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
+                              <span className="block h-full rounded-full bg-rw-teal/70" style={{ width: `${fBar}%` }} />
+                            </span>
+                          )}
+                          <span>{r.finals}</span>
+                        </span>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

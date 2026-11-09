@@ -211,28 +211,46 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
         </div>
       ) : (
         <div className="space-y-1.5">
-          <div className="flex justify-between gap-2 border-t border-rw-border pt-2">
-            <span className="text-rw-sub">{tl("Head to head (series)")}</span>
-            <span className="font-bold tabular-nums">
-              {meetings.length ? (
-                <>
-                  <span className="text-rw-side-a">{h2hWins}</span> – <span className="text-rw-side-b">{meetings.length - h2hWins}</span>
-                </>
-              ) : (
-                "–"
-              )}
-            </span>
+          <div className="space-y-1 border-t border-rw-border pt-2">
+            <div className="flex justify-between gap-2">
+              <span className="text-rw-sub">{tl("Head to head (series)")}</span>
+              <span className="font-bold tabular-nums">
+                {meetings.length ? (
+                  <>
+                    <span className="text-rw-side-a">{h2hWins}</span> – <span className="text-rw-side-b">{meetings.length - h2hWins}</span>
+                  </>
+                ) : (
+                  "–"
+                )}
+              </span>
+            </div>
+            {meetings.length > 0 && (
+              <div className="h-1 w-full rounded-full bg-rw-border/70 overflow-hidden flex gap-[1px]" aria-hidden="true">
+                <span className="h-full bg-rw-side-a/80" style={{ width: `${Math.round((h2hWins / meetings.length) * 100)}%` }} />
+                <span className="h-full flex-1 bg-rw-side-b/80" />
+              </div>
+            )}
           </div>
           {meetings.length > 0 ? (
             <ul className="space-y-1 text-[11px]">
               {meetings.slice(0, 4).map((r, i) => {
                 const wonA = r[3] > r[4];
+                const tot = r[3] + r[4];
+                const shareA = tot > 0 ? Math.round((r[3] / tot) * 100) : 50;
                 const content = (
                   <>
-                    <span className="font-mono tabular-nums shrink-0">
-                      <span className={wonA ? "text-rw-side-a font-bold" : "text-rw-sub"}>{r[3]}</span>
-                      <span className="text-rw-muted">–</span>
-                      <span className={!wonA ? "text-rw-side-b font-bold" : "text-rw-sub"}>{r[4]}</span>
+                    <span className="inline-flex items-center gap-1.5 font-mono tabular-nums shrink-0">
+                      <span>
+                        <span className={wonA ? "text-rw-side-a font-bold" : "text-rw-sub"}>{r[3]}</span>
+                        <span className="text-rw-muted">–</span>
+                        <span className={!wonA ? "text-rw-side-b font-bold" : "text-rw-sub"}>{r[4]}</span>
+                      </span>
+                      {tot > 0 && (
+                        <span className="hidden sm:inline-flex w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden gap-[1px] shrink-0" aria-hidden="true">
+                          <span className="h-full bg-rw-side-a/80" style={{ width: `${shareA}%` }} />
+                          <span className="h-full flex-1 bg-rw-side-b/80" />
+                        </span>
+                      )}
                     </span>
                     <span className="text-rw-sub truncate min-w-0 flex-1">
                       {r[5]}

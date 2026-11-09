@@ -168,8 +168,16 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
         {/* the page's main heading: both teams and the score (short names on phones) */}
         <h1 className="relative mt-4 sm:mt-5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 sm:gap-6">
           <SeriesSide team={s.a} won={!hidden && s.w === 1} align="right" />
-          <span className="block font-num text-[32px] sm:text-[44px] font-bold text-rw-text tabular-nums text-center min-w-[4.5rem] leading-none">
-            {scoreA} <span className="text-rw-muted/60">–</span> {scoreB}
+          <span className="flex flex-col items-center gap-1 min-w-[4.5rem]">
+            <span className="block font-num text-[32px] sm:text-[44px] font-bold text-rw-text tabular-nums text-center leading-none">
+              {scoreA} <span className="text-rw-muted/60">–</span> {scoreB}
+            </span>
+            {!hidden && s.sa + s.sb > 0 && (
+              <span className="w-16 sm:w-20 h-1 rounded-full bg-rw-border/70 overflow-hidden flex gap-[1px]" aria-hidden="true">
+                <span className="h-full bg-rw-teal/80" style={{ width: `${Math.round((s.sa / (s.sa + s.sb)) * 100)}%` }} />
+                <span className="h-full flex-1 bg-rw-rose/70" />
+              </span>
+            )}
           </span>
           <SeriesSide team={s.b} won={!hidden && s.w === 2} align="left" />
         </h1>
@@ -758,11 +766,18 @@ const GameRoleMatchups: React.FC<{ blue: GamePlayer[]; red: GamePlayer[] }> = ({
     <div className="pt-2 border-t border-rw-border">
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-[11px]">
         {pairs.map(({ role, b, r }) => {
+          const gd15 = b.g15;
           const inner = (
             <>
               <div className="flex items-center justify-between text-[9px] uppercase tracking-wider font-bold text-rw-muted">
                 <span>{roleName(role)}</span>
-                {b.u && r.u && <span className="text-rw-accent">{tl("Compare")} →</span>}
+                {gd15 != null && gd15 !== 0 ? (
+                  <span className={`font-mono tabular-nums ${gd15 > 0 ? "text-rw-side-a" : "text-rw-side-b"}`}>
+                    {gd15 > 0 ? `+${gd15}` : gd15}@15
+                  </span>
+                ) : (
+                  b.u && r.u && <span className="text-rw-accent">{tl("Compare")} →</span>
+                )}
               </div>
               <div className="mt-1 flex items-center justify-between gap-1 min-w-0">
                 <span className="inline-flex items-center gap-1 min-w-0 truncate text-rw-side-a font-semibold">
@@ -775,6 +790,13 @@ const GameRoleMatchups: React.FC<{ blue: GamePlayer[]; red: GamePlayer[] }> = ({
                   {r.c && <ChampIcon name={r.c} size={15} />}
                 </span>
               </div>
+              {(b.k != null || r.k != null) && (
+                <div className="mt-0.5 flex items-center justify-between text-[9px] font-mono tabular-nums text-rw-sub">
+                  <span>{b.k ?? 0}/{b.d ?? 0}/{b.a ?? 0}</span>
+                  {b.u && r.u && gd15 != null && gd15 !== 0 && <span className="text-rw-accent font-sans font-bold">{tl("Compare")} →</span>}
+                  <span>{r.k ?? 0}/{r.d ?? 0}/{r.a ?? 0}</span>
+                </div>
+              )}
             </>
           );
           return b.u && r.u ? (

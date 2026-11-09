@@ -8,7 +8,7 @@ import React, { useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { tl, roleName } from "../../i18n";
 import { loadLeagues, loadMoves } from "../../hub/data";
-import { fmtDate, HubLink, PlayerLink, TeamLink, useLoad } from "./ui";
+import { fmtDate, HubLink, PlayerLink, TeamLink, TeamLogo, useLoad } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 
 export const RosterMoves: React.FC = () => {
@@ -75,10 +75,16 @@ export const RosterMoves: React.FC = () => {
               <PlayerLink name={m.n} u={m.u} className="font-semibold text-rw-text hover:text-rw-accent" />
               {m.r && <span className="text-rw-muted"> · {roleName(m.r)}</span>}
             </span>
-            <span className="flex items-center gap-1 min-w-0 text-rw-sub">
-              <TeamLink name={m.from.n} u={m.from.u} className="hover:text-rw-accent truncate" />
+            <span className="flex items-center gap-1.5 min-w-0 text-rw-sub">
+              <span className="inline-flex items-center gap-1 min-w-0">
+                <TeamLogo name={m.from.n} sizeClass="w-3.5 h-3.5" />
+                <TeamLink name={m.from.n} u={m.from.u} className="hover:text-rw-accent truncate" />
+              </span>
               <ArrowRight className="w-3 h-3 shrink-0 text-rw-accent" />
-              <TeamLink name={m.to.n} u={m.to.u} className="text-rw-text hover:text-rw-accent truncate" />
+              <span className="inline-flex items-center gap-1 min-w-0">
+                <TeamLogo name={m.to.n} sizeClass="w-3.5 h-3.5" />
+                <TeamLink name={m.to.n} u={m.to.u} className="text-rw-text hover:text-rw-accent truncate" />
+              </span>
             </span>
             {m.lu && name.get(m.lu) && (
               <HubLink to={{ kind: "league", slug: m.lu }} className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline">
