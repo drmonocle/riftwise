@@ -26,6 +26,8 @@ import {
 } from "../../platform";
 import { tl, locale, LANGUAGES, TRANSLATION_EMAIL, TRANSLATION_MAILTO, detectLanguage } from "../../i18n";
 import { langAddress } from "../../hub/route";
+import { prettySlug } from "../../hub/data";
+import { HubLink } from "../hub/ui";
 import { PushAlertsCard } from "../PushAlerts";
 import { SyncPanel } from "../SyncPanel";
 
@@ -679,24 +681,48 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           {tl("Watchlist & Following Status")}
         </h2>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-lg bg-rw-panel border border-rw-border">
-          <div>
-            <div className="font-bold text-rw-text text-xs">{tl("What you follow")}</div>
-            <div className="text-[11px] text-rw-accent mt-0.5">
-              {tl("{teams} teams · {players} players · {regions} regions · {leagues} leagues", {
-                teams: settings.followedTeams.length,
-                players: settings.followedPlayers.length,
-                regions: settings.followedRegions.length,
-                leagues: settings.followedLeagues.length,
-              })}
+        <div className="p-3.5 rounded-lg bg-rw-panel border border-rw-border space-y-2.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="font-bold text-rw-text text-xs">{tl("What you follow")}</div>
+              <div className="text-[11px] text-rw-accent mt-0.5">
+                {tl("{teams} teams · {players} players · {regions} regions · {leagues} leagues", {
+                  teams: settings.followedTeams.length,
+                  players: settings.followedPlayers.length,
+                  regions: settings.followedRegions.length,
+                  leagues: settings.followedLeagues.length,
+                })}
+              </div>
             </div>
+            <button
+              onClick={handleResetWatchlist}
+              className="px-3 py-1.5 rounded bg-rw-bg border border-rw-red/40 text-rw-red hover:bg-rw-red hover:text-white font-semibold text-xs transition-colors"
+            >
+              {tl("Reset All Follows")}
+            </button>
           </div>
-          <button
-            onClick={handleResetWatchlist}
-            className="px-3 py-1.5 rounded bg-rw-bg border border-rw-red/40 text-rw-red hover:bg-rw-red hover:text-white font-semibold text-xs transition-colors"
-          >
-            {tl("Reset All Follows")}
-          </button>
+          {(settings.followedTeams.length > 0 || settings.followedPlayers.length > 0) && (
+            <div className="flex flex-wrap gap-1.5 pt-2 border-t border-rw-border">
+              {settings.followedTeams.map((t) => (
+                <HubLink
+                  key={`t-${t}`}
+                  to={{ kind: "team", slug: prettySlug(t) }}
+                  className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-semibold text-rw-text hover:text-rw-accent"
+                >
+                  {t}
+                </HubLink>
+              ))}
+              {settings.followedPlayers.map((p) => (
+                <HubLink
+                  key={`p-${p}`}
+                  to={{ kind: "player", slug: prettySlug(p) }}
+                  className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-teal/60 text-[11px] font-semibold text-rw-teal hover:underline"
+                >
+                  {p}
+                </HubLink>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

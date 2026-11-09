@@ -1,6 +1,7 @@
 import React from "react";
 import { ExternalLink } from "lucide-react";
 import { tl, tk, currentLang, type Lang } from "../../i18n";
+import { IS_WEB } from "../../platform";
 import { RosterMoves } from "../hub/RosterMoves";
 
 interface NewsViewProps {
@@ -246,23 +247,41 @@ const LOCAL: Partial<Record<Lang, Source[]>> = {
   ],
 };
 
+const hostOf = (url: string) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+};
+
 const Card: React.FC<{
   s: Source;
   text: string;
   onOpenUrl: (url: string) => void;
 }> = ({ s, text, onOpenUrl }) => (
-  <button
-    onClick={() => onOpenUrl(s.url)}
-    className="text-left bg-rw-panel border border-rw-border hover:border-rw-accent p-4 rounded-lg transition-all group"
+  <a
+    href={s.url}
+    target="_blank"
+    rel="noopener noreferrer"
+    onClick={(e) => {
+      if (IS_WEB && (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0)) return;
+      e.preventDefault();
+      onOpenUrl(s.url);
+    }}
+    className="block text-left bg-rw-panel border border-rw-border hover:border-rw-accent p-4 rounded-lg transition-all group"
   >
     <div className="flex items-center justify-between gap-2 mb-1.5">
       <span className="text-sm font-bold text-rw-text group-hover:text-rw-accent transition-colors">
         {s.name}
       </span>
-      <ExternalLink className="w-3.5 h-3.5 text-rw-teal shrink-0" />
+      <span className="inline-flex items-center gap-1.5 shrink-0">
+        <span className="text-[10px] font-mono text-rw-muted">{hostOf(s.url)}</span>
+        <ExternalLink className="w-3.5 h-3.5 text-rw-teal shrink-0" />
+      </span>
     </div>
     <p className="text-xs text-rw-muted leading-relaxed">{text}</p>
-  </button>
+  </a>
 );
 
 export const NewsView: React.FC<NewsViewProps> = ({ onOpenUrl }) => {

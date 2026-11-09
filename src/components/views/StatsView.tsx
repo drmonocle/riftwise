@@ -181,9 +181,9 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
             )}
             {(route.kind === "about" || route.kind === "aboutme") && (
               <nav aria-label={tl("Breadcrumb")} className="flex items-center gap-1 text-xs min-w-0">
-                <button type="button" onClick={() => navigateHub({ kind: "home" })} className="text-rw-accent hover:underline shrink-0">
+                <HubLink to={{ kind: "home" }} className="text-rw-accent hover:underline shrink-0">
                   RiftWise
-                </button>
+                </HubLink>
                 <ChevronRight className="w-3 h-3 text-rw-muted shrink-0" aria-hidden="true" />
                 <span className="text-rw-text font-semibold truncate">{tl(sectionName)}</span>
               </nav>

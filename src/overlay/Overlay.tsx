@@ -11,6 +11,8 @@ import type { HubRatings, HubTeam, TeamSeriesRow } from "../hub/types";
 import type { Match } from "../types";
 import { chanceContext, matchChance, seriesChance } from "../hub/winChance";
 import { liveRating } from "../hub/liveRatings";
+import { loadHubLogos } from "../hub/riotCatalog";
+import { TeamLogo } from "../components/hub/ui";
 
 const q = new URLSearchParams(window.location.search);
 const SLUGS = (q.get("teams") || "").split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
@@ -29,6 +31,7 @@ export const Overlay: React.FC = () => {
   useEffect(() => {
     if (SLUGS.length < 2) return;
     let alive = true;
+    loadHubLogos();
     const load = () =>
       Promise.all([loadHubTeam(SLUGS[0]), loadHubTeam(SLUGS[1]), loadRatings(), loadTeamSeries(SLUGS[0]).catch(() => [] as TeamSeriesRow[])])
         .then(([x, y, r, s]) => {
@@ -104,11 +107,15 @@ export const Overlay: React.FC = () => {
   const scoreB = live ? (swapped ? live.team1Score : live.team2Score) : null;
   const side = (t: HubTeam, right: boolean, color: string) => (
     <div style={{ flex: 1, minWidth: 0, textAlign: right ? "right" : "left" }}>
-      <div style={{ fontSize: t.name.length > 16 ? 24 : t.name.length > 11 ? 28 : 34, fontWeight: 800, color, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: right ? "flex-end" : "flex-start" }}>
+        {!right && <TeamLogo name={t.name} code={t.codes?.[0]} size={38} />}
+        <div style={{ fontSize: t.name.length > 16 ? 24 : t.name.length > 11 ? 28 : 34, fontWeight: 800, color, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
+        {right && <TeamLogo name={t.name} code={t.codes?.[0]} size={38} />}
+      </div>
       {t.rating && (
         <div style={{ fontSize: 14, color: "var(--rw-sub)" }}>
           {t.rating.rank != null ? `#${t.rating.rank} · ` : ""}
-          {t.rating.league || ""} · {t.rating.r}
+          {t.rating.league || ""} · {Math.round(liveRating(ratings, t.u, t.rating.r))}
         </div>
       )}
       <div style={{ display: "flex", gap: 4, marginTop: 8, justifyContent: right ? "flex-end" : "flex-start" }}>
@@ -215,9 +222,16 @@ export const Overlay: React.FC = () => {
             })}
           </div>
         )}
-        <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--rw-border)", display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 13, color: "var(--rw-sub)" }}>
-          <span>
-            {meetings.length ? `${tl("Head to head (series)")}: ${a.name} ${wa}–${meetings.length - wa} ${b.name}` : tl("First ever meeting between these teams")}
+        <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--rw-border)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, fontSize: 13, color: "var(--rw-sub)" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+            <span>
+              {meetings.length ? `${tl("Head to head (series)")}: ${a.name} ${wa}–${meetings.length - wa} ${b.name}` : tl("First ever meeting between these teams")}
+            </span>
+            {meetings.length > 0 && (
+              <span style={{ display: "inline-flex", width: 88, height: 8, borderRadius: 999, overflow: "hidden", background: "var(--rw-side-b)", border: "1px solid var(--rw-border)" }}>
+                <span style={{ width: `${Math.round((wa / meetings.length) * 100)}%`, background: "var(--rw-side-a)" }} />
+              </span>
+            )}
           </span>
           <span style={{ color: "var(--rw-muted)" }}>
             <b style={{ color: "var(--rw-accent)" }}>Rift</b>
