@@ -6,7 +6,7 @@
 import React, { useMemo, useState } from "react";
 import { tl, tn } from "../../i18n";
 import { loadRatings, loadRatingsHistory } from "../../hub/data";
-import { hubShareUrl } from "../../hub/route";
+import { hubShareUrl, navigateHub, useHubRoute } from "../../hub/route";
 import { Sparkline } from "./Sparkline";
 import type { HubRatings, RatingRow } from "../../hub/types";
 import { chanceContext, matchChance, pct, seriesChance } from "../../hub/winChance";
@@ -51,7 +51,16 @@ export const RankingsPage: React.FC = () => {
 };
 
 const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
-  const [league, setLeague] = useState("");
+  const route = useHubRoute();
+  const q = new URLSearchParams(route.kind === "rankings" && "query" in route ? route.query || "" : "");
+  const league = q.get("league") || "";
+  const setLeague = (v: string) => {
+    const next = new URLSearchParams(q);
+    if (!v) next.delete("league");
+    else next.set("league", v);
+    const qs = next.toString();
+    navigateHub({ kind: "rankings", ...(qs ? { query: qs } : {}) }, { replace: true });
+  };
   const [limit, setLimit] = useState(50);
   const [asOf, setAsOf] = useState("");
   const hist = useLoad(loadRatingsHistory, []);
@@ -386,6 +395,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                 .filter(Boolean)
                 .join(" · ")}
               rows={rows}
+              query={q.toString()}
             />
           </span>
         }
@@ -454,39 +464,48 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                 </tr>
               </thead>
               <tbody>
-                {d.leagues.slice(0, 20).map(([l, u, r, n], i) => {
-                  const best = d.teams.filter((t) => t[3] === l).sort((a, b) => b[5] - a[5])[0];
-                  return (
-                    <tr key={l} className="border-t border-rw-border">
-                      <td className={`${td} text-rw-muted`}>{i + 1}</td>
-                      <td className={td}>
-                        {u ? (
-                          <HubLink
-                            to={{ kind: "league", slug: u }}
-                            className="text-rw-text hover:text-rw-accent hover:underline"
-                          >
-                            {l}
-                          </HubLink>
-                        ) : (
-                          l
-                        )}
-                      </td>
-                      <td className={`${td} text-rw-sub max-w-[9rem] truncate`}>
-                        {best ? <TeamLink name={best[1]} u={best[0]} /> : "–"}
-                      </td>
-                      <td
-                        className={`${td} text-right tabular-nums font-bold text-rw-accent`}
-                      >
-                        {r}
-                      </td>
-                      <td
-                        className={`${td} text-right tabular-nums text-rw-sub`}
-                      >
-                        {n}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {(() => {
+                  const shownLeagues = d.leagues.slice(0, 20);
+                  const maxLr = Math.max(1500, ...shownLeagues.map((x) => x[2]));
+                  const minLr = Math.min(1200, ...shownLeagues.map((x) => x[2]));
+                  return shownLeagues.map(([l, u, r, n], i) => {
+                    const best = d.teams.filter((t) => t[3] === l).sort((a, b) => b[5] - a[5])[0];
+                    const barW = Math.max(10, Math.min(100, Math.round(((r - minLr + 80) / Math.max(1, maxLr - minLr + 80)) * 100)));
+                    return (
+                      <tr key={l} className="border-t border-rw-border">
+                        <td className={`${td} text-rw-muted`}>{i + 1}</td>
+                        <td className={td}>
+                          {u ? (
+                            <HubLink
+                              to={{ kind: "league", slug: u }}
+                              className="text-rw-text hover:text-rw-accent hover:underline"
+                            >
+                              {l}
+                            </HubLink>
+                          ) : (
+                            l
+                          )}
+                        </td>
+                        <td className={`${td} text-rw-sub max-w-[9rem] truncate`}>
+                          {best ? <TeamLink name={best[1]} u={best[0]} /> : "–"}
+                        </td>
+                        <td className={`${td} text-right`}>
+                          <div className="inline-flex flex-col items-end gap-0.5 min-w-[4.5rem]">
+                            <span className="tabular-nums font-bold text-rw-accent">{r}</span>
+                            <div className="w-full h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                              <div className="h-full rounded-full bg-rw-accent/75" style={{ width: `${barW}%` }} />
+                            </div>
+                          </div>
+                        </td>
+                        <td
+                          className={`${td} text-right tabular-nums text-rw-sub`}
+                        >
+                          {n}
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
               </tbody>
             </STable>
           </div>
@@ -613,7 +632,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
   );
 };
 
-const CopyRankingsPost: React.FC<{ subtitle: string; rows: { r: RatingRow; rank: number }[] }> = ({ subtitle, rows }) => {
+const CopyRankingsPost: React.FC<{ subtitle: string; rows: { r: RatingRow; rank: number }[]; query?: string }> = ({ subtitle, rows, query }) => {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const lines = [
@@ -622,7 +641,7 @@ const CopyRankingsPost: React.FC<{ subtitle: string; rows: { r: RatingRow; rank:
         const chg = r[6] != null && r[6] !== 0 ? ` (${r[6] > 0 ? `+${r[6]}` : r[6]})` : "";
         return `#${rank} ${r[1]} (${r[10] || r[3]}) — ${r[5]}${chg}`;
       }),
-      hubShareUrl({ kind: "rankings" }),
+      hubShareUrl({ kind: "rankings", ...(query ? { query } : {}) }),
     ];
     navigator.clipboard?.writeText(lines.join("\n")).then(
       () => {

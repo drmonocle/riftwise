@@ -390,15 +390,27 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                 {tl("Best games in this league")}
               </HubLink>
             )}
-            <HubLink to={{ kind: "leaders", query: `league=${l.u}` }} className={heroBtn()}>
-              {tl("Full leaderboard")}
-            </HubLink>
-            <HubLink to={{ kind: "champions", query: `league=${l.u}` }} className={heroBtn()}>
-              {tl("Champion picks")}
-            </HubLink>
-            <HubLink to={{ kind: "finder", query: `league=${l.u}${season ? `&year=${season}` : ""}` }} className={heroBtn()}>
-              {tl("Game finder")}
-            </HubLink>
+            {(!l.seasons || l.seasons.length > 0) && totalGames > 0 && (
+              <HubLink
+                to={{
+                  kind: "leaders",
+                  query: `league=${l.u}${season && (!l.seasons || l.seasons.includes(season)) ? `&year=${season}` : ""}`,
+                }}
+                className={heroBtn()}
+              >
+                {tl("Full leaderboard")}
+              </HubLink>
+            )}
+            {totalGames > 0 && (
+              <HubLink to={{ kind: "champions", query: `league=${l.u}${season ? `&year=${season}` : ""}` }} className={heroBtn()}>
+                {tl("Champion picks")}
+              </HubLink>
+            )}
+            {totalGames > 0 && (
+              <HubLink to={{ kind: "finder", query: `league=${l.u}${season ? `&year=${season}` : ""}` }} className={heroBtn()}>
+                {tl("Game finder")}
+              </HubLink>
+            )}
             <CopyLeaguePost l={l} season={season} />
             {/* a league still playing: its own calendar and results feed (Riot names its leagues by the short name) */}
             {l.primary && l.s && years[0] && Number(years[0]) >= new Date().getFullYear() - 1 && <FollowFeeds leagues={[l.s]} />}

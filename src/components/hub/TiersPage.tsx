@@ -12,7 +12,7 @@ import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { ROLES, champAgg } from "../../hub/champAgg";
 import { card, ChampIcon, HubLink, Loading, Section, useLoad, usePageTitle } from "./ui";
-import { loadChampGames, loadChampIndex, prettySlug } from "../../hub/data";
+import { loadAliases, loadChampGames, loadChampIndex, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { SectionCard } from "./BroadcastCard";
 
 const TIERS: { t: string; min: number; color: string }[] = [
@@ -46,7 +46,12 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
   };
   const patchKeys = meta.champions.filter((k) => k.startsWith("p"));
   const key = q.get("key") && meta.champions.includes(q.get("key")!) ? q.get("key")! : patchKeys[0] || meta.champions[0];
-  const rawScope = q.get("league") || q.get("scope") || "major";
+  const aliases = useLoad(loadAliases, []);
+  const askedScope = q.get("league") || q.get("scope") || "major";
+  const rawScope =
+    askedScope === "major" || askedScope === "all"
+      ? askedScope
+      : aliases.data?.league[askedScope.toLowerCase()] || resolveLeagueSlug(askedScope);
   const isLeague = rawScope !== "major" && rawScope !== "all";
   const scope: "major" | "all" = rawScope === "all" ? "all" : "major";
   const role = ROLES.includes(q.get("role") || "") ? q.get("role")! : "";

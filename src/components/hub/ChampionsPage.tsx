@@ -7,7 +7,7 @@
 import React, { useMemo, useState } from "react";
 import { tl, roleName, fmtDec } from "../../i18n";
 import { ChampionStats, StatsMeta, loadChampionStats } from "../../stats";
-import { loadAliases, loadChampGames, loadChampIndex } from "../../hub/data";
+import { loadAliases, loadChampGames, loadChampIndex, resolveLeagueSlug } from "../../hub/data";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { ChampAggRow, ROLES, champAgg, patchCompare } from "../../hub/champAgg";
@@ -18,6 +18,37 @@ import { champName } from "../../champions";
 
 const sel = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text max-w-[14rem]";
 const pct = (v: number | null) => (v == null ? "–" : `${fmtDec(v * 100)}%`);
+
+const PresenceCell: React.FC<{ presence: number; p: number; b: number; games: number }> = ({ presence, p, b, games }) => {
+  const g = Math.max(games, 1);
+  const pickW = Math.min(100, Math.round((p / g) * 100));
+  const banW = Math.min(100 - pickW, Math.round((b / g) * 100));
+  return (
+    <div className="min-w-[4.5rem] space-y-0.5">
+      <div className="font-mono tabular-nums text-rw-text font-semibold">{pct(presence)}</div>
+      <div className="h-1 rounded-full bg-rw-raised overflow-hidden flex" aria-hidden="true">
+        <div className="h-full bg-rw-teal/80" style={{ width: `${pickW}%` }} />
+        <div className="h-full bg-rw-red/65" style={{ width: `${banW}%` }} />
+      </div>
+    </div>
+  );
+};
+
+const WinRateCell: React.FC<{ wr: number | null; p: number; minPicks: number }> = ({ wr, p, minPicks }) => {
+  if (!p || wr == null) return <>–</>;
+  const pctNum = Math.round(wr * 100);
+  const tone = p >= minPicks ? (wr >= 0.53 ? "text-rw-teal font-semibold" : wr <= 0.47 ? "text-rw-red" : "text-rw-text") : "text-rw-sub";
+  return (
+    <div className="min-w-[3.75rem] space-y-0.5">
+      <div className={`font-mono tabular-nums ${tone}`}>{pct(wr)}</div>
+      {p >= minPicks && (
+        <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+          <div className={`h-full rounded-full ${wr >= 0.5 ? "bg-rw-teal/75" : "bg-rw-red/65"}`} style={{ width: `${Math.min(100, Math.max(4, pctNum))}%` }} />
+        </div>
+      )}
+    </div>
+  );
+};
 
 /** Change against the compared patch, in points: "+12.5 ▲" in teal, "-8.0 ▼" in red, "new" when it wasn't there. */
 interface Delta {
@@ -112,7 +143,10 @@ export const ChampionsPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ m
   const aliases = useLoad(loadAliases, []);
   const asked = q.get("league") || q.get("scope") || "top";
   // ?league=lck works too (a league's short name)
-  const scope = aliases.data?.league[asked.toLowerCase()] || asked;
+  const scope =
+    asked === "top" || asked === "all"
+      ? asked
+      : aliases.data?.league[asked.toLowerCase()] || resolveLeagueSlug(asked);
   const setQ = (patch: Record<string, string | undefined>) => {
     const next = new URLSearchParams(q);
     for (const [k, v] of Object.entries(patch)) {
@@ -163,7 +197,7 @@ export const ChampionsPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ m
       {scope === "top" || scope === "all" ? (
         <OverallTable meta={meta} scope={scope === "all" ? "all" : "major"} q={q} setQ={setQ} />
       ) : (
-        <LeagueTable league={scope} q={q} setQ={setQ} years={Object.keys(leagues.find((l) => l.u === scope)?.y || {})} />
+        <LeagueTable league={scope} q={q} setQ={setQ} years={Object.keys(leagues.find((l) => l.u === scope)?.y || {})} indexLoading={index.loading} />
       )}
     </div>
   );
@@ -178,7 +212,7 @@ const LeagueFilters: React.FC<{ league: string; years: string[]; q: URLSearchPar
 }) => {
   const ys = [...years].sort().reverse();
   const year = q.get("year") || ys[0] || "";
-  const file = useLoad(() => (year ? loadChampGames(league, year) : Promise.reject(new Error("no year"))), [league, year]);
+  const file = useLoad(() => (year ? loadChampGames(league, year) : Promise.resolve(null)), [league, year]);
   const events = file.data?.events || [];
   const patches = useMemo(
     () => [...new Set((file.data?.games || []).map((g) => g[1]).filter(Boolean))].sort(patchCompare),
@@ -234,14 +268,21 @@ const SideRole: React.FC<{ q: URLSearchParams; setQ: (p: Record<string, string |
   </>
 );
 
-const LeagueTable: React.FC<{ league: string; years: string[]; q: URLSearchParams; setQ: (p: Record<string, string | undefined>) => void }> = ({
+const LeagueTable: React.FC<{
+  league: string;
+  years: string[];
+  q: URLSearchParams;
+  setQ: (p: Record<string, string | undefined>) => void;
+  indexLoading?: boolean;
+}> = ({
   league,
   years,
   q,
   setQ,
+  indexLoading,
 }) => {
   const year = q.get("year") || [...years].sort().reverse()[0] || "";
-  const file = useLoad(() => (year ? loadChampGames(league, year) : Promise.reject(new Error("no year"))), [league, year]);
+  const file = useLoad(() => (year ? loadChampGames(league, year) : Promise.resolve(null)), [league, year]);
   const eventSlug = q.get("event") || "";
   const roleQ = q.get("role") || "";
   const side = q.get("side") === "b" || q.get("side") === "r" ? (q.get("side") as "b" | "r") : undefined;
@@ -259,18 +300,28 @@ const LeagueTable: React.FC<{ league: string; years: string[]; q: URLSearchParam
     [file.data],
   );
   const emerging = q.get("new") === "1";
-  if (file.loading) return <Loading />;
+  if (indexLoading || file.loading) return <Loading />;
   if (!file.data || !result) return <Failed />;
   const eventName = eventSlug ? file.data.events.find(([s]) => s === eventSlug)?.[1] : null;
   type LRow = ChampAggRow & Delta;
   const cols: Column<LRow>[] = [
     { key: "c", label: tl("Champion"), value: (c) => c.c, render: (c) => <ChampLink name={c.c} size={18} /> },
     { key: "role", label: tl("Role"), value: (c) => c.role, render: (c) => <span className="text-rw-muted">{c.role >= 0 ? roleName(ROLES[c.role]) : "–"}</span> },
-    { key: "presence", label: tl("Presence"), value: (c) => c.presence, render: (c) => pct(c.presence) },
+    {
+      key: "presence",
+      label: tl("Presence"),
+      value: (c) => c.presence,
+      render: (c) => <PresenceCell presence={c.presence} p={c.p} b={c.b} games={result.games} />,
+    },
     ...(vs && result.thenGames ? deltaColumns<LRow>(vs) : []),
     { key: "p", label: tl("Picks"), value: (c) => c.p },
     { key: "b", label: tl("Bans"), value: (c) => c.b },
-    { key: "wr", label: tl("Win %"), value: (c) => (c.p >= 3 ? c.wr : null), render: (c) => (c.p ? pct(c.wr) : "–") },
+    {
+      key: "wr",
+      label: tl("Win %"),
+      value: (c) => (c.p >= 3 ? c.wr : null),
+      render: (c) => <WinRateCell wr={c.wr} p={c.p} minPicks={3} />,
+    },
     { key: "kda", label: tl("KDA"), value: (c) => c.kda },
     { key: "blind", label: tl("Blind%"), title: tl("Share of picks made before the enemy laner was picked"), value: (c) => c.blind, render: (c) => pct(c.blind) },
     { key: "fp", label: "B1", title: tl("First pick of the draft (blue side)"), value: (c) => c.fp || null, render: (c) => (c.fp ? c.fp : "–") },
@@ -380,11 +431,21 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
   const cols: Column<Row>[] = [
     { key: "c", label: tl("Champion"), value: (c) => c.c, render: (c) => <ChampLink name={c.c} size={18} /> },
     { key: "role", label: tl("Role"), value: (c) => c.role || "", render: (c) => <span className="text-rw-muted">{c.role ? roleName(c.role) : "–"}</span> },
-    { key: "presence", label: tl("Presence"), value: (c) => c.presence, render: (c) => pct(c.presence) },
+    {
+      key: "presence",
+      label: tl("Presence"),
+      value: (c) => c.presence,
+      render: (c) => <PresenceCell presence={c.presence} p={c.p} b={c.b} games={block?.games || 1} />,
+    },
     ...(thenBlock ? deltaColumns<Row>(label(vs)) : []),
     { key: "p", label: tl("Picks"), value: (c) => c.p },
     { key: "b", label: tl("Bans"), value: (c) => c.b },
-    { key: "wr", label: tl("Win %"), value: (c) => (c.p >= 10 ? c.wr : null), render: (c) => (c.p ? pct(c.wr) : "–") },
+    {
+      key: "wr",
+      label: tl("Win %"),
+      value: (c) => (c.p >= 10 ? c.wr : null),
+      render: (c) => <WinRateCell wr={c.wr} p={c.p} minPicks={10} />,
+    },
     { key: "kda", label: tl("KDA"), value: (c) => c.kda ?? null },
   ];
   // the patch before the chosen one, for "Compare with" (patch keys are newest first)

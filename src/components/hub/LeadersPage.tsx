@@ -5,7 +5,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
-import { loadHubEvent, loadLeagues, loadLeagueSeason } from "../../hub/data";
+import { loadAliases, loadHubEvent, loadLeagues, loadLeagueSeason, resolveLeagueSlug } from "../../hub/data";
 import type { EventPlayer, LeagueRow } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { ROLES } from "../../hub/champAgg";
@@ -18,6 +18,7 @@ import { SectionCard } from "./BroadcastCard";
 const DEFAULT_LEAGUE = "world-championship";
 
 const yearsOf = (l?: LeagueRow) => {
+  if (l?.sy?.length) return l.sy;
   const from = Number(l?.from) || 0;
   const to = Number(l?.to) || 0;
   const out: string[] = [];
@@ -29,13 +30,20 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
   usePageTitle(tl("Player leaderboards"));
   const q = new URLSearchParams(query || "");
   const leagues = useLoad(loadLeagues, []);
-  const league = q.get("league") || DEFAULT_LEAGUE;
+  const aliases = useLoad(loadAliases, []);
+  const asked = q.get("league") || DEFAULT_LEAGUE;
+  const league = aliases.data?.league[asked.toLowerCase()] || resolveLeagueSlug(asked);
   const row = leagues.data?.find((l) => l.u === league);
   const years = yearsOf(row);
-  const year = q.get("year") || row?.to || String(new Date().getFullYear());
+  const askedYear = q.get("year") || "";
+  const year = (askedYear && (!row?.sy?.length || row.sy.includes(askedYear)) ? askedYear : "") || years[0] || row?.to || String(new Date().getFullYear());
   const event = q.get("event") || "";
   const role = q.get("role") || "";
-  const season = useLoad(() => loadLeagueSeason(league, year), [league, year]);
+  const waitingForLeagues = !askedYear && league !== DEFAULT_LEAGUE && leagues.loading && !leagues.data;
+  const season = useLoad(
+    () => (waitingForLeagues ? Promise.resolve(null) : loadLeagueSeason(league, year)),
+    [league, year, waitingForLeagues],
+  );
   const ev = useLoad(() => (event ? loadHubEvent(event) : Promise.resolve(null)), [event]);
   const set = (patch: Record<string, string | undefined>) => {
     const next = new URLSearchParams(query || "");
@@ -113,12 +121,27 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
       value: (p) => (zMode ? (z => (z == null ? null : m.low ? -z : z))(zOf(m.key, p, m.value(p))) : m.value(p)),
       render: (p) => {
         const v = m.value(p);
-        if (!zMode) return v == null ? "–" : m.fmt(v);
+        if (v == null) return "–";
         const z = zOf(m.key, p, v);
+        const good = z == null ? 0 : m.low ? -z : z;
+        if (!zMode) {
+          const tone =
+            m.key === "wr"
+              ? v >= 0.55
+                ? "text-rw-teal font-semibold"
+                : v <= 0.45
+                  ? "text-rw-red"
+                  : ""
+              : good >= 1.25
+                ? "text-rw-teal font-semibold"
+                : good <= -1.25
+                  ? "text-rw-red"
+                  : "";
+          return tone ? <span className={tone}>{m.fmt(v)}</span> : m.fmt(v);
+        }
         if (z == null) return "–";
-        const good = m.low ? -z : z;
         return (
-          <span className={good >= 1 ? "text-rw-teal font-semibold" : good <= -1 ? "text-rw-red" : ""} title={v != null ? m.fmt(v) : undefined}>
+          <span className={good >= 1 ? "text-rw-teal font-semibold" : good <= -1 ? "text-rw-red" : ""} title={m.fmt(v)}>
             {z > 0 ? "+" : z < 0 ? "−" : ""}
             {Math.abs(z).toFixed(1)}
           </span>
@@ -129,11 +152,12 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
   ];
 
   const sel = "bg-rw-bg border border-rw-border rounded px-2 py-1 text-xs text-rw-text max-w-full";
-  const primary = (leagues.data || []).filter((l) => l.pr).sort((a, b) => b.g - a.g);
-  const others = (leagues.data || []).filter((l) => !l.pr).sort((a, b) => b.g - a.g);
+  const hasSeasons = (l: LeagueRow) => !l.sy || l.sy.length > 0;
+  const primary = (leagues.data || []).filter((l) => l.pr && hasSeasons(l)).sort((a, b) => b.g - a.g);
+  const others = (leagues.data || []).filter((l) => !l.pr && hasSeasons(l)).sort((a, b) => b.g - a.g);
   const scope = event ? ev.data?.n || event : `${row?.s || row?.l || league} ${year}`;
-  const loading = event ? ev.loading : season.loading;
-  const failed = event ? !ev.loading && !ev.data : !!season.error;
+  const loading = event ? ev.loading : waitingForLeagues || season.loading;
+  const failed = event ? !ev.loading && !ev.data : !waitingForLeagues && !!season.error;
   return (
     <div className="space-y-3">
       <div className={`${card} space-y-2`}>

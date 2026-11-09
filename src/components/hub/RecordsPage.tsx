@@ -100,6 +100,7 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
   p,
 }) => {
   const [n, setN] = useState(8);
+  const maxPenta = Math.max(1, p.most[0]?.v || 1);
   return (
     <>
       <Section
@@ -115,9 +116,14 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
       >
         <ol className="text-xs space-y-1.5">
           {p.most.map((x, i) => (
-            <li key={i} className="flex justify-between gap-2 min-w-0">
-              <PlayerLink name={x.n} u={x.u} />
-              <span className="text-rw-accent font-bold">{x.v}</span>
+            <li key={i} className="space-y-0.5 min-w-0">
+              <div className="flex justify-between gap-2 min-w-0">
+                <PlayerLink name={x.n} u={x.u} />
+                <span className="text-rw-accent font-bold tabular-nums">{x.v}</span>
+              </div>
+              <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                <div className="h-full rounded-full bg-rw-accent/70" style={{ width: `${Math.max(8, Math.round((x.v / maxPenta) * 100))}%` }} />
+              </div>
             </li>
           ))}
         </ol>
@@ -427,27 +433,32 @@ export const RecordsPanel: React.FC = () => {
             <ol className="text-xs space-y-1.5">
               {rows.map((p, i) => (
                 <li key={i} className="min-w-0">
-                  <div className="truncate">
-                    <span className="text-rw-accent font-bold mr-1">
-                      {fmt(p.v)}
-                    </span>
-                    <PlayerLink name={p.pl} u={p.u} />
-                    <span className="text-rw-sub">
-                      {" "}
-                      <HubLink to={{ kind: "champ", slug: prettySlug(p.c) }} className="hover:text-rw-accent hover:underline">
-                        {champName(p.c)}
-                      </HubLink>{" "}
-                      {p.g ? (
-                        <HubLink
-                          to={{ kind: "match", slug: p.g, game: p.gn }}
-                          className="text-rw-sub hover:text-rw-accent hover:underline"
-                        >
-                          {p.kda}
-                        </HubLink>
-                      ) : (
-                        p.kda
-                      )}
-                    </span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <HubLink to={{ kind: "champ", slug: prettySlug(p.c) }} title={champName(p.c)} className="shrink-0">
+                      <ChampIcon name={p.c} size={18} />
+                    </HubLink>
+                    <div className="truncate min-w-0">
+                      <span className="text-rw-accent font-bold mr-1 tabular-nums">
+                        {fmt(p.v)}
+                      </span>
+                      <PlayerLink name={p.pl} u={p.u} />
+                      <span className="text-rw-sub">
+                        {" "}
+                        <HubLink to={{ kind: "champ", slug: prettySlug(p.c) }} className="hover:text-rw-accent hover:underline">
+                          {champName(p.c)}
+                        </HubLink>{" "}
+                        {p.g ? (
+                          <HubLink
+                            to={{ kind: "match", slug: p.g, game: p.gn }}
+                            className="text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {p.kda}
+                          </HubLink>
+                        ) : (
+                          p.kda
+                        )}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-[10px] text-rw-muted truncate">
                     vs {p.opp} ·{" "}
@@ -466,32 +477,40 @@ export const RecordsPanel: React.FC = () => {
         const careerList = (
           title: string,
           rows: HubRecords["career"]["games"],
-        ) => (
-          <Section
-            title={title}
-            right={
-              rows.length > 0 ? (
-                <SectionCard
-                  section={title}
-                  name={tl("Career totals")}
-                  rows={() => rows.slice(0, 12).map((p, i) => ({ label: `#${i + 1} · ${p.pl}`, value: fmtNum(p.v), win: true }))}
-                />
-              ) : undefined
-            }
-            share={shareName(title)}
-          >
-            <ol className="text-xs space-y-1.5">
-              {rows.map((p, i) => (
-                <li key={i} className="flex justify-between gap-2 min-w-0">
-                  <PlayerLink name={p.pl} u={p.u} />
-                  <span className="text-rw-accent font-bold">
-                    {fmtNum(p.v)}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </Section>
-        );
+        ) => {
+          const maxV = Math.max(1, rows[0]?.v || 1);
+          return (
+            <Section
+              title={title}
+              right={
+                rows.length > 0 ? (
+                  <SectionCard
+                    section={title}
+                    name={tl("Career totals")}
+                    rows={() => rows.slice(0, 12).map((p, i) => ({ label: `#${i + 1} · ${p.pl}`, value: fmtNum(p.v), win: true }))}
+                  />
+                ) : undefined
+              }
+              share={shareName(title)}
+            >
+              <ol className="text-xs space-y-1.5">
+                {rows.map((p, i) => (
+                  <li key={i} className="space-y-0.5 min-w-0">
+                    <div className="flex justify-between gap-2 min-w-0">
+                      <PlayerLink name={p.pl} u={p.u} />
+                      <span className="text-rw-accent font-bold tabular-nums">
+                        {fmtNum(p.v)}
+                      </span>
+                    </div>
+                    <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                      <div className="h-full rounded-full bg-rw-accent/70" style={{ width: `${Math.max(8, Math.round((p.v / maxV) * 100))}%` }} />
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </Section>
+          );
+        };
         return (
           <CaptureContext.Provider value={year === "all" ? tl("All-time pro records") : tl("{year} records", { year })}>
           <div className="space-y-3">

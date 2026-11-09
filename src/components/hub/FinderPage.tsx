@@ -7,7 +7,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { tl, tn, tc, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
-import { loadAliases, loadChampGames, loadChampIndex, prettySlug } from "../../hub/data";
+import { loadAliases, loadChampGames, loadChampIndex, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import type { ChampGame, ChampGamesFile, ChampPick } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
 import { SITE_URL } from "../../platform";
@@ -106,7 +106,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
   const leagues = index.data || [];
   const aliases = useLoad(loadAliases, []);
   const asked = q.get("league") || "";
-  const league = asked ? aliases.data?.league[asked.toLowerCase()] || asked : leagues.length ? "top" : "";
+  const league = asked ? aliases.data?.league[asked.toLowerCase()] || resolveLeagueSlug(asked) : leagues.length ? "top" : "";
   const years = useMemo(
     () =>
       (league === "top"
@@ -123,10 +123,10 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
       : years[0] || "";
   const file = useLoad<ChampGamesFile>(
     () => {
-      if (!league || !year) return Promise.reject(new Error("no league"));
+      if (!league || !year) return Promise.resolve({ events: [], games: [] });
       if (league !== "top") return loadChampGames(league, year);
       const topLeagues = leagues.filter((l) => l.pr && l.y[year]);
-      if (!topLeagues.length) return Promise.reject(new Error("no league"));
+      if (!topLeagues.length) return Promise.resolve({ events: [], games: [] });
       return Promise.all(topLeagues.map((l) => loadChampGames(l.u, year))).then((files) => {
         const events: [string, string][] = [];
         const games: ChampGame[] = [];
