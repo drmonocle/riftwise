@@ -12,6 +12,7 @@ import { mainPlayerEntries } from "../../helpers";
 import { riotImg } from "../../riotImage";
 import { navigateHub } from "../../hub/route";
 import { prettySlug } from "../../hub/data";
+import { PlayerPhoto, TeamLogo } from "../hub/ui";
 
 interface WatchlistViewProps {
   settings: AppSettings;
@@ -480,6 +481,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                               <span className="text-[10px] font-mono px-1.5 rounded bg-rw-deep text-rw-teal min-w-12 text-center whitespace-nowrap shrink-0">
                                 {roleName(p.role)}
                               </span>
+                              <PlayerPhoto name={p.name} team={team.name} img={p.image} size={18} linkFallback={false} />
                               <button
                                 type="button"
                                 onClick={() => navigateHub({ kind: "player", slug: prettySlug(p.name) })}
@@ -534,7 +536,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       : "bg-rw-bg border-rw-border text-rw-muted hover:border-rw-muted"
                   }`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <PlayerPhoto name={player.name} team={player.teamName} img={player.image} size={32} linkFallback={false} />
                     <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-rw-deep border border-rw-border text-rw-teal min-w-14 text-center whitespace-nowrap shrink-0">
                       {roleName(player.role)}
                     </span>
@@ -556,7 +559,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                           </span>
                         )}
                       </div>
-                      <div className="text-[10px] text-rw-muted">
+                      <div className="text-[10px] text-rw-muted flex items-center gap-1 mt-0.5">
+                        <TeamLogo name={player.teamName || player.teamCode} code={player.teamCode} size={13} />
                         <button
                           type="button"
                           onClick={(e) => {

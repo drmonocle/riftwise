@@ -9,7 +9,7 @@ import { tl, locale, roleName, regionName, tc } from "../i18n";
 import { findHubTeam, loadHubIndexQuick, prettySlug } from "../hub/data";
 import { navigateHub } from "../hub/route";
 import { RiotCatalogContext } from "../hub/riotCatalog";
-import { PlayerPhoto, PhotosLink } from "./hub/ui";
+import { PlayerPhoto, PhotosLink, TeamLogo } from "./hub/ui";
 import { riotImg } from "../riotImage";
 
 interface TeamRosterModalProps {
@@ -293,8 +293,11 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                         className="p-2.5 rounded-lg bg-rw-bg border border-rw-border flex items-center justify-between text-xs"
                       >
                         <div>
-                          <div className="font-semibold text-rw-text">
-                            vs <span className="text-rw-accent">{opp}</span> ({oppCode})
+                          <div className="font-semibold text-rw-text inline-flex items-center gap-1.5">
+                            <span>vs</span>
+                            <TeamLogo name={opp} code={oppCode} size={14} />
+                            <span className="text-rw-accent">{opp}</span>
+                            <span>({oppCode})</span>
                           </div>
                           <div className="text-[10px] text-rw-sub">
                             {m.leagueName} · {tc("short best of", "Bo{n}", { n: m.bestOf })}
@@ -346,7 +349,11 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           key={m.matchId}
                           className="p-2.5 rounded-lg bg-rw-bg border border-rw-border flex items-center justify-between text-xs"
                         >
-                          <span className="font-semibold text-rw-text">vs {oppName}</span>
+                          <span className="font-semibold text-rw-text inline-flex items-center gap-1.5">
+                            <span>vs</span>
+                            <TeamLogo name={oppName} size={14} />
+                            <span>{oppName}</span>
+                          </span>
                           <span className="text-[10px] text-rw-sub">{tl("Result hidden (spoiler mode)")}</span>
                         </div>
                       );
@@ -367,7 +374,11 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           >
                             <span className="uppercase">{won ? tl("Win") : tl("Loss")}</span>
                           </span>
-                          <span className="font-semibold text-rw-text truncate">vs {oppName}</span>
+                          <span className="font-semibold text-rw-text truncate inline-flex items-center gap-1.5">
+                            <span>vs</span>
+                            <TeamLogo name={oppName} size={14} />
+                            <span className="truncate">{oppName}</span>
+                          </span>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           {tot > 0 && (

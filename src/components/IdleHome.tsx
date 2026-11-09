@@ -10,7 +10,7 @@ import { tl, tc, locale } from "../i18n";
 import { isRevealed, setRevealed } from "../revealed";
 import { navigateHub } from "../hub/route";
 import { loadRatings } from "../hub/data";
-import { useLoad } from "./hub/ui";
+import { TeamLogo, useLoad } from "./hub/ui";
 import { SectionCard } from "./hub/BroadcastCard";
 import { MatchOverviewButton } from "./MatchOverviewButton";
 import { riotImg } from "../riotImage";
@@ -151,8 +151,9 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
           return top.map((t, i) => {
             const pct = Math.max(12, Math.min(100, Math.round(((t[5] - minElo) / Math.max(1, maxElo - minElo)) * 100)));
             return (
-              <li key={t[0]} {...clickable(() => open(t[0]))} className="flex items-center gap-3 px-3 py-1.5 text-xs cursor-pointer hover:bg-rw-raised">
+              <li key={t[0]} {...clickable(() => open(t[0]))} className="flex items-center gap-2.5 px-3 py-1.5 text-xs cursor-pointer hover:bg-rw-raised">
                 <span className="w-4 text-rw-muted font-num tabular-nums">{i + 1}</span>
+                <TeamLogo name={t[1]} code={t[2]} size={16} />
                 <span className="font-semibold text-rw-text flex-1 min-w-0 truncate">{t[1]}</span>
                 <span className="text-[11px] text-rw-muted">{t[10] || t[3]}</span>
                 <span className="inline-flex items-center justify-end gap-1.5 w-24 text-right">

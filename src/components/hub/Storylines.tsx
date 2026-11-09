@@ -8,7 +8,7 @@ import { tl, tn } from "../../i18n";
 import { champName } from "../../champions";
 import { load } from "../../stats";
 import { prettySlug } from "../../hub/data";
-import { ChampIcon, HubLink, RevealButton, Section, TeamLogo, fmtNum, useHidden, useLoad, GRID_COLS, useColumns } from "./ui";
+import { ChampIcon, HubLink, PlayerPhoto, RevealButton, Section, TeamLogo, fmtNum, useHidden, useLoad, GRID_COLS, useColumns } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 
 export interface Note {
@@ -136,6 +136,7 @@ export const StoryBullets: React.FC<{ lines: StoryLine[]; spoilerKey: string; co
               <>
                 <HubLink to={l.who.to} className="inline-flex items-center gap-1 text-rw-text font-semibold hover:underline">
                   {l.who.to.kind === "team" && <TeamLogo name={l.who.name} sizeClass="w-3.5 h-3.5" />}
+                  {l.who.to.kind === "player" && <PlayerPhoto name={l.who.name} slug={l.who.to.slug} size={15} linkFallback={false} />}
                   <span>{l.who.name}</span>
                 </HubLink>
                 {": "}

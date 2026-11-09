@@ -8,6 +8,7 @@ import { tl } from "../i18n";
 import { navigateHub } from "../hub/route";
 import { swissNow, type SwissNow } from "../hub/swissNow";
 import { SectionCard } from "./hub/BroadcastCard";
+import { TeamLogo } from "./hub/ui";
 
 /** a cell's shade: teal for likely, red for unlikely, stronger the surer (theme colours) */
 export const chanceShade = (p: number) =>
@@ -85,9 +86,10 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
               navigateHub({ kind: "team", slug: r.u });
               onOpen();
             }}
-            className="flex items-center gap-2 py-0.5 border-b border-rw-border/40 min-w-0 text-left hover:text-rw-accent transition-colors"
+            className="flex items-center gap-1.5 py-0.5 border-b border-rw-border/40 min-w-0 text-left hover:text-rw-accent transition-colors"
             title={r.name}
           >
+            <TeamLogo name={r.name} code={r.code} size={14} />
             <span className="font-semibold text-rw-text hover:text-rw-accent truncate flex-1 min-w-0">{r.code}</span>
             <span className="inline-flex items-center gap-1 font-mono tabular-nums text-rw-sub">
               <span className="hidden sm:inline-flex items-center gap-0.5" aria-hidden="true">

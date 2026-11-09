@@ -734,7 +734,14 @@ const LatestRow: React.FC<{ e: EventListItem }> = ({ e }) => {
       {e.w && (
         <span className="shrink-0 flex items-center gap-1 text-rw-accent">
           {!e.rs && <Crown className="w-3 h-3" />}
-          {hidden ? <RevealButton onReveal={reveal} small /> : <TeamLink name={e.w} u={e.wu} className="text-rw-accent hover:underline" />}
+          {hidden ? (
+            <RevealButton onReveal={reveal} small />
+          ) : (
+            <span className="inline-flex items-center gap-1 min-w-0">
+              <TeamLogo name={e.w} size={14} />
+              <TeamLink name={e.w} u={e.wu} className="text-rw-accent hover:underline" />
+            </span>
+          )}
           {e.rs ? <span className="hidden sm:inline"><StandingsFirst /></span> : null}
         </span>
       )}
@@ -853,7 +860,18 @@ const BrowseRow: React.FC<{ e: EventListItem; maxG: number }> = ({ e, maxG }) =>
       </td>
       <td className={`${td} text-rw-sub max-w-[8rem] truncate hidden sm:table-cell`}>{e.r ? regionName(e.r, e.r) : ""}</td>
       <td className={`${td} max-w-[18rem] truncate`}>
-        {e.w ? hidden ? <RevealButton onReveal={reveal} small /> : <TeamLink name={e.w} u={e.wu} /> : ""}
+        {e.w ? (
+          hidden ? (
+            <RevealButton onReveal={reveal} small />
+          ) : (
+            <span className="inline-flex items-center gap-1.5 min-w-0">
+              <TeamLogo name={e.w} size={15} />
+              <TeamLink name={e.w} u={e.wu} />
+            </span>
+          )
+        ) : (
+          ""
+        )}
         {e.w && !hidden && e.rs ? <> <StandingsFirst /></> : null}
       </td>
       <td className={`${td} text-rw-muted`} data-sort={e.g || 0}>

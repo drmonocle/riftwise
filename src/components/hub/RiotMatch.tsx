@@ -14,7 +14,7 @@ import { findSeriesSlug } from "../../hub/seriesLookup";
 import { navigateHub } from "../../hub/route";
 import { prettySlug } from "../../hub/data";
 import type { HubSeries } from "../../hub/types";
-import { card, fmtDate, HubLink, Loading, RevealButton, useHidden, usePageTitle } from "./ui";
+import { card, fmtDate, HubLink, Loading, RevealButton, TeamLogo, useHidden, usePageTitle } from "./ui";
 
 const CopyRiotMatchPost: React.FC<{ match: Match }> = ({ match }) => {
   const [copied, setCopied] = useState(false);
@@ -134,9 +134,10 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
         </div>
         <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className={`text-right text-base sm:text-lg font-bold truncate ${!hidden && m.team1Score > m.team2Score && !live ? "text-rw-teal" : "text-rw-text"}`}>
-            <HubLink to={{ kind: "team", slug: prettySlug(m.team1Name) }} className="hover:text-rw-accent">
-              <span className="sm:hidden">{m.team1Code}</span>
-              <span className="hidden sm:inline">{m.team1Name}</span>
+            <HubLink to={{ kind: "team", slug: prettySlug(m.team1Name) }} className="inline-flex items-center justify-end gap-2 hover:text-rw-accent max-w-full">
+              <span className="sm:hidden truncate">{m.team1Code}</span>
+              <span className="hidden sm:inline truncate">{m.team1Name}</span>
+              <TeamLogo name={m.team1Name} code={m.team1Code} size={22} />
             </HubLink>
           </div>
           <div className="flex flex-col items-center gap-1 min-w-[4.5rem]">
@@ -154,9 +155,10 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
             )}
           </div>
           <div className={`text-base sm:text-lg font-bold truncate ${!hidden && m.team2Score > m.team1Score && !live ? "text-rw-teal" : "text-rw-text"}`}>
-            <HubLink to={{ kind: "team", slug: prettySlug(m.team2Name) }} className="hover:text-rw-accent">
-              <span className="sm:hidden">{m.team2Code}</span>
-              <span className="hidden sm:inline">{m.team2Name}</span>
+            <HubLink to={{ kind: "team", slug: prettySlug(m.team2Name) }} className="inline-flex items-center gap-2 hover:text-rw-accent max-w-full">
+              <TeamLogo name={m.team2Name} code={m.team2Code} size={22} />
+              <span className="sm:hidden truncate">{m.team2Code}</span>
+              <span className="hidden sm:inline truncate">{m.team2Name}</span>
             </HubLink>
           </div>
         </div>

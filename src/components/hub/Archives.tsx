@@ -7,7 +7,7 @@ import type { PlayerGameRow, TeamSeriesRow } from "../../hub/types";
 import { isFinishedItem } from "../../hub/ddragon";
 import { SectionCard } from "./BroadcastCard";
 import { KdaBar, WinBar } from "./OpponentChart";
-import { ChampIcon, EventLink, Failed, fmtDate, HubLink, isFresh, ItemIcon, Loading, ratingTextClass, RevealButton, Section, TeamLink, useHidden, useLoad } from "./ui";
+import { ChampIcon, EventLink, Failed, fmtDate, HubLink, isFresh, ItemIcon, Loading, ratingTextClass, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad } from "./ui";
 
 const PAGE = 50;
 const select = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text";
@@ -36,7 +36,11 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; spoilerKey
                 </span>{" "}
                 {showOpp && (
                   <>
-                    vs <TeamLink name={r[1]} u={r[2]} />{" "}
+                    vs{" "}
+                    <span className="inline-flex items-center gap-1 align-baseline">
+                      <TeamLogo name={r[1]} size={13} />
+                      <TeamLink name={r[1]} u={r[2]} />
+                    </span>{" "}
                   </>
                 )}
                 {r[9] !== teamName && <span className="text-rw-muted text-[10px]">({tl("as {name}", { name: r[9] })}) </span>}
@@ -213,12 +217,14 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="rounded-lg border border-rw-border bg-rw-bg/60 px-2.5 py-2 space-y-1">
                 <div className="flex items-center justify-between text-xs font-bold tabular-nums">
-                  <span className="text-rw-side-a truncate">
-                    {aName} {wa}
+                  <span className="inline-flex items-center gap-1.5 text-rw-side-a truncate min-w-0">
+                    <TeamLogo name={aName} size={15} />
+                    <span className="truncate">{aName}</span> {wa}
                   </span>
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">{tl("Series")}</span>
-                  <span className="text-rw-side-b truncate text-right">
-                    {rows.length - wa} {bName}
+                  <span className="inline-flex items-center justify-end gap-1.5 text-rw-side-b truncate text-right min-w-0">
+                    {rows.length - wa} <span className="truncate">{bName}</span>
+                    <TeamLogo name={bName} size={15} />
                   </span>
                 </div>
                 <div className="h-2 rounded-full bg-rw-raised overflow-hidden flex gap-[2px]">
@@ -229,12 +235,14 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
               {ga + gb > 0 && (
                 <div className="rounded-lg border border-rw-border bg-rw-bg/60 px-2.5 py-2 space-y-1">
                   <div className="flex items-center justify-between text-xs font-bold tabular-nums">
-                    <span className="text-rw-side-a truncate">
-                      {aName} {ga}
+                    <span className="inline-flex items-center gap-1.5 text-rw-side-a truncate min-w-0">
+                      <TeamLogo name={aName} size={15} />
+                      <span className="truncate">{aName}</span> {ga}
                     </span>
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">{tl("Games")}</span>
-                    <span className="text-rw-side-b truncate text-right">
-                      {gb} {bName}
+                    <span className="inline-flex items-center justify-end gap-1.5 text-rw-side-b truncate text-right min-w-0">
+                      {gb} <span className="truncate">{bName}</span>
+                      <TeamLogo name={bName} size={15} />
                     </span>
                   </div>
                   <div className="h-2 rounded-full bg-rw-raised overflow-hidden flex gap-[2px]">
@@ -412,8 +420,10 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }>
                 </HubLink>
                 <span className="truncate min-w-0">
                   <span className="text-rw-text tabular-nums">{hide ? "?/?/?" : `${r[3]}/${r[4]}/${r[5]}`}</span>{" "}
-                  <span className="text-rw-sub">
-                    vs {r[8]}
+                  <span className="text-rw-sub inline-flex items-center gap-1 align-baseline">
+                    <span>vs</span>
+                    <TeamLogo name={r[8]} size={13} />
+                    <span>{r[8]}</span>
                     {r[10] ? ` · ${roleName(r[10])}` : ""}
                   </span>{" "}
                   <span className="text-rw-muted">
