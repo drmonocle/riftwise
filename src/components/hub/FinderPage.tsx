@@ -25,6 +25,7 @@ import {
   Failed,
   RevealButton,
   td,
+  TeamLogo,
   th,
   useHidden,
   useLoad,
@@ -668,8 +669,10 @@ const FinderBody: React.FC<{
                         won={g[3] === 0}
                       />
                       <td className={`${td} font-semibold text-rw-text`}>
-                        {(g[3] === 1 ? g[10] : g[11]) ||
-                          (g[3] === 1 ? tl("Blue") : tl("Red"))}
+                        <span className="inline-flex items-center gap-1.5 min-w-0">
+                          {(g[3] === 1 ? g[10] : g[11]) && <TeamLogo name={(g[3] === 1 ? g[10] : g[11])!} size={14} />}
+                          <span>{(g[3] === 1 ? g[10] : g[11]) || (g[3] === 1 ? tl("Blue") : tl("Red"))}</span>
+                        </span>
                       </td>
                       <td className={`${td} text-rw-sub`} data-sort={patchSort(g[1])}>{g[1]}</td>
                       <td className={`${td} text-rw-sub tabular-nums`}>
@@ -876,13 +879,16 @@ const TeamCell: React.FC<{
   <td
     className={`${td} ${won ? "text-rw-text font-semibold" : "text-rw-sub"} ${focus ? "underline decoration-rw-accent decoration-2 underline-offset-4" : ""}`}
   >
-    {u ? (
-      <HubLink to={{ kind: "team", slug: u }} className="hover:text-rw-accent">
-        {name}
-      </HubLink>
-    ) : (
-      name || "–"
-    )}
+    <span className="inline-flex items-center gap-1.5 min-w-0">
+      {name && <TeamLogo name={name} size={14} />}
+      {u ? (
+        <HubLink to={{ kind: "team", slug: u }} className="hover:text-rw-accent">
+          {name}
+        </HubLink>
+      ) : (
+        name || "–"
+      )}
+    </span>
   </td>
 );
 

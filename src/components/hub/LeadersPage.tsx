@@ -9,7 +9,7 @@ import { loadAliases, loadHubEvent, loadLeagues, loadLeagueSeason, resolveLeague
 import type { EventPlayer, LeagueRow } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { ROLES } from "../../hub/champAgg";
-import { card, Loading, PlayerLink, Section, TeamLink, useLoad, usePageTitle } from "./ui";
+import { card, Loading, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo, useLoad, usePageTitle } from "./ui";
 import { SortTable, type Column } from "./SortTable";
 import { PLAYER_METRICS } from "./Ranks";
 import { SectionCard } from "./BroadcastCard";
@@ -106,9 +106,13 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
       label: tl("Player"),
       value: (p) => p.n,
       render: (p) => (
-        <span className="whitespace-nowrap">
-          <PlayerLink name={p.n} u={p.u} className="text-rw-text hover:text-rw-accent font-semibold" />{" "}
-          <TeamLink name={p.t} u={p.tu} className="text-[10px] text-rw-muted hover:text-rw-accent" />
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+          <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
+          <PlayerLink name={p.n} u={p.u} className="text-rw-text hover:text-rw-accent font-semibold" />
+          <span className="inline-flex items-center gap-1 text-[10px] text-rw-muted">
+            <TeamLogo name={p.t} size={13} />
+            <TeamLink name={p.t} u={p.tu} className="text-rw-muted hover:text-rw-accent" />
+          </span>
         </span>
       ),
     },
@@ -338,13 +342,18 @@ const LeaderSpotlight: React.FC<{ rows: EventPlayer[] }> = ({ rows }) => {
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-xs">
       {cards.map((c) => (
         <div key={c.key} className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted truncate">{c.label}</div>
-            <div className="mt-0.5 truncate">
-              <PlayerLink name={c.top.n} u={c.top.u} className="font-semibold text-rw-text hover:text-rw-accent" />
-            </div>
-            <div className="text-[10px] text-rw-muted truncate">
-              <TeamLink name={c.top.t} u={c.top.tu} className="text-rw-muted hover:text-rw-accent" /> · {roleName(c.top.r)}
+          <div className="flex items-center gap-2 min-w-0">
+            <PlayerPhoto name={c.top.n} team={c.top.t} slug={c.top.u ?? undefined} size={22} />
+            <div className="min-w-0">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted truncate">{c.label}</div>
+              <div className="mt-0.5 truncate">
+                <PlayerLink name={c.top.n} u={c.top.u} className="font-semibold text-rw-text hover:text-rw-accent" />
+              </div>
+              <div className="text-[10px] text-rw-muted flex items-center gap-1 min-w-0">
+                <TeamLogo name={c.top.t} size={12} />
+                <TeamLink name={c.top.t} u={c.top.tu} className="text-rw-muted hover:text-rw-accent truncate" />
+                <span className="shrink-0">· {roleName(c.top.r)}</span>
+              </div>
             </div>
           </div>
           <div className="text-right shrink-0">

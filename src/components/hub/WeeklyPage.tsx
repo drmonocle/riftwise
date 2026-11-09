@@ -11,7 +11,7 @@ import { champName } from "../../champions";
 import { loadWeekly } from "../../hub/data";
 import type { HubWeekly } from "../../hub/types";
 import { SITE_URL } from "../../platform";
-import { card, ChampLink, EventLink, fmtDate, HubLink, Page, PlayerLink, RevealButton, Section, TeamLink, th, td, useHidden, useLoad, usePageTitle } from "./ui";
+import { card, ChampLink, EventLink, fmtDate, HubLink, Page, PlayerLink, PlayerPhoto, RevealButton, Section, TeamLink, TeamLogo, th, td, useHidden, useLoad, usePageTitle } from "./ui";
 import { BroadcastCardButton, listCard, SectionCard } from "./BroadcastCard";
 import { fmtRating, RatingBadge } from "./PlayerRating";
 
@@ -252,7 +252,8 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     {w.movers.map((m) => (
                       <li key={m.u} className="space-y-0.5 min-w-0">
                         <div className="flex items-baseline justify-between gap-2 min-w-0">
-                          <span className="truncate">
+                          <span className="inline-flex items-center gap-1.5 truncate min-w-0">
+                            <TeamLogo name={m.n} size={15} />
                             <TeamLink name={m.n} u={m.u} /> <span className="text-[10px] text-rw-muted">{m.lg}</span>
                           </span>
                           <span className="font-num tabular-nums shrink-0">
@@ -379,10 +380,11 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                 {w.players.map((p, i) => (
                   <li key={p.u || p.n} className="min-w-0">
                     <div className="flex items-center justify-between gap-2 min-w-0">
-                      <span className="truncate min-w-0">
-                        <span className="text-rw-muted mr-1 tabular-nums">{i + 1}.</span>
+                      <span className="inline-flex items-center gap-1.5 truncate min-w-0">
+                        <span className="text-rw-muted tabular-nums">{i + 1}.</span>
+                        <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
                         <PlayerLink name={p.n} u={p.u} />
-                        <span className="text-rw-muted"> · {[p.r ? roleName(p.r) : "", p.t].filter(Boolean).join(" · ")}</span>
+                        <span className="text-rw-muted truncate">· {[p.r ? roleName(p.r) : "", p.t].filter(Boolean).join(" · ")}</span>
                       </span>
                       <RatingBadge v={p.rt} title={tl("Average RiftWise rating over {n} games (6 is an average game)", { n: p.g })} />
                     </div>
@@ -489,8 +491,11 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                 {w.results.map((r) => (
                   <li key={r.g} className="flex items-center gap-2 py-1 min-w-0">
                     <span className="w-14 shrink-0 text-[10px] text-rw-muted">{fmtDate(r.date, false)}</span>
-                    <span className={`flex-1 min-w-0 text-right truncate ${r.sa > r.sb ? "font-bold text-rw-text" : "text-rw-sub"}`}>
-                      <TeamLink name={r.a} u={r.au} />
+                    <span className={`flex-1 min-w-0 flex items-center justify-end gap-1.5 text-right ${r.sa > r.sb ? "font-bold text-rw-text" : "text-rw-sub"}`}>
+                      <span className="truncate">
+                        <TeamLink name={r.a} u={r.au} />
+                      </span>
+                      <TeamLogo name={r.a} size={15} />
                     </span>
                     <HubLink to={{ kind: "match", slug: r.g }} className="inline-flex flex-col items-center justify-center w-11 shrink-0 hover:text-rw-accent gap-0.5">
                       <span className="font-num tabular-nums font-bold text-center leading-none">
@@ -509,8 +514,11 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         </span>
                       )}
                     </HubLink>
-                    <span className={`flex-1 min-w-0 truncate ${r.sb > r.sa ? "font-bold text-rw-text" : "text-rw-sub"}`}>
-                      <TeamLink name={r.b} u={r.bu} />
+                    <span className={`flex-1 min-w-0 flex items-center gap-1.5 ${r.sb > r.sa ? "font-bold text-rw-text" : "text-rw-sub"}`}>
+                      <TeamLogo name={r.b} size={15} />
+                      <span className="truncate">
+                        <TeamLink name={r.b} u={r.bu} />
+                      </span>
                     </span>
                     <span className="hidden sm:block w-48 shrink-0 truncate text-[10px] text-rw-muted">
                       <EventLink name={r.t} u={r.e} className="text-rw-muted hover:text-rw-accent hover:underline" />

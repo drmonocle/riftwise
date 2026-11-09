@@ -16,7 +16,7 @@ import { loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemI
 import type { ItemIndexRow, PlayerGameRow, SearchPlayerRow } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
 import { isFinishedItem, itemName, useDDragon } from "../../hub/ddragon";
-import { card, ChampIcon, fmtDate, fmtNum, HubLink, ItemIcon, Loading, PlayerLink, Section, Stat, td, th, useHiddenCheck, useLoad, usePageTitle } from "./ui";
+import { card, ChampIcon, fmtDate, fmtNum, HubLink, ItemIcon, Loading, PlayerLink, PlayerPhoto, Section, Stat, td, th, useHiddenCheck, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
 import { SectionCard } from "./BroadcastCard";
 
@@ -120,9 +120,12 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
                         set({ player: playerSlug(r) });
                         setTyped("");
                       }}
-                      className="w-full text-left px-2 py-1 hover:bg-rw-bg flex justify-between gap-2"
+                      className="w-full text-left px-2 py-1 hover:bg-rw-bg flex items-center justify-between gap-2"
                     >
-                      <span className="truncate text-rw-text">{r[0]}</span>
+                      <span className="flex items-center gap-1.5 min-w-0">
+                        <PlayerPhoto name={r[0]} team={r[2] || undefined} slug={playerSlug(r)} size={16} linkFallback={false} />
+                        <span className="truncate text-rw-text">{r[0]}</span>
+                      </span>
                       <span className="text-rw-muted shrink-0">
                         {r[2] || r[4]} · {tl("{n} games", { n: fmtNum(r[3]) })}
                       </span>
@@ -491,7 +494,10 @@ const ItemPlayersView: React.FC<{ slug: string; onPlayer: (slug: string) => void
             return it.players.map(([n, u, g, last]) => (
               <tr key={u} className="border-t border-rw-border">
                 <td className={td}>
-                  <PlayerLink name={n} u={u} />
+                  <span className="inline-flex items-center gap-1.5 min-w-0">
+                    <PlayerPhoto name={n} slug={u} size={16} />
+                    <PlayerLink name={n} u={u} />
+                  </span>
                 </td>
                 <td className={`${td} tabular-nums text-rw-sub w-28`} data-sort={g}>
                   {fmtNum(g)}
@@ -595,7 +601,16 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                   const u = p ? playerSlug(p) : "";
                   return (
                     <tr key={r.k} className="border-t border-rw-border">
-                      <td className={td}>{p ? <PlayerLink name={p[0]} u={u} /> : "–"}</td>
+                      <td className={td}>
+                        {p ? (
+                          <span className="inline-flex items-center gap-1.5 min-w-0">
+                            <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={u} size={16} />
+                            <PlayerLink name={p[0]} u={u} />
+                          </span>
+                        ) : (
+                          "–"
+                        )}
+                      </td>
                       <td className={`${td} tabular-nums text-rw-sub w-28`} data-sort={r.g}>
                         {fmtNum(r.g)}
                         <span className="block h-1 mt-0.5 rounded-sm bg-rw-accent/55" style={{ width: `${Math.max(4, Math.round((r.g / maxG) * 100))}%` }} aria-hidden="true" />
@@ -690,7 +705,16 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                   const u = p ? playerSlug(p) : "";
                   return (
                     <tr key={k} className="border-t border-rw-border">
-                      <td className={td}>{p ? <PlayerLink name={p[0]} u={u} /> : "–"}</td>
+                      <td className={td}>
+                        {p ? (
+                          <span className="inline-flex items-center gap-1.5 min-w-0">
+                            <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={u} size={16} />
+                            <PlayerLink name={p[0]} u={u} />
+                          </span>
+                        ) : (
+                          "–"
+                        )}
+                      </td>
                       <td className={`${td} tabular-nums text-rw-sub w-28`} data-sort={g}>
                         {fmtNum(g)}
                         <span className="block h-1 mt-0.5 rounded-sm bg-rw-accent/55" style={{ width: `${Math.max(4, Math.round((g / maxG) * 100))}%` }} aria-hidden="true" />

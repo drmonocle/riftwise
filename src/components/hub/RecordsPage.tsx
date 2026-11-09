@@ -34,12 +34,14 @@ import {
   Loading,
   Page,
   PlayerLink,
+  PlayerPhoto,
   RevealButton,
   Section,
   SpoilerProvider,
   td,
   th,
   TeamLink,
+  TeamLogo,
   useHidden,
   useLoad,
   usePageTitle,
@@ -118,7 +120,10 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
           {p.most.map((x, i) => (
             <li key={i} className="space-y-0.5 min-w-0">
               <div className="flex justify-between gap-2 min-w-0">
-                <PlayerLink name={x.n} u={x.u} />
+                <span className="inline-flex items-center gap-1.5 min-w-0">
+                  <PlayerPhoto name={x.n} slug={x.u ?? undefined} size={16} />
+                  <PlayerLink name={x.n} u={x.u} />
+                </span>
                 <span className="text-rw-accent font-bold tabular-nums">{x.v}</span>
               </div>
               <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
@@ -519,7 +524,10 @@ export const RecordsPanel: React.FC = () => {
                 {rows.map((p, i) => (
                   <li key={i} className="space-y-0.5 min-w-0">
                     <div className="flex justify-between gap-2 min-w-0">
-                      <PlayerLink name={p.pl} u={p.u} />
+                      <span className="inline-flex items-center gap-1.5 min-w-0">
+                        <PlayerPhoto name={p.pl} slug={p.u ?? undefined} size={16} />
+                        <PlayerLink name={p.pl} u={p.u} />
+                      </span>
                       <span className="text-rw-accent font-bold tabular-nums">
                         {fmtNum(p.v)}
                       </span>
@@ -600,7 +608,10 @@ export const RecordsPanel: React.FC = () => {
                     return r.team.streaks.map((t, i) => (
                       <li key={i} className="space-y-0.5 min-w-0">
                         <div className="flex justify-between gap-2 min-w-0">
-                          <TeamLink name={t.team} u={t.u} />
+                          <span className="inline-flex items-center gap-1.5 min-w-0">
+                            <TeamLogo name={t.team} size={15} />
+                            <TeamLink name={t.team} u={t.u} />
+                          </span>
                           <span className="text-rw-muted shrink-0">
                             <span className="text-rw-accent font-bold tabular-nums">
                               {tl("{n} games", { n: t.v })}
@@ -646,7 +657,10 @@ export const RecordsPanel: React.FC = () => {
                     return r.team.titles.map((t, i) => (
                       <li key={i} className="space-y-0.5 min-w-0">
                         <div className="flex justify-between gap-2 min-w-0">
-                          <TeamLink name={t.team} u={t.u} />
+                          <span className="inline-flex items-center gap-1.5 min-w-0">
+                            <TeamLogo name={t.team} size={15} />
+                            <TeamLink name={t.team} u={t.u} />
+                          </span>
                           <span className="text-rw-muted shrink-0">
                             {t.worlds
                               ? tl("{n} Worlds", { n: t.worlds }) + " · "
@@ -806,7 +820,10 @@ export const TitlesPanel: React.FC = () => {
                         <EventLink name={eventTitle(x.t)} u={x.e} />
                       </td>
                       <td className={td}>
-                        <TeamLink name={x.as} u={x.u} />
+                        <span className="inline-flex items-center gap-1.5 min-w-0">
+                          <TeamLogo name={x.as} size={16} />
+                          <TeamLink name={x.as} u={x.u} />
+                        </span>
                         {x.as !== x.w && (
                           <span className="text-rw-muted text-[10px]">
                             {" "}
@@ -822,8 +839,10 @@ export const TitlesPanel: React.FC = () => {
                           const wPct = sw + sl > 0 ? Math.round((sw / (sw + sl)) * 100) : 0;
                           return (
                             <span className="inline-flex items-center gap-1.5">
-                              <span>
-                                {x.score} vs {x.l}
+                              <span className="inline-flex items-center gap-1">
+                                <span>{x.score} vs</span>
+                                <TeamLogo name={x.l} size={14} />
+                                <span>{x.l}</span>
                               </span>
                               {sw + sl > 0 && (
                                 <span className="hidden sm:inline-flex w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">

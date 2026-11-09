@@ -21,6 +21,7 @@ import {
   td,
   th,
   TeamLink,
+  TeamLogo,
   useLoad,
   usePageTitle,
 } from "./ui";
@@ -145,11 +146,14 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       label: tl("Team"),
       value: (x) => x.r[1],
       render: (x) => (
-        <TeamLink
-          name={x.r[1]}
-          u={x.r[0]}
-          className="text-rw-text hover:text-rw-accent hover:underline font-semibold"
-        />
+        <span className="inline-flex items-center gap-1.5 min-w-0">
+          <TeamLogo name={x.r[1]} size={16} />
+          <TeamLink
+            name={x.r[1]}
+            u={x.r[0]}
+            className="text-rw-text hover:text-rw-accent hover:underline font-semibold"
+          />
+        </span>
       ),
     },
     {
@@ -327,9 +331,11 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                   <span className="font-mono tabular-nums font-bold text-rw-accent">{lc.top4Avg}</span>
                 </div>
                 {lc.best && (
-                  <div className="mt-1 text-[11px] text-rw-sub truncate">
-                    #1 <span className="text-rw-text font-medium">{lc.best[1]}</span>{" "}
-                    <span className="text-rw-muted tabular-nums">({lc.best[5]})</span>
+                  <div className="mt-1 text-[11px] text-rw-sub flex items-center gap-1 min-w-0">
+                    <span className="shrink-0">#1</span>
+                    <TeamLogo name={lc.best[1]} size={14} />
+                    <span className="text-rw-text font-medium truncate">{lc.best[1]}</span>
+                    <span className="text-rw-muted tabular-nums shrink-0">({lc.best[5]})</span>
                   </div>
                 )}
                 <div className="mt-1.5 flex items-center justify-between text-[10px] text-rw-muted tabular-nums">
@@ -520,7 +526,14 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                           )}
                         </td>
                         <td className={`${td} text-rw-sub max-w-[9rem] truncate`}>
-                          {best ? <TeamLink name={best[1]} u={best[0]} /> : "–"}
+                          {best ? (
+                            <span className="inline-flex items-center gap-1.5 min-w-0">
+                              <TeamLogo name={best[1]} size={15} />
+                              <TeamLink name={best[1]} u={best[0]} />
+                            </span>
+                          ) : (
+                            "–"
+                          )}
                         </td>
                         <td className={`${td} text-right`}>
                           <div className="inline-flex flex-col items-end gap-0.5 min-w-[4.5rem]">

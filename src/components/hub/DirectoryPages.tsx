@@ -10,7 +10,7 @@ import { navigateHub, type HubSection } from "../../hub/route";
 import type { SearchPlayerRow, SearchTeamRow } from "../../hub/types";
 import { SortTable, type Column } from "./SortTable";
 import { SectionCard } from "./BroadcastCard";
-import { card, fmtNum, HubLink, Page, PlayerLink, TeamLink, TeamLogo, useLoad, usePageTitle } from "./ui";
+import { card, fmtNum, HubLink, Page, PlayerLink, PlayerPhoto, TeamLink, TeamLogo, useLoad, usePageTitle } from "./ui";
 
 /** rows shown before "Show more" (the whole list sorts and filters either way) */
 const STEP = 200;
@@ -238,7 +238,17 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
   }, [rows, role, since, words]);
   const maxGames = useMemo(() => Math.max(1, ...list.map((p) => p[3] || 0)), [list]);
   const columns: Column<SearchPlayerRow>[] = [
-    { key: "n", label: tl("Player"), value: (p) => p[0].toLowerCase(), render: (p) => <PlayerLink name={p[0]} u={p[1] || prettySlug(p[0])} /> },
+    {
+      key: "n",
+      label: tl("Player"),
+      value: (p) => p[0].toLowerCase(),
+      render: (p) => (
+        <span className="inline-flex items-center gap-1.5 min-w-0">
+          <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={p[1] || prettySlug(p[0])} size={18} />
+          <PlayerLink name={p[0]} u={p[1] || prettySlug(p[0])} />
+        </span>
+      ),
+    },
     { key: "r", label: tl("Role"), value: (p) => (ROLE_OF[p[5]] ? roleName(ROLE_OF[p[5]]) : null), className: "text-rw-sub" },
     {
       key: "t",

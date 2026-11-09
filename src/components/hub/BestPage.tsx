@@ -10,7 +10,7 @@ import { tl, tn, tc, stageLabel, fmtDec } from "../../i18n";
 import { loadAliases, loadBest, loadBestIndex, normText, resolveLeagueSlug } from "../../hub/data";
 import type { BestGame, BestSeries } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
-import { card, EventLink, Failed, fmtDate, HubLink, isFresh, Loading, RatingBadge, ratingTextClass, ratingTier, RevealButton, useHidden, useLoad, usePageTitle } from "./ui";
+import { card, EventLink, Failed, fmtDate, HubLink, isFresh, Loading, RatingBadge, ratingTextClass, ratingTier, RevealButton, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 
 export { ratingTier, ratingTextClass, RatingBadge };
@@ -259,7 +259,10 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
 };
 
 const Team: React.FC<{ name: string; won: boolean }> = ({ name, won }) => (
-  <span className={won ? "font-bold text-rw-teal" : "text-rw-text"}>{name}</span>
+  <span className={`inline-flex items-center gap-1 ${won ? "font-bold text-rw-teal" : "text-rw-text"}`}>
+    <TeamLogo name={name} size={15} />
+    <span>{name}</span>
+  </span>
 );
 
 const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
