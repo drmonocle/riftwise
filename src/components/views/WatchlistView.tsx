@@ -256,7 +256,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
               key={`chip-t-${code}`}
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-accent/40 text-rw-accent font-semibold text-[10px]"
             >
-              <span>{code}</span>
+              <button
+                type="button"
+                onClick={() => navigateHub({ kind: "team", slug: prettySlug(code) })}
+                className="hover:underline"
+              >
+                {code}
+              </button>
               <button
                 onClick={() => toggleTeam(code)}
                 className="hover:text-white"
@@ -273,7 +279,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
               key={`chip-p-${name}`}
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-teal/40 text-rw-teal font-semibold text-[10px]"
             >
-              <span>{name}</span>
+              <button
+                type="button"
+                onClick={() => navigateHub({ kind: "player", slug: prettySlug(name) })}
+                className="hover:underline"
+              >
+                {name}
+              </button>
               <button
                 onClick={() => togglePlayer(name)}
                 className="hover:text-white"
@@ -425,6 +437,12 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2">
+                      <a
+                        href={`/compare?type=teams&a=${encodeURIComponent(team.name)}`}
+                        className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors"
+                      >
+                        {tl("Compare")}
+                      </a>
                       {roster.length > 0 && (
                         <button
                           onClick={() => setExpandedTeamSlug(isExpanded ? null : team.slug)}

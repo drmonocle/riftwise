@@ -17,12 +17,14 @@ import { SectionCard } from "./BroadcastCard";
 import { KdaBar } from "./OpponentChart";
 import {
   ChampIcon,
-   fmtDate,
+  fmtDate,
   fmtNum,
   HubLink,
   isFresh,
   RevealButton,
   Section,
+  TeamLink,
+  TeamLogo,
   useHidden,
 } from "./ui";
 import { smoothPath, useWidth } from "../../useWidth";
@@ -664,7 +666,9 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                   {sel.won ? tc("short result", "W") : tc("short result", "L")}
                 </span>
                 <ChampIcon name={sel.champ} size={18} />
-                <span className="font-semibold text-rw-text">{champName(sel.champ)}</span>
+                <HubLink to={{ kind: "champ", slug: prettySlug(sel.champ) }} className="font-semibold text-rw-text hover:text-rw-accent hover:underline">
+                  {champName(sel.champ)}
+                </HubLink>
                 <span className="font-mono font-bold text-rw-text tabular-nums">
                   {sel.k}/{sel.d}/{sel.a}
                 </span>
@@ -678,8 +682,11 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                     GD@15 {signed(sel.gd15)}
                   </span>
                 )}
-                <span className="text-rw-sub truncate">
-                  vs {sel.opp} · {sel.event}
+                <span className="inline-flex items-center gap-1.5 text-rw-sub truncate">
+                  <span>vs</span>
+                  <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
+                  <TeamLink name={sel.opp} />
+                  <span>· {sel.event}</span>
                 </span>
               </span>
               <span className="flex items-center gap-2 shrink-0 text-rw-muted">
@@ -1001,15 +1008,23 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
 
                 {sel && (
                   <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-rw-border bg-rw-bg/60 px-3 py-1.5 text-xs">
-                    <span className="flex items-center gap-2 min-w-0 truncate">
+                    <span className="flex items-center gap-1.5 min-w-0 truncate">
                       <span className={`font-bold tabular-nums ${sel.us > sel.them ? "text-rw-teal" : "text-rw-red"}`}>
                         {sel.us > sel.them ? tc("short result", "W") : tc("short result", "L")} {sel.us}–{sel.them}
                       </span>
-                      <span className="text-rw-text font-semibold truncate">vs {sel.opp}</span>
+                      <span className="text-rw-muted">vs</span>
+                      <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
+                      <TeamLink name={sel.opp} u={sel.ou} />
                       <span className="text-rw-muted truncate">· {sel.en}</span>
                     </span>
                     <span className="flex items-center gap-2 shrink-0 text-rw-muted">
                       <span>{fmtDate(sel.date, false)}</span>
+                      <a
+                        href={`/prep?a=${encodeURIComponent(t.name)}&b=${encodeURIComponent(sel.opp)}`}
+                        className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Match prep")}
+                      </a>
                       {sel.g && (
                         <HubLink to={{ kind: "match", slug: sel.g }} className="text-rw-accent font-semibold hover:underline">
                           {tl("Details")} →
@@ -1076,25 +1091,40 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
 
               {t.obj && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2.5 py-1.5">
+                  <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2.5 py-1.5 space-y-1">
                     <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Dragons")}</div>
                     <div className="text-sm font-bold font-mono text-rw-text tabular-nums">{fmtDec(t.obj.dragons, 2)}</div>
+                    <div className="h-1 rounded-full bg-rw-raised overflow-hidden">
+                      <div className="h-full rounded-full bg-rw-accent/80" style={{ width: `${clamp(Math.round((t.obj.dragons / 4.0) * 100), 8, 100)}%` }} />
+                    </div>
                     <div className="text-[10px] text-rw-muted">{tl("Per game")}</div>
                   </div>
-                  <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2.5 py-1.5">
+                  <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2.5 py-1.5 space-y-1">
                     <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Barons")}</div>
                     <div className="text-sm font-bold font-mono text-rw-text tabular-nums">{fmtDec(t.obj.barons, 2)}</div>
+                    <div className="h-1 rounded-full bg-rw-raised overflow-hidden">
+                      <div className="h-full rounded-full bg-rw-accent/80" style={{ width: `${clamp(Math.round((t.obj.barons / 1.5) * 100), 8, 100)}%` }} />
+                    </div>
                     <div className="text-[10px] text-rw-muted">{tl("Per game")}</div>
                   </div>
-                  <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2.5 py-1.5">
+                  <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2.5 py-1.5 space-y-1">
                     <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Towers")}</div>
                     <div className="text-sm font-bold font-mono text-rw-text tabular-nums">{fmtDec(t.obj.towers, 1)}</div>
+                    <div className="h-1 rounded-full bg-rw-raised overflow-hidden">
+                      <div className="h-full rounded-full bg-rw-accent/80" style={{ width: `${clamp(Math.round((t.obj.towers / 11.0) * 100), 8, 100)}%` }} />
+                    </div>
                     <div className="text-[10px] text-rw-muted">{tl("Per game")}</div>
                   </div>
-                  <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2.5 py-1.5">
+                  <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2.5 py-1.5 space-y-1">
                     <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Gold diff")}</div>
                     <div className={`text-sm font-bold font-mono tabular-nums ${t.obj.golddiff >= 0 ? "text-rw-teal" : "text-rw-red"}`}>
                       {signed(Math.round(t.obj.golddiff))}
+                    </div>
+                    <div className="h-1 rounded-full bg-rw-raised overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${t.obj.golddiff >= 0 ? "bg-rw-teal" : "bg-rw-red"}`}
+                        style={{ width: `${clamp(Math.round((Math.abs(t.obj.golddiff) / 4000) * 100), 10, 100)}%` }}
+                      />
                     </div>
                     <div className="text-[10px] text-rw-muted">{t.avgMin ? `${fmtDec(t.avgMin, 1)}m` : tl("Per game")}</div>
                   </div>
@@ -1347,7 +1377,11 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                   {topRoles.map((r) => {
                     const share = Math.round((r.p / totalRoles) * 100);
                     return (
-                      <div key={r.r} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-2 text-xs">
+                      <HubLink
+                        key={r.r}
+                        to={{ kind: "counters", query: `champ=${encodeURIComponent(c.name)}&role=${encodeURIComponent(r.r)}` }}
+                        className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-2 text-xs rounded px-1 -mx-1 hover:bg-rw-raised/50 transition-colors"
+                      >
                         <span className="font-semibold text-rw-text truncate">{roleName(r.r)}</span>
                         <div className="h-2 rounded-full bg-rw-raised overflow-hidden">
                           <div className="h-full rounded-full bg-rw-accent" style={{ width: `${Math.max(4, share)}%` }} />
@@ -1355,7 +1389,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                         <span className="font-mono tabular-nums text-rw-sub text-[11px] min-w-[5.5rem] text-right">
                           {share}% <span className="text-rw-muted">({fmtNum(r.p)})</span>
                         </span>
-                      </div>
+                      </HubLink>
                     );
                   })}
                 </div>

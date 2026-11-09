@@ -8,7 +8,7 @@ import { tl, tn } from "../../i18n";
 import { champName } from "../../champions";
 import { load } from "../../stats";
 import { prettySlug } from "../../hub/data";
-import { ChampIcon, HubLink, RevealButton, Section, fmtNum, useHidden, useLoad, GRID_COLS, useColumns } from "./ui";
+import { ChampIcon, HubLink, RevealButton, Section, TeamLogo, fmtNum, useHidden, useLoad, GRID_COLS, useColumns } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 
 export interface Note {
@@ -78,17 +78,32 @@ export function notePlainText(nt: Note): string {
 }
 
 export function noteText(nt: Note): React.ReactNode {
+  const plain = notePlainText(nt);
   if ((nt.k === "champ" || nt.k === "crec" || nt.k === "cms") && nt.c) {
     return (
       <span className="inline-flex items-center gap-1 flex-wrap">
         <HubLink to={{ kind: "champ", slug: prettySlug(nt.c) }} title={champName(nt.c)}>
           <ChampIcon name={nt.c} size={16} />
         </HubLink>
-        {notePlainText(nt)}
+        <span>{plain}</span>
       </span>
     );
   }
-  return notePlainText(nt) || null;
+  if (nt.k === "form" && nt.n > 0 && nt.w != null) {
+    const pct = Math.round((nt.w / nt.n) * 100);
+    return (
+      <span className="inline-flex items-center gap-1.5 flex-wrap">
+        <span>{plain}</span>
+        <span className="inline-block w-8 h-1 rounded-full bg-rw-border/80 overflow-hidden shrink-0" aria-hidden="true">
+          <span
+            className={`block h-full rounded-full ${pct >= 65 ? "bg-rw-teal" : "bg-rw-accent"}`}
+            style={{ width: `${Math.max(8, pct)}%` }}
+          />
+        </span>
+      </span>
+    );
+  }
+  return plain || null;
 }
 
 export interface StoryLine {
@@ -119,8 +134,9 @@ export const StoryBullets: React.FC<{ lines: StoryLine[]; spoilerKey: string; co
           <span className="min-w-0">
             {l.who && (
               <>
-                <HubLink to={l.who.to} className="text-rw-text font-semibold hover:underline">
-                  {l.who.name}
+                <HubLink to={l.who.to} className="inline-flex items-center gap-1 text-rw-text font-semibold hover:underline">
+                  {l.who.to.kind === "team" && <TeamLogo name={l.who.name} sizeClass="w-3.5 h-3.5" />}
+                  <span>{l.who.name}</span>
                 </HubLink>
                 {": "}
               </>
