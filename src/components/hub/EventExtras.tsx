@@ -272,13 +272,19 @@ export const EventFacts: React.FC<{ o: EventOverview; hidden?: boolean; card?: {
             <Crown className="w-3 h-3" />
             {tl("Most Player of the Game awards")}
           </span>
-          <div className="flex flex-wrap gap-x-3 gap-y-1">
-            {o.mvp.map((m) => (
-              <span key={m.n}>
-                <PlayerLink name={m.n} u={m.u} />{" "}
-                <span className="text-rw-accent font-bold">{m.v}</span>
-              </span>
-            ))}
+          <div className="flex flex-wrap gap-1.5">
+            {(() => {
+              const maxM = Math.max(1, ...o.mvp.map((m) => m.v));
+              return o.mvp.map((m) => (
+                <span key={m.n} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-rw-border bg-rw-bg/50">
+                  <PlayerLink name={m.n} u={m.u} />
+                  <span className="w-6 h-1 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
+                    <span className="h-full bg-rw-accent/85 rounded-full" style={{ width: `${Math.round((m.v / maxM) * 100)}%` }} />
+                  </span>
+                  <span className="text-rw-accent font-bold tabular-nums">{m.v}</span>
+                </span>
+              ));
+            })()}
           </div>
         </div>
       )}
@@ -418,30 +424,44 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
           </tr>
         </thead>
         <tbody>
-          {e.regions.map((r) => (
-            <tr key={r.a + r.b} className="border-t border-rw-border">
-              <td className={`${td} text-rw-text`}>
-                {regionName(r.a, r.a)} vs {regionName(r.b, r.b)}
-              </td>
-              <td className={`${td} tabular-nums`}>
-                <span
-                  className={
-                    r.wa > r.wb ? "text-rw-teal font-bold" : "text-rw-sub"
-                  }
-                >
-                  {r.wa}
-                </span>
-                <span className="text-rw-muted"> – </span>
-                <span
-                  className={
-                    r.wb > r.wa ? "text-rw-teal font-bold" : "text-rw-sub"
-                  }
-                >
-                  {r.wb}
-                </span>
-              </td>
-            </tr>
-          ))}
+          {e.regions.map((r) => {
+            const total = r.wa + r.wb;
+            const pctA = total > 0 ? Math.round((r.wa / total) * 100) : 50;
+            return (
+              <tr key={r.a + r.b} className="border-t border-rw-border">
+                <td className={`${td} text-rw-text`}>
+                  {regionName(r.a, r.a)} vs {regionName(r.b, r.b)}
+                </td>
+                <td className={`${td} tabular-nums`}>
+                  <span className="inline-flex items-center gap-2">
+                    <span>
+                      <span
+                        className={
+                          r.wa > r.wb ? "text-rw-teal font-bold" : "text-rw-sub"
+                        }
+                      >
+                        {r.wa}
+                      </span>
+                      <span className="text-rw-muted"> – </span>
+                      <span
+                        className={
+                          r.wb > r.wa ? "text-rw-teal font-bold" : "text-rw-sub"
+                        }
+                      >
+                        {r.wb}
+                      </span>
+                    </span>
+                    {total > 0 && (
+                      <span className="w-16 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
+                        <span className={`h-full ${r.wa > r.wb ? "bg-rw-teal/85" : "bg-rw-sub/65"}`} style={{ width: `${pctA}%` }} />
+                        <span className={`h-full ${r.wb > r.wa ? "bg-rw-teal/85" : "bg-rw-sub/65"}`} style={{ width: `${100 - pctA}%` }} />
+                      </span>
+                    )}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </STable>
     </Section>

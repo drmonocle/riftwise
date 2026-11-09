@@ -253,18 +253,38 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
           ) : (
             <STable className="w-full text-xs">
               <tbody>
-                {e.results.slice(0, 32).map((r, i) => (
-                  <tr key={i} className="border-t border-rw-border first:border-0">
-                    <td className={`${td} w-12 font-bold ${r.p === "1" ? "text-rw-accent" : "text-rw-sub"}`}>
-                      {r.p === "1" && <Trophy className="w-3 h-3 inline mr-1" />}
-                      {r.p}
-                    </td>
-                    <td className={td}>
-                      <TeamLink name={r.t} u={r.u} />
-                    </td>
-                    <td className={`${td} text-right text-rw-muted`} data-sort={r.usd || 0}>{r.usd ? fmtUsd(r.usd) : ""}</td>
-                  </tr>
-                ))}
+                {(() => {
+                  const shown = e.results.slice(0, 32);
+                  const maxUsd = Math.max(0, ...shown.map((r) => r.usd || 0));
+                  return shown.map((r, i) => (
+                    <tr key={i} className="border-t border-rw-border first:border-0">
+                      <td className={`${td} w-12 font-bold ${r.p === "1" ? "text-rw-accent" : "text-rw-sub"}`}>
+                        {r.p === "1" && <Trophy className="w-3 h-3 inline mr-1" />}
+                        {r.p}
+                      </td>
+                      <td className={td}>
+                        <TeamLink name={r.t} u={r.u} />
+                      </td>
+                      <td className={`${td} text-right text-rw-muted`} data-sort={r.usd || 0}>
+                        {r.usd ? (
+                          <span className="inline-flex items-center justify-end gap-1.5 tabular-nums">
+                            {maxUsd > 0 && (
+                              <span className="w-12 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
+                                <span
+                                  className={`h-full rounded-full ${r.p === "1" ? "bg-rw-teal/85" : "bg-rw-accent/75"}`}
+                                  style={{ width: `${Math.max(6, Math.round((r.usd / maxUsd) * 100))}%` }}
+                                />
+                              </span>
+                            )}
+                            <span>{fmtUsd(r.usd)}</span>
+                          </span>
+                        ) : (
+                          ""
+                        )}
+                      </td>
+                    </tr>
+                  ));
+                })()}
               </tbody>
             </STable>
           )}
@@ -382,7 +402,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                         <TeamLink name={t.t} u={t.u} />
                       </td>
                       <td className={`${td} text-rw-sub`} data-sort={t.sg ? t.sw / t.sg : 0}>
-                        {resultsHidden ? "–" : `${t.sw}-${t.sg - t.sw}`}
+                        {resultsHidden ? "–" : t.sg ? <WinBar w={t.sw} g={t.sg} showRecord /> : `${t.sw}-${t.sg - t.sw}`}
                       </td>
                       <td className={`${td} text-rw-sub`} data-sort={t.g ? t.w / t.g : 0}>
                         {resultsHidden ? "–" : <WinBar w={t.w} g={t.g} showRecord />}
@@ -698,8 +718,24 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
               <td className={`${td} max-w-[11rem] truncate`}>
                 <TeamLink name={r.t} u={r.u} />
               </td>
-              <td className={`${td} text-rw-sub tabular-nums`}>{hide ? "–" : `${r.sw ?? 0}-${r.sl ?? 0}${ties ? `-${r.st ?? 0}` : ""}`}</td>
-              <td className={`${td} text-rw-muted tabular-nums`}>{hide || r.gw == null ? "–" : `${r.gw}-${r.gl ?? 0}`}</td>
+              <td className={`${td} text-rw-sub tabular-nums`}>
+                {hide ? (
+                  "–"
+                ) : !ties && (r.sw ?? 0) + (r.sl ?? 0) > 0 ? (
+                  <WinBar w={r.sw ?? 0} g={(r.sw ?? 0) + (r.sl ?? 0)} showRecord />
+                ) : (
+                  `${r.sw ?? 0}-${r.sl ?? 0}${ties ? `-${r.st ?? 0}` : ""}`
+                )}
+              </td>
+              <td className={`${td} text-rw-muted tabular-nums`}>
+                {hide || r.gw == null ? (
+                  "–"
+                ) : r.gw + (r.gl ?? 0) > 0 ? (
+                  <WinBar w={r.gw} g={r.gw + (r.gl ?? 0)} showRecord />
+                ) : (
+                  `${r.gw}-${r.gl ?? 0}`
+                )}
+              </td>
             </tr>
           ))}
         </tbody>
