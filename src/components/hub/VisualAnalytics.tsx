@@ -17,6 +17,7 @@ import { SectionCard } from "./BroadcastCard";
 import { KdaBar } from "./OpponentChart";
 import {
   ChampIcon,
+  EventLink,
   fmtDate,
   fmtNum,
   HubLink,
@@ -686,7 +687,8 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                   <span>vs</span>
                   <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
                   <TeamLink name={sel.opp} u={prettySlug(sel.opp)} />
-                  <span>· {sel.event}</span>
+                  <span className="text-rw-muted">·</span>
+                  <EventLink name={sel.event} u={sel.row[11]} className="text-rw-sub hover:text-rw-accent hover:underline truncate" />
                 </span>
               </span>
               <span className="flex items-center gap-2 shrink-0 text-rw-muted">
@@ -1014,17 +1016,18 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                       </span>
                       <span className="text-rw-muted">vs</span>
                       <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
-                      <TeamLink name={sel.opp} u={prettySlug(sel.opp)} />
-                      <span className="text-rw-muted truncate">· {sel.en}</span>
+                      <TeamLink name={sel.opp} u={t.opps.find((o) => o.n === sel.opp)?.u || prettySlug(sel.opp)} />
+                      <span className="text-rw-muted">·</span>
+                      <EventLink name={sel.en} u={sel.e} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
                     </span>
                     <span className="flex items-center gap-2 shrink-0 text-rw-muted">
                       <span>{fmtDate(sel.date, false)}</span>
-                      <a
-                        href={`/prep?a=${encodeURIComponent(t.name)}&b=${encodeURIComponent(sel.opp)}`}
+                      <HubLink
+                        to={{ kind: "prep", a: t.u, b: t.opps.find((o) => o.n === sel.opp)?.u || prettySlug(sel.opp) }}
                         className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
                       >
                         {tl("Match prep")}
-                      </a>
+                      </HubLink>
                       {sel.g && (
                         <HubLink to={{ kind: "match", slug: sel.g }} className="text-rw-accent font-semibold hover:underline">
                           {tl("Details")} →

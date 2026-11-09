@@ -120,7 +120,9 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
       <div className={card}>
         <div className="text-[11px] text-rw-muted flex flex-wrap items-center justify-between gap-2">
           <span className="flex flex-wrap gap-x-2">
-            <span className="text-rw-accent">{m.leagueName}</span>
+            <HubLink to={{ kind: "league", slug: prettySlug(m.leagueSlug || m.leagueName) }} className="text-rw-accent hover:underline">
+              {m.leagueName}
+            </HubLink>
             {m.blockName && <span>· {stageLabel(m.blockName)}</span>}
             <span>· {fmtDate(m.startTimeUtc.slice(0, 10))}</span>
             <span>· {tc("series length", "Best of {n}", { n: m.bestOf })}</span>
@@ -137,7 +139,7 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
             <HubLink to={{ kind: "team", slug: prettySlug(m.team1Name) }} className="inline-flex items-center justify-end gap-2 hover:text-rw-accent max-w-full">
               <span className="sm:hidden truncate">{m.team1Code}</span>
               <span className="hidden sm:inline truncate">{m.team1Name}</span>
-              <TeamLogo name={m.team1Name} code={m.team1Code} size={22} />
+              <TeamLogo name={m.team1Name} code={m.team1Code} src={m.team1Image} size={22} />
             </HubLink>
           </div>
           <div className="flex flex-col items-center gap-1 min-w-[4.5rem]">
@@ -156,7 +158,7 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
           </div>
           <div className={`text-base sm:text-lg font-bold truncate ${!hidden && m.team2Score > m.team1Score && !live ? "text-rw-teal" : "text-rw-text"}`}>
             <HubLink to={{ kind: "team", slug: prettySlug(m.team2Name) }} className="inline-flex items-center gap-2 hover:text-rw-accent max-w-full">
-              <TeamLogo name={m.team2Name} code={m.team2Code} size={22} />
+              <TeamLogo name={m.team2Name} code={m.team2Code} src={m.team2Image} size={22} />
               <span className="sm:hidden truncate">{m.team2Code}</span>
               <span className="hidden sm:inline truncate">{m.team2Name}</span>
             </HubLink>

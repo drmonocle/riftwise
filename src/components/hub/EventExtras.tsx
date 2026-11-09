@@ -24,6 +24,7 @@ import {
   td,
   th,
 } from "./ui";
+import { RegionFlag } from "./RegionStats";
 import { CountryFlag, localCountry } from "./CountryFlag";
 import { STable } from "../STable";
 import { BroadcastCardButton, SectionCard, type CardData } from "./BroadcastCard";
@@ -71,9 +72,10 @@ const GameLine: React.FC<{
         ) : (
           <span className="text-rw-text inline-flex items-center gap-1">
             <TeamLogo name={r.a} size={13} />
-            <span>{r.a} vs</span>
+            <TeamLink name={r.a} />
+            <span>vs</span>
             <TeamLogo name={r.b} size={13} />
-            <span>{r.b}</span>
+            <TeamLink name={r.b} />
           </span>
         )}
       </span>
@@ -455,7 +457,13 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
             return (
               <tr key={r.a + r.b} className="border-t border-rw-border">
                 <td className={`${td} text-rw-text`}>
-                  {regionName(r.a, r.a)} vs {regionName(r.b, r.b)}
+                  <span className="inline-flex items-center gap-1.5 flex-wrap">
+                    <RegionFlag code={r.a} />
+                    <span>{regionName(r.a, r.a)}</span>
+                    <span className="text-rw-muted">vs</span>
+                    <RegionFlag code={r.b} />
+                    <span>{regionName(r.b, r.b)}</span>
+                  </span>
                 </td>
                 <td className={`${td} tabular-nums`} data-sort={r.wa - r.wb}>
                   <span className="inline-flex items-center gap-2">

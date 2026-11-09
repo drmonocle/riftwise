@@ -818,7 +818,7 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
                 <PlayerLink name={r.n} u={r.u} />
                 <span className="text-rw-muted shrink-0">·</span>
                 <TeamLogo name={r.t} size={14} />
-                <span className="text-rw-muted truncate">{r.t}</span>
+                <TeamLink name={r.t} u={e.teams?.find((tm) => tm.t === r.t)?.u} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
               </span>
               <span className="relative shrink-0 text-rw-sub tabular-nums">
                 <span className="text-rw-accent font-bold">{fmtNum(r.v)}</span> · {tn("{n} game", "{n} games", r.g)}

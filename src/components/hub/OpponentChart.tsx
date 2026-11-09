@@ -15,7 +15,7 @@ import type { HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
 import { smoothPath } from "../../useWidth";
 import { SectionCard } from "./BroadcastCard";
 import { RatingBadge, fmtRating, useRatingFile } from "./PlayerRating";
-import { ChampIcon, HubLink, Section, TeamLink, TeamLogo, fmtDate, fmtNum, td, th, useHiddenCheck, useLoad } from "./ui";
+import { ChampIcon, EventLink, HubLink, Section, TeamLink, TeamLogo, fmtDate, fmtNum, td, th, useHiddenCheck, useLoad } from "./ui";
 
 /** Visual win-rate progress bar + colored percentage for instant recognition in any table. */
 export const WinBar: React.FC<{ w: number; g: number; showRecord?: boolean }> = ({ w, g, showRecord }) => {
@@ -441,7 +441,13 @@ const ColoredOpponentGraph: React.FC<{
             {active.champs && active.champs.length > 0 && (
               <span className="inline-flex items-center gap-0.5">
                 {active.champs.slice(0, 3).map((c) => (
-                  <ChampIcon key={c.c} name={c.c} size={15} />
+                  <HubLink
+                    key={c.c}
+                    to={{ kind: "champ", slug: prettySlug(c.c) }}
+                    title={`${champName(c.c)} (${c.w}–${c.g - c.w})`}
+                  >
+                    <ChampIcon name={c.c} size={15} />
+                  </HubLink>
                 ))}
               </span>
             )}
@@ -785,11 +791,13 @@ export const PlayerOpponents: React.FC<{
                     <span className={`w-3.5 shrink-0 font-bold ${won ? "text-rw-teal" : "text-rw-red"}`}>
                       {won ? tc("short result", "W") : tc("short result", "L")}
                     </span>
-                    <ChampIcon name={g[2]} size={17} />
+                    <HubLink to={{ kind: "champ", slug: prettySlug(g[2]) }} title={champName(g[2])} className="shrink-0">
+                      <ChampIcon name={g[2]} size={17} />
+                    </HubLink>
                     <span className="tabular-nums text-rw-text font-medium">
                       {g[3]}/{g[4]}/{g[5]}
                     </span>
-                    <span className="text-rw-muted truncate">{eventTitle(g[9])}</span>
+                    <EventLink name={g[9]} u={g[11]} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
                   </span>
                   <span className="flex items-center gap-2 shrink-0 text-rw-muted tabular-nums">
                     {rv != null && <RatingBadge v={rv} />}
@@ -1246,7 +1254,7 @@ export const TeamPeriodOpponents: React.FC<{
                   }`}
                 >
                   <td className={`${td} max-w-[13rem] truncate`}>
-                    <span className="inline-flex items-center gap-1.5 min-w-0">
+                    <span className="inline-flex items-center gap-1.5 min-w-0" onClick={(e) => e.stopPropagation()}>
                       <TeamLogo name={o.opp} size={18} />
                       <TeamLink name={o.opp} u={o.u} />
                     </span>
@@ -1284,22 +1292,24 @@ export const TeamPeriodOpponents: React.FC<{
                   <td className={`${td} text-rw-muted tabular-nums`}>{fmtDate(o.last)}</td>
                   {teamName && (
                     <td className={`${td} text-right whitespace-nowrap`} onClick={(e) => e.stopPropagation()}>
-                      <span className="inline-flex items-center gap-2 text-[10px]">
-                        <a
-                          href={`/prep?a=${encodeURIComponent(teamName)}&b=${encodeURIComponent(o.opp)}`}
-                          className="text-rw-accent hover:underline"
-                          title={tl("Match prep")}
-                        >
-                          {tl("Match prep")}
-                        </a>
-                        <a
-                          href={`/compare?type=teams&a=${encodeURIComponent(teamName)}&b=${encodeURIComponent(o.opp)}`}
-                          className="text-rw-muted hover:text-rw-accent hover:underline"
-                          title={tl("Compare")}
-                        >
-                          {tl("Compare")}
-                        </a>
-                      </span>
+                      {o.u && (
+                        <span className="inline-flex items-center gap-2 text-[10px]">
+                          <HubLink
+                            to={{ kind: "prep", a: teamSlug, b: o.u }}
+                            className="text-rw-accent hover:underline"
+                            title={tl("Match prep")}
+                          >
+                            {tl("Match prep")}
+                          </HubLink>
+                          <HubLink
+                            to={{ kind: "compare", mode: "team", a: teamSlug, b: o.u }}
+                            className="text-rw-muted hover:text-rw-accent hover:underline"
+                            title={tl("Compare")}
+                          >
+                            {tl("Compare")}
+                          </HubLink>
+                        </span>
+                      )}
                     </td>
                   )}
                 </tr>

@@ -9,7 +9,7 @@ import React, { useEffect, useState } from "react";
 import type { Match } from "../../types";
 import type { HubTeam, TeamSeriesRow } from "../../hub/types";
 import { tl, tc, roleName } from "../../i18n";
-import { findHubTeam, loadHubIndexQuick, loadHubTeam, loadTeamSeries, teamStarter } from "../../hub/data";
+import { findHubTeam, loadHubIndexQuick, loadHubTeam, loadTeamSeries, prettySlug, teamStarter } from "../../hub/data";
 import { recentSchedule, RIOT_PREFIX } from "../../hub/riotMatch";
 import { useMatchRatings } from "../../hub/matchRatings";
 import { formatMatchTime } from "../../matchTime";
@@ -127,7 +127,9 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px]">
         <span className="min-w-0 truncate">
-          <span className="font-bold text-rw-accent">{m.leagueName}</span>
+          <HubLink to={{ kind: "league", slug: prettySlug(m.leagueSlug || m.leagueName) }} className="font-bold text-rw-accent hover:underline">
+            {m.leagueName}
+          </HubLink>
           {m.blockName && <span className="text-rw-sub"> · {m.blockName}</span>}
           <span className="text-rw-muted"> · {tc("short best of", "Bo{n}", { n: m.bestOf || 1 })}</span>
         </span>
@@ -170,7 +172,11 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
             </span>
           )}
           {h2h && (
-            <span className="inline-flex items-center gap-1.5 font-mono tabular-nums text-rw-sub" title={tl("All-time head-to-head, in games")}>
+            <HubLink
+              to={{ kind: "compare", mode: "team", a: t.u, b: c.opp || undefined }}
+              className="inline-flex items-center gap-1.5 font-mono tabular-nums text-rw-sub hover:text-rw-accent hover:underline"
+              title={tl("All-time head-to-head, in games")}
+            >
               <span>
                 H2H {h2h.w}–{h2h.g - h2h.w}
               </span>
@@ -180,7 +186,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
                   <span className="h-full bg-rw-side-b/85" style={{ width: `${100 - Math.round((h2h.w / h2h.g) * 100)}%` }} />
                 </span>
               )}
-            </span>
+            </HubLink>
           )}
           {lastMeeting && lastMeeting[7] && (
             <HubLink
