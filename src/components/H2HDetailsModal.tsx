@@ -6,7 +6,7 @@ import { Match, CatalogData } from "../types";
 import { computeHeadToHead, h2hKey, normalizeTeamCode, pickTeamByCode, recentMeetings, H2HMeeting } from "../helpers";
 import { fetchH2HSeries, H2HSeriesEntry } from "../api";
 import { H2HBar, T1_COLOR, T2_COLOR } from "./H2HMeter";
-import { fmtDate } from "./hub/ui";
+import { fmtDate, useTeamLogo } from "./hub/ui";
 import { SectionCard } from "./hub/BroadcastCard";
 import { tl, tn } from "../i18n";
 import { riotImg } from "../riotImage";
@@ -133,26 +133,30 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
     info,
     color,
     align,
-  }) => (
-    <button
-      type="button"
-      onClick={() => onSelectTeam?.(code, info.name)}
-      className={`flex items-center gap-2 min-w-0 ${align === "right" ? "flex-row-reverse text-right" : "text-left"} hover:opacity-80`}
-      title={tl("View {team} roster", { team: info.name })}
-    >
-      {info.image ? (
-        <img {...riotImg(info.image, 96)} alt="" className="w-9 h-9 object-contain shrink-0" />
-      ) : (
-        <div className="w-9 h-9 rounded bg-rw-bg flex items-center justify-center font-mono text-[10px] text-rw-accent shrink-0">
-          {code.slice(0, 3)}
+  }) => {
+    const hubLogo = useTeamLogo(info.name, code);
+    const imgSrc = info.image || hubLogo;
+    return (
+      <button
+        type="button"
+        onClick={() => onSelectTeam?.(code, info.name)}
+        className={`flex items-center gap-2 min-w-0 ${align === "right" ? "flex-row-reverse text-right" : "text-left"} hover:opacity-80`}
+        title={tl("View {team} roster", { team: info.name })}
+      >
+        {imgSrc ? (
+          <img {...riotImg(imgSrc, 96)} alt="" className="w-9 h-9 object-contain shrink-0" />
+        ) : (
+          <div className="w-9 h-9 rounded bg-rw-bg flex items-center justify-center font-mono text-[10px] text-rw-accent shrink-0">
+            {code.slice(0, 3)}
+          </div>
+        )}
+        <div className="min-w-0">
+          <div className="font-bold text-sm whitespace-nowrap" style={{ color }}>{code}</div>
+          <div className="hidden sm:block text-[10px] text-rw-muted truncate">{info.name}</div>
         </div>
-      )}
-      <div className="min-w-0">
-        <div className="font-bold text-sm whitespace-nowrap" style={{ color }}>{code}</div>
-        <div className="hidden sm:block text-[10px] text-rw-muted truncate">{info.name}</div>
-      </div>
-    </button>
-  );
+      </button>
+    );
+  };
 
   return (
     <div

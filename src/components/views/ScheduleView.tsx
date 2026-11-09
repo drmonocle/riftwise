@@ -16,6 +16,7 @@ import { findSeriesSlug } from "../../hub/seriesLookup";
 import { RIOT_PREFIX } from "../../hub/riotMatch";
 import { navigateHub, scheduleOfPath, setScheduleAddress } from "../../hub/route";
 import { riotImg } from "../../riotImage";
+import { TeamLogo } from "../hub/ui";
 import { countSecondPage } from "../../usage";
 
 interface ScheduleViewProps {
@@ -430,13 +431,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         >
                           {m.team1Code}
                         </span>
-                        {m.team1Image && (
-                          <img
-                            {...riotImg(m.team1Image, 64)}
-                            alt=""
-                            className="w-5 h-5 object-contain cursor-pointer"
-                            onClick={() => onSelectTeam?.(m.team1Code, m.team1Name)}
-                          />
+                        {m.team1Code.toUpperCase() !== "TBD" && (
+                          <span
+                            {...clickable(() => onSelectTeam?.(m.team1Code, m.team1Name))}
+                            className="cursor-pointer shrink-0 inline-flex items-center"
+                          >
+                            <TeamLogo name={m.team1Name} code={m.team1Code} src={m.team1Image} size={20} />
+                          </span>
                         )}
                       </div>
 
@@ -497,13 +498,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
                       {/* Team 2 */}
                       <div className="flex items-center gap-1.5 flex-1 justify-start text-left min-w-0">
-                        {m.team2Image && (
-                          <img
-                            {...riotImg(m.team2Image, 64)}
-                            alt=""
-                            className="w-5 h-5 object-contain cursor-pointer"
-                            onClick={() => onSelectTeam?.(m.team2Code, m.team2Name)}
-                          />
+                        {m.team2Code.toUpperCase() !== "TBD" && (
+                          <span
+                            {...clickable(() => onSelectTeam?.(m.team2Code, m.team2Name))}
+                            className="cursor-pointer shrink-0 inline-flex items-center"
+                          >
+                            <TeamLogo name={m.team2Name} code={m.team2Code} src={m.team2Image} size={20} />
+                          </span>
                         )}
                         <span
                           {...clickable(() => onSelectTeam?.(m.team2Code, m.team2Name))}

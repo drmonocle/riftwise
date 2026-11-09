@@ -204,15 +204,38 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
       >
         {all ? (
           <div className="space-y-2 text-xs">
-            <p>
-              <span className="font-bold text-rw-teal">3-0:</span> {clean.map((r) => `${r.team} (${yearOnly(r.year)})`).join(", ") || "–"}
-            </p>
-            <p>
-              <span className="font-bold text-rw-red">0-3:</span> {swept.map((r) => `${r.team} (${yearOnly(r.year)})`).join(", ") || "–"}
-            </p>
-            <p>
-              <span className="font-bold text-rw-accent">{tl("Escaped from 0-2:")}</span> {escaped.map((r) => `${r.team} (${yearOnly(r.year)})`).join(", ") || "–"}
-            </p>
+            {(() => {
+              const swissList = (list: typeof clean) =>
+                list.length ? (
+                  <span className="inline-flex flex-wrap items-center gap-x-2.5 gap-y-1 align-middle">
+                    {list.map((r, i) => (
+                      <span key={`${r.u}-${r.year}-${i}`} className="inline-flex items-center gap-1">
+                        <TeamLogo name={r.team} size={13} />
+                        <TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent" />
+                        <span className="text-rw-muted">({yearOnly(r.year)})</span>
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  "–"
+                );
+              return (
+                <>
+                  <p>
+                    <span className="font-bold text-rw-teal mr-1.5">3-0:</span>
+                    {swissList(clean)}
+                  </p>
+                  <p>
+                    <span className="font-bold text-rw-red mr-1.5">0-3:</span>
+                    {swissList(swept)}
+                  </p>
+                  <p>
+                    <span className="font-bold text-rw-accent mr-1.5">{tl("Escaped from 0-2:")}</span>
+                    {swissList(escaped)}
+                  </p>
+                </>
+              );
+            })()}
             {at12.length > 0 && <p className="text-rw-sub">{tl("Teams at 1-2 that still went through: {n} of {of}", { n: at12Through, of: at12.length })}</p>}
           </div>
         ) : (

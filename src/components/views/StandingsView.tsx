@@ -18,6 +18,7 @@ import { STable } from "../STable";
 import { riotImg } from "../../riotImage";
 import { navigateHub } from "../../hub/route";
 import { SectionCard } from "../hub/BroadcastCard";
+import { useTeamLogo } from "../hub/ui";
 
 interface StandingsViewProps {
   schedule: Match[];
@@ -471,9 +472,11 @@ const RankBadge: React.FC<{ rank: number }> = ({ rank }) => {
 
 /** A team's logo (or its code in a box). Clickable on its own only with onClick: inside a button it is just a picture,
  *  since a button inside a button is invalid HTML (and the click would fire twice). */
-const TeamLogo: React.FC<{ code: string; image?: string; onClick?: () => void; size?: string }> = ({ code, image, onClick, size = "w-7 h-7" }) => {
+const TeamLogo: React.FC<{ code: string; name?: string; image?: string; onClick?: () => void; size?: string }> = ({ code, name, image, onClick, size = "w-7 h-7" }) => {
+  const hubLogo = useTeamLogo(name || code, code);
+  const src = image || hubLogo;
   const box = `${size} rounded bg-rw-bg border border-rw-border flex items-center justify-center font-bold text-[10px] text-rw-accent shrink-0 font-mono`;
-  if (image) return <img {...riotImg(image, 96)} alt="" className={`${size} object-contain rounded shrink-0 ${onClick ? "cursor-pointer" : ""}`} onClick={onClick} />;
+  if (src) return <img {...riotImg(src, 96)} alt="" className={`${size} object-contain rounded shrink-0 ${onClick ? "cursor-pointer" : ""}`} onClick={onClick} />;
   return onClick ? (
     <button type="button" onClick={onClick} className={box}>
       {code.slice(0, 3)}

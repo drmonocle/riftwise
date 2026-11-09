@@ -31,6 +31,7 @@ import { navigateHub } from "../../hub/route";
 import { lazyPart } from "../../lazyPart";
 import { formatMatchTime } from "../../matchTime";
 import { INTL_EVENTS, intlMatchNow } from "../../intlNow";
+import { useTeamLogo } from "../hub/ui";
 
 // what's on the line in the next day (milestones, streaks), in the side column: loaded only when it shows
 const AtStakeToday = lazyPart(() => import("../hub/AtStake").then((m) => m.AtStakeToday));
@@ -662,7 +663,8 @@ const LiveSide: React.FC<{
   const first = side === "a"; // team 1 sits left of the score, so it lines up toward the right
   const code = first ? m.team1Code : m.team2Code;
   const name = first ? m.team1Name : m.team2Name;
-  const image = first ? m.team1Image : m.team2Image;
+  const hubLogo = useTeamLogo(name, code);
+  const image = (first ? m.team1Image : m.team2Image) || hubLogo;
   const open = () => onSelectTeam?.(code, name);
   const follow = followed ? tl("Unfollow {name}", { name: code }) : tl("Follow {name}", { name: code });
   const logo = image ? (
@@ -784,6 +786,8 @@ const NextMatchCard: React.FC<{
   compact?: boolean;
 }> = ({ match: m, tag, countdown, delayed, lateMin, show, schedule, settings, onToggleFollow, onSelectTeam, onOpenUrl, compact }) => {
   const logo = compact ? "w-10 h-10" : "w-14 h-14 sm:w-16 sm:h-16";
+  const hubLogo1 = useTeamLogo(m.team1Name, m.team1Code);
+  const hubLogo2 = useTeamLogo(m.team2Name, m.team2Code);
   const team = (code: string, name: string, image: string | undefined, side: "a" | "b") => {
     const followed = settings.followedTeams.includes(code);
     const open = () => onSelectTeam?.(code, name);
@@ -858,13 +862,13 @@ const NextMatchCard: React.FC<{
 
         {/* Matchup */}
         <div className={`flex items-center justify-center w-full my-2 ${compact ? "gap-3" : "gap-3 sm:gap-12"}`}>
-          {team(m.team1Code, m.team1Name, m.team1Image, "a")}
+          {team(m.team1Code, m.team1Name, m.team1Image || hubLogo1, "a")}
           <div className="flex flex-col items-center">
             <span className="text-xs font-bold text-rw-sub bg-rw-bg border border-rw-border px-2.5 py-1 rounded-full uppercase tracking-widest font-mono">
               {tl("VS")}
             </span>
           </div>
-          {team(m.team2Code, m.team2Name, m.team2Image, "b")}
+          {team(m.team2Code, m.team2Name, m.team2Image || hubLogo2, "b")}
         </div>
 
         {/* Pre-series win chance from power rankings */}

@@ -7,6 +7,7 @@ import { lazyPart } from "../../lazyPart";
 import { PartBoundary } from "../PartBoundary";
 import { navigateHub } from "../../hub/route";
 import { prettySlug } from "../../hub/data";
+import { useTeamLogo } from "../hub/ui";
 // Loaded with the stats hub code, only when the 24/7 tab is opened
 const StreamBracket = lazyPart(() => import("../hub/StreamBracket").then((m) => m.StreamBracket));
 
@@ -78,8 +79,9 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
     (!!e.team1 && settings.followedTeams.includes(e.team1)) || (!!e.team2 && settings.followedTeams.includes(e.team2));
 
   const Logo: React.FC<{ code?: string; size: number }> = ({ code, size }) => {
+    const hubLogo = useTeamLogo(code, code);
     if (!code) return null;
-    const src = logos[code.toUpperCase()];
+    const src = logos[code.toUpperCase()] || hubLogo;
     const box = { width: size, height: size };
     return src ? (
       <img src={src} alt="" style={box} className="object-contain shrink-0" />

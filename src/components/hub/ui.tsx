@@ -12,6 +12,7 @@ import { preloadPageCode } from "./pageCode";
 import { IS_WEB, SITE_URL } from "../../platform";
 import { CaptureFooter, ShareButtons } from "./ShareImage";
 import { usePlayerPicture, useTeamLogo } from "../../hub/riotCatalog";
+export { useTeamLogo };
 import { ddragonThumb, riotThumb } from "../../riotImage";
 import { allRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 

@@ -9,7 +9,7 @@ import { tl, locale, roleName, regionName, tc } from "../i18n";
 import { findHubTeam, loadHubIndexQuick, prettySlug } from "../hub/data";
 import { navigateHub } from "../hub/route";
 import { RiotCatalogContext } from "../hub/riotCatalog";
-import { PlayerPhoto, PhotosLink, TeamLogo } from "./hub/ui";
+import { PlayerPhoto, PhotosLink, TeamLogo, useTeamLogo } from "./hub/ui";
 import { riotImg } from "../riotImage";
 
 interface TeamRosterModalProps {
@@ -102,17 +102,19 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
     return () => before?.focus?.();
   }, [teamCode]);
 
-  if (!teamCode) return null;
-
-  const upperCode = teamCode.toUpperCase();
+  const upperCode = (teamCode || "").toUpperCase();
   // Exact name first (Riot reuses codes: "KT" is both kt Rolster and kt Challengers), then the
   // main-league team for the code.
   const catalogTeam =
     (teamName ? catalog?.teams?.find((t) => t.name.toLowerCase() === teamName.toLowerCase()) : undefined) ??
-    (catalog?.teams ? pickTeamByCode(catalog.teams, teamCode) : undefined);
+    (catalog?.teams && teamCode ? pickTeamByCode(catalog.teams, teamCode) : undefined);
 
-  const displayName = catalogTeam?.name || teamName || teamCode;
-  const teamImage = catalogTeam?.image;
+  const displayName = catalogTeam?.name || teamName || teamCode || "";
+  const hubLogo = useTeamLogo(teamCode ? displayName : undefined, teamCode ? upperCode : undefined);
+  const teamImage = catalogTeam?.image || hubLogo;
+
+  if (!teamCode) return null;
+
   const isTeamFollowed = settings.followedTeams.includes(upperCode);
 
   // Find all players matching this team

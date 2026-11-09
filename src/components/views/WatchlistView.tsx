@@ -260,9 +260,10 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
               <button
                 type="button"
                 onClick={() => navigateHub({ kind: "team", slug: prettySlug(code) })}
-                className="hover:underline"
+                className="inline-flex items-center gap-1 hover:underline"
               >
-                {code}
+                <TeamLogo name={code} code={code} size={12} />
+                <span>{code}</span>
               </button>
               <button
                 onClick={() => toggleTeam(code)}
@@ -283,9 +284,10 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
               <button
                 type="button"
                 onClick={() => navigateHub({ kind: "player", slug: prettySlug(name) })}
-                className="hover:underline"
+                className="inline-flex items-center gap-1 hover:underline"
               >
-                {name}
+                <PlayerPhoto name={name} slug={prettySlug(name)} size={13} linkFallback={false} />
+                <span>{name}</span>
               </button>
               <button
                 onClick={() => togglePlayer(name)}
@@ -438,12 +440,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <a
-                        href={`/compare?type=teams&a=${encodeURIComponent(team.name)}`}
+                      <button
+                        type="button"
+                        onClick={() => navigateHub({ kind: "compare", mode: "team", a: prettySlug(team.name) })}
                         className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors"
                       >
                         {tl("Compare")}
-                      </a>
+                      </button>
                       {roster.length > 0 && (
                         <button
                           onClick={() => setExpandedTeamSlug(isExpanded ? null : team.slug)}
