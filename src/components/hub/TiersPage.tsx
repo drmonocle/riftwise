@@ -213,19 +213,41 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
               title={roleName(r)}
               right={
                 (byRole.get(r) || []).length > 0 ? (
-                  <SectionCard
-                    section={`${tl("Pro tier list")} · ${roleName(r)}`}
-                    name={label(key)}
-                    sub={`${block.games}G`}
-                    rows={() =>
-                      (byRole.get(r) || []).slice(0, 12).map((c) => ({
-                        label: `${tierOf(c.score).t} · ${champName(c.c)}`,
-                        sub: `${fmtDec(c.presence * 100)}% ${tl("Presence")} · ${c.p} ${tl("Picks")}`,
-                        value: c.wr != null && c.p >= 5 ? `${Math.round(c.wr * 100)}%` : `${fmtDec(c.presence * 100)}%`,
-                        win: c.wr != null ? c.wr >= 0.5 : undefined,
-                      }))
-                    }
-                  />
+                  <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+                    <HubLink
+                      to={{
+                        kind: "champions",
+                        query: new URLSearchParams({
+                          ...(isLeague
+                            ? {
+                                league: rawScope,
+                                ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
+                              }
+                            : {
+                                key,
+                                ...(scope === "all" ? { scope: "all" } : {}),
+                              }),
+                          role: r,
+                        }).toString(),
+                      }}
+                      className="text-[11px] font-semibold text-rw-accent hover:underline"
+                    >
+                      {tl("Champions")} →
+                    </HubLink>
+                    <SectionCard
+                      section={`${tl("Pro tier list")} · ${roleName(r)}`}
+                      name={label(key)}
+                      sub={`${block.games}G`}
+                      rows={() =>
+                        (byRole.get(r) || []).slice(0, 12).map((c) => ({
+                          label: `${tierOf(c.score).t} · ${champName(c.c)}`,
+                          sub: `${fmtDec(c.presence * 100)}% ${tl("Presence")} · ${c.p} ${tl("Picks")}`,
+                          value: c.wr != null && c.p >= 5 ? `${Math.round(c.wr * 100)}%` : `${fmtDec(c.presence * 100)}%`,
+                          win: c.wr != null ? c.wr >= 0.5 : undefined,
+                        }))
+                      }
+                    />
+                  </span>
                 ) : undefined
               }
               share={`riftwise-tiers-${key}-${r}`}

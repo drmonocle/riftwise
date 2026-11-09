@@ -269,11 +269,44 @@ const mmss = (m: number) => {
  * for the fastest win, the record's time over this year's).
  */
 const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label: string }> = ({ all, year, label }) => {
-  type Row = { title: string; rec: number; best: number; recBy: string; bestBy: string; fmt: (v: number) => string; lower?: boolean };
+  type Row = {
+    title: string;
+    rec: number;
+    best: number;
+    recBy: string;
+    bestBy: string;
+    fmt: (v: number) => string;
+    lower?: boolean;
+    recTo?: { kind: "match"; slug: string; game?: number };
+    bestTo?: { kind: "match"; slug: string; game?: number };
+  };
   const g = (title: string, a: HubRecords["game"]["fastest"], b: HubRecords["game"]["fastest"], fmt: (v: number) => string, lower = false): Row | null =>
-    a[0] && b[0] ? { title, rec: a[0].v, best: b[0].v, recBy: a[0].w, bestBy: b[0].w, fmt, lower } : null;
+    a[0] && b[0]
+      ? {
+          title,
+          rec: a[0].v,
+          best: b[0].v,
+          recBy: a[0].w,
+          bestBy: b[0].w,
+          fmt,
+          lower,
+          recTo: a[0].g ? { kind: "match", slug: a[0].g, game: a[0].gn } : undefined,
+          bestTo: b[0].g ? { kind: "match", slug: b[0].g, game: b[0].gn } : undefined,
+        }
+      : null;
   const p = (title: string, a: HubRecords["player"]["kills"], b: HubRecords["player"]["kills"]): Row | null =>
-    a[0] && b[0] ? { title, rec: a[0].v, best: b[0].v, recBy: a[0].pl, bestBy: b[0].pl, fmt: fmtNum } : null;
+    a[0] && b[0]
+      ? {
+          title,
+          rec: a[0].v,
+          best: b[0].v,
+          recBy: a[0].pl,
+          bestBy: b[0].pl,
+          fmt: fmtNum,
+          recTo: a[0].g ? { kind: "match", slug: a[0].g, game: a[0].gn } : undefined,
+          bestTo: b[0].g ? { kind: "match", slug: b[0].g, game: b[0].gn } : undefined,
+        }
+      : null;
   const rows = [
     g(tl("Fastest wins"), all.game.fastest, year.game.fastest, mmss, true),
     g(tl("Longest games"), all.game.longest, year.game.longest, mmss),
@@ -312,10 +345,25 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
           <li key={r.title} className="min-w-0">
             <div className="flex items-baseline justify-between gap-2">
               <span className="truncate text-rw-text">{r.title}</span>
-              <span className={`font-num tabular-nums font-bold shrink-0 ${r.share >= 1 ? "text-rw-teal" : "text-rw-accent"}`}>{Math.round(r.share * 100)}%</span>
+              {r.bestTo ? (
+                <HubLink
+                  to={r.bestTo}
+                  className={`font-num tabular-nums font-bold shrink-0 hover:underline ${r.share >= 1 ? "text-rw-teal" : "text-rw-accent"}`}
+                >
+                  {Math.round(r.share * 100)}%
+                </HubLink>
+              ) : (
+                <span className={`font-num tabular-nums font-bold shrink-0 ${r.share >= 1 ? "text-rw-teal" : "text-rw-accent"}`}>{Math.round(r.share * 100)}%</span>
+              )}
             </div>
             <div className="text-[10px] text-rw-muted truncate">
-              {tl("Record {value} ({who}) · best this year {best} ({by})", { value: r.fmt(r.rec), who: r.recBy, best: r.fmt(r.best), by: r.bestBy })}
+              {r.recTo ? (
+                <HubLink to={r.recTo} className="hover:text-rw-accent hover:underline">
+                  {tl("Record {value} ({who}) · best this year {best} ({by})", { value: r.fmt(r.rec), who: r.recBy, best: r.fmt(r.best), by: r.bestBy })}
+                </HubLink>
+              ) : (
+                tl("Record {value} ({who}) · best this year {best} ({by})", { value: r.fmt(r.rec), who: r.recBy, best: r.fmt(r.best), by: r.bestBy })
+              )}
             </div>
             <div className="h-1 mt-0.5 rounded bg-rw-border overflow-hidden" aria-hidden="true">
               <div className="h-full bg-rw-accent" style={{ width: `${Math.min(100, r.share * 100)}%` }} />
@@ -698,9 +746,12 @@ export const RecordsPanel: React.FC = () => {
                             <TeamLink name={t.team} u={t.u} />
                           </span>
                           <span className="text-rw-muted shrink-0">
-                            <span className="text-rw-accent font-bold tabular-nums">
+                            <HubLink
+                              to={{ kind: "team", slug: t.u || prettySlug(t.team), tab: "series" }}
+                              className="text-rw-accent font-bold tabular-nums hover:underline"
+                            >
                               {tl("{n} games", { n: t.v })}
-                            </span>{" "}
+                            </HubLink>{" "}
                             · {tl("ended {date}", { date: fmtDate(t.date) })}
                           </span>
                         </div>
@@ -750,9 +801,12 @@ export const RecordsPanel: React.FC = () => {
                             {t.worlds
                               ? tl("{n} Worlds", { n: t.worlds }) + " · "
                               : ""}
-                            <span className="text-rw-accent font-bold tabular-nums">
+                            <HubLink
+                              to={{ kind: "titles", query: `q=${encodeURIComponent(t.team)}` }}
+                              className="text-rw-accent font-bold tabular-nums hover:underline"
+                            >
                               {tl("{n} total", { n: t.v })}
-                            </span>
+                            </HubLink>
                           </span>
                         </div>
                         <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
@@ -898,13 +952,13 @@ export const TitlesPanel: React.FC = () => {
                       key={x.t + x.date}
                       className="border-t border-rw-border"
                     >
-                      <td className={`${td} max-w-[14rem] truncate`}>
+                      <td className={`${td} max-w-[14rem] truncate`} data-sort={eventTitle(x.t)}>
                         <Trophy
                           className={`w-3 h-3 inline mr-1 ${x.kind === "Worlds" ? "text-rw-accent" : "text-rw-muted"}`}
                         />
                         <EventLink name={eventTitle(x.t)} u={x.e} />
                       </td>
-                      <td className={td}>
+                      <td className={td} data-sort={x.as}>
                         <span className="inline-flex items-center gap-1.5 min-w-0">
                           <TeamLogo name={x.as} size={16} />
                           <TeamLink name={x.as} u={x.u} />
@@ -937,7 +991,17 @@ export const TitlesPanel: React.FC = () => {
                                   ) : (
                                     x.score
                                   )}{" "}
-                                  vs
+                                  {x.l ? (
+                                    <HubLink
+                                      to={{ kind: "compare", mode: "team", a: x.u || prettySlug(x.as), b: prettySlug(x.l) }}
+                                      className="text-rw-muted hover:text-rw-accent hover:underline"
+                                      title={tl("Compare")}
+                                    >
+                                      vs
+                                    </HubLink>
+                                  ) : (
+                                    "vs"
+                                  )}
                                 </span>
                                 <TeamLogo name={x.l} size={14} />
                                 <TeamLink name={x.l} />

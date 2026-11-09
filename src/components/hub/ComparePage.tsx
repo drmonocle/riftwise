@@ -1017,35 +1017,49 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
               </tr>
             </thead>
             <tbody>
-              {shared.map(({ c, o }) => (
-                <tr key={c.c} className="border-t border-rw-border">
-                  <td className={`${td} text-right tabular-nums w-2/5`} data-sort={c.g}>
-                    <HubLink
-                      to={{ kind: "player", slug: x.u, tab: "champions", query: `champ=${encodeURIComponent(c.c)}` }}
-                      className="hover:text-rw-accent hover:underline"
-                      title={tl("Every game")}
-                    >
-                      {c.g}
-                    </HubLink>{" "}
-                    · {winRate(c.w, c.g)} · {fmtN(c.kda)}
-                  </td>
-                  <td className={`${td} text-center`} data-sort={c.c}>
-                    <span className="inline-flex justify-center">
-                      <ChampLink name={c.c} size={16} />
-                    </span>
-                  </td>
-                  <td className={`${td} tabular-nums w-2/5`} data-sort={o.g}>
-                    <HubLink
-                      to={{ kind: "player", slug: y.u, tab: "champions", query: `champ=${encodeURIComponent(c.c)}` }}
-                      className="hover:text-rw-accent hover:underline"
-                      title={tl("Every game")}
-                    >
-                      {o.g}
-                    </HubLink>{" "}
-                    · {winRate(o.w, o.g)} · {fmtN(o.kda)}
-                  </td>
-                </tr>
-              ))}
+              {shared.map(({ c, o }) => {
+                const wrA = c.g ? c.w / c.g : 0;
+                const wrB = o.g ? o.w / o.g : 0;
+                const gSum = c.g + o.g;
+                const aShare = gSum > 0 ? Math.round((c.g / gSum) * 100) : 50;
+                return (
+                  <tr key={c.c} className="border-t border-rw-border">
+                    <td className={`${td} text-right tabular-nums w-2/5`} data-sort={c.g}>
+                      <HubLink
+                        to={{ kind: "player", slug: x.u, tab: "champions", query: `champ=${encodeURIComponent(c.c)}` }}
+                        className="hover:text-rw-accent hover:underline"
+                        title={tl("Every game")}
+                      >
+                        {c.g}
+                      </HubLink>{" "}
+                      · <span className={wrA > wrB ? "text-rw-side-a font-semibold" : ""}>{winRate(c.w, c.g)}</span> ·{" "}
+                      <span className={c.kda != null && o.kda != null && c.kda > o.kda ? "text-rw-side-a font-semibold" : ""}>{fmtN(c.kda)}</span>
+                    </td>
+                    <td className={`${td} text-center`} data-sort={c.c}>
+                      <span className="inline-flex flex-col items-center gap-0.5">
+                        <ChampLink name={c.c} size={16} />
+                        {gSum > 0 && (
+                          <span className="w-12 h-1 rounded-full bg-rw-raised overflow-hidden flex" aria-hidden="true">
+                            <span className="h-full bg-rw-side-a/85" style={{ width: `${aShare}%` }} />
+                            <span className="h-full bg-rw-side-b/85" style={{ width: `${100 - aShare}%` }} />
+                          </span>
+                        )}
+                      </span>
+                    </td>
+                    <td className={`${td} tabular-nums w-2/5`} data-sort={o.g}>
+                      <HubLink
+                        to={{ kind: "player", slug: y.u, tab: "champions", query: `champ=${encodeURIComponent(c.c)}` }}
+                        className="hover:text-rw-accent hover:underline"
+                        title={tl("Every game")}
+                      >
+                        {o.g}
+                      </HubLink>{" "}
+                      · <span className={wrB > wrA ? "text-rw-side-b font-semibold" : ""}>{winRate(o.w, o.g)}</span> ·{" "}
+                      <span className={c.kda != null && o.kda != null && o.kda > c.kda ? "text-rw-side-b font-semibold" : ""}>{fmtN(o.kda)}</span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </STable>
           <p className="text-[10px] text-rw-muted">{tl("Games · win rate · KDA")}</p>
@@ -1153,20 +1167,35 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
         <div className="space-y-1">
           <div className="text-[10px] font-semibold text-rw-muted">{tl("Most common champion matchups")}</div>
           <ul className="text-xs grid sm:grid-cols-2 gap-x-4 gap-y-1">
-            {s.top.map((p) => (
-              <li key={p.ca + p.cb} className="flex items-center gap-1.5 min-w-0">
-                <HubLink to={{ kind: "champ", slug: prettySlug(p.ca) }} className="shrink-0">
-                  <ChampIcon name={p.ca} size={18} />
-                </HubLink>
-                <HubLink to={{ kind: "champ", slug: prettySlug(p.cb) }} className="shrink-0">
-                  <ChampIcon name={p.cb} size={18} />
-                </HubLink>
-                <span className="truncate text-rw-sub">
-                  <ChampLink name={p.ca} /> vs <ChampLink name={p.cb} />
-                </span>
-                <span className="ml-auto tabular-nums text-rw-text">{p.w}–{p.g - p.w}</span>
-              </li>
-            ))}
+            {s.top.map((p) => {
+              const aPct = p.g > 0 ? Math.round((p.w / p.g) * 100) : 50;
+              return (
+                <li key={p.ca + p.cb} className="flex items-center gap-1.5 min-w-0">
+                  <HubLink to={{ kind: "champ", slug: prettySlug(p.ca) }} className="shrink-0">
+                    <ChampIcon name={p.ca} size={18} />
+                  </HubLink>
+                  <HubLink to={{ kind: "champ", slug: prettySlug(p.cb) }} className="shrink-0">
+                    <ChampIcon name={p.cb} size={18} />
+                  </HubLink>
+                  <span className="truncate text-rw-sub">
+                    <ChampLink name={p.ca} /> vs <ChampLink name={p.cb} />
+                  </span>
+                  <span className="ml-auto inline-flex items-center gap-1.5 shrink-0">
+                    <span className="hidden sm:inline-flex w-8 h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                      <span className="h-full bg-rw-side-a/85" style={{ width: `${aPct}%` }} />
+                      <span className="h-full bg-rw-side-b/85" style={{ width: `${100 - aPct}%` }} />
+                    </span>
+                    <HubLink
+                      to={{ kind: "counters", query: `champ=${prettySlug(p.ca)}&vs=${encodeURIComponent(p.cb)}` }}
+                      className="tabular-nums text-rw-text hover:text-rw-accent hover:underline"
+                      title={tl("Counter-pick finder")}
+                    >
+                      {p.w}–{p.g - p.w}
+                    </HubLink>
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
@@ -1335,8 +1364,9 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
             </div>
           </details>
         )}
-        <span className="ml-auto flex items-center gap-2">
+        <span className="ml-auto flex flex-wrap items-center gap-2">
           <span className="text-rw-muted">{tl("Stats for")}</span>
+          <QuickPeriods options={options} value={period} onChange={(p) => set({ period: p })} />
           <PeriodPicker options={options} value={period} onChange={(p) => set({ period: p })} />
         </span>
       </div>

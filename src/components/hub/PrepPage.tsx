@@ -19,7 +19,7 @@ import { useDDragon } from "../../hub/ddragon";
 import { PeriodKey, inPeriod, playerAgg, playerHeadToHead, playerRowRef, teamAgg, teamRowRef } from "../../hub/period";
 import { HeadToHeadSeries } from "./Archives";
 import { ComparePick, TeamRows, bothOptions } from "./ComparePage";
-import { PeriodPicker, Playstyle, TeamEarly, defaultPeriod } from "./PeriodStats";
+import { PeriodPicker, Playstyle, QuickPeriods, TeamEarly, defaultPeriod } from "./PeriodStats";
 import { DraftTendencies } from "./DraftTendencies";
 import { pool, computeDraftSuggestions, slotsFromGameDraft, packSlots } from "./DraftPage";
 import { StoryLine, StoryList, notePlainText, noteText } from "./Storylines";
@@ -370,12 +370,18 @@ const KeyStats: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[
       tl("Games won and lost this period"),
       (x, X) =>
         X.g ? (
-          <HubLink
-            to={{ kind: "team", slug: x.team.u, tab: "stats", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
-            className="hover:text-rw-accent hover:underline"
-          >
-            {`${Math.round((X.w / X.g) * 100)}% · ${X.w}–${X.g - X.w}`}
-          </HubLink>
+          <span className="inline-flex flex-col items-end gap-0.5">
+            <HubLink
+              to={{ kind: "team", slug: x.team.u, tab: "stats", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+              className="hover:text-rw-accent hover:underline"
+            >
+              {`${Math.round((X.w / X.g) * 100)}% · ${X.w}–${X.g - X.w}`}
+            </HubLink>
+            <span className="w-12 h-1 rounded-full bg-rw-raised overflow-hidden flex" aria-hidden="true">
+              <span className="h-full bg-rw-teal/85" style={{ width: `${Math.round((X.w / X.g) * 100)}%` }} />
+              <span className="h-full bg-rw-red/70" style={{ width: `${100 - Math.round((X.w / X.g) * 100)}%` }} />
+            </span>
+          </span>
         ) : (
           "–"
         ),
@@ -386,7 +392,15 @@ const KeyStats: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[
       tl("Rank (worldwide among top-league teams, else in its league) and power rating"),
       (x) =>
         x.team.rating ? (
-          <HubLink to={{ kind: "rankings" }} className="hover:text-rw-accent hover:underline">
+          <HubLink
+            to={{
+              kind: "rankings",
+              ...(x.team.rating.rank == null && x.team.rating.league
+                ? { query: `league=${encodeURIComponent(x.team.rating.league)}` }
+                : {}),
+            }}
+            className="hover:text-rw-accent hover:underline"
+          >
             {rank(x.team)}
           </HubLink>
         ) : (
@@ -394,8 +408,38 @@ const KeyStats: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[
         ),
       "always",
     ],
-    [tl("Gold diff / game"), tl("Average gold difference at the end of the game"), (_x, X) => (X.gd != null ? `${X.gd > 0 ? "+" : ""}${fmtNum(X.gd)}` : "–"), "period"],
-    [tl("Avg game"), tl("Average game length, minutes"), (_x, X) => (X.min != null ? fmtDec(X.min) : "–"), "period"],
+    [
+      tl("Gold diff / game"),
+      tl("Average gold difference at the end of the game"),
+      (x, X) =>
+        X.gd != null ? (
+          <HubLink
+            to={{ kind: "team", slug: x.team.u, tab: "stats", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+            className={`hover:text-rw-accent hover:underline ${X.gd > 0 ? "text-rw-teal" : X.gd < 0 ? "text-rw-red" : ""}`}
+          >
+            {`${X.gd > 0 ? "+" : ""}${fmtNum(X.gd)}`}
+          </HubLink>
+        ) : (
+          "–"
+        ),
+      "period",
+    ],
+    [
+      tl("Avg game"),
+      tl("Average game length, minutes"),
+      (x, X) =>
+        X.min != null ? (
+          <HubLink
+            to={{ kind: "team", slug: x.team.u, tab: "stats", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+            className="hover:text-rw-accent hover:underline"
+          >
+            {fmtDec(X.min)}
+          </HubLink>
+        ) : (
+          "–"
+        ),
+      "period",
+    ],
     [
       tl("Head to head (series)"),
       tl("Every series between them, all time"),
@@ -899,6 +943,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs" data-nocapture="1">
           <span className="text-rw-muted">{tl("Stats for")}</span>
+          <QuickPeriods options={options} value={period} onChange={(p) => set({ period: p })} />
           <PeriodPicker options={options} value={period} onChange={(p) => set({ period: p })} />
           <HubLink
             to={{ kind: "draft", query: `teams=${encodeURIComponent(a.team.u)},${encodeURIComponent(b.team.u)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}

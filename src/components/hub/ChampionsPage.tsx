@@ -7,7 +7,7 @@
 import React, { useMemo, useState } from "react";
 import { tl, roleName, fmtDec } from "../../i18n";
 import { ChampionStats, StatsMeta, loadChampionStats } from "../../stats";
-import { loadAliases, loadChampGames, loadChampIndex, resolveLeagueSlug } from "../../hub/data";
+import { loadAliases, loadChampGames, loadChampIndex, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { ChampAggRow, ROLES, champAgg, patchCompare } from "../../hub/champAgg";
@@ -336,27 +336,58 @@ const LeagueTable: React.FC<{
       key: "p",
       label: tl("Picks"),
       value: (c) => c.p,
-      render: (c) => (
-        <span className="inline-flex flex-col gap-0.5 min-w-[2.5rem] tabular-nums">
-          <span>{c.p}</span>
-          <span className="h-1 w-9 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
-            <span className="block h-full rounded-full bg-rw-teal/75" style={{ width: `${c.p > 0 ? Math.max(6, Math.round((c.p / maxLPicks) * 100)) : 0}%` }} />
+      render: (c) => {
+        const fq = new URLSearchParams({
+          champ: c.c,
+          league,
+          ...(year ? { year } : {}),
+          ...(eventSlug ? { event: eventSlug } : {}),
+          ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
+          ...(side ? { side } : {}),
+        }).toString();
+        return (
+          <span className="inline-flex flex-col gap-0.5 min-w-[2.5rem] tabular-nums">
+            {c.p > 0 ? (
+              <HubLink to={{ kind: "finder", query: fq }} className="hover:text-rw-accent hover:underline" title={tl("Game finder")}>
+                {c.p}
+              </HubLink>
+            ) : (
+              <span>{c.p}</span>
+            )}
+            <span className="h-1 w-9 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+              <span className="block h-full rounded-full bg-rw-teal/75" style={{ width: `${c.p > 0 ? Math.max(6, Math.round((c.p / maxLPicks) * 100)) : 0}%` }} />
+            </span>
           </span>
-        </span>
-      ),
+        );
+      },
     },
     {
       key: "b",
       label: tl("Bans"),
       value: (c) => c.b,
-      render: (c) => (
-        <span className="inline-flex flex-col gap-0.5 min-w-[2.5rem] tabular-nums">
-          <span>{c.b}</span>
-          <span className="h-1 w-9 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
-            <span className="block h-full rounded-full bg-rw-red/65" style={{ width: `${c.b > 0 ? Math.max(6, Math.round((c.b / maxLBans) * 100)) : 0}%` }} />
+      render: (c) => {
+        const fq = new URLSearchParams({
+          ban: c.c,
+          league,
+          ...(year ? { year } : {}),
+          ...(eventSlug ? { event: eventSlug } : {}),
+          ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
+        }).toString();
+        return (
+          <span className="inline-flex flex-col gap-0.5 min-w-[2.5rem] tabular-nums">
+            {c.b > 0 ? (
+              <HubLink to={{ kind: "finder", query: fq }} className="hover:text-rw-accent hover:underline" title={tl("Game finder")}>
+                {c.b}
+              </HubLink>
+            ) : (
+              <span>{c.b}</span>
+            )}
+            <span className="h-1 w-9 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+              <span className="block h-full rounded-full bg-rw-red/65" style={{ width: `${c.b > 0 ? Math.max(6, Math.round((c.b / maxLBans) * 100)) : 0}%` }} />
+            </span>
           </span>
-        </span>
-      ),
+        );
+      },
     },
     {
       key: "wr",
@@ -518,27 +549,51 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
       key: "p",
       label: tl("Picks"),
       value: (c) => c.p,
-      render: (c) => (
-        <span className="inline-flex flex-col gap-0.5 min-w-[2.75rem] tabular-nums">
-          <span>{fmtNum(c.p)}</span>
-          <span className="h-1 w-9 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
-            <span className="block h-full rounded-full bg-rw-teal/75" style={{ width: `${c.p > 0 ? Math.max(6, Math.round((c.p / maxOPicks) * 100)) : 0}%` }} />
+      render: (c) => {
+        const fq = new URLSearchParams({
+          champ: c.c,
+          ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
+        }).toString();
+        return (
+          <span className="inline-flex flex-col gap-0.5 min-w-[2.75rem] tabular-nums">
+            {c.p > 0 ? (
+              <HubLink to={{ kind: "finder", query: fq }} className="hover:text-rw-accent hover:underline" title={tl("Game finder")}>
+                {fmtNum(c.p)}
+              </HubLink>
+            ) : (
+              <span>{fmtNum(c.p)}</span>
+            )}
+            <span className="h-1 w-9 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+              <span className="block h-full rounded-full bg-rw-teal/75" style={{ width: `${c.p > 0 ? Math.max(6, Math.round((c.p / maxOPicks) * 100)) : 0}%` }} />
+            </span>
           </span>
-        </span>
-      ),
+        );
+      },
     },
     {
       key: "b",
       label: tl("Bans"),
       value: (c) => c.b,
-      render: (c) => (
-        <span className="inline-flex flex-col gap-0.5 min-w-[2.75rem] tabular-nums">
-          <span>{fmtNum(c.b)}</span>
-          <span className="h-1 w-9 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
-            <span className="block h-full rounded-full bg-rw-red/65" style={{ width: `${c.b > 0 ? Math.max(6, Math.round((c.b / maxOBans) * 100)) : 0}%` }} />
+      render: (c) => {
+        const fq = new URLSearchParams({
+          ban: c.c,
+          ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
+        }).toString();
+        return (
+          <span className="inline-flex flex-col gap-0.5 min-w-[2.75rem] tabular-nums">
+            {c.b > 0 ? (
+              <HubLink to={{ kind: "finder", query: fq }} className="hover:text-rw-accent hover:underline" title={tl("Game finder")}>
+                {fmtNum(c.b)}
+              </HubLink>
+            ) : (
+              <span>{fmtNum(c.b)}</span>
+            )}
+            <span className="h-1 w-9 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+              <span className="block h-full rounded-full bg-rw-red/65" style={{ width: `${c.b > 0 ? Math.max(6, Math.round((c.b / maxOBans) * 100)) : 0}%` }} />
+            </span>
           </span>
-        </span>
-      ),
+        );
+      },
     },
     {
       key: "wr",
@@ -661,7 +716,12 @@ const MetaSpotlight: React.FC<{
             </div>
           </div>
           <div className="text-right shrink-0">
-            <div className={`font-mono font-bold tabular-nums ${item.tone}`}>{item.val}</div>
+            <HubLink
+              to={{ kind: "champ", slug: prettySlug(item.c) }}
+              className={`font-mono font-bold tabular-nums hover:underline ${item.tone}`}
+            >
+              {item.val}
+            </HubLink>
             {item.sub && <div className="text-[10px] text-rw-muted font-mono">{item.sub}</div>}
           </div>
         </div>

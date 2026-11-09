@@ -497,13 +497,19 @@ const FinderBody: React.FC<{
             n: fmtNum(found.length),
           })}
           {found.length > 0 && sideCond && !hidden && (
-            <span className="text-rw-sub">
-              {" · "}
-              {tl("won {w}, lost {l} ({pct})", {
-                w: won,
-                l: found.length - won,
-                pct: `${Math.round((won / found.length) * 100)}%`,
-              })}
+            <span className="text-rw-sub inline-flex items-center gap-1.5">
+              <span>
+                {" · "}
+                {tl("won {w}, lost {l} ({pct})", {
+                  w: won,
+                  l: found.length - won,
+                  pct: `${Math.round((won / found.length) * 100)}%`,
+                })}
+              </span>
+              <span className="inline-flex w-10 h-1.5 rounded-full bg-rw-raised overflow-hidden shrink-0" aria-hidden="true">
+                <span className="h-full bg-rw-teal/85" style={{ width: `${Math.round((won / found.length) * 100)}%` }} />
+                <span className="h-full bg-rw-red/75" style={{ width: `${100 - Math.round((won / found.length) * 100)}%` }} />
+              </span>
             </span>
           )}
           {avg != null && (
@@ -647,6 +653,7 @@ const FinderBody: React.FC<{
                       </td>
                       <td
                         className={`${td} text-rw-muted max-w-[12rem] truncate`}
+                        data-sort={events[g[2]]?.[1] || ""}
                       >
                         {events[g[2]]?.[0] ? (
                           <HubLink
@@ -671,7 +678,7 @@ const FinderBody: React.FC<{
                         focus={sideCond && s === 1}
                         won={g[3] === 0}
                       />
-                      <td className={`${td} font-semibold text-rw-text`}>
+                      <td className={`${td} font-semibold text-rw-text`} data-sort={(g[3] === 1 ? g[10] : g[11]) || ""}>
                         <span className="inline-flex items-center gap-1.5 min-w-0">
                           {(g[3] === 1 ? g[10] : g[11]) && <TeamLogo name={(g[3] === 1 ? g[10] : g[11])!} size={14} />}
                           {(g[3] === 1 ? g[10] : g[11]) ? (
@@ -917,6 +924,7 @@ const TeamCell: React.FC<{
 }> = ({ name, u, focus, won }) => (
   <td
     className={`${td} ${won ? "text-rw-text font-semibold" : "text-rw-sub"} ${focus ? "underline decoration-rw-accent decoration-2 underline-offset-4" : ""}`}
+    data-sort={name || ""}
   >
     <span className="inline-flex items-center gap-1.5 min-w-0">
       {name && <TeamLogo name={name} size={14} />}

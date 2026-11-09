@@ -150,7 +150,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
         const barCls = x.w / x.g >= 0.55 ? "bg-rw-teal/80" : x.w / x.g <= 0.45 ? "bg-rw-red/75" : "bg-rw-sub/55";
         return (
           <span className="inline-flex flex-col gap-0.5 min-w-[3rem]">
-            <span className={cls}>{pct}%</span>
+            <button
+              type="button"
+              onClick={() => set({ vs: x.c })}
+              className={`text-left hover:underline ${cls}`}
+              title={`${cName} ${tl("vs")} ${champName(x.c)}`}
+            >
+              {pct}%
+            </button>
             <span className="h-1 w-11 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
               <span className={`block h-full rounded-full ${barCls}`} style={{ width: `${Math.max(4, Math.min(100, pct))}%` }} />
             </span>
@@ -480,7 +487,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                             <ChampLink name={x.c} size={18} /> <span className="text-rw-muted">{x.role >= 0 ? roleName(ROLES[x.role]) : ""}</span>
                           </span>
                           <span className="tabular-nums text-rw-teal font-semibold shrink-0">
-                            {wr}%{" "}
+                            <button
+                              type="button"
+                              onClick={() => set({ vs: x.c })}
+                              className="hover:underline"
+                              title={`${cName} ${tl("vs")} ${champName(x.c)}`}
+                            >
+                              {wr}%
+                            </button>{" "}
                             {x.gd != null && (
                               <span className="text-[11px] font-mono text-rw-sub font-normal">
                                 · {x.gd > 0 ? "+" : ""}
@@ -526,7 +540,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                             <ChampLink name={x.c} size={18} /> <span className="text-rw-muted">{x.role >= 0 ? roleName(ROLES[x.role]) : ""}</span>
                           </span>
                           <span className="tabular-nums text-rw-red font-semibold shrink-0">
-                            {wr}%{" "}
+                            <button
+                              type="button"
+                              onClick={() => set({ vs: x.c })}
+                              className="hover:underline"
+                              title={`${cName} ${tl("vs")} ${champName(x.c)}`}
+                            >
+                              {wr}%
+                            </button>{" "}
                             {x.gd != null && (
                               <span className="text-[11px] font-mono text-rw-sub font-normal">
                                 · {x.gd > 0 ? "+" : ""}
@@ -611,7 +632,13 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         <div className="flex items-center justify-between gap-2">
                           <ChampLink name={pc} size={20} />
                           <div className="text-right shrink-0">
-                            <div className={`font-mono font-bold tabular-nums ${wr >= 50 ? "text-rw-teal" : "text-rw-red"}`}>{wr}%</div>
+                            <HubLink
+                              to={{ kind: "counters", query: `champ=${prettySlug(pc)}` }}
+                              className={`font-mono font-bold tabular-nums hover:underline ${wr >= 50 ? "text-rw-teal" : "text-rw-red"}`}
+                              title={tl("Counter-pick finder")}
+                            >
+                              {wr}%
+                            </HubLink>
                             <HubLink
                               to={{ kind: "finder", query: `champ=${encodeURIComponent(`${cName},${pc}`)}` }}
                               className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline font-mono block"

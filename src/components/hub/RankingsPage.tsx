@@ -226,7 +226,17 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
         const p = Math.max(4, Math.min(100, Math.round(v * 100)));
         return (
           <span className="inline-flex flex-col gap-0.5 min-w-[2.75rem]">
-            <span>{pct(v)}</span>
+            {top && x.r[0] && top[0] && x.r[0] !== top[0] ? (
+              <HubLink
+                to={{ kind: "prep", a: x.r[0], b: top[0] }}
+                className="hover:text-rw-accent hover:underline"
+                title={tl("Match prep")}
+              >
+                {pct(v)}
+              </HubLink>
+            ) : (
+              <span>{pct(v)}</span>
+            )}
             <span className="h-1 w-10 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
               <span className={`block h-full rounded-full ${v >= 0.45 ? "bg-rw-teal/75" : "bg-rw-sub/55"}`} style={{ width: `${p}%` }} />
             </span>
@@ -519,7 +529,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                     return (
                       <tr key={l} className="border-t border-rw-border">
                         <td className={`${td} text-rw-muted`} data-sort={i + 1}>{i + 1}</td>
-                        <td className={td}>
+                        <td className={td} data-sort={l}>
                           {u ? (
                             <HubLink
                               to={{ kind: "league", slug: u }}
@@ -531,7 +541,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                             l
                           )}
                         </td>
-                        <td className={`${td} text-rw-sub max-w-[9rem] truncate`}>
+                        <td className={`${td} text-rw-sub max-w-[9rem] truncate`} data-sort={best ? best[1] : ""}>
                           {best ? (
                             <span className="inline-flex items-center gap-1.5 min-w-0">
                               <TeamLogo name={best[1]} size={15} />
@@ -581,7 +591,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
             )}
           </p>
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <STable className="w-full text-xs">
               <thead>
                 <tr>
                   <th className={th}>{tl("Favourite's chance")}</th>
@@ -593,17 +603,23 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               <tbody>
                 {t.calibration.map(([lo, hi, n, won, said]) => (
                   <tr key={lo} className="border-t border-rw-border">
-                    <td className={td}>
+                    <td className={td} data-sort={lo}>
                       {lo}–{Math.min(hi, 100)}%
                     </td>
                     <td
                       className={`${td} text-right tabular-nums text-rw-sub`}
+                      data-sort={n}
                     >
                       {fmtNum(n)}
                     </td>
-                    {saidCol && <td className={`${td} text-right tabular-nums text-rw-sub`}>{said != null ? pct(said) : "–"}</td>}
+                    {saidCol && (
+                      <td className={`${td} text-right tabular-nums text-rw-sub`} data-sort={said ?? -1}>
+                        {said != null ? pct(said) : "–"}
+                      </td>
+                    )}
                     <td
                       className={`${td} text-right tabular-nums font-bold text-rw-text`}
+                      data-sort={won}
                     >
                       <span className="inline-flex items-center justify-end gap-1.5">
                         <span className="hidden sm:inline-block w-10 h-1 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
@@ -615,7 +631,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </STable>
           </div>
           {series3.length + series5.length > 0 && (
             <>
@@ -625,7 +641,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                 })}
               </p>
               <div className="overflow-x-auto">
-                <table className="w-full text-xs">
+                <STable className="w-full text-xs">
                   <thead>
                     <tr>
                       <th className={th}>{tl("Favourite's chance")}</th>
@@ -636,19 +652,24 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                   <tbody>
                     {seriesBins.map((lo) => (
                       <tr key={lo} className="border-t border-rw-border">
-                        <td className={td}>
+                        <td className={td} data-sort={lo}>
                           {lo}–{lo + 10}%
                         </td>
                         {[series3, series5].map((rows, i) => {
                           const row = rows.find((r) => r[0] === lo);
                           return (
-                            <td key={i} className={`${td} text-right tabular-nums text-rw-sub whitespace-nowrap`}>
+                            <td key={i} className={`${td} text-right tabular-nums text-rw-sub whitespace-nowrap`} data-sort={row ? row[3] : -1}>
                               {row ? (
-                                <>
-                                  {row[4] != null ? `${pct(row[4])} · ` : ""}
-                                  <span className="font-bold text-rw-text">{pct(row[3])}</span>
-                                  <span className="hidden sm:inline"> · {fmtNum(row[2])}</span>
-                                </>
+                                <span className="inline-flex items-center justify-end gap-1.5">
+                                  <span className="hidden sm:inline-block w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
+                                    <span className="block h-full rounded-full bg-rw-teal/80" style={{ width: `${Math.max(6, Math.min(100, Math.round(row[3] * 100)))}%` }} />
+                                  </span>
+                                  <span>
+                                    {row[4] != null ? `${pct(row[4])} · ` : ""}
+                                    <span className="font-bold text-rw-text">{pct(row[3])}</span>
+                                    <span className="hidden sm:inline"> · {fmtNum(row[2])}</span>
+                                  </span>
+                                </span>
                               ) : (
                                 "–"
                               )}
@@ -658,7 +679,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </STable>
               </div>
             </>
           )}

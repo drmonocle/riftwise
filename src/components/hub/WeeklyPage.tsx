@@ -397,7 +397,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             >
               <ol className="text-xs space-y-1.5">
                 {w.players.map((p, i) => (
-                  <li key={p.u || p.n} className="min-w-0">
+                  <li key={p.u || p.n} className="space-y-0.5 min-w-0">
                     <div className="flex items-center justify-between gap-2 min-w-0">
                       <span className="inline-flex items-center gap-1.5 truncate min-w-0">
                         <span className="text-rw-muted tabular-nums">{i + 1}.</span>
@@ -414,7 +414,13 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           ) : null}
                         </span>
                       </span>
-                      <RatingBadge v={p.rt} title={tl("Average RiftWise rating over {n} games (6 is an average game)", { n: p.g })} />
+                      <HubLink
+                        to={{ kind: "player", slug: p.u || prettySlug(p.n), tab: "matches" }}
+                        className="shrink-0 hover:opacity-85"
+                        title={tl("Recent games")}
+                      >
+                        <RatingBadge v={p.rt} title={tl("Average RiftWise rating over {n} games (6 is an average game)", { n: p.g })} />
+                      </HubLink>
                     </div>
                     {p.best && (
                       <div className="flex items-center gap-1 text-[10px] text-rw-muted truncate">
@@ -429,6 +435,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         <TeamLogo name={p.best.opp} size={12} />
                       </div>
                     )}
+                    <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                      <div
+                        className="h-full rounded-full bg-rw-teal/75"
+                        style={{ width: `${Math.max(10, Math.min(100, Math.round((p.rt / 10) * 100)))}%` }}
+                      />
+                    </div>
                   </li>
                 ))}
               </ol>
@@ -479,7 +491,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     const wrTone = pk >= 3 && wrPct != null ? (wrPct >= 53 ? "text-rw-teal font-semibold" : wrPct <= 47 ? "text-rw-red" : "text-rw-text") : "text-rw-sub";
                     return (
                       <tr key={c} className="border-t border-rw-border">
-                        <td className={`${td} max-w-[9rem]`}>
+                        <td className={`${td} max-w-[9rem]`} data-sort={champName(c)}>
                           <ChampLink name={c} size={18} />
                         </td>
                         <td className={`${td} tabular-nums`} data-sort={presPct ?? -1}>

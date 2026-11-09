@@ -1134,7 +1134,19 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blue: Gam
             {lanes.map(({ r, b, o }) => (
               <LeadBar
                 key={r}
-                label={roleName(r)}
+                label={
+                  b!.u && o!.u ? (
+                    <HubLink
+                      to={{ kind: "compare", mode: "player", a: b!.u, b: o!.u }}
+                      className="hover:text-rw-accent hover:underline"
+                      title={`${tl("Compare")}: ${b!.n} vs ${o!.n}`}
+                    >
+                      {roleName(r)}
+                    </HubLink>
+                  ) : (
+                    roleName(r)
+                  )
+                }
                 left={
                   <span className="inline-flex items-center justify-end gap-1 min-w-0 max-w-full">
                     {b!.c && <ChampIcon name={b!.c} size={13} />}
@@ -1394,7 +1406,20 @@ const PlayerRow: React.FC<{
                 <ItemIcon name={it} size={20} />
               </HubLink>
             ))}
-            {p.tr && <ItemIcon name={p.tr} size={16} />}
+            {p.tr && (
+              <HubLink
+                to={{
+                  kind: "items",
+                  query: new URLSearchParams({
+                    item: prettySlug(p.tr),
+                    ...(p.u ? { player: p.u } : {}),
+                  }).toString(),
+                }}
+                className="hover:opacity-80"
+              >
+                <ItemIcon name={p.tr} size={16} />
+              </HubLink>
+            )}
           </span>
         )}
         {p.sp && p.sp.length > 0 && (
