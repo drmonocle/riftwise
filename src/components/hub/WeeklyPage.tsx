@@ -394,7 +394,15 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
                         <PlayerLink name={p.n} u={p.u} />
                         {p.t && <TeamLogo name={p.t} size={13} />}
-                        <span className="text-rw-muted truncate">· {[p.r ? roleName(p.r) : "", p.t].filter(Boolean).join(" · ")}</span>
+                        <span className="text-rw-muted truncate">
+                          {p.r ? `· ${roleName(p.r)}` : ""}
+                          {p.t ? (
+                            <>
+                              {" · "}
+                              <TeamLink name={p.t} className="text-rw-muted hover:text-rw-accent hover:underline" />
+                            </>
+                          ) : null}
+                        </span>
                       </span>
                       <RatingBadge v={p.rt} title={tl("Average RiftWise rating over {n} games (6 is an average game)", { n: p.g })} />
                     </div>

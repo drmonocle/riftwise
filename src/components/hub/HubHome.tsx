@@ -168,7 +168,11 @@ export const HubHome: React.FC<{
                   <PlayerLink name={p.n} u={p.u} className="font-semibold truncate" />
                   <span className="inline-flex items-center gap-1 text-rw-muted truncate ml-auto">
                     {p.t && <TeamLogo name={p.t} size={13} />}
-                    <span className="truncate">{[p.r ? roleName(p.r) : "", p.t].filter(Boolean).join(" · ")}</span>
+                    <span className="truncate">
+                      {p.r ? roleName(p.r) : ""}
+                      {p.r && p.t ? " · " : ""}
+                      {p.t ? <TeamLink name={p.t} className="text-rw-muted hover:text-rw-accent hover:underline" /> : null}
+                    </span>
                   </span>
                 </li>
               ))}
@@ -504,7 +508,15 @@ const TopTeams: React.FC<{ rows?: RatingRow[]; n: number; ranked?: boolean }> = 
             <TeamLogo name={t[1]} code={t[2]} size={22} />
             <TeamLink name={t[1]} u={t[0]} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
             <span className="ml-auto flex items-center gap-2 shrink-0">
-              {!ranked && <span className="text-rw-muted">{t[10] || t[3]}</span>}
+              {!ranked && (
+                t[4] ? (
+                  <HubLink to={{ kind: "league", slug: t[4] }} className="text-rw-muted hover:text-rw-accent hover:underline">
+                    {t[10] || t[3]}
+                  </HubLink>
+                ) : (
+                  <span className="text-rw-muted">{t[10] || t[3]}</span>
+                )
+              )}
               <span className="hidden sm:inline-flex w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden shrink-0">
                 <span className="h-full bg-rw-accent/80 rounded-full" style={{ width: `${barPct}%` }} />
               </span>
@@ -664,7 +676,15 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                   <span className="inline-flex items-center gap-1 truncate min-w-0">
                     <PlayerLink name={p.n} u={p.u} />
                     {p.t && <TeamLogo name={p.t} size={13} />}
-                    <span className="text-rw-muted truncate">· {[p.r ? roleName(p.r) : "", p.t].filter(Boolean).join(" · ")}</span>
+                    <span className="text-rw-muted truncate">
+                      {p.r ? `· ${roleName(p.r)}` : ""}
+                      {p.t ? (
+                        <>
+                          {" · "}
+                          <TeamLink name={p.t} className="text-rw-muted hover:text-rw-accent hover:underline" />
+                        </>
+                      ) : null}
+                    </span>
                   </span>
                   <span className="ml-auto flex items-center gap-2 shrink-0">
                     <span className="hidden sm:inline-flex w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden shrink-0">

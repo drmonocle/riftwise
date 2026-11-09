@@ -19,7 +19,7 @@ import { PeriodKey, inPeriod, kdaOf, playerRowRef, teamRowRef } from "../../hub/
 import { ComparePick, bothOptions } from "./ComparePage";
 import { PeriodPicker, defaultPeriod } from "./PeriodStats";
 import { FearlessDepth, RosterSubPicker, Side, loadFullLogs, loadSide, needsFullLogs, swapPlayerInSide } from "./PrepPage";
-import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, PlayerPhoto, Section, TeamLogo, useLoad, usePageTitle, useRetryAttempt, retryFailedLoads } from "./ui";
+import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, PlayerLink, PlayerPhoto, Section, TeamLogo, useLoad, usePageTitle, useRetryAttempt, retryFailedLoads } from "./ui";
 import { bare, buildGameDraftQuery, DRAFT_ORDER as ORDER, type GameDraftInput, type GameDraftQueryInput, loadHubChamp, packHistory, packSlots, type PastGame, prettySlug, slotsFromGameDraft } from "../../hub/data";
 import { BroadcastCardButton, SectionCard, draftBoardCard, type BoardSide } from "./BroadcastCard";
 import type { HubChamp, LaneLine } from "../../hub/types";
@@ -1643,17 +1643,24 @@ const DraftMatchupPanel: React.FC<{
             <div className="flex items-center gap-2 min-w-0">
               {bChamp ? (
                 <>
-                  <ChampIcon name={bChamp} size={24} className="shrink-0" />
+                  <HubLink to={{ kind: "champ", slug: prettySlug(bChamp) }} className="shrink-0">
+                    <ChampIcon name={bChamp} size={24} />
+                  </HubLink>
                   <div className="min-w-0">
-                    <div className="font-semibold text-rw-text truncate">{champName(bChamp)}</div>
+                    <div className="font-semibold text-rw-text truncate">
+                      <HubLink to={{ kind: "champ", slug: prettySlug(bChamp) }} className="hover:text-rw-accent hover:underline">
+                        {champName(bChamp)}
+                      </HubLink>
+                    </div>
                     <div className="text-[10px] text-rw-muted truncate tabular-nums flex items-center gap-1">
                       {bPlayer ? (
                         <>
                           <PlayerPhoto name={bPlayer.name} team={blue.team.name} slug={bPlayer.u ?? undefined} size={13} />
                           <span className="truncate">
+                            <PlayerLink name={bPlayer.name} u={bPlayer.u} className="text-rw-muted hover:text-rw-accent hover:underline" />
                             {bPlayer.g > 0
-                              ? `${bPlayer.name} · ${bPlayer.g}G (${winRate(bPlayer.w, bPlayer.g)})`
-                              : `${bPlayer.name} · ${tl("pocket pick")} (${bPlayer.cg}G)`}
+                              ? ` · ${bPlayer.g}G (${winRate(bPlayer.w, bPlayer.g)})`
+                              : ` · ${tl("pocket pick")} (${bPlayer.cg}G)`}
                           </span>
                         </>
                       ) : (
@@ -1711,14 +1718,19 @@ const DraftMatchupPanel: React.FC<{
               {rChamp ? (
                 <>
                   <div className="min-w-0">
-                    <div className="font-semibold text-rw-text truncate">{champName(rChamp)}</div>
+                    <div className="font-semibold text-rw-text truncate">
+                      <HubLink to={{ kind: "champ", slug: prettySlug(rChamp) }} className="hover:text-rw-accent hover:underline">
+                        {champName(rChamp)}
+                      </HubLink>
+                    </div>
                     <div className="text-[10px] text-rw-muted truncate tabular-nums flex items-center justify-end gap-1">
                       {rPlayer ? (
                         <>
                           <span className="truncate">
+                            <PlayerLink name={rPlayer.name} u={rPlayer.u} className="text-rw-muted hover:text-rw-accent hover:underline" />
                             {rPlayer.g > 0
-                              ? `${rPlayer.name} · ${rPlayer.g}G (${winRate(rPlayer.w, rPlayer.g)})`
-                              : `${rPlayer.name} · ${tl("pocket pick")} (${rPlayer.cg}G)`}
+                              ? ` · ${rPlayer.g}G (${winRate(rPlayer.w, rPlayer.g)})`
+                              : ` · ${tl("pocket pick")} (${rPlayer.cg}G)`}
                           </span>
                           <PlayerPhoto name={rPlayer.name} team={red.team.name} slug={rPlayer.u ?? undefined} size={13} />
                         </>
@@ -1727,7 +1739,9 @@ const DraftMatchupPanel: React.FC<{
                       )}
                     </div>
                   </div>
-                  <ChampIcon name={rChamp} size={24} className="shrink-0" />
+                  <HubLink to={{ kind: "champ", slug: prettySlug(rChamp) }} className="shrink-0">
+                    <ChampIcon name={rChamp} size={24} />
+                  </HubLink>
                 </>
               ) : (
                 <span className="text-rw-muted text-[11px]">–</span>
@@ -2267,7 +2281,7 @@ const ChampInfo: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Side; 
                 return (
                   <div key={x.name} className="text-rw-text flex flex-wrap items-center gap-x-1">
                     <PlayerPhoto name={x.name} team={s.team.name} slug={x.u ?? undefined} size={15} />
-                    <span className="font-semibold">{x.name}</span>:{" "}
+                    <PlayerLink name={x.name} u={x.u} className="font-semibold text-rw-text hover:text-rw-accent hover:underline" />:{" "}
                     {x.g ? (
                       <>
                         {tl("{n} games, won {pct}", { n: x.g, pct: winRate(x.w, x.g) })}

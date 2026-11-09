@@ -16,7 +16,7 @@ import { loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemI
 import type { ItemIndexRow, PlayerGameRow, SearchPlayerRow } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
 import { isFinishedItem, itemName, useDDragon } from "../../hub/ddragon";
-import { card, ChampIcon, fmtDate, fmtNum, HubLink, ItemIcon, Loading, PlayerLink, PlayerPhoto, Section, Stat, td, TeamLogo, th, useHiddenCheck, useLoad, usePageTitle } from "./ui";
+import { card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, Loading, PlayerLink, PlayerPhoto, Section, Stat, td, TeamLogo, th, useHiddenCheck, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
 import { SectionCard } from "./BroadcastCard";
 
@@ -474,7 +474,7 @@ const ItemPlayersView: React.FC<{ slug: string; onPlayer: (slug: string) => void
         <Stat label={tl("Games")} value={fmtNum(it.g)} sub={tl("ended with it")} />
         <Stat label={tl("Players")} value={fmtNum(it.np)} />
         {it.w != null && <Stat label={tl("Win %")} value={winRate(it.w, it.g)} sub={tl("{n} won", { n: fmtNum(it.w) })} />}
-        {top && <Stat label={tl("Most built on")} value={champName(top[0])} sub={tl("{n} games", { n: fmtNum(top[1]) })} />}
+        {top && <Stat label={tl("Most built on")} value={<ChampLink name={top[0]} size={18} />} sub={tl("{n} games", { n: fmtNum(top[1]) })} />}
       </div>
       {it.y && it.y.length > 1 && <YearBars years={it.y} onYear={onYear} />}
       <PickChips label={tl("Champions")} rows={(it.c || []).slice(0, 24).map(([c, g]) => ({ key: c, champ: c, text: champName(c), n: g, pick: () => onChamp(c) }))} />
@@ -1040,7 +1040,10 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                     <TeamLogo name={r[8]} size={13} />
                     <span>{r[8]}</span>
                   </HubLink>
-                  <span className="text-rw-muted"> · {r[9]}</span>
+                  <span className="text-rw-muted">
+                    {" · "}
+                    <EventLink name={r[9]} u={r[11]} className="text-rw-muted hover:text-rw-accent hover:underline" />
+                  </span>
                 </span>
               </span>
               <span className="text-rw-muted shrink-0">{fmtDate(r[0], false)}</span>

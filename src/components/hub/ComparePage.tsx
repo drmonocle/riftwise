@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { tl, tc, tn, roleName, fmtDec, locale, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
-import { HubHit, HubIndex, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadPlayerGames, loadTeamGames, searchHub, teamStarter } from "../../hub/data";
+import { HubHit, HubIndex, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadPlayerGames, loadTeamGames, prettySlug, searchHub, teamStarter } from "../../hub/data";
 import { countView } from "../../usage";
 import type { HubPlayer, HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
 import { CompareRoute, hubShareUrl, navigateHub } from "../../hub/route";
@@ -702,10 +702,14 @@ export const TeamRows: React.FC<{
         <div className="flex items-center justify-between gap-3 text-sm font-bold">
           <span className="flex items-center gap-2 min-w-0 text-rw-side-a">
             <TeamLogo name={x.name} sizeClass="w-9 h-9 lg:w-12 lg:h-12 2xl:w-16 2xl:h-16" />
-            <span className="truncate">{x.name}</span>
+            <HubLink to={{ kind: "team", slug: x.u }} className="truncate hover:underline">
+              {x.name}
+            </HubLink>
           </span>
           <span className="flex items-center gap-2 min-w-0 text-rw-side-b">
-            <span className="truncate text-right">{y.name}</span>
+            <HubLink to={{ kind: "team", slug: y.u }} className="truncate text-right hover:underline">
+              {y.name}
+            </HubLink>
             <TeamLogo name={y.name} sizeClass="w-9 h-9 lg:w-12 lg:h-12 2xl:w-16 2xl:h-16" />
           </span>
         </div>
@@ -904,12 +908,16 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
         <div className="flex items-center justify-between gap-3 text-sm font-bold">
           <span className="flex items-center gap-2 min-w-0 text-rw-side-a">
             <PlayerPhoto name={x.name} team={x.club} slug={x.u} img={x.img} sizeClass="w-11 h-11 lg:w-16 lg:h-16 2xl:w-20 2xl:h-20" />
-            <span className="truncate">{x.name}</span>
+            <HubLink to={{ kind: "player", slug: x.u }} className="truncate hover:underline">
+              {x.name}
+            </HubLink>
             <PhotosLink q={x.name} iconOnly className="text-rw-muted hover:text-rw-accent shrink-0" />
           </span>
           <span className="flex items-center gap-2 min-w-0 text-rw-side-b">
             <PhotosLink q={y.name} iconOnly className="text-rw-muted hover:text-rw-accent shrink-0" />
-            <span className="truncate text-right">{y.name}</span>
+            <HubLink to={{ kind: "player", slug: y.u }} className="truncate text-right hover:underline">
+              {y.name}
+            </HubLink>
             <PlayerPhoto name={y.name} team={y.club} slug={y.u} img={y.img} sizeClass="w-11 h-11 lg:w-16 lg:h-16 2xl:w-20 2xl:h-20" />
           </span>
         </div>
@@ -1132,10 +1140,14 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
               <span className={`w-3.5 shrink-0 font-bold ${m.a[6] ? "text-rw-teal" : "text-rw-red"}`}>
                 {m.a[6] ? tc("short result", "W") : tc("short result", "L")}
               </span>
-              <ChampIcon name={m.a[2]} size={18} />
+              <HubLink to={{ kind: "champ", slug: prettySlug(m.a[2]) }}>
+                <ChampIcon name={m.a[2]} size={18} />
+              </HubLink>
               <span className="tabular-nums text-rw-text">{m.a[3]}/{m.a[4]}/{m.a[5]}</span>
               <span className="text-rw-muted">vs</span>
-              <ChampIcon name={m.b[2]} size={18} />
+              <HubLink to={{ kind: "champ", slug: prettySlug(m.b[2]) }}>
+                <ChampIcon name={m.b[2]} size={18} />
+              </HubLink>
               <span className="tabular-nums text-rw-sub">{m.b[3]}/{m.b[4]}/{m.b[5]}</span>
               <span className="truncate text-rw-muted">
                 · <EventLink name={m.a[9]} u={m.a[11]} className="text-rw-muted hover:text-rw-accent hover:underline" />
@@ -1318,7 +1330,9 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
                       ) : (
                         <PlayerPhoto name={r.info.name} slug={r.slug} img={(r.info as HubPlayer).img} size={16} />
                       )}
-                      {r.info.name}
+                      <HubLink to={{ kind: mode, slug: r.slug }} className="hover:text-rw-accent hover:underline">
+                        {r.info.name}
+                      </HubLink>
                     </span>
                   </th>
                 ))}

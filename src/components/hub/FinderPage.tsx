@@ -25,6 +25,7 @@ import {
   Failed,
   RevealButton,
   td,
+  TeamLink,
   TeamLogo,
   th,
   useHidden,
@@ -671,7 +672,13 @@ const FinderBody: React.FC<{
                       <td className={`${td} font-semibold text-rw-text`}>
                         <span className="inline-flex items-center gap-1.5 min-w-0">
                           {(g[3] === 1 ? g[10] : g[11]) && <TeamLogo name={(g[3] === 1 ? g[10] : g[11])!} size={14} />}
-                          <span>{(g[3] === 1 ? g[10] : g[11]) || (g[3] === 1 ? tl("Blue") : tl("Red"))}</span>
+                          {(g[3] === 1 ? g[10] : g[11]) ? (
+                            <TeamLink name={(g[3] === 1 ? g[10] : g[11])!} u={g[3] === 1 ? g[12] : g[13]} />
+                          ) : g[3] === 1 ? (
+                            <span>{tl("Blue")}</span>
+                          ) : (
+                            <span>{tl("Red")}</span>
+                          )}
                         </span>
                       </td>
                       <td className={`${td} text-rw-sub`} data-sort={patchSort(g[1])}>{g[1]}</td>
@@ -885,8 +892,10 @@ const TeamCell: React.FC<{
         <HubLink to={{ kind: "team", slug: u }} className="hover:text-rw-accent">
           {name}
         </HubLink>
+      ) : name ? (
+        <TeamLink name={name} />
       ) : (
-        name || "–"
+        "–"
       )}
     </span>
   </td>

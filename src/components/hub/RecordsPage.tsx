@@ -215,10 +215,10 @@ const PentaRow: React.FC<{
               ) : (
                 <span className="inline-flex items-center gap-1 text-rw-sub">
                   <TeamLogo name={x.a} size={13} />
-                  <span>{x.a}</span>
+                  <TeamLink name={x.a} />
                   <span>vs</span>
                   <TeamLogo name={x.b} size={13} />
-                  <span>{x.b}</span>
+                  <TeamLink name={x.b} />
                 </span>
               )}
             </span>
@@ -500,7 +500,7 @@ export const RecordsPanel: React.FC = () => {
                         <span>vs</span>
                         <TeamLogo name={p.opp} size={12} />
                         <span className="truncate">
-                          {p.opp} ·{" "}
+                          <TeamLink name={p.opp} className="text-rw-muted hover:text-rw-accent hover:underline" /> ·{" "}
                           <EventLink
                             name={p.t}
                             u={p.e}
@@ -860,7 +860,7 @@ export const TitlesPanel: React.FC = () => {
                               <span className="inline-flex items-center gap-1">
                                 <span>{x.score} vs</span>
                                 <TeamLogo name={x.l} size={14} />
-                                <span>{x.l}</span>
+                                <TeamLink name={x.l} />
                               </span>
                               {sw + sl > 0 && (
                                 <span className="hidden sm:inline-flex w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">

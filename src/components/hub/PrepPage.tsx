@@ -9,7 +9,7 @@ import { ClipboardCopy, GitCompare, Printer, Swords } from "lucide-react";
 import { tl, tc, roleName, fmtDec } from "../../i18n";
 import { MissingFile, winRate } from "../../stats";
 import { champName } from "../../champions";
-import { bare, loadHubPlayer, loadHubTeam, loadPlayerGames, loadPlayerGames2y, loadRatings, loadTeamGames, loadTeamGames2y, loadTeamSeries } from "../../hub/data";
+import { bare, loadHubPlayer, loadHubTeam, loadPlayerGames, loadPlayerGames2y, loadRatings, loadTeamGames, loadTeamGames2y, loadTeamSeries, prettySlug } from "../../hub/data";
 import { chanceContext, matchChance, pct, seriesChance } from "../../hub/winChance";
 import { liveRating } from "../../hub/liveRatings";
 import { Change } from "./RankingsPage";
@@ -23,7 +23,7 @@ import { PeriodPicker, Playstyle, TeamEarly, defaultPeriod } from "./PeriodStats
 import { DraftTendencies } from "./DraftTendencies";
 import { pool, computeDraftSuggestions, slotsFromGameDraft, packSlots } from "./DraftPage";
 import { StoryLine, StoryList, notePlainText, noteText } from "./Storylines";
-import { CaptureContext, card, ChampIcon, fmtDate, fmtNum, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, TeamLogo, useHidden, useLoad, usePageTitle, PhotosLink, NERDFINDER_TOGETHER, useRetryAttempt, retryFailedLoads } from "./ui";
+import { CaptureContext, card, ChampIcon, fmtDate, fmtNum, HubLink, isFresh, Loading, OeCredit, PlayerLink, PlayerPhoto, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle, PhotosLink, NERDFINDER_TOGETHER, useRetryAttempt, retryFailedLoads } from "./ui";
 import { CaptureFooter, CopyPageImage, ShareButtons } from "./ShareImage";
 import { BroadcastCardButton, CardData, PoolLine, SectionCard, fearlessCard, lineupCard, playerCardData, prepOverviewCard } from "./BroadcastCard";
 import type { HubRatings } from "../../hub/types";
@@ -256,10 +256,10 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
       <div className="flex items-center justify-between gap-2 text-xs font-bold">
         <span className="flex items-center gap-1.5 min-w-0 text-rw-side-a">
           <TeamLogo name={a.name} size={18} />
-          <span className="truncate">{a.name}</span>
+          <TeamLink name={a.name} u={a.u} className="truncate hover:underline" />
         </span>
         <span className="flex items-center justify-end gap-1.5 min-w-0 text-rw-side-b text-right">
-          <span className="truncate">{b.name}</span>
+          <TeamLink name={b.name} u={b.u} className="truncate hover:underline" />
           <TeamLogo name={b.name} size={18} />
         </span>
       </div>
@@ -278,7 +278,7 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
       <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-rw-sub">
         {[a, b].map((t) => (
           <p key={t.u}>
-            <span className="text-rw-text font-semibold">{t.name}</span>{" "}
+            <TeamLink name={t.name} u={t.u} className="text-rw-text font-semibold hover:text-rw-accent hover:underline" />{" "}
             {t.rating!.rank != null
               ? tl("#{rank} of {of} worldwide · #{lrank} in {league} · rating {r}", {
                   rank: t.rating!.rank,
@@ -395,7 +395,7 @@ const KeyStats: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[
               <td className="px-2 py-1 font-semibold text-rw-text whitespace-nowrap">
                 <span className="inline-flex items-center gap-1.5">
                   <TeamLogo name={(side as Side).team.name} size={16} />
-                  {(side as Side).team.name}
+                  <TeamLink name={(side as Side).team.name} u={(side as Side).team.u} />
                 </span>
               </td>
               {cols.map((c) => (
@@ -1033,7 +1033,7 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
               <div key={s.team.u} className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
                 <span className="w-28 flex items-center gap-1.5 min-w-0 font-semibold text-rw-text" title={s.team.name}>
                   <TeamLogo name={s.team.name} size={15} />
-                  <span className="truncate">{s.team.name}</span>
+                  <TeamLink name={s.team.name} u={s.team.u} className="truncate hover:text-rw-accent hover:underline" />
                 </span>
                 <span className="inline-flex items-center gap-1 w-20 tabular-nums shrink-0">
                   <span className="text-rw-sub">{w}-{rows.length - w}</span>
@@ -1136,7 +1136,7 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
         <div className={`text-[11px] flex flex-wrap items-center gap-1.5 ${right ? "justify-end" : ""} ${x.deep === minDeep ? "text-rw-red font-bold" : "text-rw-sub"}`}>
           <PlayerPhoto name={x.name} slug={x.slug ?? undefined} size={16} />
           <span>
-            {x.name} · {tl("{n} with 2+ games", { n: x.deep })}
+            <PlayerLink name={x.name} u={x.slug} /> · {tl("{n} with 2+ games", { n: x.deep })}
             {x.deep === minDeep && ` · ${tl("pinch point")}`}
           </span>
           <span className="inline-flex gap-0.5 items-center shrink-0" title={`${Math.min(x.deep, 5)}/5`}>
@@ -1554,8 +1554,10 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
           className="inline-flex items-center gap-1 rounded border border-rw-border bg-rw-bg px-1.5 py-0.5 text-[11px]"
           title={x.why}
         >
-          <ChampIcon name={x.c} size={18} />
-          <span className="font-medium text-rw-text">{champName(x.c)}</span>
+          <HubLink to={{ kind: "champ", slug: prettySlug(x.c) }} className="inline-flex items-center gap-1 hover:text-rw-accent hover:underline">
+            <ChampIcon name={x.c} size={18} />
+            <span className="font-medium text-rw-text">{champName(x.c)}</span>
+          </HubLink>
           {x.role != null && <span className="text-[9px] text-rw-muted">{roleName(ROLES[x.role])}</span>}
           {x.stat && <span className="text-[10px] text-rw-sub tabular-nums">{x.stat}</span>}
           {x.badge && <span className="text-[9px] px-1 rounded bg-rw-accent/15 text-rw-accent font-semibold">{x.badge}</span>}
