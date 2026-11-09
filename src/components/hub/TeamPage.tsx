@@ -163,14 +163,18 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
           const eraName = t.years.find((y) => y.y === yr.y)?.as;
           return (
             <div key={yr.y} className="text-xs flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-              <span className="text-rw-muted font-semibold whitespace-nowrap">
+              <HubLink
+                to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${yr.y}` }}
+                title={`${tl("Stats for")} ${yr.y}`}
+                className="text-rw-muted hover:text-rw-accent hover:underline font-semibold whitespace-nowrap"
+              >
                 {yr.y}
                 {eraName && eraName !== t.name ? ` (${eraName})` : ""}
-              </span>
+              </HubLink>
               {yr.p.map((p, i) => (
                 <span key={p.n + i} className="inline-flex items-center gap-1.5 whitespace-nowrap">
                   {i > 0 && !overview && <span className="text-rw-muted/60 mr-0.5">·</span>}
-                  {overview && <PlayerPhoto name={p.n} team={eraName || t.name} slug={p.u ?? undefined} size={22} />}
+                  <PlayerPhoto name={p.n} team={eraName || t.name} slug={p.u ?? undefined} size={overview ? 22 : 18} />
                   <PlayerLink name={p.n} u={p.u} />
                   <span className="text-rw-muted">{roleName(p.r)}</span>
                   {overview && <PhotosLink q={p.n} iconOnly className="text-rw-muted hover:text-rw-accent" />}
@@ -395,16 +399,18 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
             <ul className="text-xs space-y-1 md:max-h-[24rem] md:overflow-y-auto md:pr-1">
               {t.recent.map((r, i) => (
                 <li key={i} className="flex justify-between gap-2 min-w-0">
-                  <span className="truncate min-w-0">
-                    <span className={r.us > r.them ? "text-rw-teal font-bold" : "text-rw-red font-bold"}>
+                  <span className="inline-flex items-center gap-1.5 truncate min-w-0">
+                    <span className={`shrink-0 ${r.us > r.them ? "text-rw-teal font-bold" : "text-rw-red font-bold"}`}>
                       {r.us > r.them ? tc("short result", "W") : tc("short result", "L")} {r.us}-{r.them}
-                    </span>{" "}
+                    </span>
+                    <span className="text-rw-muted shrink-0">vs</span>
+                    <TeamLogo name={r.opp} size={15} />
                     {r.g ? (
-                      <HubLink to={{ kind: "match", slug: r.g }}>vs {r.opp}</HubLink>
+                      <HubLink to={{ kind: "match", slug: r.g }} className="truncate">{r.opp}</HubLink>
                     ) : (
-                      <span className="text-rw-text">vs {r.opp}</span>
+                      <span className="text-rw-text truncate">{r.opp}</span>
                     )}
-                    <span className="text-rw-muted"> · {r.en}</span>
+                    <span className="text-rw-muted truncate">· {r.en}</span>
                   </span>
                   <span className="text-rw-muted shrink-0 flex items-center gap-2">
                     {r.r != null && (
@@ -441,24 +447,30 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
               </tr>
             </thead>
             <tbody>
-              {t.years.map((y) => (
-                <tr key={y.y} className="border-t border-rw-border hover:bg-rw-raised/50">
-                  <td className={`${td} text-rw-text`}>
-                    <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${y.y}` }} className="hover:text-rw-accent hover:underline font-medium">
-                      {y.y}
-                    </HubLink>
-                    {y.as !== t.name && <span className="text-rw-muted text-[10px]"> {tl("as {name}", { name: y.as })}</span>}
-                  </td>
-                  <td className={`${td} text-rw-sub`}>
-                    <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${y.y}` }} className="hover:text-rw-accent hover:underline">
-                      {y.w}-{y.g - y.w}
-                    </HubLink>
-                  </td>
-                  <td className={`${td} text-rw-sub`}>
-                    <WinBar w={y.w} g={y.g} />
-                  </td>
-                </tr>
-              ))}
+              {(() => {
+                const maxYrG = Math.max(1, ...t.years.map((x) => x.g));
+                return t.years.map((y) => (
+                  <tr key={y.y} className="border-t border-rw-border hover:bg-rw-raised/50">
+                    <td className={`${td} text-rw-text`} data-sort={y.y}>
+                      <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${y.y}` }} className="hover:text-rw-accent hover:underline font-medium">
+                        {y.y}
+                      </HubLink>
+                      {y.as !== t.name && <span className="text-rw-muted text-[10px]"> {tl("as {name}", { name: y.as })}</span>}
+                    </td>
+                    <td className={`${td} text-rw-sub`} data-sort={y.g}>
+                      <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${y.y}` }} className="inline-flex items-center gap-1.5 hover:text-rw-accent hover:underline tabular-nums">
+                        <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
+                          <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(6, Math.round((y.g / maxYrG) * 100))}%` }} />
+                        </span>
+                        <span>{y.w}-{y.g - y.w}</span>
+                      </HubLink>
+                    </td>
+                    <td className={`${td} text-rw-sub`} data-sort={y.g ? y.w / y.g : 0}>
+                      <WinBar w={y.w} g={y.g} />
+                    </td>
+                  </tr>
+                ));
+              })()}
             </tbody>
           </STable>
         </Section>
@@ -496,8 +508,11 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   <EventLink name={eventTitle(x.t)} u={x.e} />
                   {x.as !== t.name && <span className="text-rw-muted"> ({tl("as {name}", { name: x.as })})</span>}
                 </span>
-                <span className="text-rw-muted shrink-0">
-                  {x.score} vs {x.l}
+                <span className="text-rw-muted shrink-0 inline-flex items-center gap-1.5">
+                  <span className="tabular-nums">{x.score}</span>
+                  <span>vs</span>
+                  <TeamLogo name={x.l} size={14} />
+                  <span>{x.l}</span>
                 </span>
               </li>
             ))}

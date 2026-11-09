@@ -385,20 +385,23 @@ const PlayerView: React.FC<{
             <tbody>
               {p.years.map((y) => (
                 <tr key={y.y} className="border-t border-rw-border hover:bg-rw-raised/50">
-                  <td className={`${td} text-rw-text`}>
+                  <td className={`${td} text-rw-text`} data-sort={y.y}>
                     <HubLink to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${y.y}` }} className="hover:text-rw-accent hover:underline font-medium">
                       {y.y}
                     </HubLink>
                   </td>
-                  <td className={`${td} text-rw-sub max-w-[9rem] truncate`}>
-                    {y.team}
+                  <td className={`${td} text-rw-sub max-w-[9rem]`}>
+                    <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
+                      <TeamLogo name={y.team} size={15} />
+                      <span className="truncate">{y.team}</span>
+                    </span>
                   </td>
-                  <td className={`${td} text-rw-sub`}>
+                  <td className={`${td} text-rw-sub`} data-sort={y.g ? y.w / y.g : 0}>
                     <HubLink to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${y.y}` }} className="hover:text-rw-accent hover:underline">
                       <WinBar w={y.w} g={y.g} showRecord />
                     </HubLink>
                   </td>
-                  <td className={`${td} text-rw-sub`}>
+                  <td className={`${td} text-rw-sub`} data-sort={y.kda}>
                     <KdaBar kda={y.kda} />
                   </td>
                 </tr>
@@ -476,16 +479,18 @@ const PlayerView: React.FC<{
                     >
                       <ChampIcon name={r.c} size={18} />
                     </HubLink>
-                    <span className="truncate min-w-0">
-                      <span className="text-rw-text tabular-nums">
+                    <span className="inline-flex items-center gap-1.5 truncate min-w-0">
+                      <span className="text-rw-text tabular-nums shrink-0">
                         {r.k}/{r.d}/{r.a}
-                      </span>{" "}
+                      </span>
+                      <span className="text-rw-muted shrink-0">vs</span>
+                      <TeamLogo name={r.opp} size={15} />
                       {r.g ? (
-                        <HubLink to={{ kind: "match", slug: r.g, game: r.gn }}>
-                          vs {r.opp}
+                        <HubLink to={{ kind: "match", slug: r.g, game: r.gn }} className="truncate">
+                          {r.opp}
                         </HubLink>
                       ) : (
-                        <span className="text-rw-sub">vs {r.opp}</span>
+                        <span className="text-rw-sub truncate">{r.opp}</span>
                       )}
                     </span>
                   </span>
@@ -706,13 +711,13 @@ const PlayerChampionsTab: React.FC<{
                       <span>{c.g}</span>
                     </span>
                   </td>
-                  <td className={`${td} text-rw-sub`}>
+                  <td className={`${td} text-rw-sub`} data-sort={c.g ? c.w / c.g : 0}>
                     <WinBar w={c.w} g={c.g} />
                   </td>
-                  <td className={`${td} text-rw-sub`}>
+                  <td className={`${td} text-rw-sub`} data-sort={c.kda}>
                     <KdaBar kda={c.kda} />
                   </td>
-                  <td className={`${td} text-rw-muted`}>
+                  <td className={`${td} text-rw-muted`} data-sort={c.k}>
                     {c.k} / {c.d} / {c.a}
                   </td>
                   <td className={`${td} text-right whitespace-nowrap`}>
@@ -936,7 +941,7 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
       }
     >
       <ul className="space-y-2 text-xs">
-        {peers.map(({ peer, shared }) => (
+        {peers.map(({ peer, sim, shared }) => (
           <li key={peer.u} className="flex items-center justify-between gap-2 min-w-0">
             <span className="flex items-center gap-2 min-w-0">
               <PlayerPhoto name={peer.name} team={peer.club} slug={peer.u} img={peer.img} size={26} />
@@ -950,6 +955,12 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
               </span>
             </span>
             <span className="flex items-center gap-2 shrink-0">
+              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono text-rw-sub tabular-nums" title={`${sim}%`}>
+                <span className="w-7 h-1.5 rounded-full bg-rw-bg overflow-hidden shrink-0">
+                  <span className="block h-full rounded-full bg-rw-accent/75" style={{ width: `${sim}%` }} />
+                </span>
+                <span>{sim}%</span>
+              </span>
               <span className="flex gap-0.5" title={shared.map(champName).join(", ")}>
                 {shared.slice(0, 3).map((c) => (
                   <HubLink key={c} to={{ kind: "champ", slug: prettySlug(c) }}>

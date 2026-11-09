@@ -502,7 +502,9 @@ export const PlayerPhoto: React.FC<{
   /** Tailwind size classes instead of a fixed size ("w-16 h-16 lg:w-24 lg:h-24"): the photo grows with the window */
   sizeClass?: string;
   className?: string;
-}> = ({ name, team, slug, img, size = 56, sizeClass, className = "" }) => {
+  /** When false, renders a plain <span> for the initials fallback instead of an <a> link (for use inside <a>/<HubLink>). */
+  linkFallback?: boolean;
+}> = ({ name, team, slug, img, size = 56, sizeClass, className = "", linkFallback = true }) => {
   const pic = usePlayerPicture(name, team, slug, img);
   const open = useContext(OpenUrlContext);
   const [broken, setBroken] = useState<string[]>([]); // addresses that failed to load
@@ -522,7 +524,7 @@ export const PlayerPhoto: React.FC<{
       style={box}
       className={`rounded-full object-cover object-top bg-rw-raised border border-rw-border shrink-0 ${sz} ${className}`}
     />
-  ) : (
+  ) : linkFallback ? (
     <a
       href={photosHref}
       target="_blank"
@@ -540,6 +542,14 @@ export const PlayerPhoto: React.FC<{
     >
       {name.slice(0, 2).toUpperCase()}
     </a>
+  ) : (
+    <span
+      data-nocapture="1"
+      style={{ ...box, fontSize: sizeClass ? undefined : Math.max(9, Math.round(size / 2.8)) }}
+      className={`rounded-full bg-rw-raised border border-rw-border text-rw-muted font-bold inline-flex items-center justify-center shrink-0 ${sz} ${className}`}
+    >
+      {name.slice(0, 2).toUpperCase()}
+    </span>
   );
 };
 

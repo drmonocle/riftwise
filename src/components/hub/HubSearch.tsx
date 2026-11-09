@@ -9,11 +9,12 @@ import { tl, tk, roleName, fmtN } from "../../i18n";
 import { champName } from "../../champions";
 import { isNonLatin } from "../../searchAliases";
 import { winRate } from "../../stats";
-import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadItemIndex, normText, searchHub } from "../../hub/data";
+import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadItemIndex, normText, prefetchHub, searchHub } from "../../hub/data";
 import type { ItemIndexRow } from "../../hub/types";
 import { itemName } from "../../hub/ddragon";
 import { HubRoute, navigateHub } from "../../hub/route";
-import { ChampIcon, fmtNum, HubLink, ItemIcon, TeamLogo, useLoad } from "./ui";
+import { ChampIcon, fmtNum, HubLink, ItemIcon, PlayerPhoto, TeamLogo, useLoad } from "./ui";
+import { preloadPageCode } from "./pageCode";
 import { MENU_ITEMS } from "./menu";
 import { useRecentPages } from "../../hub/recent";
 import { loadPopular, type PopularPage } from "../../hub/popular";
@@ -264,7 +265,7 @@ const TIPS: [string, string][] = [
   ["Tab", tk("after a player or team: add a champion")],
 ];
 const tryChip = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-rw-border bg-rw-bg text-rw-text hover:border-rw-accent hover:text-rw-accent";
-const chipLink = "inline-block px-2.5 py-1 rounded-full border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-line max-w-[12rem] truncate";
+const chipLink = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-line max-w-[12rem] truncate";
 
 /**
  * What the box shows before anything is typed: searches to try (each fills the box, so the results show what that
@@ -312,7 +313,10 @@ const SearchStart: React.FC<{ onTry: (text: string) => void; onNavigate: () => v
               <div className="flex flex-wrap gap-1.5">
                 {recent.map((r) => (
                   <HubLink key={JSON.stringify(r.route)} to={r.route} onNavigate={onNavigate} className={chipLink}>
-                    {r.title}
+                    {r.route.kind === "team" && <TeamLogo name={r.title} size={14} />}
+                    {r.route.kind === "champ" && <ChampIcon name={r.title} size={14} />}
+                    {r.route.kind === "player" && <PlayerPhoto name={r.title} slug={r.route.slug} size={14} linkFallback={false} />}
+                    <span className="truncate">{r.title}</span>
                   </HubLink>
                 ))}
               </div>
@@ -324,7 +328,10 @@ const SearchStart: React.FC<{ onTry: (text: string) => void; onNavigate: () => v
               <div className="flex flex-wrap gap-1.5">
                 {list.map((p) => (
                   <HubLink key={JSON.stringify(p.route)} to={p.route} onNavigate={onNavigate} className={chipLink}>
-                    {p.route.kind === "champ" ? champName(p.title) : p.title}
+                    {p.route.kind === "team" && <TeamLogo name={p.title} size={14} />}
+                    {p.route.kind === "champ" && <ChampIcon name={p.title} size={14} />}
+                    {p.route.kind === "player" && <PlayerPhoto name={p.title} slug={p.route.slug} size={14} linkFallback={false} />}
+                    <span className="truncate">{p.route.kind === "champ" ? champName(p.title) : p.title}</span>
                   </HubLink>
                 ))}
               </div>
@@ -536,6 +543,20 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
     } else if (flat[i - shortcuts.length]) go(flat[i - shortcuts.length]);
   };
   const count = shortcuts.length + flat.length;
+  const activeRoute = useMemo<HubRoute | null>(() => {
+    if (!open || !q.trim() || active < 0 || active >= count) return null;
+    if (active < shortcuts.length) return shortcuts[active].route;
+    const h = flat[active - shortcuts.length];
+    return h ? hitRoute(h) : null;
+  }, [open, q, active, count, shortcuts, flat]);
+  useEffect(() => {
+    if (!activeRoute) return;
+    const timer = window.setTimeout(() => {
+      prefetchHub(activeRoute);
+      preloadPageCode(activeRoute.kind);
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [activeRoute]);
 
   /** What text to fill into the search box when scrolling over or pressing Tab on a hit. */
   const fillForHit = (h: HubHit): string | null => {
@@ -747,6 +768,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
                       <span className="flex items-center gap-2 min-w-0">
                         {h.kind === "champ" && <ChampIcon name={h.name} size={18} />}
                         {h.kind === "team" && <TeamLogo name={h.name} size={16} />}
+                        {h.kind === "player" && <PlayerPhoto name={h.name} team={h.sub} slug={h.slug} size={18} linkFallback={false} />}
                         <span className="font-semibold truncate">{h.kind === "champ" ? champName(h.name) : h.name}</span>
                         {h.matched && <span className="text-rw-muted truncate">({h.kind === "team" ? tl("was {name}", { name: h.matched }) : h.matched})</span>}
                       </span>

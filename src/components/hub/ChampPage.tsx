@@ -17,12 +17,14 @@ import {
   OeCredit,
   Page,
   PlayerLink,
+  PlayerPhoto,
   RevealButton,
   RuneIcon,
   Section,
   SpellIcon,
   Stat,
   td,
+  TeamLogo,
   th,
   useHidden,
   useLoad,
@@ -647,7 +649,10 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               return pList.map((p) => (
                 <tr key={p.n + p.u} className="border-t border-rw-border">
                   <td className={td}>
-                    <PlayerLink name={p.n} u={p.u} />
+                    <span className="inline-flex items-center gap-1.5 min-w-0">
+                      <PlayerPhoto name={p.n} slug={p.u ?? undefined} size={20} />
+                      <PlayerLink name={p.n} u={p.u} />
+                    </span>
                   </td>
                   <td className={`${td} text-rw-sub`} data-sort={p.g}>
                     <span className="inline-flex items-center gap-1.5 tabular-nums">
@@ -721,12 +726,15 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
             {c.recent.filter(usedIn).map((r, i) => (
               <li key={i} className="min-w-0">
                 <div className="flex items-center justify-between gap-2 min-w-0">
-                  <span className="truncate min-w-0">
-                    <span className={`font-bold mr-1 ${r.win ? "text-rw-teal" : "text-rw-red"}`}>
+                  <span className="inline-flex items-center gap-1.5 truncate min-w-0">
+                    <span className={`font-bold shrink-0 ${r.win ? "text-rw-teal" : "text-rw-red"}`}>
                       {r.win ? tc("short result", "W") : tc("short result", "L")}
                     </span>
-                    <PlayerLink name={r.n} u={r.u} /> <span className="text-rw-sub tabular-nums">{r.k}/{r.d}/{r.a}</span>{" "}
-                    {r.g ? <HubLink to={{ kind: "match", slug: r.g, game: r.gn }}>vs {r.opp}</HubLink> : <span>vs {r.opp}</span>}
+                    <PlayerLink name={r.n} u={r.u} />
+                    <span className="text-rw-sub tabular-nums shrink-0">{r.k}/{r.d}/{r.a}</span>
+                    <span className="text-rw-muted shrink-0">vs</span>
+                    <TeamLogo name={r.opp} size={14} />
+                    {r.g ? <HubLink to={{ kind: "match", slug: r.g, game: r.gn }} className="truncate">{r.opp}</HubLink> : <span className="truncate">{r.opp}</span>}
                   </span>
                   <span className="text-rw-muted shrink-0">{fmtDate(r.date, false)}</span>
                 </div>
