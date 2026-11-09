@@ -338,23 +338,33 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
             </span>
           }
         >
-          <ul className="text-xs space-y-1">
-            {pairs.slice(0, 12).map((p) => (
-              <li key={p.a + p.b} className="flex items-center justify-between gap-2 min-w-0">
-                <span className="flex items-center gap-1.5 min-w-0">
-                  <RegionFlag code={p.a} />
-                  <span className="truncate text-rw-text">{regionLabel(p.a)}</span>
-                  <span className="text-rw-muted">vs</span>
-                  <RegionFlag code={p.b} />
-                  <span className="truncate text-rw-sub">{regionLabel(p.b)}</span>
-                </span>
-                <span className="tabular-nums shrink-0">
-                  <span className="text-rw-teal font-bold">{p.wa}</span>
-                  <span className="text-rw-muted"> – </span>
-                  <span className="text-rw-sub">{p.wb}</span>
-                </span>
-              </li>
-            ))}
+          <ul className="text-xs space-y-1.5">
+            {pairs.slice(0, 12).map((p) => {
+              const tot = p.wa + p.wb;
+              const shareA = tot > 0 ? Math.round((p.wa / tot) * 100) : 50;
+              return (
+                <li key={p.a + p.b} className="space-y-0.5">
+                  <div className="flex items-center justify-between gap-2 min-w-0">
+                    <span className="flex items-center gap-1.5 min-w-0">
+                      <RegionFlag code={p.a} />
+                      <span className="truncate text-rw-text font-medium">{regionLabel(p.a)}</span>
+                      <span className="text-rw-muted">vs</span>
+                      <RegionFlag code={p.b} />
+                      <span className="truncate text-rw-sub">{regionLabel(p.b)}</span>
+                    </span>
+                    <span className="tabular-nums shrink-0">
+                      <span className="text-rw-teal font-bold">{p.wa}</span>
+                      <span className="text-rw-muted"> – </span>
+                      <span className="text-rw-sub">{p.wb}</span>
+                    </span>
+                  </div>
+                  <div className="h-1 w-full rounded-full bg-rw-border/70 overflow-hidden flex gap-[1px]" aria-hidden="true">
+                    <span className="h-full bg-rw-teal/80" style={{ width: `${shareA}%` }} />
+                    <span className="h-full flex-1 bg-rw-sub/40" />
+                  </div>
+                </li>
+              );
+            })}
           </ul>
           <p className="text-[10px] text-rw-muted">{tl("Series between teams from different regions.")}</p>
         </Section>

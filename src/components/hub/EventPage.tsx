@@ -874,6 +874,8 @@ const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
         <tbody>
           {rows.map((c) => {
             const presPct = games ? Math.min(100, Math.round(((c.p + c.b) / games) * 100)) : 0;
+            const pickPct = games ? Math.min(100, (c.p / games) * 100) : 0;
+            const banPct = games ? Math.min(Math.max(0, 100 - pickPct), (c.b / games) * 100) : 0;
             return (
               <tr key={c.c} className="border-t border-rw-border">
                 <td className={`${td} max-w-[9rem]`}>
@@ -881,10 +883,14 @@ const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
                 </td>
                 <td className={`${td} text-rw-sub`} data-sort={games ? (c.p + c.b) / games : 0}>
                   {games ? (
-                    <span className="inline-flex flex-col gap-0.5 min-w-[3.25rem]">
+                    <span
+                      className="inline-flex flex-col gap-0.5 min-w-[3.25rem]"
+                      title={`${tl("Picks")}: ${c.p} · ${tl("Bans")}: ${c.b}`}
+                    >
                       <span className="tabular-nums font-medium">{presPct}%</span>
-                      <span className="h-1 w-12 rounded-full bg-rw-border/70 overflow-hidden">
-                        <span className="block h-full rounded-full bg-rw-accent" style={{ width: `${presPct}%` }} />
+                      <span className="h-1 w-12 rounded-full bg-rw-border/70 overflow-hidden flex" aria-hidden="true">
+                        <span className="h-full bg-rw-teal/85" style={{ width: `${pickPct.toFixed(1)}%` }} />
+                        <span className="h-full bg-rw-red/75" style={{ width: `${banPct.toFixed(1)}%` }} />
                       </span>
                     </span>
                   ) : (

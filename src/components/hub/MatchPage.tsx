@@ -294,7 +294,7 @@ const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
         const teamSide: 1 | 2 = (p.s === 1 ? aIsBlue : !aIsBlue) ? 1 : 2;
         const cur = players.get(key) || {
           n: p.n,
-          u: p.u,
+          u: p.u || null,
           teamSide,
           k: 0,
           d: 0,
@@ -302,7 +302,7 @@ const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
           g: 0,
           rtSum: 0,
           rtCount: 0,
-          champs: [],
+          champs: [] as string[],
         };
         cur.k += p.k;
         cur.d += p.d;

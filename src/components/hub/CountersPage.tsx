@@ -24,7 +24,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   usePageTitle(tl("Counter-pick finder"));
   useDDragon();
   const q = new URLSearchParams(query || "");
-  const slug = q.get("champ") || "";
+  const rawSlug = q.get("champ") || "";
+  const slug = rawSlug ? prettySlug(rawSlug) : "";
   const vsParam = q.get("vs") || "";
   const role = q.get("role") || "";
   const spanParam = q.get("span") || "";
@@ -99,16 +100,46 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
     ) : (
       n
     );
+  const maxRowG = useMemo(() => Math.max(1, ...rows.map((r) => r.g)), [rows]);
+  const hasCsd = useMemo(() => rows.some((r) => r.csd != null), [rows]);
   const columns: Column<Row>[] = [
     { key: "c", label: tl("Lane opponent"), value: (x) => champName(x.c), render: (x) => <ChampLink name={x.c} size={18} /> },
     { key: "role", label: tl("Role"), value: (x) => x.role, render: (x) => (x.role >= 0 ? roleName(ROLES[x.role]) : "–"), className: "text-rw-sub" },
-    { key: "g", label: tl("Games"), value: (x) => x.g, render: (x) => finderLink(x.c, x.g), className: "tabular-nums text-rw-sub" },
+    {
+      key: "g",
+      label: tl("Games"),
+      value: (x) => x.g,
+      render: (x) => {
+        const w = Math.max(6, Math.round((x.g / maxRowG) * 100));
+        return (
+          <span className="inline-flex flex-col gap-0.5 min-w-[2.75rem]">
+            <span>{finderLink(x.c, x.g)}</span>
+            <span className="h-1 w-10 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
+              <span className="block h-full rounded-full bg-rw-accent/65" style={{ width: `${w}%` }} />
+            </span>
+          </span>
+        );
+      },
+      className: "tabular-nums text-rw-sub",
+    },
     {
       key: "wr",
       label: tl("Win rate"),
       title: tl("How often {champ} won the game against this lane opponent", { champ: cName }),
       value: (x) => x.w / x.g,
-      render: (x) => <span className={x.w / x.g >= 0.55 ? "text-rw-teal font-semibold" : x.w / x.g <= 0.45 ? "text-rw-red" : ""}>{Math.round((x.w / x.g) * 100)}%</span>,
+      render: (x) => {
+        const pct = Math.round((x.w / x.g) * 100);
+        const cls = x.w / x.g >= 0.55 ? "text-rw-teal font-semibold" : x.w / x.g <= 0.45 ? "text-rw-red" : "";
+        const barCls = x.w / x.g >= 0.55 ? "bg-rw-teal/80" : x.w / x.g <= 0.45 ? "bg-rw-red/75" : "bg-rw-sub/55";
+        return (
+          <span className="inline-flex flex-col gap-0.5 min-w-[3rem]">
+            <span className={cls}>{pct}%</span>
+            <span className="h-1 w-11 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
+              <span className={`block h-full rounded-full ${barCls}`} style={{ width: `${Math.max(4, Math.min(100, pct))}%` }} />
+            </span>
+          </span>
+        );
+      },
       className: "tabular-nums",
     },
     {
@@ -119,6 +150,19 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
       render: (x) => (x.gd == null ? "–" : <span className={x.gd > 150 ? "text-rw-teal" : x.gd < -150 ? "text-rw-red" : ""}>{x.gd > 0 ? "+" : ""}{x.gd}</span>),
       className: "tabular-nums",
     },
+    ...(hasCsd
+      ? ([
+          {
+            key: "csd",
+            label: "CSD@15",
+            title: tl("CS lead over the lane opponent at 15 minutes"),
+            value: (x) => x.csd ?? null,
+            render: (x) =>
+              x.csd == null ? "–" : <span className={x.csd >= 3 ? "text-rw-teal" : x.csd <= -3 ? "text-rw-red" : ""}>{x.csd > 0 ? "+" : ""}{x.csd.toFixed(1)}</span>,
+            className: "tabular-nums",
+          },
+        ] as Column<Row>[])
+      : []),
   ];
   const sampleFloor = span === "12m" ? Math.max(minG, 3) : Math.max(minG, 8);
   const good = rows.filter((x) => x.g >= sampleFloor).sort((a, b) => b.w / b.g - a.w / a.g).slice(0, 5);
