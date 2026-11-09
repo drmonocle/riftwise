@@ -19,7 +19,7 @@ import { PeriodKey, inPeriod, kdaOf, playerRowRef, teamRowRef } from "../../hub/
 import { ComparePick, bothOptions } from "./ComparePage";
 import { PeriodPicker, defaultPeriod } from "./PeriodStats";
 import { FearlessDepth, RosterSubPicker, Side, loadFullLogs, loadSide, needsFullLogs, swapPlayerInSide } from "./PrepPage";
-import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, Section, useLoad, usePageTitle, useRetryAttempt, retryFailedLoads } from "./ui";
+import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, PlayerPhoto, Section, TeamLogo, useLoad, usePageTitle, useRetryAttempt, retryFailedLoads } from "./ui";
 import { bare, buildGameDraftQuery, DRAFT_ORDER as ORDER, type GameDraftInput, type GameDraftQueryInput, loadHubChamp, packHistory, packSlots, type PastGame, prettySlug, slotsFromGameDraft } from "../../hub/data";
 import { BroadcastCardButton, SectionCard, draftBoardCard, type BoardSide } from "./BroadcastCard";
 import type { HubChamp, LaneLine } from "../../hub/types";
@@ -830,13 +830,15 @@ const Board: React.FC<{
             {tl("Draft board")}
             {gameNum != null && gameNum >= 1 ? ` · ${tl("Game {n}", { n: gameNum })}` : ""}
           </div>
-          <h1 className="text-lg font-bold truncate">
-            <HubLink to={{ kind: "team", slug: blue.team.u }} className="text-rw-side-a">
-              {blue.team.name}
+          <h1 className="text-lg font-bold flex flex-wrap items-center gap-2 min-w-0">
+            <HubLink to={{ kind: "team", slug: blue.team.u }} className="inline-flex items-center gap-1.5 min-w-0 text-rw-side-a hover:underline">
+              <TeamLogo name={blue.team.name} size={22} />
+              <span className="truncate">{blue.team.name}</span>
             </HubLink>
-            <span className="text-rw-muted font-normal"> vs </span>
-            <HubLink to={{ kind: "team", slug: red.team.u }} className="text-rw-side-b">
-              {red.team.name}
+            <span className="text-rw-muted font-normal">vs</span>
+            <HubLink to={{ kind: "team", slug: red.team.u }} className="inline-flex items-center gap-1.5 min-w-0 text-rw-side-b hover:underline">
+              <TeamLogo name={red.team.name} size={22} />
+              <span className="truncate">{red.team.name}</span>
             </HubLink>
           </h1>
         </div>
@@ -1917,8 +1919,11 @@ const TeamColumn: React.FC<{
   };
   return (
     <div className={`${card} space-y-2`} style={{ borderColor: `${color}55` }}>
-      <div className="text-xs font-bold truncate" style={{ color }}>
-        {who === "b" ? tl("Blue side") : tl("Red side")}: {side.team.name}
+      <div className="text-xs font-bold flex items-center gap-1.5 min-w-0" style={{ color }}>
+        <TeamLogo name={side.team.name} size={16} />
+        <span className="truncate">
+          {who === "b" ? tl("Blue side") : tl("Red side")}: {side.team.name}
+        </span>
       </div>
       <div className="space-y-1">
         <button
@@ -2055,14 +2060,17 @@ const PlayerPools: React.FC<{
               .slice(0, 5);
             return (
               <div key={pl.role} className="flex flex-wrap items-start gap-1.5 min-w-0">
-                <span className="w-24 shrink-0 min-w-0 leading-tight">
-                  {pl.u ? (
-                    <HubLink to={{ kind: "player", slug: pl.u }} className="font-semibold text-rw-text hover:text-rw-accent truncate block">
-                      {pl.name}
-                    </HubLink>
-                  ) : (
-                    <span className="font-semibold text-rw-text truncate block">{pl.name}</span>
-                  )}
+                <span className="w-28 shrink-0 min-w-0 leading-tight">
+                  <span className="flex items-center gap-1.5 min-w-0">
+                    <PlayerPhoto name={pl.name} team={side.team.name} slug={pl.u ?? undefined} size={18} />
+                    {pl.u ? (
+                      <HubLink to={{ kind: "player", slug: pl.u }} className="font-semibold text-rw-text hover:text-rw-accent truncate">
+                        {pl.name}
+                      </HubLink>
+                    ) : (
+                      <span className="font-semibold text-rw-text truncate">{pl.name}</span>
+                    )}
+                  </span>
                   <span className="text-[10px] text-rw-muted">{roleName(ROLES[pl.role])}</span>
                   {onSwap && <RosterSubPicker side={side} roleIdx={pl.role} onSwap={onSwap} />}
                 </span>
@@ -2225,7 +2233,10 @@ const ChampInfo: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Side; 
         const roles = [...(p.roles.get(c) || [])].map((r) => roleName(ROLES[r]));
         return (
           <div key={w} className="space-y-1 min-w-0">
-            <div className={`font-bold truncate ${w === "b" ? "text-rw-side-a" : "text-rw-side-b"}`}>{s.team.name}</div>
+            <div className={`font-bold flex items-center gap-1.5 min-w-0 ${w === "b" ? "text-rw-side-a" : "text-rw-side-b"}`}>
+              <TeamLogo name={s.team.name} size={15} />
+              <span className="truncate">{s.team.name}</span>
+            </div>
             <div className="text-rw-sub">
               {pk ? tl("Picked {n} times, won {pct}", { n: pk[0], pct: winRate(pk[1], pk[0]) }) : tl("Not picked in this period")}
               {roles.length > 0 && ` (${roles.join(" / ")})`}

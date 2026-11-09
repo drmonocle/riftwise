@@ -23,7 +23,7 @@ import { PeriodPicker, Playstyle, TeamEarly, defaultPeriod } from "./PeriodStats
 import { DraftTendencies } from "./DraftTendencies";
 import { pool, computeDraftSuggestions, slotsFromGameDraft, packSlots } from "./DraftPage";
 import { StoryLine, StoryList, notePlainText, noteText } from "./Storylines";
-import { CaptureContext, card, ChampIcon, fmtDate, fmtNum, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, useHidden, useLoad, usePageTitle, PhotosLink, NERDFINDER_TOGETHER, useRetryAttempt, retryFailedLoads } from "./ui";
+import { CaptureContext, card, ChampIcon, fmtDate, fmtNum, HubLink, isFresh, Loading, OeCredit, PlayerPhoto, RevealButton, Section, TeamLogo, useHidden, useLoad, usePageTitle, PhotosLink, NERDFINDER_TOGETHER, useRetryAttempt, retryFailedLoads } from "./ui";
 import { CaptureFooter, CopyPageImage, ShareButtons } from "./ShareImage";
 import { BroadcastCardButton, CardData, PoolLine, SectionCard, fearlessCard, lineupCard, playerCardData, prepOverviewCard } from "./BroadcastCard";
 import type { HubRatings } from "../../hub/types";
@@ -254,8 +254,14 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
       right={overview ? <BroadcastCardButton data={overview} name={`${a.name}-vs-${b.name}-match-prep`} label={tl("Overview card")} /> : undefined}
     >
       <div className="flex items-center justify-between gap-2 text-xs font-bold">
-        <span className="text-rw-side-a truncate">{a.name}</span>
-        <span className="text-rw-side-b truncate text-right">{b.name}</span>
+        <span className="flex items-center gap-1.5 min-w-0 text-rw-side-a">
+          <TeamLogo name={a.name} size={18} />
+          <span className="truncate">{a.name}</span>
+        </span>
+        <span className="flex items-center justify-end gap-1.5 min-w-0 text-rw-side-b text-right">
+          <span className="truncate">{b.name}</span>
+          <TeamLogo name={b.name} size={18} />
+        </span>
       </div>
       <div className="space-y-1.5">
         {rows.map(([label, x]) => (
@@ -386,7 +392,12 @@ const KeyStats: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[
             [b, B, a],
           ].map(([side, X, other]) => (
             <tr key={(side as Side).team.u} className="border-t border-rw-border">
-              <td className="px-2 py-1 font-semibold text-rw-text whitespace-nowrap">{(side as Side).team.name}</td>
+              <td className="px-2 py-1 font-semibold text-rw-text whitespace-nowrap">
+                <span className="inline-flex items-center gap-1.5">
+                  <TeamLogo name={(side as Side).team.name} size={16} />
+                  {(side as Side).team.name}
+                </span>
+              </td>
               {cols.map((c) => (
                 <td key={c[0]} className="px-2 py-1 text-right font-mono tabular-nums text-rw-text whitespace-nowrap">
                   {cell(side as Side, X as ReturnType<typeof teamAgg>, other as Side, c)}
@@ -810,10 +821,16 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
       <div className={`rw-span ${card} border-l-[3px] border-l-rw-accent flex flex-wrap items-center justify-between gap-2`}>
         <div className="min-w-0">
           <div className="font-head text-[10px] uppercase tracking-wider font-semibold text-rw-accent">{tl("Match prep")}</div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-rw-text truncate">
-            <HubLink to={{ kind: "team", slug: a.team.u }}>{a.team.name}</HubLink>
-            <span className="text-rw-muted font-normal"> vs </span>
-            <HubLink to={{ kind: "team", slug: b.team.u }}>{b.team.name}</HubLink>
+          <h1 className="text-xl sm:text-2xl font-semibold text-rw-text flex flex-wrap items-center gap-2 min-w-0">
+            <HubLink to={{ kind: "team", slug: a.team.u }} className="inline-flex items-center gap-2 min-w-0 hover:underline">
+              <TeamLogo name={a.team.name} size={24} />
+              <span className="truncate">{a.team.name}</span>
+            </HubLink>
+            <span className="text-rw-muted font-normal">vs</span>
+            <HubLink to={{ kind: "team", slug: b.team.u }} className="inline-flex items-center gap-2 min-w-0 hover:underline">
+              <TeamLogo name={b.team.name} size={24} />
+              <span className="truncate">{b.team.name}</span>
+            </HubLink>
           </h1>
           {/* only in the copied picture, where the controls are left out */}
           <div className="rw-capture-only text-[11px] text-rw-sub gap-1">
@@ -1014,7 +1031,10 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
             return (
               // the ten squares stay together: one line beside the name in a side column, their own line on a phone
               <div key={s.team.u} className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
-                <span className="w-24 truncate font-semibold text-rw-text" title={s.team.name}>{s.team.name}</span>
+                <span className="w-28 flex items-center gap-1.5 min-w-0 font-semibold text-rw-text" title={s.team.name}>
+                  <TeamLogo name={s.team.name} size={15} />
+                  <span className="truncate">{s.team.name}</span>
+                </span>
                 <span className="inline-flex items-center gap-1 w-20 tabular-nums shrink-0">
                   <span className="text-rw-sub">{w}-{rows.length - w}</span>
                   {rows.length > 0 && (
@@ -1114,6 +1134,7 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
     ) : (
       <div className={`min-w-0 space-y-1 ${right ? "text-right" : ""}`}>
         <div className={`text-[11px] flex flex-wrap items-center gap-1.5 ${right ? "justify-end" : ""} ${x.deep === minDeep ? "text-rw-red font-bold" : "text-rw-sub"}`}>
+          <PlayerPhoto name={x.name} slug={x.slug ?? undefined} size={16} />
           <span>
             {x.name} · {tl("{n} with 2+ games", { n: x.deep })}
             {x.deep === minDeep && ` · ${tl("pinch point")}`}
@@ -1596,7 +1617,10 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
     >
       <div className="grid gap-3 md:grid-cols-2 text-xs">
         <div className="space-y-2 min-w-0">
-          <div className="font-bold text-rw-side-a truncate">{a.team.name}</div>
+          <div className="font-bold text-rw-side-a flex items-center gap-1.5 min-w-0">
+            <TeamLogo name={a.team.name} size={16} />
+            <span className="truncate">{a.team.name}</span>
+          </div>
           <div className="space-y-1">
             <div className="text-[10px] font-semibold text-rw-muted">
               {tl("Threats to ban")} ({b.team.name})
@@ -1611,7 +1635,10 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
           </div>
         </div>
         <div className="space-y-2 min-w-0">
-          <div className="font-bold text-rw-side-b truncate">{b.team.name}</div>
+          <div className="font-bold text-rw-side-b flex items-center gap-1.5 min-w-0">
+            <TeamLogo name={b.team.name} size={16} />
+            <span className="truncate">{b.team.name}</span>
+          </div>
           <div className="space-y-1">
             <div className="text-[10px] font-semibold text-rw-muted">
               {tl("Threats to ban")} ({a.team.name})

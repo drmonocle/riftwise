@@ -12,7 +12,7 @@ import { hubShareUrl, navigateHub } from "../../hub/route";
 import { BroadcastCardButton, gameCardData, SectionCard, seriesCardData } from "./BroadcastCard";
 import { RiotGamesFor, RiotMatchPage } from "./RiotMatch";
 import { RIOT_PREFIX } from "../../hub/riotMatch";
-import { card, ChampIcon, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, OeCredit, Page, PlayerLink, RatingBadge, RevealButton, RuneIcon, Section, SpellIcon, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
+import { card, ChampIcon, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, OeCredit, Page, PlayerLink, PlayerPhoto, RatingBadge, RevealButton, RuneIcon, Section, SpellIcon, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
 import { heroBtn } from "./EntityHero";
 
 export function extractHubGameDraft(g: HubGame): GameDraftInput {
@@ -375,6 +375,7 @@ const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
               <span className="truncate">{tl("Top rated:")}</span>
             </div>
             <div className="mt-0.5 flex items-center gap-1.5 min-w-0">
+              <PlayerPhoto name={mvp.n} team={mvp.teamSide === 1 ? s.a.n : s.b.n} slug={mvp.u ?? undefined} size={20} />
               <PlayerLink name={mvp.n} u={mvp.u} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
               <span className="text-[10px] text-rw-muted font-mono tabular-nums shrink-0">
                 {mvp.k}/{mvp.d}/{mvp.a}
@@ -1159,7 +1160,10 @@ const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red
         </span>
         {won && <span className="text-[10px] font-bold text-rw-teal">{tc("short result", "W")}</span>}
       </div>
-      <TeamLink name={name} u={u} className="text-sm font-bold text-rw-text hover:underline" />
+      <div className={`flex items-center gap-1.5 min-w-0 ${right ? "flex-row-reverse" : ""}`}>
+        <TeamLogo name={name} size={18} />
+        <TeamLink name={name} u={u} className="text-sm font-bold text-rw-text hover:underline truncate" />
+      </div>
       {obj.length > 0 && (
         <div className={`mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] ${right ? "justify-end" : ""}`}>
           {obj.map(([l, v]) => (
@@ -1244,6 +1248,7 @@ const Scoreboard: React.FC<{
     <section className={`${card} p-3 min-w-0`} style={{ borderTopColor: color, borderTopWidth: 2 }}>
       <h3 className="text-xs font-bold text-rw-text mb-2 flex items-center gap-2">
         <span className="w-1 h-3.5 rounded-sm shrink-0" style={{ background: color }} aria-hidden="true" />
+        <TeamLogo name={name} size={16} />
         {name}
         {!hidden && won && <span className="text-[10px] text-rw-teal">{tl("Victory")}</span>}
       </h3>

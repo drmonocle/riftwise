@@ -89,11 +89,18 @@ export const ComparePick: React.FC<{ kind: Mode; onPick: (slug: string) => void;
           type="button"
           onClick={() => pick(h)}
           onMouseEnter={() => setSel(i)}
-          className={`w-full flex justify-between gap-2 px-2 py-1 rounded text-left text-xs min-w-0 ${
+          className={`w-full flex items-center justify-between gap-2 px-2 py-1 rounded text-left text-xs min-w-0 ${
             i === sel ? "bg-rw-raised" : "bg-rw-bg hover:bg-rw-raised"
           }`}
         >
-          <span className="text-rw-text font-semibold truncate">{h.name}</span>
+          <span className="flex items-center gap-1.5 min-w-0">
+            {kind === "team" ? (
+              <TeamLogo name={h.name} size={16} />
+            ) : (
+              <PlayerPhoto name={h.name} team={h.sub} slug={h.slug} size={18} linkFallback={false} />
+            )}
+            <span className="text-rw-text font-semibold truncate">{h.name}</span>
+          </span>
           <span className="text-rw-muted truncate shrink-0 max-w-[50%]">{h.sub}</span>
         </button>
       ))}
@@ -488,8 +495,15 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
         ).map((side) => (
           <div key={side.key} className={`${card} space-y-1 min-w-0`}>
             {side.s && side.i && (
-              <div className={`text-sm font-bold truncate ${side.key === "a" ? "text-rw-side-a" : "text-rw-side-b"}`}>
-                <HubLink to={{ kind: mode, slug: side.s }}>{side.i.name}</HubLink>
+              <div className={`text-sm font-bold flex items-center gap-2 min-w-0 ${side.key === "a" ? "text-rw-side-a" : "text-rw-side-b"}`}>
+                {mode === "team" ? (
+                  <TeamLogo name={side.i.name} size={20} />
+                ) : (
+                  <PlayerPhoto name={side.i.name} slug={side.s} img={(side.i as HubPlayer).img} size={22} />
+                )}
+                <HubLink to={{ kind: mode, slug: side.s }} className="truncate hover:underline">
+                  {side.i.name}
+                </HubLink>
               </div>
             )}
             {side.s ? (
@@ -705,9 +719,15 @@ export const TeamRows: React.FC<{
               >
                 <span className="text-[9px] font-bold uppercase tracking-wider text-rw-muted">{short}</span>
                 <span className="w-full flex items-center justify-between gap-1 text-[11px] font-semibold min-w-0 mt-0.5">
-                  <span className="truncate text-rw-side-a">{pa!.n}</span>
+                  <span className="flex items-center gap-1 min-w-0 text-rw-side-a">
+                    <PlayerPhoto name={pa!.n} team={x.name} slug={pa!.u} size={16} linkFallback={false} />
+                    <span className="truncate">{pa!.n}</span>
+                  </span>
                   <span className="text-rw-muted text-[9px] shrink-0">vs</span>
-                  <span className="truncate text-rw-side-b text-right">{pb!.n}</span>
+                  <span className="flex items-center justify-end gap-1 min-w-0 text-rw-side-b text-right">
+                    <span className="truncate">{pb!.n}</span>
+                    <PlayerPhoto name={pb!.n} team={y.name} slug={pb!.u} size={16} linkFallback={false} />
+                  </span>
                 </span>
               </HubLink>
             ))}
@@ -1235,8 +1255,13 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
     <>
       <div className="flex flex-wrap items-center gap-2 text-xs">
         {rows.map((r) => (
-          <span key={r.slug} className={`${card} py-1 px-2 flex items-center gap-2`}>
-            <HubLink to={{ kind: mode, slug: r.slug }} className="font-bold">
+          <span key={r.slug} className={`${card} py-1 px-2 flex items-center gap-1.5`}>
+            {mode === "team" ? (
+              <TeamLogo name={r.info.name} size={16} />
+            ) : (
+              <PlayerPhoto name={r.info.name} slug={r.slug} img={(r.info as HubPlayer).img} size={18} />
+            )}
+            <HubLink to={{ kind: mode, slug: r.slug }} className="font-bold hover:underline">
               {r.info.name}
             </HubLink>
             <button type="button" onClick={() => remove(r.slug)} className="text-rw-muted hover:text-rw-red" aria-label={tl("Remove")} title={tl("Remove")}>
@@ -1287,7 +1312,14 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
                 <th className="text-left py-1.5 pr-2 text-rw-muted font-semibold"></th>
                 {rows.map((r) => (
                   <th key={r.slug} className="text-right py-1.5 px-2 font-bold text-rw-text whitespace-nowrap">
-                    {r.info.name}
+                    <span className="inline-flex items-center justify-end gap-1.5">
+                      {mode === "team" ? (
+                        <TeamLogo name={r.info.name} size={15} />
+                      ) : (
+                        <PlayerPhoto name={r.info.name} slug={r.slug} img={(r.info as HubPlayer).img} size={16} />
+                      )}
+                      {r.info.name}
+                    </span>
                   </th>
                 ))}
               </tr>
