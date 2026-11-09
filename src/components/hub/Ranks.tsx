@@ -436,7 +436,11 @@ const Bars: React.FC<{ rows: RankRow[]; hide: ColId[] }> = ({ rows, hide }) => {
           </span>
           {show("pct") && (
             <span className="order-3 sm:order-2 relative h-6" title={tl("Percentile {p} (100 = the best)", { p: r.pct })}>
-              <span className="absolute inset-x-3 top-1/2 h-px bg-rw-line" />
+              <span className="absolute inset-x-3 top-1/2 -translate-y-1/2 h-1 rounded-full bg-rw-line/70" />
+              <span
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-1 rounded-full opacity-55"
+                style={{ width: `calc((100% - 1.5rem) * ${r.pct / 100})`, background: pctShade(r.pct) }}
+              />
               <span
                 className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full grid place-items-center text-[10px] font-semibold tabular-nums text-rw-bg"
                 style={{ left: `calc(0.75rem + (100% - 1.5rem) * ${r.pct / 100})`, background: pctShade(r.pct) }}

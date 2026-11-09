@@ -10,7 +10,7 @@ import { navigateHub, type HubSection } from "../../hub/route";
 import type { SearchPlayerRow, SearchTeamRow } from "../../hub/types";
 import { SortTable, type Column } from "./SortTable";
 import { SectionCard } from "./BroadcastCard";
-import { card, fmtNum, HubLink, Page, PlayerLink, TeamLink, useLoad, usePageTitle } from "./ui";
+import { card, fmtNum, HubLink, Page, PlayerLink, TeamLink, TeamLogo, useLoad, usePageTitle } from "./ui";
 
 /** rows shown before "Show more" (the whole list sorts and filters either way) */
 const STEP = 200;
@@ -104,7 +104,17 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
   }, [rows, region, since, words]);
   const maxGames = useMemo(() => Math.max(1, ...list.map((t) => t[2] || 0)), [list]);
   const columns: Column<SearchTeamRow>[] = [
-    { key: "n", label: tl("Team"), value: (t) => t[0].toLowerCase(), render: (t) => <TeamLink name={t[0]} u={t[1] || prettySlug(t[0])} /> },
+    {
+      key: "n",
+      label: tl("Team"),
+      value: (t) => t[0].toLowerCase(),
+      render: (t) => (
+        <span className="inline-flex items-center gap-1.5 min-w-0">
+          <TeamLogo name={t[0]} code={(t[5] || "").split(" | ")[0] || undefined} size={16} />
+          <TeamLink name={t[0]} u={t[1] || prettySlug(t[0])} />
+        </span>
+      ),
+    },
     { key: "c", label: tl("Short name"), value: (t) => (t[5] || "").split(" | ")[0] || null, className: "text-rw-sub" },
     { key: "r", label: tl("Region"), value: (t) => (t[6] ? regionName(t[6], t[6]) : null), className: "text-rw-sub max-w-[10rem] truncate" },
     { key: "y", label: tl("Last played"), value: (t) => t[3] || null, className: "tabular-nums text-rw-sub" },
@@ -234,7 +244,13 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       key: "t",
       label: tl("Last team"),
       value: (p) => p[2] || null,
-      render: (p) => (p[2] ? <TeamLink name={p[2]} u={prettySlug(p[2])} /> : null),
+      render: (p) =>
+        p[2] ? (
+          <span className="inline-flex items-center gap-1.5 min-w-0">
+            <TeamLogo name={p[2]} size={15} />
+            <TeamLink name={p[2]} u={prettySlug(p[2])} />
+          </span>
+        ) : null,
       className: "text-rw-sub max-w-[12rem] truncate",
     },
     { key: "y", label: tl("Last played"), value: (p) => p[4] || null, className: "tabular-nums text-rw-sub" },

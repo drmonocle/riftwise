@@ -633,6 +633,7 @@ export const PlayerOpponents: React.FC<{
 
   if (!opps.length) return null;
 
+  const maxOppG = Math.max(1, ...opps.map((o) => o.g));
   const shownOpps = showAll || search.trim() ? filteredOpps : filteredOpps.slice(0, 10);
   const expanded = selectedOpp ? opps.find((o) => o.opp === selectedOpp) || null : null;
 
@@ -853,9 +854,19 @@ export const PlayerOpponents: React.FC<{
                     </span>
                   </td>
                   <td className={`${td} text-rw-sub tabular-nums`}>
-                    <span className="font-semibold text-rw-text">{o.g}</span>{" "}
-                    <span className="text-[11px] text-rw-muted">
-                      ({o.w}–{o.g - o.w})
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="hidden sm:inline-block w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
+                        <span
+                          className="block h-full rounded-full bg-rw-accent/80"
+                          style={{ width: `${Math.max(6, Math.round((o.g / maxOppG) * 100))}%` }}
+                        />
+                      </span>
+                      <span>
+                        <span className="font-semibold text-rw-text">{o.g}</span>{" "}
+                        <span className="text-[11px] text-rw-muted">
+                          ({o.w}–{o.g - o.w})
+                        </span>
+                      </span>
                     </span>
                   </td>
                   <td className={td}>
@@ -957,6 +968,7 @@ export const TeamOpponentsChart: React.FC<{
 
   if (!opps.length) return null;
 
+  const maxTeamOppG = Math.max(1, ...opps.map((o) => o.g));
   const limit = compact ? 8 : 15;
   const shown = showAll || search.trim() ? filtered : filtered.slice(0, limit);
 
@@ -1038,9 +1050,19 @@ export const TeamOpponentsChart: React.FC<{
                   </span>
                 </td>
                 <td className={`${td} text-rw-sub tabular-nums`}>
-                  <span className="font-semibold text-rw-text">{o.g}</span>{" "}
-                  <span className="text-[11px] text-rw-muted">
-                    ({o.w}–{o.g - o.w})
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="hidden sm:inline-block w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
+                      <span
+                        className="block h-full rounded-full bg-rw-accent/80"
+                        style={{ width: `${Math.max(6, Math.round((o.g / maxTeamOppG) * 100))}%` }}
+                      />
+                    </span>
+                    <span>
+                      <span className="font-semibold text-rw-text">{o.g}</span>{" "}
+                      <span className="text-[11px] text-rw-muted">
+                        ({o.w}–{o.g - o.w})
+                      </span>
+                    </span>
                   </span>
                 </td>
                 <td className={td}>
@@ -1076,7 +1098,7 @@ export const TeamPeriodOpponents: React.FC<{
   teamName: string;
   rows: TeamGameRow[];
   cardSub?: string;
-}> = ({ teamSlug: _teamSlug, teamName, rows, cardSub }) => {
+}> = ({ teamSlug, teamName, rows, cardSub }) => {
   const hiddenCheck = useHiddenCheck();
   const [selectedOpp, setSelectedOpp] = useState<string | null>(null);
   const [metric, setMetric] = useState<"wr" | "gd15">("wr");
@@ -1146,6 +1168,7 @@ export const TeamPeriodOpponents: React.FC<{
     };
   });
 
+  const maxPeriodOppG = Math.max(1, ...opps.map((o) => o.g));
   const shown = showAll ? opps : opps.slice(0, 10);
 
   return (
@@ -1208,40 +1231,80 @@ export const TeamPeriodOpponents: React.FC<{
               <th className={th}>{tl("Win %")}</th>
               {hasGd15 && <th className={th}>GD@15</th>}
               <th className={th}>{tl("Last met")}</th>
+              {teamName && <th className={`${th} text-right`}></th>}
             </tr>
           </thead>
           <tbody>
-            {shown.map((o) => (
-              <tr key={o.opp} className="border-t border-rw-border hover:bg-rw-raised/40">
-                <td className={`${td} max-w-[13rem] truncate`}>
-                  <span className="inline-flex items-center gap-1.5 min-w-0">
-                    <TeamLogo name={o.opp} size={18} />
-                    <TeamLink name={o.opp} u={o.u} />
-                  </span>
-                </td>
-                <td className={`${td} text-rw-sub tabular-nums`}>
-                  <span className="font-semibold text-rw-text">{o.g}</span>{" "}
-                  <span className="text-[11px] text-rw-muted">
-                    ({o.w}–{o.g - o.w})
-                  </span>
-                </td>
-                <td className={td}>
-                  <WinBar w={o.w} g={o.g} />
-                </td>
-                {hasGd15 && (
-                  <td className={`${td} tabular-nums`}>
-                    {o.gd15 != null ? (
-                      <span className={o.gd15 >= 0 ? "text-rw-teal font-semibold" : "text-rw-red"}>
-                        {o.gd15 > 0 ? `+${fmtNum(o.gd15)}` : fmtNum(o.gd15)}
-                      </span>
-                    ) : (
-                      <span className="text-rw-muted">–</span>
-                    )}
+            {shown.map((o) => {
+              const isSelected = selectedOpp === o.opp;
+              return (
+                <tr
+                  key={o.opp}
+                  onClick={() => setSelectedOpp(isSelected ? null : o.opp)}
+                  className={`border-t border-rw-border cursor-pointer transition-colors ${
+                    isSelected ? "bg-rw-accent/15 ring-1 ring-inset ring-rw-accent/50" : "hover:bg-rw-raised/40"
+                  }`}
+                >
+                  <td className={`${td} max-w-[13rem] truncate`}>
+                    <span className="inline-flex items-center gap-1.5 min-w-0">
+                      <TeamLogo name={o.opp} size={18} />
+                      <TeamLink name={o.opp} u={o.u} />
+                    </span>
                   </td>
-                )}
-                <td className={`${td} text-rw-muted tabular-nums`}>{fmtDate(o.last)}</td>
-              </tr>
-            ))}
+                  <td className={`${td} text-rw-sub tabular-nums`}>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="hidden sm:inline-block w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
+                        <span
+                          className="block h-full rounded-full bg-rw-accent/80"
+                          style={{ width: `${Math.max(6, Math.round((o.g / maxPeriodOppG) * 100))}%` }}
+                        />
+                      </span>
+                      <span>
+                        <span className="font-semibold text-rw-text">{o.g}</span>{" "}
+                        <span className="text-[11px] text-rw-muted">
+                          ({o.w}–{o.g - o.w})
+                        </span>
+                      </span>
+                    </span>
+                  </td>
+                  <td className={td}>
+                    <WinBar w={o.w} g={o.g} />
+                  </td>
+                  {hasGd15 && (
+                    <td className={`${td} tabular-nums`}>
+                      {o.gd15 != null ? (
+                        <span className={o.gd15 >= 0 ? "text-rw-teal font-semibold" : "text-rw-red"}>
+                          {o.gd15 > 0 ? `+${fmtNum(o.gd15)}` : fmtNum(o.gd15)}
+                        </span>
+                      ) : (
+                        <span className="text-rw-muted">–</span>
+                      )}
+                    </td>
+                  )}
+                  <td className={`${td} text-rw-muted tabular-nums`}>{fmtDate(o.last)}</td>
+                  {teamName && (
+                    <td className={`${td} text-right whitespace-nowrap`} onClick={(e) => e.stopPropagation()}>
+                      <span className="inline-flex items-center gap-2 text-[10px]">
+                        <a
+                          href={`/prep?a=${encodeURIComponent(teamName)}&b=${encodeURIComponent(o.opp)}`}
+                          className="text-rw-accent hover:underline"
+                          title={tl("Match prep")}
+                        >
+                          {tl("Match prep")}
+                        </a>
+                        <a
+                          href={`/compare?type=teams&a=${encodeURIComponent(teamName)}&b=${encodeURIComponent(o.opp)}`}
+                          className="text-rw-muted hover:text-rw-accent hover:underline"
+                          title={tl("Compare")}
+                        >
+                          {tl("Compare")}
+                        </a>
+                      </span>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

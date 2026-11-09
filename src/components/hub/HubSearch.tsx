@@ -13,7 +13,7 @@ import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubIndex, loadHubIndexQ
 import type { ItemIndexRow } from "../../hub/types";
 import { itemName } from "../../hub/ddragon";
 import { HubRoute, navigateHub } from "../../hub/route";
-import { ChampIcon, fmtNum, HubLink, ItemIcon, useLoad } from "./ui";
+import { ChampIcon, fmtNum, HubLink, ItemIcon, TeamLogo, useLoad } from "./ui";
 import { MENU_ITEMS } from "./menu";
 import { useRecentPages } from "../../hub/recent";
 import { loadPopular, type PopularPage } from "../../hub/popular";
@@ -746,6 +746,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
                     >
                       <span className="flex items-center gap-2 min-w-0">
                         {h.kind === "champ" && <ChampIcon name={h.name} size={18} />}
+                        {h.kind === "team" && <TeamLogo name={h.name} size={16} />}
                         <span className="font-semibold truncate">{h.kind === "champ" ? champName(h.name) : h.name}</span>
                         {h.matched && <span className="text-rw-muted truncate">({h.kind === "team" ? tl("was {name}", { name: h.matched }) : h.matched})</span>}
                       </span>
