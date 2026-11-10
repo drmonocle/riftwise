@@ -605,20 +605,32 @@ export const TeamRows: React.FC<{
   const gEarly = tl("Early game");
   const gObj = `${tl("Towers")} · ${tl("Baron%")}`;
   const gPace = tl("Stats");
+  const periodFinderParam =
+    period?.startsWith("y") && period.length === 5
+      ? `&year=${encodeURIComponent(period.slice(1))}`
+      : period?.startsWith("e:")
+        ? `&event=${encodeURIComponent(period.slice(2))}`
+        : "";
   const rows: RowSpec[] = [
     {
       key: "h2h",
       group: gOverview,
       label: career ? tl("Head to head (games)") : tl("Head to head this period (games)"),
       a: h2h.g ? (
-        <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(x.u)}&vs=${encodeURIComponent(y.u)}` }} className="hover:text-rw-accent hover:underline">
+        <HubLink
+          to={{ kind: "finder", query: `team=${encodeURIComponent(x.u)}&vs=${encodeURIComponent(y.u)}${periodFinderParam}` }}
+          className="hover:text-rw-accent hover:underline"
+        >
           {h2h.w}
         </HubLink>
       ) : (
         "–"
       ),
       b: h2h.g ? (
-        <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(y.u)}&vs=${encodeURIComponent(x.u)}` }} className="hover:text-rw-accent hover:underline">
+        <HubLink
+          to={{ kind: "finder", query: `team=${encodeURIComponent(y.u)}&vs=${encodeURIComponent(x.u)}${periodFinderParam}` }}
+          className="hover:text-rw-accent hover:underline"
+        >
           {h2h.g - h2h.w}
         </HubLink>
       ) : (
@@ -642,20 +654,43 @@ export const TeamRows: React.FC<{
         </HubLink>
       ),
     },
-    { key: "wr", group: gOverview, label: tl("Win rate"), a: winRate(A.w, A.g), b: winRate(B.w, B.g), va: wr(A.w, A.g), vb: wr(B.w, B.g), ...pc("wr") },
+    {
+      key: "wr",
+      group: gOverview,
+      label: tl("Win rate"),
+      a: (
+        <HubLink
+          to={{ kind: "team", slug: x.u, tab: "stats", ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+          className="hover:text-rw-accent hover:underline"
+        >
+          {winRate(A.w, A.g)}
+        </HubLink>
+      ),
+      b: (
+        <HubLink
+          to={{ kind: "team", slug: y.u, tab: "stats", ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+          className="hover:text-rw-accent hover:underline"
+        >
+          {winRate(B.w, B.g)}
+        </HubLink>
+      ),
+      va: wr(A.w, A.g),
+      vb: wr(B.w, B.g),
+      ...pc("wr"),
+    },
     {
       key: "blue",
       group: gOverview,
       label: tl("Blue side wins"),
       a: A.blue[0] ? (
-        <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(x.u)}&side=b` }} className="hover:text-rw-accent hover:underline">
+        <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(x.u)}&side=b${periodFinderParam}` }} className="hover:text-rw-accent hover:underline">
           {`${winRate(A.blue[1], A.blue[0])} (${A.blue[0]})`}
         </HubLink>
       ) : (
         `${winRate(A.blue[1], A.blue[0])} (${A.blue[0]})`
       ),
       b: B.blue[0] ? (
-        <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(y.u)}&side=b` }} className="hover:text-rw-accent hover:underline">
+        <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(y.u)}&side=b${periodFinderParam}` }} className="hover:text-rw-accent hover:underline">
           {`${winRate(B.blue[1], B.blue[0])} (${B.blue[0]})`}
         </HubLink>
       ) : (
@@ -669,14 +704,14 @@ export const TeamRows: React.FC<{
       group: gOverview,
       label: tl("Red side wins"),
       a: A.red[0] ? (
-        <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(x.u)}&side=r` }} className="hover:text-rw-accent hover:underline">
+        <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(x.u)}&side=r${periodFinderParam}` }} className="hover:text-rw-accent hover:underline">
           {`${winRate(A.red[1], A.red[0])} (${A.red[0]})`}
         </HubLink>
       ) : (
         `${winRate(A.red[1], A.red[0])} (${A.red[0]})`
       ),
       b: B.red[0] ? (
-        <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(y.u)}&side=r` }} className="hover:text-rw-accent hover:underline">
+        <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(y.u)}&side=r${periodFinderParam}` }} className="hover:text-rw-accent hover:underline">
           {`${winRate(B.red[1], B.red[0])} (${B.red[0]})`}
         </HubLink>
       ) : (
@@ -687,8 +722,38 @@ export const TeamRows: React.FC<{
     },
     ...(career
       ? ([
-          { key: "titles", group: gOverview, label: tl("Titles"), a: x.titles.length, b: y.titles.length, va: x.titles.length, vb: y.titles.length },
-          { key: "worlds", group: gOverview, label: tl("Worlds"), a: x.titles.filter((t) => t.kind === "Worlds").length, b: y.titles.filter((t) => t.kind === "Worlds").length },
+          {
+            key: "titles",
+            group: gOverview,
+            label: tl("Titles"),
+            a: (
+              <HubLink to={{ kind: "team", slug: x.u, tab: "history" }} className="hover:text-rw-accent hover:underline">
+                {x.titles.length}
+              </HubLink>
+            ),
+            b: (
+              <HubLink to={{ kind: "team", slug: y.u, tab: "history" }} className="hover:text-rw-accent hover:underline">
+                {y.titles.length}
+              </HubLink>
+            ),
+            va: x.titles.length,
+            vb: y.titles.length,
+          },
+          {
+            key: "worlds",
+            group: gOverview,
+            label: tl("Worlds"),
+            a: (
+              <HubLink to={{ kind: "team", slug: x.u, tab: "history" }} className="hover:text-rw-accent hover:underline">
+                {x.titles.filter((t) => t.kind === "Worlds").length}
+              </HubLink>
+            ),
+            b: (
+              <HubLink to={{ kind: "team", slug: y.u, tab: "history" }} className="hover:text-rw-accent hover:underline">
+                {y.titles.filter((t) => t.kind === "Worlds").length}
+              </HubLink>
+            ),
+          },
         ] as RowSpec[])
       : []),
     ...(A.tl || B.tl
@@ -871,7 +936,18 @@ export const TeamRows: React.FC<{
                           {n}
                         </HubLink>
                         <span className="text-rw-muted">·</span>
-                        <span className={`w-9 text-right ${good ? "text-rw-teal font-semibold" : "text-rw-red"}`}>{winRate(w, n)}</span>
+                        <HubLink
+                          to={{
+                            kind: "team",
+                            slug: s.u,
+                            tab: "champions",
+                            query: `champ=${encodeURIComponent(c)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                          }}
+                          className={`w-9 text-right hover:underline ${good ? "text-rw-teal font-semibold" : "text-rw-red"}`}
+                          title={tl("Every game")}
+                        >
+                          {winRate(w, n)}
+                        </HubLink>
                       </span>
                     </li>
                   );
@@ -930,8 +1006,50 @@ const PlayerRows: React.FC<{
           },
         ] as RowSpec[])
       : []),
-    { key: "p_games", group: gOverview, label: tl("Games won"), a: `${A.w}-${A.g - A.w}`, b: `${B.w}-${B.g - B.w}` },
-    { key: "p_wr", group: gOverview, label: tl("Win rate"), a: winRate(A.w, A.g), b: winRate(B.w, B.g), va: wr(A.w, A.g), vb: wr(B.w, B.g) },
+    {
+      key: "p_games",
+      group: gOverview,
+      label: tl("Games won"),
+      a: (
+        <HubLink
+          to={{ kind: "player", slug: x.u, tab: "stats", ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+          className="hover:text-rw-accent hover:underline"
+        >
+          {`${A.w}-${A.g - A.w}`}
+        </HubLink>
+      ),
+      b: (
+        <HubLink
+          to={{ kind: "player", slug: y.u, tab: "stats", ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+          className="hover:text-rw-accent hover:underline"
+        >
+          {`${B.w}-${B.g - B.w}`}
+        </HubLink>
+      ),
+    },
+    {
+      key: "p_wr",
+      group: gOverview,
+      label: tl("Win rate"),
+      a: (
+        <HubLink
+          to={{ kind: "player", slug: x.u, tab: "stats", ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+          className="hover:text-rw-accent hover:underline"
+        >
+          {winRate(A.w, A.g)}
+        </HubLink>
+      ),
+      b: (
+        <HubLink
+          to={{ kind: "player", slug: y.u, tab: "stats", ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+          className="hover:text-rw-accent hover:underline"
+        >
+          {winRate(B.w, B.g)}
+        </HubLink>
+      ),
+      va: wr(A.w, A.g),
+      vb: wr(B.w, B.g),
+    },
     {
       key: "p_champs",
       group: gOverview,
@@ -957,8 +1075,38 @@ const PlayerRows: React.FC<{
     },
     ...(career
       ? ([
-          { key: "p_titles", group: gOverview, label: tl("Titles"), a: x.titles.length, b: y.titles.length, va: x.titles.length, vb: y.titles.length },
-          { key: "p_worlds", group: gOverview, label: tl("Worlds"), a: x.titles.filter((t) => t.kind === "Worlds").length, b: y.titles.filter((t) => t.kind === "Worlds").length },
+          {
+            key: "p_titles",
+            group: gOverview,
+            label: tl("Titles"),
+            a: (
+              <HubLink to={{ kind: "player", slug: x.u, tab: "career" }} className="hover:text-rw-accent hover:underline">
+                {x.titles.length}
+              </HubLink>
+            ),
+            b: (
+              <HubLink to={{ kind: "player", slug: y.u, tab: "career" }} className="hover:text-rw-accent hover:underline">
+                {y.titles.length}
+              </HubLink>
+            ),
+            va: x.titles.length,
+            vb: y.titles.length,
+          },
+          {
+            key: "p_worlds",
+            group: gOverview,
+            label: tl("Worlds"),
+            a: (
+              <HubLink to={{ kind: "player", slug: x.u, tab: "career" }} className="hover:text-rw-accent hover:underline">
+                {x.titles.filter((t) => t.kind === "Worlds").length}
+              </HubLink>
+            ),
+            b: (
+              <HubLink to={{ kind: "player", slug: y.u, tab: "career" }} className="hover:text-rw-accent hover:underline">
+                {y.titles.filter((t) => t.kind === "Worlds").length}
+              </HubLink>
+            ),
+          },
         ] as RowSpec[])
       : []),
     { key: "p_kda", group: gStats, label: tl("KDA"), a: fmtN(A.kda), b: fmtN(B.kda), va: A.kda, vb: B.kda },
@@ -1093,7 +1241,18 @@ const PlayerRows: React.FC<{
                           {c.g}
                         </HubLink>
                         <span className="text-rw-muted">·</span>
-                        <span className={`w-9 text-right ${good ? "text-rw-teal font-semibold" : "text-rw-red"}`}>{winRate(c.w, c.g)}</span>
+                        <HubLink
+                          to={{
+                            kind: "player",
+                            slug: s.u,
+                            tab: "champions",
+                            query: `champ=${encodeURIComponent(c.c)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                          }}
+                          className={`w-9 text-right hover:underline ${good ? "text-rw-teal font-semibold" : "text-rw-red"}`}
+                          title={tl("Every game")}
+                        >
+                          {winRate(c.w, c.g)}
+                        </HubLink>
                         <span className="text-rw-muted">· {fmtN(c.kda)} KDA</span>
                       </span>
                     </li>
@@ -1153,7 +1312,20 @@ const PlayerRows: React.FC<{
                       >
                         {c.g}
                       </HubLink>{" "}
-                      · <span className={wrA > wrB ? "text-rw-side-a font-semibold" : ""}>{winRate(c.w, c.g)}</span> ·{" "}
+                      ·{" "}
+                      <HubLink
+                        to={{
+                          kind: "player",
+                          slug: x.u,
+                          tab: "champions",
+                          query: `champ=${encodeURIComponent(c.c)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                        }}
+                        className={`hover:underline ${wrA > wrB ? "text-rw-side-a font-semibold" : ""}`}
+                        title={tl("Every game")}
+                      >
+                        {winRate(c.w, c.g)}
+                      </HubLink>{" "}
+                      ·{" "}
                       <span className={c.kda != null && o.kda != null && c.kda > o.kda ? "text-rw-side-a font-semibold" : ""}>{fmtN(c.kda)}</span>
                     </td>
                     <td className={`${td} text-center`} data-sort={c.c}>
@@ -1180,7 +1352,20 @@ const PlayerRows: React.FC<{
                       >
                         {o.g}
                       </HubLink>{" "}
-                      · <span className={wrB > wrA ? "text-rw-side-b font-semibold" : ""}>{winRate(o.w, o.g)}</span> ·{" "}
+                      ·{" "}
+                      <HubLink
+                        to={{
+                          kind: "player",
+                          slug: y.u,
+                          tab: "champions",
+                          query: `champ=${encodeURIComponent(c.c)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                        }}
+                        className={`hover:underline ${wrB > wrA ? "text-rw-side-b font-semibold" : ""}`}
+                        title={tl("Every game")}
+                      >
+                        {winRate(o.w, o.g)}
+                      </HubLink>{" "}
+                      ·{" "}
                       <span className={c.kda != null && o.kda != null && o.kda > c.kda ? "text-rw-side-b font-semibold" : ""}>{fmtN(o.kda)}</span>
                     </td>
                   </tr>
@@ -1351,9 +1536,13 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
             </span>
             <span className="flex items-center gap-2 shrink-0 text-rw-muted">
               {m.a[23] != null && (
-                <span className={`tabular-nums font-semibold ${ratingTextClass(m.a[23])}`} title={tl("Game rating")}>
+                <HubLink
+                  to={{ kind: "match", slug: m.a[1], game: m.a[22] || undefined }}
+                  className={`tabular-nums font-semibold hover:underline ${ratingTextClass(m.a[23])}`}
+                  title={tl("Game rating")}
+                >
                   {m.a[23].toFixed(0)}
-                </span>
+                </HubLink>
               )}
               {fmtDate(m.a[0])}
               <HubLink to={{ kind: "match", slug: m.a[1], game: m.a[22] || undefined }} className="text-rw-accent hover:underline">
@@ -1493,11 +1682,17 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
         <span className="ml-auto flex flex-wrap items-center gap-2">
           {mode === "team" && rows.length >= 2 && (
             <>
-              <HubLink to={{ kind: "prep", a: rows[0].slug, b: rows[1].slug }} className="text-rw-accent hover:underline">
+              <HubLink
+                to={{ kind: "prep", a: rows[0].slug, b: rows[1].slug, ...(period !== "all" ? { period } : {}) }}
+                className="text-rw-accent hover:underline"
+              >
                 {tl("Match prep")}
               </HubLink>
               <HubLink
-                to={{ kind: "draft", query: `teams=${encodeURIComponent(rows[0].slug)},${encodeURIComponent(rows[1].slug)}` }}
+                to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(rows[0].slug)},${encodeURIComponent(rows[1].slug)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                }}
                 className="text-rw-accent hover:underline"
               >
                 {tl("Draft board")}

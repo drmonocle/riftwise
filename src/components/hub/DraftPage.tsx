@@ -906,7 +906,7 @@ const Board: React.FC<{
             {tl("Compare")}
           </HubLink>
           <HubLink
-            to={{ kind: "finder", query: `team=${encodeURIComponent(blue.team.name)}&vs=${encodeURIComponent(red.team.name)}` }}
+            to={{ kind: "finder", query: `team=${encodeURIComponent(blue.team.u)}&vs=${encodeURIComponent(red.team.u)}` }}
             className="text-rw-accent hover:underline"
           >
             {tl("Game finder")}
@@ -1616,21 +1616,21 @@ const DraftMatchupPanel: React.FC<{
     return { rKey, rIdx, bChamp, rChamp, bPlayer, rPlayer, laneStats };
   });
 
-  const activeDuos: { side: Who; teamName: string; label: string; c1: string; c2: string; g: number; w: number }[] = [];
-  const checkDuos = (w: Who, tName: string, pks: string[], tend: ReturnType<typeof draftTendencies>) => {
+  const activeDuos: { side: Who; teamName: string; teamSlug: string; label: string; c1: string; c2: string; g: number; w: number }[] = [];
+  const checkDuos = (w: Who, tName: string, tSlug: string, pks: string[], tend: ReturnType<typeof draftTendencies>) => {
     for (const [c1, c2, g, wins] of tend.midJungle) {
       if (pks.some((p) => bare(p) === bare(c1)) && pks.some((p) => bare(p) === bare(c2))) {
-        activeDuos.push({ side: w, teamName: tName, label: tl("Jungle + mid pairs"), c1, c2, g, w: wins });
+        activeDuos.push({ side: w, teamName: tName, teamSlug: tSlug, label: tl("Jungle + mid pairs"), c1, c2, g, w: wins });
       }
     }
     for (const [c1, c2, g, wins] of tend.botDuos) {
       if (pks.some((p) => bare(p) === bare(c1)) && pks.some((p) => bare(p) === bare(c2))) {
-        activeDuos.push({ side: w, teamName: tName, label: tl("Bot lane pairs"), c1, c2, g, w: wins });
+        activeDuos.push({ side: w, teamName: tName, teamSlug: tSlug, label: tl("Bot lane pairs"), c1, c2, g, w: wins });
       }
     }
   };
-  checkDuos("b", blue.team.name, bluePicks, bTend);
-  checkDuos("r", red.team.name, redPicks, rTend);
+  checkDuos("b", blue.team.name, blue.team.u, bluePicks, bTend);
+  checkDuos("r", red.team.name, red.team.u, redPicks, rTend);
 
   return (
     <Section
@@ -1745,7 +1745,7 @@ const DraftMatchupPanel: React.FC<{
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `champ=${encodeURIComponent(bChamp)}&vs=${encodeURIComponent(rChamp)}&role=${encodeURIComponent(rKey)}`,
+                        query: `champ=${encodeURIComponent(bChamp)}&vschamp=${encodeURIComponent(rChamp)}&role=${encodeURIComponent(rKey)}`,
                       }}
                       className="text-rw-accent hover:underline"
                     >
@@ -1834,7 +1834,7 @@ const DraftMatchupPanel: React.FC<{
                 <span>{champName(d.c2)}</span>
               </HubLink>
               <HubLink
-                to={{ kind: "finder", query: `team=${encodeURIComponent(d.teamName)}&champ=${encodeURIComponent(`${d.c1},${d.c2}`)}` }}
+                to={{ kind: "finder", query: `team=${encodeURIComponent(d.teamSlug)}&champ=${encodeURIComponent(`${d.c1},${d.c2}`)}` }}
                 className="tabular-nums font-semibold hover:underline"
               >
                 {d.g}G · {winRate(d.w, d.g)}
@@ -2274,7 +2274,7 @@ const LaneCounters: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Sid
           <span>
             ·{" "}
             <HubLink
-              to={{ kind: "finder", query: `champ=${encodeURIComponent(c)}&vs=${encodeURIComponent(oc)}&role=${encodeURIComponent(role)}` }}
+              to={{ kind: "finder", query: `champ=${encodeURIComponent(c)}&vschamp=${encodeURIComponent(oc)}&role=${encodeURIComponent(role)}` }}
               className="hover:text-rw-accent hover:underline"
             >
               {winRate(w, g)}
@@ -2387,7 +2387,7 @@ const ChampInfo: React.FC<{
                     kind: "team",
                     slug: s.team.u,
                     tab: "champions",
-                    query: `ban=${encodeURIComponent(c)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                    query: `champ=${encodeURIComponent(c)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
                   }}
                   className="hover:text-rw-accent hover:underline"
                 >

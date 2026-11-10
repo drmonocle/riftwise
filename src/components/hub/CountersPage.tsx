@@ -457,10 +457,38 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                   <div className="flex flex-wrap items-center gap-3">
                     {vsMatch.roles.map((r) => {
                       const wr = Math.round((r.w / r.g) * 100);
+                      const rStr = r.role >= 0 ? ROLES[r.role] : "";
                       return (
                         <div key={r.role} className="rounded-lg border border-rw-border bg-rw-surface px-2.5 py-1.5 text-center">
-                          <div className="text-[10px] text-rw-muted uppercase">{r.role >= 0 ? roleName(ROLES[r.role]) : tl("Role")}</div>
-                          <div className={`font-mono font-bold ${wr >= 50 ? "text-rw-teal" : "text-rw-red"}`}>{wr}%</div>
+                          <div className="text-[10px] text-rw-muted uppercase">
+                            {r.role >= 0 ? (
+                              <button
+                                type="button"
+                                onClick={() => set({ role: role === rStr ? undefined : rStr })}
+                                className="hover:text-rw-accent hover:underline"
+                              >
+                                {roleName(rStr)}
+                              </button>
+                            ) : (
+                              tl("Role")
+                            )}
+                          </div>
+                          <div className={`font-mono font-bold ${wr >= 50 ? "text-rw-teal" : "text-rw-red"}`}>
+                            {rawChamp ? (
+                              <HubLink
+                                to={{
+                                  kind: "finder",
+                                  query: `champ=${encodeURIComponent(rawChamp)}&vschamp=${encodeURIComponent(vsMatch.oppCanon)}${rStr ? `&role=${encodeURIComponent(rStr)}` : ""}`,
+                                }}
+                                className="hover:underline"
+                                title={tl("Game finder")}
+                              >
+                                {wr}%
+                              </HubLink>
+                            ) : (
+                              `${wr}%`
+                            )}
+                          </div>
                           <div className="text-[10px] font-mono text-rw-sub">
                             {finderLink(vsMatch.oppCanon, r.g, r.role)}G
                             {r.gd != null ? ` · ${r.gd > 0 ? "+" : ""}${r.gd} GD@15` : ""}
@@ -500,7 +528,16 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       <li key={x.c + x.role} className="space-y-0.5">
                         <div className="flex items-center justify-between gap-2">
                           <span className="flex items-center gap-1.5 min-w-0 truncate">
-                            <ChampLink name={x.c} size={18} /> <span className="text-rw-muted">{x.role >= 0 ? roleName(ROLES[x.role]) : ""}</span>
+                            <ChampLink name={x.c} size={18} />{" "}
+                            {x.role >= 0 && (
+                              <button
+                                type="button"
+                                onClick={() => set({ role: role === ROLES[x.role] ? undefined : ROLES[x.role] })}
+                                className="text-rw-muted hover:text-rw-accent hover:underline"
+                              >
+                                {roleName(ROLES[x.role])}
+                              </button>
+                            )}
                           </span>
                           <span className="tabular-nums text-rw-teal font-semibold shrink-0">
                             <button
@@ -553,7 +590,16 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       <li key={x.c + x.role} className="space-y-0.5">
                         <div className="flex items-center justify-between gap-2">
                           <span className="flex items-center gap-1.5 min-w-0 truncate">
-                            <ChampLink name={x.c} size={18} /> <span className="text-rw-muted">{x.role >= 0 ? roleName(ROLES[x.role]) : ""}</span>
+                            <ChampLink name={x.c} size={18} />{" "}
+                            {x.role >= 0 && (
+                              <button
+                                type="button"
+                                onClick={() => set({ role: role === ROLES[x.role] ? undefined : ROLES[x.role] })}
+                                className="text-rw-muted hover:text-rw-accent hover:underline"
+                              >
+                                {roleName(ROLES[x.role])}
+                              </button>
+                            )}
                           </span>
                           <span className="tabular-nums text-rw-red font-semibold shrink-0">
                             <button
@@ -656,7 +702,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               {wr}%
                             </HubLink>
                             <HubLink
-                              to={{ kind: "finder", query: `champ=${encodeURIComponent(`${cName},${pc}`)}` }}
+                              to={{ kind: "finder", query: `champ=${encodeURIComponent(`${rawChamp || cName},${pc}`)}` }}
                               className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline font-mono block"
                               title={tl("Game finder")}
                             >

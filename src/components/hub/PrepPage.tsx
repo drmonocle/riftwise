@@ -877,7 +877,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
               </div>
             )
           ) : (
-            <TeamRows x={a.team} y={b.team} ra={ra} rb={rb} bSlug={b.team.u} career={period === "all"} periodLabel={periodLabel} chance={chance} />
+            <TeamRows x={a.team} y={b.team} ra={ra} rb={rb} bSlug={b.team.u} career={period === "all"} period={period} periodLabel={periodLabel} chance={chance} />
           )}
         </div>
         <div className="space-y-3 min-w-0">
@@ -1741,7 +1741,7 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
 
   if (!bansByA.length && !bansByB.length && !picksA.length && !picksB.length) return null;
 
-  const chipRow = (items: ReturnType<typeof computeDraftSuggestions>) => (
+  const chipRow = (items: ReturnType<typeof computeDraftSuggestions>, teamSlug: string) => (
     <div className="flex flex-wrap gap-1.5">
       {items.map((x) => (
         <span
@@ -1754,7 +1754,19 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
             <span className="font-medium text-rw-text">{champName(x.c)}</span>
           </HubLink>
           {x.role != null && <span className="text-[9px] text-rw-muted">{roleName(ROLES[x.role])}</span>}
-          {x.stat && <span className="text-[10px] text-rw-sub tabular-nums">{x.stat}</span>}
+          {x.stat && (
+            <HubLink
+              to={{
+                kind: "team",
+                slug: teamSlug,
+                tab: "champions",
+                query: `champ=${encodeURIComponent(x.c)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+              }}
+              className="text-[10px] text-rw-sub tabular-nums hover:text-rw-accent hover:underline"
+            >
+              {x.stat}
+            </HubLink>
+          )}
           {x.badge && <span className="text-[9px] px-1 rounded bg-rw-accent/15 text-rw-accent font-semibold">{x.badge}</span>}
         </span>
       ))}
@@ -1822,13 +1834,13 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
             <div className="text-[10px] font-semibold text-rw-muted">
               {tl("Threats to ban")} ({b.team.name})
             </div>
-            {chipRow(bansByA)}
+            {chipRow(bansByA, b.team.u)}
           </div>
           <div className="space-y-1">
             <div className="text-[10px] font-semibold text-rw-muted">
               {tl("Comfort picks")} · {tl("First pick (blue)")}
             </div>
-            {chipRow(picksA)}
+            {chipRow(picksA, a.team.u)}
           </div>
         </div>
         <div className="space-y-2 min-w-0">
@@ -1840,13 +1852,13 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
             <div className="text-[10px] font-semibold text-rw-muted">
               {tl("Threats to ban")} ({a.team.name})
             </div>
-            {chipRow(bansByB)}
+            {chipRow(bansByB, a.team.u)}
           </div>
           <div className="space-y-1">
             <div className="text-[10px] font-semibold text-rw-muted">
               {tl("Comfort picks")} · {tl("First picks (red)")}
             </div>
-            {chipRow(picksB)}
+            {chipRow(picksB, b.team.u)}
           </div>
         </div>
       </div>
