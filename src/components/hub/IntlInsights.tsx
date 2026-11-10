@@ -187,7 +187,18 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {tl("Records")} →
             </HubLink>
             <HubLink
-              to={{ kind: "leaders", query: `league=${encodeURIComponent(intlLeague)}${singleYear ? `&year=${singleYear}` : ""}` }}
+              to={{
+                kind: "leaders",
+                query: new URLSearchParams({
+                  league: intlLeague,
+                  ...(singleYear ? { year: singleYear } : {}),
+                  ...(up.games[0]?.winner
+                    ? {
+                        q: `${prettySlug(up.games[0].winner)}${up.games[0].loser ? `,${prettySlug(up.games[0].loser)}` : ""}`,
+                      }
+                    : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -387,7 +398,18 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {tl("Power rankings")} →
             </HubLink>
             <HubLink
-              to={{ kind: "leaders", query: `league=${encodeURIComponent(intlLeague)}${singleYear ? `&year=${singleYear}` : ""}` }}
+              to={{
+                kind: "leaders",
+                query: new URLSearchParams({
+                  league: intlLeague,
+                  ...(singleYear ? { year: singleYear } : {}),
+                  ...(cb[0]?.winner
+                    ? {
+                        q: `${prettySlug(cb[0].winner)}${cb[0].loser ? `,${prettySlug(cb[0].loser)}` : ""}`,
+                      }
+                    : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -557,7 +579,15 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             <HubLink
               to={{
                 kind: "leaders",
-                query: `league=${encodeURIComponent(intlLeague)}${!all && sorted[0] ? `&year=${encodeURIComponent(yearOnly(sorted[0].year))}` : ""}`,
+                query: new URLSearchParams({
+                  league: intlLeague,
+                  ...(!all && sorted[0] ? { year: yearOnly(sorted[0].year) } : {}),
+                  ...(sorted[0]
+                    ? {
+                        q: `${sorted[0].u || prettySlug(sorted[0].team)}${sorted[1] ? `,${sorted[1].u || prettySlug(sorted[1].team)}` : ""}`,
+                      }
+                    : {}),
+                }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
@@ -684,49 +714,53 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
       }
     />
   );
-  if (cind.playIn.length || cind.underdogs.length || (all && cind.debuts.length))
+  if (cind.playIn.length || cind.underdogs.length || (all && cind.debuts.length)) {
+    const cindList = [...cind.playIn, ...cind.underdogs, ...(all ? cind.debuts : [])];
+    const u0 = cindList[0]?.u || (cindList[0]?.team ? prettySlug(cindList[0].team) : "");
+    const u1 =
+      cindList.slice(1).map((r) => r.u || (r.team ? prettySlug(r.team) : "")).find((u) => u && u !== u0) || "";
     sections.push(
       <Section
         key="cinderella"
         title={tl("Cinderella runs")}
         right={
           <span className="flex flex-wrap items-center gap-2">
-            {(() => {
-              const cindList = [...cind.playIn, ...cind.underdogs, ...(all ? cind.debuts : [])];
-              const u0 = cindList[0]?.u || (cindList[0]?.team ? prettySlug(cindList[0].team) : "");
-              const u1 =
-                cindList.slice(1).map((r) => r.u || (r.team ? prettySlug(r.team) : "")).find((u) => u && u !== u0) || "";
-              return u0 ? (
-                <>
-                  <HubLink
-                    to={{ kind: "prep", a: u0, ...(u1 ? { b: u1 } : {}), ...(singleYear ? { period: `y${singleYear}` } : {}) }}
-                    className="text-[11px] font-semibold text-rw-accent hover:underline"
-                    data-nocapture="1"
-                  >
-                    {tl("Match prep")} →
-                  </HubLink>
-                  <HubLink
-                    to={{
-                      kind: "draft",
-                      query: `teams=${encodeURIComponent(u0)}${u1 ? `,${encodeURIComponent(u1)}` : ""}${singleYear ? `&p=y${singleYear}` : ""}`,
-                    }}
-                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                    data-nocapture="1"
-                  >
-                    {tl("Draft board")} →
-                  </HubLink>
-                  <HubLink
-                    to={{ kind: "compare", mode: "team", a: u0, ...(u1 ? { b: u1 } : {}), ...(singleYear ? { period: `y${singleYear}` } : {}) }}
-                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                    data-nocapture="1"
-                  >
-                    {tl("Compare")} →
-                  </HubLink>
-                </>
-              ) : null;
-            })()}
+            {u0 ? (
+              <>
+                <HubLink
+                  to={{ kind: "prep", a: u0, ...(u1 ? { b: u1 } : {}), ...(singleYear ? { period: `y${singleYear}` } : {}) }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(u0)}${u1 ? `,${encodeURIComponent(u1)}` : ""}${singleYear ? `&p=y${singleYear}` : ""}`,
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "compare", mode: "team", a: u0, ...(u1 ? { b: u1 } : {}), ...(singleYear ? { period: `y${singleYear}` } : {}) }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              </>
+            ) : null}
             <HubLink
-              to={{ kind: "rankings", query: `league=${encodeURIComponent(intlLeague)}` }}
+              to={{
+                kind: "rankings",
+                query: new URLSearchParams({
+                  league: intlLeague,
+                  ...(u0 ? { q: `${u0}${u1 ? `,${u1}` : ""}` } : {}),
+                }).toString(),
+              }}
               className="text-[11px] font-semibold text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -740,21 +774,42 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {tl("Tournaments")} →
             </HubLink>
             <HubLink
-              to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}${singleYear ? `&year=${singleYear}` : ""}` }}
+              to={{
+                kind: "finder",
+                query: new URLSearchParams({
+                  league: intlLeague,
+                  ...(singleYear ? { year: singleYear } : {}),
+                  ...(u0 ? { team: u0 } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
               {tl("Game finder")} →
             </HubLink>
             <HubLink
-              to={{ kind: "best", query: `league=${encodeURIComponent(intlLeague)}${singleYear ? `&year=${singleYear}` : ""}` }}
+              to={{
+                kind: "best",
+                query: new URLSearchParams({
+                  league: intlLeague,
+                  ...(singleYear ? { year: singleYear } : {}),
+                  ...(u0 ? { q: `${u0}${u1 ? `,${u1}` : ""}` } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
               {tl("Best games")} →
             </HubLink>
             <HubLink
-              to={{ kind: "leaders", query: `league=${encodeURIComponent(intlLeague)}${singleYear ? `&year=${singleYear}` : ""}` }}
+              to={{
+                kind: "leaders",
+                query: new URLSearchParams({
+                  league: intlLeague,
+                  ...(singleYear ? { year: singleYear } : {}),
+                  ...(u0 ? { q: `${u0}${u1 ? `,${u1}` : ""}` } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -801,6 +856,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         )}
       </Section>,
     );
+  }
 
   if (fin && (fin.mostReached.length || fin.repeats.length))
     sections.push(
@@ -876,7 +932,17 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {tl("Power rankings")} →
             </HubLink>
             <HubLink
-              to={{ kind: "leaders", query: `league=${encodeURIComponent(intlLeague)}` }}
+              to={{
+                kind: "leaders",
+                query: new URLSearchParams({
+                  league: intlLeague,
+                  ...(fin.mostReached[0]?.u
+                    ? {
+                        q: `${fin.mostReached[0].u}${fin.mostReached[1]?.u ? `,${fin.mostReached[1].u}` : ""}`,
+                      }
+                    : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -1292,7 +1358,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {tl("Power rankings")} →
             </HubLink>
             <HubLink
-              to={{ kind: "leaders", query: `league=${encodeURIComponent(intlLeague)}` }}
+              to={{
+                kind: "leaders",
+                query: new URLSearchParams({
+                  league: intlLeague,
+                  ...(hs[0]?.teamU || hs[0]?.team ? { q: hs[0].teamU || prettySlug(hs[0].team!) } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >

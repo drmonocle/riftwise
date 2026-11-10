@@ -393,6 +393,8 @@ export const DraftTendencies: React.FC<{
                     query: new URLSearchParams({
                       teams: resolvedSlug,
                       ...(period && period !== "all" ? { p: period } : {}),
+                      ...((d.b1[0] || d.r12[0]) ? { champ: (d.b1[0] || d.r12[0])[0] } : {}),
+                      ...(d.firstRole[0] ? { role: ROLES[d.firstRole[0][0]] } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
@@ -430,13 +432,21 @@ export const DraftTendencies: React.FC<{
                 <HubLink
                   to={{
                     kind: "tiers",
-                    ...(period?.startsWith("y") && period.length === 5
-                      ? { query: `key=${encodeURIComponent(period)}` }
-                      : period?.startsWith("e:")
-                        ? { query: `event=${encodeURIComponent(period.slice(2))}` }
-                        : period?.startsWith("p:")
-                          ? { query: `key=p${encodeURIComponent(period.slice(2))}` }
-                          : {}),
+                    ...((period && period !== "all") || d.b1[0] || d.r12[0] || d.firstRole[0]
+                      ? {
+                          query: new URLSearchParams({
+                            ...(period?.startsWith("y") && period.length === 5
+                              ? { key: period }
+                              : period?.startsWith("e:")
+                                ? { event: period.slice(2) }
+                                : period?.startsWith("p:")
+                                  ? { key: `p${period.slice(2)}` }
+                                  : {}),
+                            ...((d.b1[0] || d.r12[0]) ? { q: (d.b1[0] || d.r12[0])[0] } : {}),
+                            ...(d.firstRole[0] ? { role: ROLES[d.firstRole[0][0]] } : {}),
+                          }).toString(),
+                        }
+                      : {}),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -454,7 +464,8 @@ export const DraftTendencies: React.FC<{
                   to={{
                     kind: "leaders",
                     query: new URLSearchParams({
-                      ...(teamName ? { q: teamName } : (d.b1[0] || d.r12[0]) ? { champ: (d.b1[0] || d.r12[0])[0] } : {}),
+                      ...(teamName ? { q: teamName } : {}),
+                      ...((d.b1[0] || d.r12[0]) ? { champ: (d.b1[0] || d.r12[0])[0] } : {}),
                       ...(period?.startsWith("y") && period.length === 5 ? { year: period.slice(1) } : {}),
                       ...(period?.startsWith("e:") ? { event: period.slice(2) } : {}),
                     }).toString(),

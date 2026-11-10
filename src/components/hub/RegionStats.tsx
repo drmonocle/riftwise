@@ -425,6 +425,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 query: new URLSearchParams({
                   league: intlLeague,
                   ...(singleYear ? { year: singleYear } : {}),
+                  ...(topRegTeamA ? { team: topRegTeamA } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -451,6 +452,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 query: new URLSearchParams({
                   league: intlLeague,
                   ...(singleYear ? { year: singleYear } : {}),
+                  ...(topRegTeamA ? { q: `${topRegTeamA}${topRegTeamB && topRegTeamB !== topRegTeamA ? `,${topRegTeamB}` : ""}` } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -464,6 +466,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 query: new URLSearchParams({
                   league: intlLeague,
                   ...(singleYear ? { year: singleYear } : {}),
+                  ...(topRegTeamA ? { q: `${topRegTeamA}${topRegTeamB && topRegTeamB !== topRegTeamA ? `,${topRegTeamB}` : ""}` } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -748,7 +751,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   query: new URLSearchParams({
                     league: intlLeague,
                     ...(singleYear ? { year: singleYear } : {}),
-                    ...(pairTerms.length > 0 && pairTeamA
+                    ...(pairTeamA
                       ? {
                           team: pairTeamA,
                           ...(pairTeamB && pairTeamB !== pairTeamA ? { vs: pairTeamB } : {}),
@@ -780,7 +783,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   query: new URLSearchParams({
                     league: intlLeague,
                     ...(singleYear ? { year: singleYear } : {}),
-                    ...(pairTerms.length > 0 && pairTeamA
+                    ...(pairTeamA
                       ? { q: `${pairTeamA}${pairTeamB && pairTeamB !== pairTeamA ? `,${pairTeamB}` : ""}` }
                       : {}),
                   }).toString(),
@@ -796,7 +799,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   query: new URLSearchParams({
                     league: intlLeague,
                     ...(singleYear ? { year: singleYear } : {}),
-                    ...(pairTerms.length > 0 && pairTeamA
+                    ...(pairTeamA
                       ? { q: `${pairTeamA}${pairTeamB && pairTeamB !== pairTeamA ? `,${pairTeamB}` : ""}` }
                       : {}),
                   }).toString(),

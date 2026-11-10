@@ -126,7 +126,7 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                     query:
                       new URLSearchParams({
                         ...(e.lu ? { league: e.lu } : {}),
-                        ...(terms.length > 0 && filteredRows[0]
+                        ...(filteredRows[0]
                           ? { q: `${filteredRows[0].u}${filteredRows[1] ? `,${filteredRows[1].u}` : ""}` }
                           : {}),
                       }).toString() || undefined,
@@ -143,8 +143,8 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                       ...(e.lu ? { league: e.lu } : {}),
                       ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                       event: e.u,
-                      ...(terms.length > 0 && filteredRows[0]
-                        ? { q: `${filteredRows[0].u}${filteredRows[1] ? `,${filteredRows[1].u}` : ""}` }
+                      ...(filteredRows[0]
+                        ? { q: `${filteredRows[0].name}${filteredRows[1] ? `,${filteredRows[1].name}` : ""}` }
                         : {}),
                     }).toString(),
                   }}
