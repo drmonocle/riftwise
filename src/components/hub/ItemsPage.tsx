@@ -331,8 +331,23 @@ const PlayerItemsView: React.FC<{
             >
               {tl("Pro tier list")} →
             </HubLink>
+            {g[0]?.[7] && (
+              <HubLink
+                to={{ kind: "prep", a: prettySlug(g[0][7]), ...(g[0][8] ? { b: prettySlug(g[0][8]) } : {}), ...(year ? { period: `y${year}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+            )}
             <HubLink
-              to={{ kind: "draft", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) }}
+              to={{
+                kind: "draft",
+                query: new URLSearchParams({
+                  ...(g[0]?.[7] ? { teams: `${prettySlug(g[0][7])}${g[0][8] ? `,${prettySlug(g[0][8])}` : ""}` } : {}),
+                  ...(year ? { p: `y${year}` } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -450,8 +465,30 @@ const PlayerItemsView: React.FC<{
             >
               {tl("Pro tier list")} →
             </HubLink>
+            {list[0]?.[1]?.[0]?.[7] && (
+              <HubLink
+                to={{
+                  kind: "prep",
+                  a: prettySlug(list[0][1][0][7]),
+                  ...(list[0][1][0][8] ? { b: prettySlug(list[0][1][0][8]) } : {}),
+                  ...(year ? { period: `y${year}` } : {}),
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+            )}
             <HubLink
-              to={{ kind: "draft", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) }}
+              to={{
+                kind: "draft",
+                query: new URLSearchParams({
+                  ...(list[0]?.[1]?.[0]?.[7]
+                    ? { teams: `${prettySlug(list[0][1][0][7])}${list[0][1][0][8] ? `,${prettySlug(list[0][1][0][8])}` : ""}` }
+                    : {}),
+                  ...(year ? { p: `y${year}` } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -701,8 +738,33 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
               >
                 {tl("Pro tier list")} →
               </HubLink>
+              {teamBySlug.get(filteredPlayers[0][1]) && (
+                <HubLink
+                  to={{
+                    kind: "prep",
+                    a: prettySlug(teamBySlug.get(filteredPlayers[0][1])!),
+                    ...(filteredPlayers[1] && teamBySlug.get(filteredPlayers[1][1]) && prettySlug(teamBySlug.get(filteredPlayers[1][1])!) !== prettySlug(teamBySlug.get(filteredPlayers[0][1])!)
+                      ? { b: prettySlug(teamBySlug.get(filteredPlayers[1][1])!) }
+                      : {}),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+              )}
               <HubLink
-                to={{ kind: "draft" }}
+                to={{
+                  kind: "draft",
+                  ...(teamBySlug.get(filteredPlayers[0][1])
+                    ? {
+                        query: `teams=${encodeURIComponent(prettySlug(teamBySlug.get(filteredPlayers[0][1])!))}${
+                          filteredPlayers[1] && teamBySlug.get(filteredPlayers[1][1]) && prettySlug(teamBySlug.get(filteredPlayers[1][1])!) !== prettySlug(teamBySlug.get(filteredPlayers[0][1])!)
+                            ? `,${encodeURIComponent(prettySlug(teamBySlug.get(filteredPlayers[1][1])!))}`
+                            : ""
+                        }`,
+                      }
+                    : {}),
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Draft board")} →
@@ -916,8 +978,37 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
               >
                 {tl("Pro tier list")} →
               </HubLink>
+              {players?.[filteredRows[0].k]?.[2] && (
+                <HubLink
+                  to={{
+                    kind: "prep",
+                    a: prettySlug(players[filteredRows[0].k][2]!),
+                    ...(filteredRows[1] && players?.[filteredRows[1].k]?.[2] && prettySlug(players[filteredRows[1].k][2]!) !== prettySlug(players[filteredRows[0].k][2]!)
+                      ? { b: prettySlug(players[filteredRows[1].k][2]!) }
+                      : {}),
+                    ...(year ? { period: `y${year}` } : {}),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+              )}
               <HubLink
-                to={{ kind: "draft", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) }}
+                to={{
+                  kind: "draft",
+                  query: new URLSearchParams({
+                    ...(players?.[filteredRows[0].k]?.[2]
+                      ? {
+                          teams: `${prettySlug(players[filteredRows[0].k][2]!)}${
+                            filteredRows[1] && players?.[filteredRows[1].k]?.[2] && prettySlug(players[filteredRows[1].k][2]!) !== prettySlug(players[filteredRows[0].k][2]!)
+                              ? `,${prettySlug(players[filteredRows[1].k][2]!)}`
+                              : ""
+                          }`,
+                        }
+                      : {}),
+                    ...(year ? { p: `y${year}` } : {}),
+                  }).toString(),
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Draft board")} →
@@ -1137,8 +1228,37 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
               >
                 {tl("Pro tier list")} →
               </HubLink>
+              {players?.[filteredP[0][0]]?.[2] && (
+                <HubLink
+                  to={{
+                    kind: "prep",
+                    a: prettySlug(players[filteredP[0][0]][2]!),
+                    ...(filteredP[1] && players?.[filteredP[1][0]]?.[2] && prettySlug(players[filteredP[1][0]][2]!) !== prettySlug(players[filteredP[0][0]][2]!)
+                      ? { b: prettySlug(players[filteredP[1][0]][2]!) }
+                      : {}),
+                    ...(year ? { period: `y${year}` } : {}),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+              )}
               <HubLink
-                to={{ kind: "draft", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) }}
+                to={{
+                  kind: "draft",
+                  query: new URLSearchParams({
+                    ...(players?.[filteredP[0][0]]?.[2]
+                      ? {
+                          teams: `${prettySlug(players[filteredP[0][0]][2]!)}${
+                            filteredP[1] && players?.[filteredP[1][0]]?.[2] && prettySlug(players[filteredP[1][0]][2]!) !== prettySlug(players[filteredP[0][0]][2]!)
+                              ? `,${prettySlug(players[filteredP[1][0]][2]!)}`
+                              : ""
+                          }`,
+                        }
+                      : {}),
+                    ...(year ? { p: `y${year}` } : {}),
+                  }).toString(),
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Draft board")} →

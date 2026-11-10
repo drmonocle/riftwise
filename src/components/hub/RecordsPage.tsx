@@ -504,6 +504,31 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
       title={tl("Closest to falling")}
       right={
         <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+          {all.game.fastest[0]?.w && year.game.fastest[0]?.w && (
+            <>
+              <HubLink
+                to={{
+                  kind: "prep",
+                  a: prettySlug(year.game.fastest[0].w),
+                  b: prettySlug(all.game.fastest[0].w),
+                }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "compare",
+                  mode: "team",
+                  a: prettySlug(year.game.fastest[0].w),
+                  b: prettySlug(all.game.fastest[0].w),
+                }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            </>
+          )}
           <HubLink
             to={{ kind: "champions", query: `key=y${encodeURIComponent(label)}` }}
             className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -910,6 +935,22 @@ export const RecordsPanel: React.FC = () => {
                     >
                       {tl("Pro tier list")} →
                     </HubLink>
+                    {rows[0].opp && (
+                      <>
+                        <HubLink
+                          to={{ kind: "prep", a: prettySlug(rows[0].opp) }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Match prep")} →
+                        </HubLink>
+                        <HubLink
+                          to={{ kind: "draft", query: `teams=${encodeURIComponent(prettySlug(rows[0].opp))}` }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Draft board")} →
+                        </HubLink>
+                      </>
+                    )}
                     <HubLink
                       to={{ kind: "rankings" }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"

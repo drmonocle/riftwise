@@ -480,30 +480,55 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number;
         {title ? <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{title}</h3> : <span />}
         {list.length > 0 && (
           <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
-            <HubLink to={{ kind: "rankings" }} className="text-rw-accent hover:underline font-semibold">
-              {tl("Power rankings")} →
-            </HubLink>
-            <HubLink to={{ kind: "tournaments" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-              {tl("Tournaments")} →
-            </HubLink>
-            <HubLink to={{ kind: "titles" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-              {tl("Titles")} →
-            </HubLink>
-            <HubLink to={{ kind: "champions" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-              {tl("Champions")} →
-            </HubLink>
-            <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-              {tl("Pro tier list")} →
-            </HubLink>
-            <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-              {tl("Player leaderboards")} →
-            </HubLink>
-            <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-              {tl("Game finder")} →
-            </HubLink>
-            <HubLink to={{ kind: "best" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-              {tl("Best games")} →
-            </HubLink>
+            {(() => {
+              const scopeLg = (q.trim() || list.length === 1) && list[0]?.u ? list[0].u : "";
+              return (
+                <>
+                  <HubLink
+                    to={{ kind: "rankings", ...(scopeLg ? { query: `league=${encodeURIComponent(scopeLg)}` } : {}) }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Power rankings")} →
+                  </HubLink>
+                  <HubLink to={{ kind: "tournaments" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                    {tl("Tournaments")} →
+                  </HubLink>
+                  <HubLink to={{ kind: "titles" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                    {tl("Titles")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "champions", ...(scopeLg ? { query: `league=${encodeURIComponent(scopeLg)}` } : {}) }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Champions")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "tiers", ...(scopeLg ? { query: `scope=${encodeURIComponent(scopeLg)}` } : {}) }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Pro tier list")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "leaders", ...(scopeLg ? { query: `league=${encodeURIComponent(scopeLg)}` } : {}) }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "finder", ...(scopeLg ? { query: `league=${encodeURIComponent(scopeLg)}` } : {}) }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Game finder")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "best", ...(scopeLg ? { query: `league=${encodeURIComponent(scopeLg)}` } : {}) }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Best games")} →
+                  </HubLink>
+                </>
+              );
+            })()}
             <SectionCard
               section={title || tl("Leagues")}
               name={tl("Leagues")}

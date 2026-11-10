@@ -925,15 +925,26 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     />
                   )}
                   {filteredRows.length >= 1 && (
-                    <HubLink
-                      to={{
-                        kind: "finder",
-                        query: `champ=${encodeURIComponent(rawChamp || cName)}&vschamp=${encodeURIComponent(filteredRows[0].c)}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
-                      }}
-                      className="text-[11px] text-rw-accent hover:underline font-semibold"
-                    >
-                      {tl("Game finder")} →
-                    </HubLink>
+                    <>
+                      <HubLink
+                        to={{
+                          kind: "counters",
+                          query: `champ=${encodeURIComponent(slug)}&vs=${encodeURIComponent(filteredRows[0].c)}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                        }}
+                        className="text-[11px] text-rw-accent hover:underline font-semibold"
+                      >
+                        {champName(filteredRows[0].c)} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "finder",
+                          query: `champ=${encodeURIComponent(rawChamp || cName)}&vschamp=${encodeURIComponent(filteredRows[0].c)}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                        }}
+                        className="text-[11px] text-rw-accent hover:underline font-semibold"
+                      >
+                        {tl("Game finder")} →
+                      </HubLink>
+                    </>
                   )}
                   <HubLink
                     to={{ kind: "items", query: `champ=${encodeURIComponent(slug)}` }}

@@ -211,6 +211,12 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
                       <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                         {tl("Power rankings")}
                       </HubLink>
+                      <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                        {tl("Pro tier list")}
+                      </HubLink>
+                      <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                        {tl("Player leaderboards")}
+                      </HubLink>
                       <button type="button" onClick={() => set({ [k]: undefined })} className="text-rw-accent hover:underline">
                         {tl("Change")}
                       </button>
@@ -2032,6 +2038,15 @@ const Lanes: React.FC<{
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
               >
                 {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(a.team.u)},${encodeURIComponent(b.team.u)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+              >
+                {tl("Draft board")} →
               </HubLink>
               <HubLink
                 to={{ kind: "rankings" }}

@@ -442,6 +442,15 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
                       <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(slug)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
                         {tl("Game finder")}
                       </HubLink>
+                      <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                        {tl("Power rankings")}
+                      </HubLink>
+                      <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                        {tl("Pro tier list")}
+                      </HubLink>
+                      <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                        {tl("Player leaderboards")}
+                      </HubLink>
                       <button type="button" onClick={() => set({ [k]: null })} className="text-rw-accent hover:underline shrink-0">
                         {tl("Change")}
                       </button>
@@ -2664,6 +2673,18 @@ const ChampInfo: React.FC<{
         />
         <HubLink to={{ kind: "champ", slug: prettySlug(c) }} className="text-rw-accent hover:underline font-semibold">
           {champName(c)} →
+        </HubLink>
+        <HubLink
+          to={{ kind: "prep", a: blue.team.u, b: red.team.u, ...(period !== "all" ? { period } : {}) }}
+          className="text-rw-accent hover:underline font-semibold"
+        >
+          {tl("Match prep")} →
+        </HubLink>
+        <HubLink
+          to={{ kind: "compare", mode: "team", a: blue.team.u, b: red.team.u, ...(period !== "all" ? { period } : {}) }}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {tl("Compare")} →
         </HubLink>
         <HubLink to={{ kind: "counters", query: `champ=${prettySlug(c)}` }} className="text-rw-accent hover:underline font-semibold">
           {tl("Counter-picks")} →

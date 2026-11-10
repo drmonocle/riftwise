@@ -534,32 +534,37 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
         )}
         {ready && mode === "player" && (
           <>
-            {(info.a as HubPlayer).club &&
-              (info.b as HubPlayer).club &&
-              prettySlug((info.a as HubPlayer).club!) !== prettySlug((info.b as HubPlayer).club!) && (
-                <>
-                  <HubLink
-                    to={{
-                      kind: "prep",
-                      a: prettySlug((info.a as HubPlayer).club!),
-                      b: prettySlug((info.b as HubPlayer).club!),
-                      ...(period !== "all" ? { period } : {}),
-                    }}
-                    className="text-rw-accent hover:underline"
-                  >
-                    {tl("Match prep")}
-                  </HubLink>
-                  <HubLink
-                    to={{
-                      kind: "draft",
-                      query: `teams=${encodeURIComponent(prettySlug((info.a as HubPlayer).club!))},${encodeURIComponent(prettySlug((info.b as HubPlayer).club!))}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
-                    }}
-                    className="text-rw-accent hover:underline"
-                  >
-                    {tl("Draft board")}
-                  </HubLink>
-                </>
-              )}
+            {((info.a as HubPlayer).club || (info.b as HubPlayer).club) &&
+              (() => {
+                const ca = (info.a as HubPlayer).club ? prettySlug((info.a as HubPlayer).club!) : "";
+                const cb = (info.b as HubPlayer).club ? prettySlug((info.b as HubPlayer).club!) : "";
+                const aTeam = ca || cb;
+                const bTeam = ca && cb && ca !== cb ? cb : undefined;
+                return (
+                  <>
+                    <HubLink
+                      to={{
+                        kind: "prep",
+                        a: aTeam,
+                        ...(bTeam ? { b: bTeam } : {}),
+                        ...(period !== "all" ? { period } : {}),
+                      }}
+                      className="text-rw-accent hover:underline"
+                    >
+                      {tl("Match prep")}
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(aTeam)}${bTeam ? `,${encodeURIComponent(bTeam)}` : ""}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                      }}
+                      className="text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")}
+                    </HubLink>
+                  </>
+                );
+              })()}
             <HubLink
               to={{
                 kind: "finder",
@@ -1497,32 +1502,39 @@ const PlayerRows: React.FC<{
         right={
           <span className="flex flex-wrap items-center justify-end gap-2">
             <span className="text-[11px] text-rw-sub whitespace-nowrap">{periodLabel}</span>
-            {x.club && y.club && prettySlug(x.club) !== prettySlug(y.club) && (
-              <>
-                <HubLink
-                  to={{
-                    kind: "prep",
-                    a: x.clubU || prettySlug(x.club),
-                    b: y.clubU || prettySlug(y.club),
-                    ...(period && period !== "all" ? { period } : {}),
-                  }}
-                  className="text-[11px] text-rw-accent hover:underline font-semibold"
-                  data-nocapture="1"
-                >
-                  {tl("Match prep")} →
-                </HubLink>
-                <HubLink
-                  to={{
-                    kind: "draft",
-                    query: `teams=${encodeURIComponent(x.clubU || prettySlug(x.club))},${encodeURIComponent(y.clubU || prettySlug(y.club))}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
-                  }}
-                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                  data-nocapture="1"
-                >
-                  {tl("Draft board")} →
-                </HubLink>
-              </>
-            )}
+            {(x.club || y.club) &&
+              (() => {
+                const ca = x.club ? x.clubU || prettySlug(x.club) : "";
+                const cb = y.club ? y.clubU || prettySlug(y.club) : "";
+                const aTeam = ca || cb;
+                const bTeam = ca && cb && ca !== cb ? cb : undefined;
+                return (
+                  <>
+                    <HubLink
+                      to={{
+                        kind: "prep",
+                        a: aTeam,
+                        ...(bTeam ? { b: bTeam } : {}),
+                        ...(period && period !== "all" ? { period } : {}),
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline font-semibold"
+                      data-nocapture="1"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(aTeam)}${bTeam ? `,${encodeURIComponent(bTeam)}` : ""}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                      data-nocapture="1"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                  </>
+                );
+              })()}
             <HubLink
               to={{
                 kind: "items",
@@ -1686,6 +1698,29 @@ const PlayerRows: React.FC<{
                 >
                   {tl("Player leaderboards")} →
                 </HubLink>
+                {s.club && (
+                  <>
+                    <HubLink
+                      to={{
+                        kind: "prep",
+                        a: prettySlug(s.club),
+                        ...(period && period !== "all" ? { period } : {}),
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(prettySlug(s.club))}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                  </>
+                )}
                 <HubLink
                   to={{ kind: "rankings" }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

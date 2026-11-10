@@ -469,6 +469,21 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                       >
                         {tl("Item history")} →
                       </HubLink>
+                      {(top2[0].tu || top2[0].t) && (
+                        <HubLink
+                          to={{
+                            kind: "prep",
+                            a: top2[0].tu || prettySlug(top2[0].t),
+                            ...((top2[1].tu || top2[1].t) && (top2[1].tu || prettySlug(top2[1].t)) !== (top2[0].tu || prettySlug(top2[0].t))
+                              ? { b: top2[1].tu || prettySlug(top2[1].t) }
+                              : {}),
+                            period: event ? `e:${event}` : year ? `y${year}` : undefined,
+                          }}
+                          className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Match prep")} →
+                        </HubLink>
+                      )}
                     </>
                   ) : null;
                 })()}
@@ -508,7 +523,16 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}`,
+                    query: `${
+                      shownRows[0]?.tu || shownRows[0]?.t
+                        ? `teams=${encodeURIComponent(shownRows[0].tu || prettySlug(shownRows[0].t))}${
+                            (shownRows[1]?.tu || shownRows[1]?.t) &&
+                            (shownRows[1].tu || prettySlug(shownRows[1].t)) !== (shownRows[0].tu || prettySlug(shownRows[0].t))
+                              ? `,${encodeURIComponent(shownRows[1].tu || prettySlug(shownRows[1].t))}`
+                              : ""
+                          }&`
+                        : ""
+                    }p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}`,
                   }}
                   className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
                 >

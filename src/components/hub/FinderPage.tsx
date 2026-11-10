@@ -207,6 +207,46 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
               const qPlayer = q.get("player") || "";
               return (
                 <>
+                  {qTeam && (
+                    <>
+                      <HubLink
+                        to={{
+                          kind: "prep",
+                          a: qTeam,
+                          ...(qVs ? { b: qVs } : {}),
+                          ...(qEvent ? { period: `e:${qEvent}` } : year ? { period: `y${year}` } : {}),
+                        }}
+                        className="text-rw-accent hover:underline font-semibold"
+                      >
+                        {tl("Match prep")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "compare",
+                          mode: "team",
+                          a: qTeam,
+                          ...(qVs ? { b: qVs } : {}),
+                          ...(qEvent ? { period: `e:${qEvent}` } : year ? { period: `y${year}` } : {}),
+                        }}
+                        className="text-rw-accent hover:underline font-semibold"
+                      >
+                        {tl("Compare")} →
+                      </HubLink>
+                    </>
+                  )}
+                  {!qTeam && qPlayer && (
+                    <HubLink
+                      to={{
+                        kind: "compare",
+                        mode: "player",
+                        a: qPlayer,
+                        ...(qEvent ? { period: `e:${qEvent}` } : year ? { period: `y${year}` } : {}),
+                      }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                  )}
                   <HubLink
                     to={{
                       kind: "champions",

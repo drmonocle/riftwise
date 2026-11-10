@@ -481,6 +481,8 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
   const pctKa = totalK > 0 && ka != null ? Math.round((ka / totalK) * 100) : 50;
   const y = (date || "").slice(0, 4);
   const period = /^\d{4}$/.test(y) ? `y${y}` : undefined;
+  const sa = aSlug || (a ? prettySlug(a) : "");
+  const sb = bSlug || (b ? prettySlug(b) : "");
   return (
     <tr className="border-t border-rw-border/60 first:border-t-0 hover:bg-rw-raised/50">
       <td className="py-2 pr-2 text-rw-muted tabular-nums w-8 text-right" data-sort={rank}>
@@ -551,22 +553,22 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
               <PlayCircle className="w-3 h-3" /> {tl("VOD")}
             </HubLink>
           ) : null}
-          {aSlug && bSlug && (
+          {sa && sb && (
             <>
-              <HubLink to={{ kind: "prep", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
+              <HubLink to={{ kind: "prep", a: sa, b: sb, period }} className="hover:text-rw-accent hover:underline">
                 {tl("Match prep")}
               </HubLink>
               <HubLink
-                to={{ kind: "draft", query: `teams=${encodeURIComponent(aSlug)},${encodeURIComponent(bSlug)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                to={{ kind: "draft", query: `teams=${encodeURIComponent(sa)},${encodeURIComponent(sb)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
                 className="hover:text-rw-accent hover:underline"
               >
                 {tl("Draft board")}
               </HubLink>
-              <HubLink to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
+              <HubLink to={{ kind: "compare", mode: "team", a: sa, b: sb, period }} className="hover:text-rw-accent hover:underline">
                 {tl("Compare")}
               </HubLink>
               <HubLink
-                to={{ kind: "finder", query: `team=${encodeURIComponent(aSlug)}&vs=${encodeURIComponent(bSlug)}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}` }}
+                to={{ kind: "finder", query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}` }}
                 className="hover:text-rw-accent hover:underline"
               >
                 {tl("Game finder")}
@@ -598,6 +600,8 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
   const pctWa = totalS > 0 ? Math.round((wa / totalS) * 100) : 50;
   const y = (date || "").slice(0, 4);
   const period = /^\d{4}$/.test(y) ? `y${y}` : undefined;
+  const sa = aSlug || (a ? prettySlug(a) : "");
+  const sb = bSlug || (b ? prettySlug(b) : "");
   return (
     <tr className="border-t border-rw-border/60 first:border-t-0 hover:bg-rw-raised/50">
       <td className="py-2 pr-2 text-rw-muted tabular-nums w-8 text-right" data-sort={rank}>
@@ -653,25 +657,25 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
                 <span className={`font-semibold ${v != null ? ratingTextClass(v) : "text-rw-muted"}`}>{v != null ? v : "–"}</span>
               </HubLink>
             ))}
-            {aSlug && bSlug && (
+            {sa && sb && (
               <span className="text-[10px] text-rw-muted inline-flex items-center gap-1.5 ml-1">
-                <HubLink to={{ kind: "prep", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
+                <HubLink to={{ kind: "prep", a: sa, b: sb, period }} className="hover:text-rw-accent hover:underline">
                   {tl("Match prep")}
                 </HubLink>
                 <span>·</span>
                 <HubLink
-                  to={{ kind: "draft", query: `teams=${encodeURIComponent(aSlug)},${encodeURIComponent(bSlug)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                  to={{ kind: "draft", query: `teams=${encodeURIComponent(sa)},${encodeURIComponent(sb)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
                   className="hover:text-rw-accent hover:underline"
                 >
                   {tl("Draft board")}
                 </HubLink>
                 <span>·</span>
-                <HubLink to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
+                <HubLink to={{ kind: "compare", mode: "team", a: sa, b: sb, period }} className="hover:text-rw-accent hover:underline">
                   {tl("Compare")}
                 </HubLink>
                 <span>·</span>
                 <HubLink
-                  to={{ kind: "finder", query: `team=${encodeURIComponent(aSlug)}&vs=${encodeURIComponent(bSlug)}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}` }}
+                  to={{ kind: "finder", query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}` }}
                   className="hover:text-rw-accent hover:underline"
                 >
                   {tl("Game finder")}
@@ -688,26 +692,26 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
             <HubLink to={{ kind: "match", slug, game: bestN }} className="hover:underline hover:text-rw-accent">
               {tl("best: game {n}", { n: bestN })}
             </HubLink>
-            {aSlug && bSlug && (
+            {sa && sb && (
               <>
                 <span>·</span>
-                <HubLink to={{ kind: "prep", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
+                <HubLink to={{ kind: "prep", a: sa, b: sb, period }} className="hover:text-rw-accent hover:underline">
                   {tl("Match prep")}
                 </HubLink>
                 <span>·</span>
                 <HubLink
-                  to={{ kind: "draft", query: `teams=${encodeURIComponent(aSlug)},${encodeURIComponent(bSlug)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                  to={{ kind: "draft", query: `teams=${encodeURIComponent(sa)},${encodeURIComponent(sb)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
                   className="hover:text-rw-accent hover:underline"
                 >
                   {tl("Draft board")}
                 </HubLink>
                 <span>·</span>
-                <HubLink to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
+                <HubLink to={{ kind: "compare", mode: "team", a: sa, b: sb, period }} className="hover:text-rw-accent hover:underline">
                   {tl("Compare")}
                 </HubLink>
                 <span>·</span>
                 <HubLink
-                  to={{ kind: "finder", query: `team=${encodeURIComponent(aSlug)}&vs=${encodeURIComponent(bSlug)}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}` }}
+                  to={{ kind: "finder", query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}` }}
                   className="hover:text-rw-accent hover:underline"
                 >
                   {tl("Game finder")}
