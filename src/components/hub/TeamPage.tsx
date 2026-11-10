@@ -1579,6 +1579,21 @@ const TeamChampGames: React.FC<{
           <HubLink to={{ kind: "items", query: `champ=${encodeURIComponent(prettySlug(canonical))}` }} className="text-[11px] text-rw-accent hover:underline">
             {tl("Item history")} →
           </HubLink>
+          <HubLink
+            to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Draft board")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "finder",
+              query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(canonical)}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+            }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Game finder")} →
+          </HubLink>
           {!hidden && totalG > 0 && (
             <>
               <CopyTeamChampPost

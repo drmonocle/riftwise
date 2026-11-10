@@ -1531,6 +1531,12 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
           >
             {tl("Player leaderboards")} →
           </HubLink>
+          <HubLink
+            to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}` }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Game finder")} →
+          </HubLink>
           <SectionCard
             section={`${tl("Compare")} · ${p.role ? roleName(p.role) : tl("Players")}`}
             name={p.name}

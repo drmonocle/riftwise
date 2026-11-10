@@ -493,6 +493,12 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
               <HubLink to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
                 {tl("Compare")}
               </HubLink>
+              <HubLink
+                to={{ kind: "finder", query: `team=${encodeURIComponent(aSlug)}&vs=${encodeURIComponent(bSlug)}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}` }}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {tl("Game finder")}
+              </HubLink>
             </>
           )}
         </div>
@@ -591,6 +597,13 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
                 <HubLink to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
                   {tl("Compare")}
                 </HubLink>
+                <span>·</span>
+                <HubLink
+                  to={{ kind: "finder", query: `team=${encodeURIComponent(aSlug)}&vs=${encodeURIComponent(bSlug)}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}` }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")}
+                </HubLink>
               </span>
             )}
           </div>
@@ -619,6 +632,13 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
                 <span>·</span>
                 <HubLink to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
                   {tl("Compare")}
+                </HubLink>
+                <span>·</span>
+                <HubLink
+                  to={{ kind: "finder", query: `team=${encodeURIComponent(aSlug)}&vs=${encodeURIComponent(bSlug)}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}` }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")}
                 </HubLink>
               </>
             )}

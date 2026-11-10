@@ -191,9 +191,87 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
   return (
     <div className="space-y-3">
       <div className={`${card} space-y-2 text-xs`}>
-        <h1 className="text-base font-bold text-rw-text">
-          {tl("Game finder")}
-        </h1>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-base font-bold text-rw-text">
+            {tl("Game finder")}
+          </h1>
+          <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+            {(() => {
+              const qEvent = q.get("event") || "";
+              const qPatch = q.get("patch") || "";
+              const qRole = q.get("role") || "";
+              const qChamp = (q.get("champ") || "").split(",").map((s) => s.trim()).filter(Boolean)[0] || "";
+              const qVsChamp = (q.get("vschamp") || "").split(",").map((s) => s.trim()).filter(Boolean)[0] || "";
+              const qTeam = q.get("team") || "";
+              const qVs = q.get("vs") || "";
+              const qPlayer = q.get("player") || "";
+              return (
+                <>
+                  <HubLink
+                    to={{
+                      kind: "champions",
+                      query: new URLSearchParams({
+                        ...(league && league !== "top" ? { league } : {}),
+                        ...(year ? { year } : {}),
+                        ...(qEvent ? { event: qEvent } : {}),
+                      }).toString(),
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Champions")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "tiers",
+                      query: new URLSearchParams({
+                        ...(league && league !== "top" ? { scope: league } : {}),
+                        ...(qPatch ? { key: `p${qPatch}` } : year ? { key: `y${year}` } : {}),
+                        ...(qRole ? { role: qRole } : {}),
+                      }).toString(),
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Pro tier list")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      ...(qChamp
+                        ? { query: `champ=${encodeURIComponent(prettySlug(qChamp))}${qVsChamp ? `&vs=${encodeURIComponent(prettySlug(qVsChamp))}` : ""}` }
+                        : {}),
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Counter-pick finder")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "draft",
+                      ...(qTeam
+                        ? { query: `teams=${encodeURIComponent(qTeam)}${qVs ? `,${encodeURIComponent(qVs)}` : ""}${qEvent ? `&p=e:${encodeURIComponent(qEvent)}` : year ? `&p=y${encodeURIComponent(year)}` : ""}` }
+                        : {}),
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "items",
+                      query: new URLSearchParams({
+                        ...(qPlayer ? { player: qPlayer } : {}),
+                        ...(qChamp ? { champ: prettySlug(qChamp) } : {}),
+                      }).toString(),
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Item history")} →
+                  </HubLink>
+                </>
+              );
+            })()}
+          </span>
+        </div>
         <p className="text-rw-sub">
           {tl(
             'Find games by team, champion, player, side, result, patch and length. Conditions are about one team in the game: "T1 on red with Azir, against Orianna, lost".',

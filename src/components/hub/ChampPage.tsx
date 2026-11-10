@@ -1240,17 +1240,37 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                   </span>
                   <span className="flex items-center gap-2 text-rw-muted shrink-0">
                     {r.team && r.opp && (
-                      <HubLink
-                        to={{
-                          kind: "prep",
-                          a: prettySlug(r.team),
-                          b: prettySlug(r.opp),
-                          ...(/^\d{4}$/.test((r.date || "").slice(0, 4)) ? { period: `y${(r.date || "").slice(0, 4)}` } : {}),
-                        }}
-                        className="hidden sm:inline text-[10px] hover:text-rw-accent hover:underline"
-                      >
-                        {tl("Match prep")}
-                      </HubLink>
+                      <>
+                        <HubLink
+                          to={{
+                            kind: "prep",
+                            a: prettySlug(r.team),
+                            b: prettySlug(r.opp),
+                            ...(/^\d{4}$/.test((r.date || "").slice(0, 4)) ? { period: `y${(r.date || "").slice(0, 4)}` } : {}),
+                          }}
+                          className="hidden sm:inline text-[10px] hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Match prep")}
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "draft",
+                            query: `teams=${encodeURIComponent(prettySlug(r.team))},${encodeURIComponent(prettySlug(r.opp))}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
+                          }}
+                          className="hidden md:inline text-[10px] hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Draft board")}
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "finder",
+                            query: `team=${encodeURIComponent(prettySlug(r.team))}&vs=${encodeURIComponent(prettySlug(r.opp))}&champ=${encodeURIComponent(c.name)}`,
+                          }}
+                          className="hidden md:inline text-[10px] hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Game finder")}
+                        </HubLink>
+                      </>
                     )}
                     {r.g ? (
                       <HubLink to={{ kind: "match", slug: r.g, game: r.gn }} className="hover:text-rw-text hover:underline">

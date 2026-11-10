@@ -463,6 +463,12 @@ const ColoredOpponentGraph: React.FC<{
                 ))}
               </span>
             )}
+            <HubLink
+              to={{ kind: "finder", query: `team=${encodeURIComponent(active.u || prettySlug(active.opp))}` }}
+              className="text-rw-muted hover:text-rw-accent hover:underline"
+            >
+              {tl("Game finder")} →
+            </HubLink>
           </div>
         )}
       </div>
@@ -1356,6 +1362,12 @@ export const TeamOpponentsChart: React.FC<{
                           <HubLink to={{ kind: "compare", mode: "team", a: teamSlug, b: oppSlug }} className="text-rw-muted hover:text-rw-accent hover:underline">
                             {tl("Compare")}
                           </HubLink>
+                          <HubLink
+                            to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(oppSlug)}` }}
+                            className="text-rw-muted hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Game finder")}
+                          </HubLink>
                         </span>
                       );
                     })()}
@@ -1763,6 +1775,13 @@ export const TeamPeriodOpponents: React.FC<{
                             title={tl("Compare")}
                           >
                             {tl("Compare")}
+                          </HubLink>
+                          <HubLink
+                            to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(o.u)}${pSuffix}` }}
+                            className="text-rw-muted hover:text-rw-accent hover:underline"
+                            title={tl("Game finder")}
+                          >
+                            {tl("Game finder")}
                           </HubLink>
                         </span>
                       )}

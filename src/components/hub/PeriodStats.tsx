@@ -1253,6 +1253,18 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
               <HubLink to={teamFinderTo} className="text-[11px] font-semibold text-rw-accent hover:underline">
                 {tl("Game finder")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "champions", ...(/^y\d{4}$/.test(period) ? { query: `key=${encodeURIComponent(period)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Champions")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers", ...(/^y\d{4}$/.test(period) ? { query: `key=${encodeURIComponent(period)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
               <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Power rankings")} →
               </HubLink>

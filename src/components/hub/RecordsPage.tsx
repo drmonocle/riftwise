@@ -429,6 +429,18 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
       right={
         <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
           <HubLink
+            to={{ kind: "champions", query: `key=y${encodeURIComponent(label)}` }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Champions")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "tiers", query: `key=y${encodeURIComponent(label)}` }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")} →
+          </HubLink>
+          <HubLink
             to={{ kind: "finder", query: `year=${encodeURIComponent(label)}` }}
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
@@ -965,6 +977,30 @@ export const RecordsPanel: React.FC = () => {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h1 className="text-lg font-bold text-rw-text">{year === "all" ? tl("Records") : tl("{year} records", { year })}</h1>
               <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+                <HubLink
+                  to={{ kind: "titles" }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Titles")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "leaders", ...(year !== "all" ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "champions", ...(year !== "all" ? { query: `key=y${encodeURIComponent(year)}` } : {}) }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Champions")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "finder", ...(year !== "all" ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
                 <input
                   type="search"
                   value={search}
@@ -1055,6 +1091,12 @@ export const RecordsPanel: React.FC = () => {
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
                         {tl("Power rankings")} →
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "finder", query: `team=${encodeURIComponent(streakRows[0].u || prettySlug(streakRows[0].team))}` }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Game finder")} →
                       </HubLink>
                       <SectionCard
                         section={tl("Longest win streaks")}
@@ -1159,6 +1201,12 @@ export const RecordsPanel: React.FC = () => {
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
                         {tl("Titles")} →
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "finder", query: `team=${encodeURIComponent(titleRecordRows[0].u || prettySlug(titleRecordRows[0].team))}` }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Game finder")} →
                       </HubLink>
                       <SectionCard
                         section={tl("Most international titles (Worlds, MSI, First Stand)")}

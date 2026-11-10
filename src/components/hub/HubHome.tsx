@@ -472,6 +472,30 @@ const FeaturedMatch: React.FC<{
           >
             {tl("Draft board")}
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              const a = prettySlug(m.team1Name || m.team1Code);
+              const b = prettySlug(m.team2Name || m.team2Code);
+              const yr = m.startTimeUtc?.slice(0, 4);
+              if (a && b) navigateHub({ kind: "compare", mode: "team", a, b, ...(yr ? { period: `y${yr}` } : {}) });
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-rw-border bg-rw-bg hover:border-rw-accent text-rw-text font-semibold transition-colors px-2.5 py-1 text-[11px]"
+          >
+            {tl("Compare")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const a = prettySlug(m.team1Name || m.team1Code);
+              const b = prettySlug(m.team2Name || m.team2Code);
+              const yr = m.startTimeUtc?.slice(0, 4);
+              if (a && b) navigateHub({ kind: "finder", query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${yr ? `&year=${encodeURIComponent(yr)}` : ""}` });
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-rw-border bg-rw-bg hover:border-rw-accent text-rw-text font-semibold transition-colors px-2.5 py-1 text-[11px]"
+          >
+            {tl("Game finder")}
+          </button>
           <MatchOverviewButton match={m} />
           <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} />
           <ShareMatchButton match={m} className="border border-rw-border bg-rw-bg p-1.5" />
@@ -605,6 +629,14 @@ const LatestTournaments: React.FC<{ latest: EventListItem[] }> = ({ latest }) =>
           <HubLink to={{ kind: "titles" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Titles")} →
           </HubLink>
+          {latest[0]?.u && (
+            <HubLink
+              to={{ kind: "finder", query: `event=${encodeURIComponent(latest[0].u)}` }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Game finder")} →
+            </HubLink>
+          )}
           <HubLink to={{ kind: "tournaments" }} className="text-[11px] text-rw-accent hover:underline">
             {tl("Tournaments")} →
           </HubLink>
@@ -1057,12 +1089,12 @@ export const EventsBrowse: React.FC<{ year?: string; meta: HubMeta | null; onYea
           className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1.5 text-rw-text placeholder-rw-muted flex-1 min-w-[10rem]"
         />
       </div>
-      <Page state={state}>{(list) => <EventsTable list={list} scope={scope} q={q} onSetQ={setQ} />}</Page>
+      <Page state={state}>{(list) => <EventsTable list={list} scope={scope} q={q} year={y} onSetQ={setQ} />}</Page>
     </div>
   );
 };
 
-const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: string; onSetQ?: (q: string) => void }> = ({ list, scope, q, onSetQ }) => {
+const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: string; year?: string; onSetQ?: (q: string) => void }> = ({ list, scope, q, year, onSetQ }) => {
   const rows = useMemo(() => {
     const qq = q.trim().toLowerCase();
     const terms = qq ? qq.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean) : [];
@@ -1128,6 +1160,28 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
           <HubLink to={{ kind: "titles" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Titles")} →
           </HubLink>
+          {year && (
+            <>
+              <HubLink
+                to={{ kind: "champions", query: `key=y${encodeURIComponent(year)}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Champions")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers", query: `key=y${encodeURIComponent(year)}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "finder", query: `year=${encodeURIComponent(year)}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
+            </>
+          )}
           <SectionCard
             section={tl("Tournaments")}
             name={scope === "main" ? tl("Main leagues & internationals") : tl("Everything")}

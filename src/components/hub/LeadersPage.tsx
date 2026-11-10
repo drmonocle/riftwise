@@ -458,6 +458,33 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                 </HubLink>
                 <HubLink
                   to={{
+                    kind: "champions",
+                    query: new URLSearchParams({
+                      ...(league ? { league } : {}),
+                      ...(year ? { year } : {}),
+                      ...(event ? { event } : {}),
+                      ...(role ? { role } : {}),
+                    }).toString(),
+                  }}
+                  className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Champions")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "tiers",
+                    query: new URLSearchParams({
+                      ...(league ? { scope: league } : {}),
+                      ...(year ? { key: `y${year}` } : {}),
+                      ...(role ? { role } : {}),
+                    }).toString(),
+                  }}
+                  className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
+                <HubLink
+                  to={{
                     kind: "finder",
                     query: new URLSearchParams({
                       ...(league ? { league } : {}),

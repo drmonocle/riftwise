@@ -1134,6 +1134,15 @@ const PlayerBars: React.FC<{
               >
                 {tl("Compare")} →
               </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
             </>
           )}
           <SectionCard
@@ -1325,6 +1334,15 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                   >
                     {tl("Compare")} →
                   </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "finder",
+                      query: `team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Game finder")} →
+                  </HubLink>
                 </>
               )}
               <SectionCard
@@ -1391,6 +1409,15 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                     className="text-[11px] text-rw-accent hover:underline"
                   >
                     {tl("Compare")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "finder",
+                      query: `team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Game finder")} →
                   </HubLink>
                 </>
               )}
