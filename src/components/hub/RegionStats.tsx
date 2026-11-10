@@ -425,11 +425,11 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                         {regionLabel(p.b)}
                       </HubLink>
                     </span>
-                    <span className="tabular-nums shrink-0">
+                    <HubLink to={{ kind: "finder" }} className="tabular-nums shrink-0 hover:underline" title={tl("Game finder")}>
                       <span className="text-rw-teal font-bold">{p.wa}</span>
                       <span className="text-rw-muted"> – </span>
                       <span className="text-rw-sub">{p.wb}</span>
-                    </span>
+                    </HubLink>
                   </div>
                   <div className="h-1 w-full rounded-full bg-rw-border/70 overflow-hidden flex gap-[1px]" aria-hidden="true">
                     <span className="h-full bg-rw-teal/80" style={{ width: `${shareA}%` }} />

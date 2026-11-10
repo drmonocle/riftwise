@@ -75,7 +75,15 @@ export const MatchOverview: React.FC<{ match: Match; a: string; b: string; onClo
             >
               {match.leagueName}
             </button>{" "}
-            · {tc("short best of", "Bo{n}", { n: match.bestOf })}
+            ·{" "}
+            <button
+              type="button"
+              onClick={onPrep}
+              className="hover:text-rw-accent hover:underline uppercase font-semibold"
+              title={tl("Full match prep")}
+            >
+              {tc("short best of", "Bo{n}", { n: match.bestOf })}
+            </button>
           </h3>
           <button type="button" onClick={onClose} aria-label={tl("Close")} className="p-1 text-rw-muted hover:text-rw-text">
             <X className="w-4 h-4" />
@@ -152,7 +160,17 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
           >
             {rankText(s.team)}
           </button>{" "}
-          · <Change v={s.team.rating.chg30} /> {tl("in 30 days")}
+          ·{" "}
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              navigateHub({ kind: "team", slug: s.team.u, tab: "matches" });
+            }}
+            className="hover:text-rw-accent hover:underline"
+          >
+            <Change v={s.team.rating.chg30} /> {tl("in 30 days")}
+          </button>
         </div>
       )}
       {!hidden && (

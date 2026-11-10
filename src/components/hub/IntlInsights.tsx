@@ -103,7 +103,11 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   <span>{u.loser}</span>
                 </HubLink>
               }
-              sub={`${all ? yearOnly(u.year) + " · " : ""}${u.stage} · ${tl("Game {n}", { n: u.n ?? 1 })}`}
+              sub={
+                <HubLink to={{ kind: "match", slug: u.series, game: u.n }} className="hover:text-rw-accent hover:underline">
+                  {`${all ? yearOnly(u.year) + " · " : ""}${u.stage} · ${tl("Game {n}", { n: u.n ?? 1 })}`}
+                </HubLink>
+              }
               right={
                 <HubLink to={{ kind: "match", slug: u.series, game: u.n }} className="hover:underline">
                   {u.chance}%
@@ -127,7 +131,11 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       <span>{u.loser}</span>
                     </HubLink>
                   }
-                  sub={`${all ? yearOnly(u.year) + " · " : ""}${u.stage}`}
+                  sub={
+                    <HubLink to={{ kind: "match", slug: u.series }} className="hover:text-rw-accent hover:underline">
+                      {`${all ? yearOnly(u.year) + " · " : ""}${u.stage}`}
+                    </HubLink>
+                  }
                   right={
                     <HubLink to={{ kind: "match", slug: u.series }} className="hover:underline">
                       {u.chance}%
@@ -172,7 +180,11 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     <span>{c.loser}</span>
                   </HubLink>
                 }
-                sub={`${all ? yearOnly(c.year) + " · " : ""}${c.stage} · ${tl("Game {n}", { n: c.n })}`}
+                sub={
+                  <HubLink to={{ kind: "match", slug: c.series, game: c.n }} className="hover:text-rw-accent hover:underline">
+                    {`${all ? yearOnly(c.year) + " · " : ""}${c.stage} · ${tl("Game {n}", { n: c.n })}`}
+                  </HubLink>
+                }
                 right={
                   <HubLink to={{ kind: "match", slug: c.series, game: c.n }} className="inline-flex items-center gap-1.5 hover:underline">
                     <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
@@ -251,7 +263,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 </>
               );
             })()}
-            {at12.length > 0 && <p className="text-rw-sub">{tl("Teams at 1-2 that still went through: {n} of {of}", { n: at12Through, of: at12.length })}</p>}
+            {at12.length > 0 && (
+              <p className="text-rw-sub">
+                <HubLink to={{ kind: "worlds" }} className="hover:text-rw-accent hover:underline">
+                  {tl("Teams at 1-2 that still went through: {n} of {of}", { n: at12Through, of: at12.length })}
+                </HubLink>
+              </p>
+            )}
           </div>
         ) : (
           <List>

@@ -166,9 +166,16 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   m.leagueName
                 )}{" "}
                 ·{" "}
-                {m.state === "inProgress"
-                  ? tl("Live now")
-                  : time(m.startTimeUtc)}
+                <HubLink
+                  to={{
+                    kind: "prep",
+                    a: findHubTeam(data.index, m.team1Name, m.team1Code) || prettySlug(m.team1Name || m.team1Code),
+                    b: findHubTeam(data.index, m.team2Name, m.team2Code) || prettySlug(m.team2Name || m.team2Code),
+                  }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {m.state === "inProgress" ? tl("Live now") : time(m.startTimeUtc)}
+                </HubLink>
               </span>
               <WinChanceLine match={m} />
               <span className="ml-auto flex items-center gap-1" data-nocapture="1">

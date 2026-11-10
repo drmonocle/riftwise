@@ -242,9 +242,32 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
               {h2h ? (
                 <>
                   <div className="font-mono font-extrabold text-2xl">
-                    <span style={{ color: T1_COLOR }}>{hideTotals ? "?" : h2h.team1Wins}</span>
-                    <span className="text-rw-muted mx-1.5">–</span>
-                    <span style={{ color: T2_COLOR }}>{hideTotals ? "?" : h2h.team2Wins}</span>
+                    {hideTotals ? (
+                      <>
+                        <span style={{ color: T1_COLOR }}>?</span>
+                        <span className="text-rw-muted mx-1.5">–</span>
+                        <span style={{ color: T2_COLOR }}>?</span>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigateHub({
+                            kind: "compare",
+                            mode: "team",
+                            a: prettySlug(t1.name),
+                            b: prettySlug(t2.name),
+                          });
+                          onClose();
+                        }}
+                        className="hover:opacity-85 hover:underline"
+                        title={tl("Compare")}
+                      >
+                        <span style={{ color: T1_COLOR }}>{h2h.team1Wins}</span>
+                        <span className="text-rw-muted mx-1.5">–</span>
+                        <span style={{ color: T2_COLOR }}>{h2h.team2Wins}</span>
+                      </button>
+                    )}
                   </div>
                   <button
                     type="button"

@@ -302,14 +302,23 @@ export const LiveNextGamePreview: React.FC<{
             <Sparkles className="w-3 h-3" />
             {tl("Game {n}", { n: nextGameNum })} · {tl("Draft board")}
           </span>
-          {fearlessUsed.length > 0 && (
-            <span
-              className="text-[11px] text-rw-sub font-medium"
-              title={tl("Fearless: champions picked in earlier games of the series can't be picked again")}
-            >
-              {tl("Fearless")} ({fearlessUsed.length})
-            </span>
-          )}
+          {fearlessUsed.length > 0 &&
+            (draftIntel ? (
+              <HubLink
+                to={{ kind: "draft", query: draftQuery }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline font-medium"
+                title={tl("Fearless: champions picked in earlier games of the series can't be picked again")}
+              >
+                {tl("Fearless")} ({fearlessUsed.length})
+              </HubLink>
+            ) : (
+              <span
+                className="text-[11px] text-rw-sub font-medium"
+                title={tl("Fearless: champions picked in earlier games of the series can't be picked again")}
+              >
+                {tl("Fearless")} ({fearlessUsed.length})
+              </span>
+            ))}
         </div>
         {draftIntel && (
           <span className="inline-flex items-center gap-2">

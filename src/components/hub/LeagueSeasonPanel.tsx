@@ -203,7 +203,14 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                 );
               })}
             </div>
-            <p className="text-[10px] text-rw-muted mt-1">{tl("Players with {n}+ games.", { n: minG })}</p>
+            <p className="text-[10px] text-rw-muted mt-1">
+              <HubLink
+                to={{ kind: "leaders", query: `league=${encodeURIComponent(league)}&year=${encodeURIComponent(year)}` }}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {tl("Players with {n}+ games.", { n: minG })}
+              </HubLink>
+            </p>
           </div>
         )}
       </div>

@@ -520,9 +520,11 @@ const EventNow: React.FC<{ intl?: Match; schedule?: Match[]; settings?: AppSetti
             <li key={e.u} className="min-w-0">
               <div className="flex items-center justify-between gap-2 min-w-0">
                 <EventLink name={e.n} u={e.u} />
-                <span className="text-rw-muted shrink-0">
-                  {fmtDate(e.st, false)} – {fmtDate(e.en, false)}
-                </span>
+                <EventLink
+                  name={`${fmtDate(e.st, false)} – ${fmtDate(e.en, false)}`}
+                  u={e.u}
+                  className="text-rw-muted hover:text-rw-accent hover:underline shrink-0"
+                />
               </div>
               <div className="text-[11px] text-rw-muted font-num">
                 <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }} className="hover:text-rw-accent hover:underline">
@@ -803,7 +805,9 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
             })()}
           </ol>
           <p className="text-[10px] text-rw-muted">
-            {tl("Average RiftWise rating since {date} in the top leagues and international events (at least {n} games).", { date: fmtDate(from), n: 6 })}
+            <HubLink to={{ kind: "leaders" }} className="hover:text-rw-accent hover:underline">
+              {tl("Average RiftWise rating since {date} in the top leagues and international events (at least {n} games).", { date: fmtDate(from), n: 6 })}
+            </HubLink>
           </p>
         </>
       )}
@@ -811,7 +815,7 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
   );
 };
 
-const chipClass = "px-2 py-0.5 rounded-full border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-line max-w-[14rem] truncate";
+const chipClass = "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-line max-w-[14rem] truncate";
 
 /** The pages opened last on this device, plus the week's most viewed across all visitors. */
 const RecentPages: React.FC = () => {
@@ -825,7 +829,10 @@ const RecentPages: React.FC = () => {
         <span className="text-rw-muted font-semibold text-[10px] mr-1">{tl("Recently viewed")}</span>
         {recentShown.map((r) => (
           <HubLink key={hubPathOf(r.route)} to={r.route} className={chipClass}>
-            {r.title}
+            {r.route.kind === "team" && <TeamLogo name={r.title} size={14} />}
+            {r.route.kind === "champ" && <ChampIcon name={r.title} size={14} />}
+            {r.route.kind === "player" && <PlayerPhoto name={r.title} slug={r.route.slug} size={14} linkFallback={false} />}
+            <span className="truncate">{r.title}</span>
           </HubLink>
         ))}
       </div>
@@ -844,7 +851,10 @@ const MostViewed: React.FC<{ exclude?: Set<string> }> = ({ exclude }) => {
       <span className="text-rw-muted font-semibold text-[10px] mr-1">{tl("Most viewed this week")}</span>
       {list.map((p) => (
         <HubLink key={hubPathOf(p.route)} to={p.route} className={chipClass}>
-          {p.route.kind === "champ" ? champName(p.title) : p.title}
+          {p.route.kind === "team" && <TeamLogo name={p.title} size={14} />}
+          {p.route.kind === "champ" && <ChampIcon name={p.title} size={14} />}
+          {p.route.kind === "player" && <PlayerPhoto name={p.title} slug={p.route.slug} size={14} linkFallback={false} />}
+          <span className="truncate">{p.route.kind === "champ" ? champName(p.title) : p.title}</span>
         </HubLink>
       ))}
     </div>
@@ -944,7 +954,10 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
   const maxG = Math.max(1, ...rows.map((e) => e.g || 0));
   return (
     <div className={`${card} space-y-2 overflow-x-auto`}>
-      <div className="flex items-center justify-end" data-nocapture="1">
+      <div className="flex items-center justify-between gap-2" data-nocapture="1">
+        <span className="text-[11px] text-rw-muted tabular-nums">
+          {tn("{n} tournament", "{n} tournaments", rows.length)}
+        </span>
         <SectionCard
           section={tl("Tournaments")}
           name={scope === "main" ? tl("Main leagues & internationals") : tl("Everything")}

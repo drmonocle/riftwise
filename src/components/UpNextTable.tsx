@@ -127,7 +127,20 @@ const UpNextRow: React.FC<{
         >
           {m.leagueName}
         </button>
-        <span className="@max-[900px]:hidden text-rw-sub text-[10px] font-medium">{bo}</span>
+        <button
+          type="button"
+          onClick={() =>
+            navigateHub({
+              kind: "prep",
+              a: prettySlug(m.team1Name || m.team1Code),
+              b: prettySlug(m.team2Name || m.team2Code),
+            })
+          }
+          className="@max-[900px]:hidden text-rw-sub hover:text-rw-accent hover:underline text-[10px] font-medium text-left"
+          title={tl("Match prep")}
+        >
+          {bo}
+        </button>
       </span>
       <span className="flex items-center gap-1.5 min-w-0 @max-[900px]:order-last @max-[900px]:basis-full @min-[900px]:grid @min-[900px]:grid-cols-[minmax(0,1fr)_auto_auto_auto_minmax(0,1fr)]">
         {team(m.team1Code, m.team1Name, true)}
@@ -175,7 +188,20 @@ const UpNextRow: React.FC<{
       <span className={FORM_COL}>
         <FormCell m={m} schedule={schedule} hidden={settings.spoilerMode} />
       </span>
-      <span className="@min-[900px]:hidden text-rw-sub text-[11px] font-medium shrink-0">{bo}</span>
+      <button
+        type="button"
+        onClick={() =>
+          navigateHub({
+            kind: "prep",
+            a: prettySlug(m.team1Name || m.team1Code),
+            b: prettySlug(m.team2Name || m.team2Code),
+          })
+        }
+        className="@min-[900px]:hidden text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium shrink-0"
+        title={tl("Match prep")}
+      >
+        {bo}
+      </button>
       <span className="text-rw-sub font-mono text-[11px] font-medium shrink-0 whitespace-nowrap">{timeOf(m.startTimeUtc)}</span>
       <span className="flex items-center gap-0.5 shrink-0 ml-auto">
         <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} compact={true} />
