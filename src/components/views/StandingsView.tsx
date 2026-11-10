@@ -308,7 +308,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                             </td>
                             <td className="py-2.5 px-3" data-sort={team.name}>
                               <div className="flex items-center gap-2.5 min-w-0">
-                                <TeamLogo code={team.code} image={team.image} onClick={() => onSelectTeam(team.code, team.name)} />
+                                <TeamLogo code={team.code} name={team.name} image={team.image} onClick={() => onSelectTeam(team.code, team.name)} />
                                 <button
                                   type="button"
                                   onClick={() => onSelectTeam(team.code, team.name)}
@@ -543,7 +543,7 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
               className={`flex items-center gap-2 min-w-0 ${won ? "text-rw-teal font-bold" : "text-rw-text"} disabled:text-rw-muted`}
               title={tbd ? undefined : tl("View {team} roster", { team: t.name })}
             >
-              <TeamLogo code={t.code} image={tbd ? undefined : t.image} size="w-5 h-5" />
+              <TeamLogo code={t.code} name={tbd ? undefined : t.name} image={tbd ? undefined : t.image} size="w-5 h-5" />
               <span className="truncate">{t.code}</span>
             </button>
             <span className="font-mono font-bold">

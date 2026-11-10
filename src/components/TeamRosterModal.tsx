@@ -422,8 +422,10 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
               {upcomingMatches.length > 0 ? (
                 <div className="space-y-1.5">
                   {upcomingMatches.map((m) => {
-                    const opp = m.team1Code.toUpperCase() === upperCode ? m.team2Name : m.team1Name;
-                    const oppCode = m.team1Code.toUpperCase() === upperCode ? m.team2Code : m.team1Code;
+                    const isT1 = m.team1Code.toUpperCase() === upperCode;
+                    const opp = isT1 ? m.team2Name : m.team1Name;
+                    const oppCode = isT1 ? m.team2Code : m.team1Code;
+                    const oppImg = isT1 ? m.team2Image : m.team1Image;
                     // spoiler mode: a series under way doesn't add its games yet
                     const h2h = computeHeadToHead(teamCode, oppCode, schedule, m.matchId, !settings.spoilerMode);
                     return (
@@ -457,7 +459,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                               }}
                               className="inline-flex items-center gap-1.5 text-rw-accent hover:underline text-left"
                             >
-                              <TeamLogo name={opp} code={oppCode} size={14} />
+                              <TeamLogo name={opp} code={oppCode} src={oppImg} size={14} />
                               <span>{opp} ({oppCode})</span>
                             </button>
                           </div>
@@ -540,6 +542,8 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                     const myScore = isT1 ? m.team1Score : m.team2Score;
                     const oppScore = isT1 ? m.team2Score : m.team1Score;
                     const oppName = isT1 ? m.team2Name : m.team1Name;
+                    const oppCode = isT1 ? m.team2Code : m.team1Code;
+                    const oppImg = isT1 ? m.team2Image : m.team1Image;
                     const won = myScore > oppScore;
                     const shown = !settings.spoilerMode || isRevealed(`match:${m.matchId}`);
 
@@ -574,7 +578,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                               }}
                               className="inline-flex items-center gap-1.5 hover:text-rw-accent hover:underline text-left truncate"
                             >
-                              <TeamLogo name={oppName} size={14} />
+                              <TeamLogo name={oppName} code={oppCode} src={oppImg} size={14} />
                               <span className="truncate">{oppName}</span>
                             </button>
                           </span>
@@ -643,7 +647,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                               }}
                               className="inline-flex items-center gap-1.5 truncate hover:text-rw-accent hover:underline text-left"
                             >
-                              <TeamLogo name={oppName} size={14} />
+                              <TeamLogo name={oppName} code={oppCode} src={oppImg} size={14} />
                               <span className="truncate">{oppName}</span>
                             </button>
                           </span>

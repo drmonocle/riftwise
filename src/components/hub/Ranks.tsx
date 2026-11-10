@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { tl, tk, roleName, fmtDec } from "../../i18n";
 import { loadLeagueSeason, loadLeagues, loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y } from "../../hub/data";
 import type { EventPlayer, EventTeamStats, LeagueRow, PlayerGameRow, TeamGameRow } from "../../hub/types";
-import type { HubRoute } from "../../hub/route";
+import { hubShareUrl, type HubRoute } from "../../hub/route";
 import { HubLink, isFresh, Loading, RevealButton, Section, useHidden, useLoad } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 
@@ -740,7 +740,7 @@ export const PlayerRanks: React.FC<{
               <CopyRanksPost
                 title={`${name || me?.n || slug} · ${leagueLabel} ${year}${me?.r ? ` (${roleName(me.r)})` : ""}`}
                 rows={cardRows}
-                url={`https://riftwise.gg/player/${slug}/stats`}
+                url={hubShareUrl({ kind: "player", slug, tab: "stats" })}
               />
               <SectionCard
                 section={tl("League ranks")}
@@ -867,7 +867,7 @@ export const TeamRanks: React.FC<{
               <CopyRanksPost
                 title={`${name || me?.t || slug} · ${leagueLabel} ${year}`}
                 rows={cardRows}
-                url={`https://riftwise.gg/team/${slug}/stats`}
+                url={hubShareUrl({ kind: "team", slug, tab: "stats" })}
               />
               <SectionCard
                 section={tl("League ranks")}
@@ -935,7 +935,7 @@ const CopyRanksPost: React.FC<{
   rows: RankRow[];
   url: string;
 }> = ({ title, rows, url }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const top = [...rows].sort((a, b) => b.pct - a.pct).slice(0, 6);
     const lines: string[] = [`${tl("League ranks")} · ${title}`];
@@ -946,10 +946,13 @@ const CopyRanksPost: React.FC<{
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setState("copied");
+        setTimeout(() => setState("idle"), 2000);
       })
-      .catch(() => {});
+      .catch(() => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2400);
+      });
   };
   return (
     <button
@@ -959,7 +962,7 @@ const CopyRanksPost: React.FC<{
       className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
       title={tl("Copy post")}
     >
-      {copied ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };

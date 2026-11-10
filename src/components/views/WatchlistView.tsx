@@ -266,7 +266,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   className="inline-flex items-center gap-1 hover:underline"
                   title={teamDisplay}
                 >
-                  <TeamLogo name={teamDisplay} code={code} size={12} />
+                  <TeamLogo name={teamDisplay} code={code} src={teamObj?.image} size={12} />
                   <span>{code}</span>
                 </button>
                 <button

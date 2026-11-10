@@ -71,7 +71,7 @@ type SectionKind = HubRoute["kind"];
 const OWN_H1 = new Set(["home", "worlds", "msi", "first-stand", "rankings", "records", "prep", "draft", "finder", "best", "counters", "items", "leaders", "tiers", "team", "player", "event", "champ", "league", "match", "aboutme"]);
 
 /** pages whose address carries what they show (teams, filters): their link is worth copying */
-const LINKABLE = new Set<SectionKind>(["prep", "draft", "finder", "compare", "best", "champions", "counters", "items", "leaders", "tiers", "teams", "players", "data"]);
+const LINKABLE = new Set<SectionKind>(["prep", "draft", "finder", "compare", "best", "champions", "counters", "items", "leaders", "tiers", "teams", "players", "data", "rankings", "records", "tournaments", "leagues", "patches", "titles", "weekly", "worlds", "msi", "first-stand"]);
 
 /** pages that are one big table: kept at the two-column width on very wide screens (App.css .rw-capped) */
 const CAPPED_KINDS = new Set(["weekly", "tournaments", "leagues", "rankings", "titles", "best", "champions", "patches", "data", "finder", "counters", "items", "leaders", "teams", "players"]);

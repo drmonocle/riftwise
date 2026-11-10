@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
 import { playerPlaystyleTags } from "../components/hub/VisualAnalytics";
+import { listCard } from "../components/hub/BroadcastCard";
 import type { PlayerAgg } from "../hub/period";
 
 describe("playerPlaystyleTags", () => {
@@ -59,5 +61,27 @@ describe("playerPlaystyleTags", () => {
 
   it("returns empty array when sample size is too small", () => {
     expect(playerPlaystyleTags({ ...baseAgg, g: 4 }, "Mid", 10)).toEqual([]);
+  });
+});
+
+describe("listCard", () => {
+  it("renders rank badges, note fallback as subtitle, and dual sub + note lines", () => {
+    const card = listCard({
+      section: "Standings",
+      name: "LCK 2026",
+      sub: "Regular Season",
+      rows: [
+        { rank: 1, label: "Gen.G", sub: "GEN", value: "16 - 2", note: "89%" },
+        { rank: "#2", label: "Mid: Faker (Ahri)", value: "5/1/8 · 295 CS", note: "T1: Chovy (Orianna) · 2/3/4 · 280 CS" },
+      ],
+    });
+    const html = renderToStaticMarkup(card.body as any);
+    expect(html).toContain("#1");
+    expect(html).toContain("Gen.G");
+    expect(html).toContain("GEN");
+    expect(html).toContain("16 - 2");
+    expect(html).toContain("89%");
+    expect(html).toContain("#2");
+    expect(html).toContain("T1: Chovy (Orianna)");
   });
 });

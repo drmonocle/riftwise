@@ -27,7 +27,7 @@ import {
 import { tl, locale, LANGUAGES, TRANSLATION_EMAIL, TRANSLATION_MAILTO, detectLanguage } from "../../i18n";
 import { langAddress } from "../../hub/route";
 import { prettySlug, resolveLeagueSlug } from "../../hub/data";
-import { HubLink, TeamLogo } from "../hub/ui";
+import { HubLink, PlayerPhoto, TeamLogo } from "../hub/ui";
 import { PushAlertsCard } from "../PushAlerts";
 import { SyncPanel } from "../SyncPanel";
 
@@ -722,9 +722,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <HubLink
                   key={`p-${p}`}
                   to={{ kind: "player", slug: prettySlug(p) }}
-                  className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-teal/60 text-[11px] font-semibold text-rw-teal hover:underline"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-teal/60 text-[11px] font-semibold text-rw-teal hover:underline"
                 >
-                  {p}
+                  <PlayerPhoto name={p} slug={prettySlug(p)} size={13} linkFallback={false} />
+                  <span>{p}</span>
                 </HubLink>
               ))}
               {settings.followedLeagues.map((l) => (

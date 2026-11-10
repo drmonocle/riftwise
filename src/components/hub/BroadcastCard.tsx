@@ -1822,6 +1822,10 @@ export interface ListRow {
   value?: string;
   /** a smaller line under the label */
   sub?: string;
+  /** an extra note (shown under the label when sub is absent, or under the value on the right when sub is also present) */
+  note?: string;
+  /** a rank number or label before the row */
+  rank?: number | string;
   /** a champion icon before the label */
   champ?: string;
   /** a won / lost mark before the label */
@@ -1851,47 +1855,74 @@ export function listCard(d: { section: string; name: string; sub?: string; rows:
             alignContent: "start",
           }}
         >
-          {rows.map((r, i) => (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 16,
-                background: "var(--rw-surface)",
-                border: "1px solid var(--rw-border)",
-                borderRadius: 10,
-                padding: "10px 16px",
-                minWidth: 0,
-              }}
-            >
-              {r.win != null && (
-                <span
-                  style={{
-                    fontSize: 20,
-                    fontWeight: 900,
-                    width: 34,
-                    height: 34,
-                    borderRadius: 7,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: "var(--rw-bg)",
-                    border: `2px solid ${r.win ? "var(--rw-teal)" : "var(--rw-red)"}`,
-                    color: r.win ? "var(--rw-teal)" : "var(--rw-red)",
-                  }}
-                >
-                  {r.win ? tc("short result", "W") : tc("short result", "L")}
-                </span>
-              )}
-              {r.champ && <ChampIcon name={r.champ} size={46} />}
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 26, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.label}</div>
-                {r.sub && <div style={{ fontSize: 18, color: "var(--rw-sub)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.sub}</div>}
+          {rows.map((r, i) => {
+            const subLine = r.sub || r.note;
+            const rightNote = r.sub && r.note ? r.note : undefined;
+            const rankStr = r.rank != null && r.rank !== "" ? (typeof r.rank === "number" ? `#${r.rank}` : String(r.rank).startsWith("#") ? String(r.rank) : `#${r.rank}`) : null;
+            const rankNum = typeof r.rank === "number" ? r.rank : Number(String(r.rank ?? "").replace(/^#/, ""));
+            const rankColor = rankNum === 1 ? "var(--rw-teal)" : rankNum === 2 || rankNum === 3 ? "var(--rw-accent)" : "var(--rw-muted)";
+            return (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 16,
+                  background: "var(--rw-surface)",
+                  border: "1px solid var(--rw-border)",
+                  borderRadius: 10,
+                  padding: "10px 16px",
+                  minWidth: 0,
+                }}
+              >
+                {rankStr && (
+                  <span
+                    style={{
+                      fontSize: 22,
+                      fontWeight: 900,
+                      minWidth: 36,
+                      textAlign: "center",
+                      color: rankColor,
+                      fontVariantNumeric: "tabular-nums",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {rankStr}
+                  </span>
+                )}
+                {r.win != null && (
+                  <span
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 900,
+                      width: 34,
+                      height: 34,
+                      borderRadius: 7,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "var(--rw-bg)",
+                      border: `2px solid ${r.win ? "var(--rw-teal)" : "var(--rw-red)"}`,
+                      color: r.win ? "var(--rw-teal)" : "var(--rw-red)",
+                    }}
+                  >
+                    {r.win ? tc("short result", "W") : tc("short result", "L")}
+                  </span>
+                )}
+                {r.champ && <ChampIcon name={r.champ} size={46} />}
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 26, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.label}</div>
+                  {subLine && <div style={{ fontSize: 18, color: "var(--rw-sub)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{subLine}</div>}
+                </div>
+                {(r.value || rightNote) && (
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    {r.value && <div style={{ fontSize: 26, fontWeight: 800, color: "var(--rw-teal)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{r.value}</div>}
+                    {rightNote && <div style={{ fontSize: 16, color: "var(--rw-sub)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{rightNote}</div>}
+                  </div>
+                )}
               </div>
-              {r.value && <div style={{ fontSize: 26, fontWeight: 800, color: "var(--rw-teal)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{r.value}</div>}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </>
     ),
