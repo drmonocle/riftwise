@@ -159,6 +159,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   {tl("Game finder")} →
                 </HubLink>
                 <HubLink
+                  to={{ kind: "leaders", query: `year=${encodeURIComponent(activeRoster.y)}` }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
+                <HubLink
                   to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${activeRoster.y}` }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
@@ -517,6 +523,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 >
                   {tl("Game finder")} →
                 </HubLink>
+                <HubLink
+                  to={{ kind: "rankings" }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Power rankings")} →
+                </HubLink>
                 <SectionCard
                   section={tl("Recent series")}
                   name={t.name}
@@ -626,6 +638,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Compare")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "titles", query: `kind=All&q=${encodeURIComponent(t.name)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Titles")} →
               </HubLink>
               <HubLink
                 to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)}` }}
@@ -750,6 +768,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 {tl("Tournaments")} →
               </HubLink>
               <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}` }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -843,10 +867,22 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 </button>
               )}
               <HubLink
+                to={{ kind: "prep", a: t.u }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "compare", mode: "team", a: t.u }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Compare")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "titles", query: `kind=All&q=${encodeURIComponent(t.name)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Titles")} →
               </HubLink>
               <HubLink
                 to={{
@@ -1077,6 +1113,15 @@ const TeamChampionsTab: React.FC<{
                     className="text-[11px] text-rw-accent hover:underline"
                   >
                     {tl("Draft board")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "tiers",
+                      ...(/^y\d{4}$/.test(period) ? { query: `key=${encodeURIComponent(period)}` } : {}),
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Pro tier list")} →
                   </HubLink>
                   <HubLink
                     to={{
@@ -1587,6 +1632,15 @@ const TeamChampGames: React.FC<{
           </HubLink>
           <HubLink
             to={{
+              kind: "tiers",
+              ...(/^y\d{4}$/.test(period) ? { query: `key=${encodeURIComponent(period)}` } : {}),
+            }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")} →
+          </HubLink>
+          <HubLink
+            to={{
               kind: "finder",
               query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(canonical)}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
             }}
@@ -1756,8 +1810,14 @@ const TeamChampGames: React.FC<{
 
             {draftPartners.length > 0 && (
               <div className="bg-rw-bg border border-rw-border rounded-lg p-2.5 space-y-1.5">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">
-                  {tl("With {name}", { name: champName(canonical) })}
+                <div className="flex items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-wider text-rw-muted">
+                  <span>{tl("With {name}", { name: champName(canonical) })}</span>
+                  <HubLink
+                    to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                    className="text-rw-accent hover:underline font-normal normal-case tracking-normal"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
                   {(() => {
