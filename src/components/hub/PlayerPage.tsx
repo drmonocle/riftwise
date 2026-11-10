@@ -829,6 +829,12 @@ const PlayerView: React.FC<{
               >
                 {tl("Game finder")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "tiers", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
               <SectionCard
                 section={tl("Career bests")}
                 name={p.name}
@@ -963,6 +969,12 @@ const PlayerView: React.FC<{
               >
                 {tl("Game finder")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "tiers", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
               <SectionCard
                 section={tl("Titles")}
                 name={p.name}
@@ -1038,6 +1050,12 @@ const PlayerView: React.FC<{
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Game finder")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
               </HubLink>
               <SectionCard
                 section={tl("Pentakills")}
@@ -1467,6 +1485,12 @@ const CareerTimeline: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
           >
             {tl("Game finder")} →
           </HubLink>
+          <HubLink
+            to={{ kind: "tiers", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")} →
+          </HubLink>
           <SectionCard
             section={tl("Teams")}
             name={p.name}
@@ -1650,6 +1674,12 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
             className="text-[11px] text-rw-accent hover:underline"
           >
             {tl("Game finder")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "tiers", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")} →
           </HubLink>
           <SectionCard
             section={`${tl("Compare")} · ${p.role ? roleName(p.role) : tl("Players")}`}

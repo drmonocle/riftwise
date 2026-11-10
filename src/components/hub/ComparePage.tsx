@@ -1001,6 +1001,20 @@ export const TeamRows: React.FC<{
             >
               {tl("Pro tier list")} →
             </HubLink>
+            <HubLink
+              to={{
+                kind: "leaders",
+                ...(period && period.startsWith("y") && period.length === 5
+                  ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                  : period && period.startsWith("e:")
+                    ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                    : {}),
+              }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Player leaderboards")} →
+            </HubLink>
             <CopyComparePost
               title={`${x.name} vs ${y.name} · ${periodLabel}`}
               lines={postLines}
@@ -1487,6 +1501,13 @@ const PlayerRows: React.FC<{
               data-nocapture="1"
             >
               {tl("Pro tier list")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "rankings" }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Power rankings")} →
             </HubLink>
             <CopyComparePost
               title={`${x.name} vs ${y.name} · ${periodLabel}`}
@@ -1979,6 +2000,12 @@ const PlayerHeadToHead: React.FC<{
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Pro tier list")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "rankings" }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Power rankings")} →
             </HubLink>
             <SectionCard
               section={`${tl("Head to head")} · ${aName} vs ${bName}`}

@@ -894,6 +894,12 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                 >
                   {tl("Game finder")}
                 </HubLink>
+                <HubLink
+                  to={{ kind: "tiers", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")}
+                </HubLink>
                 {sel.seriesSlug ? (
                   <HubLink
                     to={{ kind: "match", slug: sel.seriesSlug, game: sel.gn }}
@@ -1169,6 +1175,12 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                     >
                       {tl("Pro tier list")} →
                     </HubLink>
+                    <HubLink
+                      to={{ kind: "leaders" }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Player leaderboards")} →
+                    </HubLink>
                   </>
                 );
               })()}
@@ -1399,6 +1411,12 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                         className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
                       >
                         {tl("Pro tier list")}
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "rankings" }}
+                        className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Power rankings")}
                       </HubLink>
                       {sel.g && (
                         <HubLink to={{ kind: "match", slug: sel.g }} className="text-rw-accent font-semibold hover:underline">
@@ -1635,6 +1653,12 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
             >
               {tl("Player leaderboards")} →
             </HubLink>
+            <HubLink
+              to={{ kind: "rankings" }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Power rankings")} →
+            </HubLink>
             <SectionCard
               section={`${tl("Recent patches")} · ${champName(c.name)}`}
               name={champName(c.name)}
@@ -1854,6 +1878,13 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Item history")} →
+                    </HubLink>{" "}
+                    ·{" "}
+                    <HubLink
+                      to={{ kind: "tiers", ...(primaryRole ? { query: `role=${encodeURIComponent(primaryRole)}` } : {}) }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Pro tier list")} →
                     </HubLink>
                   </span>
                 </div>

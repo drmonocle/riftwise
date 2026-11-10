@@ -945,6 +945,12 @@ export const PlayerOpponents: React.FC<{
               >
                 {tl("Game finder")}
               </HubLink>
+              <HubLink
+                to={{ kind: "tiers" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")}
+              </HubLink>
               <button
                 type="button"
                 onClick={() => setSelectedOpp(null)}
@@ -1264,6 +1270,12 @@ export const TeamOpponentsChart: React.FC<{
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Game finder")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "leaders" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Player leaderboards")} →
           </HubLink>
           {filtered.length > limit && !search.trim() && (
             <button
@@ -1586,6 +1598,19 @@ export const TeamPeriodOpponents: React.FC<{
           >
             {tl("Game finder")} →
           </HubLink>
+          <HubLink
+            to={{
+              kind: "leaders",
+              ...(period && /^y\d{4}$/.test(period)
+                ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                : period?.startsWith("e:")
+                  ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                  : {}),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Player leaderboards")} →
+          </HubLink>
           {filtered.length > 10 && !q && (
             <button type="button" onClick={() => setShowAll((v) => !v)} className="text-[11px] text-rw-accent hover:underline">
               {showAll ? tl("Show fewer") : tl("Show all {n}", { n: filtered.length })}
@@ -1651,6 +1676,12 @@ export const TeamPeriodOpponents: React.FC<{
                 className="text-rw-muted hover:text-rw-accent hover:underline"
               >
                 {tl("Game finder")}
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers", ...(period && /^y\d{4}$/.test(period) ? { query: `key=${encodeURIComponent(period)}` } : {}) }}
+                className="text-rw-muted hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")}
               </HubLink>
               <button type="button" onClick={() => setSelectedOpp(null)} className="text-rw-muted hover:text-rw-accent">
                 {tl("Close")}

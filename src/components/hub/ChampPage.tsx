@@ -860,6 +860,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               >
                 {tl("Game finder")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "leaders", query: "role=Bot" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
               <SectionCard
                 section={tl("Bot lane partners")}
                 name={champName(c.name)}
@@ -1429,6 +1435,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               >
                 {tl("Game finder")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "leaders", ...(c.roles[0]?.r ? { query: `role=${encodeURIComponent(c.roles[0].r)}` } : {}) }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
               <SectionCard
                 section={tl("By pick order")}
                 name={champName(c.name)}
@@ -1611,6 +1623,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               className="text-[11px] text-rw-accent hover:underline"
             >
               {tl("Game finder")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "leaders", ...(c.roles[0]?.r ? { query: `role=${encodeURIComponent(c.roles[0].r)}` } : {}) }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Player leaderboards")} →
             </HubLink>
             <BroadcastCardButton data={() => champCardData(c, champName(c.name))} name={`${c.u}-pro-play`} label={tl("Overview card")} />
             <SectionCard

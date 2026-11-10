@@ -1249,6 +1249,12 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
               >
                 {tl("Game finder")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "best", ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Best games")} →
+              </HubLink>
             </>
           )}
           <SectionCard

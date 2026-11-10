@@ -940,6 +940,12 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
               >
                 {tl("Pro tier list")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
               <CopyPeriodTextPost
               url={hubShareUrl({
                 kind: "player",

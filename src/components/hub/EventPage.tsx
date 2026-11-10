@@ -368,6 +368,12 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                 >
                   {tl("Game finder")} →
                 </HubLink>
+                <HubLink
+                  to={{ kind: "tiers", ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}) }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
                 <SectionCard
                   section={e.resultsFrom === "event" ? tl("Final standings (whole event)") : tl("Final standings")}
                   sub={eventTitle(e.n)}
@@ -674,6 +680,15 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                           className="text-[11px] text-rw-accent hover:underline"
                         >
                           {tl("Game finder")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "tiers",
+                            ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}),
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Pro tier list")} →
                         </HubLink>
                         <SectionCard
                           section={tl("Teams")}
@@ -1004,6 +1019,12 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
               >
                 {tl("Game finder")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "tiers" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
             </span>
           ) : undefined
         }
@@ -1098,6 +1119,12 @@ const StageLists: React.FC<{ stages: Stage[] }> = ({ stages }) => {
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Game finder")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
               </HubLink>
             </>
           )}
@@ -1231,6 +1258,12 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
                 {tl("Game finder")} →
               </HubLink>
             )}
+            <HubLink
+              to={{ kind: "tiers" }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Pro tier list")} →
+            </HubLink>
             <SectionCard
               section={name}
               name={`standings-${name}`}
@@ -1400,6 +1433,15 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Pro tier list")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "rankings",
+              ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Power rankings")} →
           </HubLink>
           <HubLink
             to={{
@@ -1641,6 +1683,12 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean }> = ({ e, full }) => 
             className="text-[11px] text-rw-accent hover:underline"
           >
             {tl("Game finder")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "leaders", query: `event=${encodeURIComponent(e.u)}` }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Player leaderboards")} →
           </HubLink>
           {more}
           <SectionCard

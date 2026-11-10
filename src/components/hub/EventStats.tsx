@@ -107,6 +107,9 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
             >
               {tl("Game finder")} →
             </HubLink>
+            <HubLink to={{ kind: "best" }} className="text-rw-accent hover:underline">
+              {tl("Best games")} →
+            </HubLink>
           </span>
           <input
             type="search"
@@ -211,6 +214,13 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                 >
                   {tl("Game finder")} →
                 </HubLink>
+                <HubLink
+                  to={{ kind: "tiers" }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
               </>
             ) : !f.rows[0].player && !f.rows[0].champ && f.rows[0].team && f.rows[1].team && f.rows[0].team !== f.rows[1].team ? (
               <>
@@ -270,6 +280,13 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                 >
                   {tl("Game finder")} →
                 </HubLink>
+                <HubLink
+                  to={{ kind: "tiers" }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
               </>
             ) : f.rows[0].champ && f.rows[1].champ && f.rows[0].champ !== f.rows[1].champ ? (
               <>
@@ -322,6 +339,13 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   data-nocapture="1"
                 >
                   {tl("Game finder")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "rankings" }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Power rankings")} →
                 </HubLink>
               </>
             ) : null)}

@@ -550,6 +550,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 >
                   {tl("Power rankings")} →
                 </HubLink>
+                <HubLink
+                  to={{ kind: "tiers" }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
                 <SectionCard
                   section={tl("Recent series")}
                   name={t.name}
@@ -684,6 +690,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
               >
                 {tl("Power rankings")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "tiers" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
               <SectionCard
                 section={tl("By year")}
                 name={t.name}
@@ -811,6 +823,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Game finder")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
               </HubLink>
               <SectionCard
                 section={tl("Titles")}
@@ -940,6 +958,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Game finder")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
               </HubLink>
               <SectionCard
                 section={tl("Tournaments")}
@@ -1686,6 +1710,12 @@ const TeamChampGames: React.FC<{
             className="text-[11px] text-rw-accent hover:underline"
           >
             {tl("Game finder")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "rankings" }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Power rankings")} →
           </HubLink>
           {!hidden && totalG > 0 && (
             <>

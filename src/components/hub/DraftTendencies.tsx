@@ -434,6 +434,20 @@ export const DraftTendencies: React.FC<{
                 </HubLink>
                 <HubLink
                   to={{
+                    kind: "leaders",
+                    ...(period?.startsWith("y") && period.length === 5
+                      ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                      : period?.startsWith("e:")
+                        ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                        : {}),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
+                <HubLink
+                  to={{
                     kind: "team",
                     slug: resolvedSlug,
                     tab: "champions",

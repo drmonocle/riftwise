@@ -115,6 +115,17 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
               >
                 {tl("Power rankings")} →
               </HubLink>
+              <HubLink
+                to={{
+                  kind: "tiers",
+                  ...(first.m.startTimeUtc && /^\d{4}$/.test(first.m.startTimeUtc.slice(0, 4))
+                    ? { query: `key=y${first.m.startTimeUtc.slice(0, 4)}` }
+                    : {}),
+                }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
             </>
           )}
           <SectionCard
@@ -390,6 +401,18 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
             </HubLink>
           </>
         )}
+        <HubLink
+          to={{ kind: "rankings" }}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+        >
+          {tl("Power rankings")}
+        </HubLink>
+        <HubLink
+          to={{ kind: "tiers", ...(period ? { query: `key=${encodeURIComponent(period)}` } : {}) }}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+        >
+          {tl("Pro tier list")}
+        </HubLink>
         <HubLink
           to={{ kind: "match", slug: RIOT_PREFIX + m.matchId }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"

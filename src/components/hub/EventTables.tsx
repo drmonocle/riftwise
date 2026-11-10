@@ -312,6 +312,13 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
           >
             {tl("Game finder")} →
           </HubLink>
+          <HubLink
+            to={{ kind: "rankings", ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}) }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Power rankings")} →
+          </HubLink>
           <CopyEventTablePost
             title={`${tl("Player stats")} · ${e.n} (${role === "All" ? tl("All roles") : roleName(role)})`}
             rows={[...rows]
@@ -667,6 +674,20 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
             data-nocapture="1"
           >
             {tl("Game finder")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "leaders",
+              query: new URLSearchParams({
+                ...(e.lu ? { league: e.lu } : {}),
+                ...(e.start?.slice(0, 4) ? { year: e.start.slice(0, 4) } : {}),
+                event: e.u,
+              }).toString(),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Player leaderboards")} →
           </HubLink>
           <CopyEventTablePost
             title={`${tl("Team stats")} · ${e.n}`}

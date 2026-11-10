@@ -453,6 +453,9 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
               <HubLink to={{ kind: "records" }} className="text-[11px] text-rw-accent hover:underline">
                 {tl("Records")} →
               </HubLink>
+              <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Pro tier list")} →
+              </HubLink>
             </span>
           </div>
           <ul className="space-y-1">
@@ -516,6 +519,9 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                   {tl("Game finder")} →
                 </HubLink>
               )}
+              <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Pro tier list")} →
+              </HubLink>
             </span>
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -863,6 +869,13 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
             data-nocapture="1"
           >
             {tl("Game finder")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "tiers" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Pro tier list")} →
           </HubLink>
           <CopyExtrasPost
             title={`${tl("Region vs region")} · ${e.n}`}
