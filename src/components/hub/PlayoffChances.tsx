@@ -102,7 +102,9 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                   <tr key={r.u} className="border-t border-rw-border">
                     <td className="px-1.5 sm:px-2 py-1 truncate" data-sort={r.name}>
                       <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
-                        <TeamLogo name={r.name} size={15} />
+                        <HubLink to={{ kind: "team", slug: r.u }} className="shrink-0 hover:opacity-80" title={r.name}>
+                          <TeamLogo name={r.name} size={15} />
+                        </HubLink>
                         <TeamLink name={r.name} u={r.u} className="truncate" />
                         {r.unrated && <span className="text-rw-muted shrink-0" title={tl("No power rating yet: played at the table's median rating")}> *</span>}
                       </span>

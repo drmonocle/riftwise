@@ -472,7 +472,9 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                 <td className="px-2 py-1" data-sort={t?.n || u}>
                   {/* the short name on a phone, so the next opponent fits beside it */}
                   <span className="flex items-center gap-1.5 min-w-0">
-                    <TeamLogo name={t?.n || u} code={t?.c} src={t?.img} size={16} className="shrink-0" />
+                    <HubLink to={{ kind: "team", slug: u }} className="shrink-0 hover:opacity-80" title={t?.n || u}>
+                      <TeamLogo name={t?.n || u} code={t?.c} src={t?.img} size={16} className="shrink-0" />
+                    </HubLink>
                     <TeamLink name={t?.n || u} u={u} className="truncate hover:text-rw-accent max-sm:hidden" />
                     <TeamLink name={t?.c || t?.n || u} u={u} className="hover:text-rw-accent sm:hidden" />
                   </span>
@@ -576,7 +578,9 @@ const BracketNow: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Bracket
             <h4 className="text-[11px] font-bold uppercase tracking-wider text-rw-sub">{tl("Champion")}</h4>
             {champ ? (
               <div className="rounded-lg border border-rw-accent/60 bg-rw-accent/10 p-3 flex items-center gap-2">
-                <TeamLogo name={champ.n} code={champ.c} src={champ.img} size={32} />
+                <HubLink to={{ kind: "team", slug: champ.u }} className="shrink-0 hover:opacity-80" title={champ.n}>
+                  <TeamLogo name={champ.n} code={champ.c} src={champ.img} size={32} />
+                </HubLink>
                 <TeamLink name={champ.n} u={champ.u} className="font-extrabold text-rw-text hover:text-rw-accent" />
               </div>
             ) : (
@@ -786,7 +790,9 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                 <td className="px-2 py-1" data-sort={x.as}>
                   <span className="flex items-center gap-1.5 min-w-0">
                     <Trophy className="w-3 h-3 text-rw-accent shrink-0" />
-                    <TeamLogo name={x.as} size={16} className="shrink-0" />
+                    <HubLink to={{ kind: "team", slug: x.u || prettySlug(x.as) }} className="shrink-0 hover:opacity-80" title={x.as}>
+                      <TeamLogo name={x.as} size={16} className="shrink-0" />
+                    </HubLink>
                     <TeamLink name={x.as} u={x.u} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
                   </span>
                   {/* phones: the final and the runner-up under the champion instead of two more columns */}
@@ -853,7 +859,9 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                       >
                         {tl("vs")}
                       </HubLink>
-                      <TeamLogo name={x.l} size={15} className="shrink-0" />
+                      <HubLink to={{ kind: "team", slug: prettySlug(x.l) }} className="shrink-0 hover:opacity-80" title={x.l}>
+                        <TeamLogo name={x.l} size={15} className="shrink-0" />
+                      </HubLink>
                       <TeamLink name={x.l} u={prettySlug(x.l)} className="hover:text-rw-accent" />
                     </span>
                   ) : (
@@ -874,7 +882,9 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
             .map((r, idx) => (
               <span key={`${r.team}-${r.from}-${idx}`} className="inline-flex items-center gap-1">
                 {idx > 0 && <span className="text-rw-muted mr-1">·</span>}
-                <TeamLogo name={r.team} size={13} className="shrink-0" />
+                <HubLink to={{ kind: "team", slug: r.u || prettySlug(r.team) }} className="shrink-0 hover:opacity-80" title={r.team}>
+                  <TeamLogo name={r.team} size={13} className="shrink-0" />
+                </HubLink>
                 <TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent" />
                 {r.u ? (
                   <HubLink to={{ kind: "team", slug: r.u, tab: "tournaments" }} className="hover:text-rw-accent hover:underline">
@@ -1304,7 +1314,9 @@ const Bracket: React.FC<{ ko: ReturnType<typeof runKnockout>; byU: Map<string, W
         <h4 className="text-[11px] font-bold uppercase tracking-wider text-rw-sub">{tl("World champion")}</h4>
         {champ ? (
           <div className="rounded-lg border border-rw-accent/60 bg-rw-accent/10 p-3 flex items-center gap-2">
-            <TeamLogo name={champ.n} code={champ.c} src={champ.img} size={32} />
+            <HubLink to={{ kind: "team", slug: champ.u }} className="shrink-0 hover:opacity-80" title={champ.n}>
+              <TeamLogo name={champ.n} code={champ.c} src={champ.img} size={32} />
+            </HubLink>
             <TeamLink name={champ.n} u={champ.u} className="font-extrabold text-rw-text hover:text-rw-accent" />
           </div>
         ) : (
@@ -1351,7 +1363,9 @@ const OddsTable: React.FC<{ odds: Record<string, TeamOdds>; teams: WTeam[] }> = 
               <tr key={t.u} className="border-t border-rw-border">
                 <td className="px-2 py-1" data-sort={t.n}>
                   <span className="flex items-center gap-1.5 min-w-0">
-                    <TeamLogo name={t.n} code={t.c} src={t.img} size={16} className="shrink-0" />
+                    <HubLink to={{ kind: "team", slug: t.u }} className="shrink-0 hover:opacity-80" title={t.n}>
+                      <TeamLogo name={t.n} code={t.c} src={t.img} size={16} className="shrink-0" />
+                    </HubLink>
                     <TeamLink name={t.n} u={t.u} className="truncate hover:text-rw-accent" />
                   </span>
                 </td>
@@ -1486,7 +1500,9 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
             <h4 className="text-[11px] font-bold uppercase tracking-wider text-rw-sub">{tl("Champion")}</h4>
             {champ ? (
               <div className="rounded-lg border border-rw-accent/60 bg-rw-accent/10 p-3 flex items-center gap-2">
-                <TeamLogo name={champ.n} code={champ.c} src={champ.img} size={32} />
+                <HubLink to={{ kind: "team", slug: champ.u }} className="shrink-0 hover:opacity-80" title={champ.n}>
+                  <TeamLogo name={champ.n} code={champ.c} src={champ.img} size={32} />
+                </HubLink>
                 <TeamLink name={champ.n} u={champ.u} className="font-extrabold text-rw-text hover:text-rw-accent" />
               </div>
             ) : (
@@ -1550,7 +1566,9 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                     <tr key={t.u} className="border-t border-rw-border">
                       <td className="px-2 py-1" data-sort={t.n}>
                         <span className="flex items-center gap-1.5 min-w-0">
-                          <TeamLogo name={t.n} code={t.c} src={t.img} size={16} className="shrink-0" />
+                          <HubLink to={{ kind: "team", slug: t.u }} className="shrink-0 hover:opacity-80" title={t.n}>
+                            <TeamLogo name={t.n} code={t.c} src={t.img} size={16} className="shrink-0" />
+                          </HubLink>
                           <TeamLink name={t.n} u={t.u} className="truncate hover:text-rw-accent" />
                         </span>
                       </td>

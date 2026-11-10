@@ -175,7 +175,9 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
               {yr.p.map((p, i) => (
                 <span key={p.n + i} className="inline-flex items-center gap-1.5 whitespace-nowrap">
                   {i > 0 && !overview && <span className="text-rw-muted/60 mr-0.5">·</span>}
-                  <PlayerPhoto name={p.n} team={eraName || t.name} slug={p.u ?? undefined} size={overview ? 22 : 18} />
+                  <HubLink to={{ kind: "player", slug: p.u || prettySlug(p.n) }} className="shrink-0 hover:opacity-80" title={p.n}>
+                    <PlayerPhoto name={p.n} team={eraName || t.name} slug={p.u ?? undefined} size={overview ? 22 : 18} />
+                  </HubLink>
                   <PlayerLink name={p.n} u={p.u} />
                   {p.u ? (
                     <HubLink
@@ -476,7 +478,9 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     >
                       vs
                     </HubLink>
-                    <TeamLogo name={r.opp} size={15} />
+                    <HubLink to={{ kind: "team", slug: t.opps.find((o) => o.n === r.opp)?.u || prettySlug(r.opp) }} className="shrink-0 hover:opacity-80" title={r.opp}>
+                      <TeamLogo name={r.opp} size={15} />
+                    </HubLink>
                     <TeamLink name={r.opp} u={t.opps.find((o) => o.n === r.opp)?.u || prettySlug(r.opp)} className="truncate" />
                     <span className="text-rw-muted truncate">
                       · <EventLink name={r.en} u={r.e} className="text-rw-muted hover:text-rw-accent hover:underline" />
@@ -635,7 +639,9 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   >
                     vs
                   </HubLink>
-                  <TeamLogo name={x.l} size={14} />
+                  <HubLink to={{ kind: "team", slug: t.opps.find((o) => o.n === x.l)?.u || prettySlug(x.l) }} className="shrink-0 hover:opacity-80" title={x.l}>
+                    <TeamLogo name={x.l} size={14} />
+                  </HubLink>
                   <TeamLink name={x.l} u={t.opps.find((o) => o.n === x.l)?.u || prettySlug(x.l)} />
                 </span>
               </li>
@@ -1252,7 +1258,17 @@ const TeamChampGames: React.FC<{
                   {playersSummary.map((pl) => (
                     <li key={pl.u || pl.n} className="flex items-center justify-between gap-2 min-w-0">
                       <span className="flex items-center gap-1.5 min-w-0">
-                        <PlayerPhoto slug={pl.u ?? undefined} name={pl.n} team={t.name} size={20} />
+                        {pl.u ? (
+                          <HubLink
+                            to={{ kind: "player", slug: pl.u, tab: "champions", query: `champ=${encodeURIComponent(canonical)}` }}
+                            className="shrink-0 hover:opacity-80"
+                            title={pl.n}
+                          >
+                            <PlayerPhoto slug={pl.u ?? undefined} name={pl.n} team={t.name} size={20} />
+                          </HubLink>
+                        ) : (
+                          <PlayerPhoto slug={pl.u ?? undefined} name={pl.n} team={t.name} size={20} />
+                        )}
                         {pl.u ? (
                           <HubLink
                             to={{ kind: "player", slug: pl.u, tab: "champions", query: `champ=${encodeURIComponent(canonical)}` }}
@@ -1447,7 +1463,9 @@ const TeamChampGames: React.FC<{
                       <span className="inline-flex items-center gap-1 truncate min-w-0">
                         {who && (
                           <>
-                            <PlayerPhoto name={who.n} team={t.name} slug={who.u ?? undefined} size={15} />
+                            <HubLink to={{ kind: "player", slug: who.u || prettySlug(who.n) }} className="shrink-0 hover:opacity-80" title={who.n}>
+                              <PlayerPhoto name={who.n} team={t.name} slug={who.u ?? undefined} size={15} />
+                            </HubLink>
                             {who.u ? (
                               <PlayerLink name={who.n} u={who.u} className="font-semibold text-rw-text hover:text-rw-accent" />
                             ) : (
@@ -1478,7 +1496,9 @@ const TeamChampGames: React.FC<{
                           >
                             vs
                           </HubLink>
-                          <TeamLogo name={r[4]} size={13} />
+                          <HubLink to={{ kind: "team", slug: r[5] || prettySlug(r[4]) }} className="shrink-0 hover:opacity-80" title={r[4]}>
+                            <TeamLogo name={r[4]} size={13} />
+                          </HubLink>
                           <TeamLink name={r[4]} u={r[5]} />
                           {roleStr && (
                             <span>

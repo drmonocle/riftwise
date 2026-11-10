@@ -105,7 +105,9 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                   <li key={t.u || t.t} className="flex items-center justify-between gap-2 min-w-0">
                     <span className="inline-flex items-center gap-1.5 truncate min-w-0">
                       <span className="text-rw-muted tabular-nums w-4 inline-block shrink-0">{i + 1}</span>
-                      <TeamLogo name={t.t} size={15} />
+                      <HubLink to={{ kind: "team", slug: t.u || prettySlug(t.t) }} className="shrink-0 hover:opacity-80" title={t.t}>
+                        <TeamLogo name={t.t} size={15} />
+                      </HubLink>
                       <TeamLink name={t.t} u={t.u} className="text-rw-text hover:text-rw-accent truncate" />
                     </span>
                     <span className="inline-flex items-center gap-1.5 tabular-nums text-rw-sub shrink-0">
@@ -166,8 +168,14 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                           return (
                             <li key={`${p.u || p.n}-${p.t}`} className="flex items-center justify-between gap-2 min-w-0">
                               <span className="inline-flex items-center gap-1.5 truncate min-w-0">
-                                <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={16} />
-                                {p.t && <TeamLogo name={p.t} size={13} />}
+                                <HubLink to={{ kind: "player", slug: p.u || prettySlug(p.n) }} className="shrink-0 hover:opacity-80" title={p.n}>
+                                  <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={16} />
+                                </HubLink>
+                                {p.t && (
+                                  <HubLink to={{ kind: "team", slug: p.tu || prettySlug(p.t) }} className="shrink-0 hover:opacity-80" title={p.t}>
+                                    <TeamLogo name={p.t} size={13} />
+                                  </HubLink>
+                                )}
                                 <PlayerLink name={p.n} u={p.u} className="text-rw-text hover:text-rw-accent truncate" />{" "}
                                 {p.u ? (
                                   <HubLink

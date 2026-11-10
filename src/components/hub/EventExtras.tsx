@@ -77,7 +77,9 @@ const GameLine: React.FC<{
           </HubLink>
         ) : (
           <span className="text-rw-text inline-flex items-center gap-1">
-            <TeamLogo name={r.a} size={13} />
+            <HubLink to={{ kind: "team", slug: prettySlug(r.a) }} className="shrink-0 hover:opacity-80" title={r.a}>
+              <TeamLogo name={r.a} size={13} />
+            </HubLink>
             <TeamLink name={r.a} />
             <HubLink
               to={{ kind: "compare", mode: "team", a: prettySlug(r.a), b: prettySlug(r.b) }}
@@ -86,7 +88,9 @@ const GameLine: React.FC<{
             >
               vs
             </HubLink>
-            <TeamLogo name={r.b} size={13} />
+            <HubLink to={{ kind: "team", slug: prettySlug(r.b) }} className="shrink-0 hover:opacity-80" title={r.b}>
+              <TeamLogo name={r.b} size={13} />
+            </HubLink>
             <TeamLink name={r.b} />
           </span>
         )}
@@ -216,7 +220,9 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                   </HubLink>
                 ) : (
                   <span className="text-rw-text inline-flex items-center gap-1">
-                    <TeamLogo name={o.best.a} size={13} />
+                    <HubLink to={{ kind: "team", slug: prettySlug(o.best.a) }} className="shrink-0 hover:opacity-80" title={o.best.a}>
+                      <TeamLogo name={o.best.a} size={13} />
+                    </HubLink>
                     <TeamLink name={o.best.a} />
                     <HubLink
                       to={{ kind: "compare", mode: "team", a: prettySlug(o.best.a), b: prettySlug(o.best.b) }}
@@ -225,7 +231,9 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                     >
                       vs
                     </HubLink>
-                    <TeamLogo name={o.best.b} size={13} />
+                    <HubLink to={{ kind: "team", slug: prettySlug(o.best.b) }} className="shrink-0 hover:opacity-80" title={o.best.b}>
+                      <TeamLogo name={o.best.b} size={13} />
+                    </HubLink>
                     <TeamLink name={o.best.b} />
                   </span>
                 )}
@@ -262,7 +270,9 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                     {tl("{n} CS/min", { n: o.farm.v })}
                   </span>
                 )}
-                <PlayerPhoto name={o.farm.n} slug={o.farm.u ?? undefined} size={15} />
+                <HubLink to={{ kind: "player", slug: o.farm.u || prettySlug(o.farm.n) }} className="shrink-0 hover:opacity-80" title={o.farm.n}>
+                  <PlayerPhoto name={o.farm.n} slug={o.farm.u ?? undefined} size={15} />
+                </HubLink>
                 <PlayerLink name={o.farm.n} u={o.farm.u} />
                 {o.farm.g ? (
                   <HubLink
@@ -358,7 +368,9 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                 <HubLink to={{ kind: "champ", slug: prettySlug(p.c) }} className="hover:opacity-80" title={champName(p.c)}>
                   <ChampIcon name={p.c} size={16} />
                 </HubLink>
-                <PlayerPhoto name={p.n} slug={p.u ?? undefined} size={16} />
+                <HubLink to={{ kind: "player", slug: p.u || prettySlug(p.n) }} className="shrink-0 hover:opacity-80" title={p.n}>
+                  <PlayerPhoto name={p.n} slug={p.u ?? undefined} size={16} />
+                </HubLink>
                 <PlayerLink name={p.n} u={p.u} />
                 {p.x > 1 &&
                   (p.g ? (
@@ -392,7 +404,9 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
               const maxM = Math.max(1, ...o.mvp.map((m) => m.v));
               return o.mvp.map((m) => (
                 <span key={m.n} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-rw-border bg-rw-bg/50">
-                  <PlayerPhoto name={m.n} slug={m.u ?? undefined} size={16} />
+                  <HubLink to={{ kind: "player", slug: m.u || prettySlug(m.n) }} className="shrink-0 hover:opacity-80" title={m.n}>
+                    <PlayerPhoto name={m.n} slug={m.u ?? undefined} size={16} />
+                  </HubLink>
                   <PlayerLink name={m.n} u={m.u} />
                   <span className="w-6 h-1 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
                     <span className="h-full bg-rw-accent/85 rounded-full" style={{ width: `${Math.round((m.v / maxM) * 100)}%` }} />
@@ -484,7 +498,9 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
             className="bg-rw-bg border border-rw-border rounded-lg p-2 text-xs min-w-0"
           >
             <div className="font-semibold mb-1.5 flex items-center gap-1.5 truncate">
-              <TeamLogo name={t.t} size={16} />
+              <HubLink to={{ kind: "team", slug: t.u || prettySlug(t.t) }} className="shrink-0 hover:opacity-80" title={t.t}>
+                <TeamLogo name={t.t} size={16} />
+              </HubLink>
               <TeamLink name={t.t} u={t.u} />
               {t.r && (
                 <HubLink to={{ kind: "leagues" }} className="text-rw-muted hover:text-rw-accent hover:underline text-[10px] ml-0.5">
@@ -505,7 +521,9 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
               {t.p.map(([n, u, role, flag], i) => (
                 <li key={i} className="flex items-center justify-between gap-2 min-w-0">
                   <span className="inline-flex items-center gap-1.5 truncate min-w-0">
-                    <PlayerPhoto name={n} team={t.t} slug={u ?? undefined} size={16} />
+                    <HubLink to={{ kind: "player", slug: u || prettySlug(n) }} className="shrink-0 hover:opacity-80" title={n}>
+                      <PlayerPhoto name={n} team={t.t} slug={u ?? undefined} size={16} />
+                    </HubLink>
                     <PlayerLink name={n} u={u} />
                   </span>
                   <span className="inline-flex items-center gap-1 text-rw-muted shrink-0 text-[10px]">

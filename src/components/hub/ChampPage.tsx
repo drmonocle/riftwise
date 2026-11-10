@@ -776,8 +776,14 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 <tr key={p.n + p.u} className="border-t border-rw-border">
                   <td className={td} data-sort={p.n}>
                     <span className="inline-flex items-center gap-1.5 min-w-0">
-                      <PlayerPhoto name={p.n} team={pTeam} slug={p.u ?? undefined} size={20} />
-                      {pTeam && <TeamLogo name={pTeam} size={13} />}
+                      <HubLink to={{ kind: "player", slug: p.u || prettySlug(p.n) }} className="shrink-0 hover:opacity-80" title={p.n}>
+                        <PlayerPhoto name={p.n} team={pTeam} slug={p.u ?? undefined} size={20} />
+                      </HubLink>
+                      {pTeam && (
+                        <HubLink to={{ kind: "team", slug: prettySlug(pTeam) }} className="shrink-0 hover:opacity-80" title={pTeam}>
+                          <TeamLogo name={pTeam} size={13} />
+                        </HubLink>
+                      )}
                       <PlayerLink name={p.n} u={p.u} />
                     </span>
                   </td>
@@ -887,7 +893,9 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                         {r.win ? tc("short result", "W") : tc("short result", "L")}
                       </span>
                     )}
-                    <PlayerPhoto name={r.n} team={r.team} slug={r.u ?? undefined} size={16} />
+                    <HubLink to={{ kind: "player", slug: r.u || prettySlug(r.n) }} className="shrink-0 hover:opacity-80" title={r.n}>
+                      <PlayerPhoto name={r.n} team={r.team} slug={r.u ?? undefined} size={16} />
+                    </HubLink>
                     {r.team && (
                       <HubLink to={{ kind: "team", slug: prettySlug(r.team) }} className="shrink-0 hover:opacity-80" title={r.team}>
                         <TeamLogo name={r.team} size={13} />
@@ -918,7 +926,9 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     ) : (
                       <span className="text-rw-muted shrink-0">vs</span>
                     )}
-                    <TeamLogo name={r.opp} size={14} />
+                    <HubLink to={{ kind: "team", slug: prettySlug(r.opp) }} className="shrink-0 hover:opacity-80" title={r.opp}>
+                      <TeamLogo name={r.opp} size={14} />
+                    </HubLink>
                     <TeamLink name={r.opp} className="truncate" />
                   </span>
                   <span className="text-rw-muted shrink-0">

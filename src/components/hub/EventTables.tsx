@@ -78,7 +78,9 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
       value: (p) => p.n.toLowerCase(),
       render: (p) => (
         <span className="inline-flex items-center gap-1.5 min-w-0">
-          <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
+          <HubLink to={{ kind: "player", slug: p.u || prettySlug(p.n) }} className="shrink-0 hover:opacity-80" title={p.n}>
+            <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
+          </HubLink>
           <PlayerLink name={p.n} u={p.u} />
         </span>
       ),
@@ -89,7 +91,9 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
       value: (p) => p.t.toLowerCase(),
       render: (p) => (
         <span className="inline-flex items-center gap-1.5 max-w-[9rem] truncate align-bottom">
-          <TeamLogo name={p.t} size={14} />
+          <HubLink to={{ kind: "team", slug: p.tu || prettySlug(p.t) }} className="shrink-0 hover:opacity-80" title={p.t}>
+            <TeamLogo name={p.t} size={14} />
+          </HubLink>
           <TeamLink name={p.t} u={p.tu} className="truncate" />
         </span>
       ),
@@ -331,7 +335,9 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
       value: (t) => t.t.toLowerCase(),
       render: (t) => (
         <span className="inline-flex items-center gap-1.5 min-w-0">
-          <TeamLogo name={t.t} size={15} />
+          <HubLink to={{ kind: "team", slug: t.u || prettySlug(t.t) }} className="shrink-0 hover:opacity-80" title={t.t}>
+            <TeamLogo name={t.t} size={15} />
+          </HubLink>
           <TeamLink name={t.t} u={t.u} />
         </span>
       ),

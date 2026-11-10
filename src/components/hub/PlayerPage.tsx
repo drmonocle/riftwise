@@ -76,13 +76,17 @@ function age(born?: string): number | null {
 }
 
 /** The club's logo in the corner of the photo (none when Riot has no logo for it). */
-const ClubBadge: React.FC<{ name: string }> = ({ name }) => {
+const ClubBadge: React.FC<{ name: string; u?: string | null }> = ({ name, u }) => {
   const logo = useTeamLogo(name);
   if (!logo) return null;
   return (
-    <span className="absolute -right-1 -bottom-0.5 w-[30px] h-[30px] md:w-9 md:h-9 rounded-full bg-rw-deep border-2 border-rw-accent/50 p-[3px] flex items-center justify-center">
+    <HubLink
+      to={{ kind: "team", slug: u || prettySlug(name) }}
+      title={name}
+      className="absolute -right-1 -bottom-0.5 w-[30px] h-[30px] md:w-9 md:h-9 rounded-full bg-rw-deep border-2 border-rw-accent/50 p-[3px] flex items-center justify-center hover:border-rw-accent transition-colors"
+    >
       <TeamLogo name={name} sizeClass="w-full h-full" />
-    </span>
+    </HubLink>
   );
 };
 
@@ -161,7 +165,7 @@ const PlayerView: React.FC<{
               sizeClass={overview ? "w-[84px] h-[84px] md:w-[116px] md:h-[116px]" : "w-12 h-12 sm:w-14 sm:h-14"}
               className={overview ? "!border-[3px] !border-rw-accent/50 shadow-[0_10px_30px_rgba(0,0,0,0.45)]" : ""}
             />
-            {overview && p.club && <ClubBadge name={p.club} />}
+            {overview && p.club && <ClubBadge name={p.club} u={p.clubU} />}
           </>
         }
         title={
@@ -205,7 +209,9 @@ const PlayerView: React.FC<{
             </p>
             {p.club && (
               <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-                <TeamLogo name={p.club} size={15} />
+                <HubLink to={{ kind: "team", slug: p.clubU || prettySlug(p.club) }} className="shrink-0 hover:opacity-80" title={p.club}>
+                  <TeamLogo name={p.club} size={15} />
+                </HubLink>
                 <TeamLink name={p.club} u={p.clubU} className="font-semibold text-rw-text hover:text-rw-accent hover:underline" />{" "}
                 <HubLink to={{ kind: "player", slug: p.u, tab: "matches" }} className="hover:text-rw-accent hover:underline">
                   {tl("(last game {date})", { date: fmtDate(p.clubTo) })}
@@ -434,7 +440,9 @@ const PlayerView: React.FC<{
                   </td>
                   <td className={`${td} text-rw-sub max-w-[9rem]`} data-sort={y.team}>
                     <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
-                      <TeamLogo name={y.team} size={15} />
+                      <HubLink to={{ kind: "team", slug: p.teams.find((t) => t.n === y.team)?.u || prettySlug(y.team) }} className="shrink-0 hover:opacity-80" title={y.team}>
+                        <TeamLogo name={y.team} size={15} />
+                      </HubLink>
                       <TeamLink name={y.team} u={p.teams.find((t) => t.n === y.team)?.u} className="truncate" />
                     </span>
                   </td>
@@ -559,7 +567,9 @@ const PlayerView: React.FC<{
                       >
                         vs
                       </HubLink>
-                      <TeamLogo name={r.opp} size={15} />
+                      <HubLink to={{ kind: "team", slug: prettySlug(r.opp) }} className="shrink-0 hover:opacity-80" title={r.opp}>
+                        <TeamLogo name={r.opp} size={15} />
+                      </HubLink>
                       <TeamLink name={r.opp} className="text-rw-sub hover:text-rw-accent hover:underline truncate" />
                       {r.en && (
                         <span className="text-rw-muted truncate">
@@ -641,7 +651,9 @@ const PlayerView: React.FC<{
                     >
                       vs
                     </HubLink>
-                    <TeamLogo name={b.opp} size={13} />
+                    <HubLink to={{ kind: "team", slug: prettySlug(b.opp) }} className="shrink-0 hover:opacity-80" title={b.opp}>
+                      <TeamLogo name={b.opp} size={13} />
+                    </HubLink>
                     <TeamLink name={b.opp} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
                     ,{" "}
                     <HubLink
@@ -907,7 +919,9 @@ const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number]; playerSlug: str
       </td>
       <td className={`${td} max-w-[9rem]`} data-sort={x.t}>
         <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
-          <TeamLogo name={x.t} size={14} />
+          <HubLink to={{ kind: "team", slug: x.tu || prettySlug(x.t) }} className="shrink-0 hover:opacity-80" title={x.t}>
+            <TeamLogo name={x.t} size={14} />
+          </HubLink>
           <TeamLink name={x.t} u={x.tu} className="truncate" />
         </span>
       </td>
@@ -1016,7 +1030,9 @@ const CareerTimeline: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
               />
               <div className="flex items-center justify-between gap-2 min-w-0">
                 <span className="flex items-center gap-2 min-w-0">
-                  <TeamLogo name={t.n} size={20} />
+                  <HubLink to={{ kind: "team", slug: t.u || prettySlug(t.n) }} className="shrink-0 hover:opacity-80" title={t.n}>
+                    <TeamLogo name={t.n} size={20} />
+                  </HubLink>
                   <TeamLink name={t.n} u={t.u} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
                   <HubLink
                     to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${ty}` }}
@@ -1151,12 +1167,17 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
         {peers.map(({ peer, sim, shared }) => (
           <li key={peer.u} className="flex items-center justify-between gap-2 min-w-0">
             <span className="flex items-center gap-2 min-w-0">
-              <PlayerPhoto name={peer.name} team={peer.club} slug={peer.u} img={peer.img} size={26} />
+              <HubLink to={{ kind: "player", slug: peer.u }} className="shrink-0 hover:opacity-80" title={peer.name}>
+                <PlayerPhoto name={peer.name} team={peer.club} slug={peer.u} img={peer.img} size={26} />
+              </HubLink>
               <span className="min-w-0 truncate">
                 <PlayerLink name={peer.name} u={peer.u} />
                 {peer.club && (
                   <span className="text-rw-muted text-[11px] inline-flex items-center gap-1 ml-1">
-                    · <TeamLogo name={peer.club} size={12} />
+                    ·{" "}
+                    <HubLink to={{ kind: "team", slug: peer.clubU || prettySlug(peer.club) }} className="shrink-0 hover:opacity-80" title={peer.club}>
+                      <TeamLogo name={peer.club} size={12} />
+                    </HubLink>
                     <TeamLink name={peer.club} u={peer.clubU} className="text-rw-muted hover:text-rw-accent hover:underline" />
                   </span>
                 )}
