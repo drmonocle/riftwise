@@ -83,7 +83,9 @@ export const PlayerEarly: React.FC<{
   t: PlayerTl;
   dmgShare: number | null;
   goldShare: number | null;
-}> = ({ t, dmgShare, goldShare }) => {
+  leaderTo?: (stat: string) => import("../../hub/route").HubRoute;
+  matchesTo?: import("../../hub/route").HubRoute;
+}> = ({ t, dmgShare, goldShare, leaderTo, matchesTo }) => {
   const eff =
     dmgShare != null && goldShare != null
       ? Math.round((dmgShare - goldShare) * 10) / 10
@@ -98,36 +100,43 @@ export const PlayerEarly: React.FC<{
           label="GD@10"
           value={signed(t.gd10)}
           sub={lead(t.csd10, t.xpd10)}
+          to={leaderTo ? leaderTo("g15") : matchesTo}
         />
         <Stat
           label="GD@15"
           value={signed(t.gd15)}
           sub={lead(t.csd15, t.xpd15)}
+          to={leaderTo ? leaderTo("g15") : matchesTo}
         />
         <Stat
           label="GD@20"
           value={signed(t.gd20)}
           sub={lead(t.csd20, t.xpd20)}
+          to={leaderTo ? leaderTo("g15") : matchesTo}
         />
         <Stat
           label={tl("DMG% − Gold%")}
           value={signed(eff)}
           sub={tl("Damage vs. gold share")}
+          to={leaderTo ? leaderTo("dmgs") : matchesTo}
         />
         <Stat
           label={tl("First blood")}
           value={pct(t.fbPart)}
           sub={tl("{p} died for it", { p: pct(t.fbVictim) })}
+          to={leaderTo ? leaderTo("fbp") : matchesTo}
         />
         <Stat
           label={tl("Wards / min")}
           value={dash(t.wpm)}
           sub={tl("{n} cleared / min", { n: dash(t.wcpm) })}
+          to={leaderTo ? leaderTo("vsm") : matchesTo}
         />
         <Stat
           label={tl("Control wards")}
           value={dash(t.cw)}
           sub={tl("bought per game")}
+          to={leaderTo ? leaderTo("vsm") : matchesTo}
         />
       </div>
       <OeCredit n={t.n} />
@@ -136,7 +145,7 @@ export const PlayerEarly: React.FC<{
 };
 
 /** A team's early game from Oracle's Elixir: gold leads, firsts, plates, grubs, vision. */
-export const TeamEarly: React.FC<{ t: TeamAgg }> = ({ t: agg }) => {
+export const TeamEarly: React.FC<{ t: TeamAgg; to?: import("../../hub/route").HubRoute }> = ({ t: agg, to }) => {
   const t = agg.tl;
   if (!t) return null;
   return (
@@ -147,6 +156,7 @@ export const TeamEarly: React.FC<{ t: TeamAgg }> = ({ t: agg }) => {
           label="GD@15"
           value={signed(t.gd15)}
           sub={`@10 ${signed(t.gd10)} · @20 ${signed(t.gd20)}`}
+          to={to}
         />
         <Stat
           label={tl("Ahead at 15")}
@@ -155,21 +165,25 @@ export const TeamEarly: React.FC<{ t: TeamAgg }> = ({ t: agg }) => {
             a: winRate(t.ahead[1], t.ahead[0]),
             b: winRate(t.behind[1], t.behind[0]),
           })}
+          to={to}
         />
         <Stat
           label={tl("First blood")}
           value={pct(t.fb)}
           sub={tl("First tower {p}", { p: pct(t.ft) })}
+          to={to}
         />
         <Stat
           label={tl("First mid tower")}
           value={pct(t.fmt)}
           sub={tl("First to 3 towers {p}", { p: pct(t.f3t) })}
+          to={to}
         />
         <Stat
           label={tl("First dragon")}
           value={pct(t.fd)}
           sub={tl("Herald {h} · Baron {b}", { h: pct(t.fh), b: pct(t.fbaron) })}
+          to={to}
         />
         <Stat
           label={tl("Turret plates")}
@@ -179,12 +193,14 @@ export const TeamEarly: React.FC<{ t: TeamAgg }> = ({ t: agg }) => {
               ? tl("{n} lost", { n: t.platesLost })
               : undefined
           }
+          to={to}
         />
         {t.grubs != null && (
           <Stat
             label={tl("Void grubs")}
             value={t.grubs == null ? "–" : fmtDec(t.grubs)}
             sub={tl("{p} of all grubs", { p: pct(t.grubShare) })}
+            to={to}
           />
         )}
         <Stat
@@ -194,16 +210,19 @@ export const TeamEarly: React.FC<{ t: TeamAgg }> = ({ t: agg }) => {
             w: dash(t.wpm),
             c: dash(t.wcpm),
           })}
+          to={to}
         />
         <Stat
           label={tl("Control wards")}
           value={dash(t.cw)}
           sub={tl("bought per game")}
+          to={to}
         />
         <Stat
           label="CKPM"
           value={agg.ckpm == null ? "–" : fmtDec(agg.ckpm, 2)}
           sub={tl("Kills per minute, both teams")}
+          to={to}
         />
       </div>
       <OeCredit n={t.n} />
@@ -245,24 +264,27 @@ export function playstyleTags(t: TeamAgg): { tag: string; why: string; good?: bo
   return out;
 }
 
-export const Playstyle: React.FC<{ t: TeamAgg }> = ({ t }) => {
+export const Playstyle: React.FC<{ t: TeamAgg; to?: import("../../hub/route").HubRoute }> = ({ t, to }) => {
   const tags = playstyleTags(t);
   if (!tags.length) return null;
   return (
     <div className="space-y-1">
       <Sub>{tl("Playstyle")}</Sub>
       <div className="flex flex-wrap gap-1.5">
-        {tags.map((x) => (
-          <span
-            key={x.tag}
-            title={x.why}
-            className={`px-2 py-1 rounded-full border text-[11px] ${
-              x.good === true ? "border-rw-teal/60 text-rw-teal" : x.good === false ? "border-rw-red/60 text-rw-red" : "border-rw-border text-rw-sub"
-            }`}
-          >
-            <span className="font-semibold">{x.tag}</span> <span className="text-rw-muted">· {x.why}</span>
-          </span>
-        ))}
+        {tags.map((x) => {
+          const cls = `px-2 py-1 rounded-full border text-[11px] ${
+            x.good === true ? "border-rw-teal/60 text-rw-teal" : x.good === false ? "border-rw-red/60 text-rw-red" : "border-rw-border text-rw-sub"
+          }`;
+          return to ? (
+            <HubLink key={x.tag} to={to} title={x.why} className={`${cls} hover:border-rw-accent`}>
+              <span className="font-semibold hover:underline">{x.tag}</span> <span className="text-rw-muted">· {x.why}</span>
+            </HubLink>
+          ) : (
+            <span key={x.tag} title={x.why} className={cls}>
+              <span className="font-semibold">{x.tag}</span> <span className="text-rw-muted">· {x.why}</span>
+            </span>
+          );
+        })}
       </div>
       <p className="text-[10px] text-rw-muted">{tl("Compared with every pro team season since 2024: a label means the top or bottom fifth.")}</p>
     </div>
@@ -760,6 +782,14 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
     const o = options.find((x) => x.key === period);
     return !o || o.key === "all" ? tl("All time") : o.group === "basic" ? tl("Last {n} games", { n: o.label }) : o.label;
   })();
+  const leaderTo = (stat: string): import("../../hub/route").HubRoute => ({
+    kind: "leaders",
+    query: new URLSearchParams({
+      stat,
+      ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
+      ...(/^y\d{4}$/.test(period) ? { year: period.slice(1) } : period.startsWith("e:") ? { event: period.slice(2) } : {}),
+    }).toString(),
+  });
   return (
     <Section
       title={tl("Stats for")}
@@ -819,11 +849,13 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
               label={tl("KDA")}
               value={fmtN(agg.kda)}
               sub={`${fmtDec(agg.k / Math.max(agg.g, 1))} / ${fmtDec(agg.d / Math.max(agg.g, 1))} / ${fmtDec(agg.a / Math.max(agg.g, 1))}`}
+              to={leaderTo("kda")}
             />
             <Stat
               label="KP"
               value={pct(agg.kp)}
               sub={tl("Kill participation")}
+              to={leaderTo("kp")}
             />
             <Stat
               label={tl("CS / min")}
@@ -833,6 +865,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                   ? tl("{n} gold / min", { n: fmtNum(agg.gpm) })
                   : undefined
               }
+              to={leaderTo("csm")}
             />
             <Stat
               label={tl("Damage / min")}
@@ -842,11 +875,13 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                   ? tl("{p} of team damage", { p: pct(agg.dmgShare) })
                   : undefined
               }
+              to={leaderTo("dpm")}
             />
             <Stat
               label={tl("Gold%")}
               value={pct(agg.goldShare)}
               sub={tl("Share of the team's gold")}
+              to={leaderTo("golds")}
             />
             <Stat
               label={tl("VS / min")}
@@ -856,6 +891,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                   ? tl("{p} of team vision", { p: pct(agg.visShare) })
                   : undefined
               }
+              to={leaderTo("vsm")}
             />
             <Stat
               label={tl("Champions")}
@@ -874,6 +910,8 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 t={agg.tl}
                 dmgShare={agg.dmgShare}
                 goldShare={agg.goldShare}
+                leaderTo={leaderTo}
+                matchesTo={{ kind: "player", slug, tab: "matches" }}
               />
             )}
           </div>
@@ -999,6 +1037,18 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
     const o = options.find((x) => x.key === period);
     return !o || o.key === "all" ? tl("All time") : o.group === "basic" ? tl("Last {n} games", { n: o.label }) : o.label;
   })();
+  const teamFinderTo: import("../../hub/route").HubRoute = {
+    kind: "finder",
+    query: `team=${encodeURIComponent(slug)}${
+      /^y\d{4}$/.test(period)
+        ? `&year=${encodeURIComponent(period.slice(1))}`
+        : period.startsWith("e:")
+          ? `&event=${encodeURIComponent(period.slice(2))}`
+          : period.startsWith("p:")
+            ? `&patch=${encodeURIComponent(period.slice(2))}`
+            : ""
+    }`,
+  };
   return (
     <Section
       title={tl("Stats for")}
@@ -1050,18 +1100,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                 b: t.blue[0],
                 r: t.red[0],
               })}
-              to={{
-                kind: "finder",
-                query: `team=${encodeURIComponent(slug)}${
-                  /^y\d{4}$/.test(period)
-                    ? `&year=${encodeURIComponent(period.slice(1))}`
-                    : period.startsWith("e:")
-                      ? `&event=${encodeURIComponent(period.slice(2))}`
-                      : period.startsWith("p:")
-                        ? `&patch=${encodeURIComponent(period.slice(2))}`
-                        : ""
-                }`,
-              }}
+              to={teamFinderTo}
             />
             <Stat
               label={tl("Avg game")}
@@ -1071,6 +1110,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                   ? tl("Wins {a} · losses {b} min", { a: fmtDec(t.minWin), b: fmtDec(t.minLoss) })
                   : undefined
               }
+              to={teamFinderTo}
             />
             <Stat
               label={tl("Kills / game")}
@@ -1078,6 +1118,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
               sub={
                 t.deaths != null ? tl("{n} deaths", { n: t.deaths }) : undefined
               }
+              to={teamFinderTo}
             />
             <Stat
               label={tl("Gold diff / game")}
@@ -1087,21 +1128,25 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                   ? tl("{n} per minute", { n: signed(t.gdm) })
                   : undefined
               }
+              to={teamFinderTo}
             />
             <Stat
               label={tl("GPM")}
               value={t.gpm != null ? fmtNum(t.gpm) : "–"}
               sub={tl("Team gold per minute")}
+              to={teamFinderTo}
             />
             <Stat
               label={tl("DRA%")}
               value={pct(t.dragShare)}
               sub={tl("Share of all dragons taken in their games")}
+              to={teamFinderTo}
             />
             <Stat
               label={tl("Baron%")}
               value={pct(t.baronShare)}
               sub={tl("Share of all barons taken in their games")}
+              to={teamFinderTo}
             />
             <Stat
               label={tl("Towers")}
@@ -1111,6 +1156,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                   ? tl("{n} lost", { n: t.towersLost })
                   : undefined
               }
+              to={teamFinderTo}
             />
             <Stat
               label={tl("Champions")}
@@ -1121,8 +1167,8 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
           </div>
           <div className="grid gap-4 xl:grid-cols-2 items-start">
             <div className="space-y-4 min-w-0">
-              <TeamEarly t={t} />
-              <Playstyle t={t} />
+              <TeamEarly t={t} to={teamFinderTo} />
+              <Playstyle t={t} to={teamFinderTo} />
               <WinWhen rows={sel} teamName={who?.name} teamSlug={slug} period={period} periodLabel={periodText} />
             </div>
             <div className="space-y-4 min-w-0">

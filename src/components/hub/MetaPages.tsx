@@ -526,7 +526,13 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                 to: { kind: "finder", query: `league=${encodeURIComponent(l.u)}${season ? `&year=${encodeURIComponent(season)}` : ""}` },
               }
             : null,
-          years.length > 0 ? { label: tl("Years"), value: years.length > 1 ? `${years[years.length - 1]}–${years[0]}` : years[0] } : null,
+          years.length > 0
+            ? {
+                label: tl("Years"),
+                value: years.length > 1 ? `${years[years.length - 1]}–${years[0]}` : years[0],
+                to: { kind: "league", slug: l.u, year: years[0] },
+              }
+            : null,
           l.titles.length > 0
             ? {
                 label: tl("Most titles"),

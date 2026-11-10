@@ -222,7 +222,23 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
             ))}
           </span>
         </div>
-        {block && <p className="text-[10px] text-rw-muted">{tl("{n} games", { n: block.games })}</p>}
+        {block && (
+          <p className="text-[10px] text-rw-muted">
+            <HubLink
+              to={{
+                kind: "finder",
+                query: new URLSearchParams({
+                  ...(isLeague ? { league: rawScope } : {}),
+                  ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
+                  ...(role ? { role } : {}),
+                }).toString(),
+              }}
+              className="hover:text-rw-accent hover:underline"
+            >
+              {tl("{n} games", { n: block.games })}
+            </HubLink>
+          </p>
+        )}
       </div>
       {(state.loading || lgBlock.loading) && <Loading />}
       {block && (

@@ -769,7 +769,13 @@ export const RecordsPanel: React.FC = () => {
                             >
                               {tl("{n} games", { n: t.v })}
                             </HubLink>{" "}
-                            · {tl("ended {date}", { date: fmtDate(t.date) })}
+                            ·{" "}
+                            <HubLink
+                              to={{ kind: "team", slug: t.u || prettySlug(t.team), tab: "matches" }}
+                              className="hover:text-rw-accent hover:underline"
+                            >
+                              {tl("ended {date}", { date: fmtDate(t.date) })}
+                            </HubLink>
                           </span>
                         </div>
                         <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">

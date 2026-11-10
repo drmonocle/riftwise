@@ -149,7 +149,15 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
       <div className={`rw-span ${card}`}>
         <h1 className="text-lg font-bold text-rw-text">{tl("The week in pro League")}</h1>
         <p className="text-[11px] text-rw-sub">
-          {range} · {tn("{n} series", "{n} series", w.series)} · {tn("{n} game", "{n} games", w.games)} · {tl("top leagues and international events")}
+          {range} ·{" "}
+          <HubLink to={{ kind: "finder" }} className="hover:text-rw-accent hover:underline">
+            {tn("{n} series", "{n} series", w.series)}
+          </HubLink>{" "}
+          ·{" "}
+          <HubLink to={{ kind: "finder" }} className="hover:text-rw-accent hover:underline">
+            {tn("{n} game", "{n} games", w.games)}
+          </HubLink>{" "}
+          · {tl("top leagues and international events")}
         </p>
         <div className="flex flex-wrap items-center gap-1.5 mt-2">
           <BroadcastCardButton
@@ -325,9 +333,19 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
               <ol className="text-xs space-y-1.5">
                 {w.records.map((r) => (
                   <li key={`${r.s}/${r.k}`} className="min-w-0">
-                    <div className="truncate text-rw-text">{tl(RECORD_TITLES[`${r.s}/${r.k}`] || r.k)}</div>
+                    <div className="truncate text-rw-text">
+                      <HubLink to={{ kind: "records" }} className="hover:text-rw-accent hover:underline">
+                        {tl(RECORD_TITLES[`${r.s}/${r.k}`] || r.k)}
+                      </HubLink>
+                    </div>
                     <div className="text-[10px] text-rw-muted truncate">
-                      <span className="text-rw-accent font-bold">{recordValue(r.k, Number(r.r.v))}</span> · {recordWho(r.r)}
+                      <HubLink
+                        to={r.r.g ? { kind: "match", slug: String(r.r.g), game: Number(r.r.gn) || undefined } : { kind: "records" }}
+                        className="text-rw-accent font-bold hover:underline"
+                      >
+                        {recordValue(r.k, Number(r.r.v))}
+                      </HubLink>{" "}
+                      · {recordWho(r.r)}
                       {r.r.g ? (
                         <>
                           {" · "}
@@ -451,7 +469,9 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           <ChampIcon name={p.best.c} size={12} />
                         </HubLink>
                         <span className="truncate">
-                          {tl("Best: {rating} on {champion} vs {team}", { rating: fmtRating(p.best.rt), champion: champName(p.best.c), team: p.best.opp })}
+                          <HubLink to={{ kind: "match", slug: p.best.g, game: p.best.gn }} className="hover:text-rw-accent hover:underline">
+                            {tl("Best: {rating} on {champion} vs {team}", { rating: fmtRating(p.best.rt), champion: champName(p.best.c), team: p.best.opp })}
+                          </HubLink>
                           {" · "}
                           <HubLink to={{ kind: "match", slug: p.best.g, game: p.best.gn }}>{tl("the game")}</HubLink>
                         </span>

@@ -103,15 +103,21 @@ export const HubHome: React.FC<{
           </p>
           {meta.data && (
             <dl className="grid grid-cols-3 sm:grid-cols-5 gap-x-5 gap-y-2 pt-3 border-t border-rw-border/60">
-              {[
-                [fmtNum(meta.data.games), tl("pro games")],
-                [fmtNum(meta.data.events), tl("tournaments")],
-                [fmtNum(meta.data.players), tl("players")],
-                [fmtNum(meta.data.teams), tl("teams")],
-                [String(LANGUAGES.length), tl("languages")],
-              ].map(([v, label]) => (
+              {(
+                [
+                  [fmtNum(meta.data.games), tl("pro games"), { kind: "finder" }],
+                  [fmtNum(meta.data.events), tl("tournaments"), { kind: "tournaments" }],
+                  [fmtNum(meta.data.players), tl("players"), { kind: "players" }],
+                  [fmtNum(meta.data.teams), tl("teams"), { kind: "teams" }],
+                  [String(LANGUAGES.length), tl("languages"), { kind: "about" }],
+                ] as [string, string, HubRoute][]
+              ).map(([v, label, to]) => (
                 <div key={label}>
-                  <dd className="font-num tabular-nums text-xl text-rw-text leading-tight">{v}</dd>
+                  <dd className="font-num tabular-nums text-xl text-rw-text leading-tight">
+                    <HubLink to={to} className="hover:text-rw-accent hover:underline">
+                      {v}
+                    </HubLink>
+                  </dd>
                   <dt className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">{label}</dt>
                 </div>
               ))}
@@ -360,7 +366,17 @@ const FeaturedMatch: React.FC<{
             ) : (
               m.leagueName
             )}
-            {m.blockName ? ` · ${m.blockName}` : ""} · {tl("Best of {n}", { n: m.bestOf })}
+            {m.blockName ? ` · ${m.blockName}` : ""} ·{" "}
+            <HubLink
+              to={{
+                kind: "prep",
+                a: prettySlug(m.team1Name || m.team1Code),
+                b: prettySlug(m.team2Name || m.team2Code),
+              }}
+              className="hover:text-rw-accent hover:underline"
+            >
+              {tl("Best of {n}", { n: m.bestOf })}
+            </HubLink>
           </span>
         </span>
         {h2h && <H2HMeter team1Code={m.team1Code} team2Code={m.team2Code} h2h={h2h} size="sm" matchId={m.matchId} />}
@@ -473,7 +489,13 @@ const EventNow: React.FC<{ intl?: Match; schedule?: Match[]; settings?: AppSetti
         <div>
           <Eyebrow>{ev ? tl("Happening now") : tl("Tournaments")}</Eyebrow>
           <h2 {...clickable(open)} className="font-head text-2xl font-bold text-rw-text hover:text-rw-accent cursor-pointer leading-tight mt-1">{title}</h2>
-          {ev && running[0] && <p className="text-[11px] text-rw-muted font-num">{line(running[0])}</p>}
+          {ev && running[0] && (
+            <p className="text-[11px] text-rw-muted font-num">
+              <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(running[0].u)}` }} className="hover:text-rw-accent hover:underline">
+                {line(running[0])}
+              </HubLink>
+            </p>
+          )}
         </div>
         {ev && (
           <div className="flex flex-wrap gap-2">
