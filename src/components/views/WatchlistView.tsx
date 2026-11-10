@@ -8,7 +8,7 @@ import { PushAlertsBanner } from "../PushAlerts";
 import { CalendarFeed } from "../CalendarFeed";
 import { DiscordFeed } from "../DiscordFeed";
 import { searchAlias, isNonLatin } from "../../searchAliases";
-import { mainPlayerEntries } from "../../helpers";
+import { mainPlayerEntries, pickTeamByCode } from "../../helpers";
 import { riotImg } from "../../riotImage";
 import { navigateHub } from "../../hub/route";
 import { prettySlug, resolveLeagueSlug } from "../../hub/data";
@@ -252,29 +252,34 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
 
         {/* Quick-remove chips */}
         <div className="flex flex-wrap gap-1.5 pt-1">
-          {teamChips.map((code) => (
-            <span
-              key={`chip-t-${code}`}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-accent/40 text-rw-accent font-semibold text-[10px]"
-            >
-              <button
-                type="button"
-                onClick={() => navigateHub({ kind: "team", slug: prettySlug(code) })}
-                className="inline-flex items-center gap-1 hover:underline"
+          {teamChips.map((code) => {
+            const teamObj = pickTeamByCode(catalog.teams || [], code);
+            const teamDisplay = teamObj?.name || code;
+            return (
+              <span
+                key={`chip-t-${code}`}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-accent/40 text-rw-accent font-semibold text-[10px]"
               >
-                <TeamLogo name={code} code={code} size={12} />
-                <span>{code}</span>
-              </button>
-              <button
-                onClick={() => toggleTeam(code)}
-                className="hover:text-white"
-                title={tl("Remove from watchlist")}
-                aria-label={tl("Stop following {name}", { name: code })}
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          ))}
+                <button
+                  type="button"
+                  onClick={() => navigateHub({ kind: "team", slug: prettySlug(teamDisplay) })}
+                  className="inline-flex items-center gap-1 hover:underline"
+                  title={teamDisplay}
+                >
+                  <TeamLogo name={teamDisplay} code={code} size={12} />
+                  <span>{code}</span>
+                </button>
+                <button
+                  onClick={() => toggleTeam(code)}
+                  className="hover:text-white"
+                  title={tl("Remove from watchlist")}
+                  aria-label={tl("Stop following {name}", { name: code })}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            );
+          })}
 
           {playerChips.map((name) => (
             <span
@@ -451,6 +456,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => navigateHub({ kind: "prep", a: prettySlug(team.name) })}
+                        className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors"
+                      >
+                        {tl("Match prep")}
+                      </button>
                       <button
                         type="button"
                         onClick={() => navigateHub({ kind: "compare", mode: "team", a: prettySlug(team.name) })}

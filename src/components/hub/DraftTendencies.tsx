@@ -151,13 +151,14 @@ export function draftTendencies(rows: TeamGameRow[]) {
   };
 }
 
-const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boolean; teamName?: string; isBan?: boolean }> = ({
+const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boolean; teamName?: string; isBan?: boolean; side?: "b" | "r" }> = ({
   title,
   hint,
   list,
   showWr,
   teamName,
   isBan,
+  side,
 }) => {
   if (!list.length) return null;
   const maxN = Math.max(1, ...list.map(([, n]) => n));
@@ -171,9 +172,7 @@ const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boo
       <ul className="text-xs space-y-1">
         {list.map(([c, n, w]) => {
           const good = n > 0 && w / n >= 0.5;
-          const finderQuery = teamName
-            ? `team=${encodeURIComponent(teamName)}&${isBan ? "ban" : "champ"}=${encodeURIComponent(c)}`
-            : `${isBan ? "ban" : "champ"}=${encodeURIComponent(c)}`;
+          const finderQuery = `${teamName ? `team=${encodeURIComponent(teamName)}&` : ""}${isBan ? "ban" : "champ"}=${encodeURIComponent(c)}${side ? `&side=${side}` : ""}`;
           return (
             <li key={c} className="flex items-center justify-between gap-2 min-w-0">
               <ChampLink name={c} size={16} />
@@ -226,7 +225,7 @@ const RoleLine: React.FC<{ title: string; shares: [number, number][] }> = ({ tit
 /** [champion a, champion b, games, wins, their combined gold lead at 15 or null] */
 type Pair = [string, string, number, number, number | null];
 
-const Pairs: React.FC<{ title: string; hint?: string; list: Pair[]; teamName?: string }> = ({ title, hint, list, teamName }) => {
+const Pairs: React.FC<{ title: string; hint?: string; list: Pair[]; teamName?: string; side?: "b" | "r" }> = ({ title, hint, list, teamName, side }) => {
   if (!list.length) return null;
   const maxN = Math.max(1, ...list.map(([, , n]) => n));
   return (
@@ -237,7 +236,7 @@ const Pairs: React.FC<{ title: string; hint?: string; list: Pair[]; teamName?: s
       <ul className="text-xs space-y-1">
         {list.map(([a, b, n, w, gd]) => {
           const good = n > 0 && w / n >= 0.5;
-          const finderQuery = `${teamName ? `team=${encodeURIComponent(teamName)}&` : ""}champ=${encodeURIComponent(`${a},${b}`)}`;
+          const finderQuery = `${teamName ? `team=${encodeURIComponent(teamName)}&` : ""}champ=${encodeURIComponent(`${a},${b}`)}${side ? `&side=${side}` : ""}`;
           return (
             <li key={`${a}-${b}`} className="flex items-center justify-between gap-2 min-w-0">
               <span className="flex items-center gap-1 min-w-0 truncate" title={`${champName(a)} + ${champName(b)}`}>
@@ -317,8 +316,8 @@ export const DraftTendencies: React.FC<{ rows: TeamGameRow[]; teamName?: string;
         )}
       </div>
       <div className="grid grid-cols-2 @3xl:grid-cols-4 gap-x-6 gap-y-3">
-        <List title={tl("First pick (blue)")} hint={tl("Their first pick when on blue side (B1)")} list={d.b1} showWr teamName={teamName} />
-        <List title={tl("First picks (red)")} hint={tl("Their first two picks when on red side (R1-R2)")} list={d.r12} showWr teamName={teamName} />
+        <List title={tl("First pick (blue)")} hint={tl("Their first pick when on blue side (B1)")} list={d.b1} showWr teamName={teamName} side="b" />
+        <List title={tl("First picks (red)")} hint={tl("Their first two picks when on red side (R1-R2)")} list={d.r12} showWr teamName={teamName} side="r" />
         <List title={tl("Bans, phase 1")} hint={tl("Their first three bans")} list={d.bans1} teamName={teamName} isBan />
         <List title={tl("Bans, phase 2")} hint={tl("Their last two bans")} list={d.bans2} teamName={teamName} isBan />
       </div>
@@ -339,7 +338,7 @@ export const DraftTendencies: React.FC<{ rows: TeamGameRow[]; teamName?: string;
             teamName={teamName}
           />
           <Pairs title={tl("Bot lane pairs")} hint={tl("Games · win rate · combined gold lead at 15")} list={d.botDuos} teamName={teamName} />
-          <Pairs title={tl("Red openers (R1 + R2)")} list={d.r12pairs} teamName={teamName} />
+          <Pairs title={tl("Red openers (R1 + R2)")} list={d.r12pairs} teamName={teamName} side="r" />
         </div>
       )}
       <div className="text-xs flex flex-wrap items-baseline gap-x-2 gap-y-0.5" title={tl("Champions each role played in this period (in brackets: 2+ games). In Fearless, a Bo5 needs up to five per role.")}>

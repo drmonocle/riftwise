@@ -240,7 +240,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     split: [c.side[0] ? c.side[1] / c.side[0] : 0, c.side[2] ? c.side[3] / c.side[2] : 0],
                     splitColors: ["bg-[#4a9eff]/85", "bg-rw-red/80"],
                   },
-                  to: { kind: "finder", query: `champ=${encodeURIComponent(c.name)}&side=blue` },
+                  to: { kind: "finder", query: `champ=${encodeURIComponent(c.name)}&side=b` },
                 }
               : null,
           ]}

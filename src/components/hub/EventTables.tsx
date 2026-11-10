@@ -302,7 +302,27 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
         return <span className={v >= 0 ? "text-rw-teal" : "text-rw-red"}>{`${v >= 0 ? "+" : ""}${v}`}</span>;
       },
     },
-    { key: "blue", label: tl("Blue%"), title: tl("Share of games on blue side"), value: (t) => (t.blue != null ? per(t.blue, t.g, 3) : null), render: (t) => (t.blue != null ? pct(per(t.blue, t.g, 3)) : "–") },
+    {
+      key: "blue",
+      label: tl("Blue%"),
+      title: tl("Share of games on blue side"),
+      value: (t) => (t.blue != null ? per(t.blue, t.g, 3) : null),
+      render: (t) =>
+        t.blue != null ? (
+          t.blue > 0 ? (
+            <HubLink
+              to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(t.u || t.t)}&side=b` }}
+              className="hover:text-rw-accent hover:underline"
+            >
+              {pct(per(t.blue, t.g, 3))}
+            </HubLink>
+          ) : (
+            pct(per(t.blue, t.g, 3))
+          )
+        ) : (
+          "–"
+        ),
+    },
     {
       key: "gd",
       label: tl("Gold diff"),
@@ -376,6 +396,13 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
             <span className="flex items-center gap-2 text-[11px]">
               <HubLink to={{ kind: "prep", a: pair[0], b: pair[1], period: `e:${e.u}` }} className="text-rw-accent hover:underline font-semibold">
                 {tl("Match prep")}
+              </HubLink>
+              <span className="text-rw-muted">·</span>
+              <HubLink
+                to={{ kind: "draft", query: `teams=${encodeURIComponent(pair[0])},${encodeURIComponent(pair[1])}&p=e:${encodeURIComponent(e.u)}` }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Draft board")}
               </HubLink>
               <span className="text-rw-muted">·</span>
               <HubLink to={{ kind: "compare", mode: "team", a: pair[0], b: pair[1], period: `e:${e.u}` }} className="text-rw-accent hover:underline font-semibold">

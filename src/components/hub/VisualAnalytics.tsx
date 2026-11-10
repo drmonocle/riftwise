@@ -716,7 +716,10 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                     </span>
                   )}
                   <span className="inline-flex items-center gap-1.5 text-rw-sub truncate">
-                    <HubLink to={{ kind: "player", slug: p.u, tab: "opponents" }} className="hover:text-rw-accent hover:underline">
+                    <HubLink
+                      to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}&vs=${encodeURIComponent(prettySlug(sel.opp))}` }}
+                      className="hover:text-rw-accent hover:underline"
+                    >
                       vs
                     </HubLink>
                   <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
@@ -1071,6 +1074,12 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                       >
                         {tl("Match prep")}
                       </HubLink>
+                      <HubLink
+                        to={{ kind: "compare", mode: "team", a: t.u, b: t.opps.find((o) => o.n === sel.opp)?.u || prettySlug(sel.opp) }}
+                        className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Compare")}
+                      </HubLink>
                       {sel.g && (
                         <HubLink to={{ kind: "match", slug: sel.g }} className="text-rw-accent font-semibold hover:underline">
                           {tl("Details")} →
@@ -1097,7 +1106,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
 
                   {/* Blue Side Bar */}
                   <HubLink
-                    to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&side=blue` }}
+                    to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&side=b` }}
                     className="block rounded-lg border border-rw-border bg-rw-bg/50 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-3 py-2 space-y-1 transition-colors"
                   >
                     <div className="flex items-center justify-between text-xs">
@@ -1119,7 +1128,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
 
                   {/* Red Side Bar */}
                   <HubLink
-                    to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&side=red` }}
+                    to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&side=r` }}
                     className="block rounded-lg border border-rw-border bg-rw-bg/50 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-3 py-2 space-y-1 transition-colors"
                   >
                     <div className="flex items-center justify-between text-xs">
@@ -1414,6 +1423,13 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                   </span>
                   <span className="text-rw-muted tabular-nums text-[11px]">
                     <HubLink
+                      to={{ kind: "finder", query: `patch=${encodeURIComponent(sel.p)}&champ=${encodeURIComponent(c.name)}` }}
+                      className="hover:text-rw-accent hover:underline"
+                    >
+                      {sel.pk} {tl("Picks")}
+                    </HubLink>{" "}
+                    ·{" "}
+                    <HubLink
                       to={{ kind: "finder", query: `patch=${encodeURIComponent(sel.p)}&ban=${encodeURIComponent(c.name)}` }}
                       className="hover:text-rw-accent hover:underline"
                     >
@@ -1463,7 +1479,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
             {hasSides && (
               <div className="grid grid-cols-2 gap-2">
                 <HubLink
-                  to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&side=blue` }}
+                  to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&side=b` }}
                   className="block rounded-lg border border-rw-border bg-rw-bg/50 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-2.5 py-2 space-y-1 transition-colors"
                 >
                   <div className="flex items-center justify-between text-xs">
@@ -1482,7 +1498,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                 </HubLink>
 
                 <HubLink
-                  to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&side=red` }}
+                  to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&side=r` }}
                   className="block rounded-lg border border-rw-border bg-rw-bg/50 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-2.5 py-2 space-y-1 transition-colors"
                 >
                   <div className="flex items-center justify-between text-xs">

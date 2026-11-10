@@ -83,6 +83,22 @@ const TeamStatsLink: React.FC<{ name: string; code: string; onDone: () => void }
         <GitCompare className="w-3 h-3" />
         {tl("Compare")}
       </button>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => openRoute((slug) => navigateHub({ kind: "prep", a: slug }))}
+        className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
+      >
+        {tl("Match prep")}
+      </button>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => openRoute((slug) => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(slug)},` }))}
+        className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
+      >
+        {tl("Draft board")}
+      </button>
     </div>
   );
 };
@@ -480,6 +496,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             <span className={!won ? "text-rw-red" : ""}>{oppScore}</span>
                           </button>
                           <MatchOverviewButton match={m} compact onDone={onClose} />
+                          <MatchPrepButton match={m} compact onDone={onClose} />
                         </div>
                       </div>
                     );

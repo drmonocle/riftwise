@@ -332,6 +332,16 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
               <PlayCircle className="w-3 h-3" /> {tl("VOD")}
             </HubLink>
           ) : null}
+          {aSlug && bSlug && (
+            <>
+              <HubLink to={{ kind: "prep", a: aSlug, b: bSlug }} className="hover:text-rw-accent hover:underline">
+                {tl("Match prep")}
+              </HubLink>
+              <HubLink to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug }} className="hover:text-rw-accent hover:underline">
+                {tl("Compare")}
+              </HubLink>
+            </>
+          )}
         </div>
       </td>
       <td className="py-2 pr-3 min-w-[10rem] hidden sm:table-cell" data-sort={en}>
@@ -375,7 +385,7 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
         </div>
         {perGame && perGame.length > 1 ? (
           // every game's rating: G1 89 · G2 91 · G3 97 (each opens that game; the best one is outlined)
-          <div className="mt-1 flex flex-wrap gap-1">
+          <div className="mt-1 flex flex-wrap items-center gap-1">
             {perGame.map((v, i) => (
               <HubLink
                 key={i}
@@ -389,13 +399,37 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
                 <span className={`font-semibold ${v != null ? ratingTextClass(v) : "text-rw-muted"}`}>{v != null ? v : "–"}</span>
               </HubLink>
             ))}
+            {aSlug && bSlug && (
+              <span className="text-[10px] text-rw-muted inline-flex items-center gap-1.5 ml-1">
+                <HubLink to={{ kind: "prep", a: aSlug, b: bSlug }} className="hover:text-rw-accent hover:underline">
+                  {tl("Match prep")}
+                </HubLink>
+                <span>·</span>
+                <HubLink to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug }} className="hover:text-rw-accent hover:underline">
+                  {tl("Compare")}
+                </HubLink>
+              </span>
+            )}
           </div>
         ) : (
-          <div className="text-[10px] text-rw-muted mt-0.5">
-            {tn("{n} game", "{n} games", games)} ·{" "}
+          <div className="text-[10px] text-rw-muted mt-0.5 flex flex-wrap items-center gap-x-1.5">
+            <span>{tn("{n} game", "{n} games", games)}</span>
+            <span>·</span>
             <HubLink to={{ kind: "match", slug, game: bestN }} className="hover:underline hover:text-rw-accent">
               {tl("best: game {n}", { n: bestN })}
             </HubLink>
+            {aSlug && bSlug && (
+              <>
+                <span>·</span>
+                <HubLink to={{ kind: "prep", a: aSlug, b: bSlug }} className="hover:text-rw-accent hover:underline">
+                  {tl("Match prep")}
+                </HubLink>
+                <span>·</span>
+                <HubLink to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug }} className="hover:text-rw-accent hover:underline">
+                  {tl("Compare")}
+                </HubLink>
+              </>
+            )}
           </div>
         )}
       </td>

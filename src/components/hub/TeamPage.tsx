@@ -1119,7 +1119,7 @@ const TeamChampGames: React.FC<{
                 : "–"
             }
             sub={`${blueW}–${blueEntries.length - blueW} ${tl("Blue side")} · ${redW}–${redEntries.length - redW} ${tl("Red side")}`}
-            to={totalG > 0 ? { kind: "finder", query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(canonical)}&side=blue` } : undefined}
+            to={totalG > 0 ? { kind: "finder", query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(canonical)}&side=b` } : undefined}
           />
           <Stat
             label={tl("Gold @15")}

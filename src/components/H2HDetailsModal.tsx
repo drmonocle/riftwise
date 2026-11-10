@@ -363,7 +363,7 @@ const PrepButton: React.FC<{ t1: { code: string; name: string }; t2: { code: str
         <ClipboardList className="w-3.5 h-3.5" />
         {tl("Match prep: form, drafts, lanes and storylines")}
       </button>
-      <div className="grid grid-cols-2 gap-1.5">
+      <div className="grid grid-cols-3 gap-1.5">
         <button
           type="button"
           disabled={state === "busy"}
@@ -383,6 +383,16 @@ const PrepButton: React.FC<{ t1: { code: string; name: string }; t2: { code: str
         >
           <GitCompare className="w-3.5 h-3.5" />
           {tl("Compare")}
+        </button>
+        <button
+          type="button"
+          disabled={state === "busy"}
+          onClick={() =>
+            openRoute((a, b) => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}` }))
+          }
+          className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/40 text-xs font-semibold disabled:opacity-60"
+        >
+          {tl("Game finder")}
         </button>
       </div>
     </div>

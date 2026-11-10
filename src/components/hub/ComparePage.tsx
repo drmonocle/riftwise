@@ -858,7 +858,7 @@ export const TeamRows: React.FC<{
                 });
               })()}
             </ul>
-            <DraftTendencies rows={s.rows} />
+            <DraftTendencies rows={s.rows} teamName={s.n} periodLabel={periodLabel} />
           </Section>
         ))}
       </div>
