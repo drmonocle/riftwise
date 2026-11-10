@@ -169,7 +169,16 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                                 <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={16} />
                                 {p.t && <TeamLogo name={p.t} size={13} />}
                                 <PlayerLink name={p.n} u={p.u} className="text-rw-text hover:text-rw-accent truncate" />{" "}
-                                <span className="text-[10px] text-rw-muted shrink-0">{roleName(p.r)}</span>
+                                {p.u ? (
+                                  <HubLink
+                                    to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${encodeURIComponent(year)}` }}
+                                    className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline shrink-0"
+                                  >
+                                    {roleName(p.r)}
+                                  </HubLink>
+                                ) : (
+                                  <span className="text-[10px] text-rw-muted shrink-0">{roleName(p.r)}</span>
+                                )}
                               </span>
                               <span className="inline-flex items-center gap-1.5 tabular-nums text-rw-sub shrink-0">
                                 <HubLink

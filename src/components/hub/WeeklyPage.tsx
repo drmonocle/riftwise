@@ -219,7 +219,10 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         <TeamLogo name={u.l} size={14} />
                       </div>
                       <div className="text-[10px] text-rw-muted truncate">
-                        <EventLink name={u.t} u={u.e} className="text-rw-muted hover:text-rw-accent hover:underline" /> · {fmtDate(u.date)}
+                        <EventLink name={u.t} u={u.e} className="text-rw-muted hover:text-rw-accent hover:underline" /> ·{" "}
+                        <HubLink to={{ kind: "match", slug: u.g }} className="hover:text-rw-accent hover:underline">
+                          {fmtDate(u.date)}
+                        </HubLink>
                       </div>
                       <div className="h-1 rounded-full bg-rw-raised overflow-hidden flex" aria-hidden="true">
                         <div className="h-full bg-rw-accent/85" style={{ width: `${winPct}%` }} />
@@ -372,7 +375,10 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                       <TeamLogo name={b.b} size={14} />
                     </div>
                     <div className="text-[10px] text-rw-muted truncate">
-                      <EventLink name={b.t} u={b.e} className="text-rw-muted hover:text-rw-accent hover:underline" /> · {fmtDate(b.date)}
+                      <EventLink name={b.t} u={b.e} className="text-rw-muted hover:text-rw-accent hover:underline" /> ·{" "}
+                      <HubLink to={{ kind: "match", slug: b.g, game: b.gn }} className="hover:text-rw-accent hover:underline">
+                        {fmtDate(b.date)}
+                      </HubLink>
                     </div>
                     <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
                       <div className="h-full rounded-full bg-rw-accent/75" style={{ width: `${Math.max(10, Math.min(100, b.r))}%` }} />
@@ -413,7 +419,16 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         <PlayerLink name={p.n} u={p.u} />
                         {p.t && <TeamLogo name={p.t} size={13} />}
                         <span className="text-rw-muted truncate">
-                          {p.r ? `· ${roleName(p.r)}` : ""}
+                          {p.r ? (
+                            <>
+                              {"· "}
+                              <HubLink to={{ kind: "player", slug: p.u || prettySlug(p.n), tab: "stats" }} className="hover:text-rw-accent hover:underline">
+                                {roleName(p.r)}
+                              </HubLink>
+                            </>
+                          ) : (
+                            ""
+                          )}
                           {p.t ? (
                             <>
                               {" · "}
@@ -576,7 +591,9 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
               <ul className="text-xs divide-y divide-rw-border/60">
                 {w.results.map((r) => (
                   <li key={r.g} className="flex items-center gap-2 py-1 min-w-0">
-                    <span className="w-14 shrink-0 text-[10px] text-rw-muted">{fmtDate(r.date, false)}</span>
+                    <HubLink to={{ kind: "match", slug: r.g }} className="w-14 shrink-0 text-[10px] text-rw-muted hover:text-rw-accent hover:underline">
+                      {fmtDate(r.date, false)}
+                    </HubLink>
                     <span className={`flex-1 min-w-0 flex items-center justify-end gap-1.5 text-right ${r.sa > r.sb ? "font-bold text-rw-text" : "text-rw-sub"}`}>
                       <span className="truncate">
                         <TeamLink name={r.a} u={r.au} />

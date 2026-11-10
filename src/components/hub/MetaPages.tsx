@@ -60,7 +60,10 @@ export const PatchesPanel: React.FC = () => {
                     </HubLink>
                   </h3>
                   <span className="text-[11px] text-rw-muted">
-                    {fmtDate(p.from)} – {fmtDate(p.to)} ·{" "}
+                    <HubLink to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}` }} className="hover:text-rw-accent hover:underline">
+                      {fmtDate(p.from)} – {fmtDate(p.to)}
+                    </HubLink>{" "}
+                    ·{" "}
                     <HubLink to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}` }} className="hover:text-rw-accent hover:underline">
                       {tn("{n} game", "{n} games", p.g)}
                     </HubLink>
@@ -383,7 +386,15 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number;
                     ""
                   )}
                 </td>
-                <td className={`${td} text-rw-muted`} data-sort={l.from || ""}>{l.from && l.to ? (l.from === l.to ? l.from : `${l.from}–${l.to}`) : ""}</td>
+                <td className={`${td} text-rw-muted`} data-sort={l.from || ""}>
+                  {l.from && l.to ? (
+                    <HubLink to={{ kind: "league", slug: l.u }} className="hover:text-rw-accent hover:underline">
+                      {l.from === l.to ? l.from : `${l.from}–${l.to}`}
+                    </HubLink>
+                  ) : (
+                    ""
+                  )}
+                </td>
                 <td className={`${td} text-rw-sub tabular-nums`} data-sort={l.n}>
                   <span className="inline-flex items-center gap-1.5">
                     <HubLink to={{ kind: "league", slug: l.u }} className="hover:text-rw-accent hover:underline">
@@ -705,8 +716,11 @@ const LeagueEventRow: React.FC<{ e: HubLeague["events"][number] }> = ({
         className={`${td} text-rw-muted hidden sm:table-cell whitespace-nowrap`}
         data-sort={e.st}
       >
-        {fmtDate(e.st, false)}
-        {e.en && e.en !== e.st ? ` – ${fmtDate(e.en)}` : ""}
+        <EventLink
+          name={`${fmtDate(e.st, false)}${e.en && e.en !== e.st ? ` – ${fmtDate(e.en)}` : ""}`}
+          u={e.u}
+          className="text-rw-muted hover:text-rw-accent hover:underline"
+        />
       </td>
       <td className={`${td} max-w-[18rem] truncate`} data-sort={hidden ? "" : e.w || ""}>
         {e.w ? (

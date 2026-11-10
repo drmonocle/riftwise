@@ -291,7 +291,11 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
   const period = /^\d{4}$/.test(y) ? `y${y}` : undefined;
   return (
     <tr className="border-t border-rw-border/60 first:border-t-0 hover:bg-rw-raised/50">
-      <td className="py-2 pr-2 text-rw-muted tabular-nums w-8 text-right" data-sort={rank}>{rank}</td>
+      <td className="py-2 pr-2 text-rw-muted tabular-nums w-8 text-right" data-sort={rank}>
+        <HubLink to={{ kind: "match", slug, game: n }} className="hover:text-rw-accent hover:underline">
+          {rank}
+        </HubLink>
+      </td>
       <td className="py-2 pr-3 w-16" data-sort={rating}>
         <HubLink to={{ kind: "match", slug, game: n }} className="inline-block">
           <RatingBadge r={rating} />
@@ -318,7 +322,10 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
         </div>
         <div className="text-[10px] text-rw-muted mt-0.5 sm:hidden">
           <EventLink name={en} u={eslug} className="hover:text-rw-accent hover:underline" />
-          {stage ? ` · ${stageLabel(stage)}` : ""} · {fmtDate(date)}
+          {stage ? ` · ${stageLabel(stage)}` : ""} ·{" "}
+          <HubLink to={{ kind: "match", slug, game: n }} className="hover:text-rw-accent hover:underline">
+            {fmtDate(date)}
+          </HubLink>
         </div>
         <div className="text-[10px] text-rw-muted mt-0.5 flex flex-wrap items-center gap-x-2">
           {ka != null && kb != null && (
@@ -360,9 +367,17 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
       </td>
       <td className="py-2 pr-3 min-w-[10rem] hidden sm:table-cell" data-sort={en}>
         <EventLink name={en} u={eslug} className="text-rw-sub hover:text-rw-accent hover:underline" />
-        {stage && <div className="text-[10px] text-rw-muted">{stageLabel(stage)}</div>}
+        {stage && (
+          <div className="text-[10px] text-rw-muted">
+            {eslug ? <EventLink name={stageLabel(stage)} u={eslug} className="hover:text-rw-accent hover:underline" /> : stageLabel(stage)}
+          </div>
+        )}
       </td>
-      <td className="py-2 pr-1 text-rw-muted whitespace-nowrap text-right hidden sm:table-cell" data-sort={date}>{fmtDate(date)}</td>
+      <td className="py-2 pr-1 text-rw-muted whitespace-nowrap text-right hidden sm:table-cell" data-sort={date}>
+        <HubLink to={{ kind: "match", slug, game: n }} className="hover:text-rw-accent hover:underline">
+          {fmtDate(date)}
+        </HubLink>
+      </td>
     </tr>
   );
 };
@@ -375,7 +390,11 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
   const period = /^\d{4}$/.test(y) ? `y${y}` : undefined;
   return (
     <tr className="border-t border-rw-border/60 first:border-t-0 hover:bg-rw-raised/50">
-      <td className="py-2 pr-2 text-rw-muted tabular-nums w-8 text-right" data-sort={rank}>{rank}</td>
+      <td className="py-2 pr-2 text-rw-muted tabular-nums w-8 text-right" data-sort={rank}>
+        <HubLink to={{ kind: "match", slug }} className="hover:text-rw-accent hover:underline">
+          {rank}
+        </HubLink>
+      </td>
       <td className="py-2 pr-3 w-16" data-sort={rating}>
         <HubLink to={{ kind: "match", slug }} className="inline-block">
           <RatingBadge r={rating} />
@@ -397,7 +416,10 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
         </div>
         <div className="text-[10px] text-rw-muted mt-0.5 sm:hidden">
           <EventLink name={en} u={eslug} className="hover:text-rw-accent hover:underline" />
-          {stage ? ` · ${stageLabel(stage)}` : ""} · {fmtDate(date)}
+          {stage ? ` · ${stageLabel(stage)}` : ""} ·{" "}
+          <HubLink to={{ kind: "match", slug }} className="hover:text-rw-accent hover:underline">
+            {fmtDate(date)}
+          </HubLink>
         </div>
         {perGame && perGame.length > 1 ? (
           // every game's rating: G1 89 · G2 91 · G3 97 (each opens that game; the best one is outlined)
@@ -451,9 +473,17 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
       </td>
       <td className="py-2 pr-3 min-w-[10rem] hidden sm:table-cell" data-sort={en}>
         <EventLink name={en} u={eslug} className="text-rw-sub hover:text-rw-accent hover:underline" />
-        {stage && <div className="text-[10px] text-rw-muted">{stageLabel(stage)}</div>}
+        {stage && (
+          <div className="text-[10px] text-rw-muted">
+            {eslug ? <EventLink name={stageLabel(stage)} u={eslug} className="hover:text-rw-accent hover:underline" /> : stageLabel(stage)}
+          </div>
+        )}
       </td>
-      <td className="py-2 pr-1 text-rw-muted whitespace-nowrap text-right hidden sm:table-cell" data-sort={date}>{fmtDate(date)}</td>
+      <td className="py-2 pr-1 text-rw-muted whitespace-nowrap text-right hidden sm:table-cell" data-sort={date}>
+        <HubLink to={{ kind: "match", slug }} className="hover:text-rw-accent hover:underline">
+          {fmtDate(date)}
+        </HubLink>
+      </td>
     </tr>
   );
 };

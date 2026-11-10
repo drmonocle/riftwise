@@ -221,7 +221,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       <span key={`${r.u}-${r.year}-${i}`} className="inline-flex items-center gap-1">
                         <TeamLogo name={r.team} size={13} />
                         <TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent" />
-                        <span className="text-rw-muted">({yearOnly(r.year)})</span>
+                        <HubLink
+                          to={{ kind: "finder", query: `team=${encodeURIComponent(r.u)}&year=${encodeURIComponent(yearOnly(r.year))}` }}
+                          className="text-rw-muted hover:text-rw-accent hover:underline"
+                          title={tl("Game finder")}
+                        >
+                          ({yearOnly(r.year)})
+                        </HubLink>
                       </span>
                     ))}
                   </span>
@@ -283,7 +289,17 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         </span>
       }
       sub={`${all ? yearOnly(r.year) + " · " : ""}${placeText(r.place)}${r.chance != null ? ` · ${tl("avg. chance {p}%", { p: r.chance })}` : ""}`}
-      right={show === "chance" && r.chance != null ? `${r.chance}%` : placeText(r.place)}
+      right={
+        r.u ? (
+          <HubLink to={{ kind: "team", slug: r.u, tab: "tournaments" }} className="hover:underline">
+            {show === "chance" && r.chance != null ? `${r.chance}%` : placeText(r.place)}
+          </HubLink>
+        ) : show === "chance" && r.chance != null ? (
+          `${r.chance}%`
+        ) : (
+          placeText(r.place)
+        )
+      }
     />
   );
   if (cind.playIn.length || cind.underdogs.length || (all && cind.debuts.length))
@@ -417,7 +433,15 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     </span>
                   }
                   sub={l.map((f) => `${yearOnly(f.year)}: ${f.winner} ${f.score}`).join(" · ")}
-                  right={`×${l.length}`}
+                  right={
+                    <HubLink
+                      to={{ kind: "compare", mode: "team", a: prettySlug(l[0].winner), b: prettySlug(l[0].loser) }}
+                      className="hover:underline"
+                      title={tl("Compare")}
+                    >
+                      ×{l.length}
+                    </HubLink>
+                  }
                 />
               ))}
             </List>
@@ -575,8 +599,24 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                           </span>
                         )}
                       </td>
-                      <td className="px-2 py-1 text-right tabular-nums" data-sort={y.min ?? -1}>{mmss(y.min)}</td>
-                      <td className="px-2 py-1 text-right tabular-nums" data-sort={y.kills ?? -1}>{y.kills ?? "–"}</td>
+                      <td className="px-2 py-1 text-right tabular-nums" data-sort={y.min ?? -1}>
+                        {y.min != null ? (
+                          <HubLink to={{ kind: "finder", query: `year=${encodeURIComponent(yearOnly(y.year))}` }} className="hover:text-rw-accent hover:underline">
+                            {mmss(y.min)}
+                          </HubLink>
+                        ) : (
+                          "–"
+                        )}
+                      </td>
+                      <td className="px-2 py-1 text-right tabular-nums" data-sort={y.kills ?? -1}>
+                        {y.kills != null ? (
+                          <HubLink to={{ kind: "finder", query: `year=${encodeURIComponent(yearOnly(y.year))}` }} className="hover:text-rw-accent hover:underline">
+                            {y.kills}
+                          </HubLink>
+                        ) : (
+                          "–"
+                        )}
+                      </td>
                       <td className="px-2 py-1" data-sort={y.top ? y.top[1] : -1}>
                         {y.top ? (
                           <HubLink to={{ kind: "champ", slug: prettySlug(y.top[0]) }} className="flex items-center gap-1 hover:text-rw-accent">
