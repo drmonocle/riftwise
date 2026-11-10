@@ -135,6 +135,15 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]>; matchTe
             )}
             <HubLink
               to={{
+                kind: "items",
+                query: `player=${encodeURIComponent(mostRows[0].u || prettySlug(mostRows[0].n))}`,
+              }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Item history")} →
+            </HubLink>
+            <HubLink
+              to={{
                 kind: "finder",
                 query: `player=${encodeURIComponent(mostRows[0].u || prettySlug(mostRows[0].n))}`,
               }}
@@ -191,18 +200,39 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]>; matchTe
           recentRows.length > 0 ? (
             <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
               {recentRows[0].a && recentRows[0].b && (
-                <HubLink
-                  to={{
-                    kind: "compare",
-                    mode: "team",
-                    a: prettySlug(recentRows[0].a),
-                    b: prettySlug(recentRows[0].b),
-                  }}
-                  className="text-rw-accent hover:underline font-semibold"
-                >
-                  {tl("Compare")} →
-                </HubLink>
+                <>
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: prettySlug(recentRows[0].a),
+                      b: prettySlug(recentRows[0].b),
+                    }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      mode: "team",
+                      a: prettySlug(recentRows[0].a),
+                      b: prettySlug(recentRows[0].b),
+                    }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                </>
               )}
+              <HubLink
+                to={{
+                  kind: "items",
+                  query: `player=${encodeURIComponent(recentRows[0].u || prettySlug(recentRows[0].n))}&champ=${encodeURIComponent(prettySlug(recentRows[0].c))}`,
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
+              </HubLink>
               <HubLink
                 to={{
                   kind: "finder",
@@ -397,19 +427,27 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
     <Section
       title={tl("Closest to falling")}
       right={
-        <SectionCard
-          section={tl("Closest to falling")}
-          name={label}
-          rows={() =>
-            rows.map((r, idx) => ({
-              rank: idx + 1,
-              label: r.title,
-              sub: tl("Record {value} ({who}) · best this year {best} ({by})", { value: r.fmt(r.rec), who: r.recBy, best: r.fmt(r.best), by: r.bestBy }),
-              value: `${Math.round(r.share * 100)}%`,
-              win: r.share >= 1,
-            }))
-          }
-        />
+        <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+          <HubLink
+            to={{ kind: "finder", query: `year=${encodeURIComponent(label)}` }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Game finder")} →
+          </HubLink>
+          <SectionCard
+            section={tl("Closest to falling")}
+            name={label}
+            rows={() =>
+              rows.map((r, idx) => ({
+                rank: idx + 1,
+                label: r.title,
+                sub: tl("Record {value} ({who}) · best this year {best} ({by})", { value: r.fmt(r.rec), who: r.recBy, best: r.fmt(r.best), by: r.bestBy }),
+                value: `${Math.round(r.share * 100)}%`,
+                win: r.share >= 1,
+              }))
+            }
+          />
+        </span>
       }
       share="records-closest-to-falling"
     >
@@ -1012,6 +1050,12 @@ export const RecordsPanel: React.FC = () => {
                           </HubLink>
                         </>
                       )}
+                      <HubLink
+                        to={{ kind: "rankings" }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Power rankings")} →
+                      </HubLink>
                       <SectionCard
                         section={tl("Longest win streaks")}
                         name={tl("Records")}
@@ -1110,6 +1154,12 @@ export const RecordsPanel: React.FC = () => {
                           </HubLink>
                         </>
                       )}
+                      <HubLink
+                        to={{ kind: "titles" }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Titles")} →
+                      </HubLink>
                       <SectionCard
                         section={tl("Most international titles (Worlds, MSI, First Stand)")}
                         name={tl("Records")}
@@ -1314,6 +1364,12 @@ export const TitlesPanel: React.FC = () => {
                       </HubLink>
                     </>
                   )}
+                  <HubLink
+                    to={{ kind: "worlds" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Worlds")} →
+                  </HubLink>
                   <SectionCard
                     section={tl("Titles")}
                     name={tl(TITLE_FILTERS.find((f) => f.key === kind)?.label || kind)}

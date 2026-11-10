@@ -236,6 +236,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   >
                     {tl("Compare")} →
                   </HubLink>
+                  <HubLink
+                    to={{ kind: "finder", query: `team=${encodeURIComponent(prettySlug(w.upsets[0].w))}&vs=${encodeURIComponent(prettySlug(w.upsets[0].l))}` }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Game finder")} →
+                  </HubLink>
                   <SectionCard
                     section={tl("Biggest upsets")}
                     name={range}
@@ -332,6 +338,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                       </HubLink>
                     </>
                   )}
+                  <HubLink
+                    to={{ kind: "rankings" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Power rankings")} →
+                  </HubLink>
                   <SectionCard
                     section={tl("Power rankings movers")}
                     name={range}
@@ -406,6 +418,9 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                 <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
                   <HubLink to={{ kind: "records" }} className="text-rw-accent hover:underline font-semibold">
                     {tl("Records")} →
+                  </HubLink>
+                  <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                    {tl("Game finder")} →
                   </HubLink>
                   <SectionCard
                     section={tl("All-time records set")}
@@ -492,6 +507,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     className="text-rw-accent hover:underline font-semibold"
                   >
                     {tl("Compare")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "best" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Best games")} →
                   </HubLink>
                   <SectionCard
                     section={tl("Best games")}
@@ -583,6 +604,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     className="text-rw-accent hover:underline font-semibold"
                   >
                     {tl("Player leaderboards")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "finder", query: `player=${encodeURIComponent(w.players[0].u || prettySlug(w.players[0].n))}` }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Game finder")} →
                   </HubLink>
                   <SectionCard
                     section={tl("Players of the week")}
@@ -702,6 +729,18 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     className="text-rw-accent hover:underline font-semibold"
                   >
                     {tl("Pro tier list")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "draft" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "champions" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Champions")} →
                   </HubLink>
                   <SectionCard
                     section={tl("Picks and bans this week")}
@@ -823,7 +862,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
               right={
                 w.results.length > 0 ? (
                   <span className="flex flex-wrap items-center gap-2">
-                    {rTerms.length > 0 && shownResults.length > 0 && shownResults[0].au && shownResults[0].bu && (
+                    {shownResults.length > 0 && shownResults[0].au && shownResults[0].bu && (
                       <>
                         <HubLink
                           to={{
@@ -860,21 +899,15 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         <HubLink
                           to={{
                             kind: "finder",
-                            query: `team=${encodeURIComponent(shownResults[0].au)}&vs=${encodeURIComponent(shownResults[0].bu)}`,
+                            ...(rTerms.length > 0
+                              ? { query: `team=${encodeURIComponent(shownResults[0].au)}&vs=${encodeURIComponent(shownResults[0].bu)}` }
+                              : {}),
                           }}
                           className="text-[11px] font-semibold text-rw-accent hover:underline"
                         >
                           {tl("Game finder")} →
                         </HubLink>
                       </>
-                    )}
-                    {rTerms.length === 0 && (
-                      <HubLink
-                        to={{ kind: "finder" }}
-                        className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                      >
-                        {tl("Game finder")} →
-                      </HubLink>
                     )}
                     {w.results.length > 8 && (
                       <input

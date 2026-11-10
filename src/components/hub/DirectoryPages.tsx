@@ -263,7 +263,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             </HubLink>
           </>
         )}
-        {(list.length === 2 || (words.trim() && list.length >= 2 && list.length <= 4)) && (
+        {list.length >= 2 && (
           <>
             <HubLink
               to={{ kind: "prep", a: list[0][1] || prettySlug(list[0][0]), b: list[1][1] || prettySlug(list[1][0]) }}
@@ -288,6 +288,12 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             </HubLink>
           </>
         )}
+        <HubLink
+          to={{ kind: "rankings", ...(region ? { query: `league=${encodeURIComponent(region)}` } : {}) }}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {tl("Power rankings")} →
+        </HubLink>
         {list.length > 0 && (
           <>
             <CopyDirectoryPost
@@ -508,13 +514,19 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
             </HubLink>
           </>
         )}
-        {(list.length === 2 || (words.trim() && list.length >= 2 && list.length <= 4)) && (
+        {list.length >= 2 && (
           <>
             <HubLink
               to={{ kind: "compare", mode: "player", a: list[0][1] || prettySlug(list[0][0]), b: list[1][1] || prettySlug(list[1][0]) }}
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Compare")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "items", query: `player=${encodeURIComponent(list[0][1] || prettySlug(list[0][0]))}` }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Item history")} →
             </HubLink>
             {list[0][2] && list[1][2] && list[0][2] !== list[1][2] && (
               <>
@@ -534,6 +546,12 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
             )}
           </>
         )}
+        <HubLink
+          to={{ kind: "leaders", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {tl("Player leaderboards")} →
+        </HubLink>
         {list.length > 0 && (
           <>
             <CopyDirectoryPost

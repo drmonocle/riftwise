@@ -425,18 +425,29 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                     })
                     .slice(0, 2);
                   return top2.length >= 2 ? (
-                    <HubLink
-                      to={{
-                        kind: "compare",
-                        mode: "player",
-                        a: top2[0].u || prettySlug(top2[0].n),
-                        b: top2[1].u || prettySlug(top2[1].n),
-                        period: event ? `e:${event}` : year ? `y${year}` : undefined,
-                      }}
-                      className="text-xs font-semibold text-rw-accent hover:underline"
-                    >
-                      {tl("Compare")} →
-                    </HubLink>
+                    <>
+                      <HubLink
+                        to={{
+                          kind: "compare",
+                          mode: "player",
+                          a: top2[0].u || prettySlug(top2[0].n),
+                          b: top2[1].u || prettySlug(top2[1].n),
+                          period: event ? `e:${event}` : year ? `y${year}` : undefined,
+                        }}
+                        className="text-xs font-semibold text-rw-accent hover:underline"
+                      >
+                        {tl("Compare")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "items",
+                          query: `player=${encodeURIComponent(top2[0].u || prettySlug(top2[0].n))}`,
+                        }}
+                        className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Item history")} →
+                      </HubLink>
+                    </>
                   ) : null;
                 })()}
                 <HubLink
