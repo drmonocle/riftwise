@@ -108,7 +108,25 @@ function matchSide(g: ChampGame, q: Q, eventIdx: number | null): number {
 export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
   usePageTitle(tl("Game finder"));
   useDDragon();
-  const q = useMemo(() => new URLSearchParams(query || ""), [query]);
+  const q = useMemo(() => {
+    const p = new URLSearchParams(query || "");
+    const teamsParam = p.get("teams");
+    if (teamsParam) {
+      const [a, b] = teamsParam
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (a && !p.get("team")) p.set("team", a);
+      if (b && !p.get("vs") && !p.get("vsteam")) p.set("vs", b);
+      p.delete("teams");
+    }
+    const vsTeam = p.get("vsteam");
+    if (vsTeam && !p.get("vs")) {
+      p.set("vs", vsTeam);
+      p.delete("vsteam");
+    }
+    return p;
+  }, [query]);
   const setQ: SetQ = (patch) => {
     const next = new URLSearchParams(q);
     for (const [k, v] of Object.entries(patch)) {
@@ -585,7 +603,7 @@ const FinderBody: React.FC<{
               </button>
               <SectionCard
                 section={tl("Game finder")}
-                name={[q.get("team"), q.get("champ") && champName(q.get("champ")!), q.get("role") && roleName(q.get("role")!), q.get("player"), q.get("patch") && `Patch ${q.get("patch")}`]
+                name={[q.get("team"), q.get("vs") && `vs ${q.get("vs")}`, q.get("champ") && champName(q.get("champ")!), q.get("role") && roleName(q.get("role")!), q.get("player"), q.get("patch") && `Patch ${q.get("patch")}`]
                   .filter(Boolean)
                   .join(" · ") || name}
                 sub={
@@ -594,11 +612,12 @@ const FinderBody: React.FC<{
                     : tn("{n} game", "{n} games", found.length)
                 }
                 rows={() =>
-                  found.slice(0, 12).map(({ g, s }) => {
+                  found.slice(0, 12).map(({ g, s }, idx) => {
                     const bWon = g[3] === 1;
                     const winSide = sideCond ? (s === 0 ? bWon : !bWon) : undefined;
                     const focusTeam = sideCond ? (s === 0 ? g[10] : g[11]) : bWon ? g[10] : g[11];
                     return {
+                      rank: idx + 1,
                       champ: champs[0] || undefined,
                       team: focusTeam || undefined,
                       label: `${g[10] || tl("Blue")} vs ${g[11] || tl("Red")}${g[15] ? ` (${tc("short game", "G{n}", { n: g[15] })})` : ""}`,

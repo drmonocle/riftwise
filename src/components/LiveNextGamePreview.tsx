@@ -339,7 +339,9 @@ export const LiveNextGamePreview: React.FC<{
                     .map((pk) => `${champName(pk.c)} (${pk.g}G)`)
                     .join(", ");
                   return {
+                    rank: idx + 1,
                     champ: ra?.open[0]?.c || rb?.open[0]?.c,
+                    team: match.team1Name || match.team1Code,
                     label: `${roleName(rLabel)}: ${ra?.player || match.team1Code} vs ${rb?.player || match.team2Code}`,
                     sub: `${match.team1Code}: ${topA || "–"} · ${match.team2Code}: ${topB || "–"}`,
                   };

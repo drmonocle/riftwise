@@ -8,7 +8,7 @@ import { createPortal } from "react-dom";
 import { ClipboardList, GitCompare, Swords, X } from "lucide-react";
 import type { Match } from "../../types";
 import { tl, tc, roleName } from "../../i18n";
-import { loadHubTeam, loadRatings, loadTeamSeries, prettySlug, teamStarter } from "../../hub/data";
+import { loadHubTeam, loadRatings, loadTeamSeries, prettySlug, resolveLeagueSlug, teamStarter } from "../../hub/data";
 import type { TeamSeriesRow } from "../../hub/types";
 import { pct } from "../../hub/winChance";
 import { navigateHub } from "../../hub/route";
@@ -69,7 +69,7 @@ export const MatchOverview: React.FC<{ match: Match; a: string; b: string; onClo
               type="button"
               onClick={() => {
                 onClose();
-                navigateHub({ kind: "league", slug: prettySlug(match.leagueSlug || match.leagueName) });
+                navigateHub({ kind: "league", slug: resolveLeagueSlug(match.leagueSlug || match.leagueName) });
               }}
               className="hover:text-rw-accent hover:underline uppercase font-semibold"
             >
@@ -154,7 +154,10 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
             type="button"
             onClick={() => {
               onClose();
-              navigateHub({ kind: "rankings" });
+              navigateHub({
+                kind: "rankings",
+                query: s.team.rating?.rank == null && s.team.rating?.league ? `league=${encodeURIComponent(s.team.rating.league)}` : undefined,
+              });
             }}
             className="hover:text-rw-accent hover:underline"
           >

@@ -276,10 +276,12 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                             const played = team.wins + team.losses + team.ties;
                             return {
                               rank: String(row.rank),
+                              team: team.name || team.code,
                               label: team.name,
                               sub: team.code,
                               value: `${team.wins}–${team.losses}${team.ties > 0 ? `–${team.ties}` : ""}`,
                               note: played > 0 ? `${Math.round((team.wins / played) * 100)}%` : "",
+                              win: played > 0 ? team.wins / played >= 0.5 : undefined,
                             };
                           }),
                         )
@@ -402,11 +404,38 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
               </div>
             ) : (
               <div key={si} className="bg-rw-panel border border-rw-border rounded-xl overflow-hidden">
-                {(stage.sections.length > 1 || sec.name !== stage.name) && sec.name && (
-                  <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-rw-accent border-b border-rw-border bg-rw-bg">
-                    {sec.name}
-                  </div>
-                )}
+                <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-rw-accent border-b border-rw-border bg-rw-bg flex items-center justify-between gap-2">
+                  <span>{sec.name || stage.name}</span>
+                  {!hideResults && (
+                    <SectionCard
+                      section={sec.name || stage.name}
+                      name={tournamentInfo ? prettyTournament(tournamentInfo) : activeLeague.toUpperCase()}
+                      sub={stage.name}
+                      rows={() =>
+                        sec.rounds
+                          .flatMap((round) =>
+                            round.matches
+                              .filter((m) => m.teams.length === 2 && m.teams.some((t) => t.code && t.code !== "TBD"))
+                              .map((m) => ({ m, roundName: round.name })),
+                          )
+                          .map(({ m, roundName }, idx) => {
+                            const t1 = m.teams[0];
+                            const t2 = m.teams[1];
+                            const w1 = m.state === "completed" && t1.outcome === "win";
+                            const w2 = m.state === "completed" && t2.outcome === "win";
+                            return {
+                              rank: idx + 1,
+                              team: w2 ? t2.name || t2.code : t1.name || t1.code,
+                              label: `${t1.name || t1.code} vs ${t2.name || t2.code}`,
+                              sub: roundName,
+                              value: m.state === "unstarted" ? tl("Upcoming") : `${t1.gameWins}–${t2.gameWins}`,
+                              win: m.state === "completed" ? w1 || w2 : undefined,
+                            };
+                          })
+                      }
+                    />
+                  )}
+                </div>
                 <div className="overflow-x-auto p-3">
                   <BracketBoard
                     colClass="w-[200px] grow max-w-80"
@@ -559,7 +588,7 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
             onClick={() =>
               navigateHub({
                 kind: "finder",
-                query: `teams=${encodeURIComponent(prettySlug(match.teams[0].name || match.teams[0].code))},${encodeURIComponent(prettySlug(match.teams[1].name || match.teams[1].code))}`,
+                query: `team=${encodeURIComponent(prettySlug(match.teams[0].name || match.teams[0].code))}&vs=${encodeURIComponent(prettySlug(match.teams[1].name || match.teams[1].code))}`,
               })
             }
             className="hover:text-rw-accent hover:underline"

@@ -339,9 +339,11 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
               .join(" · ")}
             rows={() => [
               {
+                team: left.name || left.code,
                 label: `${left.code} · ${tl("Gold")} ${k(left.t.totalGold)} · ${tl("Towers")} ${left.t.towers} · ${tl("Dragons")} ${left.t.dragons.length} · ${tl("Barons")} ${left.t.barons}`,
                 value: `${left.t.totalKills}–${right.t.totalKills}`,
                 note: `${right.code} · ${tl("Gold")} ${k(right.t.totalGold)} · ${tl("Towers")} ${right.t.towers} · ${tl("Dragons")} ${right.t.dragons.length} · ${tl("Barons")} ${right.t.barons}`,
+                win: left.t.totalGold !== right.t.totalGold ? left.t.totalGold > right.t.totalGold : undefined,
               },
               ...ROLE_ORDER.map((role) => {
                 const lm = left.meta.find((p) => p.role === role);
@@ -351,9 +353,12 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
                 const lStr = lm && lf ? `${playerName(lm.summonerName)} (${champName(champNameById(lm.championId))}) ${lf.kills}/${lf.deaths}/${lf.assists} · ${lf.creepScore} CS` : left.code;
                 const rStr = rm && rf ? `${playerName(rm.summonerName)} (${champName(champNameById(rm.championId))}) ${rf.kills}/${rf.deaths}/${rf.assists} · ${rf.creepScore} CS` : right.code;
                 return {
+                  champ: lm ? champNameById(lm.championId) : rm ? champNameById(rm.championId) : undefined,
+                  team: left.name || left.code,
                   label: `${roleName(ROLE_LABEL[role])}: ${lStr}`,
                   value: lf && rf ? `${k(lf.totalGold)} vs ${k(rf.totalGold)}` : "",
                   note: rStr,
+                  win: lf && rf && lf.totalGold !== rf.totalGold ? lf.totalGold > rf.totalGold : undefined,
                 };
               }),
             ]}
@@ -378,11 +383,13 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
       <div className="h-1.5 rounded overflow-hidden bg-rw-side-b/60" aria-hidden="true" title={tl("Share of the gold")}>
         <div className="h-full bg-rw-side-a/80" style={{ width: `${share * 100}%` }} />
       </div>
-      {!finished && elapsed != null && elapsed > 60_000 && <ChanceNow leftCode={left.code} rightCode={right.code} minute={elapsed / 60_000} lead={lead} />}
-      {!finished && elapsed != null && elapsed > 3 * 60_000 && ratings?.game != null && (
-        <UpsetMeter leftCode={left.code} rightCode={right.code} before={ratings.game} now={winChanceFromGold(elapsed / 60_000, lead)} />
+      {!finished && elapsed != null && elapsed > 60_000 && (
+        <ChanceNow leftCode={left.code} leftName={left.name} rightCode={right.code} rightName={right.name} minute={elapsed / 60_000} lead={lead} />
       )}
-      {history && history.length > 1 && <GoldGraph points={history} blueIsLeft={blueIsTeam1} leftCode={left.code} rightCode={right.code} />}
+      {!finished && elapsed != null && elapsed > 3 * 60_000 && ratings?.game != null && (
+        <UpsetMeter leftCode={left.code} leftName={left.name} rightCode={right.code} rightName={right.name} before={ratings.game} now={winChanceFromGold(elapsed / 60_000, lead)} />
+      )}
+      {history && history.length > 1 && <GoldGraph points={history} blueIsLeft={blueIsTeam1} leftCode={left.code} leftName={left.name} rightCode={right.code} rightName={right.name} />}
       {finished && history && <GameStory points={history} left={left.code} right={right.code} blueIsLeft={blueIsTeam1} />}
       {showNextPreview && (
         <Suspense fallback={null}>
@@ -538,10 +545,18 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
  * The upset meter: how far the game has swung from what the model expected. The underdog's chance before the game
  * (power rankings, hub/matchRatings.ts) against its chance now from the gold lead (winChanceFromGold).
  */
-const UpsetMeter: React.FC<{ leftCode: string; rightCode: string; before: number; now: number }> = ({ leftCode, rightCode, before, now }) => {
+const UpsetMeter: React.FC<{ leftCode: string; leftName?: string; rightCode: string; rightName?: string; before: number; now: number }> = ({
+  leftCode,
+  leftName,
+  rightCode,
+  rightName,
+  before,
+  now,
+}) => {
   if (Math.abs(before - 0.5) < 0.05) return null; // a coin flip has no underdog
   const leftIsDog = before < 0.5;
   const dog = leftIsDog ? leftCode : rightCode;
+  const dogName = leftIsDog ? leftName || leftCode : rightName || rightCode;
   const pre = leftIsDog ? before : 1 - before;
   const cur = leftIsDog ? now : 1 - now;
   const swing = Math.round((cur - pre) * 100);
@@ -559,7 +574,7 @@ const UpsetMeter: React.FC<{ leftCode: string; rightCode: string; before: number
         </button>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: prettySlug(dog) })}
+          onClick={() => navigateHub({ kind: "team", slug: prettySlug(dogName) })}
           className="text-rw-muted hover:text-rw-accent hover:underline"
         >
           {tl("{team}: {before} before the game, {now} now", { team: dog, before: `${Math.round(pre * 100)}%`, now: `${Math.round(cur * 100)}%` })}
@@ -587,7 +602,14 @@ const GameStory: React.FC<{ points: TimelinePoint[]; left: string; right: string
 };
 
 /** "Win chance right now": the chance the gold lead at this minute has given in pro games (liveGame.ts). */
-const ChanceNow: React.FC<{ leftCode: string; rightCode: string; minute: number; lead: number }> = ({ leftCode, rightCode, minute, lead }) => {
+const ChanceNow: React.FC<{ leftCode: string; leftName?: string; rightCode: string; rightName?: string; minute: number; lead: number }> = ({
+  leftCode,
+  leftName,
+  rightCode,
+  rightName,
+  minute,
+  lead,
+}) => {
   const p = winChanceFromGold(minute, lead);
   const a = Math.round(p * 100);
   return (
@@ -607,7 +629,7 @@ const ChanceNow: React.FC<{ leftCode: string; rightCode: string; minute: number;
       <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: prettySlug(leftCode) })}
+          onClick={() => navigateHub({ kind: "team", slug: prettySlug(leftName || leftCode) })}
           className="font-mono tabular-nums font-bold text-rw-side-a w-16 text-right whitespace-nowrap hover:underline"
         >
           {leftCode} {a}%
@@ -617,7 +639,7 @@ const ChanceNow: React.FC<{ leftCode: string; rightCode: string; minute: number;
         </div>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: prettySlug(rightCode) })}
+          onClick={() => navigateHub({ kind: "team", slug: prettySlug(rightName || rightCode) })}
           className="font-mono tabular-nums font-bold text-rw-side-b w-16 text-left whitespace-nowrap hover:underline"
         >
           {100 - a}% {rightCode}
@@ -828,7 +850,14 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
  *  smooth line in the leading side's colour over a fill that fades toward the middle, clean gridlines (±1k, 2k, 5k...),
  *  the minutes along the bottom, the dragons and barons each side took on its own edge, and any minute's lead and
  *  kills under the pointer. */
-const GoldGraph: React.FC<{ points: TimelinePoint[]; blueIsLeft: boolean; leftCode: string; rightCode: string }> = ({ points, blueIsLeft, leftCode, rightCode }) => {
+const GoldGraph: React.FC<{ points: TimelinePoint[]; blueIsLeft: boolean; leftCode: string; leftName?: string; rightCode: string; rightName?: string }> = ({
+  points,
+  blueIsLeft,
+  leftCode,
+  leftName,
+  rightCode,
+  rightName,
+}) => {
   const [mode, setMode] = useState<"gold" | "chance">("gold");
   const [box, W] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
@@ -903,7 +932,7 @@ const GoldGraph: React.FC<{ points: TimelinePoint[]; blueIsLeft: boolean; leftCo
         </span>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "compare", mode: "team", a: prettySlug(leftCode), b: prettySlug(rightCode) })}
+          onClick={() => navigateHub({ kind: "compare", mode: "team", a: prettySlug(leftName || leftCode), b: prettySlug(rightName || rightCode) })}
           className="font-mono text-rw-text hover:text-rw-accent hover:underline"
           title={mode === "chance" ? tl("From the gold lead only, as in pro games since 2023") : undefined}
         >

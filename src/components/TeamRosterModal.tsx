@@ -12,6 +12,7 @@ import { RIOT_PREFIX } from "../hub/riotMatch";
 import { navigateHub } from "../hub/route";
 import { RiotCatalogContext } from "../hub/riotCatalog";
 import { PlayerPhoto, PhotosLink, TeamLogo, useTeamLogo } from "./hub/ui";
+import { SectionCard } from "./hub/BroadcastCard";
 import { riotImg } from "../riotImage";
 import { isRevealed, setRevealed, useRevealedVersion } from "../revealed";
 
@@ -313,7 +314,25 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                   {tl("Active Roster ({n})", { n: players.length })}
                 </button>
               </h3>
-              <span className="text-[11px] text-rw-sub">{tl("Click star to follow player")}</span>
+              <span className="inline-flex items-center gap-2 text-[11px] text-rw-sub">
+                {players.length > 0 && (
+                  <SectionCard
+                    section={tl("Active Roster ({n})", { n: players.length })}
+                    name={displayName}
+                    sub={[upperCode, catalogTeam?.league, catalogTeam?.region && regionName(catalogTeam.region)].filter(Boolean).join(" · ")}
+                    rows={() =>
+                      players.map((p, idx) => ({
+                        rank: idx + 1,
+                        team: displayName,
+                        label: p.name,
+                        sub: p.realName || upperCode,
+                        value: roleName(p.role),
+                      }))
+                    }
+                  />
+                )}
+                <span>{tl("Click star to follow player")}</span>
+              </span>
             </div>
 
             {players.length > 0 ? (
@@ -523,7 +542,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
 
             {/* Recent Results */}
             <section className="space-y-2">
-              <h3 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
+              <h3 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center justify-between gap-1.5">
                 <button
                   type="button"
                   onClick={() => {
@@ -534,6 +553,30 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                 >
                   {tl("Recent Series Results")}
                 </button>
+                {completedMatches.length > 0 && !settings.spoilerMode && (
+                  <SectionCard
+                    section={tl("Recent Series Results")}
+                    name={displayName}
+                    sub={upperCode}
+                    rows={() =>
+                      completedMatches.map((m, idx) => {
+                        const isT1 = m.team1Code.toUpperCase() === upperCode;
+                        const myScore = isT1 ? m.team1Score : m.team2Score;
+                        const oppScore = isT1 ? m.team2Score : m.team1Score;
+                        const oppName = isT1 ? m.team2Name : m.team1Name;
+                        const oppCode = isT1 ? m.team2Code : m.team1Code;
+                        return {
+                          rank: idx + 1,
+                          team: displayName,
+                          label: `vs ${oppName || oppCode}`,
+                          sub: m.leagueName,
+                          value: `${myScore}–${oppScore}`,
+                          win: myScore !== oppScore ? myScore > oppScore : undefined,
+                        };
+                      })
+                    }
+                  />
+                )}
               </h3>
               {completedMatches.length > 0 ? (
                 <div className="space-y-1.5">

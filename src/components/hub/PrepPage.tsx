@@ -258,6 +258,7 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
   const rows = chancesOf(a, b, ratings.data);
   if (!rows || !ratings.data) return null;
   const acc = ratings.data?.test.all;
+  const rankQuery = a.rating?.rank == null && b.rating?.rank == null && a.rating?.league ? `league=${encodeURIComponent(a.rating.league)}` : undefined;
   return (
     <Section
       title={tl("Win chances")}
@@ -281,14 +282,14 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
       <div className="space-y-1.5">
         {rows.map(([label, x]) => (
           <div key={label} className="grid grid-cols-[3rem_1fr_3rem] sm:grid-cols-[3.5rem_1fr_3.5rem] items-center gap-2 text-xs">
-            <HubLink to={{ kind: "rankings" }} className="tabular-nums font-bold text-rw-side-a hover:underline">
+            <HubLink to={{ kind: "rankings", ...(rankQuery ? { query: rankQuery } : {}) }} className="tabular-nums font-bold text-rw-side-a hover:underline">
               {pct(x)}
             </HubLink>
             <div className="relative h-4 rounded bg-rw-side-b/70 overflow-hidden">
               <div className="absolute inset-y-0 left-0 bg-rw-side-a/80" style={{ width: `${x * 100}%` }} />
               <span className="absolute inset-0 flex items-center justify-center text-[10px] text-rw-text font-semibold">{label}</span>
             </div>
-            <HubLink to={{ kind: "rankings" }} className="tabular-nums font-bold text-rw-side-b text-right hover:underline">
+            <HubLink to={{ kind: "rankings", ...(rankQuery ? { query: rankQuery } : {}) }} className="tabular-nums font-bold text-rw-side-b text-right hover:underline">
               {pct(1 - x)}
             </HubLink>
           </div>
@@ -331,7 +332,7 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
               acc: pct(acc.acc || 0),
             })
           : tl("From the power rankings (every pro game since 2011).")}{" "}
-        <HubLink to={{ kind: "rankings" }} className="text-rw-accent hover:underline" >
+        <HubLink to={{ kind: "rankings", ...(rankQuery ? { query: rankQuery } : {}) }} className="text-rw-accent hover:underline">
           {tl("Power rankings")}
         </HubLink>
       </p>
@@ -707,11 +708,23 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
       textValue: `${sa ? sa.v : "–"} · ${sb ? sb.v : "–"}`,
       value: (
         <span className="inline-flex items-center justify-end">
-          <HubLink to={{ kind: "rankings" }} className={`hover:underline ${sa && sb && sa.v > sb.v ? "text-rw-side-a font-semibold" : "hover:text-rw-accent"}`}>
+          <HubLink
+            to={{
+              kind: "rankings",
+              ...(a.team.rating?.rank == null && a.team.rating?.league ? { query: `league=${encodeURIComponent(a.team.rating.league)}` } : {}),
+            }}
+            className={`hover:underline ${sa && sb && sa.v > sb.v ? "text-rw-side-a font-semibold" : "hover:text-rw-accent"}`}
+          >
             {sa ? sa.v : "–"}
           </HubLink>
           <span className="mx-1 text-rw-muted">·</span>
-          <HubLink to={{ kind: "rankings" }} className={`hover:underline ${sa && sb && sb.v > sa.v ? "text-rw-side-b font-semibold" : "hover:text-rw-accent"}`}>
+          <HubLink
+            to={{
+              kind: "rankings",
+              ...(b.team.rating?.rank == null && b.team.rating?.league ? { query: `league=${encodeURIComponent(b.team.rating.league)}` } : {}),
+            }}
+            className={`hover:underline ${sa && sb && sb.v > sa.v ? "text-rw-side-b font-semibold" : "hover:text-rw-accent"}`}
+          >
             {sb ? sb.v : "–"}
           </HubLink>
           {sideBar(sa?.v, sb?.v)}
@@ -773,6 +786,7 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
           name={`${a.team.u}-vs-${b.team.u}-calculated`}
           rows={() =>
             rows.map((r) => ({
+              team: a.team.name,
               label: r.label,
               sub: r.how,
               value: r.textValue || (typeof r.value === "string" ? r.value : ""),
@@ -1952,24 +1966,28 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
             rows={() => [
               ...bansByA.slice(0, 2).map((x) => ({
                 champ: x.c,
+                team: a.team.name,
                 label: `${a.team.name} · ${tl("Threats to ban")}: ${champName(x.c)}`,
                 sub: x.why,
                 value: x.stat,
               })),
               ...picksA.slice(0, 2).map((x) => ({
                 champ: x.c,
+                team: a.team.name,
                 label: `${a.team.name} · ${tl("Comfort picks")}: ${champName(x.c)}`,
                 sub: x.why,
                 value: x.stat,
               })),
               ...bansByB.slice(0, 2).map((x) => ({
                 champ: x.c,
+                team: b.team.name,
                 label: `${b.team.name} · ${tl("Threats to ban")}: ${champName(x.c)}`,
                 sub: x.why,
                 value: x.stat,
               })),
               ...picksB.slice(0, 2).map((x) => ({
                 champ: x.c,
+                team: b.team.name,
                 label: `${b.team.name} · ${tl("Comfort picks")}: ${champName(x.c)}`,
                 sub: x.why,
                 value: x.stat,

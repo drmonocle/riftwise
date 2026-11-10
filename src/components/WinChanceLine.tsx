@@ -20,7 +20,12 @@ export const WinChanceLine: React.FC<{ match: Match }> = ({ match }) => {
   return (
     <button
       type="button"
-      onClick={() => navigateHub({ kind: "rankings" })}
+      onClick={() =>
+        navigateHub({
+          kind: "rankings",
+          query: r?.a?.world == null && r?.b?.world == null && match.leagueSlug ? `league=${encodeURIComponent(resolveLeagueSlug(match.leagueSlug))}` : undefined,
+        })
+      }
       className="block w-full text-left space-y-0.5 group"
       title={`${tl("From the power rankings (every pro game since 2011).")} ${tl("Win chance before the series: {a} {pa} · {b} {pb}", { a: match.team1Code, pa: pct(p), b: match.team2Code, pb: pct(1 - p) })}`}
     >

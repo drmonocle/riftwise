@@ -54,7 +54,9 @@ export const UpNextTable: React.FC<{
             section={tl("Up Next")}
             name={tl("Up Next")}
             rows={() =>
-              matches.slice(0, 12).map((m) => ({
+              matches.slice(0, 12).map((m, idx) => ({
+                rank: idx + 1,
+                team: m.team1Name || m.team1Code,
                 label: `${m.team1Name} vs ${m.team2Name}`,
                 sub: `${m.leagueName} · ${tc("short best of", "Bo{n}", { n: m.bestOf })}`,
                 value: timeOf(m.startTimeUtc),

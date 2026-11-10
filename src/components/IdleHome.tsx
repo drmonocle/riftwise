@@ -46,9 +46,27 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
     <section className="space-y-2">
       <div className="flex items-center justify-between">
         <h2 className={HEAD}>{tl("Latest results")}</h2>
-        <button type="button" onClick={() => onSelectTab("schedule")} className="text-rw-accent hover:underline text-[11px] font-medium">
-          {tl("All results →")}
-        </button>
+        <div className="flex items-center gap-2">
+          {!settings.spoilerMode && (
+            <SectionCard
+              section={tl("Latest results")}
+              name={tl("Latest results")}
+              rows={() =>
+                done.map((m, idx) => ({
+                  rank: idx + 1,
+                  team: m.team1Score >= m.team2Score ? m.team1Name || m.team1Code : m.team2Name || m.team2Code,
+                  label: `${m.team1Name} vs ${m.team2Name}`,
+                  sub: `${m.leagueName} · ${when(m.startTimeUtc)}`,
+                  value: `${m.team1Score}–${m.team2Score}`,
+                  win: true,
+                }))
+              }
+            />
+          )}
+          <button type="button" onClick={() => onSelectTab("schedule")} className="text-rw-accent hover:underline text-[11px] font-medium">
+            {tl("All results →")}
+          </button>
+        </div>
       </div>
       {/* why the scores are buttons: spoiler mode hides results until asked */}
       {settings.spoilerMode && done.some((m) => !isRevealed(`match:${m.matchId}`)) && (
@@ -177,6 +195,7 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
             rows={() =>
               top.map((t, i) => ({
                 rank: String(i + 1),
+                team: t[1],
                 label: t[1],
                 sub: t[10] || t[3] || "",
                 value: String(Math.round(t[5])),

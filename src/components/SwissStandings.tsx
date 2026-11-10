@@ -66,11 +66,14 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
             name={tl("Worlds Swiss stage: standings")}
             sub={tl("{n} of {m} series played", { n: d.played, m: d.total })}
             rows={() =>
-              d.rows.map((r) => ({
+              d.rows.map((r, idx) => ({
+                rank: idx + 1,
+                team: r.name || r.code,
                 label: r.name,
                 sub: r.code,
                 value: `${r.w}–${r.l}`,
                 note: `${Math.round(r.adv * 100)}%`,
+                win: r.adv >= 0.5,
               }))
             }
           />

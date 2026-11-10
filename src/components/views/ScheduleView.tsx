@@ -18,6 +18,7 @@ import { RIOT_PREFIX } from "../../hub/riotMatch";
 import { navigateHub, scheduleOfPath, setScheduleAddress } from "../../hub/route";
 import { riotImg } from "../../riotImage";
 import { TeamLogo } from "../hub/ui";
+import { SectionCard } from "../hub/BroadcastCard";
 import { countSecondPage } from "../../usage";
 
 interface ScheduleViewProps {
@@ -326,6 +327,30 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                   className="w-full bg-rw-surface border border-rw-border rounded pl-8 pr-3 py-1 text-xs text-rw-text focus:outline-none focus:border-rw-accent"
                 />
               </div>
+              {filtered.length > 0 && (filterRange !== "results" || !settings.spoilerMode) && (
+                <SectionCard
+                  section={filterRange === "today" ? tl("Today") : filterRange === "upcoming" ? tl("Upcoming") : tl("Results")}
+                  name={league ? schedule.find((m) => m.leagueSlug === league)?.leagueName || league : tl("Matches & Schedule")}
+                  rows={() =>
+                    filtered
+                      .filter((m) => m.team1Code !== "TBD" || m.team2Code !== "TBD")
+                      .slice(0, 12)
+                      .map((m, idx) => {
+                        const done = m.state === "completed";
+                        const w2 = done && m.team2Score > m.team1Score;
+                        const tStr = m.startTimeUtc ? new Date(m.startTimeUtc).toLocaleTimeString(locale(), clockOptions()) : "";
+                        return {
+                          rank: idx + 1,
+                          team: w2 ? m.team2Name || m.team2Code : m.team1Name || m.team1Code,
+                          label: `${m.team1Name || m.team1Code} vs ${m.team2Name || m.team2Code}`,
+                          sub: [m.leagueName, dayOf(m.startTimeUtc), tc("short best of", "Bo{n}", { n: m.bestOf })].filter(Boolean).join(" · "),
+                          value: done ? `${m.team1Score}–${m.team2Score}` : tStr,
+                          win: done && m.team1Score !== m.team2Score ? true : undefined,
+                        };
+                      })
+                  }
+                />
+              )}
             </div>
           </div>
 

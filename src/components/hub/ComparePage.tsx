@@ -942,9 +942,11 @@ export const TeamRows: React.FC<{
                   s.t.picks.slice(0, 10).map(([c, n, w], idx) => ({
                     rank: idx + 1,
                     champ: c,
+                    team: s.n,
                     label: c,
                     sub: tn("{n} game", "{n} games", n),
                     value: winRate(w, n),
+                    win: n > 0 ? w / n >= 0.5 : undefined,
                   }))
                 }
               />
@@ -1300,6 +1302,7 @@ const PlayerRows: React.FC<{
                     label: c.c,
                     sub: `${c.g} · ${fmtN(c.kda)} KDA`,
                     value: winRate(c.w, c.g),
+                    win: c.g > 0 ? c.w / c.g >= 0.5 : undefined,
                   }))
                 }
               />
@@ -1380,6 +1383,7 @@ const PlayerRows: React.FC<{
                   label: c.c,
                   sub: `${x.name}: ${c.g} (${winRate(c.w, c.g)})`,
                   value: `${y.name}: ${o.g} (${winRate(o.w, o.g)})`,
+                  win: c.g > 0 && o.g > 0 && c.w / c.g !== o.w / o.g ? c.w / c.g > o.w / o.g : undefined,
                 }))
               }
             />
@@ -1554,9 +1558,11 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
               shown.slice(0, 10).map((m, idx) => ({
                 rank: idx + 1,
                 champ: m.a[2],
+                team: m.a[6] ? m.a[7] : m.b[7],
                 label: `${m.a[2]} (${m.a[3]}/${m.a[4]}/${m.a[5]}) vs ${m.b[2]} (${m.b[3]}/${m.b[4]}/${m.b[5]})`,
                 sub: `${m.a[9]} · ${fmtDate(m.a[0])}`,
                 value: m.a[6] ? aName : bName,
+                win: Boolean(m.a[6]),
               }))
             }
           />
@@ -1882,6 +1888,7 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
                   label: r.info.name,
                   sub: mode === "team" ? `${agg.w}-${agg.g - agg.w} · GD@15 ${sgn(agg.tl?.gd15 ?? null)}` : `${agg.w}-${agg.g - agg.w} · ${fmtN((agg as PlayerAgg).kda)} KDA`,
                   value: winRate(agg.w, agg.g),
+                  win: agg.g > 0 ? agg.w / agg.g >= 0.5 : undefined,
                 };
               })
             }
