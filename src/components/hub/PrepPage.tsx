@@ -9,7 +9,7 @@ import { ClipboardCopy, GitCompare, Printer, Swords } from "lucide-react";
 import { tl, tc, roleName, fmtDec } from "../../i18n";
 import { MissingFile, winRate } from "../../stats";
 import { champName } from "../../champions";
-import { bare, loadHubPlayer, loadHubTeam, loadPlayerGames, loadPlayerGames2y, loadRatings, loadTeamGames, loadTeamGames2y, loadTeamSeries, prettySlug } from "../../hub/data";
+import { bare, loadHubPlayer, loadHubTeam, loadPlayerGames, loadPlayerGames2y, loadRatings, loadTeamGames, loadTeamGames2y, loadTeamSeries, prettySlug, sameChamp } from "../../hub/data";
 import { chanceContext, matchChance, pct, seriesChance } from "../../hub/winChance";
 import { liveRating } from "../../hub/liveRatings";
 import { Change } from "./RankingsPage";
@@ -480,7 +480,10 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; period?: PeriodKey; card?: 
             <HubLink
               to={{
                 kind: "rankings",
-                ...(t.rating!.rank == null && t.rating!.league ? { query: `league=${encodeURIComponent(t.rating!.league)}` } : {}),
+                query: new URLSearchParams({
+                  q: t.u,
+                  ...(t.rating!.rank == null && t.rating!.league ? { league: t.rating!.league } : {}),
+                }).toString(),
               }}
               className="hover:text-rw-accent hover:underline"
             >
@@ -609,9 +612,10 @@ const KeyStats: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[
           <HubLink
             to={{
               kind: "rankings",
-              ...(x.team.rating.rank == null && x.team.rating.league
-                ? { query: `league=${encodeURIComponent(x.team.rating.league)}` }
-                : {}),
+              query: new URLSearchParams({
+                q: x.team.u,
+                ...(x.team.rating.rank == null && x.team.rating.league ? { league: x.team.rating.league } : {}),
+              }).toString(),
             }}
             className="hover:text-rw-accent hover:underline"
           >
@@ -895,7 +899,10 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
           <HubLink
             to={{
               kind: "rankings",
-              ...(a.team.rating?.rank == null && a.team.rating?.league ? { query: `league=${encodeURIComponent(a.team.rating.league)}` } : {}),
+              query: new URLSearchParams({
+                q: a.team.u,
+                ...(a.team.rating?.rank == null && a.team.rating?.league ? { league: a.team.rating.league } : {}),
+              }).toString(),
             }}
             className={`hover:underline ${sa && sb && sa.v > sb.v ? "text-rw-side-a font-semibold" : "hover:text-rw-accent"}`}
           >
@@ -905,7 +912,10 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
           <HubLink
             to={{
               kind: "rankings",
-              ...(b.team.rating?.rank == null && b.team.rating?.league ? { query: `league=${encodeURIComponent(b.team.rating.league)}` } : {}),
+              query: new URLSearchParams({
+                q: b.team.u,
+                ...(b.team.rating?.rank == null && b.team.rating?.league ? { league: b.team.rating.league } : {}),
+              }).toString(),
             }}
             className={`hover:underline ${sa && sb && sb.v > sa.v ? "text-rw-side-b font-semibold" : "hover:text-rw-accent"}`}
           >
@@ -1897,7 +1907,8 @@ function fearlessPools(a: Side, b: Side, period: PeriodKey, exclude?: Set<string
       exclude.has(cn) ||
       exclude.has(cn.toLowerCase()) ||
       (!!bare(c) && exclude.has(bare(c))) ||
-      (!!bare(cn) && exclude.has(bare(cn)))
+      (!!bare(cn) && exclude.has(bare(cn))) ||
+      [...exclude].some((ex) => sameChamp(c, ex))
     );
   };
   const of = (pl: Side["players"][number]) => {

@@ -205,7 +205,18 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
             />
           </span>
           {!hidden && s.r != null && (
-            <HubLink to={{ kind: "best", query: "view=series" }} className="ml-auto" title={tl("Series rating: mostly its best game, then its other games")}>
+            <HubLink
+              to={{
+                kind: "best",
+                query: new URLSearchParams({
+                  view: "series",
+                  ...(seriesYear ? { year: seriesYear } : {}),
+                  ...(s.a.u && s.b.u ? { q: `${s.a.u},${s.b.u}` } : {}),
+                }).toString(),
+              }}
+              className="ml-auto"
+              title={tl("Series rating: mostly its best game, then its other games")}
+            >
               <RatingBadge r={s.r} />
             </HubLink>
           )}
@@ -1316,7 +1327,18 @@ const PlayerBars: React.FC<{
               <HubLink
                 to={{
                   kind: "tiers",
-                  ...(period && /^y\d{4}$/.test(period) ? { query: `key=${encodeURIComponent(period)}` } : {}),
+                  ...(() => {
+                    const qChamps = [blue[0]?.c, red[0]?.c && red[0]?.c !== blue[0]?.c ? red[0].c : ""].filter(Boolean).join(",");
+                    const key = g.patch ? `p${g.patch}` : period && /^y\d{4}$/.test(period) ? period : "";
+                    return qChamps || key
+                      ? {
+                          query: new URLSearchParams({
+                            ...(qChamps ? { q: qChamps } : {}),
+                            ...(key ? { key } : {}),
+                          }).toString(),
+                        }
+                      : {};
+                  })(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -1543,7 +1565,18 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                   <HubLink
                     to={{
                       kind: "tiers",
-                      ...(period && /^y\d{4}$/.test(period) ? { query: `key=${encodeURIComponent(period)}` } : {}),
+                      ...(() => {
+                        const qChamps = [blue[0]?.c, red[0]?.c && red[0]?.c !== blue[0]?.c ? red[0].c : ""].filter(Boolean).join(",");
+                        const key = g.patch ? `p${g.patch}` : period && /^y\d{4}$/.test(period) ? period : "";
+                        return qChamps || key
+                          ? {
+                              query: new URLSearchParams({
+                                ...(qChamps ? { q: qChamps } : {}),
+                                ...(key ? { key } : {}),
+                              }).toString(),
+                            }
+                          : {};
+                      })(),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -1661,7 +1694,18 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                   <HubLink
                     to={{
                       kind: "tiers",
-                      ...(period && /^y\d{4}$/.test(period) ? { query: `key=${encodeURIComponent(period)}` } : {}),
+                      ...(() => {
+                        const qChamps = [lanes[0]?.b?.c, lanes[0]?.o?.c && lanes[0]?.o?.c !== lanes[0]?.b?.c ? lanes[0].o.c : ""].filter(Boolean).join(",");
+                        const key = g.patch ? `p${g.patch}` : period && /^y\d{4}$/.test(period) ? period : "";
+                        return qChamps || key
+                          ? {
+                              query: new URLSearchParams({
+                                ...(qChamps ? { q: qChamps } : {}),
+                                ...(key ? { key } : {}),
+                              }).toString(),
+                            }
+                          : {};
+                      })(),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -2002,7 +2046,22 @@ const Scoreboard: React.FC<{
             <HubLink
               to={{
                 kind: "tiers",
-                ...(period && /^y\d{4}$/.test(period) ? { query: `key=${encodeURIComponent(period)}` } : {}),
+                ...(() => {
+                  const qChamps = players
+                    .slice(0, 2)
+                    .map((p) => p.c)
+                    .filter((x): x is string => Boolean(x))
+                    .join(",");
+                  const key = period && /^y\d{4}$/.test(period) ? period : "";
+                  return qChamps || key
+                    ? {
+                        query: new URLSearchParams({
+                          ...(qChamps ? { q: qChamps } : {}),
+                          ...(key ? { key } : {}),
+                        }).toString(),
+                      }
+                    : {};
+                })(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >

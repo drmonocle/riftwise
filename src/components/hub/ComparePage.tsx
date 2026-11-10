@@ -611,7 +611,11 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
             <HubLink
               to={{
                 kind: "finder",
-                query: `player=${encodeURIComponent(info.a!.u)}&vsplayer=${encodeURIComponent(info.b!.u)}${
+                query: `player=${encodeURIComponent(info.a!.u)}${
+                  playerMeetings(selA as PlayerGameRow[], selB as PlayerGameRow[]).length > 0
+                    ? `&vsplayer=${encodeURIComponent(info.b!.u)}`
+                    : ""
+                }${
                   period.startsWith("y") && period.length === 5
                     ? `&year=${encodeURIComponent(period.slice(1))}`
                     : period.startsWith("e:")
@@ -1109,10 +1113,22 @@ export const TeamRows: React.FC<{
             <HubLink
               to={{
                 kind: "tiers",
-                ...(x.rating?.league === y.rating?.league ||
+                ...(A.picks[0] ||
+                B.picks[0] ||
+                x.rating?.league === y.rating?.league ||
                 (period && ((period.startsWith("y") && period.length === 5) || period.startsWith("e:")))
                   ? {
                       query: new URLSearchParams({
+                        ...((A.picks[0] || B.picks[0])
+                          ? {
+                              q: [
+                                A.picks[0]?.[0],
+                                B.picks[0]?.[0] && B.picks[0]?.[0] !== A.picks[0]?.[0] ? B.picks[0][0] : "",
+                              ]
+                                .filter(Boolean)
+                                .join(","),
+                            }
+                          : {}),
                         ...(x.rating?.league && x.rating.league === y.rating?.league ? { league: x.rating.league } : {}),
                         ...(period && period.startsWith("y") && period.length === 5
                           ? { key: period }
@@ -1699,7 +1715,7 @@ const PlayerRows: React.FC<{
             <HubLink
               to={{
                 kind: "items",
-                query: `player=${encodeURIComponent(x.u)}${period && period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                query: `player=${encodeURIComponent(x.u)}${A.champs[0] ? `&champ=${encodeURIComponent(prettySlug(A.champs[0].c))}` : ""}${period && period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
               }}
               className="text-[11px] text-rw-accent hover:underline font-semibold"
               data-nocapture="1"
@@ -1743,9 +1759,22 @@ const PlayerRows: React.FC<{
             <HubLink
               to={{
                 kind: "tiers",
-                ...(x.role || (period && ((period.startsWith("y") && period.length === 5) || period.startsWith("e:")))
+                ...(A.champs[0] ||
+                B.champs[0] ||
+                x.role ||
+                (period && ((period.startsWith("y") && period.length === 5) || period.startsWith("e:")))
                   ? {
                       query: new URLSearchParams({
+                        ...((A.champs[0] || B.champs[0])
+                          ? {
+                              q: [
+                                A.champs[0]?.c,
+                                B.champs[0]?.c && B.champs[0]?.c !== A.champs[0]?.c ? B.champs[0].c : "",
+                              ]
+                                .filter(Boolean)
+                                .join(","),
+                            }
+                          : {}),
                         ...(x.role ? { role: x.role } : {}),
                         ...(period && period.startsWith("y") && period.length === 5
                           ? { key: period }
@@ -2403,7 +2432,13 @@ const PlayerHeadToHead: React.FC<{
               {tl("Pro tier list")} →
             </HubLink>
             <HubLink
-              to={{ kind: "rankings" }}
+              to={{
+                kind: "rankings",
+                ...(() => {
+                  const teams = Array.from(new Set([shown[0]?.a[7], shown[0]?.b[7]].filter(Boolean).map((t) => prettySlug(t!))));
+                  return teams.length ? { query: `q=${teams.map(encodeURIComponent).join(",")}` } : {};
+                })(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Power rankings")} →
@@ -2797,6 +2832,14 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
                   to={{
                     kind: "finder",
                     query: `player=${encodeURIComponent(rows[0].slug)}${
+                      rows[1] &&
+                      playerMeetings(
+                        inPeriod(rows[0].log as PlayerGameRow[], period, playerRowRef),
+                        inPeriod(rows[1].log as PlayerGameRow[], period, playerRowRef),
+                      ).length > 0
+                        ? `&vsplayer=${encodeURIComponent(rows[1].slug)}`
+                        : ""
+                    }${
                       period.startsWith("y") && period.length === 5
                         ? `&year=${encodeURIComponent(period.slice(1))}`
                         : period.startsWith("e:")
