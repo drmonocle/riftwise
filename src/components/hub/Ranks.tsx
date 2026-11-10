@@ -751,6 +751,18 @@ export const PlayerRanks: React.FC<{
                   </HubLink>
                 ) : null;
               })()}
+              <HubLink
+                to={{ kind: "leaders", query: new URLSearchParams({ league: lu, year, ...(me?.r ? { role: me.r } : {}) }).toString() }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Leaderboards")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "items", query: `player=${encodeURIComponent(slug)}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
+              </HubLink>
               <CopyRanksPost
                 title={`${name || me?.n || slug} · ${leagueLabel} ${year}${me?.r ? ` (${roleName(me.r)})` : ""}`}
                 rows={cardRows}
@@ -901,9 +913,21 @@ export const TeamRanks: React.FC<{
                     >
                       {tl("Compare")} →
                     </HubLink>
+                    <HubLink
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(slug)},${encodeURIComponent(topTeam.u)}&p=y${encodeURIComponent(year)}` }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
                   </>
                 ) : null;
               })()}
+              <HubLink
+                to={{ kind: "leaders", query: new URLSearchParams({ league: lu, year }).toString() }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Leaderboards")} →
+              </HubLink>
               <CopyRanksPost
                 title={`${name || me?.t || slug} · ${leagueLabel} ${year}`}
                 rows={cardRows}

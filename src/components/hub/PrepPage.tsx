@@ -194,11 +194,21 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
                   <div className="flex items-center justify-between gap-2 text-xs">
                     <span className="inline-flex items-center gap-1.5 font-semibold text-rw-text min-w-0">
                       {label && <TeamLogo name={label} size={18} />}
-                      <span className="truncate">{label}</span>
+                      <HubLink to={{ kind: "team", slug }} className="truncate hover:text-rw-accent hover:underline">
+                        {label}
+                      </HubLink>
                     </span>
-                    <button type="button" onClick={() => set({ [k]: undefined })} className="text-[11px] text-rw-accent hover:underline shrink-0">
-                      {tl("Change")}
-                    </button>
+                    <span className="flex items-center gap-2 shrink-0 text-[11px]">
+                      <HubLink to={{ kind: "draft", query: `teams=${encodeURIComponent(slug)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                        {tl("Draft board")}
+                      </HubLink>
+                      <HubLink to={{ kind: "compare", mode: "team", a: slug }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                        {tl("Compare")}
+                      </HubLink>
+                      <button type="button" onClick={() => set({ [k]: undefined })} className="text-rw-accent hover:underline">
+                        {tl("Change")}
+                      </button>
+                    </span>
                   </div>
                 ) : (
                   <ComparePick kind="team" autoFocus={k === "a" || !!a} onPick={(s) => set({ [k]: s })} />
@@ -1648,6 +1658,29 @@ const Lanes: React.FC<{
         label={`${pa?.p.name || "–"} vs ${pb?.p.name || "–"} · ${roleName(r)}`}
         name={`${title}-${r}-${periodLabel}`}
         card={laneCard}
+        extra={
+          pa?.p.u && pb?.p.u ? (
+            <>
+              <HubLink
+                to={{ kind: "compare", mode: "player", a: pa.p.u, b: pb.p.u, period }}
+                className="text-[11px] text-rw-accent hover:underline font-semibold mr-1"
+              >
+                {tl("Compare")} →
+              </HubLink>
+              {sa?.champs[0]?.c && sb?.champs[0]?.c && (
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: `champ=${prettySlug(sa.champs[0].c)}&vs=${encodeURIComponent(sb.champs[0].c)}&role=${encodeURIComponent(r)}`,
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+              )}
+            </>
+          ) : null
+        }
         left={
           pa ? (
             <HubLink to={{ kind: "player", slug: pa.p.u }} className="shrink-0">
@@ -1874,16 +1907,18 @@ const LaneBlock: React.FC<{
   label: string;
   name: string;
   card: () => CardData | null;
+  extra?: React.ReactNode;
   /** the two players' photos, on the outer sides (when the lane is wide enough) */
   left?: React.ReactNode;
   right?: React.ReactNode;
   children: React.ReactNode;
-}> = ({ label, name, card, left, right, children }) => {
+}> = ({ label, name, card, extra, left, right, children }) => {
   const ref = useRef<HTMLDivElement>(null);
   const data = card();
   return (
     <div className="@container py-2.5">
       <div className="flex justify-end mb-1 items-center gap-1" data-nocapture="1">
+        {extra}
         {data && <BroadcastCardButton data={() => card() as CardData} name={name} label={tl("Lane card")} compact />}
         <ShareButtons target={ref} name={name} />
       </div>

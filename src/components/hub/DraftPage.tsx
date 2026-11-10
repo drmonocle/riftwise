@@ -2479,6 +2479,20 @@ const ChampInfo: React.FC<{
         <HubLink to={{ kind: "counters", query: `champ=${prettySlug(c)}` }} className="text-rw-accent hover:underline font-semibold">
           {tl("Counter-picks")} →
         </HubLink>
+        <HubLink to={{ kind: "items", query: `champ=${prettySlug(c)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+          {tl("Item history")} →
+        </HubLink>
+        <HubLink
+          to={{
+            kind: "finder",
+            query: `champ=${encodeURIComponent(c)}${
+              period.startsWith("y") ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""
+            }`,
+          }}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {tl("Game finder")} →
+        </HubLink>
       </span>
     }
   >
@@ -2723,6 +2737,17 @@ const Priorities: React.FC<{
       right={
         <span className="flex items-center gap-2">
           <TeamLink name={side.team.name} u={side.team.u} className={`text-[11px] font-semibold ${color} hover:underline`} />
+          <HubLink
+            to={{
+              kind: "team",
+              slug: side.team.u,
+              tab: "champions",
+              ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Champions")} →
+          </HubLink>
           <HubLink
             to={{
               kind: "finder",

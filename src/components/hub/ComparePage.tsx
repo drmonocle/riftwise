@@ -512,17 +512,28 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
             {(info.a as HubPlayer).club &&
               (info.b as HubPlayer).club &&
               prettySlug((info.a as HubPlayer).club!) !== prettySlug((info.b as HubPlayer).club!) && (
-                <HubLink
-                  to={{
-                    kind: "prep",
-                    a: prettySlug((info.a as HubPlayer).club!),
-                    b: prettySlug((info.b as HubPlayer).club!),
-                    ...(period !== "all" ? { period } : {}),
-                  }}
-                  className="text-rw-accent hover:underline"
-                >
-                  {tl("Match prep")}
-                </HubLink>
+                <>
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: prettySlug((info.a as HubPlayer).club!),
+                      b: prettySlug((info.b as HubPlayer).club!),
+                      ...(period !== "all" ? { period } : {}),
+                    }}
+                    className="text-rw-accent hover:underline"
+                  >
+                    {tl("Match prep")}
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "draft",
+                      query: `teams=${encodeURIComponent(prettySlug((info.a as HubPlayer).club!))},${encodeURIComponent(prettySlug((info.b as HubPlayer).club!))}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                    }}
+                    className="text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")}
+                  </HubLink>
+                </>
               )}
             <HubLink
               to={{
@@ -538,6 +549,15 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
               className="text-rw-accent hover:underline"
             >
               {tl("Game finder")}
+            </HubLink>
+            <HubLink
+              to={{
+                kind: "items",
+                query: `player=${encodeURIComponent(info.a!.u)}`,
+              }}
+              className="text-rw-accent hover:underline"
+            >
+              {tl("Item history")}
             </HubLink>
             <HubLink
               to={{

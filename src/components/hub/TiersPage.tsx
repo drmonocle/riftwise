@@ -163,6 +163,12 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
               >
                 {tl("Counter-pick finder")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "items" }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
+              </HubLink>
               <SectionCard
                 section={tl("Pro tier list")}
                 name={fullLabel}
@@ -378,6 +384,12 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                   className="text-[10px] text-rw-accent hover:underline ml-1"
                                 >
                                   {tl("Counter-picks")}
+                                </HubLink>
+                                <HubLink
+                                  to={{ kind: "items", query: `champ=${prettySlug(c.c)}` }}
+                                  className="text-[10px] text-rw-sub hover:text-rw-accent hover:underline"
+                                >
+                                  {tl("Item history")}
                                 </HubLink>
                                 {c.p > 0 && (
                                   <HubLink

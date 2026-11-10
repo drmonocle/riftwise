@@ -134,6 +134,20 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
                 ) : (
                   fmtDate(r[0])
                 )}
+                {showOpp && r[2] && teamName && (
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: teamSlug || prettySlug(teamName),
+                      b: r[2],
+                      period: /^\d{4}/.test(r[0]) ? `y${r[0].slice(0, 4)}` : undefined,
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                    title={tl("Match prep")}
+                  >
+                    {tl("Match prep")}
+                  </HubLink>
+                )}
                 {r[7] && (
                   <HubLink to={{ kind: "match", slug: r[7] }} className="text-rw-accent hover:underline">
                     {tl("Details")}
@@ -232,6 +246,15 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
                   className="text-[11px] text-rw-accent hover:underline"
                 >
                   {tl("Compare")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(slug)},${encodeURIComponent(shown[0][2])}${year !== "all" ? `&p=y${encodeURIComponent(year)}` : ""}`,
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
                 </HubLink>
               </>
             )}
@@ -628,6 +651,23 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
         </HubLink>
         {!hidden && shown.length > 0 && (
           <>
+            <HubLink
+              to={{
+                kind: "items",
+                query: new URLSearchParams({ player: slug, ...(champ !== "all" ? { champ: prettySlug(champ) } : {}) }).toString(),
+              }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Item history")} →
+            </HubLink>
+            {champ !== "all" && (
+              <HubLink
+                to={{ kind: "counters", query: `champ=${prettySlug(champ)}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
             <CopyArchivePost
               title={`${tl("Every game")} · ${displayName}${champ !== "all" ? ` · ${champName(champ)}` : ""}${year !== "all" ? ` (${year})` : ""}`}
               sub={`${tn("{n} game", "{n} games", rows.length)} · ${Math.round((won / rows.length) * 100)}% · KDA ${fmtDec((k + a) / Math.max(d, 1), 2)}`}
