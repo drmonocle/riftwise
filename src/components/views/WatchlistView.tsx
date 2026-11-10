@@ -429,19 +429,26 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      {team.image && !brokenImgs[team.slug] ? (
-                        <img
-                          {...riotImg(team.image, 96)}
-                          alt={team.code}
-                          onError={() => setBrokenImgs((b) => ({ ...b, [team.slug]: true }))}
-                          className="w-9 h-9 object-contain rounded bg-rw-deep p-0.5"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-9 h-9 rounded-lg bg-rw-deep border border-rw-border flex items-center justify-center font-bold font-mono text-xs text-rw-accent">
-                          {team.code.slice(0, 3)}
-                        </div>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => navigateHub({ kind: "team", slug: prettySlug(team.name) })}
+                        className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent transition-all"
+                        title={team.name}
+                      >
+                        {team.image && !brokenImgs[team.slug] ? (
+                          <img
+                            {...riotImg(team.image, 96)}
+                            alt={team.code}
+                            onError={() => setBrokenImgs((b) => ({ ...b, [team.slug]: true }))}
+                            className="w-9 h-9 object-contain rounded bg-rw-deep p-0.5"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-9 h-9 rounded-lg bg-rw-deep border border-rw-border flex items-center justify-center font-bold font-mono text-xs text-rw-accent">
+                            {team.code.slice(0, 3)}
+                          </div>
+                        )}
+                      </button>
                       <div>
                         <button
                           type="button"
@@ -549,13 +556,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                               >
                                 {roleName(p.role)}
                               </button>
-                              <PlayerPhoto name={p.name} team={team.name} img={p.image} size={18} linkFallback={false} />
                               <button
                                 type="button"
                                 onClick={() => navigateHub({ kind: "player", slug: prettySlug(p.name) })}
-                                className="text-rw-text font-semibold hover:text-rw-accent hover:underline text-left transition-colors"
+                                className="inline-flex items-center gap-2 text-rw-text font-semibold hover:text-rw-accent hover:underline text-left transition-colors"
                               >
-                                {p.name}
+                                <PlayerPhoto name={p.name} team={team.name} img={p.image} size={18} linkFallback={false} />
+                                <span>{p.name}</span>
                               </button>
                               {p.realName && <span className="text-rw-muted">({p.realName})</span>}
                             </div>
@@ -621,7 +628,17 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <PlayerPhoto name={player.name} team={player.teamName} img={player.image} size={32} linkFallback={false} />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigateHub({ kind: "player", slug: prettySlug(player.name) });
+                      }}
+                      className="shrink-0 rounded-full hover:ring-1 hover:ring-rw-accent transition-all"
+                      title={player.name}
+                    >
+                      <PlayerPhoto name={player.name} team={player.teamName} img={player.image} size={32} linkFallback={false} />
+                    </button>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -651,16 +668,16 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                         )}
                       </div>
                       <div className="text-[10px] text-rw-muted flex items-center gap-1 mt-0.5">
-                        <TeamLogo name={player.teamName || player.teamCode} code={player.teamCode} size={13} />
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             navigateHub({ kind: "team", slug: prettySlug(player.teamName || player.teamCode) });
                           }}
-                          className="hover:text-rw-accent hover:underline text-left transition-colors"
+                          className="inline-flex items-center gap-1 hover:text-rw-accent hover:underline text-left transition-colors"
                         >
-                          {player.teamName} ({player.teamCode})
+                          <TeamLogo name={player.teamName || player.teamCode} code={player.teamCode} size={13} />
+                          <span>{player.teamName} ({player.teamCode})</span>
                         </button>
                       </div>
                     </div>
@@ -844,19 +861,29 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    {league.image && !brokenImgs[league.slug] ? (
-                      <img
-                        {...riotImg(league.image, 96)}
-                        alt={league.name}
-                        onError={() => setBrokenImgs((b) => ({ ...b, [league.slug]: true }))}
-                        className="w-8 h-8 object-contain rounded bg-rw-deep p-0.5"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded bg-rw-deep border border-rw-border flex items-center justify-center font-bold text-xs text-rw-teal">
-                        <Trophy className="w-4 h-4" />
-                      </div>
-                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigateHub({ kind: "league", slug: resolveLeagueSlug(league.slug) });
+                      }}
+                      className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent transition-all"
+                      title={league.name}
+                    >
+                      {league.image && !brokenImgs[league.slug] ? (
+                        <img
+                          {...riotImg(league.image, 96)}
+                          alt={league.name}
+                          onError={() => setBrokenImgs((b) => ({ ...b, [league.slug]: true }))}
+                          className="w-8 h-8 object-contain rounded bg-rw-deep p-0.5"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded bg-rw-deep border border-rw-border flex items-center justify-center font-bold text-xs text-rw-teal">
+                          <Trophy className="w-4 h-4" />
+                        </div>
+                      )}
+                    </button>
                     <div>
                       <button
                         type="button"

@@ -112,9 +112,14 @@ const UpNextRow: React.FC<{
     );
   };
   const logo = (name: string, code: string, image: string | undefined) => (
-    <span className="w-5 h-5 shrink-0 inline-flex items-center justify-center">
+    <button
+      type="button"
+      onClick={() => (onSelectTeam ? onSelectTeam(code, name) : navigateHub({ kind: "team", slug: prettySlug(name || code) }))}
+      className="w-5 h-5 shrink-0 inline-flex items-center justify-center rounded hover:ring-1 hover:ring-rw-accent transition-all"
+      title={tl("View {team} roster", { team: name })}
+    >
       <TeamLogo name={name} code={code} src={image} size={20} />
-    </span>
+    </button>
   );
   return (
     <div className={`px-3 py-2 ${GRID} flex flex-wrap items-center gap-x-3 gap-y-1`}>

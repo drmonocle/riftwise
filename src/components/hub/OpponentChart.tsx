@@ -432,7 +432,9 @@ const ColoredOpponentGraph: React.FC<{
         {active && (
           <div className="flex flex-wrap items-center gap-2 text-[11px] text-rw-sub ml-auto">
             <span className="inline-flex items-center gap-1 font-semibold text-rw-text">
-              <TeamLogo name={active.opp} size={16} />
+              <HubLink to={{ kind: "team", slug: active.u || prettySlug(active.opp) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                <TeamLogo name={active.opp} size={16} />
+              </HubLink>
               <TeamLink name={active.opp} u={active.u} />
             </span>
             <HubLink
@@ -787,7 +789,9 @@ export const PlayerOpponents: React.FC<{
         <div className="bg-rw-bg border border-rw-accent/40 rounded-lg p-2.5 space-y-1.5 text-xs">
           <div className="flex items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1.5 font-semibold text-rw-text">
-              <TeamLogo name={expanded.opp} size={18} />
+              <HubLink to={{ kind: "team", slug: expanded.u || prettySlug(expanded.opp) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                <TeamLogo name={expanded.opp} size={18} />
+              </HubLink>
               <TeamLink name={expanded.opp} u={expanded.u} />
               <HubLink
                 to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(expanded.u || expanded.opp)}${periodQuerySuffix(period || scope)}` }}
@@ -903,7 +907,9 @@ export const PlayerOpponents: React.FC<{
                 >
                   <td className={`${td} max-w-[12rem] truncate`} data-sort={o.opp}>
                     <span className="inline-flex items-center gap-1.5 min-w-0" onClick={(e) => e.stopPropagation()}>
-                      <TeamLogo name={o.opp} size={18} />
+                      <HubLink to={{ kind: "team", slug: o.u || prettySlug(o.opp) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                        <TeamLogo name={o.opp} size={18} />
+                      </HubLink>
                       <TeamLink name={o.opp} u={o.u} className="text-rw-text hover:text-rw-accent hover:underline truncate" />
                     </span>
                   </td>
@@ -1137,7 +1143,9 @@ export const TeamOpponentsChart: React.FC<{
                 >
                   <td className={`${td} max-w-[13rem] truncate`} data-sort={o.n}>
                     <span className="inline-flex items-center gap-1.5 min-w-0" onClick={(e) => e.stopPropagation()}>
-                      <TeamLogo name={o.n} size={18} />
+                      <HubLink to={{ kind: "team", slug: o.u || prettySlug(o.n) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                        <TeamLogo name={o.n} size={18} />
+                      </HubLink>
                       <TeamLink name={o.n} u={o.u} />
                     </span>
                   </td>
@@ -1350,7 +1358,9 @@ export const TeamPeriodOpponents: React.FC<{
         <div className="bg-rw-bg border border-rw-accent/40 rounded-lg p-2.5 space-y-1.5 text-xs">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1.5 font-semibold text-rw-text">
-              <TeamLogo name={expanded.opp} size={18} />
+              <HubLink to={{ kind: "team", slug: expanded.u || prettySlug(expanded.opp) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                <TeamLogo name={expanded.opp} size={18} />
+              </HubLink>
               <TeamLink name={expanded.opp} u={expanded.u} />
               <HubLink
                 to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(expanded.u || expanded.opp)}${pSuffix}` }}
@@ -1462,7 +1472,9 @@ export const TeamPeriodOpponents: React.FC<{
                 >
                   <td className={`${td} max-w-[13rem] truncate`} data-sort={o.opp}>
                     <span className="inline-flex items-center gap-1.5 min-w-0" onClick={(e) => e.stopPropagation()}>
-                      <TeamLogo name={o.opp} size={18} />
+                      <HubLink to={{ kind: "team", slug: o.u || prettySlug(o.opp) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                        <TeamLogo name={o.opp} size={18} />
+                      </HubLink>
                       <TeamLink name={o.opp} u={o.u} />
                     </span>
                   </td>

@@ -70,7 +70,9 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
                       "vs"
                     )}{" "}
                     <span className="inline-flex items-center gap-1 align-baseline">
-                      <TeamLogo name={r[1]} size={13} />
+                      <HubLink to={{ kind: "team", slug: r[2] || prettySlug(r[1]) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                        <TeamLogo name={r[1]} size={13} />
+                      </HubLink>
                       <TeamLink name={r[1]} u={r[2]} />
                     </span>{" "}
                   </>
@@ -311,7 +313,9 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
               <div className="rounded-lg border border-rw-border bg-rw-bg/60 px-2.5 py-2 space-y-1">
                 <div className="flex items-center justify-between text-xs font-bold tabular-nums">
                   <span className="inline-flex items-center gap-1.5 text-rw-side-a truncate min-w-0">
-                    <TeamLogo name={aName} size={15} />
+                    <HubLink to={{ kind: "team", slug: a }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                      <TeamLogo name={aName} size={15} />
+                    </HubLink>
                     <TeamLink name={aName} u={a} className="truncate hover:underline" />{" "}
                     <HubLink
                       to={{
@@ -343,7 +347,9 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                       {rows.length - wa}
                     </HubLink>{" "}
                     <TeamLink name={bName} u={b} className="truncate hover:underline" />
-                    <TeamLogo name={bName} size={15} />
+                    <HubLink to={{ kind: "team", slug: b }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                      <TeamLogo name={bName} size={15} />
+                    </HubLink>
                   </span>
                 </div>
                 <div className="h-2 rounded-full bg-rw-raised overflow-hidden flex gap-[2px]">
@@ -355,7 +361,9 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                 <div className="rounded-lg border border-rw-border bg-rw-bg/60 px-2.5 py-2 space-y-1">
                   <div className="flex items-center justify-between text-xs font-bold tabular-nums">
                     <span className="inline-flex items-center gap-1.5 text-rw-side-a truncate min-w-0">
-                      <TeamLogo name={aName} size={15} />
+                      <HubLink to={{ kind: "team", slug: a }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                        <TeamLogo name={aName} size={15} />
+                      </HubLink>
                       <TeamLink name={aName} u={a} className="truncate hover:underline" />{" "}
                       <HubLink
                         to={{
@@ -387,7 +395,9 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                         {gb}
                       </HubLink>{" "}
                       <TeamLink name={bName} u={b} className="truncate hover:underline" />
-                      <TeamLogo name={bName} size={15} />
+                      <HubLink to={{ kind: "team", slug: b }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                        <TeamLogo name={bName} size={15} />
+                      </HubLink>
                     </span>
                   </div>
                   <div className="h-2 rounded-full bg-rw-raised overflow-hidden flex gap-[2px]">
@@ -602,7 +612,9 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string; p
                     >
                       vs
                     </HubLink>
-                    <TeamLogo name={r[8]} size={13} />
+                    <HubLink to={{ kind: "team", slug: prettySlug(r[8]) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                      <TeamLogo name={r[8]} size={13} />
+                    </HubLink>
                     <TeamLink name={r[8]} />
                     {r[10] ? (
                       <>

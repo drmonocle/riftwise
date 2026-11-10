@@ -80,7 +80,9 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                   ) : (
                     <span className="text-rw-sub">{tl("vs")}</span>
                   )}
-                  <TeamLogo name={them.name} code={them.code} src={them.img} size={15} className="shrink-0" />
+                  <HubLink to={{ kind: "team", slug: c.opp || prettySlug(them.name) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                    <TeamLogo name={them.name} code={them.code} src={them.img} size={15} className="shrink-0" />
+                  </HubLink>
                   <TeamLink name={them.name} u={c.opp} className="truncate hover:text-rw-accent" />
                   <span className="text-rw-muted truncate">
                     ·{" "}
@@ -183,7 +185,9 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
           <span className="font-bold text-sm text-rw-text sm:hidden">
             <TeamLink name={ours.code || t.name} u={t.u} />
           </span>
-          <TeamLogo name={t.name} code={ours.code} src={ours.img} size={32} className="shrink-0" />
+          <HubLink to={{ kind: "team", slug: t.u }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+            <TeamLogo name={t.name} code={ours.code} src={ours.img} size={32} className="shrink-0" />
+          </HubLink>
         </span>
         {c.opp ? (
           <HubLink
@@ -197,7 +201,9 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
           <span className="text-rw-sub text-xs shrink-0">{tl("vs")}</span>
         )}
         <span className="flex items-center gap-2 min-w-0 flex-1">
-          <TeamLogo name={them.name} code={them.code} src={them.img} size={32} className="shrink-0" />
+          <HubLink to={{ kind: "team", slug: c.opp || prettySlug(them.name) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+            <TeamLogo name={them.name} code={them.code} src={them.img} size={32} className="shrink-0" />
+          </HubLink>
           <span className="font-bold text-sm truncate min-w-0 max-sm:hidden">
             <TeamLink name={them.name} u={c.opp} />
           </span>

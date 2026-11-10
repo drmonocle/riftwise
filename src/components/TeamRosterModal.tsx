@@ -197,13 +197,23 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
         {/* Header Bar */}
         <div className="p-5 border-b border-rw-border bg-rw-surface flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {teamImage ? (
-              <img {...riotImg(teamImage, 160)} alt={upperCode} className="w-14 h-14 object-contain rounded-lg drop-shadow" />
-            ) : (
-              <div className="w-14 h-14 rounded-lg bg-rw-bg border border-rw-border flex items-center justify-center font-bold text-xl text-rw-accent">
-                {upperCode.slice(0, 3)}
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                navigateHub({ kind: "team", slug: prettySlug(displayName) });
+                onClose();
+              }}
+              className="shrink-0 rounded-lg hover:ring-1 hover:ring-rw-accent transition-all"
+              title={displayName}
+            >
+              {teamImage ? (
+                <img {...riotImg(teamImage, 160)} alt={upperCode} className="w-14 h-14 object-contain rounded-lg drop-shadow" />
+              ) : (
+                <div className="w-14 h-14 rounded-lg bg-rw-bg border border-rw-border flex items-center justify-center font-bold text-xl text-rw-accent">
+                  {upperCode.slice(0, 3)}
+                </div>
+              )}
+            </button>
             <div>
               <div className="flex items-center gap-2">
                 <button
@@ -319,7 +329,17 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                         className="flex items-center justify-between p-3 rounded-xl bg-rw-bg border border-rw-border hover:border-rw-accent/50 transition-all group"
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <PlayerPhoto name={p.name} team={displayName} img={p.image} size={44} />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigateHub({ kind: "player", slug: prettySlug(p.name) });
+                              onClose();
+                            }}
+                            className="shrink-0 rounded-full hover:ring-1 hover:ring-rw-accent transition-all"
+                            title={p.name}
+                          >
+                            <PlayerPhoto name={p.name} team={displayName} img={p.image} size={44} linkFallback={false} />
+                          </button>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
                               <button
@@ -429,16 +449,16 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             >
                               {tl("vs")}
                             </button>
-                            <TeamLogo name={opp} code={oppCode} size={14} />
                             <button
                               type="button"
                               onClick={() => {
                                 navigateHub({ kind: "team", slug: prettySlug(opp) });
                                 onClose();
                               }}
-                              className="text-rw-accent hover:underline text-left"
+                              className="inline-flex items-center gap-1.5 text-rw-accent hover:underline text-left"
                             >
-                              {opp} ({oppCode})
+                              <TeamLogo name={opp} code={oppCode} size={14} />
+                              <span>{opp} ({oppCode})</span>
                             </button>
                           </div>
                           <div className="text-[10px] text-rw-sub">
@@ -546,16 +566,16 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             >
                               {tl("vs")}
                             </button>
-                            <TeamLogo name={oppName} size={14} />
                             <button
                               type="button"
                               onClick={() => {
                                 navigateHub({ kind: "team", slug: prettySlug(oppName) });
                                 onClose();
                               }}
-                              className="hover:text-rw-accent hover:underline text-left truncate"
+                              className="inline-flex items-center gap-1.5 hover:text-rw-accent hover:underline text-left truncate"
                             >
-                              {oppName}
+                              <TeamLogo name={oppName} size={14} />
+                              <span className="truncate">{oppName}</span>
                             </button>
                           </span>
                           <span className="flex items-center gap-1.5 shrink-0">
@@ -615,16 +635,16 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             >
                               {tl("vs")}
                             </button>
-                            <TeamLogo name={oppName} size={14} />
                             <button
                               type="button"
                               onClick={() => {
                                 navigateHub({ kind: "team", slug: prettySlug(oppName) });
                                 onClose();
                               }}
-                              className="truncate hover:text-rw-accent hover:underline text-left"
+                              className="inline-flex items-center gap-1.5 truncate hover:text-rw-accent hover:underline text-left"
                             >
-                              {oppName}
+                              <TeamLogo name={oppName} size={14} />
+                              <span className="truncate">{oppName}</span>
                             </button>
                           </span>
                         </div>

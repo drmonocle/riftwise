@@ -490,16 +490,13 @@ export const LiveNextGamePreview: React.FC<{
               ) => (
                 <div className={`flex flex-wrap items-center gap-1 min-w-0 ${alignRight ? "justify-end" : ""}`}>
                   {row.player && (
-                    <span className={`inline-flex items-center gap-1 font-semibold text-rw-text text-[11px] shrink-0 ${alignRight ? "order-last ml-1 flex-row-reverse" : "mr-1"}`}>
-                      <PlayerPhoto name={row.player} team={teamName} slug={row.u ?? undefined} size={16} />
-                      {row.u ? (
-                        <HubLink to={{ kind: "player", slug: row.u, tab: "champions" }} className="hover:text-rw-accent">
-                          {row.player}
-                        </HubLink>
-                      ) : (
-                        row.player
-                      )}
-                    </span>
+                    <HubLink
+                      to={{ kind: "player", slug: row.u || prettySlug(row.player), tab: "champions" }}
+                      className={`inline-flex items-center gap-1 font-semibold text-rw-text hover:text-rw-accent text-[11px] shrink-0 ${alignRight ? "order-last ml-1 flex-row-reverse" : "mr-1"}`}
+                    >
+                      <PlayerPhoto name={row.player} team={teamName} slug={row.u ?? undefined} size={16} linkFallback={false} />
+                      <span>{row.player}</span>
+                    </HubLink>
                   )}
                   {row.open.map((pk) => {
                     const wrPct = pk.g > 0 ? Math.round((pk.w / pk.g) * 100) : 0;
