@@ -415,7 +415,49 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 const topPair = filtered.find(
                   (m) => m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD",
                 );
-                if (!topPair) return null;
+                if (!topPair) {
+                  const singleMatch = filtered.find(
+                    (m) => (m.team1Code && m.team1Code !== "TBD") || (m.team2Code && m.team2Code !== "TBD"),
+                  );
+                  if (!singleMatch) return null;
+                  const sSlug = prettySlug(
+                    singleMatch.team1Code && singleMatch.team1Code !== "TBD"
+                      ? singleMatch.team1Name || singleMatch.team1Code
+                      : singleMatch.team2Name || singleMatch.team2Code,
+                  );
+                  return (
+                    <div className="flex items-center gap-2 text-[11px]">
+                      <button
+                        type="button"
+                        onClick={() => navigateHub({ kind: "prep", a: sSlug })}
+                        className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                      >
+                        {tl("Match prep")} →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(sSlug)}` })}
+                        className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                      >
+                        {tl("Draft board")} →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigateHub({ kind: "compare", mode: "team", a: sSlug })}
+                        className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                      >
+                        {tl("Compare")} →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(sSlug)}` })}
+                        className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                      >
+                        {tl("Game finder")} →
+                      </button>
+                    </div>
+                  );
+                }
                 const a = prettySlug(topPair.team1Name || topPair.team1Code);
                 const b = prettySlug(topPair.team2Name || topPair.team2Code);
                 return (

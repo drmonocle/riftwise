@@ -379,6 +379,12 @@ export const LiveNextGamePreview: React.FC<{
               {tl("Pro tier list")} →
             </HubLink>
             <HubLink
+              to={{ kind: "leaders" }}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Player leaderboards")} →
+            </HubLink>
+            <HubLink
               to={{ kind: "draft", query: draftQuery }}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-accent hover:underline"
             >
@@ -571,24 +577,38 @@ export const LiveNextGamePreview: React.FC<{
               return (
                 <div key={rLabel} className="py-1.5 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
                   {renderPicks(ra, draftIntel.slugA, match.team1Name, false)}
-                  {ra?.player && rb?.player ? (
-                    <HubLink
-                      to={{
-                        kind: "compare",
-                        mode: "player",
-                        a: ra.u || prettySlug(ra.player),
-                        b: rb.u || prettySlug(rb.player),
-                      }}
-                      className="text-[9px] uppercase font-mono text-rw-muted hover:text-rw-accent hover:underline text-center w-12 shrink-0"
-                      title={tl("Compare {a} and {b}", { a: ra.player, b: rb.player })}
-                    >
-                      {roleName(rLabel)}
-                    </HubLink>
-                  ) : (
-                    <span className="text-[9px] uppercase font-mono text-rw-muted text-center w-12 shrink-0">
-                      {roleName(rLabel)}
-                    </span>
-                  )}
+                  <span className="flex flex-col items-center justify-center w-12 shrink-0 leading-tight">
+                    {ra?.player && rb?.player ? (
+                      <HubLink
+                        to={{
+                          kind: "compare",
+                          mode: "player",
+                          a: ra.u || prettySlug(ra.player),
+                          b: rb.u || prettySlug(rb.player),
+                        }}
+                        className="text-[9px] uppercase font-mono text-rw-muted hover:text-rw-accent hover:underline text-center"
+                        title={tl("Compare {a} and {b}", { a: ra.player, b: rb.player })}
+                      >
+                        {roleName(rLabel)}
+                      </HubLink>
+                    ) : (
+                      <span className="text-[9px] uppercase font-mono text-rw-muted text-center">
+                        {roleName(rLabel)}
+                      </span>
+                    )}
+                    {ra?.open[0]?.c && rb?.open[0]?.c && (
+                      <HubLink
+                        to={{
+                          kind: "counters",
+                          query: `champ=${encodeURIComponent(prettySlug(ra.open[0].c))}&vs=${encodeURIComponent(prettySlug(rb.open[0].c))}&role=${encodeURIComponent(rLabel)}`,
+                        }}
+                        className="text-[8px] text-rw-sub hover:text-rw-accent hover:underline text-center"
+                        title={tl("Counters")}
+                      >
+                        {tl("Counters")}
+                      </HubLink>
+                    )}
+                  </span>
                   {renderPicks(rb, draftIntel.slugB, match.team2Name, true)}
                 </div>
               );

@@ -125,6 +125,14 @@ const TeamStatsLink: React.FC<{ name: string; code: string; onDone: () => void }
       >
         {tl("Pro tier list")}
       </button>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => openRoute(() => navigateHub({ kind: "leaders" }))}
+        className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
+      >
+        {tl("Player leaderboards")}
+      </button>
     </div>
   );
 };
@@ -349,16 +357,38 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                   </button>
                 )}
                 {players.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigateHub({ kind: "leaders" });
-                      onClose();
-                    }}
-                    className="text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Player leaderboards")} →
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigateHub({ kind: "items", query: `player=${encodeURIComponent(prettySlug(players[0].name))}` });
+                        onClose();
+                      }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Item history")} →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigateHub({ kind: "finder", query: `player=${encodeURIComponent(prettySlug(players[0].name))}` });
+                        onClose();
+                      }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Game finder")} →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigateHub({ kind: "leaders" });
+                        onClose();
+                      }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Player leaderboards")} →
+                    </button>
+                  </>
                 )}
                 {players.length > 0 && (
                   <SectionCard
@@ -445,6 +475,17 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                         </div>
 
                         <div className="flex items-center gap-1 shrink-0 ml-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigateHub({ kind: "finder", query: `player=${encodeURIComponent(prettySlug(p.name))}` });
+                              onClose();
+                            }}
+                            className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-surface text-[10px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 transition-colors hidden md:inline-block"
+                            title={tl("Game finder")}
+                          >
+                            {tl("Game finder")}
+                          </button>
                           <button
                             type="button"
                             onClick={() => {

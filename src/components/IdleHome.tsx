@@ -63,6 +63,49 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               }
             />
           )}
+          {done[0] && (
+            <>
+              <button
+                type="button"
+                onClick={() =>
+                  navigateHub({
+                    kind: "prep",
+                    a: prettySlug(done[0].team1Name || done[0].team1Code),
+                    b: prettySlug(done[0].team2Name || done[0].team2Code),
+                  })
+                }
+                className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
+              >
+                {tl("Match prep")}
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  navigateHub({
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(prettySlug(done[0].team1Name || done[0].team1Code))},${encodeURIComponent(prettySlug(done[0].team2Name || done[0].team2Code))}`,
+                  })
+                }
+                className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
+              >
+                {tl("Draft board")}
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  navigateHub({
+                    kind: "compare",
+                    mode: "team",
+                    a: prettySlug(done[0].team1Name || done[0].team1Code),
+                    b: prettySlug(done[0].team2Name || done[0].team2Code),
+                  })
+                }
+                className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
+              >
+                {tl("Compare")}
+              </button>
+            </>
+          )}
           <button
             type="button"
             onClick={() => navigateHub({ kind: "rankings" })}
@@ -269,7 +312,7 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
               <button
                 type="button"
                 onClick={() => {
-                  navigateHub({ kind: "finder", query: `team=${encodeURIComponent(top[0][0])}` });
+                  navigateHub({ kind: "finder", query: `team=${encodeURIComponent(top[0][0])}&vs=${encodeURIComponent(top[1][0])}` });
                   onSelectTab("stats");
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"

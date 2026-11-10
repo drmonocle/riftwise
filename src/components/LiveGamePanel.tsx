@@ -379,6 +379,13 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
           >
             {tl("Pro tier list")}
           </button>
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "leaders" })}
+            className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Player leaderboards")}
+          </button>
           <SectionCard
             section={finished ? tl("Game {n} · final", { n: game.number }) : tl("Game {n} · live", { n: game.number })}
             name={`${left.code} vs ${right.code}`}
@@ -1168,6 +1175,45 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
           {live && startMs != null && <span className="ml-2 font-num text-rw-text">{clock(now - startMs)}</span>}
         </span>
         <span className="flex items-center gap-2 ml-auto">
+          <button
+            type="button"
+            onClick={() =>
+              navigateHub({
+                kind: "prep",
+                a: prettySlug(left.name || left.code),
+                b: prettySlug(right.name || right.code),
+              })
+            }
+            className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Match prep")}
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              navigateHub({
+                kind: "compare",
+                mode: "team",
+                a: prettySlug(left.name || left.code),
+                b: prettySlug(right.name || right.code),
+              })
+            }
+            className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Compare")}
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              navigateHub({
+                kind: "finder",
+                query: `team=${encodeURIComponent(prettySlug(left.name || left.code))}&vs=${encodeURIComponent(prettySlug(right.name || right.code))}`,
+              })
+            }
+            className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Game finder")}
+          </button>
           <Suspense fallback={null}>
             <LiveGameDraftLink match={match} gameNum={number} win={win} />
           </Suspense>
@@ -1232,28 +1278,45 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
           return (
             <React.Fragment key={i}>
               {cell(p, left.name, false)}
-              {p && q ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigateHub({
-                      kind: "compare",
-                      mode: "player",
-                      a: prettySlug(playerName(p.summonerName)),
-                      b: prettySlug(playerName(q.summonerName)),
-                    })
-                  }
-                  className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline text-center w-12"
-                  title={tl("Compare {a} and {b}", {
-                    a: playerName(p.summonerName),
-                    b: playerName(q.summonerName),
-                  })}
-                >
-                  {roleName(ROLE_LABEL[p.role] || p.role)}
-                </button>
-              ) : (
-                <span className="text-[10px] text-rw-muted text-center w-12">{roleName(ROLE_LABEL[p.role] || p.role)}</span>
-              )}
+              <span className="flex flex-col items-center justify-center w-12 shrink-0 leading-tight">
+                {p && q ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigateHub({
+                        kind: "compare",
+                        mode: "player",
+                        a: prettySlug(playerName(p.summonerName)),
+                        b: prettySlug(playerName(q.summonerName)),
+                      })
+                    }
+                    className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline text-center"
+                    title={tl("Compare {a} and {b}", {
+                      a: playerName(p.summonerName),
+                      b: playerName(q.summonerName),
+                    })}
+                  >
+                    {roleName(ROLE_LABEL[p.role] || p.role)}
+                  </button>
+                ) : (
+                  <span className="text-[10px] text-rw-muted text-center">{roleName(ROLE_LABEL[p.role] || p.role)}</span>
+                )}
+                {p?.championId && q?.championId && champNameById(p.championId) && champNameById(q.championId) && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigateHub({
+                        kind: "counters",
+                        query: `champ=${encodeURIComponent(prettySlug(champNameById(p.championId)))}&vs=${encodeURIComponent(prettySlug(champNameById(q.championId)))}&role=${encodeURIComponent(ROLE_LABEL[p.role] || p.role)}`,
+                      })
+                    }
+                    className="text-[8px] text-rw-sub hover:text-rw-accent hover:underline text-center"
+                    title={tl("Counters")}
+                  >
+                    {tl("Counters")}
+                  </button>
+                )}
+              </span>
               {cell(q, right.name, true)}
             </React.Fragment>
           );

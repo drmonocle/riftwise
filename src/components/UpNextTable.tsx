@@ -64,12 +64,56 @@ export const UpNextTable: React.FC<{
         >
           {tl("Match prep")}
         </button>
+        {matches[0] && (
+          <>
+            <button
+              type="button"
+              onClick={() =>
+                navigateHub({
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(prettySlug(matches[0].team1Name || matches[0].team1Code))},${encodeURIComponent(prettySlug(matches[0].team2Name || matches[0].team2Code))}`,
+                })
+              }
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Draft board")}
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                navigateHub({
+                  kind: "compare",
+                  mode: "team",
+                  a: prettySlug(matches[0].team1Name || matches[0].team1Code),
+                  b: prettySlug(matches[0].team2Name || matches[0].team2Code),
+                })
+              }
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Compare")}
+            </button>
+          </>
+        )}
         <button
           type="button"
           onClick={() => navigateHub({ kind: "rankings" })}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
           {tl("Power rankings")}
+        </button>
+        <button
+          type="button"
+          onClick={() => navigateHub({ kind: "tiers" })}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {tl("Pro tier list")}
+        </button>
+        <button
+          type="button"
+          onClick={() => navigateHub({ kind: "leaders" })}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {tl("Player leaderboards")}
         </button>
         {matches.length > 0 && (
           <SectionCard

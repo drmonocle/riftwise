@@ -788,6 +788,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   </button>
                   <button
                     type="button"
+                    onClick={() => navigateHub({ kind: "items", query: `player=${encodeURIComponent(a)}` })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Item history")} →
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => navigateHub({ kind: "finder", query: `player=${encodeURIComponent(a)}` })}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -998,20 +1005,56 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     </div>
                   </div>
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleRegion(region.code);
-                    }}
-                    className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-semibold transition-colors ${
-                      isFollowed
-                        ? "bg-rw-accent text-rw-bg"
-                        : "bg-rw-deep border border-rw-border text-rw-muted hover:text-rw-text"
-                    }`}
-                  >
-                    {isFollowed ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                    <span>{isFollowed ? tl("Following") : tl("Follow")}</span>
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    {region.leagues[0] && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigateHub({ kind: "rankings", query: `league=${encodeURIComponent(resolveLeagueSlug(region.leagues[0]))}` });
+                          }}
+                          className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden sm:inline-block"
+                        >
+                          {tl("Power rankings")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigateHub({ kind: "tiers", query: `key=l:${encodeURIComponent(resolveLeagueSlug(region.leagues[0]))}` });
+                          }}
+                          className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden md:inline-block"
+                        >
+                          {tl("Pro tier list")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigateHub({ kind: "leaders", query: `league=${encodeURIComponent(resolveLeagueSlug(region.leagues[0]))}` });
+                          }}
+                          className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden lg:inline-block"
+                        >
+                          {tl("Player leaderboards")}
+                        </button>
+                      </>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleRegion(region.code);
+                      }}
+                      className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-semibold transition-colors ${
+                        isFollowed
+                          ? "bg-rw-accent text-rw-bg"
+                          : "bg-rw-deep border border-rw-border text-rw-muted hover:text-rw-text"
+                      }`}
+                    >
+                      {isFollowed ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                      <span>{isFollowed ? tl("Following") : tl("Follow")}</span>
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -1110,20 +1153,62 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     </div>
                   </div>
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleLeague(league.slug);
-                    }}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors ${
-                      isFollowed
-                        ? "bg-rw-accent text-rw-bg"
-                        : "bg-rw-deep border border-rw-border text-rw-muted hover:text-rw-text"
-                    }`}
-                  >
-                    {isFollowed ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                    <span>{isFollowed ? tl("Following") : tl("Follow")}</span>
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigateHub({ kind: "rankings", query: `league=${encodeURIComponent(resolveLeagueSlug(league.slug))}` });
+                      }}
+                      className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden sm:inline-block"
+                    >
+                      {tl("Power rankings")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigateHub({ kind: "tiers", query: `key=l:${encodeURIComponent(resolveLeagueSlug(league.slug))}` });
+                      }}
+                      className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden md:inline-block"
+                    >
+                      {tl("Pro tier list")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigateHub({ kind: "leaders", query: `league=${encodeURIComponent(resolveLeagueSlug(league.slug))}` });
+                      }}
+                      className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden lg:inline-block"
+                    >
+                      {tl("Player leaderboards")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigateHub({ kind: "finder", query: `league=${encodeURIComponent(resolveLeagueSlug(league.slug))}` });
+                      }}
+                      className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden xl:inline-block"
+                    >
+                      {tl("Game finder")}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleLeague(league.slug);
+                      }}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors ${
+                        isFollowed
+                          ? "bg-rw-accent text-rw-bg"
+                          : "bg-rw-deep border border-rw-border text-rw-muted hover:text-rw-text"
+                      }`}
+                    >
+                      {isFollowed ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                      <span>{isFollowed ? tl("Following") : tl("Follow")}</span>
+                    </button>
+                  </div>
                 </div>
               );
             })}

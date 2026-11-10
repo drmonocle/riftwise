@@ -8,6 +8,7 @@ import { PartBoundary } from "../PartBoundary";
 import { navigateHub, type HubRoute } from "../../hub/route";
 import { prettySlug } from "../../hub/data";
 import { useTeamLogo } from "../hub/ui";
+import { SectionCard } from "../hub/BroadcastCard";
 // Loaded with the stats hub code, only when the 24/7 tab is opened
 const StreamBracket = lazyPart(() => import("../hub/StreamBracket").then((m) => m.StreamBracket));
 
@@ -243,6 +244,20 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
             >
               {tl("Power rankings")}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateHub({ kind: "tiers", ...(year ? { query: `key=y${encodeURIComponent(year)}` } : {}) })}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
+            >
+              {tl("Pro tier list")}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateHub({ kind: "leaders", ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}) })}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
+            >
+              {tl("Player leaderboards")}
             </button>
             <button
               type="button"
@@ -502,9 +517,83 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
       {/* Schedule */}
       {later.length > 0 && (
         <section className="space-y-3">
-          <h3 className="flex items-center gap-2 text-xs font-semibold text-rw-text uppercase tracking-wider">
-            {tl("Coming up on the marathon")}
-          </h3>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="flex items-center gap-2 text-xs font-semibold text-rw-text uppercase tracking-wider">
+              {tl("Coming up on the marathon")}
+            </h3>
+            <span className="flex flex-wrap items-center gap-2 text-[11px]">
+              {(() => {
+                const first = later.find((x) => x.team1 && x.team2) ?? later[0];
+                if (!first?.team1 || !first?.team2) return null;
+                const aSlug = teamSlug(first.team1);
+                const bSlug = teamSlug(first.team2);
+                const yr = /\b(20\d\d)\b/.exec(first.season || "")?.[1];
+                if (!aSlug || !bSlug) return null;
+                return (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => navigateHub({ kind: "prep", a: aSlug, b: bSlug, period: yr ? `y${yr}` : undefined })}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Match prep")} →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigateHub({
+                          kind: "draft",
+                          query: `teams=${encodeURIComponent(aSlug)},${encodeURIComponent(bSlug)}${yr ? `&p=y${yr}` : ""}`,
+                        })
+                      }
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigateHub({ kind: "compare", mode: "team", a: aSlug, b: bSlug, period: yr ? `y${yr}` : undefined })}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Compare")} →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigateHub({
+                          kind: "finder",
+                          query: `team=${encodeURIComponent(aSlug)}&vs=${encodeURIComponent(bSlug)}${yr ? `&year=${yr}` : ""}`,
+                        })
+                      }
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Game finder")} →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigateHub({ kind: "rankings" })}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Power rankings")} →
+                    </button>
+                  </>
+                );
+              })()}
+              <SectionCard
+                section={tl("Coming up on the marathon")}
+                name={tl("24/7 Stream")}
+                rows={() =>
+                  later.slice(0, 12).map((e, idx) => ({
+                    rank: idx + 1,
+                    team: e.team1,
+                    label: e.team1 && e.team2 ? `${e.team1} vs ${e.team2}` : streamEventTitle(e),
+                    sub: `${streamEventTitle(e)}${e.stage ? ` · ${stageName(e.stage)}` : ""}`,
+                    value: relTime(e.utcIso, now),
+                  }))
+                }
+              />
+            </span>
+          </div>
           {shownDays.map((day) => {
             const list = byDay.get(day)!;
             return (

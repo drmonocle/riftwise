@@ -116,6 +116,16 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
               <button
                 type="button"
                 onClick={() => {
+                  navigateHub({ kind: "leaders" });
+                  onOpen();
+                }}
+                className="text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
                   navigateHub({
                     kind: "finder",
                     query: `team=${encodeURIComponent(d.rows[0].u)}&vs=${encodeURIComponent(d.rows[1].u)}`,
