@@ -476,6 +476,25 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
             >
               {tl("Draft board")}
             </HubLink>
+            <HubLink
+              to={{ kind: "finder", query: `team=${encodeURIComponent(a!)}&vs=${encodeURIComponent(b!)}` }}
+              className="text-rw-accent hover:underline"
+            >
+              {tl("Game finder")}
+            </HubLink>
+          </>
+        )}
+        {ready && mode === "player" && (
+          <>
+            <HubLink
+              to={{ kind: "finder", query: `player=${encodeURIComponent(a!)}` }}
+              className="text-rw-accent hover:underline"
+            >
+              {tl("Game finder")}
+            </HubLink>
+            <HubLink to={{ kind: "leaders" }} className="text-rw-accent hover:underline">
+              {tl("Leaderboards")}
+            </HubLink>
           </>
         )}
         {ready && (
@@ -1810,6 +1829,15 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
                 className="text-rw-accent hover:underline"
               >
                 {tl("Draft board")}
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `team=${encodeURIComponent(rows[0].slug)}&vs=${encodeURIComponent(rows[1].slug)}`,
+                }}
+                className="text-rw-accent hover:underline"
+              >
+                {tl("Game finder")}
               </HubLink>
             </>
           )}

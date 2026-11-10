@@ -307,7 +307,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                     </td>
                     <td className={cell} data-sort={r.teams}>{r.teams}</td>
                     <td className={cell} data-sort={r.sw * 1000 - r.sl}>
-                      <span className="inline-flex items-center justify-end gap-1.5">
+                      <HubLink to={{ kind: "finder" }} className="inline-flex items-center justify-end gap-1.5 hover:text-rw-accent hover:underline" title={tl("Game finder")}>
                         {sPct != null && (
                           <span className="hidden sm:inline-block w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
                             <span
@@ -317,10 +317,10 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                           </span>
                         )}
                         <span>{r.sw}-{r.sl}</span>
-                      </span>
+                      </HubLink>
                     </td>
                     <td className={cell} data-sort={gPct ?? -1}>
-                      <span className="inline-flex items-center justify-end gap-1.5">
+                      <HubLink to={{ kind: "finder" }} className="inline-flex items-center justify-end gap-1.5 hover:text-rw-accent hover:underline" title={tl("Game finder")}>
                         {gPct != null && (
                           <span className="hidden sm:inline-block w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
                             <span
@@ -333,11 +333,11 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                           {r.gw}-{r.gl}
                           <span className="text-rw-muted"> · {gPct ?? "–"}%</span>
                         </span>
-                      </span>
+                      </HubLink>
                     </td>
                     <td className={cell} data-sort={oPct ?? -1}>
                       {r.ow + r.ol ? (
-                        <span className="inline-flex items-center justify-end gap-1.5">
+                        <HubLink to={{ kind: "finder" }} className="inline-flex items-center justify-end gap-1.5 hover:text-rw-accent hover:underline" title={tl("Game finder")}>
                           {oPct != null && (
                             <span className="hidden sm:inline-block w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
                               <span
@@ -349,7 +349,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                           <span>
                             {r.ow}-{r.ol} <span className={oPct != null && oPct >= 50 ? "text-rw-teal font-semibold" : "text-rw-muted"}>· {oPct}%</span>
                           </span>
-                        </span>
+                        </HubLink>
                       ) : (
                         "–"
                       )}
@@ -373,14 +373,18 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                     )}
                     {all && (
                       <td className={cell} data-sort={r.finals}>
-                        <span className="inline-flex items-center justify-end gap-1.5">
-                          {fBar > 0 && (
-                            <span className="hidden sm:inline-block w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
-                              <span className="block h-full rounded-full bg-rw-teal/70" style={{ width: `${fBar}%` }} />
-                            </span>
-                          )}
+                        {r.finals > 0 ? (
+                          <HubLink to={{ kind: "titles" }} className="inline-flex items-center justify-end gap-1.5 hover:text-rw-accent hover:underline">
+                            {fBar > 0 && (
+                              <span className="hidden sm:inline-block w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
+                                <span className="block h-full rounded-full bg-rw-teal/70" style={{ width: `${fBar}%` }} />
+                              </span>
+                            )}
+                            <span>{r.finals}</span>
+                          </HubLink>
+                        ) : (
                           <span>{r.finals}</span>
-                        </span>
+                        )}
                       </td>
                     )}
                   </tr>

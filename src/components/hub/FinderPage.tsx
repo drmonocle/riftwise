@@ -552,7 +552,10 @@ const FinderBody: React.FC<{
           {avg != null && (
             <span className="text-rw-sub">
               {" "}
-              · {tl("average {n} min", { n: fmtDec(avg) })}
+              ·{" "}
+              <HubLink to={{ kind: "records" }} className="hover:text-rw-accent hover:underline" title={tl("Records")}>
+                {tl("average {n} min", { n: fmtDec(avg) })}
+              </HubLink>
             </span>
           )}
         </p>
@@ -636,6 +639,15 @@ const FinderBody: React.FC<{
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
                     {tl("Compare")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "draft",
+                      query: `teams=${encodeURIComponent(teamOption(opts.teams, q.get("team")) || q.get("team")!)},${encodeURIComponent(teamOption(opts.teams, q.get("vs")) || q.get("vs")!)}${year ? `&p=y${encodeURIComponent(year)}` : ""}`,
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Draft board")} →
                   </HubLink>
                 </>
               )}
@@ -933,8 +945,22 @@ const Cohort: React.FC<{
           ) : (
             tl("Blue side won {p}", { p: `${bluePct}%` })
           )}
-          {d.kpg != null && ` · ${tl("{n} kills per game", { n: fmtDec(d.kpg) })}`}
-          {d.ckpm != null && ` · ${tl("{n} kills per minute", { n: fmtDec(d.ckpm, 2) })}`}
+          {d.kpg != null && (
+            <>
+              {" · "}
+              <HubLink to={{ kind: "records" }} className="hover:text-rw-accent hover:underline" title={tl("Records")}>
+                {tl("{n} kills per game", { n: fmtDec(d.kpg) })}
+              </HubLink>
+            </>
+          )}
+          {d.ckpm != null && (
+            <>
+              {" · "}
+              <HubLink to={{ kind: "records" }} className="hover:text-rw-accent hover:underline" title={tl("Records")}>
+                {tl("{n} kills per minute", { n: fmtDec(d.ckpm, 2) })}
+              </HubLink>
+            </>
+          )}
           {d.gd15 != null && (
             <span title={tl("{n} games with timelines (Oracle's Elixir)", { n: d.gdn })}>
               {" · "}

@@ -170,10 +170,16 @@ export const HubHome: React.FC<{
             <ul className="text-xs space-y-1.5">
               {(home.data?.potm || []).slice(0, 3).map((p) => (
                 <li key={p.u || p.n} className="flex items-center gap-2 min-w-0">
-                  <PlayerPhoto name={p.n} team={p.t} slug={p.u || undefined} size={24} />
+                  <HubLink to={{ kind: "player", slug: p.u || prettySlug(p.n) }} className="shrink-0">
+                    <PlayerPhoto name={p.n} team={p.t} slug={p.u || undefined} size={24} />
+                  </HubLink>
                   <PlayerLink name={p.n} u={p.u} className="font-semibold truncate" />
                   <span className="inline-flex items-center gap-1 text-rw-muted truncate ml-auto">
-                    {p.t && <TeamLogo name={p.t} size={13} />}
+                    {p.t && (
+                      <HubLink to={{ kind: "team", slug: prettySlug(p.t) }} className="shrink-0">
+                        <TeamLogo name={p.t} size={13} />
+                      </HubLink>
+                    )}
                     <span className="truncate">
                       {p.r ? (
                         <HubLink to={{ kind: "player", slug: p.u || prettySlug(p.n), tab: "stats" }} className="hover:text-rw-accent hover:underline">
@@ -571,7 +577,9 @@ const TopTeams: React.FC<{ rows?: RatingRow[]; n: number; ranked?: boolean }> = 
         return (
           <li key={t[0]} className="flex items-center gap-2 min-w-0">
             {ranked && <span className="w-3 text-rw-muted font-num tabular-nums shrink-0">{i + 1}</span>}
-            <TeamLogo name={t[1]} code={t[2]} size={22} />
+            <HubLink to={{ kind: "team", slug: t[0] }} className="shrink-0">
+              <TeamLogo name={t[1]} code={t[2]} size={22} />
+            </HubLink>
             <TeamLink name={t[1]} u={t[0]} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
             <span className="ml-auto flex items-center gap-2 shrink-0">
               {!ranked && (
@@ -627,7 +635,9 @@ const PatchMovers: React.FC = () => {
           const wrTone = wr.now == null ? "" : wr.now >= 0.55 ? "text-rw-teal font-semibold" : wr.now < 0.45 ? "text-rw-red" : "text-rw-sub";
           return (
             <li key={c} className="flex items-center gap-2 min-w-0">
-              <ChampIcon name={c} size={22} />
+              <HubLink to={{ kind: "champ", slug: prettySlug(c) }} className="shrink-0">
+                <ChampIcon name={c} size={22} />
+              </HubLink>
               <HubLink to={{ kind: "champ", slug: prettySlug(c) }} className="font-semibold text-rw-text hover:text-rw-accent truncate">
                 {champName(c)}
               </HubLink>
@@ -760,10 +770,16 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
               return shown.map((p, i) => (
                 <li key={p.u || p.n} className="flex items-center gap-2 min-w-0">
                   <span className="w-3 text-right text-rw-muted tabular-nums shrink-0">{i + 1}</span>
-                  <PlayerPhoto name={p.n} team={p.t} slug={p.u || undefined} size={26} />
+                  <HubLink to={{ kind: "player", slug: p.u || prettySlug(p.n) }} className="shrink-0">
+                    <PlayerPhoto name={p.n} team={p.t} slug={p.u || undefined} size={26} />
+                  </HubLink>
                   <span className="inline-flex items-center gap-1 truncate min-w-0">
                     <PlayerLink name={p.n} u={p.u} />
-                    {p.t && <TeamLogo name={p.t} size={13} />}
+                    {p.t && (
+                      <HubLink to={{ kind: "team", slug: prettySlug(p.t) }} className="shrink-0">
+                        <TeamLogo name={p.t} size={13} />
+                      </HubLink>
+                    )}
                     <span className="text-rw-muted truncate">
                       {p.r ? (
                         <>
@@ -880,7 +896,9 @@ const LatestRow: React.FC<{ e: EventListItem }> = ({ e }) => {
             <RevealButton onReveal={reveal} small />
           ) : (
             <span className="inline-flex items-center gap-1 min-w-0">
-              <TeamLogo name={e.w} size={14} />
+              <HubLink to={{ kind: "team", slug: e.wu || prettySlug(e.w) }} className="shrink-0">
+                <TeamLogo name={e.w} size={14} />
+              </HubLink>
               <TeamLink name={e.w} u={e.wu} className="text-rw-accent hover:underline" />
             </span>
           )}
@@ -1029,7 +1047,9 @@ const BrowseRow: React.FC<{ e: EventListItem; maxG: number; q?: string; onSetQ?:
             <RevealButton onReveal={reveal} small />
           ) : (
             <span className="inline-flex items-center gap-1.5 min-w-0">
-              <TeamLogo name={e.w} size={15} />
+              <HubLink to={{ kind: "team", slug: e.wu || prettySlug(e.w) }} className="shrink-0">
+                <TeamLogo name={e.w} size={15} />
+              </HubLink>
               <TeamLink name={e.w} u={e.wu} />
             </span>
           )

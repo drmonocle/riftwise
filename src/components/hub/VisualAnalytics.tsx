@@ -744,7 +744,9 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                     >
                       vs
                     </HubLink>
-                  <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
+                  <HubLink to={{ kind: "team", slug: prettySlug(sel.opp) }} className="shrink-0">
+                    <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
+                  </HubLink>
                   <TeamLink name={sel.opp} u={prettySlug(sel.opp)} />
                   <span className="text-rw-muted">·</span>
                   <EventLink name={sel.event} u={sel.row[11]} className="text-rw-sub hover:text-rw-accent hover:underline truncate" />
@@ -1109,7 +1111,9 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                       >
                         vs
                       </HubLink>
-                      <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
+                      <HubLink to={{ kind: "team", slug: oppSlug }} className="shrink-0">
+                        <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
+                      </HubLink>
                       <TeamLink name={sel.opp} u={oppSlug} />
                       <span className="text-rw-muted">·</span>
                       <EventLink name={sel.en} u={sel.e} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />

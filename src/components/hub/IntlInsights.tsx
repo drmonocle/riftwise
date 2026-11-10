@@ -302,7 +302,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
       key={i}
       left={
         <span className="inline-flex items-center gap-1.5 min-w-0">
-          <TeamLogo name={r.team} size={15} />
+          <HubLink to={{ kind: "team", slug: r.u || prettySlug(r.team) }} className="shrink-0">
+            <TeamLogo name={r.team} size={15} />
+          </HubLink>
           <TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent truncate" />
         </span>
       }
@@ -374,7 +376,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 key={r.u}
                 left={
                   <span className="inline-flex items-center gap-1.5 min-w-0">
-                    <TeamLogo name={r.name} size={15} />
+                    <HubLink to={{ kind: "team", slug: r.u }} className="shrink-0">
+                      <TeamLogo name={r.name} size={15} />
+                    </HubLink>
                     <TeamLink name={r.name} u={r.u} className="text-rw-text hover:text-rw-accent truncate" />
                   </span>
                 }
@@ -407,7 +411,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     key={r.u}
                     left={
                       <span className="inline-flex items-center gap-1.5 min-w-0">
-                        <TeamLogo name={r.name} size={15} />
+                        <HubLink to={{ kind: "team", slug: r.u }} className="shrink-0">
+                          <TeamLogo name={r.name} size={15} />
+                        </HubLink>
                         <TeamLink name={r.name} u={r.u} className="text-rw-text hover:text-rw-accent truncate" />
                       </span>
                     }
@@ -491,7 +497,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 key={p.u || p.name}
                 left={
                   <span className="inline-flex items-center gap-1.5 min-w-0">
-                    <PlayerPhoto name={p.name} slug={p.u ?? undefined} size={18} />
+                    {p.u ? (
+                      <HubLink to={{ kind: "player", slug: p.u }} className="shrink-0">
+                        <PlayerPhoto name={p.name} slug={p.u} size={18} />
+                      </HubLink>
+                    ) : (
+                      <PlayerPhoto name={p.name} slug={undefined} size={18} />
+                    )}
                     <PlayerLink name={p.name} u={p.u} className="text-rw-text hover:text-rw-accent truncate" />
                   </span>
                 }

@@ -346,8 +346,12 @@ const EloFormula: React.FC<{ a: HubTeam; b: HubTeam; ratings: HubRatings; p: num
   return (
     <div className="rounded border border-rw-border bg-rw-bg px-2.5 py-1.5 space-y-0.5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-[11px]">
-        <span className="text-rw-sub">{tl("How it is calculated")}</span>
-        <span className="font-mono text-rw-muted">{ratings.k ? tl("Elo, K = {k} (top leagues)", { k: ratings.k.top }) : "Elo"}</span>
+        <HubLink to={{ kind: "about" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+          {tl("How it is calculated")}
+        </HubLink>
+        <HubLink to={{ kind: "about" }} className="font-mono text-rw-muted hover:text-rw-accent hover:underline">
+          {ratings.k ? tl("Elo, K = {k} (top leagues)", { k: ratings.k.top }) : "Elo"}
+        </HubLink>
       </div>
       <div className="font-mono text-[10px] text-rw-muted break-words">
         P({a.name}) = 1 / (1 + 10^(({Math.round(rb)} − {Math.round(ra)}){scale !== 1 ? ` × ${fmtDec(scale, 2)}` : ""} / 400)) = {pct(p)}
@@ -1012,6 +1016,12 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
             <GitCompare className="w-3.5 h-3.5" />
             {tl("Compare")}
           </HubLink>
+          <HubLink
+            to={{ kind: "finder", query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}` }}
+            className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-accent hover:underline"
+          >
+            {tl("Game finder")}
+          </HubLink>
           {/* icons with their name on hover, to keep the bar short */}
           <button
             type="button"
@@ -1531,8 +1541,20 @@ const Lanes: React.FC<{
         label={`${pa?.p.name || "–"} vs ${pb?.p.name || "–"} · ${roleName(r)}`}
         name={`${title}-${r}-${periodLabel}`}
         card={laneCard}
-        left={pa ? <PlayerPhoto name={pa.p.name} team={a.team.name} slug={pa.p.u} img={pa.p.img} sizeClass="w-16 h-16 @min-[44rem]:w-24 @min-[44rem]:h-24 @min-[60rem]:w-32 @min-[60rem]:h-32" /> : null}
-        right={pb ? <PlayerPhoto name={pb.p.name} team={b.team.name} slug={pb.p.u} img={pb.p.img} sizeClass="w-16 h-16 @min-[44rem]:w-24 @min-[44rem]:h-24 @min-[60rem]:w-32 @min-[60rem]:h-32" /> : null}
+        left={
+          pa ? (
+            <HubLink to={{ kind: "player", slug: pa.p.u }} className="shrink-0">
+              <PlayerPhoto name={pa.p.name} team={a.team.name} slug={pa.p.u} img={pa.p.img} sizeClass="w-16 h-16 @min-[44rem]:w-24 @min-[44rem]:h-24 @min-[60rem]:w-32 @min-[60rem]:h-32" />
+            </HubLink>
+          ) : null
+        }
+        right={
+          pb ? (
+            <HubLink to={{ kind: "player", slug: pb.p.u }} className="shrink-0">
+              <PlayerPhoto name={pb.p.name} team={b.team.name} slug={pb.p.u} img={pb.p.img} sizeClass="w-16 h-16 @min-[44rem]:w-24 @min-[44rem]:h-24 @min-[60rem]:w-32 @min-[60rem]:h-32" />
+            </HubLink>
+          ) : null
+        }
       >
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className="min-w-0 flex justify-end">{name(pa, a, onSwapA, false)}</div>

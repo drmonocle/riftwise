@@ -286,7 +286,11 @@ export const Playstyle: React.FC<{ t: TeamAgg; to?: import("../../hub/route").Hu
           );
         })}
       </div>
-      <p className="text-[10px] text-rw-muted">{tl("Compared with every pro team season since 2024: a label means the top or bottom fifth.")}</p>
+      <p className="text-[10px] text-rw-muted">
+        <HubLink to={{ kind: "about" }} className="hover:text-rw-accent hover:underline">
+          {tl("Compared with every pro team season since 2024: a label means the top or bottom fifth.")}
+        </HubLink>
+      </p>
     </div>
   );
 };

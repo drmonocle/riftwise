@@ -2423,7 +2423,9 @@ const ChampInfo: React.FC<{
         return (
           <div key={w} className="space-y-1 min-w-0">
             <div className={`font-bold flex items-center gap-1.5 min-w-0 ${w === "b" ? "text-rw-side-a" : "text-rw-side-b"}`}>
-              <TeamLogo name={s.team.name} size={15} />
+              <HubLink to={{ kind: "team", slug: s.team.u }} className="shrink-0">
+                <TeamLogo name={s.team.name} size={15} />
+              </HubLink>
               <TeamLink name={s.team.name} u={s.team.u} className="truncate hover:underline" />
             </div>
             <div className="text-rw-sub">
@@ -2442,7 +2444,22 @@ const ChampInfo: React.FC<{
               ) : (
                 tl("Not picked in this period")
               )}
-              {roles.length > 0 && ` (${roles.join(" / ")})`}
+              {roles.length > 0 && (
+                <>
+                  {" "}
+                  <HubLink
+                    to={{
+                      kind: "team",
+                      slug: s.team.u,
+                      tab: "champions",
+                      query: `champ=${encodeURIComponent(c)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                    }}
+                    className="hover:text-rw-accent hover:underline"
+                  >
+                    {`(${roles.join(" / ")})`}
+                  </HubLink>
+                </>
+              )}
             </div>
             <div className="text-rw-sub">
               {(p.bans.get(c) || 0) + (p.bansVs.get(c) || 0) > 0 ? (
@@ -2467,7 +2484,13 @@ const ChampInfo: React.FC<{
                 const full = s.players[x.role]?.full;
                 return (
                   <div key={x.name} className="text-rw-text flex flex-wrap items-center gap-x-1">
-                    <PlayerPhoto name={x.name} team={s.team.name} slug={x.u ?? undefined} size={15} />
+                    {x.u ? (
+                      <HubLink to={{ kind: "player", slug: x.u }} className="shrink-0">
+                        <PlayerPhoto name={x.name} team={s.team.name} slug={x.u} size={15} />
+                      </HubLink>
+                    ) : (
+                      <PlayerPhoto name={x.name} team={s.team.name} slug={undefined} size={15} />
+                    )}
                     <PlayerLink name={x.name} u={x.u} className="font-semibold text-rw-text hover:text-rw-accent hover:underline" />:{" "}
                     {x.g ? (
                       <>
