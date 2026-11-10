@@ -303,11 +303,17 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                                 {p.name}
                               </button>
                               <PhotosLink q={p.name} iconOnly className="text-rw-muted hover:text-rw-accent shrink-0" />
-                              <span
-                                className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${colors.bg} ${colors.text} ${colors.border}`}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigateHub({ kind: "player", slug: prettySlug(p.name), tab: "stats" });
+                                  onClose();
+                                }}
+                                className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider hover:opacity-80 ${colors.bg} ${colors.text} ${colors.border}`}
+                                title={tl("Stats")}
                               >
                                 {roleName(p.role)}
-                              </span>
+                              </button>
                             </div>
                             {p.realName && (
                               <div className="text-xs text-rw-sub truncate">{p.realName}</div>
@@ -359,7 +365,22 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                       >
                         <div>
                           <div className="font-semibold text-rw-text inline-flex items-center gap-1.5">
-                            <span>vs</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigateHub({
+                                  kind: "compare",
+                                  mode: "team",
+                                  a: prettySlug(displayName),
+                                  b: prettySlug(opp),
+                                });
+                                onClose();
+                              }}
+                              className="text-rw-muted hover:text-rw-accent hover:underline"
+                              title={tl("Compare")}
+                            >
+                              {tl("vs")}
+                            </button>
                             <TeamLogo name={opp} code={oppCode} size={14} />
                             <button
                               type="button"
@@ -435,7 +456,22 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           className="p-2.5 rounded-lg bg-rw-bg border border-rw-border flex items-center justify-between gap-2 text-xs"
                         >
                           <span className="font-semibold text-rw-text inline-flex items-center gap-1.5 min-w-0 truncate">
-                            <span>vs</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigateHub({
+                                  kind: "compare",
+                                  mode: "team",
+                                  a: prettySlug(displayName),
+                                  b: prettySlug(oppName),
+                                });
+                                onClose();
+                              }}
+                              className="text-rw-muted hover:text-rw-accent hover:underline"
+                              title={tl("Compare")}
+                            >
+                              {tl("vs")}
+                            </button>
                             <TeamLogo name={oppName} size={14} />
                             <button
                               type="button"
@@ -479,7 +515,22 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             <span className="uppercase">{won ? tl("Win") : tl("Loss")}</span>
                           </span>
                           <span className="font-semibold text-rw-text truncate inline-flex items-center gap-1.5">
-                            <span>vs</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigateHub({
+                                  kind: "compare",
+                                  mode: "team",
+                                  a: prettySlug(displayName),
+                                  b: prettySlug(oppName),
+                                });
+                                onClose();
+                              }}
+                              className="text-rw-muted hover:text-rw-accent hover:underline"
+                              title={tl("Compare")}
+                            >
+                              {tl("vs")}
+                            </button>
                             <TeamLogo name={oppName} size={14} />
                             <button
                               type="button"

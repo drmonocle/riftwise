@@ -642,19 +642,35 @@ const LiveMatchBlock: React.FC<{
             <MatchPrepButton match={m} />
             <MatchOverviewButton match={m} />
             {m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD" && (
-              <button
-                type="button"
-                onClick={() =>
-                  navigateHub({
-                    kind: "draft",
-                    query: `teams=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))},${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}`,
-                  })
-                }
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
-              >
-                <Swords className="w-3.5 h-3.5" />
-                {tl("Draft board")}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigateHub({
+                      kind: "draft",
+                      query: `teams=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))},${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}`,
+                    })
+                  }
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+                >
+                  <Swords className="w-3.5 h-3.5" />
+                  {tl("Draft board")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigateHub({
+                      kind: "compare",
+                      mode: "team",
+                      a: prettySlug(m.team1Name || m.team1Code),
+                      b: prettySlug(m.team2Name || m.team2Code),
+                    })
+                  }
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+                >
+                  {tl("Compare")}
+                </button>
+              </>
             )}
           </span>
           <WatchLinks streams={getLeagueBroadcastStreams(m.leagueSlug, m.streamUrl)} onOpenUrl={onOpenUrl} inline />
@@ -952,19 +968,35 @@ const NextMatchCard: React.FC<{
             <MatchPrepButton match={m} />
             <MatchOverviewButton match={m} />
             {m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD" && (
-              <button
-                type="button"
-                onClick={() =>
-                  navigateHub({
-                    kind: "draft",
-                    query: `teams=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))},${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}`,
-                  })
-                }
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
-              >
-                <Swords className="w-3.5 h-3.5" />
-                {tl("Draft board")}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigateHub({
+                      kind: "draft",
+                      query: `teams=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))},${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}`,
+                    })
+                  }
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+                >
+                  <Swords className="w-3.5 h-3.5" />
+                  {tl("Draft board")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigateHub({
+                      kind: "compare",
+                      mode: "team",
+                      a: prettySlug(m.team1Name || m.team1Code),
+                      b: prettySlug(m.team2Name || m.team2Code),
+                    })
+                  }
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+                >
+                  {tl("Compare")}
+                </button>
+              </>
             )}
             <ShareMatchButton match={m} className="border border-rw-border bg-rw-bg p-1.5" />
           </div>

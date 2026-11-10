@@ -125,8 +125,9 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
     );
   };
 
-  const Matchup: React.FC<{ e: StreamEvent; big?: boolean }> = ({ e, big }) =>
-    e.team1 && e.team2 ? (
+  const Matchup: React.FC<{ e: StreamEvent; big?: boolean }> = ({ e, big }) => {
+    const year = /\b(20\d\d)\b/.exec(e.season || "")?.[1];
+    return e.team1 && e.team2 ? (
       <span className={`flex items-center ${big ? "gap-3" : "gap-1.5"} min-w-0`}>
         <button
           type="button"
@@ -144,7 +145,15 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
         </button>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "compare", mode: "team", a: teamSlug(e.team1!), b: teamSlug(e.team2!) })}
+          onClick={() =>
+            navigateHub({
+              kind: "compare",
+              mode: "team",
+              a: teamSlug(e.team1!),
+              b: teamSlug(e.team2!),
+              period: year ? `y${year}` : undefined,
+            })
+          }
           title={tl("Compare")}
           className={`text-rw-muted hover:text-rw-accent hover:underline ${big ? "text-sm" : "text-[11px]"}`}
         >
@@ -168,10 +177,12 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
     ) : (
       <span className={`font-semibold text-rw-text ${big ? "text-xl" : "text-xs"}`}>{e.name || tl("Broadcast segment")}</span>
     );
+  };
 
   const WatchButtons: React.FC<{ active?: StreamEvent | null }> = ({ active }) => {
     const aSlug = active?.team1 ? teamSlug(active.team1) : "";
     const bSlug = active?.team2 ? teamSlug(active.team2) : "";
+    const year = /\b(20\d\d)\b/.exec(active?.season || "")?.[1];
     return (
       <div className="flex flex-wrap items-center gap-2">
         <button
@@ -190,28 +201,38 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
           <>
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "prep", a: aSlug, b: bSlug })}
+              onClick={() => navigateHub({ kind: "prep", a: aSlug, b: bSlug, period: year ? `y${year}` : undefined })}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-accent"
             >
               {tl("Match prep")}
             </button>
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(aSlug)},${encodeURIComponent(bSlug)}` })}
+              onClick={() =>
+                navigateHub({
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(aSlug)},${encodeURIComponent(bSlug)}${year ? `&period=y${year}` : ""}`,
+                })
+              }
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
             >
               {tl("Draft board")}
             </button>
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "compare", mode: "team", a: aSlug, b: bSlug })}
+              onClick={() => navigateHub({ kind: "compare", mode: "team", a: aSlug, b: bSlug, period: year ? `y${year}` : undefined })}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
             >
               {tl("Compare")}
             </button>
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(aSlug)}&vs=${encodeURIComponent(bSlug)}` })}
+              onClick={() =>
+                navigateHub({
+                  kind: "finder",
+                  query: `team=${encodeURIComponent(aSlug)}&vs=${encodeURIComponent(bSlug)}${year ? `&year=${year}` : ""}`,
+                })
+              }
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
             >
               {tl("Game finder")}
@@ -264,7 +285,23 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                     >
                       {phase.lastAired.team1}
                     </button>{" "}
-                    vs{" "}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const y = /\b(20\d\d)\b/.exec(phase.lastAired!.season || "")?.[1];
+                        navigateHub({
+                          kind: "compare",
+                          mode: "team",
+                          a: teamSlug(phase.lastAired!.team1!),
+                          b: teamSlug(phase.lastAired!.team2!),
+                          period: y ? `y${y}` : undefined,
+                        });
+                      }}
+                      className="hover:text-rw-accent hover:underline"
+                      title={tl("Compare")}
+                    >
+                      {tl("vs")}
+                    </button>{" "}
                     <button
                       type="button"
                       onClick={() => navigateHub({ kind: "team", slug: teamSlug(phase.lastAired!.team2!) })}
@@ -464,14 +501,31 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                             <>
                               <button
                                 type="button"
-                                onClick={() => navigateHub({ kind: "prep", a: teamSlug(e.team1!), b: teamSlug(e.team2!) })}
+                                onClick={() => {
+                                  const y = /\b(20\d\d)\b/.exec(e.season || "")?.[1];
+                                  navigateHub({
+                                    kind: "prep",
+                                    a: teamSlug(e.team1!),
+                                    b: teamSlug(e.team2!),
+                                    period: y ? `y${y}` : undefined,
+                                  });
+                                }}
                                 className="hidden sm:inline text-[10px] text-rw-sub hover:text-rw-accent hover:underline"
                               >
                                 {tl("Match prep")}
                               </button>
                               <button
                                 type="button"
-                                onClick={() => navigateHub({ kind: "compare", mode: "team", a: teamSlug(e.team1!), b: teamSlug(e.team2!) })}
+                                onClick={() => {
+                                  const y = /\b(20\d\d)\b/.exec(e.season || "")?.[1];
+                                  navigateHub({
+                                    kind: "compare",
+                                    mode: "team",
+                                    a: teamSlug(e.team1!),
+                                    b: teamSlug(e.team2!),
+                                    period: y ? `y${y}` : undefined,
+                                  });
+                                }}
                                 className="hidden md:inline text-[10px] text-rw-sub hover:text-rw-accent hover:underline"
                               >
                                 {tl("Compare")}

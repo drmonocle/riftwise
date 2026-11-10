@@ -364,7 +364,14 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                       style={{ width: `${Math.max(4, Math.min(100, Math.round((team.wins / played) * 100)))}%` }}
                                     />
                                   </span>
-                                  <span>{Math.round((team.wins / played) * 100)}%</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => navigateHub({ kind: "team", slug: prettySlug(team.name || team.code), tab: "stats" })}
+                                    className="hover:text-rw-accent hover:underline"
+                                    title={tl("Stats")}
+                                  >
+                                    {Math.round((team.wins / played) * 100)}%
+                                  </button>
                                 </span>
                               ) : (
                                 "–"

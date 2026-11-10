@@ -483,7 +483,20 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
           })}
           <tr className="border-t border-rw-border text-rw-sub bg-rw-bg/40 text-[11px]">
             <td className="px-1.5 py-1 text-left whitespace-nowrap" title={tl("{a} minus {b}", { a: left.code, b: right.code })}>
-              {tl("Diff ({team})", { team: left.code })}
+              <button
+                type="button"
+                onClick={() =>
+                  navigateHub({
+                    kind: "compare",
+                    mode: "team",
+                    a: prettySlug(left.name || left.code),
+                    b: prettySlug(right.name || right.code),
+                  })
+                }
+                className="hover:text-rw-accent hover:underline"
+              >
+                {tl("Diff ({team})", { team: left.code })}
+              </button>
             </td>
             {cols.map((c) => {
               const d = c.v(left) - c.v(right);
@@ -685,9 +698,22 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
               <PlayerPhoto name={pName} team={teamName} size={15} linkFallback={false} />
               <span className="truncate">{pName}</span>
             </button>
-            <span className="font-mono font-bold text-rw-text shrink-0">
+            <button
+              type="button"
+              onClick={() =>
+                navigateHub({
+                  kind: "finder",
+                  query: new URLSearchParams({
+                    player: prettySlug(pName),
+                    champ: champNameById(p.meta!.championId),
+                  }).toString(),
+                })
+              }
+              className="font-mono font-bold text-rw-text hover:text-rw-accent hover:underline shrink-0"
+              title={tl("Game finder")}
+            >
               {p.frame.kills}/{p.frame.deaths}/{p.frame.assists}
-            </span>
+            </button>
           </div>
           <div className="text-[10px] text-rw-sub font-mono">
             <span className="whitespace-nowrap">
