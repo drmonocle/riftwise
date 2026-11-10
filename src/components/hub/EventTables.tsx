@@ -294,9 +294,10 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
               kind: "leaders",
               query: new URLSearchParams({
                 ...(e.lu ? { league: e.lu } : {}),
-                ...(e.start?.slice(0, 4) ? { year: e.start.slice(0, 4) } : {}),
+                ...((e.start || e.end || "").slice(0, 4) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
                 ...(role !== "All" ? { role } : {}),
+                ...((search.trim() || rows.length === 1) && rows[0]?.c?.[0] ? { champ: rows[0].c[0] } : {}),
               }).toString(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -309,7 +310,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
               kind: "champions",
               query: new URLSearchParams({
                 ...(e.lu ? { league: e.lu } : {}),
-                ...(e.start?.slice(0, 4) ? { year: e.start.slice(0, 4) } : {}),
+                ...((e.start || e.end || "").slice(0, 4) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
                 ...(role !== "All" ? { role } : {}),
               }).toString(),
@@ -324,7 +325,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
               kind: "tiers",
               query: new URLSearchParams({
                 ...(e.lu ? { league: e.lu } : {}),
-                ...(e.start?.slice(0, 4) ? { key: `y${e.start.slice(0, 4)}` } : {}),
+                ...((e.start || e.end || "").slice(0, 4) ? { key: `y${(e.start || e.end || "").slice(0, 4)}` } : {}),
                 ...(role !== "All" ? { role } : {}),
               }).toString(),
             }}

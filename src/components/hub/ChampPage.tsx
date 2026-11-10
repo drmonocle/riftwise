@@ -232,7 +232,13 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 {tl("Draft board")}
               </HubLink>
               <HubLink
-                to={{ kind: "leaders", ...(c.roles[0]?.r ? { query: `role=${encodeURIComponent(c.roles[0].r)}` } : {}) }}
+                to={{
+                  kind: "leaders",
+                  query: new URLSearchParams({
+                    champ: c.name,
+                    ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
+                  }).toString(),
+                }}
                 className={heroBtn()}
               >
                 {tl("Player leaderboards")}
@@ -261,7 +267,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               label: tl("Win %"),
               value: winRate(c.w, c.p),
               bar: c.p > 0 ? { pct: Math.round((c.w / c.p) * 100), tone: c.w / c.p >= 0.5 ? "teal" : "red" } : undefined,
-              to: { kind: "finder", query: `champ=${encodeURIComponent(c.name)}&result=win` },
+              to: { kind: "finder", query: `champ=${encodeURIComponent(c.name)}&result=w` },
             },
             c.side && c.side[0] + c.side[2] > 0
               ? {
@@ -352,7 +358,10 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               <HubLink
                 to={{
                   kind: "leaders",
-                  ...(buildRole || c.roles[0]?.r ? { query: `role=${encodeURIComponent(buildRole || c.roles[0].r)}` } : {}),
+                  query: new URLSearchParams({
+                    champ: c.name,
+                    ...(buildRole || c.roles[0]?.r ? { role: buildRole || c.roles[0].r } : {}),
+                  }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -596,7 +605,10 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               <HubLink
                 to={{
                   kind: "leaders",
-                  ...(muRole ? { query: `role=${encodeURIComponent(muRole)}` } : {}),
+                  query: new URLSearchParams({
+                    champ: c.name,
+                    ...(muRole ? { role: muRole } : {}),
+                  }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -914,7 +926,13 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                       {tl("Game finder")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "leaders", query: "role=Bot" }}
+                      to={{
+                        kind: "leaders",
+                        query: new URLSearchParams({
+                          champ: c.name,
+                          role: "Bot",
+                        }).toString(),
+                      }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
                       {tl("Player leaderboards")} →
@@ -1105,7 +1123,10 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                   <HubLink
                     to={{
                       kind: "leaders",
-                      ...(c.roles[0]?.r ? { query: `role=${encodeURIComponent(c.roles[0].r)}` } : {}),
+                      query: new URLSearchParams({
+                        champ: c.name,
+                        ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
+                      }).toString(),
                     }}
                     className="text-[11px] text-rw-accent hover:underline"
                   >
@@ -1357,6 +1378,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                       to={{
                         kind: "leaders",
                         query: new URLSearchParams({
+                          champ: c.name,
                           ...(r0Year ? { year: r0Year } : {}),
                           ...(buildRole || c.roles[0]?.r ? { role: buildRole || c.roles[0].r } : {}),
                         }).toString(),
@@ -1651,7 +1673,13 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 {tl("Game finder")} →
               </HubLink>
               <HubLink
-                to={{ kind: "leaders", ...(c.roles[0]?.r ? { query: `role=${encodeURIComponent(c.roles[0].r)}` } : {}) }}
+                to={{
+                  kind: "leaders",
+                  query: new URLSearchParams({
+                    champ: c.name,
+                    ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
+                  }).toString(),
+                }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Player leaderboards")} →
@@ -1767,7 +1795,13 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 {tl("Game finder")} →
               </HubLink>
               <HubLink
-                to={{ kind: "leaders", ...(c.roles[0]?.r ? { query: `role=${encodeURIComponent(c.roles[0].r)}` } : {}) }}
+                to={{
+                  kind: "leaders",
+                  query: new URLSearchParams({
+                    champ: c.name,
+                    ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
+                  }).toString(),
+                }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Player leaderboards")} →
@@ -1898,6 +1932,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     to={{
                       kind: "leaders",
                       query: new URLSearchParams({
+                        champ: c.name,
                         ...(latestY ? { year: latestY } : {}),
                         ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
                       }).toString(),

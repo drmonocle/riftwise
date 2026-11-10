@@ -516,6 +516,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                         ...(leagueSlug ? { league: leagueSlug } : {}),
                         ...(yr ? { year: yr } : {}),
                         event: slug,
+                        ...(o.pentas[0]?.c ? { champ: o.pentas[0].c } : {}),
                       }).toString(),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

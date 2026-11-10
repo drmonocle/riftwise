@@ -690,6 +690,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                             kind: "leaders",
                             query: new URLSearchParams({
                               ...(e.lu ? { league: e.lu } : {}),
+                              ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                               ...(!e.whole ? { event: e.u } : {}),
                             }).toString(),
                           }}

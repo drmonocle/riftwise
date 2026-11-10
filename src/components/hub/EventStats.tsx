@@ -159,13 +159,28 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
               {tl("Records")} →
             </HubLink>
             <HubLink
-              to={{ kind: "leaders", ...(eventSlug ? { query: `event=${encodeURIComponent(eventSlug)}` } : {}) }}
+              to={{
+                kind: "leaders",
+                query:
+                  new URLSearchParams({
+                    ...(evYr ? { year: evYr } : {}),
+                    ...(eventSlug ? { event: eventSlug } : {}),
+                    ...(topChamps[0] && terms.length > 0 ? { champ: topChamps[0] } : {}),
+                  }).toString() || undefined,
+              }}
               className="text-rw-accent hover:underline"
             >
               {tl("Player leaderboards")} →
             </HubLink>
             <HubLink
-              to={{ kind: "champions", ...(eventSlug ? { query: `event=${encodeURIComponent(eventSlug)}` } : {}) }}
+              to={{
+                kind: "champions",
+                query:
+                  new URLSearchParams({
+                    ...(evYr ? { year: evYr } : {}),
+                    ...(eventSlug ? { event: eventSlug } : {}),
+                  }).toString() || undefined,
+              }}
               className="text-rw-accent hover:underline"
             >
               {tl("Champions")} →
@@ -189,7 +204,14 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
               {tl("Power rankings")} →
             </HubLink>
             <HubLink
-              to={{ kind: "finder", ...(eventSlug ? { query: `event=${encodeURIComponent(eventSlug)}` } : {}) }}
+              to={{
+                kind: "finder",
+                query:
+                  new URLSearchParams({
+                    ...(evYr ? { year: evYr } : {}),
+                    ...(eventSlug ? { event: eventSlug } : {}),
+                  }).toString() || undefined,
+              }}
               className="text-rw-accent hover:underline"
             >
               {tl("Game finder")} →
@@ -320,7 +342,12 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                 <HubLink
                   to={{
                     kind: "leaders",
-                    ...(eventSlug ? { query: `event=${encodeURIComponent(eventSlug)}` } : {}),
+                    query:
+                      new URLSearchParams({
+                        ...(evYr ? { year: evYr } : {}),
+                        ...(eventSlug ? { event: eventSlug } : {}),
+                        ...(f.rows[0].champ ? { champ: f.rows[0].champ } : {}),
+                      }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
@@ -333,6 +360,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                     query: new URLSearchParams({
                       player: f.rows[0].player,
                       ...(f.rows[0].champ ? { champ: f.rows[0].champ } : {}),
+                      ...(evYr ? { year: evYr } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
                     }).toString(),
                   }}

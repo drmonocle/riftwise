@@ -815,7 +815,14 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
               </>
             )}
             <HubLink
-              to={{ kind: "leaders", ...(year !== "all" ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+              to={{
+                kind: "leaders",
+                query:
+                  new URLSearchParams({
+                    ...(year !== "all" ? { year } : {}),
+                    ...(champ !== "all" ? { champ } : {}),
+                  }).toString() || undefined,
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Player leaderboards")} →

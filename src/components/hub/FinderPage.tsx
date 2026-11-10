@@ -69,7 +69,8 @@ function matchSide(g: ChampGame, q: Q, eventIdx: number | null): number {
   const vs = q.get("vs") || q.get("vsteam");
   const rawSide = q.get("side");
   const side = rawSide === "blue" ? "b" : rawSide === "red" ? "r" : rawSide;
-  const result = q.get("result");
+  const rawResult = (q.get("result") || "").toLowerCase();
+  const result = rawResult === "win" ? "w" : rawResult === "loss" ? "l" : rawResult;
   const champs = (q.get("champ") || "").split(",").filter(Boolean);
   const vsChamp = q.get("vschamp");
   const player = q.get("player");
@@ -128,6 +129,9 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
       p.set("vs", vsTeam);
       p.delete("vsteam");
     }
+    const resParam = (p.get("result") || "").toLowerCase();
+    if (resParam === "win") p.set("result", "w");
+    else if (resParam === "loss") p.set("result", "l");
     return p;
   }, [query]);
   const setQ: SetQ = (patch) => {
@@ -141,7 +145,13 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
   const index = useLoad(loadChampIndex, []);
   const leagues = index.data || [];
   const aliases = useLoad(loadAliases, []);
-  const asked = q.get("league") || "";
+  const evSlug = q.get("event") || "";
+  const evPrefix = evSlug.replace(/-20\d{2}.*$/, "");
+  const inferredLeague =
+    !q.get("league") && evPrefix && evPrefix !== evSlug
+      ? aliases.data?.league[evPrefix.toLowerCase()] || resolveLeagueSlug(evPrefix)
+      : "";
+  const asked = q.get("league") || (inferredLeague && leagues.some((l) => l.u === inferredLeague) ? inferredLeague : "");
   const league = asked ? aliases.data?.league[asked.toLowerCase()] || resolveLeagueSlug(asked) : leagues.length ? "top" : "";
   const years = useMemo(
     () =>
@@ -153,9 +163,17 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
         .reverse(),
     [leagues, league],
   );
+  const evYr = /(?:^|-)(20\d{2})(?:-|$)/.exec(evSlug)?.[1] || "";
+  const patchYr = q.get("patch")
+    ? (() => {
+        const m = Number(q.get("patch")!.split(".")[0]);
+        return m >= 25 ? String(2000 + m) : m >= 1 ? String(2010 + m) : "";
+      })()
+    : "";
+  const askedYear = q.get("year") || evYr || patchYr;
   const year =
-    q.get("year") && years.includes(q.get("year")!)
-      ? q.get("year")!
+    askedYear && years.includes(askedYear)
+      ? askedYear
       : years[0] || "";
   const file = useLoad<ChampGamesFile>(
     () => {

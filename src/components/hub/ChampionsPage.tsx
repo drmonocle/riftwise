@@ -157,7 +157,18 @@ export const ChampionsPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ m
   useDDragon();
   const q = useMemo(() => new URLSearchParams(query || ""), [query]);
   const aliases = useLoad(loadAliases, []);
-  const asked = q.get("league") || q.get("scope") || "top";
+  const index = useLoad(loadChampIndex, []);
+  const leagues = index.data || [];
+  const evSlug = q.get("event") || "";
+  const evPrefix = evSlug.replace(/-20\d{2}.*$/, "");
+  const inferredLeague =
+    !q.get("league") && !q.get("scope") && evPrefix && evPrefix !== evSlug
+      ? aliases.data?.league[evPrefix.toLowerCase()] || resolveLeagueSlug(evPrefix)
+      : "";
+  const asked =
+    q.get("league") ||
+    q.get("scope") ||
+    (inferredLeague && (!leagues.length || leagues.some((l) => l.u === inferredLeague)) ? inferredLeague : "top");
   // ?league=lck works too (a league's short name)
   const scope =
     asked === "top" || asked === "all"
@@ -171,8 +182,6 @@ export const ChampionsPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ m
     }
     navigateHub({ kind: "champions", query: next.toString() }, { replace: true });
   };
-  const index = useLoad(loadChampIndex, []);
-  const leagues = index.data || [];
   const main = leagues.filter((l) => l.pr);
   const other = leagues.filter((l) => !l.pr && Object.values(l.y).reduce((s, n) => s + n, 0) >= 150);
 
@@ -234,7 +243,8 @@ const LeagueFilters: React.FC<{ league: string; years: string[]; q: URLSearchPar
   setQ,
 }) => {
   const ys = [...years].sort().reverse();
-  const year = q.get("year") || (q.get("key")?.startsWith("y") ? q.get("key")!.slice(1) : "") || ys[0] || "";
+  const evYr = /(?:^|-)(20\d{2})(?:-|$)/.exec(q.get("event") || "")?.[1] || "";
+  const year = q.get("year") || (q.get("key")?.startsWith("y") ? q.get("key")!.slice(1) : "") || (evYr && ys.includes(evYr) ? evYr : "") || ys[0] || "";
   const file = useLoad(() => (year ? loadChampGames(league, year) : Promise.resolve(null)), [league, year]);
   const events = file.data?.events || [];
   const patches = useMemo(
@@ -312,7 +322,9 @@ const LeagueTable: React.FC<{
   indexLoading,
 }) => {
   const [search, setSearch] = useState("");
-  const year = q.get("year") || (q.get("key")?.startsWith("y") ? q.get("key")!.slice(1) : "") || [...years].sort().reverse()[0] || "";
+  const ys = [...years].sort().reverse();
+  const evYr = /(?:^|-)(20\d{2})(?:-|$)/.exec(q.get("event") || "")?.[1] || "";
+  const year = q.get("year") || (q.get("key")?.startsWith("y") ? q.get("key")!.slice(1) : "") || (evYr && ys.includes(evYr) ? evYr : "") || ys[0] || "";
   const file = useLoad(() => (year ? loadChampGames(league, year) : Promise.resolve(null)), [league, year]);
   const eventSlug = q.get("event") || "";
   const roleQ = q.get("role") || "";

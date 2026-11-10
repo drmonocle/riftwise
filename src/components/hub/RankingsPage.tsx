@@ -5,7 +5,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { tl, tn } from "../../i18n";
-import { loadRatings, loadRatingsHistory, prettySlug } from "../../hub/data";
+import { loadRatings, loadRatingsHistory, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { hubShareUrl, navigateHub, useHubRoute } from "../../hub/route";
 import { Sparkline } from "./Sparkline";
 import type { HubRatings, RatingRow } from "../../hub/types";
@@ -59,10 +59,17 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
     if (!rawLeague || rawLeague === "*") return rawLeague;
     if (d.teams.some((r) => r[3] === rawLeague)) return rawLeague;
     const low = rawLeague.toLowerCase();
-    const match = d.teams.find(
-      (r) => (r[3] && r[3].toLowerCase() === low) || (r[4] && r[4].toLowerCase() === low) || (r[10] && r[10].toLowerCase() === low),
-    );
-    return match ? match[3] : rawLeague;
+    const slug = resolveLeagueSlug(rawLeague).toLowerCase();
+    const match =
+      d.teams.find(
+        (r) =>
+          (r[3] && r[3].toLowerCase() === low) ||
+          (r[4] && (r[4].toLowerCase() === low || r[4].toLowerCase() === slug)) ||
+          (r[10] && r[10].toLowerCase() === low),
+      ) ||
+      d.teams.find((r) => r[9] === 1 && r[2] && r[2].toLowerCase() === low) ||
+      d.teams.find((r) => r[2] && r[2].toLowerCase() === low);
+    return match ? match[3] : "";
   }, [d.teams, rawLeague]);
   const setLeague = (v: string) => {
     const next = new URLSearchParams(q);

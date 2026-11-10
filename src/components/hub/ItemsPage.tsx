@@ -227,7 +227,14 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
       ) : resolvedItem ? (
         <ItemPlayersView slug={resolvedItem} players={people.data?.players} onPlayer={(s) => set({ player: s })} onChamp={(c) => set({ champ: prettySlug(c) })} onYear={(y) => set({ year: y })} />
       ) : (
-        <ItemStats loading={items.loading} rows={items.data ?? undefined} scope={scope} to={(slug) => ({ kind: "items", query: queryWith({ item: slug }) })} />
+        <ItemStats
+          loading={items.loading}
+          rows={items.data ?? undefined}
+          scope={scope}
+          champ={champ}
+          year={year}
+          to={(slug) => ({ kind: "items", query: queryWith({ item: slug }) })}
+        />
       )}
     </div>
   );
@@ -1398,7 +1405,14 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
  * win rate and the champions it's built on most; a filter and "finished items only" (the default). A row opens who
  * built it.
  */
-const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: string | null; to: (slug: string) => HubRoute }> = ({ loading, rows, scope, to }) => {
+const ItemStats: React.FC<{
+  loading: boolean;
+  rows?: ItemIndexRow[];
+  scope: string | null;
+  champ?: string;
+  year?: string;
+  to: (slug: string) => HubRoute;
+}> = ({ loading, rows, scope, champ, year, to }) => {
   const [filter, setFilter] = useState("");
   const [finishedOnly, setFinishedOnly] = useState(true);
   const [all, setAll] = useState(false);
@@ -1413,37 +1427,70 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
   );
   const max = Math.max(1, ...list.map((r) => r[2]));
   const shown = all || terms.length ? list : list.slice(0, 60);
+  const activeChamp = champ || shown[0]?.[5]?.[0] || "";
   return (
     <Section
       title={tl("Item stats")}
       right={
         shown.length > 0 ? (
           <span className="flex flex-wrap items-center gap-2">
-            <HubLink to={{ kind: "champions" }} className="text-[11px] text-rw-accent hover:underline">
+            <HubLink
+              to={{
+                kind: "champions",
+                ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}),
+              }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
               {tl("Champions")} →
             </HubLink>
             <HubLink
               to={{
                 kind: "counters",
-                ...(shown[0]?.[5]?.[0] ? { query: `champ=${encodeURIComponent(prettySlug(shown[0][5][0]))}` } : {}),
+                ...(activeChamp ? { query: `champ=${encodeURIComponent(prettySlug(activeChamp))}` } : {}),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Counters")} →
             </HubLink>
-            <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+            <HubLink
+              to={{
+                kind: "tiers",
+                ...(year ? { query: `key=y${encodeURIComponent(year)}` } : {}),
+              }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
               {tl("Pro tier list")} →
             </HubLink>
-            <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+            <HubLink
+              to={{
+                kind: "leaders",
+                query:
+                  new URLSearchParams({
+                    ...(year ? { year } : {}),
+                    ...(activeChamp ? { champ: activeChamp } : {}),
+                  }).toString() || undefined,
+              }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
               {tl("Player leaderboards")} →
             </HubLink>
-            <HubLink to={{ kind: "draft" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+            <HubLink
+              to={{
+                kind: "draft",
+                ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}),
+              }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
               {tl("Draft board")} →
             </HubLink>
             <HubLink
               to={{
                 kind: "finder",
-                ...(shown[0]?.[5]?.[0] ? { query: `champ=${encodeURIComponent(shown[0][5][0])}` } : {}),
+                query:
+                  new URLSearchParams({
+                    ...(activeChamp ? { champ: activeChamp } : {}),
+                    ...(year ? { year } : {}),
+                  }).toString() || undefined,
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -1456,7 +1503,7 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
               title={tl("Item stats")}
               sub={scope || undefined}
               rows={shown.slice(0, 5).map((r, i) => `#${i + 1} ${itemName(r[0])}: ${fmtNum(r[2])}G${r[4] != null ? ` (${winRate(r[4], r[2])})` : ""}`)}
-              picks={{ player: "", item: "", champ: "", year: "" }}
+              picks={{ player: "", item: "", champ: champ || "", year: year || "" }}
             />
             <SectionCard
               section={tl("Item stats")}
@@ -1913,7 +1960,7 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `team=${encodeURIComponent(prettySlug(r[7]))}&vs=${encodeURIComponent(prettySlug(r[8]))}`,
+                        query: `team=${encodeURIComponent(prettySlug(r[7]))}&vs=${encodeURIComponent(prettySlug(r[8]))}${r[2] ? `&champ=${encodeURIComponent(r[2])}` : ""}${/^\d{4}$/.test((r[0] || "").slice(0, 4)) ? `&year=${encodeURIComponent((r[0] || "").slice(0, 4))}` : ""}`,
                       }}
                       className="hidden sm:inline text-[10px] hover:text-rw-accent hover:underline"
                     >

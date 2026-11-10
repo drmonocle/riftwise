@@ -34,11 +34,12 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
   const aliases = useLoad(loadAliases, []);
   const event = q.get("event") || "";
   const ev = useLoad(() => (event ? loadHubEvent(event) : Promise.resolve(null)), [event]);
-  const asked = q.get("league") || (event && ev.data?.lu ? ev.data.lu : DEFAULT_LEAGUE);
+  const eventLeagueGuess = event ? /^(.*?)-(?:20\d{2})(?:-|$)/.exec(event)?.[1] || "" : "";
+  const asked = q.get("league") || (event && (ev.data?.lu || eventLeagueGuess) ? ev.data?.lu || eventLeagueGuess : DEFAULT_LEAGUE);
   const league = aliases.data?.league[asked.toLowerCase()] || resolveLeagueSlug(asked);
   const row = leagues.data?.find((l) => l.u === league);
   const years = yearsOf(row);
-  const evYear = event ? (ev.data?.year || (ev.data?.start || ev.data?.end || "").slice(0, 4) || (/\b(20\d{2})\b/.exec(event)?.[1] ?? "")) : "";
+  const evYear = event ? (ev.data?.year || (ev.data?.start || ev.data?.end || "").slice(0, 4) || (/(?:^|-)(20\d{2})(?:-|$)/.exec(event)?.[1] ?? "")) : "";
   const askedYear = q.get("year") || (/^\d{4}$/.test(evYear) ? evYear : "");
   const year = (askedYear && (!row?.sy?.length || row.sy.includes(askedYear)) ? askedYear : "") || years[0] || row?.to || String(new Date().getFullYear());
   const role = q.get("role") || "";
@@ -368,7 +369,11 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
               <HubLink
                 to={{
                   kind: "items",
-                  query: `player=${encodeURIComponent(shownRows[0].u)}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                  query: new URLSearchParams({
+                    player: shownRows[0].u,
+                    ...(q.get("champ") ? { champ: prettySlug(q.get("champ")!) } : {}),
+                    ...(year ? { year } : {}),
+                  }).toString(),
                 }}
                 className="text-rw-accent hover:underline font-semibold"
               >
@@ -377,7 +382,14 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `player=${encodeURIComponent(shownRows[0].u)}${!event && year ? `&year=${encodeURIComponent(year)}` : ""}${event ? `&event=${encodeURIComponent(event)}` : ""}`,
+                  query: new URLSearchParams({
+                    player: shownRows[0].u,
+                    ...(league ? { league } : {}),
+                    ...(year ? { year } : {}),
+                    ...(event ? { event } : {}),
+                    ...(role ? { role } : {}),
+                    ...(q.get("champ") ? { champ: q.get("champ")! } : {}),
+                  }).toString(),
                 }}
                 className="text-rw-accent hover:underline font-semibold"
               >
@@ -478,15 +490,19 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                       >
                         {tl("Compare")} →
                       </HubLink>
-                      <HubLink
-                        to={{
-                          kind: "items",
-                          query: `player=${encodeURIComponent(top2[0].u || prettySlug(top2[0].n))}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
-                        }}
-                        className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
-                      >
-                        {tl("Item history")} →
-                      </HubLink>
+                       <HubLink
+                         to={{
+                           kind: "items",
+                           query: new URLSearchParams({
+                             player: top2[0].u || prettySlug(top2[0].n),
+                             ...(q.get("champ") ? { champ: prettySlug(q.get("champ")!) } : {}),
+                             ...(year ? { year } : {}),
+                           }).toString(),
+                         }}
+                         className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
+                       >
+                         {tl("Item history")} →
+                       </HubLink>
                       {(top2[0].tu || top2[0].t) && (
                         <HubLink
                           to={{
@@ -559,7 +575,10 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                 <HubLink
                   to={{
                     kind: "counters",
-                    ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}),
+                    query: new URLSearchParams({
+                      ...(q.get("champ") || shownRows[0]?.c?.[0] ? { champ: prettySlug(q.get("champ") || shownRows[0]!.c![0]) } : {}),
+                      ...(role ? { role } : {}),
+                    }).toString() || undefined,
                   }}
                   className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -573,6 +592,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                       ...(year ? { year } : {}),
                       ...(event ? { event } : {}),
                       ...(role ? { role } : {}),
+                      ...(q.get("champ") ? { champ: q.get("champ")! } : {}),
                       ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { player: shownRows[0].u || shownRows[0].n } : {}),
                     }).toString(),
                   }}
