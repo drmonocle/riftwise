@@ -972,7 +972,17 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 {tl("Leaderboards")} →
               </HubLink>
               <HubLink
-                to={{ kind: "tiers", ...(agg.roles[0] ? { query: `role=${encodeURIComponent(agg.roles[0])}` } : {}) }}
+                to={{
+                  kind: "tiers",
+                  ...(agg.roles[0] || /^y\d{4}$/.test(period)
+                    ? {
+                        query: new URLSearchParams({
+                          ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
+                          ...(/^y\d{4}$/.test(period) ? { key: period } : {}),
+                        }).toString(),
+                      }
+                    : {}),
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Pro tier list")} →
@@ -1139,7 +1149,17 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                   {tl("Game finder")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "tiers", ...(agg.roles[0] ? { query: `role=${encodeURIComponent(agg.roles[0])}` } : {}) }}
+                  to={{
+                    kind: "tiers",
+                    ...(agg.roles[0] || /^y\d{4}$/.test(period)
+                      ? {
+                          query: new URLSearchParams({
+                            ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
+                            ...(/^y\d{4}$/.test(period) ? { key: period } : {}),
+                          }).toString(),
+                        }
+                      : {}),
+                  }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Pro tier list")} →

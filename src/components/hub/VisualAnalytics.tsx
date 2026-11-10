@@ -289,7 +289,10 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                   {tl("Game finder")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "items", query: `player=${encodeURIComponent(p.u)}` }}
+                  to={{
+                    kind: "items",
+                    query: `player=${encodeURIComponent(p.u)}${agg.champs[0] ? `&champ=${encodeURIComponent(prettySlug(agg.champs[0].c))}` : ""}${periodKey?.startsWith("y") ? `&year=${encodeURIComponent(periodKey.slice(1))}` : ""}`,
+                  }}
                   className="text-rw-accent hover:underline font-semibold"
                 >
                   {tl("Item history")} →
@@ -332,7 +335,14 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                 <HubLink
                   to={{
                     kind: "tiers",
-                    ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}),
+                    ...(p.role || periodKey?.startsWith("y")
+                      ? {
+                          query: new URLSearchParams({
+                            ...(p.role ? { role: p.role } : {}),
+                            ...(periodKey?.startsWith("y") ? { key: periodKey } : {}),
+                          }).toString(),
+                        }
+                      : {}),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -574,7 +584,12 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
               </button>
             ))}
             <HubLink
-              to={{ kind: "compare", mode: "player", a: p.u }}
+              to={{
+                kind: "compare",
+                mode: "player",
+                a: p.u,
+                ...(sel?.date && /^\d{4}/.test(sel.date) ? { period: `y${sel.date.slice(0, 4)}` } : {}),
+              }}
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Compare")} →
@@ -586,6 +601,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                     kind: "prep",
                     a: prettySlug((sel?.team || p.club)!),
                     ...(sel?.opp ? { b: prettySlug(sel.opp) } : {}),
+                    ...(sel?.date && /^\d{4}/.test(sel.date) ? { period: `y${sel.date.slice(0, 4)}` } : {}),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -594,7 +610,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(prettySlug((sel?.team || p.club)!))}${sel?.opp ? `,${encodeURIComponent(prettySlug(sel.opp))}` : ""}`,
+                    query: `teams=${encodeURIComponent(prettySlug((sel?.team || p.club)!))}${sel?.opp ? `,${encodeURIComponent(prettySlug(sel.opp))}` : ""}${sel?.date && /^\d{4}/.test(sel.date) ? `&p=y${encodeURIComponent(sel.date.slice(0, 4))}` : ""}`,
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -614,13 +630,19 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
               </HubLink>
             )}
             <HubLink
-              to={{ kind: "items", query: `player=${encodeURIComponent(p.u)}` }}
+              to={{
+                kind: "items",
+                query: `player=${encodeURIComponent(p.u)}${sel?.champ ? `&champ=${encodeURIComponent(prettySlug(sel.champ))}` : ""}${sel?.date && /^\d{4}/.test(sel.date) ? `&year=${encodeURIComponent(sel.date.slice(0, 4))}` : ""}`,
+              }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Item history")} →
             </HubLink>
             <HubLink
-              to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}` }}
+              to={{
+                kind: "finder",
+                query: `player=${encodeURIComponent(p.u)}${sel?.champ ? `&champ=${encodeURIComponent(sel.champ)}` : ""}${sel?.date && /^\d{4}/.test(sel.date) ? `&year=${encodeURIComponent(sel.date.slice(0, 4))}` : ""}`,
+              }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Game finder")} →
@@ -628,7 +650,14 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
             <HubLink
               to={{
                 kind: "leaders",
-                ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}),
+                ...(p.role || (sel?.date && /^\d{4}/.test(sel.date))
+                  ? {
+                      query: new URLSearchParams({
+                        ...(p.role ? { role: p.role } : {}),
+                        ...(sel?.date && /^\d{4}/.test(sel.date) ? { year: sel.date.slice(0, 4) } : {}),
+                      }).toString(),
+                    }
+                  : {}),
               }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -637,7 +666,14 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
             <HubLink
               to={{
                 kind: "tiers",
-                ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}),
+                ...(p.role || (sel?.date && /^\d{4}/.test(sel.date))
+                  ? {
+                      query: new URLSearchParams({
+                        ...(p.role ? { role: p.role } : {}),
+                        ...(sel?.date && /^\d{4}/.test(sel.date) ? { key: `y${sel.date.slice(0, 4)}` } : {}),
+                      }).toString(),
+                    }
+                  : {}),
               }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -1272,19 +1308,28 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                       {tl("Game finder")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "rankings" }}
+                      to={{
+                        kind: "rankings",
+                        ...(t.rating?.league ? { query: `league=${encodeURIComponent(t.rating.league)}` } : {}),
+                      }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Power rankings")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "tiers" }}
+                      to={{
+                        kind: "tiers",
+                        ...(t.rating?.league ? { query: `league=${encodeURIComponent(t.rating.league)}` } : {}),
+                      }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Pro tier list")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "leaders" }}
+                      to={{
+                        kind: "leaders",
+                        ...(t.rating?.league ? { query: `league=${encodeURIComponent(t.rating.league)}` } : {}),
+                      }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Player leaderboards")} →
