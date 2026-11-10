@@ -6,6 +6,7 @@
 import React, { useMemo, useState } from "react";
 import { tl, regionName } from "../../i18n";
 import type { EventLines } from "../../hub/worldsFacts";
+import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { HubLink, Section } from "./ui";
 import { STable } from "../STable";
 import { SectionCard } from "./BroadcastCard";
@@ -177,11 +178,12 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; nam
             name={tl("Regions")}
             sub={`${t.cols[0]}–${t.cols[t.cols.length - 1]}`}
             rows={() =>
-              t.rows.slice(0, 10).map((c) => {
+              t.rows.slice(0, 10).map((c, idx) => {
                 const vals = [...t.cells.get(c)!.values()];
                 const w = vals.reduce((s, [a]) => s + a, 0);
                 const l = vals.reduce((s, [, b]) => s + b, 0);
                 return {
+                  rank: idx + 1,
                   label: regionLabel(c),
                   sub: `${w}-${l} (${t.cells.get(c)!.size} ${tl("Years")})`,
                   value: w + l > 0 ? `${Math.round((w / (w + l)) * 100)}%` : "–",
@@ -266,10 +268,12 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
               section={tl("Regions")}
               name={name}
               rows={() =>
-                list.map((r) => ({
+                list.map((r, idx) => ({
+                  rank: idx + 1,
                   label: regionLabel(r.code),
                   sub: `${tl("Series {w}-{l}", { w: r.sw, l: r.sl })} · ${tl("vs other regions {w}-{l}", { w: r.ow, l: r.ol })}`,
                   value: all ? tl("{n} titles", { n: r.titles }) : bestText(r.best),
+                  win: r.sw >= r.sl,
                 }))
               }
             />
@@ -406,7 +410,14 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
               <SectionCard
                 section={tl("Region vs region")}
                 name={name}
-                rows={() => pairs.map((p) => ({ label: `${regionLabel(p.a)} vs ${regionLabel(p.b)}`, value: `${p.wa}-${p.wb}` }))}
+                rows={() =>
+                  pairs.map((p, idx) => ({
+                    rank: idx + 1,
+                    label: `${regionLabel(p.a)} vs ${regionLabel(p.b)}`,
+                    value: `${p.wa}-${p.wb}`,
+                    win: p.wa >= p.wb,
+                  }))
+                }
               />
             </span>
           }
@@ -453,20 +464,23 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
 };
 
 const CopyRegionStatsPost: React.FC<{ title: string; rows: string[] }> = ({ title, rows }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const lines: string[] = [title];
     for (const r of rows) {
       lines.push(`• ${r}`);
     }
-    lines.push(window.location.href);
+    lines.push(hubShareUrl(currentHubRoute()));
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setState("copied");
+        setTimeout(() => setState("idle"), 2000);
       })
-      .catch(() => {});
+      .catch(() => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2400);
+      });
   };
   return (
     <button
@@ -475,7 +489,7 @@ const CopyRegionStatsPost: React.FC<{ title: string; rows: string[] }> = ({ titl
       className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
       title={tl("Copy post")}
     >
-      {copied ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };

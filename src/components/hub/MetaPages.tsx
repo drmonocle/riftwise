@@ -81,7 +81,9 @@ export const PatchesPanel: React.FC = () => {
                     name={`${fmtDate(p.from)} – ${fmtDate(p.to)}`}
                     sub={tn("{n} game", "{n} games", p.g)}
                     rows={() => [
-                      ...p.c.slice(0, 10).map(([c, pk, b, w, pr]) => ({
+                      ...p.c.slice(0, 10).map(([c, pk, b, w, pr], idx) => ({
+                        rank: idx + 1,
+                        champ: c,
                         label: champName(c),
                         sub: tl("{p} picks · {b} bans · {wr}", {
                           p: pk,
@@ -92,6 +94,7 @@ export const PatchesPanel: React.FC = () => {
                         win: pk >= 5 ? w / pk >= 0.5 : undefined,
                       })),
                       ...(p.up || []).slice(0, 2).map(([c, now, was]) => ({
+                        champ: c,
                         label: `▲ ${champName(c)}`,
                         sub: p.prev ? tl("Rising since {patch}", { patch: p.prev }) : undefined,
                         value: `${Math.round(was * 100)}% → ${Math.round(now * 100)}%`,
@@ -339,7 +342,8 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number;
             section={title || tl("Leagues")}
             name={tl("Leagues")}
             rows={() =>
-              list.slice(0, 12).map((l) => ({
+              list.slice(0, 12).map((l, idx) => ({
+                rank: idx + 1,
                 label: l.s ? `${l.s} · ${l.l}` : l.l,
                 sub: [l.r ? regionName(l.r, l.r) : "", l.from && l.to ? (l.from === l.to ? l.from : `${l.from}–${l.to}`) : ""].filter(Boolean).join(" · "),
                 value: `${fmtNum(l.g)} ${tl("Games")}`,
@@ -684,6 +688,7 @@ const LeagueEventsSection: React.FC<{
               events.slice(0, 12).map((e) => {
                 const hide = isHidden(`event:${e.u}`, e.en);
                 return {
+                  team: e.w && !hide ? e.w : undefined,
                   label: e.n,
                   sub: [fmtDate(e.st, false), e.en && e.en !== e.st ? fmtDate(e.en, false) : ""].filter(Boolean).join(" – "),
                   value: e.w && !hide ? e.w : fmtDate(e.st, false),

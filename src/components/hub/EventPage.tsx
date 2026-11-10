@@ -420,6 +420,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                     rows={() =>
                       e.teams!.slice(0, 12).map((t, idx) => ({
                         rank: idx + 1,
+                        team: t.t,
                         label: t.t,
                         sub: `${t.w}-${t.g - t.w} ${tl("Games")}`,
                         value: `${t.sw}-${t.sg - t.sw}`,
@@ -754,7 +755,9 @@ const StageLists: React.FC<{ stages: Stage[] }> = ({ stages }) => {
                 shown.slice(0, 12).map((r) => {
                   const hide = isHidden(seriesKey(r), r.date);
                   const played = r.sa != null && r.sb != null;
+                  const winTeam = !hide && played ? (r.w === 1 ? r.a : r.w === 2 ? r.b : r.a) : r.a;
                   return {
+                    team: winTeam,
                     label: `${r.a} vs ${r.b}`,
                     sub: fmtDate(r.date, false),
                     value: played ? (hide ? "–" : `${r.sa}–${r.sb}`) : fmtDate(r.date, false),

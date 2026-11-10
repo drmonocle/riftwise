@@ -1075,6 +1075,7 @@ const PlayerBars: React.FC<{
             sub={`${fmt(total(blue))} vs ${fmt(total(red))}`}
             rows={() =>
               rows.map(({ r, b, o }) => ({
+                champ: (getVal(b, m) || 0) >= (getVal(o, m) || 0) ? b.c : o.c,
                 label: `${roleName(r)} · ${b.n} vs ${o.n}`,
                 sub: [b.c && champName(b.c), o.c && champName(o.c)].filter(Boolean).join(" vs "),
                 value: `${fmt(getVal(b, m))} – ${fmt(getVal(o, m))}`,
@@ -1239,12 +1240,14 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
               name={`${blueName} vs ${redName}`}
               rows={() => [
                 ...gold.map(([m, v]) => ({
+                  team: v >= 0 ? blueName : redName,
                   label: `${tl("Gold")} · ${tl("{n} min", { n: m })}`,
                   sub: v >= 0 ? blueName : redName,
                   value: kfmt(v),
                   win: v >= 0,
                 })),
                 ...xp.map(([m, v]) => ({
+                  team: v >= 0 ? blueName : redName,
                   label: `XP · ${tl("{n} min", { n: m })}`,
                   sub: v >= 0 ? blueName : redName,
                   value: kfmt(v),
@@ -1278,6 +1281,7 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
               name={`${blueName} vs ${redName}`}
               rows={() =>
                 lanes.map(({ r, b, o }) => ({
+                  champ: (b!.g15 as number) >= 0 ? b!.c : o!.c,
                   label: `${roleName(r)} · ${b!.n} vs ${o!.n}`,
                   sub: (b!.g15 as number) >= 0 ? b!.n : o!.n,
                   value: kfmt(b!.g15 as number),

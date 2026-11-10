@@ -12,7 +12,7 @@ import { tl, roleName, fmtN } from "../../i18n";
 import { champName } from "../../champions";
 import { MissingFile, winRate } from "../../stats";
 import type { TeamGameRow } from "../../hub/types";
-import { navigateHub } from "../../hub/route";
+import { currentHubRoute, hubShareUrl, navigateHub } from "../../hub/route";
 import { championList, useDDragon } from "../../hub/ddragon";
 import { ROLES } from "../../hub/champAgg";
 import { PeriodKey, inPeriod, kdaOf, playerRowRef, teamRowRef } from "../../hub/period";
@@ -831,7 +831,7 @@ const Board: React.FC<{
       });
       lines.push(`${t.team.name}: ${tl("Bans")} ${bansOf(w).map(champName).join(", ") || "–"} · ${tl("Picks")} ${picks.join(", ") || "–"}`);
     }
-    lines.push(window.location.href);
+    lines.push(hubShareUrl(currentHubRoute()));
     return lines.join("\n");
   };
 

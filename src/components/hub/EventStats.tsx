@@ -73,15 +73,18 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
 };
 
 export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventSlug?: string }> = ({ f, link, shareId, eventSlug }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     navigator.clipboard
       ?.writeText(factText(f, link))
       .then(() => {
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1500);
+        setState("copied");
+        window.setTimeout(() => setState("idle"), 1500);
       })
-      .catch(() => {});
+      .catch(() => {
+        setState("failed");
+        window.setTimeout(() => setState("idle"), 2000);
+      });
   };
   return (
     <Section
@@ -98,6 +101,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
               f.rows.slice(0, 10).map((r, idx) => ({
                 rank: f.plain ? undefined : idx + 1,
                 champ: r.champ,
+                team: !r.champ && r.team ? r.label : undefined,
                 label: r.label,
                 sub: r.sub,
                 value: r.value,
@@ -106,8 +110,8 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
           />
           <CopyLinkButton url={`${link}#${shareId}`} />
           <button type="button" className={btn} onClick={copy} aria-label={tl("Copy as text")}>
-            {copied ? <Check className="w-3.5 h-3.5 text-rw-teal" /> : <Copy className="w-3.5 h-3.5" />}
-            {tl("Text")}
+            {state === "copied" ? <Check className="w-3.5 h-3.5 text-rw-teal" /> : <Copy className="w-3.5 h-3.5" />}
+            {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Text")}
           </button>
         </span>
       }

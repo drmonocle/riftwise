@@ -702,11 +702,13 @@ export const PlayerOpponents: React.FC<{
             name={name}
             sub={cardSub}
             rows={() =>
-              opps.slice(0, 10).map((o) => ({
+              opps.slice(0, 10).map((o, idx) => ({
+                rank: idx + 1,
                 team: o.opp,
                 label: o.opp,
                 sub: `${o.w}–${o.g - o.w} (${Math.round((o.w / o.g) * 100)}%)${o.dpm != null ? ` · ${fmtNum(o.dpm)} DPM` : ""}`,
                 value: `KDA ${o.kda.toFixed(2)}`,
+                win: o.w / Math.max(1, o.g) >= 0.5,
               }))
             }
           />
@@ -1085,11 +1087,13 @@ export const TeamOpponentsChart: React.FC<{
             name={teamName}
             sub={cardSub}
             rows={() =>
-              opps.slice(0, 10).map((o) => ({
+              opps.slice(0, 10).map((o, idx) => ({
+                rank: idx + 1,
                 team: o.n,
                 label: o.n,
                 sub: `${o.w}–${o.g - o.w} · ${fmtDate(o.last)}`,
                 value: `${Math.round((o.w / Math.max(1, o.g)) * 100)}%`,
+                win: o.w / Math.max(1, o.g) >= 0.5,
               }))
             }
           />
@@ -1334,11 +1338,13 @@ export const TeamPeriodOpponents: React.FC<{
             name={teamName}
             sub={cardSub}
             rows={() =>
-              opps.slice(0, 10).map((o) => ({
+              opps.slice(0, 10).map((o, idx) => ({
+                rank: idx + 1,
                 team: o.opp,
                 label: o.opp,
                 sub: `${o.w}–${o.g - o.w}${o.gd15 != null ? ` · GD@15 ${o.gd15 > 0 ? "+" : ""}${fmtNum(o.gd15)}` : ""}`,
                 value: `${Math.round((o.w / o.g) * 100)}%`,
+                win: o.w / Math.max(1, o.g) >= 0.5,
               }))
             }
           />

@@ -377,7 +377,13 @@ const PlayerView: React.FC<{
                 rows={() =>
                   p.events
                     .filter((x) => !hiddenCheck(`player-event:${x.e}`, x.date))
-                    .map((x) => ({ label: x.en, sub: `${x.t} · ${x.w}-${x.g - x.w} · KDA ${fmtN(x.kda)}`, value: x.pl ? tl("Place {p}", { p: x.pl }) : undefined }))
+                    .map((x) => ({
+                      team: x.t,
+                      label: x.en,
+                      sub: `${x.t} · ${x.w}-${x.g - x.w} · KDA ${fmtN(x.kda)}`,
+                      value: x.pl ? tl("Place {p}", { p: x.pl }) : undefined,
+                      win: x.g ? x.w / x.g >= 0.5 : undefined,
+                    }))
                 }
               />
             </span>
@@ -417,7 +423,15 @@ const PlayerView: React.FC<{
               section={tl("By year")}
               name={p.name}
               sub={cardSub}
-              rows={() => [...p.years].reverse().map((y) => ({ label: y.y, sub: `${y.team} · ${y.w}-${y.g - y.w}`, value: `KDA ${fmtN(y.kda)}` }))}
+              rows={() =>
+                [...p.years].reverse().map((y) => ({
+                  team: y.team,
+                  label: y.y,
+                  sub: `${y.team} · ${y.w}-${y.g - y.w}`,
+                  value: `KDA ${fmtN(y.kda)}`,
+                  win: y.g ? y.w / y.g >= 0.5 : undefined,
+                }))
+              }
             />
           }
         >
@@ -505,7 +519,16 @@ const PlayerView: React.FC<{
                 section={tl("Recent games")}
                 name={p.name}
                 sub={cardSub}
-                rows={() => p.recent.map((r) => ({ win: !!r.win, champ: r.c, label: `${r.k}/${r.d}/${r.a} vs ${r.opp}`, sub: r.en, value: fmtDate(r.date, false) }))}
+                rows={() =>
+                  p.recent.map((r) => ({
+                    win: !!r.win,
+                    champ: r.c,
+                    team: r.opp,
+                    label: `${r.k}/${r.d}/${r.a} vs ${r.opp}`,
+                    sub: r.en,
+                    value: fmtDate(r.date, false),
+                  }))
+                }
               />
             )
           }
@@ -1006,7 +1029,13 @@ const CareerTimeline: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
             p.teams.map((x) => {
               const fy = x.from.slice(0, 4);
               const ty = x.to.slice(0, 4);
-              return { label: x.n, sub: fy === ty ? fy : `${fy}–${ty}`, value: `${x.w}-${x.g - x.w} (${winRate(x.w, x.g)})` };
+              return {
+                team: x.n,
+                label: x.n,
+                sub: fy === ty ? fy : `${fy}–${ty}`,
+                value: `${x.w}-${x.g - x.w} (${winRate(x.w, x.g)})`,
+                win: x.g ? x.w / x.g >= 0.5 : undefined,
+              };
             })
           }
         />
@@ -1154,10 +1183,13 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
           name={p.name}
           sub={cardSub}
           rows={() =>
-            peers.map(({ peer, shared }) => ({
+            peers.map(({ peer, shared }, idx) => ({
+              rank: idx + 1,
+              team: peer.club || undefined,
               label: peer.name,
               sub: [peer.club, shared.slice(0, 3).map(champName).join(", ")].filter(Boolean).join(" · "),
               value: `KDA ${fmtN(peer.kda)} · ${winRate(peer.w, peer.g)}`,
+              win: peer.g ? peer.w / peer.g >= 0.5 : undefined,
             }))
           }
         />

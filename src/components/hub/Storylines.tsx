@@ -8,6 +8,7 @@ import { tl, tn } from "../../i18n";
 import { champName } from "../../champions";
 import { load } from "../../stats";
 import { prettySlug } from "../../hub/data";
+import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { ChampIcon, HubLink, PlayerPhoto, RevealButton, Section, TeamLogo, fmtNum, useHidden, useLoad, GRID_COLS, useColumns } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 
@@ -269,7 +270,8 @@ export const StoryList: React.FC<{
                   section={title || tl("Storylines")}
                   name={share || "storylines"}
                   rows={() =>
-                    plainLines.slice(0, 10).map((l) => ({
+                    plainLines.slice(0, 10).map((l, idx) => ({
+                      rank: idx + 1,
                       champ: l.champ,
                       team: !l.champ && l.who?.to.kind === "team" ? l.who.name : undefined,
                       label: l.who ? l.who.name : l.plain!,
@@ -340,7 +342,7 @@ const CopyStorylinesPost: React.FC<{ title: string; lines: StoryLine[] }> = ({ t
     const out = [
       title,
       ...lines.slice(0, 5).map((l) => `• ${l.who ? `${l.who.name}: ` : ""}${l.plain}`),
-      typeof window !== "undefined" ? window.location.href : "https://riftwise.gg",
+      hubShareUrl(currentHubRoute()),
     ];
     navigator.clipboard?.writeText(out.join("\n")).then(
       () => {

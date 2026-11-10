@@ -748,9 +748,11 @@ export const PlayerRanks: React.FC<{
                 sub={`${leagueLabel} ${year}${me?.r ? ` · ${roleName(me.r)}` : ""}`}
                 rows={() =>
                   cardRows.map((r) => ({
+                    team: me?.t,
                     label: r.label,
                     sub: `${tl("League avg")} ${r.avg} · ${r.diff} (${tl("{n} of {m}", { n: r.rank, m: r.of })})`,
                     value: `${r.text} · P${r.pct}`,
+                    win: r.better ?? undefined,
                   }))
                 }
               />
@@ -875,9 +877,11 @@ export const TeamRanks: React.FC<{
                 sub={`${leagueLabel} ${year}`}
                 rows={() =>
                   cardRows.map((r) => ({
+                    team: name || me?.t,
                     label: r.label,
                     sub: `${tl("League avg")} ${r.avg} · ${r.diff} (${tl("{n} of {m}", { n: r.rank, m: r.of })})`,
                     value: `${r.text} · P${r.pct}`,
+                    win: r.better ?? undefined,
                   }))
                 }
               />

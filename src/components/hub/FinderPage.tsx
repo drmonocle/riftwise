@@ -9,8 +9,7 @@ import { tl, tn, tc, fmtDec, roleName } from "../../i18n";
 import { champName } from "../../champions";
 import { loadAliases, loadChampGames, loadChampIndex, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import type { ChampGame, ChampGamesFile, ChampPick } from "../../hub/types";
-import { navigateHub } from "../../hub/route";
-import { SITE_URL } from "../../platform";
+import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { patchCompare, ROLES } from "../../hub/champAgg";
 import { TableExport } from "./SortTable";
@@ -598,7 +597,10 @@ const FinderBody: React.FC<{
                   found.slice(0, 12).map(({ g, s }) => {
                     const bWon = g[3] === 1;
                     const winSide = sideCond ? (s === 0 ? bWon : !bWon) : undefined;
+                    const focusTeam = sideCond ? (s === 0 ? g[10] : g[11]) : bWon ? g[10] : g[11];
                     return {
+                      champ: champs[0] || undefined,
+                      team: focusTeam || undefined,
                       label: `${g[10] || tl("Blue")} vs ${g[11] || tl("Red")}${g[15] ? ` (${tc("short game", "G{n}", { n: g[15] })})` : ""}`,
                       sub: [events[g[2]]?.[1], g[1] && `P${g[1]}`, fmtDate(g[0])].filter(Boolean).join(" · "),
                       value: g[4] != null ? `${fmtDec(g[4])}m` : bWon ? g[10] || tl("Blue") : g[11] || tl("Red"),
@@ -1006,7 +1008,7 @@ function downloadCohort(found: Found, events: [string, string][], name: string) 
     [
       g[0], events[g[2]]?.[1] || "", g[15] || "", g[1], g[10] || "", g[11] || "", (g[3] === 1 ? g[10] : g[11]) || (g[3] === 1 ? "Blue" : "Red"),
       g[4] != null ? g[4].toFixed(1) : "", champs(g[5]), champs(g[6]), players(g[5]), players(g[6]), (g[7] || []).join(" / "),
-      (g[8] || []).join(" / "), g[14] ? `${SITE_URL}match/${g[14]}` : "",
+      (g[8] || []).join(" / "), g[14] ? hubShareUrl({ kind: "match", slug: g[14], game: g[15] || undefined }) : "",
     ].map(esc).join(","),
   );
   const csv = "\ufeff" + [head.join(","), ...lines].join("\r\n");
@@ -1076,7 +1078,7 @@ const CopyFinderPost: React.FC<{
   won: number;
   avg: number | null;
 }> = ({ found, events, q, sideCond, won, avg }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const parts = [
       q.get("team"),
@@ -1104,14 +1106,17 @@ const CopyFinderPost: React.FC<{
       );
     }
     const qs = q.toString();
-    lines.push(`${SITE_URL}stats/finder${qs ? `?${qs}` : ""}`);
+    lines.push(hubShareUrl({ kind: "finder", query: qs || undefined }));
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setState("copied");
+        setTimeout(() => setState("idle"), 2000);
       })
-      .catch(() => {});
+      .catch(() => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2400);
+      });
   };
   return (
     <button
@@ -1120,7 +1125,7 @@ const CopyFinderPost: React.FC<{
       className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
       title={tl("Copy post")}
     >
-      {copied ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };

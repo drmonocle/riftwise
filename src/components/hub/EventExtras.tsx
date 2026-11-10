@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Flame, Crown, Timer, Swords } from "lucide-react";
 import { tl, tk, roleName, regionName } from "../../i18n";
 import { prettySlug } from "../../hub/data";
+import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { champName } from "../../champions";
 import type {
   EventOverview,
@@ -464,7 +465,9 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                 section={tl("Team rosters")}
                 name={tl("Team rosters")}
                 rows={() =>
-                  rosters.slice(0, 12).map((t) => ({
+                  rosters.slice(0, 12).map((t, idx) => ({
+                    rank: idx + 1,
+                    team: t.t,
                     label: t.t,
                     sub: t.r ? regionName(t.r, t.r) : undefined,
                     value: t.p
@@ -663,20 +666,23 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
 };
 
 const CopyExtrasPost: React.FC<{ title: string; rows: string[] }> = ({ title, rows }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const lines: string[] = [title];
     for (const r of rows) {
       lines.push(`• ${r}`);
     }
-    lines.push(window.location.href);
+    lines.push(hubShareUrl(currentHubRoute()));
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setState("copied");
+        setTimeout(() => setState("idle"), 2000);
       })
-      .catch(() => {});
+      .catch(() => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2400);
+      });
   };
   return (
     <button
@@ -685,7 +691,7 @@ const CopyExtrasPost: React.FC<{ title: string; rows: string[] }> = ({ title, ro
       className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
       title={tl("Copy post")}
     >
-      {copied ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };

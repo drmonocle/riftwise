@@ -131,7 +131,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
               section={tl("Roster")}
               name={t.name}
               sub={activeRoster.y}
-              rows={() => activeRoster.p.map((x) => ({ label: x.n, sub: roleName(x.r), value: tl("{n} games", { n: x.g }) }))}
+              rows={() => activeRoster.p.map((x) => ({ team: t.name, label: x.n, sub: roleName(x.r), value: tl("{n} games", { n: x.g }) }))}
             />
           </span>
         ) : undefined
@@ -435,7 +435,15 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
               <SectionCard
                 section={tl("Recent series")}
                 name={t.name}
-                rows={() => t.recent.map((r) => ({ win: r.us > r.them, label: `${r.us}-${r.them} vs ${r.opp}`, sub: r.en, value: fmtDate(r.date, false) }))}
+                rows={() =>
+                  t.recent.map((r) => ({
+                    win: r.us > r.them,
+                    team: r.opp,
+                    label: `${r.us}-${r.them} vs ${r.opp}`,
+                    sub: r.en,
+                    value: fmtDate(r.date, false),
+                  }))
+                }
               />
             )
           }
@@ -523,7 +531,15 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
               section={tl("By year")}
               name={t.name}
               sub={cardSub}
-              rows={() => [...t.years].reverse().map((y) => ({ label: y.as !== t.name ? `${y.y} · ${y.as}` : y.y, sub: `${y.w}-${y.g - y.w}`, value: winRate(y.w, y.g) }))}
+              rows={() =>
+                [...t.years].reverse().map((y) => ({
+                  team: y.as || t.name,
+                  label: y.as !== t.name ? `${y.y} · ${y.as}` : y.y,
+                  sub: `${y.w}-${y.g - y.w}`,
+                  value: winRate(y.w, y.g),
+                  win: y.g ? y.w / y.g >= 0.5 : undefined,
+                }))
+              }
             />
           }
         >
@@ -599,7 +615,22 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
       {overview && t.titles.length > 0 && (
         <Section
           title={tl("Titles")}
-          right={<SectionCard section={tl("Titles")} name={t.name} sub={tl("{n} titles", { n: t.titles.length })} rows={() => t.titles.map((x) => ({ label: eventTitle(x.t), sub: `${x.score} vs ${x.l}`, value: x.date.slice(0, 4) }))} />}
+          right={
+            <SectionCard
+              section={tl("Titles")}
+              name={t.name}
+              sub={tl("{n} titles", { n: t.titles.length })}
+              rows={() =>
+                t.titles.map((x) => ({
+                  team: x.as || t.name,
+                  label: eventTitle(x.t),
+                  sub: `${x.score} vs ${x.l}`,
+                  value: x.date.slice(0, 4),
+                  win: true,
+                }))
+              }
+            />
+          }
         >
           <ul className="text-xs space-y-1">
             {t.titles.map((x) => (
@@ -666,7 +697,13 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 rows={() =>
                   t.events
                     .filter((x) => !hiddenCheck(`team-event:${x.e}`, x.date))
-                    .map((x) => ({ label: x.en, sub: tl("Series {s} · games {g}", { s: `${x.sw}-${x.sg - x.sw}`, g: `${x.w}-${x.g - x.w}` }), value: x.pl ? tl("Place {p}", { p: x.pl }) : undefined }))
+                    .map((x) => ({
+                      team: x.as || t.name,
+                      label: x.en,
+                      sub: tl("Series {s} · games {g}", { s: `${x.sw}-${x.sg - x.sw}`, g: `${x.w}-${x.g - x.w}` }),
+                      value: x.pl ? tl("Place {p}", { p: x.pl }) : undefined,
+                      win: x.g ? x.w / x.g >= 0.5 : undefined,
+                    }))
                 }
               />
             </span>
@@ -794,7 +831,22 @@ const TeamChampionsTab: React.FC<{
       <div className="grid gap-3 md:grid-cols-2">
         <Section
           title={tl("Most picked champions")}
-          right={<SectionCard section={tl("Most picked champions")} name={t.name} rows={() => champs.map((c) => ({ champ: c.c, label: champName(c.c), sub: tl("{n} games", { n: c.g }), value: winRate(c.w, c.g) }))} />}
+          right={
+            <SectionCard
+              section={tl("Most picked champions")}
+              name={t.name}
+              rows={() =>
+                champs.map((c, idx) => ({
+                  rank: idx + 1,
+                  champ: c.c,
+                  label: champName(c.c),
+                  sub: tl("{n} games", { n: c.g }),
+                  value: winRate(c.w, c.g),
+                  win: c.g ? c.w / c.g >= 0.5 : undefined,
+                }))
+              }
+            />
+          }
         >
           <ul className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
             {champs.map((c) => {
@@ -836,7 +888,13 @@ const TeamChampionsTab: React.FC<{
         </Section>
         <Section
           title={tl("Most banned by them")}
-          right={<SectionCard section={tl("Most banned by them")} name={t.name} rows={() => bans.map((c) => ({ champ: c.c, label: champName(c.c), value: String(c.g) }))} />}
+          right={
+            <SectionCard
+              section={tl("Most banned by them")}
+              name={t.name}
+              rows={() => bans.map((c, idx) => ({ rank: idx + 1, champ: c.c, label: champName(c.c), value: String(c.g) }))}
+            />
+          }
         >
           <ul className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
             {bans.map((c) => {
@@ -874,7 +932,13 @@ const TeamChampionsTab: React.FC<{
         {bansVs.length > 0 && (
           <Section
             title={tl("Most banned against them")}
-            right={<SectionCard section={tl("Most banned against them")} name={t.name} rows={() => bansVs.map((c) => ({ champ: c.c, label: champName(c.c), value: String(c.g) }))} />}
+            right={
+              <SectionCard
+                section={tl("Most banned against them")}
+                name={t.name}
+                rows={() => bansVs.map((c, idx) => ({ rank: idx + 1, champ: c.c, label: champName(c.c), value: String(c.g) }))}
+              />
+            }
           >
             <ul className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
               {bansVs.map((c) => {
@@ -1753,8 +1817,8 @@ const TeamPlaystyleOverview: React.FC<{ t: HubTeam }> = ({ t }) => {
               name={t.name}
               sub={periodLabel}
               rows={() => [
-                ...tags.map((x) => ({ label: x.tag, sub: x.why, win: x.good })),
-                ...metrics.map((m) => ({ label: m.label, sub: m.sub, value: m.value, win: m.good })),
+                ...tags.map((x) => ({ team: t.name, label: x.tag, sub: x.why, win: x.good })),
+                ...metrics.map((m) => ({ team: t.name, label: m.label, sub: m.sub, value: m.value, win: m.good })),
               ]}
             />
           </span>

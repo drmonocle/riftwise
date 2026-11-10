@@ -756,7 +756,15 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
         <SectionCard
           section={tl("Champions")}
           name={name}
-          rows={() => shown.map((x) => ({ label: `${x.y} · ${x.as}`, sub: tl("{score} vs {team}", { score: x.score, team: x.l }) }))}
+          rows={() =>
+            shown.map((x) => ({
+              team: x.as,
+              label: `${x.y} · ${x.as}`,
+              sub: tl("{score} vs {team}", { score: x.score, team: x.l }),
+              value: x.score,
+              win: true,
+            }))
+          }
         />
       }
     >
@@ -1218,44 +1226,49 @@ function swissPicksCard(rec: Record<string, [number, number]>, byU: Map<string, 
     .map((k) => ({ k, us: Object.keys(rec).filter((u) => rec[u].join("-") === k) }))
     .filter((g) => g.us.length)
     .map((g) => ({
+      team: g.us[0] ? byU.get(g.us[0])?.n || byU.get(g.us[0])?.c || g.us[0] : undefined,
       label: g.us.map((u) => byU.get(u)?.c || u).join(" · "),
       sub: `${g.k} · ${g.k.startsWith("3") ? tl("through") : tl("out")}`,
       win: g.k.startsWith("3"),
     }));
-  return listCard({ section: tl("My Swiss stage picks"), name: event, sub: "riftwise.gg/stats/worlds", rows });
+  return listCard({ section: tl("My Swiss stage picks"), name: event, sub: hubShareUrl({ kind: "worlds" }).replace(/^https?:\/\//, ""), rows });
 }
 
 /** The knockouts as picked: the champion, then the final, semifinals and quarterfinals. */
 function bracketPicksCard(ko: ReturnType<typeof runKnockout>, byU: Map<string, WTeam>, event: string) {
   const code = (u: string) => byU.get(u)?.c || u;
+  const fullName = (u: string) => byU.get(u)?.n || byU.get(u)?.c || u;
   const row = (stage: string, m: WMatch) => ({
+    team: m.w ? fullName(m.w === 1 ? m.a : m.b) : fullName(m.a),
     label: `${code(m.a)} vs ${code(m.b)}`,
     sub: stage,
     value: m.w ? code(m.w === 1 ? m.a : m.b) : "?",
   });
   const rows = [
-    ...(ko.champion ? [{ label: byU.get(ko.champion)?.n || ko.champion, sub: tl("World champion"), value: "🏆" }] : []),
+    ...(ko.champion ? [{ team: fullName(ko.champion), label: byU.get(ko.champion)?.n || ko.champion, sub: tl("World champion"), value: "🏆", win: true }] : []),
     ...(ko.final ? [row(tl("Final"), ko.final)] : []),
     ...ko.sf.map((m) => row(tl("Semifinals"), m)),
     ...ko.qf.map((m) => row(tl("Quarterfinals"), m)),
   ];
-  return listCard({ section: tl("My Worlds bracket"), name: event, sub: "riftwise.gg/stats/worlds", rows });
+  return listCard({ section: tl("My Worlds bracket"), name: event, sub: hubShareUrl({ kind: "worlds" }).replace(/^https?:\/\//, ""), rows });
 }
 
 function msiBracketCard(res: ReturnType<typeof runBracket>, byU: Map<string, WTeam>, event: string, kind: "msi" | "first-stand") {
   const code = (u: string) => byU.get(u)?.c || u;
+  const fullName = (u: string) => byU.get(u)?.n || byU.get(u)?.c || u;
   const rows = [
-    ...(res.champion ? [{ label: byU.get(res.champion)?.n || res.champion, sub: tl("Champion"), value: "🏆" }] : []),
+    ...(res.champion ? [{ team: fullName(res.champion), label: byU.get(res.champion)?.n || res.champion, sub: tl("Champion"), value: "🏆", win: true }] : []),
     ...res.matches
       .slice()
       .reverse()
       .map((m) => ({
+        team: m.w ? fullName(m.w === 1 ? m.a : m.b) : fullName(m.a),
         label: `${code(m.a)} vs ${code(m.b)}`,
         sub: tl(COL_LABELS[m.col] || m.col),
         value: m.w ? code(m.w === 1 ? m.a : m.b) : "?",
       })),
   ];
-  return listCard({ section: tl("Bracket"), name: event, sub: `riftwise.gg/stats/${kind}`, rows });
+  return listCard({ section: tl("Bracket"), name: event, sub: hubShareUrl({ kind }).replace(/^https?:\/\//, ""), rows });
 }
 
 const Records: React.FC<{ rec: Record<string, [number, number]>; byU: Map<string, WTeam> }> = ({ rec, byU }) => {

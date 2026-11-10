@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName, fmtDec, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { hubShareUrl } from "../../hub/route";
+import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y } from "../../hub/data";
 import type { PlayerGameRow, TeamGameRow } from "../../hub/types";
 import {
@@ -59,14 +59,20 @@ const Sub: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 const CopyPeriodTextPost: React.FC<{ buildText: () => string; url?: string }> = ({ buildText, url }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
-    const shareUrl = url || (typeof window !== "undefined" ? window.location.href : "https://riftwise.gg");
+    const shareUrl = url || hubShareUrl(currentHubRoute());
     const text = `${buildText()}\n${shareUrl}`;
-    navigator.clipboard?.writeText(text).then(() => {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    });
+    navigator.clipboard
+      ?.writeText(text)
+      .then(() => {
+        setState("copied");
+        window.setTimeout(() => setState("idle"), 1800);
+      })
+      .catch(() => {
+        setState("failed");
+        window.setTimeout(() => setState("idle"), 2200);
+      });
   };
   return (
     <button
@@ -75,7 +81,7 @@ const CopyPeriodTextPost: React.FC<{ buildText: () => string; url?: string }> = 
       onClick={copy}
       className="px-2 py-1 rounded border border-rw-border bg-rw-surface text-[11px] font-semibold text-rw-sub hover:text-rw-text hover:border-rw-accent/60 transition-colors"
     >
-      {copied ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };
@@ -382,12 +388,14 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; teamSlu
             name={`${teamName || "team"}-win-when`}
             rows={() => [
               ...d.firsts.map((x) => ({
+                team: teamName,
                 label: label[x.key],
                 sub: `${tl("Opponent got it")}: ${wrStr(x.lost)}`,
                 value: wrStr(x.got),
                 win: x.got[0] > 0 ? x.got[1] / x.got[0] >= 0.5 : undefined,
               })),
               ...d.gold.map((x) => ({
+                team: teamName,
                 label: `${tl("Gold at 15 minutes")} · ${label[x.key]}`,
                 value: wrStr([x.g, x.w]),
                 win: x.g > 0 ? x.w / x.g >= 0.5 : undefined,

@@ -1213,9 +1213,11 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
               ].map(({ s, rows }) => {
                 const w = rows.filter((r) => r[3] > r[4]).length;
                 return {
+                  team: s.team.name,
                   label: s.team.name,
                   sub: rows.map((r) => `${r[3] > r[4] ? tc("short result", "W") : tc("short result", "L")} (${r[3]}-${r[4]} vs ${r[1]})`).slice(0, 5).join(" · "),
                   value: `${w}–${rows.length - w}`,
+                  win: rows.length > 0 ? w >= rows.length - w : undefined,
                 };
               })
             }

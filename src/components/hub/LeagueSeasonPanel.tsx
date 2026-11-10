@@ -232,7 +232,7 @@ const CopyLeagueGlancePost: React.FC<{
   year: string;
   teams: { t: string; w: number; g: number }[];
 }> = ({ title, league, year, teams }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const lines: string[] = [title];
     for (const [idx, t] of teams.slice(0, 6).entries()) {
@@ -242,10 +242,13 @@ const CopyLeagueGlancePost: React.FC<{
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setState("copied");
+        setTimeout(() => setState("idle"), 2000);
       })
-      .catch(() => {});
+      .catch(() => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2400);
+      });
   };
   return (
     <button
@@ -254,7 +257,7 @@ const CopyLeagueGlancePost: React.FC<{
       className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] font-normal text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
       title={tl("Copy post")}
     >
-      {copied ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };

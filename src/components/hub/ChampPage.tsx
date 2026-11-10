@@ -439,7 +439,9 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 name={champName(c.name)}
                 sub={muRecent ? tl("Last 12 months") : tl("All time")}
                 rows={() =>
-                  muRows.slice(0, 8).map(([oc, g, w, , gd]) => ({
+                  muRows.slice(0, 8).map(([oc, g, w, , gd], idx) => ({
+                    rank: idx + 1,
+                    champ: oc,
                     label: `vs ${champName(oc)}`,
                     sub: gd != null ? `${tl("Games")}: ${g} · GD@15 ${signedText(gd)}` : `${tl("Games")}: ${g}`,
                     value: pctOf(w, g),
@@ -657,7 +659,9 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               section={tl("Bot lane partners")}
               name={champName(c.name)}
               rows={() =>
-                (c.duos || []).slice(0, 12).map(([pc, g, w]) => ({
+                (c.duos || []).slice(0, 12).map(([pc, g, w], idx) => ({
+                  rank: idx + 1,
+                  champ: pc,
                   label: champName(pc),
                   sub: `${g}G`,
                   value: pctOf(w, g),
@@ -741,7 +745,9 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               name={champName(c.name)}
               sub={playersRecent ? tl("Last 12 months") : tl("All time")}
               rows={() =>
-                (playersRecent ? recentPlayersList : c.players).slice(0, 12).map((p) => ({
+                (playersRecent ? recentPlayersList : c.players).slice(0, 12).map((p, idx) => ({
+                  rank: idx + 1,
+                  champ: c.name,
                   label: p.n,
                   sub: `${p.g}G · ${fmtN(p.kda)} ${tl("KDA")}`,
                   value: winRate(p.w, p.g),
@@ -1088,9 +1094,11 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               name={champName(c.name)}
               rows={() =>
                 [...c.years].reverse().map((y) => ({
+                  champ: c.name,
                   label: y.y,
                   sub: `${fmtNum(y.p)} ${tl("Picks")} · ${fmtNum(y.b)} ${tl("Bans")}`,
                   value: y.p ? winRate(y.w, y.p) : "–",
+                  win: y.p ? y.w / y.p >= 0.5 : undefined,
                 }))
               }
             />

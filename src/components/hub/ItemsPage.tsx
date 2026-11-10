@@ -300,6 +300,8 @@ const PlayerItemsView: React.FC<{
               sub={`${fmtNum(g.length)}G${scope ? ` · ${scope}` : ""}`}
               rows={() =>
                 g.slice(0, 12).map((r) => ({
+                  champ: r[2],
+                  team: r[8],
                   label: `${champName(r[2])} ${tl("vs")} ${r[8]}`,
                   sub: `${r[9]} · ${fmtDate(r[0], false)}`,
                   value: `${r[3]}/${r[4]}/${r[5]}`,
@@ -354,9 +356,11 @@ const PlayerItemsView: React.FC<{
               name={name}
               sub={scope || undefined}
               rows={() =>
-                list.slice(0, 12).map(([it, g]) => {
+                list.slice(0, 12).map(([it, g], idx) => {
                   const won = g.filter((r) => r[6]).length;
                   return {
+                    rank: idx + 1,
+                    champ: g[0]?.[2],
                     label: itemName(it),
                     sub: `${fmtNum(g.length)}G${g[0] ? ` · ${fmtDate(g[0][0], false)}` : ""}`,
                     value: winRate(won, g.length),
@@ -519,8 +523,10 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
             name={itemName(it.n)}
             sub={`${fmtNum(it.g)}G · ${fmtNum(it.np)} ${tl("Players")}`}
             rows={() =>
-              it.players.slice(0, 12).map(([n, , g, last], i) => ({
-                label: `#${i + 1} · ${n}`,
+              it.players.slice(0, 12).map(([n, u, g, last], i) => ({
+                rank: i + 1,
+                team: teamBySlug.get(u),
+                label: n,
                 sub: fmtDate(last, false),
                 value: `${fmtNum(g)}G`,
                 win: true,
@@ -642,7 +648,9 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                 sub={`${fmtNum(total)}G · ${fmtNum(rows.length)} ${tl("Players")}`}
                 rows={() =>
                   rows.slice(0, 12).map((r, i) => ({
-                    label: `#${i + 1} · ${players?.[r.k]?.[0] || "–"}`,
+                    rank: i + 1,
+                    team: players?.[r.k]?.[2] || undefined,
+                    label: players?.[r.k]?.[0] || "–",
                     sub: yearSpan(r.ys),
                     value: `${fmtNum(r.g)}G`,
                     win: true,
@@ -773,7 +781,9 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                 sub={`${fmtNum(y.g)}G · ${fmtNum(y.np)} ${tl("Players")}`}
                 rows={() =>
                   y.p.slice(0, 12).map(([k, g], i) => ({
-                    label: `#${i + 1} · ${players?.[k]?.[0] || "–"}`,
+                    rank: i + 1,
+                    team: players?.[k]?.[2] || undefined,
+                    label: players?.[k]?.[0] || "–",
                     value: `${fmtNum(g)}G`,
                     win: true,
                   }))
@@ -885,7 +895,9 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
               sub={scope || undefined}
               rows={() =>
                 shown.slice(0, 12).map((r, i) => ({
-                  label: `#${i + 1} · ${itemName(r[0])}`,
+                  rank: i + 1,
+                  champ: r[5]?.[0],
+                  label: itemName(r[0]),
                   sub: `${fmtNum(r[2])}G · ${fmtNum(r[3])} ${tl("Players")}`,
                   value: r[4] != null ? winRate(r[4], r[2]) : `${fmtNum(r[2])}G`,
                   win: r[4] != null && r[2] ? r[4] / r[2] >= 0.5 : true,

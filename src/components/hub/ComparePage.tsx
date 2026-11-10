@@ -573,16 +573,19 @@ const COMPARE_ROLES: { role: string; short: string }[] = [
 ];
 
 const CopyComparePost: React.FC<{ title: string; lines: string[]; url: string }> = ({ title, lines, url }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const text = [title, ...lines, url].filter(Boolean).join("\n");
     navigator.clipboard
       ?.writeText(text)
       .then(() => {
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1800);
+        setState("copied");
+        window.setTimeout(() => setState("idle"), 1800);
       })
-      .catch(() => {});
+      .catch(() => {
+        setState("failed");
+        window.setTimeout(() => setState("idle"), 2200);
+      });
   };
   return (
     <button
@@ -591,8 +594,8 @@ const CopyComparePost: React.FC<{ title: string; lines: string[]; url: string }>
       title={tl("Copy post")}
       className="px-2 py-0.5 rounded bg-rw-surface hover:bg-rw-border border border-rw-border text-[11px] font-semibold text-rw-sub hover:text-rw-text inline-flex items-center gap-1"
     >
-      {copied ? <Check className="w-3 h-3 text-rw-teal" /> : <Copy className="w-3 h-3" />}
-      {copied ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? <Check className="w-3 h-3 text-rw-teal" /> : <Copy className="w-3 h-3" />}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };
