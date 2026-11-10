@@ -171,6 +171,12 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                 <HubLink to={{ kind: "compare", mode: "team", a, b, period: p }} className="text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Compare")} →
                 </HubLink>
+                <HubLink
+                  to={{ kind: "finder", query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}` }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
               </span>
             );
           })()}
@@ -269,6 +275,18 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] text-rw-muted hover:text-rw-accent hover:border-rw-accent/60 transition-colors"
                 >
                   {tl("Draft board")}
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "compare",
+                    mode: "team",
+                    a: findHubTeam(data.index, m.team1Name, m.team1Code) || prettySlug(m.team1Name || m.team1Code),
+                    b: findHubTeam(data.index, m.team2Name, m.team2Code) || prettySlug(m.team2Name || m.team2Code),
+                    period: m.startTimeUtc ? `y${m.startTimeUtc.slice(0, 4)}` : undefined,
+                  }}
+                  className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] text-rw-muted hover:text-rw-accent hover:border-rw-accent/60 transition-colors"
+                >
+                  {tl("Compare")}
                 </HubLink>
               </span>
             </div>

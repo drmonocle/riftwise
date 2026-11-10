@@ -130,7 +130,42 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-lg font-bold text-rw-text">{tl("Best games")}</h1>
           {shown.length > 0 && (
-            <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+            <span className="flex flex-wrap items-center gap-2 text-xs" data-nocapture="1">
+              {(() => {
+                const r0 = shown[0];
+                const a =
+                  view === "series"
+                    ? (r0 as BestSeries)[7] || prettySlug((r0 as BestSeries)[6])
+                    : (r0 as BestGame)[8] || prettySlug((r0 as BestGame)[7]);
+                const b =
+                  view === "series"
+                    ? (r0 as BestSeries)[9] || prettySlug((r0 as BestSeries)[8])
+                    : (r0 as BestGame)[10] || prettySlug((r0 as BestGame)[9]);
+                const dt = view === "series" ? (r0 as BestSeries)[2] : (r0 as BestGame)[3];
+                const p = dt && /^\d{4}/.test(dt) ? `y${dt.slice(0, 4)}` : undefined;
+                return (
+                  <>
+                    <HubLink
+                      to={{ kind: "prep", a, b, period: p }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}${p ? `&p=${encodeURIComponent(p)}` : ""}` }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "compare", mode: "team", a, b, period: p }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                  </>
+                );
+              })()}
               <SectionCard
                 section={view === "series" ? `${tl("Best games")} · ${tl("Series")}` : tl("Best games")}
                 name={[lgRow ? lgRow[2] || lgRow[1] : tl("All leagues"), year || tl("All time")].filter(Boolean).join(" · ")}

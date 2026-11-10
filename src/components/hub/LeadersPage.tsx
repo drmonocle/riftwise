@@ -355,6 +355,21 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
               >
                 {tl("Compare")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "items", query: `player=${encodeURIComponent(shownRows[0].u)}` }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Item history")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `player=${encodeURIComponent(shownRows[0].u)}${!event && year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Game finder")} →
+              </HubLink>
               {shownRows.length === 2 && shownRows[0].tu && shownRows[1].tu && shownRows[0].tu !== shownRows[1].tu && (
                 <>
                   <HubLink

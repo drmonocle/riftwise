@@ -475,6 +475,13 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
               fillText: `${p.name} ${champName(c.c)}`,
             })),
             {
+              key: `top-p-compare-${p.u}`,
+              route: { kind: "compare", mode: "player", a: p.u },
+              label: `${p.name} · ${tl("Compare")}`,
+              sub: tl("Side by side, over any period"),
+              icon: <GitCompare className="w-3.5 h-3.5" />,
+            },
+            {
               key: `top-p-items-${p.u}`,
               route: { kind: "items", query: `player=${encodeURIComponent(p.u)}` },
               label: `${p.name} · ${tl("Item history")}`,
@@ -524,6 +531,13 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
               label: `${t.name} · ${tl("Draft board")}`,
               sub: `${tl("Champion pool")} · ${tl("Fearless")}`,
               icon: <Swords className="w-3.5 h-3.5" />,
+            },
+            {
+              key: `top-t-compare-${t.u}`,
+              route: { kind: "compare", mode: "team", a: t.u },
+              label: `${t.name} · ${tl("Compare")}`,
+              sub: tl("Side by side, over any period"),
+              icon: <GitCompare className="w-3.5 h-3.5" />,
             },
             {
               key: `top-t-finder-${t.u}`,

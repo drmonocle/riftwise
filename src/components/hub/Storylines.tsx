@@ -341,36 +341,58 @@ export const HomeStorylines: React.FC = () => {
           <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
             {terms.length > 0 && (() => {
               const teamSlugs = Array.from(new Set(rows.filter((r) => r.t === "team").map((r) => r.u)));
-              if (teamSlugs.length >= 2) {
+              if (teamSlugs.length >= 1) {
+                const a = teamSlugs[0];
+                const b = teamSlugs[1];
                 return (
                   <>
-                    <HubLink to={{ kind: "prep", a: teamSlugs[0], b: teamSlugs[1] }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                    <HubLink to={{ kind: "prep", a, ...(b ? { b } : {}) }} className="text-rw-sub hover:text-rw-accent hover:underline">
                       {tl("Match prep")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "draft", query: `teams=${encodeURIComponent(teamSlugs[0])},${encodeURIComponent(teamSlugs[1])}` }}
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(a)}${b ? `,${encodeURIComponent(b)}` : ""}` }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Draft board")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "compare", mode: "team", a: teamSlugs[0], b: teamSlugs[1] }}
+                      to={{ kind: "compare", mode: "team", a, ...(b ? { b } : {}) }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Compare")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "finder", query: `team=${encodeURIComponent(a)}${b ? `&vs=${encodeURIComponent(b)}` : ""}` }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Game finder")} →
                     </HubLink>
                   </>
                 );
               }
               const playerSlugs = Array.from(new Set(rows.filter((r) => r.t === "player").map((r) => r.u)));
-              if (playerSlugs.length >= 2) {
+              if (playerSlugs.length >= 1) {
                 return (
-                  <HubLink
-                    to={{ kind: "compare", mode: "player", a: playerSlugs[0], b: playerSlugs[1] }}
-                    className="text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Compare")} →
-                  </HubLink>
+                  <>
+                    <HubLink
+                      to={{ kind: "compare", mode: "player", a: playerSlugs[0], ...(playerSlugs[1] ? { b: playerSlugs[1] } : {}) }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "items", query: `player=${encodeURIComponent(playerSlugs[0])}` }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "finder", query: `player=${encodeURIComponent(playerSlugs[0])}` }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Game finder")} →
+                    </HubLink>
+                  </>
                 );
               }
               return null;

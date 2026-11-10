@@ -796,6 +796,12 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                   {tl("Counters")}
                 </HubLink>
                 <HubLink
+                  to={{ kind: "items", query: `player=${encodeURIComponent(p.u)}&champ=${encodeURIComponent(prettySlug(sel.champ))}` }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Item history")}
+                </HubLink>
+                <HubLink
                   to={{ kind: "compare", mode: "player", a: p.u }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -843,16 +849,30 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
         share={`${p.u}-signature-champs`}
         right={
           <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
-            {topChamps.length >= 2 && (
-              <HubLink
-                to={{
-                  kind: "counters",
-                  query: `champ=${prettySlug(topChamps[0].c)}&vs=${encodeURIComponent(topChamps[1].c)}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
-                }}
-                className="text-rw-accent hover:underline font-semibold"
-              >
-                {tl("Counters")} →
-              </HubLink>
+            {topChamps.length >= 1 && (
+              <>
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: `champ=${prettySlug(topChamps[0].c)}${topChamps[1] ? `&vs=${encodeURIComponent(topChamps[1].c)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
+                  }}
+                  className="text-rw-accent hover:underline font-semibold"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "items", query: `player=${encodeURIComponent(p.u)}&champ=${encodeURIComponent(prettySlug(topChamps[0].c))}` }}
+                  className="text-rw-accent hover:underline font-semibold"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}&champ=${encodeURIComponent(topChamps[0].c)}` }}
+                  className="text-rw-accent hover:underline font-semibold"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
+              </>
             )}
             <HubLink to={{ kind: "player", slug: p.u, tab: "champions" }} className="text-rw-accent hover:underline font-semibold">
               {tl("Show all {n}", { n: p.nChamps })} →
@@ -1000,18 +1020,41 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
             <RevealButton onReveal={reveal} small />
           ) : (
             <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
-              <HubLink to={{ kind: "prep", a: t.u }} className="text-rw-accent hover:underline font-semibold">
-                {tl("Match prep")} →
-              </HubLink>
-              <HubLink
-                to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)}` }}
-                className="text-rw-accent hover:underline font-semibold"
-              >
-                {tl("Draft board")} →
-              </HubLink>
-              <HubLink to={{ kind: "compare", mode: "team", a: t.u }} className="text-rw-accent hover:underline font-semibold">
-                {tl("Compare")} →
-              </HubLink>
+              {(() => {
+                const opp0 = t.recent[0]?.opp;
+                const oppSlug = opp0 ? t.opps.find((o) => o.n === opp0)?.u || prettySlug(opp0) : undefined;
+                return (
+                  <>
+                    <HubLink
+                      to={{ kind: "prep", a: t.u, ...(oppSlug ? { b: oppSlug } : {}) }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(t.u)}${oppSlug ? `,${encodeURIComponent(oppSlug)}` : ""}`,
+                      }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "compare", mode: "team", a: t.u, ...(oppSlug ? { b: oppSlug } : {}) }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}` }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Game finder")} →
+                    </HubLink>
+                  </>
+                );
+              })()}
               <SectionCard
                 section={`${tl("Recent series")} & ${tl("Blue / red side")}`}
                 name={t.name}
@@ -1432,6 +1475,12 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Pro tier list")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "items", query: `champ=${encodeURIComponent(c.u)}` }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Item history")} →
             </HubLink>
             <HubLink
               to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}` }}

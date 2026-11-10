@@ -475,28 +475,38 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                 </HubLink>
               </>
             )}
-            {search.trim() && shownRows.length === 1 && (shownRows[0].r[0] || shownRows[0].r[1]) && (
-              <>
-                <HubLink
-                  to={{ kind: "prep", a: shownRows[0].r[0] || prettySlug(shownRows[0].r[1]) }}
-                  className="text-rw-accent hover:underline font-medium"
-                >
-                  {tl("Match prep")} →
-                </HubLink>
-                <HubLink
-                  to={{ kind: "draft", query: `teams=${encodeURIComponent(shownRows[0].r[0] || prettySlug(shownRows[0].r[1]))}` }}
-                  className="text-rw-accent hover:underline"
-                >
-                  {tl("Draft board")} →
-                </HubLink>
-                <HubLink
-                  to={{ kind: "compare", mode: "team", a: shownRows[0].r[0] || prettySlug(shownRows[0].r[1]) }}
-                  className="text-rw-accent hover:underline font-medium"
-                >
-                  {tl("Compare")} →
-                </HubLink>
-              </>
-            )}
+            {search.trim() && shownRows.length === 1 && (shownRows[0].r[0] || shownRows[0].r[1]) && (() => {
+              const s0 = shownRows[0].r[0] || prettySlug(shownRows[0].r[1]);
+              const topSlug = top && top[0] && top[0] !== s0 ? top[0] : undefined;
+              return (
+                <>
+                  <HubLink
+                    to={{ kind: "prep", a: s0, ...(topSlug ? { b: topSlug } : {}) }}
+                    className="text-rw-accent hover:underline font-medium"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "draft", query: `teams=${encodeURIComponent(s0)}${topSlug ? `,${encodeURIComponent(topSlug)}` : ""}` }}
+                    className="text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "compare", mode: "team", a: s0, ...(topSlug ? { b: topSlug } : {}) }}
+                    className="text-rw-accent hover:underline font-medium"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "finder", query: `team=${encodeURIComponent(s0)}` }}
+                    className="text-rw-accent hover:underline"
+                  >
+                    {tl("Game finder")} →
+                  </HubLink>
+                </>
+              );
+            })()}
             <input
               type="search"
               value={search}
@@ -636,6 +646,12 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(aSlug)},${encodeURIComponent(bSlug)}` }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Draft board")} →
                     </HubLink>
                     <HubLink
                       to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug }}

@@ -257,6 +257,15 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   {tl("Match prep")} →
                 </HubLink>
                 <HubLink
+                  to={{
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(sorted[0].u || prettySlug(sorted[0].team))},${encodeURIComponent(sorted[1].u || prettySlug(sorted[1].team))}&p=y${encodeURIComponent(yearOnly(sorted[0].year))}`,
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
                   to={{ kind: "compare", mode: "team", a: sorted[0].u || prettySlug(sorted[0].team), b: sorted[1].u || prettySlug(sorted[1].team), period: `y${yearOnly(sorted[0].year)}` }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
@@ -440,6 +449,12 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   {tl("Match prep")} →
                 </HubLink>
                 <HubLink
+                  to={{ kind: "draft", query: `teams=${encodeURIComponent(fin.mostReached[0].u)},${encodeURIComponent(fin.mostReached[1].u)}` }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
                   to={{ kind: "compare", mode: "team", a: fin.mostReached[0].u, b: fin.mostReached[1].u }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
@@ -575,6 +590,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                           {tl("Match prep")}
                         </HubLink>
                         <HubLink
+                          to={{ kind: "draft", query: `teams=${encodeURIComponent(wSlug)},${encodeURIComponent(lSlug)}` }}
+                          className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
+                          title={tl("Draft board")}
+                        >
+                          {tl("Draft board")}
+                        </HubLink>
+                        <HubLink
                           to={{ kind: "compare", mode: "team", a: wSlug, b: lSlug }}
                           className="hover:underline"
                           title={tl("Compare")}
@@ -600,13 +622,21 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         right={
           <span className="flex flex-wrap items-center gap-2">
             {titles.length >= 2 && titles[0].u && titles[1].u && (
-              <HubLink
-                to={{ kind: "compare", mode: "player", a: titles[0].u, b: titles[1].u }}
-                className="text-[11px] text-rw-accent hover:underline"
-                title={tl("Compare {a} and {b}", { a: titles[0].name, b: titles[1].name })}
-              >
-                {tl("Compare")} →
-              </HubLink>
+              <>
+                <HubLink
+                  to={{ kind: "compare", mode: "player", a: titles[0].u, b: titles[1].u }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                  title={tl("Compare {a} and {b}", { a: titles[0].name, b: titles[1].name })}
+                >
+                  {tl("Compare")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "items", query: `player=${encodeURIComponent(titles[0].u)}` }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+              </>
             )}
             <CopyInsightPost
               title={`${tl("Players with the most titles")} · ${name}`}
