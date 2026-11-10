@@ -160,8 +160,22 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
   const [order, setOrder] = useState<"d" | "r">("d");
   const years = useMemo(() => [...new Set((state.data || []).map((r) => r[0].slice(0, 4)))], [state.data]);
   const rows = useMemo(() => {
-    const qq = q.trim().toLowerCase();
-    return (state.data || []).filter((r) => (year === "all" || r[0].startsWith(year)) && (!qq || r[1].toLowerCase().includes(qq) || r[5].toLowerCase().includes(qq)));
+    const terms = q
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean);
+    return (state.data || []).filter(
+      (r) =>
+        (year === "all" || r[0].startsWith(year)) &&
+        (!terms.length ||
+          terms.some(
+            (qq) =>
+              r[1].toLowerCase().includes(qq) ||
+              (r[2] || "").toLowerCase().includes(qq) ||
+              r[5].toLowerCase().includes(qq) ||
+              (r[6] || "").toLowerCase().includes(qq),
+          )),
+    );
   }, [state.data, year, q]);
   // the same spoiler switch as the list below: while its fresh results are hidden, so is the count of wins
   const [seriesHidden] = useHidden(`teamseries:${slug}:${year}:${q}`, rows.find((r) => isFresh(r[0]))?.[0]);
@@ -205,6 +219,22 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
         </HubLink>
         {!seriesHidden && shown.length > 0 && (
           <>
+            {shown[0]?.[2] && (
+              <>
+                <HubLink
+                  to={{ kind: "prep", a: slug, b: shown[0][2], period: year !== "all" ? `y${year}` : undefined }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "compare", mode: "team", a: slug, b: shown[0][2], period: year !== "all" ? `y${year}` : undefined }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              </>
+            )}
             <CopyArchivePost
               title={`${tl("Every series")} · ${teamName}${year !== "all" ? ` (${year})` : ""}`}
               sub={`${tn("{n} series", "{n} series", rows.length)} · ${tl("{w} won", { w: won })}`}
@@ -287,7 +317,10 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
               {tl("Compare")} →
             </HubLink>
             <HubLink
-              to={{ kind: "draft", query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}` }}
+              to={{
+                kind: "draft",
+                query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}${event !== "all" ? `&p=e:${encodeURIComponent(event)}` : year !== "all" ? `&p=y${encodeURIComponent(year)}` : ""}`,
+              }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
             >
               {tl("Draft board")} →
@@ -474,6 +507,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
   const [year, setYear] = useState(startYear || "all");
   const [champ, setChamp] = useState(startChamp || "all");
   const [opp, setOpp] = useState("all");
+  const [q, setQ] = useState("");
   const [order, setOrder] = useState<"d" | "r">("d");
   const [n, setN] = useState(PAGE);
   useEffect(() => {
@@ -511,11 +545,24 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
     for (const r of data) if (r[8]) count.set(r[8], (count.get(r[8]) || 0) + 1);
     return [...count.entries()].sort((x, y) => y[1] - x[1]);
   }, [data]);
-  const rows = useMemo(
-    () => data.filter((r: PlayerGameRow) => (year === "all" || r[0].startsWith(year)) && (champ === "all" || r[2] === champ) && (opp === "all" || r[8] === opp)),
-    [data, year, champ, opp],
-  );
-  const [hidden, reveal] = useHidden(`playergames:${slug}:${year}:${champ}:${opp}`, rows.find((r) => isFresh(r[0]))?.[0]);
+  const rows = useMemo(() => {
+    const terms = q
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean);
+    return data.filter(
+      (r: PlayerGameRow) =>
+        (year === "all" || r[0].startsWith(year)) &&
+        (champ === "all" || r[2] === champ) &&
+        (opp === "all" || r[8] === opp) &&
+        (!terms.length ||
+          terms.some((term) => {
+            const hay = `${r[2] || ""} ${champName(r[2] || "")} ${r[7] || ""} ${r[8] || ""} ${r[9] || ""} ${r[10] || ""}`.toLowerCase();
+            return hay.includes(term);
+          })),
+    );
+  }, [data, year, champ, opp, q]);
+  const [hidden, reveal] = useHidden(`playergames:${slug}:${year}:${champ}:${opp}:${q}`, rows.find((r) => isFresh(r[0]))?.[0]);
   const shown = useMemo(
     () => (order === "r" ? rows.filter((r) => r[23] != null && !(hidden && isFresh(r[0]))).sort((x, y) => (y[23] || 0) - (x[23] || 0)) : rows),
     [rows, order, hidden],
@@ -557,6 +604,16 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
           <option value="d">{tl("Newest first")}</option>
           <option value="r">{tl("Top rated")}</option>
         </select>
+        <input
+          value={q}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setN(PAGE);
+          }}
+          placeholder={tl("Filter by opponent or tournament…")}
+          aria-label={tl("Filter by opponent or tournament…")}
+          className={`${select} flex-1 min-w-[10rem] placeholder-rw-muted`}
+        />
         <HubLink
           to={{
             kind: "finder",
@@ -666,7 +723,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                       <>
                         {" · "}
                         <HubLink
-                          to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&role=${encodeURIComponent(r[10])}` }}
+                          to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&role=${encodeURIComponent(r[10])}${year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}` }}
                           className="hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
                         >

@@ -74,8 +74,19 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
   // Riot's logo when it has one; otherwise the top card shows the team's short name in a tile
   const logo = useTeamLogo(t.name, t.codes[0]);
   const [allEvents, setAllEvents] = useState(false);
+  const [eventSearch, setEventSearch] = useState("");
   const [recentHidden, revealRecent] = useHidden(`team-recent:${t.u}`, t.recent[0]?.date);
-  const events = allEvents ? t.events : t.events.slice(0, 15);
+  const eventTerms = eventSearch
+    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+    .map((x) => normText(x))
+    .filter(Boolean);
+  const filteredEvents = eventTerms.length
+    ? t.events.filter((x) => {
+        const hay = `${normText(x.en)} ${normText(x.e || "")} ${normText(x.as || "")} ${x.date || ""}`;
+        return eventTerms.some((term) => hay.includes(term));
+      })
+    : t.events;
+  const events = allEvents || eventTerms.length ? filteredEvents : filteredEvents.slice(0, 15);
   // the section cards leave out what spoiler mode hides
   const hiddenCheck = useHiddenCheck();
   const cardSub = t.region ? regionName(t.region) : undefined;
@@ -118,7 +129,21 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
       title={tl("Roster")}
       right={
         activeRoster ? (
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center gap-2">
+            {activeRoster.p.length >= 2 && (
+              <HubLink
+                to={{
+                  kind: "compare",
+                  mode: "player",
+                  a: activeRoster.p[0].u || prettySlug(activeRoster.p[0].n),
+                  b: activeRoster.p[1].u || prettySlug(activeRoster.p[1].n),
+                  period: `y${activeRoster.y}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            )}
             {overview && (
               <HubLink
                 to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${activeRoster.y}` }}
@@ -435,20 +460,35 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
             recentHidden ? (
               <RevealButton onReveal={revealRecent} small />
             ) : (
-              <SectionCard
-                section={tl("Recent series")}
-                name={t.name}
-                rows={() =>
-                  t.recent.map((r, idx) => ({
-                    rank: idx + 1,
-                    win: r.us > r.them,
-                    team: r.opp,
-                    label: `${r.us}-${r.them} vs ${r.opp}`,
-                    sub: r.en,
-                    value: fmtDate(r.date, false),
-                  }))
-                }
-              />
+              <span className="flex flex-wrap items-center gap-2">
+                {t.recent[0]?.opp && (
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: t.u,
+                      b: t.opps.find((o) => o.n === t.recent[0].opp)?.u || prettySlug(t.recent[0].opp),
+                      period: /^\d{4}/.test(t.recent[0].date) ? `y${t.recent[0].date.slice(0, 4)}` : undefined,
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                )}
+                <SectionCard
+                  section={tl("Recent series")}
+                  name={t.name}
+                  rows={() =>
+                    t.recent.map((r, idx) => ({
+                      rank: idx + 1,
+                      win: r.us > r.them,
+                      team: r.opp,
+                      label: `${r.us}-${r.them} vs ${r.opp}`,
+                      sub: r.en,
+                      value: fmtDate(r.date, false),
+                    }))
+                  }
+                />
+              </span>
             )
           }
         >
@@ -691,8 +731,18 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
         <Section
           title={tl("Tournaments")}
           right={
-            <span className="flex items-center gap-2">
-              {t.events.length > 15 && (
+            <span className="flex flex-wrap items-center gap-2">
+              {t.events.length > 8 && (
+                <input
+                  type="search"
+                  value={eventSearch}
+                  onChange={(e) => setEventSearch(e.target.value)}
+                  placeholder={tl("Filter by opponent or tournament…")}
+                  aria-label={tl("Filter by opponent or tournament…")}
+                  className={`${select} w-44`}
+                />
+              )}
+              {!eventTerms.length && t.events.length > 15 && (
                 <button type="button" onClick={() => setAllEvents((v) => !v)} className="text-[11px] text-rw-accent hover:underline">
                   {allEvents ? tl("Show fewer") : tl("Show all {n}", { n: t.events.length })}
                 </button>
@@ -810,8 +860,22 @@ const TeamChampionsTab: React.FC<{
   const bans = agg ? agg.bans.map(([c, g]) => ({ c, g })) : t.bans;
   const bansVs = agg ? agg.bansVs.map(([c, g]) => ({ c, g })) : t.bansVs || [];
   const [search, setSearch] = useState("");
-  const nq = normText(search);
-  const shownChamps = useMemo(() => (nq ? champs.filter((c) => normText(champName(c.c)).includes(nq) || normText(c.c).includes(nq)) : champs), [champs, nq]);
+  const terms = useMemo(
+    () =>
+      search
+        .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+        .map((x) => normText(x))
+        .filter(Boolean),
+    [search],
+  );
+  const matchesChamp = (c: string) => {
+    if (!terms.length) return true;
+    const hay = `${normText(champName(c))} ${normText(c)}`;
+    return terms.some((term) => hay.includes(term));
+  };
+  const shownChamps = useMemo(() => (terms.length ? champs.filter((c) => matchesChamp(c.c)) : champs), [champs, terms]);
+  const shownBans = useMemo(() => (terms.length ? bans.filter((c) => matchesChamp(c.c)) : bans), [bans, terms]);
+  const shownBansVs = useMemo(() => (terms.length ? bansVs.filter((c) => matchesChamp(c.c)) : bansVs), [bansVs, terms]);
   const maxPickG = Math.max(1, ...champs.map((c) => c.g));
   const maxBanG = Math.max(1, ...bans.map((c) => c.g));
   const maxBanVsG = Math.max(1, ...bansVs.map((c) => c.g));
@@ -842,7 +906,7 @@ const TeamChampionsTab: React.FC<{
         <Section
           title={tl("Most picked champions")}
           right={
-            <span className="flex items-center gap-2">
+            <span className="flex flex-wrap items-center gap-2">
               {champs.length >= 12 && (
                 <input
                   type="search"
@@ -852,6 +916,17 @@ const TeamChampionsTab: React.FC<{
                   aria-label={tl("Search champions…")}
                   className={`${select} w-36`}
                 />
+              )}
+              {shownChamps.length >= 2 && (
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: `champ=${encodeURIComponent(prettySlug(shownChamps[0].c))}&vs=${encodeURIComponent(prettySlug(shownChamps[1].c))}`,
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Counters")} →
+                </HubLink>
               )}
               <SectionCard
                 section={tl("Most picked champions")}
@@ -915,12 +990,12 @@ const TeamChampionsTab: React.FC<{
             <SectionCard
               section={tl("Most banned by them")}
               name={t.name}
-              rows={() => bans.map((c, idx) => ({ rank: idx + 1, champ: c.c, team: t.name, label: champName(c.c), value: String(c.g) }))}
+              rows={() => shownBans.map((c, idx) => ({ rank: idx + 1, champ: c.c, team: t.name, label: champName(c.c), value: String(c.g) }))}
             />
           }
         >
           <ul className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
-            {bans.map((c) => {
+            {shownBans.map((c) => {
               const isSel = selectedChamp?.toLowerCase() === c.c.toLowerCase();
               return (
                 <li
@@ -959,12 +1034,12 @@ const TeamChampionsTab: React.FC<{
               <SectionCard
                 section={tl("Most banned against them")}
                 name={t.name}
-                rows={() => bansVs.map((c, idx) => ({ rank: idx + 1, champ: c.c, team: t.name, label: champName(c.c), value: String(c.g) }))}
+                rows={() => shownBansVs.map((c, idx) => ({ rank: idx + 1, champ: c.c, team: t.name, label: champName(c.c), value: String(c.g) }))}
               />
             }
           >
             <ul className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
-              {bansVs.map((c) => {
+              {shownBansVs.map((c) => {
                 const isSel = selectedChamp?.toLowerCase() === c.c.toLowerCase();
                 return (
                   <li
@@ -1343,8 +1418,22 @@ const TeamChampGames: React.FC<{
           <div className="grid gap-3 md:grid-cols-2">
             {playersSummary.length > 0 && (
               <div className="bg-rw-bg border border-rw-border rounded-lg p-2.5 space-y-1.5">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">
-                  {tl("Most games on {champion}", { champion: champName(canonical) })}
+                <div className="flex items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-wider text-rw-muted">
+                  <span>{tl("Most games on {champion}", { champion: champName(canonical) })}</span>
+                  {playersSummary.length >= 2 && playersSummary[0].u && playersSummary[1].u && (
+                    <HubLink
+                      to={{
+                        kind: "compare",
+                        mode: "player",
+                        a: playersSummary[0].u,
+                        b: playersSummary[1].u,
+                        period: period !== "all" ? period : undefined,
+                      }}
+                      className="text-rw-accent hover:underline font-normal normal-case tracking-normal"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                  )}
                 </div>
                 <ul className="space-y-1">
                   {playersSummary.map((pl) => (
@@ -1508,7 +1597,10 @@ const TeamChampGames: React.FC<{
                 </select>
               )}
               <HubLink
-                to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(canonical)}` }}
+                to={{
+                  kind: "finder",
+                  query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(canonical)}${year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}${sideFilter !== "all" ? `&side=${sideFilter}` : ""}${playerFilter !== "all" ? `&player=${encodeURIComponent(playerFilter)}` : ""}`,
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tn("{n} game", "{n} games", filtered.length)}

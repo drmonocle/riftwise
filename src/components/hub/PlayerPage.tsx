@@ -114,6 +114,7 @@ const PlayerView: React.FC<{
   ];
   const to = (key: string): HubRoute => ({ kind: "player", slug: p.u, ...(key ? { tab: key } : {}) });
   const [allEvents, setAllEvents] = useState(false);
+  const [eventSearch, setEventSearch] = useState("");
   const nowRoute = currentHubRoute();
   const routeQuery = nowRoute.kind === "player" && nowRoute.slug === p.u ? nowRoute.query : undefined;
   const urlParams = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
@@ -154,7 +155,17 @@ const PlayerView: React.FC<{
     "Leaguepedia",
     `https://lol.fandom.com/wiki/${encodeURIComponent(p.page.replace(/ /g, "_"))}`,
   ]);
-  const events = allEvents ? p.events : p.events.slice(0, 12);
+  const eventTerms = eventSearch
+    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+    .map((x) => normText(x))
+    .filter(Boolean);
+  const filteredEvents = eventTerms.length
+    ? p.events.filter((x) => {
+        const hay = `${normText(x.en)} ${normText(x.e || "")} ${normText(x.t || "")} ${x.date || ""} ${(x.c || []).map((c) => `${normText(champName(c))} ${normText(c)}`).join(" ")}`;
+        return eventTerms.some((term) => hay.includes(term));
+      })
+    : p.events;
+  const events = allEvents || eventTerms.length ? filteredEvents : filteredEvents.slice(0, 12);
   // the section cards leave out what spoiler mode hides
   const hiddenCheck = useHiddenCheck();
   const cardSub = [p.role ? roleName(p.role) : null, p.club].filter(Boolean).join(" · ") || undefined;
@@ -367,8 +378,18 @@ const PlayerView: React.FC<{
         <Section
           title={tl("Tournaments")}
           right={
-            <span className="flex items-center gap-2">
-              {p.events.length > 12 && (
+            <span className="flex flex-wrap items-center gap-2">
+              {p.events.length > 8 && (
+                <input
+                  type="search"
+                  value={eventSearch}
+                  onChange={(e) => setEventSearch(e.target.value)}
+                  placeholder={tl("Filter by opponent or tournament…")}
+                  aria-label={tl("Filter by opponent or tournament…")}
+                  className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text w-44"
+                />
+              )}
+              {!eventTerms.length && p.events.length > 12 && (
                 <button
                   type="button"
                   onClick={() => setAllEvents((v) => !v)}
@@ -597,7 +618,14 @@ const PlayerView: React.FC<{
                         </span>
                       )}
                       <HubLink
-                        to={{ kind: "finder", query: new URLSearchParams({ player: p.u, vs: prettySlug(r.opp) }).toString() }}
+                        to={{
+                          kind: "finder",
+                          query: new URLSearchParams({
+                            player: p.u,
+                            vs: prettySlug(r.opp),
+                            ...(r.date && /^\d{4}/.test(r.date) ? { year: r.date.slice(0, 4) } : {}),
+                          }).toString(),
+                        }}
                         className="text-rw-muted hover:text-rw-accent hover:underline shrink-0"
                         title={tl("Game finder")}
                       >
@@ -690,7 +718,14 @@ const PlayerView: React.FC<{
                       <span>{champName(b.c)}</span>
                     </HubLink>
                     <HubLink
-                      to={{ kind: "finder", query: new URLSearchParams({ player: p.u, vs: prettySlug(b.opp) }).toString() }}
+                      to={{
+                        kind: "finder",
+                        query: new URLSearchParams({
+                          player: p.u,
+                          vs: prettySlug(b.opp),
+                          ...(b.date && /^\d{4}/.test(b.date) ? { year: b.date.slice(0, 4) } : {}),
+                        }).toString(),
+                      }}
                       className="text-rw-muted hover:text-rw-accent hover:underline"
                       title={tl("Game finder")}
                     >
@@ -880,8 +915,24 @@ const PlayerChampionsTab: React.FC<{
   }, [log.data, period]);
   const champs = agg ? agg.champs : p.champs;
   const [search, setSearch] = useState("");
-  const nq = normText(search);
-  const shownChamps = useMemo(() => (nq ? champs.filter((c) => normText(champName(c.c)).includes(nq) || normText(c.c).includes(nq)) : champs), [champs, nq]);
+  const terms = useMemo(
+    () =>
+      search
+        .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+        .map((x) => normText(x))
+        .filter(Boolean),
+    [search],
+  );
+  const shownChamps = useMemo(
+    () =>
+      terms.length
+        ? champs.filter((c) => {
+            const hay = `${normText(champName(c.c))} ${normText(c.c)}`;
+            return terms.some((t) => hay.includes(t));
+          })
+        : champs,
+    [champs, terms],
+  );
   const maxChampG = Math.max(1, ...champs.map((c) => c.g));
   const periodLabel = period === "all" ? "" : options.find((o) => o.key === period)?.label || period;
   return (
@@ -898,7 +949,7 @@ const PlayerChampionsTab: React.FC<{
       <Section
         title={tl("Champion pool")}
         right={
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center gap-2">
             {champs.length >= 12 && (
               <input
                 type="search"
@@ -908,6 +959,17 @@ const PlayerChampionsTab: React.FC<{
                 aria-label={tl("Search champions…")}
                 className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text w-36"
               />
+            )}
+            {shownChamps.length >= 2 && (
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: `champ=${encodeURIComponent(prettySlug(shownChamps[0].c))}&vs=${encodeURIComponent(prettySlug(shownChamps[1].c))}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Counters")} →
+              </HubLink>
             )}
             <SectionCard
               section={tl("Champion pool")}

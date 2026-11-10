@@ -89,12 +89,14 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
         <ul className="text-xs space-y-1 pt-2 border-t border-rw-border">
           {rest.map((c) => {
             const [, them] = sides(c);
+            const yr = c.m.startTimeUtc?.slice(0, 4);
+            const period = yr && /^\d{4}$/.test(yr) ? `y${yr}` : undefined;
             return (
               <li key={c.m.matchId} className="flex items-center justify-between gap-2 min-w-0">
                 <span className="inline-flex items-center gap-1.5 truncate min-w-0">
                   {c.opp ? (
                     <HubLink
-                      to={{ kind: "compare", mode: "team", a: t.u, b: c.opp }}
+                      to={{ kind: "compare", mode: "team", a: t.u, b: c.opp, period }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                       title={tl("Compare")}
                     >
@@ -170,6 +172,8 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
     ? ROLES.map((role) => ({ role, a: teamStarter(t, role), b: teamStarter(oppTeam, role) }))
     : [];
   const hasLanePairs = lanePairs.filter((lp) => lp.a && lp.b).length >= 3;
+  const yr = m.startTimeUtc?.slice(0, 4);
+  const period = yr && /^\d{4}$/.test(yr) ? `y${yr}` : undefined;
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px]">
@@ -181,7 +185,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
           <span className="text-rw-muted">
             {" · "}
             {c.opp ? (
-              <HubLink to={{ kind: "prep", a: t.u, b: c.opp }} className="hover:text-rw-accent hover:underline" title={tl("Match prep")}>
+              <HubLink to={{ kind: "prep", a: t.u, b: c.opp, period }} className="hover:text-rw-accent hover:underline" title={tl("Match prep")}>
                 {tc("short best of", "Bo{n}", { n: m.bestOf || 1 })}
               </HubLink>
             ) : (
@@ -215,7 +219,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
         </span>
         {c.opp ? (
           <HubLink
-            to={{ kind: "compare", mode: "team", a: t.u, b: c.opp }}
+            to={{ kind: "compare", mode: "team", a: t.u, b: c.opp, period }}
             className="text-rw-sub hover:text-rw-accent hover:underline text-xs shrink-0"
             title={tl("Compare")}
           >
@@ -253,7 +257,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
           )}
           {h2h && (
             <HubLink
-              to={{ kind: "compare", mode: "team", a: t.u, b: c.opp || undefined }}
+              to={{ kind: "compare", mode: "team", a: t.u, b: c.opp || undefined, period }}
               className="inline-flex items-center gap-1.5 font-mono tabular-nums text-rw-sub hover:text-rw-accent hover:underline"
               title={tl("All-time head-to-head, in games")}
             >
@@ -285,7 +289,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
             a && b ? (
               <HubLink
                 key={role}
-                to={{ kind: "compare", mode: "player", a: a.u, b: b.u }}
+                to={{ kind: "compare", mode: "player", a: a.u, b: b.u, period }}
                 title={tl("Compare {a} and {b}", { a: a.n, b: b.n })}
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-rw-border bg-rw-bg/70 hover:border-rw-accent/60"
               >
@@ -304,7 +308,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
         <MatchPrepButton match={m} />
         <MatchOverviewButton match={m} />
         <HubLink
-          to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)}${c.opp ? `,${encodeURIComponent(c.opp)}` : ""}` }}
+          to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)}${c.opp ? `,${encodeURIComponent(c.opp)}` : ""}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
         >
           {tl("Draft board")}
@@ -312,13 +316,13 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
         {c.opp && (
           <>
             <HubLink
-              to={{ kind: "compare", mode: "team", a: t.u, b: c.opp }}
+              to={{ kind: "compare", mode: "team", a: t.u, b: c.opp, period }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
             >
               {tl("Compare")}
             </HubLink>
             <HubLink
-              to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&vs=${encodeURIComponent(c.opp)}` }}
+              to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&vs=${encodeURIComponent(c.opp)}${yr && /^\d{4}$/.test(yr) ? `&year=${encodeURIComponent(yr)}` : ""}` }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
             >
               {tl("Game finder")}

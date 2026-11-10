@@ -836,7 +836,14 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
           <PeriodPicker options={options} value={period} onChange={setPeriod} />
           <OnlyPicker value={only} onChange={setOnly} />
           {!hidden && (
-            <CopyPeriodTextPost
+            <>
+              <HubLink
+                to={{ kind: "compare", mode: "player", a: slug, ...(period !== "all" ? { period } : {}) }}
+                className="text-[11px] font-semibold text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+              <CopyPeriodTextPost
               url={hubShareUrl({
                 kind: "player",
                 slug,
@@ -852,6 +859,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 return [head, stats, ...champs].join("\n");
               }}
             />
+            </>
           )}
           {who && !hidden && (
             <BroadcastCardButton data={() => playerCardData({ ...who, slug }, agg, periodText)} name={`${who.name}-${period}`} />
@@ -1109,7 +1117,20 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
           <PeriodPicker options={options} value={period} onChange={setPeriod} />
           <OnlyPicker value={only} onChange={setOnly} sides />
           {!hidden && (
-            <CopyPeriodTextPost
+            <>
+              <HubLink
+                to={{ kind: "prep", a: slug, ...(period !== "all" ? { period } : {}) }}
+                className="text-[11px] font-semibold text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: slug, ...(period !== "all" ? { period } : {}) }}
+                className="text-[11px] font-semibold text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+              <CopyPeriodTextPost
               url={hubShareUrl({
                 kind: "team",
                 slug,
@@ -1125,6 +1146,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                 return [head, stats, ...picks].join("\n");
               }}
             />
+            </>
           )}
           {who && !hidden && (
             <BroadcastCardButton

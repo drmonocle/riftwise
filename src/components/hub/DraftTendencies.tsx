@@ -340,18 +340,26 @@ export const DraftTendencies: React.FC<{
   const d = useMemo(() => draftTendencies(rows), [rows]);
   if (d.games < 3) return null;
   const resolvedSlug = teamSlug || undefined;
+  const periodParam =
+    period?.startsWith("y") && period.length === 5
+      ? `&year=${encodeURIComponent(period.slice(1))}`
+      : period?.startsWith("e:")
+        ? `&event=${encodeURIComponent(period.slice(2))}`
+        : period?.startsWith("p:")
+          ? `&patch=${encodeURIComponent(period.slice(2))}`
+          : "";
   const roleStr = (shares: [number, number][]) =>
     shares.length ? shares.slice(0, 2).map(([r, v]) => `${roleName(ROLES[r])} ${Math.round(v * 100)}%`).join(" · ") : "–";
   const champStr = (list: Count[], n = 3) =>
     list.length ? list.slice(0, n).map(([c, g, w]) => `${champName(c)} (${g} · ${winRate(w, g)})`).join(", ") : "–";
   return (
     <div className="@container space-y-2 pt-2 border-t border-rw-border">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div className="flex flex-wrap items-baseline gap-2">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Draft tendencies")}</h4>
           {resolvedSlug ? (
             <HubLink
-              to={{ kind: "finder", query: `team=${encodeURIComponent(resolvedSlug)}` }}
+              to={{ kind: "finder", query: `team=${encodeURIComponent(resolvedSlug)}${periodParam}` }}
               className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
             >
               {tl("{n} games with the draft order", { n: d.games })}
