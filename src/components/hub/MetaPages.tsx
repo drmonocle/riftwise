@@ -286,12 +286,12 @@ export const LeaguesPanel: React.FC = () => {
           className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1.5 text-rw-text placeholder-rw-muted flex-1 min-w-[10rem]"
         />
       </div>
-      <Page state={state}>{(rows: LeagueRow[]) => <LeagueLists rows={rows} scope={scope} q={q} />}</Page>
+      <Page state={state}>{(rows: LeagueRow[]) => <LeagueLists rows={rows} scope={scope} q={q} onSetQ={setQ} />}</Page>
     </div>
   );
 };
 
-const LeagueLists: React.FC<{ rows: LeagueRow[]; scope: LeagueScope; q: string }> = ({ rows, scope, q }) => {
+const LeagueLists: React.FC<{ rows: LeagueRow[]; scope: LeagueScope; q: string; onSetQ?: (q: string) => void }> = ({ rows, scope, q, onSetQ }) => {
   const groups = useMemo(() => {
     const qq = q.trim().toLowerCase();
     const match = (l: LeagueRow) => !qq || `${l.s || ""} ${l.l} ${l.r || ""}`.toLowerCase().includes(qq);
@@ -313,13 +313,13 @@ const LeagueLists: React.FC<{ rows: LeagueRow[]; scope: LeagueScope; q: string }
   return (
     <div className="space-y-3">
       {groups.map((g) => (
-        <LeagueTable key={g.key} title={g.title} rows={g.rows} limit={g.limit} />
+        <LeagueTable key={g.key} title={g.title} rows={g.rows} limit={g.limit} q={q} onSetQ={onSetQ} />
       ))}
     </div>
   );
 };
 
-const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number }> = ({ title, rows, limit }) => {
+const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number; q?: string; onSetQ?: (q: string) => void }> = ({ title, rows, limit, q = "", onSetQ }) => {
   const [n, setN] = useState(limit || 0);
   const list = n ? rows.slice(0, n) : rows;
   const maxG = Math.max(1, ...list.map((l) => l.g || 0));
@@ -366,11 +366,29 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
                   </HubLink>
                   {l.h && l.h.length > 1 && <HistoryChain steps={l.h} current={l.u} small />}
                 </td>
-                <td className={`${td} text-rw-sub`} data-sort={l.r ? regionName(l.r, l.r) : ""}>{l.r ? regionName(l.r, l.r) : ""}</td>
+                <td className={`${td} text-rw-sub`} data-sort={l.r ? regionName(l.r, l.r) : ""}>
+                  {l.r ? (
+                    onSetQ ? (
+                      <button
+                        type="button"
+                        onClick={() => onSetQ(q.trim().toLowerCase() === l.r!.toLowerCase() ? "" : l.r!)}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {regionName(l.r, l.r)}
+                      </button>
+                    ) : (
+                      regionName(l.r, l.r)
+                    )
+                  ) : (
+                    ""
+                  )}
+                </td>
                 <td className={`${td} text-rw-muted`} data-sort={l.from || ""}>{l.from && l.to ? (l.from === l.to ? l.from : `${l.from}–${l.to}`) : ""}</td>
                 <td className={`${td} text-rw-sub tabular-nums`} data-sort={l.n}>
                   <span className="inline-flex items-center gap-1.5">
-                    <span>{l.n}</span>
+                    <HubLink to={{ kind: "league", slug: l.u }} className="hover:text-rw-accent hover:underline">
+                      {l.n}
+                    </HubLink>
                     <span className="hidden sm:inline-block w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
                       <span className="block h-full rounded-full bg-rw-teal/65" style={{ width: `${nPct}%` }} />
                     </span>
@@ -489,7 +507,7 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
           </>
         }
         stats={[
-          { label: tl("Tournaments"), value: fmtNum(l.events.length), to: { kind: "tournaments" } },
+          { label: tl("Tournaments"), value: fmtNum(l.events.length), to: { kind: "tournaments", ...(season || years[0] ? { year: season || years[0] } : {}) } },
           totalGames > 0
             ? {
                 label: tl("Games"),

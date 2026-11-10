@@ -5,8 +5,9 @@
  */
 import React, { useState } from "react";
 import { tl, roleName } from "../../i18n";
-import { loadLeagueSeason } from "../../hub/data";
+import { loadLeagueSeason, prettySlug } from "../../hub/data";
 import type { EventPlayer } from "../../hub/types";
+import { hubShareUrl } from "../../hub/route";
 import { HubLink, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo, useLoad } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 import { PLAYER_METRICS } from "./Ranks";
@@ -70,6 +71,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
               <CopyLeagueGlancePost
                 title={tl("{name} {year} at a glance", { name, year })}
                 league={league}
+                year={year}
                 teams={teams}
               />
               <SectionCard
@@ -117,7 +119,12 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                         >
                           {t.w}-{t.g - t.w}
                         </HubLink>{" "}
-                        <span className={wrPct >= 55 ? "text-rw-teal font-semibold" : wrPct <= 45 ? "text-rw-red" : "text-rw-muted"}>({wrPct}%)</span>
+                        <HubLink
+                          to={{ kind: "team", slug: t.u || prettySlug(t.t), tab: "stats", query: `p=y${encodeURIComponent(year)}` }}
+                          className={`hover:underline ${wrPct >= 55 ? "text-rw-teal font-semibold" : wrPct <= 45 ? "text-rw-red" : "text-rw-muted"}`}
+                        >
+                          ({wrPct}%)
+                        </HubLink>
                       </span>
                       <span className="w-9 h-1 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
                         <span
@@ -198,15 +205,16 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
 const CopyLeagueGlancePost: React.FC<{
   title: string;
   league: string;
+  year: string;
   teams: { t: string; w: number; g: number }[];
-}> = ({ title, league, teams }) => {
+}> = ({ title, league, year, teams }) => {
   const [copied, setCopied] = useState(false);
   const copy = () => {
     const lines: string[] = [title];
     for (const [idx, t] of teams.slice(0, 6).entries()) {
       lines.push(`#${idx + 1} ${t.t}: ${t.w}–${t.g - t.w} (${Math.round((t.w / Math.max(1, t.g)) * 100)}%)`);
     }
-    lines.push(`https://riftwise.gg/league/${league}`);
+    lines.push(hubShareUrl({ kind: "league", slug: league, year }));
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {

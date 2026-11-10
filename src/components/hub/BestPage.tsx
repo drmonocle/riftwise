@@ -7,7 +7,7 @@
 import React, { useMemo, useState } from "react";
 import { PlayCircle } from "lucide-react";
 import { tl, tn, tc, stageLabel, fmtDec } from "../../i18n";
-import { loadAliases, loadBest, loadBestIndex, normText, resolveLeagueSlug } from "../../hub/data";
+import { loadAliases, loadBest, loadBestIndex, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import type { BestGame, BestSeries } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { card, EventLink, Failed, fmtDate, HubLink, isFresh, Loading, RatingBadge, ratingTextClass, ratingTier, RevealButton, TeamLink, TeamLogo, th, useHidden, useLoad, usePageTitle } from "./ui";
@@ -300,7 +300,15 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
       <td className="py-2 pr-3 sm:min-w-[12rem]" data-sort={min || 0}>
         <div className="inline-flex flex-wrap items-center gap-x-1.5">
           <Team name={a} u={aSlug} won={w === 1} />
-          <HubLink to={{ kind: "match", slug, game: n }} className="text-rw-muted hover:text-rw-accent hover:underline">
+          <HubLink
+            to={
+              aSlug || bSlug
+                ? { kind: "compare", mode: "team", a: aSlug || prettySlug(a), b: bSlug || prettySlug(b), period }
+                : { kind: "match", slug, game: n }
+            }
+            className="text-rw-muted hover:text-rw-accent hover:underline"
+            title={tl("Compare")}
+          >
             vs
           </HubLink>
           <Team name={b} u={bSlug} won={w === 2} />

@@ -481,7 +481,13 @@ const Bars: React.FC<{ rows: RankRow[]; hide: ColId[]; rankTo?: (r: RankRow) => 
             ))}
           {show("value") && (
             <span className="order-2 sm:order-3 tabular-nums text-rw-text whitespace-nowrap text-right">
-              {r.text}{" "}
+              {rankTo ? (
+                <HubLink to={rankTo(r)} className="hover:text-rw-accent hover:underline">
+                  {r.text}
+                </HubLink>
+              ) : (
+                r.text
+              )}{" "}
               <span className="text-rw-muted">
                 ·{" "}
                 {rankTo ? (

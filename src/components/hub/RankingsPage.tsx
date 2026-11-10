@@ -187,7 +187,9 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
         const w = Math.max(10, Math.min(100, Math.round(((x.r[5] - minRowRating) / Math.max(1, maxRowRating - minRowRating)) * 100)));
         return (
           <span className="inline-flex flex-col gap-0.5 min-w-[3.25rem]">
-            <span>{x.r[5]}</span>
+            <HubLink to={{ kind: "team", slug: x.r[0] }} className="hover:underline">
+              {x.r[5]}
+            </HubLink>
             <span className="h-1 w-11 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
               <span className="block h-full rounded-full bg-rw-accent/80" style={{ width: `${w}%` }} />
             </span>
@@ -212,7 +214,16 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       label: tl("30 days"),
       title: tl("Rating change over the last 30 days"),
       value: (x) => change(x.r),
-      render: (x) => <Change v={change(x.r)} />,
+      render: (x) => {
+        const v = change(x.r);
+        return v != null ? (
+          <HubLink to={{ kind: "team", slug: x.r[0], tab: "matches" }} className="hover:underline">
+            <Change v={v} />
+          </HubLink>
+        ) : (
+          <Change v={v} />
+        );
+      },
       className: "tabular-nums",
     },
     {

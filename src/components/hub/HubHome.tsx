@@ -496,7 +496,11 @@ const EventNow: React.FC<{ intl?: Match; schedule?: Match[]; settings?: AppSetti
                   {fmtDate(e.st, false)} – {fmtDate(e.en, false)}
                 </span>
               </div>
-              <div className="text-[11px] text-rw-muted font-num">{line(e)}</div>
+              <div className="text-[11px] text-rw-muted font-num">
+                <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }} className="hover:text-rw-accent hover:underline">
+                  {line(e)}
+                </HubLink>
+              </div>
             </li>
           ))}
         </ul>
@@ -559,10 +563,14 @@ const TopTeams: React.FC<{ rows?: RatingRow[]; n: number; ranked?: boolean }> = 
                 {Math.round(t[5])}
               </HubLink>
               {ranked && t[6] != null && (
-                <span className={`font-num tabular-nums text-[11px] w-9 text-right ${t[6] >= 0 ? "text-rw-accent" : "text-rw-muted"}`}>
+                <HubLink
+                  to={{ kind: "team", slug: t[0], tab: "matches" }}
+                  className={`font-num tabular-nums text-[11px] w-9 text-right hover:underline ${t[6] >= 0 ? "text-rw-accent" : "text-rw-muted"}`}
+                  title={tl("30-day change")}
+                >
                   {t[6] >= 0 ? "+" : ""}
                   {Math.round(t[6])}
-                </span>
+                </HubLink>
               )}
             </span>
           </li>
@@ -607,9 +615,16 @@ const PatchMovers: React.FC = () => {
                   {up ? "▲" : "▼"} {Math.round(Math.abs(now - was) * 100)}%
                 </HubLink>
                 {wr.now != null && (
-                  <span className={wrTone}>
+                  <HubLink
+                    to={{
+                      kind: "finder",
+                      query: p ? `patch=${encodeURIComponent(p.p)}&champ=${encodeURIComponent(c)}` : `champ=${encodeURIComponent(c)}`,
+                    }}
+                    className={`${wrTone} hover:underline`}
+                    title={tl("Game finder")}
+                  >
                     · {Math.round(wr.now * 100)}% {tl("WR")}
-                  </span>
+                  </HubLink>
                 )}
               </span>
             </li>

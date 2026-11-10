@@ -122,7 +122,27 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-lg font-bold text-rw-text">{tl("Pro tier list")}</h1>
           {block && block.games > 0 && (
-            <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+            <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+              <HubLink
+                to={{
+                  kind: "champions",
+                  query: new URLSearchParams({
+                    ...(isLeague
+                      ? {
+                          league: rawScope,
+                          ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
+                        }
+                      : {
+                          key,
+                          ...(scope === "all" ? { scope: "all" } : {}),
+                        }),
+                    ...(role ? { role } : {}),
+                  }).toString(),
+                }}
+                className="font-semibold text-rw-accent hover:underline"
+              >
+                {tl("Champions")} →
+              </HubLink>
               <SectionCard
                 section={tl("Pro tier list")}
                 name={label(key)}

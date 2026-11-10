@@ -19,13 +19,21 @@ import { champName } from "../../champions";
 const sel = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-rw-text max-w-[14rem]";
 const pct = (v: number | null) => (v == null ? "–" : `${fmtDec(v * 100)}%`);
 
-const PresenceCell: React.FC<{ presence: number; p: number; b: number; games: number }> = ({ presence, p, b, games }) => {
+const PresenceCell: React.FC<{ presence: number; p: number; b: number; games: number; to?: import("../../hub/route").HubRoute }> = ({ presence, p, b, games, to }) => {
   const g = Math.max(games, 1);
   const pickW = Math.min(100, Math.round((p / g) * 100));
   const banW = Math.min(100 - pickW, Math.round((b / g) * 100));
   return (
     <div className="min-w-[4.5rem] space-y-0.5">
-      <div className="font-mono tabular-nums text-rw-text font-semibold">{pct(presence)}</div>
+      <div className="font-mono tabular-nums text-rw-text font-semibold">
+        {to ? (
+          <HubLink to={to} className="hover:text-rw-accent hover:underline" title={tl("Game finder")}>
+            {pct(presence)}
+          </HubLink>
+        ) : (
+          pct(presence)
+        )}
+      </div>
       <div className="h-1 rounded-full bg-rw-raised overflow-hidden flex" aria-hidden="true">
         <div className="h-full bg-rw-teal/80" style={{ width: `${pickW}%` }} />
         <div className="h-full bg-rw-red/65" style={{ width: `${banW}%` }} />
@@ -34,13 +42,21 @@ const PresenceCell: React.FC<{ presence: number; p: number; b: number; games: nu
   );
 };
 
-const WinRateCell: React.FC<{ wr: number | null; p: number; minPicks: number }> = ({ wr, p, minPicks }) => {
+const WinRateCell: React.FC<{ wr: number | null; p: number; minPicks: number; to?: import("../../hub/route").HubRoute }> = ({ wr, p, minPicks, to }) => {
   if (!p || wr == null) return <>–</>;
   const pctNum = Math.round(wr * 100);
   const tone = p >= minPicks ? (wr >= 0.53 ? "text-rw-teal font-semibold" : wr <= 0.47 ? "text-rw-red" : "text-rw-text") : "text-rw-sub";
   return (
     <div className="min-w-[3.75rem] space-y-0.5">
-      <div className={`font-mono tabular-nums ${tone}`}>{pct(wr)}</div>
+      <div className={`font-mono tabular-nums ${tone}`}>
+        {to ? (
+          <HubLink to={to} className="hover:underline" title={tl("Game finder")}>
+            {pct(wr)}
+          </HubLink>
+        ) : (
+          pct(wr)
+        )}
+      </div>
       {p >= minPicks && (
         <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
           <div className={`h-full rounded-full ${wr >= 0.5 ? "bg-rw-teal/75" : "bg-rw-red/65"}`} style={{ width: `${Math.min(100, Math.max(4, pctNum))}%` }} />
@@ -330,7 +346,18 @@ const LeagueTable: React.FC<{
       key: "presence",
       label: tl("Presence"),
       value: (c) => c.presence,
-      render: (c) => <PresenceCell presence={c.presence} p={c.p} b={c.b} games={result.games} />,
+      render: (c) => {
+        const fq = new URLSearchParams({
+          ...(c.p > 0 ? { champ: c.c } : { ban: c.c }),
+          league,
+          ...(year ? { year } : {}),
+          ...(eventSlug ? { event: eventSlug } : {}),
+          ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
+          ...(c.p > 0 && side ? { side } : {}),
+          ...(c.p > 0 && roleQ ? { role: roleQ } : {}),
+        }).toString();
+        return <PresenceCell presence={c.presence} p={c.p} b={c.b} games={result.games} to={c.p + c.b > 0 ? { kind: "finder", query: fq } : undefined} />;
+      },
     },
     ...(vs && result.thenGames ? deltaColumns<LRow>(vs) : []),
     {
@@ -395,7 +422,18 @@ const LeagueTable: React.FC<{
       key: "wr",
       label: tl("Win %"),
       value: (c) => (c.p >= 3 ? c.wr : null),
-      render: (c) => <WinRateCell wr={c.wr} p={c.p} minPicks={3} />,
+      render: (c) => {
+        const fq = new URLSearchParams({
+          champ: c.c,
+          league,
+          ...(year ? { year } : {}),
+          ...(eventSlug ? { event: eventSlug } : {}),
+          ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
+          ...(side ? { side } : {}),
+          ...(roleQ ? { role: roleQ } : {}),
+        }).toString();
+        return <WinRateCell wr={c.wr} p={c.p} minPicks={3} to={c.p > 0 ? { kind: "finder", query: fq } : undefined} />;
+      },
     },
     { key: "kda", label: tl("KDA"), value: (c) => c.kda },
     {
@@ -571,7 +609,14 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
       key: "presence",
       label: tl("Presence"),
       value: (c) => c.presence,
-      render: (c) => <PresenceCell presence={c.presence} p={c.p} b={c.b} games={block?.games || 1} />,
+      render: (c) => {
+        const fq = new URLSearchParams({
+          ...(c.p > 0 ? { champ: c.c } : { ban: c.c }),
+          ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
+          ...(c.p > 0 && roleQ ? { role: roleQ } : {}),
+        }).toString();
+        return <PresenceCell presence={c.presence} p={c.p} b={c.b} games={block?.games || 1} to={c.p + c.b > 0 ? { kind: "finder", query: fq } : undefined} />;
+      },
     },
     ...(thenBlock ? deltaColumns<Row>(label(vs)) : []),
     {
@@ -629,7 +674,14 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
       key: "wr",
       label: tl("Win %"),
       value: (c) => (c.p >= 10 ? c.wr : null),
-      render: (c) => <WinRateCell wr={c.wr} p={c.p} minPicks={10} />,
+      render: (c) => {
+        const fq = new URLSearchParams({
+          champ: c.c,
+          ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
+          ...(roleQ ? { role: roleQ } : {}),
+        }).toString();
+        return <WinRateCell wr={c.wr} p={c.p} minPicks={10} to={c.p > 0 ? { kind: "finder", query: fq } : undefined} />;
+      },
     },
     { key: "kda", label: tl("KDA"), value: (c) => c.kda ?? null },
   ];

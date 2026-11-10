@@ -270,11 +270,19 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                             </HubLink>
                           </span>
                           <span className="font-num tabular-nums shrink-0">
-                            <span className={m.chg > 0 ? "text-rw-teal font-bold" : "text-rw-red font-bold"}>
+                            <HubLink
+                              to={{ kind: "team", slug: m.u, tab: "matches" }}
+                              className={m.chg > 0 ? "text-rw-teal font-bold hover:underline" : "text-rw-red font-bold hover:underline"}
+                            >
                               {m.chg > 0 ? "▲" : "▼"}
                               {Math.abs(m.chg)}
-                            </span>{" "}
-                            <span className="text-rw-muted">{m.r.toLocaleString(locale())}</span>
+                            </HubLink>{" "}
+                            <HubLink
+                              to={{ kind: "rankings", ...(m.lg ? { query: `league=${encodeURIComponent(m.lg)}` } : {}) }}
+                              className="text-rw-muted hover:text-rw-accent hover:underline"
+                            >
+                              {m.r.toLocaleString(locale())}
+                            </HubLink>
                           </span>
                         </div>
                         <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
@@ -603,10 +611,27 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     </span>
                     {r.au && r.bu && (
                       <span className="hidden md:inline-flex items-center gap-1.5 shrink-0 text-[10px]">
-                        <HubLink to={{ kind: "prep", a: r.au, b: r.bu }} className="text-rw-muted hover:text-rw-accent hover:underline">
+                        <HubLink
+                          to={{
+                            kind: "prep",
+                            a: r.au,
+                            b: r.bu,
+                            ...(/^\d{4}$/.test((r.date || "").slice(0, 4)) ? { period: `y${(r.date || "").slice(0, 4)}` } : {}),
+                          }}
+                          className="text-rw-muted hover:text-rw-accent hover:underline"
+                        >
                           {tl("Match prep")}
                         </HubLink>
-                        <HubLink to={{ kind: "compare", mode: "team", a: r.au, b: r.bu }} className="text-rw-muted hover:text-rw-accent hover:underline">
+                        <HubLink
+                          to={{
+                            kind: "compare",
+                            mode: "team",
+                            a: r.au,
+                            b: r.bu,
+                            ...(/^\d{4}$/.test((r.date || "").slice(0, 4)) ? { period: `y${(r.date || "").slice(0, 4)}` } : {}),
+                          }}
+                          className="text-rw-muted hover:text-rw-accent hover:underline"
+                        >
                           {tl("Compare")}
                         </HubLink>
                       </span>
