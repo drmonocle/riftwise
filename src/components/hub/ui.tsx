@@ -326,33 +326,39 @@ export const HubLink: React.FC<{
   </a>
 );
 
-/** Team name, linked to its page when it has one. */
-export const TeamLink: React.FC<{ name: string; u?: string | null; className?: string }> = ({ name, u, className }) =>
-  u ? (
-    <HubLink to={{ kind: "team", slug: u }} className={className}>
+/** Team name, linked to its page when it has one (falls back to prettySlug(name) when u is omitted). */
+export const TeamLink: React.FC<{ name: string; u?: string | null; className?: string }> = ({ name, u, className }) => {
+  const slug = u === undefined ? (name && name.toUpperCase() !== "TBD" ? prettySlug(name) : null) : u;
+  return slug ? (
+    <HubLink to={{ kind: "team", slug }} className={className}>
       {name}
     </HubLink>
   ) : (
     <span className="text-rw-sub">{name}</span>
   );
+};
 
-export const PlayerLink: React.FC<{ name: string; u?: string | null; className?: string }> = ({ name, u, className }) =>
-  u ? (
-    <HubLink to={{ kind: "player", slug: u }} className={className}>
+export const PlayerLink: React.FC<{ name: string; u?: string | null; className?: string }> = ({ name, u, className }) => {
+  const slug = u === undefined ? (name ? prettySlug(name) : null) : u;
+  return slug ? (
+    <HubLink to={{ kind: "player", slug }} className={className}>
       {name}
     </HubLink>
   ) : (
     <span className="text-rw-sub">{name}</span>
   );
+};
 
-export const EventLink: React.FC<{ name: string; u?: string | null; className?: string }> = ({ name, u, className }) =>
-  u ? (
-    <HubLink to={{ kind: "event", slug: u }} className={className}>
+export const EventLink: React.FC<{ name: string; u?: string | null; className?: string }> = ({ name, u, className }) => {
+  const slug = u === undefined ? (name ? prettySlug(name) : null) : u;
+  return slug ? (
+    <HubLink to={{ kind: "event", slug }} className={className}>
       {name}
     </HubLink>
   ) : (
     <span className="text-rw-sub">{name}</span>
   );
+};
 
 // ── Pictures ──────────────────────────────────────────────────────────────
 

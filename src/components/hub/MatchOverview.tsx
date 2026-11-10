@@ -350,6 +350,16 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
             <GitCompare className="w-3.5 h-3.5" />
             {tl("Compare")}
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              navigateHub({ kind: "finder", query: `team=${encodeURIComponent(x.team.u)}&vs=${encodeURIComponent(y.team.u)}` });
+            }}
+            className="flex items-center gap-1 px-2 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+          >
+            {tl("Game finder")}
+          </button>
         </div>
         <BroadcastCardButton data={card} name={`${x.team.name}-vs-${y.team.name}-overview`} label={tl("Overview card")} />
       </div>

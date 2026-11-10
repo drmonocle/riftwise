@@ -593,6 +593,16 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     <span className="hidden sm:block w-48 shrink-0 truncate text-[10px] text-rw-muted">
                       <EventLink name={r.t} u={r.e} className="text-rw-muted hover:text-rw-accent hover:underline" />
                     </span>
+                    {r.au && r.bu && (
+                      <span className="hidden md:inline-flex items-center gap-1.5 shrink-0 text-[10px]">
+                        <HubLink to={{ kind: "prep", a: r.au, b: r.bu }} className="text-rw-muted hover:text-rw-accent hover:underline">
+                          {tl("Match prep")}
+                        </HubLink>
+                        <HubLink to={{ kind: "compare", mode: "team", a: r.au, b: r.bu }} className="text-rw-muted hover:text-rw-accent hover:underline">
+                          {tl("Compare")}
+                        </HubLink>
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>

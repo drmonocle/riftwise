@@ -205,6 +205,15 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
                 >
                   {tl("Draft board")}
                 </HubLink>
+                <HubLink
+                  to={{
+                    kind: "finder",
+                    query: `team=${encodeURIComponent(s.a.u)}&vs=${encodeURIComponent(s.b.u)}`,
+                  }}
+                  className={heroBtn()}
+                >
+                  {tl("Game finder")}
+                </HubLink>
               </>
             )}
             {!hidden && s.games.some((g) => g.w) && (
@@ -666,8 +675,8 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
           <Scoreboard name={redTeam.n} u={redTeam.u} side="red" players={red} hidden={hidden} won={redWon} minutes={g.min} ratings={ratings} top={top?.[0]} />
         </div>
       )}
-      {!hidden && <Leads g={g} blueName={blueTeam.n} redName={redTeam.n} blue={blue} red={red} />}
-      {!hidden && <PlayerBars g={g} blueName={blueTeam.n} redName={redTeam.n} blue={blue} red={red} minutes={g.min ?? undefined} ratings={ratings} />}
+      {!hidden && <Leads g={g} blueName={blueTeam.n} redName={redTeam.n} blueU={blueTeam.u} redU={redTeam.u} blue={blue} red={red} />}
+      {!hidden && <PlayerBars g={g} blueName={blueTeam.n} redName={redTeam.n} blueU={blueTeam.u} redU={redTeam.u} blue={blue} red={red} minutes={g.min ?? undefined} ratings={ratings} />}
       {g.st !== "f" && !g.p && (
         <p className="text-[11px] text-rw-muted text-center">
           {g.st === "r" ? tl("Only the result of this game is known.") : tl("No result or stats were recorded for this game.")}
@@ -843,11 +852,13 @@ const PlayerBars: React.FC<{
   g: HubGame;
   blueName: string;
   redName: string;
+  blueU?: string | null;
+  redU?: string | null;
   blue: GamePlayer[];
   red: GamePlayer[];
   minutes?: number;
   ratings?: Map<GamePlayer, number>;
-}> = ({ g, blueName, redName, blue, red, minutes, ratings }) => {
+}> = ({ g, blueName, redName, blueU, redU, blue, red, minutes, ratings }) => {
   const [metric, setMetric] = useState<BarMetric>("dm");
   const getVal = (p: GamePlayer, k: BarMetric): number | undefined => {
     if (k === "rt") return ratings?.get(p);
@@ -978,11 +989,11 @@ const PlayerBars: React.FC<{
 
         <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-3 text-[10px] uppercase tracking-wider font-bold">
           <span className="truncate text-right" style={{ color: BLUE }}>
-            <TeamLink name={blueName} className="hover:underline" /> · {fmt(total(blue))}
+            <TeamLink name={blueName} u={blueU} className="hover:underline" /> · {fmt(total(blue))}
           </span>
           <span />
           <span className="truncate" style={{ color: RED }}>
-            <TeamLink name={redName} className="hover:underline" /> · {fmt(total(red))}
+            <TeamLink name={redName} u={redU} className="hover:underline" /> · {fmt(total(red))}
           </span>
         </div>
         {rows.map(({ r, b, o }) => {
@@ -1045,7 +1056,7 @@ const PlayerBars: React.FC<{
   );
 };
 
-const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blue: GamePlayer[]; red: GamePlayer[] }> = ({ g, blueName, redName, blue, red }) => {
+const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: string | null; redU?: string | null; blue: GamePlayer[]; red: GamePlayer[] }> = ({ g, blueName, redName, blueU, redU, blue, red }) => {
   const t = g.t?.blue;
   // the team's XP lead: its five players' leads over their lane opponents add up to it
   const xpAt = (key: "x10" | "x15" | "x20") => (blue.length === 5 && blue.every((p) => p[key] != null) ? blue.reduce((s, p) => s + (p[key] as number), 0) : null);
@@ -1061,11 +1072,11 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blue: Gam
   const head = (
     <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)] gap-2 text-[10px] uppercase tracking-wider font-bold">
       <span className="truncate text-right" style={{ color: BLUE }}>
-        <TeamLink name={blueName} className="hover:underline" />
+        <TeamLink name={blueName} u={blueU} className="hover:underline" />
       </span>
       <span />
       <span className="truncate" style={{ color: RED }}>
-        <TeamLink name={redName} className="hover:underline" />
+        <TeamLink name={redName} u={redU} className="hover:underline" />
       </span>
     </div>
   );

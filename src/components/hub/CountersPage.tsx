@@ -312,13 +312,24 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
             ))}
           </select>
           {slug && cName && (
-            <HubLink
-              to={{ kind: "champ", slug }}
-              className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-rw-accent/50 bg-rw-accent/10 text-rw-accent hover:bg-rw-accent/20 font-semibold"
-            >
-              {rawChamp && <ChampIcon name={rawChamp} size={16} />}
-              {cName} →
-            </HubLink>
+            <span className="ml-auto inline-flex flex-wrap items-center gap-1.5">
+              <HubLink
+                to={{ kind: "champ", slug }}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-rw-accent/50 bg-rw-accent/10 text-rw-accent hover:bg-rw-accent/20 font-semibold"
+              >
+                {rawChamp && <ChampIcon name={rawChamp} size={16} />}
+                {cName} →
+              </HubLink>
+              {vsMatch && (
+                <HubLink
+                  to={{ kind: "champ", slug: prettySlug(vsMatch.oppCanon) }}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
+                >
+                  <ChampIcon name={vsMatch.oppCanon} size={16} />
+                  {champName(vsMatch.oppCanon)} →
+                </HubLink>
+              )}
+            </span>
           )}
         </div>
       </div>

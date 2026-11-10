@@ -93,4 +93,14 @@ describe("stats search", () => {
       { kind: "finder", query: "champ=Ahri&vschamp=Azir" },
     ]);
   });
+
+  it("links team vs team searches to Match prep, Draft board, Compare and Game finder", () => {
+    const tvt = matchupShortcuts(index, "G2 vs DRX");
+    expect(tvt.map((s) => s.route)).toEqual([
+      { kind: "prep", a: "g2-esports", b: "kiwoom-drx" },
+      { kind: "draft", query: "teams=g2-esports,kiwoom-drx" },
+      { kind: "compare", mode: "team", a: "g2-esports", b: "kiwoom-drx" },
+      { kind: "finder", query: "team=g2-esports&vs=kiwoom-drx" },
+    ]);
+  });
 });

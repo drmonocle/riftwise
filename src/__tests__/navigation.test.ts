@@ -132,11 +132,12 @@ const INDEX: HubIndex = {
 };
 
 describe("search shortcuts", () => {
-  it("opens Match prep, Draft board and Compare for two teams", () => {
+  it("opens Match prep, Draft board, Compare and Game finder for two teams", () => {
     const s = matchupShortcuts(INDEX, "t1 vs gen.g");
-    expect(s.map((x) => x.key)).toEqual(["prep", "draft", "compare"]);
+    expect(s.map((x) => x.key)).toEqual(["prep", "draft", "compare", "finder"]);
     expect(hubPath(s[0].route)).toBe("/stats/prep?teams=t1,geng");
     expect(hubPath(s[1].route)).toBe("/stats/draft?teams=t1,geng");
+    expect(hubPath(s[3].route)).toBe("/stats/finder?team=t1&vs=geng");
   });
   it("opens a player's or team's champion pool for player/team + champion queries", () => {
     const p = champPairShortcuts(INDEX, "faker azir");

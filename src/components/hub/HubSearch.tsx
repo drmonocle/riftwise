@@ -53,6 +53,7 @@ export function matchupShortcuts(index: HubIndex, q: string): Shortcut[] {
       { key: "prep", route: { kind: "prep", a: ta.slug, b: tb.slug }, label: tl("Match prep: {a} vs {b}", { a: ta.name, b: tb.name }), sub: tl("Form, head-to-head, drafts and every lane"), icon: <ClipboardList className="w-3.5 h-3.5" /> },
       { key: "draft", route: { kind: "draft", query: `teams=${encodeURIComponent(ta.slug)},${encodeURIComponent(tb.slug)}` }, label: `${tl("Draft board")}: ${ta.name} vs ${tb.name}`, sub: `${tl("Champion pool")} · ${tl("Fearless")}`, icon: <Swords className="w-3.5 h-3.5" /> },
       { key: "compare", route: { kind: "compare", mode: "team", a: ta.slug, b: tb.slug }, label: tl("Compare {a} and {b}", { a: ta.name, b: tb.name }), sub: tl("Side by side, over any period"), icon: <GitCompare className="w-3.5 h-3.5" /> },
+      { key: "finder", route: { kind: "finder", query: `team=${encodeURIComponent(ta.slug)}&vs=${encodeURIComponent(tb.slug)}` }, label: `${tl("Game finder")}: ${ta.name} vs ${tb.name}`, sub: tl("Any game by team, champion, player"), icon: <Compass className="w-3.5 h-3.5" /> },
     ];
   }
   if (good(pa) && good(pb) && pa.slug !== pb.slug)
