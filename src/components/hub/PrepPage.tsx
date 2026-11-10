@@ -205,6 +205,12 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
                       <HubLink to={{ kind: "compare", mode: "team", a: slug }} className="text-rw-sub hover:text-rw-accent hover:underline">
                         {tl("Compare")}
                       </HubLink>
+                      <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(slug)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                        {tl("Game finder")}
+                      </HubLink>
+                      <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                        {tl("Power rankings")}
+                      </HubLink>
                       <button type="button" onClick={() => set({ [k]: undefined })} className="text-rw-accent hover:underline">
                         {tl("Change")}
                       </button>

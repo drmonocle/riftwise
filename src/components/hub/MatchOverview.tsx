@@ -529,6 +529,16 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
           >
             {tl("Pro tier list")}
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              navigateHub({ kind: "leaders" });
+            }}
+            className="flex items-center gap-1 px-2 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+          >
+            {tl("Player leaderboards")}
+          </button>
         </div>
         <BroadcastCardButton data={card} name={`${x.team.name}-vs-${y.team.name}-overview`} label={tl("Overview card")} />
       </div>

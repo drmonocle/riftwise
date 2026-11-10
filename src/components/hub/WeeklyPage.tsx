@@ -286,6 +286,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   >
                     {tl("Best games")} →
                   </HubLink>
+                  <HubLink
+                    to={{ kind: "leaders" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")} →
+                  </HubLink>
                   <SectionCard
                     section={tl("Biggest upsets")}
                     name={range}
@@ -420,6 +426,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   >
                     {tl("Pro tier list")} →
                   </HubLink>
+                  <HubLink
+                    to={{ kind: "leaders" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")} →
+                  </HubLink>
                   <SectionCard
                     section={tl("Power rankings movers")}
                     name={range}
@@ -506,6 +518,9 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   </HubLink>
                   <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                     {tl("Power rankings")} →
+                  </HubLink>
+                  <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                    {tl("Pro tier list")} →
                   </HubLink>
                   <SectionCard
                     section={tl("All-time records set")}
@@ -610,6 +625,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Power rankings")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "leaders" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")} →
                   </HubLink>
                   <SectionCard
                     section={tl("Best games")}

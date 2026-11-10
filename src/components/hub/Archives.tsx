@@ -290,6 +290,12 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
                 >
                   {tl("Pro tier list")} →
                 </HubLink>
+                <HubLink
+                  to={{ kind: "leaders", ...(year !== "all" ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
               </>
             )}
             <CopyArchivePost
@@ -949,6 +955,19 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                       title={tl("Draft board")}
                     >
                       {tl("Draft board")}
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "compare",
+                        mode: "team",
+                        a: prettySlug(r[7]),
+                        b: prettySlug(r[8]),
+                        ...(/^\d{4}/.test(r[0]) ? { period: `y${r[0].slice(0, 4)}` } : {}),
+                      }}
+                      className="hidden sm:inline text-rw-sub hover:text-rw-accent hover:underline"
+                      title={tl("Compare")}
+                    >
+                      {tl("Compare")}
                     </HubLink>
                   </>
                 )}

@@ -543,6 +543,7 @@ const SeriesGames: React.FC<{
   reveal: () => void;
   onOpenUrl: (url: string) => void;
 }> = ({ s, tabs, gi, pick, hidden, game, reveal, onOpenUrl }) => {
+  const seriesYear = s.date && /^\d{4}/.test(s.date) ? s.date.slice(0, 4) : undefined;
   const gamePicks = !hidden && tabs > 1
     ? s.games.map((g, i) => {
         const aBlue = g.blue === "a";
@@ -651,6 +652,18 @@ const SeriesGames: React.FC<{
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Power rankings")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "leaders", ...(s.e ? { query: `event=${encodeURIComponent(s.e)}` } : seriesYear ? { query: `year=${encodeURIComponent(seriesYear)}` } : {}) }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers", ...(seriesYear ? { query: `key=y${encodeURIComponent(seriesYear)}` } : {}) }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
               </HubLink>
             </span>
           )}
@@ -1461,6 +1474,15 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Pro tier list")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "leaders",
+                      ...(period && /^y\d{4}$/.test(period) ? { query: `year=${encodeURIComponent(period.slice(1))}` } : {}),
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")} →
                   </HubLink>
                 </>
               )}

@@ -338,6 +338,13 @@ const PlayerItemsView: React.FC<{
             >
               {tl("Draft board")} →
             </HubLink>
+            <HubLink
+              to={{ kind: "rankings" }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Power rankings")} →
+            </HubLink>
             <CopyItemsPost
               title={`${name} · ${label}`}
               sub={`${fmtNum(g.length)}G${scope ? ` · ${scope}` : ""}`}
@@ -449,6 +456,13 @@ const PlayerItemsView: React.FC<{
               data-nocapture="1"
             >
               {tl("Draft board")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "rankings" }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Power rankings")} →
             </HubLink>
             <CopyItemsPost
               title={tl("Every item {player} finished pro games with", { player: name })}
@@ -692,6 +706,12 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
               </HubLink>
               <HubLink
                 to={{ kind: "items" }}

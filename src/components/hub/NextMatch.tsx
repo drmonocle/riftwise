@@ -126,6 +126,12 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
               >
                 {tl("Pro tier list")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "leaders" }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
             </>
           )}
           <SectionCard
@@ -412,6 +418,12 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
         >
           {tl("Pro tier list")}
+        </HubLink>
+        <HubLink
+          to={{ kind: "leaders" }}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+        >
+          {tl("Player leaderboards")}
         </HubLink>
         <HubLink
           to={{ kind: "match", slug: RIOT_PREFIX + m.matchId }}

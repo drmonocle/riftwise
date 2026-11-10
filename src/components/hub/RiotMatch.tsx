@@ -217,6 +217,18 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
             >
               {tl("Game finder")}
             </HubLink>
+            <HubLink
+              to={{ kind: "rankings" }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+            >
+              {tl("Power rankings")}
+            </HubLink>
+            <HubLink
+              to={{ kind: "tiers" }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+            >
+              {tl("Pro tier list")}
+            </HubLink>
           </span>
         </div>
         <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">

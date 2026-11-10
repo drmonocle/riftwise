@@ -200,6 +200,12 @@ export const PatchesPanel: React.FC = () => {
                   >
                     {tl("Power rankings")}
                   </HubLink>
+                  <HubLink
+                    to={{ kind: "leaders" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")}
+                  </HubLink>
                   <SectionCard
                     section={tl("Patch {patch}", { patch: p.p })}
                     name={`${fmtDate(p.from)} – ${fmtDate(p.to)}`}

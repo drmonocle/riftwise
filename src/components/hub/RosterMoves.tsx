@@ -83,6 +83,22 @@ export const RosterMoves: React.FC = () => {
               >
                 {tl("Game finder")} →
               </HubLink>
+              {terms.length > 0 && list.length === 1 && list[0] && (
+                <>
+                  <HubLink
+                    to={{ kind: "compare", mode: "player", a: list[0].u }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "items", query: `player=${encodeURIComponent(list[0].u)}` }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Item history")} →
+                  </HubLink>
+                </>
+              )}
               {terms.length > 0 && list.length >= 2 && list[0].u !== list[1].u && (
                 <HubLink
                   to={{ kind: "compare", mode: "player", a: list[0].u, b: list[1].u }}

@@ -839,6 +839,15 @@ const FinderBody: React.FC<{
                   >
                     {tl("Pro tier list")} →
                   </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "leaders",
+                      ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}),
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Player leaderboards")} →
+                  </HubLink>
                 </>
               )}
               {q.get("team") && q.get("vs") && (

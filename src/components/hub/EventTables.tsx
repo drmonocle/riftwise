@@ -410,6 +410,12 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
             >
               {tl("Item history")} →
             </HubLink>
+            <HubLink
+              to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(rows[0].u)}` }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Game finder")} →
+            </HubLink>
           </>
         )}
         {maxG >= 3 && (
@@ -774,6 +780,13 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
                 className="text-rw-accent hover:underline font-semibold"
               >
                 {tl("Compare")}
+              </HubLink>
+              <span className="text-rw-muted">·</span>
+              <HubLink
+                to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(rows[0].u || prettySlug(rows[0].t))}` }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Game finder")}
               </HubLink>
             </span>
           )}

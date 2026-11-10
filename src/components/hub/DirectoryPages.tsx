@@ -267,6 +267,18 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             >
               {tl("Compare")} →
             </HubLink>
+            <HubLink
+              to={{ kind: "finder", query: `team=${encodeURIComponent(list[0][1] || prettySlug(list[0][0]))}` }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Game finder")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "rankings" }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Power rankings")} →
+            </HubLink>
           </>
         )}
         {list.length >= 2 && (
@@ -559,6 +571,18 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Item history")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "finder", query: `player=${encodeURIComponent(list[0][1] || prettySlug(list[0][0]))}` }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Game finder")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "leaders" }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Player leaderboards")} →
             </HubLink>
           </>
         )}

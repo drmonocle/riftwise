@@ -428,11 +428,24 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
                   <div className="flex items-center justify-between gap-2 text-xs">
                     <span className="inline-flex items-center gap-1.5 font-semibold text-rw-text min-w-0">
                       {label && <TeamLogo name={label} size={18} />}
-                      <span className="truncate">{label}</span>
+                      <HubLink to={{ kind: "team", slug }} className="truncate hover:text-rw-accent hover:underline">
+                        {label}
+                      </HubLink>
                     </span>
-                    <button type="button" onClick={() => set({ [k]: null })} className="text-[11px] text-rw-accent hover:underline shrink-0">
-                      {tl("Change")}
-                    </button>
+                    <span className="flex items-center gap-2 shrink-0 text-[11px]">
+                      <HubLink to={{ kind: "prep", a: slug }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                        {tl("Match prep")}
+                      </HubLink>
+                      <HubLink to={{ kind: "compare", mode: "team", a: slug }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                        {tl("Compare")}
+                      </HubLink>
+                      <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(slug)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                        {tl("Game finder")}
+                      </HubLink>
+                      <button type="button" onClick={() => set({ [k]: null })} className="text-rw-accent hover:underline shrink-0">
+                        {tl("Change")}
+                      </button>
+                    </span>
                   </div>
                 ) : (
                   <ComparePick kind="team" autoFocus={k === "a" || !!a} onPick={(s) => set({ [k]: s })} />

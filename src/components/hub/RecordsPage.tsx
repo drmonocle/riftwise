@@ -743,6 +743,12 @@ export const RecordsPanel: React.FC = () => {
                         >
                           {tl("Pro tier list")} →
                         </HubLink>
+                        <HubLink
+                          to={{ kind: "leaders", ...(year !== "all" ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Player leaderboards")} →
+                        </HubLink>
                       </>
                     )}
                     <SectionCard
@@ -1288,6 +1294,12 @@ export const RecordsPanel: React.FC = () => {
                       >
                         {tl("Best games")} →
                       </HubLink>
+                      <HubLink
+                        to={{ kind: "leaders" }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Player leaderboards")} →
+                      </HubLink>
                       <SectionCard
                         section={tl("Longest win streaks")}
                         name={tl("Records")}
@@ -1409,6 +1421,12 @@ export const RecordsPanel: React.FC = () => {
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
                         {tl("Pro tier list")} →
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "leaders" }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Player leaderboards")} →
                       </HubLink>
                       <SectionCard
                         section={tl("Most international titles (Worlds, MSI, First Stand)")}

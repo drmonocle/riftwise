@@ -334,6 +334,9 @@ export const OwnStorylines: React.FC<{
                 <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Pro tier list")} →
                 </HubLink>
+                <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Player leaderboards")} →
+                </HubLink>
               </>
             ) : (
               <>
@@ -348,6 +351,9 @@ export const OwnStorylines: React.FC<{
                 </HubLink>
                 <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Player leaderboards")} →
+                </HubLink>
+                <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Power rankings")} →
                 </HubLink>
                 <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Pro tier list")} →
@@ -441,6 +447,9 @@ export const HomeStorylines: React.FC = () => {
                     <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                       {tl("Pro tier list")} →
                     </HubLink>
+                    <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                      {tl("Player leaderboards")} →
+                    </HubLink>
                   </>
                 );
               }
@@ -468,6 +477,9 @@ export const HomeStorylines: React.FC = () => {
                     </HubLink>
                     <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                       {tl("Player leaderboards")} →
+                    </HubLink>
+                    <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                      {tl("Power rankings")} →
                     </HubLink>
                     <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                       {tl("Pro tier list")} →

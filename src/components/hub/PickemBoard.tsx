@@ -106,6 +106,20 @@ export const PickemBoard: React.FC<{
           >
             {tl("Best games")} →
           </HubLink>
+          <HubLink
+            to={{ kind: "leaders" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Player leaderboards")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "tiers" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Pro tier list")} →
+          </HubLink>
           {rows.length > 8 && (
             <input
               type="search"
