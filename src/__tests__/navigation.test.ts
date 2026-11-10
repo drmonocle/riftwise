@@ -3,6 +3,7 @@ import { hubPath, parseHubPath } from "../hub/route";
 import { resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug } from "../hub/data";
 import { rateLine, profile, type RatingFile } from "../hub/playerRating";
 import { filterBuiltSeasons } from "../components/hub/Ranks";
+import { matchSide } from "../components/hub/FinderPage";
 import { champPairShortcuts, matchupShortcuts, pageShortcuts } from "../components/hub/HubSearch";
 import { groupOf, MENU, MENU_ITEMS } from "../components/hub/menu";
 import { NAV_GROUP } from "../components/navGroups";
@@ -179,5 +180,29 @@ describe("search shortcuts", () => {
     expect(pageShortcuts("tier list")[0]?.route).toEqual({ kind: "tiers" });
     expect(pageShortcuts("power rankings")[0]?.route).toEqual({ kind: "rankings" });
     expect(pageShortcuts("ab")).toEqual([]);
+  });
+  it("matches game finder vsplayer and champion/player aliases", () => {
+    const g = [
+      "2026-04-01",
+      "26.7",
+      0,
+      1,
+      32,
+      [["Wukong", 1, 5, 1, 7, 250, 14000, 22000, "Oner", "oner", 150]],
+      [["Jarvan IV", 1, 2, 4, 5, 220, 12000, 18000, "Canyon", "canyon", -150]],
+      ["Twisted Fate"],
+      ["K'Sante"],
+      "lck-2026",
+      "T1",
+      "Gen.G",
+      "t1",
+      "geng",
+      "t1-vs-geng",
+      1,
+    ] as unknown as import("../hub/types").ChampGame;
+    expect(matchSide(g, new URLSearchParams("player=oner&vsplayer=canyon"), null)).toBe(0);
+    expect(matchSide(g, new URLSearchParams("player=canyon&vsplayer=oner"), null)).toBe(1);
+    expect(matchSide(g, new URLSearchParams("champ=monkeyking&vschamp=j4"), null)).toBe(0);
+    expect(matchSide(g, new URLSearchParams("ban=k-sante"), null)).toBe(0);
   });
 });

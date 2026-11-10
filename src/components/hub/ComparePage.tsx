@@ -1660,7 +1660,7 @@ const PlayerRows: React.FC<{
             <HubLink
               to={{
                 kind: "finder",
-                query: `player=${encodeURIComponent(x.u)}${
+                query: `player=${encodeURIComponent(x.u)}${h2h.g > 0 ? `&vsplayer=${encodeURIComponent(y.u)}` : ""}${
                   period && period.startsWith("y") && period.length === 5
                     ? `&year=${encodeURIComponent(period.slice(1))}`
                     : period && period.startsWith("e:")
@@ -2285,7 +2285,8 @@ const PlayerHeadToHead: React.FC<{
                 kind: "finder",
                 query: new URLSearchParams({
                   player: sa,
-                  ...(s.top[0] ? { champ: s.top[0].ca } : {}),
+                  vsplayer: sb,
+                  ...(s.top[0] ? { champ: s.top[0].ca, vschamp: s.top[0].cb } : {}),
                   ...(shown[0]?.a[0] && /^\d{4}/.test(shown[0].a[0]) ? { year: shown[0].a[0].slice(0, 4) } : {}),
                 }).toString(),
               }}

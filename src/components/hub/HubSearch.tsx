@@ -9,7 +9,7 @@ import { tl, tk, roleName, fmtN } from "../../i18n";
 import { champName } from "../../champions";
 import { isNonLatin } from "../../searchAliases";
 import { winRate } from "../../stats";
-import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadItemIndex, normText, prefetchHub, searchHub } from "../../hub/data";
+import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubChamp, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadItemIndex, normText, prefetchHub, prettySlug, searchHub } from "../../hub/data";
 import type { ItemIndexRow } from "../../hub/types";
 import { itemName } from "../../hub/ddragon";
 import { HubRoute, navigateHub } from "../../hub/route";
@@ -449,6 +449,10 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
     const hit = searchHub(index, trimmed, 1);
     const pl = hit.player[0];
     const tm = hit.team[0];
+    const ch = hit.champ[0];
+    if (ch && (ch.score ?? 9) <= 0.5 && (!pl || (ch.score ?? 9) < (pl.score ?? 9)) && (!tm || (ch.score ?? 9) < (tm.score ?? 9))) {
+      return { kind: "champ" as const, slug: ch.slug, name: ch.name, key: `ec-${ch.slug}` };
+    }
     if (pl && (pl.score ?? 9) <= 0.5 && (!tm || (pl.score ?? 9) <= (tm.score ?? 9))) {
       return { kind: "player" as const, slug: pl.slug, name: pl.name, key: `ep-${pl.slug}` };
     }
@@ -461,7 +465,52 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
   useEffect(() => {
     if (!filledEntity || entityChamps[filledEntity.key]) return;
     let alive = true;
-    if (filledEntity.kind === "player") {
+    if (filledEntity.kind === "champ") {
+      loadHubChamp(filledEntity.slug)
+        .then((c) => {
+          if (!alive) return;
+          const topPlayers = (c.players12?.length ? c.players12 : c.players || []).slice(0, 4);
+          const top: Shortcut[] = [
+            ...topPlayers.map((p) => {
+              const pSlug = p.u || prettySlug(p.n);
+              return {
+                key: `top-c-${c.u}-${pSlug}`,
+                route: { kind: "player" as const, slug: pSlug, tab: "champions" as const, query: `champ=${encodeURIComponent(c.name)}` },
+                label: `${p.n} · ${champName(c.name)}`,
+                sub: `${p.g}G · ${p.w}W-${p.g - p.w}L (${winRate(p.w, p.g)}) · KDA ${fmtN(p.kda)}`,
+                icon: <ChampIcon name={c.name} size={16} />,
+                fillText: `${p.n} ${champName(c.name)}`,
+              };
+            }),
+            {
+              key: `top-c-counters-${c.u}`,
+              route: {
+                kind: "counters",
+                query: `champ=${encodeURIComponent(c.u)}${c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""}`,
+              },
+              label: `${champName(c.name)} · ${tl("Counter-pick finder")}`,
+              sub: tl("Every pro lane matchup, by champion"),
+              icon: <Swords className="w-3.5 h-3.5" />,
+            },
+            {
+              key: `top-c-items-${c.u}`,
+              route: { kind: "items", query: `champ=${encodeURIComponent(c.u)}` },
+              label: `${champName(c.name)} · ${tl("Item history")}`,
+              sub: tl("Has a pro ever built it?"),
+              icon: <Package className="w-3.5 h-3.5" />,
+            },
+            {
+              key: `top-c-finder-${c.u}`,
+              route: { kind: "finder", query: `champ=${encodeURIComponent(c.name)}` },
+              label: `${champName(c.name)} · ${tl("Game finder")}`,
+              sub: tl("Any game by team, champion, player"),
+              icon: <Compass className="w-3.5 h-3.5" />,
+            },
+          ];
+          setEntityChamps((prev) => ({ ...prev, [filledEntity.key]: top }));
+        })
+        .catch(() => {});
+    } else if (filledEntity.kind === "player") {
       loadHubPlayer(filledEntity.slug)
         .then((p) => {
           if (!alive) return;
@@ -614,12 +663,13 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
 
   /** What text to fill into the search box when scrolling over or pressing Tab on a hit. */
   const fillForHit = (h: HubHit): string | null => {
+    const vsMatch = /^(.+?\s+(?:vs\.?|v\.?|versus|x|[-–])\s*).*$/i.exec(q);
     if (h.kind === "team" || h.kind === "player") {
-      const vsMatch = /^(.+?\s+(?:vs\.?|v\.?|versus|x|[-–])\s*).*$/i.exec(q);
       if (vsMatch) return `${vsMatch[1]}${h.name}`;
       return `${h.name} `;
     }
     if (h.kind === "champ") {
+      if (vsMatch) return `${vsMatch[1]}${champName(h.name)}`;
       return `${champName(h.name)} `;
     }
     return null;
@@ -749,7 +799,8 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
           {filledEntity && (
             <div className="px-2 py-1 mb-1 rounded bg-rw-accent/10 border border-rw-accent/25 text-[11px] text-rw-sub flex items-center justify-between gap-2">
               <span>
-                <span className="font-semibold text-rw-text">{filledEntity.name}</span> · {tl("Search champions…")}
+                <span className="font-semibold text-rw-text">{filledEntity.kind === "champ" ? champName(filledEntity.name) : filledEntity.name}</span> ·{" "}
+                {filledEntity.kind === "champ" ? tl("Players") : tl("Search champions…")}
               </span>
               <span className="text-[10px] font-mono text-rw-accent shrink-0">Enter ↵</span>
             </div>
@@ -798,7 +849,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
                 {results![g.kind].map((h) => {
                   const i = shortcuts.length + flat.indexOf(h);
                   const fill = fillForHit(h);
-                  const canChain = h.kind === "team" || h.kind === "player";
+                  const canChain = h.kind === "team" || h.kind === "player" || h.kind === "champ";
                   return (
                     <HubLink
                       key={h.kind + h.slug}

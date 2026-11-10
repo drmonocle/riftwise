@@ -7,7 +7,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { tl, tn, tc, fmtDec, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadAliases, loadChampGames, loadChampIndex, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, loadAliases, loadChampGames, loadChampIndex, prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug } from "../../hub/data";
 import type { ChampGame, ChampGamesFile, ChampPick } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
@@ -54,8 +54,12 @@ const patchSort = (p: string) => {
 
 const eqSlug = (a: string | null | undefined, b: string | null | undefined) =>
   !!a && !!b && (a === b || bare(a) === bare(b));
+const eqChamp = (a: string | null | undefined, b: string | null | undefined) =>
+  eqSlug(a, b) || (!!a && !!b && eqSlug(resolveChampSlug(a), resolveChampSlug(b)));
+const eqPlayer = (a: string | null | undefined, b: string | null | undefined) =>
+  eqSlug(a, b) || (!!a && !!b && eqSlug(resolvePlayerSlug(a), resolvePlayerSlug(b)));
 
-function matchSide(g: ChampGame, q: Q, eventIdx: number | null): number {
+export function matchSide(g: ChampGame, q: Q, eventIdx: number | null): number {
   if (eventIdx != null && g[2] !== eventIdx) return -1;
   const patch = q.get("patch");
   if (patch && g[1] !== patch) return -1;
@@ -64,7 +68,7 @@ function matchSide(g: ChampGame, q: Q, eventIdx: number | null): number {
   if (minLen && (g[4] == null || g[4] < minLen)) return -1;
   if (maxLen && (g[4] == null || g[4] > maxLen)) return -1;
   const ban = q.get("ban");
-  if (ban && !g[7].some((c) => eqSlug(c, ban)) && !g[8].some((c) => eqSlug(c, ban))) return -1;
+  if (ban && !g[7].some((c) => eqChamp(c, ban)) && !g[8].some((c) => eqChamp(c, ban))) return -1;
   const team = q.get("team");
   const vs = q.get("vs") || q.get("vsteam");
   const rawSide = q.get("side");
@@ -74,10 +78,11 @@ function matchSide(g: ChampGame, q: Q, eventIdx: number | null): number {
   const champs = (q.get("champ") || "").split(",").filter(Boolean);
   const vsChamp = q.get("vschamp");
   const player = q.get("player");
+  const vsPlayer = q.get("vsplayer");
   const roleQ = q.get("role") || "";
   const roleIdx = roleQ ? ROLES.findIndex((r) => r.toLowerCase() === roleQ.toLowerCase()) : -1;
   // "won" / "lost" only means something for a side picked by another filter
-  const sided = !!(team || vs || side || champs.length || vsChamp || player || roleIdx >= 0);
+  const sided = !!(team || vs || side || champs.length || vsChamp || player || vsPlayer || roleIdx >= 0);
   for (const s of [0, 1]) {
     const mine = s === 0 ? g[5] : g[6];
     const theirs = s === 0 ? g[6] : g[5];
@@ -91,18 +96,20 @@ function matchSide(g: ChampGame, q: Q, eventIdx: number | null): number {
     if (result && sided && (result === "w") !== won) continue;
     if (champs.length) {
       if (roleIdx >= 0) {
-        if (!mine.some((p) => eqSlug(p[0], champs[0]) && p[1] === roleIdx)) continue;
-        if (champs.slice(1).some((c) => !mine.some((p) => eqSlug(p[0], c)))) continue;
-      } else if (champs.some((c) => !mine.some((p) => eqSlug(p[0], c)))) continue;
+        if (!mine.some((p) => eqChamp(p[0], champs[0]) && p[1] === roleIdx)) continue;
+        if (champs.slice(1).some((c) => !mine.some((p) => eqChamp(p[0], c)))) continue;
+      } else if (champs.some((c) => !mine.some((p) => eqChamp(p[0], c)))) continue;
     }
     if (vsChamp) {
       if (roleIdx >= 0 && champs.length > 0) {
-        if (!theirs.some((p) => eqSlug(p[0], vsChamp) && (p[1] < 0 || p[1] === roleIdx))) continue;
-      } else if (!theirs.some((p) => eqSlug(p[0], vsChamp))) continue;
+        if (!theirs.some((p) => eqChamp(p[0], vsChamp) && (p[1] < 0 || p[1] === roleIdx))) continue;
+      } else if (!theirs.some((p) => eqChamp(p[0], vsChamp))) continue;
     }
-    if (player && !mine.some((p) => (eqSlug(p[9], player) || eqSlug(p[8], player)) && (roleIdx < 0 || p[1] === roleIdx)))
+    if (player && !mine.some((p) => (eqPlayer(p[9], player) || eqPlayer(p[8], player)) && (roleIdx < 0 || p[1] === roleIdx)))
       continue;
-    if (roleIdx >= 0 && !champs.length && !player && !mine.some((p) => p[1] === roleIdx))
+    if (vsPlayer && !theirs.some((p) => (eqPlayer(p[9], vsPlayer) || eqPlayer(p[8], vsPlayer)) && (roleIdx < 0 || p[1] === roleIdx)))
+      continue;
+    if (roleIdx >= 0 && !champs.length && !player && !vsPlayer && !mine.some((p) => p[1] === roleIdx))
       continue;
     return s;
   }
@@ -128,6 +135,16 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
     if (vsTeam && !p.get("vs")) {
       p.set("vs", vsTeam);
       p.delete("vsteam");
+    }
+    const playersParam = p.get("players");
+    if (playersParam) {
+      const [pa, pb] = playersParam
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (pa && !p.get("player")) p.set("player", pa);
+      if (pb && !p.get("vsplayer")) p.set("vsplayer", pb);
+      p.delete("players");
     }
     const resParam = (p.get("result") || "").toLowerCase();
     if (resParam === "win") p.set("result", "w");
@@ -223,6 +240,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
               const qTeam = q.get("team") || "";
               const qVs = q.get("vs") || "";
               const qPlayer = q.get("player") || "";
+              const qVsPlayer = q.get("vsplayer") || "";
               return (
                 <>
                   {qTeam && (
@@ -258,6 +276,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                         kind: "compare",
                         mode: "player",
                         a: qPlayer,
+                        ...(qVsPlayer ? { b: qVsPlayer } : {}),
                         ...(qEvent ? { period: `e:${qEvent}` } : year ? { period: `y${year}` } : {}),
                       }}
                       className="text-rw-accent hover:underline font-semibold"
@@ -460,11 +479,11 @@ const teamOption = (teams: [string, string][], v: string | null) =>
 const teamLabel = (teams: [string, string][], v: string | null) =>
   !v ? "" : (teams.find(([k, n]) => eqSlug(k, v) || eqSlug(n, v))?.[1] ?? v);
 const champOption = (champs: string[], v: string | null) =>
-  !v ? "" : (champs.find((c) => eqSlug(c, v)) ?? v);
+  !v ? "" : (champs.find((c) => eqChamp(c, v)) ?? v);
 const playerOption = (players: [string, string][], v: string | null) =>
-  !v ? "" : (players.find(([k, n]) => eqSlug(k, v) || eqSlug(n, v))?.[0] ?? v);
+  !v ? "" : (players.find(([k, n]) => eqPlayer(k, v) || eqPlayer(n, v))?.[0] ?? v);
 const playerLabel = (players: [string, string][], v: string | null) =>
-  !v ? "" : (players.find(([k, n]) => eqSlug(k, v) || eqSlug(n, v))?.[1] ?? v);
+  !v ? "" : (players.find(([k, n]) => eqPlayer(k, v) || eqPlayer(n, v))?.[1] ?? v);
 
 const FinderBody: React.FC<{
   games: ChampGame[];
@@ -534,6 +553,7 @@ const FinderBody: React.FC<{
     q.get("champ") ||
     q.get("vschamp") ||
     q.get("player") ||
+    q.get("vsplayer") ||
     q.get("role")
   );
 
@@ -700,6 +720,36 @@ const FinderBody: React.FC<{
               </option>
             ))}
           </select>
+          {(q.get("player") || q.get("vsplayer")) && (
+            <>
+              <button
+                type="button"
+                onClick={() =>
+                  setQ({
+                    player: q.get("vsplayer") || undefined,
+                    vsplayer: q.get("player") || undefined,
+                  })
+                }
+                className="px-1.5 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 font-semibold"
+                title="⇄"
+              >
+                ⇄
+              </button>
+              <select
+                value={playerOption(opts.players, q.get("vsplayer"))}
+                onChange={(e) => setQ({ vsplayer: e.target.value || undefined })}
+                aria-label={tl("Opponent")}
+                className={sel}
+              >
+                <option value="">{tl("Against: anyone")}</option>
+                {opts.players.map(([k, n]) => (
+                  <option key={k} value={k}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
           <select
             value={q.get("role") || ""}
             onChange={(e) => setQ({ role: e.target.value || undefined })}
@@ -832,6 +882,7 @@ const FinderBody: React.FC<{
                   q.get("champ") && champName(champOption(opts.champs, q.get("champ")!)),
                   q.get("role") && roleName(q.get("role")!),
                   playerLabel(opts.players, q.get("player")),
+                  q.get("vsplayer") && `vs ${playerLabel(opts.players, q.get("vsplayer"))}`,
                   q.get("patch") && `Patch ${q.get("patch")}`,
                 ]
                   .filter(Boolean)
@@ -1136,6 +1187,7 @@ const FinderBody: React.FC<{
                       kind: "compare",
                       mode: "player",
                       a: playerOption(opts.players, q.get("player")) || q.get("player")!,
+                      ...(q.get("vsplayer") ? { b: playerOption(opts.players, q.get("vsplayer")) || q.get("vsplayer")! } : {}),
                       period: q.get("event") ? `e:${q.get("event")}` : year ? `y${year}` : undefined,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
