@@ -124,7 +124,10 @@ export interface PlayerPicture {
 export function usePlayerPicture(name: string | undefined, teamName?: string, slug?: string, img?: string): PlayerPicture | undefined {
   const { photos } = useIndex();
   const hub = useHubPhotos();
-  const list = photos.get(norm(name)) || [];
+  const n = norm(name);
+  const bare = norm(name?.replace(/\s*\([^()]*\)\s*$/, ""));
+  const slugNorm = slug ? norm(slug) : "";
+  const list = photos.get(n) || (bare !== n ? photos.get(bare) : undefined) || (slugNorm ? photos.get(slugNorm) : undefined) || [];
   const t = norm(teamName);
   const tTokens = useMemo(() => (teamName ? orgTokens(teamName) : []), [teamName]);
   const onTeam = t

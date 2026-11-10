@@ -402,16 +402,18 @@ export const DraftTendencies: React.FC<{
               section={tl("Draft tendencies")}
               name={teamName}
               sub={periodLabel ? `${periodLabel} · ${tl("{n} games", { n: d.games })}` : tl("{n} games", { n: d.games })}
-              rows={() => [
-                ...(d.b1.length ? [{ champ: d.b1[0][0], label: tl("First pick (blue)"), sub: champStr(d.b1, 3), value: `${d.b1[0][1]}G` }] : []),
-                ...(d.r12.length ? [{ champ: d.r12[0][0], label: tl("First picks (red)"), sub: champStr(d.r12, 3), value: `${d.r12[0][1]}G` }] : []),
-                ...(d.bans1.length ? [{ champ: d.bans1[0][0], label: tl("Bans, phase 1"), sub: d.bans1.slice(0, 4).map(([c, g]) => `${champName(c)} (${g})`).join(", "), value: `${d.bans1[0][1]}G` }] : []),
-                ...(d.firstRole.length ? [{ label: tl("First role locked in"), value: roleStr(d.firstRole) }] : []),
-                ...(d.r5.length ? [{ label: tl("Last pick on red (R5)"), value: roleStr(d.r5) }] : []),
-                ...(d.b45.length ? [{ label: tl("Last picks on blue (B4-B5)"), value: roleStr(d.b45) }] : []),
-                ...(d.botDuos.length ? [{ champ: d.botDuos[0][0], label: tl("Bot lane pairs"), sub: `${champName(d.botDuos[0][0])} + ${champName(d.botDuos[0][1])}`, value: `${d.botDuos[0][2]}G · ${winRate(d.botDuos[0][3], d.botDuos[0][2])}` }] : []),
-                ...(d.flex.length ? [{ champ: d.flex[0][0], label: tl("Flex picks"), sub: d.flex.slice(0, 4).map(([c]) => champName(c)).join(", "), value: `${d.flex.length}` }] : []),
-              ]}
+              rows={() =>
+                [
+                  ...(d.b1.length ? [{ champ: d.b1[0][0], team: teamName, label: tl("First pick (blue)"), sub: champStr(d.b1, 3), value: `${d.b1[0][1]}G` }] : []),
+                  ...(d.r12.length ? [{ champ: d.r12[0][0], team: teamName, label: tl("First picks (red)"), sub: champStr(d.r12, 3), value: `${d.r12[0][1]}G` }] : []),
+                  ...(d.bans1.length ? [{ champ: d.bans1[0][0], team: teamName, label: tl("Bans, phase 1"), sub: d.bans1.slice(0, 4).map(([c, g]) => `${champName(c)} (${g})`).join(", "), value: `${d.bans1[0][1]}G` }] : []),
+                  ...(d.firstRole.length ? [{ team: teamName, label: tl("First role locked in"), value: roleStr(d.firstRole) }] : []),
+                  ...(d.r5.length ? [{ team: teamName, label: tl("Last pick on red (R5)"), value: roleStr(d.r5) }] : []),
+                  ...(d.b45.length ? [{ team: teamName, label: tl("Last picks on blue (B4-B5)"), value: roleStr(d.b45) }] : []),
+                  ...(d.botDuos.length ? [{ champ: d.botDuos[0][0], team: teamName, label: tl("Bot lane pairs"), sub: `${champName(d.botDuos[0][0])} + ${champName(d.botDuos[0][1])}`, value: `${d.botDuos[0][2]}G · ${winRate(d.botDuos[0][3], d.botDuos[0][2])}` }] : []),
+                  ...(d.flex.length ? [{ champ: d.flex[0][0], team: teamName, label: tl("Flex picks"), sub: d.flex.slice(0, 4).map(([c]) => champName(c)).join(", "), value: `${d.flex.length}` }] : []),
+                ].map((r, idx) => ({ ...r, rank: idx + 1 }))
+              }
             />
           </span>
         )}

@@ -101,7 +101,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
               f.rows.slice(0, 10).map((r, idx) => ({
                 rank: f.plain ? undefined : idx + 1,
                 champ: r.champ,
-                team: !r.champ && r.team ? r.label : undefined,
+                team: !r.champ && r.team ? (r.player ? r.team : r.label) : undefined,
                 label: r.label,
                 sub: r.sub,
                 value: r.value,
@@ -145,7 +145,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   </HubLink>
                 ) : r.player ? (
                   <HubLink to={{ kind: "player", slug: r.player }} className="relative shrink-0">
-                    <PlayerPhoto name={r.label} slug={r.player} size={18} />
+                    <PlayerPhoto name={r.label} team={r.team ?? undefined} slug={r.player} size={18} />
                   </HubLink>
                 ) : r.team ? (
                   <HubLink to={{ kind: "team", slug: r.team }} className="relative shrink-0">

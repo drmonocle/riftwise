@@ -38,16 +38,16 @@ export const UpNextTable: React.FC<{
   timeOf: (iso: string) => string;
 }> = ({ matches, schedule, settings, onOpenUrl, onSelectTeam, onToggleFollow, timeOf }) => (
   <div className="@container rounded-xl border border-rw-border bg-rw-panel rw-lit text-xs divide-y divide-rw-border/70">
-    <div className={`hidden ${GRID} px-3 py-1.5 text-[10px] uppercase tracking-wider text-rw-muted`}>
+    <div className={`flex items-center justify-between ${GRID} px-3 py-1.5 text-[10px] uppercase tracking-wider text-rw-muted`}>
       <span>{tl("League")}</span>
-      <span className="text-center">{tl("Match")}</span>
-      <span className="text-center" title={tl("Chance to win the series, from the power rankings (every pro game since 2011)")}>
+      <span className="hidden @min-[900px]:inline text-center">{tl("Match")}</span>
+      <span className="hidden @min-[900px]:inline text-center" title={tl("Chance to win the series, from the power rankings (every pro game since 2011)")}>
         {tl("Chance")}
       </span>
-      <span className={FORM_COL} title={tl("Last five series, newest first")}>
+      <span className={`hidden @min-[1060px]:inline ${FORM_COL}`} title={tl("Last five series, newest first")}>
         {tl("Form")}
       </span>
-      <span>{tl("Time")}</span>
+      <span className="hidden @min-[900px]:inline">{tl("Time")}</span>
       <span className="flex justify-end">
         {matches.length > 0 && (
           <SectionCard

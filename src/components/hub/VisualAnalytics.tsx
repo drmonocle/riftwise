@@ -274,10 +274,12 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                   section={`${tl("Playstyle")} · ${periodLabel}`}
                   name={p.name}
                   sub={cardSub}
-                  rows={() => [
-                    ...tags.map((x) => ({ label: x.tag, sub: x.why, win: x.good })),
-                    ...metrics.map((m) => ({ label: m.label, sub: m.sub, value: m.value, win: m.good })),
-                  ]}
+                  rows={() =>
+                    [
+                      ...tags.map((x) => ({ team: p.club || undefined, label: x.tag, sub: x.why, win: x.good })),
+                      ...metrics.map((m) => ({ team: p.club || undefined, label: m.label, sub: m.sub, value: m.value, win: m.good })),
+                    ].map((r, idx) => ({ ...r, rank: idx + 1 }))
+                  }
                 />
               </span>
             )
@@ -808,6 +810,7 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
                 topChamps.map((c, idx) => ({
                   rank: idx + 1,
                   champ: c.c,
+                  team: p.club || undefined,
                   win: c.w / Math.max(1, c.g) >= 0.5,
                   label: champName(c.c),
                   sub: `${c.w}-${c.g - c.w} (${winRate(c.w, c.g)})`,
@@ -945,47 +948,49 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
               section={`${tl("Recent series")} & ${tl("Blue / red side")}`}
               name={t.name}
               sub={cardSub}
-              rows={() => [
-                ...(series.length > 0
-                  ? [
-                      {
-                        team: t.name,
-                        label: tl("Recent series"),
-                        sub: `${gameWins}-${gameLosses} ${tl("Games")}`,
-                        value: `${seriesWins}-${series.length - seriesWins} (${winRate(seriesWins, series.length)})`,
-                        win: seriesWins * 2 >= series.length,
-                      },
-                    ]
-                  : []),
-                ...(hasSides
-                  ? [
-                      {
-                        team: t.name,
-                        label: tl("Blue side"),
-                        sub: `${blueW}-${blueG - blueW}`,
-                        value: winRate(blueW, blueG),
-                        win: blueWr >= 50,
-                      },
-                      {
-                        team: t.name,
-                        label: tl("Red side"),
-                        sub: `${redW}-${redG - redW}`,
-                        value: winRate(redW, redG),
-                        win: redWr >= 50,
-                      },
-                    ]
-                  : []),
-                ...(t.obj
-                  ? [
-                      {
-                        team: t.name,
-                        label: `${tl("Dragons")} · ${tl("Barons")} · ${tl("Towers")}`,
-                        sub: tl("Per game"),
-                        value: `${fmtDec(t.obj.dragons, 2)} · ${fmtDec(t.obj.barons, 2)} · ${fmtDec(t.obj.towers, 1)}`,
-                      },
-                    ]
-                  : []),
-              ]}
+              rows={() =>
+                [
+                  ...(series.length > 0
+                    ? [
+                        {
+                          team: t.name,
+                          label: tl("Recent series"),
+                          sub: `${gameWins}-${gameLosses} ${tl("Games")}`,
+                          value: `${seriesWins}-${series.length - seriesWins} (${winRate(seriesWins, series.length)})`,
+                          win: seriesWins * 2 >= series.length,
+                        },
+                      ]
+                    : []),
+                  ...(hasSides
+                    ? [
+                        {
+                          team: t.name,
+                          label: tl("Blue side"),
+                          sub: `${blueW}-${blueG - blueW}`,
+                          value: winRate(blueW, blueG),
+                          win: blueWr >= 50,
+                        },
+                        {
+                          team: t.name,
+                          label: tl("Red side"),
+                          sub: `${redW}-${redG - redW}`,
+                          value: winRate(redW, redG),
+                          win: redWr >= 50,
+                        },
+                      ]
+                    : []),
+                  ...(t.obj
+                    ? [
+                        {
+                          team: t.name,
+                          label: `${tl("Dragons")} · ${tl("Barons")} · ${tl("Towers")}`,
+                          sub: tl("Per game"),
+                          value: `${fmtDec(t.obj.dragons, 2)} · ${fmtDec(t.obj.barons, 2)} · ${fmtDec(t.obj.towers, 1)}`,
+                        },
+                      ]
+                    : []),
+                ].map((r, idx) => ({ ...r, rank: idx + 1 }))
+              }
             />
           )
         }
@@ -1338,28 +1343,30 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
             section={`${tl("Recent patches")} · ${champName(c.name)}`}
             name={champName(c.name)}
             sub={`${fmtNum(c.p)} ${tl("Picks")} · ${fmtNum(c.b)} ${tl("Bans")} · ${winRate(c.w, c.p)}`}
-            rows={() => [
-              ...topRoles.slice(0, 3).map((r) => ({
-                champ: c.name,
-                label: roleName(r.r),
-                sub: `${fmtNum(r.p)} ${tl("Picks")}`,
-                value: `${Math.round((r.p / totalRoles) * 100)}%`,
-                win: true,
-              })),
-              ...patches
-                .slice(-5)
-                .reverse()
-                .map((p) => {
-                  const pr = Math.round(((p.pr ?? p.pk + p.b) / Math.max(1, p.g)) * 100);
-                  return {
-                    champ: c.name,
-                    label: tl("Patch {patch}", { patch: p.p }),
-                    sub: `${p.pk} ${tl("Picks")} · ${p.b} ${tl("Bans")}`,
-                    value: `${pr}% · ${p.pk ? winRate(p.w, p.pk) : "–"}`,
-                    win: p.pk >= 3 ? p.w / p.pk >= 0.5 : undefined,
-                  };
-                }),
-            ]}
+            rows={() =>
+              [
+                ...topRoles.slice(0, 3).map((r) => ({
+                  champ: c.name,
+                  label: roleName(r.r),
+                  sub: `${fmtNum(r.p)} ${tl("Picks")}`,
+                  value: `${Math.round((r.p / totalRoles) * 100)}%`,
+                  win: true,
+                })),
+                ...patches
+                  .slice(-5)
+                  .reverse()
+                  .map((p) => {
+                    const pr = Math.round(((p.pr ?? p.pk + p.b) / Math.max(1, p.g)) * 100);
+                    return {
+                      champ: c.name,
+                      label: tl("Patch {patch}", { patch: p.p }),
+                      sub: `${p.pk} ${tl("Picks")} · ${p.b} ${tl("Bans")}`,
+                      value: `${pr}% · ${p.pk ? winRate(p.w, p.pk) : "–"}`,
+                      win: p.pk >= 3 ? p.w / p.pk >= 0.5 : undefined,
+                    };
+                  }),
+              ].map((r, idx) => ({ ...r, rank: idx + 1 }))
+            }
           />
         }
       >

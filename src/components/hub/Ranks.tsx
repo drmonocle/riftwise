@@ -747,7 +747,8 @@ export const PlayerRanks: React.FC<{
                 name={name || me?.n || slug}
                 sub={`${leagueLabel} ${year}${me?.r ? ` · ${roleName(me.r)}` : ""}`}
                 rows={() =>
-                  cardRows.map((r) => ({
+                  cardRows.map((r, idx) => ({
+                    rank: idx + 1,
                     team: me?.t,
                     label: r.label,
                     sub: `${tl("League avg")} ${r.avg} · ${r.diff} (${tl("{n} of {m}", { n: r.rank, m: r.of })})`,
@@ -876,7 +877,8 @@ export const TeamRanks: React.FC<{
                 name={name || me?.t || slug}
                 sub={`${leagueLabel} ${year}`}
                 rows={() =>
-                  cardRows.map((r) => ({
+                  cardRows.map((r, idx) => ({
+                    rank: idx + 1,
                     team: name || me?.t,
                     label: r.label,
                     sub: `${tl("League avg")} ${r.avg} · ${r.diff} (${tl("{n} of {m}", { n: r.rank, m: r.of })})`,

@@ -289,6 +289,8 @@ export function useCurrentTitle(route: HubRoute): string {
 
 // ── Links ─────────────────────────────────────────────────────────────────
 
+const InsideLinkContext = createContext(false);
+
 /**
  * A link to a hub page. On the web it is a real link (open in new tab works, search engines follow
  * it); a plain click stays inside the app.
@@ -326,7 +328,7 @@ export const HubLink: React.FC<{
       onNavigate?.();
     }}
   >
-    {children}
+    <InsideLinkContext.Provider value={true}>{children}</InsideLinkContext.Provider>
   </a>
 );
 
@@ -525,9 +527,11 @@ export const PlayerPhoto: React.FC<{
   className?: string;
   /** When false, renders a plain <span> for the initials fallback instead of an <a> link (for use inside <a>/<HubLink>). */
   linkFallback?: boolean;
-}> = ({ name, team, slug, img, size = 56, sizeClass, className = "", linkFallback = true }) => {
+}> = ({ name, team, slug, img, size = 56, sizeClass, className = "", linkFallback }) => {
   const pic = usePlayerPicture(name, team, slug, img);
   const open = useContext(OpenUrlContext);
+  const insideLink = useContext(InsideLinkContext);
+  const shouldLinkFallback = !insideLink && (linkFallback ?? (!!sizeClass || size >= 40));
   const [broken, setBroken] = useState<string[]>([]); // addresses that failed to load
   const box = sizeClass ? undefined : { width: size, height: size };
   const sz = sizeClass || "";
@@ -545,7 +549,7 @@ export const PlayerPhoto: React.FC<{
       style={box}
       className={`rounded-full object-cover object-top bg-rw-raised border border-rw-border shrink-0 ${sz} ${className}`}
     />
-  ) : linkFallback ? (
+  ) : shouldLinkFallback ? (
     <a
       href={photosHref}
       target="_blank"
