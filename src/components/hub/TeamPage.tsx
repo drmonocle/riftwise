@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Trophy } from "lucide-react";
 import { tl, tk, roleName, regionName, eventTitle, tc, tn, fmtDec } from "../../i18n";
 import { winRate } from "../../stats";
-import { loadHubTeam, loadPlayerGames, loadTeamGames, loadTeamGames2y, prettySlug } from "../../hub/data";
+import { loadHubTeam, loadPlayerGames, loadTeamGames, loadTeamGames2y, normText, prettySlug } from "../../hub/data";
 import { currentHubRoute, hubShareUrl, navigateHub, type HubRoute } from "../../hub/route";
 import { PageTabs, type PageTab } from "./PageTabs";
 import type { HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
@@ -375,7 +375,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     worlds || msi || firstStand
                       ? [tl("{n} Worlds", { n: worlds }), tl("{n} MSI", { n: msi }), firstStand ? tl("{n} First Stand", { n: firstStand }) : ""].filter(Boolean).join(" · ")
                       : tl("finals won"),
-                  to: t.titles.length > 0 ? ({ kind: "titles" } as HubRoute) : to("history"),
+                  to: t.titles.length > 0 ? ({ kind: "titles", query: `kind=All&q=${encodeURIComponent(t.name)}` } as HubRoute) : to("history"),
                 },
                 t.earnings
                   ? { label: tl("Prize money"), value: fmtUsdShort(t.earnings), title: fmtUsd(t.earnings), sub: `${fmtUsd(t.earnings)} · ${tl("as listed in US dollars")}`, to: to("history") }
@@ -809,6 +809,9 @@ const TeamChampionsTab: React.FC<{
   const champs = agg ? agg.picks.map(([c, g, w]) => ({ c, g, w })) : t.champs;
   const bans = agg ? agg.bans.map(([c, g]) => ({ c, g })) : t.bans;
   const bansVs = agg ? agg.bansVs.map(([c, g]) => ({ c, g })) : t.bansVs || [];
+  const [search, setSearch] = useState("");
+  const nq = normText(search);
+  const shownChamps = useMemo(() => (nq ? champs.filter((c) => normText(champName(c.c)).includes(nq) || normText(c.c).includes(nq)) : champs), [champs, nq]);
   const maxPickG = Math.max(1, ...champs.map((c) => c.g));
   const maxBanG = Math.max(1, ...bans.map((c) => c.g));
   const maxBanVsG = Math.max(1, ...bansVs.map((c) => c.g));
@@ -839,25 +842,37 @@ const TeamChampionsTab: React.FC<{
         <Section
           title={tl("Most picked champions")}
           right={
-            <SectionCard
-              section={tl("Most picked champions")}
-              name={t.name}
-              rows={() =>
-                champs.map((c, idx) => ({
-                  rank: idx + 1,
-                  champ: c.c,
-                  team: t.name,
-                  label: champName(c.c),
-                  sub: tl("{n} games", { n: c.g }),
-                  value: winRate(c.w, c.g),
-                  win: c.g ? c.w / c.g >= 0.5 : undefined,
-                }))
-              }
-            />
+            <span className="flex items-center gap-2">
+              {champs.length >= 12 && (
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={tl("Search champions…")}
+                  aria-label={tl("Search champions…")}
+                  className={`${select} w-36`}
+                />
+              )}
+              <SectionCard
+                section={tl("Most picked champions")}
+                name={t.name}
+                rows={() =>
+                  shownChamps.map((c, idx) => ({
+                    rank: idx + 1,
+                    champ: c.c,
+                    team: t.name,
+                    label: champName(c.c),
+                    sub: tl("{n} games", { n: c.g }),
+                    value: winRate(c.w, c.g),
+                    win: c.g ? c.w / c.g >= 0.5 : undefined,
+                  }))
+                }
+              />
+            </span>
           }
         >
           <ul className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
-            {champs.map((c) => {
+            {shownChamps.map((c) => {
               const isSel = selectedChamp?.toLowerCase() === c.c.toLowerCase();
               const good = c.g > 0 && c.w / c.g >= 0.5;
               return (
@@ -1261,24 +1276,26 @@ const TeamChampGames: React.FC<{
                 section={`${t.name} · ${champName(canonical)}`}
                 sub={`${totalW}–${totalG - totalW} (${winRate(totalW, totalG)})`}
                 name={`${t.u}-${prettySlug(canonical)}`}
-                rows={() => [
-                  ...playersSummary.map((pl) => ({
-                    champ: canonical,
-                    team: t.name,
-                    label: `${pl.n}${pl.r ? ` (${roleName(pl.r)})` : ""}`,
-                    sub: pl.kdaGames > 0 ? `KDA ${fmtDec((pl.k + pl.a) / Math.max(pl.d, 1), 2)}` : undefined,
-                    value: `${pl.w}–${pl.g - pl.w} (${winRate(pl.w, pl.g)})`,
-                    win: pl.g > 0 ? pl.w / pl.g >= 0.5 : undefined,
-                  })),
-                  ...filtered.slice(0, 8).map((e) => ({
-                    champ: canonical,
-                    team: t.name,
-                    label: `vs ${e.r[4]}`,
-                    sub: `${e.r[3]} · ${fmtDate(e.r[0])}`,
-                    value: e.r[7] ? tc("short result", "W") : tc("short result", "L"),
-                    win: e.r[7] === 1,
-                  })),
-                ]}
+                rows={() =>
+                  [
+                    ...playersSummary.map((pl) => ({
+                      champ: canonical,
+                      team: t.name,
+                      label: `${pl.n}${pl.r ? ` (${roleName(pl.r)})` : ""}`,
+                      sub: pl.kdaGames > 0 ? `KDA ${fmtDec((pl.k + pl.a) / Math.max(pl.d, 1), 2)}` : undefined,
+                      value: `${pl.w}–${pl.g - pl.w} (${winRate(pl.w, pl.g)})`,
+                      win: pl.g > 0 ? pl.w / pl.g >= 0.5 : undefined,
+                    })),
+                    ...filtered.slice(0, 8).map((e) => ({
+                      champ: canonical,
+                      team: t.name,
+                      label: `vs ${e.r[4]}`,
+                      sub: `${e.r[3]} · ${fmtDate(e.r[0])}`,
+                      value: e.r[7] ? tc("short result", "W") : tc("short result", "L"),
+                      win: e.r[7] === 1,
+                    })),
+                  ].map((r, idx) => ({ rank: idx + 1, ...r }))
+                }
               />
             </>
           )}
@@ -1827,10 +1844,12 @@ const TeamPlaystyleOverview: React.FC<{ t: HubTeam }> = ({ t }) => {
               section={tl("Playstyle")}
               name={t.name}
               sub={periodLabel}
-              rows={() => [
-                ...tags.map((x) => ({ team: t.name, label: x.tag, sub: x.why, win: x.good })),
-                ...metrics.map((m) => ({ team: t.name, label: m.label, sub: m.sub, value: m.value, win: m.good })),
-              ]}
+              rows={() =>
+                [
+                  ...tags.map((x) => ({ team: t.name, label: x.tag, sub: x.why, win: x.good })),
+                  ...metrics.map((m) => ({ team: t.name, label: m.label, sub: m.sub, value: m.value, win: m.good })),
+                ].map((r, idx) => ({ rank: idx + 1, ...r }))
+              }
             />
           </span>
         )

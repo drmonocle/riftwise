@@ -480,7 +480,7 @@ const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
               </span>
               {s.a.u && s.b.u ? (
                 <HubLink
-                  to={{ kind: "compare", mode: "team", a: s.a.u, b: s.b.u }}
+                  to={{ kind: "compare", mode: "team", a: s.a.u, b: s.b.u, period: /^\d{4}$/.test((s.date || "").slice(0, 4)) ? `y${(s.date || "").slice(0, 4)}` : undefined }}
                   className="font-sans text-[9px] font-bold uppercase tracking-wider text-rw-muted hover:text-rw-accent hover:underline"
                   title={tl("Compare")}
                 >
@@ -1240,22 +1240,24 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
             <SectionCard
               section={tl("Gold and XP lead")}
               name={`${blueName} vs ${redName}`}
-              rows={() => [
-                ...gold.map(([m, v]) => ({
-                  team: v >= 0 ? blueName : redName,
-                  label: `${tl("Gold")} · ${tl("{n} min", { n: m })}`,
-                  sub: v >= 0 ? blueName : redName,
-                  value: kfmt(v),
-                  win: v >= 0,
-                })),
-                ...xp.map(([m, v]) => ({
-                  team: v >= 0 ? blueName : redName,
-                  label: `XP · ${tl("{n} min", { n: m })}`,
-                  sub: v >= 0 ? blueName : redName,
-                  value: kfmt(v),
-                  win: v >= 0,
-                })),
-              ]}
+              rows={() =>
+                [
+                  ...gold.map(([m, v]) => ({
+                    team: v >= 0 ? blueName : redName,
+                    label: `${tl("Gold")} · ${tl("{n} min", { n: m })}`,
+                    sub: v >= 0 ? blueName : redName,
+                    value: kfmt(v),
+                    win: v >= 0,
+                  })),
+                  ...xp.map(([m, v]) => ({
+                    team: v >= 0 ? blueName : redName,
+                    label: `XP · ${tl("{n} min", { n: m })}`,
+                    sub: v >= 0 ? blueName : redName,
+                    value: kfmt(v),
+                    win: v >= 0,
+                  })),
+                ].map((r, idx) => ({ rank: idx + 1, ...r }))
+              }
             />
           }
         >

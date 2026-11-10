@@ -3,7 +3,7 @@ import React, { useMemo, useState } from "react";
 import { tl, tc, roleName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { loadHubChamp, prettySlug } from "../../hub/data";
+import { loadHubChamp, normText, prettySlug } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import type { HubChamp } from "../../hub/types";
 import { isFinishedItem, useDDragon } from "../../hub/ddragon";
@@ -105,6 +105,8 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
   // the champion's roles in order of how often it's played there, with matchups in either list
   const roleKeys = mainRoles.filter((r) => (c.matchups?.[r]?.length || 0) > 0 || (c.matchups12?.[r]?.length || 0) > 0);
   const [muRole, setMuRole] = useState(roleKeys[0] || "");
+  const [muSearch, setMuSearch] = useState("");
+  const [playerSearch, setPlayerSearch] = useState("");
   // this meta (last 12 months) first when there is one
   const [muRecentPick, setMuRecent] = useState(() => Object.keys(c.matchups12 || {}).length > 0);
   // the last 12 months have no matchups in this role: show all time
@@ -430,6 +432,16 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
           title={tl("Matchups")}
           right={
             <span className="flex flex-wrap items-center gap-2">
+              {muRows.length >= 10 && (
+                <input
+                  type="search"
+                  value={muSearch}
+                  onChange={(e) => setMuSearch(e.target.value)}
+                  placeholder={tl("Search champions…")}
+                  aria-label={tl("Search champions…")}
+                  className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text w-36"
+                />
+              )}
               {c.matchups12 && (
                 <span className="flex gap-1">
                   {[true, false].map((recent) => (
@@ -564,7 +576,9 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
             <tbody>
               {(() => {
                 const maxMuG = Math.max(1, ...muRows.map((x) => x[1]));
-                return muRows.map(([oc, g, w, tn, gd, cs, xp, ahead]) => (
+                const nq = normText(muSearch);
+                const shownMu = nq ? muRows.filter(([oc]) => normText(champName(oc)).includes(nq) || normText(oc).includes(nq)) : muRows;
+                return shownMu.map(([oc, g, w, tn, gd, cs, xp, ahead]) => (
                   <tr key={oc} className="border-t border-rw-border">
                     <td className={`${td} max-w-[10rem]`} data-sort={champName(oc)}>
                       <ChampLink name={oc} size={16} />
@@ -737,6 +751,16 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         title={tl("Most games on {champion}", { champion: champName(c.name) })}
         right={
           <span className="flex flex-wrap items-center gap-2">
+            {(playersRecent ? recentPlayersList : c.players).length >= 10 && (
+              <input
+                type="search"
+                value={playerSearch}
+                onChange={(e) => setPlayerSearch(e.target.value)}
+                placeholder={tl("Filter by name or team…")}
+                aria-label={tl("Filter by name or team…")}
+                className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text w-36"
+              />
+            )}
             {recentPlayersList.length > 0 && (
               <span className="flex gap-1">
                 {[false, true].map((recent) => (
@@ -783,7 +807,14 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
           </thead>
           <tbody>
             {(() => {
-              const pList = (playersRecent ? recentPlayersList : c.players).slice(0, 25);
+              const allPlayers = playersRecent ? recentPlayersList : c.players;
+              const nq = normText(playerSearch);
+              const pList = nq
+                ? allPlayers.filter((p) => {
+                    const pTeam = teamByPlayer.get(p.u || p.n) || "";
+                    return normText(p.n).includes(nq) || normText(p.u || "").includes(nq) || normText(pTeam).includes(nq);
+                  })
+                : allPlayers.slice(0, 25);
               const maxPG = Math.max(1, ...pList.map((x) => x.g));
               return pList.map((p) => {
                 const pTeam = teamByPlayer.get(p.u || p.n);

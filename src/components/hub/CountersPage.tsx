@@ -366,11 +366,17 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
         <div className="rw-span">
           <Section title={tl("Most played champions")}>
             <div className="flex flex-wrap gap-2">
-              {index.data.champs.slice(0, 40).map((c) => (
-                <HubLink key={champSlug(c)} to={{ kind: "counters", query: `champ=${champSlug(c)}` }} className="flex items-center gap-1 px-2 py-1 rounded border border-rw-border text-xs hover:border-rw-accent">
-                  <ChampIcon name={c[0]} size={18} /> {champName(c[0])}
-                </HubLink>
-              ))}
+              {(() => {
+                const qBare = bare(inputVal.trim());
+                const list = qBare
+                  ? index.data.champs.filter((c) => bare(c[0]).includes(qBare) || bare(champName(c[0])).includes(qBare) || c[1].includes(qBare))
+                  : index.data.champs.slice(0, 40);
+                return list.map((c) => (
+                  <HubLink key={champSlug(c)} to={{ kind: "counters", query: `champ=${champSlug(c)}` }} className="flex items-center gap-1 px-2 py-1 rounded border border-rw-border text-xs hover:border-rw-accent">
+                    <ChampIcon name={c[0]} size={18} /> {champName(c[0])}
+                  </HubLink>
+                ));
+              })()}
             </div>
           </Section>
         </div>

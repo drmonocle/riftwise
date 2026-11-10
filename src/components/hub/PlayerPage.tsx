@@ -8,8 +8,8 @@ import { Trophy, ExternalLink, Package } from "lucide-react";
 import { tl, tk, tc, roleName, eventTitle, regionName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { loadHubChamp, loadHubPlayer, loadPlayerGames, prettySlug } from "../../hub/data";
-import { currentHubRoute, hubShareUrl, type HubRoute } from "../../hub/route";
+import { loadHubChamp, loadHubPlayer, loadPlayerGames, normText, prettySlug } from "../../hub/data";
+import { currentHubRoute, hubShareUrl, navigateHub, type HubRoute } from "../../hub/route";
 import type { HubPlayer } from "../../hub/types";
 import { type PeriodKey, inPeriod, periodOptions, playerAgg, playerRowRef } from "../../hub/period";
 import { PageTabs, type PageTab } from "./PageTabs";
@@ -48,7 +48,16 @@ export const PlayerPage: React.FC<{
   tab?: string;
   onOpenUrl: (url: string) => void;
 }> = ({ slug, tab, onOpenUrl }) => {
-  const state = useLoad(() => loadHubPlayer(slug), [slug]);
+  const state = useLoad(
+    () =>
+      loadHubPlayer(slug).then((p) => {
+        const now = currentHubRoute();
+        if (p.u && p.u !== slug && now.kind === "player" && now.slug === slug)
+          navigateHub({ kind: "player", slug: p.u, ...("tab" in now && now.tab ? { tab: now.tab } : {}), ...("query" in now && now.query ? { query: now.query } : {}) }, { replace: true });
+        return p;
+      }),
+    [slug],
+  );
   usePageTitle(state.data ? (tab && TAB_LABEL[tab] ? `${state.data.name} · ${tl(TAB_LABEL[tab])}` : state.data.name) : undefined);
   useDDragon();
   return (
@@ -870,7 +879,11 @@ const PlayerChampionsTab: React.FC<{
     return playerAgg(rows);
   }, [log.data, period]);
   const champs = agg ? agg.champs : p.champs;
+  const [search, setSearch] = useState("");
+  const nq = normText(search);
+  const shownChamps = useMemo(() => (nq ? champs.filter((c) => normText(champName(c.c)).includes(nq) || normText(c.c).includes(nq)) : champs), [champs, nq]);
   const maxChampG = Math.max(1, ...champs.map((c) => c.g));
+  const periodLabel = period === "all" ? "" : options.find((o) => o.key === period)?.label || period;
   return (
     <div className={`${gamesOn ? "" : "rw-span "}space-y-3`}>
       {options.length > 0 && (
@@ -885,22 +898,34 @@ const PlayerChampionsTab: React.FC<{
       <Section
         title={tl("Champion pool")}
         right={
-          <SectionCard
-            section={tl("Champion pool")}
-            name={p.name}
-            sub={tl("{n} champions played", { n: champs.length })}
-            rows={() =>
-              champs.map((c, idx) => ({
-                rank: idx + 1,
-                champ: c.c,
-                team: p.club || undefined,
-                label: champName(c.c),
-                sub: tl("{g} games · {wr}", { g: c.g, wr: winRate(c.w, c.g) }),
-                value: `KDA ${fmtN(c.kda)}`,
-                win: c.g > 0 ? c.w / c.g >= 0.5 : undefined,
-              }))
-            }
-          />
+          <span className="flex items-center gap-2">
+            {champs.length >= 12 && (
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={tl("Search champions…")}
+                aria-label={tl("Search champions…")}
+                className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text w-36"
+              />
+            )}
+            <SectionCard
+              section={tl("Champion pool")}
+              name={p.name}
+              sub={[periodLabel, tl("{n} champions played", { n: shownChamps.length })].filter(Boolean).join(" · ")}
+              rows={() =>
+                shownChamps.map((c, idx) => ({
+                  rank: idx + 1,
+                  champ: c.c,
+                  team: p.club || undefined,
+                  label: champName(c.c),
+                  sub: tl("{g} games · {wr}", { g: c.g, wr: winRate(c.w, c.g) }),
+                  value: `KDA ${fmtN(c.kda)}`,
+                  win: c.g > 0 ? c.w / c.g >= 0.5 : undefined,
+                }))
+              }
+            />
+          </span>
         }
       >
         <div className="overflow-x-auto">
@@ -916,7 +941,7 @@ const PlayerChampionsTab: React.FC<{
               </tr>
             </thead>
             <tbody>
-              {champs.map((c) => (
+              {shownChamps.map((c) => (
                 <tr key={c.c} className={`border-t border-rw-border ${gamesOn === c.c ? "bg-rw-accent/10" : ""}`}>
                   <td className={`${td} max-w-[10rem]`} data-sort={champName(c.c)}>
                     <ChampLink name={c.c} size={18} />

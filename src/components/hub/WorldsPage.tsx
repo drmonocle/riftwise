@@ -896,7 +896,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                 </HubLink>
                 <TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent" />
                 {r.u ? (
-                  <HubLink to={{ kind: "team", slug: r.u, tab: "tournaments" }} className="hover:text-rw-accent hover:underline">
+                  <HubLink to={{ kind: "team", slug: r.u, tab: "history" }} className="hover:text-rw-accent hover:underline">
                     ({r.from}–{r.to}, {r.n})
                   </HubLink>
                 ) : (
@@ -1226,7 +1226,8 @@ function swissPicksCard(rec: Record<string, [number, number]>, byU: Map<string, 
   const rows = ["3-0", "3-1", "3-2", "2-3", "1-3", "0-3"]
     .map((k) => ({ k, us: Object.keys(rec).filter((u) => rec[u].join("-") === k) }))
     .filter((g) => g.us.length)
-    .map((g) => ({
+    .map((g, idx) => ({
+      rank: idx + 1,
       team: g.us[0] ? byU.get(g.us[0])?.n || byU.get(g.us[0])?.c || g.us[0] : undefined,
       label: g.us.map((u) => byU.get(u)?.c || u).join(" · "),
       sub: `${g.k} · ${g.k.startsWith("3") ? tl("through") : tl("out")}`,
@@ -1250,7 +1251,7 @@ function bracketPicksCard(ko: ReturnType<typeof runKnockout>, byU: Map<string, W
     ...(ko.final ? [row(tl("Final"), ko.final)] : []),
     ...ko.sf.map((m) => row(tl("Semifinals"), m)),
     ...ko.qf.map((m) => row(tl("Quarterfinals"), m)),
-  ];
+  ].map((r, idx) => ({ rank: idx + 1, ...r }));
   return listCard({ section: tl("My Worlds bracket"), name: event, sub: hubShareUrl({ kind: "worlds" }).replace(/^https?:\/\//, ""), rows });
 }
 
@@ -1268,7 +1269,7 @@ function msiBracketCard(res: ReturnType<typeof runBracket>, byU: Map<string, WTe
         sub: tl(COL_LABELS[m.col] || m.col),
         value: m.w ? code(m.w === 1 ? m.a : m.b) : "?",
       })),
-  ];
+  ].map((r, idx) => ({ rank: idx + 1, ...r }));
   return listCard({ section: tl("Bracket"), name: event, sub: hubShareUrl({ kind }).replace(/^https?:\/\//, ""), rows });
 }
 

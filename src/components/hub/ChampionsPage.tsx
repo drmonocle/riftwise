@@ -7,7 +7,7 @@
 import React, { useMemo, useState } from "react";
 import { tl, roleName, fmtDec } from "../../i18n";
 import { ChampionStats, StatsMeta, loadChampionStats } from "../../stats";
-import { loadAliases, loadChampGames, loadChampIndex, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { loadAliases, loadChampGames, loadChampIndex, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { ChampAggRow, ROLES, champAgg, patchCompare } from "../../hub/champAgg";
@@ -213,7 +213,14 @@ export const ChampionsPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ m
       {scope === "top" || scope === "all" ? (
         <OverallTable meta={meta} scope={scope === "all" ? "all" : "major"} q={q} setQ={setQ} />
       ) : (
-        <LeagueTable league={scope} q={q} setQ={setQ} years={Object.keys(leagues.find((l) => l.u === scope)?.y || {})} indexLoading={index.loading} />
+        <LeagueTable
+          league={scope}
+          leagueName={leagues.find((l) => l.u === scope)?.l || scope.toUpperCase()}
+          q={q}
+          setQ={setQ}
+          years={Object.keys(leagues.find((l) => l.u === scope)?.y || {})}
+          indexLoading={index.loading}
+        />
       )}
     </div>
   );
@@ -286,17 +293,20 @@ const SideRole: React.FC<{ q: URLSearchParams; setQ: (p: Record<string, string |
 
 const LeagueTable: React.FC<{
   league: string;
+  leagueName: string;
   years: string[];
   q: URLSearchParams;
   setQ: (p: Record<string, string | undefined>) => void;
   indexLoading?: boolean;
 }> = ({
   league,
+  leagueName,
   years,
   q,
   setQ,
   indexLoading,
 }) => {
+  const [search, setSearch] = useState("");
   const year = q.get("year") || [...years].sort().reverse()[0] || "";
   const file = useLoad(() => (year ? loadChampGames(league, year) : Promise.resolve(null)), [league, year]);
   const eventSlug = q.get("event") || "";
@@ -539,6 +549,14 @@ const LeagueTable: React.FC<{
   return (
     <div className={`${card} space-y-2`}>
       <div className="flex flex-wrap items-center gap-2 text-xs">
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={tl("Search champions…")}
+          aria-label={tl("Search champions…")}
+          className={`${sel} w-44`}
+        />
         <CompareWith
           value={vs}
           options={patchList.filter((p) => p !== q.get("patch")).map((p) => [p, p])}
@@ -610,7 +628,7 @@ const LeagueTable: React.FC<{
             </HubLink>
             <SectionCard
               section={tl("Champions")}
-              name={[league.toUpperCase(), year, q.get("patch") && tl("Patch {patch}", { patch: q.get("patch")! })].filter(Boolean).join(" · ")}
+              name={[leagueName, year, q.get("patch") && tl("Patch {patch}", { patch: q.get("patch")! })].filter(Boolean).join(" · ")}
               sub={tl("{n} games", { n: fmtNum(result.games) })}
               rows={() =>
                 result.rows.slice(0, 12).map((c, i) => ({
@@ -624,7 +642,7 @@ const LeagueTable: React.FC<{
               }
             />
             <CopyChampsPost
-              title={[tl("Champions"), league.toUpperCase(), year, q.get("patch") && tl("Patch {patch}", { patch: q.get("patch")! })].filter(Boolean).join(" · ")}
+              title={[tl("Champions"), leagueName, year, q.get("patch") && tl("Patch {patch}", { patch: q.get("patch")! })].filter(Boolean).join(" · ")}
               rows={result.rows}
               query={q.toString()}
             />
@@ -636,7 +654,11 @@ const LeagueTable: React.FC<{
         <p className="text-xs text-rw-sub py-4 text-center">{tl("No games match these filters.")}</p>
       ) : (
         <SortTable
-          rows={emerging && vs ? result.rows.filter((r) => r.emerging) : result.rows}
+          rows={(() => {
+            const base = emerging && vs ? result.rows.filter((r) => r.emerging) : result.rows;
+            const nq = normText(search);
+            return nq ? base.filter((r) => normText(champName(r.c)).includes(nq) || normText(r.c).includes(nq)) : base;
+          })()}
           columns={cols}
           // with a role picked, bans (not tied to a role) would put e.g. top-lane bans at the top of a mid list
           initial={{ key: vs ? "dPres" : roleQ ? "p" : "presence", desc: true }}
@@ -659,6 +681,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
   q,
   setQ,
 }) => {
+  const [search, setSearch] = useState("");
   const key = q.get("key") && meta.champions.includes(q.get("key")!) ? q.get("key")! : meta.champions.find((k) => k.startsWith("p")) || meta.champions[0];
   const state = useLoad<ChampionStats>(() => loadChampionStats(key), [key]);
   const block = state.data?.[scope] || state.data?.all;
@@ -814,6 +837,14 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
             ))}
         </select>
         <SideRole q={q} setQ={setQ} noSide />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={tl("Search champions…")}
+          aria-label={tl("Search champions…")}
+          className={`${sel} w-44`}
+        />
         {key.startsWith("p") && (
           <CompareWith
             value={vs}
@@ -878,7 +909,11 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
         <div className={`${card} space-y-2.5`}>
           {rows.length > 0 && <MetaSpotlight rows={rows} minWrPicks={10} />}
           <SortTable
-            rows={emerging && thenBlock ? rows.filter((r) => r.emerging) : rows}
+            rows={(() => {
+              const base = emerging && thenBlock ? rows.filter((r) => r.emerging) : rows;
+              const nq = normText(search);
+              return nq ? base.filter((r) => normText(champName(r.c)).includes(nq) || normText(r.c).includes(nq)) : base;
+            })()}
             columns={cols}
             initial={{ key: thenBlock ? "dPres" : "presence", desc: true }}
             key={thenBlock ? "by-delta" : "by-presence"}

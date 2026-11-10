@@ -10,7 +10,7 @@ import { CountryFlag, countryCode, localCountry } from "./CountryFlag";
 import { tl, tn, tk, regionName, stageLabel, eventTitle } from "../../i18n";
 import { champName } from "../../champions";
 import { winRate } from "../../stats";
-import { downloadEventCsv, downloadStagesCsv, loadHubEvent, prettySlug } from "../../hub/data";
+import { downloadEventCsv, downloadStagesCsv, loadHubEvent, normText, prettySlug } from "../../hub/data";
 import type { HubEvent, SeriesRow, Stage, StandingRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { EventPlayerStats, EventTeamStatsTable } from "./EventTables";
@@ -409,8 +409,8 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
       )}
 
       {((on("champions") && e.champs && e.champs.length > 0) || (on("teams") && e.teams && e.teams.length > 0)) && (
-        <div className={`${tabbed && tab === "champions" ? "rw-span " : ""}grid gap-3 md:grid-cols-2`}>
-          {on("champions") && e.champs && e.champs.length > 0 && <EventChamps e={e} />}
+        <div className={tabbed ? "rw-span" : "grid gap-3 md:grid-cols-2"}>
+          {on("champions") && e.champs && e.champs.length > 0 && <EventChamps e={e} full={tabbed} />}
           {on("teams") && e.teams && e.teams.length > 0 && (
             <Section
               title={tl("Teams")}
@@ -1049,7 +1049,7 @@ const CopyEventPost: React.FC<{ e: HubEvent }> = ({ e }) => {
       lines.push(
         `${tl("Champions")}: ${e.champs
           .slice(0, 3)
-          .map((c) => `${c.c} (${c.p}P/${c.b}B)`)
+          .map((c) => `${champName(c.c)} (${c.p}P/${c.b}B)`)
           .join(", ")}`,
       );
     }
@@ -1070,9 +1070,16 @@ const CopyEventPost: React.FC<{ e: HubEvent }> = ({ e }) => {
   );
 };
 
-const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
+const EventChamps: React.FC<{ e: HubEvent; full?: boolean }> = ({ e, full }) => {
   const games = e.statsGames || 0;
-  const rows = useMemo(() => (e.champs || []).slice(0, 20), [e.champs]);
+  const allChamps = useMemo(() => e.champs || [], [e.champs]);
+  const [search, setSearch] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const rows = useMemo(() => {
+    const nq = normText(search);
+    if (nq) return allChamps.filter((c) => normText(champName(c.c)).includes(nq) || normText(c.c).includes(nq));
+    return full || showAll ? allChamps : allChamps.slice(0, 20);
+  }, [allChamps, search, full, showAll]);
   // the Champions page with this tournament picked: every champion, by patch / side / role, blind picks
   const year = (e.start || e.end || "").slice(0, 4);
   const more =
@@ -1089,6 +1096,21 @@ const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
       title={tl("Champions")}
       right={
         <span className="flex flex-wrap items-center gap-2">
+          {allChamps.length >= 10 && (
+            <input
+              type="search"
+              value={search}
+              onChange={(ev) => setSearch(ev.target.value)}
+              placeholder={tl("Search champions…")}
+              aria-label={tl("Search champions…")}
+              className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text w-36"
+            />
+          )}
+          {!full && !search && allChamps.length > 20 && (
+            <button type="button" onClick={() => setShowAll((v) => !v)} className="text-[11px] text-rw-accent hover:underline">
+              {showAll ? tl("Show fewer") : tl("Show all {n}", { n: allChamps.length })}
+            </button>
+          )}
           {more}
           <SectionCard
             section={tl("Champions")}

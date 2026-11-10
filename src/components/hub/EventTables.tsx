@@ -467,7 +467,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
   const cols = all.filter((c) => c.key !== "grub" || teams.some((t) => t.grub > 0));
   const early = teams.some((t) => t.tn || t.fbn || t.pln);
   if (early) cols.push(...teamEarlyCols(tStatLink));
-  const pair = rows.length === 2 && rows[0].u && rows[1].u ? [rows[0].u, rows[1].u] : null;
+  const pair = rows.length === 2 ? [rows[0].u || prettySlug(rows[0].t), rows[1].u || prettySlug(rows[1].t)] : null;
   return (
     <Section
       title={tl("Team stats")}
