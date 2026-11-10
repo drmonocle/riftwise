@@ -485,6 +485,24 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                 </HubLink>
                 <HubLink
                   to={{
+                    kind: "draft",
+                    query: `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}`,
+                  }}
+                  className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}),
+                  }}
+                  className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+                <HubLink
+                  to={{
                     kind: "finder",
                     query: new URLSearchParams({
                       ...(league ? { league } : {}),

@@ -1729,6 +1729,18 @@ const DraftMatchupPanel: React.FC<{
             {tl("Pro tier list")} →
           </HubLink>
           <HubLink
+            to={{ kind: "rankings" }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Power rankings")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "leaders" }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Player leaderboards")} →
+          </HubLink>
+          <HubLink
             to={{
               kind: "finder",
               query: `team=${encodeURIComponent(blue.team.u)}&vs=${encodeURIComponent(red.team.u)}${
@@ -2608,6 +2620,9 @@ const ChampInfo: React.FC<{
         </HubLink>
         <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
           {tl("Pro tier list")} →
+        </HubLink>
+        <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+          {tl("Player leaderboards")} →
         </HubLink>
         <HubLink
           to={{

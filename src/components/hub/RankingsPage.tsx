@@ -424,6 +424,21 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
             {tl("Pro tier list")} →
           </HubLink>
           <HubLink
+            to={{ kind: "leaders", ...(league ? { query: `league=${encodeURIComponent(prettySlug(league))}` } : {}) }}
+            className="text-rw-accent hover:underline"
+          >
+            {tl("Player leaderboards")} →
+          </HubLink>
+          <HubLink to={{ kind: "titles" }} className="text-rw-accent hover:underline">
+            {tl("Titles")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "best", ...(league ? { query: `league=${encodeURIComponent(prettySlug(league))}` } : {}) }}
+            className="text-rw-accent hover:underline"
+          >
+            {tl("Best games")} →
+          </HubLink>
+          <HubLink
             to={{ kind: "finder", ...(league ? { query: `league=${encodeURIComponent(prettySlug(league))}` } : {}) }}
             className="text-rw-accent hover:underline"
           >
@@ -734,6 +749,18 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Tournaments")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "titles" }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Titles")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers" }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
               </HubLink>
               <HubLink
                 to={{ kind: "finder" }}

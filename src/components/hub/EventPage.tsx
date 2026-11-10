@@ -208,19 +208,61 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
               )}
               {!resultsHidden && (e.games || 0) > 0 && <CopyEventPost e={e} />}
               {(e.games || 0) > 0 && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    (e.whole && e.children?.length
-                      ? downloadStagesCsv(e.u, e.children.map((c) => c.u), onOpenUrl)
-                      : downloadEventCsv(e.u, onOpenUrl)
-                    ).catch(() => {})
-                  }
-                  className={heroBtn()}
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  {tl("Download every game (CSV)")}
-                </button>
+                <>
+                  <HubLink
+                    to={{
+                      kind: "leaders",
+                      query: new URLSearchParams({
+                        ...(e.lu ? { league: e.lu } : {}),
+                        ...(!e.whole ? { event: e.u } : {}),
+                        ...(e.start || e.end ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                      }).toString(),
+                    }}
+                    className={heroBtn()}
+                  >
+                    {tl("Leaderboards")}
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "tiers",
+                      ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}),
+                    }}
+                    className={heroBtn()}
+                  >
+                    {tl("Pro tier list")}
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "draft",
+                      query: `p=e:${encodeURIComponent(e.u)}`,
+                    }}
+                    className={heroBtn()}
+                  >
+                    {tl("Draft board")}
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "finder",
+                      query: `event=${encodeURIComponent(e.u)}`,
+                    }}
+                    className={heroBtn()}
+                  >
+                    {tl("Game finder")}
+                  </HubLink>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      (e.whole && e.children?.length
+                        ? downloadStagesCsv(e.u, e.children.map((c) => c.u), onOpenUrl)
+                        : downloadEventCsv(e.u, onOpenUrl)
+                      ).catch(() => {})
+                    }
+                    className={heroBtn()}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    {tl("Download every game (CSV)")}
+                  </button>
+                </>
               )}
             </div>
           ) : undefined
@@ -569,6 +611,27 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                       <>
                         <HubLink
                           to={{
+                            kind: "rankings",
+                            ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}),
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Power rankings")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "leaders",
+                            query: new URLSearchParams({
+                              ...(e.lu ? { league: e.lu } : {}),
+                              ...(!e.whole ? { event: e.u } : {}),
+                            }).toString(),
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Player leaderboards")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
                             kind: "finder",
                             query: `event=${encodeURIComponent(e.u)}${filteredTeams.length === 1 ? `&team=${encodeURIComponent(filteredTeams[0].u || filteredTeams[0].t)}` : ""}`,
                           }}
@@ -894,6 +957,12 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
                 {tl("Compare")} →
               </HubLink>
               <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "finder", query: `team=${encodeURIComponent(finalS.au)}&vs=${encodeURIComponent(finalS.bu)}` }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -981,6 +1050,12 @@ const StageLists: React.FC<{ stages: Stage[] }> = ({ stages }) => {
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Compare")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
               </HubLink>
               <HubLink
                 to={{ kind: "finder", query: `team=${encodeURIComponent(shown[0].au)}&vs=${encodeURIComponent(shown[0].bu)}` }}

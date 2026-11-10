@@ -171,6 +171,42 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                     </HubLink>
                     <HubLink
                       to={{
+                        kind: "champions",
+                        query: new URLSearchParams({
+                          ...(league ? { league } : {}),
+                          ...(year ? { year } : {}),
+                        }).toString(),
+                      }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Champions")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "tiers",
+                        query: new URLSearchParams({
+                          ...(league ? { scope: league } : {}),
+                          ...(year ? { key: `y${year}` } : {}),
+                        }).toString(),
+                      }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Pro tier list")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "leaders",
+                        query: new URLSearchParams({
+                          ...(league ? { league } : {}),
+                          ...(year ? { year } : {}),
+                        }).toString(),
+                      }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Player leaderboards")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
                         kind: "finder",
                         query: new URLSearchParams({
                           team: a,

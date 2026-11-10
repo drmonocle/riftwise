@@ -280,6 +280,9 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
                 >
                   {tl("Draft board")} →
                 </HubLink>
+                <HubLink to={{ kind: "rankings" }} className={btn}>
+                  {tl("Power rankings")} →
+                </HubLink>
                 <HubLink
                   to={{
                     kind: "finder",
@@ -307,6 +310,15 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
                   className={btn}
                 >
                   {tl("Champions")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "tiers", query: `league=${encodeURIComponent(def.league)}` }}
+                  className={btn}
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
+                <HubLink to={{ kind: "rankings" }} className={btn}>
+                  {tl("Power rankings")} →
                 </HubLink>
                 <HubLink
                   to={{ kind: "finder", query: `league=${encodeURIComponent(def.league)}` }}
@@ -502,6 +514,18 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Champions")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers", query: `league=world-championship&key=y${encodeURIComponent(d.year)}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "draft", query: `p=e:${encodeURIComponent(main.u)}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
               </HubLink>
               <HubLink
                 to={{ kind: "finder", query: `event=${encodeURIComponent(main.u)}` }}
@@ -1019,6 +1043,12 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Titles")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
               </HubLink>
             </>
           )}
