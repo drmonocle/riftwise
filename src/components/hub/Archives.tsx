@@ -15,7 +15,13 @@ const select = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1 text-xs te
 
 // ── Team: every series ────────────────────────────────────────────────────
 
-const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; spoilerKey: string; showOpp?: boolean }> = ({ rows, teamName, spoilerKey, showOpp = true }) => {
+const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?: string; spoilerKey: string; showOpp?: boolean }> = ({
+  rows,
+  teamName,
+  teamSlug,
+  spoilerKey,
+  showOpp = true,
+}) => {
   const [hidden, reveal] = useHidden(spoilerKey, rows.find((r) => isFresh(r[0]))?.[0]);
   const [n, setN] = useState(25);
   return (
@@ -48,7 +54,13 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; spoilerKey
                   <>
                     {r[2] && teamName ? (
                       <HubLink
-                        to={{ kind: "compare", mode: "team", a: prettySlug(teamName), b: r[2] }}
+                        to={{
+                          kind: "compare",
+                          mode: "team",
+                          a: teamSlug || prettySlug(teamName),
+                          b: r[2],
+                          period: /^\d{4}/.test(r[0]) ? `y${r[0].slice(0, 4)}` : undefined,
+                        }}
                         className="text-rw-muted hover:text-rw-accent hover:underline"
                         title={tl("Compare")}
                       >
@@ -70,11 +82,20 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; spoilerKey
                 </span>
               </span>
               <span className="flex items-center gap-2 shrink-0 text-rw-muted">
-                {!hide && r[10] != null && (
-                  <span className={`tabular-nums font-semibold ${ratingTextClass(r[10])}`} title={tl("Series rating")}>
-                    {r[10].toFixed(0)}
-                  </span>
-                )}
+                {!hide && r[10] != null &&
+                  (r[7] ? (
+                    <HubLink
+                      to={{ kind: "match", slug: r[7] }}
+                      className={`tabular-nums font-semibold hover:underline ${ratingTextClass(r[10])}`}
+                      title={tl("Series rating")}
+                    >
+                      {r[10].toFixed(0)}
+                    </HubLink>
+                  ) : (
+                    <span className={`tabular-nums font-semibold ${ratingTextClass(r[10])}`} title={tl("Series rating")}>
+                      {r[10].toFixed(0)}
+                    </span>
+                  ))}
                 {fmtDate(r[0])}
                 {r[7] && (
                   <HubLink to={{ kind: "match", slug: r[7] }} className="text-rw-accent hover:underline">
@@ -169,7 +190,7 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
           </>
         )}
       </div>
-      <SeriesList rows={shown} teamName={teamName} spoilerKey={`teamseries:${slug}:${year}:${q}`} />
+      <SeriesList rows={shown} teamName={teamName} teamSlug={slug} spoilerKey={`teamseries:${slug}:${year}:${q}`} />
     </div>
   );
 };
@@ -203,7 +224,15 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
       right={
         !hidden && rows.length > 0 ? (
           <span className="flex flex-wrap items-center gap-2 text-[11px]">
-            <HubLink to={{ kind: "prep", a, b }} className="text-rw-accent hover:underline font-semibold">
+            <HubLink
+              to={{
+                kind: "prep",
+                a,
+                b,
+                period: event !== "all" ? `e:${event}` : year !== "all" ? `y${year}` : undefined,
+              }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
               {tl("Match prep")} →
             </HubLink>
             <HubLink
@@ -303,7 +332,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
               <span className="text-[11px] text-rw-muted">{tl("The number before the date is the series rating: how good it was to watch, 0-100.")}</span>
             </div>
           )}
-          <SeriesList rows={rows} teamName={aName} spoilerKey={`h2h:${a}:${b}`} showOpp={false} />
+          <SeriesList rows={rows} teamName={aName} teamSlug={a} spoilerKey={`h2h:${a}:${b}`} showOpp={false} />
         </>
       )}
     </Section>

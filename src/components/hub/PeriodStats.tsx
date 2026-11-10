@@ -609,7 +609,17 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
       key: "w",
       label: tl("Win %"),
       value: (c) => (hidden ? null : c.w / c.g),
-      render: (c) => (hidden ? "–" : <WinBar w={c.w} g={c.g} />),
+      render: (c) =>
+        hidden ? (
+          "–"
+        ) : (
+          <HubLink
+            to={{ kind: "player", slug, tab: "champions", query: `champ=${encodeURIComponent(c.c)}&p=${encodeURIComponent(period)}` }}
+            className="inline-flex hover:opacity-85"
+          >
+            <WinBar w={c.w} g={c.g} />
+          </HubLink>
+        ),
     },
     {
       key: "kda",
@@ -1041,9 +1051,12 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                                   {n}
                                 </HubLink>
                                 <span className="text-rw-muted">·</span>
-                                <span className={`w-9 text-right ${good ? "text-rw-teal font-semibold" : "text-rw-red"}`}>
+                                <HubLink
+                                  to={{ kind: "team", slug, tab: "champions", query: `champ=${encodeURIComponent(c)}&p=${encodeURIComponent(period)}` }}
+                                  className={`w-9 text-right hover:underline ${good ? "text-rw-teal font-semibold" : "text-rw-red"}`}
+                                >
                                   {winRate(w, n)}
-                                </span>
+                                </HubLink>
                               </span>
                             </li>
                           );

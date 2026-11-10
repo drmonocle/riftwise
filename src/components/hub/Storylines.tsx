@@ -170,6 +170,30 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
       </HubLink>
     );
   }
+  if (nt.k === "streak" && who?.kind === "team") {
+    return (
+      <HubLink to={{ kind: "team", slug: who.slug, tab: "matches" }} className="hover:text-rw-accent hover:underline">
+        {plain}
+      </HubLink>
+    );
+  }
+  if (nt.k === "ms" && who) {
+    if (nt.s === "games" || nt.s === "wins") {
+      return (
+        <HubLink
+          to={{ kind: "finder", query: `${who.kind}=${encodeURIComponent(who.slug)}${nt.s === "wins" ? "&result=w" : ""}` }}
+          className="hover:text-rw-accent hover:underline"
+        >
+          {plain}
+        </HubLink>
+      );
+    }
+    return (
+      <HubLink to={{ kind: who.kind, slug: who.slug, tab: "stats" }} className="hover:text-rw-accent hover:underline">
+        {plain}
+      </HubLink>
+    );
+  }
   return plain || null;
 }
 

@@ -196,7 +196,12 @@ const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boo
                 {showWr && (
                   <>
                     <span className="text-rw-muted">·</span>
-                    <span className={`w-9 text-right ${good ? "text-rw-teal font-semibold" : "text-rw-red"}`}>{winRate(w, n)}</span>
+                    <HubLink
+                      to={{ kind: "finder", query: finderQuery }}
+                      className={`w-9 text-right hover:underline ${good ? "text-rw-teal font-semibold" : "text-rw-red"}`}
+                    >
+                      {winRate(w, n)}
+                    </HubLink>
                   </>
                 )}
               </span>
@@ -265,7 +270,12 @@ const Pairs: React.FC<{ title: string; hint?: string; list: Pair[]; teamName?: s
                   {n}
                 </HubLink>
                 <span className="text-rw-muted">·</span>
-                <span className={good ? "text-rw-teal font-semibold" : "text-rw-red"}>{winRate(w, n)}</span>
+                <HubLink
+                  to={{ kind: "finder", query: finderQuery }}
+                  className={`hover:underline ${good ? "text-rw-teal font-semibold" : "text-rw-red"}`}
+                >
+                  {winRate(w, n)}
+                </HubLink>
                 {gd != null && (
                   <span
                     className={gd >= 0 ? "text-rw-teal" : "text-rw-red"}
@@ -351,10 +361,10 @@ export const DraftTendencies: React.FC<{
         )}
       </div>
       <div className="grid grid-cols-2 @3xl:grid-cols-4 gap-x-6 gap-y-3">
-        <List title={tl("First pick (blue)")} hint={tl("Their first pick when on blue side (B1)")} list={d.b1} showWr teamName={teamName} period={period} side="b" />
-        <List title={tl("First picks (red)")} hint={tl("Their first two picks when on red side (R1-R2)")} list={d.r12} showWr teamName={teamName} period={period} side="r" />
-        <List title={tl("Bans, phase 1")} hint={tl("Their first three bans")} list={d.bans1} teamName={teamName} period={period} isBan />
-        <List title={tl("Bans, phase 2")} hint={tl("Their last two bans")} list={d.bans2} teamName={teamName} period={period} isBan />
+        <List title={tl("First pick (blue)")} hint={tl("Their first pick when on blue side (B1)")} list={d.b1} showWr teamName={resolvedSlug || teamName} period={period} side="b" />
+        <List title={tl("First picks (red)")} hint={tl("Their first two picks when on red side (R1-R2)")} list={d.r12} showWr teamName={resolvedSlug || teamName} period={period} side="r" />
+        <List title={tl("Bans, phase 1")} hint={tl("Their first three bans")} list={d.bans1} teamName={resolvedSlug || teamName} period={period} isBan />
+        <List title={tl("Bans, phase 2")} hint={tl("Their last two bans")} list={d.bans2} teamName={resolvedSlug || teamName} period={period} isBan />
       </div>
       <dl className="grid grid-cols-1 @md:grid-cols-[auto_1fr] gap-x-4 gap-y-1">
         <RoleLine title={tl("First role locked in")} shares={d.firstRole} />
@@ -370,11 +380,11 @@ export const DraftTendencies: React.FC<{
             title={tl("Jungle + mid pairs")}
             hint={tl("Games · win rate · combined gold lead at 15")}
             list={d.midJungle}
-            teamName={teamName}
+            teamName={resolvedSlug || teamName}
             period={period}
           />
-          <Pairs title={tl("Bot lane pairs")} hint={tl("Games · win rate · combined gold lead at 15")} list={d.botDuos} teamName={teamName} period={period} />
-          <Pairs title={tl("Red openers (R1 + R2)")} list={d.r12pairs} teamName={teamName} period={period} side="r" />
+          <Pairs title={tl("Bot lane pairs")} hint={tl("Games · win rate · combined gold lead at 15")} list={d.botDuos} teamName={resolvedSlug || teamName} period={period} />
+          <Pairs title={tl("Red openers (R1 + R2)")} list={d.r12pairs} teamName={resolvedSlug || teamName} period={period} side="r" />
         </div>
       )}
       <div className="text-xs flex flex-wrap items-baseline gap-x-2 gap-y-0.5" title={tl("Champions each role played in this period (in brackets: 2+ games). In Fearless, a Bo5 needs up to five per role.")}>
@@ -382,7 +392,21 @@ export const DraftTendencies: React.FC<{
         {d.depth.map(([n, two], i) => (
           <span key={i} className={`whitespace-nowrap ${n < 5 ? "text-rw-red" : "text-rw-text"}`}>
             {i > 0 ? "· " : ""}
-            {`${roleName(ROLES[i])} ${n} (${two})`}
+            {resolvedSlug ? (
+              <HubLink
+                to={{
+                  kind: "team",
+                  slug: resolvedSlug,
+                  tab: "champions",
+                  ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                }}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {`${roleName(ROLES[i])} ${n} (${two})`}
+              </HubLink>
+            ) : (
+              `${roleName(ROLES[i])} ${n} (${two})`
+            )}
           </span>
         ))}
       </div>

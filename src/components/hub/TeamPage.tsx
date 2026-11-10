@@ -293,7 +293,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   </HubLink>
                 </>
               )}
-              <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(t.name)}` }} className={heroLink}>
+              <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}` }} className={heroLink}>
                 {tl("Game finder")}
               </HubLink>
               <PhotosLink q={t.name} className={heroLink} />
@@ -433,7 +433,13 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                       </span>
                     )}
                     <HubLink
-                      to={{ kind: "compare", mode: "team", a: t.u, b: t.opps.find((o) => o.n === r.opp)?.u || prettySlug(r.opp) }}
+                      to={{
+                        kind: "compare",
+                        mode: "team",
+                        a: t.u,
+                        b: t.opps.find((o) => o.n === r.opp)?.u || prettySlug(r.opp),
+                        period: /^\d{4}/.test(r.date) ? `y${r.date.slice(0, 4)}` : undefined,
+                      }}
                       className="text-rw-muted hover:text-rw-accent hover:underline shrink-0"
                       title={tl("Compare {a} and {b}", { a: t.name, b: r.opp })}
                     >
@@ -508,7 +514,9 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                       </HubLink>
                     </td>
                     <td className={`${td} text-rw-sub`} data-sort={y.g ? y.w / y.g : 0}>
-                      <WinBar w={y.w} g={y.g} />
+                      <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${y.y}` }} className="inline-flex hover:opacity-85">
+                        <WinBar w={y.w} g={y.g} />
+                      </HubLink>
                     </td>
                   </tr>
                 ));
@@ -1185,7 +1193,14 @@ const TeamChampGames: React.FC<{
                         {pl.r && <span className="text-[10px] text-rw-muted shrink-0">· {roleName(pl.r)}</span>}
                       </span>
                       <span className="text-rw-sub tabular-nums shrink-0 text-[11px]">
-                        {pl.g}G · {pl.w}–{pl.g - pl.w} ({winRate(pl.w, pl.g)})
+                        <button
+                          type="button"
+                          onClick={() => setPlayerFilter(playerFilter === (pl.u || pl.n) ? "all" : pl.u || pl.n)}
+                          className={`hover:text-rw-accent hover:underline ${playerFilter === (pl.u || pl.n) ? "text-rw-accent font-semibold" : ""}`}
+                          title={tl("Every game")}
+                        >
+                          {pl.g}G · {pl.w}–{pl.g - pl.w} ({winRate(pl.w, pl.g)})
+                        </button>
                         {pl.kdaGames > 0 && ` · KDA ${fmtDec((pl.k + pl.a) / Math.max(pl.d, 1), 2)}`}
                         {pl.gdGames > 0 && (
                           <span className="text-rw-muted">

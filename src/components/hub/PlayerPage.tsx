@@ -259,7 +259,7 @@ const PlayerView: React.FC<{
                 <Package className="w-3.5 h-3.5" />
                 {tl("Item history")}
               </HubLink>
-              <HubLink to={{ kind: "finder", query: `player=${encodeURIComponent(p.name)}` }} className={heroLink}>
+              <HubLink to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}` }} className={heroLink}>
                 {tl("Game finder")}
               </HubLink>
             </div>
@@ -592,8 +592,9 @@ const PlayerView: React.FC<{
                   <span className="text-rw-muted inline-flex items-center gap-1 truncate">
                     (
                     <HubLink
-                      to={{ kind: "champ", slug: prettySlug(b.c) }}
+                      to={{ kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(b.c)}` }}
                       className="inline-flex items-center gap-1 text-rw-muted hover:text-rw-accent hover:underline"
+                      title={tl("Every game")}
                     >
                       <ChampIcon name={b.c} size={14} />
                       <span>{champName(b.c)}</span>
@@ -778,7 +779,14 @@ const PlayerChampionsTab: React.FC<{
                     </span>
                   </td>
                   <td className={`${td} text-rw-sub`} data-sort={c.g ? c.w / c.g : 0}>
-                    <WinBar w={c.w} g={c.g} />
+                    <button
+                      type="button"
+                      onClick={() => onSelectChamp(c.c)}
+                      className="inline-flex hover:opacity-85"
+                      title={tl("Every game")}
+                    >
+                      <WinBar w={c.w} g={c.g} />
+                    </button>
                   </td>
                   <td className={`${td} text-rw-sub`} data-sort={c.kda}>
                     <KdaBar kda={c.kda} />
@@ -832,7 +840,7 @@ const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number]; playerSlug: str
           x.g
         ) : (
           <HubLink
-            to={{ kind: "player", slug: playerSlug, tab: "stats", query: `p=e:${encodeURIComponent(x.en)}` }}
+            to={{ kind: "player", slug: playerSlug, tab: "stats", query: `p=e:${encodeURIComponent(x.e)}` }}
             className="hover:text-rw-accent hover:underline"
           >
             <WinBar w={x.w} g={x.g} showRecord />
@@ -848,7 +856,7 @@ const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number]; playerSlug: str
           {x.c.map((c) => (
             <HubLink
               key={c}
-              to={{ kind: "player", slug: playerSlug, tab: "champions", query: `champ=${encodeURIComponent(c)}&p=e:${encodeURIComponent(x.en)}` }}
+              to={{ kind: "player", slug: playerSlug, tab: "champions", query: `champ=${encodeURIComponent(c)}&p=e:${encodeURIComponent(x.e)}` }}
               title={`${champName(c)} · ${x.en}`}
             >
               <ChampIcon name={c} size={16} />
@@ -1052,7 +1060,11 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
               </span>
               <span className="flex gap-0.5" title={shared.map(champName).join(", ")}>
                 {shared.slice(0, 3).map((c) => (
-                  <HubLink key={c} to={{ kind: "champ", slug: prettySlug(c) }}>
+                  <HubLink
+                    key={c}
+                    to={{ kind: "player", slug: peer.u, tab: "champions", query: `champ=${encodeURIComponent(c)}` }}
+                    title={`${peer.name} · ${champName(c)}`}
+                  >
                     <ChampIcon name={c} size={18} />
                   </HubLink>
                 ))}

@@ -41,13 +41,19 @@ export function periodOptions(rows: { date: string; e: string; en: string; patch
 }
 
 /** The rows of a period; rows are newest first. */
-export function inPeriod<T>(rows: T[], key: PeriodKey, get: (r: T) => { date: string; e: string; patch?: string | null }): T[] {
+export function inPeriod<T>(rows: T[], key: PeriodKey, get: (r: T) => { date: string; e: string; en?: string; patch?: string | null }): T[] {
   if (!key || key === "all") return rows;
   const last = /^last(\d+)$/.exec(key);
   if (last) return rows.slice(0, Number(last[1]));
   if (key.startsWith("y")) return rows.filter((r) => get(r).date.startsWith(key.slice(1)));
   if (key.startsWith("p:")) return rows.filter((r) => get(r).patch === key.slice(2));
-  if (key.startsWith("e:")) return rows.filter((r) => get(r).e === key.slice(2));
+  if (key.startsWith("e:")) {
+    const ev = key.slice(2);
+    return rows.filter((r) => {
+      const g = get(r);
+      return g.e === ev || g.en === ev;
+    });
+  }
   return rows;
 }
 
