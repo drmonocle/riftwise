@@ -423,10 +423,30 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                         </span>
                       </td>
                       <td className={`${td} text-rw-sub`} data-sort={t.sg ? t.sw / t.sg : 0}>
-                        {resultsHidden ? "–" : t.sg ? <WinBar w={t.sw} g={t.sg} showRecord /> : `${t.sw}-${t.sg - t.sw}`}
+                        {resultsHidden ? (
+                          "–"
+                        ) : (
+                          <HubLink
+                            to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(t.u || t.t)}` }}
+                            className="hover:opacity-90"
+                            title={tl("Game finder")}
+                          >
+                            {t.sg ? <WinBar w={t.sw} g={t.sg} showRecord /> : `${t.sw}-${t.sg - t.sw}`}
+                          </HubLink>
+                        )}
                       </td>
                       <td className={`${td} text-rw-sub`} data-sort={t.g ? t.w / t.g : 0}>
-                        {resultsHidden ? "–" : <WinBar w={t.w} g={t.g} showRecord />}
+                        {resultsHidden ? (
+                          "–"
+                        ) : (
+                          <HubLink
+                            to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(t.u || t.t)}` }}
+                            className="hover:opacity-90"
+                            title={tl("Game finder")}
+                          >
+                            <WinBar w={t.w} g={t.g} showRecord />
+                          </HubLink>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -436,7 +456,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
           )}
         </div>
       )}
-      {on("teams") && e.rosters && e.rosters.length > 0 && <EventRosters rosters={e.rosters} />}
+      {on("teams") && e.rosters && e.rosters.length > 0 && <EventRosters rosters={e.rosters} eventSlug={e.u} />}
       </div>
     </div>
   );
@@ -526,7 +546,7 @@ export const EventBracketBlock: React.FC<{ e: HubEvent }> = ({ e }) => {
       {tables.length > 0 && (
         <div className={`grid gap-3 ${tables.length > 1 ? "md:grid-cols-2" : ""}`}>
           {tables.map((t, i) => (
-            <Standings key={i} name={t.name === "Standings" ? tl("Standings") : tl("Group {name}", { name: t.name.replace(/^Group /, "") })} rows={t.rows} end={e.end} />
+            <Standings key={i} name={t.name === "Standings" ? tl("Standings") : tl("Group {name}", { name: t.name.replace(/^Group /, "") })} rows={t.rows} end={e.end} eventSlug={e.u} />
           ))}
         </div>
       )}
@@ -575,7 +595,7 @@ const ChildStages: React.FC<{ kids: { n: string; u: string }[] }> = ({ kids }) =
       {x.standings && x.standings.length > 0 && (
         <div className={`grid gap-3 ${x.standings.length > 1 ? "md:grid-cols-2" : ""}`}>
           {x.standings.map((t, k) => (
-            <Standings key={k} name={t.name === "Standings" ? tl("Standings") : tl("Group {name}", { name: t.name.replace(/^Group /, "") })} rows={t.rows} end={x.end} />
+            <Standings key={k} name={t.name === "Standings" ? tl("Standings") : tl("Group {name}", { name: t.name.replace(/^Group /, "") })} rows={t.rows} end={x.end} eventSlug={x.u} />
           ))}
         </div>
       )}
@@ -720,7 +740,7 @@ const StageLists: React.FC<{ stages: Stage[] }> = ({ stages }) => {
   );
 };
 
-export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: string; hideAll?: boolean }> = ({ name, rows, end, hideAll }) => {
+export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: string; hideAll?: boolean; eventSlug?: string }> = ({ name, rows, end, hideAll, eventSlug }) => {
   const [hidden, reveal] = useHidden(`standings:${name}:${rows.map((r) => r.t).join()}`, end);
   const hide = hideAll || hidden;
   const ties = rows.some((r) => r.st);
@@ -769,20 +789,48 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
               <td className={`${td} text-rw-sub tabular-nums`} data-sort={hide ? 0 : (r.sw ?? 0) + (r.sl ?? 0) > 0 ? (r.sw ?? 0) / ((r.sw ?? 0) + (r.sl ?? 0)) : 0}>
                 {hide ? (
                   "–"
-                ) : !ties && (r.sw ?? 0) + (r.sl ?? 0) > 0 ? (
-                  <WinBar w={r.sw ?? 0} g={(r.sw ?? 0) + (r.sl ?? 0)} showRecord />
-                ) : (
-                  `${r.sw ?? 0}-${r.sl ?? 0}${ties ? `-${r.st ?? 0}` : ""}`
-                )}
+                ) : (() => {
+                  const seriesNode =
+                    !ties && (r.sw ?? 0) + (r.sl ?? 0) > 0 ? (
+                      <WinBar w={r.sw ?? 0} g={(r.sw ?? 0) + (r.sl ?? 0)} showRecord />
+                    ) : (
+                      `${r.sw ?? 0}-${r.sl ?? 0}${ties ? `-${r.st ?? 0}` : ""}`
+                    );
+                  return eventSlug ? (
+                    <HubLink
+                      to={{ kind: "finder", query: `event=${encodeURIComponent(eventSlug)}&team=${encodeURIComponent(r.u || r.t)}` }}
+                      className="hover:opacity-90"
+                      title={tl("Game finder")}
+                    >
+                      {seriesNode}
+                    </HubLink>
+                  ) : (
+                    seriesNode
+                  );
+                })()}
               </td>
               <td className={`${td} text-rw-muted tabular-nums`} data-sort={hide || r.gw == null ? 0 : r.gw + (r.gl ?? 0) > 0 ? r.gw / (r.gw + (r.gl ?? 0)) : 0}>
                 {hide || r.gw == null ? (
                   "–"
-                ) : r.gw + (r.gl ?? 0) > 0 ? (
-                  <WinBar w={r.gw} g={r.gw + (r.gl ?? 0)} showRecord />
-                ) : (
-                  `${r.gw}-${r.gl ?? 0}`
-                )}
+                ) : (() => {
+                  const gamesNode =
+                    r.gw + (r.gl ?? 0) > 0 ? (
+                      <WinBar w={r.gw} g={r.gw + (r.gl ?? 0)} showRecord />
+                    ) : (
+                      `${r.gw}-${r.gl ?? 0}`
+                    );
+                  return eventSlug ? (
+                    <HubLink
+                      to={{ kind: "finder", query: `event=${encodeURIComponent(eventSlug)}&team=${encodeURIComponent(r.u || r.t)}` }}
+                      className="hover:opacity-90"
+                      title={tl("Game finder")}
+                    >
+                      {gamesNode}
+                    </HubLink>
+                  ) : (
+                    gamesNode
+                  );
+                })()}
               </td>
             </tr>
           ))}
@@ -991,8 +1039,12 @@ const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
                 </td>
                 <td className={`${td} text-rw-sub`} data-sort={games ? (c.p + c.b) / games : 0}>
                   {games ? (
-                    <span
-                      className="inline-flex flex-col gap-0.5 min-w-[3.25rem]"
+                    <HubLink
+                      to={{
+                        kind: "finder",
+                        query: `event=${encodeURIComponent(e.u)}&${c.p > 0 ? "champ" : "ban"}=${encodeURIComponent(c.c)}`,
+                      }}
+                      className="inline-flex flex-col gap-0.5 min-w-[3.25rem] hover:text-rw-accent hover:underline"
                       title={`${tl("Picks")}: ${c.p} · ${tl("Bans")}: ${c.b}`}
                     >
                       <span className="tabular-nums font-medium">{presPct}%</span>
@@ -1000,7 +1052,7 @@ const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
                         <span className="h-full bg-rw-teal/85" style={{ width: `${pickPct.toFixed(1)}%` }} />
                         <span className="h-full bg-rw-red/75" style={{ width: `${banPct.toFixed(1)}%` }} />
                       </span>
-                    </span>
+                    </HubLink>
                   ) : (
                     "–"
                   )}
@@ -1030,7 +1082,17 @@ const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
                   )}
                 </td>
                 <td className={`${td} text-rw-sub`} data-sort={c.p ? c.w / c.p : -1}>
-                  {c.p ? <WinBar w={c.w} g={c.p} /> : "–"}
+                  {c.p ? (
+                    <HubLink
+                      to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&champ=${encodeURIComponent(c.c)}` }}
+                      className="hover:opacity-90"
+                      title={tl("Game finder")}
+                    >
+                      <WinBar w={c.w} g={c.p} />
+                    </HubLink>
+                  ) : (
+                    "–"
+                  )}
                 </td>
               </tr>
             );

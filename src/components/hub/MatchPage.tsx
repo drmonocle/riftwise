@@ -137,6 +137,8 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
   const game = gi < s.games.length ? s.games[gi] : hidden ? undefined : s.games[s.games.length - 1];
   const scoreA = hidden ? "?" : s.sa;
   const scoreB = hidden ? "?" : s.sb;
+  const seriesYear = (s.date || "").slice(0, 4);
+  const seriesPeriod = /^\d{4}$/.test(seriesYear) ? `y${seriesYear}` : undefined;
   return (
     <div className="space-y-3">
       {/* the series' top card: where and when, both teams and the score, then what to open next */}
@@ -190,10 +192,10 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
           <div className="relative mt-4 sm:mt-5 flex flex-wrap items-center justify-center gap-2">
             {s.a.u && s.b.u && (
               <>
-                <HubLink to={{ kind: "prep", a: s.a.u, b: s.b.u }} className={heroBtn(true)}>
+                <HubLink to={{ kind: "prep", a: s.a.u, b: s.b.u, period: seriesPeriod }} className={heroBtn(true)}>
                   {tl("Match prep")}
                 </HubLink>
-                <HubLink to={{ kind: "compare", mode: "team", a: s.a.u, b: s.b.u }} className={heroBtn()}>
+                <HubLink to={{ kind: "compare", mode: "team", a: s.a.u, b: s.b.u, period: seriesPeriod }} className={heroBtn()}>
                   {tl("Compare")}
                 </HubLink>
                 <HubLink
@@ -394,7 +396,16 @@ const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="inline-flex items-center gap-0.5">
               {mvp.champs.slice(0, 4).map((c) => (
-                <HubLink key={c} to={{ kind: "champ", slug: prettySlug(c) }} className="hover:opacity-80" title={champName(c)}>
+                <HubLink
+                  key={c}
+                  to={
+                    mvp.u
+                      ? { kind: "player", slug: mvp.u, tab: "champions", query: `champ=${encodeURIComponent(c)}` }
+                      : { kind: "champ", slug: prettySlug(c) }
+                  }
+                  className="hover:opacity-80"
+                  title={`${mvp.n} · ${champName(c)}`}
+                >
                   <ChampIcon name={c} size={16} />
                 </HubLink>
               ))}
@@ -539,6 +550,8 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
   const redWon = g.w !== 0 && !blueWon;
   const blue = g.p?.filter((p) => p.s === 1) || [];
   const red = g.p?.filter((p) => p.s === 2) || [];
+  const gameYear = (g.date || s.date || "").slice(0, 4);
+  const gamePeriod = /^\d{4}$/.test(gameYear) ? `y${gameYear}` : undefined;
   // each player's rating for this game (src/hub/playerRating.ts), and the best of the ten
   const ratingFile = useRatingFile();
   const ratings = useMemo(() => {
@@ -654,12 +667,12 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
         </div>
         {(g.t?.blue?.picks?.length || g.t?.blue?.bans?.length) && (
           <div className="grid grid-cols-2 gap-3 pt-2 border-t border-rw-border">
-            <Draft st={g.t?.blue} side="blue" />
-            <Draft st={g.t?.red} side="red" right />
+            <Draft st={g.t?.blue} side="blue" teamSlug={blueTeam.u} period={gamePeriod} />
+            <Draft st={g.t?.red} side="red" right teamSlug={redTeam.u} period={gamePeriod} />
           </div>
         )}
         {!hidden && blue.length === 5 && red.length === 5 && (
-          <GameRoleMatchups blue={blue} red={red} />
+          <GameRoleMatchups blue={blue} red={red} period={gamePeriod} />
         )}
       </div>
 
@@ -671,12 +684,12 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
       )}
       {!hidden && (blue.length > 0 || red.length > 0) && (
         <div className="grid gap-3 lg:grid-cols-2">
-          <Scoreboard name={blueTeam.n} u={blueTeam.u} side="blue" players={blue} hidden={hidden} won={blueWon} minutes={g.min} ratings={ratings} top={top?.[0]} />
-          <Scoreboard name={redTeam.n} u={redTeam.u} side="red" players={red} hidden={hidden} won={redWon} minutes={g.min} ratings={ratings} top={top?.[0]} />
+          <Scoreboard name={blueTeam.n} u={blueTeam.u} side="blue" players={blue} hidden={hidden} won={blueWon} minutes={g.min} ratings={ratings} top={top?.[0]} period={gamePeriod} />
+          <Scoreboard name={redTeam.n} u={redTeam.u} side="red" players={red} hidden={hidden} won={redWon} minutes={g.min} ratings={ratings} top={top?.[0]} period={gamePeriod} />
         </div>
       )}
-      {!hidden && <Leads g={g} blueName={blueTeam.n} redName={redTeam.n} blueU={blueTeam.u} redU={redTeam.u} blue={blue} red={red} />}
-      {!hidden && <PlayerBars g={g} blueName={blueTeam.n} redName={redTeam.n} blueU={blueTeam.u} redU={redTeam.u} blue={blue} red={red} minutes={g.min ?? undefined} ratings={ratings} />}
+      {!hidden && <Leads g={g} blueName={blueTeam.n} redName={redTeam.n} blueU={blueTeam.u} redU={redTeam.u} blue={blue} red={red} period={gamePeriod} />}
+      {!hidden && <PlayerBars g={g} blueName={blueTeam.n} redName={redTeam.n} blueU={blueTeam.u} redU={redTeam.u} blue={blue} red={red} minutes={g.min ?? undefined} ratings={ratings} period={gamePeriod} />}
       {g.st !== "f" && !g.p && (
         <p className="text-[11px] text-rw-muted text-center">
           {g.st === "r" ? tl("Only the result of this game is known.") : tl("No result or stats were recorded for this game.")}
@@ -776,7 +789,7 @@ const CopySeriesPost: React.FC<{ s: HubSeries; slug: string }> = ({ s, slug }) =
 };
 
 /** 5-role 1v1 lane strip inside a game card, linking each lane matchup directly to /stats/compare. */
-const GameRoleMatchups: React.FC<{ blue: GamePlayer[]; red: GamePlayer[] }> = ({ blue, red }) => {
+const GameRoleMatchups: React.FC<{ blue: GamePlayer[]; red: GamePlayer[]; period?: string }> = ({ blue, red, period }) => {
   const pairs = ROLE_ORDER.map((r, i) => {
     const b = blue.find((p) => p.r === r) || blue[i];
     const rd = red.find((p) => p.r === r) || red[i];
@@ -825,7 +838,7 @@ const GameRoleMatchups: React.FC<{ blue: GamePlayer[]; red: GamePlayer[] }> = ({
           return b.u && r.u ? (
             <HubLink
               key={role}
-              to={{ kind: "compare", mode: "player", a: b.u, b: r.u }}
+              to={{ kind: "compare", mode: "player", a: b.u, b: r.u, period }}
               className="rounded-lg border border-rw-border bg-rw-bg/50 px-2 py-1.5 hover:border-rw-accent/60 hover:bg-rw-raised/60 transition-colors"
               title={`${b.n} vs ${r.n} · ${tl("Compare")}`}
             >
@@ -858,7 +871,8 @@ const PlayerBars: React.FC<{
   red: GamePlayer[];
   minutes?: number;
   ratings?: Map<GamePlayer, number>;
-}> = ({ g, blueName, redName, blueU, redU, blue, red, minutes, ratings }) => {
+  period?: string;
+}> = ({ g, blueName, redName, blueU, redU, blue, red, minutes, ratings, period }) => {
   const [metric, setMetric] = useState<BarMetric>("dm");
   const getVal = (p: GamePlayer, k: BarMetric): number | undefined => {
     if (k === "rt") return ratings?.get(p);
@@ -1023,7 +1037,7 @@ const PlayerBars: React.FC<{
               <div className="flex flex-col items-center w-14 shrink-0">
                 {b.u && o.u ? (
                   <HubLink
-                    to={{ kind: "compare", mode: "player", a: b.u, b: o.u }}
+                    to={{ kind: "compare", mode: "player", a: b.u, b: o.u, period }}
                     className="text-[9px] text-rw-muted hover:text-rw-accent hover:underline text-center"
                     title={`${tl("Compare")}: ${b.n} vs ${o.n}`}
                   >
@@ -1056,7 +1070,7 @@ const PlayerBars: React.FC<{
   );
 };
 
-const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: string | null; redU?: string | null; blue: GamePlayer[]; red: GamePlayer[] }> = ({ g, blueName, redName, blueU, redU, blue, red }) => {
+const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: string | null; redU?: string | null; blue: GamePlayer[]; red: GamePlayer[]; period?: string }> = ({ g, blueName, redName, blueU, redU, blue, red, period }) => {
   const t = g.t?.blue;
   // the team's XP lead: its five players' leads over their lane opponents add up to it
   const xpAt = (key: "x10" | "x15" | "x20") => (blue.length === 5 && blue.every((p) => p[key] != null) ? blue.reduce((s, p) => s + (p[key] as number), 0) : null);
@@ -1148,7 +1162,7 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                 label={
                   b!.u && o!.u ? (
                     <HubLink
-                      to={{ kind: "compare", mode: "player", a: b!.u, b: o!.u }}
+                      to={{ kind: "compare", mode: "player", a: b!.u, b: o!.u, period }}
                       className="hover:text-rw-accent hover:underline"
                       title={`${tl("Compare")}: ${b!.n} vs ${o!.n}`}
                     >
@@ -1249,7 +1263,7 @@ const sgn = (v: number | null | undefined) => (v == null ? "–" : `${v > 0 ? "+
 // Draft order: blue picks 1st, 4th, 5th, 8th, 9th; red 2nd, 3rd, 6th, 7th, 10th. Bans and picks come in two phases (3 + 2).
 const PICK_NO: Record<"blue" | "red", number[]> = { blue: [1, 4, 5, 8, 9], red: [2, 3, 6, 7, 10] };
 
-const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean }> = ({ st, side, right }) => (
+const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; teamSlug?: string | null; period?: string }> = ({ st, side, right, teamSlug, period }) => (
   <div className={`space-y-1.5 min-w-0 ${right ? "text-right" : ""}`}>
     {st?.bans && st.bans.length > 0 && (
       <div className={`flex flex-wrap items-center gap-1 ${right ? "justify-end" : ""}`}>
@@ -1257,7 +1271,11 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean }>
         {st.bans.map((c, i) => (
           <HubLink
             key={i}
-            to={{ kind: "champ", slug: prettySlug(c) }}
+            to={
+              teamSlug
+                ? { kind: "team", slug: teamSlug, tab: "champions", query: `ban=${encodeURIComponent(c)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }
+                : { kind: "champ", slug: prettySlug(c) }
+            }
             className={`opacity-60 grayscale hover:opacity-100 hover:grayscale-0 transition-opacity ${i === 3 ? "ml-2" : ""}`}
             title={`${champName(c)} · ${tl("Ban {n}", { n: i + 1 })}`}
           >
@@ -1272,7 +1290,11 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean }>
         {st.picks.map((c, i) => (
           <HubLink
             key={i}
-            to={{ kind: "champ", slug: prettySlug(c) }}
+            to={
+              teamSlug
+                ? { kind: "team", slug: teamSlug, tab: "champions", query: `champ=${encodeURIComponent(c)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }
+                : { kind: "champ", slug: prettySlug(c) }
+            }
             className={`flex flex-col items-center hover:opacity-85 ${i === 3 ? "ml-2" : ""}`}
             title={`${champName(c)} · ${tl("Pick {n} of the draft", { n: PICK_NO[side][i] ?? i + 1 })}`}
           >
@@ -1295,7 +1317,8 @@ const Scoreboard: React.FC<{
   minutes?: number | null;
   ratings?: Map<GamePlayer, number>;
   top?: GamePlayer;
-}> = ({ name, u, side, players, hidden, won, minutes, ratings, top }) => {
+  period?: string;
+}> = ({ name, u, side, players, hidden, won, minutes, ratings, top, period }) => {
   const color = side === "blue" ? "#4a9eff" : "var(--rw-red)";
   const totalK = players.reduce((s, p) => s + p.k, 0);
   const totalDmg = players.reduce((s, p) => s + (p.dm || 0), 0);
@@ -1323,6 +1346,7 @@ const Scoreboard: React.FC<{
             minutes={minutes}
             rating={ratings?.get(p)}
             top={p === top}
+            period={period}
           />
         ))}
       </div>
@@ -1341,6 +1365,7 @@ const PlayerRow: React.FC<{
   minutes?: number | null;
   rating?: number;
   top?: boolean;
+  period?: string;
 }> = ({
   p,
   teamName,
@@ -1352,6 +1377,7 @@ const PlayerRow: React.FC<{
   minutes,
   rating,
   top,
+  period,
 }) => {
   const kp = teamKills ? Math.round(((p.k + p.a) / teamKills) * 100) : null;
   const csm = p.cs != null && minutes ? fmtDec(p.cs / minutes) : null;
@@ -1374,7 +1400,7 @@ const PlayerRow: React.FC<{
             {p.c ? (
               p.u ? (
                 <HubLink
-                  to={{ kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(p.c)}` }}
+                  to={{ kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(p.c)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
                   className="hover:text-rw-accent hover:underline"
                   title={`${p.n} · ${champName(p.c)}`}
                 >

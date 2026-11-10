@@ -177,13 +177,25 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
             const pct = Math.max(0, Math.min(100, Math.round(v * 100)));
             const tone = v >= 0.55 ? "text-rw-teal font-semibold" : v <= 0.45 ? "text-rw-red" : "";
             return (
-              <span className="inline-flex items-center gap-1.5 tabular-nums">
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: new URLSearchParams({
+                    ...(league ? { league } : {}),
+                    ...(year ? { year } : {}),
+                    ...(event ? { event } : {}),
+                    player: p.u || p.n,
+                  }).toString(),
+                }}
+                className="inline-flex items-center gap-1.5 tabular-nums hover:opacity-90"
+                title={tl("Game finder")}
+              >
                 <span className={`w-9 text-right ${tone}`}>{m.fmt(v)}</span>
                 <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
                   <span className="h-full bg-rw-teal/85" style={{ width: `${pct}%` }} />
                   <span className="h-full bg-rw-red/75" style={{ width: `${100 - pct}%` }} />
                 </span>
-              </span>
+              </HubLink>
             );
           }
           const tone =
@@ -333,7 +345,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
           }
           share={`riftwise-leaders-${league}-${year}${event ? `-${event}` : ""}${role ? `-${role}` : ""}`}
         >
-          {shownRows.length >= 2 && <LeaderSpotlight rows={shownRows} activeStat={statMetric?.key} onPickStat={(k) => set({ stat: k })} />}
+          {shownRows.length >= 2 && <LeaderSpotlight rows={shownRows} activeStat={statMetric?.key} onPickStat={(k) => set({ stat: k })} league={league} year={year} event={event} />}
           {zMode && (
             <p className="text-[11px] text-rw-muted">
               {tl("z = (value − role average) ÷ role standard deviation, over the {n} players listed. +1.0 is one standard deviation better than the role's average (for deaths, fewer is better). Hover a number for the stat itself.", { n: rows.length })}
@@ -358,7 +370,14 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
 };
 
 /** 5-card spotlight strip showing the #1 player in KDA, DPM, CSM, GD@15, and KP for the current filter. */
-const LeaderSpotlight: React.FC<{ rows: EventPlayer[]; activeStat?: string; onPickStat?: (key: string) => void }> = ({ rows, activeStat, onPickStat }) => {
+const LeaderSpotlight: React.FC<{
+  rows: EventPlayer[];
+  activeStat?: string;
+  onPickStat?: (key: string) => void;
+  league?: string;
+  year?: string;
+  event?: string;
+}> = ({ rows, activeStat, onPickStat, league, year, event }) => {
   const keys = ["kda", "dpm", "csm", "g15", "kp"] as const;
   const cards = useMemo(() => {
     return keys
@@ -411,7 +430,15 @@ const LeaderSpotlight: React.FC<{ rows: EventPlayer[]; activeStat?: string; onPi
           <div className="text-right shrink-0">
             <div className="font-mono font-bold tabular-nums text-rw-teal">{c.val}</div>
             <HubLink
-              to={{ kind: "finder", query: `player=${encodeURIComponent(c.top.u || c.top.n)}` }}
+              to={{
+                kind: "finder",
+                query: new URLSearchParams({
+                  ...(league ? { league } : {}),
+                  ...(year ? { year } : {}),
+                  ...(event ? { event } : {}),
+                  player: c.top.u || c.top.n,
+                }).toString(),
+              }}
               className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline font-mono block"
               title={tl("Game finder")}
             >

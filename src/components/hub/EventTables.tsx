@@ -110,7 +110,20 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
         </span>
       ),
     },
-    { key: "wr", label: tl("Win %"), value: (p) => per(p.w, p.g, 3), render: (p) => <WinBar w={p.w} g={p.g} /> },
+    {
+      key: "wr",
+      label: tl("Win %"),
+      value: (p) => per(p.w, p.g, 3),
+      render: (p) => (
+        <HubLink
+          to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(p.u || p.n)}` }}
+          className="hover:opacity-90"
+          title={tl("Game finder")}
+        >
+          <WinBar w={p.w} g={p.g} />
+        </HubLink>
+      ),
+    },
     {
       key: "kda",
       label: tl("KDA"),
@@ -135,7 +148,16 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
       render: (p) => (
         <span className="flex items-center gap-0.5">
           {p.c.map((c) => (
-            <HubLink key={c} to={{ kind: "champ", slug: prettySlug(c) }} className="hover:opacity-80" title={champName(c)}>
+            <HubLink
+              key={c}
+              to={
+                p.u
+                  ? { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(c)}&p=e:${encodeURIComponent(e.u)}` }
+                  : { kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(p.n)}&champ=${encodeURIComponent(c)}` }
+              }
+              className="hover:opacity-80"
+              title={`${p.n} · ${champName(c)}`}
+            >
               <ChampIcon name={c} size={16} />
             </HubLink>
           ))}
@@ -276,7 +298,20 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
         </span>
       ),
     },
-    { key: "wr", label: tl("Win %"), value: (t) => per(t.w, t.g, 3), render: (t) => <WinBar w={t.w} g={t.g} /> },
+    {
+      key: "wr",
+      label: tl("Win %"),
+      value: (t) => per(t.w, t.g, 3),
+      render: (t) => (
+        <HubLink
+          to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(t.u || t.t)}` }}
+          className="hover:opacity-90"
+          title={tl("Game finder")}
+        >
+          <WinBar w={t.w} g={t.g} />
+        </HubLink>
+      ),
+    },
     { key: "min", label: tl("Avg game"), value: (t) => per(t.min, t.g), render: (t) => tl("{n} min", { n: per(t.min, t.g) ?? "–" }) },
     {
       key: "kd",

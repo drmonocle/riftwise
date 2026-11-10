@@ -537,7 +537,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                           <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(6, Math.round((g / maxMuG) * 100))}%` }} />
                         </span>
                         <HubLink
-                          to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&vschamp=${encodeURIComponent(oc)}` }}
+                          to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&vschamp=${encodeURIComponent(oc)}${muRole ? `&role=${encodeURIComponent(muRole)}` : ""}` }}
                           className="hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
                         >
@@ -638,7 +638,13 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                       </span>
                     </td>
                     <td className={td} data-sort={g ? w / g : 0}>
-                      <WinBar w={w} g={g} />
+                      <HubLink
+                        to={{ kind: "finder", query: `champ=${encodeURIComponent(`${c.name},${pc}`)}` }}
+                        className="hover:opacity-90"
+                        title={tl("Game finder")}
+                      >
+                        <WinBar w={w} g={g} />
+                      </HubLink>
                     </td>
                   </tr>
                 ));
@@ -733,7 +739,17 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     </span>
                   </td>
                   <td className={td} data-sort={p.g ? p.w / p.g : 0}>
-                    <WinBar w={p.w} g={p.g} />
+                    <HubLink
+                      to={
+                        p.u
+                          ? { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(c.name)}` }
+                          : { kind: "finder", query: `player=${encodeURIComponent(p.n)}&champ=${encodeURIComponent(c.name)}` }
+                      }
+                      className="hover:opacity-90"
+                      title={tl("Game finder")}
+                    >
+                      <WinBar w={p.w} g={p.g} />
+                    </HubLink>
                   </td>
                   <td className={td} data-sort={p.kda}>
                     <KdaBar kda={p.kda} />
@@ -947,9 +963,13 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                   >
                     {d == null ? "" : d === 0 ? "=" : `${d > 0 ? "+" : ""}${d}`}
                   </span>
-                  <span className="text-rw-sub tabular-nums text-right leading-tight sm:whitespace-nowrap sm:min-w-56">
+                  <HubLink
+                    to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&patch=${encodeURIComponent(p.p)}` }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline tabular-nums text-right leading-tight sm:whitespace-nowrap sm:min-w-56"
+                    title={tl("Game finder")}
+                  >
                     {tl("{pres} presence · {p} picks · {wr}", { pres: `${Math.round(pres * 100)}%`, p: p.pk, wr: p.pk ? pctOf(p.w, p.pk) : "–" })}
-                  </span>
+                  </HubLink>
                 </div>
               );
             })}
@@ -987,9 +1007,13 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 <div className="bg-rw-teal/70" style={{ width: `${(y.p / maxYear) * 100}%` }} />
                 <div className="bg-rw-red/50" style={{ width: `${(y.b / maxYear) * 100}%` }} />
               </div>
-              <span className="text-rw-sub tabular-nums text-right shrink-0 whitespace-nowrap min-w-44">
+              <HubLink
+                to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&year=${encodeURIComponent(y.y)}` }}
+                className="text-rw-sub hover:text-rw-accent hover:underline tabular-nums text-right shrink-0 whitespace-nowrap min-w-44"
+                title={tl("Game finder")}
+              >
                 {tl("{p} picks · {b} bans · {wr}", { p: fmtNum(y.p), b: fmtNum(y.b), wr: y.p ? winRate(y.w, y.p) : "–" })}
-              </span>
+              </HubLink>
             </div>
           ))}
         </div>

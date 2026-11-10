@@ -329,7 +329,17 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                   <span className="w-6 h-1 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
                     <span className="h-full bg-rw-accent/85 rounded-full" style={{ width: `${Math.round((m.v / maxM) * 100)}%` }} />
                   </span>
-                  <span className="text-rw-accent font-bold tabular-nums">{m.v}</span>
+                  {slug ? (
+                    <HubLink
+                      to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}&player=${encodeURIComponent(m.u || m.n)}` }}
+                      className="text-rw-accent font-bold tabular-nums hover:underline"
+                      title={tl("Game finder")}
+                    >
+                      {m.v}
+                    </HubLink>
+                  ) : (
+                    <span className="text-rw-accent font-bold tabular-nums">{m.v}</span>
+                  )}
                 </span>
               ));
             })()}
@@ -345,8 +355,9 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
 };
 
 /** Every team's roster for the tournament, including substitutes and coaches (Leaguepedia's rosters). */
-export const EventRosters: React.FC<{ rosters: EventRoster[] }> = ({
+export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string }> = ({
   rosters,
+  eventSlug,
 }) => {
   const [open, setOpen] = useState(rosters.length <= 4);
   return (
@@ -409,6 +420,15 @@ export const EventRosters: React.FC<{ rosters: EventRoster[] }> = ({
               <TeamLink name={t.t} u={t.u} />
               {t.r && (
                 <span className="text-rw-muted text-[10px] ml-0.5">{regionName(t.r, t.r)}</span>
+              )}
+              {eventSlug && (
+                <HubLink
+                  to={{ kind: "finder", query: `event=${encodeURIComponent(eventSlug)}&team=${encodeURIComponent(t.u || t.t)}` }}
+                  className="ml-auto text-[10px] font-normal text-rw-muted hover:text-rw-accent hover:underline shrink-0"
+                  title={tl("Game finder")}
+                >
+                  {tl("Games")} →
+                </HubLink>
               )}
             </div>
             <ul className="space-y-1">

@@ -345,6 +345,7 @@ const LeagueTable: React.FC<{
           ...(eventSlug ? { event: eventSlug } : {}),
           ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
           ...(side ? { side } : {}),
+          ...(roleQ ? { role: roleQ } : {}),
         }).toString();
         return (
           <span className="inline-flex flex-col gap-0.5 min-w-[2.5rem] tabular-nums">
@@ -581,6 +582,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
         const fq = new URLSearchParams({
           champ: c.c,
           ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
+          ...(roleQ ? { role: roleQ } : {}),
         }).toString();
         return (
           <span className="inline-flex flex-col gap-0.5 min-w-[2.75rem] tabular-nums">
