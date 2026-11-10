@@ -163,6 +163,12 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
               <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Player leaderboards")} →
               </HubLink>
+              <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Game finder")} →
+              </HubLink>
             </span>
           )}
           {terms.length > 0 && blocks.length >= 1 && (() => {

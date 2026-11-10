@@ -699,6 +699,25 @@ const LiveMatchBlock: React.FC<{
                 >
                   {tl("Game finder")}
                 </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigateHub({
+                      kind: "rankings",
+                      ...(m.leagueSlug ? { query: `league=${encodeURIComponent(resolveLeagueSlug(m.leagueSlug))}` } : {}),
+                    })
+                  }
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+                >
+                  {tl("Power rankings")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigateHub({ kind: "tiers" })}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+                >
+                  {tl("Pro tier list")}
+                </button>
               </>
             )}
           </span>
@@ -1060,6 +1079,25 @@ const NextMatchCard: React.FC<{
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
                   {tl("Game finder")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigateHub({
+                      kind: "rankings",
+                      ...(m.leagueSlug ? { query: `league=${encodeURIComponent(resolveLeagueSlug(m.leagueSlug))}` } : {}),
+                    })
+                  }
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+                >
+                  {tl("Power rankings")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigateHub({ kind: "tiers" })}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+                >
+                  {tl("Pro tier list")}
                 </button>
               </>
             )}

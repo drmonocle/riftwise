@@ -103,6 +103,29 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
               >
                 {tl("Power rankings")}
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  navigateHub({ kind: "tiers" });
+                  onOpen();
+                }}
+                className="text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  navigateHub({
+                    kind: "finder",
+                    query: `team=${encodeURIComponent(d.rows[0].u)}&vs=${encodeURIComponent(d.rows[1].u)}`,
+                  });
+                  onOpen();
+                }}
+                className="text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Game finder")}
+              </button>
             </>
           )}
           <SectionCard

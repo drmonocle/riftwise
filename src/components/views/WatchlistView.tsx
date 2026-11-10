@@ -249,17 +249,33 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             </span>
           </div>
 
-          {onRefreshCatalog && (
+          <div className="flex items-center gap-2">
             <button
-              onClick={onRefreshCatalog}
-              disabled={isRefreshingCatalog}
-              className="flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors"
-              title={tl("Check Riot API for roster transfers, trades, and new leagues")}
+              type="button"
+              onClick={() => navigateHub({ kind: "rankings" })}
+              className="hidden sm:inline text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
-              <RefreshCw className={`w-3 h-3 ${isRefreshingCatalog ? "animate-spin text-rw-accent" : ""}`} />
-              <span>{isRefreshingCatalog ? tl("Syncing directory…") : tl("Check roster updates")}</span>
+              {tl("Power rankings")} →
             </button>
-          )}
+            <button
+              type="button"
+              onClick={() => navigateHub({ kind: "leaders" })}
+              className="hidden sm:inline text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Player leaderboards")} →
+            </button>
+            {onRefreshCatalog && (
+              <button
+                onClick={onRefreshCatalog}
+                disabled={isRefreshingCatalog}
+                className="flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors"
+                title={tl("Check Riot API for roster transfers, trades, and new leagues")}
+              >
+                <RefreshCw className={`w-3 h-3 ${isRefreshingCatalog ? "animate-spin text-rw-accent" : ""}`} />
+                <span>{isRefreshingCatalog ? tl("Syncing directory…") : tl("Check roster updates")}</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Quick-remove chips */}
@@ -487,6 +503,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Game finder")} →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "rankings" })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Power rankings")} →
                   </button>
                 </span>
               );
@@ -769,6 +792,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Game finder")} →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "leaders" })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")} →
                   </button>
                 </span>
               );

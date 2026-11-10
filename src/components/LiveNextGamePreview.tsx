@@ -367,6 +367,18 @@ export const LiveNextGamePreview: React.FC<{
               {tl("Game finder")} →
             </HubLink>
             <HubLink
+              to={{ kind: "rankings" }}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Power rankings")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "tiers" }}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Pro tier list")} →
+            </HubLink>
+            <HubLink
               to={{ kind: "draft", query: draftQuery }}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-accent hover:underline"
             >

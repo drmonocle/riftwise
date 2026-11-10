@@ -100,6 +100,21 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
               >
                 {tl("Compare")} →
               </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `team=${encodeURIComponent(t.u)}&vs=${encodeURIComponent(first.opp)}`,
+                }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Game finder")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
             </>
           )}
           <SectionCard

@@ -518,6 +518,24 @@ const PrepButton: React.FC<{ t1: { code: string; name: string }; t2: { code: str
           {tl("Game finder")}
         </button>
       </div>
+      <div className="grid grid-cols-2 gap-1.5">
+        <button
+          type="button"
+          disabled={state === "busy"}
+          onClick={() => openRoute(() => navigateHub({ kind: "rankings" }))}
+          className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/40 text-xs font-semibold disabled:opacity-60"
+        >
+          {tl("Power rankings")}
+        </button>
+        <button
+          type="button"
+          disabled={state === "busy"}
+          onClick={() => openRoute(() => navigateHub({ kind: "tiers" }))}
+          className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/40 text-xs font-semibold disabled:opacity-60"
+        >
+          {tl("Pro tier list")}
+        </button>
+      </div>
     </div>
   );
 };

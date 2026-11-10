@@ -241,6 +241,13 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
               </button>
               <button
                 type="button"
+                onClick={() => navigateHub({ kind: "best", query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` })}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Best games")} →
+              </button>
+              <button
+                type="button"
                 onClick={() => navigateHub({ kind: "finder", query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` })}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -405,6 +412,30 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                           >
                             {tl("Compare")} →
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigateHub({
+                                kind: "finder",
+                                query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
+                              })
+                            }
+                            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Game finder")} →
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigateHub({
+                                kind: "rankings",
+                                ...(activeLeague ? { query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` } : {}),
+                              })
+                            }
+                            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Power rankings")} →
                           </button>
                         </>
                       );

@@ -237,6 +237,20 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
             >
               {tl("Game finder")}
             </button>
+            <button
+              type="button"
+              onClick={() => navigateHub({ kind: "rankings" })}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
+            >
+              {tl("Power rankings")}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateHub({ kind: "best", ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}) })}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
+            >
+              {tl("Best games")}
+            </button>
           </>
         )}
         <button

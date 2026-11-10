@@ -257,6 +257,14 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           {tl("Champions")}
         </HubLink>
         {" · "}
+        <HubLink to={{ kind: "tiers", query: `key=y${encodeURIComponent(which.year)}` }} className="text-rw-accent hover:underline">
+          {tl("Pro tier list")}
+        </HubLink>
+        {" · "}
+        <HubLink to={{ kind: "rankings" }} className="text-rw-accent hover:underline">
+          {tl("Power rankings")}
+        </HubLink>
+        {" · "}
         <HubLink to={{ kind: "leaders", query: `year=${encodeURIComponent(which.year)}` }} className="text-rw-accent hover:underline">
           {tl("Player leaderboards")}
         </HubLink>

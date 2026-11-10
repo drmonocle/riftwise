@@ -255,6 +255,36 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             <span>{tl("Standings & Brackets")}</span>
           </button>
         </div>
+        <div className="hidden sm:flex items-center gap-2 text-[11px]">
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "rankings" })}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Power rankings")} →
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "tiers" })}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")} →
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "leaders" })}
+            className="hidden md:inline text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Player leaderboards")} →
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "finder" })}
+            className="hidden md:inline text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Game finder")} →
+          </button>
+        </div>
       </div>
 
       {mainSubTab === "standings" ? (
@@ -328,6 +358,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     className="hidden lg:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                   >
                     {tl("Player leaderboards")} →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "best", query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` })}
+                    className="hidden lg:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                  >
+                    {tl("Best games")} →
                   </button>
                   <button
                     type="button"

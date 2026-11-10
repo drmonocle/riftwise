@@ -109,6 +109,22 @@ const TeamStatsLink: React.FC<{ name: string; code: string; onDone: () => void }
       >
         {tl("Game finder")}
       </button>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => openRoute(() => navigateHub({ kind: "rankings" }))}
+        className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
+      >
+        {tl("Power rankings")}
+      </button>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => openRoute(() => navigateHub({ kind: "tiers" }))}
+        className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
+      >
+        {tl("Pro tier list")}
+      </button>
     </div>
   );
 };
@@ -330,6 +346,18 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                     className="text-rw-accent hover:underline"
                   >
                     {tl("Compare")} →
+                  </button>
+                )}
+                {players.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigateHub({ kind: "leaders" });
+                      onClose();
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")} →
                   </button>
                 )}
                 {players.length > 0 && (
