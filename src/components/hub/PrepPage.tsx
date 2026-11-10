@@ -281,6 +281,18 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
           <HubLink to={{ kind: "compare", mode: "team", a: a.u, b: b.u }} className="text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Compare")} →
           </HubLink>
+          <HubLink
+            to={{ kind: "draft", query: `teams=${encodeURIComponent(a.u)},${encodeURIComponent(b.u)}` }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Draft board")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "finder", query: `team=${encodeURIComponent(a.u)}&vs=${encodeURIComponent(b.u)}` }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Game finder")} →
+          </HubLink>
           {overview && <BroadcastCardButton data={overview} name={`${a.name}-vs-${b.name}-match-prep`} label={tl("Overview card")} />}
         </span>
       }
@@ -1351,6 +1363,15 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
             >
               {tl("Game finder")} →
             </HubLink>
+            <HubLink
+              to={{ kind: "compare", mode: "team", a: a.team.u, b: b.team.u }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Compare")} →
+            </HubLink>
+            <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Power rankings")} →
+            </HubLink>
             <SectionCard
               section={tl("Form: last 10 series")}
               sub={`${a.team.name} vs ${b.team.name}`}
@@ -1585,6 +1606,29 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
             data-nocapture="1"
           >
             {tl("Draft board")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "compare", mode: "team", a: a.team.u, b: b.team.u, ...(period !== "all" ? { period } : {}) }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Compare")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "finder",
+              query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
+                period.startsWith("y") && period.length === 5
+                  ? `&year=${encodeURIComponent(period.slice(1))}`
+                  : period.startsWith("e:")
+                    ? `&event=${encodeURIComponent(period.slice(2))}`
+                    : ""
+              }`,
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Game finder")} →
           </HubLink>
           <BroadcastCardButton
             data={() =>
@@ -1932,8 +1976,29 @@ const Lanes: React.FC<{
     <Section
       title={tl("Lane by lane")}
       right={
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center gap-2">
           <span className="text-[11px] text-rw-sub">{periodLabel}</span>
+          <HubLink
+            to={{ kind: "compare", mode: "team", a: a.team.u, b: b.team.u, ...(period !== "all" ? { period } : {}) }}
+            className="text-[11px] text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Compare")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "leaders",
+              ...(period.startsWith("y") && period.length === 5
+                ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                : period.startsWith("e:")
+                  ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                  : {}),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Leaderboards")} →
+          </HubLink>
           <BroadcastCardButton
             data={() =>
               lineupCard({

@@ -294,6 +294,18 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                 >
                   {tl("Item history")} →
                 </HubLink>
+                <HubLink
+                  to={{
+                    kind: "leaders",
+                    query: new URLSearchParams({
+                      ...(periodKey?.startsWith("y") ? { year: periodKey.slice(1) } : {}),
+                      ...(p.role ? { role: p.role } : {}),
+                    }).toString(),
+                  }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
                 <SectionCard
                   section={`${tl("Playstyle")} · ${periodLabel}`}
                   name={p.name}
@@ -516,6 +528,17 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
             >
               {tl("Compare")} →
             </HubLink>
+            {sel?.champ && (
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: `champ=${prettySlug(sel.champ)}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
             <HubLink
               to={{ kind: "items", query: `player=${encodeURIComponent(p.u)}` }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -896,6 +919,18 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
                 >
                   {tl("Game finder")} →
                 </HubLink>
+                <HubLink
+                  to={{ kind: "compare", mode: "player", a: p.u }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "tiers", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
               </>
             )}
             <HubLink to={{ kind: "player", slug: p.u, tab: "champions" }} className="text-rw-accent hover:underline font-semibold">
@@ -1075,6 +1110,12 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Game finder")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "rankings" }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Power rankings")} →
                     </HubLink>
                   </>
                 );
@@ -1511,6 +1552,18 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Game finder")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "draft", ...(sel ? { query: `p=p:${encodeURIComponent(sel.p)}` } : {}) }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Draft board")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "champions", ...(sel ? { query: `key=p${encodeURIComponent(sel.p)}` } : {}) }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Champions")} →
             </HubLink>
             <SectionCard
               section={`${tl("Recent patches")} · ${champName(c.name)}`}

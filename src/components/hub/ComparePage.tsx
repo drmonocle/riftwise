@@ -505,6 +505,9 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
             >
               {tl("Game finder")}
             </HubLink>
+            <HubLink to={{ kind: "rankings" }} className="text-rw-accent hover:underline">
+              {tl("Power rankings")}
+            </HubLink>
           </>
         )}
         {ready && mode === "player" && (
@@ -942,6 +945,27 @@ export const TeamRows: React.FC<{
         right={
           <span className="flex flex-wrap items-center justify-end gap-2">
             <span className="text-[11px] text-rw-sub whitespace-nowrap">{periodLabel}</span>
+            <HubLink
+              to={{ kind: "prep", a: x.u, b: y.u, ...(period && period !== "all" ? { period } : {}) }}
+              className="text-[11px] text-rw-accent hover:underline font-semibold"
+              data-nocapture="1"
+            >
+              {tl("Match prep")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "draft", query: `teams=${encodeURIComponent(x.u)},${encodeURIComponent(y.u)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Draft board")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "finder", query: `team=${encodeURIComponent(x.u)}&vs=${encodeURIComponent(y.u)}${periodFinderParam}` }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Game finder")} →
+            </HubLink>
             <CopyComparePost
               title={`${x.name} vs ${y.name} · ${periodLabel}`}
               lines={postLines}
@@ -1358,6 +1382,39 @@ const PlayerRows: React.FC<{
         right={
           <span className="flex flex-wrap items-center justify-end gap-2">
             <span className="text-[11px] text-rw-sub whitespace-nowrap">{periodLabel}</span>
+            <HubLink
+              to={{
+                kind: "items",
+                query: `player=${encodeURIComponent(x.u)}${period && period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+              }}
+              className="text-[11px] text-rw-accent hover:underline font-semibold"
+              data-nocapture="1"
+            >
+              {tl("Item history")} →
+            </HubLink>
+            <HubLink
+              to={{
+                kind: "finder",
+                query: `player=${encodeURIComponent(x.u)}${
+                  period && period.startsWith("y") && period.length === 5
+                    ? `&year=${encodeURIComponent(period.slice(1))}`
+                    : period && period.startsWith("e:")
+                      ? `&event=${encodeURIComponent(period.slice(2))}`
+                      : ""
+                }`,
+              }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Game finder")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "leaders", ...(x.role ? { query: `role=${encodeURIComponent(x.role)}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Leaderboards")} →
+            </HubLink>
             <CopyComparePost
               title={`${x.name} vs ${y.name} · ${periodLabel}`}
               lines={postLines}

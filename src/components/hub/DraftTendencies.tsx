@@ -9,6 +9,7 @@ import { winRate } from "../../stats";
 import type { TeamGameRow } from "../../hub/types";
 import { ROLES } from "../../hub/champAgg";
 import { champName } from "../../champions";
+import { prettySlug } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import { ChampLink, HubLink } from "./ui";
 import { SectionCard } from "./BroadcastCard";
@@ -398,6 +399,22 @@ export const DraftTendencies: React.FC<{
                   data-nocapture="1"
                 >
                   {tl("Draft board")} →
+                </HubLink>
+                {(d.b1[0] || d.r12[0]) && (
+                  <HubLink
+                    to={{ kind: "counters", query: `champ=${encodeURIComponent(prettySlug((d.b1[0] || d.r12[0])[0]))}` }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    data-nocapture="1"
+                  >
+                    {tl("Counters")} →
+                  </HubLink>
+                )}
+                <HubLink
+                  to={{ kind: "finder", query: `team=${encodeURIComponent(resolvedSlug)}${periodParam}` }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Game finder")} →
                 </HubLink>
               </>
             )}

@@ -389,6 +389,12 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; teamSlu
               >
                 {tl("Draft board")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: teamSlug, ...(period && period !== "all" ? { period } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
               {finderQuery && (
                 <HubLink
                   to={{ kind: "finder", query: finderQuery }}
@@ -899,6 +905,23 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
               >
                 {tl("Game finder")} →
               </HubLink>
+              {agg.champs[0] && (
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: `champ=${prettySlug(agg.champs[0].c)}${agg.roles[0] ? `&role=${encodeURIComponent(agg.roles[0])}` : ""}`,
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+              )}
+              <HubLink
+                to={leaderTo("kda")}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Leaderboards")} →
+              </HubLink>
               <CopyPeriodTextPost
               url={hubShareUrl({
                 kind: "player",
@@ -1053,6 +1076,12 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Game finder")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "tiers", ...(agg.roles[0] ? { query: `role=${encodeURIComponent(agg.roles[0])}` } : {}) }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")} →
                 </HubLink>
                 <SectionCard
                   section={who ? `${who.name} · ${tl("Champions")}` : tl("Champions")}
@@ -1223,6 +1252,9 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
               </HubLink>
               <HubLink to={teamFinderTo} className="text-[11px] font-semibold text-rw-accent hover:underline">
                 {tl("Game finder")} →
+              </HubLink>
+              <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Power rankings")} →
               </HubLink>
               <CopyPeriodTextPost
               url={hubShareUrl({
