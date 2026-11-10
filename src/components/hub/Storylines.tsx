@@ -200,10 +200,11 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
 
 export interface StoryLine {
   key: string;
-  who?: { name: string; to: { kind: "team" | "player"; slug: string } };
+  who?: { name: string; team?: string; to: { kind: "team" | "player"; slug: string } };
   text: React.ReactNode;
   plain?: string;
   champ?: string;
+  team?: string;
   /** newest game the line depends on (spoiler mode) */
   asOf?: string;
 }
@@ -228,7 +229,7 @@ export const StoryBullets: React.FC<{ lines: StoryLine[]; spoilerKey: string; co
               <>
                 <HubLink to={l.who.to} className="inline-flex items-center gap-1 text-rw-text font-semibold hover:underline">
                   {l.who.to.kind === "team" && <TeamLogo name={l.who.name} sizeClass="w-3.5 h-3.5" />}
-                  {l.who.to.kind === "player" && <PlayerPhoto name={l.who.name} slug={l.who.to.slug} size={15} linkFallback={false} />}
+                  {l.who.to.kind === "player" && <PlayerPhoto name={l.who.name} team={l.who.team} slug={l.who.to.slug} size={15} linkFallback={false} />}
                   <span>{l.who.name}</span>
                 </HubLink>
                 {": "}
@@ -273,7 +274,7 @@ export const StoryList: React.FC<{
                     plainLines.slice(0, 10).map((l, idx) => ({
                       rank: idx + 1,
                       champ: l.champ,
-                      team: !l.champ && l.who?.to.kind === "team" ? l.who.name : undefined,
+                      team: !l.champ ? l.team || l.who?.team || (l.who?.to.kind === "team" ? l.who.name : undefined) : undefined,
                       label: l.who ? l.who.name : l.plain!,
                       sub: l.who ? l.plain : undefined,
                     }))
@@ -296,7 +297,7 @@ export const OwnStorylines: React.FC<{
   notes?: Notes;
   spoilerKey: string;
   share?: string;
-  who?: { kind: "team" | "player"; slug: string };
+  who?: { kind: "team" | "player"; slug: string; team?: string };
 }> = ({ notes, spoilerKey, share, who }) =>
   notes && notes.list.length ? (
     <StoryList
@@ -305,6 +306,7 @@ export const OwnStorylines: React.FC<{
         text: noteText(nt, who),
         plain: notePlainText(nt),
         champ: nt.c,
+        team: who?.team || (who?.kind === "team" ? who.slug : undefined),
         asOf: notes.asOf,
       }))}
       spoilerKey={spoilerKey}

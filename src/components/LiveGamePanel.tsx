@@ -337,31 +337,33 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
             ]
               .filter(Boolean)
               .join(" · ")}
-            rows={() => [
-              {
-                team: left.name || left.code,
-                label: `${left.code} · ${tl("Gold")} ${k(left.t.totalGold)} · ${tl("Towers")} ${left.t.towers} · ${tl("Dragons")} ${left.t.dragons.length} · ${tl("Barons")} ${left.t.barons}`,
-                value: `${left.t.totalKills}–${right.t.totalKills}`,
-                note: `${right.code} · ${tl("Gold")} ${k(right.t.totalGold)} · ${tl("Towers")} ${right.t.towers} · ${tl("Dragons")} ${right.t.dragons.length} · ${tl("Barons")} ${right.t.barons}`,
-                win: left.t.totalGold !== right.t.totalGold ? left.t.totalGold > right.t.totalGold : undefined,
-              },
-              ...ROLE_ORDER.map((role) => {
-                const lm = left.meta.find((p) => p.role === role);
-                const lf = lm ? left.t.participants.find((p) => p.participantId === lm.participantId) : undefined;
-                const rm = right.meta.find((p) => p.role === role);
-                const rf = rm ? right.t.participants.find((p) => p.participantId === rm.participantId) : undefined;
-                const lStr = lm && lf ? `${playerName(lm.summonerName)} (${champName(champNameById(lm.championId))}) ${lf.kills}/${lf.deaths}/${lf.assists} · ${lf.creepScore} CS` : left.code;
-                const rStr = rm && rf ? `${playerName(rm.summonerName)} (${champName(champNameById(rm.championId))}) ${rf.kills}/${rf.deaths}/${rf.assists} · ${rf.creepScore} CS` : right.code;
-                return {
-                  champ: lm ? champNameById(lm.championId) : rm ? champNameById(rm.championId) : undefined,
+            rows={() =>
+              [
+                {
                   team: left.name || left.code,
-                  label: `${roleName(ROLE_LABEL[role])}: ${lStr}`,
-                  value: lf && rf ? `${k(lf.totalGold)} vs ${k(rf.totalGold)}` : "",
-                  note: rStr,
-                  win: lf && rf && lf.totalGold !== rf.totalGold ? lf.totalGold > rf.totalGold : undefined,
-                };
-              }),
-            ]}
+                  label: `${left.code} · ${tl("Gold")} ${k(left.t.totalGold)} · ${tl("Towers")} ${left.t.towers} · ${tl("Dragons")} ${left.t.dragons.length} · ${tl("Barons")} ${left.t.barons}`,
+                  value: `${left.t.totalKills}–${right.t.totalKills}`,
+                  note: `${right.code} · ${tl("Gold")} ${k(right.t.totalGold)} · ${tl("Towers")} ${right.t.towers} · ${tl("Dragons")} ${right.t.dragons.length} · ${tl("Barons")} ${right.t.barons}`,
+                  win: left.t.totalGold !== right.t.totalGold ? left.t.totalGold > right.t.totalGold : undefined,
+                },
+                ...ROLE_ORDER.map((role) => {
+                  const lm = left.meta.find((p) => p.role === role);
+                  const lf = lm ? left.t.participants.find((p) => p.participantId === lm.participantId) : undefined;
+                  const rm = right.meta.find((p) => p.role === role);
+                  const rf = rm ? right.t.participants.find((p) => p.participantId === rm.participantId) : undefined;
+                  const lStr = lm && lf ? `${playerName(lm.summonerName)} (${champName(champNameById(lm.championId))}) ${lf.kills}/${lf.deaths}/${lf.assists} · ${lf.creepScore} CS` : left.code;
+                  const rStr = rm && rf ? `${playerName(rm.summonerName)} (${champName(champNameById(rm.championId))}) ${rf.kills}/${rf.deaths}/${rf.assists} · ${rf.creepScore} CS` : right.code;
+                  return {
+                    champ: lm ? champNameById(lm.championId) : rm ? champNameById(rm.championId) : undefined,
+                    team: left.name || left.code,
+                    label: `${roleName(ROLE_LABEL[role])}: ${lStr}`,
+                    value: lf && rf ? `${k(lf.totalGold)} vs ${k(rf.totalGold)}` : "",
+                    note: rStr,
+                    win: lf && rf && lf.totalGold !== rf.totalGold ? lf.totalGold > rf.totalGold : undefined,
+                  };
+                }),
+              ].map((r, idx) => ({ ...r, rank: idx + 1 }))
+            }
           />
           <Suspense fallback={null}>
             <LiveGameDraftLink match={match} gameNum={game.number} win={win} />

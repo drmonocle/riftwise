@@ -288,12 +288,12 @@ export function eventFacts(games: Game[], event: string): Fact[] {
   }
 
   // a player's line over a whole series
-  type S = { name: string; u: string | null; c: string; side: number; series: string; games: One[] };
+  type S = { name: string; u: string | null; c: string; t: string; side: number; series: string; games: One[] };
   const series = new Map<string, S>();
   for (const o of ones) {
     const i = o.g.team.indexOf(o.side);
     const key = `${o.g.series}:${o.l.u || o.l.name}`;
-    const s = series.get(key) || { name: o.l.name, u: o.l.u, c: o.side.c, side: i, series: o.g.series, games: [] };
+    const s = series.get(key) || { name: o.l.name, u: o.l.u, c: o.side.c, t: o.side.u, side: i, series: o.g.series, games: [] };
     s.games.push(o);
     series.set(key, s);
   }
@@ -318,7 +318,7 @@ export function eventFacts(games: Game[], event: string): Fact[] {
       rows: bestSeries.map((s) => {
         const [k, d, a] = sum(s);
         return {
-          label: who(s.c, s.name), player: s.u, value: line(k, d, a), match: { slug: s.series },
+          label: who(s.c, s.name), player: s.u, team: s.t || null, value: line(k, d, a), match: { slug: s.series },
           sub: at(s.games[0].g) + s.games.map((o) => tl("G{n}: {line} on {champ}", { n: o.g.n, line: line(o.l.k, o.l.d, o.l.a), champ: champName(o.l.champ) })).join(" · "),
         };
       }),

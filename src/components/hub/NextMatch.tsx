@@ -9,12 +9,13 @@ import React, { useEffect, useState } from "react";
 import type { Match } from "../../types";
 import type { HubTeam, TeamSeriesRow } from "../../hub/types";
 import { tl, tc, roleName } from "../../i18n";
-import { findHubTeam, loadHubIndexQuick, loadHubTeam, loadTeamSeries, prettySlug, teamStarter } from "../../hub/data";
+import { findHubTeam, loadHubIndexQuick, loadHubTeam, loadTeamSeries, prettySlug, resolveLeagueSlug, teamStarter } from "../../hub/data";
 import { recentSchedule, RIOT_PREFIX } from "../../hub/riotMatch";
 import { useMatchRatings } from "../../hub/matchRatings";
 import { formatMatchTime } from "../../matchTime";
 import { MatchPrepButton } from "../MatchPrepButton";
 import { MatchOverviewButton } from "../MatchOverviewButton";
+import { SectionCard } from "./BroadcastCard";
 import { fmtDate, HubLink, PlayerPhoto, Section, TeamLink, TeamLogo } from "./ui";
 
 const ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"] as const;
@@ -60,7 +61,29 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
   if (!list.length) return null;
   const [first, ...rest] = list;
   return (
-    <Section title={tl("Next match")}>
+    <Section
+      title={tl("Next match")}
+      share={`${t.u}-next-match`}
+      right={
+        <SectionCard
+          section={tl("Next match")}
+          name={t.name}
+          sub={first.m.leagueName}
+          rows={() =>
+            list.map((c, idx) => {
+              const [, them] = sides(c);
+              return {
+                rank: idx + 1,
+                team: them.name || them.code,
+                label: `${tl("vs")} ${them.name || them.code}`,
+                sub: [c.m.leagueName, c.m.blockName, tc("short best of", "Bo{n}", { n: c.m.bestOf || 1 })].filter(Boolean).join(" · "),
+                value: c.m.state === "inProgress" ? tl("On now") : formatMatchTime(c.m.startTimeUtc),
+              };
+            })
+          }
+        />
+      }
+    >
       <FirstMatch c={first} t={t} />
       {rest.length > 0 && (
         <ul className="text-xs space-y-1 pt-2 border-t border-rw-border">
@@ -86,7 +109,7 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                   <TeamLink name={them.name} u={c.opp} className="truncate hover:text-rw-accent" />
                   <span className="text-rw-muted truncate">
                     ·{" "}
-                    <HubLink to={{ kind: "league", slug: prettySlug(c.m.leagueSlug || c.m.leagueName) }} className="hover:text-rw-accent hover:underline">
+                    <HubLink to={{ kind: "league", slug: resolveLeagueSlug(c.m.leagueSlug || c.m.leagueName) }} className="hover:text-rw-accent hover:underline">
                       {c.m.leagueName}
                     </HubLink>
                     {c.m.blockName ? ` · ${c.m.blockName}` : ""}
@@ -94,6 +117,7 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                 </span>
                 <span className="inline-flex items-center gap-1.5 shrink-0">
                   <MatchPrepButton match={c.m} compact />
+                  <MatchOverviewButton match={c.m} compact />
                   <HubLink to={{ kind: "match", slug: RIOT_PREFIX + c.m.matchId }} className="text-rw-muted hover:text-rw-accent hover:underline">
                     {formatMatchTime(c.m.startTimeUtc)}
                   </HubLink>
@@ -150,7 +174,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px]">
         <span className="min-w-0 truncate">
-          <HubLink to={{ kind: "league", slug: prettySlug(m.leagueSlug || m.leagueName) }} className="font-bold text-rw-accent hover:underline">
+          <HubLink to={{ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) }} className="font-bold text-rw-accent hover:underline">
             {m.leagueName}
           </HubLink>
           {m.blockName && <span className="text-rw-sub"> · {m.blockName}</span>}

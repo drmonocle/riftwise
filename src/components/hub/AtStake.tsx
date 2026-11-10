@@ -13,6 +13,7 @@ import {
   type Note,
   type StoryLine,
   StoryBullets,
+  notePlainText,
   noteText,
 } from "./Storylines";
 import { GRID_COLS, HubLink, Section, TeamLogo, useColumns } from "./ui";
@@ -45,8 +46,10 @@ function matchLines(
     s.l.forEach((nt, i) =>
       lines.push({
         key: `${u}-${i}`,
-        who: { name: s.n, to: { kind: "team", slug: u } },
+        who: { name: s.n, team: s.n, to: { kind: "team", slug: u } },
         text: noteText(nt, { kind: "team", slug: u }),
+        plain: notePlainText(nt),
+        champ: nt.c,
         asOf: s.a || undefined,
       }),
     );
@@ -54,8 +57,10 @@ function matchLines(
       notes.forEach((nt, i) =>
         lines.push({
           key: `${pu}-${i}`,
-          who: { name: pn, to: { kind: "player", slug: pu } },
+          who: { name: pn, team: s.n, to: { kind: "player", slug: pu } },
           text: noteText(nt, { kind: "player", slug: pu }),
+          plain: notePlainText(nt),
+          champ: nt.c,
           asOf,
         }),
       );
@@ -125,11 +130,13 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
           name="RiftWise"
           sub={tl("Milestones and streaks for the matches in the next 24 hours.")}
           rows={() =>
-            blocks.slice(0, 8).map(({ m }, idx) => ({
+            blocks.slice(0, 8).map(({ m, lines }, idx) => ({
               rank: idx + 1,
               team: m.team1Name || m.team1Code,
               label: `${m.team1Code} vs ${m.team2Code}`,
-              sub: m.leagueName,
+              sub: lines[0]?.plain
+                ? `${m.leagueName} · ${lines[0].who ? `${lines[0].who.name}: ` : ""}${lines[0].plain}`
+                : m.leagueName,
               value: m.state === "inProgress" ? tl("Live now") : time(m.startTimeUtc),
             }))
           }

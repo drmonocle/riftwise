@@ -191,44 +191,46 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                 section={`${c1} vs ${c2} · ${tl("All-time head-to-head")}`}
                 sub={tl("{n} games · all tournaments", { n: total })}
                 name={`${c1}-vs-${c2}-h2h`}
-                rows={() => [
-                  {
-                    team: h2h.team1Wins >= h2h.team2Wins ? t1.name || c1 : t2.name || c2,
-                    label: tl("All-time head-to-head"),
-                    sub: `${t1.name} vs ${t2.name}`,
-                    value: `${c1} ${h2h.team1Wins} – ${h2h.team2Wins} ${c2}`,
-                    win: h2h.team1Wins !== h2h.team2Wins ? h2h.team1Wins > h2h.team2Wins : undefined,
-                  },
-                  ...(intl[0] + intl[1] > 0
-                    ? [
-                        {
-                          team: intl[0] >= intl[1] ? t1.name || c1 : t2.name || c2,
-                          label: tl("Worlds · MSI · First Stand"),
-                          value: `${c1} ${intl[0]} – ${intl[1]} ${c2}`,
-                          win: intl[0] !== intl[1] ? intl[0] > intl[1] : undefined,
-                        },
-                      ]
-                    : []),
-                  ...(domestic[0] + domestic[1] > 0
-                    ? [
-                        {
-                          team: domestic[0] >= domestic[1] ? t1.name || c1 : t2.name || c2,
-                          label: tl("Domestic & other events"),
-                          value: `${c1} ${domestic[0]} – ${domestic[1]} ${c2}`,
-                          win: domestic[0] !== domestic[1] ? domestic[0] > domestic[1] : undefined,
-                        },
-                      ]
-                    : []),
-                  ...(revealed
-                    ? meetings.slice(0, 6).map((m) => ({
-                        team: m.team1Score >= m.team2Score ? t1.name || c1 : t2.name || c2,
-                        label: m.tournament,
-                        sub: fmtDate(m.date),
-                        value: `${c1} ${m.team1Score} – ${m.team2Score} ${c2}`,
-                        win: m.team1Score !== m.team2Score ? m.team1Score > m.team2Score : undefined,
-                      }))
-                    : []),
-                ]}
+                rows={() =>
+                  [
+                    {
+                      team: h2h.team1Wins >= h2h.team2Wins ? t1.name || c1 : t2.name || c2,
+                      label: tl("All-time head-to-head"),
+                      sub: `${t1.name} vs ${t2.name}`,
+                      value: `${c1} ${h2h.team1Wins} – ${h2h.team2Wins} ${c2}`,
+                      win: h2h.team1Wins !== h2h.team2Wins ? h2h.team1Wins > h2h.team2Wins : undefined,
+                    },
+                    ...(intl[0] + intl[1] > 0
+                      ? [
+                          {
+                            team: intl[0] >= intl[1] ? t1.name || c1 : t2.name || c2,
+                            label: tl("Worlds · MSI · First Stand"),
+                            value: `${c1} ${intl[0]} – ${intl[1]} ${c2}`,
+                            win: intl[0] !== intl[1] ? intl[0] > intl[1] : undefined,
+                          },
+                        ]
+                      : []),
+                    ...(domestic[0] + domestic[1] > 0
+                      ? [
+                          {
+                            team: domestic[0] >= domestic[1] ? t1.name || c1 : t2.name || c2,
+                            label: tl("Domestic & other events"),
+                            value: `${c1} ${domestic[0]} – ${domestic[1]} ${c2}`,
+                            win: domestic[0] !== domestic[1] ? domestic[0] > domestic[1] : undefined,
+                          },
+                        ]
+                      : []),
+                    ...(revealed
+                      ? meetings.slice(0, 6).map((m) => ({
+                          team: m.team1Score >= m.team2Score ? t1.name || c1 : t2.name || c2,
+                          label: m.tournament,
+                          sub: fmtDate(m.date),
+                          value: `${c1} ${m.team1Score} – ${m.team2Score} ${c2}`,
+                          win: m.team1Score !== m.team2Score ? m.team1Score > m.team2Score : undefined,
+                        }))
+                      : []),
+                  ].map((r, idx) => ({ ...r, rank: idx + 1 }))
+                }
               />
             )}
             <button
