@@ -142,14 +142,17 @@ export const CardLogo: React.FC<{ name?: string; code?: string | null; size: num
  * matches the color scheme"): Riot's logo used as a cutout, filled with the theme's colours, so it suits every theme
  * with no pictures of our own. Nothing for a team Riot has no logo for.
  */
-const CardMark: React.FC<{ name: string; code?: string | null; color: string; opacity: number; style: React.CSSProperties }> = ({
+const CardMark: React.FC<{ name: string; code?: string | null; fallback?: string; color: string; opacity: number; style: React.CSSProperties }> = ({
   name,
   code,
+  fallback,
   color,
   opacity,
   style,
 }) => {
-  const logo = useTeamLogo(name, code ?? undefined);
+  const primary = useTeamLogo(name, code ?? undefined);
+  const secondary = useTeamLogo(fallback);
+  const logo = primary || secondary;
   if (!logo) return null;
   const url = `url("${logo.replace(/^http:/, "https:")}")`;
   return (
@@ -203,7 +206,7 @@ export interface CardData {
   body?: React.ReactNode;
   /** the teams whose logos sit faintly behind the card: one on the right, or a and b on their halves (null: none on
    *  that half). Cards with sides take them from the sides' teams. */
-  marks?: ({ name: string; code?: string | null } | null)[];
+  marks?: ({ name: string; code?: string | null; fallback?: string } | null)[];
 }
 
 const W = 1600;
@@ -1866,11 +1869,18 @@ export function listCard(d: { section: string; name: string; sub?: string; rows:
       heading = d.section;
     }
   }
+  const vsParts = heading.split(/\s+vs\s+/i);
+  const uniqueRowTeams = [...new Set(rows.map((r) => r.team).filter((t): t is string => !!t))];
+  const marks: CardData["marks"] =
+    vsParts.length === 2
+      ? [{ name: vsParts[0].trim() }, { name: vsParts[1].trim() }]
+      : [{ name: heading, fallback: uniqueRowTeams.length === 1 ? uniqueRowTeams[0] : undefined }];
   return {
     title,
     subtitle,
     a: { name: heading },
     rows: [],
+    marks,
     body: (
       <>
         <div style={{ fontSize: 50, fontWeight: 800, lineHeight: 1.05, marginTop: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{heading}</div>

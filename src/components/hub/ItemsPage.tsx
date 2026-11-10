@@ -299,7 +299,8 @@ const PlayerItemsView: React.FC<{
               name={`${name} · ${label}`}
               sub={`${fmtNum(g.length)}G${scope ? ` · ${scope}` : ""}`}
               rows={() =>
-                g.slice(0, 12).map((r) => ({
+                g.slice(0, 12).map((r, idx) => ({
+                  rank: idx + 1,
                   champ: r[2],
                   team: r[8],
                   label: `${champName(r[2])} ${tl("vs")} ${r[8]}`,

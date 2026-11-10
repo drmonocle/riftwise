@@ -131,7 +131,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
               section={tl("Roster")}
               name={t.name}
               sub={activeRoster.y}
-              rows={() => activeRoster.p.map((x) => ({ team: t.name, label: x.n, sub: roleName(x.r), value: tl("{n} games", { n: x.g }) }))}
+              rows={() => activeRoster.p.map((x, idx) => ({ rank: idx + 1, team: t.name, label: x.n, sub: roleName(x.r), value: tl("{n} games", { n: x.g }) }))}
             />
           </span>
         ) : undefined
@@ -360,7 +360,10 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                         t.rating.rank != null
                           ? tl("#{lrank} in {league} · rating {r}", { lrank: t.rating.lrank, league: t.rating.league || "–", r: t.rating.r })
                           : tl("in {league} · rating {r}", { league: t.rating.league || "–", r: t.rating.r }),
-                      to: { kind: "rankings" } as HubRoute,
+                      to: {
+                        kind: "rankings",
+                        ...(t.rating.rank == null && t.rating.league ? { query: `league=${encodeURIComponent(t.rating.league)}` } : {}),
+                      } as HubRoute,
                       title: t.rh && t.rh.length > 1 ? tl("Rating over the last year") : undefined,
                       corner: t.rh && t.rh.length > 1 ? <Sparkline points={t.rh} width={64} height={20} /> : undefined,
                     }
@@ -436,7 +439,8 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 section={tl("Recent series")}
                 name={t.name}
                 rows={() =>
-                  t.recent.map((r) => ({
+                  t.recent.map((r, idx) => ({
+                    rank: idx + 1,
                     win: r.us > r.them,
                     team: r.opp,
                     label: `${r.us}-${r.them} vs ${r.opp}`,
@@ -532,7 +536,8 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
               name={t.name}
               sub={cardSub}
               rows={() =>
-                [...t.years].reverse().map((y) => ({
+                [...t.years].reverse().map((y, idx) => ({
+                  rank: idx + 1,
                   team: y.as || t.name,
                   label: y.as !== t.name ? `${y.y} · ${y.as}` : y.y,
                   sub: `${y.w}-${y.g - y.w}`,
@@ -621,7 +626,8 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
               name={t.name}
               sub={tl("{n} titles", { n: t.titles.length })}
               rows={() =>
-                t.titles.map((x) => ({
+                t.titles.map((x, idx) => ({
+                  rank: idx + 1,
                   team: x.as || t.name,
                   label: eventTitle(x.t),
                   sub: `${x.score} vs ${x.l}`,
@@ -697,7 +703,8 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 rows={() =>
                   t.events
                     .filter((x) => !hiddenCheck(`team-event:${x.e}`, x.date))
-                    .map((x) => ({
+                    .map((x, idx) => ({
+                      rank: idx + 1,
                       team: x.as || t.name,
                       label: x.en,
                       sub: tl("Series {s} · games {g}", { s: `${x.sw}-${x.sg - x.sw}`, g: `${x.w}-${x.g - x.w}` }),
@@ -839,6 +846,7 @@ const TeamChampionsTab: React.FC<{
                 champs.map((c, idx) => ({
                   rank: idx + 1,
                   champ: c.c,
+                  team: t.name,
                   label: champName(c.c),
                   sub: tl("{n} games", { n: c.g }),
                   value: winRate(c.w, c.g),
@@ -892,7 +900,7 @@ const TeamChampionsTab: React.FC<{
             <SectionCard
               section={tl("Most banned by them")}
               name={t.name}
-              rows={() => bans.map((c, idx) => ({ rank: idx + 1, champ: c.c, label: champName(c.c), value: String(c.g) }))}
+              rows={() => bans.map((c, idx) => ({ rank: idx + 1, champ: c.c, team: t.name, label: champName(c.c), value: String(c.g) }))}
             />
           }
         >
@@ -936,7 +944,7 @@ const TeamChampionsTab: React.FC<{
               <SectionCard
                 section={tl("Most banned against them")}
                 name={t.name}
-                rows={() => bansVs.map((c, idx) => ({ rank: idx + 1, champ: c.c, label: champName(c.c), value: String(c.g) }))}
+                rows={() => bansVs.map((c, idx) => ({ rank: idx + 1, champ: c.c, team: t.name, label: champName(c.c), value: String(c.g) }))}
               />
             }
           >
@@ -1256,12 +1264,15 @@ const TeamChampGames: React.FC<{
                 rows={() => [
                   ...playersSummary.map((pl) => ({
                     champ: canonical,
+                    team: t.name,
                     label: `${pl.n}${pl.r ? ` (${roleName(pl.r)})` : ""}`,
                     sub: pl.kdaGames > 0 ? `KDA ${fmtDec((pl.k + pl.a) / Math.max(pl.d, 1), 2)}` : undefined,
                     value: `${pl.w}–${pl.g - pl.w} (${winRate(pl.w, pl.g)})`,
+                    win: pl.g > 0 ? pl.w / pl.g >= 0.5 : undefined,
                   })),
                   ...filtered.slice(0, 8).map((e) => ({
                     champ: canonical,
+                    team: t.name,
                     label: `vs ${e.r[4]}`,
                     sub: `${e.r[3]} · ${fmtDate(e.r[0])}`,
                     value: e.r[7] ? tc("short result", "W") : tc("short result", "L"),

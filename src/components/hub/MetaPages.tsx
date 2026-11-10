@@ -588,6 +588,7 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                     team: t.t,
                     label: t.t,
                     value: String(t.n),
+                    win: true,
                   }))
                 }
               />
@@ -685,9 +686,10 @@ const LeagueEventsSection: React.FC<{
             name={l.s || l.l}
             sub={l.l}
             rows={() =>
-              events.slice(0, 12).map((e) => {
+              events.slice(0, 12).map((e, idx) => {
                 const hide = isHidden(`event:${e.u}`, e.en);
                 return {
+                  rank: idx + 1,
                   team: e.w && !hide ? e.w : undefined,
                   label: e.n,
                   sub: [fmtDate(e.st, false), e.en && e.en !== e.st ? fmtDate(e.en, false) : ""].filter(Boolean).join(" – "),

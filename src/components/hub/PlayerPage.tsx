@@ -377,7 +377,8 @@ const PlayerView: React.FC<{
                 rows={() =>
                   p.events
                     .filter((x) => !hiddenCheck(`player-event:${x.e}`, x.date))
-                    .map((x) => ({
+                    .map((x, idx) => ({
+                      rank: idx + 1,
                       team: x.t,
                       label: x.en,
                       sub: `${x.t} · ${x.w}-${x.g - x.w} · KDA ${fmtN(x.kda)}`,
@@ -424,7 +425,8 @@ const PlayerView: React.FC<{
               name={p.name}
               sub={cardSub}
               rows={() =>
-                [...p.years].reverse().map((y) => ({
+                [...p.years].reverse().map((y, idx) => ({
+                  rank: idx + 1,
                   team: y.team,
                   label: y.y,
                   sub: `${y.team} · ${y.w}-${y.g - y.w}`,
@@ -520,7 +522,8 @@ const PlayerView: React.FC<{
                 name={p.name}
                 sub={cardSub}
                 rows={() =>
-                  p.recent.map((r) => ({
+                  p.recent.map((r, idx) => ({
+                    rank: idx + 1,
                     win: !!r.win,
                     champ: r.c,
                     team: r.opp,
@@ -636,7 +639,16 @@ const PlayerView: React.FC<{
               section={tl("Career bests")}
               name={p.name}
               sub={cardSub}
-              rows={() => Object.entries(p.best).map(([k, b]) => ({ champ: b.c, label: BEST_LABEL[k] ? tl(BEST_LABEL[k]) : k, sub: `${champName(b.c)} vs ${b.opp}, ${b.date.slice(0, 4)}`, value: fmtNum(b.v) }))}
+              rows={() =>
+                Object.entries(p.best).map(([k, b], idx) => ({
+                  rank: idx + 1,
+                  champ: b.c,
+                  team: p.club || undefined,
+                  label: BEST_LABEL[k] ? tl(BEST_LABEL[k]) : k,
+                  sub: `${champName(b.c)} vs ${b.opp}, ${b.date.slice(0, 4)}`,
+                  value: fmtNum(b.v),
+                }))
+              }
             />
           }
         >
@@ -717,7 +729,22 @@ const PlayerView: React.FC<{
       {overview && p.titles.length > 0 && (
         <Section
           title={tl("Titles")}
-          right={<SectionCard section={tl("Titles")} name={p.name} sub={tl("{n} titles", { n: p.titles.length })} rows={() => p.titles.map((x) => ({ label: eventTitle(x.t), value: x.date.slice(0, 4) }))} />}
+          right={
+            <SectionCard
+              section={tl("Titles")}
+              name={p.name}
+              sub={tl("{n} titles", { n: p.titles.length })}
+              rows={() =>
+                p.titles.map((x, idx) => ({
+                  rank: idx + 1,
+                  team: p.club || undefined,
+                  label: eventTitle(x.t),
+                  value: x.date.slice(0, 4),
+                  win: true,
+                }))
+              }
+            />
+          }
         >
           <ul className="text-xs space-y-1">
             {p.titles.map((x) => (
@@ -746,7 +773,24 @@ const PlayerView: React.FC<{
       {overview && p.pentas && p.pentas.length > 0 && (
         <Section
           title={tl("Pentakills")}
-          right={<SectionCard section={tl("Pentakills")} name={p.name} sub={cardSub} rows={() => p.pentas!.map((x) => ({ champ: x.c, label: x.x > 1 ? `${champName(x.c)} ×${x.x}` : champName(x.c), sub: x.en, value: x.date.slice(0, 4) }))} />}
+          right={
+            <SectionCard
+              section={tl("Pentakills")}
+              name={p.name}
+              sub={cardSub}
+              rows={() =>
+                p.pentas!.map((x, idx) => ({
+                  rank: idx + 1,
+                  champ: x.c,
+                  team: p.club || undefined,
+                  label: x.x > 1 ? `${champName(x.c)} ×${x.x}` : champName(x.c),
+                  sub: x.en,
+                  value: x.date.slice(0, 4),
+                  win: true,
+                }))
+              }
+            />
+          }
         >
           <ul className="text-xs space-y-1">
             {p.pentas.map((x, i) => (
@@ -844,7 +888,17 @@ const PlayerChampionsTab: React.FC<{
             section={tl("Champion pool")}
             name={p.name}
             sub={tl("{n} champions played", { n: champs.length })}
-            rows={() => champs.map((c) => ({ champ: c.c, label: champName(c.c), sub: tl("{g} games · {wr}", { g: c.g, wr: winRate(c.w, c.g) }), value: `KDA ${fmtN(c.kda)}` }))}
+            rows={() =>
+              champs.map((c, idx) => ({
+                rank: idx + 1,
+                champ: c.c,
+                team: p.club || undefined,
+                label: champName(c.c),
+                sub: tl("{g} games · {wr}", { g: c.g, wr: winRate(c.w, c.g) }),
+                value: `KDA ${fmtN(c.kda)}`,
+                win: c.g > 0 ? c.w / c.g >= 0.5 : undefined,
+              }))
+            }
           />
         }
       >
@@ -1026,10 +1080,11 @@ const CareerTimeline: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
           name={p.name}
           sub={cardSub}
           rows={() =>
-            p.teams.map((x) => {
+            p.teams.map((x, idx) => {
               const fy = x.from.slice(0, 4);
               const ty = x.to.slice(0, 4);
               return {
+                rank: idx + 1,
                 team: x.n,
                 label: x.n,
                 sub: fy === ty ? fy : `${fy}–${ty}`,

@@ -85,6 +85,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                     label: t.t,
                     sub: `${t.w}-${t.g - t.w}`,
                     value: `${Math.round((t.w / Math.max(1, t.g)) * 100)}%`,
+                    win: t.g > 0 ? t.w / t.g >= 0.5 : undefined,
                   }))
                 }
               />

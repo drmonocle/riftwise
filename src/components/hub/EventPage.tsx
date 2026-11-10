@@ -8,6 +8,7 @@ import { Trophy, MapPin, CalendarDays, Coins, Download, Sparkles, ClipboardCopy 
 import { BracketBoard, type BracketColumn } from "../BracketBoard";
 import { CountryFlag, countryCode, localCountry } from "./CountryFlag";
 import { tl, tn, tk, regionName, stageLabel, eventTitle } from "../../i18n";
+import { champName } from "../../champions";
 import { winRate } from "../../stats";
 import { downloadEventCsv, downloadStagesCsv, loadHubEvent, prettySlug } from "../../hub/data";
 import type { HubEvent, SeriesRow, Stage, StandingRow } from "../../hub/types";
@@ -256,10 +257,12 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                 sub={eventTitle(e.n)}
                 name={`${e.u}-final-standings`}
                 rows={() =>
-                  e.results!.slice(0, 10).map((r) => ({
+                  e.results!.slice(0, 10).map((r, idx) => ({
+                    rank: Number(r.p.replace(/\D.*$/, "")) || idx + 1,
                     team: r.t,
                     label: `${r.p}. ${r.t}`,
                     value: r.usd ? fmtUsd(r.usd) : r.p,
+                    win: r.p === "1",
                   }))
                 }
               />
@@ -752,11 +755,12 @@ const StageLists: React.FC<{ stages: Stage[] }> = ({ stages }) => {
               section={tl("Matches")}
               name={stageLabel(st.name) || tl("Matches")}
               rows={() =>
-                shown.slice(0, 12).map((r) => {
+                shown.slice(0, 12).map((r, idx) => {
                   const hide = isHidden(seriesKey(r), r.date);
                   const played = r.sa != null && r.sb != null;
                   const winTeam = !hide && played ? (r.w === 1 ? r.a : r.w === 2 ? r.b : r.a) : r.a;
                   return {
+                    rank: idx + 1,
                     team: winTeam,
                     label: `${r.a} vs ${r.b}`,
                     sub: fmtDate(r.date, false),
@@ -816,6 +820,7 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
                 label: r.t,
                 sub: r.gw != null ? `${r.gw}-${r.gl ?? 0}` : undefined,
                 value: `${r.sw ?? 0}-${r.sl ?? 0}${ties ? `-${r.st ?? 0}` : ""}`,
+                win: (r.sw ?? 0) + (r.sl ?? 0) > 0 ? (r.sw ?? 0) >= (r.sl ?? 0) : undefined,
               }))
             }
           />
@@ -1093,9 +1098,10 @@ const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
               rows.slice(0, 10).map((c, idx) => ({
                 rank: idx + 1,
                 champ: c.c,
-                label: c.c,
+                label: champName(c.c),
                 sub: `${c.p} P · ${c.b} B · ${c.p ? winRate(c.w, c.p) : "–"}`,
                 value: games ? `${Math.round(((c.p + c.b) / games) * 100)}%` : `${c.p}`,
+                win: c.p >= 3 ? c.w / c.p >= 0.5 : undefined,
               }))
             }
           />

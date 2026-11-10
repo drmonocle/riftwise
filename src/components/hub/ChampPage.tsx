@@ -872,7 +872,8 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                   c.recent
                     .filter(usedIn)
                     .slice(0, 10)
-                    .map((r) => ({
+                    .map((r, idx) => ({
+                      rank: idx + 1,
                       win: !!r.win,
                       champ: c.name,
                       team: r.team || r.opp,
@@ -995,7 +996,8 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               section={tl("By pick order")}
               name={champName(c.name)}
               rows={() =>
-                Object.entries(c.slots!).map(([slot, [g, w]]) => ({
+                Object.entries(c.slots!).map(([slot, [g, w]], idx) => ({
+                  rank: idx + 1,
                   champ: c.name,
                   label: slot,
                   sub: tl("{n} games", { n: fmtNum(g) }),
@@ -1046,9 +1048,10 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 section={tl("Recent patches")}
                 name={champName(c.name)}
                 rows={() =>
-                  c.patches!.map((p) => {
+                  c.patches!.map((p, idx) => {
                     const pres = (p.pr ?? p.pk + p.b) / Math.max(p.g, 1);
                     return {
+                      rank: idx + 1,
                       champ: c.name,
                       label: `${tl("Patch")} ${p.p}`,
                       sub: `${p.pk} ${tl("Picks")} · ${p.b} ${tl("Bans")}`,
@@ -1104,7 +1107,8 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               section={tl("By year")}
               name={champName(c.name)}
               rows={() =>
-                [...c.years].reverse().map((y) => ({
+                [...c.years].reverse().map((y, idx) => ({
+                  rank: idx + 1,
                   champ: c.name,
                   label: y.y,
                   sub: `${fmtNum(y.p)} ${tl("Picks")} · ${fmtNum(y.b)} ${tl("Bans")}`,

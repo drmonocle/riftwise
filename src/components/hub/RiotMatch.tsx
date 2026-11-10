@@ -12,7 +12,7 @@ import { MatchPrepButton } from "../MatchPrepButton";
 import { riotMatchById, riotMatchFor } from "../../hub/riotMatch";
 import { findSeriesSlug } from "../../hub/seriesLookup";
 import { navigateHub } from "../../hub/route";
-import { prettySlug } from "../../hub/data";
+import { prettySlug, resolveLeagueSlug } from "../../hub/data";
 import type { HubSeries } from "../../hub/types";
 import { card, fmtDate, HubLink, hubShareUrl, Loading, RevealButton, TeamLogo, useHidden, usePageTitle } from "./ui";
 
@@ -126,14 +126,14 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
       <div className={card}>
         <div className="text-[11px] text-rw-muted flex flex-wrap items-center justify-between gap-2">
           <span className="flex flex-wrap gap-x-2">
-            <HubLink to={{ kind: "league", slug: prettySlug(m.leagueSlug || m.leagueName) }} className="text-rw-accent hover:underline">
+            <HubLink to={{ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) }} className="text-rw-accent hover:underline">
               {m.leagueName}
             </HubLink>
             {m.blockName && (
               <span>
                 ·{" "}
                 <HubLink
-                  to={{ kind: "league", slug: prettySlug(m.leagueSlug || m.leagueName) }}
+                  to={{ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) }}
                   className="hover:text-rw-accent hover:underline"
                 >
                   {stageLabel(m.blockName)}

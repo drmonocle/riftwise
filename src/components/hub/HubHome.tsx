@@ -34,7 +34,7 @@ import { ShareMatchButton } from "../ShareMatchButton";
 import { SwissStandings } from "../SwissStandings";
 import { INTL_EVENTS, intlMatchNow } from "../../intlNow";
 import { LatestResults } from "../IdleHome";
-import { prettySlug } from "../../hub/data";
+import { prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { BroadcastCardButton, SectionCard, rankingsCard } from "./BroadcastCard";
 import type { TabKey } from "../Navigation";
 
@@ -365,8 +365,8 @@ const FeaturedMatch: React.FC<{
             <span className="font-head font-semibold uppercase tracking-wider text-rw-accent">{formatMatchTime(m.startTimeUtc)}</span>
           )}
           <span className="text-rw-muted">
-            {m.leagueSlug ? (
-              <HubLink to={{ kind: "league", slug: m.leagueSlug }} className="hover:text-rw-accent hover:underline">
+            {m.leagueSlug || m.leagueName ? (
+              <HubLink to={{ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) }} className="hover:text-rw-accent hover:underline">
                 {m.leagueName}
               </HubLink>
             ) : (
@@ -553,7 +553,27 @@ const EventNow: React.FC<{ intl?: Match; schedule?: Match[]; settings?: AppSetti
 };
 
 const LatestTournaments: React.FC<{ latest: EventListItem[] }> = ({ latest }) => (
-  <Section title={tl("Latest tournaments")}>
+  <Section
+    title={tl("Latest tournaments")}
+    right={
+      latest.length > 0 ? (
+        <SectionCard
+          section={tl("Latest tournaments")}
+          name="RiftWise"
+          rows={() =>
+            latest.slice(0, 6).map((e, idx) => ({
+              rank: idx + 1,
+              team: e.w || undefined,
+              label: e.n,
+              sub: fmtDate(e.en, false),
+              value: e.w || fmtDate(e.en, false),
+              win: Boolean(e.w),
+            }))
+          }
+        />
+      ) : undefined
+    }
+  >
     <ul className="text-xs space-y-1.5">
       {latest.slice(0, 6).map((e) => (
         <LatestRow key={e.u} e={e} />

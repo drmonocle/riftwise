@@ -594,6 +594,7 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
                 rank: idx + 1,
                 label: `${regionName(r.a, r.a)} vs ${regionName(r.b, r.b)}`,
                 value: `${r.wa} – ${r.wb}`,
+                win: r.wa + r.wb > 0 ? r.wa >= r.wb : undefined,
               }))
             }
           />

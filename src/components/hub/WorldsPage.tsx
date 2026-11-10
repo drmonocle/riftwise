@@ -757,7 +757,8 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
           section={tl("Champions")}
           name={name}
           rows={() =>
-            shown.map((x) => ({
+            shown.map((x, idx) => ({
+              rank: idx + 1,
               team: x.as,
               label: `${x.y} · ${x.as}`,
               sub: tl("{score} vs {team}", { score: x.score, team: x.l }),

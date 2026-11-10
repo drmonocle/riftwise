@@ -679,7 +679,8 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     section={tl("Every result")}
                     name={range}
                     rows={() =>
-                      w.results.slice(0, 12).map((r) => ({
+                      w.results.slice(0, 12).map((r, idx) => ({
+                        rank: idx + 1,
                         team: r.sa >= r.sb ? r.a : r.b,
                         label: `${r.a} vs ${r.b}`,
                         sub: `${r.t} · ${fmtDate(r.date, false)}`,

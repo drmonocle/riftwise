@@ -785,7 +785,8 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
           sub={`${a.team.name} vs ${b.team.name}`}
           name={`${a.team.u}-vs-${b.team.u}-calculated`}
           rows={() =>
-            rows.map((r) => ({
+            rows.map((r, idx) => ({
+              rank: idx + 1,
               team: a.team.name,
               label: r.label,
               sub: r.how,
@@ -1224,9 +1225,10 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
               [
                 { s: a, rows: la },
                 { s: b, rows: lb },
-              ].map(({ s, rows }) => {
+              ].map(({ s, rows }, idx) => {
                 const w = rows.filter((r) => r[3] > r[4]).length;
                 return {
+                  rank: idx + 1,
                   team: s.team.name,
                   label: s.team.name,
                   sub: rows.map((r) => `${r[3] > r[4] ? tc("short result", "W") : tc("short result", "L")} (${r[3]}-${r[4]} vs ${r[1]})`).slice(0, 5).join(" · "),
@@ -1963,36 +1965,38 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
             section={`${tl("Draft board")} · ${tl("Threats to ban")} & ${tl("Comfort picks")}`}
             sub={`${a.team.name} vs ${b.team.name}`}
             name={`${a.team.u}-vs-${b.team.u}-draft-scouting`}
-            rows={() => [
-              ...bansByA.slice(0, 2).map((x) => ({
-                champ: x.c,
-                team: a.team.name,
-                label: `${a.team.name} · ${tl("Threats to ban")}: ${champName(x.c)}`,
-                sub: x.why,
-                value: x.stat,
-              })),
-              ...picksA.slice(0, 2).map((x) => ({
-                champ: x.c,
-                team: a.team.name,
-                label: `${a.team.name} · ${tl("Comfort picks")}: ${champName(x.c)}`,
-                sub: x.why,
-                value: x.stat,
-              })),
-              ...bansByB.slice(0, 2).map((x) => ({
-                champ: x.c,
-                team: b.team.name,
-                label: `${b.team.name} · ${tl("Threats to ban")}: ${champName(x.c)}`,
-                sub: x.why,
-                value: x.stat,
-              })),
-              ...picksB.slice(0, 2).map((x) => ({
-                champ: x.c,
-                team: b.team.name,
-                label: `${b.team.name} · ${tl("Comfort picks")}: ${champName(x.c)}`,
-                sub: x.why,
-                value: x.stat,
-              })),
-            ]}
+            rows={() =>
+              [
+                ...bansByA.slice(0, 2).map((x) => ({
+                  champ: x.c,
+                  team: a.team.name,
+                  label: `${a.team.name} · ${tl("Threats to ban")}: ${champName(x.c)}`,
+                  sub: x.why,
+                  value: x.stat,
+                })),
+                ...picksA.slice(0, 2).map((x) => ({
+                  champ: x.c,
+                  team: a.team.name,
+                  label: `${a.team.name} · ${tl("Comfort picks")}: ${champName(x.c)}`,
+                  sub: x.why,
+                  value: x.stat,
+                })),
+                ...bansByB.slice(0, 2).map((x) => ({
+                  champ: x.c,
+                  team: b.team.name,
+                  label: `${b.team.name} · ${tl("Threats to ban")}: ${champName(x.c)}`,
+                  sub: x.why,
+                  value: x.stat,
+                })),
+                ...picksB.slice(0, 2).map((x) => ({
+                  champ: x.c,
+                  team: b.team.name,
+                  label: `${b.team.name} · ${tl("Comfort picks")}: ${champName(x.c)}`,
+                  sub: x.why,
+                  value: x.stat,
+                })),
+              ].map((row, idx) => ({ ...row, rank: idx + 1 }))
+            }
           />
           <HubLink to={{ kind: "draft", query: preloadedQuery }} className="text-rw-accent hover:underline font-semibold">
             {tl("Draft board")} ({tl("Bans, phase 1")})

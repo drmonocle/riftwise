@@ -1661,11 +1661,14 @@ const DraftMatchupPanel: React.FC<{
           sub={`${blue.team.name} vs ${red.team.name}`}
           name={`${blue.team.name}-${red.team.name}-draft-lanes`}
           rows={() =>
-            byRole.map(({ rKey, bChamp, rChamp, bPlayer, rPlayer, laneStats }) => ({
+            byRole.map(({ rKey, bChamp, rChamp, bPlayer, rPlayer, laneStats }, idx) => ({
+              rank: idx + 1,
               champ: bChamp || rChamp || undefined,
+              team: blue.team.name,
               label: `${roleName(rKey)}: ${bChamp ? champName(bChamp) : "–"} vs ${rChamp ? champName(rChamp) : "–"}`,
               sub: [bPlayer ? `${bPlayer.name} (${bPlayer.g}G)` : "", rPlayer ? `${rPlayer.name} (${rPlayer.g}G)` : ""].filter(Boolean).join(" vs ") || undefined,
               value: laneStats ? `${winRate(laneStats.bw, laneStats.g)} (${laneStats.g}G)` : undefined,
+              win: laneStats && laneStats.g > 0 ? laneStats.bw / laneStats.g >= 0.5 : undefined,
             }))
           }
         />
@@ -2160,13 +2163,15 @@ const PlayerPools: React.FC<{
               sub={tl("{n} games in this period", { n: p.games })}
               name={`${side.team.name}-player-pools`}
               rows={() =>
-                rows.map((pl) => {
+                rows.map((pl, idx) => {
                   const top = pl.champs
                     .filter((x) => x.g > 0)
                     .sort((a, b) => comfort(b.g, b.w) - comfort(a.g, a.w) || b.g - a.g)
                     .slice(0, 4);
                   return {
+                    rank: idx + 1,
                     champ: top[0]?.c,
+                    team: side.team.name,
                     label: `${pl.name} (${roleName(ROLES[pl.role])})`,
                     sub: top.map((x) => `${champName(x.c)} ${x.g}G (${winRate(x.w, x.g)})`).join(" · ") || tl("No games in this period"),
                   };
@@ -2667,9 +2672,11 @@ const Priorities: React.FC<{
                 open.map(([c, [g, w]], idx) => ({
                   rank: idx + 1,
                   champ: c,
+                  team: side.team.name,
                   label: champName(c),
                   sub: (p.roles.get(c)?.size || 0) > 1 ? tl("flex") : undefined,
                   value: `${g}G · ${winRate(w, g)}`,
+                  win: g > 0 ? w / g >= 0.5 : undefined,
                 }))
               }
             />

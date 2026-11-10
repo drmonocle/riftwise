@@ -401,22 +401,24 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       section={tl("Matchups")}
                       name={`${cName} vs ${champName(vsMatch.oppCanon)}`}
                       sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
-                      rows={() => [
-                        {
-                          champ: vsMatch.oppCanon,
-                          label: `${cName} vs ${champName(vsMatch.oppCanon)}`,
-                          sub: `${vsMatch.totalG}G · ${vsMatch.totalW}W–${vsMatch.totalG - vsMatch.totalW}L${vsMatch.avgGd != null ? ` · ${vsMatch.avgGd > 0 ? "+" : ""}${vsMatch.avgGd} GD@15` : ""}`,
-                          value: `${Math.round((vsMatch.totalW / vsMatch.totalG) * 100)}%`,
-                          win: vsMatch.totalW / vsMatch.totalG >= 0.5,
-                        },
-                        ...vsMatch.roles.map((r) => ({
-                          champ: rawChamp || undefined,
-                          label: r.role >= 0 ? roleName(ROLES[r.role]) : tl("Every role"),
-                          sub: `${r.g}G · ${r.w}W–${r.g - r.w}L${r.gd != null ? ` · ${r.gd > 0 ? "+" : ""}${r.gd} GD@15` : ""}`,
-                          value: `${Math.round((r.w / r.g) * 100)}%`,
-                          win: r.w / r.g >= 0.5,
-                        })),
-                      ]}
+                      rows={() =>
+                        [
+                          {
+                            champ: vsMatch.oppCanon,
+                            label: `${cName} vs ${champName(vsMatch.oppCanon)}`,
+                            sub: `${vsMatch.totalG}G · ${vsMatch.totalW}W–${vsMatch.totalG - vsMatch.totalW}L${vsMatch.avgGd != null ? ` · ${vsMatch.avgGd > 0 ? "+" : ""}${vsMatch.avgGd} GD@15` : ""}`,
+                            value: `${Math.round((vsMatch.totalW / vsMatch.totalG) * 100)}%`,
+                            win: vsMatch.totalW / vsMatch.totalG >= 0.5,
+                          },
+                          ...vsMatch.roles.map((r) => ({
+                            champ: rawChamp || undefined,
+                            label: r.role >= 0 ? roleName(ROLES[r.role]) : tl("Every role"),
+                            sub: `${r.g}G · ${r.w}W–${r.g - r.w}L${r.gd != null ? ` · ${r.gd > 0 ? "+" : ""}${r.gd} GD@15` : ""}`,
+                            value: `${Math.round((r.w / r.g) * 100)}%`,
+                            win: r.w / r.g >= 0.5,
+                          })),
+                        ].map((row, idx) => ({ rank: idx + 1, ...row }))
+                      }
                     />
                     <CopyMatchupPost
                       cName={cName}

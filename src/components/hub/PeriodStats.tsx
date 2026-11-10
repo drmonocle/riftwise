@@ -386,21 +386,23 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; teamSlu
             section={teamName ? `${teamName} · ${tl("Win rate when…")}` : tl("Win rate when…")}
             sub={periodLabel}
             name={`${teamName || "team"}-win-when`}
-            rows={() => [
-              ...d.firsts.map((x) => ({
-                team: teamName,
-                label: label[x.key],
-                sub: `${tl("Opponent got it")}: ${wrStr(x.lost)}`,
-                value: wrStr(x.got),
-                win: x.got[0] > 0 ? x.got[1] / x.got[0] >= 0.5 : undefined,
-              })),
-              ...d.gold.map((x) => ({
-                team: teamName,
-                label: `${tl("Gold at 15 minutes")} · ${label[x.key]}`,
-                value: wrStr([x.g, x.w]),
-                win: x.g > 0 ? x.w / x.g >= 0.5 : undefined,
-              })),
-            ]}
+            rows={() =>
+              [
+                ...d.firsts.map((x) => ({
+                  team: teamName,
+                  label: label[x.key],
+                  sub: `${tl("Opponent got it")}: ${wrStr(x.lost)}`,
+                  value: wrStr(x.got),
+                  win: x.got[0] > 0 ? x.got[1] / x.got[0] >= 0.5 : undefined,
+                })),
+                ...d.gold.map((x) => ({
+                  team: teamName,
+                  label: `${tl("Gold at 15 minutes")} · ${label[x.key]}`,
+                  value: wrStr([x.g, x.w]),
+                  win: x.g > 0 ? x.w / x.g >= 0.5 : undefined,
+                })),
+              ].map((row, idx) => ({ rank: idx + 1, ...row }))
+            }
           />
         </div>
       </div>
@@ -962,9 +964,11 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                   agg.champs.slice(0, 10).map((c, idx) => ({
                     rank: idx + 1,
                     champ: c.c,
+                    team: who?.club || undefined,
                     label: champName(c.c),
                     sub: `${c.g}G · KDA ${fmtN(c.kda)}${c.gd15 != null ? ` · GD@15 ${signed(c.gd15)}` : ""}`,
                     value: winRate(c.w, c.g),
+                    win: c.g > 0 ? c.w / c.g >= 0.5 : undefined,
                   }))
                 }
               />
