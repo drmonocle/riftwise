@@ -513,7 +513,12 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
           {hs.map((h) => (
             <li key={h.year} className="flex items-center justify-between gap-2 min-w-0">
               <span className="flex items-center gap-1.5 min-w-0">
-                <span className="tabular-nums text-rw-muted w-9">{yearOnly(h.year)}</span>
+                <HubLink
+                  to={{ kind: "finder", query: `year=${encodeURIComponent(yearOnly(h.year))}` }}
+                  className="tabular-nums text-rw-muted hover:text-rw-accent hover:underline w-9"
+                >
+                  {yearOnly(h.year)}
+                </HubLink>
                 {h.region && <RegionFlag code={h.region} />}
                 <span className="truncate text-rw-text">{h.country}</span>
                 {h.team && (
@@ -524,7 +529,16 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   </span>
                 )}
               </span>
-              <span className={`shrink-0 font-semibold ${h.best === 1 ? "text-rw-accent" : "text-rw-sub"}`}>{h.region ? placeText(h.best) : "–"}</span>
+              {h.region && h.team ? (
+                <HubLink
+                  to={{ kind: "team", slug: prettySlug(h.team), tab: "tournaments" }}
+                  className={`shrink-0 font-semibold hover:underline ${h.best === 1 ? "text-rw-accent" : "text-rw-sub hover:text-rw-accent"}`}
+                >
+                  {placeText(h.best)}
+                </HubLink>
+              ) : (
+                <span className={`shrink-0 font-semibold ${h.best === 1 ? "text-rw-accent" : "text-rw-sub"}`}>{h.region ? placeText(h.best) : "–"}</span>
+              )}
             </li>
           ))}
         </List>
@@ -572,7 +586,11 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   const maxG = Math.max(1, ...ys.map((y) => y.games));
                   return ys.map((y) => (
                     <tr key={y.year} className="border-t border-rw-border whitespace-nowrap">
-                      <td className="px-2 py-1 text-rw-text font-semibold" data-sort={editionYear(y.year) || 0}>{yearOnly(y.year)}</td>
+                      <td className="px-2 py-1 text-rw-text font-semibold" data-sort={editionYear(y.year) || 0}>
+                        <HubLink to={{ kind: "finder", query: `year=${encodeURIComponent(yearOnly(y.year))}` }} className="hover:text-rw-accent hover:underline">
+                          {yearOnly(y.year)}
+                        </HubLink>
+                      </td>
                       <td className="px-2 py-1 text-right tabular-nums" data-sort={y.games}>
                         <span className="inline-flex items-center justify-end gap-1.5">
                           <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
@@ -590,13 +608,17 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                         {y.blue == null ? (
                           "–"
                         ) : (
-                          <span className="inline-flex items-center justify-end gap-1.5">
+                          <HubLink
+                            to={{ kind: "finder", query: `year=${encodeURIComponent(yearOnly(y.year))}&side=b` }}
+                            className="inline-flex items-center justify-end gap-1.5 hover:text-rw-accent hover:underline"
+                            title={tl("Game finder")}
+                          >
                             <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
                               <span className="h-full" style={{ width: `${y.blue}%`, background: "#4a9eff" }} />
                               <span className="h-full" style={{ width: `${100 - y.blue}%`, background: "var(--rw-red)" }} />
                             </span>
                             <span className="w-8 text-right">{y.blue}%</span>
-                          </span>
+                          </HubLink>
                         )}
                       </td>
                       <td className="px-2 py-1 text-right tabular-nums" data-sort={y.min ?? -1}>
@@ -640,7 +662,11 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                           "–"
                         )}
                       </td>
-                      <td className="px-2 py-1 text-right tabular-nums text-rw-sub" data-sort={y.newTeams * 100 + y.newPlayers}>{tl("{t} teams · {p} players", { t: y.newTeams, p: y.newPlayers })}</td>
+                      <td className="px-2 py-1 text-right tabular-nums text-rw-sub" data-sort={y.newTeams * 100 + y.newPlayers}>
+                        <HubLink to={{ kind: "finder", query: `year=${encodeURIComponent(yearOnly(y.year))}` }} className="hover:text-rw-accent hover:underline">
+                          {tl("{t} teams · {p} players", { t: y.newTeams, p: y.newPlayers })}
+                        </HubLink>
+                      </td>
                     </tr>
                   ));
                 })()}
@@ -700,10 +726,10 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 {trend.regions.map((code) => (
                   <tr key={code} className="border-t border-rw-border">
                     <td className="px-2 py-1 whitespace-nowrap" data-sort={regionLabel(code)}>
-                      <span className="flex items-center gap-1.5">
+                      <HubLink to={{ kind: "leagues" }} className="flex items-center gap-1.5 hover:text-rw-accent">
                         <RegionFlag code={code} />
-                        {regionLabel(code)}
-                      </span>
+                        <span>{regionLabel(code)}</span>
+                      </HubLink>
                     </td>
                     {trend.years.map((y) => {
                       const r = y.rows.find((x) => x.code === code);
@@ -717,7 +743,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                           title={r ? `${r.ow}-${r.ol}` : undefined}
                           style={pct == null ? undefined : { background: `color-mix(in srgb, ${pct >= 50 ? "var(--rw-teal)" : "var(--rw-red)"} ${Math.round(Math.abs(pct - 50) * 1.2)}%, transparent)` }}
                         >
-                          {pct == null ? <span className="text-rw-muted">·</span> : pct}
+                          {pct == null ? (
+                            <span className="text-rw-muted">·</span>
+                          ) : (
+                            <HubLink to={{ kind: "finder", query: `year=${encodeURIComponent(yearOnly(y.y))}` }} className="hover:underline">
+                              {pct}
+                            </HubLink>
+                          )}
                         </td>
                       );
                     })}

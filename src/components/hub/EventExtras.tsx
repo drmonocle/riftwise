@@ -304,7 +304,17 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                   style={{ background: DRAKE_COLOR[k.toLowerCase()] || "var(--rw-accent)" }}
                 />
                 {tl(DRAKE[k] || k)}{" "}
-                <span className="text-rw-text font-semibold tabular-nums">{n}</span>
+                {slug ? (
+                  <HubLink
+                    to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}` }}
+                    className="text-rw-text font-semibold tabular-nums hover:text-rw-accent hover:underline"
+                    title={tl("Game finder")}
+                  >
+                    {n}
+                  </HubLink>
+                ) : (
+                  <span className="text-rw-text font-semibold tabular-nums">{n}</span>
+                )}
                 <span className="text-rw-muted text-[10px] tabular-nums">({Math.round((n / totalDrakes) * 100)}%)</span>
               </span>
             ))}
@@ -445,7 +455,9 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
               <TeamLogo name={t.t} size={16} />
               <TeamLink name={t.t} u={t.u} />
               {t.r && (
-                <span className="text-rw-muted text-[10px] ml-0.5">{regionName(t.r, t.r)}</span>
+                <HubLink to={{ kind: "leagues" }} className="text-rw-muted hover:text-rw-accent hover:underline text-[10px] ml-0.5">
+                  {regionName(t.r, t.r)}
+                </HubLink>
               )}
               {eventSlug && (
                 <HubLink

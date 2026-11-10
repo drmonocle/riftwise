@@ -986,7 +986,13 @@ const CareerTimeline: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
                 <span className="flex items-center gap-2 min-w-0">
                   <TeamLogo name={t.n} size={20} />
                   <TeamLink name={t.n} u={t.u} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
-                  <span className="text-[11px] text-rw-muted tabular-nums shrink-0">{yrLabel}</span>
+                  <HubLink
+                    to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${ty}` }}
+                    className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline tabular-nums shrink-0"
+                    title={`${tl("Stats for")} ${ty}`}
+                  >
+                    {yrLabel}
+                  </HubLink>
                 </span>
                 <HubLink
                   to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${ty}` }}

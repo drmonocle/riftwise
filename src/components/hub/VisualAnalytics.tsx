@@ -285,10 +285,11 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
               {tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {tags.map((x) => (
-                    <span
+                    <HubLink
                       key={x.tag}
+                      to={{ kind: "player", slug: p.u, tab: "stats" }}
                       title={x.why}
-                      className={`px-2.5 py-1 rounded-full border text-[11px] ${
+                      className={`px-2.5 py-1 rounded-full border text-[11px] hover:border-rw-accent/60 transition-colors ${
                         x.good === true
                           ? "border-rw-teal/60 bg-rw-teal/10 text-rw-teal"
                           : x.good === false
@@ -297,7 +298,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                       }`}
                     >
                       <span className="font-semibold">{x.tag}</span> <span className="text-rw-muted">· {x.why}</span>
-                    </span>
+                    </HubLink>
                   ))}
                 </div>
               )}
@@ -1001,8 +1002,10 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                     </HubLink>
                   </div>
                   {streakN >= 2 && streakWon != null && (
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold border tabular-nums ${
+                    <HubLink
+                      to={{ kind: "team", slug: t.u, tab: "matches" }}
+                      title={tl("Matches")}
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold border tabular-nums hover:border-rw-accent/60 transition-colors ${
                         streakWon
                           ? "border-rw-teal/60 bg-rw-teal/10 text-rw-teal"
                           : "border-rw-red/60 bg-rw-red/10 text-rw-red"
@@ -1010,7 +1013,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                     >
                       {streakN}
                       {streakWon ? tc("short result", "W") : tc("short result", "L")}
-                    </span>
+                    </HubLink>
                   )}
                 </div>
 

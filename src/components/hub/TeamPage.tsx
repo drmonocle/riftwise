@@ -1665,10 +1665,11 @@ const TeamPlaystyleOverview: React.FC<{ t: HubTeam }> = ({ t }) => {
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {tags.map((x) => (
-                <span
+                <HubLink
                   key={x.tag}
+                  to={{ kind: "team", slug: t.u, tab: "stats" }}
                   title={x.why}
-                  className={`px-2.5 py-1 rounded-full border text-[11px] ${
+                  className={`px-2.5 py-1 rounded-full border text-[11px] hover:border-rw-accent/60 transition-colors ${
                     x.good === true
                       ? "border-rw-teal/60 bg-rw-teal/10 text-rw-teal"
                       : x.good === false
@@ -1677,7 +1678,7 @@ const TeamPlaystyleOverview: React.FC<{ t: HubTeam }> = ({ t }) => {
                   }`}
                 >
                   <span className="font-semibold">{x.tag}</span> <span className="text-rw-muted">· {x.why}</span>
-                </span>
+                </HubLink>
               ))}
             </div>
           )}

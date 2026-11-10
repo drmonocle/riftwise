@@ -925,14 +925,30 @@ export const PlayerOpponents: React.FC<{
                     />
                   </td>
                   {hasDpm && (
-                    <td className={`${td} text-rw-sub tabular-nums`} data-sort={o.dpm ?? -1}>{o.dpm != null ? fmtNum(o.dpm) : "–"}</td>
+                    <td className={`${td} text-rw-sub tabular-nums`} data-sort={o.dpm ?? -1}>
+                      {o.dpm != null ? (
+                        <HubLink
+                          to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(o.u || prettySlug(o.opp))}${periodQuerySuffix(period || scope)}` }}
+                          className="hover:text-rw-accent hover:underline"
+                          title={tl("Game finder")}
+                        >
+                          <span onClick={(e) => e.stopPropagation()}>{fmtNum(o.dpm)}</span>
+                        </HubLink>
+                      ) : (
+                        "–"
+                      )}
+                    </td>
                   )}
                   {hasGd15 && (
                     <td className={`${td} tabular-nums`} data-sort={o.gd15 ?? -99999}>
                       {o.gd15 != null ? (
-                        <span className={o.gd15 >= 0 ? "text-rw-teal font-semibold" : "text-rw-red"}>
-                          {o.gd15 > 0 ? `+${fmtNum(o.gd15)}` : fmtNum(o.gd15)}
-                        </span>
+                        <HubLink
+                          to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(o.u || prettySlug(o.opp))}${periodQuerySuffix(period || scope)}` }}
+                          className={`hover:underline ${o.gd15 >= 0 ? "text-rw-teal font-semibold" : "text-rw-red"}`}
+                          title={tl("Game finder")}
+                        >
+                          <span onClick={(e) => e.stopPropagation()}>{o.gd15 > 0 ? `+${fmtNum(o.gd15)}` : fmtNum(o.gd15)}</span>
+                        </HubLink>
                       ) : (
                         <span className="text-rw-muted">–</span>
                       )}
@@ -1130,7 +1146,15 @@ export const TeamOpponentsChart: React.FC<{
                   <td className={td} data-sort={o.g ? o.w / o.g : -1}>
                     <WinBar w={o.w} g={o.g} />
                   </td>
-                  <td className={`${td} text-rw-muted tabular-nums`} data-sort={o.last || ""}>{fmtDate(o.last)}</td>
+                  <td className={`${td} text-rw-muted tabular-nums`} data-sort={o.last || ""}>
+                    <HubLink
+                      to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(o.u || prettySlug(o.n))}` }}
+                      className="hover:text-rw-accent hover:underline"
+                      title={tl("Game finder")}
+                    >
+                      <span onClick={(e) => e.stopPropagation()}>{fmtDate(o.last)}</span>
+                    </HubLink>
+                  </td>
                   <td className={`${td} text-right whitespace-nowrap`} onClick={(e) => e.stopPropagation()}>
                     {(() => {
                       const oppSlug = o.u || prettySlug(o.n);
@@ -1436,15 +1460,27 @@ export const TeamPeriodOpponents: React.FC<{
                   {hasGd15 && (
                     <td className={`${td} tabular-nums`} data-sort={o.gd15 ?? -99999}>
                       {o.gd15 != null ? (
-                        <span className={o.gd15 >= 0 ? "text-rw-teal font-semibold" : "text-rw-red"}>
-                          {o.gd15 > 0 ? `+${fmtNum(o.gd15)}` : fmtNum(o.gd15)}
-                        </span>
+                        <HubLink
+                          to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(o.u || prettySlug(o.opp))}${pSuffix}` }}
+                          className={`hover:underline ${o.gd15 >= 0 ? "text-rw-teal font-semibold" : "text-rw-red"}`}
+                          title={tl("Game finder")}
+                        >
+                          <span onClick={(e) => e.stopPropagation()}>{o.gd15 > 0 ? `+${fmtNum(o.gd15)}` : fmtNum(o.gd15)}</span>
+                        </HubLink>
                       ) : (
                         <span className="text-rw-muted">–</span>
                       )}
                     </td>
                   )}
-                  <td className={`${td} text-rw-muted tabular-nums`} data-sort={o.last || ""}>{fmtDate(o.last)}</td>
+                  <td className={`${td} text-rw-muted tabular-nums`} data-sort={o.last || ""}>
+                    <HubLink
+                      to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(o.u || prettySlug(o.opp))}${pSuffix}` }}
+                      className="hover:text-rw-accent hover:underline"
+                      title={tl("Game finder")}
+                    >
+                      <span onClick={(e) => e.stopPropagation()}>{fmtDate(o.last)}</span>
+                    </HubLink>
+                  </td>
                   {teamName && (
                     <td className={`${td} text-right whitespace-nowrap`} onClick={(e) => e.stopPropagation()}>
                       {o.u && (

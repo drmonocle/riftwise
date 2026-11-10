@@ -6,7 +6,7 @@
 import React, { useMemo, useState } from "react";
 import { tl, regionName } from "../../i18n";
 import type { EventLines } from "../../hub/worldsFacts";
-import { Section } from "./ui";
+import { HubLink, Section } from "./ui";
 import { STable } from "../STable";
 import { SectionCard } from "./BroadcastCard";
 import { chanceShade } from "../SwissStandings";
@@ -209,10 +209,10 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; nam
             {t.rows.map((c) => (
               <tr key={c} className="border-t border-rw-border">
                 <td className="px-2 py-1" data-sort={regionLabel(c)}>
-                  <span className="flex items-center gap-1.5 whitespace-nowrap">
+                  <HubLink to={{ kind: "leagues" }} className="flex items-center gap-1.5 whitespace-nowrap hover:text-rw-accent">
                     <RegionFlag code={c} />
-                    <span className="text-rw-text font-semibold">{regionLabel(c)}</span>
-                  </span>
+                    <span className="text-rw-text hover:text-rw-accent font-semibold">{regionLabel(c)}</span>
+                  </HubLink>
                 </td>
                 {t.cols.map((y) => {
                   const wl = t.cells.get(c)!.get(y);
@@ -220,13 +220,14 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; nam
                   const p = wl[0] / (wl[0] + wl[1]);
                   return (
                     <td key={y} data-sort={Math.round(p * 100)} className="px-0.5 py-0.5 text-center">
-                      <span
-                        className={`block min-w-[2.5rem] rounded-sm px-1 py-0.5 tabular-nums text-rw-text ${wl[0] + wl[1] < 3 ? "opacity-45" : ""}`}
+                      <HubLink
+                        to={{ kind: "finder", query: `year=${encodeURIComponent(y)}` }}
+                        className={`block min-w-[2.5rem] rounded-sm px-1 py-0.5 tabular-nums text-rw-text hover:ring-1 hover:ring-rw-accent/60 ${wl[0] + wl[1] < 3 ? "opacity-45" : ""}`}
                         style={chanceShade(p)}
                         title={tl("{region} {year}: {w}-{l} in series against other regions", { region: regionLabel(c), year: y, w: wl[0], l: wl[1] })}
                       >
                         {Math.round(p * 100)}
-                      </span>
+                      </HubLink>
                     </td>
                   );
                 })}
@@ -299,10 +300,10 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 return (
                   <tr key={r.code} className="border-t border-rw-border">
                     <td className="px-2 py-1" data-sort={regionLabel(r.code)}>
-                      <span className="flex items-center gap-1.5 min-w-0">
+                      <HubLink to={{ kind: "leagues" }} className="flex items-center gap-1.5 min-w-0 hover:text-rw-accent">
                         <RegionFlag code={r.code} />
-                        <span className="truncate text-rw-text font-semibold">{regionLabel(r.code)}</span>
-                      </span>
+                        <span className="truncate text-rw-text hover:text-rw-accent font-semibold">{regionLabel(r.code)}</span>
+                      </HubLink>
                     </td>
                     <td className={cell} data-sort={r.teams}>{r.teams}</td>
                     <td className={cell} data-sort={r.sw * 1000 - r.sl}>
@@ -356,14 +357,18 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                     <td className={`${cell} ${r.best === 1 ? "text-rw-accent font-bold" : ""}`} data-sort={r.best ? -r.best : -999}>{bestText(r.best)}</td>
                     {all && (
                       <td className={`${cell} font-bold ${r.titles ? "text-rw-accent" : "text-rw-muted"}`} data-sort={r.titles}>
-                        <span className="inline-flex items-center justify-end gap-1.5">
-                          {tBar > 0 && (
-                            <span className="hidden sm:inline-block w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
-                              <span className="block h-full rounded-full bg-rw-accent/80" style={{ width: `${tBar}%` }} />
-                            </span>
-                          )}
+                        {r.titles > 0 ? (
+                          <HubLink to={{ kind: "titles" }} className="inline-flex items-center justify-end gap-1.5 hover:underline">
+                            {tBar > 0 && (
+                              <span className="hidden sm:inline-block w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
+                                <span className="block h-full rounded-full bg-rw-accent/80" style={{ width: `${tBar}%` }} />
+                              </span>
+                            )}
+                            <span>{r.titles}</span>
+                          </HubLink>
+                        ) : (
                           <span>{r.titles}</span>
-                        </span>
+                        )}
                       </td>
                     )}
                     {all && (
@@ -411,10 +416,14 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   <div className="flex items-center justify-between gap-2 min-w-0">
                     <span className="flex items-center gap-1.5 min-w-0">
                       <RegionFlag code={p.a} />
-                      <span className="truncate text-rw-text font-medium">{regionLabel(p.a)}</span>
+                      <HubLink to={{ kind: "leagues" }} className="truncate text-rw-text font-medium hover:text-rw-accent hover:underline">
+                        {regionLabel(p.a)}
+                      </HubLink>
                       <span className="text-rw-muted">vs</span>
                       <RegionFlag code={p.b} />
-                      <span className="truncate text-rw-sub">{regionLabel(p.b)}</span>
+                      <HubLink to={{ kind: "leagues" }} className="truncate text-rw-sub hover:text-rw-accent hover:underline">
+                        {regionLabel(p.b)}
+                      </HubLink>
                     </span>
                     <span className="tabular-nums shrink-0">
                       <span className="text-rw-teal font-bold">{p.wa}</span>

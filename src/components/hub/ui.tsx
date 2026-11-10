@@ -295,6 +295,7 @@ export function useCurrentTitle(route: HubRoute): string {
 export const HubLink: React.FC<{
   to: HubRoute;
   className?: string;
+  style?: React.CSSProperties;
   title?: string;
   onNavigate?: () => void;
   onMouseMove?: React.MouseEventHandler<HTMLAnchorElement>;
@@ -302,6 +303,7 @@ export const HubLink: React.FC<{
 }> = ({
   to,
   className,
+  style,
   title,
   onNavigate,
   onMouseMove,
@@ -310,6 +312,7 @@ export const HubLink: React.FC<{
   <a
     href={IS_WEB ? hubPath(to) : "#"}
     title={title}
+    style={style}
     className={className ?? "text-rw-text hover:text-rw-accent hover:underline"}
     onMouseEnter={() => prefetchSoon(to)}
     onMouseMove={onMouseMove}
