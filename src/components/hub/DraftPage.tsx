@@ -1562,7 +1562,7 @@ export function computeDraftSuggestions(opts: {
         if (myLanePick) {
           const myCh = champMap[myLanePick] || champMap[bare(myLanePick)];
           const mRows = myCh?.matchups12?.[ROLES[targetRole]] || myCh?.matchups?.[ROLES[targetRole]] || [];
-          const hit = mRows.find((m) => bare(m[0]) === bare(c) && (m[3] ?? m[1]) >= 2);
+          const hit = mRows.find((m) => sameChamp(m[0], c) && (m[3] ?? m[1]) >= 2);
           if (hit && hit[4] != null && hit[4] <= -120) {
             score *= 1.35;
             counterVs = { myC: myLanePick, oppGd15: -hit[4] };
@@ -1651,11 +1651,11 @@ export function computeDraftSuggestions(opts: {
     if (!roleTaken && tend && myPicks.length > 0) {
       for (const [p1, p2, pg, pw] of [...tend.botDuos, ...tend.midJungle]) {
         if (pg < 2) continue;
-        if (bare(p1) === bare(c) && myPicks.some((mp) => bare(mp) === bare(p2))) {
+        if (sameChamp(p1, c) && myPicks.some((mp) => sameChamp(mp, p2))) {
           duoWith = { partner: p2, g: pg, w: pw };
           break;
         }
-        if (bare(p2) === bare(c) && myPicks.some((mp) => bare(mp) === bare(p1))) {
+        if (sameChamp(p2, c) && myPicks.some((mp) => sameChamp(mp, p1))) {
           duoWith = { partner: p1, g: pg, w: pw };
           break;
         }
@@ -1669,7 +1669,7 @@ export function computeDraftSuggestions(opts: {
       if (oppLanePick) {
         const oppCh = champMap[oppLanePick] || champMap[bare(oppLanePick)];
         const mRows = oppCh?.matchups12?.[ROLES[r]] || oppCh?.matchups?.[ROLES[r]] || [];
-        const hit = mRows.find((m) => bare(m[0]) === bare(c) && (m[3] ?? m[1]) >= 2);
+        const hit = mRows.find((m) => sameChamp(m[0], c) && (m[3] ?? m[1]) >= 2);
         if (hit && hit[4] != null && hit[4] <= -100) {
           score *= 1.32;
           laneEdge = { oppC: oppLanePick, myGd15: -hit[4] };
@@ -1824,13 +1824,13 @@ const DraftMatchupPanel: React.FC<{
     if (bChamp && rChamp) {
       const bCh = champMap[bChamp] || champMap[bare(bChamp)];
       const mRows = bCh?.matchups12?.[rKey] || bCh?.matchups?.[rKey] || [];
-      const hit = mRows.find((m) => bare(m[0]) === bare(rChamp));
+      const hit = mRows.find((m) => sameChamp(m[0], rChamp));
       if (hit) {
         laneStats = { g: hit[1], bw: hit[2], bgd: hit[4] ?? null };
       } else {
         const rCh = champMap[rChamp] || champMap[bare(rChamp)];
         const rmRows = rCh?.matchups12?.[rKey] || rCh?.matchups?.[rKey] || [];
-        const rHit = rmRows.find((m) => bare(m[0]) === bare(bChamp));
+        const rHit = rmRows.find((m) => sameChamp(m[0], bChamp));
         if (rHit) {
           laneStats = { g: rHit[1], bw: rHit[1] - rHit[2], bgd: rHit[4] != null ? -rHit[4] : null };
         }
@@ -1842,12 +1842,12 @@ const DraftMatchupPanel: React.FC<{
   const activeDuos: { side: Who; teamName: string; teamSlug: string; label: string; c1: string; c2: string; g: number; w: number }[] = [];
   const checkDuos = (w: Who, tName: string, tSlug: string, pks: string[], tend: ReturnType<typeof draftTendencies>) => {
     for (const [c1, c2, g, wins] of tend.midJungle) {
-      if (pks.some((p) => bare(p) === bare(c1)) && pks.some((p) => bare(p) === bare(c2))) {
+      if (pks.some((p) => sameChamp(p, c1)) && pks.some((p) => sameChamp(p, c2))) {
         activeDuos.push({ side: w, teamName: tName, teamSlug: tSlug, label: tl("Jungle + mid pairs"), c1, c2, g, w: wins });
       }
     }
     for (const [c1, c2, g, wins] of tend.botDuos) {
-      if (pks.some((p) => bare(p) === bare(c1)) && pks.some((p) => bare(p) === bare(c2))) {
+      if (pks.some((p) => sameChamp(p, c1)) && pks.some((p) => sameChamp(p, c2))) {
         activeDuos.push({ side: w, teamName: tName, teamSlug: tSlug, label: tl("Bot lane pairs"), c1, c2, g, w: wins });
       }
     }
@@ -2907,7 +2907,18 @@ const ChampInfo: React.FC<{
         >
           {tl("Compare")} →
         </HubLink>
-        <HubLink to={{ kind: "counters", query: `champ=${prettySlug(c)}` }} className="text-rw-accent hover:underline font-semibold">
+        <HubLink
+          to={{
+            kind: "counters",
+            query: new URLSearchParams({
+              champ: prettySlug(c),
+              ...((pools.b.roles.get(c)?.size || pools.r.roles.get(c)?.size)
+                ? { role: ROLES[[...(pools.b.roles.get(c) || []), ...(pools.r.roles.get(c) || [])][0]] }
+                : {}),
+            }).toString(),
+          }}
+          className="text-rw-accent hover:underline font-semibold"
+        >
           {tl("Counter-picks")} →
         </HubLink>
         <HubLink
@@ -2924,6 +2935,9 @@ const ChampInfo: React.FC<{
             kind: "tiers",
             query: new URLSearchParams({
               q: c,
+              ...((pools.b.roles.get(c)?.size || pools.r.roles.get(c)?.size)
+                ? { role: ROLES[[...(pools.b.roles.get(c) || []), ...(pools.r.roles.get(c) || [])][0]] }
+                : {}),
               ...(period.startsWith("y") && period.length === 5
                 ? { key: period }
                 : period.startsWith("e:")
@@ -2940,6 +2954,9 @@ const ChampInfo: React.FC<{
             kind: "leaders",
             query: new URLSearchParams({
               champ: c,
+              ...((pools.b.roles.get(c)?.size || pools.r.roles.get(c)?.size)
+                ? { role: ROLES[[...(pools.b.roles.get(c) || []), ...(pools.r.roles.get(c) || [])][0]] }
+                : {}),
               ...(period.startsWith("y")
                 ? { year: period.slice(1) }
                 : period.startsWith("e:")
@@ -2964,6 +2981,10 @@ const ChampInfo: React.FC<{
           to={{
             kind: "finder",
             query: `champ=${encodeURIComponent(c)}${
+              pools.b.roles.get(c)?.size || pools.r.roles.get(c)?.size
+                ? `&role=${encodeURIComponent(ROLES[[...(pools.b.roles.get(c) || []), ...(pools.r.roles.get(c) || [])][0]])}`
+                : ""
+            }${
               period.startsWith("y") ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""
             }`,
           }}

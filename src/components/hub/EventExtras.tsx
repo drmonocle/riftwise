@@ -170,7 +170,14 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
             {slug && (
               <>
                 <HubLink
-                  to={{ kind: "records" }}
+                  to={{
+                    kind: "records",
+                    query:
+                      new URLSearchParams({
+                        ...(yr ? { year: yr } : {}),
+                        ...(slug ? { q: slug } : {}),
+                      }).toString() || undefined,
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
                 >
@@ -559,7 +566,16 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                   </HubLink>
                 </>
               )}
-              <HubLink to={{ kind: "records", query: "q=pentakill" }} className="text-[11px] text-rw-accent hover:underline">
+              <HubLink
+                to={{
+                  kind: "records",
+                  query: new URLSearchParams({
+                    q: "pentakill",
+                    ...(yr ? { year: yr } : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
                 {tl("Records")} →
               </HubLink>
               <HubLink
@@ -577,7 +593,23 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
               >
                 {tl("Pro tier list")} →
               </HubLink>
-              <HubLink to={{ kind: "rankings", ...(leagueSlug ? { query: `league=${encodeURIComponent(leagueSlug)}` } : {}) }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{
+                  kind: "rankings",
+                  query:
+                    new URLSearchParams({
+                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(featGame?.a
+                        ? {
+                            q: [prettySlug(featGame.a), featGame.b ? prettySlug(featGame.b) : ""]
+                              .filter(Boolean)
+                              .join(","),
+                          }
+                        : {}),
+                    }).toString() || undefined,
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {tl("Power rankings")} →
               </HubLink>
             </span>
@@ -669,7 +701,23 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
               <HubLink to={{ kind: "tiers", query: tiersQuery }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Pro tier list")} →
               </HubLink>
-              <HubLink to={{ kind: "rankings", ...(leagueSlug ? { query: `league=${encodeURIComponent(leagueSlug)}` } : {}) }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{
+                  kind: "rankings",
+                  query:
+                    new URLSearchParams({
+                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(featGame?.a
+                        ? {
+                            q: [prettySlug(featGame.a), featGame.b ? prettySlug(featGame.b) : ""]
+                              .filter(Boolean)
+                              .join(","),
+                          }
+                        : {}),
+                    }).toString() || undefined,
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {tl("Power rankings")} →
               </HubLink>
             </span>
@@ -1039,7 +1087,11 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
           <HubLink
             to={{
               kind: "best",
-              ...((e.start || e.end) && /^\d{4}/.test(e.start || e.end || "") ? { query: `year=${(e.start || e.end || "").slice(0, 4)}` } : {}),
+              query:
+                new URLSearchParams({
+                  ...(e.lu ? { league: e.lu } : {}),
+                  ...((e.start || e.end) && /^\d{4}/.test(e.start || e.end || "") ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                }).toString() || undefined,
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"

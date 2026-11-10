@@ -180,7 +180,7 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
                     ...(evYr ? { year: evYr } : {}),
                     ...(eventSlug ? { event: eventSlug } : {}),
                     ...(topChamps[0] && terms.length > 0 ? { champ: topChamps[0] } : {}),
-                    ...(topPlayers.length >= 1 && terms.length > 0 ? { q: topPlayers.join(",") } : {}),
+                    ...(topPlayers.length >= 1 ? { q: topPlayers.join(",") } : {}),
                   }).toString() || undefined,
               }}
               className="text-rw-accent hover:underline"
@@ -194,7 +194,7 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
                   new URLSearchParams({
                     ...(evYr ? { year: evYr } : {}),
                     ...(eventSlug ? { event: eventSlug } : {}),
-                    ...(topChamps[0] && terms.length > 0 ? { q: topChamps[0] } : {}),
+                    ...(topChamps.length >= 1 ? { q: topChamps.join(",") } : {}),
                   }).toString() || undefined,
               }}
               className="text-rw-accent hover:underline"
@@ -208,7 +208,7 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
                   new URLSearchParams({
                     ...(evYr ? { key: `y${evYr}` } : {}),
                     ...(eventSlug ? { event: eventSlug } : {}),
-                    ...(topChamps[0] && terms.length > 0 ? { q: topChamps[0] } : {}),
+                    ...(topChamps.length >= 1 ? { q: topChamps.join(",") } : {}),
                   }).toString() || undefined,
               }}
               className="text-rw-accent hover:underline"
@@ -571,7 +571,9 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                       new URLSearchParams({
                         ...(evYr ? { key: `y${evYr}` } : {}),
                         ...(eventSlug ? { event: eventSlug } : {}),
-                        q: f.rows[0].champ,
+                        q: [f.rows[0].champ, f.rows[1]?.champ && f.rows[1].champ !== f.rows[0].champ ? f.rows[1].champ : ""]
+                          .filter(Boolean)
+                          .join(","),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
@@ -597,6 +599,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                     kind: "finder",
                     query: new URLSearchParams({
                       champ: f.rows[0].champ,
+                      ...(evYr ? { year: evYr } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
                     }).toString(),
                   }}
@@ -617,6 +620,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                     kind: "leaders",
                     query: new URLSearchParams({
                       champ: f.rows[0].champ,
+                      ...(evYr ? { year: evYr } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
                     }).toString(),
                   }}

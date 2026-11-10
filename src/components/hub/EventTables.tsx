@@ -408,6 +408,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
                 .slice(0, 10)
                 .map((p, idx) => ({
                   rank: idx + 1,
+                  champ: p.c?.[0],
                   team: p.t,
                   label: p.n,
                   sub: `${p.t} · ${roleName(p.r)} · ${pct(per(p.w, p.g, 3))}`,
@@ -735,7 +736,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
               kind: "champions",
               query: new URLSearchParams({
                 ...(e.lu ? { league: e.lu } : {}),
-                ...(e.start?.slice(0, 4) ? { year: e.start.slice(0, 4) } : {}),
+                ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
               }).toString(),
             }}
@@ -749,7 +750,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
               kind: "tiers",
               query: new URLSearchParams({
                 ...(e.lu ? { league: e.lu } : {}),
-                ...(e.start?.slice(0, 4) ? { key: `y${e.start.slice(0, 4)}` } : {}),
+                ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { key: `y${(e.start || e.end || "").slice(0, 4)}` } : {}),
                 event: e.u,
               }).toString(),
             }}
@@ -809,9 +810,9 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
               kind: "leaders",
               query: new URLSearchParams({
                 ...(e.lu ? { league: e.lu } : {}),
-                ...(e.start?.slice(0, 4) ? { year: e.start.slice(0, 4) } : {}),
+                ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
-                ...((search.trim() || rows.length <= 2) && rows.length >= 1
+                ...(rows.length >= 1
                   ? { q: rows.slice(0, 2).map((t) => t.t).join(",") }
                   : {}),
               }).toString(),
