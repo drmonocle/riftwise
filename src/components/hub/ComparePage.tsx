@@ -466,9 +466,22 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
             {k === "team" ? tl("Teams") : tl("Players")}
           </button>
         ))}
+        {ready && (a || b) && (
+          <button
+            type="button"
+            onClick={() => set({ a: b || undefined, b: a || undefined })}
+            className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+            title={`${info.b?.name || ""} ⇄ ${info.a?.name || ""}`}
+          >
+            ⇄
+          </button>
+        )}
         {ready && mode === "team" && (
           <>
-            <HubLink to={{ kind: "prep", a: info.a!.u, b: info.b!.u, period: route.period }} className="text-rw-accent hover:underline">
+            <HubLink
+              to={{ kind: "prep", a: info.a!.u, b: info.b!.u, ...(period !== "all" ? { period } : {}) }}
+              className="text-rw-accent hover:underline"
+            >
               {tl("Match prep")}
             </HubLink>
             <HubLink
@@ -478,7 +491,16 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
               {tl("Draft board")}
             </HubLink>
             <HubLink
-              to={{ kind: "finder", query: `team=${encodeURIComponent(info.a!.u)}&vs=${encodeURIComponent(info.b!.u)}` }}
+              to={{
+                kind: "finder",
+                query: `team=${encodeURIComponent(info.a!.u)}&vs=${encodeURIComponent(info.b!.u)}${
+                  period.startsWith("y") && period.length === 5
+                    ? `&year=${encodeURIComponent(period.slice(1))}`
+                    : period.startsWith("e:")
+                      ? `&event=${encodeURIComponent(period.slice(2))}`
+                      : ""
+                }`,
+              }}
               className="text-rw-accent hover:underline"
             >
               {tl("Game finder")}
@@ -487,13 +509,43 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
         )}
         {ready && mode === "player" && (
           <>
+            {(info.a as HubPlayer).club &&
+              (info.b as HubPlayer).club &&
+              prettySlug((info.a as HubPlayer).club!) !== prettySlug((info.b as HubPlayer).club!) && (
+                <HubLink
+                  to={{
+                    kind: "prep",
+                    a: prettySlug((info.a as HubPlayer).club!),
+                    b: prettySlug((info.b as HubPlayer).club!),
+                    ...(period !== "all" ? { period } : {}),
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Match prep")}
+                </HubLink>
+              )}
             <HubLink
-              to={{ kind: "finder", query: `player=${encodeURIComponent(info.a!.u)}` }}
+              to={{
+                kind: "finder",
+                query: `player=${encodeURIComponent(info.a!.u)}${
+                  period.startsWith("y") && period.length === 5
+                    ? `&year=${encodeURIComponent(period.slice(1))}`
+                    : period.startsWith("e:")
+                      ? `&event=${encodeURIComponent(period.slice(2))}`
+                      : ""
+                }`,
+              }}
               className="text-rw-accent hover:underline"
             >
               {tl("Game finder")}
             </HubLink>
-            <HubLink to={{ kind: "leaders" }} className="text-rw-accent hover:underline">
+            <HubLink
+              to={{
+                kind: "leaders",
+                ...((info.a as HubPlayer).role ? { query: `role=${encodeURIComponent((info.a as HubPlayer).role!)}` } : {}),
+              }}
+              className="text-rw-accent hover:underline"
+            >
               {tl("Leaderboards")}
             </HubLink>
           </>
@@ -943,22 +995,35 @@ export const TeamRows: React.FC<{
             title={tl("Most picked: {team}", { team: s.n })}
             share={`${s.n}-draft-${periodLabel}`}
             right={
-              <SectionCard
-                section={tl("Most picked: {team}", { team: s.n })}
-                sub={periodLabel}
-                name={`${s.n}-picks-${periodLabel}`}
-                rows={() =>
-                  s.t.picks.slice(0, 10).map(([c, n, w], idx) => ({
-                    rank: idx + 1,
-                    champ: c,
-                    team: s.n,
-                    label: champName(c),
-                    sub: tn("{n} game", "{n} games", n),
-                    value: winRate(w, n),
-                    win: n > 0 ? w / n >= 0.5 : undefined,
-                  }))
-                }
-              />
+              <span className="flex flex-wrap items-center gap-2">
+                {s.t.picks.length >= 2 && (
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      query: `champ=${encodeURIComponent(prettySlug(s.t.picks[0][0]))}&vs=${encodeURIComponent(s.t.picks[1][0])}`,
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Counters")} →
+                  </HubLink>
+                )}
+                <SectionCard
+                  section={tl("Most picked: {team}", { team: s.n })}
+                  sub={periodLabel}
+                  name={`${s.n}-picks-${periodLabel}`}
+                  rows={() =>
+                    s.t.picks.slice(0, 10).map(([c, n, w], idx) => ({
+                      rank: idx + 1,
+                      champ: c,
+                      team: s.n,
+                      label: champName(c),
+                      sub: tn("{n} game", "{n} games", n),
+                      value: winRate(w, n),
+                      win: n > 0 ? w / n >= 0.5 : undefined,
+                    }))
+                  }
+                />
+              </span>
             }
           >
             <ul className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
@@ -1300,22 +1365,35 @@ const PlayerRows: React.FC<{
             key={s.n}
             title={tl("Champions: {player}", { player: s.n })}
             right={
-              <SectionCard
-                section={tl("Champions: {player}", { player: s.n })}
-                sub={periodLabel}
-                name={`${s.n}-champs-${periodLabel}`}
-                rows={() =>
-                  s.p.champs.slice(0, 8).map((c, idx) => ({
-                    rank: idx + 1,
-                    champ: c.c,
-                    team: s.club || undefined,
-                    label: champName(c.c),
-                    sub: `${c.g} · ${fmtN(c.kda)} KDA`,
-                    value: winRate(c.w, c.g),
-                    win: c.g > 0 ? c.w / c.g >= 0.5 : undefined,
-                  }))
-                }
-              />
+              <span className="flex flex-wrap items-center gap-2">
+                {s.p.champs.length >= 2 && (
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      query: `champ=${encodeURIComponent(prettySlug(s.p.champs[0].c))}&vs=${encodeURIComponent(s.p.champs[1].c)}`,
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Counters")} →
+                  </HubLink>
+                )}
+                <SectionCard
+                  section={tl("Champions: {player}", { player: s.n })}
+                  sub={periodLabel}
+                  name={`${s.n}-champs-${periodLabel}`}
+                  rows={() =>
+                    s.p.champs.slice(0, 8).map((c, idx) => ({
+                      rank: idx + 1,
+                      champ: c.c,
+                      team: s.club || undefined,
+                      label: champName(c.c),
+                      sub: `${c.g} · ${fmtN(c.kda)} KDA`,
+                      value: winRate(c.w, c.g),
+                      win: c.g > 0 ? c.w / c.g >= 0.5 : undefined,
+                    }))
+                  }
+                />
+              </span>
             }
           >
             <ul className="text-xs space-y-1">
@@ -1382,21 +1460,34 @@ const PlayerRows: React.FC<{
         <Section
           title={tl("Champions both played")}
           right={
-            <SectionCard
-              section={tl("Champions both played")}
-              sub={`${x.name} vs ${y.name} · ${periodLabel}`}
-              name={`${x.name}-vs-${y.name}-shared-champs`}
-              rows={() =>
-                shared.map(({ c, o }, idx) => ({
-                  rank: idx + 1,
-                  champ: c.c,
-                  label: champName(c.c),
-                  sub: `${x.name}: ${c.g} (${winRate(c.w, c.g)})`,
-                  value: `${y.name}: ${o.g} (${winRate(o.w, o.g)})`,
-                  win: c.g > 0 && o.g > 0 && c.w / c.g !== o.w / o.g ? c.w / c.g > o.w / o.g : undefined,
-                }))
-              }
-            />
+            <span className="flex flex-wrap items-center gap-2">
+              {shared.length >= 2 && (
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: `champ=${encodeURIComponent(prettySlug(shared[0].c.c))}&vs=${encodeURIComponent(shared[1].c.c)}`,
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+              )}
+              <SectionCard
+                section={tl("Champions both played")}
+                sub={`${x.name} vs ${y.name} · ${periodLabel}`}
+                name={`${x.name}-vs-${y.name}-shared-champs`}
+                rows={() =>
+                  shared.map(({ c, o }, idx) => ({
+                    rank: idx + 1,
+                    champ: c.c,
+                    label: champName(c.c),
+                    sub: `${x.name}: ${c.g} (${winRate(c.w, c.g)})`,
+                    value: `${y.name}: ${o.g} (${winRate(o.w, o.g)})`,
+                    win: c.g > 0 && o.g > 0 && c.w / c.g !== o.w / o.g ? c.w / c.g > o.w / o.g : undefined,
+                  }))
+                }
+              />
+            </span>
           }
         >
           <STable className="w-full text-xs">
@@ -1547,15 +1638,15 @@ const PlayerHeadToHead: React.FC<{
   const [champFilter, setChampFilter] = useState("");
   const shown = hidden ? meetings.filter((m) => !isFresh(m.a[0])) : meetings;
   const filteredGames = useMemo(() => {
-    const q = champFilter.trim().toLowerCase();
-    if (!q) return shown;
-    return shown.filter(
-      (m) =>
-        champName(m.a[2]).toLowerCase().includes(q) ||
-        m.a[2].toLowerCase().includes(q) ||
-        champName(m.b[2]).toLowerCase().includes(q) ||
-        m.b[2].toLowerCase().includes(q),
-    );
+    const terms = champFilter
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean);
+    if (!terms.length) return shown;
+    return shown.filter((m) => {
+      const hay = `${champName(m.a[2])} ${m.a[2]} ${champName(m.b[2])} ${m.b[2]} ${m.a[9] || ""} ${m.a[0] || ""}`.toLowerCase();
+      return terms.some((t) => hay.includes(t));
+    });
   }, [shown, champFilter]);
   const s = useMemo(() => {
     const w = shown.filter((m) => m.a[6]).length;
@@ -1919,13 +2010,36 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `team=${encodeURIComponent(rows[0].slug)}&vs=${encodeURIComponent(rows[1].slug)}`,
+                  query: `team=${encodeURIComponent(rows[0].slug)}&vs=${encodeURIComponent(rows[1].slug)}${
+                    period.startsWith("y") && period.length === 5
+                      ? `&year=${encodeURIComponent(period.slice(1))}`
+                      : period.startsWith("e:")
+                        ? `&event=${encodeURIComponent(period.slice(2))}`
+                        : ""
+                  }`,
                 }}
                 className="text-rw-accent hover:underline"
               >
                 {tl("Game finder")}
               </HubLink>
             </>
+          )}
+          {mode === "player" && rows.length >= 1 && (
+            <HubLink
+              to={{
+                kind: "finder",
+                query: `player=${encodeURIComponent(rows[0].slug)}${
+                  period.startsWith("y") && period.length === 5
+                    ? `&year=${encodeURIComponent(period.slice(1))}`
+                    : period.startsWith("e:")
+                      ? `&event=${encodeURIComponent(period.slice(2))}`
+                      : ""
+                }`,
+              }}
+              className="text-rw-accent hover:underline"
+            >
+              {tl("Game finder")}
+            </HubLink>
           )}
           <span className="text-rw-muted">{tl("Stats for")}</span>
           <QuickPeriods options={options} value={period} onChange={(p) => set({ period: p })} />
@@ -2019,7 +2133,13 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
                               <HubLink
                                 to={{
                                   kind: "finder",
-                                  query: `team=${encodeURIComponent(rows[i].slug)}&side=${label === tl("Blue side wins") ? "b" : "r"}`,
+                                  query: `team=${encodeURIComponent(rows[i].slug)}&side=${label === tl("Blue side wins") ? "b" : "r"}${
+                                    period.startsWith("y") && period.length === 5
+                                      ? `&year=${encodeURIComponent(period.slice(1))}`
+                                      : period.startsWith("e:")
+                                        ? `&event=${encodeURIComponent(period.slice(2))}`
+                                        : ""
+                                  }`,
                                 }}
                                 className="hover:text-rw-accent hover:underline"
                               >

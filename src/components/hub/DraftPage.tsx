@@ -627,17 +627,29 @@ const Board: React.FC<{
   const takenCount = useMemo(() => all.filter((c) => isChampTaken(c, taken)).length, [all, taken]);
   const availableTotal = hideTaken ? all.length - takenCount : all.length;
 
-  const bq = bare(search.trim());
+  const searchTerms = useMemo(
+    () =>
+      search
+        .trim()
+        .toLowerCase()
+        .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+        .map((s) => s.trim())
+        .filter(Boolean),
+    [search],
+  );
   const shown = useMemo(() => {
     const filtered = all.filter((c) => {
       if (hideTaken && isChampTaken(c, taken)) return false;
-      if (
-        search.trim() &&
-        !champName(c).toLowerCase().includes(search.trim().toLowerCase()) &&
-        !c.toLowerCase().includes(search.trim().toLowerCase()) &&
-        !(bq.length >= 2 && (bare(champName(c)).includes(bq) || bare(c).includes(bq)))
-      ) {
-        return false;
+      if (searchTerms.length > 0) {
+        const cDisp = champName(c).toLowerCase();
+        const cRaw = c.toLowerCase();
+        const cBare = bare(cDisp);
+        const rBare = bare(cRaw);
+        const matches = searchTerms.some((term) => {
+          const tb = bare(term);
+          return cDisp.includes(term) || cRaw.includes(term) || (tb.length >= 2 && (cBare.includes(tb) || rBare.includes(tb)));
+        });
+        if (!matches) return false;
       }
       if (role === "open") {
         if (openRoles.length > 0 && !openRoles.some((r) => champHasRole(c, r, pools))) return false;
@@ -703,7 +715,7 @@ const Board: React.FC<{
       }
       return sy.comf - sx.comf || sy.g - sx.g || sy.bans - sx.bans || sy.career - sx.career || champName(x).localeCompare(champName(y));
     });
-  }, [all, hideTaken, taken, search, bq, role, openRoles, pools, poolFilter, minGames, sortBy]);
+  }, [all, hideTaken, taken, searchTerms, role, openRoles, pools, poolFilter, minGames, sortBy]);
 
   const hasActiveFilters =
     !!search.trim() || role !== null || poolFilter !== "all" || minGames > 0 || !hideTaken || sortBy !== "picked";
@@ -916,7 +928,12 @@ const Board: React.FC<{
             {tl("Compare")}
           </HubLink>
           <HubLink
-            to={{ kind: "finder", query: `team=${encodeURIComponent(blue.team.u)}&vs=${encodeURIComponent(red.team.u)}` }}
+            to={{
+              kind: "finder",
+              query: `team=${encodeURIComponent(blue.team.u)}&vs=${encodeURIComponent(red.team.u)}${
+                period.startsWith("y") ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""
+              }`,
+            }}
             className="text-rw-accent hover:underline"
           >
             {tl("Game finder")}
@@ -1239,8 +1256,8 @@ const Board: React.FC<{
         />
       </div>
       <div className="grid gap-3 md:grid-cols-2">
-        <Priorities who="b" side={blue} pool={pools.b} other={pools.r} taken={taken} onPick={place} />
-        <Priorities who="r" side={red} pool={pools.r} other={pools.b} taken={taken} onPick={place} />
+        <Priorities who="b" side={blue} pool={pools.b} other={pools.r} period={period} taken={taken} onPick={place} />
+        <Priorities who="r" side={red} pool={pools.r} other={pools.b} period={period} taken={taken} onPick={place} />
       </div>
       <FearlessDepth a={blue} b={red} period={period} periodLabel="" title={`${blue.team.name}-${red.team.name}`} exclude={hideTaken ? taken : undefined} />
     </div>
@@ -1865,7 +1882,12 @@ const DraftMatchupPanel: React.FC<{
                 <span>{champName(d.c2)}</span>
               </HubLink>
               <HubLink
-                to={{ kind: "finder", query: `team=${encodeURIComponent(d.teamSlug)}&champ=${encodeURIComponent(`${d.c1},${d.c2}`)}` }}
+                to={{
+                  kind: "finder",
+                  query: `team=${encodeURIComponent(d.teamSlug)}&champ=${encodeURIComponent(`${d.c1},${d.c2}`)}${
+                    period.startsWith("y") ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""
+                  }`,
+                }}
                 className="tabular-nums font-semibold hover:underline"
               >
                 {d.g}G · {winRate(d.w, d.g)}
@@ -2156,7 +2178,12 @@ const PlayerPools: React.FC<{
       right={
         <span className="flex items-center gap-2">
           <HubLink
-            to={{ kind: "finder", query: `team=${encodeURIComponent(side.team.u)}` }}
+            to={{
+              kind: "finder",
+              query: `team=${encodeURIComponent(side.team.u)}${
+                period.startsWith("y") ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""
+              }`,
+            }}
             className={`text-[11px] ${color} hover:underline`}
           >
             {tl("{n} games in this period", { n: p.games })}
@@ -2637,9 +2664,10 @@ const Priorities: React.FC<{
   side: Side;
   pool: Pool;
   other: Pool;
+  period?: PeriodKey;
   taken: Set<string>;
   onPick: (c: string) => void;
-}> = ({ who, side, pool: p, taken, onPick }) => {
+}> = ({ who, side, pool: p, period = "all", taken, onPick }) => {
   const open = [...p.picks.entries()]
     .filter(([c]) => !isChampTaken(c, taken))
     .sort((a, b) => b[1][0] - a[1][0])
@@ -2696,7 +2724,12 @@ const Priorities: React.FC<{
         <span className="flex items-center gap-2">
           <TeamLink name={side.team.name} u={side.team.u} className={`text-[11px] font-semibold ${color} hover:underline`} />
           <HubLink
-            to={{ kind: "finder", query: `team=${encodeURIComponent(side.team.u)}` }}
+            to={{
+              kind: "finder",
+              query: `team=${encodeURIComponent(side.team.u)}${
+                period.startsWith("y") ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""
+              }`,
+            }}
             className={`text-[11px] ${color} hover:underline`}
           >
             {tl("{n} games in this period", { n: p.games })}

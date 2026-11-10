@@ -128,15 +128,15 @@ export function usePlayerOverviewRows(slug: string, has2y: boolean): PlayerGameR
 /** Player Playstyle DNA & Role Benchmarks + Rolling 20-Game Form Trajectory on the Player Overview tab. */
 export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardSub }) => {
   const rows = usePlayerOverviewRows(p.u, !!p.g2y);
-  const { periodRows, periodLabel } = useMemo(() => {
-    if (!rows || !rows.length) return { periodRows: [] as PlayerGameRow[], periodLabel: "" };
+  const { periodRows, periodLabel, periodKey } = useMemo(() => {
+    if (!rows || !rows.length) return { periodRows: [] as PlayerGameRow[], periodLabel: "", periodKey: undefined as string | undefined };
     const latestYear = p.years[p.years.length - 1]?.y;
     if (latestYear) {
       const yRows = rows.filter((r) => r[0].startsWith(latestYear));
-      if (yRows.length >= 10) return { periodRows: yRows, periodLabel: `${latestYear} · ${yRows.length}G` };
+      if (yRows.length >= 10) return { periodRows: yRows, periodLabel: `${latestYear} · ${yRows.length}G`, periodKey: `y${latestYear}` };
     }
     const recent = rows.slice(0, 50);
-    return { periodRows: recent, periodLabel: `${recent.length}G` };
+    return { periodRows: recent, periodLabel: `${recent.length}G`, periodKey: undefined as string | undefined };
   }, [rows, p.years]);
 
   const agg = useMemo(() => (periodRows.length ? playerAgg(periodRows) : null), [periodRows]);
@@ -262,13 +262,22 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
             ) : (
               <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
                 <HubLink
-                  to={{ kind: "player", slug: p.u, tab: "stats" }}
+                  to={{ kind: "player", slug: p.u, tab: "stats", ...(periodKey ? { query: `p=${encodeURIComponent(periodKey)}` } : {}) }}
                   className="text-rw-muted hover:text-rw-accent hover:underline font-mono"
                 >
                   {periodLabel}
                 </HubLink>
-                <HubLink to={{ kind: "player", slug: p.u, tab: "stats" }} className="text-rw-accent hover:underline font-semibold">
+                <HubLink
+                  to={{ kind: "player", slug: p.u, tab: "stats", ...(periodKey ? { query: `p=${encodeURIComponent(periodKey)}` } : {}) }}
+                  className="text-rw-accent hover:underline font-semibold"
+                >
                   {tl("Stats")} · {tl("Open →")}
+                </HubLink>
+                <HubLink
+                  to={{ kind: "compare", mode: "player", a: p.u, period: periodKey }}
+                  className="text-rw-accent hover:underline font-semibold"
+                >
+                  {tl("Compare")} →
                 </HubLink>
                 <SectionCard
                   section={`${tl("Playstyle")} · ${periodLabel}`}
@@ -743,7 +752,12 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                     ))}
                   <span className="inline-flex items-center gap-1.5 text-rw-sub truncate">
                     <HubLink
-                      to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}&vs=${encodeURIComponent(prettySlug(sel.opp))}` }}
+                      to={{
+                        kind: "finder",
+                        query: `player=${encodeURIComponent(p.u)}&vs=${encodeURIComponent(prettySlug(sel.opp))}${
+                          sel.date && sel.date.length >= 4 ? `&year=${encodeURIComponent(sel.date.slice(0, 4))}` : ""
+                        }`,
+                      }}
                       className="hover:text-rw-accent hover:underline"
                     >
                       vs
@@ -757,6 +771,12 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                 </span>
               </span>
               <span className="flex items-center gap-2 shrink-0 text-rw-muted">
+                <HubLink
+                  to={{ kind: "counters", query: `champ=${prettySlug(sel.champ)}` }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Counters")}
+                </HubLink>
                 {sel.seriesSlug ? (
                   <HubLink
                     to={{ kind: "match", slug: sel.seriesSlug, game: sel.gn }}
@@ -799,6 +819,14 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
         share={`${p.u}-signature-champs`}
         right={
           <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+            {topChamps.length >= 2 && (
+              <HubLink
+                to={{ kind: "counters", query: `champ=${prettySlug(topChamps[0].c)}&vs=${encodeURIComponent(topChamps[1].c)}` }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
             <HubLink to={{ kind: "player", slug: p.u, tab: "champions" }} className="text-rw-accent hover:underline font-semibold">
               {tl("Show all {n}", { n: p.nChamps })} →
             </HubLink>
@@ -1543,6 +1571,13 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                       className="hover:text-rw-accent hover:underline"
                     >
                       {sel.g} {tl("Games")}
+                    </HubLink>{" "}
+                    ·{" "}
+                    <HubLink
+                      to={{ kind: "counters", query: `champ=${prettySlug(c.name)}` }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Counters")} →
                     </HubLink>
                   </span>
                 </div>

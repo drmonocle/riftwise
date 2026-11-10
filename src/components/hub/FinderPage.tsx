@@ -466,6 +466,22 @@ const FinderBody: React.FC<{
               </option>
             ))}
           </select>
+          {(q.get("team") || q.get("vs") || q.get("vsteam")) && (
+            <button
+              type="button"
+              onClick={() =>
+                setQ({
+                  team: q.get("vs") || q.get("vsteam") || undefined,
+                  vs: q.get("team") || undefined,
+                  vsteam: undefined,
+                })
+              }
+              className="px-1.5 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 font-semibold"
+              title="⇄"
+            >
+              ⇄
+            </button>
+          )}
           <select
             value={teamOption(opts.teams, q.get("vs") || q.get("vsteam"))}
             onChange={(e) => setQ({ vs: e.target.value || undefined, vsteam: undefined })}
@@ -540,6 +556,21 @@ const FinderBody: React.FC<{
               (v) => setChamp(1, v),
               `+ ${tl("and champion")}`,
             )}
+          {champs.length === 1 && q.get("vschamp") && (
+            <button
+              type="button"
+              onClick={() =>
+                setQ({
+                  champ: q.get("vschamp") || undefined,
+                  vschamp: champs[0] || undefined,
+                })
+              }
+              className="px-1.5 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 font-semibold"
+              title="⇄"
+            >
+              ⇄
+            </button>
+          )}
           {champSel(
             tl("Against champion"),
             opts.champs,
@@ -705,6 +736,19 @@ const FinderBody: React.FC<{
                   className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                 >
                   {tl("Counter-pick finder")} →
+                </HubLink>
+              )}
+              {q.get("player") && (
+                <HubLink
+                  to={{
+                    kind: "compare",
+                    mode: "player",
+                    a: playerOption(opts.players, q.get("player")) || q.get("player")!,
+                    period: year ? `y${year}` : undefined,
+                  }}
+                  className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                >
+                  {tl("Compare")} →
                 </HubLink>
               )}
             </div>
@@ -930,7 +974,17 @@ const Cohort: React.FC<{
     const maxG = Math.max(1, ...rows.map(([, [g]]) => g));
     return (
       <div className="min-w-0">
-        <div className="text-[10px] font-semibold text-rw-muted mb-1">{title}</div>
+        <div className="flex items-center justify-between gap-2 text-[10px] font-semibold text-rw-muted mb-1">
+          <span>{title}</span>
+          {wr && rows.length >= 2 && (
+            <HubLink
+              to={{ kind: "counters", query: `champ=${prettySlug(rows[0][0])}&vs=${encodeURIComponent(rows[1][0])}` }}
+              className="text-rw-accent hover:underline shrink-0"
+            >
+              {tl("Counters")} →
+            </HubLink>
+          )}
+        </div>
         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
           {rows.map(([c, [g, w]]) => {
             const pctVal = wr ? Math.round((w / g) * 100) : Math.round((g / n) * 100);

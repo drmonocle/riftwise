@@ -51,9 +51,13 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   };
   const [inputVal, setInputVal] = useState("");
   const [vsInput, setVsInput] = useState("");
+  const [tableSearch, setTableSearch] = useState("");
+  const [duoSearch, setDuoSearch] = useState("");
   useEffect(() => {
     if (data.data?.m?.c) setInputVal(champName(data.data.m.c));
     else if (!slug) setInputVal("");
+    setTableSearch("");
+    setDuoSearch("");
   }, [data.data?.m?.c, slug]);
   useEffect(() => {
     setVsInput(vsParam ? champName(vsParam) : "");
@@ -220,6 +224,24 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   const sampleFloor = span === "12m" ? Math.max(minG, 3) : Math.max(minG, 8);
   const good = rows.filter((x) => x.g >= sampleFloor).sort((a, b) => b.w / b.g - a.w / a.g).slice(0, 5);
   const bad = rows.filter((x) => x.g >= sampleFloor).sort((a, b) => a.w / a.g - b.w / b.g).slice(0, 5);
+  const filteredRows = useMemo(() => {
+    const raw = tableSearch.trim().toLowerCase();
+    if (!raw) return rows;
+    const terms = raw
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return rows.filter((r) => {
+      const cDisp = champName(r.c).toLowerCase();
+      const cRaw = r.c.toLowerCase();
+      const cBare = bare(cDisp);
+      const rDisp = r.role >= 0 ? roleName(ROLES[r.role]).toLowerCase() : "";
+      return terms.some((term) => {
+        const tb = bare(term);
+        return cDisp.includes(term) || cRaw.includes(term) || (tb.length >= 2 && cBare.includes(tb)) || (rDisp && rDisp.includes(term));
+      });
+    });
+  }, [rows, tableSearch]);
   const vsMatch = useMemo(() => {
     const d = data.data;
     if (!d || !vsParam) return null;
@@ -278,7 +300,18 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
             }}
             className={`${sel} w-44`}
           />
-          <span className="text-rw-muted">{tl("vs")}</span>
+          {slug && vsParam ? (
+            <button
+              type="button"
+              onClick={() => set({ champ: prettySlug(vsMatch?.oppCanon || vsParam), vs: rawChamp || slug })}
+              className="px-1.5 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 font-semibold"
+              title={`⇄ ${champName(vsMatch?.oppCanon || vsParam)} ${tl("vs")} ${cName || slug}`}
+            >
+              ⇄
+            </button>
+          ) : (
+            <span className="text-rw-muted">{tl("vs")}</span>
+          )}
           <input
             list="rw-champ-list"
             placeholder={tl("Lane opponent")}
@@ -694,12 +727,21 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               title={tl("Every lane matchup: {champ}", { champ: cName })}
               right={
                 <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+                  {rows.length > 8 && (
+                    <input
+                      value={tableSearch}
+                      onChange={(e) => setTableSearch(e.target.value)}
+                      placeholder={tl("Search champions…")}
+                      aria-label={tl("Search champions…")}
+                      className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted w-36"
+                    />
+                  )}
                   <SectionCard
                     section={tl("Every lane matchup: {champ}", { champ: cName })}
                     name={cName}
                     sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
                     rows={() =>
-                      rows.slice(0, 14).map((x, idx) => ({
+                      filteredRows.slice(0, 14).map((x, idx) => ({
                         rank: idx + 1,
                         champ: x.c,
                         label: champName(x.c),
@@ -734,7 +776,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     : tl("{n} games with a lane opponent in pro play", { n: data.data.m.g })}
                 </HubLink>
               </p>
-              <SortTable rows={rows} columns={columns} initial={{ key: "g", desc: true }} rowKey={(x) => `${x.c}-${x.role}`} copyName={`riftwise-counters-${slug}`} />
+              <SortTable rows={filteredRows} columns={columns} initial={{ key: "g", desc: true }} rowKey={(x) => `${x.c}-${x.role}`} copyName={`riftwise-counters-${slug}`} />
               <OeCredit />
             </Section>
           </div>
@@ -743,55 +785,81 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               <Section
                 title={tl("Bot lane partners")}
                 right={
-                  <SectionCard
-                    section={tl("Bot lane partners")}
-                    name={cName}
-                    rows={() =>
-                      data.data!.ch!.duos!.slice(0, 12).map(([pc, g, w], idx) => ({
-                        rank: idx + 1,
-                        champ: pc,
-                        label: champName(pc),
-                        sub: `${g}G`,
-                        value: `${Math.round((w / g) * 100)}%`,
-                        win: w / g >= 0.5,
-                      }))
-                    }
-                  />
+                  <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+                    {data.data.ch.duos.length > 10 && (
+                      <input
+                        value={duoSearch}
+                        onChange={(e) => setDuoSearch(e.target.value)}
+                        placeholder={tl("Search champions…")}
+                        aria-label={tl("Search champions…")}
+                        className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted w-36"
+                      />
+                    )}
+                    <SectionCard
+                      section={tl("Bot lane partners")}
+                      name={cName}
+                      rows={() =>
+                        data.data!.ch!.duos!.slice(0, 12).map(([pc, g, w], idx) => ({
+                          rank: idx + 1,
+                          champ: pc,
+                          label: champName(pc),
+                          sub: `${g}G`,
+                          value: `${Math.round((w / g) * 100)}%`,
+                          win: w / g >= 0.5,
+                        }))
+                      }
+                    />
+                  </span>
                 }
               >
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-xs">
-                  {data.data.ch.duos.slice(0, 10).map(([pc, g, w]) => {
-                    const wr = Math.round((w / g) * 100);
-                    return (
-                      <div key={pc} className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 space-y-1.5">
-                        <div className="flex items-center justify-between gap-2">
-                          <ChampLink name={pc} size={20} />
-                          <div className="text-right shrink-0">
-                            <HubLink
-                              to={{ kind: "counters", query: `champ=${prettySlug(pc)}` }}
-                              className={`font-mono font-bold tabular-nums hover:underline ${wr >= 50 ? "text-rw-teal" : "text-rw-red"}`}
-                              title={tl("Counter-pick finder")}
-                            >
-                              {wr}%
-                            </HubLink>
-                            <HubLink
-                              to={{ kind: "finder", query: `champ=${encodeURIComponent(`${rawChamp || cName},${pc}`)}` }}
-                              className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline font-mono block"
-                              title={tl("Game finder")}
-                            >
-                              {g}G
-                            </HubLink>
+                  {(() => {
+                    const raw = duoSearch.trim().toLowerCase();
+                    const terms = raw
+                      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+                      .map((s) => s.trim())
+                      .filter(Boolean);
+                    const list = terms.length
+                      ? data.data.ch.duos.filter(([pc]) => {
+                          const cDisp = champName(pc).toLowerCase();
+                          const cRaw = pc.toLowerCase();
+                          const cBare = bare(cDisp);
+                          return terms.some((t) => cDisp.includes(t) || cRaw.includes(t) || (bare(t).length >= 2 && cBare.includes(bare(t))));
+                        })
+                      : data.data.ch.duos;
+                    return list.slice(0, terms.length ? 30 : 10).map(([pc, g, w]) => {
+                      const wr = Math.round((w / g) * 100);
+                      return (
+                        <div key={pc} className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <ChampLink name={pc} size={20} />
+                            <div className="text-right shrink-0">
+                              <HubLink
+                                to={{ kind: "counters", query: `champ=${prettySlug(pc)}` }}
+                                className={`font-mono font-bold tabular-nums hover:underline ${wr >= 50 ? "text-rw-teal" : "text-rw-red"}`}
+                                title={tl("Counter-pick finder")}
+                              >
+                                {wr}%
+                              </HubLink>
+                              <HubLink
+                                to={{ kind: "finder", query: `champ=${encodeURIComponent(`${rawChamp || cName},${pc}`)}` }}
+                                className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline font-mono block"
+                                title={tl("Game finder")}
+                              >
+                                {g}G
+                              </HubLink>
+                            </div>
+                          </div>
+                          <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+                            <div
+                              className={`h-full rounded-full ${wr >= 50 ? "bg-rw-teal/75" : "bg-rw-red/70"}`}
+                              style={{ width: `${Math.max(8, Math.min(100, wr))}%` }}
+                            />
                           </div>
                         </div>
-                        <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
-                          <div
-                            className={`h-full rounded-full ${wr >= 50 ? "bg-rw-teal/75" : "bg-rw-red/70"}`}
-                            style={{ width: `${Math.max(8, Math.min(100, wr))}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
                 </div>
               </Section>
             </div>

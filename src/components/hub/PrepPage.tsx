@@ -670,14 +670,14 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
       value: (
         <span className="inline-flex items-center justify-end flex-wrap gap-y-0.5">
           <HubLink
-            to={{ kind: "team", slug: a.team.u, tab: "stats" }}
+            to={{ kind: "team", slug: a.team.u, tab: "stats", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
             className={`hover:underline ${pa != null && pb != null && pa > pb ? "text-rw-side-a font-semibold" : "hover:text-rw-accent"}`}
           >
             {a.team.name} {pa != null ? fmtDec(pa * 100) + "%" : "–"}
           </HubLink>
           <span className="mx-1 text-rw-muted">·</span>
           <HubLink
-            to={{ kind: "team", slug: b.team.u, tab: "stats" }}
+            to={{ kind: "team", slug: b.team.u, tab: "stats", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
             className={`hover:underline ${pa != null && pb != null && pb > pa ? "text-rw-side-b font-semibold" : "hover:text-rw-accent"}`}
           >
             {b.team.name} {pb != null ? fmtDec(pb * 100) + "%" : "–"}
@@ -692,11 +692,17 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
       textValue: `${pa != null && A.g ? signed(Math.round((A.w / A.g - pa) * 1000) / 10) : "–"} · ${pb != null && B.g ? signed(Math.round((B.w / B.g - pb) * 1000) / 10) : "–"}`,
       value: (
         <>
-          <HubLink to={{ kind: "team", slug: a.team.u, tab: "stats" }} className={`hover:underline ${tone(pa != null && A.g ? A.w / A.g - pa : null)}`}>
+          <HubLink
+            to={{ kind: "team", slug: a.team.u, tab: "stats", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+            className={`hover:underline ${tone(pa != null && A.g ? A.w / A.g - pa : null)}`}
+          >
             {pa != null && A.g ? signed(Math.round((A.w / A.g - pa) * 1000) / 10) : "–"}
           </HubLink>
           {" · "}
-          <HubLink to={{ kind: "team", slug: b.team.u, tab: "stats" }} className={`hover:underline ${tone(pb != null && B.g ? B.w / B.g - pb : null)}`}>
+          <HubLink
+            to={{ kind: "team", slug: b.team.u, tab: "stats", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+            className={`hover:underline ${tone(pb != null && B.g ? B.w / B.g - pb : null)}`}
+          >
             {pb != null && B.g ? signed(Math.round((B.w / B.g - pb) * 1000) / 10) : "–"}
           </HubLink>
         </>
@@ -738,14 +744,14 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
       value: (
         <span className="inline-flex items-center justify-end flex-wrap gap-y-0.5">
           <HubLink
-            to={{ kind: "team", slug: a.team.u, tab: "stats" }}
+            to={{ kind: "team", slug: a.team.u, tab: "stats", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
             className={`hover:underline ${pka != null && pkb != null && pka > pkb ? "text-rw-side-a font-semibold" : "hover:text-rw-accent"}`}
           >
             {a.team.name} {pka ?? "–"}
           </HubLink>
           <span className="mx-1 text-rw-muted">·</span>
           <HubLink
-            to={{ kind: "team", slug: b.team.u, tab: "stats" }}
+            to={{ kind: "team", slug: b.team.u, tab: "stats", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
             className={`hover:underline ${pka != null && pkb != null && pkb > pka ? "text-rw-side-b font-semibold" : "hover:text-rw-accent"}`}
           >
             {b.team.name} {pkb ?? "–"}
@@ -1016,6 +1022,15 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
               <TeamLogo name={b.team.name} size={24} />
               <span className="truncate">{b.team.name}</span>
             </HubLink>
+            <button
+              type="button"
+              data-nocapture="1"
+              onClick={() => set({ a: b.team.u, b: a.team.u })}
+              className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-xs font-normal text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+              title={`${b.team.name} ⇄ ${a.team.name}`}
+            >
+              ⇄
+            </button>
           </h1>
           {/* only in the copied picture, where the controls are left out */}
           <div className="rw-capture-only text-[11px] text-rw-sub gap-1">
@@ -1041,7 +1056,16 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
             {tl("Compare")}
           </HubLink>
           <HubLink
-            to={{ kind: "finder", query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}` }}
+            to={{
+              kind: "finder",
+              query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
+                period.startsWith("y") && period.length === 5
+                  ? `&year=${encodeURIComponent(period.slice(1))}`
+                  : period.startsWith("e:")
+                    ? `&event=${encodeURIComponent(period.slice(2))}`
+                    : ""
+              }`,
+            }}
             className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-accent hover:underline"
           >
             {tl("Game finder")}
