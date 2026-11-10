@@ -183,6 +183,25 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                 {tl("Item history")} →
               </HubLink>
               <HubLink
+                to={{ kind: "patches" }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Patches")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "leaders",
+                  query: new URLSearchParams({
+                    ...(isLeague ? { league: rawScope } : {}),
+                    ...(key.startsWith("y") ? { year: key.slice(1) } : {}),
+                    ...(role ? { role } : {}),
+                  }).toString(),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
                 to={{
                   kind: "finder",
                   ...(key.startsWith("p")
@@ -367,6 +386,19 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "leaders",
+                        query: new URLSearchParams({
+                          role: r,
+                          ...(isLeague ? { league: rawScope } : {}),
+                          ...(key.startsWith("y") ? { year: key.slice(1) } : {}),
+                        }).toString(),
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Player leaderboards")} →
                     </HubLink>
                     <HubLink
                       to={{

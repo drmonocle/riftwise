@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "1.3.60" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "1.3.61" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )

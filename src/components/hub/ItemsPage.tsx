@@ -317,6 +317,20 @@ const PlayerItemsView: React.FC<{
                 {tl("Counters")} →
               </HubLink>
             )}
+            <HubLink
+              to={{ kind: "leaders", ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Player leaderboards")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "tiers", ...(year ? { query: `key=y${encodeURIComponent(year)}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Pro tier list")} →
+            </HubLink>
             <CopyItemsPost
               title={`${name} · ${label}`}
               sub={`${fmtNum(g.length)}G${scope ? ` · ${scope}` : ""}`}
@@ -407,6 +421,20 @@ const PlayerItemsView: React.FC<{
               data-nocapture="1"
             >
               {tl("Game finder")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "leaders", ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Player leaderboards")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "tiers", ...(year ? { query: `key=y${encodeURIComponent(year)}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Pro tier list")} →
             </HubLink>
             <CopyItemsPost
               title={tl("Every item {player} finished pro games with", { player: name })}
@@ -640,6 +668,12 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
                 {tl("Player leaderboards")} →
               </HubLink>
               <HubLink
+                to={{ kind: "tiers" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "items" }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -830,6 +864,12 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                   </HubLink>
                 </>
               )}
+              <HubLink
+                to={{ kind: "leaders", ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
               <HubLink
                 to={{ kind: "tiers", ...(year ? { query: `key=y${encodeURIComponent(year)}` } : {}) }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1034,6 +1074,12 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                 {tl("Champions")} →
               </HubLink>
               <HubLink
+                to={{ kind: "leaders", ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "tiers", ...(year ? { query: `key=y${encodeURIComponent(year)}` } : {}) }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -1168,8 +1214,14 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
             <HubLink to={{ kind: "champions" }} className="text-[11px] text-rw-accent hover:underline">
               {tl("Champions")} →
             </HubLink>
+            <HubLink to={{ kind: "counters" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Counters")} →
+            </HubLink>
             <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Pro tier list")} →
+            </HubLink>
+            <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Player leaderboards")} →
             </HubLink>
             <HubLink to={{ kind: "draft" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Draft board")} →

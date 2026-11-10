@@ -115,6 +115,9 @@ export const PatchesPanel: React.FC = () => {
               <HubLink to={{ kind: "items" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Item history")} →
               </HubLink>
+              <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Player leaderboards")} →
+              </HubLink>
               <HubLink to={{ kind: "draft" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Draft board")} →
               </HubLink>
@@ -468,6 +471,9 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number;
             <HubLink to={{ kind: "tournaments" }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Tournaments")} →
             </HubLink>
+            <HubLink to={{ kind: "titles" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Titles")} →
+            </HubLink>
             <HubLink to={{ kind: "champions" }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Champions")} →
             </HubLink>
@@ -676,6 +682,14 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
               </HubLink>
             )}
             {totalGames > 0 && (
+              <HubLink to={{ kind: "tiers", query: `league=${l.u}${season ? `&key=y${season}` : ""}` }} className={heroBtn()}>
+                {tl("Pro tier list")}
+              </HubLink>
+            )}
+            <HubLink to={{ kind: "rankings", query: `league=${encodeURIComponent(l.s || l.u)}` }} className={heroBtn()}>
+              {tl("Power rankings")}
+            </HubLink>
+            {totalGames > 0 && (
               <HubLink to={{ kind: "finder", query: `league=${l.u}${season ? `&year=${season}` : ""}` }} className={heroBtn()}>
                 {tl("Game finder")}
               </HubLink>
@@ -761,6 +775,12 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Titles")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "rankings", query: `league=${encodeURIComponent(l.s || l.u)}` }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Power rankings")} →
                 </HubLink>
                 <HubLink
                   to={{

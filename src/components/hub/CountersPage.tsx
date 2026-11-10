@@ -490,6 +490,12 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       {tl("Item history")} →
                     </HubLink>
                     <HubLink
+                      to={{ kind: "tiers", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Pro tier list")} →
+                    </HubLink>
+                    <HubLink
                       to={{ kind: "draft" }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -887,6 +893,12 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                   >
                     {tl("Pro tier list")} →
                   </HubLink>
+                  <HubLink
+                    to={{ kind: "draft" }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
                   <SectionCard
                     section={tl("Every lane matchup: {champ}", { champ: cName })}
                     name={cName}
@@ -973,6 +985,18 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Item history")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "tiers", query: "role=Bot" }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Pro tier list")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "draft" }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
                     </HubLink>
                     <SectionCard
                       section={tl("Bot lane partners")}

@@ -267,6 +267,28 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                   >
                     {tl("Item history")} →
                   </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "leaders",
+                      query: new URLSearchParams({
+                        ...(league && league !== "top" ? { league } : {}),
+                        ...(year ? { year } : {}),
+                        ...(qRole ? { role: qRole } : {}),
+                      }).toString(),
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "rankings",
+                      ...(league && league !== "top" ? { query: `league=${encodeURIComponent(league)}` } : {}),
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Power rankings")} →
+                  </HubLink>
                 </>
               );
             })()}
@@ -927,6 +949,18 @@ const FinderBody: React.FC<{
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
                     {tl("Item history")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "leaders",
+                      query: new URLSearchParams({
+                        ...(q.get("role") ? { role: q.get("role")! } : {}),
+                        ...(year ? { year } : {}),
+                      }).toString(),
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Player leaderboards")} →
                   </HubLink>
                 </>
               )}

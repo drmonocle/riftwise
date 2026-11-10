@@ -295,6 +295,12 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
           {tl("Power rankings")} →
         </HubLink>
         <HubLink
+          to={{ kind: "tiers" }}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {tl("Pro tier list")} →
+        </HubLink>
+        <HubLink
           to={{ kind: "tournaments" }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
@@ -563,6 +569,12 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
           {tl("Player leaderboards")} →
+        </HubLink>
+        <HubLink
+          to={{ kind: "tiers", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {tl("Pro tier list")} →
         </HubLink>
         <HubLink
           to={{ kind: "items" }}
