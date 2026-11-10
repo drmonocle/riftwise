@@ -7,7 +7,7 @@
 import React, { useMemo, useState } from "react";
 import { tl, roleName, fmtDec } from "../../i18n";
 import { ChampionStats, StatsMeta, loadChampionStats } from "../../stats";
-import { loadAliases, loadChampGames, loadChampIndex, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { loadAliases, loadChampGames, loadChampIndex, matchesChampSearch, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { ChampAggRow, ROLES, champAgg, patchCompare } from "../../hub/champAgg";
@@ -321,7 +321,7 @@ const LeagueTable: React.FC<{
   setQ,
   indexLoading,
 }) => {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => q.get("champ") || q.get("q") || "");
   const ys = [...years].sort().reverse();
   const evYr = /(?:^|-)(20\d{2})(?:-|$)/.exec(q.get("event") || "")?.[1] || "";
   const year = q.get("year") || (q.get("key")?.startsWith("y") ? q.get("key")!.slice(1) : "") || (evYr && ys.includes(evYr) ? evYr : "") || ys[0] || "";
@@ -357,11 +357,7 @@ const LeagueTable: React.FC<{
       .map((s) => normText(s.trim()))
       .filter(Boolean);
     if (!terms.length) return base;
-    return base.filter((r) => {
-      const cDisp = normText(champName(r.c));
-      const cRaw = normText(r.c);
-      return terms.some((t) => cDisp.includes(t) || cRaw.includes(t));
-    });
+    return base.filter((r) => terms.some((t) => matchesChampSearch(r.c, t)));
   }, [result.rows, emerging, vs, search]);
   const maxLPicks = Math.max(1, ...result.rows.map((r) => r.p || 0));
   const maxLBans = Math.max(1, ...result.rows.map((r) => r.b || 0));
@@ -789,7 +785,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
   q,
   setQ,
 }) => {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => q.get("champ") || q.get("q") || "");
   const askedKey = q.get("key") || (q.get("patch") ? `p${q.get("patch")}` : q.get("year") ? `y${q.get("year")}` : "");
   const key = askedKey && meta.champions.includes(askedKey) ? askedKey : meta.champions.find((k) => k.startsWith("p")) || meta.champions[0];
   const state = useLoad<ChampionStats>(() => loadChampionStats(key), [key]);
@@ -817,11 +813,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
       .map((s) => normText(s.trim()))
       .filter(Boolean);
     if (!terms.length) return base;
-    return base.filter((r) => {
-      const cDisp = normText(champName(r.c));
-      const cRaw = normText(r.c);
-      return terms.some((t) => cDisp.includes(t) || cRaw.includes(t));
-    });
+    return base.filter((r) => terms.some((t) => matchesChampSearch(r.c, t)));
   }, [rows, emerging, thenBlock, search]);
   const maxOPicks = useMemo(() => Math.max(1, ...rows.map((r) => r.p || 0)), [rows]);
   const maxOBans = useMemo(() => Math.max(1, ...rows.map((r) => r.b || 0)), [rows]);

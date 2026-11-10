@@ -20,7 +20,7 @@ import { ComparePick, bothOptions } from "./ComparePage";
 import { PeriodPicker, QuickPeriods, defaultPeriod } from "./PeriodStats";
 import { FearlessDepth, RosterSubPicker, Side, loadFullLogs, loadSide, needsFullLogs, swapPlayerInSide } from "./PrepPage";
 import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo, useLoad, usePageTitle, useRetryAttempt, retryFailedLoads } from "./ui";
-import { bare, buildGameDraftQuery, DRAFT_ORDER as ORDER, type GameDraftInput, type GameDraftQueryInput, loadHubChamp, packHistory, packSlots, type PastGame, prettySlug, slotsFromGameDraft } from "../../hub/data";
+import { bare, buildGameDraftQuery, DRAFT_ORDER as ORDER, type GameDraftInput, type GameDraftQueryInput, loadHubChamp, matchesChampSearch, packHistory, packSlots, type PastGame, prettySlug, resolveChampSlug, slotsFromGameDraft } from "../../hub/data";
 import { BroadcastCardButton, SectionCard, draftBoardCard, type BoardSide } from "./BroadcastCard";
 import type { HubChamp, LaneLine } from "../../hub/types";
 import { draftTendencies } from "./DraftTendencies";
@@ -281,6 +281,15 @@ export function buildTakenSet(slots: (string | null)[], used: string[], fearless
       out.add(b);
       if (CHAMP_ALIAS[b]) out.add(CHAMP_ALIAS[b]);
     }
+    const res = resolveChampSlug(t);
+    if (res) {
+      out.add(res);
+      const bRes = bare(res);
+      if (bRes) {
+        out.add(bRes);
+        if (CHAMP_ALIAS[bRes]) out.add(CHAMP_ALIAS[bRes]);
+      }
+    }
     const cn = champName(t);
     if (cn && cn !== t) {
       out.add(cn);
@@ -297,6 +306,8 @@ export function isChampTaken(c: string, taken: Set<string>): boolean {
   if (taken.has(c) || taken.has(c.toLowerCase())) return true;
   const b = bare(c);
   if (b && (taken.has(b) || (CHAMP_ALIAS[b] !== undefined && taken.has(CHAMP_ALIAS[b])))) return true;
+  const res = bare(resolveChampSlug(c));
+  if (res && (taken.has(res) || (CHAMP_ALIAS[res] !== undefined && taken.has(CHAMP_ALIAS[res])))) return true;
   const cn = champName(c);
   if (cn && (taken.has(cn) || taken.has(cn.toLowerCase()) || taken.has(bare(cn)))) return true;
   return false;
@@ -399,6 +410,13 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
       alive = false;
     };
   }, [a, b, attempt]);
+  useEffect(() => {
+    const ca = sides.a?.team.u;
+    const cb = sides.b?.team.u;
+    if ((ca && a && ca !== a) || (cb && b && cb !== b)) {
+      set({ a: ca || a, b: cb || b });
+    }
+  }, [sides.a, sides.b, a, b]); // eslint-disable-line react-hooks/exhaustive-deps
   usePageTitle(
     sides.a && sides.b ? tl("{a} vs {b}: draft board", { a: sides.a.team.name, b: sides.b.team.name }) : tl("Draft board"),
   );
@@ -442,13 +460,31 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
                       <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(slug)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
                         {tl("Game finder")}
                       </HubLink>
-                      <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                      <HubLink
+                        to={{
+                          kind: "rankings",
+                          ...(side?.team.rating?.league ? { query: `league=${encodeURIComponent(side.team.rating.league)}` } : {}),
+                        }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
                         {tl("Power rankings")}
                       </HubLink>
-                      <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                      <HubLink
+                        to={{
+                          kind: "tiers",
+                          ...(side?.team.rating?.league ? { query: `league=${encodeURIComponent(side.team.rating.league)}` } : {}),
+                        }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
                         {tl("Pro tier list")}
                       </HubLink>
-                      <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                      <HubLink
+                        to={{
+                          kind: "leaders",
+                          ...(side?.team.rating?.league ? { query: `league=${encodeURIComponent(side.team.rating.league)}` } : {}),
+                        }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
                         {tl("Player leaderboards")}
                       </HubLink>
                       <button type="button" onClick={() => set({ [k]: null })} className="text-rw-accent hover:underline shrink-0">
@@ -662,16 +698,8 @@ const Board: React.FC<{
   const shown = useMemo(() => {
     const filtered = all.filter((c) => {
       if (hideTaken && isChampTaken(c, taken)) return false;
-      if (searchTerms.length > 0) {
-        const cDisp = champName(c).toLowerCase();
-        const cRaw = c.toLowerCase();
-        const cBare = bare(cDisp);
-        const rBare = bare(cRaw);
-        const matches = searchTerms.some((term) => {
-          const tb = bare(term);
-          return cDisp.includes(term) || cRaw.includes(term) || (tb.length >= 2 && (cBare.includes(tb) || rBare.includes(tb)));
-        });
-        if (!matches) return false;
+      if (searchTerms.length > 0 && !searchTerms.some((term) => matchesChampSearch(c, term))) {
+        return false;
       }
       if (role === "open") {
         if (openRoles.length > 0 && !openRoles.some((r) => champHasRole(c, r, pools))) return false;
@@ -1827,6 +1855,9 @@ const DraftMatchupPanel: React.FC<{
               kind: "tiers",
               query:
                 new URLSearchParams({
+                  ...(blue.team.rating?.league && blue.team.rating.league === red.team.rating?.league
+                    ? { league: blue.team.rating.league }
+                    : {}),
                   ...(activeLane?.rKey ? { role: activeLane.rKey } : {}),
                   ...(period.startsWith("y") && period.length === 5 ? { key: period } : {}),
                 }).toString() || undefined,
@@ -1836,7 +1867,12 @@ const DraftMatchupPanel: React.FC<{
             {tl("Pro tier list")} →
           </HubLink>
           <HubLink
-            to={{ kind: "rankings" }}
+            to={{
+              kind: "rankings",
+              ...(blue.team.rating?.league && blue.team.rating.league === red.team.rating?.league
+                ? { query: `league=${encodeURIComponent(blue.team.rating.league)}` }
+                : {}),
+            }}
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Power rankings")} →
@@ -1846,6 +1882,9 @@ const DraftMatchupPanel: React.FC<{
               kind: "leaders",
               query:
                 new URLSearchParams({
+                  ...(blue.team.rating?.league && blue.team.rating.league === red.team.rating?.league
+                    ? { league: blue.team.rating.league }
+                    : {}),
                   ...(activeLane?.rKey ? { role: activeLane.rKey } : {}),
                   ...(activeChamp ? { champ: activeChamp } : {}),
                   ...(period.startsWith("y")
@@ -2427,6 +2466,7 @@ const PlayerPools: React.FC<{
               kind: "tiers",
               query:
                 new URLSearchParams({
+                  ...(side.team.rating?.league ? { league: side.team.rating.league } : {}),
                   ...(roleFilter != null ? { role: ROLES[roleFilter] } : {}),
                   ...(period.startsWith("y") && period.length === 5 ? { key: period } : {}),
                 }).toString() || undefined,
@@ -2440,6 +2480,7 @@ const PlayerPools: React.FC<{
               kind: "leaders",
               query:
                 new URLSearchParams({
+                  ...(side.team.rating?.league ? { league: side.team.rating.league } : {}),
                   ...(roleFilter != null ? { role: ROLES[roleFilter] } : {}),
                   ...(roleFilter != null && rows[0]?.champs[0]?.c ? { champ: rows[0].champs[0].c } : {}),
                   ...(period.startsWith("y")
@@ -2475,7 +2516,10 @@ const PlayerPools: React.FC<{
             {tl("Compare")} →
           </HubLink>
           <HubLink
-            to={{ kind: "rankings" }}
+            to={{
+              kind: "rankings",
+              ...(side.team.rating?.league ? { query: `league=${encodeURIComponent(side.team.rating.league)}` } : {}),
+            }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Power rankings")} →
@@ -3110,7 +3154,14 @@ const Priorities: React.FC<{
             </HubLink>
           )}
           <HubLink
-            to={{ kind: "tiers", ...(period.startsWith("y") && period.length === 5 ? { query: `key=${encodeURIComponent(period)}` } : {}) }}
+            to={{
+              kind: "tiers",
+              query:
+                new URLSearchParams({
+                  ...(side.team.rating?.league ? { league: side.team.rating.league } : {}),
+                  ...(period.startsWith("y") && period.length === 5 ? { key: period } : {}),
+                }).toString() || undefined,
+            }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Pro tier list")} →
@@ -3142,6 +3193,7 @@ const Priorities: React.FC<{
               kind: "leaders",
               query:
                 new URLSearchParams({
+                  ...(side.team.rating?.league ? { league: side.team.rating.league } : {}),
                   ...(open[0] ? { champ: open[0][0] } : {}),
                   ...(period.startsWith("y")
                     ? { year: period.slice(1) }
@@ -3155,7 +3207,10 @@ const Priorities: React.FC<{
             {tl("Player leaderboards")} →
           </HubLink>
           <HubLink
-            to={{ kind: "rankings" }}
+            to={{
+              kind: "rankings",
+              ...(side.team.rating?.league ? { query: `league=${encodeURIComponent(side.team.rating.league)}` } : {}),
+            }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Power rankings")} →

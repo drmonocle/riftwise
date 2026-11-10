@@ -170,6 +170,13 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
   }, [a, b, attempt]);
   usePageTitle(sides.a && sides.b ? tl("{a} vs {b}: match prep", { a: sides.a.team.name, b: sides.b.team.name }) : tl("Match prep"));
   useEffect(() => {
+    const canonA = sides.a?.team.u || a || undefined;
+    const canonB = sides.b?.team.u || b || undefined;
+    if ((sides.a && canonA !== a) || (sides.b && canonB !== b)) {
+      navigateHub({ kind: "prep", a: canonA, b: canonB, period: route.period }, { replace: true });
+    }
+  }, [a, b, sides.a, sides.b, route.period]);
+  useEffect(() => {
     if (!sides.a || !sides.b) return;
     countView(`team/${sides.a.team.u}`, sides.a.team.name);
     countView(`team/${sides.b.team.u}`, sides.b.team.name);

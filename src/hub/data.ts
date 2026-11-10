@@ -6,6 +6,7 @@ import { load, loadText, MissingFile, statsFileUrl } from "../stats";
 import { IS_WEB, SITE_URL } from "../platform";
 import { searchAlias } from "../searchAliases";
 import { normalizeTeamCode } from "../helpers";
+import { champName } from "../champions";
 import type {
   EventListItem,
   HubChamp,
@@ -226,6 +227,37 @@ export function resolveChampSlug(slug: string): string {
   if (CHAMP_SLUG_ALIASES[raw]) return CHAMP_SLUG_ALIASES[raw];
   const p = prettySlug(slug);
   return CHAMP_SLUG_ALIASES[p] || p;
+}
+
+/** True when two champion names, slugs, or shorthand aliases refer to the same champion ("Lee Sin" === "lee-sin", "Jarvan IV" === "j4", "K'Sante" === "k-sante", "Wukong" === "monkeyking"). */
+export function sameChamp(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  if (a === b || a.toLowerCase() === b.toLowerCase()) return true;
+  const ba = bare(resolveChampSlug(a) || a);
+  const bb = bare(resolveChampSlug(b) || b);
+  if (ba && bb && ba === bb) return true;
+  const ca = bare(champName(a));
+  const cb = bare(champName(b));
+  return (!!ca && (ca === bb || ca === cb)) || (!!cb && cb === ba);
+}
+
+/** True when a champion name or slug `c` matches a search substring or shorthand alias ("j4", "tf", "mf", "gp", "tk", "asol", "lb", "ksante", "monkeyking"). */
+export function matchesChampSearch(c: string, term: string): boolean {
+  const q = normText(term.trim());
+  if (!q) return true;
+  const disp = normText(champName(c));
+  const raw = normText(c);
+  if (disp.includes(q) || raw.includes(q)) return true;
+  const bq = bare(q);
+  const bDisp = bare(disp);
+  const bRaw = bare(raw);
+  if (bq.length >= 2 && (bDisp.includes(bq) || bRaw.includes(bq))) return true;
+  const alias = CHAMP_SLUG_ALIASES[q] || CHAMP_SLUG_ALIASES[prettySlug(q)];
+  if (alias) {
+    const ba = bare(alias);
+    if (ba && (bDisp === ba || bRaw === ba)) return true;
+  }
+  return false;
 }
 
 async function champFile<T>(dir: "champ" | "matchups", slug: string): Promise<T> {
@@ -477,11 +509,13 @@ export function searchHub(index: HubIndex, query: string, limit = 6): Record<Hub
     (t) => (ACADEMY_TEAM.test(t[0]) ? Math.round(t[2] * 0.15) : t[2]),
     (t, m) => ({ kind: "team", name: t[0], slug: slugOf(t[0], t[1]), sub: [t[6], t[3]].filter(Boolean).join(" · "), games: t[2], matched: m, year: t[3] }),
   );
+  const playerAlias = PLAYER_SLUG_ALIASES[q] || PLAYER_SLUG_ALIASES[prettySlug(q)];
   out.player = pick(
     index.players,
     (p) => {
       const s = score(p[0], q);
       if (s >= 0) return [s, undefined];
+      if (playerAlias && slugOf(p[0], p[1]) === playerAlias) return [0.4, undefined];
       if (p[6] && q.length >= 2 && normText(p[6]).includes(q)) return [2.5, p[6]];
       return null;
     },
@@ -520,11 +554,22 @@ export function searchHub(index: HubIndex, query: string, limit = 6): Record<Hub
       matched: m,
     }),
   );
+  const champAlias = CHAMP_SLUG_ALIASES[q] || CHAMP_SLUG_ALIASES[prettySlug(q)];
+  const bChampAlias = champAlias ? bare(champAlias) : "";
   out.champ = pick(
     index.champs,
     (c) => {
       const s = score(c[0], q);
-      return s >= 0 ? [s, undefined] : null;
+      if (s >= 0) return [s, undefined];
+      const disp = champName(c[0]);
+      if (disp !== c[0]) {
+        const ds = score(disp, q);
+        if (ds >= 0) return [ds, undefined];
+      }
+      if (bChampAlias && (slugOf(c[0], c[1]) === champAlias || bare(c[0]) === bChampAlias || bare(c[1]) === bChampAlias)) {
+        return [0.4, undefined];
+      }
+      return null;
     },
     (c) => c[2],
     (c) => ({ kind: "champ", name: c[0], slug: slugOf(c[0], c[1]), sub: "", games: c[2] }),

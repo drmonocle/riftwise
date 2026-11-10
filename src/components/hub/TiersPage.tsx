@@ -12,7 +12,7 @@ import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { ROLES, champAgg } from "../../hub/champAgg";
 import { card, ChampIcon, HubLink, Loading, Section, useLoad, usePageTitle } from "./ui";
-import { loadAliases, loadChampGames, loadChampIndex, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { loadAliases, loadChampGames, loadChampIndex, matchesChampSearch, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { SectionCard } from "./BroadcastCard";
 
 const TIERS: { t: string; min: number; color: string }[] = [
@@ -101,7 +101,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
     [isLeague, rawScope, key, leagues.length],
   );
   const block = isLeague ? lgBlock.data : state.data?.[scope] || state.data?.all;
-  const [champFilter, setChampFilter] = useState("");
+  const [champFilter, setChampFilter] = useState(() => q.get("champ") || q.get("q") || "");
 
   const byRole = useMemo(() => {
     const out = new Map<string, Ranked[]>(ROLES.map((r) => [r, []]));
@@ -113,10 +113,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
       .filter(Boolean);
     for (const c of block.champs) {
       if (!c.role || !out.has(c.role) || c.p + c.b < 2) continue;
-      if (
-        cfTerms.length > 0 &&
-        !cfTerms.some((cf) => champName(c.c).toLowerCase().includes(cf) || c.c.toLowerCase().includes(cf))
-      ) {
+      if (cfTerms.length > 0 && !cfTerms.some((cf) => matchesChampSearch(c.c, cf))) {
         continue;
       }
       out.get(c.role)!.push({ ...c, presence: block.games ? (c.p + c.b) / block.games : 0, wr: c.p ? c.w / c.p : null, score: tierScore(c, block.games) });

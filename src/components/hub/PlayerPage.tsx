@@ -8,7 +8,7 @@ import { Trophy, ExternalLink, Package } from "lucide-react";
 import { tl, tk, tc, roleName, eventTitle, regionName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { loadHubChamp, loadHubPlayer, loadPlayerGames, normText, prettySlug } from "../../hub/data";
+import { loadHubChamp, loadHubPlayer, loadPlayerGames, matchesChampSearch, normText, prettySlug, sameChamp } from "../../hub/data";
 import { currentHubRoute, hubShareUrl, navigateHub, type HubRoute } from "../../hub/route";
 import type { HubPlayer } from "../../hub/types";
 import { type PeriodKey, inPeriod, periodOptions, playerAgg, playerRowRef } from "../../hub/period";
@@ -127,12 +127,12 @@ const PlayerView: React.FC<{
   // the Champions tab: a champion's every game, with the items of each (TV, 2026-10-28)
   const [gamesOn, setGamesOn] = useState<string | null>(() => {
     if (!champParam) return null;
-    const hit = p.champs.find((c) => c.c.toLowerCase() === champParam.toLowerCase());
+    const hit = p.champs.find((c) => sameChamp(c.c, champParam));
     return hit ? hit.c : champParam;
   });
   useEffect(() => {
     if (!champParam) return;
-    const hit = p.champs.find((c) => c.c.toLowerCase() === champParam.toLowerCase());
+    const hit = p.champs.find((c) => sameChamp(c.c, champParam));
     setGamesOn(hit ? hit.c : champParam);
   }, [champParam, p.champs]);
   const [recentHidden, revealRecent] = useHidden(
@@ -1496,10 +1496,7 @@ const PlayerChampionsTab: React.FC<{
   const shownChamps = useMemo(
     () =>
       terms.length
-        ? champs.filter((c) => {
-            const hay = `${normText(champName(c.c))} ${normText(c.c)}`;
-            return terms.some((t) => hay.includes(t));
-          })
+        ? champs.filter((c) => terms.some((t) => matchesChampSearch(c.c, t)))
         : champs,
     [champs, terms],
   );

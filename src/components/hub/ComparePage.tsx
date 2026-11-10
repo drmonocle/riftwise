@@ -416,6 +416,14 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
 
   const ready = !!(a && b && info.key === forKey && logs.key === forKey && info.a && info.b && logs.a && logs.b);
   useEffect(() => {
+    if (info.key !== forKey) return;
+    const canonA = info.a?.u || a || undefined;
+    const canonB = info.b?.u || b || undefined;
+    if ((info.a && canonA !== a) || (info.b && canonB !== b)) {
+      navigateHub({ kind: "compare", mode, a: canonA, b: canonB, period: route.period }, { replace: true });
+    }
+  }, [forKey, info.key, info.a, info.b, a, b, mode, route.period]);
+  useEffect(() => {
     if (!ready || !info.a || !info.b) return;
     countView(`${mode}/${info.a.u}`, info.a.name);
     countView(`${mode}/${info.b.u}`, info.b.name);
@@ -567,8 +575,8 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
           <>
             {((info.a as HubPlayer).club || (info.b as HubPlayer).club) &&
               (() => {
-                const ca = (info.a as HubPlayer).club ? prettySlug((info.a as HubPlayer).club!) : "";
-                const cb = (info.b as HubPlayer).club ? prettySlug((info.b as HubPlayer).club!) : "";
+                const ca = (info.a as HubPlayer).clubU || ((info.a as HubPlayer).club ? prettySlug((info.a as HubPlayer).club!) : "");
+                const cb = (info.b as HubPlayer).clubU || ((info.b as HubPlayer).club ? prettySlug((info.b as HubPlayer).club!) : "");
                 const aTeam = ca || cb;
                 const bTeam = ca && cb && ca !== cb ? cb : undefined;
                 return (
@@ -599,7 +607,7 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
             <HubLink
               to={{
                 kind: "finder",
-                query: `player=${encodeURIComponent(info.a!.u)}${
+                query: `player=${encodeURIComponent(info.a!.u)}&vsplayer=${encodeURIComponent(info.b!.u)}${
                   period.startsWith("y") && period.length === 5
                     ? `&year=${encodeURIComponent(period.slice(1))}`
                     : period.startsWith("e:")

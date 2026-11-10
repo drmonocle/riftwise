@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Trophy } from "lucide-react";
 import { tl, tk, roleName, regionName, eventTitle, tc, tn, fmtDec } from "../../i18n";
 import { winRate } from "../../stats";
-import { loadHubTeam, loadPlayerGames, loadTeamGames, loadTeamGames2y, normText, prettySlug } from "../../hub/data";
+import { loadHubTeam, loadPlayerGames, loadTeamGames, loadTeamGames2y, matchesChampSearch, normText, prettySlug, sameChamp } from "../../hub/data";
 import { currentHubRoute, hubShareUrl, navigateHub, type HubRoute } from "../../hub/route";
 import { PageTabs, type PageTab } from "./PageTabs";
 import type { HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
@@ -1213,8 +1213,7 @@ const TeamChampionsTab: React.FC<{
   );
   const matchesChamp = (c: string) => {
     if (!terms.length) return true;
-    const hay = `${normText(champName(c))} ${normText(c)}`;
-    return terms.some((term) => hay.includes(term));
+    return terms.some((term) => matchesChampSearch(c, term));
   };
   const shownChamps = useMemo(() => (terms.length ? champs.filter((c) => matchesChamp(c.c)) : champs), [champs, terms]);
   const shownBans = useMemo(() => (terms.length ? bans.filter((c) => matchesChamp(c.c)) : bans), [bans, terms]);
@@ -1384,7 +1383,7 @@ const TeamChampionsTab: React.FC<{
         >
           <ul className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
             {shownChamps.map((c) => {
-              const isSel = selectedChamp?.toLowerCase() === c.c.toLowerCase();
+              const isSel = Boolean(selectedChamp && sameChamp(selectedChamp, c.c));
               const good = c.g > 0 && c.w / c.g >= 0.5;
               return (
                 <li
@@ -1525,7 +1524,7 @@ const TeamChampionsTab: React.FC<{
         >
           <ul className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
             {shownBans.map((c) => {
-              const isSel = selectedChamp?.toLowerCase() === c.c.toLowerCase();
+              const isSel = Boolean(selectedChamp && sameChamp(selectedChamp, c.c));
               return (
                 <li
                   key={c.c}
@@ -1662,7 +1661,7 @@ const TeamChampionsTab: React.FC<{
           >
             <ul className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
               {shownBansVs.map((c) => {
-                const isSel = selectedChamp?.toLowerCase() === c.c.toLowerCase();
+                const isSel = Boolean(selectedChamp && sameChamp(selectedChamp, c.c));
                 return (
                   <li
                     key={c.c}
@@ -1736,11 +1735,10 @@ const TeamChampGames: React.FC<{
   }, [period]);
 
   const canonical = useMemo(() => {
-    const low = champ.toLowerCase();
     const hit =
-      t.champs.find((x) => x.c.toLowerCase() === low || champName(x.c).toLowerCase() === low)?.c ||
-      t.bans.find((x) => x.c.toLowerCase() === low || champName(x.c).toLowerCase() === low)?.c ||
-      (t.bansVs || []).find((x) => x.c.toLowerCase() === low || champName(x.c).toLowerCase() === low)?.c;
+      t.champs.find((x) => sameChamp(x.c, champ))?.c ||
+      t.bans.find((x) => sameChamp(x.c, champ))?.c ||
+      (t.bansVs || []).find((x) => sameChamp(x.c, champ))?.c;
     return hit || champ;
   }, [t, champ]);
 
@@ -1750,11 +1748,10 @@ const TeamChampGames: React.FC<{
   }, [rows, period]);
 
   const pickEntries = useMemo(() => {
-    const low = canonical.toLowerCase();
     const out: { r: TeamGameRow; idx: number; roleIdx: number | null; gd15: number | null }[] = [];
     for (const r of periodRows) {
       const picks = r[20] || [];
-      const idx = picks.findIndex((c) => c.toLowerCase() === low || champName(c).toLowerCase() === low);
+      const idx = picks.findIndex((c) => sameChamp(c, canonical));
       if (idx >= 0) {
         const roleIdx = r[22]?.[idx] != null && r[22]![idx] >= 0 ? r[22]![idx] : null;
         const gd15 = r[24]?.[idx] ?? null;
@@ -1802,12 +1799,11 @@ const TeamChampGames: React.FC<{
 
   // Match each team game on `canonical` to the player who played it (via player game logs, or single-role-starter fallback)
   const gamePlayerMap = useMemo(() => {
-    const low = canonical.toLowerCase();
     const bySeriesDate = new Map<string, { n: string; u: string; r: string; k: number; d: number; a: number; g15: number | null }>();
     for (const p of candidatePlayers) {
       const logs = playerLogs[p.u] || [];
       for (const pg of logs) {
-        if (pg[2]?.toLowerCase() !== low && champName(pg[2] || "").toLowerCase() !== low) continue;
+        if (!sameChamp(pg[2] || "", canonical)) continue;
         const key = `${pg[0]}|${pg[1] || ""}|${pg[22] || ""}`;
         const keyFallback = `${pg[0]}|${pg[1] || ""}|${pg[6]}`;
         const info = { n: p.n, u: p.u, r: pg[10] || p.r, k: pg[3], d: pg[4], a: pg[5], g15: pg[21]?.[3] ?? null };
@@ -1880,11 +1876,10 @@ const TeamChampGames: React.FC<{
 
   // Draft synergies: most frequent teammate champions in the same 5-man composition
   const draftPartners = useMemo(() => {
-    const low = canonical.toLowerCase();
     const counts = new Map<string, [number, number]>();
     for (const e of pickEntries) {
       for (const c of e.r[20] || []) {
-        if (c.toLowerCase() === low || champName(c).toLowerCase() === low) continue;
+        if (sameChamp(c, canonical)) continue;
         const cur = counts.get(c) || [0, 0];
         cur[0]++;
         cur[1] += e.r[7];
@@ -1895,12 +1890,11 @@ const TeamChampGames: React.FC<{
   }, [pickEntries, canonical]);
 
   const bansInfo = useMemo(() => {
-    const low = canonical.toLowerCase();
     let byTeam = 0;
     let vsTeam = 0;
     for (const r of periodRows) {
-      if ((r[19] || []).some((c) => c.toLowerCase() === low)) byTeam++;
-      if ((r[21] || []).some((c) => c.toLowerCase() === low)) vsTeam++;
+      if ((r[19] || []).some((c) => sameChamp(c, canonical))) byTeam++;
+      if ((r[21] || []).some((c) => sameChamp(c, canonical))) vsTeam++;
     }
     return { byTeam, vsTeam };
   }, [periodRows, canonical]);

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { hubPath, parseHubPath } from "../hub/route";
-import { resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug } from "../hub/data";
+import { matchesChampSearch, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug, sameChamp, searchHub } from "../hub/data";
 import { rateLine, profile, type RatingFile } from "../hub/playerRating";
 import { filterBuiltSeasons } from "../components/hub/Ranks";
 import { matchSide } from "../components/hub/FinderPage";
@@ -204,5 +204,24 @@ describe("search shortcuts", () => {
     expect(matchSide(g, new URLSearchParams("player=canyon&vsplayer=oner"), null)).toBe(1);
     expect(matchSide(g, new URLSearchParams("champ=monkeyking&vschamp=j4"), null)).toBe(0);
     expect(matchSide(g, new URLSearchParams("ban=k-sante"), null)).toBe(0);
+  });
+  it("matches champion shorthand and aliases across search and filters", () => {
+    expect(sameChamp("Jarvan IV", "j4")).toBe(true);
+    expect(sameChamp("K'Sante", "k-sante")).toBe(true);
+    expect(sameChamp("Wukong", "monkeyking")).toBe(true);
+    expect(sameChamp("Lee Sin", "lee-sin")).toBe(true);
+    expect(matchesChampSearch("Jarvan IV", "j4")).toBe(true);
+    expect(matchesChampSearch("Twisted Fate", "tf")).toBe(true);
+    expect(matchesChampSearch("K'Sante", "ksante")).toBe(true);
+    const idx: HubIndex = {
+      ...INDEX,
+      players: [...INDEX.players, ["Baus", "baus", "Los Ratones", 120, "2026", "T", "Simon Hofverberg"]],
+      champs: [...INDEX.champs, ["Jarvan IV", "jarvan-iv", 14000], ["LeBlanc", "leblanc", 11000]],
+    };
+    expect(searchHub(idx, "j4").champ.map((h) => h.slug)).toContain("jarvan-iv");
+    expect(searchHub(idx, "thebausffs").player.map((h) => h.slug)).toContain("baus");
+    const pair = champPairShortcuts(idx, "faker lb");
+    expect(pair.shortcuts).toHaveLength(1);
+    expect(hubPath(pair.shortcuts[0].route)).toBe("/player/faker/champions?champ=LeBlanc");
   });
 });

@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, tn, tc, roleName, stageLabel, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
-import { loadPlayerGames, loadPlayerItems, loadTeamSeries, prettySlug } from "../../hub/data";
+import { loadPlayerGames, loadPlayerItems, loadTeamSeries, matchesChampSearch, prettySlug, sameChamp } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import { inPeriod, playerRowRef, type PeriodKey } from "../../hub/period";
 import type { PlayerGameRow, TeamSeriesRow } from "../../hub/types";
@@ -672,6 +672,10 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
     for (const r of data) if (r[8]) count.set(r[8], (count.get(r[8]) || 0) + 1);
     return [...count.entries()].sort((x, y) => y[1] - x[1]);
   }, [data]);
+  const activeChamp = useMemo(
+    () => (champ === "all" ? "all" : champs.find(([c]) => sameChamp(c, champ))?.[0] || champ),
+    [champ, champs],
+  );
   const rows = useMemo(() => {
     const terms = q
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
@@ -680,12 +684,12 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
     return data.filter(
       (r: PlayerGameRow) =>
         (year === "all" || r[0].startsWith(year)) &&
-        (champ === "all" || r[2] === champ) &&
+        (champ === "all" || sameChamp(r[2] || "", champ)) &&
         (opp === "all" || r[8] === opp) &&
         (!terms.length ||
           terms.some((term) => {
             const hay = `${r[2] || ""} ${champName(r[2] || "")} ${r[7] || ""} ${r[8] || ""} ${r[9] || ""} ${r[10] || ""}`.toLowerCase();
-            return hay.includes(term);
+            return hay.includes(term) || Boolean(r[2] && matchesChampSearch(r[2], term));
           })),
     );
   }, [data, year, champ, opp, q]);
@@ -711,7 +715,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
             </option>
           ))}
         </select>
-        <select value={champ} onChange={(e) => { setChamp(e.target.value); setN(PAGE); }} aria-label={tl("Champion")} className={select}>
+        <select value={activeChamp} onChange={(e) => { setChamp(e.target.value); setN(PAGE); }} aria-label={tl("Champion")} className={select}>
           <option value="all">{tl("All champions")}</option>
           {champs.map(([c, cnt]) => (
             <option key={c} value={c}>

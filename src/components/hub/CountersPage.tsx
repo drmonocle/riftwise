@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadHubChamp, loadHubIndexQuick, loadMatchups, prettySlug, resolveChampSlug } from "../../hub/data";
+import { bare, loadHubChamp, loadHubIndexQuick, loadMatchups, matchesChampSearch, prettySlug, resolveChampSlug, sameChamp } from "../../hub/data";
 import { ROLES } from "../../hub/champAgg";
 import type { HubChamp, HubMatchups } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
@@ -233,25 +233,18 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
       .map((s) => s.trim())
       .filter(Boolean);
     return rows.filter((r) => {
-      const cDisp = champName(r.c).toLowerCase();
-      const cRaw = r.c.toLowerCase();
-      const cBare = bare(cDisp);
       const rDisp = r.role >= 0 ? roleName(ROLES[r.role]).toLowerCase() : "";
-      return terms.some((term) => {
-        const tb = bare(term);
-        return cDisp.includes(term) || cRaw.includes(term) || (tb.length >= 2 && cBare.includes(tb)) || (rDisp && rDisp.includes(term));
-      });
+      return terms.some((term) => matchesChampSearch(r.c, term) || Boolean(rDisp && rDisp.includes(term)));
     });
   }, [rows, tableSearch]);
   const vsMatch = useMemo(() => {
     const d = data.data;
     if (!d || !vsParam) return null;
-    const b = bare(resolveChampSlug(vsParam) || vsParam);
     const allRows: Row[] = [];
     if (span === "12m" && d.ch?.matchups12) {
       ROLES.forEach((rName, rIdx) => {
         for (const [opp, g, w, , gd, csd] of d.ch?.matchups12?.[rName] || []) {
-          if (bare(opp) === b || bare(champName(opp)) === b) {
+          if (sameChamp(opp, vsParam)) {
             allRows.push({ c: opp, role: rIdx, g, w, gd: gd ?? null, csd: csd ?? null });
           }
         }
@@ -259,7 +252,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
     }
     if (allRows.length === 0) {
       for (const [c, r, g, w, gd] of d.m.vs) {
-        if (bare(c) === b || bare(champName(c)) === b) {
+        if (sameChamp(c, vsParam)) {
           allRows.push({ c, role: r, g, w, gd });
         }
       }
