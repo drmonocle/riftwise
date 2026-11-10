@@ -708,7 +708,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `champ=${encodeURIComponent(cName)}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                    query: `champ=${encodeURIComponent(rawChamp || cName)}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
                   }}
                   className="hover:text-rw-accent hover:underline"
                   title={tl("Game finder")}

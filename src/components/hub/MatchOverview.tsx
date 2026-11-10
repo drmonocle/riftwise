@@ -15,7 +15,7 @@ import { navigateHub } from "../../hub/route";
 import { Change } from "./RankingsPage";
 import { chancesOf, prepLines, rankText, type Side } from "./PrepPage";
 import { BroadcastCardButton, prepOverviewCard } from "./BroadcastCard";
-import { fmtDate, isFresh, Loading, PlayerLink, PlayerPhoto, RevealButton, TeamLink, TeamLogo, useHidden, useLoad } from "./ui";
+import { fmtDate, HubLink, isFresh, Loading, PlayerLink, PlayerPhoto, RevealButton, TeamLink, TeamLogo, useHidden, useLoad } from "./ui";
 
 export { teamStarter };
 
@@ -397,7 +397,9 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                       <>
                         {l.who.to.kind === "team" ? (
                           <span className="inline-flex items-center gap-1 align-baseline font-semibold">
-                            <TeamLogo name={l.who.name} size={13} />
+                            <HubLink to={l.who.to} className="shrink-0">
+                              <TeamLogo name={l.who.name} size={13} />
+                            </HubLink>
                             <TeamLink name={l.who.name} u={l.who.to.slug} />
                           </span>
                         ) : (

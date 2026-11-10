@@ -5,6 +5,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName, fmtDec, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
+import { champName } from "../../champions";
+import { hubShareUrl } from "../../hub/route";
 import { loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y } from "../../hub/data";
 import type { PlayerGameRow, TeamGameRow } from "../../hub/types";
 import {
@@ -56,11 +58,11 @@ const Sub: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </div>
 );
 
-const CopyPeriodTextPost: React.FC<{ buildText: () => string }> = ({ buildText }) => {
+const CopyPeriodTextPost: React.FC<{ buildText: () => string; url?: string }> = ({ buildText, url }) => {
   const [copied, setCopied] = useState(false);
   const copy = () => {
-    const url = typeof window !== "undefined" ? window.location.href : "https://riftwise.gg";
-    const text = `${buildText()}\n${url}`;
+    const shareUrl = url || (typeof window !== "undefined" ? window.location.href : "https://riftwise.gg");
+    const text = `${buildText()}\n${shareUrl}`;
     navigator.clipboard?.writeText(text).then(() => {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
@@ -656,7 +658,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
     {
       key: "c",
       label: tl("Champion"),
-      value: (c) => c.c,
+      value: (c) => champName(c.c),
       render: (c) => <ChampLink name={c.c} size={18} />,
     },
     {
@@ -819,12 +821,18 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
           <OnlyPicker value={only} onChange={setOnly} />
           {!hidden && (
             <CopyPeriodTextPost
+              url={hubShareUrl({
+                kind: "player",
+                slug,
+                tab: "stats",
+                ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+              })}
               buildText={() => {
                 const head = `${who?.name || slug} — ${tl("Stats for")} ${periodText} (${agg.w}-${agg.g - agg.w}, ${winRate(agg.w, agg.g)})`;
                 const stats = `KDA ${fmtN(agg.kda)}${agg.csm != null ? ` · CS/m ${agg.csm}` : ""}${agg.dpm != null ? ` · DPM ${fmtNum(agg.dpm)}` : ""}${agg.tl?.gd15 != null ? ` · GD@15 ${signed(agg.tl.gd15)}` : ""}`;
                 const champs = agg.champs
                   .slice(0, 5)
-                  .map((c) => `• ${c.c}: ${c.w}-${c.g - c.w} (${winRate(c.w, c.g)}, KDA ${fmtN(c.kda)})`);
+                  .map((c) => `• ${champName(c.c)}: ${c.w}-${c.g - c.w} (${winRate(c.w, c.g)}, KDA ${fmtN(c.kda)})`);
                 return [head, stats, ...champs].join("\n");
               }}
             />
@@ -946,7 +954,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                   agg.champs.slice(0, 10).map((c, idx) => ({
                     rank: idx + 1,
                     champ: c.c,
-                    label: c.c,
+                    label: champName(c.c),
                     sub: `${c.g}G · KDA ${fmtN(c.kda)}${c.gd15 != null ? ` · GD@15 ${signed(c.gd15)}` : ""}`,
                     value: winRate(c.w, c.g),
                   }))
@@ -1078,12 +1086,18 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
           <OnlyPicker value={only} onChange={setOnly} sides />
           {!hidden && (
             <CopyPeriodTextPost
+              url={hubShareUrl({
+                kind: "team",
+                slug,
+                tab: "stats",
+                ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+              })}
               buildText={() => {
                 const head = `${who?.name || slug} — ${tl("Stats for")} ${periodText} (${t.w}-${t.g - t.w}, ${winRate(t.w, t.g)})`;
                 const stats = `Blue ${winRate(t.blue[1], t.blue[0])} / Red ${winRate(t.red[1], t.red[0])}${t.tl?.gd15 != null ? ` · GD@15 ${signed(t.tl.gd15)}` : ""}${t.dragShare != null ? ` · DRA% ${pct(t.dragShare)}` : ""}${t.baronShare != null ? ` · Baron% ${pct(t.baronShare)}` : ""}`;
                 const picks = t.picks
                   .slice(0, 5)
-                  .map(([c, n, w]) => `• ${c}: ${n}G (${winRate(w, n)})`);
+                  .map(([c, n, w]) => `• ${champName(c)}: ${n}G (${winRate(w, n)})`);
                 return [head, stats, ...picks].join("\n");
               }}
             />

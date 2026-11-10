@@ -730,7 +730,14 @@ const FinderBody: React.FC<{
                       />
                       <td className={`${td} font-semibold text-rw-text`} data-sort={(g[3] === 1 ? g[10] : g[11]) || ""}>
                         <span className="inline-flex items-center gap-1.5 min-w-0">
-                          {(g[3] === 1 ? g[10] : g[11]) && <TeamLogo name={(g[3] === 1 ? g[10] : g[11])!} size={14} />}
+                          {(g[3] === 1 ? g[10] : g[11]) && (
+                            <HubLink
+                              to={{ kind: "team", slug: (g[3] === 1 ? g[12] : g[13]) || prettySlug((g[3] === 1 ? g[10] : g[11])!) }}
+                              className="shrink-0"
+                            >
+                              <TeamLogo name={(g[3] === 1 ? g[10] : g[11])!} size={14} />
+                            </HubLink>
+                          )}
                           {(g[3] === 1 ? g[10] : g[11]) ? (
                             <TeamLink name={(g[3] === 1 ? g[10] : g[11])!} u={g[3] === 1 ? g[12] : g[13]} />
                           ) : g[3] === 1 ? (
@@ -1022,7 +1029,11 @@ const TeamCell: React.FC<{
     data-sort={name || ""}
   >
     <span className="inline-flex items-center gap-1.5 min-w-0">
-      {name && <TeamLogo name={name} size={14} />}
+      {name && (
+        <HubLink to={{ kind: "team", slug: u || prettySlug(name) }} className="shrink-0">
+          <TeamLogo name={name} size={14} />
+        </HubLink>
+      )}
       {u ? (
         <HubLink to={{ kind: "team", slug: u }} className="hover:text-rw-accent">
           {name}

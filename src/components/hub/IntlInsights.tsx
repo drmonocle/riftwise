@@ -231,7 +231,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   <span className="inline-flex flex-wrap items-center gap-x-2.5 gap-y-1 align-middle">
                     {list.map((r, i) => (
                       <span key={`${r.u}-${r.year}-${i}`} className="inline-flex items-center gap-1">
-                        <TeamLogo name={r.team} size={13} />
+                        <HubLink to={{ kind: "team", slug: r.u || prettySlug(r.team) }} className="shrink-0">
+                          <TeamLogo name={r.team} size={13} />
+                        </HubLink>
                         <TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent" />
                         <HubLink
                           to={{ kind: "finder", query: `team=${encodeURIComponent(r.u)}&year=${encodeURIComponent(yearOnly(r.year))}` }}
@@ -276,7 +278,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             {sorted.map((r) => (
               <li key={r.u} className="flex items-center justify-between gap-2 min-w-0">
                 <span className="inline-flex items-center gap-1.5 truncate min-w-0">
-                  <TeamLogo name={r.team} size={15} />
+                  <HubLink to={{ kind: "team", slug: r.u || prettySlug(r.team) }} className="shrink-0">
+                    <TeamLogo name={r.team} size={15} />
+                  </HubLink>
                   <TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent truncate" />
                 </span>
                 <span className="flex items-center gap-2 shrink-0">
@@ -443,7 +447,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   key={i}
                   left={
                     <span className="inline-flex items-center gap-1 min-w-0">
-                      <TeamLogo name={l[0].winner} size={14} />
+                      <HubLink to={{ kind: "team", slug: prettySlug(l[0].winner) }} className="shrink-0">
+                        <TeamLogo name={l[0].winner} size={14} />
+                      </HubLink>
                       <TeamLink name={l[0].winner} className="text-rw-text hover:text-rw-accent hover:underline" />
                       <HubLink
                         to={{ kind: "compare", mode: "team", a: prettySlug(l[0].winner), b: prettySlug(l[0].loser) }}
@@ -452,7 +458,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       >
                         vs
                       </HubLink>
-                      <TeamLogo name={l[0].loser} size={14} />
+                      <HubLink to={{ kind: "team", slug: prettySlug(l[0].loser) }} className="shrink-0">
+                        <TeamLogo name={l[0].loser} size={14} />
+                      </HubLink>
                       <TeamLink name={l[0].loser} className="text-rw-text hover:text-rw-accent hover:underline" />
                     </span>
                   }
@@ -554,7 +562,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 {h.team && (
                   <span className="inline-flex items-center gap-1 truncate text-rw-muted">
                     <span>·</span>
-                    <TeamLogo name={h.team} size={14} />
+                    <HubLink to={{ kind: "team", slug: prettySlug(h.team) }} className="shrink-0">
+                      <TeamLogo name={h.team} size={14} />
+                    </HubLink>
                     <TeamLink name={h.team} className="truncate text-rw-muted hover:text-rw-accent hover:underline" />
                   </span>
                 )}

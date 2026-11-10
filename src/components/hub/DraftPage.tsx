@@ -2044,7 +2044,9 @@ const TeamColumn: React.FC<{
   return (
     <div className={`${card} space-y-2`} style={{ borderColor: `${color}55` }}>
       <div className="text-xs font-bold flex items-center gap-1.5 min-w-0" style={{ color }}>
-        <TeamLogo name={side.team.name} size={16} />
+        <HubLink to={{ kind: "team", slug: side.team.u }} className="shrink-0">
+          <TeamLogo name={side.team.name} size={16} />
+        </HubLink>
         <span className="truncate">
           {who === "b" ? tl("Blue side") : tl("Red side")}: <TeamLink name={side.team.name} u={side.team.u} className="hover:underline" />
         </span>

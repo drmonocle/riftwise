@@ -9,6 +9,7 @@ import { winRate } from "../../stats";
 import type { TeamGameRow } from "../../hub/types";
 import { ROLES } from "../../hub/champAgg";
 import { champName } from "../../champions";
+import { hubShareUrl } from "../../hub/route";
 import { ChampLink, HubLink } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 
@@ -379,6 +380,16 @@ export const DraftTendencies: React.FC<{
             <CopyDraftTendenciesPost
               teamName={teamName}
               sub={periodLabel ? `${periodLabel} · ${tl("{n} games", { n: d.games })}` : tl("{n} games", { n: d.games })}
+              url={
+                resolvedSlug
+                  ? hubShareUrl({
+                      kind: "team",
+                      slug: resolvedSlug,
+                      tab: "champions",
+                      ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                    })
+                  : "https://riftwise.gg"
+              }
               rows={[
                 ...(d.b1.length ? [`${tl("First pick (blue)")}: ${champStr(d.b1, 3)}`] : []),
                 ...(d.r12.length ? [`${tl("First picks (red)")}: ${champStr(d.r12, 3)}`] : []),
@@ -490,15 +501,16 @@ export const DraftTendencies: React.FC<{
 const CopyDraftTendenciesPost: React.FC<{
   teamName: string;
   sub: string;
+  url: string;
   rows: string[];
-}> = ({ teamName, sub, rows }) => {
+}> = ({ teamName, sub, url, rows }) => {
   const [copied, setCopied] = useState(false);
   const copy = () => {
     const lines: string[] = [`${tl("Draft tendencies")} · ${teamName} (${sub})`];
     for (const r of rows) {
       lines.push(`• ${r}`);
     }
-    lines.push("https://riftwise.gg");
+    lines.push(url);
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {

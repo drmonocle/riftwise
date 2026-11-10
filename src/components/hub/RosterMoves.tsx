@@ -88,7 +88,9 @@ export const RosterMoves: React.FC = () => {
             </span>
             <span className="flex items-center gap-1.5 min-w-0 text-rw-sub">
               <span className="inline-flex items-center gap-1 min-w-0">
-                <TeamLogo name={m.from.n} sizeClass="w-3.5 h-3.5" />
+                <HubLink to={{ kind: "team", slug: m.from.u }} className="shrink-0">
+                  <TeamLogo name={m.from.n} sizeClass="w-3.5 h-3.5" />
+                </HubLink>
                 <TeamLink name={m.from.n} u={m.from.u} className="hover:text-rw-accent truncate" />
               </span>
               <HubLink
@@ -99,7 +101,9 @@ export const RosterMoves: React.FC = () => {
                 <ArrowRight className="w-3 h-3" />
               </HubLink>
               <span className="inline-flex items-center gap-1 min-w-0">
-                <TeamLogo name={m.to.n} sizeClass="w-3.5 h-3.5" />
+                <HubLink to={{ kind: "team", slug: m.to.u }} className="shrink-0">
+                  <TeamLogo name={m.to.n} sizeClass="w-3.5 h-3.5" />
+                </HubLink>
                 <TeamLink name={m.to.n} u={m.to.u} className="text-rw-text hover:text-rw-accent truncate" />
               </span>
             </span>

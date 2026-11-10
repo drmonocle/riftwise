@@ -516,7 +516,9 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
             {side.s && side.i && (
               <div className={`text-sm font-bold flex items-center gap-2 min-w-0 ${side.key === "a" ? "text-rw-side-a" : "text-rw-side-b"}`}>
                 {mode === "team" ? (
-                  <TeamLogo name={side.i.name} size={20} />
+                  <HubLink to={{ kind: "team", slug: side.s }} className="shrink-0">
+                    <TeamLogo name={side.i.name} size={20} />
+                  </HubLink>
                 ) : (
                   <PlayerPhoto name={side.i.name} slug={side.s} img={(side.i as HubPlayer).img} size={22} />
                 )}
@@ -856,7 +858,11 @@ export const TeamRows: React.FC<{
         right={
           <span className="flex flex-wrap items-center justify-end gap-2">
             <span className="text-[11px] text-rw-sub whitespace-nowrap">{periodLabel}</span>
-            <CopyComparePost title={`${x.name} vs ${y.name} · ${periodLabel}`} lines={postLines} url={hubShareUrl({ kind: "compare", mode: "team", a: x.u, b: y.u })} />
+            <CopyComparePost
+              title={`${x.name} vs ${y.name} · ${periodLabel}`}
+              lines={postLines}
+              url={hubShareUrl({ kind: "compare", mode: "team", a: x.u, b: y.u, ...(period && period !== "all" ? { period } : {}) })}
+            />
             <BroadcastCardButton data={() => teamCardData(x, y, A, B, periodLabel, chance)} name={`${x.name}-vs-${y.name}`} label={tl("Overview card")} />
             {drafts.A.games >= 3 && drafts.B.games >= 3 && (
               <BroadcastCardButton
@@ -871,7 +877,9 @@ export const TeamRows: React.FC<{
       >
         <div className="flex items-center justify-between gap-3 text-sm font-bold">
           <span className="flex items-center gap-2 min-w-0 text-rw-side-a">
-            <TeamLogo name={x.name} sizeClass="w-9 h-9 lg:w-12 lg:h-12 2xl:w-16 2xl:h-16" />
+            <HubLink to={{ kind: "team", slug: x.u }} className="shrink-0">
+              <TeamLogo name={x.name} sizeClass="w-9 h-9 lg:w-12 lg:h-12 2xl:w-16 2xl:h-16" />
+            </HubLink>
             <HubLink to={{ kind: "team", slug: x.u }} className="truncate hover:underline">
               {x.name}
             </HubLink>
@@ -880,7 +888,9 @@ export const TeamRows: React.FC<{
             <HubLink to={{ kind: "team", slug: y.u }} className="truncate text-right hover:underline">
               {y.name}
             </HubLink>
-            <TeamLogo name={y.name} sizeClass="w-9 h-9 lg:w-12 lg:h-12 2xl:w-16 2xl:h-16" />
+            <HubLink to={{ kind: "team", slug: y.u }} className="shrink-0">
+              <TeamLogo name={y.name} sizeClass="w-9 h-9 lg:w-12 lg:h-12 2xl:w-16 2xl:h-16" />
+            </HubLink>
           </span>
         </div>
         {rolePairs.length > 0 && (
@@ -1225,7 +1235,11 @@ const PlayerRows: React.FC<{
         right={
           <span className="flex flex-wrap items-center justify-end gap-2">
             <span className="text-[11px] text-rw-sub whitespace-nowrap">{periodLabel}</span>
-            <CopyComparePost title={`${x.name} vs ${y.name} · ${periodLabel}`} lines={postLines} url={hubShareUrl({ kind: "compare", mode: "player", a: x.u, b: y.u })} />
+            <CopyComparePost
+              title={`${x.name} vs ${y.name} · ${periodLabel}`}
+              lines={postLines}
+              url={hubShareUrl({ kind: "compare", mode: "player", a: x.u, b: y.u, ...(period && period !== "all" ? { period } : {}) })}
+            />
             <BroadcastCardButton
               data={() =>
                 playerCardData(
@@ -1792,7 +1806,9 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
         {rows.map((r) => (
           <span key={r.slug} className={`${card} py-1 px-2 flex items-center gap-1.5`}>
             {mode === "team" ? (
-              <TeamLogo name={r.info.name} size={16} />
+              <HubLink to={{ kind: "team", slug: r.slug }} className="shrink-0">
+                <TeamLogo name={r.info.name} size={16} />
+              </HubLink>
             ) : (
               <PlayerPhoto name={r.info.name} slug={r.slug} img={(r.info as HubPlayer).img} size={18} />
             )}
@@ -1878,7 +1894,9 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
                   <th key={r.slug} className="text-right py-1.5 px-2 font-bold text-rw-text whitespace-nowrap">
                     <span className="inline-flex items-center justify-end gap-1.5">
                       {mode === "team" ? (
-                        <TeamLogo name={r.info.name} size={15} />
+                        <HubLink to={{ kind: "team", slug: r.slug }} className="shrink-0">
+                          <TeamLogo name={r.info.name} size={15} />
+                        </HubLink>
                       ) : (
                         <PlayerPhoto name={r.info.name} slug={r.slug} img={(r.info as HubPlayer).img} size={16} />
                       )}

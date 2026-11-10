@@ -266,12 +266,16 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
     >
       <div className="flex items-center justify-between gap-2 text-xs font-bold">
         <span className="flex items-center gap-1.5 min-w-0 text-rw-side-a">
-          <TeamLogo name={a.name} size={18} />
+          <HubLink to={{ kind: "team", slug: a.u }} className="shrink-0">
+            <TeamLogo name={a.name} size={18} />
+          </HubLink>
           <TeamLink name={a.name} u={a.u} className="truncate hover:underline" />
         </span>
         <span className="flex items-center justify-end gap-1.5 min-w-0 text-rw-side-b text-right">
           <TeamLink name={b.name} u={b.u} className="truncate hover:underline" />
-          <TeamLogo name={b.name} size={18} />
+          <HubLink to={{ kind: "team", slug: b.u }} className="shrink-0">
+            <TeamLogo name={b.name} size={18} />
+          </HubLink>
         </span>
       </div>
       <div className="space-y-1.5">
@@ -529,7 +533,9 @@ const KeyStats: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[
             <tr key={(side as Side).team.u} className="border-t border-rw-border">
               <td className="px-2 py-1 font-semibold text-rw-text whitespace-nowrap">
                 <span className="inline-flex items-center gap-1.5">
-                  <TeamLogo name={(side as Side).team.name} size={16} />
+                  <HubLink to={{ kind: "team", slug: (side as Side).team.u }} className="shrink-0">
+                    <TeamLogo name={(side as Side).team.name} size={16} />
+                  </HubLink>
                   <TeamLink name={(side as Side).team.name} u={(side as Side).team.u} />
                 </span>
               </td>
@@ -607,7 +613,7 @@ const RoleQuickCompare: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a
  * Pythagorean win rate (from kills for and against), luck (actual minus Pythagorean), strength of schedule (the
  * opponents' current power rating), gold lead per kill of lead, and the edge by phase against the other team.
  */
-const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[]; ratings: HubRatings | null | undefined }> = ({ a, b, ra, rb, ratings }) => {
+const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[]; period: PeriodKey; ratings: HubRatings | null | undefined }> = ({ a, b, ra, rb, period, ratings }) => {
   const A = useMemo(() => teamAgg(ra), [ra]);
   const B = useMemo(() => teamAgg(rb), [rb]);
   const pyth = (X: ReturnType<typeof teamAgg>) => (X.kills != null && X.deaths != null && X.kills + X.deaths > 0 ? X.kills ** 2 / (X.kills ** 2 + X.deaths ** 2) : null);
@@ -740,7 +746,10 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
       label: tl("Edge by phase ({team})", { team: a.team.name }),
       textValue: `${tl("early")} ${signed(edge("gd10"))} · ${tl("mid")} ${signed(edge("gd15"))} · ${tl("late")} ${signed(edge("gd20"))}`,
       value: (
-        <HubLink to={{ kind: "compare", mode: "team", a: a.team.u, b: b.team.u }} className="inline-flex flex-wrap items-center justify-end gap-1 hover:opacity-90">
+        <HubLink
+          to={{ kind: "compare", mode: "team", a: a.team.u, b: b.team.u, ...(period !== "all" ? { period } : {}) }}
+          className="inline-flex flex-wrap items-center justify-end gap-1 hover:opacity-90"
+        >
           {phaseBadge(tl("early"), edge("gd10"))}
           {phaseBadge(tl("mid"), edge("gd15"))}
           {phaseBadge(tl("late"), edge("gd20"))}
@@ -924,7 +933,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           <WinChances a={a.team} b={b.team} card={print ? undefined : overview} />
           <PrepStorylines a={a} b={b} />
           <Form a={a} b={b} />
-          {!hidden && <Calculated a={a} b={b} ra={ra} rb={rb} ratings={ratings.data} />}
+          {!hidden && <Calculated a={a} b={b} ra={ra} rb={rb} period={period} ratings={ratings.data} />}
         </div>
       </div>
       <div id="prep-h2h" className="rw-span">
@@ -1230,7 +1239,9 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
               // the ten squares stay together: one line beside the name in a side column, their own line on a phone
               <div key={s.team.u} className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
                 <span className="w-28 flex items-center gap-1.5 min-w-0 font-semibold text-rw-text" title={s.team.name}>
-                  <TeamLogo name={s.team.name} size={15} />
+                  <HubLink to={{ kind: "team", slug: s.team.u }} className="shrink-0">
+                    <TeamLogo name={s.team.name} size={15} />
+                  </HubLink>
                   <TeamLink name={s.team.name} u={s.team.u} className="truncate hover:text-rw-accent hover:underline" />
                 </span>
                 <span className="inline-flex items-center gap-1 w-20 tabular-nums shrink-0">
@@ -1981,7 +1992,9 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
       <div className="grid gap-3 md:grid-cols-2 text-xs">
         <div className="space-y-2 min-w-0">
           <div className="font-bold text-rw-side-a flex items-center gap-1.5 min-w-0">
-            <TeamLogo name={a.team.name} size={16} />
+            <HubLink to={{ kind: "team", slug: a.team.u }} className="shrink-0">
+              <TeamLogo name={a.team.name} size={16} />
+            </HubLink>
             <TeamLink name={a.team.name} u={a.team.u} className="truncate hover:underline" />
           </div>
           <div className="space-y-1">
@@ -1999,7 +2012,9 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
         </div>
         <div className="space-y-2 min-w-0">
           <div className="font-bold text-rw-side-b flex items-center gap-1.5 min-w-0">
-            <TeamLogo name={b.team.name} size={16} />
+            <HubLink to={{ kind: "team", slug: b.team.u }} className="shrink-0">
+              <TeamLogo name={b.team.name} size={16} />
+            </HubLink>
             <TeamLink name={b.team.name} u={b.team.u} className="truncate hover:underline" />
           </div>
           <div className="space-y-1">

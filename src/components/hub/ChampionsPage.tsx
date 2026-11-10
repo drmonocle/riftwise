@@ -324,7 +324,7 @@ const LeagueTable: React.FC<{
   const maxLPicks = Math.max(1, ...result.rows.map((r) => r.p || 0));
   const maxLBans = Math.max(1, ...result.rows.map((r) => r.b || 0));
   const cols: Column<LRow>[] = [
-    { key: "c", label: tl("Champion"), value: (c) => c.c, render: (c) => <ChampLink name={c.c} size={18} /> },
+    { key: "c", label: tl("Champion"), value: (c) => champName(c.c), render: (c) => <ChampLink name={c.c} size={18} /> },
     {
       key: "role",
       label: tl("Role"),
@@ -679,7 +679,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
   const maxOPicks = useMemo(() => Math.max(1, ...rows.map((r) => r.p || 0)), [rows]);
   const maxOBans = useMemo(() => Math.max(1, ...rows.map((r) => r.b || 0)), [rows]);
   const cols: Column<Row>[] = [
-    { key: "c", label: tl("Champion"), value: (c) => c.c, render: (c) => <ChampLink name={c.c} size={18} /> },
+    { key: "c", label: tl("Champion"), value: (c) => champName(c.c), render: (c) => <ChampLink name={c.c} size={18} /> },
     {
       key: "role",
       label: tl("Role"),
