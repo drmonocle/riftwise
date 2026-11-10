@@ -1322,6 +1322,15 @@ const TeamChampionsTab: React.FC<{
                     {tl("Draft board")} →
                   </HubLink>
                   <HubLink
+                    to={{
+                      kind: "items",
+                      query: `champ=${encodeURIComponent(prettySlug(shownBans[0].c))}`,
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Item history")} →
+                  </HubLink>
+                  <HubLink
                     to={{ kind: "tiers" }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -1341,6 +1350,15 @@ const TeamChampionsTab: React.FC<{
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Power rankings")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "leaders",
+                      ...(/^y\d{4}$/.test(period) ? { query: `year=${encodeURIComponent(period.slice(1))}` } : {}),
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")} →
                   </HubLink>
                 </>
               )}
@@ -1411,6 +1429,15 @@ const TeamChampionsTab: React.FC<{
                       {tl("Draft board")} →
                     </HubLink>
                     <HubLink
+                      to={{
+                        kind: "items",
+                        query: `champ=${encodeURIComponent(prettySlug(shownBansVs[0].c))}`,
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
+                    <HubLink
                       to={{ kind: "tiers" }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -1430,6 +1457,15 @@ const TeamChampionsTab: React.FC<{
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Power rankings")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "leaders",
+                        ...(/^y\d{4}$/.test(period) ? { query: `year=${encodeURIComponent(period.slice(1))}` } : {}),
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Player leaderboards")} →
                     </HubLink>
                   </>
                 )}

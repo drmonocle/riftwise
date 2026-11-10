@@ -1702,6 +1702,29 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
       title={`${tl("Compare")} · ${p.role ? roleName(p.role) : tl("Players")}`}
       right={
         <span className="flex flex-wrap items-center gap-2">
+          {p.club && peers[0].peer.club && prettySlug(p.club) !== prettySlug(peers[0].peer.club) && (
+            <>
+              <HubLink
+                to={{
+                  kind: "prep",
+                  a: p.clubU || prettySlug(p.club),
+                  b: peers[0].peer.clubU || prettySlug(peers[0].peer.club),
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(p.clubU || prettySlug(p.club))},${encodeURIComponent(peers[0].peer.clubU || prettySlug(peers[0].peer.club))}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+            </>
+          )}
           <HubLink
             to={{ kind: "compare", mode: "player", a: p.u, b: peers[0].peer.u }}
             className="text-[11px] text-rw-accent hover:underline"

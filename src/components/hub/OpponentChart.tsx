@@ -470,6 +470,12 @@ const ColoredOpponentGraph: React.FC<{
               {tl("Match prep")} →
             </HubLink>
             <HubLink
+              to={{ kind: "draft", query: `teams=${encodeURIComponent(active.u || prettySlug(active.opp))}` }}
+              className="text-rw-muted hover:text-rw-accent hover:underline"
+            >
+              {tl("Draft board")} →
+            </HubLink>
+            <HubLink
               to={{ kind: "compare", mode: "team", a: active.u || prettySlug(active.opp) }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
             >
@@ -480,6 +486,24 @@ const ColoredOpponentGraph: React.FC<{
               className="text-rw-muted hover:text-rw-accent hover:underline"
             >
               {tl("Game finder")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "rankings" }}
+              className="text-rw-muted hover:text-rw-accent hover:underline"
+            >
+              {tl("Power rankings")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "tiers" }}
+              className="text-rw-muted hover:text-rw-accent hover:underline"
+            >
+              {tl("Pro tier list")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "leaders" }}
+              className="text-rw-muted hover:text-rw-accent hover:underline"
+            >
+              {tl("Player leaderboards")} →
             </HubLink>
           </div>
         )}
@@ -1284,7 +1308,14 @@ export const TeamOpponentsChart: React.FC<{
             {tl("Pro tier list")} →
           </HubLink>
           <HubLink
-            to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}` }}
+            to={{
+              kind: "finder",
+              query: `team=${encodeURIComponent(teamSlug)}${
+                search.trim() && filtered.length === 1
+                  ? `&vs=${encodeURIComponent(filtered[0].u || prettySlug(filtered[0].n))}`
+                  : ""
+              }`,
+            }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Game finder")} →

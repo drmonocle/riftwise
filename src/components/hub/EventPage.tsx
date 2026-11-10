@@ -1450,6 +1450,15 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
               >
                 {tl("Game finder")} →
               </HubLink>
+              <HubLink
+                to={{
+                  kind: "draft",
+                  query: `p=e:${encodeURIComponent(e.u)}${rows[0].t ? `&teams=${encodeURIComponent(prettySlug(rows[0].t))}${rows[1]?.t && rows[1].t !== rows[0].t ? `,${encodeURIComponent(prettySlug(rows[1].t))}` : ""}` : ""}`,
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
             </>
           )}
           <HubLink

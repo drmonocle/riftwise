@@ -666,17 +666,38 @@ const LatestTournaments: React.FC<{ latest: EventListItem[] }> = ({ latest }) =>
       latest.length > 0 ? (
         <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
           {latest[0]?.w && latest[1]?.w && latest[0].w !== latest[1].w && (
-            <HubLink
-              to={{
-                kind: "compare",
-                mode: "team",
-                a: latest[0].wu || prettySlug(latest[0].w),
-                b: latest[1].wu || prettySlug(latest[1].w),
-              }}
-              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-            >
-              {tl("Compare")} →
-            </HubLink>
+            <>
+              <HubLink
+                to={{
+                  kind: "prep",
+                  a: latest[0].wu || prettySlug(latest[0].w),
+                  b: latest[1].wu || prettySlug(latest[1].w),
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(latest[0].wu || prettySlug(latest[0].w))},${encodeURIComponent(latest[1].wu || prettySlug(latest[1].w))}`,
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "compare",
+                  mode: "team",
+                  a: latest[0].wu || prettySlug(latest[0].w),
+                  b: latest[1].wu || prettySlug(latest[1].w),
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            </>
           )}
           <HubLink to={{ kind: "titles" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Titles")} →
@@ -942,10 +963,16 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
             <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Power rankings")}
             </HubLink>
-            <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+            <HubLink
+              to={{ kind: "tiers", ...(rows[0]?.r ? { query: `role=${encodeURIComponent(rows[0].r)}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
               {tl("Pro tier list")}
             </HubLink>
-            <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-accent hover:underline">
+            <HubLink
+              to={{ kind: "leaders", ...(rows[0]?.r ? { query: `role=${encodeURIComponent(rows[0].r)}` } : {}) }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
               {tl("Player leaderboards")}
             </HubLink>
             <SectionCard

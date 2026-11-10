@@ -165,15 +165,15 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
       share={shareId}
       right={
         <span className="flex items-center gap-1">
-          {f.rows.length >= 2 &&
-            (f.rows[0].player && f.rows[1].player && f.rows[0].player !== f.rows[1].player ? (
+          {f.rows.length >= 1 &&
+            (f.rows[0].player ? (
               <>
                 <HubLink
                   to={{
                     kind: "compare",
                     mode: "player",
                     a: f.rows[0].player,
-                    b: f.rows[1].player,
+                    ...(f.rows[1]?.player && f.rows[1].player !== f.rows[0].player ? { b: f.rows[1].player } : {}),
                     ...(eventSlug ? { period: `e:${eventSlug}` } : {}),
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
@@ -229,13 +229,13 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   {tl("Power rankings")} →
                 </HubLink>
               </>
-            ) : !f.rows[0].player && !f.rows[0].champ && f.rows[0].team && f.rows[1].team && f.rows[0].team !== f.rows[1].team ? (
+            ) : !f.rows[0].player && !f.rows[0].champ && f.rows[0].team ? (
               <>
                 <HubLink
                   to={{
                     kind: "prep",
                     a: f.rows[0].team,
-                    b: f.rows[1].team,
+                    ...(f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? { b: f.rows[1].team } : {}),
                     ...(eventSlug ? { period: `e:${eventSlug}` } : {}),
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
@@ -246,7 +246,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(f.rows[0].team)},${encodeURIComponent(f.rows[1].team)}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}`,
+                    query: `teams=${encodeURIComponent(f.rows[0].team)}${f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? `,${encodeURIComponent(f.rows[1].team)}` : ""}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
@@ -258,7 +258,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                     kind: "compare",
                     mode: "team",
                     a: f.rows[0].team,
-                    b: f.rows[1].team,
+                    ...(f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? { b: f.rows[1].team } : {}),
                     ...(eventSlug ? { period: `e:${eventSlug}` } : {}),
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
@@ -278,7 +278,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                     kind: "finder",
                     query: new URLSearchParams({
                       team: f.rows[0].team,
-                      vs: f.rows[1].team,
+                      ...(f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? { vs: f.rows[1].team } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
                     }).toString(),
                   }}
@@ -302,12 +302,12 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   {tl("Player leaderboards")} →
                 </HubLink>
               </>
-            ) : f.rows[0].champ && f.rows[1].champ && f.rows[0].champ !== f.rows[1].champ ? (
+            ) : f.rows[0].champ ? (
               <>
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${prettySlug(f.rows[0].champ)}&vs=${encodeURIComponent(f.rows[1].champ)}`,
+                    query: `champ=${prettySlug(f.rows[0].champ)}${f.rows[1]?.champ && f.rows[1].champ !== f.rows[0].champ ? `&vs=${encodeURIComponent(f.rows[1].champ)}` : ""}`,
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
                   data-nocapture="1"

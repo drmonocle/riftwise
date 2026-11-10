@@ -148,6 +148,30 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           />
         </h3>
         <div className="flex flex-wrap items-center gap-2">
+          <HubLink
+            to={{ kind: "finder", query: `event=${encodeURIComponent(ev.u)}` }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Game finder")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "leaders", query: `event=${encodeURIComponent(ev.u)}` }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Player leaderboards")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "tiers" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "rankings" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Power rankings")} →
+          </HubLink>
           {!airing.streamDone && (
             <button
               type="button"

@@ -1497,6 +1497,32 @@ const PlayerRows: React.FC<{
         right={
           <span className="flex flex-wrap items-center justify-end gap-2">
             <span className="text-[11px] text-rw-sub whitespace-nowrap">{periodLabel}</span>
+            {x.club && y.club && prettySlug(x.club) !== prettySlug(y.club) && (
+              <>
+                <HubLink
+                  to={{
+                    kind: "prep",
+                    a: x.clubU || prettySlug(x.club),
+                    b: y.clubU || prettySlug(y.club),
+                    ...(period && period !== "all" ? { period } : {}),
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline font-semibold"
+                  data-nocapture="1"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(x.clubU || prettySlug(x.club))},${encodeURIComponent(y.clubU || prettySlug(y.club))}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+              </>
+            )}
             <HubLink
               to={{
                 kind: "items",
@@ -2439,26 +2465,20 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
         share={`riftwise-compare-${slugs.join("-")}`}
         right={
           <span className="flex flex-wrap items-center gap-2">
-            {mode === "team" ? (
-              <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
-                {tl("Power rankings")} →
-              </HubLink>
-            ) : (
-              <HubLink
-                to={{
-                  kind: "leaders",
-                  ...(period && period.startsWith("y") && period.length === 5
-                    ? { query: `year=${encodeURIComponent(period.slice(1))}` }
-                    : period && period.startsWith("e:")
-                      ? { query: `event=${encodeURIComponent(period.slice(2))}` }
-                      : {}),
-                }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                data-nocapture="1"
-              >
-                {tl("Player leaderboards")} →
-              </HubLink>
-            )}
+            <HubLink
+              to={{
+                kind: "leaders",
+                ...(period && period.startsWith("y") && period.length === 5
+                  ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                  : period && period.startsWith("e:")
+                    ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                    : {}),
+              }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Player leaderboards")} →
+            </HubLink>
             <HubLink
               to={{
                 kind: "tiers",

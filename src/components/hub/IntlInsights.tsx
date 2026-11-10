@@ -82,6 +82,43 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         title={tl("Biggest upsets")}
         right={
           <span className="flex flex-wrap items-center gap-2">
+            {up.games[0]?.winner && up.games[0]?.loser && (
+              <>
+                <HubLink
+                  to={{
+                    kind: "prep",
+                    a: prettySlug(up.games[0].winner),
+                    b: prettySlug(up.games[0].loser),
+                  }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(prettySlug(up.games[0].winner))},${encodeURIComponent(prettySlug(up.games[0].loser))}`,
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "compare",
+                    mode: "team",
+                    a: prettySlug(up.games[0].winner),
+                    b: prettySlug(up.games[0].loser),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              </>
+            )}
             <HubLink to={{ kind: "rankings" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
               {tl("Power rankings")} →
             </HubLink>
@@ -187,6 +224,43 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         title={tl("Biggest comebacks")}
         right={
           <span className="flex flex-wrap items-center gap-2">
+            {cb[0]?.winner && cb[0]?.loser && (
+              <>
+                <HubLink
+                  to={{
+                    kind: "prep",
+                    a: prettySlug(cb[0].winner),
+                    b: prettySlug(cb[0].loser),
+                  }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(prettySlug(cb[0].winner))},${encodeURIComponent(prettySlug(cb[0].loser))}`,
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "compare",
+                    mode: "team",
+                    a: prettySlug(cb[0].winner),
+                    b: prettySlug(cb[0].loser),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              </>
+            )}
             <HubLink to={{ kind: "records" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
               {tl("Records")} →
             </HubLink>
