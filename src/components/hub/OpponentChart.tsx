@@ -656,7 +656,12 @@ export const PlayerOpponents: React.FC<{
 
   const filteredOpps = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return q ? opps.filter((o) => o.opp.toLowerCase().includes(q)) : opps;
+    const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean) : [];
+    if (!terms.length) return opps;
+    return opps.filter((o) => {
+      const hay = `${o.opp} ${o.u || ""}`.toLowerCase();
+      return terms.some((t) => hay.includes(t));
+    });
   }, [opps, search]);
 
   if (!opps.length) return null;
@@ -1058,7 +1063,12 @@ export const TeamOpponentsChart: React.FC<{
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return q ? opps.filter((o) => o.n.toLowerCase().includes(q)) : opps;
+    const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean) : [];
+    if (!terms.length) return opps;
+    return opps.filter((o) => {
+      const hay = `${o.n} ${o.u || ""}`.toLowerCase();
+      return terms.some((t) => hay.includes(t));
+    });
   }, [opps, search]);
 
   if (!opps.length) return null;
@@ -1236,6 +1246,7 @@ export const TeamPeriodOpponents: React.FC<{
   const [selectedOpp, setSelectedOpp] = useState<string | null>(null);
   const [metric, setMetric] = useState<"wr" | "gd15">("wr");
   const [showAll, setShowAll] = useState(false);
+  const [search, setSearch] = useState("");
 
   const opps = useMemo(() => {
     const byOpp = new Map<string, { opp: string; u: string | null; g: number; w: number; k: number; d: number; gd15Sum: number; gd15N: number; last: string; games: TeamGameRow[] }>();
@@ -1304,14 +1315,33 @@ export const TeamPeriodOpponents: React.FC<{
   });
 
   const maxPeriodOppG = Math.max(1, ...opps.map((o) => o.g));
-  const shown = showAll ? opps : opps.slice(0, 10);
+  const q = search.trim().toLowerCase();
+  const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean) : [];
+  const filtered = terms.length
+    ? opps.filter((o) => {
+        const hay = `${o.opp} ${o.u || ""}`.toLowerCase();
+        return terms.some((t) => hay.includes(t));
+      })
+    : opps;
+  const shown = showAll || q ? filtered : filtered.slice(0, 10);
   const expanded = selectedOpp ? opps.find((o) => o.opp === selectedOpp) || null : null;
 
   return (
     <Section
       title={tl("Against other teams")}
       right={
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center gap-2">
+          {opps.length > 8 && (
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={tl("Filter by name or team…")}
+              aria-label={tl("Filter by name or team…")}
+              data-nocapture="1"
+              className="bg-rw-bg border border-rw-border rounded-md px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted focus:border-rw-accent focus:outline-none w-36"
+            />
+          )}
           {hasGd15 && (
             <span className="inline-flex items-center gap-1" data-nocapture="1">
               {(["wr", "gd15"] as const).map((m) => (
@@ -1328,9 +1358,9 @@ export const TeamPeriodOpponents: React.FC<{
               ))}
             </span>
           )}
-          {opps.length > 10 && (
+          {filtered.length > 10 && !q && (
             <button type="button" onClick={() => setShowAll((v) => !v)} className="text-[11px] text-rw-accent hover:underline">
-              {showAll ? tl("Show fewer") : tl("Show all {n}", { n: opps.length })}
+              {showAll ? tl("Show fewer") : tl("Show all {n}", { n: filtered.length })}
             </button>
           )}
           <SectionCard

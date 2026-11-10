@@ -106,14 +106,29 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
       alive = false;
     };
   }, [wanted]);
+  const [search, setSearch] = useState("");
   const cols = useColumns();
   if (!data) return null;
-  // a phone shows the next four matches; each extra column of room shows four more
-  const blocks = upcoming
+  const allBlocks = upcoming
     .map((m) => ({ m, lines: matchLines(m, data.index, data.stakes) }))
-    .filter((x) => x.lines.length)
-    .slice(0, narrow ? 3 : cols * 4);
-  if (!blocks.length) return null;
+    .filter((x) => x.lines.length);
+  if (!allBlocks.length) return null;
+  const q = search.trim().toLowerCase();
+  const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean) : [];
+  // a phone shows the next four matches; each extra column of room shows four more
+  const blocks = terms.length
+    ? allBlocks
+        .map(({ m, lines }) => {
+          const mHay = `${m.team1Code} ${m.team1Name} ${m.team2Code} ${m.team2Name} ${m.leagueName}`.toLowerCase();
+          if (terms.some((t) => mHay.includes(t))) return { m, lines };
+          const filteredLines = lines.filter((l) => {
+            const lHay = `${l.who?.name || ""} ${l.champ || ""} ${l.plain || ""}`.toLowerCase();
+            return terms.some((t) => lHay.includes(t));
+          });
+          return { m, lines: filteredLines };
+        })
+        .filter((x) => x.lines.length > 0)
+    : allBlocks.slice(0, narrow ? 3 : cols * 4);
   const time = (iso: string) =>
     new Date(iso).toLocaleTimeString(locale(), {
       weekday: "short",
@@ -125,22 +140,35 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
       title={tl("On the line today")}
       share="riftwise-on-the-line-today"
       right={
-        <SectionCard
-          section={tl("On the line today")}
-          name="RiftWise"
-          sub={tl("Milestones and streaks for the matches in the next 24 hours.")}
-          rows={() =>
-            blocks.slice(0, 8).map(({ m, lines }, idx) => ({
-              rank: idx + 1,
-              team: m.team1Name || m.team1Code,
-              label: `${m.team1Code} vs ${m.team2Code}`,
-              sub: lines[0]?.plain
-                ? `${m.leagueName} · ${lines[0].who ? `${lines[0].who.name}: ` : ""}${lines[0].plain}`
-                : m.leagueName,
-              value: m.state === "inProgress" ? tl("Live now") : time(m.startTimeUtc),
-            }))
-          }
-        />
+        <span className="flex flex-wrap items-center gap-2">
+          {!narrow && allBlocks.length > 3 && (
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={tl("Filter by name or team…")}
+              aria-label={tl("Filter by name or team…")}
+              data-nocapture="1"
+              className="bg-rw-bg border border-rw-border rounded-md px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted focus:border-rw-accent focus:outline-none w-36"
+            />
+          )}
+          <SectionCard
+            section={tl("On the line today")}
+            name="RiftWise"
+            sub={tl("Milestones and streaks for the matches in the next 24 hours.")}
+            rows={() =>
+              blocks.slice(0, 8).map(({ m, lines }, idx) => ({
+                rank: idx + 1,
+                team: m.team1Name || m.team1Code,
+                label: `${m.team1Code} vs ${m.team2Code}`,
+                sub: lines[0]?.plain
+                  ? `${m.leagueName} · ${lines[0].who ? `${lines[0].who.name}: ` : ""}${lines[0].plain}`
+                  : m.leagueName,
+                value: m.state === "inProgress" ? tl("Live now") : time(m.startTimeUtc),
+              }))
+            }
+          />
+        </span>
       }
     >
       <p className="text-[11px] text-rw-muted">
@@ -164,6 +192,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                     mode: "team",
                     a: findHubTeam(data.index, m.team1Name, m.team1Code) || prettySlug(m.team1Name || m.team1Code),
                     b: findHubTeam(data.index, m.team2Name, m.team2Code) || prettySlug(m.team2Name || m.team2Code),
+                    period: m.startTimeUtc ? `y${m.startTimeUtc.slice(0, 4)}` : undefined,
                   }}
                   className="text-rw-muted hover:text-rw-accent hover:underline font-normal"
                   title={tl("Compare")}
@@ -195,6 +224,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                     kind: "prep",
                     a: findHubTeam(data.index, m.team1Name, m.team1Code) || prettySlug(m.team1Name || m.team1Code),
                     b: findHubTeam(data.index, m.team2Name, m.team2Code) || prettySlug(m.team2Name || m.team2Code),
+                    period: m.startTimeUtc ? `y${m.startTimeUtc.slice(0, 4)}` : undefined,
                   }}
                   className="hover:text-rw-accent hover:underline"
                 >

@@ -399,17 +399,31 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           </div>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => onTogglePlayerFollow(p.name)}
-                          className={`p-1.5 rounded hover:bg-rw-border transition-colors shrink-0 ml-2 ${
-                            isPlayerFollowed ? "text-rw-accent" : "text-rw-sub hover:text-rw-accent"
-                          }`}
-                          aria-label={isPlayerFollowed ? tl("Unfollow {name}", { name: p.name }) : tl("Follow {name}", { name: p.name })}
-                          title={isPlayerFollowed ? tl("Unfollow {name}", { name: p.name }) : tl("Follow {name}", { name: p.name })}
-                        >
-                          <Star className={`w-4 h-4 ${isPlayerFollowed ? "fill-rw-accent" : ""}`} />
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0 ml-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigateHub({ kind: "compare", mode: "player", a: prettySlug(p.name) });
+                              onClose();
+                            }}
+                            className="p-1.5 rounded hover:bg-rw-border text-rw-sub hover:text-rw-accent transition-colors"
+                            aria-label={tl("Compare")}
+                            title={tl("Compare")}
+                          >
+                            <GitCompare className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onTogglePlayerFollow(p.name)}
+                            className={`p-1.5 rounded hover:bg-rw-border transition-colors ${
+                              isPlayerFollowed ? "text-rw-accent" : "text-rw-sub hover:text-rw-accent"
+                            }`}
+                            aria-label={isPlayerFollowed ? tl("Unfollow {name}", { name: p.name }) : tl("Follow {name}", { name: p.name })}
+                            title={isPlayerFollowed ? tl("Unfollow {name}", { name: p.name }) : tl("Follow {name}", { name: p.name })}
+                          >
+                            <Star className={`w-4 h-4 ${isPlayerFollowed ? "fill-rw-accent" : ""}`} />
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -457,11 +471,13 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             <button
                               type="button"
                               onClick={() => {
+                                const yr = m.startTimeUtc?.slice(0, 4);
                                 navigateHub({
                                   kind: "compare",
                                   mode: "team",
                                   a: prettySlug(displayName),
                                   b: prettySlug(opp),
+                                  period: yr ? `y${yr}` : undefined,
                                 });
                                 onClose();
                               }}
@@ -497,7 +513,13 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             <button
                               type="button"
                               onClick={() => {
-                                navigateHub({ kind: "prep", a: prettySlug(displayName), b: prettySlug(opp) });
+                                const yr = m.startTimeUtc?.slice(0, 4);
+                                navigateHub({
+                                  kind: "prep",
+                                  a: prettySlug(displayName),
+                                  b: prettySlug(opp),
+                                  period: yr ? `y${yr}` : undefined,
+                                });
                                 onClose();
                               }}
                               className="hover:text-rw-accent hover:underline"
@@ -517,8 +539,14 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             <button
                               type="button"
                               onClick={() => {
+                                const yr = m.startTimeUtc?.slice(0, 4);
                                 onClose();
-                                navigateHub({ kind: "prep", a: prettySlug(displayName), b: prettySlug(opp) });
+                                navigateHub({
+                                  kind: "prep",
+                                  a: prettySlug(displayName),
+                                  b: prettySlug(opp),
+                                  period: yr ? `y${yr}` : undefined,
+                                });
                               }}
                               className="text-right font-mono text-[11px] text-rw-teal hover:underline"
                             >
@@ -600,11 +628,13 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             <button
                               type="button"
                               onClick={() => {
+                                const yr = m.startTimeUtc?.slice(0, 4);
                                 navigateHub({
                                   kind: "compare",
                                   mode: "team",
                                   a: prettySlug(displayName),
                                   b: prettySlug(oppName),
+                                  period: yr ? `y${yr}` : undefined,
                                 });
                                 onClose();
                               }}
@@ -669,11 +699,13 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             <button
                               type="button"
                               onClick={() => {
+                                const yr = m.startTimeUtc?.slice(0, 4);
                                 navigateHub({
                                   kind: "compare",
                                   mode: "team",
                                   a: prettySlug(displayName),
                                   b: prettySlug(oppName),
+                                  period: yr ? `y${yr}` : undefined,
                                 });
                                 onClose();
                               }}

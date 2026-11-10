@@ -255,7 +255,7 @@ export const StoryList: React.FC<{
 }> = ({ title, lines, spoilerKey, share, right, columns }) => {
   const newest = lines.map((l) => l.asOf || "").sort().pop();
   const [hidden] = useHidden(spoilerKey, newest || undefined);
-  if (!lines.length) return null;
+  if (!lines.length && !right) return null;
   const plainLines = lines.filter((l) => l.plain);
   return (
     <Section
@@ -317,15 +317,38 @@ export const OwnStorylines: React.FC<{
 /** Stats home: the most notable storylines of teams and players who played in the last 30 days. */
 export const HomeStorylines: React.FC = () => {
   const state = useLoad(() => load<GlobalNote[]>("hub/notes.json"), []);
+  const [search, setSearch] = useState("");
   // more of them as the window gets wider: 8 in one column, 6 more for each column after
   const cols = useColumns();
-  const rows = (state.data || []).slice(0, 8 + (cols - 1) * 6);
+  const all = state.data || [];
+  const q = search.trim().toLowerCase();
+  const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean) : [];
+  const rows = terms.length
+    ? all.filter((r) => {
+        const hay = `${r.name} ${r.u} ${r.c || ""} ${r.c ? champName(r.c) : ""} ${r.e || ""} ${notePlainText(r)}`.toLowerCase();
+        return terms.some((t) => hay.includes(t));
+      })
+    : all.slice(0, 8 + (cols - 1) * 6);
+  if (!all.length) return null;
   return (
     <StoryList
       title={tl("Storylines")}
       spoilerKey="home-notes"
       share="riftwise-storylines"
       columns
+      right={
+        all.length > 6 ? (
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={tl("Filter by name or team…")}
+            aria-label={tl("Filter by name or team…")}
+            data-nocapture="1"
+            className="bg-rw-bg border border-rw-border rounded-md px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted focus:border-rw-accent focus:outline-none w-36"
+          />
+        ) : undefined
+      }
       lines={rows.map((r, i) => ({
         key: `${r.u}-${i}`,
         who: { name: r.name, to: { kind: r.t, slug: r.u } },

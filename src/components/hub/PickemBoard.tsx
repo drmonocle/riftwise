@@ -73,7 +73,10 @@ export const PickemBoard: React.FC<{
     setBusy(false);
   };
 
+  const [search, setSearch] = useState("");
   const rows = board?.rows || [];
+  const q = search.trim().toLowerCase();
+  const filteredRows = q ? rows.filter((r) => shownName(r).toLowerCase().includes(q)) : rows;
   const me = board?.me;
   const sub = board ? `${tn("{n} player entered", "{n} players entered", board.players)} · ${tn("{n} series decided", "{n} series decided", board.results)}` : "";
   return (
@@ -81,7 +84,18 @@ export const PickemBoard: React.FC<{
       title={tl("Pick'Em leaderboard")}
       id="leaderboard"
       right={
-        <span className="flex items-center gap-1.5">
+        <span className="flex flex-wrap items-center gap-1.5">
+          {rows.length > 8 && (
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={tl("Filter by name or team…")}
+              aria-label={tl("Filter by name or team…")}
+              data-nocapture="1"
+              className="bg-rw-bg border border-rw-border rounded-md px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted focus:border-rw-accent focus:outline-none w-36"
+            />
+          )}
           {rows.length > 0 && (
             <BroadcastCardButton
               compact
@@ -90,7 +104,7 @@ export const PickemBoard: React.FC<{
                   section: tl("Pick'Em leaderboard"),
                   name,
                   sub,
-                  rows: rows.slice(0, 12).map((r) => ({ label: `${r.rank}. ${shownName(r)}`, sub: `${r.right}/${r.scored}`, value: String(r.score) })),
+                  rows: filteredRows.slice(0, 12).map((r) => ({ label: `${r.rank}. ${shownName(r)}`, sub: `${r.right}/${r.scored}`, value: String(r.score) })),
                 })
               }
               name={`${event}-pickem`}
@@ -169,8 +183,8 @@ export const PickemBoard: React.FC<{
           };
           return (
             <ol className="text-xs divide-y divide-rw-border border border-rw-border rounded-lg overflow-hidden">
-              {rows.map((r, i) => renderRow(r, i))}
-              {me && !rows.some((r) => r.me) && renderRow(me, "me", true)}
+              {filteredRows.map((r, i) => renderRow(r, i))}
+              {me && !filteredRows.some((r) => r.me) && (!q || shownName(me).toLowerCase().includes(q)) && renderRow(me, "me", true)}
             </ol>
           );
         })()

@@ -189,6 +189,32 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
       <div className="flex items-center justify-between">
         <h2 className={HEAD}>{tl("Power rankings")}</h2>
         <div className="flex items-center gap-2">
+          {top.length >= 2 && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  navigateHub({ kind: "prep", a: top[0][0], b: top[1][0] });
+                  onSelectTab("stats");
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
+                title={tl("Match prep")}
+              >
+                {tl("Match prep")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  navigateHub({ kind: "compare", mode: "team", a: top[0][0], b: top[1][0] });
+                  onSelectTab("stats");
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
+                title={tl("Compare {a} and {b}", { a: top[0][1], b: top[1][1] })}
+              >
+                {tl("Compare")}
+              </button>
+            </>
+          )}
           <SectionCard
             section={tl("Power rankings")}
             name={tl("Power rankings")}

@@ -45,14 +45,24 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
               ))}
             </span>
             {rows.length >= 2 && (
-              <HubLink
-                data-nocapture="1"
-                to={{ kind: "compare", mode: "team", a: rows[0].u, b: rows[1].u, period: `e:${e.u}` }}
-                className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
-                title={tl("Compare {a} and {b}", { a: rows[0].name, b: rows[1].name })}
-              >
-                {tl("Compare")} →
-              </HubLink>
+              <>
+                <HubLink
+                  data-nocapture="1"
+                  to={{ kind: "prep", a: rows[0].u, b: rows[1].u, period: `e:${e.u}` }}
+                  className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+                  title={tl("Match prep")}
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  data-nocapture="1"
+                  to={{ kind: "compare", mode: "team", a: rows[0].u, b: rows[1].u, period: `e:${e.u}` }}
+                  className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+                  title={tl("Compare {a} and {b}", { a: rows[0].name, b: rows[1].name })}
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              </>
             )}
             <CopyPlayoffOddsPost
               eventName={e.n}

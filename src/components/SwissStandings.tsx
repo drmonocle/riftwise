@@ -61,6 +61,30 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
           )}
         </span>
         <div className="ml-auto flex items-center gap-2">
+          {d.rows.length >= 2 && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  navigateHub({ kind: "prep", a: d.rows[0].u, b: d.rows[1].u });
+                  onOpen();
+                }}
+                className="text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Match prep")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  navigateHub({ kind: "compare", mode: "team", a: d.rows[0].u, b: d.rows[1].u });
+                  onOpen();
+                }}
+                className="text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Compare")}
+              </button>
+            </>
+          )}
           <SectionCard
             section={tl("Worlds Swiss stage: standings")}
             name={tl("Worlds Swiss stage: standings")}

@@ -432,8 +432,12 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
           <button
             type="button"
             onClick={() => {
+              const yr = match.startTimeUtc?.slice(0, 4);
               onClose();
-              navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(x.team.u)},${encodeURIComponent(y.team.u)}` });
+              navigateHub({
+                kind: "draft",
+                query: `teams=${encodeURIComponent(x.team.u)},${encodeURIComponent(y.team.u)}${yr ? `&p=y${yr}` : ""}`,
+              });
             }}
             className="flex items-center gap-1 px-2 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
           >
@@ -443,8 +447,9 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
           <button
             type="button"
             onClick={() => {
+              const yr = match.startTimeUtc?.slice(0, 4);
               onClose();
-              navigateHub({ kind: "compare", mode: "team", a: x.team.u, b: y.team.u });
+              navigateHub({ kind: "compare", mode: "team", a: x.team.u, b: y.team.u, period: yr ? `y${yr}` : undefined });
             }}
             className="flex items-center gap-1 px-2 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
           >
@@ -454,8 +459,12 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
           <button
             type="button"
             onClick={() => {
+              const yr = match.startTimeUtc?.slice(0, 4);
               onClose();
-              navigateHub({ kind: "finder", query: `team=${encodeURIComponent(x.team.u)}&vs=${encodeURIComponent(y.team.u)}` });
+              navigateHub({
+                kind: "finder",
+                query: `team=${encodeURIComponent(x.team.u)}&vs=${encodeURIComponent(y.team.u)}${yr ? `&year=${yr}` : ""}`,
+              });
             }}
             className="flex items-center gap-1 px-2 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
           >

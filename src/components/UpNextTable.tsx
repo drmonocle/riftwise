@@ -136,13 +136,15 @@ const UpNextRow: React.FC<{
         </button>
         <button
           type="button"
-          onClick={() =>
+          onClick={() => {
+            const yr = m.startTimeUtc?.slice(0, 4);
             navigateHub({
               kind: "prep",
               a: prettySlug(m.team1Name || m.team1Code),
               b: prettySlug(m.team2Name || m.team2Code),
-            })
-          }
+              period: yr ? `y${yr}` : undefined,
+            });
+          }}
           className="@max-[900px]:hidden text-rw-sub hover:text-rw-accent hover:underline text-[10px] font-medium text-left"
           title={tl("Match prep")}
         >
@@ -154,7 +156,16 @@ const UpNextRow: React.FC<{
         {logo(m.team1Name, m.team1Code, m.team1Image)}
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "compare", mode: "team", a: prettySlug(m.team1Name), b: prettySlug(m.team2Name) })}
+          onClick={() => {
+            const yr = m.startTimeUtc?.slice(0, 4);
+            navigateHub({
+              kind: "compare",
+              mode: "team",
+              a: prettySlug(m.team1Name),
+              b: prettySlug(m.team2Name),
+              period: yr ? `y${yr}` : undefined,
+            });
+          }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
           title={tl("Compare {a} and {b}", { a: m.team1Name, b: m.team2Name })}
         >
@@ -169,7 +180,16 @@ const UpNextRow: React.FC<{
           {h2h && (
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "compare", mode: "team", a: prettySlug(m.team1Name), b: prettySlug(m.team2Name) })}
+              onClick={() => {
+                const yr = m.startTimeUtc?.slice(0, 4);
+                navigateHub({
+                  kind: "compare",
+                  mode: "team",
+                  a: prettySlug(m.team1Name),
+                  b: prettySlug(m.team2Name),
+                  period: yr ? `y${yr}` : undefined,
+                });
+              }}
               className="inline-flex items-center justify-center gap-1.5 font-mono tabular-nums text-rw-sub hover:text-rw-accent hover:underline text-[10px] @min-[900px]:text-center"
               title={tl("All-time head-to-head, in games")}
             >
@@ -197,13 +217,15 @@ const UpNextRow: React.FC<{
       </span>
       <button
         type="button"
-        onClick={() =>
+        onClick={() => {
+          const yr = m.startTimeUtc?.slice(0, 4);
           navigateHub({
             kind: "prep",
             a: prettySlug(m.team1Name || m.team1Code),
             b: prettySlug(m.team2Name || m.team2Code),
-          })
-        }
+            period: yr ? `y${yr}` : undefined,
+          });
+        }}
         className="@min-[900px]:hidden text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium shrink-0"
         title={tl("Match prep")}
       >
@@ -227,13 +249,15 @@ const ChanceCell: React.FC<{ m: Match }> = ({ m }) => {
   return (
     <button
       type="button"
-      onClick={() =>
+      onClick={() => {
+        const yr = m.startTimeUtc?.slice(0, 4);
         navigateHub({
           kind: "prep",
           a: prettySlug(m.team1Name || m.team1Code),
           b: prettySlug(m.team2Name || m.team2Code),
-        })
-      }
+          period: yr ? `y${yr}` : undefined,
+        });
+      }}
       className="flex items-center gap-1.5 min-w-[7rem] hover:opacity-85"
       title={tl("Chance to win the series, from the power rankings (every pro game since 2011)")}
     >
