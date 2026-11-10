@@ -116,7 +116,13 @@ export const PatchesPanel: React.FC = () => {
                     >
                       <div className="flex items-center justify-between gap-1 min-w-0">
                         <ChampLink name={c} size={18} />
-                        <span className="text-rw-text font-semibold tabular-nums shrink-0">{presPct}%</span>
+                        <HubLink
+                          to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}&champ=${encodeURIComponent(c)}` }}
+                          className="text-rw-text font-semibold tabular-nums shrink-0 hover:text-rw-accent hover:underline"
+                          title={tl("Game finder")}
+                        >
+                          {presPct}%
+                        </HubLink>
                       </div>
                       <div className="h-1.5 rounded-full bg-rw-raised overflow-hidden flex">
                         <div className="h-full bg-rw-teal/80" style={{ width: `${pickPct}%` }} />
@@ -139,9 +145,13 @@ export const PatchesPanel: React.FC = () => {
                           </HubLink>
                         </span>
                         {wrPct != null && (
-                          <span className={pk >= 5 ? (wrPct >= 52 ? "text-rw-teal font-semibold" : wrPct <= 48 ? "text-rw-red" : "text-rw-sub") : ""}>
+                          <HubLink
+                            to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}&champ=${encodeURIComponent(c)}` }}
+                            className={`hover:underline ${pk >= 5 ? (wrPct >= 52 ? "text-rw-teal font-semibold" : wrPct <= 48 ? "text-rw-red" : "text-rw-sub") : "hover:text-rw-accent"}`}
+                            title={tl("Game finder")}
+                          >
                             {wrPct}%
-                          </span>
+                          </HubLink>
                         )}
                       </div>
                     </div>
@@ -150,8 +160,8 @@ export const PatchesPanel: React.FC = () => {
               </div>
               {p.prev && ((p.up?.length || 0) > 0 || (p.down?.length || 0) > 0) && (
                 <div className="grid sm:grid-cols-2 gap-x-4 gap-y-2 mt-2 pt-2 border-t border-rw-border">
-                  <Movers title={tl("Rising since {patch}", { patch: p.prev })} list={p.up || []} up />
-                  <Movers title={tl("Falling since {patch}", { patch: p.prev })} list={p.down || []} />
+                  <Movers title={tl("Rising since {patch}", { patch: p.prev })} list={p.up || []} patch={p.p} up />
+                  <Movers title={tl("Falling since {patch}", { patch: p.prev })} list={p.down || []} patch={p.p} />
                 </div>
               )}
             </div>
@@ -173,7 +183,7 @@ export const PatchesPanel: React.FC = () => {
 };
 
 /** Patch movers: presence before -> now, and the win rate now (5+ picks). */
-const Movers: React.FC<{ title: string; list: PatchMove[]; up?: boolean }> = ({ title, list, up }) =>
+const Movers: React.FC<{ title: string; list: PatchMove[]; patch: string; up?: boolean }> = ({ title, list, patch, up }) =>
   list.length ? (
     <div className="min-w-0">
       <div className={`text-[10px] uppercase tracking-wider font-bold mb-1 ${up ? "text-rw-teal" : "text-rw-red"}`}>{title}</div>
@@ -185,7 +195,11 @@ const Movers: React.FC<{ title: string; list: PatchMove[]; up?: boolean }> = ({ 
             <li key={c} className="space-y-0.5 min-w-0">
               <div className="flex items-center justify-between gap-2 min-w-0">
                 <ChampLink name={c} size={18} />
-                <span className="tabular-nums shrink-0 text-rw-sub" title={tl("Presence: picked or banned in this share of games")}>
+                <HubLink
+                  to={{ kind: "finder", query: `patch=${encodeURIComponent(patch)}&champ=${encodeURIComponent(c)}` }}
+                  className="tabular-nums shrink-0 text-rw-sub hover:underline"
+                  title={tl("Presence: picked or banned in this share of games")}
+                >
                   {Math.round(was * 100)}% → <span className={`font-semibold ${up ? "text-rw-teal" : "text-rw-red"}`}>{nowPct}%</span>
                   {pk >= 5 && (
                     <span className={wrPct >= 53 ? "text-rw-teal font-medium" : wrPct <= 47 ? "text-rw-red" : "text-rw-muted"}>
@@ -193,7 +207,7 @@ const Movers: React.FC<{ title: string; list: PatchMove[]; up?: boolean }> = ({ 
                       · {tl("{pct} won", { pct: `${wrPct}%` })}
                     </span>
                   )}
-                </span>
+                </HubLink>
               </div>
               <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
                 <div
@@ -527,7 +541,12 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                       <TeamLogo name={t.t} size={16} />
                       <TeamLink name={t.t} u={t.u} />
                     </span>
-                    <span className="text-rw-accent font-bold tabular-nums shrink-0">{t.n}</span>
+                    <HubLink
+                      to={t.u ? { kind: "team", slug: t.u, tab: "history" } : { kind: "titles" }}
+                      className="text-rw-accent font-bold tabular-nums shrink-0 hover:underline"
+                    >
+                      {t.n}
+                    </HubLink>
                   </div>
                   <div className="h-1.5 rounded-full bg-rw-raised overflow-hidden">
                     <div className="h-full rounded-full bg-rw-accent/75" style={{ width: `${Math.max(6, Math.round((t.n / maxTitles) * 100))}%` }} />

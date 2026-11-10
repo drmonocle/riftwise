@@ -496,13 +496,17 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         </td>
                         <td className={`${td} tabular-nums`} data-sort={presPct ?? -1}>
                           {presPct != null ? (
-                            <div className="min-w-[3.75rem] space-y-0.5">
-                              <div className="font-semibold text-rw-text">{presPct}%</div>
+                            <HubLink
+                              to={{ kind: "finder", query: `${pk > 0 ? "champ" : "ban"}=${encodeURIComponent(c)}` }}
+                              className="block min-w-[3.75rem] space-y-0.5 hover:opacity-90"
+                              title={tl("Game finder")}
+                            >
+                              <div className="font-semibold text-rw-text hover:text-rw-accent">{presPct}%</div>
                               <div className="h-1 rounded-full bg-rw-raised overflow-hidden flex" aria-hidden="true">
                                 <div className="h-full bg-rw-teal/80" style={{ width: `${pickW}%` }} />
                                 <div className="h-full bg-rw-red/65" style={{ width: `${banW}%` }} />
                               </div>
-                            </div>
+                            </HubLink>
                           ) : (
                             "–"
                           )}
@@ -535,14 +539,18 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         </td>
                         <td className={`${td} tabular-nums`} data-sort={wrPct ?? -1}>
                           {wrPct != null ? (
-                            <div className="min-w-[3.25rem] space-y-0.5">
-                              <div className={wrTone}>{wrPct}%</div>
+                            <HubLink
+                              to={{ kind: "finder", query: `champ=${encodeURIComponent(c)}` }}
+                              className="block min-w-[3.25rem] space-y-0.5 hover:opacity-90"
+                              title={tl("Game finder")}
+                            >
+                              <div className={`${wrTone} hover:underline`}>{wrPct}%</div>
                               {pk >= 3 && (
                                 <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
                                   <div className={`h-full rounded-full ${wrPct >= 50 ? "bg-rw-teal/75" : "bg-rw-red/65"}`} style={{ width: `${Math.max(6, wrPct)}%` }} />
                                 </div>
                               )}
-                            </div>
+                            </HubLink>
                           ) : (
                             "–"
                           )}

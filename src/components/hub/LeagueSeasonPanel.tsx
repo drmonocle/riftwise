@@ -39,18 +39,31 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
             {tl("Game finder")}
           </HubLink>
           {teams.length >= 2 && (
-            <HubLink
-              to={{
-                kind: "compare",
-                mode: "team",
-                a: teams[0].u || teams[0].t,
-                b: teams[1].u || teams[1].t,
-                period: `e:${league}`,
-              }}
-              className="text-rw-accent hover:underline"
-            >
-              {tl("Compare")}
-            </HubLink>
+            <>
+              <HubLink
+                to={{
+                  kind: "prep",
+                  a: teams[0].u || teams[0].t,
+                  b: teams[1].u || teams[1].t,
+                  period: `y${year}`,
+                }}
+                className="text-rw-accent hover:underline"
+              >
+                {tl("Match prep")}
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "compare",
+                  mode: "team",
+                  a: teams[0].u || teams[0].t,
+                  b: teams[1].u || teams[1].t,
+                  period: `y${year}`,
+                }}
+                className="text-rw-accent hover:underline"
+              >
+                {tl("Compare")}
+              </HubLink>
+            </>
           )}
           {teams.length > 0 && (
             <>

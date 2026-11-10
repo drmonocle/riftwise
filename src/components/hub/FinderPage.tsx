@@ -5,14 +5,14 @@
  * Filters live in the address: /stats/finder?league=lck&year=2026&team=T1&champ=Azir
  */
 import React, { useMemo, useRef, useState } from "react";
-import { tl, tn, tc, fmtDec } from "../../i18n";
+import { tl, tn, tc, fmtDec, roleName } from "../../i18n";
 import { champName } from "../../champions";
 import { loadAliases, loadChampGames, loadChampIndex, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import type { ChampGame, ChampGamesFile, ChampPick } from "../../hub/types";
 import { navigateHub } from "../../hub/route";
 import { SITE_URL } from "../../platform";
 import { useDDragon } from "../../hub/ddragon";
-import { patchCompare } from "../../hub/champAgg";
+import { patchCompare, ROLES } from "../../hub/champAgg";
 import { TableExport } from "./SortTable";
 import {
   card,
@@ -71,8 +71,10 @@ function matchSide(g: ChampGame, q: Q, eventIdx: number | null): number {
   const champs = (q.get("champ") || "").split(",").filter(Boolean);
   const vsChamp = q.get("vschamp");
   const player = q.get("player");
+  const roleQ = q.get("role") || "";
+  const roleIdx = roleQ ? ROLES.findIndex((r) => r.toLowerCase() === roleQ.toLowerCase()) : -1;
   // "won" / "lost" only means something for a side picked by another filter
-  const sided = !!(team || vs || side || champs.length || vsChamp || player);
+  const sided = !!(team || vs || side || champs.length || vsChamp || player || roleIdx >= 0);
   for (const s of [0, 1]) {
     const mine = s === 0 ? g[5] : g[6];
     const theirs = s === 0 ? g[6] : g[5];
@@ -84,9 +86,20 @@ function matchSide(g: ChampGame, q: Q, eventIdx: number | null): number {
     if (vs && theirTeam !== vs && (s === 0 ? g[11] : g[10]) !== vs) continue;
     if (side && side !== (s === 0 ? "b" : "r")) continue;
     if (result && sided && (result === "w") !== won) continue;
-    if (champs.some((c) => !mine.some((p) => p[0] === c))) continue;
-    if (vsChamp && !theirs.some((p) => p[0] === vsChamp)) continue;
-    if (player && !mine.some((p) => p[9] === player || p[8] === player))
+    if (champs.length) {
+      if (roleIdx >= 0) {
+        if (!mine.some((p) => p[0] === champs[0] && p[1] === roleIdx)) continue;
+        if (champs.slice(1).some((c) => !mine.some((p) => p[0] === c))) continue;
+      } else if (champs.some((c) => !mine.some((p) => p[0] === c))) continue;
+    }
+    if (vsChamp) {
+      if (roleIdx >= 0 && champs.length > 0) {
+        if (!theirs.some((p) => p[0] === vsChamp && (p[1] < 0 || p[1] === roleIdx))) continue;
+      } else if (!theirs.some((p) => p[0] === vsChamp)) continue;
+    }
+    if (player && !mine.some((p) => (p[9] === player || p[8] === player) && (roleIdx < 0 || p[1] === roleIdx)))
+      continue;
+    if (roleIdx >= 0 && !champs.length && !player && !mine.some((p) => p[1] === roleIdx))
       continue;
     return s;
   }
@@ -241,6 +254,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
           events={file.data.events}
           q={q}
           setQ={setQ}
+          year={year}
           name={`riftwise-games-${league}-${year}`}
         />
       )}
@@ -257,8 +271,9 @@ const FinderBody: React.FC<{
   events: [string, string][];
   q: Q;
   setQ: SetQ;
+  year: string;
   name: string;
-}> = ({ games, events, q, setQ, name }) => {
+}> = ({ games, events, q, setQ, year, name }) => {
   const opts = useMemo(() => {
     const teams = new Map<string, string>(); // team page (or name) -> its newest name in this file
     const champs = new Set<string>();
@@ -318,7 +333,8 @@ const FinderBody: React.FC<{
     q.get("result") ||
     q.get("champ") ||
     q.get("vschamp") ||
-    q.get("player")
+    q.get("player") ||
+    q.get("role")
   );
 
   const champSel = (
@@ -468,6 +484,19 @@ const FinderBody: React.FC<{
               </option>
             ))}
           </select>
+          <select
+            value={q.get("role") || ""}
+            onChange={(e) => setQ({ role: e.target.value || undefined })}
+            aria-label={tl("Role")}
+            className={sel}
+          >
+            <option value="">{tl("All roles")}</option>
+            {ROLES.map((r) => (
+              <option key={r} value={r}>
+                {roleName(r)}
+              </option>
+            ))}
+          </select>
           {champSel(
             tl("With champion"),
             opts.champs,
@@ -547,7 +576,7 @@ const FinderBody: React.FC<{
               </button>
               <SectionCard
                 section={tl("Game finder")}
-                name={[q.get("team"), q.get("champ") && champName(q.get("champ")!), q.get("player"), q.get("patch") && `Patch ${q.get("patch")}`]
+                name={[q.get("team"), q.get("champ") && champName(q.get("champ")!), q.get("role") && roleName(q.get("role")!), q.get("player"), q.get("patch") && `Patch ${q.get("patch")}`]
                   .filter(Boolean)
                   .join(" · ") || name}
                 sub={
@@ -583,6 +612,7 @@ const FinderBody: React.FC<{
                       kind: "prep",
                       a: teamOption(opts.teams, q.get("team")) || q.get("team")!,
                       b: teamOption(opts.teams, q.get("vs")) || q.get("vs")!,
+                      period: year ? `y${year}` : undefined,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -594,6 +624,7 @@ const FinderBody: React.FC<{
                       mode: "team",
                       a: teamOption(opts.teams, q.get("team")) || q.get("team")!,
                       b: teamOption(opts.teams, q.get("vs")) || q.get("vs")!,
+                      period: year ? `y${year}` : undefined,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -608,6 +639,7 @@ const FinderBody: React.FC<{
                     query: new URLSearchParams({
                       champ: prettySlug(champs[0]),
                       vs: q.get("vschamp")!,
+                      ...(q.get("role") ? { role: q.get("role")! } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
@@ -946,7 +978,11 @@ const Picks: React.FC<{ list: ChampPick[] }> = ({ list }) => (
       {list.map((p, i) => (
         <HubLink
           key={`${p[0]}-${i}`}
-          to={{ kind: "champ", slug: prettySlug(p[0]) }}
+          to={
+            p[9]
+              ? { kind: "player", slug: p[9], tab: "champions", query: `champ=${encodeURIComponent(p[0])}` }
+              : { kind: "champ", slug: prettySlug(p[0]) }
+          }
           title={p[8] ? `${p[8]}: ${champName(p[0])}` : champName(p[0])}
           className="hover:opacity-80"
         >
@@ -971,6 +1007,7 @@ const CopyFinderPost: React.FC<{
       q.get("team"),
       q.get("vs") && `vs ${q.get("vs")}`,
       q.get("champ") && champName(q.get("champ")!),
+      q.get("role") && roleName(q.get("role")!),
       q.get("vschamp") && `vs ${champName(q.get("vschamp")!)}`,
       q.get("player"),
       q.get("patch") && `Patch ${q.get("patch")}`,

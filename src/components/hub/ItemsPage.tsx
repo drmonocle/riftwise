@@ -395,12 +395,18 @@ const PlayerItemsView: React.FC<{
                     </button>
                   </td>
                   <td className={`${td} tabular-nums text-rw-sub w-24`} data-sort={g.length}>
-                    {fmtNum(g.length)}
+                    <button type="button" onClick={() => onItem(prettySlug(it))} className="hover:text-rw-accent hover:underline" title={tl("Show the games")}>
+                      {fmtNum(g.length)}
+                    </button>
                     <span className="block h-1 mt-0.5 rounded-sm bg-rw-accent/55" style={{ width: `${Math.max(4, Math.round((g.length / maxG) * 100))}%` }} aria-hidden="true" />
                   </td>
                   <td className={`${td} tabular-nums ${wrTone}`} data-sort={wr}>
                     <div className="min-w-[3.25rem] space-y-0.5">
-                      <div>{winRate(won, g.length)}</div>
+                      <div>
+                        <button type="button" onClick={() => onItem(prettySlug(it))} className="hover:underline" title={tl("Show the games")}>
+                          {winRate(won, g.length)}
+                        </button>
+                      </div>
                       {g.length >= 2 && (
                         <div className="h-1 w-10 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
                           <div
@@ -526,7 +532,9 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
                   </span>
                 </td>
                 <td className={`${td} tabular-nums text-rw-sub w-28`} data-sort={g}>
-                  {fmtNum(g)}
+                  <button type="button" onClick={() => onPlayer(u)} className="hover:text-rw-accent hover:underline" title={tl("Their games")}>
+                    {fmtNum(g)}
+                  </button>
                   <span className="block h-1 mt-0.5 rounded-sm bg-rw-accent/55" style={{ width: `${Math.max(4, Math.round((g / maxG) * 100))}%` }} aria-hidden="true" />
                 </td>
                 <td className={`${td} text-rw-muted whitespace-nowrap`} data-sort={last}>
@@ -639,7 +647,13 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                         )}
                       </td>
                       <td className={`${td} tabular-nums text-rw-sub w-28`} data-sort={r.g}>
-                        {fmtNum(r.g)}
+                        {u ? (
+                          <button type="button" onClick={() => onPlayer(u)} className="hover:text-rw-accent hover:underline" title={tl("Their games")}>
+                            {fmtNum(r.g)}
+                          </button>
+                        ) : (
+                          fmtNum(r.g)
+                        )}
                         <span className="block h-1 mt-0.5 rounded-sm bg-rw-accent/55" style={{ width: `${Math.max(4, Math.round((r.g / maxG) * 100))}%` }} aria-hidden="true" />
                       </td>
                       <td className={`${td} text-rw-muted max-sm:hidden`} data-sort={r.ys[r.ys.length - 1] || 0}>{yearSpan(r.ys)}</td>
@@ -744,7 +758,13 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                         )}
                       </td>
                       <td className={`${td} tabular-nums text-rw-sub w-28`} data-sort={g}>
-                        {fmtNum(g)}
+                        {u ? (
+                          <button type="button" onClick={() => onPlayer(u)} className="hover:text-rw-accent hover:underline" title={tl("Their games")}>
+                            {fmtNum(g)}
+                          </button>
+                        ) : (
+                          fmtNum(g)
+                        )}
                         <span className="block h-1 mt-0.5 rounded-sm bg-rw-accent/55" style={{ width: `${Math.max(4, Math.round((g / maxG) * 100))}%` }} aria-hidden="true" />
                       </td>
                       <td className={`${td} text-right`}>{u && <TheirGames onClick={() => onPlayer(u)} />}</td>
@@ -841,11 +861,15 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
                   </td>
                   {/* the number over a thin bar of its share of the most built item's games */}
                   <td className={`${td} tabular-nums text-rw-sub w-28`} data-sort={r[2]}>
-                    {fmtNum(r[2])}
+                    <HubLink to={to(r[1])} className="hover:text-rw-accent hover:underline">
+                      {fmtNum(r[2])}
+                    </HubLink>
                     <span className="block h-1 mt-0.5 rounded-sm bg-rw-accent/50" style={{ width: `${Math.max(2, (r[2] / max) * 100)}%` }} aria-hidden="true" />
                   </td>
                   <td className={`${td} tabular-nums text-rw-sub max-sm:hidden w-24`} data-sort={r[3]}>
-                    {fmtNum(r[3])}
+                    <HubLink to={to(r[1])} className="hover:text-rw-accent hover:underline">
+                      {fmtNum(r[3])}
+                    </HubLink>
                     <span className="block h-1 mt-0.5 rounded-sm bg-rw-sub/45" style={{ width: `${Math.max(4, Math.min(100, Math.round((r[3] / Math.max(1, shown[0]?.[3] || 1)) * 100)))}%` }} aria-hidden="true" />
                   </td>
                   <td className={`${td} tabular-nums`} data-sort={r[4] != null && r[2] ? r[4] / r[2] : 0}>
@@ -854,8 +878,8 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
                         const wr = r[4] / r[2];
                         const tone = r[2] >= 10 ? (wr >= 0.55 ? "text-rw-teal font-semibold" : wr <= 0.45 ? "text-rw-red" : "text-rw-text") : "text-rw-sub";
                         return (
-                          <div className="min-w-[3.25rem] space-y-0.5">
-                            <span className={tone}>{winRate(r[4], r[2])}</span>
+                          <HubLink to={to(r[1])} className="block min-w-[3.25rem] space-y-0.5 hover:opacity-90">
+                            <span className={`${tone} hover:underline`}>{winRate(r[4], r[2])}</span>
                             {r[2] >= 5 && (
                               <div className="h-1 w-10 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
                                 <div
@@ -864,7 +888,7 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
                                 />
                               </div>
                             )}
-                          </div>
+                          </HubLink>
                         );
                       })()
                     ) : (

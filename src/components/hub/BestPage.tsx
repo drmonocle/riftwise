@@ -287,6 +287,8 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
   const [rating, slug, n, date, en, eslug, stage, a, aSlug, b, bSlug, w, min, ka, kb, vod] = r;
   const totalK = ka != null && kb != null ? ka + kb : 0;
   const pctKa = totalK > 0 && ka != null ? Math.round((ka / totalK) * 100) : 50;
+  const y = (date || "").slice(0, 4);
+  const period = /^\d{4}$/.test(y) ? `y${y}` : undefined;
   return (
     <tr className="border-t border-rw-border/60 first:border-t-0 hover:bg-rw-raised/50">
       <td className="py-2 pr-2 text-rw-muted tabular-nums w-8 text-right" data-sort={rank}>{rank}</td>
@@ -312,7 +314,7 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
         </div>
         <div className="text-[10px] text-rw-muted mt-0.5 flex flex-wrap items-center gap-x-2">
           {ka != null && kb != null && (
-            <span className="inline-flex items-center gap-1.5 tabular-nums">
+            <HubLink to={{ kind: "match", slug, game: n }} className="inline-flex items-center gap-1.5 tabular-nums hover:text-rw-accent hover:underline">
               <span>{tl("{a}–{b} kills", { a: ka, b: kb })}</span>
               {totalK > 0 && (
                 <span className="w-12 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
@@ -320,9 +322,13 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
                   <span className={`h-full ${w === 2 ? "bg-rw-teal/85" : "bg-rw-sub/65"}`} style={{ width: `${100 - pctKa}%` }} />
                 </span>
               )}
-            </span>
+            </HubLink>
           )}
-          {min ? <span className="tabular-nums">{tl("{n} min", { n: Math.round(min) })}</span> : null}
+          {min ? (
+            <HubLink to={{ kind: "match", slug, game: n }} className="tabular-nums hover:text-rw-accent hover:underline">
+              {tl("{n} min", { n: Math.round(min) })}
+            </HubLink>
+          ) : null}
           {vod ? (
             <HubLink
               to={{ kind: "match", slug, game: n }}
@@ -334,10 +340,10 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
           ) : null}
           {aSlug && bSlug && (
             <>
-              <HubLink to={{ kind: "prep", a: aSlug, b: bSlug }} className="hover:text-rw-accent hover:underline">
+              <HubLink to={{ kind: "prep", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
                 {tl("Match prep")}
               </HubLink>
-              <HubLink to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug }} className="hover:text-rw-accent hover:underline">
+              <HubLink to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
                 {tl("Compare")}
               </HubLink>
             </>
@@ -357,6 +363,8 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
   const [rating, slug, date, en, eslug, stage, a, aSlug, b, bSlug, wa, wb, bestN, games, , perGame] = r;
   const totalS = wa + wb;
   const pctWa = totalS > 0 ? Math.round((wa / totalS) * 100) : 50;
+  const y = (date || "").slice(0, 4);
+  const period = /^\d{4}$/.test(y) ? `y${y}` : undefined;
   return (
     <tr className="border-t border-rw-border/60 first:border-t-0 hover:bg-rw-raised/50">
       <td className="py-2 pr-2 text-rw-muted tabular-nums w-8 text-right" data-sort={rank}>{rank}</td>
@@ -401,11 +409,11 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
             ))}
             {aSlug && bSlug && (
               <span className="text-[10px] text-rw-muted inline-flex items-center gap-1.5 ml-1">
-                <HubLink to={{ kind: "prep", a: aSlug, b: bSlug }} className="hover:text-rw-accent hover:underline">
+                <HubLink to={{ kind: "prep", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
                   {tl("Match prep")}
                 </HubLink>
                 <span>·</span>
-                <HubLink to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug }} className="hover:text-rw-accent hover:underline">
+                <HubLink to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
                   {tl("Compare")}
                 </HubLink>
               </span>
@@ -421,11 +429,11 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
             {aSlug && bSlug && (
               <>
                 <span>·</span>
-                <HubLink to={{ kind: "prep", a: aSlug, b: bSlug }} className="hover:text-rw-accent hover:underline">
+                <HubLink to={{ kind: "prep", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
                   {tl("Match prep")}
                 </HubLink>
                 <span>·</span>
-                <HubLink to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug }} className="hover:text-rw-accent hover:underline">
+                <HubLink to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
                   {tl("Compare")}
                 </HubLink>
               </>

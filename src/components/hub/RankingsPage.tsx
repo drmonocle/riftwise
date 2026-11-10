@@ -563,7 +563,14 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                         </td>
                         <td className={`${td} text-right`} data-sort={r}>
                           <div className="inline-flex flex-col items-end gap-0.5 min-w-[4.5rem]">
-                            <span className="tabular-nums font-bold text-rw-accent">{r}</span>
+                            <button
+                              type="button"
+                              onClick={() => setLeague(league === l ? "" : l)}
+                              className="tabular-nums font-bold text-rw-accent hover:underline"
+                              title={tl("Teams")}
+                            >
+                              {r}
+                            </button>
                             <div className="w-full h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
                               <div className="h-full rounded-full bg-rw-accent/75" style={{ width: `${barW}%` }} />
                             </div>

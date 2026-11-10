@@ -273,14 +273,26 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                   <ChampIcon name={c.c} size={32} />
                                   <span>{champName(c.c)}</span>
                                 </HubLink>
-                                <span className="text-[11px] font-mono tabular-nums text-rw-sub">
+                                <HubLink
+                                  to={{
+                                    kind: "finder",
+                                    query: new URLSearchParams({
+                                      champ: c.c,
+                                      role: r,
+                                      ...(isLeague ? { league: rawScope } : {}),
+                                      ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
+                                    }).toString(),
+                                  }}
+                                  className="text-[11px] font-mono tabular-nums text-rw-sub hover:text-rw-accent hover:underline"
+                                  title={tl("Game finder")}
+                                >
                                   {fmtDec(c.presence * 100)}%
                                   {c.wr != null && c.p >= 5 && (
                                     <span className={`ml-1 font-semibold ${c.wr >= 0.52 ? "text-rw-teal" : c.wr <= 0.48 ? "text-rw-red" : "text-rw-sub"}`}>
                                       · {Math.round(c.wr * 100)}%
                                     </span>
                                   )}
-                                </span>
+                                </HubLink>
                                 <HubLink
                                   to={{ kind: "counters", query: `champ=${prettySlug(c.c)}&role=${r}` }}
                                   className="text-[10px] text-rw-accent hover:underline ml-1"
@@ -293,6 +305,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                       kind: "finder",
                                       query: new URLSearchParams({
                                         champ: c.c,
+                                        role: r,
                                         ...(isLeague ? { league: rawScope } : {}),
                                         ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
                                       }).toString(),
