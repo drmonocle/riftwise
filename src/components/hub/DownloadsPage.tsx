@@ -7,7 +7,7 @@ import { Download } from "lucide-react";
 import { tl, tn } from "../../i18n";
 import { load } from "../../stats";
 import { IS_WEB, SITE_URL } from "../../platform";
-import { downloadEventCsv, downloadStagesCsv, joinCsvs, saveCsv } from "../../hub/data";
+import { downloadEventCsv, downloadStagesCsv, joinCsvs, resolveLeagueSlug, saveCsv } from "../../hub/data";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { card, EventLink, Failed, fmtNum, HubLink, Loading, Section, useLoad, usePageTitle } from "./ui";
 
@@ -32,7 +32,8 @@ export const DownloadsPage: React.FC<{ onOpenUrl?: (url: string) => void; query?
   usePageTitle(tl("Data downloads"));
   const state = useLoad(loadDownloads, []);
   const params = useMemo(() => new URLSearchParams(query || ""), [query]);
-  const qLeague = (params.get("league") || "").toLowerCase();
+  const rawLeague = (params.get("league") || "").trim();
+  const qLeague = rawLeague ? resolveLeagueSlug(rawLeague) : "";
   const qYear = params.get("year") || "";
   const [league, setLeague] = useState(qLeague);
   const [yearPick, setYearPick] = useState(qYear);
@@ -335,7 +336,7 @@ const LeagueYears: React.FC<{ league: DownloadLeague; initialYear?: string; onOp
                 to={{
                   kind: "tiers",
                   query: new URLSearchParams({
-                    league: league.u,
+                    scope: league.u,
                     ...(activeLeagueYear ? { key: `y${activeLeagueYear}` } : {}),
                   }).toString(),
                 }}

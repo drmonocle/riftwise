@@ -8,6 +8,7 @@ import { champAgg, matchedEventLabel, matchEventIndices } from "../hub/champAgg"
 import { champPairShortcuts, matchupShortcuts, pageShortcuts } from "../components/hub/HubSearch";
 import { groupOf, MENU, MENU_ITEMS } from "../components/hub/menu";
 import { NAV_GROUP } from "../components/navGroups";
+import { siblingSectionRoute } from "../components/views/StatsView";
 import type { HubIndex } from "../hub/data";
 
 describe("page tabs in the address", () => {
@@ -168,10 +169,33 @@ describe("search shortcuts", () => {
     expect(p.shortcuts).toHaveLength(1);
     expect(hubPath(p.shortcuts[0].route)).toBe("/player/faker/champions?champ=Azir");
   });
-  it("compares two players", () => {
+  it("compares two players and links to head-to-head game finder and leaderboards", () => {
     const s = matchupShortcuts(INDEX, "Faker v Chovy");
-    expect(s).toHaveLength(1);
+    expect(s.map((x) => x.key)).toEqual(["compare", "finder", "leaders"]);
     expect(hubPath(s[0].route)).toBe("/stats/compare?players=faker,chovy");
+    expect(hubPath(s[1].route)).toBe("/stats/finder?player=faker&vsplayer=chovy");
+    expect(hubPath(s[2].route)).toBe("/stats/leaders?q=faker%2Cchovy");
+  });
+  it("carries context across sibling section pills in StatsView", () => {
+    expect(siblingSectionRoute({ kind: "prep", a: "t1", b: "geng", period: "y2025" }, "draft")).toEqual({
+      kind: "draft",
+      query: "teams=t1%2Cgeng&p=y2025",
+    });
+    expect(siblingSectionRoute({ kind: "prep", a: "t1", b: "geng", period: "y2025" }, "finder")).toEqual({
+      kind: "finder",
+      query: "team=t1&vs=geng&year=2025",
+    });
+    expect(siblingSectionRoute({ kind: "compare", mode: "player", a: "faker", b: "chovy" }, "finder")).toEqual({
+      kind: "finder",
+      query: "player=faker&vsplayer=chovy",
+    });
+    expect(siblingSectionRoute({ kind: "champions", query: "scope=lck&key=y2025&role=Mid&q=azir" }, "tiers")).toEqual({
+      kind: "tiers",
+      query: "scope=lck&key=y2025&role=Mid&q=azir",
+    });
+    expect(siblingSectionRoute({ kind: "champions", query: "scope=lck&key=y2025&role=Mid&q=azir" }, "champions")).toEqual({
+      kind: "champions",
+    });
   });
   it("leaves other searches alone", () => {
     expect(matchupShortcuts(INDEX, "faker")).toEqual([]);

@@ -26,7 +26,7 @@ import {
 } from "../../platform";
 import { tl, locale, LANGUAGES, TRANSLATION_EMAIL, TRANSLATION_MAILTO, detectLanguage } from "../../i18n";
 import { langAddress } from "../../hub/route";
-import { prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { prettySlug, resolveLeagueSlug, resolvePlayerSlug } from "../../hub/data";
 import { HubLink, PlayerPhoto, TeamLogo } from "../hub/ui";
 import { PushAlertsCard } from "../PushAlerts";
 import { SyncPanel } from "../SyncPanel";
@@ -718,16 +718,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </HubLink>
                 );
               })}
-              {settings.followedPlayers.map((p) => (
-                <HubLink
-                  key={`p-${p}`}
-                  to={{ kind: "player", slug: prettySlug(p) }}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-teal/60 text-[11px] font-semibold text-rw-teal hover:underline"
-                >
-                  <PlayerPhoto name={p} slug={prettySlug(p)} size={13} linkFallback={false} />
-                  <span>{p}</span>
-                </HubLink>
-              ))}
+              {settings.followedPlayers.map((p) => {
+                const pSlug = resolvePlayerSlug(p);
+                return (
+                  <HubLink
+                    key={`p-${p}`}
+                    to={{ kind: "player", slug: pSlug }}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-teal/60 text-[11px] font-semibold text-rw-teal hover:underline"
+                  >
+                    <PlayerPhoto name={p} slug={pSlug} size={13} linkFallback={false} />
+                    <span>{p}</span>
+                  </HubLink>
+                );
+              })}
               {settings.followedLeagues.map((l) => (
                 <HubLink
                   key={`l-${l}`}
@@ -737,6 +740,40 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   {l}
                 </HubLink>
               ))}
+              {settings.followedTeams.length > 0 && (
+                <HubLink
+                  to={{
+                    kind: "rankings",
+                    query: `q=${encodeURIComponent(
+                      settings.followedTeams
+                        .slice(0, 6)
+                        .map((t) => prettySlug((catalog ? pickTeamByCode(catalog.teams, t)?.name : undefined) || t))
+                        .join(","),
+                    )}`,
+                  }}
+                  className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-accent hover:underline"
+                >
+                  {tl("Power rankings")} →
+                </HubLink>
+              )}
+              {(settings.followedPlayers.length > 0 || settings.followedTeams.length > 0) && (
+                <HubLink
+                  to={{
+                    kind: "leaders",
+                    query: `q=${encodeURIComponent(
+                      (settings.followedPlayers.length > 0
+                        ? settings.followedPlayers.slice(0, 6).map((p) => resolvePlayerSlug(p))
+                        : settings.followedTeams
+                            .slice(0, 6)
+                            .map((t) => prettySlug((catalog ? pickTeamByCode(catalog.teams, t)?.name : undefined) || t))
+                      ).join(","),
+                    )}`,
+                  }}
+                  className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-accent hover:underline"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
+              )}
             </div>
           )}
         </div>

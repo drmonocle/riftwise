@@ -234,7 +234,13 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
               {tl("Game finder")}
             </HubLink>
             <HubLink
-              to={{ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) }}
+              to={{
+                kind: "rankings",
+                query: new URLSearchParams({
+                  ...(lg ? { league: lg } : {}),
+                  q: `${t1Slug},${t2Slug}`,
+                }).toString(),
+              }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
             >
               {tl("Power rankings")}
@@ -245,7 +251,7 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
                 ...((lg || period)
                   ? {
                       query: new URLSearchParams({
-                        ...(lg ? { league: lg } : {}),
+                        ...(lg ? { scope: lg } : {}),
                         ...(period ? { key: period } : {}),
                       }).toString(),
                     }
@@ -258,14 +264,11 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
             <HubLink
               to={{
                 kind: "leaders",
-                ...((lg || yr)
-                  ? {
-                      query: new URLSearchParams({
-                        ...(lg ? { league: lg } : {}),
-                        ...(yr ? { year: yr } : {}),
-                      }).toString(),
-                    }
-                  : {}),
+                query: new URLSearchParams({
+                  ...(lg ? { league: lg } : {}),
+                  ...(yr ? { year: yr } : {}),
+                  q: `${t1Slug},${t2Slug}`,
+                }).toString(),
               }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
             >

@@ -150,7 +150,7 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                   query: new URLSearchParams({
                     ...(firstLg ? { league: firstLg } : {}),
                     ...(firstYr ? { year: firstYr } : {}),
-                    q: [t.name, sides(first)[1].name].filter(Boolean).join(","),
+                    q: [t.u, first.opp || prettySlug(sides(first)[1].name)].filter(Boolean).join(","),
                   }).toString(),
                 }}
                 className="text-rw-accent hover:underline font-semibold"
@@ -503,7 +503,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
             query: new URLSearchParams({
               ...(lg ? { league: lg } : {}),
               ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
-              q: [t.name, them.name].filter(Boolean).join(","),
+              q: [t.u, c.opp || prettySlug(them.name)].filter(Boolean).join(","),
             }).toString(),
           }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"

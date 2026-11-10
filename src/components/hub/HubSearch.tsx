@@ -4,12 +4,12 @@
  * Compare for the pair; an item ("heartsteel"), or a player and an item ("faker heartsteel"), opens its item history.
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Search, Users, User, Trophy, Swords, X, Flag, GitCompare, ClipboardList, Compass, Package } from "lucide-react";
+import { Search, Users, User, Trophy, Swords, X, Flag, GitCompare, ClipboardList, Compass, Package, ListOrdered, Rows3, TrendingUp } from "lucide-react";
 import { tl, tk, roleName, fmtN } from "../../i18n";
 import { champName } from "../../champions";
 import { isNonLatin } from "../../searchAliases";
 import { winRate } from "../../stats";
-import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubChamp, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadItemIndex, normText, prefetchHub, prettySlug, searchHub } from "../../hub/data";
+import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubChamp, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadItemIndex, normText, prefetchHub, prettySlug, sameChamp, searchHub } from "../../hub/data";
 import type { ItemIndexRow } from "../../hub/types";
 import { itemName } from "../../hub/ddragon";
 import { HubRoute, navigateHub } from "../../hub/route";
@@ -59,6 +59,20 @@ export function matchupShortcuts(index: HubIndex, q: string): Shortcut[] {
   if (good(pa) && good(pb) && pa.slug !== pb.slug)
     return [
       { key: "compare", route: { kind: "compare", mode: "player", a: pa.slug, b: pb.slug }, label: tl("Compare {a} and {b}", { a: pa.name, b: pb.name }), sub: tl("Side by side, over any period"), icon: <GitCompare className="w-3.5 h-3.5" /> },
+      {
+        key: "finder",
+        route: { kind: "finder", query: `player=${encodeURIComponent(pa.slug)}&vsplayer=${encodeURIComponent(pb.slug)}` },
+        label: `${tl("Game finder")}: ${pa.name} vs ${pb.name}`,
+        sub: tl("Any game by team, champion, player"),
+        icon: <Compass className="w-3.5 h-3.5" />,
+      },
+      {
+        key: "leaders",
+        route: { kind: "leaders", query: `q=${encodeURIComponent(`${pa.slug},${pb.slug}`)}` },
+        label: `${tl("Player leaderboards")}: ${pa.name} vs ${pb.name}`,
+        sub: tl("Every player on every stat, by league and role"),
+        icon: <ListOrdered className="w-3.5 h-3.5" />,
+      },
     ];
   if (good(ca) && good(cb) && ca.slug !== cb.slug)
     return [
@@ -417,7 +431,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
         loadHubPlayer(pr.slug)
           .then((p) => {
             if (!alive) return;
-            const c = p.champs.find((x) => x.c.toLowerCase() === pr.champ.toLowerCase());
+            const c = p.champs.find((x) => sameChamp(x.c, pr.champ));
             const txt = c ? `${c.g}G · ${c.w}W-${c.g - c.w}L (${winRate(c.w, c.g)}) · KDA ${fmtN(c.kda)}` : tl("{n} games", { n: 0 });
             setPairStats((prev) => ({ ...prev, [pr.key]: txt }));
           })
@@ -426,7 +440,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
         loadHubTeam(pr.slug)
           .then((t) => {
             if (!alive) return;
-            const c = t.champs.find((x) => x.c.toLowerCase() === pr.champ.toLowerCase());
+            const c = t.champs.find((x) => sameChamp(x.c, pr.champ));
             const txt = c ? `${c.g}G · ${c.w}W-${c.g - c.w}L (${winRate(c.w, c.g)})` : tl("{n} games", { n: 0 });
             setPairStats((prev) => ({ ...prev, [pr.key]: txt }));
           })
@@ -500,6 +514,16 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
               icon: <Package className="w-3.5 h-3.5" />,
             },
             {
+              key: `top-c-tiers-${c.u}`,
+              route: {
+                kind: "tiers",
+                query: `q=${encodeURIComponent(c.u)}${c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""}`,
+              },
+              label: `${champName(c.name)} · ${tl("Pro tier list")}`,
+              sub: tl("What pros play on each patch, by role"),
+              icon: <Rows3 className="w-3.5 h-3.5" />,
+            },
+            {
               key: `top-c-finder-${c.u}`,
               route: { kind: "finder", query: `champ=${encodeURIComponent(c.name)}` },
               label: `${champName(c.name)} · ${tl("Game finder")}`,
@@ -529,6 +553,13 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
               label: `${p.name} · ${tl("Compare")}`,
               sub: tl("Side by side, over any period"),
               icon: <GitCompare className="w-3.5 h-3.5" />,
+            },
+            {
+              key: `top-p-leaders-${p.u}`,
+              route: { kind: "leaders", query: `q=${encodeURIComponent(p.u)}` },
+              label: `${p.name} · ${tl("Player leaderboards")}`,
+              sub: tl("Every player on every stat, by league and role"),
+              icon: <ListOrdered className="w-3.5 h-3.5" />,
             },
             {
               key: `top-p-items-${p.u}`,
@@ -587,6 +618,20 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
               label: `${t.name} · ${tl("Compare")}`,
               sub: tl("Side by side, over any period"),
               icon: <GitCompare className="w-3.5 h-3.5" />,
+            },
+            {
+              key: `top-t-rankings-${t.u}`,
+              route: { kind: "rankings", query: `q=${encodeURIComponent(t.u)}` },
+              label: `${t.name} · ${tl("Power rankings")}`,
+              sub: tl("Every team, every region, one scale"),
+              icon: <TrendingUp className="w-3.5 h-3.5" />,
+            },
+            {
+              key: `top-t-leaders-${t.u}`,
+              route: { kind: "leaders", query: `q=${encodeURIComponent(t.u)}` },
+              label: `${t.name} · ${tl("Player leaderboards")}`,
+              sub: tl("Every player on every stat, by league and role"),
+              icon: <ListOrdered className="w-3.5 h-3.5" />,
             },
             {
               key: `top-t-finder-${t.u}`,

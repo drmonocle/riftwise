@@ -97,6 +97,206 @@ const KIND_LIST: Partial<Record<SectionKind, HubRoute>> = {
   champ: { kind: "champions" },
 };
 
+/**
+ * Carries active filter/team/player/champion/league/year context when switching between sibling pills in the top
+ * section bar (e.g. Match prep <-> Draft board <-> Compare <-> Game finder, or Champions <-> Tier list <-> Counters).
+ * Clicking the already-open section pill returns a clean route (`{ kind: targetKind }`) to reset filters.
+ */
+export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kind"]): HubRoute {
+  if (targetKind === current.kind) return { kind: targetKind } as HubRoute;
+  const params = new URLSearchParams("query" in current && current.query ? current.query : "");
+  let teamA: string | undefined;
+  let teamB: string | undefined;
+  let playerA: string | undefined;
+  let playerB: string | undefined;
+  if (current.kind === "prep") {
+    teamA = current.a;
+    teamB = current.b;
+  } else if (current.kind === "compare") {
+    if (current.mode === "player") {
+      playerA = current.a;
+      playerB = current.b;
+    } else {
+      teamA = current.a;
+      teamB = current.b;
+    }
+  }
+  const qTeams = params.get("teams");
+  if (!teamA && qTeams) {
+    const parts = qTeams.split(",").map((s) => s.trim()).filter(Boolean);
+    teamA = parts[0];
+    teamB = parts[1];
+  }
+  if (!teamA && params.get("team")) {
+    teamA = params.get("team") || undefined;
+    teamB = params.get("vs") || undefined;
+  }
+  if (!playerA && params.get("player")) {
+    playerA = params.get("player") || undefined;
+    playerB = params.get("vsplayer") || undefined;
+  }
+  const rawPeriod =
+    ("period" in current && current.period ? current.period : "") ||
+    params.get("p") ||
+    params.get("key") ||
+    params.get("patch") ||
+    "";
+  const periodYearMatch = /^y(\d{4})$/i.exec(rawPeriod);
+  const year =
+    ("year" in current && current.year ? current.year : "") ||
+    params.get("year") ||
+    (periodYearMatch ? periodYearMatch[1] : "");
+  const period = rawPeriod || (year ? `y${year}` : "");
+  const league =
+    params.get("league") ||
+    ((current.kind === "champions" || current.kind === "tiers") ? params.get("scope") || "" : "");
+  const event = params.get("event") || "";
+  const role = params.get("role") || "";
+  const champ = params.get("champ") || "";
+  const region = params.get("region") || "";
+  const q = params.get("q") || "";
+
+  if (targetKind === "prep") {
+    return {
+      kind: "prep",
+      ...(teamA ? { a: teamA } : {}),
+      ...(teamB ? { b: teamB } : {}),
+      ...(period ? { period } : {}),
+    };
+  }
+  if (targetKind === "compare") {
+    if (playerA || playerB) {
+      return {
+        kind: "compare",
+        mode: "player",
+        ...(playerA ? { a: playerA } : {}),
+        ...(playerB ? { b: playerB } : {}),
+        ...(period ? { period } : {}),
+      };
+    }
+    return {
+      kind: "compare",
+      mode: "team",
+      ...(teamA ? { a: teamA } : {}),
+      ...(teamB ? { b: teamB } : {}),
+      ...(period ? { period } : {}),
+    };
+  }
+  if (targetKind === "draft") {
+    const next = new URLSearchParams();
+    if (teamA || teamB) next.set("teams", [teamA, teamB].filter(Boolean).join(","));
+    if (period) next.set("p", period);
+    if (champ) next.set("champ", champ);
+    if (role) next.set("role", role);
+    const qs = next.toString();
+    return { kind: "draft", ...(qs ? { query: qs } : {}) };
+  }
+  if (targetKind === "finder") {
+    const next = new URLSearchParams();
+    if (teamA) next.set("team", teamA);
+    if (teamB) next.set("vs", teamB);
+    if (playerA) next.set("player", playerA);
+    if (playerB) next.set("vsplayer", playerB);
+    if (champ) next.set("champ", champ);
+    if (event) next.set("event", event);
+    if (league) next.set("league", league);
+    if (year) next.set("year", year);
+    const qs = next.toString();
+    return { kind: "finder", ...(qs ? { query: qs } : {}) };
+  }
+  if (targetKind === "items") {
+    const next = new URLSearchParams();
+    if (playerA) next.set("player", playerA);
+    if (champ) next.set("champ", champ);
+    const qs = next.toString();
+    return { kind: "items", ...(qs ? { query: qs } : {}) };
+  }
+  if (targetKind === "data") {
+    const next = new URLSearchParams();
+    if (league) next.set("league", league);
+    if (year) next.set("year", year);
+    const qs = next.toString();
+    return { kind: "data", ...(qs ? { query: qs } : {}) };
+  }
+  if (targetKind === "champions" || targetKind === "tiers") {
+    const next = new URLSearchParams();
+    if (league) next.set("scope", league);
+    if (period) next.set("key", period);
+    if (event) next.set("event", event);
+    if (role) next.set("role", role);
+    if (q || champ) next.set("q", q || champ);
+    const qs = next.toString();
+    return { kind: targetKind, ...(qs ? { query: qs } : {}) };
+  }
+  if (targetKind === "counters") {
+    const next = new URLSearchParams();
+    if (champ || q) next.set("champ", champ || q);
+    if (role) next.set("role", role);
+    if (event) next.set("event", event);
+    if (period) next.set("patch", period);
+    const qs = next.toString();
+    return { kind: "counters", ...(qs ? { query: qs } : {}) };
+  }
+  if (targetKind === "patches") {
+    const next = new URLSearchParams();
+    if (q || champ) next.set("q", q || champ);
+    const qs = next.toString();
+    return { kind: "patches", ...(qs ? { query: qs } : {}) };
+  }
+  if (targetKind === "teams") {
+    const next = new URLSearchParams();
+    if (region) next.set("region", region);
+    if (q) next.set("q", q);
+    const qs = next.toString();
+    return { kind: "teams", ...(qs ? { query: qs } : {}) };
+  }
+  if (targetKind === "rankings") {
+    const next = new URLSearchParams();
+    if (region) next.set("region", region);
+    if (league) next.set("league", league);
+    if (q) next.set("q", q);
+    const qs = next.toString();
+    return { kind: "rankings", ...(qs ? { query: qs } : {}) };
+  }
+  if (targetKind === "players") {
+    const next = new URLSearchParams();
+    if (role) next.set("role", role);
+    if (q) next.set("q", q);
+    const qs = next.toString();
+    return { kind: "players", ...(qs ? { query: qs } : {}) };
+  }
+  if (targetKind === "leaders") {
+    const next = new URLSearchParams();
+    if (role) next.set("role", role);
+    if (league) next.set("league", league);
+    if (year) next.set("year", year);
+    if (event) next.set("event", event);
+    if (q) next.set("q", q);
+    const qs = next.toString();
+    return { kind: "leaders", ...(qs ? { query: qs } : {}) };
+  }
+  if (targetKind === "tournaments") {
+    const next = new URLSearchParams();
+    if (league) next.set("league", league);
+    if (q) next.set("q", q);
+    const qs = next.toString();
+    return { kind: "tournaments", ...(year ? { year } : {}), ...(qs ? { query: qs } : {}) };
+  }
+  if (targetKind === "worlds" || targetKind === "msi" || targetKind === "first-stand") {
+    return { kind: targetKind, ...(year ? { year } : {}) };
+  }
+  if (targetKind === "best") {
+    const next = new URLSearchParams();
+    if (year) next.set("year", year);
+    if (league) next.set("league", league);
+    if (event) next.set("event", event);
+    if (q) next.set("q", q);
+    const qs = next.toString();
+    return { kind: "best", ...(qs ? { query: qs } : {}) };
+  }
+  return { kind: targetKind } as HubRoute;
+}
+
 // ── The stats pages ───────────────────────────────────────────────────────
 
 export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, schedule, liveMatches, catalog, onSelectTab, onSelectTeam }) => {
@@ -162,7 +362,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
                 aria-label={tl(group.label)}
               >
                 {group.items.map((i) => (
-                  <HubLink key={i.kind} to={{ kind: i.kind } as HubRoute} className={subPillClass(route.kind === i.kind)}>
+                  <HubLink key={i.kind} to={siblingSectionRoute(route, i.kind)} className={subPillClass(route.kind === i.kind)}>
                     {i.icon}
                     {tl(i.label)}
                   </HubLink>

@@ -7,7 +7,7 @@ import { champName } from "../../champions";
 import { HubRoute, currentHubRoute, hubPath, navigateHub } from "../../hub/route";
 import { rememberRecent } from "../../hub/recent";
 import { champIcon, itemIcon, itemName, runeIcon, runeName, spellIcon, spellName } from "../../hub/ddragon";
-import { prefetchHub, prettySlug } from "../../hub/data";
+import { prefetchHub, prettySlug, resolveChampSlug, resolveEventSlug, resolvePlayerSlug } from "../../hub/data";
 import { preloadPageCode } from "./pageCode";
 import { IS_WEB, SITE_URL } from "../../platform";
 import { CaptureFooter, ShareButtons } from "./ShareImage";
@@ -345,7 +345,7 @@ export const TeamLink: React.FC<{ name: string; u?: string | null; className?: s
 };
 
 export const PlayerLink: React.FC<{ name: string; u?: string | null; className?: string }> = ({ name, u, className }) => {
-  const slug = u === undefined ? (name ? prettySlug(name) : null) : u;
+  const slug = u === undefined ? (name ? resolvePlayerSlug(name) : null) : u;
   return slug ? (
     <HubLink to={{ kind: "player", slug }} className={className}>
       {name}
@@ -356,7 +356,7 @@ export const PlayerLink: React.FC<{ name: string; u?: string | null; className?:
 };
 
 export const EventLink: React.FC<{ name: string; u?: string | null; className?: string }> = ({ name, u, className }) => {
-  const slug = u === undefined ? (name ? prettySlug(name) : null) : u;
+  const slug = u === undefined ? (name ? resolveEventSlug(name) : null) : u;
   return slug ? (
     <HubLink to={{ kind: "event", slug }} className={className}>
       {name}
@@ -415,7 +415,7 @@ export const RuneIcon: React.FC<{ name: string; size?: number }> = ({ name, size
 
 /** Champion picture + name, linked to the champion page. */
 export const ChampLink: React.FC<{ name: string; size?: number; showName?: boolean }> = ({ name, size = 20, showName = true }) => (
-  <HubLink to={{ kind: "champ", slug: prettySlug(name) }} className="inline-flex items-center gap-1.5 min-w-0 text-rw-text hover:text-rw-accent">
+  <HubLink to={{ kind: "champ", slug: resolveChampSlug(name) }} className="inline-flex items-center gap-1.5 min-w-0 text-rw-text hover:text-rw-accent">
     <ChampIcon name={name} size={size} />
     {showName && <span className="truncate">{champName(name)}</span>}
   </HubLink>
