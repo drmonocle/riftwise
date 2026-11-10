@@ -1,5 +1,5 @@
 /** gol.gg-style stat tables for one tournament: every player and every team, sortable by any column. */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { bare, matchesChampSearch, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
@@ -35,10 +35,24 @@ const teamEarlyCols = (wrap: (t: EventTeamStats, node: React.ReactNode) => React
   { key: "pl", label: tl("Plates"), title: tl("Turret plates taken per game"), value: (t) => (t.pln ? per(t.pl || 0, t.pln, 1) : null), render: (t) => (t.pln ? wrap(t, per(t.pl || 0, t.pln, 1)) : "–") },
 ];
 
-export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ e, hidden }) => {
+export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initialSearch?: string; initialRole?: string }> = ({
+  e,
+  hidden,
+  initialSearch = "",
+  initialRole,
+}) => {
   const players = hidden ? [] : e.players || [];
-  const [role, setRole] = useState("All");
-  const [search, setSearch] = useState("");
+  const validRole = initialRole && ROLES.some((r) => r.toLowerCase() === initialRole.toLowerCase())
+    ? ROLES.find((r) => r.toLowerCase() === initialRole.toLowerCase())!
+    : "All";
+  const [role, setRole] = useState(validRole);
+  const [search, setSearch] = useState(initialSearch);
+  useEffect(() => {
+    setRole(validRole);
+  }, [validRole]);
+  useEffect(() => {
+    setSearch(initialSearch);
+  }, [initialSearch]);
   const maxG = Math.max(0, ...players.map((p) => p.g));
   const [regular, setRegular] = useState(true);
   const minG = Math.max(2, Math.ceil(maxG * 0.4));
@@ -306,7 +320,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
                 ...(role !== "All" ? { role } : {}),
                 ...((search.trim() || rows.length === 1) && rows[0]?.c?.[0] ? { champ: rows[0].c[0] } : {}),
                 ...((search.trim() || rows.length <= 2) && rows.length >= 1
-                  ? { q: rows.slice(0, 2).map((p) => p.n).join(",") }
+                  ? { q: rows.slice(0, 2).map((p) => p.u || prettySlug(p.n)).join(",") }
                   : {}),
               }).toString(),
             }}
@@ -526,9 +540,12 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
   );
 };
 
-export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ e, hidden }) => {
+export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; initialSearch?: string }> = ({ e, hidden, initialSearch = "" }) => {
   const teams = e.teamStats || [];
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
+  useEffect(() => {
+    setSearch(initialSearch);
+  }, [initialSearch]);
   const rows = useMemo(() => {
     const terms = search
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
@@ -813,7 +830,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
                 ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
                 ...(rows.length >= 1
-                  ? { q: rows.slice(0, 2).map((t) => t.t).join(",") }
+                  ? { q: rows.slice(0, 2).map((t) => t.u || prettySlug(t.t)).join(",") }
                   : {}),
               }).toString(),
             }}

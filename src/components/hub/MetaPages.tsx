@@ -801,7 +801,7 @@ export const LeaguePage: React.FC<{ slug: string; year?: string }> = ({ slug, ye
       loadLeague(slug).then((l) => {
         const now = currentHubRoute();
         if (l.u && l.u !== slug && now.kind === "league" && now.slug === slug)
-          navigateHub({ kind: "league", slug: l.u, ...(now.year ? { year: now.year } : {}) }, { replace: true });
+          navigateHub({ kind: "league", slug: l.u, ...(now.year ? { year: now.year } : {}), ...("query" in now && now.query ? { query: now.query } : {}) }, { replace: true });
         return l;
       }),
     [slug],
@@ -1150,7 +1150,16 @@ const LeagueEventsSection: React.FC<{
   pick: (y?: string) => void;
 }> = ({ l, season, years, events, pick }) => {
   const isHidden = useHiddenCheck();
-  const [evSearch, setEvSearch] = useState("");
+  const nowRoute = currentHubRoute();
+  const routeQuery = nowRoute.kind === "league" && nowRoute.slug === l.u ? nowRoute.query : undefined;
+  const qParam = useMemo(() => {
+    const qp = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
+    return qp.get("q") || qp.get("vs") || "";
+  }, [routeQuery]);
+  const [evSearch, setEvSearch] = useState(qParam);
+  useEffect(() => {
+    setEvSearch(qParam);
+  }, [qParam]);
   const shownEvents = useMemo(() => {
     const terms = evSearch
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)

@@ -189,11 +189,22 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
   );
 };
 
-const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, teamName }) => {
+const TeamSeriesBody: React.FC<{ slug: string; teamName: string; initialQ?: string; initialYear?: string }> = ({
+  slug,
+  teamName,
+  initialQ = "",
+  initialYear,
+}) => {
   const state = useLoad(() => loadTeamSeries(slug), [slug]);
-  const [year, setYear] = useState("all");
-  const [q, setQ] = useState("");
+  const [year, setYear] = useState(initialYear || "all");
+  const [q, setQ] = useState(initialQ);
   const [order, setOrder] = useState<"d" | "r">("d");
+  useEffect(() => {
+    if (initialYear) setYear(initialYear);
+  }, [initialYear]);
+  useEffect(() => {
+    setQ(initialQ);
+  }, [initialQ]);
   const years = useMemo(() => [...new Set((state.data || []).map((r) => r[0].slice(0, 4)))], [state.data]);
   const rows = useMemo(() => {
     const terms = q
@@ -336,7 +347,12 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
   );
 };
 
-export const TeamSeriesArchive: React.FC<{ slug: string; teamName: string }> = ({ slug, teamName }) => (
+export const TeamSeriesArchive: React.FC<{ slug: string; teamName: string; initialQ?: string; initialYear?: string }> = ({
+  slug,
+  teamName,
+  initialQ,
+  initialYear,
+}) => (
   <Section
     title={tl("Every series")}
     right={
@@ -360,13 +376,13 @@ export const TeamSeriesArchive: React.FC<{ slug: string; teamName: string }> = (
         <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(slug)}` }} className="text-rw-accent hover:underline">
           {tl("Game finder")} →
         </HubLink>
-        <HubLink to={{ kind: "leaders", query: `q=${encodeURIComponent(teamName)}` }} className="text-rw-accent hover:underline">
+        <HubLink to={{ kind: "leaders", query: `q=${encodeURIComponent(slug)}` }} className="text-rw-accent hover:underline">
           {tl("Player leaderboards")} →
         </HubLink>
       </span>
     }
   >
-    <TeamSeriesBody slug={slug} teamName={teamName} />
+    <TeamSeriesBody slug={slug} teamName={teamName} initialQ={initialQ} initialYear={initialYear} />
   </Section>
 );
 
@@ -637,12 +653,13 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
 
 /** `champ`: open on that champion's games (the Champions tab's "Every game" button). Each game shows the items the
  *  player ended it with (hub/playeritems/: the finished ones first). */
-const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: string; year?: string; period?: PeriodKey }> = ({
+const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: string; year?: string; period?: PeriodKey; initialQ?: string }> = ({
   slug,
   playerName,
   champ: startChamp,
   year: startYear,
   period,
+  initialQ = "",
 }) => {
   const displayName = playerName || slug;
   const state = useLoad(() => loadPlayerGames(slug), [slug]);
@@ -650,9 +667,13 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
   const [year, setYear] = useState(startYear || "all");
   const [champ, setChamp] = useState(startChamp || "all");
   const [opp, setOpp] = useState("all");
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(initialQ);
   const [order, setOrder] = useState<"d" | "r">("d");
   const [n, setN] = useState(PAGE);
+  useEffect(() => {
+    setQ(initialQ);
+    setN(PAGE);
+  }, [initialQ]);
   useEffect(() => {
     if (startChamp) {
       setChamp(startChamp);
@@ -1127,7 +1148,13 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
   );
 };
 
-export const PlayerGamesArchive: React.FC<{ slug: string; playerName?: string }> = ({ slug, playerName }) => (
+export const PlayerGamesArchive: React.FC<{ slug: string; playerName?: string; initialQ?: string; initialChamp?: string; initialYear?: string }> = ({
+  slug,
+  playerName,
+  initialQ,
+  initialChamp,
+  initialYear,
+}) => (
   <Section
     title={tl("Every game")}
     right={
@@ -1145,7 +1172,7 @@ export const PlayerGamesArchive: React.FC<{ slug: string; playerName?: string }>
         <HubLink to={{ kind: "tiers" }} className="text-rw-accent hover:underline">
           {tl("Pro tier list")} →
         </HubLink>
-        <HubLink to={{ kind: "leaders", query: `q=${encodeURIComponent(playerName || slug)}` }} className="text-rw-accent hover:underline">
+        <HubLink to={{ kind: "leaders", query: `q=${encodeURIComponent(slug)}` }} className="text-rw-accent hover:underline">
           {tl("Player leaderboards")} →
         </HubLink>
         <HubLink to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}` }} className="text-rw-accent hover:underline">
@@ -1157,7 +1184,7 @@ export const PlayerGamesArchive: React.FC<{ slug: string; playerName?: string }>
       </span>
     }
   >
-    <PlayerGamesBody slug={slug} playerName={playerName} />
+    <PlayerGamesBody slug={slug} playerName={playerName} initialQ={initialQ} champ={initialChamp} year={initialYear} />
   </Section>
 );
 

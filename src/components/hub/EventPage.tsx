@@ -75,7 +75,7 @@ export const EventPage: React.FC<{ slug: string; tab?: string; onOpenUrl?: (url:
       loadHubEvent(slug).then((e) => {
         const now = currentHubRoute();
         if (e.u && e.u !== slug && now.kind === "event" && now.slug === slug)
-          navigateHub({ kind: "event", slug: e.u, ...("tab" in now && now.tab ? { tab: now.tab } : {}) }, { replace: true });
+          navigateHub({ kind: "event", slug: e.u, ...("tab" in now && now.tab ? { tab: now.tab } : {}), ...("query" in now && now.query ? { query: now.query } : {}) }, { replace: true });
         return e;
       }),
     [slug],
@@ -94,7 +94,18 @@ const INTL_PAGE: Record<string, "worlds" | "msi" | "first-stand"> = {
 
 const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) => void }> = ({ e, tab: asked, onOpenUrl }) => {
   const [resultsHidden, revealResults] = useHidden(`event:${e.u}`, e.end);
-  const [teamSearch, setTeamSearch] = useState("");
+  const nowRoute = currentHubRoute();
+  const routeQuery = nowRoute.kind === "event" && nowRoute.slug === e.u ? nowRoute.query : undefined;
+  const urlParams = useMemo(
+    () => new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : "")),
+    [routeQuery],
+  );
+  const qParam = urlParams.get("q") || urlParams.get("champ") || urlParams.get("vs") || "";
+  const roleParam = urlParams.get("role") || undefined;
+  const [teamSearch, setTeamSearch] = useState(qParam);
+  useEffect(() => {
+    setTeamSearch(qParam);
+  }, [qParam]);
   const lists = (e.stages || []).filter((s) => s.kind === "list");
   // the tabs this tournament has something for; one with two parts or fewer stays one page
   const tabs: PageTab[] = [
@@ -446,7 +457,16 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                       ...(e.lu ? { league: e.lu } : {}),
                       ...(e.start || e.end ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                       event: e.u,
-                      ...(e.results[0] ? { q: [e.results[0].t, e.results[1]?.t].filter(Boolean).join(",") } : {}),
+                      ...(e.results[0]
+                        ? {
+                            q: [
+                              e.results[0].u || prettySlug(e.results[0].t),
+                              e.results[1] ? e.results[1].u || prettySlug(e.results[1].t) : "",
+                            ]
+                              .filter(Boolean)
+                              .join(","),
+                          }
+                        : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
@@ -561,7 +581,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
 
       {on("matches") && lists.length > 0 && (
         <div className="rw-span">
-          <StageLists stages={lists} eventSlug={e.u} leagueSlug={e.lu} />
+          <StageLists stages={lists} eventSlug={e.u} leagueSlug={e.lu} initialSearch={qParam} />
         </div>
       )}
 
@@ -669,12 +689,12 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
         <div className="rw-span space-y-3">
           {!!e.players?.length && !resultsHidden && (
             <div id="jump-pstats">
-              <EventPlayerStats e={e} hidden={resultsHidden} />
+              <EventPlayerStats e={e} hidden={resultsHidden} initialSearch={qParam} initialRole={roleParam} />
             </div>
           )}
           {!!e.teamStats?.length && !resultsHidden && (
             <div id="jump-tstats">
-              <EventTeamStatsTable e={e} hidden={resultsHidden} />
+              <EventTeamStatsTable e={e} hidden={resultsHidden} initialSearch={qParam} />
             </div>
           )}
           {/* the stats cards (records, objectives, the draft...) from every game's scoreboard */}
@@ -694,7 +714,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
 
       {((on("champions") && e.champs && e.champs.length > 0) || (on("teams") && e.teams && e.teams.length > 0)) && (
         <div className={tabbed ? "rw-span" : "grid gap-3 md:grid-cols-2"}>
-          {on("champions") && e.champs && e.champs.length > 0 && <EventChamps e={e} full={tabbed} />}
+          {on("champions") && e.champs && e.champs.length > 0 && <EventChamps e={e} full={tabbed} initialSearch={qParam} />}
           {on("teams") && e.teams && e.teams.length > 0 && (() => {
             const tq = normText(teamSearch);
             const tTerms = tq ? tq.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
@@ -788,7 +808,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                               ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                               ...(!e.whole ? { event: e.u } : {}),
                               ...((tTerms.length > 0 || filteredTeams.length <= 2) && filteredTeams.length >= 1
-                                ? { q: filteredTeams.slice(0, 2).map((t) => t.t).join(",") }
+                                ? { q: filteredTeams.slice(0, 2).map((t) => t.u || prettySlug(t.t)).join(",") }
                                 : {}),
                             }).toString(),
                           }}
@@ -899,7 +919,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
         </div>
       )}
       {on("teams") && e.rosters && e.rosters.length > 0 && (
-        <EventRosters rosters={e.rosters} eventSlug={e.u} leagueSlug={e.lu} year={(e.start || e.end || "").slice(0, 4)} />
+        <EventRosters rosters={e.rosters} eventSlug={e.u} leagueSlug={e.lu} year={(e.start || e.end || "").slice(0, 4)} initialSearch={qParam} />
       )}
       </div>
     </div>
@@ -1258,11 +1278,14 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
 
 /** Stage names from Leaguepedia ("Week 3", "Round 1", "Quarterfinals") in the reader's language where we can. */
 
-const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: string | null }> = ({ stages, eventSlug, leagueSlug }) => {
+const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: string | null; initialSearch?: string }> = ({ stages, eventSlug, leagueSlug, initialSearch = "" }) => {
   // Long leagues: one stage at a time, newest first
   const [i, setI] = useState(stages.length - 1);
   const [byRating, setByRating] = useState(false);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
+  useEffect(() => {
+    setSearch(initialSearch);
+  }, [initialSearch]);
   const isHidden = useHiddenCheck();
   const st = stages[Math.min(i, stages.length - 1)];
   // "Top rated": every stage's series, best first (results still hidden by spoiler mode stay out, so the order gives
@@ -1942,10 +1965,13 @@ const CopyEventPost: React.FC<{ e: HubEvent }> = ({ e }) => {
   );
 };
 
-const EventChamps: React.FC<{ e: HubEvent; full?: boolean }> = ({ e, full }) => {
+const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: string }> = ({ e, full, initialSearch = "" }) => {
   const games = e.statsGames || 0;
   const allChamps = useMemo(() => e.champs || [], [e.champs]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
+  useEffect(() => {
+    setSearch(initialSearch);
+  }, [initialSearch]);
   const [showAll, setShowAll] = useState(false);
   const rows = useMemo(() => {
     const terms = search

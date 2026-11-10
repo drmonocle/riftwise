@@ -132,13 +132,13 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
   const kind = PATH_ENTITY[parts[0]];
   const rawQ = new URLSearchParams(search);
   const keptQ = new URLSearchParams();
-  for (const k of ["p", "as", "y", "champ", "role"]) {
+  for (const k of ["p", "as", "y", "champ", "role", "q", "vs"]) {
     const v = rawQ.get(k);
     if (v) keptQ.set(k, v);
   }
-  const qStr = (kind === "team" || kind === "player" || kind === "champ") && keptQ.toString() ? keptQ.toString() : undefined;
+  const qStr = (kind === "team" || kind === "player" || kind === "champ" || kind === "event" || kind === "league") && keptQ.toString() ? keptQ.toString() : undefined;
   // a league page can open at one season: /league/lck/2025
-  if (kind === "league" && parts.length === 3 && /^\d{4}$/.test(parts[2])) return { kind, slug: parts[1].toLowerCase(), year: parts[2] };
+  if (kind === "league" && parts.length === 3 && /^\d{4}$/.test(parts[2])) return { kind, slug: parts[1].toLowerCase(), year: parts[2], ...(qStr ? { query: qStr } : {}) };
   // a match page can open at one of its games via /match/<slug>/5 as well as ?g=5
   if (kind === "match" && parts.length === 3 && /^[1-9]$/.test(parts[2])) return { kind, slug: parts[1].toLowerCase(), game: Number(parts[2]) };
   // one tab of a team's, player's or tournament's page: /team/t1/matches
@@ -203,7 +203,7 @@ export function hubPath(r: HubRoute): string {
     r.kind === "match" && e.game
       ? `?g=${e.game}`
       : r.kind === "league" && e.year
-        ? `/${e.year}`
+        ? `/${e.year}${e.query ? `?${e.query}` : ""}`
         : `${isTabbed(r.kind) && normTab ? `/${normTab}` : ""}${e.query ? `?${e.query}` : ""}`;
   return `${BASE}${ENTITY_PATH[r.kind as HubEntity]}/${encodeURIComponent(e.slug)}${tail}`;
 }

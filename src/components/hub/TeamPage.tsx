@@ -73,8 +73,20 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
   const oldNames = t.names.filter((n) => n.n !== t.name);
   // Riot's logo when it has one; otherwise the top card shows the team's short name in a tile
   const logo = useTeamLogo(t.name, t.codes[0]);
+  const nowRoute = currentHubRoute();
+  const routeQuery = nowRoute.kind === "team" && nowRoute.slug === t.u ? nowRoute.query : undefined;
+  const urlParams = useMemo(
+    () => new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : "")),
+    [routeQuery],
+  );
+  const asParam = urlParams.get("as") || "";
+  const yParam = urlParams.get("y") || "";
+  const qParam = urlParams.get("q") || urlParams.get("vs") || "";
   const [allEvents, setAllEvents] = useState(false);
-  const [eventSearch, setEventSearch] = useState("");
+  const [eventSearch, setEventSearch] = useState(qParam);
+  useEffect(() => {
+    setEventSearch(qParam);
+  }, [qParam]);
   const [recentHidden, revealRecent] = useHidden(`team-recent:${t.u}`, t.recent[0]?.date);
   const eventTerms = eventSearch
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
@@ -100,14 +112,6 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
   ];
   const to = (key: string): HubRoute => ({ kind: "team", slug: t.u, ...(key ? { tab: key } : {}) });
   const overview = tab === "";
-  const nowRoute = currentHubRoute();
-  const routeQuery = nowRoute.kind === "team" && nowRoute.slug === t.u ? nowRoute.query : undefined;
-  const urlParams = useMemo(
-    () => new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : "")),
-    [routeQuery],
-  );
-  const asParam = urlParams.get("as") || "";
-  const yParam = urlParams.get("y") || "";
   const initialRosterYear = useMemo(() => {
     if (yParam && t.roster.some((r) => r.y === yParam)) return yParam;
     if (asParam) {
@@ -1209,7 +1213,14 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
         </Section>
       )}
 
-      {tab === "matches" && <TeamSeriesArchive slug={t.u} teamName={t.name} />}
+      {tab === "matches" && (
+        <TeamSeriesArchive
+          slug={t.u}
+          teamName={t.name}
+          initialQ={qParam}
+          initialYear={yParam || (urlParams.get("p")?.startsWith("y") ? urlParams.get("p")!.slice(1) : undefined)}
+        />
+      )}
 
       {tab === "history" && rosterSection}
 
@@ -1224,6 +1235,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
           t={t}
           initialPeriod={urlParams.get("p") || (rosterYear && rosterYear !== t.roster[0]?.y ? `y${rosterYear}` : "all")}
           initialChamp={urlParams.get("champ")}
+          initialSearch={qParam}
           asParam={asParam}
           to={to}
         />
@@ -1239,9 +1251,10 @@ const TeamChampionsTab: React.FC<{
   t: HubTeam;
   initialPeriod: PeriodKey;
   initialChamp?: string | null;
+  initialSearch?: string;
   asParam?: string;
   to: (k: string) => HubRoute;
-}> = ({ t, initialPeriod, initialChamp, asParam, to }) => {
+}> = ({ t, initialPeriod, initialChamp, initialSearch = "", asParam, to }) => {
   const [period, setPeriod] = useState<PeriodKey>(initialPeriod || "all");
   const [selectedChamp, setSelectedChamp] = useState<string | null>(initialChamp || null);
   useEffect(() => {
@@ -1281,7 +1294,10 @@ const TeamChampionsTab: React.FC<{
   const champs = agg ? agg.picks.map(([c, g, w]) => ({ c, g, w })) : t.champs;
   const bans = agg ? agg.bans.map(([c, g]) => ({ c, g })) : t.bans;
   const bansVs = agg ? agg.bansVs.map(([c, g]) => ({ c, g })) : t.bansVs || [];
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
+  useEffect(() => {
+    setSearch(initialSearch);
+  }, [initialSearch]);
   const terms = useMemo(
     () =>
       search

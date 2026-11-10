@@ -9,7 +9,7 @@ import type { EventLines } from "./worldsFacts";
 import type { Match } from "../types";
 import { fetchMatchGames } from "../api";
 import { feedNow, fetchLiveDetails, fetchLiveStart, fetchLiveWindow, type LiveWindow } from "../liveGame";
-import { findHubTeam, loadHubIndex, loadHubIndexQuick, type HubIndex } from "./data";
+import { findHubTeam, loadHubIndex, loadHubIndexQuick, prettySlug, resolvePlayerSlug, type HubIndex } from "./data";
 import { RIOT_PREFIX, recentSchedule } from "./riotMatch";
 import { champNameById, ddragonReady } from "./ddragon";
 
@@ -54,8 +54,9 @@ function gameLines(gameId: string, match: Match, index: HubIndex): Promise<GameL
         for (const pm of w.participantMetadata) {
           const pf = frame.participants.find((x) => x.participantId === pm.participantId);
           const name = bareName(pm.summonerName);
+          const canonSlug = resolvePlayerSlug(name);
           const row = index.players
-            .filter((x) => norm(x[0]) === norm(name))
+            .filter((x) => norm(x[0]) === norm(name) || (x[1] || prettySlug(x[0])) === canonSlug)
             .sort((x, y) => (y[4] || "").localeCompare(x[4] || "") || y[3] - x[3])[0];
           const share = shares.get(pm.participantId);
           players.push([side, name, row ? row[1] || null : null, ROLE[pm.role] || pm.role, champNameById(pm.championId), pf?.kills ?? 0, pf?.deaths ?? 0, pf?.assists ?? 0, pf?.creepScore ?? 0, share == null ? null : Math.round(share * 1000)]);

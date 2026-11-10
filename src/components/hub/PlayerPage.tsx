@@ -113,13 +113,17 @@ const PlayerView: React.FC<{
     { key: "career", label: TAB_LABEL.career, count: p.events.length },
   ];
   const to = (key: string): HubRoute => ({ kind: "player", slug: p.u, ...(key ? { tab: key } : {}) });
-  const [allEvents, setAllEvents] = useState(false);
-  const [eventSearch, setEventSearch] = useState("");
   const nowRoute = currentHubRoute();
   const routeQuery = nowRoute.kind === "player" && nowRoute.slug === p.u ? nowRoute.query : undefined;
   const urlParams = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
   const champParam = urlParams.get("champ");
   const pParam = urlParams.get("p");
+  const qParam = urlParams.get("q") || urlParams.get("vs") || "";
+  const [allEvents, setAllEvents] = useState(false);
+  const [eventSearch, setEventSearch] = useState(qParam);
+  useEffect(() => {
+    setEventSearch(qParam);
+  }, [qParam]);
   const [champPeriod, setChampPeriod] = useState<PeriodKey>(pParam || "all");
   useEffect(() => {
     if (pParam) setChampPeriod(pParam);
@@ -765,6 +769,7 @@ const PlayerView: React.FC<{
           period={champPeriod}
           onPeriodChange={setChampPeriod}
           gamesOn={gamesOn}
+          initialSearch={qParam}
           onSelectChamp={(c) => {
             setGamesOn(c);
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1531,7 +1536,13 @@ const PlayerView: React.FC<{
 
       {tab === "matches" && (
         <div className="rw-span">
-          <PlayerGamesArchive slug={p.u} playerName={p.name} />
+          <PlayerGamesArchive
+            slug={p.u}
+            playerName={p.name}
+            initialQ={qParam}
+            initialChamp={champParam || undefined}
+            initialYear={pParam && /^y\d{4}$/.test(pParam) ? pParam.slice(1) : urlParams.get("y") || undefined}
+          />
         </div>
       )}
       </div>
@@ -1544,8 +1555,9 @@ const PlayerChampionsTab: React.FC<{
   period: PeriodKey;
   onPeriodChange: (p: PeriodKey) => void;
   gamesOn: string | null;
+  initialSearch?: string;
   onSelectChamp: (c: string) => void;
-}> = ({ p, period, onPeriodChange: setPeriod, gamesOn, onSelectChamp }) => {
+}> = ({ p, period, onPeriodChange: setPeriod, gamesOn, initialSearch = "", onSelectChamp }) => {
   const log = useLoad(() => loadPlayerGames(p.u), [p.u]);
   const options = useMemo(() => (log.data ? periodOptions(log.data.map(playerRowRef)) : []), [log.data]);
   const agg = useMemo(() => {
@@ -1554,7 +1566,10 @@ const PlayerChampionsTab: React.FC<{
     return playerAgg(rows);
   }, [log.data, period]);
   const champs = agg ? agg.champs : p.champs;
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
+  useEffect(() => {
+    setSearch(initialSearch);
+  }, [initialSearch]);
   const terms = useMemo(
     () =>
       search

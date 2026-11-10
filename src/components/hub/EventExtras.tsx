@@ -1,5 +1,5 @@
 /** Tournament page extras: quick facts, team rosters (with subs and coaches), records between regions. */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Flame, Crown, Timer, Swords } from "lucide-react";
 import { tl, tk, roleName, regionName } from "../../i18n";
 import { bare, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
@@ -190,7 +190,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                       ...(leagueSlug ? { league: leagueSlug } : {}),
                       ...(yr ? { year: yr } : {}),
                       event: slug,
-                      ...(featGame?.a ? { q: [featGame.a, featGame.b].filter(Boolean).join(",") } : {}),
+                      ...(featGame?.a ? { q: [prettySlug(featGame.a), featGame.b ? prettySlug(featGame.b) : ""].filter(Boolean).join(",") } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -760,14 +760,18 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
 };
 
 /** Every team's roster for the tournament, including substitutes and coaches (Leaguepedia's rosters). */
-export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string; leagueSlug?: string | null; year?: string }> = ({
+export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string; leagueSlug?: string | null; year?: string; initialSearch?: string }> = ({
   rosters,
   eventSlug,
   leagueSlug,
   year,
+  initialSearch = "",
 }) => {
   const [open, setOpen] = useState(rosters.length <= 4);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
+  useEffect(() => {
+    setSearch(initialSearch);
+  }, [initialSearch]);
   const q = normText(search);
   const yr = year && /^\d{4}$/.test(year) ? year : eventSlug && /\d{4}/.test(eventSlug) ? /\d{4}/.exec(eventSlug)![0] : undefined;
   const filteredRosters = useMemo(() => {
@@ -841,7 +845,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                 to={{
                   kind: "teams",
                   ...((q || filteredRosters.length <= 2) && filteredRosters.length >= 1
-                    ? { query: `q=${encodeURIComponent(filteredRosters.slice(0, 2).map((t) => t.t).join(","))}` }
+                    ? { query: `q=${encodeURIComponent(filteredRosters.slice(0, 2).map((t) => t.u || prettySlug(t.t)).join(","))}` }
                     : {}),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -857,7 +861,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                       ...(yr ? { year: yr } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
                       ...((q || filteredRosters.length <= 2) && filteredRosters.length >= 1
-                        ? { q: filteredRosters.slice(0, 2).map((t) => t.t).join(",") }
+                        ? { q: filteredRosters.slice(0, 2).map((t) => t.u || prettySlug(t.t)).join(",") }
                         : {}),
                     }).toString() || undefined,
                 }}

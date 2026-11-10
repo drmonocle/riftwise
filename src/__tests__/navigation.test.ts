@@ -268,4 +268,28 @@ describe("search shortcuts", () => {
     expect(agg.games).toBe(1);
     expect(agg.rows.map((r) => r.c)).toEqual(["Azir"]);
   });
+  it("preserves contextual query parameters across entity routes and tabs", () => {
+    expect(parseHubPath("/tournament/worlds-2025/stats", "?role=Mid&q=t1")).toEqual({
+      kind: "event",
+      slug: "worlds-2025",
+      tab: "stats",
+      query: "role=Mid&q=t1",
+    });
+    expect(hubPath({ kind: "event", slug: "worlds-2025", tab: "stats", query: "role=Mid&q=t1" })).toBe(
+      "/tournament/worlds-2025/stats?role=Mid&q=t1",
+    );
+    expect(parseHubPath("/team/t1/matches", "?y=2025&q=gen-g")).toEqual({
+      kind: "team",
+      slug: "t1",
+      tab: "matches",
+      query: "y=2025&q=gen-g",
+    });
+    expect(parseHubPath("/league/lck/2025", "?q=t1")).toEqual({
+      kind: "league",
+      slug: "lck",
+      year: "2025",
+      query: "q=t1",
+    });
+    expect(hubPath({ kind: "league", slug: "lck", year: "2025", query: "q=t1" })).toBe("/league/lck/2025?q=t1");
+  });
 });
