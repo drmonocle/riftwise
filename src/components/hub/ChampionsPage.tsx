@@ -732,7 +732,17 @@ const LeagueTable: React.FC<{
           </span>
         )}
       </div>
-      {shownRows.length > 0 && <MetaSpotlight rows={shownRows} minWrPicks={5} />}
+      {shownRows.length > 0 && (
+        <MetaSpotlight
+          rows={shownRows}
+          minWrPicks={5}
+          league={league}
+          year={year}
+          event={eventSlug || undefined}
+          patch={q.get("patch") || undefined}
+          role={roleQ || undefined}
+        />
+      )}
       {result.games === 0 ? (
         <p className="text-xs text-rw-sub py-4 text-center">{tl("No games match these filters.")}</p>
       ) : (
@@ -1063,7 +1073,17 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
         <Failed />
       ) : (
         <div className={`${card} space-y-2.5`}>
-          {shownRows.length > 0 && <MetaSpotlight rows={shownRows} minWrPicks={10} />}
+          {shownRows.length > 0 && (
+            <MetaSpotlight
+              rows={shownRows}
+              minWrPicks={10}
+              keyParam={key}
+              year={key.startsWith("y") ? key.slice(1) : undefined}
+              patch={key.startsWith("p") ? key.slice(1) : undefined}
+              role={roleQ || undefined}
+              scopeAll={scope === "all"}
+            />
+          )}
           <SortTable
             rows={shownRows}
             columns={cols}
@@ -1086,7 +1106,14 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
 const MetaSpotlight: React.FC<{
   rows: { c: string; presence: number; p: number; b: number; wr: number | null }[];
   minWrPicks: number;
-}> = ({ rows, minWrPicks }) => {
+  league?: string;
+  year?: string;
+  event?: string;
+  patch?: string;
+  role?: string;
+  keyParam?: string;
+  scopeAll?: boolean;
+}> = ({ rows, minWrPicks, league, year, event, patch, role, keyParam, scopeAll }) => {
   const topPres = useMemo(() => [...rows].sort((a, b) => b.presence - a.presence)[0], [rows]);
   const topPicks = useMemo(() => [...rows].sort((a, b) => b.p - a.p)[0], [rows]);
   const topBans = useMemo(() => [...rows].sort((a, b) => b.b - a.b)[0], [rows]);
@@ -1101,6 +1128,8 @@ const MetaSpotlight: React.FC<{
     topWr && topWr.wr != null ? { label: tl("Win %"), c: topWr.c, val: pct(topWr.wr), sub: `${topWr.p} ${tl("Picks")}`, tone: "text-rw-teal" } : null,
   ].filter((x): x is NonNullable<typeof x> => !!x);
   if (cards.length < 2) return null;
+  const tierKey = keyParam || (patch ? `p${patch}` : year ? `y${year}` : "");
+  const draftP = event ? `e:${event}` : patch ? `p:${patch}` : year ? `y${year}` : keyParam?.startsWith("p") ? `p:${keyParam.slice(1)}` : keyParam?.startsWith("y") ? keyParam : "";
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
       {cards.map((item) => (
@@ -1124,27 +1153,79 @@ const MetaSpotlight: React.FC<{
                   {item.sub}
                 </HubLink>
                 {" · "}
-                <HubLink to={{ kind: "counters", query: `champ=${prettySlug(item.c)}` }} className="hover:text-rw-accent hover:underline">
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: `champ=${prettySlug(item.c)}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                  }}
+                  className="hover:text-rw-accent hover:underline"
+                >
                   {tl("Counters")}
                 </HubLink>
                 {" · "}
-                <HubLink to={{ kind: "items", query: `champ=${encodeURIComponent(prettySlug(item.c))}` }} className="hover:text-rw-accent hover:underline">
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: `champ=${encodeURIComponent(prettySlug(item.c))}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                  }}
+                  className="hover:text-rw-accent hover:underline"
+                >
                   {tl("Item history")}
                 </HubLink>
                 {" · "}
-                <HubLink to={{ kind: "finder", query: `champ=${encodeURIComponent(item.c)}` }} className="hover:text-rw-accent hover:underline">
+                <HubLink
+                  to={{
+                    kind: "finder",
+                    query: new URLSearchParams({
+                      champ: item.c,
+                      ...(league ? { league } : {}),
+                      ...(year ? { year } : {}),
+                      ...(event ? { event } : {}),
+                      ...(patch ? { patch } : {}),
+                      ...(role ? { role } : {}),
+                    }).toString(),
+                  }}
+                  className="hover:text-rw-accent hover:underline"
+                >
                   {tl("Game finder")}
                 </HubLink>
                 {" · "}
-                <HubLink to={{ kind: "tiers" }} className="hover:text-rw-accent hover:underline">
+                <HubLink
+                  to={{
+                    kind: "tiers",
+                    query: new URLSearchParams({
+                      ...(league ? { scope: league } : scopeAll ? { scope: "all" } : {}),
+                      ...(tierKey ? { key: tierKey } : {}),
+                      ...(role ? { role } : {}),
+                    }).toString(),
+                  }}
+                  className="hover:text-rw-accent hover:underline"
+                >
                   {tl("Pro tier list")}
                 </HubLink>
                 {" · "}
-                <HubLink to={{ kind: "draft" }} className="hover:text-rw-accent hover:underline">
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    ...(draftP ? { query: `p=${encodeURIComponent(draftP)}` } : {}),
+                  }}
+                  className="hover:text-rw-accent hover:underline"
+                >
                   {tl("Draft board")}
                 </HubLink>
                 {" · "}
-                <HubLink to={{ kind: "leaders" }} className="hover:text-rw-accent hover:underline">
+                <HubLink
+                  to={{
+                    kind: "leaders",
+                    query: new URLSearchParams({
+                      ...(league ? { league } : {}),
+                      ...(year ? { year } : {}),
+                      ...(event ? { event } : {}),
+                      ...(role ? { role } : {}),
+                    }).toString(),
+                  }}
+                  className="hover:text-rw-accent hover:underline"
+                >
                   {tl("Player leaderboards")}
                 </HubLink>
               </div>

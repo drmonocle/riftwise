@@ -798,30 +798,37 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               >
                 {tl("Titles")} →
               </HubLink>
-              <HubLink
-                to={{ kind: "tiers" }}
-                className="text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Pro tier list")} →
-              </HubLink>
-              <HubLink
-                to={{ kind: "finder" }}
-                className="text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Game finder")} →
-              </HubLink>
-              <HubLink
-                to={{ kind: "leaders" }}
-                className="text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Player leaderboards")} →
-              </HubLink>
-              <HubLink
-                to={{ kind: "best" }}
-                className="text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Best games")} →
-              </HubLink>
+              {(() => {
+                const topLgSlug = d.leagues[0]?.[1] || (d.leagues[0]?.[0] ? prettySlug(d.leagues[0][0]) : "");
+                return (
+                  <>
+                    <HubLink
+                      to={{ kind: "tiers", ...(topLgSlug ? { query: `scope=${encodeURIComponent(topLgSlug)}` } : {}) }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Pro tier list")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "finder", ...(topLgSlug ? { query: `league=${encodeURIComponent(topLgSlug)}` } : {}) }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Game finder")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "leaders", ...(topLgSlug ? { query: `league=${encodeURIComponent(topLgSlug)}` } : {}) }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Player leaderboards")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "best", ...(topLgSlug ? { query: `league=${encodeURIComponent(topLgSlug)}` } : {}) }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Best games")} →
+                    </HubLink>
+                  </>
+                );
+              })()}
               <SectionCard
                 section={tl("League strength")}
                 name={tl("Power rankings")}
@@ -966,16 +973,44 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                   </HubLink>
                 </>
               )}
-              <HubLink to={{ kind: "best" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{
+                  kind: "best",
+                  ...(league && league !== "*" ? { query: `league=${encodeURIComponent(prettySlug(league))}` } : {}),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {tl("Best games")} →
               </HubLink>
-              <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: new URLSearchParams({
+                    ...(league && league !== "*" ? { league: prettySlug(league) } : {}),
+                    ...(top?.[0] ? { team: top[0] } : {}),
+                    ...(rows[1]?.r?.[0] ? { vs: rows[1].r[0] } : {}),
+                  }).toString(),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {tl("Game finder")} →
               </HubLink>
-              <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{
+                  kind: "tiers",
+                  ...(league && league !== "*" ? { query: `scope=${encodeURIComponent(prettySlug(league))}` } : {}),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {tl("Pro tier list")} →
               </HubLink>
-              <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{
+                  kind: "leaders",
+                  ...(league && league !== "*" ? { query: `league=${encodeURIComponent(prettySlug(league))}` } : {}),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {tl("Player leaderboards")} →
               </HubLink>
               <HubLink to={{ kind: "about" }} className="text-rw-sub hover:text-rw-accent hover:underline">

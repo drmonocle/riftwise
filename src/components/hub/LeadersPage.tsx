@@ -471,7 +471,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                       <HubLink
                         to={{
                           kind: "items",
-                          query: `player=${encodeURIComponent(top2[0].u || prettySlug(top2[0].n))}`,
+                          query: `player=${encodeURIComponent(top2[0].u || prettySlug(top2[0].n))}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
                         }}
                         className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
                       >
@@ -771,7 +771,10 @@ const LeaderSpotlight: React.FC<{
               {c.top.g}G
             </HubLink>
             <HubLink
-              to={{ kind: "items", query: `player=${encodeURIComponent(c.top.u || c.top.n)}` }}
+              to={{
+                kind: "items",
+                query: `player=${encodeURIComponent(c.top.u || c.top.n)}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+              }}
               className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline block"
             >
               {tl("Item history")}

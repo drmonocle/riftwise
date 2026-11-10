@@ -132,15 +132,34 @@ export const PatchesPanel: React.FC = () => {
                     >
                       {tl("Counter-pick finder")} →
                     </HubLink>
-                    <HubLink
-                      to={{ kind: "items", ...(topC ? { query: `champ=${encodeURIComponent(prettySlug(topC))}` } : {}) }}
-                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                    >
-                      {tl("Item history")} →
-                    </HubLink>
-                    <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
-                      {tl("Player leaderboards")} →
-                    </HubLink>
+                    {(() => {
+                      const topPYear = /^\d{4}$/.test((topP?.from || "").slice(0, 4)) ? (topP!.from || "").slice(0, 4) : "";
+                      return (
+                        <>
+                          <HubLink
+                            to={{
+                              kind: "items",
+                              query: new URLSearchParams({
+                                ...(topC ? { champ: prettySlug(topC) } : {}),
+                                ...(topPYear ? { year: topPYear } : {}),
+                              }).toString(),
+                            }}
+                            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Item history")} →
+                          </HubLink>
+                          <HubLink
+                            to={{
+                              kind: "leaders",
+                              ...(topPYear ? { query: `year=${encodeURIComponent(topPYear)}` } : {}),
+                            }}
+                            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Player leaderboards")} →
+                          </HubLink>
+                        </>
+                      );
+                    })()}
                     <HubLink
                       to={{ kind: "draft", ...(topP ? { query: `p=p:${encodeURIComponent(topP.p)}` } : {}) }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -213,39 +232,52 @@ export const PatchesPanel: React.FC = () => {
                   <HubLink to={{ kind: "champions", query: `key=p${p.p}` }} className="text-rw-accent hover:underline font-semibold">
                     {tl("Champions")}
                   </HubLink>
-                  <HubLink
-                    to={{
-                      kind: "items",
-                      ...(p.c[0] ? { query: `champ=${encodeURIComponent(prettySlug(p.c[0][0]))}` } : {}),
-                    }}
-                    className="text-rw-accent hover:underline font-semibold"
-                  >
-                    {tl("Item history")}
-                  </HubLink>
-                  <HubLink
-                    to={{ kind: "draft", query: `p=p:${encodeURIComponent(p.p)}` }}
-                    className="text-rw-accent hover:underline font-semibold"
-                  >
-                    {tl("Draft board")}
-                  </HubLink>
-                  <HubLink
-                    to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}` }}
-                    className="text-rw-accent hover:underline font-semibold"
-                  >
-                    {tl("Game finder")}
-                  </HubLink>
-                  <HubLink
-                    to={{ kind: "rankings" }}
-                    className="text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Power rankings")}
-                  </HubLink>
-                  <HubLink
-                    to={{ kind: "leaders" }}
-                    className="text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Player leaderboards")}
-                  </HubLink>
+                  {(() => {
+                    const pYear = /^\d{4}$/.test((p.from || "").slice(0, 4)) ? (p.from || "").slice(0, 4) : "";
+                    return (
+                      <>
+                        <HubLink
+                          to={{
+                            kind: "items",
+                            query: new URLSearchParams({
+                              ...(p.c[0] ? { champ: prettySlug(p.c[0][0]) } : {}),
+                              ...(pYear ? { year: pYear } : {}),
+                            }).toString(),
+                          }}
+                          className="text-rw-accent hover:underline font-semibold"
+                        >
+                          {tl("Item history")}
+                        </HubLink>
+                        <HubLink
+                          to={{ kind: "draft", query: `p=p:${encodeURIComponent(p.p)}` }}
+                          className="text-rw-accent hover:underline font-semibold"
+                        >
+                          {tl("Draft board")}
+                        </HubLink>
+                        <HubLink
+                          to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}` }}
+                          className="text-rw-accent hover:underline font-semibold"
+                        >
+                          {tl("Game finder")}
+                        </HubLink>
+                        <HubLink
+                          to={{ kind: "rankings" }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Power rankings")}
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "leaders",
+                            ...(pYear ? { query: `year=${encodeURIComponent(pYear)}` } : {}),
+                          }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Player leaderboards")}
+                        </HubLink>
+                      </>
+                    );
+                  })()}
                   <SectionCard
                     section={tl("Patch {patch}", { patch: p.p })}
                     name={`${fmtDate(p.from)} – ${fmtDate(p.to)}`}
@@ -1027,6 +1059,7 @@ const LeagueEventsSection: React.FC<{
                       kind: "prep",
                       a: wTeams[0],
                       ...(wTeams[1] ? { b: wTeams[1] } : {}),
+                      ...(season ? { period: `y${season}` } : {}),
                     }}
                     className="text-[11px] font-semibold text-rw-accent hover:underline"
                   >
@@ -1047,6 +1080,7 @@ const LeagueEventsSection: React.FC<{
                       mode: "team",
                       a: wTeams[0],
                       ...(wTeams[1] ? { b: wTeams[1] } : {}),
+                      ...(season ? { period: `y${season}` } : {}),
                     }}
                     className="text-[11px] font-semibold text-rw-accent hover:underline"
                   >

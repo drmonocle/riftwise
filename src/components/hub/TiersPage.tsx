@@ -196,7 +196,10 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
               <HubLink
                 to={{
                   kind: "items",
-                  ...(topChamp ? { query: `champ=${encodeURIComponent(prettySlug(topChamp.c))}` } : {}),
+                  query: new URLSearchParams({
+                    ...(topChamp ? { champ: prettySlug(topChamp.c) } : {}),
+                    ...(key.startsWith("y") ? { year: key.slice(1) } : {}),
+                  }).toString(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -396,7 +399,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                     <HubLink
                       to={{
                         kind: "items",
-                        query: `champ=${prettySlug(byRole.get(r)![0].c)}`,
+                        query: `champ=${prettySlug(byRole.get(r)![0].c)}${key.startsWith("y") ? `&year=${encodeURIComponent(key.slice(1))}` : ""}`,
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline"
                     >
@@ -519,7 +522,10 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                   {tl("Counter-picks")}
                                 </HubLink>
                                 <HubLink
-                                  to={{ kind: "items", query: `champ=${prettySlug(c.c)}` }}
+                                  to={{
+                                    kind: "items",
+                                    query: `champ=${prettySlug(c.c)}${key.startsWith("y") ? `&year=${encodeURIComponent(key.slice(1))}` : ""}`,
+                                  }}
                                   className="text-[10px] text-rw-sub hover:text-rw-accent hover:underline"
                                 >
                                   {tl("Item history")}

@@ -251,9 +251,17 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                     to={{
                       kind: "champions",
                       query: new URLSearchParams({
-                        ...(league && league !== "top" ? { league } : {}),
-                        ...(year ? { year } : {}),
-                        ...(qEvent ? { event: qEvent } : {}),
+                        ...(league && league !== "top"
+                          ? {
+                              league,
+                              ...(year ? { year } : {}),
+                              ...(qEvent ? { event: qEvent } : {}),
+                              ...(qPatch ? { patch: qPatch } : {}),
+                            }
+                          : {
+                              ...(qPatch ? { key: `p${qPatch}` } : year ? { key: `y${year}` } : {}),
+                            }),
+                        ...(qRole ? { role: qRole } : {}),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -276,9 +284,11 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                   <HubLink
                     to={{
                       kind: "counters",
-                      ...(qChamp
-                        ? { query: `champ=${encodeURIComponent(prettySlug(qChamp))}${qVsChamp ? `&vs=${encodeURIComponent(prettySlug(qVsChamp))}` : ""}` }
-                        : {}),
+                      query: new URLSearchParams({
+                        ...(qChamp ? { champ: prettySlug(qChamp) } : {}),
+                        ...(qChamp && qVsChamp ? { vs: prettySlug(qVsChamp) } : {}),
+                        ...(qRole ? { role: qRole } : {}),
+                      }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -287,9 +297,10 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                   <HubLink
                     to={{
                       kind: "draft",
-                      ...(qTeam
-                        ? { query: `teams=${encodeURIComponent(qTeam)}${qVs ? `,${encodeURIComponent(qVs)}` : ""}${qEvent ? `&p=e:${encodeURIComponent(qEvent)}` : year ? `&p=y${encodeURIComponent(year)}` : ""}` }
-                        : {}),
+                      query: new URLSearchParams({
+                        ...(qTeam ? { teams: `${qTeam}${qVs ? `,${qVs}` : ""}` } : {}),
+                        ...(qEvent ? { p: `e:${qEvent}` } : qPatch ? { p: `p:${qPatch}` } : year ? { p: `y${year}` } : {}),
+                      }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -301,6 +312,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                       query: new URLSearchParams({
                         ...(qPlayer ? { player: qPlayer } : {}),
                         ...(qChamp ? { champ: prettySlug(qChamp) } : {}),
+                        ...(year ? { year } : {}),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -313,6 +325,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                       query: new URLSearchParams({
                         ...(league && league !== "top" ? { league } : {}),
                         ...(year ? { year } : {}),
+                        ...(qEvent ? { event: qEvent } : {}),
                         ...(qRole ? { role: qRole } : {}),
                       }).toString(),
                     }}
@@ -876,7 +889,11 @@ const FinderBody: React.FC<{
                   <HubLink
                     to={{
                       kind: "tiers",
-                      ...(year ? { query: `key=y${encodeURIComponent(year)}` } : {}),
+                      query: new URLSearchParams({
+                        ...(q.get("league") && q.get("league") !== "top" ? { scope: q.get("league")! } : {}),
+                        ...(q.get("patch") ? { key: `p${q.get("patch")}` } : year ? { key: `y${year}` } : {}),
+                        ...(q.get("role") ? { role: q.get("role")! } : {}),
+                      }).toString(),
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -885,7 +902,12 @@ const FinderBody: React.FC<{
                   <HubLink
                     to={{
                       kind: "leaders",
-                      ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}),
+                      query: new URLSearchParams({
+                        ...(q.get("league") && q.get("league") !== "top" ? { league: q.get("league")! } : {}),
+                        ...(year ? { year } : {}),
+                        ...(q.get("event") ? { event: q.get("event")! } : {}),
+                        ...(q.get("role") ? { role: q.get("role")! } : {}),
+                      }).toString(),
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -900,7 +922,7 @@ const FinderBody: React.FC<{
                       kind: "prep",
                       a: teamOption(opts.teams, q.get("team")) || q.get("team")!,
                       b: teamOption(opts.teams, q.get("vs")) || q.get("vs")!,
-                      period: year ? `y${year}` : undefined,
+                      period: q.get("event") ? `e:${q.get("event")}` : year ? `y${year}` : undefined,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -912,7 +934,7 @@ const FinderBody: React.FC<{
                       mode: "team",
                       a: teamOption(opts.teams, q.get("team")) || q.get("team")!,
                       b: teamOption(opts.teams, q.get("vs")) || q.get("vs")!,
-                      period: year ? `y${year}` : undefined,
+                      period: q.get("event") ? `e:${q.get("event")}` : year ? `y${year}` : undefined,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -921,7 +943,7 @@ const FinderBody: React.FC<{
                   <HubLink
                     to={{
                       kind: "draft",
-                      query: `teams=${encodeURIComponent(teamOption(opts.teams, q.get("team")) || q.get("team")!)},${encodeURIComponent(teamOption(opts.teams, q.get("vs")) || q.get("vs")!)}${year ? `&p=y${encodeURIComponent(year)}` : ""}`,
+                      query: `teams=${encodeURIComponent(teamOption(opts.teams, q.get("team")) || q.get("team")!)},${encodeURIComponent(teamOption(opts.teams, q.get("vs")) || q.get("vs")!)}${q.get("event") ? `&p=e:${encodeURIComponent(q.get("event")!)}` : q.get("patch") ? `&p=p:${encodeURIComponent(q.get("patch")!)}` : year ? `&p=y${encodeURIComponent(year)}` : ""}`,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -930,7 +952,7 @@ const FinderBody: React.FC<{
                   <HubLink
                     to={{
                       kind: "rankings",
-                      ...(q.get("league") ? { query: `league=${encodeURIComponent(q.get("league")!)}` } : {}),
+                      ...(q.get("league") && q.get("league") !== "top" ? { query: `league=${encodeURIComponent(q.get("league")!)}` } : {}),
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -939,7 +961,11 @@ const FinderBody: React.FC<{
                   <HubLink
                     to={{
                       kind: "tiers",
-                      ...(year ? { query: `key=y${encodeURIComponent(year)}` } : {}),
+                      query: new URLSearchParams({
+                        ...(q.get("league") && q.get("league") !== "top" ? { scope: q.get("league")! } : {}),
+                        ...(q.get("patch") ? { key: `p${q.get("patch")}` } : year ? { key: `y${year}` } : {}),
+                        ...(q.get("role") ? { role: q.get("role")! } : {}),
+                      }).toString(),
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -948,7 +974,12 @@ const FinderBody: React.FC<{
                   <HubLink
                     to={{
                       kind: "leaders",
-                      ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}),
+                      query: new URLSearchParams({
+                        ...(q.get("league") && q.get("league") !== "top" ? { league: q.get("league")! } : {}),
+                        ...(year ? { year } : {}),
+                        ...(q.get("event") ? { event: q.get("event")! } : {}),
+                        ...(q.get("role") ? { role: q.get("role")! } : {}),
+                      }).toString(),
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -962,7 +993,7 @@ const FinderBody: React.FC<{
                     to={{
                       kind: "prep",
                       a: teamOption(opts.teams, q.get("team")) || q.get("team")!,
-                      period: year ? `y${year}` : undefined,
+                      period: q.get("event") ? `e:${q.get("event")}` : year ? `y${year}` : undefined,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -971,7 +1002,7 @@ const FinderBody: React.FC<{
                   <HubLink
                     to={{
                       kind: "draft",
-                      query: `teams=${encodeURIComponent(teamOption(opts.teams, q.get("team")) || q.get("team")!)}${year ? `&p=y${encodeURIComponent(year)}` : ""}`,
+                      query: `teams=${encodeURIComponent(teamOption(opts.teams, q.get("team")) || q.get("team")!)}${q.get("event") ? `&p=e:${encodeURIComponent(q.get("event")!)}` : q.get("patch") ? `&p=p:${encodeURIComponent(q.get("patch")!)}` : year ? `&p=y${encodeURIComponent(year)}` : ""}`,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -982,7 +1013,7 @@ const FinderBody: React.FC<{
                       kind: "compare",
                       mode: "team",
                       a: teamOption(opts.teams, q.get("team")) || q.get("team")!,
-                      period: year ? `y${year}` : undefined,
+                      period: q.get("event") ? `e:${q.get("event")}` : year ? `y${year}` : undefined,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -991,7 +1022,7 @@ const FinderBody: React.FC<{
                   <HubLink
                     to={{
                       kind: "rankings",
-                      ...(q.get("league") ? { query: `league=${encodeURIComponent(q.get("league")!)}` } : {}),
+                      ...(q.get("league") && q.get("league") !== "top" ? { query: `league=${encodeURIComponent(q.get("league")!)}` } : {}),
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -1000,7 +1031,11 @@ const FinderBody: React.FC<{
                   <HubLink
                     to={{
                       kind: "tiers",
-                      ...(year ? { query: `key=y${encodeURIComponent(year)}` } : {}),
+                      query: new URLSearchParams({
+                        ...(q.get("league") && q.get("league") !== "top" ? { scope: q.get("league")! } : {}),
+                        ...(q.get("patch") ? { key: `p${q.get("patch")}` } : year ? { key: `y${year}` } : {}),
+                        ...(q.get("role") ? { role: q.get("role")! } : {}),
+                      }).toString(),
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -1009,7 +1044,12 @@ const FinderBody: React.FC<{
                   <HubLink
                     to={{
                       kind: "leaders",
-                      ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}),
+                      query: new URLSearchParams({
+                        ...(q.get("league") && q.get("league") !== "top" ? { league: q.get("league")! } : {}),
+                        ...(year ? { year } : {}),
+                        ...(q.get("event") ? { event: q.get("event")! } : {}),
+                        ...(q.get("role") ? { role: q.get("role")! } : {}),
+                      }).toString(),
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >

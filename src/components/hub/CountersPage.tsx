@@ -705,15 +705,26 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 right={
                   <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
                     {good[0] && (
-                      <HubLink
-                        to={{
-                          kind: "finder",
-                          query: `champ=${encodeURIComponent(rawChamp || cName)}&vschamp=${encodeURIComponent(good[0].c)}${good[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[good[0].role])}` : ""}`,
-                        }}
-                        className="text-[11px] text-rw-accent hover:underline"
-                      >
-                        {tl("Game finder")} →
-                      </HubLink>
+                      <>
+                        <HubLink
+                          to={{
+                            kind: "counters",
+                            query: `champ=${encodeURIComponent(slug)}&vs=${encodeURIComponent(good[0].c)}${good[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[good[0].role])}` : role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline font-semibold"
+                        >
+                          {champName(good[0].c)} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "finder",
+                            query: `champ=${encodeURIComponent(rawChamp || cName)}&vschamp=${encodeURIComponent(good[0].c)}${good[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[good[0].role])}` : ""}`,
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Game finder")} →
+                        </HubLink>
+                      </>
                     )}
                     <HubLink
                       to={{ kind: "items", query: `champ=${encodeURIComponent(slug)}` }}
@@ -820,15 +831,26 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 right={
                   <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
                     {bad[0] && (
-                      <HubLink
-                        to={{
-                          kind: "finder",
-                          query: `champ=${encodeURIComponent(rawChamp || cName)}&vschamp=${encodeURIComponent(bad[0].c)}${bad[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[bad[0].role])}` : ""}`,
-                        }}
-                        className="text-[11px] text-rw-accent hover:underline"
-                      >
-                        {tl("Game finder")} →
-                      </HubLink>
+                      <>
+                        <HubLink
+                          to={{
+                            kind: "counters",
+                            query: `champ=${encodeURIComponent(slug)}&vs=${encodeURIComponent(bad[0].c)}${bad[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[bad[0].role])}` : role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline font-semibold"
+                        >
+                          {champName(bad[0].c)} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "finder",
+                            query: `champ=${encodeURIComponent(rawChamp || cName)}&vschamp=${encodeURIComponent(bad[0].c)}${bad[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[bad[0].role])}` : ""}`,
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Game finder")} →
+                        </HubLink>
+                      </>
                     )}
                     <HubLink
                       to={{ kind: "items", query: `champ=${encodeURIComponent(slug)}` }}
