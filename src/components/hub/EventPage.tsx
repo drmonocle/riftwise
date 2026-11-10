@@ -136,7 +136,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                 <span>{e.league}</span>
               ))}
             {e.region && (
-              <HubLink to={{ kind: "leagues" }} className="hover:text-rw-accent hover:underline">
+              <HubLink to={{ kind: "leagues", query: `q=${encodeURIComponent(e.region)}` }} className="hover:text-rw-accent hover:underline">
                 {regionName(e.region, e.region)}
               </HubLink>
             )}

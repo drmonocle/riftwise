@@ -3,7 +3,7 @@
  * watch), the event that is on, four ways in (tournaments, teams, players, champions), the power rankings, what is
  * on the line tonight, the week's storylines and the analyst tools. Also the tournament browser (EventsBrowse).
  */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { HomeStorylines } from "./Storylines";
 import { AtStakeToday } from "./AtStake";
 import type { AppSettings, Match } from "../../types";
@@ -1259,14 +1259,37 @@ const LatestRow: React.FC<{ e: EventListItem }> = ({ e }) => {
 
 // ── Tournament browser ────────────────────────────────────────────────────
 
-export const EventsBrowse: React.FC<{ year?: string; meta: HubMeta | null; onYear: (y: string) => void }> = ({ year, meta, onYear }) => {
+export const EventsBrowse: React.FC<{ year?: string; query?: string; meta: HubMeta | null; onYear: (y: string) => void }> = ({ year, query, meta, onYear }) => {
   const years = meta?.years || [];
   const thisYear = String(new Date().getFullYear());
-  const y = year || (years.includes(thisYear) ? thisYear : years[0]) || thisYear;
+  const qp = useMemo(() => new URLSearchParams(query || ""), [query]);
+  const qYear = qp.get("year") && /^\d{4}$/.test(qp.get("year")!) ? qp.get("year")! : undefined;
+  const y = year || qYear || (years.includes(thisYear) ? thisYear : years[0]) || thisYear;
   usePageTitle(tl("Tournaments in {year}", { year: y }));
   const state = useLoad(() => loadEventsOfYear(y), [y]);
-  const [scope, setScope] = useState<"main" | "all">("main");
-  const [q, setQ] = useState("");
+  const urlScope: "main" | "all" = qp.get("scope") === "all" ? "all" : "main";
+  const urlQ = qp.get("q") || qp.get("league") || "";
+  const [scope, setScope] = useState<"main" | "all">(urlScope);
+  const [q, setQ] = useState(urlQ);
+  useEffect(() => {
+    setScope(urlScope);
+    setQ(urlQ);
+  }, [urlScope, urlQ]);
+  const syncUrl = (nextScope: "main" | "all", nextQ: string) => {
+    const next = new URLSearchParams(query || "");
+    next.delete("league");
+    if (nextScope === "all") next.set("scope", "all");
+    else next.delete("scope");
+    if (nextQ.trim()) next.set("q", nextQ.trim());
+    else next.delete("q");
+    if (year) next.delete("year");
+    const qs = next.toString();
+    navigateHub({ kind: "tournaments", ...(year ? { year } : qYear ? { year: qYear } : {}), ...(qs ? { query: qs } : {}) }, { replace: true });
+  };
+  const handleSetQ = (nextQ: string) => {
+    setQ(nextQ);
+    syncUrl(scope, nextQ);
+  };
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -1287,7 +1310,10 @@ export const EventsBrowse: React.FC<{ year?: string; meta: HubMeta | null; onYea
             <button
               key={s}
               type="button"
-              onClick={() => setScope(s)}
+              onClick={() => {
+                setScope(s);
+                syncUrl(s, q);
+              }}
               className={`px-2.5 py-1.5 ${scope === s ? "bg-rw-accent text-rw-bg font-bold" : "text-rw-sub"}`}
             >
               {s === "main" ? tl("Main leagues & internationals") : tl("Everything")}
@@ -1296,13 +1322,13 @@ export const EventsBrowse: React.FC<{ year?: string; meta: HubMeta | null; onYea
         </div>
         <input
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => handleSetQ(e.target.value)}
           placeholder={tl("Filter by name or league…")}
           aria-label={tl("Filter by name or league…")}
           className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1.5 text-rw-text placeholder-rw-muted flex-1 min-w-[10rem]"
         />
       </div>
-      <Page state={state}>{(list) => <EventsTable list={list} scope={scope} q={q} year={y} onSetQ={setQ} />}</Page>
+      <Page state={state}>{(list) => <EventsTable list={list} scope={scope} q={q} year={y} onSetQ={handleSetQ} />}</Page>
     </div>
   );
 };
@@ -1313,8 +1339,12 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
     const terms = qq ? qq.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean) : [];
     return list.filter((e) => {
       if (terms.length) {
-        const hay = `${e.n} ${e.l || ""} ${e.r || ""} ${e.w || ""}`.toLowerCase();
-        return terms.some((t) => hay.includes(t));
+        const lgSlug = e.l ? resolveLeagueSlug(e.l) : "";
+        const hay = `${e.n} ${e.l || ""} ${lgSlug} ${e.r || ""} ${e.w || ""} ${e.u || ""}`.toLowerCase();
+        return terms.some((t) => {
+          const resolvedT = resolveLeagueSlug(t);
+          return hay.includes(t) || (resolvedT && lgSlug === resolvedT);
+        });
       }
       if (e.p) return false; // stages are listed on their event's page
       return scope === "all" || (e.lv === "Primary" && !e.q);

@@ -220,14 +220,18 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
         {route.kind === "tournaments" && (
           <EventsBrowse
             year={route.year}
+            query={"query" in route ? route.query : undefined}
             meta={hubMeta.data}
-            onYear={(y) =>
-              navigateHub({ kind: "tournaments", year: y }, { replace: true })
-            }
+            onYear={(y) => {
+              const nextQ = new URLSearchParams("query" in route ? route.query || "" : "");
+              nextQ.delete("year");
+              const qs = nextQ.toString();
+              navigateHub({ kind: "tournaments", year: y, ...(qs ? { query: qs } : {}) }, { replace: true });
+            }}
           />
         )}
-        {route.kind === "leagues" && <LeaguesPanel />}
-        {route.kind === "patches" && <PatchesPanel />}
+        {route.kind === "leagues" && <LeaguesPanel query={"query" in route ? route.query : undefined} />}
+        {route.kind === "patches" && <PatchesPanel query={"query" in route ? route.query : undefined} />}
         {route.kind === "league" && <LeaguePage slug={route.slug} year={"year" in route ? route.year : undefined} />}
         {route.kind === "champions" &&
           (statsMeta.data ? (

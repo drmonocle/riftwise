@@ -206,7 +206,14 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                 {tl("Item history")} →
               </HubLink>
               <HubLink
-                to={{ kind: "patches" }}
+                to={{
+                  kind: "patches",
+                  ...(champFilter.trim()
+                    ? { query: `q=${encodeURIComponent(champFilter.trim())}` }
+                    : key.startsWith("p")
+                      ? { query: `q=${encodeURIComponent(key.slice(1))}` }
+                      : {}),
+                }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Patches")} →

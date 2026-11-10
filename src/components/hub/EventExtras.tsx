@@ -858,7 +858,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
               </HubLink>
               <TeamLink name={t.t} u={t.u} />
               {t.r && (
-                <HubLink to={{ kind: "leagues" }} className="text-rw-muted hover:text-rw-accent hover:underline text-[10px] ml-0.5">
+                <HubLink to={{ kind: "leagues", query: `q=${encodeURIComponent(t.r)}` }} className="text-rw-muted hover:text-rw-accent hover:underline text-[10px] ml-0.5">
                   {regionName(t.r, t.r)}
                 </HubLink>
               )}
@@ -1033,7 +1033,10 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
             return (
               <tr key={r.a + r.b} className="border-t border-rw-border">
                 <td className={`${td} text-rw-text`} data-sort={regionName(r.a, r.a)}>
-                  <HubLink to={{ kind: "leagues" }} className="inline-flex items-center gap-1.5 flex-wrap hover:text-rw-accent">
+                  <HubLink
+                    to={{ kind: "leagues", query: `q=${encodeURIComponent(`${r.a}, ${r.b}`)}` }}
+                    className="inline-flex items-center gap-1.5 flex-wrap hover:text-rw-accent"
+                  >
                     <RegionFlag code={r.a} />
                     <span className="hover:underline">{regionName(r.a, r.a)}</span>
                     <span className="text-rw-muted">vs</span>

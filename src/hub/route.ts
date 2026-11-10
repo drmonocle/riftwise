@@ -55,7 +55,10 @@ const SECTIONS: HubSection[] = [
 /** Pages that keep their filters in the address (?league=lck&year=2026...). */
 /** Worlds, MSI and First Stand: one page each, for a year or every year (/stats/msi/2024, /stats/worlds/all). */
 const INTL_SECTIONS: HubSection[] = ["worlds", "msi", "first-stand"];
-const QUERY_SECTIONS: HubSection[] = ["champions", "finder", "draft", "best", "counters", "leaders", "tiers", "teams", "players", "items", "records", "titles", "data", "rankings"];
+const QUERY_SECTIONS: HubSection[] = [
+  "tournaments", "leagues", "patches", "weekly",
+  "champions", "finder", "draft", "best", "counters", "leaders", "tiers", "teams", "players", "items", "records", "titles", "data", "rankings",
+];
 const ENTITY_PATH: Record<HubEntity, string> = {
   team: "team", player: "player", event: "tournament", match: "match", champ: "champion", league: "league",
 };
@@ -115,9 +118,12 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
         return { kind, a: c.a, b: c.b, period: c.period };
       }
       // these pages keep their filters in the address (?league=lck&year=2026&patch=26.18...)
-      if (QUERY_SECTIONS.includes(kind) && search.replace(/^\?/, "")) return { kind, query: search.replace(/^\?/, "") };
+      const q = QUERY_SECTIONS.includes(kind) ? search.replace(/^\?/, "") : "";
       // a year (tournaments, the international events), or "all" for every year of Worlds / MSI / First Stand
-      if (kind === "tournaments" && parts[2] && /^\d{4}$/.test(parts[2])) return { kind, year: parts[2] };
+      if (kind === "tournaments" && parts[2] && /^\d{4}$/.test(parts[2])) {
+        return { kind, year: parts[2], ...(q ? { query: q } : {}) };
+      }
+      if (QUERY_SECTIONS.includes(kind) && q) return { kind, query: q };
       if (INTL_SECTIONS.includes(kind) && parts[2] && /^(\d{4}|all)$/.test(parts[2])) return { kind, year: parts[2] };
       return { kind };
     }
@@ -136,8 +142,18 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
   // a match page can open at one of its games via /match/<slug>/5 as well as ?g=5
   if (kind === "match" && parts.length === 3 && /^[1-9]$/.test(parts[2])) return { kind, slug: parts[1].toLowerCase(), game: Number(parts[2]) };
   // one tab of a team's, player's or tournament's page: /team/t1/matches
-  if (kind && isTabbed(kind) && parts.length === 3 && parts[1] && (ENTITY_TABS[kind] as readonly string[]).includes(parts[2].toLowerCase()))
-    return { kind, slug: parts[1].toLowerCase(), tab: parts[2].toLowerCase(), ...(qStr ? { query: qStr } : {}) };
+  if (kind && isTabbed(kind) && parts.length === 3 && parts[1]) {
+    const rawTab = parts[2].toLowerCase();
+    const mappedTab =
+      kind === "team" && rawTab === "tournaments"
+        ? "history"
+        : kind === "team" && rawTab === "series"
+          ? "matches"
+          : rawTab;
+    if ((ENTITY_TABS[kind] as readonly string[]).includes(mappedTab)) {
+      return { kind, slug: parts[1].toLowerCase(), tab: mappedTab, ...(qStr ? { query: qStr } : {}) };
+    }
+  }
   if (!kind || !parts[1] || parts.length !== 2) return null;
   // a match page can open at one of its games: /match/<slug>?g=5
   const game = kind === "match" ? Number(new URLSearchParams(search).get("g")) || undefined : undefined;
@@ -171,18 +187,24 @@ export function hubPath(r: HubRoute): string {
   if ((r.kind === "compare" || r.kind === "prep") && "query" in r && r.query && !("a" in r && (r.a || r.b))) {
     return `${BASE}stats/${r.kind}?${r.query}`;
   }
-  if (QUERY_SECTIONS.includes(r.kind as HubSection) && "query" in r && r.query) return `${BASE}stats/${r.kind}?${r.query}`;
   if ((SECTIONS as string[]).includes(r.kind)) {
     const y = "year" in r && r.year ? `/${r.year}` : "";
-    return `${BASE}stats/${r.kind}${y}`;
+    const q = QUERY_SECTIONS.includes(r.kind as HubSection) && "query" in r && r.query ? `?${r.query}` : "";
+    return `${BASE}stats/${r.kind}${y}${q}`;
   }
   const e = r as { slug: string; game?: number; year?: string; tab?: string; query?: string };
+  const normTab =
+    r.kind === "team" && e.tab === "tournaments"
+      ? "history"
+      : r.kind === "team" && e.tab === "series"
+        ? "matches"
+        : e.tab;
   const tail =
     r.kind === "match" && e.game
       ? `?g=${e.game}`
       : r.kind === "league" && e.year
         ? `/${e.year}`
-        : `${isTabbed(r.kind) && e.tab ? `/${e.tab}` : ""}${e.query ? `?${e.query}` : ""}`;
+        : `${isTabbed(r.kind) && normTab ? `/${normTab}` : ""}${e.query ? `?${e.query}` : ""}`;
   return `${BASE}${ENTITY_PATH[r.kind as HubEntity]}/${encodeURIComponent(e.slug)}${tail}`;
 }
 

@@ -533,20 +533,77 @@ export function prefetchHub(r: import("./route").HubRoute): void {
     if (r.kind === "team") loadRatings().catch(() => {});
     return;
   }
+  const qp = new URLSearchParams("query" in r && r.query ? r.query : "");
   const byKind: Record<string, (() => Promise<unknown>) | undefined> = {
     home: loadHubHome,
-    tournaments: loadHubMeta,
+    tournaments: () => {
+      const yr = ("year" in r && r.year) || qp.get("year") || "";
+      return Promise.all([loadHubMeta(), ...(/^\d{4}$/.test(yr) ? [loadEventsOfYear(yr)] : [])]);
+    },
     weekly: loadWeekly,
-    records: loadHubRecords,
+    records: () => {
+      const yr = qp.get("year") || "";
+      return Promise.all([loadHubRecords(), ...(/^\d{4}$/.test(yr) ? [loadRecordsYear(yr)] : [])]);
+    },
     titles: loadHubTitles,
     rankings: loadRatings,
     leagues: loadLeagues,
     patches: loadPatches,
     teams: loadHubIndexQuick,
     players: loadHubIndex,
-    items: loadItemIndex,
+    items: () => {
+      const pl = qp.get("player") || "";
+      const it = qp.get("item") || "";
+      return Promise.all([
+        loadItemIndex(),
+        ...(pl ? [loadPlayerItems(pl)] : []),
+        ...(it ? [loadHubItem(it)] : []),
+      ]);
+    },
     best: () => Promise.all([loadBestIndex(), loadBest()]),
-    counters: loadHubIndexQuick,
+    counters: () => {
+      const ch = qp.get("champ") || "";
+      return Promise.all([loadHubIndexQuick(), ...(ch ? [loadMatchups(prettySlug(ch))] : [])]);
+    },
+    finder: () => Promise.all([loadChampIndex(), loadAliases()]),
+    leaders: () => {
+      const ev = qp.get("event") || "";
+      const lg = qp.get("league") || "";
+      const yr = qp.get("year") || "";
+      return Promise.all([
+        loadLeagues(),
+        loadAliases(),
+        ...(ev ? [loadHubEvent(ev)] : []),
+        ...(lg && /^\d{4}$/.test(yr) ? [loadLeagueSeason(lg, yr)] : []),
+      ]);
+    },
+    champions: () => Promise.all([loadChampIndex(), loadAliases()]),
+    tiers: () => Promise.all([loadChampIndex(), loadAliases()]),
+    data: () => Promise.all([loadLeagues(), loadHubMeta()]),
+    prep: () => {
+      const a = ("a" in r && r.a) || "";
+      const b = ("b" in r && r.b) || "";
+      return Promise.all([
+        loadHubIndexQuick(),
+        loadRatings(),
+        ...(a ? [loadHubTeam(a)] : []),
+        ...(b ? [loadHubTeam(b)] : []),
+      ]);
+    },
+    compare: () => {
+      const isPlayer = "mode" in r && r.mode === "player";
+      const a = ("a" in r && r.a) || "";
+      const b = ("b" in r && r.b) || "";
+      return Promise.all([
+        isPlayer ? loadHubIndex() : loadHubIndexQuick(),
+        ...(a ? [isPlayer ? loadHubPlayer(a) : loadHubTeam(a)] : []),
+        ...(b ? [isPlayer ? loadHubPlayer(b) : loadHubTeam(b)] : []),
+      ]);
+    },
+    draft: () => {
+      const tms = (qp.get("teams") || "").split(",").map((s) => s.trim()).filter(Boolean);
+      return Promise.all([loadHubIndexQuick(), ...tms.slice(0, 2).map((t) => loadHubTeam(t))]);
+    },
     worlds: () => Promise.all([loadLeague("world-championship"), loadHubTitles(), loadRatings()]),
     msi: () => Promise.all([loadLeague("mid-season-invitational"), loadHubTitles(), loadRatings()]),
     "first-stand": () => Promise.all([loadLeague("first-stand"), loadHubTitles(), loadRatings()]),

@@ -40,8 +40,8 @@ const HUB_FILE_DIR: Partial<Record<string, string>> = {
 const HUB_KIND_PREFETCH: Partial<Record<string, string[]>> = {
   home: ["hub/home.json", "hub/meta.json", "hub/ratings.json", "hub/leagues.json", "hub/weekly.json"],
   tournaments: ["hub/meta.json"],
-  champions: ["meta.json", "hub/leagues.json", "hub/alias.json"],
-  tiers: ["meta.json", "hub/leagues.json", "hub/alias.json"],
+  champions: ["meta.json", "hub/champgames/index.json", "hub/leagues.json", "hub/alias.json"],
+  tiers: ["meta.json", "hub/champgames/index.json", "hub/leagues.json", "hub/alias.json"],
   rankings: ["hub/ratings.json"],
   weekly: ["hub/weekly.json"],
   records: ["hub/records.json"],
@@ -54,8 +54,12 @@ const HUB_KIND_PREFETCH: Partial<Record<string, string[]>> = {
   items: ["hub/items/index.json"],
   leaders: ["hub/leagues.json", "hub/alias.json"],
   best: ["hub/best/index.json", "hub/best/all.json", "hub/leagues.json", "hub/alias.json"],
-  finder: ["hub/leagues.json", "hub/alias.json"],
+  finder: ["hub/champgames/index.json", "hub/leagues.json", "hub/alias.json"],
   counters: ["hub/search/teams.json", "hub/search/events.json", "hub/search/champs.json", "hub/leagues.json"],
+  prep: ["hub/search/teams.json", "hub/ratings.json", "hub/leagues.json"],
+  compare: ["hub/search/teams.json", "hub/leagues.json"],
+  draft: ["hub/search/teams.json", "hub/leagues.json", "hub/alias.json"],
+  data: ["hub/leagues.json", "hub/meta.json"],
   worlds: ["hub/league/world-championship.json", "hub/titles.json", "hub/ratings.json"],
   msi: ["hub/league/mid-season-invitational.json", "hub/titles.json", "hub/ratings.json"],
   "first-stand": ["hub/league/first-stand.json", "hub/titles.json", "hub/ratings.json"],
@@ -78,6 +82,13 @@ if (IS_WEB && STARTED_ON_HUB) {
     r.kind === "counters" ||
     r.kind === "best" ||
     r.kind === "weekly" ||
+    r.kind === "prep" ||
+    r.kind === "compare" ||
+    r.kind === "draft" ||
+    r.kind === "finder" ||
+    r.kind === "leaders" ||
+    r.kind === "patches" ||
+    r.kind === "records" ||
     r.kind === "worlds" ||
     r.kind === "msi" ||
     r.kind === "first-stand";

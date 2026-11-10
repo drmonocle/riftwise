@@ -40,7 +40,7 @@ const TAB_LABEL: Record<string, string> = {
 };
 
 export const TeamPage: React.FC<{ slug: string; tab?: string }> = ({ slug, tab }) => {
-  const resolvedTab = tab === "series" ? "matches" : tab && TAB_LABEL[tab] ? tab : "";
+  const resolvedTab = tab === "series" ? "matches" : tab === "tournaments" ? "history" : tab && TAB_LABEL[tab] ? tab : "";
   // reached by an old or short address (/team/hle): show the team's own address, once this team's file is in and
   // only while its page is still the one open (moving to another team mustn't bounce back)
   const state = useLoad(
@@ -48,7 +48,7 @@ export const TeamPage: React.FC<{ slug: string; tab?: string }> = ({ slug, tab }
       loadHubTeam(slug).then((t) => {
         const now = currentHubRoute();
         if (t.u && t.u !== slug && now.kind === "team" && now.slug === slug)
-          navigateHub({ kind: "team", slug: t.u, ...("tab" in now && now.tab ? { tab: now.tab === "series" ? "matches" : now.tab } : {}), ...("query" in now && now.query ? { query: now.query } : {}) }, { replace: true });
+          navigateHub({ kind: "team", slug: t.u, ...("tab" in now && now.tab ? { tab: now.tab === "series" ? "matches" : now.tab === "tournaments" ? "history" : now.tab } : {}), ...("query" in now && now.query ? { query: now.query } : {}) }, { replace: true });
         return t;
       }),
     [slug],
@@ -324,7 +324,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
             {(
               [
                 t.region ? (
-                  <HubLink key="region" to={{ kind: "leagues" }} className="hover:text-rw-accent hover:underline">
+                  <HubLink key="region" to={{ kind: "leagues", query: `q=${encodeURIComponent(t.region)}` }} className="hover:text-rw-accent hover:underline">
                     {regionName(t.region, t.region)}
                   </HubLink>
                 ) : null,

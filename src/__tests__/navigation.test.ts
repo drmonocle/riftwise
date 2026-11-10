@@ -39,10 +39,19 @@ describe("page tabs in the address", () => {
     expect(hubPath({ kind: "rankings", query: "league=LCK" })).toBe("/stats/rankings?league=LCK");
     expect(parseHubPath("/stats/data", "?year=2018")).toEqual({ kind: "data", query: "year=2018" });
     expect(hubPath({ kind: "data", query: "league=lck&year=2026" })).toBe("/stats/data?league=lck&year=2026");
+    expect(parseHubPath("/stats/tournaments/2025", "?league=lck")).toEqual({ kind: "tournaments", year: "2025", query: "league=lck" });
+    expect(hubPath({ kind: "tournaments", year: "2025", query: "league=lck" })).toBe("/stats/tournaments/2025?league=lck");
+    expect(parseHubPath("/stats/leagues", "?scope=past&q=Korea")).toEqual({ kind: "leagues", query: "scope=past&q=Korea" });
+    expect(hubPath({ kind: "leagues", query: "scope=past&q=Korea" })).toBe("/stats/leagues?scope=past&q=Korea");
+    expect(parseHubPath("/stats/patches", "?q=Azir")).toEqual({ kind: "patches", query: "q=Azir" });
+    expect(hubPath({ kind: "patches", query: "q=Azir" })).toBe("/stats/patches?q=Azir");
   });
   it("resolves legacy and alternate entity/compare URLs and slug aliases", () => {
     expect(parseHubPath("/event/worlds-2026-main-event", "")).toEqual({ kind: "event", slug: "worlds-2026-main-event" });
     expect(parseHubPath("/champ/ahri", "")).toEqual({ kind: "champ", slug: "ahri" });
+    expect(parseHubPath("/team/t1/tournaments", "")).toEqual({ kind: "team", slug: "t1", tab: "history" });
+    expect(parseHubPath("/team/t1/series", "")).toEqual({ kind: "team", slug: "t1", tab: "matches" });
+    expect(hubPath({ kind: "team", slug: "t1", tab: "tournaments" })).toBe("/team/t1/history");
     expect(parseHubPath("/compare", "?a=t1&b=geng")).toEqual({ kind: "compare", mode: "team", a: "t1", b: "geng" });
     expect(resolveLeagueSlug("worlds")).toBe("world-championship");
     expect(resolveLeagueSlug("lck")).toBe("lol-champions-korea");

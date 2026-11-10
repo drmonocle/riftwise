@@ -591,7 +591,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
       sub={`${all ? yearOnly(r.year) + " · " : ""}${placeText(r.place)}${r.chance != null ? ` · ${tl("avg. chance {p}%", { p: r.chance })}` : ""}`}
       right={
         r.u ? (
-          <HubLink to={{ kind: "team", slug: r.u, tab: "tournaments" }} className="hover:underline">
+          <HubLink to={{ kind: "team", slug: r.u, tab: "history" }} className="hover:underline">
             {show === "chance" && r.chance != null ? `${r.chance}%` : placeText(r.place)}
           </HubLink>
         ) : show === "chance" && r.chance != null ? (
@@ -828,7 +828,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                         <span className="h-full bg-rw-red/75" style={{ width: `${100 - wrPct}%` }} />
                       </span>
                     )}
-                    <HubLink to={{ kind: "team", slug: r.u, tab: "tournaments" }} className="hover:underline">
+                    <HubLink to={{ kind: "team", slug: r.u, tab: "history" }} className="hover:underline">
                       {r.n}
                     </HubLink>
                   </span>
@@ -860,7 +860,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                         <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
                           <span className="h-full bg-rw-red/75 rounded-full" style={{ width: `${Math.round((r.n / maxLost) * 100)}%` }} />
                         </span>
-                        <HubLink to={{ kind: "team", slug: r.u, tab: "tournaments" }} className="hover:underline">
+                        <HubLink to={{ kind: "team", slug: r.u, tab: "history" }} className="hover:underline">
                           {r.n}
                         </HubLink>
                       </span>
@@ -1204,7 +1204,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               </span>
               {h.region && h.team ? (
                 <HubLink
-                  to={{ kind: "team", slug: h.teamU || prettySlug(h.team), tab: "tournaments" }}
+                  to={{ kind: "team", slug: h.teamU || prettySlug(h.team), tab: "history" }}
                   className={`shrink-0 font-semibold hover:underline ${h.best === 1 ? "text-rw-accent" : "text-rw-sub hover:text-rw-accent"}`}
                 >
                   {placeText(h.best)}

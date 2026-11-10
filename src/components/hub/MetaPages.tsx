@@ -70,12 +70,26 @@ const CopyPatchPost: React.FC<{ p: PatchRow }> = ({ p }) => {
   );
 };
 
-export const PatchesPanel: React.FC = () => {
+export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
   usePageTitle(tl("Patches"));
   useDDragon();
   const state = useLoad(loadPatches, []);
   const [n, setN] = useState(24);
-  const [q, setQ] = useState("");
+  const urlQ = useMemo(() => {
+    const qp = new URLSearchParams(query || "");
+    return qp.get("q") || qp.get("patch") || qp.get("champ") || "";
+  }, [query]);
+  const [q, setQ] = useState(urlQ);
+  useEffect(() => {
+    setQ(urlQ);
+  }, [urlQ]);
+  const updateQ = (nextQ: string) => {
+    setQ(nextQ);
+    const next = new URLSearchParams();
+    if (nextQ.trim()) next.set("q", nextQ.trim());
+    const qs = next.toString();
+    navigateHub({ kind: "patches", ...(qs ? { query: qs } : {}) }, { replace: true });
+  };
   return (
     <Page state={state}>
       {(rows: PatchRow[]) => {
@@ -189,7 +203,7 @@ export const PatchesPanel: React.FC = () => {
               <input
                 type="search"
                 value={q}
-                onChange={(e) => setQ(e.target.value)}
+                onChange={(e) => updateQ(e.target.value)}
                 placeholder={tl("Search champions…")}
                 aria-label={tl("Search champions…")}
                 className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1 text-xs text-rw-text w-48"
@@ -473,11 +487,29 @@ type LeagueScope = "current" | "past" | "all";
  * Every league. "Current" (leagues with games this year) comes first, split into international events, main
  * leagues and the rest; "Past main leagues" are the big ones that stopped (NA LCS, EU LCS, LMS...).
  */
-export const LeaguesPanel: React.FC = () => {
+export const LeaguesPanel: React.FC<{ query?: string }> = ({ query }) => {
   usePageTitle(tl("Leagues"));
   const state = useLoad(loadLeagues, []);
-  const [scope, setScope] = useState<LeagueScope>("current");
-  const [q, setQ] = useState("");
+  const qp = useMemo(() => new URLSearchParams(query || ""), [query]);
+  const urlScope: LeagueScope = qp.get("scope") === "past" ? "past" : qp.get("scope") === "all" ? "all" : "current";
+  const urlQ = qp.get("q") || qp.get("region") || "";
+  const [scope, setScope] = useState<LeagueScope>(urlScope);
+  const [q, setQ] = useState(urlQ);
+  useEffect(() => {
+    setScope(urlScope);
+    setQ(urlQ);
+  }, [urlScope, urlQ]);
+  const syncUrl = (nextScope: LeagueScope, nextQ: string) => {
+    const next = new URLSearchParams();
+    if (nextScope !== "current") next.set("scope", nextScope);
+    if (nextQ.trim()) next.set("q", nextQ.trim());
+    const qs = next.toString();
+    navigateHub({ kind: "leagues", ...(qs ? { query: qs } : {}) }, { replace: true });
+  };
+  const handleSetQ = (nextQ: string) => {
+    setQ(nextQ);
+    syncUrl(scope, nextQ);
+  };
   const labels: Record<LeagueScope, string> = {
     current: tl("Current"),
     past: tl("Past main leagues"),
@@ -491,7 +523,10 @@ export const LeaguesPanel: React.FC = () => {
             <button
               key={s}
               type="button"
-              onClick={() => setScope(s)}
+              onClick={() => {
+                setScope(s);
+                syncUrl(s, q);
+              }}
               className={`px-2.5 py-1.5 ${scope === s ? "bg-rw-accent text-rw-bg font-bold" : "text-rw-sub hover:text-rw-text"}`}
             >
               {labels[s]}
@@ -500,13 +535,13 @@ export const LeaguesPanel: React.FC = () => {
         </div>
         <input
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => handleSetQ(e.target.value)}
           placeholder={tl("Filter by name or region…")}
           aria-label={tl("Filter by name or region…")}
           className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1.5 text-rw-text placeholder-rw-muted flex-1 min-w-[10rem]"
         />
       </div>
-      <Page state={state}>{(rows: LeagueRow[]) => <LeagueLists rows={rows} scope={scope} q={q} onSetQ={setQ} />}</Page>
+      <Page state={state}>{(rows: LeagueRow[]) => <LeagueLists rows={rows} scope={scope} q={q} onSetQ={handleSetQ} />}</Page>
     </div>
   );
 };
@@ -520,7 +555,7 @@ const LeagueLists: React.FC<{ rows: LeagueRow[]; scope: LeagueScope; q: string; 
       .filter(Boolean);
     const match = (l: LeagueRow) => {
       if (!terms.length) return true;
-      const hay = `${l.s || ""} ${l.l} ${l.r || ""}`.toLowerCase();
+      const hay = `${l.s || ""} ${l.l} ${l.r || ""} ${l.r ? regionName(l.r, l.r) : ""}`.toLowerCase();
       return terms.some((t) => hay.includes(t));
     };
     const newest = rows.reduce((m, l) => (l.to && l.to > m ? l.to : m), "");
@@ -570,7 +605,11 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number;
                     {tl("Power rankings")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "tournaments", ...(scopeYr ? { year: scopeYr } : {}) }}
+                    to={{
+                      kind: "tournaments",
+                      ...(scopeYr ? { year: scopeYr } : {}),
+                      ...(scopeLg ? { query: `league=${encodeURIComponent(scopeLg)}` } : {}),
+                    }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Tournaments")} →
@@ -756,14 +795,14 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
           <p className="flex flex-wrap items-center gap-x-2">
             {l.region && (
               <>
-                <HubLink to={{ kind: "leagues" }} className="hover:text-rw-accent hover:underline">
+                <HubLink to={{ kind: "leagues", query: `q=${encodeURIComponent(l.region)}` }} className="hover:text-rw-accent hover:underline">
                   {regionName(l.region, l.region)}
                 </HubLink>
                 <span aria-hidden="true">·</span>
               </>
             )}
             <HubLink
-              to={{ kind: "tournaments", ...(season || years[0] ? { year: season || years[0] } : {}) }}
+              to={{ kind: "tournaments", ...(season || years[0] ? { year: season || years[0] } : {}), query: `league=${encodeURIComponent(l.u)}` }}
               className="hover:text-rw-accent hover:underline"
             >
               {tn("{n} tournament", "{n} tournaments", l.events.length)}
@@ -836,7 +875,7 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
           </>
         }
         stats={[
-          { label: tl("Tournaments"), value: fmtNum(l.events.length), to: { kind: "tournaments", ...(season || years[0] ? { year: season || years[0] } : {}) } },
+          { label: tl("Tournaments"), value: fmtNum(l.events.length), to: { kind: "tournaments", ...(season || years[0] ? { year: season || years[0] } : {}), query: `league=${encodeURIComponent(l.u)}` } },
           totalGames > 0
             ? {
                 label: tl("Games"),

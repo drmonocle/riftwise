@@ -34,6 +34,7 @@ const REGIONS: Record<string, [string, string, string | null]> = {
 };
 const regionKey = (code: string) => MERGE[code] || code;
 export const regionLabel = (code: string) => (REGIONS[code] ? regionName(REGIONS[code][0], REGIONS[code][1]) : code);
+const regionLeagueQuery = (code: string) => (code === "EMEA" ? "EMEA, Europe" : REGIONS[code]?.[1] || code);
 
 export const RegionFlag: React.FC<{ code: string }> = ({ code }) => {
   const flag = REGIONS[code]?.[2];
@@ -239,7 +240,7 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; nam
             {t.rows.map((c) => (
               <tr key={c} className="border-t border-rw-border">
                 <td className="px-2 py-1" data-sort={regionLabel(c)}>
-                  <HubLink to={{ kind: "leagues" }} className="flex items-center gap-1.5 whitespace-nowrap hover:text-rw-accent">
+                  <HubLink to={{ kind: "leagues", query: `q=${encodeURIComponent(regionLeagueQuery(c))}` }} className="flex items-center gap-1.5 whitespace-nowrap hover:text-rw-accent">
                     <RegionFlag code={c} />
                     <span className="text-rw-text hover:text-rw-accent font-semibold">{regionLabel(c)}</span>
                   </HubLink>
@@ -498,7 +499,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 return (
                   <tr key={r.code} className="border-t border-rw-border">
                     <td className="px-2 py-1" data-sort={regionLabel(r.code)}>
-                      <HubLink to={{ kind: "leagues" }} className="flex items-center gap-1.5 min-w-0 hover:text-rw-accent">
+                      <HubLink to={{ kind: "leagues", query: `q=${encodeURIComponent(regionLeagueQuery(r.code))}` }} className="flex items-center gap-1.5 min-w-0 hover:text-rw-accent">
                         <RegionFlag code={r.code} />
                         <span className="truncate text-rw-text hover:text-rw-accent font-semibold">{regionLabel(r.code)}</span>
                       </HubLink>
@@ -783,12 +784,12 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   <div className="flex items-center justify-between gap-2 min-w-0">
                     <span className="flex items-center gap-1.5 min-w-0">
                       <RegionFlag code={p.a} />
-                      <HubLink to={{ kind: "leagues" }} className="truncate text-rw-text font-medium hover:text-rw-accent hover:underline">
+                      <HubLink to={{ kind: "leagues", query: `q=${encodeURIComponent(regionLeagueQuery(p.a))}` }} className="truncate text-rw-text font-medium hover:text-rw-accent hover:underline">
                         {regionLabel(p.a)}
                       </HubLink>
                       <span className="text-rw-muted">vs</span>
                       <RegionFlag code={p.b} />
-                      <HubLink to={{ kind: "leagues" }} className="truncate text-rw-sub hover:text-rw-accent hover:underline">
+                      <HubLink to={{ kind: "leagues", query: `q=${encodeURIComponent(regionLeagueQuery(p.b))}` }} className="truncate text-rw-sub hover:text-rw-accent hover:underline">
                         {regionLabel(p.b)}
                       </HubLink>
                     </span>
