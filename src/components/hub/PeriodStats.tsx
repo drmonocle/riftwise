@@ -371,7 +371,34 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; teamSlu
     <div className="space-y-1">
       <div className="flex items-center justify-between gap-2">
         <Sub>{tl("Win rate when…")}</Sub>
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5" data-nocapture="1">
+          {teamSlug && (
+            <>
+              <HubLink
+                to={{ kind: "prep", a: teamSlug, ...(period && period !== "all" ? { period } : {}) }}
+                className="text-[11px] font-semibold text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(teamSlug)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              {finderQuery && (
+                <HubLink
+                  to={{ kind: "finder", query: finderQuery }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
+              )}
+            </>
+          )}
           <CopyPeriodTextPost
             buildText={() => {
               const head = `${teamName ? `${teamName} · ` : ""}${tl("Win rate when…")}${periodLabel ? ` (${periodLabel})` : ""}`;
@@ -999,18 +1026,34 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
           {agg.champs.length > 0 && (
             <div className="flex items-center justify-between gap-2">
               <Sub>{tl("Champions")}</Sub>
-              <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
-                {agg.champs.length >= 2 && (
-                  <HubLink
-                    to={{
-                      kind: "counters",
-                      query: `champ=${prettySlug(agg.champs[0].c)}&vs=${encodeURIComponent(agg.champs[1].c)}${agg.roles[0] ? `&role=${encodeURIComponent(agg.roles[0])}` : ""}`,
-                    }}
-                    className="text-rw-accent hover:underline font-semibold"
-                  >
-                    {tl("Counters")} →
-                  </HubLink>
-                )}
+              <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: `champ=${prettySlug(agg.champs[0].c)}${agg.champs[1] ? `&vs=${encodeURIComponent(agg.champs[1].c)}` : ""}${agg.roles[0] ? `&role=${encodeURIComponent(agg.roles[0])}` : ""}`,
+                  }}
+                  className="text-rw-accent hover:underline font-semibold"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: `player=${encodeURIComponent(slug)}${agg.champs[0] ? `&champ=${encodeURIComponent(prettySlug(agg.champs[0].c))}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                  }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "finder",
+                    query: `player=${encodeURIComponent(slug)}${agg.champs.length === 1 ? `&champ=${encodeURIComponent(agg.champs[0].c)}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
+                  }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
                 <SectionCard
                   section={who ? `${who.name} · ${tl("Champions")}` : tl("Champions")}
                   sub={periodText}

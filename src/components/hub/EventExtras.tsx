@@ -117,7 +117,25 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
       share="tournament-facts"
       right={
         !hidden ? (
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center gap-2">
+            {slug && (
+              <>
+                <HubLink
+                  to={{ kind: "draft", query: `p=e:${encodeURIComponent(slug)}` }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}` }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
+              </>
+            )}
             <CopyExtrasPost
               title={tl("Tournament stats")}
               rows={[
@@ -359,10 +377,15 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
       )}
       {!hidden && o.pentas.length > 0 && (
         <div className="text-xs">
-          <span className="text-rw-muted flex items-center gap-1 mb-1">
-            <Swords className="w-3 h-3" />
-            {tl("Pentakills")}
-          </span>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className="text-rw-muted flex items-center gap-1">
+              <Swords className="w-3 h-3" />
+              {tl("Pentakills")}
+            </span>
+            <HubLink to={{ kind: "records" }} className="text-[11px] text-rw-accent hover:underline">
+              {tl("Records")} →
+            </HubLink>
+          </div>
           <ul className="space-y-1">
             {o.pentas.map((p, i) => (
               <li key={i} className="flex items-center gap-1.5">
@@ -681,7 +704,21 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
     <Section
       title={tl("Region vs region")}
       right={
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center gap-2">
+          <HubLink
+            to={{ kind: "leagues" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Leagues")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Game finder")} →
+          </HubLink>
           <CopyExtrasPost
             title={`${tl("Region vs region")} · ${e.n}`}
             rows={e.regions.slice(0, 8).map((r) => `${regionName(r.a, r.a)} ${r.wa} – ${r.wb} ${regionName(r.b, r.b)}`)}

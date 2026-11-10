@@ -758,10 +758,16 @@ export const PlayerRanks: React.FC<{
                 {tl("Leaderboards")} →
               </HubLink>
               <HubLink
-                to={{ kind: "items", query: `player=${encodeURIComponent(slug)}` }}
+                to={{ kind: "items", query: `player=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}` }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Item history")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
               </HubLink>
               <CopyRanksPost
                 title={`${name || me?.n || slug} · ${leagueLabel} ${year}${me?.r ? ` (${roleName(me.r)})` : ""}`}
@@ -927,6 +933,12 @@ export const TeamRanks: React.FC<{
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Leaderboards")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "finder", query: `team=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
               </HubLink>
               <CopyRanksPost
                 title={`${name || me?.t || slug} · ${leagueLabel} ${year}`}

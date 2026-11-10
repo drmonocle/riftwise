@@ -510,6 +510,24 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                 {label}
               </button>
             ))}
+            <HubLink
+              to={{ kind: "compare", mode: "player", a: p.u }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Compare")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "items", query: `player=${encodeURIComponent(p.u)}` }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Item history")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}` }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Game finder")} →
+            </HubLink>
             <SectionCard
               section={`${tl("Recent games")} (${points.length}G)`}
               name={p.name}
@@ -806,6 +824,12 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Compare")}
+                </HubLink>
+                <HubLink
+                  to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}&champ=${encodeURIComponent(sel.champ)}` }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")}
                 </HubLink>
                 {sel.seriesSlug ? (
                   <HubLink
@@ -1700,6 +1724,13 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Counters")} →
+                    </HubLink>{" "}
+                    ·{" "}
+                    <HubLink
+                      to={{ kind: "items", query: `champ=${encodeURIComponent(c.u)}` }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Item history")} →
                     </HubLink>
                   </span>
                 </div>

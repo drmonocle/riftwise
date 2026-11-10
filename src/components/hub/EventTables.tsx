@@ -235,7 +235,29 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
       title={tl("Player stats")}
       share={`${e.u}-players`}
       right={
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center gap-2">
+          <HubLink
+            to={{
+              kind: "leaders",
+              query: new URLSearchParams({
+                ...(e.lu ? { league: e.lu } : {}),
+                ...(e.start?.slice(0, 4) ? { year: e.start.slice(0, 4) } : {}),
+                event: e.u,
+                ...(role !== "All" ? { role } : {}),
+              }).toString(),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Leaderboards")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}${role !== "All" ? `&role=${encodeURIComponent(role)}` : ""}` }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Game finder")} →
+          </HubLink>
           <CopyEventTablePost
             title={`${tl("Player stats")} · ${e.n} (${role === "All" ? tl("All roles") : roleName(role)})`}
             rows={[...rows]
@@ -514,7 +536,21 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
       title={tl("Team stats")}
       share={`${e.u}-teams`}
       right={
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center gap-2">
+          <HubLink
+            to={{ kind: "draft", query: `p=e:${encodeURIComponent(e.u)}` }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Draft board")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Game finder")} →
+          </HubLink>
           <CopyEventTablePost
             title={`${tl("Team stats")} · ${e.n}`}
             rows={[...rows]
