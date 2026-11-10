@@ -1398,7 +1398,13 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
             <HubLink to={{ kind: "champions" }} className="text-[11px] text-rw-accent hover:underline">
               {tl("Champions")} →
             </HubLink>
-            <HubLink to={{ kind: "counters" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+            <HubLink
+              to={{
+                kind: "counters",
+                ...(shown[0]?.[5]?.[0] ? { query: `champ=${encodeURIComponent(prettySlug(shown[0][5][0]))}` } : {}),
+              }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
               {tl("Counters")} →
             </HubLink>
             <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
@@ -1410,7 +1416,13 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
             <HubLink to={{ kind: "draft" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Draft board")} →
             </HubLink>
-            <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+            <HubLink
+              to={{
+                kind: "finder",
+                ...(shown[0]?.[5]?.[0] ? { query: `champ=${encodeURIComponent(shown[0][5][0])}` } : {}),
+              }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
               {tl("Game finder")} →
             </HubLink>
             <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">

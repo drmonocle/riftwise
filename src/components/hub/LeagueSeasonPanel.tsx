@@ -34,7 +34,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
   const teams = terms.length
     ? allTeams.filter((t) => terms.some((term) => `${t.t} ${t.u || ""}`.toLowerCase().includes(term)))
     : allTeams;
-  const headerTeams = teams.length >= 2 ? teams : allTeams;
+  const headerTeams = teams.length >= 1 ? teams : allTeams;
   return (
     <Section
       title={tl("{name} {year} at a glance", { name, year })}
@@ -69,13 +69,13 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
           <HubLink to={{ kind: "finder", query: `league=${league}&year=${year}` }} className="text-rw-accent hover:underline">
             {tl("Game finder")}
           </HubLink>
-          {headerTeams.length >= 2 && (
+          {headerTeams.length >= 1 && (
             <>
               <HubLink
                 to={{
                   kind: "prep",
                   a: headerTeams[0].u || prettySlug(headerTeams[0].t),
-                  b: headerTeams[1].u || prettySlug(headerTeams[1].t),
+                  ...(headerTeams[1] ? { b: headerTeams[1].u || prettySlug(headerTeams[1].t) } : {}),
                   period: `y${year}`,
                 }}
                 className="text-rw-accent hover:underline"
@@ -85,7 +85,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(headerTeams[0].u || prettySlug(headerTeams[0].t))},${encodeURIComponent(headerTeams[1].u || prettySlug(headerTeams[1].t))}&p=y${encodeURIComponent(year)}`,
+                  query: `teams=${encodeURIComponent(headerTeams[0].u || prettySlug(headerTeams[0].t))}${headerTeams[1] ? `,${encodeURIComponent(headerTeams[1].u || prettySlug(headerTeams[1].t))}` : ""}&p=y${encodeURIComponent(year)}`,
                 }}
                 className="text-rw-accent hover:underline"
               >
@@ -96,7 +96,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                   kind: "compare",
                   mode: "team",
                   a: headerTeams[0].u || prettySlug(headerTeams[0].t),
-                  b: headerTeams[1].u || prettySlug(headerTeams[1].t),
+                  ...(headerTeams[1] ? { b: headerTeams[1].u || prettySlug(headerTeams[1].t) } : {}),
                   period: `y${year}`,
                 }}
                 className="text-rw-accent hover:underline"

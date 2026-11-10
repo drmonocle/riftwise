@@ -754,25 +754,25 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                   .slice(0, 4)
                   .map(([l]) => d.teams.filter((t) => t[3] === l).sort((a, b) => b[5] - a[5])[0])
                   .filter(Boolean);
-                if (topTwo.length < 2) return null;
+                if (topTwo.length < 1) return null;
                 const aSlug = topTwo[0][0] || prettySlug(topTwo[0][1]);
-                const bSlug = topTwo[1][0] || prettySlug(topTwo[1][1]);
+                const bSlug = topTwo[1] ? topTwo[1][0] || prettySlug(topTwo[1][1]) : undefined;
                 return (
                   <>
                     <HubLink
-                      to={{ kind: "prep", a: aSlug, b: bSlug }}
+                      to={{ kind: "prep", a: aSlug, ...(bSlug ? { b: bSlug } : {}) }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Match prep")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "draft", query: `teams=${encodeURIComponent(aSlug)},${encodeURIComponent(bSlug)}` }}
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(aSlug)}${bSlug ? `,${encodeURIComponent(bSlug)}` : ""}` }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Draft board")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug }}
+                      to={{ kind: "compare", mode: "team", a: aSlug, ...(bSlug ? { b: bSlug } : {}) }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Compare")} →
@@ -941,22 +941,25 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           title={tl("How the chances hold up")}
           right={
             <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
-              {top && rows[1]?.r && (
+              {top && (
                 <>
                   <HubLink
-                    to={{ kind: "prep", a: top[0], b: rows[1].r[0] }}
+                    to={{ kind: "prep", a: top[0], ...(rows[1]?.r ? { b: rows[1].r[0] } : {}) }}
                     className="text-rw-accent hover:underline font-semibold"
                   >
                     {tl("Match prep")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "compare", mode: "team", a: top[0], b: rows[1].r[0] }}
+                    to={{ kind: "compare", mode: "team", a: top[0], ...(rows[1]?.r ? { b: rows[1].r[0] } : {}) }}
                     className="text-rw-accent hover:underline font-semibold"
                   >
                     {tl("Compare")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "draft", query: `teams=${encodeURIComponent(top[0])},${encodeURIComponent(rows[1].r[0])}` }}
+                    to={{
+                      kind: "draft",
+                      query: `teams=${encodeURIComponent(top[0])}${rows[1]?.r ? `,${encodeURIComponent(rows[1].r[0])}` : ""}`,
+                    }}
                     className="text-rw-accent hover:underline font-semibold"
                   >
                     {tl("Draft board")} →

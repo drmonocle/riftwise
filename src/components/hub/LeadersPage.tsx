@@ -392,30 +392,35 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
               >
                 {tl("Power rankings")} →
               </HubLink>
-              {shownRows.length === 2 && shownRows[0].tu && shownRows[1].tu && shownRows[0].tu !== shownRows[1].tu && (
-                <>
-                  <HubLink
-                    to={{
-                      kind: "prep",
-                      a: shownRows[0].tu,
-                      b: shownRows[1].tu,
-                      period: event ? `e:${event}` : `y${year}`,
-                    }}
-                    className="text-rw-accent hover:underline font-semibold"
-                  >
-                    {tl("Match prep")} →
-                  </HubLink>
-                  <HubLink
-                    to={{
-                      kind: "draft",
-                      query: `teams=${encodeURIComponent(shownRows[0].tu)},${encodeURIComponent(shownRows[1].tu)}&p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}`,
-                    }}
-                    className="text-rw-accent hover:underline font-semibold"
-                  >
-                    {tl("Draft board")} →
-                  </HubLink>
-                </>
-              )}
+              {shownRows.length >= 1 && (shownRows[0].tu || shownRows[0].t) && (() => {
+                const aTeam = shownRows[0].tu || prettySlug(shownRows[0].t);
+                const bRow = shownRows.find((r) => (r.tu || r.t) && (r.tu || prettySlug(r.t)) !== aTeam);
+                const bTeam = bRow ? bRow.tu || prettySlug(bRow.t) : undefined;
+                return (
+                  <>
+                    <HubLink
+                      to={{
+                        kind: "prep",
+                        a: aTeam,
+                        ...(bTeam ? { b: bTeam } : {}),
+                        period: event ? `e:${event}` : `y${year}`,
+                      }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(aTeam)}${bTeam ? `,${encodeURIComponent(bTeam)}` : ""}&p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}`,
+                      }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                  </>
+                );
+              })()}
             </>
           )}
           <HubLink
@@ -434,7 +439,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
           right={
             shownRows.length > 0 ? (
               <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
-                {shownRows.length >= 2 && (() => {
+                {shownRows.length >= 1 && (() => {
                   const primaryM = statMetric || PLAYER_METRICS.find((m) => m.key === "kda")!;
                   const top2 = [...shownRows]
                     .sort((a, b) => {
@@ -446,14 +451,14 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                       return primaryM.low ? va - vb : vb - va;
                     })
                     .slice(0, 2);
-                  return top2.length >= 2 ? (
+                  return top2.length >= 1 ? (
                     <>
                       <HubLink
                         to={{
                           kind: "compare",
                           mode: "player",
                           a: top2[0].u || prettySlug(top2[0].n),
-                          b: top2[1].u || prettySlug(top2[1].n),
+                          ...(top2[1] ? { b: top2[1].u || prettySlug(top2[1].n) } : {}),
                           period: event ? `e:${event}` : year ? `y${year}` : undefined,
                         }}
                         className="text-xs font-semibold text-rw-accent hover:underline"
@@ -474,7 +479,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                           to={{
                             kind: "prep",
                             a: top2[0].tu || prettySlug(top2[0].t),
-                            ...((top2[1].tu || top2[1].t) && (top2[1].tu || prettySlug(top2[1].t)) !== (top2[0].tu || prettySlug(top2[0].t))
+                            ...(top2[1] && (top2[1].tu || top2[1].t) && (top2[1].tu || prettySlug(top2[1].t)) !== (top2[0].tu || prettySlug(top2[0].t))
                               ? { b: top2[1].tu || prettySlug(top2[1].t) }
                               : {}),
                             period: event ? `e:${event}` : year ? `y${year}` : undefined,

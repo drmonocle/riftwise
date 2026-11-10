@@ -130,6 +130,11 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
   const fullLabel = isLeague ? `${leagueName} · ${label(key)}` : label(key);
   const sel = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-xs text-rw-text";
   const shown = role ? [role] : ROLES;
+  const topChamps = shown
+    .flatMap((r) => byRole.get(r) || [])
+    .sort((a, b) => b.score - a.score);
+  const topChamp = topChamps[0];
+  const secondChamp = topChamps.find((c) => c.c !== topChamp?.c);
   return (
     <div className="space-y-3">
       <div className={`${card} space-y-2`}>
@@ -158,7 +163,18 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                 {tl("Champions")} →
               </HubLink>
               <HubLink
-                to={{ kind: "counters", ...(role ? { query: `role=${role}` } : {}) }}
+                to={{
+                  kind: "counters",
+                  ...(topChamp || role
+                    ? {
+                        query: new URLSearchParams({
+                          ...(topChamp ? { champ: prettySlug(topChamp.c) } : {}),
+                          ...(secondChamp && role ? { vs: secondChamp.c } : {}),
+                          ...(role ? { role } : {}),
+                        }).toString(),
+                      }
+                    : {}),
+                }}
                 className="font-semibold text-rw-accent hover:underline"
               >
                 {tl("Counter-pick finder")} →
@@ -177,7 +193,10 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                 {tl("Draft board")} →
               </HubLink>
               <HubLink
-                to={{ kind: "items" }}
+                to={{
+                  kind: "items",
+                  ...(topChamp ? { query: `champ=${encodeURIComponent(prettySlug(topChamp.c))}` } : {}),
+                }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Item history")} →
@@ -343,11 +362,11 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
               right={
                 (byRole.get(r) || []).length > 0 ? (
                   <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
-                    {(byRole.get(r) || []).length >= 2 && (
+                    {(byRole.get(r) || []).length >= 1 && (
                       <HubLink
                         to={{
                           kind: "counters",
-                          query: `champ=${prettySlug(byRole.get(r)![0].c)}&vs=${encodeURIComponent(byRole.get(r)![1].c)}&role=${encodeURIComponent(r)}`,
+                          query: `champ=${prettySlug(byRole.get(r)![0].c)}${byRole.get(r)![1] ? `&vs=${encodeURIComponent(byRole.get(r)![1].c)}` : ""}&role=${encodeURIComponent(r)}`,
                         }}
                         className="text-[11px] font-semibold text-rw-accent hover:underline"
                       >
