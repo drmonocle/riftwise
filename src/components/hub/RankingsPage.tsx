@@ -139,6 +139,14 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       key: "rank",
       label: "#",
       value: (x) => x.rank,
+      render: (x) =>
+        x.r[0] ? (
+          <HubLink to={{ kind: "team", slug: x.r[0] }} className="hover:text-rw-accent hover:underline">
+            {x.rank}
+          </HubLink>
+        ) : (
+          x.rank
+        ),
       className: "text-rw-muted tabular-nums",
     },
     {
@@ -205,7 +213,14 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       value: (x) => change(x.r),
       render: (x) => {
         const p = trend(x.r);
-        return p && p.length > 1 ? <Sparkline points={p} width={80} height={20} /> : null;
+        if (!p || p.length <= 1) return null;
+        return x.r[0] ? (
+          <HubLink to={{ kind: "team", slug: x.r[0], tab: "matches" }} className="inline-block hover:opacity-85">
+            <Sparkline points={p} width={80} height={20} />
+          </HubLink>
+        ) : (
+          <Sparkline points={p} width={80} height={20} />
+        );
       },
       className: "hidden md:table-cell",
     },

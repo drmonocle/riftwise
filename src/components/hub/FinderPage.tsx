@@ -735,7 +735,20 @@ const FinderBody: React.FC<{
                         )}
                       </td>
                       <td className={`${td} text-rw-sub tabular-nums`} data-sort={g[4] ?? -1}>
-                        {g[4] != null ? fmtDec(g[4]) : ""}
+                        {g[4] != null ? (
+                          g[14] ? (
+                            <HubLink
+                              to={{ kind: "match", slug: g[14], game: g[15] || undefined }}
+                              className="hover:text-rw-accent hover:underline"
+                            >
+                              {fmtDec(g[4])}
+                            </HubLink>
+                          ) : (
+                            fmtDec(g[4])
+                          )
+                        ) : (
+                          ""
+                        )}
                       </td>
                       <Picks list={g[5]} />
                       <Picks list={g[6]} />
@@ -880,7 +893,18 @@ const Cohort: React.FC<{
                     <span>{g}</span>
                   )}
                   <span className="text-rw-muted">·</span>
-                  <span className={`w-8 text-right ${wr ? (good ? "text-rw-teal font-semibold" : "text-rw-red") : ""}`}>{pctVal}%</span>
+                  {(wr ? onPick : onBan) ? (
+                    <button
+                      type="button"
+                      onClick={() => (wr ? onPick?.(c) : onBan?.(c))}
+                      className={`w-8 text-right hover:underline ${wr ? (good ? "text-rw-teal font-semibold" : "text-rw-red") : "hover:text-rw-accent"}`}
+                      title={wr ? tl("With champion") : tl("Bans")}
+                    >
+                      {pctVal}%
+                    </button>
+                  ) : (
+                    <span className={`w-8 text-right ${wr ? (good ? "text-rw-teal font-semibold" : "text-rw-red") : ""}`}>{pctVal}%</span>
+                  )}
                 </span>
               </li>
             );

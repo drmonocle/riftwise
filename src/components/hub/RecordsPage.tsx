@@ -595,7 +595,20 @@ export const RecordsPanel: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-1 text-[10px] text-rw-muted truncate">
-                        <span>vs</span>
+                        {p.u ? (
+                          <HubLink
+                            to={{
+                              kind: "finder",
+                              query: `player=${encodeURIComponent(p.u)}&vs=${encodeURIComponent(prettySlug(p.opp))}`,
+                            }}
+                            className="hover:text-rw-accent hover:underline"
+                            title={tl("Game finder")}
+                          >
+                            vs
+                          </HubLink>
+                        ) : (
+                          <span>vs</span>
+                        )}
                         <TeamLogo name={p.opp} size={12} />
                         <span className="truncate">
                           <TeamLink name={p.opp} className="text-rw-muted hover:text-rw-accent hover:underline" /> ·{" "}
@@ -1035,7 +1048,11 @@ export const TitlesPanel: React.FC = () => {
                         })()}
                       </td>
                       <td className={`${td} text-rw-muted`} data-sort={x.date}>
-                        {fmtDate(x.date)}
+                        {x.e ? (
+                          <EventLink name={fmtDate(x.date)} u={x.e} className="text-rw-muted hover:text-rw-accent hover:underline" />
+                        ) : (
+                          fmtDate(x.date)
+                        )}
                       </td>
                     </tr>
                   ))}

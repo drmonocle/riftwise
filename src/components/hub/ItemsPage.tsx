@@ -439,7 +439,20 @@ const PlayerItemsView: React.FC<{
                     </span>
                   </td>
                   <td className={`${td} text-rw-muted whitespace-nowrap`} data-sort={g[0]?.[0] || ""}>
-                    {g[0] ? fmtDate(g[0][0], false) : ""}
+                    {g[0] ? (
+                      g[0][1] ? (
+                        <HubLink
+                          to={{ kind: "match", slug: g[0][1], ...(g[0][22] ? { game: g[0][22] } : {}) }}
+                          className="hover:text-rw-accent hover:underline"
+                        >
+                          {fmtDate(g[0][0], false)}
+                        </HubLink>
+                      ) : (
+                        fmtDate(g[0][0], false)
+                      )
+                    ) : (
+                      ""
+                    )}
                   </td>
                 </tr>
               );
@@ -545,7 +558,9 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
                   <span className="block h-1 mt-0.5 rounded-sm bg-rw-accent/55" style={{ width: `${Math.max(4, Math.round((g / maxG) * 100))}%` }} aria-hidden="true" />
                 </td>
                 <td className={`${td} text-rw-muted whitespace-nowrap`} data-sort={last}>
-                  {fmtDate(last, false)}
+                  <button type="button" onClick={() => onPlayer(u)} className="hover:text-rw-accent hover:underline" title={tl("Their games")}>
+                    {fmtDate(last, false)}
+                  </button>
                 </td>
                 <td className={`${td} text-right`}>
                   <TheirGames onClick={() => onPlayer(u)} />
@@ -1165,7 +1180,16 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                       {r[23].toFixed(0)}
                     </span>
                   ))}
-                <span>{fmtDate(r[0], false)}</span>
+                {r[1] ? (
+                  <HubLink
+                    to={{ kind: "match", slug: r[1], ...(r[22] ? { game: r[22] } : {}) }}
+                    className="hover:text-rw-accent hover:underline"
+                  >
+                    {fmtDate(r[0], false)}
+                  </HubLink>
+                ) : (
+                  <span>{fmtDate(r[0], false)}</span>
+                )}
               </span>
             </li>
           );

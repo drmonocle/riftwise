@@ -435,7 +435,19 @@ const LeagueTable: React.FC<{
         return <WinRateCell wr={c.wr} p={c.p} minPicks={3} to={c.p > 0 ? { kind: "finder", query: fq } : undefined} />;
       },
     },
-    { key: "kda", label: tl("KDA"), value: (c) => c.kda },
+    {
+      key: "kda",
+      label: tl("KDA"),
+      value: (c) => c.kda,
+      render: (c) =>
+        c.kda == null ? (
+          "–"
+        ) : (
+          <HubLink to={{ kind: "champ", slug: prettySlug(c.c) }} className="hover:text-rw-accent hover:underline">
+            {fmtDec(c.kda, 2)}
+          </HubLink>
+        ),
+    },
     {
       key: "blind",
       label: tl("Blind%"),
@@ -481,9 +493,48 @@ const LeagueTable: React.FC<{
           "–"
         ),
     },
-    { key: "csm", label: tl("CS/m"), title: tl("CS per minute"), value: (c) => c.csm },
-    { key: "gpm", label: tl("GPM"), title: tl("Gold per minute"), value: (c) => c.gpm },
-    { key: "dpm", label: tl("DPM"), title: tl("Damage per minute"), value: (c) => c.dpm },
+    {
+      key: "csm",
+      label: tl("CS/m"),
+      title: tl("CS per minute"),
+      value: (c) => c.csm,
+      render: (c) =>
+        c.csm == null ? (
+          "–"
+        ) : (
+          <HubLink to={{ kind: "champ", slug: prettySlug(c.c) }} className="hover:text-rw-accent hover:underline">
+            {fmtDec(c.csm, 1)}
+          </HubLink>
+        ),
+    },
+    {
+      key: "gpm",
+      label: tl("GPM"),
+      title: tl("Gold per minute"),
+      value: (c) => c.gpm,
+      render: (c) =>
+        c.gpm == null ? (
+          "–"
+        ) : (
+          <HubLink to={{ kind: "champ", slug: prettySlug(c.c) }} className="hover:text-rw-accent hover:underline">
+            {fmtNum(c.gpm)}
+          </HubLink>
+        ),
+    },
+    {
+      key: "dpm",
+      label: tl("DPM"),
+      title: tl("Damage per minute"),
+      value: (c) => c.dpm,
+      render: (c) =>
+        c.dpm == null ? (
+          "–"
+        ) : (
+          <HubLink to={{ kind: "champ", slug: prettySlug(c.c) }} className="hover:text-rw-accent hover:underline">
+            {fmtNum(c.dpm)}
+          </HubLink>
+        ),
+    },
   ];
   return (
     <div className={`${card} space-y-2`}>
@@ -683,7 +734,19 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
         return <WinRateCell wr={c.wr} p={c.p} minPicks={10} to={c.p > 0 ? { kind: "finder", query: fq } : undefined} />;
       },
     },
-    { key: "kda", label: tl("KDA"), value: (c) => c.kda ?? null },
+    {
+      key: "kda",
+      label: tl("KDA"),
+      value: (c) => c.kda ?? null,
+      render: (c) =>
+        c.kda == null ? (
+          "–"
+        ) : (
+          <HubLink to={{ kind: "champ", slug: prettySlug(c.c) }} className="hover:text-rw-accent hover:underline">
+            {fmtDec(c.kda, 2)}
+          </HubLink>
+        ),
+    },
   ];
   // the patch before the chosen one, for "Compare with" (patch keys are newest first)
   const compareOptions: [string, string][] = patchKeys.filter((k) => k !== key).map((k) => [k, label(k)]);

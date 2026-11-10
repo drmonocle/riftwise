@@ -204,11 +204,42 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
               : good <= -1.25
                 ? "text-rw-red"
                 : "";
-          return tone ? <span className={tone}>{m.fmt(v)}</span> : m.fmt(v);
+          return p.u ? (
+            <HubLink
+              to={{
+                kind: "player",
+                slug: p.u,
+                tab: "stats",
+                query: `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}`,
+              }}
+              className={`hover:underline ${tone || "hover:text-rw-accent"}`}
+            >
+              {m.fmt(v)}
+            </HubLink>
+          ) : tone ? (
+            <span className={tone}>{m.fmt(v)}</span>
+          ) : (
+            m.fmt(v)
+          );
         }
         if (z == null) return "–";
-        return (
-          <span className={good >= 1 ? "text-rw-teal font-semibold" : good <= -1 ? "text-rw-red" : ""} title={m.fmt(v)}>
+        const zTone = good >= 1 ? "text-rw-teal font-semibold" : good <= -1 ? "text-rw-red" : "";
+        return p.u ? (
+          <HubLink
+            to={{
+              kind: "player",
+              slug: p.u,
+              tab: "stats",
+              query: `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}`,
+            }}
+            className={`hover:underline ${zTone || "hover:text-rw-accent"}`}
+            title={m.fmt(v)}
+          >
+            {z > 0 ? "+" : z < 0 ? "−" : ""}
+            {Math.abs(z).toFixed(1)}
+          </HubLink>
+        ) : (
+          <span className={zTone} title={m.fmt(v)}>
             {z > 0 ? "+" : z < 0 ? "−" : ""}
             {Math.abs(z).toFixed(1)}
           </span>
@@ -437,7 +468,24 @@ const LeaderSpotlight: React.FC<{
               <div className="text-[10px] text-rw-muted flex items-center gap-1 min-w-0">
                 <TeamLogo name={c.top.t} size={12} />
                 <TeamLink name={c.top.t} u={c.top.tu} className="text-rw-muted hover:text-rw-accent truncate" />
-                <span className="shrink-0">· {roleName(c.top.r)}</span>
+                <span className="shrink-0">
+                  ·{" "}
+                  {c.top.u ? (
+                    <HubLink
+                      to={{
+                        kind: "player",
+                        slug: c.top.u,
+                        tab: "stats",
+                        query: `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}`,
+                      }}
+                      className="hover:text-rw-accent hover:underline"
+                    >
+                      {roleName(c.top.r)}
+                    </HubLink>
+                  ) : (
+                    roleName(c.top.r)
+                  )}
+                </span>
               </div>
             </div>
           </div>
