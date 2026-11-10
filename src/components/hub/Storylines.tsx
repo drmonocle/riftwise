@@ -339,6 +339,22 @@ export const HomeStorylines: React.FC = () => {
       right={
         all.length > 6 ? (
           <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+            {terms.length === 0 && (
+              <>
+                <HubLink to={{ kind: "records" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Records")} →
+                </HubLink>
+                <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Player leaderboards")} →
+                </HubLink>
+                <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Power rankings")} →
+                </HubLink>
+                <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Game finder")} →
+                </HubLink>
+              </>
+            )}
             {terms.length > 0 && (() => {
               const teamSlugs = Array.from(new Set(rows.filter((r) => r.t === "team").map((r) => r.u)));
               if (teamSlugs.length >= 1) {

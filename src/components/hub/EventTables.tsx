@@ -270,6 +270,35 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
             {tl("Leaderboards")} →
           </HubLink>
           <HubLink
+            to={{
+              kind: "champions",
+              query: new URLSearchParams({
+                ...(e.lu ? { league: e.lu } : {}),
+                ...(e.start?.slice(0, 4) ? { year: e.start.slice(0, 4) } : {}),
+                event: e.u,
+                ...(role !== "All" ? { role } : {}),
+              }).toString(),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Champions")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "tiers",
+              query: new URLSearchParams({
+                ...(e.lu ? { league: e.lu } : {}),
+                ...(e.start?.slice(0, 4) ? { key: `y${e.start.slice(0, 4)}` } : {}),
+                ...(role !== "All" ? { role } : {}),
+              }).toString(),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Pro tier list")} →
+          </HubLink>
+          <HubLink
             to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}${role !== "All" ? `&role=${encodeURIComponent(role)}` : ""}` }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
@@ -659,6 +688,13 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
               <span className="text-rw-muted">·</span>
               <HubLink to={{ kind: "compare", mode: "team", a: pair[0], b: pair[1], period: `e:${e.u}` }} className="text-rw-accent hover:underline font-semibold">
                 {tl("Compare")}
+              </HubLink>
+              <span className="text-rw-muted">·</span>
+              <HubLink
+                to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(pair[0])}&vs=${encodeURIComponent(pair[1])}` }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Game finder")}
               </HubLink>
             </span>
           )}

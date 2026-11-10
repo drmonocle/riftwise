@@ -158,6 +158,16 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
                     >
                       {tl("Draft board")}
                     </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "finder",
+                        query: `team=${encodeURIComponent(teamSlug || prettySlug(teamName))}&vs=${encodeURIComponent(r[2])}${/^\d{4}/.test(r[0]) ? `&year=${r[0].slice(0, 4)}` : ""}`,
+                      }}
+                      className="hidden sm:inline text-rw-sub hover:text-rw-accent hover:underline"
+                      title={tl("Game finder")}
+                    >
+                      {tl("Game finder")}
+                    </HubLink>
                   </>
                 )}
                 {r[7] && (
@@ -853,6 +863,32 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                 ) : (
                   fmtDate(r[0])
                 )}
+                {r[7] && r[8] && (
+                  <>
+                    <HubLink
+                      to={{
+                        kind: "prep",
+                        a: prettySlug(r[7]),
+                        b: prettySlug(r[8]),
+                        ...(/^\d{4}/.test(r[0]) ? { period: `y${r[0].slice(0, 4)}` } : {}),
+                      }}
+                      className="hidden sm:inline text-rw-sub hover:text-rw-accent hover:underline"
+                      title={tl("Match prep")}
+                    >
+                      {tl("Match prep")}
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(prettySlug(r[7]))},${encodeURIComponent(prettySlug(r[8]))}${/^\d{4}/.test(r[0]) ? `&p=y${r[0].slice(0, 4)}` : ""}`,
+                      }}
+                      className="hidden sm:inline text-rw-sub hover:text-rw-accent hover:underline"
+                      title={tl("Draft board")}
+                    >
+                      {tl("Draft board")}
+                    </HubLink>
+                  </>
+                )}
                 {r[1] && (
                   <HubLink to={{ kind: "match", slug: r[1], game: r[22] || undefined }} className="text-rw-accent hover:underline">
                     {tl("Details")}
@@ -898,6 +934,9 @@ export const PlayerGamesArchive: React.FC<{ slug: string; playerName?: string }>
         </HubLink>
         <HubLink to={{ kind: "items", query: `player=${encodeURIComponent(slug)}` }} className="text-rw-accent hover:underline">
           {tl("Item history")} →
+        </HubLink>
+        <HubLink to={{ kind: "tiers" }} className="text-rw-accent hover:underline">
+          {tl("Pro tier list")} →
         </HubLink>
         <HubLink to={{ kind: "leaders" }} className="text-rw-accent hover:underline">
           {tl("Player leaderboards")} →

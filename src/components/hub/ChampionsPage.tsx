@@ -968,6 +968,18 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
             >
               {tl("Draft board")} →
             </HubLink>
+            <HubLink
+              to={{
+                kind: "finder",
+                query: new URLSearchParams({
+                  ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
+                  ...(roleQ ? { role: roleQ } : {}),
+                }).toString(),
+              }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Game finder")} →
+            </HubLink>
             <SectionCard
               section={tl("Champions")}
               name={label(key)}
@@ -1060,6 +1072,10 @@ const MetaSpotlight: React.FC<{
                 {" · "}
                 <HubLink to={{ kind: "items", query: `champ=${encodeURIComponent(prettySlug(item.c))}` }} className="hover:text-rw-accent hover:underline">
                   {tl("Item history")}
+                </HubLink>
+                {" · "}
+                <HubLink to={{ kind: "finder", query: `champ=${encodeURIComponent(item.c)}` }} className="hover:text-rw-accent hover:underline">
+                  {tl("Game finder")}
                 </HubLink>
               </div>
             )}

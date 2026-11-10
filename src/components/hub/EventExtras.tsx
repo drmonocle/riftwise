@@ -411,9 +411,16 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
               <Swords className="w-3 h-3" />
               {tl("Pentakills")}
             </span>
-            <HubLink to={{ kind: "records" }} className="text-[11px] text-rw-accent hover:underline">
-              {tl("Records")} →
-            </HubLink>
+            <span className="flex items-center gap-2">
+              {slug && (
+                <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Game finder")} →
+                </HubLink>
+              )}
+              <HubLink to={{ kind: "records" }} className="text-[11px] text-rw-accent hover:underline">
+                {tl("Records")} →
+              </HubLink>
+            </span>
           </div>
           <ul className="space-y-1">
             {o.pentas.map((p, i) => (
@@ -468,6 +475,14 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
               >
                 {tl("Leaderboards")} →
               </HubLink>
+              {slug && (
+                <HubLink
+                  to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}${o.mvp[0]?.u ? `&player=${encodeURIComponent(o.mvp[0].u)}` : ""}` }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
+              )}
             </span>
           </div>
           <div className="flex flex-wrap gap-1.5">

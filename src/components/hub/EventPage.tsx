@@ -413,7 +413,19 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
       )}
 
       {on("") && e.children && e.children.length > 0 && (
-        <Section title={tl("Stages")}>
+        <Section
+          title={tl("Stages")}
+          right={
+            <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+              <HubLink to={{ kind: "tournaments" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Tournaments")} →
+              </HubLink>
+              <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Game finder")} →
+              </HubLink>
+            </span>
+          }
+        >
           <ul className="text-xs space-y-1">
             {e.children.map((c) => (
               <li key={c.u}>
@@ -695,19 +707,41 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
         <span className="flex items-center gap-1.5 shrink-0">
           {hiddenBySpoiler && !hideResult && played && <RevealButton onReveal={reveal} small />}
           {r.au && r.bu && (
-            <HubLink
-              to={{
-                kind: "compare",
-                mode: "team",
-                a: r.au,
-                b: r.bu,
-                period: /^\d{4}$/.test((r.date || "").slice(0, 4)) ? `y${(r.date || "").slice(0, 4)}` : undefined,
-              }}
-              className="hover:text-rw-accent hover:underline"
-              title={tl("Compare")}
-            >
-              {tl("vs")}
-            </HubLink>
+            <>
+              <HubLink
+                to={{
+                  kind: "compare",
+                  mode: "team",
+                  a: r.au,
+                  b: r.bu,
+                  period: /^\d{4}$/.test((r.date || "").slice(0, 4)) ? `y${(r.date || "").slice(0, 4)}` : undefined,
+                }}
+                className="hover:text-rw-accent hover:underline"
+                title={tl("Compare")}
+              >
+                {tl("vs")}
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(r.au)},${encodeURIComponent(r.bu)}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
+                }}
+                className="hidden sm:inline hover:text-rw-accent hover:underline"
+                title={tl("Draft board")}
+              >
+                {tl("Draft board")}
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `team=${encodeURIComponent(r.au)}&vs=${encodeURIComponent(r.bu)}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&year=${(r.date || "").slice(0, 4)}` : ""}`,
+                }}
+                className="hidden sm:inline hover:text-rw-accent hover:underline"
+                title={tl("Game finder")}
+              >
+                {tl("Game finder")}
+              </HubLink>
+            </>
           )}
           {!hidden && r.r != null &&
             (r.g && !hideResult ? (

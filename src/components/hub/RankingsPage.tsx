@@ -401,6 +401,35 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
             </HubLink>
           </p>
         )}
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 pt-0.5 text-[11px] font-semibold" data-nocapture="1">
+          <HubLink to={{ kind: "tournaments" }} className="text-rw-accent hover:underline">
+            {tl("Tournaments")} →
+          </HubLink>
+          <HubLink to={{ kind: "leagues" }} className="text-rw-accent hover:underline">
+            {tl("Leagues")} →
+          </HubLink>
+          <HubLink to={{ kind: "teams" }} className="text-rw-accent hover:underline">
+            {tl("Teams")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "champions", ...(league ? { query: `league=${encodeURIComponent(prettySlug(league))}` } : {}) }}
+            className="text-rw-accent hover:underline"
+          >
+            {tl("Champions")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "tiers", ...(league ? { query: `league=${encodeURIComponent(prettySlug(league))}` } : {}) }}
+            className="text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "finder", ...(league ? { query: `league=${encodeURIComponent(prettySlug(league))}` } : {}) }}
+            className="text-rw-accent hover:underline"
+          >
+            {tl("Game finder")} →
+          </HubLink>
+        </div>
       </div>
 
       {topLeagueCards.length > 0 && (
@@ -706,6 +735,12 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               >
                 {tl("Tournaments")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "finder" }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
               <SectionCard
                 section={tl("League strength")}
                 name={tl("Power rankings")}
@@ -826,12 +861,26 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           right={
             <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
               {top && rows[1]?.r && (
-                <HubLink
-                  to={{ kind: "prep", a: top[0], b: rows[1].r[0] }}
-                  className="text-rw-accent hover:underline font-semibold"
-                >
-                  {tl("Match prep")} →
-                </HubLink>
+                <>
+                  <HubLink
+                    to={{ kind: "prep", a: top[0], b: rows[1].r[0] }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "compare", mode: "team", a: top[0], b: rows[1].r[0] }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "draft", query: `teams=${encodeURIComponent(top[0])},${encodeURIComponent(rows[1].r[0])}` }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                </>
               )}
               <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Game finder")} →

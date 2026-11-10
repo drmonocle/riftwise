@@ -112,8 +112,14 @@ export const PatchesPanel: React.FC = () => {
               <HubLink to={{ kind: "counters" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Counter-pick finder")} →
               </HubLink>
+              <HubLink to={{ kind: "items" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Item history")} →
+              </HubLink>
               <HubLink to={{ kind: "draft" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Draft board")} →
+              </HubLink>
+              <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Game finder")} →
               </HubLink>
               <input
                 type="search"
@@ -175,6 +181,12 @@ export const PatchesPanel: React.FC = () => {
                     className="text-rw-accent hover:underline font-semibold"
                   >
                     {tl("Draft board")}
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}` }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Game finder")}
                   </HubLink>
                   <SectionCard
                     section={tl("Patch {patch}", { patch: p.p })}
@@ -459,8 +471,14 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number;
             <HubLink to={{ kind: "champions" }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Champions")} →
             </HubLink>
+            <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Pro tier list")} →
+            </HubLink>
             <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Player leaderboards")} →
+            </HubLink>
+            <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Game finder")} →
             </HubLink>
             <SectionCard
               section={title || tl("Leagues")}
@@ -744,6 +762,15 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                 >
                   {tl("Titles")} →
                 </HubLink>
+                <HubLink
+                  to={{
+                    kind: "finder",
+                    query: `league=${encodeURIComponent(l.u)}${l.titles[0] ? `&team=${encodeURIComponent(l.titles[0].u || l.titles[0].t)}` : ""}`,
+                  }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
                 <SectionCard
                   section={tl("Most titles")}
                   sub={l.l}
@@ -878,6 +905,15 @@ const LeagueEventsSection: React.FC<{
                     className="text-[11px] font-semibold text-rw-accent hover:underline"
                   >
                     {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "draft",
+                      query: `teams=${encodeURIComponent(shownEvents[0].wu || prettySlug(shownEvents[0].w))},${encodeURIComponent(shownEvents[1].wu || prettySlug(shownEvents[1].w))}${season ? `&p=y${encodeURIComponent(season)}` : ""}`,
+                    }}
+                    className="text-[11px] font-semibold text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")} →
                   </HubLink>
                   <HubLink
                     to={{
