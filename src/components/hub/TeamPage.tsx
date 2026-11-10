@@ -639,6 +639,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
               >
                 {tl("Game finder")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
               <SectionCard
                 section={tl("By year")}
                 name={t.name}
@@ -738,6 +744,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 {tl("Titles")} →
               </HubLink>
               <HubLink
+                to={{ kind: "tournaments" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Tournaments")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}` }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -830,6 +842,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   {allEvents ? tl("Show fewer") : tl("Show all {n}", { n: t.events.length })}
                 </button>
               )}
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: t.u }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
               <HubLink
                 to={{
                   kind: "draft",
@@ -1151,6 +1169,21 @@ const TeamChampionsTab: React.FC<{
                   >
                     {tl("Draft board")} →
                   </HubLink>
+                  <HubLink
+                    to={{ kind: "tiers" }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Pro tier list")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "finder",
+                      query: `team=${encodeURIComponent(t.u)}&ban=${encodeURIComponent(shownBans[0].c)}`,
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Game finder")} →
+                  </HubLink>
                 </>
               )}
               <SectionCard
@@ -1218,6 +1251,21 @@ const TeamChampionsTab: React.FC<{
                       className="text-[11px] text-rw-accent hover:underline"
                     >
                       {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "tiers" }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Pro tier list")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "finder",
+                        query: `team=${encodeURIComponent(t.u)}&ban=${encodeURIComponent(shownBansVs[0].c)}`,
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Game finder")} →
                     </HubLink>
                   </>
                 )}
@@ -2126,8 +2174,14 @@ const TeamPlaystyleOverview: React.FC<{ t: HubTeam }> = ({ t }) => {
             <HubLink to={{ kind: "prep", a: t.u }} className="text-rw-accent hover:underline">
               {tl("Match prep")} →
             </HubLink>
+            <HubLink to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)}` }} className="text-rw-accent hover:underline">
+              {tl("Draft board")} →
+            </HubLink>
             <HubLink to={{ kind: "compare", mode: "team", a: t.u }} className="text-rw-accent hover:underline">
               {tl("Compare")} →
+            </HubLink>
+            <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Game finder")} →
             </HubLink>
             <HubLink to={{ kind: "team", slug: t.u, tab: "stats" }} className="text-rw-accent hover:underline font-semibold">
               {tl("Stats")} · {tl("Open →")}

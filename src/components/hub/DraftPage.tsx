@@ -938,6 +938,12 @@ const Board: React.FC<{
           >
             {tl("Game finder")}
           </HubLink>
+          <HubLink to={{ kind: "counters" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Counters")}
+          </HubLink>
+          <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Power rankings")}
+          </HubLink>
         </div>
       </div>
 
@@ -1685,6 +1691,23 @@ const DraftMatchupPanel: React.FC<{
             {tl("Match prep")} →
           </HubLink>
           <HubLink
+            to={{ kind: "compare", mode: "team", a: blue.team.u, b: red.team.u, ...(period !== "all" ? { period } : {}) }}
+            className="text-rw-accent hover:underline"
+          >
+            {tl("Compare")} →
+          </HubLink>
+          {bluePicks[0] && (
+            <HubLink
+              to={{
+                kind: "counters",
+                query: `champ=${prettySlug(bluePicks[0])}${redPicks[0] ? `&vs=${encodeURIComponent(redPicks[0])}` : ""}`,
+              }}
+              className="text-rw-accent hover:underline"
+            >
+              {tl("Counters")} →
+            </HubLink>
+          )}
+          <HubLink
             to={{
               kind: "finder",
               query: `team=${encodeURIComponent(blue.team.u)}&vs=${encodeURIComponent(red.team.u)}${
@@ -2207,6 +2230,17 @@ const PlayerPools: React.FC<{
               {tl("Counters")} →
             </HubLink>
           )}
+          {rows[0]?.u && (
+            <HubLink
+              to={{
+                kind: "items",
+                query: `player=${encodeURIComponent(rows[0].u)}`,
+              }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Item history")} →
+            </HubLink>
+          )}
           <HubLink
             to={{
               kind: "team",
@@ -2523,6 +2557,9 @@ const ChampInfo: React.FC<{
         <HubLink to={{ kind: "items", query: `champ=${prettySlug(c)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
           {tl("Item history")} →
         </HubLink>
+        <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+          {tl("Pro tier list")} →
+        </HubLink>
         <HubLink
           to={{
             kind: "finder",
@@ -2789,6 +2826,12 @@ const Priorities: React.FC<{
               {tl("Counters")} →
             </HubLink>
           )}
+          <HubLink
+            to={{ kind: "tiers" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")} →
+          </HubLink>
           <HubLink
             to={{
               kind: "team",

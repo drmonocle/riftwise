@@ -590,6 +590,17 @@ const SeriesGames: React.FC<{
               </span>
             </button>
           ))}
+          {s.a.u && s.b.u && (
+            <HubLink
+              to={{
+                kind: "draft",
+                query: `teams=${encodeURIComponent(s.a.u)},${encodeURIComponent(s.b.u)}`,
+              }}
+              className="ml-auto text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Draft board")} →
+            </HubLink>
+          )}
         </div>
       )}
 
@@ -1303,6 +1314,12 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                     {tl("Match prep")} →
                   </HubLink>
                   <HubLink
+                    to={{ kind: "draft", query: `teams=${encodeURIComponent(blueU)},${encodeURIComponent(redU)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                  <HubLink
                     to={{ kind: "compare", mode: "team", a: blueU, b: redU, period }}
                     className="text-[11px] text-rw-accent hover:underline"
                   >
@@ -1362,6 +1379,12 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                     className="text-[11px] text-rw-accent hover:underline"
                   >
                     {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "draft", query: `teams=${encodeURIComponent(blueU)},${encodeURIComponent(redU)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")} →
                   </HubLink>
                   <HubLink
                     to={{ kind: "compare", mode: "team", a: blueU, b: redU, period }}
@@ -1622,6 +1645,18 @@ const Scoreboard: React.FC<{
               className="text-[11px] text-rw-accent hover:underline"
             >
               {tl("Champions")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "draft", query: `teams=${encodeURIComponent(u)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Draft board")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "finder", query: `team=${encodeURIComponent(u)}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}` }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Game finder")} →
             </HubLink>
           </span>
         )}

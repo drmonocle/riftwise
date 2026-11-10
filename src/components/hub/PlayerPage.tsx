@@ -752,6 +752,18 @@ const PlayerView: React.FC<{
                 {tl("Records")} →
               </HubLink>
               <HubLink
+                to={{ kind: "leaders", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "items", query: `player=${encodeURIComponent(p.u)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}` }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -866,6 +878,18 @@ const PlayerView: React.FC<{
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Titles")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tournaments" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Tournaments")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
               </HubLink>
               <SectionCard
                 section={tl("Titles")}
@@ -1101,6 +1125,12 @@ const PlayerChampionsTab: React.FC<{
                   {tl("Item history")} →
                 </HubLink>
                 <HubLink
+                  to={{ kind: "tiers", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
+                <HubLink
                   to={{
                     kind: "finder",
                     query: `player=${encodeURIComponent(p.u)}${shownChamps.length === 1 ? `&champ=${encodeURIComponent(shownChamps[0].c)}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
@@ -1317,6 +1347,12 @@ const CareerTimeline: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
               {tl("Compare")} →
             </HubLink>
           )}
+          <HubLink
+            to={{ kind: "draft", query: `teams=${encodeURIComponent(p.teams[0].u || prettySlug(p.teams[0].n))}` }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Draft board")} →
+          </HubLink>
           <HubLink
             to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}` }}
             className="text-[11px] text-rw-accent hover:underline"
