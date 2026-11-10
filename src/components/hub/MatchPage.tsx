@@ -654,7 +654,17 @@ const SeriesGames: React.FC<{
                 {tl("Power rankings")} →
               </HubLink>
               <HubLink
-                to={{ kind: "leaders", ...(s.e ? { query: `event=${encodeURIComponent(s.e)}` } : seriesYear ? { query: `year=${encodeURIComponent(seriesYear)}` } : {}) }}
+                to={{
+                  kind: "leaders",
+                  ...(s.e || seriesYear
+                    ? {
+                        query: new URLSearchParams({
+                          ...(s.e ? { event: s.e } : {}),
+                          ...(seriesYear ? { year: seriesYear } : {}),
+                        }).toString(),
+                      }
+                    : {}),
+                }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Player leaderboards")} →
@@ -751,7 +761,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
             )}
             {g.patch && (
               <HubLink
-                to={{ kind: "champions", query: `key=p${g.patch}` }}
+                to={{ kind: "champions", query: `patch=${encodeURIComponent(g.patch)}` }}
                 className="hover:text-rw-accent hover:underline"
               >
                 {tl("Patch {patch}", { patch: g.patch })}

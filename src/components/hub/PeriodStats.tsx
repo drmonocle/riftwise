@@ -974,11 +974,15 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
               <HubLink
                 to={{
                   kind: "tiers",
-                  ...(agg.roles[0] || /^y\d{4}$/.test(period)
+                  ...(agg.roles[0] || /^y\d{4}$/.test(period) || period.startsWith("p:")
                     ? {
                         query: new URLSearchParams({
                           ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
-                          ...(/^y\d{4}$/.test(period) ? { key: period } : {}),
+                          ...(/^y\d{4}$/.test(period)
+                            ? { key: period }
+                            : period.startsWith("p:")
+                              ? { key: `p${period.slice(2)}` }
+                              : {}),
                         }).toString(),
                       }
                     : {}),
@@ -1037,14 +1041,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 label={tl("Rating")}
                 value={fmtRating(rated.avg)}
                 sub={tl("best {r} · 6 is an average game", { r: fmtRating(rated.best) })}
-                to={{
-                  kind: "leaders",
-                  ...(/^y\d{4}$/.test(period)
-                    ? { query: `year=${encodeURIComponent(period.slice(1))}` }
-                    : period.startsWith("e:")
-                      ? { query: `event=${encodeURIComponent(period.slice(2))}` }
-                      : {}),
-                }}
+                to={leaderTo("rating")}
               />
             )}
             <Stat
@@ -1151,11 +1148,15 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 <HubLink
                   to={{
                     kind: "tiers",
-                    ...(agg.roles[0] || /^y\d{4}$/.test(period)
+                    ...(agg.roles[0] || /^y\d{4}$/.test(period) || period.startsWith("p:")
                       ? {
                           query: new URLSearchParams({
                             ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
-                            ...(/^y\d{4}$/.test(period) ? { key: period } : {}),
+                            ...(/^y\d{4}$/.test(period)
+                              ? { key: period }
+                              : period.startsWith("p:")
+                                ? { key: `p${period.slice(2)}` }
+                                : {}),
                           }).toString(),
                         }
                       : {}),
@@ -1165,7 +1166,15 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                   {tl("Pro tier list")} →
                 </HubLink>
                 <HubLink
-                  to={leaderTo("kda")}
+                  to={{
+                    kind: "leaders",
+                    query: new URLSearchParams({
+                      stat: "kda",
+                      ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
+                      ...(agg.champs[0] ? { champ: agg.champs[0].c } : {}),
+                      ...(/^y\d{4}$/.test(period) ? { year: period.slice(1) } : period.startsWith("e:") ? { event: period.slice(2) } : {}),
+                    }).toString(),
+                  }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Player leaderboards")} →
@@ -1385,7 +1394,14 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                 {tl("Game finder")} →
               </HubLink>
               <HubLink
-                to={{ kind: "champions", ...(/^y\d{4}$/.test(period) ? { query: `key=${encodeURIComponent(period)}` } : {}) }}
+                to={{
+                  kind: "champions",
+                  ...(/^y\d{4}$/.test(period)
+                    ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                    : period.startsWith("p:")
+                      ? { query: `patch=${encodeURIComponent(period.slice(2))}` }
+                      : {}),
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Champions")} →
@@ -1413,7 +1429,14 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                 </>
               )}
               <HubLink
-                to={{ kind: "tiers", ...(/^y\d{4}$/.test(period) ? { query: `key=${encodeURIComponent(period)}` } : {}) }}
+                to={{
+                  kind: "tiers",
+                  ...(/^y\d{4}$/.test(period)
+                    ? { query: `key=${encodeURIComponent(period)}` }
+                    : period.startsWith("p:")
+                      ? { query: `key=${encodeURIComponent(`p${period.slice(2)}`)}` }
+                      : {}),
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Pro tier list")} →
@@ -1424,11 +1447,18 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
               <HubLink
                 to={{
                   kind: "leaders",
-                  ...(/^y\d{4}$/.test(period)
-                    ? { query: `year=${encodeURIComponent(period.slice(1))}` }
-                    : period.startsWith("e:")
-                      ? { query: `event=${encodeURIComponent(period.slice(2))}` }
-                      : {}),
+                  ...(t.picks[0] || /^y\d{4}$/.test(period) || period.startsWith("e:")
+                    ? {
+                        query: new URLSearchParams({
+                          ...(t.picks[0] ? { champ: t.picks[0][0] } : {}),
+                          ...(/^y\d{4}$/.test(period)
+                            ? { year: period.slice(1) }
+                            : period.startsWith("e:")
+                              ? { event: period.slice(2) }
+                              : {}),
+                        }).toString(),
+                      }
+                    : {}),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
