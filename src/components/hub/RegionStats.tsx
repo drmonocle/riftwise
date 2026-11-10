@@ -377,7 +377,11 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
             <HubLink to={{ kind: "leagues" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
               {tl("Leagues")} →
             </HubLink>
-            <HubLink to={{ kind: "tournaments" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            <HubLink
+              to={{ kind: "tournaments", ...(singleYear ? { query: `year=${encodeURIComponent(singleYear)}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
               {tl("Tournaments")} →
             </HubLink>
             <HubLink to={{ kind: "titles" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
@@ -465,7 +469,18 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                     </td>
                     <td className={cell} data-sort={r.teams}>{r.teams}</td>
                     <td className={cell} data-sort={r.sw * 1000 - r.sl}>
-                      <HubLink to={{ kind: "finder" }} className="inline-flex items-center justify-end gap-1.5 hover:text-rw-accent hover:underline" title={tl("Game finder")}>
+                      <HubLink
+                        to={{
+                          kind: "finder",
+                          query:
+                            new URLSearchParams({
+                              ...(topTeamByRegion.get(r.code) ? { team: topTeamByRegion.get(r.code)! } : {}),
+                              ...(singleYear ? { year: singleYear } : {}),
+                            }).toString() || undefined,
+                        }}
+                        className="inline-flex items-center justify-end gap-1.5 hover:text-rw-accent hover:underline"
+                        title={tl("Game finder")}
+                      >
                         {sPct != null && (
                           <span className="hidden sm:inline-block w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
                             <span
@@ -478,7 +493,18 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                       </HubLink>
                     </td>
                     <td className={cell} data-sort={gPct ?? -1}>
-                      <HubLink to={{ kind: "finder" }} className="inline-flex items-center justify-end gap-1.5 hover:text-rw-accent hover:underline" title={tl("Game finder")}>
+                      <HubLink
+                        to={{
+                          kind: "finder",
+                          query:
+                            new URLSearchParams({
+                              ...(topTeamByRegion.get(r.code) ? { team: topTeamByRegion.get(r.code)! } : {}),
+                              ...(singleYear ? { year: singleYear } : {}),
+                            }).toString() || undefined,
+                        }}
+                        className="inline-flex items-center justify-end gap-1.5 hover:text-rw-accent hover:underline"
+                        title={tl("Game finder")}
+                      >
                         {gPct != null && (
                           <span className="hidden sm:inline-block w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
                             <span
@@ -495,7 +521,18 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                     </td>
                     <td className={cell} data-sort={oPct ?? -1}>
                       {r.ow + r.ol ? (
-                        <HubLink to={{ kind: "finder" }} className="inline-flex items-center justify-end gap-1.5 hover:text-rw-accent hover:underline" title={tl("Game finder")}>
+                        <HubLink
+                          to={{
+                            kind: "finder",
+                            query:
+                              new URLSearchParams({
+                                ...(topTeamByRegion.get(r.code) ? { team: topTeamByRegion.get(r.code)! } : {}),
+                                ...(singleYear ? { year: singleYear } : {}),
+                              }).toString() || undefined,
+                          }}
+                          className="inline-flex items-center justify-end gap-1.5 hover:text-rw-accent hover:underline"
+                          title={tl("Game finder")}
+                        >
                           {oPct != null && (
                             <span className="hidden sm:inline-block w-8 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
                               <span
@@ -599,7 +636,11 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
               <HubLink to={{ kind: "leagues" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
                 {tl("Leagues")} →
               </HubLink>
-              <HubLink to={{ kind: "tournaments" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              <HubLink
+                to={{ kind: "tournaments", ...(singleYear ? { query: `year=${encodeURIComponent(singleYear)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
                 {tl("Tournaments")} →
               </HubLink>
               <HubLink to={{ kind: "titles" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
@@ -684,7 +725,19 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                         {regionLabel(p.b)}
                       </HubLink>
                     </span>
-                    <HubLink to={{ kind: "finder" }} className="tabular-nums shrink-0 hover:underline" title={tl("Game finder")}>
+                    <HubLink
+                      to={{
+                        kind: "finder",
+                        query:
+                          new URLSearchParams({
+                            ...(topTeamByRegion.get(p.a) ? { team: topTeamByRegion.get(p.a)! } : {}),
+                            ...(topTeamByRegion.get(p.b) ? { vs: topTeamByRegion.get(p.b)! } : {}),
+                            ...(singleYear ? { year: singleYear } : {}),
+                          }).toString() || undefined,
+                      }}
+                      className="tabular-nums shrink-0 hover:underline"
+                      title={tl("Game finder")}
+                    >
                       <span className="text-rw-teal font-bold">{p.wa}</span>
                       <span className="text-rw-muted"> – </span>
                       <span className="text-rw-sub">{p.wb}</span>

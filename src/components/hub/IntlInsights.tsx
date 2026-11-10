@@ -50,6 +50,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
     () => files.map((f, i) => (f ? { f, year: years[i], stage: stages[i] } : null)).filter((x): x is FileRef => !!x),
     [files, years, stages],
   );
+  const singleYear = useMemo(() => (!all ? String(editionYear(years[0] || "") || "") : ""), [all, years]);
   const up = useMemo(() => upsets(refs), [refs]);
   const cb = useMemo(() => comebacks(refs), [refs]);
   const sw = useMemo(() => swissRuns(refs), [refs]);
@@ -89,6 +90,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     kind: "prep",
                     a: prettySlug(up.games[0].winner),
                     b: prettySlug(up.games[0].loser),
+                    ...(singleYear ? { period: `y${singleYear}` } : {}),
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -98,7 +100,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(prettySlug(up.games[0].winner))},${encodeURIComponent(prettySlug(up.games[0].loser))}`,
+                    query: `teams=${encodeURIComponent(prettySlug(up.games[0].winner))},${encodeURIComponent(prettySlug(up.games[0].loser))}${singleYear ? `&p=y${singleYear}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -111,6 +113,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     mode: "team",
                     a: prettySlug(up.games[0].winner),
                     b: prettySlug(up.games[0].loser),
+                    ...(singleYear ? { period: `y${singleYear}` } : {}),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -122,19 +125,35 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             <HubLink to={{ kind: "rankings" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
               {tl("Power rankings")} →
             </HubLink>
-            <HubLink to={{ kind: "best" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            <HubLink
+              to={{ kind: "best", ...(singleYear ? { query: `year=${singleYear}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
               {tl("Best games")} →
             </HubLink>
-            <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            <HubLink
+              to={{ kind: "finder", ...(singleYear ? { query: `year=${singleYear}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
               {tl("Game finder")} →
             </HubLink>
             <HubLink to={{ kind: "records" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
               {tl("Records")} →
             </HubLink>
-            <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            <HubLink
+              to={{ kind: "leaders", ...(singleYear ? { query: `year=${singleYear}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
               {tl("Player leaderboards")} →
             </HubLink>
-            <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            <HubLink
+              to={{ kind: "tiers", ...(singleYear ? { query: `key=y${singleYear}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
               {tl("Pro tier list")} →
             </HubLink>
             <CopyInsightPost
@@ -231,6 +250,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     kind: "prep",
                     a: prettySlug(cb[0].winner),
                     b: prettySlug(cb[0].loser),
+                    ...(singleYear ? { period: `y${singleYear}` } : {}),
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -240,7 +260,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(prettySlug(cb[0].winner))},${encodeURIComponent(prettySlug(cb[0].loser))}`,
+                    query: `teams=${encodeURIComponent(prettySlug(cb[0].winner))},${encodeURIComponent(prettySlug(cb[0].loser))}${singleYear ? `&p=y${singleYear}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -253,6 +273,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     mode: "team",
                     a: prettySlug(cb[0].winner),
                     b: prettySlug(cb[0].loser),
+                    ...(singleYear ? { period: `y${singleYear}` } : {}),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -264,19 +285,35 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             <HubLink to={{ kind: "records" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
               {tl("Records")} →
             </HubLink>
-            <HubLink to={{ kind: "best" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            <HubLink
+              to={{ kind: "best", ...(singleYear ? { query: `year=${singleYear}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
               {tl("Best games")} →
             </HubLink>
-            <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            <HubLink
+              to={{ kind: "finder", ...(singleYear ? { query: `year=${singleYear}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
               {tl("Game finder")} →
             </HubLink>
             <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
               {tl("Power rankings")} →
             </HubLink>
-            <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            <HubLink
+              to={{ kind: "leaders", ...(singleYear ? { query: `year=${singleYear}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
               {tl("Player leaderboards")} →
             </HubLink>
-            <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            <HubLink
+              to={{ kind: "tiers", ...(singleYear ? { query: `key=y${singleYear}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
               {tl("Pro tier list")} →
             </HubLink>
             <CopyInsightPost
@@ -559,21 +596,24 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               return u0 ? (
                 <>
                   <HubLink
-                    to={{ kind: "prep", a: u0, ...(u1 ? { b: u1 } : {}) }}
+                    to={{ kind: "prep", a: u0, ...(u1 ? { b: u1 } : {}), ...(singleYear ? { period: `y${singleYear}` } : {}) }}
                     className="text-[11px] font-semibold text-rw-accent hover:underline"
                     data-nocapture="1"
                   >
                     {tl("Match prep")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "draft", query: `teams=${encodeURIComponent(u0)}${u1 ? `,${encodeURIComponent(u1)}` : ""}` }}
+                    to={{
+                      kind: "draft",
+                      query: `teams=${encodeURIComponent(u0)}${u1 ? `,${encodeURIComponent(u1)}` : ""}${singleYear ? `&p=y${singleYear}` : ""}`,
+                    }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     data-nocapture="1"
                   >
                     {tl("Draft board")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "compare", mode: "team", a: u0, ...(u1 ? { b: u1 } : {}) }}
+                    to={{ kind: "compare", mode: "team", a: u0, ...(u1 ? { b: u1 } : {}), ...(singleYear ? { period: `y${singleYear}` } : {}) }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     data-nocapture="1"
                   >
@@ -585,19 +625,39 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             <HubLink to={{ kind: "rankings" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
               {tl("Power rankings")} →
             </HubLink>
-            <HubLink to={{ kind: "tournaments" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            <HubLink
+              to={{ kind: "tournaments", ...(singleYear ? { query: `year=${singleYear}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
               {tl("Tournaments")} →
             </HubLink>
-            <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            <HubLink
+              to={{ kind: "finder", ...(singleYear ? { query: `year=${singleYear}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
               {tl("Game finder")} →
             </HubLink>
-            <HubLink to={{ kind: "best" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            <HubLink
+              to={{ kind: "best", ...(singleYear ? { query: `year=${singleYear}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
               {tl("Best games")} →
             </HubLink>
-            <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            <HubLink
+              to={{ kind: "leaders", ...(singleYear ? { query: `year=${singleYear}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
               {tl("Player leaderboards")} →
             </HubLink>
-            <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            <HubLink
+              to={{ kind: "tiers", ...(singleYear ? { query: `key=y${singleYear}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
               {tl("Pro tier list")} →
             </HubLink>
             <SectionCard

@@ -268,7 +268,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
               <HubLink
                 to={{
                   kind: "items",
-                  query: `player=${encodeURIComponent(rows[0].u)}${rows.length === 1 && rows[0].c?.[0] ? `&champ=${encodeURIComponent(prettySlug(rows[0].c[0]))}` : ""}`,
+                  query: `player=${encodeURIComponent(rows[0].u)}${rows[0].c?.[0] ? `&champ=${encodeURIComponent(prettySlug(rows[0].c[0]))}` : ""}${/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? `&year=${(e.start || e.end || "").slice(0, 4)}` : ""}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 data-nocapture="1"
@@ -346,7 +346,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
           <HubLink
             to={{
               kind: "finder",
-              query: `event=${encodeURIComponent(e.u)}${role !== "All" ? `&role=${encodeURIComponent(role)}` : ""}${rows.length === 1 ? `&player=${encodeURIComponent(rows[0].u || rows[0].n)}` : ""}`,
+              query: `event=${encodeURIComponent(e.u)}${role !== "All" ? `&role=${encodeURIComponent(role)}` : ""}${(search.trim() && rows.length >= 1) || rows.length === 1 ? `&player=${encodeURIComponent(rows[0].u || rows[0].n)}` : ""}`,
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"

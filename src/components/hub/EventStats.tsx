@@ -94,6 +94,7 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
     }
     return out;
   }, [allRows]);
+  const evYr = eventSlug && /\d{4}/.test(eventSlug) ? /\d{4}/.exec(eventSlug)![0] : undefined;
   return (
     <div className="space-y-4">
       {facts.length > 6 && (
@@ -146,7 +147,7 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `champ=${encodeURIComponent(prettySlug(topChamps[0]))}`,
+                    query: `champ=${encodeURIComponent(prettySlug(topChamps[0]))}${evYr ? `&year=${evYr}` : ""}`,
                   }}
                   className="text-rw-accent hover:underline"
                 >
@@ -169,7 +170,7 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
             >
               {tl("Champions")} →
             </HubLink>
-            <HubLink to={{ kind: "tiers" }} className="text-rw-accent hover:underline">
+            <HubLink to={{ kind: "tiers", ...(evYr ? { query: `key=y${evYr}` } : {}) }} className="text-rw-accent hover:underline">
               {tl("Pro tier list")} →
             </HubLink>
             <HubLink
@@ -193,7 +194,7 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
             >
               {tl("Game finder")} →
             </HubLink>
-            <HubLink to={{ kind: "best" }} className="text-rw-accent hover:underline">
+            <HubLink to={{ kind: "best", ...(evYr ? { query: `year=${evYr}` } : {}) }} className="text-rw-accent hover:underline">
               {tl("Best games")} →
             </HubLink>
           </span>
@@ -232,6 +233,7 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
 
 export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventSlug?: string }> = ({ f, link, shareId, eventSlug }) => {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+  const evYr = eventSlug && /\d{4}/.test(eventSlug) ? /\d{4}/.exec(eventSlug)![0] : undefined;
   const copy = () => {
     navigator.clipboard
       ?.writeText(factText(f, link))
@@ -296,7 +298,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `player=${encodeURIComponent(f.rows[0].player)}${f.rows[0].champ ? `&champ=${encodeURIComponent(prettySlug(f.rows[0].champ))}` : ""}`,
+                    query: `player=${encodeURIComponent(f.rows[0].player)}${f.rows[0].champ ? `&champ=${encodeURIComponent(prettySlug(f.rows[0].champ))}` : ""}${evYr ? `&year=${evYr}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
@@ -340,7 +342,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   {tl("Game finder")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "tiers" }}
+                  to={{ kind: "tiers", ...(evYr ? { query: `key=y${evYr}` } : {}) }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
                 >
@@ -413,7 +415,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   {tl("Game finder")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "tiers" }}
+                  to={{ kind: "tiers", ...(evYr ? { query: `key=y${evYr}` } : {}) }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
                 >
@@ -442,7 +444,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `champ=${encodeURIComponent(prettySlug(f.rows[0].champ))}`,
+                    query: `champ=${encodeURIComponent(prettySlug(f.rows[0].champ))}${evYr ? `&year=${evYr}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
@@ -450,7 +452,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   {tl("Item history")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "tiers" }}
+                  to={{ kind: "tiers", ...(evYr ? { query: `key=y${evYr}` } : {}) }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
                 >
@@ -533,7 +535,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   {tl("Player leaderboards")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "tiers" }}
+                  to={{ kind: "tiers", ...(evYr ? { query: `key=y${evYr}` } : {}) }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
                 >
@@ -631,11 +633,27 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                     {r.value}
                   </HubLink>
                 ) : r.player ? (
-                  <HubLink to={{ kind: "player", slug: r.player }} className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums">
+                  <HubLink
+                    to={{
+                      kind: "player",
+                      slug: r.player,
+                      tab: "stats",
+                      ...(eventSlug ? { query: `p=e:${encodeURIComponent(eventSlug)}` } : {}),
+                    }}
+                    className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums"
+                  >
                     {r.value}
                   </HubLink>
                 ) : r.team ? (
-                  <HubLink to={{ kind: "team", slug: r.team }} className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums">
+                  <HubLink
+                    to={{
+                      kind: "team",
+                      slug: r.team,
+                      tab: "stats",
+                      ...(eventSlug ? { query: `p=e:${encodeURIComponent(eventSlug)}` } : {}),
+                    }}
+                    className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums"
+                  >
                     {r.value}
                   </HubLink>
                 ) : r.champ ? (

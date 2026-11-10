@@ -478,6 +478,8 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
         <EventFacts
           o={e.overview}
           slug={e.u}
+          leagueSlug={e.lu}
+          year={(e.start || e.end || "").slice(0, 4)}
           hidden={resultsHidden}
           card={{
             name: `${e.u}-overview`,
@@ -504,7 +506,13 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
           title={tl("Stages")}
           right={
             <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
-              <HubLink to={{ kind: "tournaments" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{
+                  kind: "tournaments",
+                  ...(e.start || e.end ? { query: `year=${encodeURIComponent((e.start || e.end || "").slice(0, 4))}` } : {}),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {tl("Tournaments")} →
               </HubLink>
               <HubLink
@@ -773,7 +781,9 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
           })()}
         </div>
       )}
-      {on("teams") && e.rosters && e.rosters.length > 0 && <EventRosters rosters={e.rosters} eventSlug={e.u} />}
+      {on("teams") && e.rosters && e.rosters.length > 0 && (
+        <EventRosters rosters={e.rosters} eventSlug={e.u} leagueSlug={e.lu} year={(e.start || e.end || "").slice(0, 4)} />
+      )}
       </div>
     </div>
   );
@@ -922,7 +932,15 @@ export const EventBracketBlock: React.FC<{ e: HubEvent }> = ({ e }) => {
       {tables.length > 0 && (
         <div className={`grid gap-3 ${tables.length > 1 ? "md:grid-cols-2" : ""}`}>
           {tables.map((t, i) => (
-            <Standings key={i} name={t.name === "Standings" ? tl("Standings") : tl("Group {name}", { name: t.name.replace(/^Group /, "") })} rows={t.rows} end={e.end} eventSlug={e.u} />
+            <Standings
+              key={i}
+              name={t.name === "Standings" ? tl("Standings") : tl("Group {name}", { name: t.name.replace(/^Group /, "") })}
+              rows={t.rows}
+              end={e.end}
+              eventSlug={e.u}
+              leagueSlug={e.lu}
+              year={(e.start || e.end || "").slice(0, 4)}
+            />
           ))}
         </div>
       )}
@@ -971,7 +989,15 @@ const ChildStages: React.FC<{ kids: { n: string; u: string }[] }> = ({ kids }) =
       {x.standings && x.standings.length > 0 && (
         <div className={`grid gap-3 ${x.standings.length > 1 ? "md:grid-cols-2" : ""}`}>
           {x.standings.map((t, k) => (
-            <Standings key={k} name={t.name === "Standings" ? tl("Standings") : tl("Group {name}", { name: t.name.replace(/^Group /, "") })} rows={t.rows} end={x.end} eventSlug={x.u} />
+            <Standings
+              key={k}
+              name={t.name === "Standings" ? tl("Standings") : tl("Group {name}", { name: t.name.replace(/^Group /, "") })}
+              rows={t.rows}
+              end={x.end}
+              eventSlug={x.u}
+              leagueSlug={x.lu}
+              year={(x.start || x.end || "").slice(0, 4)}
+            />
           ))}
         </div>
       )}
@@ -1275,10 +1301,19 @@ const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: s
   );
 };
 
-export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: string; hideAll?: boolean; eventSlug?: string }> = ({ name, rows, end, hideAll, eventSlug }) => {
+export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: string; hideAll?: boolean; eventSlug?: string; leagueSlug?: string | null; year?: string }> = ({
+  name,
+  rows,
+  end,
+  hideAll,
+  eventSlug,
+  leagueSlug,
+  year,
+}) => {
   const [hidden, reveal] = useHidden(`standings:${name}:${rows.map((r) => r.t).join()}`, end);
   const hide = hideAll || hidden;
   const ties = rows.some((r) => r.st);
+  const yr = year && /^\d{4}$/.test(year) ? year : end && /^\d{4}/.test(end) ? end.slice(0, 4) : undefined;
   return (
     <Section
       title={name}
@@ -1324,21 +1359,30 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
               </>
             )}
             <HubLink
-              to={{ kind: "rankings" }}
+              to={{ kind: "rankings", ...(leagueSlug ? { query: `league=${encodeURIComponent(leagueSlug)}` } : {}) }}
               className="text-[11px] text-rw-accent hover:underline"
             >
               {tl("Power rankings")} →
             </HubLink>
             {eventSlug && (
               <HubLink
-                to={{ kind: "finder", query: `event=${encodeURIComponent(eventSlug)}` }}
+                to={{
+                  kind: "finder",
+                  query: `event=${encodeURIComponent(eventSlug)}${rows[0] ? `&team=${encodeURIComponent(rows[0].u || prettySlug(rows[0].t))}` : ""}${rows[1] ? `&vs=${encodeURIComponent(rows[1].u || prettySlug(rows[1].t))}` : ""}`,
+                }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Game finder")} →
               </HubLink>
             )}
             <HubLink
-              to={{ kind: "tiers" }}
+              to={{
+                kind: "tiers",
+                query: new URLSearchParams({
+                  ...(leagueSlug ? { league: leagueSlug } : {}),
+                  ...(yr ? { year: yr } : {}),
+                }).toString() || undefined,
+              }}
               className="text-[11px] text-rw-accent hover:underline"
             >
               {tl("Pro tier list")} →
@@ -1506,7 +1550,7 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
               <HubLink
                 to={{
                   kind: "items",
-                  query: `player=${encodeURIComponent(rows[0].u || prettySlug(rows[0].n))}`,
+                  query: `player=${encodeURIComponent(rows[0].u || prettySlug(rows[0].n))}${/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? `&year=${(e.start || e.end || "").slice(0, 4)}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -1751,7 +1795,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean }> = ({ e, full }) => 
               <HubLink
                 to={{
                   kind: "items",
-                  query: `champ=${encodeURIComponent(prettySlug(rows[0].c))}`,
+                  query: `champ=${encodeURIComponent(prettySlug(rows[0].c))}${/^\d{4}$/.test(year) ? `&year=${year}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -1783,7 +1827,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean }> = ({ e, full }) => 
           <HubLink
             to={{
               kind: "finder",
-              query: `event=${encodeURIComponent(e.u)}${rows.length === 1 ? `&champ=${encodeURIComponent(rows[0].c)}` : ""}`,
+              query: `event=${encodeURIComponent(e.u)}${(search.trim() && rows.length >= 1) || rows.length === 1 ? `&champ=${encodeURIComponent(rows[0].c)}` : ""}`,
             }}
             className="text-[11px] text-rw-accent hover:underline"
           >
@@ -1792,7 +1836,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean }> = ({ e, full }) => 
           <HubLink
             to={{
               kind: "leaders",
-              query: `event=${encodeURIComponent(e.u)}${rows.length === 1 ? `&champ=${encodeURIComponent(rows[0].c)}` : ""}`,
+              query: `event=${encodeURIComponent(e.u)}${(search.trim() && rows.length >= 1) || rows.length === 1 ? `&champ=${encodeURIComponent(rows[0].c)}` : ""}`,
             }}
             className="text-[11px] text-rw-accent hover:underline"
           >

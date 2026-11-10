@@ -100,9 +100,11 @@ const GameLine: React.FC<{
   ) : null;
 
 /** gol.gg-style "tournament data": averages, side wins, dragons, notable games, pentakills, Player of the Game. */
-export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: boolean; card?: { data: () => CardData; name: string } }> = ({
+export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?: string | null; year?: string; hidden?: boolean; card?: { data: () => CardData; name: string } }> = ({
   o,
   slug,
+  leagueSlug,
+  year,
   hidden,
   card,
 }) => {
@@ -112,6 +114,12 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
   const drakes = Object.entries(o.drakes).sort((a, b) => b[1] - a[1]);
   const totalDrakes = drakes.reduce((s, [, n]) => s + n, 0) || 1;
   const featGame = o.best || o.bloody || o.long || o.short;
+  const yr = year && /^\d{4}$/.test(year) ? year : slug && /\d{4}/.test(slug) ? /\d{4}/.exec(slug)![0] : undefined;
+  const tiersQuery =
+    new URLSearchParams({
+      ...(leagueSlug ? { league: leagueSlug } : {}),
+      ...(yr ? { year: yr } : {}),
+    }).toString() || undefined;
   return (
     <Section
       title={tl("Tournament stats")}
@@ -182,21 +190,24 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                   {tl("Draft board")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "tiers" }}
+                  to={{ kind: "tiers", query: tiersQuery }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
                 >
                   {tl("Pro tier list")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "rankings" }}
+                  to={{ kind: "rankings", ...(leagueSlug ? { query: `league=${encodeURIComponent(leagueSlug)}` } : {}) }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
                 >
                   {tl("Power rankings")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}` }}
+                  to={{
+                    kind: "finder",
+                    query: `event=${encodeURIComponent(slug)}${featGame?.a ? `&team=${encodeURIComponent(prettySlug(featGame.a))}${featGame.b ? `&vs=${encodeURIComponent(prettySlug(featGame.b))}` : ""}` : ""}`,
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
                 >
@@ -481,7 +492,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                   <HubLink
                     to={{
                       kind: "items",
-                      query: `player=${encodeURIComponent(o.pentas[0].u || prettySlug(o.pentas[0].n))}${o.pentas[0].c ? `&champ=${encodeURIComponent(prettySlug(o.pentas[0].c))}` : ""}`,
+                      query: `player=${encodeURIComponent(o.pentas[0].u || prettySlug(o.pentas[0].n))}${o.pentas[0].c ? `&champ=${encodeURIComponent(prettySlug(o.pentas[0].c))}` : ""}${yr ? `&year=${yr}` : ""}`,
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -508,10 +519,10 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
               <HubLink to={{ kind: "records" }} className="text-[11px] text-rw-accent hover:underline">
                 {tl("Records")} →
               </HubLink>
-              <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink to={{ kind: "tiers", query: tiersQuery }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Pro tier list")} →
               </HubLink>
-              <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink to={{ kind: "rankings", ...(leagueSlug ? { query: `league=${encodeURIComponent(leagueSlug)}` } : {}) }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Power rankings")} →
               </HubLink>
             </span>
@@ -570,7 +581,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                     {tl("Compare")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "items", query: `player=${encodeURIComponent(o.mvp[0].u || prettySlug(o.mvp[0].n))}` }}
+                    to={{ kind: "items", query: `player=${encodeURIComponent(o.mvp[0].u || prettySlug(o.mvp[0].n))}${yr ? `&year=${yr}` : ""}` }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Item history")} →
@@ -591,10 +602,10 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                   {tl("Game finder")} →
                 </HubLink>
               )}
-              <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink to={{ kind: "tiers", query: tiersQuery }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Pro tier list")} →
               </HubLink>
-              <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink to={{ kind: "rankings", ...(leagueSlug ? { query: `league=${encodeURIComponent(leagueSlug)}` } : {}) }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Power rankings")} →
               </HubLink>
             </span>
@@ -637,13 +648,16 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
 };
 
 /** Every team's roster for the tournament, including substitutes and coaches (Leaguepedia's rosters). */
-export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string }> = ({
+export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string; leagueSlug?: string | null; year?: string }> = ({
   rosters,
   eventSlug,
+  leagueSlug,
+  year,
 }) => {
   const [open, setOpen] = useState(rosters.length <= 4);
   const [search, setSearch] = useState("");
   const q = search.trim().toLowerCase();
+  const yr = year && /^\d{4}$/.test(year) ? year : eventSlug && /\d{4}/.test(eventSlug) ? /\d{4}/.exec(eventSlug)![0] : undefined;
   const filteredRosters = useMemo(() => {
     if (!q) return rosters;
     const terms = q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean);
@@ -719,13 +733,20 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                 {tl("Player leaderboards")} →
               </HubLink>
               <HubLink
-                to={{ kind: "rankings" }}
+                to={{ kind: "rankings", ...(leagueSlug ? { query: `league=${encodeURIComponent(leagueSlug)}` } : {}) }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Power rankings")} →
               </HubLink>
               <HubLink
-                to={{ kind: "tiers" }}
+                to={{
+                  kind: "tiers",
+                  query:
+                    new URLSearchParams({
+                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(yr ? { year: yr } : {}),
+                    }).toString() || undefined,
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Pro tier list")} →
@@ -907,7 +928,10 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
             {tl("Player leaderboards")} →
           </HubLink>
           <HubLink
-            to={{ kind: "best" }}
+            to={{
+              kind: "best",
+              ...((e.start || e.end) && /^\d{4}/.test(e.start || e.end || "") ? { query: `year=${(e.start || e.end || "").slice(0, 4)}` } : {}),
+            }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
           >
@@ -921,7 +945,14 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
             {tl("Game finder")} →
           </HubLink>
           <HubLink
-            to={{ kind: "tiers", ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}) }}
+            to={{
+              kind: "tiers",
+              query:
+                new URLSearchParams({
+                  ...(e.lu ? { league: e.lu } : {}),
+                  ...((e.start || e.end) && /^\d{4}/.test(e.start || e.end || "") ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                }).toString() || undefined,
+            }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
           >
