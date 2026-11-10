@@ -60,6 +60,12 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
           <HubLink to={{ kind: "tiers", query: `league=${league}&year=${year}` }} className="text-rw-accent hover:underline">
             {tl("Tier list")}
           </HubLink>
+          <HubLink to={{ kind: "rankings", query: `league=${encodeURIComponent(league)}` }} className="text-rw-accent hover:underline">
+            {tl("Power rankings")}
+          </HubLink>
+          <HubLink to={{ kind: "best", query: `league=${encodeURIComponent(league)}&year=${encodeURIComponent(year)}` }} className="text-rw-accent hover:underline">
+            {tl("Best games")}
+          </HubLink>
           <HubLink to={{ kind: "finder", query: `league=${league}&year=${year}` }} className="text-rw-accent hover:underline">
             {tl("Game finder")}
           </HubLink>
@@ -203,6 +209,24 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                       className="text-[11px] font-semibold text-rw-accent hover:underline"
                     >
                       {tl("Item history")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "finder",
+                        query: `league=${encodeURIComponent(league)}&year=${encodeURIComponent(year)}&player=${encodeURIComponent(regular[0].u || prettySlug(regular[0].n))}`,
+                      }}
+                      className="text-[11px] font-semibold text-rw-accent hover:underline"
+                    >
+                      {tl("Game finder")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "tiers",
+                        query: `league=${encodeURIComponent(league)}&year=${encodeURIComponent(year)}`,
+                      }}
+                      className="text-[11px] font-semibold text-rw-accent hover:underline"
+                    >
+                      {tl("Pro tier list")} →
                     </HubLink>
                   </>
                 )}

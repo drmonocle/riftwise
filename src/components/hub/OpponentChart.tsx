@@ -464,6 +464,18 @@ const ColoredOpponentGraph: React.FC<{
               </span>
             )}
             <HubLink
+              to={{ kind: "prep", a: active.u || prettySlug(active.opp) }}
+              className="text-rw-muted hover:text-rw-accent hover:underline"
+            >
+              {tl("Match prep")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "compare", mode: "team", a: active.u || prettySlug(active.opp) }}
+              className="text-rw-muted hover:text-rw-accent hover:underline"
+            >
+              {tl("Compare")} →
+            </HubLink>
+            <HubLink
               to={{ kind: "finder", query: `team=${encodeURIComponent(active.u || prettySlug(active.opp))}` }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
             >
@@ -764,6 +776,18 @@ export const PlayerOpponents: React.FC<{
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "counters" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Counters")} →
               </HubLink>
               <HubLink
                 to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}${periodQuerySuffix(period || scope)}` }}
@@ -1230,6 +1254,12 @@ export const TeamOpponentsChart: React.FC<{
             {tl("Power rankings")} →
           </HubLink>
           <HubLink
+            to={{ kind: "tiers" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")} →
+          </HubLink>
+          <HubLink
             to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}` }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
@@ -1543,6 +1573,12 @@ export const TeamPeriodOpponents: React.FC<{
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Power rankings")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "tiers", ...(period && /^y\d{4}$/.test(period) ? { query: `key=${encodeURIComponent(period)}` } : {}) }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")} →
           </HubLink>
           <HubLink
             to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}${pSuffix}` }}

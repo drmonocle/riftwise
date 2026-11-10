@@ -395,6 +395,18 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; teamSlu
               >
                 {tl("Compare")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers", ...(period && /^y\d{4}$/.test(period) ? { query: `key=${encodeURIComponent(period)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
               {finderQuery && (
                 <HubLink
                   to={{ kind: "finder", query: finderQuery }}
@@ -1089,6 +1101,18 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 >
                   {tl("Pro tier list")} →
                 </HubLink>
+                <HubLink
+                  to={leaderTo("kda")}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "compare", mode: "player", a: slug, ...(period !== "all" ? { period } : {}) }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </HubLink>
                 <SectionCard
                   section={who ? `${who.name} · ${tl("Champions")}` : tl("Champions")}
                   sub={periodText}
@@ -1282,6 +1306,19 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
               </HubLink>
               <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Power rankings")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "leaders",
+                  ...(/^y\d{4}$/.test(period)
+                    ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                    : period.startsWith("e:")
+                      ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                      : {}),
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
               </HubLink>
               <CopyPeriodTextPost
               url={hubShareUrl({

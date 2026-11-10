@@ -433,6 +433,18 @@ export const DraftTendencies: React.FC<{
                   {tl("Power rankings")} →
                 </HubLink>
                 <HubLink
+                  to={{
+                    kind: "team",
+                    slug: resolvedSlug,
+                    tab: "champions",
+                    ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Champions")} →
+                </HubLink>
+                <HubLink
                   to={{ kind: "finder", query: `team=${encodeURIComponent(resolvedSlug)}${periodParam}` }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"

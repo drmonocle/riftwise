@@ -91,6 +91,20 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
           >
             {tl("Game finder")}
           </button>
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "leaders" })}
+            className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
+          >
+            {tl("Player leaderboards")}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "tiers" })}
+            className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
+          >
+            {tl("Pro tier list")}
+          </button>
           <button type="button" onClick={() => onSelectTab("schedule")} className="text-rw-accent hover:underline text-[11px] font-medium">
             {tl("All results →")}
           </button>

@@ -236,6 +236,12 @@ export const HubHome: React.FC<{
                     >
                       {tl("Game finder")}
                     </HubLink>
+                    <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                      {tl("Player leaderboards")}
+                    </HubLink>
+                    <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                      {tl("Pro tier list")}
+                    </HubLink>
                   </>
                 ) : null;
               })()}
@@ -273,6 +279,12 @@ export const HubHome: React.FC<{
               </HubLink>
               <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink to={{ kind: "best" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Best games")} →
+              </HubLink>
+              <HubLink to={{ kind: "records" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Records")} →
               </HubLink>
             </span>
           </div>
@@ -519,6 +531,13 @@ const FeaturedMatch: React.FC<{
           >
             {tl("Power rankings")}
           </button>
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "tiers" })}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-rw-border bg-rw-bg hover:border-rw-accent text-rw-text font-semibold transition-colors px-2.5 py-1 text-[11px]"
+          >
+            {tl("Pro tier list")}
+          </button>
           <MatchOverviewButton match={m} />
           <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} />
           <ShareMatchButton match={m} className="border border-rw-border bg-rw-bg p-1.5" />
@@ -657,6 +676,12 @@ const LatestTournaments: React.FC<{ latest: EventListItem[] }> = ({ latest }) =>
           </HubLink>
           <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Player leaderboards")} →
+          </HubLink>
+          <HubLink to={{ kind: "best" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Best games")} →
+          </HubLink>
+          <HubLink to={{ kind: "records" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Records")} →
           </HubLink>
           {latest[0]?.u && (
             <HubLink

@@ -48,7 +48,29 @@ export const UpNextTable: React.FC<{
         {tl("Form")}
       </span>
       <span className="hidden @min-[900px]:inline">{tl("Time")}</span>
-      <span className="flex justify-end">
+      <span className="flex items-center justify-end gap-2 normal-case tracking-normal font-medium text-[11px]">
+        <button
+          type="button"
+          onClick={() =>
+            matches[0]
+              ? navigateHub({
+                  kind: "prep",
+                  a: prettySlug(matches[0].team1Name || matches[0].team1Code),
+                  b: prettySlug(matches[0].team2Name || matches[0].team2Code),
+                })
+              : navigateHub({ kind: "prep" })
+          }
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {tl("Match prep")}
+        </button>
+        <button
+          type="button"
+          onClick={() => navigateHub({ kind: "rankings" })}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {tl("Power rankings")}
+        </button>
         {matches.length > 0 && (
           <SectionCard
             section={tl("Up Next")}

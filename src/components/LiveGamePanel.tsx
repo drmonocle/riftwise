@@ -365,6 +365,20 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
           >
             {tl("Game finder")}
           </button>
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "rankings" })}
+            className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Power rankings")}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "tiers" })}
+            className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")}
+          </button>
           <SectionCard
             section={finished ? tl("Game {n} · final", { n: game.number }) : tl("Game {n} · live", { n: game.number })}
             name={`${left.code} vs ${right.code}`}
