@@ -258,28 +258,28 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
         <div className="hidden sm:flex items-center gap-2 text-[11px]">
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "rankings" })}
+            onClick={() => navigateHub({ kind: "rankings", ...(league ? { query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` } : {}) })}
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Power rankings")} →
           </button>
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "tiers" })}
+            onClick={() => navigateHub({ kind: "tiers", ...(league ? { query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` } : {}) })}
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Pro tier list")} →
           </button>
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "leaders" })}
+            onClick={() => navigateHub({ kind: "leaders", ...(league ? { query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` } : {}) })}
             className="hidden md:inline text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Player leaderboards")} →
           </button>
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "finder" })}
+            onClick={() => navigateHub({ kind: "finder", ...(league ? { query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` } : {}) })}
             className="hidden md:inline text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Game finder")} →
@@ -425,32 +425,33 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       ? singleMatch.team1Name || singleMatch.team1Code
                       : singleMatch.team2Name || singleMatch.team2Code,
                   );
+                  const sYr = singleMatch.startTimeUtc?.slice(0, 4);
                   return (
                     <div className="flex items-center gap-2 text-[11px]">
                       <button
                         type="button"
-                        onClick={() => navigateHub({ kind: "prep", a: sSlug })}
+                        onClick={() => navigateHub({ kind: "prep", a: sSlug, ...(sYr ? { period: `y${sYr}` } : {}) })}
                         className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                       >
                         {tl("Match prep")} →
                       </button>
                       <button
                         type="button"
-                        onClick={() => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(sSlug)}` })}
+                        onClick={() => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(sSlug)}${sYr ? `&p=y${encodeURIComponent(sYr)}` : ""}` })}
                         className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                       >
                         {tl("Draft board")} →
                       </button>
                       <button
                         type="button"
-                        onClick={() => navigateHub({ kind: "compare", mode: "team", a: sSlug })}
+                        onClick={() => navigateHub({ kind: "compare", mode: "team", a: sSlug, ...(sYr ? { period: `y${sYr}` } : {}) })}
                         className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                       >
                         {tl("Compare")} →
                       </button>
                       <button
                         type="button"
-                        onClick={() => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(sSlug)}` })}
+                        onClick={() => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(sSlug)}${sYr ? `&year=${encodeURIComponent(sYr)}` : ""}` })}
                         className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                       >
                         {tl("Game finder")} →
@@ -460,32 +461,33 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 }
                 const a = prettySlug(topPair.team1Name || topPair.team1Code);
                 const b = prettySlug(topPair.team2Name || topPair.team2Code);
+                const pYr = topPair.startTimeUtc?.slice(0, 4);
                 return (
                   <div className="flex items-center gap-2 text-[11px]">
                     <button
                       type="button"
-                      onClick={() => navigateHub({ kind: "prep", a, b })}
+                      onClick={() => navigateHub({ kind: "prep", a, b, ...(pYr ? { period: `y${pYr}` } : {}) })}
                       className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                     >
                       {tl("Match prep")} →
                     </button>
                     <button
                       type="button"
-                      onClick={() => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}` })}
+                      onClick={() => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}${pYr ? `&p=y${encodeURIComponent(pYr)}` : ""}` })}
                       className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                     >
                       {tl("Draft board")} →
                     </button>
                     <button
                       type="button"
-                      onClick={() => navigateHub({ kind: "compare", mode: "team", a, b })}
+                      onClick={() => navigateHub({ kind: "compare", mode: "team", a, b, ...(pYr ? { period: `y${pYr}` } : {}) })}
                       className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                     >
                       {tl("Compare")} →
                     </button>
                     <button
                       type="button"
-                      onClick={() => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}` })}
+                      onClick={() => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${pYr ? `&year=${encodeURIComponent(pYr)}` : ""}` })}
                       className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                     >
                       {tl("Game finder")} →

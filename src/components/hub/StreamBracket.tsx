@@ -161,7 +161,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
             {tl("Player leaderboards")} →
           </HubLink>
           <HubLink
-            to={{ kind: "tiers" }}
+            to={{ kind: "tiers", ...(which.year ? { query: `key=y${encodeURIComponent(which.year)}` } : {}) }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Pro tier list")} →

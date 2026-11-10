@@ -51,15 +51,17 @@ export const UpNextTable: React.FC<{
       <span className="flex items-center justify-end gap-2 normal-case tracking-normal font-medium text-[11px]">
         <button
           type="button"
-          onClick={() =>
-            matches[0]
+          onClick={() => {
+            const yr = matches[0]?.startTimeUtc?.slice(0, 4);
+            return matches[0]
               ? navigateHub({
                   kind: "prep",
                   a: prettySlug(matches[0].team1Name || matches[0].team1Code),
                   b: prettySlug(matches[0].team2Name || matches[0].team2Code),
+                  ...(yr ? { period: `y${yr}` } : {}),
                 })
-              : navigateHub({ kind: "prep" })
-          }
+              : navigateHub({ kind: "prep" });
+          }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
           {tl("Match prep")}
@@ -68,26 +70,29 @@ export const UpNextTable: React.FC<{
           <>
             <button
               type="button"
-              onClick={() =>
+              onClick={() => {
+                const yr = matches[0].startTimeUtc?.slice(0, 4);
                 navigateHub({
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(prettySlug(matches[0].team1Name || matches[0].team1Code))},${encodeURIComponent(prettySlug(matches[0].team2Name || matches[0].team2Code))}`,
-                })
-              }
+                  query: `teams=${encodeURIComponent(prettySlug(matches[0].team1Name || matches[0].team1Code))},${encodeURIComponent(prettySlug(matches[0].team2Name || matches[0].team2Code))}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}`,
+                });
+              }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Draft board")}
             </button>
             <button
               type="button"
-              onClick={() =>
+              onClick={() => {
+                const yr = matches[0].startTimeUtc?.slice(0, 4);
                 navigateHub({
                   kind: "compare",
                   mode: "team",
                   a: prettySlug(matches[0].team1Name || matches[0].team1Code),
                   b: prettySlug(matches[0].team2Name || matches[0].team2Code),
-                })
-              }
+                  ...(yr ? { period: `y${yr}` } : {}),
+                });
+              }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Compare")}
@@ -96,21 +101,40 @@ export const UpNextTable: React.FC<{
         )}
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "rankings" })}
+          onClick={() => {
+            const lg = matches[0]?.leagueSlug ? resolveLeagueSlug(matches[0].leagueSlug) : "";
+            navigateHub({ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) });
+          }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
           {tl("Power rankings")}
         </button>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "tiers" })}
+          onClick={() => {
+            const yr = matches[0]?.startTimeUtc?.slice(0, 4);
+            const lg = matches[0]?.leagueSlug ? resolveLeagueSlug(matches[0].leagueSlug) : "";
+            const q = new URLSearchParams({
+              ...(lg ? { league: lg } : {}),
+              ...(yr ? { key: `y${yr}` } : {}),
+            }).toString();
+            navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
+          }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
           {tl("Pro tier list")}
         </button>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "leaders" })}
+          onClick={() => {
+            const yr = matches[0]?.startTimeUtc?.slice(0, 4);
+            const lg = matches[0]?.leagueSlug ? resolveLeagueSlug(matches[0].leagueSlug) : "";
+            const q = new URLSearchParams({
+              ...(lg ? { league: lg } : {}),
+              ...(yr ? { year: yr } : {}),
+            }).toString();
+            navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
+          }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
           {tl("Player leaderboards")}

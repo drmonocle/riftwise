@@ -49,10 +49,11 @@ const ROLE_COLORS: Record<string, { bg: string; text: string; border: string }> 
 };
 
 /** "Full history and stats": opens the team's page in the stats hub. */
-const TeamStatsLink: React.FC<{ name: string; code: string; onDone: () => void }> = ({ name, code, onDone }) => {
+const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; onDone: () => void }> = ({ name, code, league, onDone }) => {
   const [busy, setBusy] = useState(false);
   const [missing, setMissing] = useState(false);
   if (missing) return null;
+  const lg = league ? resolveLeagueSlug(league) : "";
   const openRoute = (dest: (slug: string) => void) => {
     setBusy(true);
     loadHubIndexQuick()
@@ -112,7 +113,7 @@ const TeamStatsLink: React.FC<{ name: string; code: string; onDone: () => void }
       <button
         type="button"
         disabled={busy}
-        onClick={() => openRoute(() => navigateHub({ kind: "rankings" }))}
+        onClick={() => openRoute(() => navigateHub({ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) }))}
         className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
       >
         {tl("Power rankings")}
@@ -120,7 +121,7 @@ const TeamStatsLink: React.FC<{ name: string; code: string; onDone: () => void }
       <button
         type="button"
         disabled={busy}
-        onClick={() => openRoute(() => navigateHub({ kind: "tiers" }))}
+        onClick={() => openRoute(() => navigateHub({ kind: "tiers", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) }))}
         className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
       >
         {tl("Pro tier list")}
@@ -128,7 +129,7 @@ const TeamStatsLink: React.FC<{ name: string; code: string; onDone: () => void }
       <button
         type="button"
         disabled={busy}
-        onClick={() => openRoute(() => navigateHub({ kind: "leaders" }))}
+        onClick={() => openRoute(() => navigateHub({ kind: "leaders", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) }))}
         className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
       >
         {tl("Player leaderboards")}
@@ -305,7 +306,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                   </span>
                 )}
               </div>
-              <TeamStatsLink name={displayName} code={upperCode} onDone={onClose} />
+              <TeamStatsLink name={displayName} code={upperCode} league={catalogTeam?.league} onDone={onClose} />
             </div>
           </div>
 
@@ -381,7 +382,8 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        navigateHub({ kind: "leaders" });
+                        const lg = catalogTeam?.league ? resolveLeagueSlug(catalogTeam.league) : "";
+                        navigateHub({ kind: "leaders", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) });
                         onClose();
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"

@@ -802,7 +802,18 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "leaders" })}
+                    onClick={() => {
+                      const sameRole =
+                        filteredPlayers[0]?.role &&
+                        filteredPlayers[0].role !== "Sub" &&
+                        filteredPlayers.every((p) => p.role === filteredPlayers[0].role)
+                          ? filteredPlayers[0].role
+                          : "";
+                      navigateHub({
+                        kind: "leaders",
+                        ...(sameRole ? { query: `role=${encodeURIComponent(sameRole)}` } : {}),
+                      });
+                    }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Player leaderboards")} →
@@ -1022,7 +1033,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigateHub({ kind: "tiers", query: `key=l:${encodeURIComponent(resolveLeagueSlug(region.leagues[0]))}` });
+                            navigateHub({ kind: "tiers", query: `league=${encodeURIComponent(resolveLeagueSlug(region.leagues[0]))}` });
                           }}
                           className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden md:inline-block"
                         >
@@ -1168,7 +1179,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigateHub({ kind: "tiers", query: `key=l:${encodeURIComponent(resolveLeagueSlug(league.slug))}` });
+                        navigateHub({ kind: "tiers", query: `league=${encodeURIComponent(resolveLeagueSlug(league.slug))}` });
                       }}
                       className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden md:inline-block"
                     >

@@ -179,16 +179,48 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
               <HubLink to={{ kind: "records" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Records")} →
               </HubLink>
-              <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{
+                  kind: "rankings",
+                  ...(blocks[0]?.m.leagueSlug ? { query: `league=${encodeURIComponent(resolveLeagueSlug(blocks[0].m.leagueSlug))}` } : {}),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {tl("Power rankings")} →
               </HubLink>
-              <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{
+                  kind: "leaders",
+                  query:
+                    new URLSearchParams({
+                      ...(blocks[0]?.m.leagueSlug ? { league: resolveLeagueSlug(blocks[0].m.leagueSlug) } : {}),
+                      ...(blocks[0]?.m.startTimeUtc ? { year: blocks[0].m.startTimeUtc.slice(0, 4) } : {}),
+                    }).toString() || undefined,
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {tl("Player leaderboards")} →
               </HubLink>
-              <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{
+                  kind: "tiers",
+                  query:
+                    new URLSearchParams({
+                      ...(blocks[0]?.m.leagueSlug ? { league: resolveLeagueSlug(blocks[0].m.leagueSlug) } : {}),
+                      ...(blocks[0]?.m.startTimeUtc ? { key: `y${blocks[0].m.startTimeUtc.slice(0, 4)}` } : {}),
+                    }).toString() || undefined,
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {tl("Pro tier list")} →
               </HubLink>
-              <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{
+                  kind: "finder",
+                  ...(blocks[0]?.m.startTimeUtc ? { query: `year=${encodeURIComponent(blocks[0].m.startTimeUtc.slice(0, 4))}` } : {}),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {tl("Game finder")} →
               </HubLink>
             </span>
@@ -197,7 +229,9 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
             const m0 = blocks[0].m;
             const a = findHubTeam(data.index, m0.team1Name, m0.team1Code) || prettySlug(m0.team1Name || m0.team1Code);
             const b = findHubTeam(data.index, m0.team2Name, m0.team2Code) || prettySlug(m0.team2Name || m0.team2Code);
-            const p = m0.startTimeUtc ? `y${m0.startTimeUtc.slice(0, 4)}` : undefined;
+            const yr = m0.startTimeUtc ? m0.startTimeUtc.slice(0, 4) : undefined;
+            const p = yr ? `y${yr}` : undefined;
+            const lg = m0.leagueSlug ? resolveLeagueSlug(m0.leagueSlug) : undefined;
             return (
               <span className="flex items-center gap-2" data-nocapture="1">
                 <HubLink to={{ kind: "prep", a, b, period: p }} className="text-rw-sub hover:text-rw-accent hover:underline">
@@ -213,25 +247,39 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   {tl("Compare")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "finder", query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}` }}
+                  to={{ kind: "finder", query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${yr ? `&year=${encodeURIComponent(yr)}` : ""}` }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Game finder")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "rankings" }}
+                  to={{ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Power rankings")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "tiers", ...(p ? { query: `key=${encodeURIComponent(p)}` } : {}) }}
+                  to={{
+                    kind: "tiers",
+                    query:
+                      new URLSearchParams({
+                        ...(lg ? { league: lg } : {}),
+                        ...(p ? { key: p } : {}),
+                      }).toString() || undefined,
+                  }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Pro tier list")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "leaders" }}
+                  to={{
+                    kind: "leaders",
+                    query:
+                      new URLSearchParams({
+                        ...(lg ? { league: lg } : {}),
+                        ...(yr ? { year: yr } : {}),
+                      }).toString() || undefined,
+                  }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Player leaderboards")} →
@@ -329,7 +377,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                       findHubTeam(data.index, m.team1Name, m.team1Code) || prettySlug(m.team1Name || m.team1Code),
                     )},${encodeURIComponent(
                       findHubTeam(data.index, m.team2Name, m.team2Code) || prettySlug(m.team2Name || m.team2Code),
-                    )}`,
+                    )}${m.startTimeUtc ? `&p=y${encodeURIComponent(m.startTimeUtc.slice(0, 4))}` : ""}`,
                   }}
                   className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] text-rw-muted hover:text-rw-accent hover:border-rw-accent/60 transition-colors"
                 >
@@ -354,7 +402,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                       findHubTeam(data.index, m.team1Name, m.team1Code) || prettySlug(m.team1Name || m.team1Code),
                     )}&vs=${encodeURIComponent(
                       findHubTeam(data.index, m.team2Name, m.team2Code) || prettySlug(m.team2Name || m.team2Code),
-                    )}`,
+                    )}${m.startTimeUtc ? `&year=${encodeURIComponent(m.startTimeUtc.slice(0, 4))}` : ""}`,
                   }}
                   className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] text-rw-muted hover:text-rw-accent hover:border-rw-accent/60 transition-colors"
                 >

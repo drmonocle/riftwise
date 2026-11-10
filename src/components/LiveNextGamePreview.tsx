@@ -16,7 +16,7 @@ import { winRate } from "../stats";
 import { champName } from "../champions";
 import { fetchLiveStart, type LiveParticipantMeta, type LiveWindow } from "../liveGame";
 import { champNameById, useDDragon } from "../hub/ddragon";
-import { findHubTeam, loadHubIndex, loadHubIndexQuick, prettySlug } from "../hub/data";
+import { findHubTeam, loadHubIndex, loadHubIndexQuick, prettySlug, resolveLeagueSlug } from "../hub/data";
 import { teamRowRef } from "../hub/period";
 import { bothOptions } from "./hub/ComparePage";
 import { defaultPeriod } from "./hub/PeriodStats";
@@ -349,37 +349,59 @@ export const LiveNextGamePreview: React.FC<{
               }
             />
             <HubLink
-              to={{ kind: "prep", a: draftIntel.slugA, b: draftIntel.slugB }}
+              to={{ kind: "prep", a: draftIntel.slugA, b: draftIntel.slugB, ...(draftIntel.period !== "all" ? { period: draftIntel.period } : {}) }}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Match prep")} →
             </HubLink>
             <HubLink
-              to={{ kind: "compare", mode: "team", a: draftIntel.slugA, b: draftIntel.slugB }}
+              to={{ kind: "compare", mode: "team", a: draftIntel.slugA, b: draftIntel.slugB, ...(draftIntel.period !== "all" ? { period: draftIntel.period } : {}) }}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Compare")} →
             </HubLink>
             <HubLink
-              to={{ kind: "finder", query: `team=${encodeURIComponent(draftIntel.slugA)}&vs=${encodeURIComponent(draftIntel.slugB)}` }}
+              to={{
+                kind: "finder",
+                query: `team=${encodeURIComponent(draftIntel.slugA)}&vs=${encodeURIComponent(draftIntel.slugB)}${
+                  draftIntel.period.startsWith("y") ? `&year=${encodeURIComponent(draftIntel.period.slice(1))}` : ""
+                }`,
+              }}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Game finder")} →
             </HubLink>
             <HubLink
-              to={{ kind: "rankings" }}
+              to={{
+                kind: "rankings",
+                ...(match.leagueSlug ? { query: `league=${encodeURIComponent(resolveLeagueSlug(match.leagueSlug))}` } : {}),
+              }}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Power rankings")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tiers" }}
+              to={{
+                kind: "tiers",
+                query:
+                  new URLSearchParams({
+                    ...(match.leagueSlug ? { league: resolveLeagueSlug(match.leagueSlug) } : {}),
+                    ...(draftIntel.period.startsWith("y") && draftIntel.period.length === 5 ? { key: draftIntel.period } : {}),
+                  }).toString() || undefined,
+              }}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Pro tier list")} →
             </HubLink>
             <HubLink
-              to={{ kind: "leaders" }}
+              to={{
+                kind: "leaders",
+                query:
+                  new URLSearchParams({
+                    ...(match.leagueSlug ? { league: resolveLeagueSlug(match.leagueSlug) } : {}),
+                    ...(draftIntel.period.startsWith("y") && draftIntel.period.length === 5 ? { year: draftIntel.period.slice(1) } : {}),
+                  }).toString() || undefined,
+              }}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Player leaderboards")} →

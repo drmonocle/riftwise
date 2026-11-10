@@ -552,13 +552,15 @@ const LiveMatchBlock: React.FC<{
               {m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD" ? (
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    const yr = m.startTimeUtc?.slice(0, 4);
                     navigateHub({
                       kind: "prep",
                       a: prettySlug(m.team1Name || m.team1Code),
                       b: prettySlug(m.team2Name || m.team2Code),
-                    })
-                  }
+                      ...(yr ? { period: `y${yr}` } : {}),
+                    });
+                  }}
                   className="hover:text-rw-accent hover:underline"
                 >
                   {tl("Best of {n}", { n: m.bestOf })}
@@ -662,12 +664,13 @@ const LiveMatchBlock: React.FC<{
               <>
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    const yr = m.startTimeUtc?.slice(0, 4);
                     navigateHub({
                       kind: "draft",
-                      query: `teams=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))},${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}`,
-                    })
-                  }
+                      query: `teams=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))},${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}`,
+                    });
+                  }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
                 >
                   <Swords className="w-3.5 h-3.5" />
@@ -675,26 +678,29 @@ const LiveMatchBlock: React.FC<{
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    const yr = m.startTimeUtc?.slice(0, 4);
                     navigateHub({
                       kind: "compare",
                       mode: "team",
                       a: prettySlug(m.team1Name || m.team1Code),
                       b: prettySlug(m.team2Name || m.team2Code),
-                    })
-                  }
+                      ...(yr ? { period: `y${yr}` } : {}),
+                    });
+                  }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
                   {tl("Compare")}
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    const yr = m.startTimeUtc?.slice(0, 4);
                     navigateHub({
                       kind: "finder",
-                      query: `team=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))}&vs=${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}`,
-                    })
-                  }
+                      query: `team=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))}&vs=${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
+                    });
+                  }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
                   {tl("Game finder")}
@@ -713,19 +719,30 @@ const LiveMatchBlock: React.FC<{
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigateHub({ kind: "tiers" })}
+                  onClick={() => {
+                    const yr = m.startTimeUtc?.slice(0, 4);
+                    const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
+                    const q = new URLSearchParams({
+                      ...(lg ? { league: lg } : {}),
+                      ...(yr ? { key: `y${yr}` } : {}),
+                    }).toString();
+                    navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
+                  }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
                   {tl("Pro tier list")}
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
-                    navigateHub({
-                      kind: "leaders",
-                      ...(m.leagueSlug ? { query: `league=${encodeURIComponent(resolveLeagueSlug(m.leagueSlug))}` } : {}),
-                    })
-                  }
+                  onClick={() => {
+                    const yr = m.startTimeUtc?.slice(0, 4);
+                    const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
+                    const q = new URLSearchParams({
+                      ...(lg ? { league: lg } : {}),
+                      ...(yr ? { year: yr } : {}),
+                    }).toString();
+                    navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
+                  }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
                   {tl("Player leaderboards")}
@@ -959,13 +976,15 @@ const NextMatchCard: React.FC<{
           {m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD" ? (
             <button
               type="button"
-              onClick={() =>
+              onClick={() => {
+                const yr = m.startTimeUtc?.slice(0, 4);
                 navigateHub({
                   kind: "prep",
                   a: prettySlug(m.team1Name || m.team1Code),
                   b: prettySlug(m.team2Name || m.team2Code),
-                })
-              }
+                  ...(yr ? { period: `y${yr}` } : {}),
+                });
+              }}
               className="font-mono bg-rw-bg px-2 py-0.5 rounded border border-rw-border hover:border-rw-accent/60 hover:text-rw-accent transition-colors"
             >
               {tl("Best of {n}", { n: m.bestOf })}
@@ -982,14 +1001,16 @@ const NextMatchCard: React.FC<{
             {m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD" ? (
               <button
                 type="button"
-                onClick={() =>
+                onClick={() => {
+                  const yr = m.startTimeUtc?.slice(0, 4);
                   navigateHub({
                     kind: "compare",
                     mode: "team",
                     a: prettySlug(m.team1Name || m.team1Code),
                     b: prettySlug(m.team2Name || m.team2Code),
-                  })
-                }
+                    ...(yr ? { period: `y${yr}` } : {}),
+                  });
+                }}
                 title={tl("Compare")}
                 className="text-xs font-bold text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 bg-rw-bg border border-rw-border px-2.5 py-1 rounded-full uppercase tracking-widest font-mono transition-colors"
               >
@@ -1055,12 +1076,13 @@ const NextMatchCard: React.FC<{
               <>
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    const yr = m.startTimeUtc?.slice(0, 4);
                     navigateHub({
                       kind: "draft",
-                      query: `teams=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))},${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}`,
-                    })
-                  }
+                      query: `teams=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))},${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}`,
+                    });
+                  }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
                 >
                   <Swords className="w-3.5 h-3.5" />
@@ -1068,26 +1090,29 @@ const NextMatchCard: React.FC<{
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    const yr = m.startTimeUtc?.slice(0, 4);
                     navigateHub({
                       kind: "compare",
                       mode: "team",
                       a: prettySlug(m.team1Name || m.team1Code),
                       b: prettySlug(m.team2Name || m.team2Code),
-                    })
-                  }
+                      ...(yr ? { period: `y${yr}` } : {}),
+                    });
+                  }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
                   {tl("Compare")}
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    const yr = m.startTimeUtc?.slice(0, 4);
                     navigateHub({
                       kind: "finder",
-                      query: `team=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))}&vs=${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}`,
-                    })
-                  }
+                      query: `team=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))}&vs=${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
+                    });
+                  }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
                   {tl("Game finder")}
@@ -1106,19 +1131,30 @@ const NextMatchCard: React.FC<{
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigateHub({ kind: "tiers" })}
+                  onClick={() => {
+                    const yr = m.startTimeUtc?.slice(0, 4);
+                    const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
+                    const q = new URLSearchParams({
+                      ...(lg ? { league: lg } : {}),
+                      ...(yr ? { key: `y${yr}` } : {}),
+                    }).toString();
+                    navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
+                  }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
                   {tl("Pro tier list")}
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
-                    navigateHub({
-                      kind: "leaders",
-                      ...(m.leagueSlug ? { query: `league=${encodeURIComponent(resolveLeagueSlug(m.leagueSlug))}` } : {}),
-                    })
-                  }
+                  onClick={() => {
+                    const yr = m.startTimeUtc?.slice(0, 4);
+                    const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
+                    const q = new URLSearchParams({
+                      ...(lg ? { league: lg } : {}),
+                      ...(yr ? { year: yr } : {}),
+                    }).toString();
+                    navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
+                  }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
                   {tl("Player leaderboards")}

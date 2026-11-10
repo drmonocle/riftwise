@@ -439,32 +439,26 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                           </button>
                           <button
                             type="button"
-                            onClick={() =>
-                              navigateHub({
-                                kind: "tiers",
-                                ...(activeLeague
-                                  ? { query: `key=l:${encodeURIComponent(resolveLeagueSlug(activeLeague))}` }
-                                  : yr
-                                    ? { query: `key=y${encodeURIComponent(yr)}` }
-                                    : {}),
-                              })
-                            }
+                            onClick={() => {
+                              const q = new URLSearchParams({
+                                ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
+                                ...(yr ? { key: `y${yr}` } : {}),
+                              }).toString();
+                              navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
+                            }}
                             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                           >
                             {tl("Pro tier list")} →
                           </button>
                           <button
                             type="button"
-                            onClick={() =>
-                              navigateHub({
-                                kind: "leaders",
-                                ...(activeLeague
-                                  ? { query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` }
-                                  : yr
-                                    ? { query: `year=${encodeURIComponent(yr)}` }
-                                    : {}),
-                              })
-                            }
+                            onClick={() => {
+                              const q = new URLSearchParams({
+                                ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
+                                ...(yr ? { year: yr } : {}),
+                              }).toString();
+                              navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
+                            }}
                             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                           >
                             {tl("Player leaderboards")} →
@@ -679,32 +673,26 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                           </button>
                           <button
                             type="button"
-                            onClick={() =>
-                              navigateHub({
-                                kind: "tiers",
-                                ...(activeLeague
-                                  ? { query: `key=l:${encodeURIComponent(resolveLeagueSlug(activeLeague))}` }
-                                  : yr
-                                    ? { query: `key=y${encodeURIComponent(yr)}` }
-                                    : {}),
-                              })
-                            }
+                            onClick={() => {
+                              const q = new URLSearchParams({
+                                ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
+                                ...(yr ? { key: `y${yr}` } : {}),
+                              }).toString();
+                              navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
+                            }}
                             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                           >
                             {tl("Pro tier list")} →
                           </button>
                           <button
                             type="button"
-                            onClick={() =>
-                              navigateHub({
-                                kind: "leaders",
-                                ...(activeLeague
-                                  ? { query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` }
-                                  : yr
-                                    ? { query: `year=${encodeURIComponent(yr)}` }
-                                    : {}),
-                              })
-                            }
+                            onClick={() => {
+                              const q = new URLSearchParams({
+                                ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
+                                ...(yr ? { year: yr } : {}),
+                              }).toString();
+                              navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
+                            }}
                             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                           >
                             {tl("Player leaderboards")} →

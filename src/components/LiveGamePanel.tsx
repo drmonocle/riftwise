@@ -32,7 +32,7 @@ import { useMatchRatings } from "../hub/matchRatings";
 import { gameStory } from "../gameStory";
 import { smoothPath, useWidth } from "../useWidth";
 import { navigateHub } from "../hub/route";
-import { prettySlug } from "../hub/data";
+import { prettySlug, resolveLeagueSlug } from "../hub/data";
 import { SectionCard } from "./hub/BroadcastCard";
 import { PlayerPhoto, TeamLogo } from "./hub/ui";
 
@@ -328,60 +328,84 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
         <span className="flex items-center gap-2 ml-auto">
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
+              const yr = match.startTimeUtc?.slice(0, 4);
               navigateHub({
                 kind: "prep",
                 a: prettySlug(left.name || left.code),
                 b: prettySlug(right.name || right.code),
-              })
-            }
+                ...(yr ? { period: `y${yr}` } : {}),
+              });
+            }}
             className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Match prep")}
           </button>
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
+              const yr = match.startTimeUtc?.slice(0, 4);
               navigateHub({
                 kind: "compare",
                 mode: "team",
                 a: prettySlug(left.name || left.code),
                 b: prettySlug(right.name || right.code),
-              })
-            }
+                ...(yr ? { period: `y${yr}` } : {}),
+              });
+            }}
             className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Compare")}
           </button>
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
+              const yr = match.startTimeUtc?.slice(0, 4);
               navigateHub({
                 kind: "finder",
-                query: `team=${encodeURIComponent(prettySlug(left.name || left.code))}&vs=${encodeURIComponent(prettySlug(right.name || right.code))}`,
-              })
-            }
+                query: `team=${encodeURIComponent(prettySlug(left.name || left.code))}&vs=${encodeURIComponent(prettySlug(right.name || right.code))}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
+              });
+            }}
             className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Game finder")}
           </button>
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "rankings" })}
+            onClick={() => {
+              const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+              navigateHub({ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) });
+            }}
             className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Power rankings")}
           </button>
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "tiers" })}
+            onClick={() => {
+              const yr = match.startTimeUtc?.slice(0, 4);
+              const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+              const q = new URLSearchParams({
+                ...(lg ? { league: lg } : {}),
+                ...(yr ? { key: `y${yr}` } : {}),
+              }).toString();
+              navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
+            }}
             className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Pro tier list")}
           </button>
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "leaders" })}
+            onClick={() => {
+              const yr = match.startTimeUtc?.slice(0, 4);
+              const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+              const q = new URLSearchParams({
+                ...(lg ? { league: lg } : {}),
+                ...(yr ? { year: yr } : {}),
+              }).toString();
+              navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
+            }}
             className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Player leaderboards")}
@@ -904,7 +928,16 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
                   <button
                     key={`${id}-${i}`}
                     type="button"
-                    onClick={() => navigateHub({ kind: "items", query: new URLSearchParams({ player: prettySlug(pName), item: iKey }).toString() })}
+                    onClick={() =>
+                      navigateHub({
+                        kind: "items",
+                        query: new URLSearchParams({
+                          player: prettySlug(pName),
+                          item: iKey,
+                          ...(champNameById(p.meta!.championId) ? { champ: prettySlug(champNameById(p.meta!.championId)) } : {}),
+                        }).toString(),
+                      })
+                    }
                     title={iLabel}
                     className="rounded hover:ring-1 hover:ring-rw-accent transition-all"
                   >
@@ -1177,39 +1210,44 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
         <span className="flex items-center gap-2 ml-auto">
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
+              const yr = match.startTimeUtc?.slice(0, 4);
               navigateHub({
                 kind: "prep",
                 a: prettySlug(left.name || left.code),
                 b: prettySlug(right.name || right.code),
-              })
-            }
+                ...(yr ? { period: `y${yr}` } : {}),
+              });
+            }}
             className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Match prep")}
           </button>
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
+              const yr = match.startTimeUtc?.slice(0, 4);
               navigateHub({
                 kind: "compare",
                 mode: "team",
                 a: prettySlug(left.name || left.code),
                 b: prettySlug(right.name || right.code),
-              })
-            }
+                ...(yr ? { period: `y${yr}` } : {}),
+              });
+            }}
             className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Compare")}
           </button>
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
+              const yr = match.startTimeUtc?.slice(0, 4);
               navigateHub({
                 kind: "finder",
-                query: `team=${encodeURIComponent(prettySlug(left.name || left.code))}&vs=${encodeURIComponent(prettySlug(right.name || right.code))}`,
-              })
-            }
+                query: `team=${encodeURIComponent(prettySlug(left.name || left.code))}&vs=${encodeURIComponent(prettySlug(right.name || right.code))}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
+              });
+            }}
             className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Game finder")}

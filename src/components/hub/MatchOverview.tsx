@@ -244,8 +244,12 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               <button
                 type="button"
                 onClick={() => {
+                  const yr = match.startTimeUtc?.slice(0, 4);
                   onClose();
-                  navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(x.team.u)},${encodeURIComponent(y.team.u)}` });
+                  navigateHub({
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(x.team.u)},${encodeURIComponent(y.team.u)}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}`,
+                  });
                 }}
                 className="hover:text-rw-accent hover:underline"
               >
@@ -254,8 +258,9 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               <button
                 type="button"
                 onClick={() => {
+                  const yr = match.startTimeUtc?.slice(0, 4);
                   onClose();
-                  navigateHub({ kind: "compare", mode: "team", a: x.team.u, b: y.team.u });
+                  navigateHub({ kind: "compare", mode: "team", a: x.team.u, b: y.team.u, ...(yr ? { period: `y${yr}` } : {}) });
                 }}
                 className="hover:text-rw-accent hover:underline"
               >
@@ -280,9 +285,14 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               <button
                 type="button"
                 onClick={() => {
+                  const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
                   const yr = match.startTimeUtc?.slice(0, 4);
+                  const q = new URLSearchParams({
+                    ...(lg ? { league: lg } : {}),
+                    ...(yr ? { key: `y${yr}` } : {}),
+                  }).toString();
                   onClose();
-                  navigateHub({ kind: "tiers", ...(yr ? { query: `key=y${yr}` } : {}) });
+                  navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
                 }}
                 className="hover:text-rw-accent hover:underline"
               >
@@ -302,8 +312,9 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               <button
                 type="button"
                 onClick={() => {
+                  const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
                   onClose();
-                  navigateHub({ kind: "rankings" });
+                  navigateHub({ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) });
                 }}
                 className="hover:text-rw-accent hover:underline"
               >
@@ -546,11 +557,16 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
           <button
             type="button"
             onClick={() => {
+              const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
               const yr = match.startTimeUtc?.slice(0, 4);
+              const q = new URLSearchParams({
+                ...(lg ? { league: lg } : {}),
+                ...(yr ? { key: `y${yr}` } : {}),
+              }).toString();
               onClose();
               navigateHub({
                 kind: "tiers",
-                ...(yr ? { query: `key=y${yr}` } : {}),
+                ...(q ? { query: q } : {}),
               });
             }}
             className="flex items-center gap-1 px-2 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"

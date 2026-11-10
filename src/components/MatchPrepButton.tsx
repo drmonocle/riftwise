@@ -23,7 +23,8 @@ export const MatchPrepButton: React.FC<{ match: Match; compact?: boolean; onDone
         const b = findHubTeam(index, match.team2Name, match.team2Code);
         if (!a || !b) return setState("missing");
         setState("");
-        navigateHub({ kind: "prep", a, b });
+        const yr = match.startTimeUtc?.slice(0, 4);
+        navigateHub({ kind: "prep", a, b, ...(yr ? { period: `y${yr}` } : {}) });
         onDone?.();
       })
       .catch(() => setState("missing"));

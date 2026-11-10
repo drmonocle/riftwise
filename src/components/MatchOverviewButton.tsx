@@ -68,7 +68,8 @@ export const MatchOverviewButton: React.FC<{ match: Match; compact?: boolean; on
             onClose={() => setOpen(null)}
             onPrep={() => {
               setOpen(null);
-              navigateHub({ kind: "prep", a: open.a, b: open.b });
+              const yr = match.startTimeUtc?.slice(0, 4);
+              navigateHub({ kind: "prep", a: open.a, b: open.b, ...(yr ? { period: `y${yr}` } : {}) });
               onDone?.();
             }}
           />

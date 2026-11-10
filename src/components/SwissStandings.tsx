@@ -39,6 +39,7 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
   if (!d || d.played === 0 || d.played >= d.total) return null;
+  const wy = schedule.find((m) => m.leagueSlug === "worlds")?.startTimeUtc?.slice(0, 4) || String(new Date().getFullYear());
   return (
     <section className="rounded-xl border border-rw-border bg-rw-panel rw-lit text-xs">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-3 py-2 border-b border-rw-border">
@@ -66,7 +67,7 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
               <button
                 type="button"
                 onClick={() => {
-                  navigateHub({ kind: "prep", a: d.rows[0].u, b: d.rows[1].u });
+                  navigateHub({ kind: "prep", a: d.rows[0].u, b: d.rows[1].u, period: `y${wy}` });
                   onOpen();
                 }}
                 className="text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline"
@@ -76,7 +77,10 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
               <button
                 type="button"
                 onClick={() => {
-                  navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(d.rows[0].u)},${encodeURIComponent(d.rows[1].u)}` });
+                  navigateHub({
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(d.rows[0].u)},${encodeURIComponent(d.rows[1].u)}&p=y${encodeURIComponent(wy)}`,
+                  });
                   onOpen();
                 }}
                 className="text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline"
@@ -86,7 +90,7 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
               <button
                 type="button"
                 onClick={() => {
-                  navigateHub({ kind: "compare", mode: "team", a: d.rows[0].u, b: d.rows[1].u });
+                  navigateHub({ kind: "compare", mode: "team", a: d.rows[0].u, b: d.rows[1].u, period: `y${wy}` });
                   onOpen();
                 }}
                 className="text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline"
@@ -96,7 +100,7 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
               <button
                 type="button"
                 onClick={() => {
-                  navigateHub({ kind: "rankings" });
+                  navigateHub({ kind: "rankings", query: "league=world-championship" });
                   onOpen();
                 }}
                 className="text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline"
@@ -106,7 +110,7 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
               <button
                 type="button"
                 onClick={() => {
-                  navigateHub({ kind: "tiers" });
+                  navigateHub({ kind: "tiers", query: `league=world-championship&key=y${encodeURIComponent(wy)}` });
                   onOpen();
                 }}
                 className="text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline"
@@ -116,7 +120,7 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
               <button
                 type="button"
                 onClick={() => {
-                  navigateHub({ kind: "leaders" });
+                  navigateHub({ kind: "leaders", query: `league=world-championship&year=${encodeURIComponent(wy)}` });
                   onOpen();
                 }}
                 className="text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline"
@@ -128,7 +132,7 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
                 onClick={() => {
                   navigateHub({
                     kind: "finder",
-                    query: `team=${encodeURIComponent(d.rows[0].u)}&vs=${encodeURIComponent(d.rows[1].u)}`,
+                    query: `team=${encodeURIComponent(d.rows[0].u)}&vs=${encodeURIComponent(d.rows[1].u)}&year=${encodeURIComponent(wy)}`,
                   });
                   onOpen();
                 }}
