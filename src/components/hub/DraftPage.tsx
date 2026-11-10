@@ -20,7 +20,7 @@ import { ComparePick, bothOptions } from "./ComparePage";
 import { PeriodPicker, QuickPeriods, defaultPeriod } from "./PeriodStats";
 import { FearlessDepth, RosterSubPicker, Side, loadFullLogs, loadSide, needsFullLogs, swapPlayerInSide } from "./PrepPage";
 import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo, useLoad, usePageTitle, useRetryAttempt, retryFailedLoads } from "./ui";
-import { bare, buildGameDraftQuery, DRAFT_ORDER as ORDER, type GameDraftInput, type GameDraftQueryInput, loadHubChamp, matchesChampSearch, packHistory, packSlots, type PastGame, prettySlug, resolveChampSlug, slotsFromGameDraft } from "../../hub/data";
+import { bare, buildGameDraftQuery, DRAFT_ORDER as ORDER, type GameDraftInput, type GameDraftQueryInput, loadHubChamp, matchesChampSearch, normText, packHistory, packSlots, type PastGame, prettySlug, resolveChampSlug, sameChamp, slotsFromGameDraft } from "../../hub/data";
 import { BroadcastCardButton, SectionCard, draftBoardCard, type BoardSide } from "./BroadcastCard";
 import type { HubChamp, LaneLine } from "../../hub/types";
 import { draftTendencies } from "./DraftTendencies";
@@ -421,11 +421,25 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
     sides.a && sides.b ? tl("{a} vs {b}: draft board", { a: sides.a.team.name, b: sides.b.team.name }) : tl("Draft board"),
   );
 
-  if (!a || !b)
+  if (!a || !b) {
+    const rawInitChamp = q.get("champ") || "";
+    const rawInitRole = q.get("role") || "";
     return (
       <div className="space-y-3">
         <div className={`${card} space-y-2 text-xs`}>
-          <p className="text-rw-text font-semibold">{tl("Draft board")}</p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-rw-text font-semibold">{tl("Draft board")}</p>
+            {(rawInitChamp || rawInitRole) && (
+              <span className="inline-flex flex-wrap items-center gap-2 text-[11px] text-rw-sub">
+                {rawInitChamp && <ChampLink name={rawInitChamp} size={16} />}
+                {rawInitRole && ROLES.includes(rawInitRole) && (
+                  <span className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-rw-accent font-semibold">
+                    {roleName(rawInitRole)}
+                  </span>
+                )}
+              </span>
+            )}
+          </div>
           <p className="text-rw-sub">
             {tl(
               "Pick a blue-side and a red-side team, then draft in tournament order with both teams' champion pools, bans and players in view.",
@@ -507,6 +521,7 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
         </div>
       </div>
     );
+  }
   if (sides.failed)
     return (
       <div className="text-xs text-rw-sub py-6 text-center space-y-2">
@@ -539,6 +554,8 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
       blue={sides.a}
       red={sides.b}
       period={q.get("p") || q.get("period") || undefined}
+      initChamp={q.get("champ") || undefined}
+      initRole={q.get("role") || undefined}
       gameNum={activeGameNum}
       slots={slots}
       used={usedList}
@@ -584,6 +601,8 @@ const Board: React.FC<{
   blue: Side;
   red: Side;
   period?: string;
+  initChamp?: string;
+  initRole?: string;
   gameNum?: number | null;
   slots: (string | null)[];
   used: string[];
@@ -598,7 +617,7 @@ const Board: React.FC<{
   onLoadPastGame: (idx: number) => void;
   onSwap: () => void;
   onSides: (blue: Side, red: Side) => void;
-}> = ({ blue, red, period: periodQ, gameNum, slots, used, fearless, history, onPeriod, onSlots, onUsed, onFearless, onHistory, onNextGame, onLoadPastGame, onSwap, onSides }) => {
+}> = ({ blue, red, period: periodQ, initChamp, initRole, gameNum, slots, used, fearless, history, onPeriod, onSlots, onUsed, onFearless, onHistory, onNextGame, onLoadPastGame, onSwap, onSides }) => {
   const options = useMemo(() => bothOptions(blue.games.map(teamRowRef), red.games.map(teamRowRef)), [blue.games, red.games]);
   const period: PeriodKey = periodQ && options.some((o) => o.key === periodQ) ? periodQ : defaultPeriod(options);
   const notFull = blue.gamesFull === false || red.gamesFull === false || [...blue.players, ...red.players].some((p) => p && !p.full);
@@ -621,7 +640,11 @@ const Board: React.FC<{
   const [sameTeamBans, setSameTeamBans] = useState<boolean>(false);
   const [focus, setFocus] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [role, setRole] = useState<number | "open" | null>(null);
+  const [role, setRole] = useState<number | "open" | null>(() => {
+    if (!initRole) return null;
+    const idx = ROLES.findIndex((r) => r.toLowerCase() === initRole.trim().toLowerCase());
+    return idx >= 0 ? idx : null;
+  });
   const [poolFilter, setPoolFilter] = useState<PoolFilter>("all");
   const [minGames, setMinGames] = useState<number>(0);
   const [sortBy, setSortBy] = useState<SortKey>("picked");
@@ -691,13 +714,17 @@ const Board: React.FC<{
   const takenCount = useMemo(() => all.filter((c) => isChampTaken(c, taken)).length, [all, taken]);
   const availableTotal = hideTaken ? all.length - takenCount : all.length;
 
+  useEffect(() => {
+    if (!initChamp) return;
+    const hit = all.find((c) => sameChamp(c, initChamp)) || all.find((c) => matchesChampSearch(c, initChamp));
+    if (hit) setFocus(hit);
+  }, [initChamp, all]);
+
   const searchTerms = useMemo(
     () =>
-      search
-        .trim()
-        .toLowerCase()
+      normText(search)
         .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-        .map((s) => s.trim())
+        .map((s) => normText(s))
         .filter(Boolean),
     [search],
   );
@@ -1020,15 +1047,19 @@ const Board: React.FC<{
           <HubLink
             to={{
               kind: "tiers",
-              query:
-                new URLSearchParams({
+              ...(() => {
+                const c0 = focus || picksOf("b")[0] || picksOf("r")[0];
+                const qStr = new URLSearchParams({
+                  ...(c0 ? { q: c0 } : {}),
                   ...(typeof role === "number" ? { role: ROLES[role] } : {}),
                   ...(period.startsWith("y") && period.length === 5
                     ? { key: period }
                     : period.startsWith("e:")
                       ? { event: period.slice(2) }
                       : {}),
-                }).toString() || undefined,
+                }).toString();
+                return qStr ? { query: qStr } : {};
+              })(),
             }}
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
@@ -1876,6 +1907,11 @@ const DraftMatchupPanel: React.FC<{
               kind: "tiers",
               query:
                 new URLSearchParams({
+                  ...(activeLane?.bChamp && activeLane?.rChamp
+                    ? { q: `${activeLane.bChamp},${activeLane.rChamp}` }
+                    : activeChamp
+                      ? { q: activeChamp }
+                      : {}),
                   ...(blue.team.rating?.league && blue.team.rating.league === red.team.rating?.league
                     ? { league: blue.team.rating.league }
                     : {}),
@@ -2494,6 +2530,7 @@ const PlayerPools: React.FC<{
               kind: "tiers",
               query:
                 new URLSearchParams({
+                  ...(rows[0]?.champs[0]?.c ? { q: rows[0].champs[0].c } : {}),
                   ...(side.team.rating?.league ? { league: side.team.rating.league } : {}),
                   ...(roleFilter != null ? { role: ROLES[roleFilter] } : {}),
                   ...(period.startsWith("y") && period.length === 5
@@ -2885,11 +2922,14 @@ const ChampInfo: React.FC<{
         <HubLink
           to={{
             kind: "tiers",
-            ...(period.startsWith("y") && period.length === 5
-              ? { query: `key=${encodeURIComponent(period)}` }
-              : period.startsWith("e:")
-                ? { query: `event=${encodeURIComponent(period.slice(2))}` }
-                : {}),
+            query: new URLSearchParams({
+              q: c,
+              ...(period.startsWith("y") && period.length === 5
+                ? { key: period }
+                : period.startsWith("e:")
+                  ? { event: period.slice(2) }
+                  : {}),
+            }).toString(),
           }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
@@ -3203,6 +3243,7 @@ const Priorities: React.FC<{
               kind: "tiers",
               query:
                 new URLSearchParams({
+                  ...(open[0] ? { q: open[0][0] } : {}),
                   ...(side.team.rating?.league ? { league: side.team.rating.league } : {}),
                   ...(period.startsWith("y") && period.length === 5
                     ? { key: period }

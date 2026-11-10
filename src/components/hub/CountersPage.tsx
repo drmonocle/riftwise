@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadHubChamp, loadHubIndexQuick, loadMatchups, matchesChampSearch, prettySlug, resolveChampSlug, sameChamp } from "../../hub/data";
+import { bare, loadHubChamp, loadHubIndexQuick, loadMatchups, matchesChampSearch, normText, prettySlug, resolveChampSlug, sameChamp } from "../../hub/data";
 import { ROLES } from "../../hub/champAgg";
 import type { HubChamp, HubMatchups } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
@@ -226,14 +226,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   const good = rows.filter((x) => x.g >= sampleFloor).sort((a, b) => b.w / b.g - a.w / a.g).slice(0, 5);
   const bad = rows.filter((x) => x.g >= sampleFloor).sort((a, b) => a.w / a.g - b.w / b.g).slice(0, 5);
   const filteredRows = useMemo(() => {
-    const raw = tableSearch.trim().toLowerCase();
+    const raw = normText(tableSearch);
     if (!raw) return rows;
     const terms = raw
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-      .map((s) => s.trim())
+      .map((s) => normText(s))
       .filter(Boolean);
     return rows.filter((r) => {
-      const rDisp = r.role >= 0 ? roleName(ROLES[r.role]).toLowerCase() : "";
+      const rDisp = r.role >= 0 ? normText(roleName(ROLES[r.role])) : "";
       return terms.some((term) => matchesChampSearch(r.c, term) || Boolean(rDisp && rDisp.includes(term)));
     });
   }, [rows, tableSearch]);
@@ -386,13 +386,25 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 </HubLink>
               )}
               <HubLink
-                to={{ kind: "champions", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+                to={{
+                  kind: "champions",
+                  query: new URLSearchParams({
+                    q: rawChamp || cName,
+                    ...(role ? { role } : {}),
+                  }).toString(),
+                }}
                 className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
               >
                 {tl("Champions")} →
               </HubLink>
               <HubLink
-                to={{ kind: "draft" }}
+                to={{
+                  kind: "draft",
+                  query: new URLSearchParams({
+                    champ: rawChamp || cName,
+                    ...(role ? { role } : {}),
+                  }).toString(),
+                }}
                 className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
               >
                 {tl("Draft board")} →
@@ -404,7 +416,13 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 {tl("Item history")} →
               </HubLink>
               <HubLink
-                to={{ kind: "tiers", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+                to={{
+                  kind: "tiers",
+                  query: new URLSearchParams({
+                    q: vsMatch ? `${rawChamp || cName},${vsMatch.oppCanon}` : rawChamp || cName,
+                    ...(role ? { role } : {}),
+                  }).toString(),
+                }}
                 className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
               >
                 {tl("Pro tier list")} →
@@ -446,15 +464,6 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
             title={tl("Most played champions")}
             right={
               <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
-                <HubLink to={{ kind: "champions" }} className="text-rw-accent hover:underline font-semibold">
-                  {tl("Champions")} →
-                </HubLink>
-                <HubLink to={{ kind: "tiers" }} className="text-rw-accent hover:underline font-semibold">
-                  {tl("Pro tier list")} →
-                </HubLink>
-                <HubLink to={{ kind: "draft" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-                  {tl("Draft board")} →
-                </HubLink>
                 {(() => {
                   const qTrim = inputVal.trim();
                   const topC = qTrim
@@ -462,6 +471,54 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     : undefined;
                   return (
                     <>
+                      <HubLink
+                        to={{
+                          kind: "champions",
+                          ...(topC || role
+                            ? {
+                                query: new URLSearchParams({
+                                  ...(topC ? { q: topC[0] } : {}),
+                                  ...(role ? { role } : {}),
+                                }).toString(),
+                              }
+                            : {}),
+                        }}
+                        className="text-rw-accent hover:underline font-semibold"
+                      >
+                        {tl("Champions")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "tiers",
+                          ...(topC || role
+                            ? {
+                                query: new URLSearchParams({
+                                  ...(topC ? { q: topC[0] } : {}),
+                                  ...(role ? { role } : {}),
+                                }).toString(),
+                              }
+                            : {}),
+                        }}
+                        className="text-rw-accent hover:underline font-semibold"
+                      >
+                        {tl("Pro tier list")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "draft",
+                          ...(topC || role
+                            ? {
+                                query: new URLSearchParams({
+                                  ...(topC ? { champ: topC[0] } : {}),
+                                  ...(role ? { role } : {}),
+                                }).toString(),
+                              }
+                            : {}),
+                        }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Draft board")} →
+                      </HubLink>
                       <HubLink
                         to={{
                           kind: "items",
@@ -474,7 +531,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       <HubLink
                         to={{
                           kind: "leaders",
-                          ...(topC ? { query: `champ=${encodeURIComponent(topC[0])}` } : {}),
+                          ...(topC || role
+                            ? {
+                                query: new URLSearchParams({
+                                  ...(topC ? { champ: topC[0] } : {}),
+                                  ...(role ? { role } : {}),
+                                }).toString(),
+                              }
+                            : {}),
                         }}
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
@@ -486,7 +550,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       <HubLink
                         to={{
                           kind: "finder",
-                          ...(topC ? { query: `champ=${encodeURIComponent(topC[0])}` } : {}),
+                          ...(topC || role
+                            ? {
+                                query: new URLSearchParams({
+                                  ...(topC ? { champ: topC[0] } : {}),
+                                  ...(role ? { role } : {}),
+                                }).toString(),
+                              }
+                            : {}),
                         }}
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
@@ -536,13 +607,25 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       {tl("Item history")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "tiers", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+                      to={{
+                        kind: "tiers",
+                        query: new URLSearchParams({
+                          q: `${rawChamp || cName},${vsMatch.oppCanon}`,
+                          ...(role ? { role } : {}),
+                        }).toString(),
+                      }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Pro tier list")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "draft" }}
+                      to={{
+                        kind: "draft",
+                        query: new URLSearchParams({
+                          champ: rawChamp || cName,
+                          ...(role ? { role } : {}),
+                        }).toString(),
+                      }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Draft board")} →
@@ -745,13 +828,25 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       {tl("Item history")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "tiers", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+                      to={{
+                        kind: "tiers",
+                        query: new URLSearchParams({
+                          q: good[0] ? `${rawChamp || cName},${good[0].c}` : rawChamp || cName,
+                          ...(role ? { role } : {}),
+                        }).toString(),
+                      }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Pro tier list")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "draft" }}
+                      to={{
+                        kind: "draft",
+                        query: new URLSearchParams({
+                          champ: rawChamp || cName,
+                          ...(role ? { role } : {}),
+                        }).toString(),
+                      }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Draft board")} →
@@ -877,13 +972,25 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       {tl("Item history")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "tiers", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+                      to={{
+                        kind: "tiers",
+                        query: new URLSearchParams({
+                          q: bad[0] ? `${rawChamp || cName},${bad[0].c}` : rawChamp || cName,
+                          ...(role ? { role } : {}),
+                        }).toString(),
+                      }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Pro tier list")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "draft" }}
+                      to={{
+                        kind: "draft",
+                        query: new URLSearchParams({
+                          champ: rawChamp || cName,
+                          ...(role ? { role } : {}),
+                        }).toString(),
+                      }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Draft board")} →
@@ -1021,19 +1128,37 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     {tl("Item history")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "tiers", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+                    to={{
+                      kind: "tiers",
+                      query: new URLSearchParams({
+                        q: rawChamp || cName,
+                        ...(role ? { role } : {}),
+                      }).toString(),
+                    }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Pro tier list")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "draft" }}
+                    to={{
+                      kind: "draft",
+                      query: new URLSearchParams({
+                        champ: rawChamp || cName,
+                        ...(role ? { role } : {}),
+                      }).toString(),
+                    }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Draft board")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "leaders", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+                    to={{
+                      kind: "leaders",
+                      query: new URLSearchParams({
+                        champ: rawChamp || cName,
+                        ...(role ? { role } : {}),
+                      }).toString(),
+                    }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Player leaderboards")} →
@@ -1104,10 +1229,10 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       />
                     )}
                     {(() => {
-                      const raw = duoSearch.trim().toLowerCase();
+                      const raw = normText(duoSearch);
                       const terms = raw
                         .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-                        .map((s) => s.trim())
+                        .map((s) => normText(s))
                         .filter(Boolean);
                       const dList = terms.length
                         ? data.data!.ch!.duos!.filter(([pc]) => terms.some((t) => matchesChampSearch(pc, t)))
@@ -1143,13 +1268,13 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       {tl("Item history")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "tiers", query: "role=Bot" }}
+                      to={{ kind: "tiers", query: `role=Bot&q=${encodeURIComponent(rawChamp || cName)}` }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Pro tier list")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "draft" }}
+                      to={{ kind: "draft", query: `role=Bot&champ=${encodeURIComponent(rawChamp || cName)}` }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Draft board")} →
@@ -1173,10 +1298,10 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       section={tl("Bot lane partners")}
                       name={cName}
                       rows={() => {
-                        const raw = duoSearch.trim().toLowerCase();
+                        const raw = normText(duoSearch);
                         const terms = raw
                           .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-                          .map((s) => s.trim())
+                          .map((s) => normText(s))
                           .filter(Boolean);
                         const list = terms.length
                           ? data.data!.ch!.duos!.filter(([pc]) => terms.some((t) => matchesChampSearch(pc, t)))
@@ -1196,10 +1321,10 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               >
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-xs">
                   {(() => {
-                    const raw = duoSearch.trim().toLowerCase();
+                    const raw = normText(duoSearch);
                     const terms = raw
                       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-                      .map((s) => s.trim())
+                      .map((s) => normText(s))
                       .filter(Boolean);
                     const list = terms.length
                       ? data.data.ch.duos.filter(([pc]) => terms.some((t) => matchesChampSearch(pc, t)))

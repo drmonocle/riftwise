@@ -272,6 +272,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
                   to={{
                     kind: "leaders",
                     query: new URLSearchParams({
+                      q: `${s.a.u},${s.b.u}`,
                       ...(s.e ? { event: s.e } : {}),
                       ...(seriesYear ? { year: seriesYear } : {}),
                     }).toString(),
@@ -672,14 +673,11 @@ const SeriesGames: React.FC<{
               <HubLink
                 to={{
                   kind: "leaders",
-                  ...(s.e || seriesYear
-                    ? {
-                        query: new URLSearchParams({
-                          ...(s.e ? { event: s.e } : {}),
-                          ...(seriesYear ? { year: seriesYear } : {}),
-                        }).toString(),
-                      }
-                    : {}),
+                  query: new URLSearchParams({
+                    q: `${s.a.u},${s.b.u}`,
+                    ...(s.e ? { event: s.e } : {}),
+                    ...(seriesYear ? { year: seriesYear } : {}),
+                  }).toString(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -779,7 +777,21 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                 {hidden ? (
                   "–"
                 ) : (
-                  <HubLink to={{ kind: "records" }} className="hover:text-rw-accent hover:underline" title={tl("Records")}>
+                  <HubLink
+                    to={{
+                      kind: "records",
+                      ...(s.en || gameYear
+                        ? {
+                            query: new URLSearchParams({
+                              ...(s.en ? { q: s.en } : {}),
+                              ...(gameYear ? { year: gameYear } : {}),
+                            }).toString(),
+                          }
+                        : {}),
+                    }}
+                    className="hover:text-rw-accent hover:underline"
+                    title={tl("Records")}
+                  >
                     {fmtMin(g.min)}
                   </HubLink>
                 )}
@@ -787,7 +799,13 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
             )}
             {g.patch && (
               <HubLink
-                to={{ kind: "champions", query: `patch=${encodeURIComponent(g.patch)}` }}
+                to={{
+                  kind: "champions",
+                  query: new URLSearchParams({
+                    patch: g.patch,
+                    ...(s.e ? { event: s.e } : {}),
+                  }).toString(),
+                }}
                 className="hover:text-rw-accent hover:underline"
               >
                 {tl("Patch {patch}", { patch: g.patch })}
@@ -872,6 +890,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                   to={{
                     kind: "leaders",
                     query: new URLSearchParams({
+                      q: `${s.a.u},${s.b.u}`,
                       ...(s.e ? { event: s.e } : {}),
                       ...(gameYear ? { year: gameYear } : {}),
                     }).toString(),
@@ -883,16 +902,14 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                 <HubLink
                   to={{
                     kind: "tiers",
-                    ...(g.patch
-                      ? { query: `key=p${encodeURIComponent(g.patch)}` }
-                      : gamePeriod || s.e
-                        ? {
-                            query: new URLSearchParams({
-                              ...(gamePeriod ? { key: gamePeriod } : {}),
-                              ...(s.e ? { event: s.e } : {}),
-                            }).toString(),
-                          }
-                        : {}),
+                    ...(g.patch || gamePeriod || s.e
+                      ? {
+                          query: new URLSearchParams({
+                            ...(g.patch ? { key: `p${g.patch}` } : gamePeriod ? { key: gamePeriod } : {}),
+                            ...(s.e ? { event: s.e } : {}),
+                          }).toString(),
+                        }
+                      : {}),
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
                 >
@@ -1287,7 +1304,10 @@ const PlayerBars: React.FC<{
               <HubLink
                 to={{
                   kind: "leaders",
-                  ...(period && /^y\d{4}$/.test(period) ? { query: `year=${encodeURIComponent(period.slice(1))}` } : {}),
+                  query: new URLSearchParams({
+                    q: `${blueU},${redU}`,
+                    ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
+                  }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -1532,7 +1552,10 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                   <HubLink
                     to={{
                       kind: "leaders",
-                      ...(period && /^y\d{4}$/.test(period) ? { query: `year=${encodeURIComponent(period.slice(1))}` } : {}),
+                      query: new URLSearchParams({
+                        q: `${blueU},${redU}`,
+                        ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
+                      }).toString(),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -1617,7 +1640,10 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                   <HubLink
                     to={{
                       kind: "leaders",
-                      ...(period && /^y\d{4}$/.test(period) ? { query: `year=${encodeURIComponent(period.slice(1))}` } : {}),
+                      query: new URLSearchParams({
+                        q: `${blueU},${redU}`,
+                        ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
+                      }).toString(),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >

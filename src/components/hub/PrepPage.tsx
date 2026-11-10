@@ -1468,7 +1468,7 @@ const Tendencies: React.FC<{ side: Side; rows: TeamGameRow[]; period: PeriodKey;
           <HubLink
             to={{
               kind: "draft",
-              query: `teams=${encodeURIComponent(side.team.u)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+              query: `teams=${encodeURIComponent(side.team.u)}${t.picks[0] ? `&champ=${encodeURIComponent(t.picks[0][0])}` : ""}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
             }}
             className="text-[11px] text-rw-accent hover:underline"
           >
@@ -1477,9 +1477,10 @@ const Tendencies: React.FC<{ side: Side; rows: TeamGameRow[]; period: PeriodKey;
           <HubLink
             to={{
               kind: "tiers",
-              ...(side.team.rating?.league || (period.startsWith("y") && period.length === 5) || period.startsWith("e:")
+              ...(t.picks[0] || side.team.rating?.league || (period.startsWith("y") && period.length === 5) || period.startsWith("e:")
                 ? {
                     query: new URLSearchParams({
+                      ...(t.picks[0] ? { q: t.picks[0][0] } : {}),
                       ...(side.team.rating?.league ? { league: side.team.rating.league } : {}),
                       ...(period.startsWith("y") && period.length === 5
                         ? { key: period }
@@ -1497,7 +1498,7 @@ const Tendencies: React.FC<{ side: Side; rows: TeamGameRow[]; period: PeriodKey;
           <HubLink
             to={{
               kind: "finder",
-              query: `team=${encodeURIComponent(side.team.u)}${
+              query: `team=${encodeURIComponent(side.team.u)}${t.picks[0] ? `&champ=${encodeURIComponent(t.picks[0][0])}` : ""}${
                 period.startsWith("y") && period.length === 5
                   ? `&year=${encodeURIComponent(period.slice(1))}`
                   : period.startsWith("e:")
@@ -2308,6 +2309,16 @@ const Lanes: React.FC<{
                   kind: "tiers",
                   query: new URLSearchParams({
                     role: r,
+                    ...((sa?.champs[0]?.c || sb?.champs[0]?.c)
+                      ? {
+                          q: [
+                            sa?.champs[0]?.c,
+                            sb?.champs[0]?.c && sb?.champs[0]?.c !== sa?.champs[0]?.c ? sb.champs[0].c : "",
+                          ]
+                            .filter(Boolean)
+                            .join(","),
+                        }
+                      : {}),
                     ...(a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? { league: a.team.rating.league } : {}),
                     ...(period.startsWith("y") && period.length === 5
                       ? { key: period }
@@ -2323,7 +2334,11 @@ const Lanes: React.FC<{
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(a.team.u)},${encodeURIComponent(b.team.u)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                  query: `teams=${encodeURIComponent(a.team.u)},${encodeURIComponent(b.team.u)}${
+                    sa?.champs[0]?.c || sb?.champs[0]?.c
+                      ? `&champ=${encodeURIComponent((sa?.champs[0]?.c || sb?.champs[0]?.c)!)}`
+                      : ""
+                  }&role=${encodeURIComponent(r)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
               >
@@ -2906,19 +2921,27 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
           <HubLink
             to={{
               kind: "tiers",
-              ...((a.team.rating?.league && a.team.rating.league === b.team.rating?.league) ||
-              (period && ((period.startsWith("y") && period.length === 5) || period.startsWith("e:")))
-                ? {
-                    query: new URLSearchParams({
-                      ...(a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? { league: a.team.rating.league } : {}),
-                      ...(period && period.startsWith("y") && period.length === 5
-                        ? { key: period }
-                        : period?.startsWith("e:")
-                          ? { event: period.slice(2) }
-                          : {}),
-                    }).toString(),
-                  }
-                : {}),
+              ...(() => {
+                const topChamps = [bansByA[0]?.c, picksA[0]?.c, bansByB[0]?.c, picksB[0]?.c].filter((x): x is string => Boolean(x));
+                const qChamps = Array.from(new Set(topChamps)).slice(0, 2).join(",");
+                const hasParams =
+                  qChamps ||
+                  (a.team.rating?.league && a.team.rating.league === b.team.rating?.league) ||
+                  (period && ((period.startsWith("y") && period.length === 5) || period.startsWith("e:")));
+                return hasParams
+                  ? {
+                      query: new URLSearchParams({
+                        ...(qChamps ? { q: qChamps } : {}),
+                        ...(a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? { league: a.team.rating.league } : {}),
+                        ...(period && period.startsWith("y") && period.length === 5
+                          ? { key: period }
+                          : period?.startsWith("e:")
+                            ? { event: period.slice(2) }
+                            : {}),
+                      }).toString(),
+                    }
+                  : {};
+              })(),
             }}
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
