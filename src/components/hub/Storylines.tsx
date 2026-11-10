@@ -77,23 +77,70 @@ export function notePlainText(nt: Note): string {
   return "";
 }
 
-export function noteText(nt: Note): React.ReactNode {
+export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string }): React.ReactNode {
   const plain = notePlainText(nt);
   if ((nt.k === "champ" || nt.k === "crec" || nt.k === "cms") && nt.c) {
+    const yr = nt.y ? `&year=${encodeURIComponent(nt.y)}` : "";
+    const textNode = who ? (
+      <HubLink
+        to={{
+          kind: "finder",
+          query: `${who.kind}=${encodeURIComponent(who.slug)}&champ=${encodeURIComponent(nt.c)}${yr}`,
+        }}
+        className="hover:text-rw-accent hover:underline"
+      >
+        {plain}
+      </HubLink>
+    ) : (
+      <HubLink to={{ kind: "champ", slug: prettySlug(nt.c) }} className="hover:text-rw-accent hover:underline">
+        {plain}
+      </HubLink>
+    );
     return (
       <span className="inline-flex items-center gap-1 flex-wrap">
         <HubLink to={{ kind: "champ", slug: prettySlug(nt.c) }} title={champName(nt.c)}>
           <ChampIcon name={nt.c} size={16} />
         </HubLink>
-        <span>{plain}</span>
+        {textNode}
       </span>
+    );
+  }
+  if (nt.k === "side" && who?.kind === "team" && nt.side) {
+    const yr = nt.y ? `&year=${encodeURIComponent(nt.y)}` : "";
+    return (
+      <HubLink
+        to={{ kind: "finder", query: `team=${encodeURIComponent(who.slug)}&side=${nt.side}${yr}` }}
+        className="hover:text-rw-accent hover:underline"
+      >
+        {plain}
+      </HubLink>
+    );
+  }
+  if (nt.k === "comeback" && who) {
+    const yr = nt.y ? `&year=${encodeURIComponent(nt.y)}` : "";
+    return (
+      <HubLink
+        to={{ kind: "finder", query: `${who.kind}=${encodeURIComponent(who.slug)}&result=w${yr}` }}
+        className="hover:text-rw-accent hover:underline"
+      >
+        {plain}
+      </HubLink>
     );
   }
   if (nt.k === "form" && nt.n > 0 && nt.w != null) {
     const pct = Math.round((nt.w / nt.n) * 100);
     return (
       <span className="inline-flex items-center gap-1.5 flex-wrap">
-        <span>{plain}</span>
+        {who ? (
+          <HubLink
+            to={{ kind: "finder", query: `${who.kind}=${encodeURIComponent(who.slug)}` }}
+            className="hover:text-rw-accent hover:underline"
+          >
+            {plain}
+          </HubLink>
+        ) : (
+          <span>{plain}</span>
+        )}
         <span className="inline-block w-8 h-1 rounded-full bg-rw-border/80 overflow-hidden shrink-0" aria-hidden="true">
           <span
             className={`block h-full rounded-full ${pct >= 65 ? "bg-rw-teal" : "bg-rw-accent"}`}
@@ -218,10 +265,21 @@ export const StoryList: React.FC<{
 };
 
 /** A team's or player's own storylines (their page). */
-export const OwnStorylines: React.FC<{ notes?: Notes; spoilerKey: string; share?: string }> = ({ notes, spoilerKey, share }) =>
+export const OwnStorylines: React.FC<{
+  notes?: Notes;
+  spoilerKey: string;
+  share?: string;
+  who?: { kind: "team" | "player"; slug: string };
+}> = ({ notes, spoilerKey, share, who }) =>
   notes && notes.list.length ? (
     <StoryList
-      lines={notes.list.map((nt, i) => ({ key: String(i), text: noteText(nt), plain: notePlainText(nt), champ: nt.c, asOf: notes.asOf }))}
+      lines={notes.list.map((nt, i) => ({
+        key: String(i),
+        text: noteText(nt, who),
+        plain: notePlainText(nt),
+        champ: nt.c,
+        asOf: notes.asOf,
+      }))}
       spoilerKey={spoilerKey}
       share={share}
     />
@@ -242,7 +300,7 @@ export const HomeStorylines: React.FC = () => {
       lines={rows.map((r, i) => ({
         key: `${r.u}-${i}`,
         who: { name: r.name, to: { kind: r.t, slug: r.u } },
-        text: noteText(r),
+        text: noteText(r, { kind: r.t, slug: r.u }),
         plain: notePlainText(r),
         champ: r.c,
         asOf: r.asOf,

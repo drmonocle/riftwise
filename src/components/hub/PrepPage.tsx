@@ -826,13 +826,13 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
   const [formHidden] = useHidden(`prep-form:${a.team.u}:${b.team.u}`, formFresh);
   const meetings = a.series.filter((r) => r[2] === b.team.u);
   const h2hWins = meetings.filter((r) => r[3] > r[4]).length;
-  // storylines as plain text (the ones written as text: all of them today) for the card and the post
+  // storylines as plain text for the card and the post
   const stories = useMemo(
     () =>
       prepLines(a, b)
         // the series record has its own place on the card and in the post
-        .filter((l) => l.key !== "h2h" && (typeof l.text === "string" || typeof l.text === "number"))
-        .map((l) => (l.who ? `${l.who.name}: ${l.text}` : String(l.text))),
+        .filter((l) => l.key !== "h2h" && Boolean(l.plain || typeof l.text === "string" || typeof l.text === "number"))
+        .map((l) => (l.who ? `${l.who.name}: ${l.plain || String(l.text)}` : String(l.plain || l.text))),
     [a, b],
   );
   const pools = useMemo(() => fearlessPools(a, b, period), [a, b, period]);
@@ -1060,12 +1060,18 @@ export function prepLines(a: Side, b: Side): StoryLine[] {
     const t = tl("First ever meeting between these teams");
     lines.push({ key: "first", text: t, plain: t });
   } else {
-    const [date, , , won, lost, en] = meetings[0];
+    const [date, , , won, lost, en, , seriesSlug] = meetings[0];
     const winner = won > lost ? a.team.name : b.team.name;
     const lastTxt = tl("Last meeting: {team} won {score} ({event}, {date})", { team: winner, score: `${Math.max(won, lost)}-${Math.min(won, lost)}`, event: en, date: fmtDate(date) });
     lines.push({
       key: "last",
-      text: lastTxt,
+      text: seriesSlug ? (
+        <HubLink to={{ kind: "match", slug: seriesSlug }} className="hover:text-rw-accent hover:underline">
+          {lastTxt}
+        </HubLink>
+      ) : (
+        lastTxt
+      ),
       plain: lastTxt,
       asOf: date,
     });
@@ -1081,15 +1087,27 @@ export function prepLines(a: Side, b: Side): StoryLine[] {
     }
     const wa = meetings.filter((m) => m[3] > m[4]).length;
     const h2hTxt = tl("Series between them: {a} {wa}-{wb} {b}", { a: a.team.name, b: b.team.name, wa, wb: meetings.length - wa });
-    lines.push({ key: "h2h", text: h2hTxt, plain: h2hTxt, asOf: date });
+    lines.push({
+      key: "h2h",
+      text: (
+        <HubLink
+          to={{ kind: "finder", query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}` }}
+          className="hover:text-rw-accent hover:underline"
+        >
+          {h2hTxt}
+        </HubLink>
+      ),
+      plain: h2hTxt,
+      asOf: date,
+    });
   }
   for (const s of [a, b]) {
     for (const [i, nt] of (s.team.notes?.list || []).entries())
-      lines.push({ key: `${s.team.u}-${i}`, who: { name: s.team.name, to: { kind: "team", slug: s.team.u } }, text: noteText(nt), plain: notePlainText(nt), champ: nt.c, asOf: s.team.notes?.asOf });
+      lines.push({ key: `${s.team.u}-${i}`, who: { name: s.team.name, to: { kind: "team", slug: s.team.u } }, text: noteText(nt, { kind: "team", slug: s.team.u }), plain: notePlainText(nt), champ: nt.c, asOf: s.team.notes?.asOf });
     for (const pl of s.players)
       if (pl?.p.notes)
         for (const [i, nt] of pl.p.notes.list.entries())
-          lines.push({ key: `${pl.p.u}-${i}`, who: { name: pl.p.name, to: { kind: "player", slug: pl.p.u } }, text: noteText(nt), plain: notePlainText(nt), champ: nt.c, asOf: pl.p.notes.asOf });
+          lines.push({ key: `${pl.p.u}-${i}`, who: { name: pl.p.name, to: { kind: "player", slug: pl.p.u } }, text: noteText(nt, { kind: "player", slug: pl.p.u }), plain: notePlainText(nt), champ: nt.c, asOf: pl.p.notes.asOf });
   }
   return lines;
 }

@@ -69,7 +69,17 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
             return (
               <li key={c.m.matchId} className="flex items-center justify-between gap-2 min-w-0">
                 <span className="inline-flex items-center gap-1.5 truncate min-w-0">
-                  <span className="text-rw-sub">{tl("vs")}</span>
+                  {c.opp ? (
+                    <HubLink
+                      to={{ kind: "compare", mode: "team", a: t.u, b: c.opp }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                      title={tl("Compare")}
+                    >
+                      {tl("vs")}
+                    </HubLink>
+                  ) : (
+                    <span className="text-rw-sub">{tl("vs")}</span>
+                  )}
                   <TeamLogo name={them.name} code={them.code} src={them.img} size={15} className="shrink-0" />
                   <TeamLink name={them.name} u={c.opp} className="truncate hover:text-rw-accent" />
                   <span className="text-rw-muted truncate">
@@ -80,9 +90,12 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                     {c.m.blockName ? ` · ${c.m.blockName}` : ""}
                   </span>
                 </span>
-                <HubLink to={{ kind: "match", slug: RIOT_PREFIX + c.m.matchId }} className="text-rw-muted hover:text-rw-accent hover:underline shrink-0">
-                  {formatMatchTime(c.m.startTimeUtc)}
-                </HubLink>
+                <span className="inline-flex items-center gap-1.5 shrink-0">
+                  <MatchPrepButton match={c.m} compact />
+                  <HubLink to={{ kind: "match", slug: RIOT_PREFIX + c.m.matchId }} className="text-rw-muted hover:text-rw-accent hover:underline">
+                    {formatMatchTime(c.m.startTimeUtc)}
+                  </HubLink>
+                </span>
               </li>
             );
           })}
@@ -157,7 +170,17 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
           <span className="font-bold text-sm text-rw-text sm:hidden">{ours.code || t.name}</span>
           <TeamLogo name={t.name} code={ours.code} src={ours.img} size={32} className="shrink-0" />
         </span>
-        <span className="text-rw-sub text-xs shrink-0">{tl("vs")}</span>
+        {c.opp ? (
+          <HubLink
+            to={{ kind: "compare", mode: "team", a: t.u, b: c.opp }}
+            className="text-rw-sub hover:text-rw-accent hover:underline text-xs shrink-0"
+            title={tl("Compare")}
+          >
+            {tl("vs")}
+          </HubLink>
+        ) : (
+          <span className="text-rw-sub text-xs shrink-0">{tl("vs")}</span>
+        )}
         <span className="flex items-center gap-2 min-w-0 flex-1">
           <TeamLogo name={them.name} code={them.code} src={them.img} size={32} className="shrink-0" />
           <span className="font-bold text-sm truncate min-w-0 max-sm:hidden">
@@ -237,6 +260,22 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
         >
           {tl("Draft board")}
         </HubLink>
+        {c.opp && (
+          <>
+            <HubLink
+              to={{ kind: "compare", mode: "team", a: t.u, b: c.opp }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+            >
+              {tl("Compare")}
+            </HubLink>
+            <HubLink
+              to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&vs=${encodeURIComponent(c.opp)}` }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+            >
+              {tl("Game finder")}
+            </HubLink>
+          </>
+        )}
         <HubLink
           to={{ kind: "match", slug: RIOT_PREFIX + m.matchId }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"

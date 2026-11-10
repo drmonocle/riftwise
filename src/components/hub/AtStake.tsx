@@ -45,7 +45,7 @@ function matchLines(
       lines.push({
         key: `${u}-${i}`,
         who: { name: s.n, to: { kind: "team", slug: u } },
-        text: noteText(nt),
+        text: noteText(nt, { kind: "team", slug: u }),
         asOf: s.a || undefined,
       }),
     );
@@ -54,7 +54,7 @@ function matchLines(
         lines.push({
           key: `${pu}-${i}`,
           who: { name: pn, to: { kind: "player", slug: pu } },
-          text: noteText(nt),
+          text: noteText(nt, { kind: "player", slug: pu }),
           asOf,
         }),
       );

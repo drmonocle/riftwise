@@ -616,7 +616,7 @@ const PlayerView: React.FC<{
         </div>
       )}
 
-      {overview && <OwnStorylines notes={p.notes} spoilerKey={`notes:player:${p.u}`} share={`${p.u}-storylines`} />}
+      {overview && <OwnStorylines notes={p.notes} spoilerKey={`notes:player:${p.u}`} share={`${p.u}-storylines`} who={{ kind: "player", slug: p.u }} />}
 
       {overview && (
         <div className="rw-span grid gap-3 md:grid-cols-2 items-start">

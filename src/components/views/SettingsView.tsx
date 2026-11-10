@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { APP_VERSION } from "../../version";
 import { DEFAULT_FOLLOWED_REGIONS, DEFAULT_FOLLOWED_LEAGUES } from "../../api";
-import { playKickoffChime } from "../../helpers";
+import { pickTeamByCode, playKickoffChime } from "../../helpers";
 import {
   IS_DESKTOP,
   IS_WEB,
@@ -27,7 +27,7 @@ import {
 import { tl, locale, LANGUAGES, TRANSLATION_EMAIL, TRANSLATION_MAILTO, detectLanguage } from "../../i18n";
 import { langAddress } from "../../hub/route";
 import { prettySlug } from "../../hub/data";
-import { HubLink } from "../hub/ui";
+import { HubLink, TeamLogo } from "../hub/ui";
 import { PushAlertsCard } from "../PushAlerts";
 import { SyncPanel } from "../SyncPanel";
 
@@ -703,15 +703,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
           {(settings.followedTeams.length > 0 || settings.followedPlayers.length > 0) && (
             <div className="flex flex-wrap gap-1.5 pt-2 border-t border-rw-border">
-              {settings.followedTeams.map((t) => (
-                <HubLink
-                  key={`t-${t}`}
-                  to={{ kind: "team", slug: prettySlug(t) }}
-                  className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-semibold text-rw-text hover:text-rw-accent"
-                >
-                  {t}
-                </HubLink>
-              ))}
+              {settings.followedTeams.map((t) => {
+                const team = catalog ? pickTeamByCode(catalog.teams, t) : undefined;
+                const teamName = team?.name || t;
+                return (
+                  <HubLink
+                    key={`t-${t}`}
+                    to={{ kind: "team", slug: prettySlug(teamName) }}
+                    title={teamName}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-semibold text-rw-text hover:text-rw-accent"
+                  >
+                    <TeamLogo name={teamName} code={t} src={team?.image} size={13} />
+                    <span>{t}</span>
+                  </HubLink>
+                );
+              })}
               {settings.followedPlayers.map((p) => (
                 <HubLink
                   key={`p-${p}`}

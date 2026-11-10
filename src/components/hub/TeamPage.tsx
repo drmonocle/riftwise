@@ -535,7 +535,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
         </div>
       )}
 
-      {overview && <OwnStorylines notes={t.notes} spoilerKey={`notes:team:${t.u}`} share={`${t.u}-storylines`} />}
+      {overview && <OwnStorylines notes={t.notes} spoilerKey={`notes:team:${t.u}`} share={`${t.u}-storylines`} who={{ kind: "team", slug: t.u }} />}
 
       {overview && t.titles.length > 0 && (
         <Section
