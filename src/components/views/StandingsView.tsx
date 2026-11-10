@@ -203,13 +203,43 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
             )
           )}
           {activeLeague && (
-            <button
-              type="button"
-              onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(activeLeague) })}
-              className="text-[11px] font-semibold text-rw-accent hover:underline"
-            >
-              {tl("Full history and stats")} →
-            </button>
+            <span className="flex flex-wrap items-center gap-2 text-[11px]">
+              <button
+                type="button"
+                onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(activeLeague) })}
+                className="font-semibold text-rw-accent hover:underline"
+              >
+                {tl("Full history and stats")} →
+              </button>
+              <button
+                type="button"
+                onClick={() => navigateHub({ kind: "champions", query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` })}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Champions")} →
+              </button>
+              <button
+                type="button"
+                onClick={() => navigateHub({ kind: "tiers", query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` })}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </button>
+              <button
+                type="button"
+                onClick={() => navigateHub({ kind: "leaders", query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` })}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </button>
+              <button
+                type="button"
+                onClick={() => navigateHub({ kind: "finder", query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` })}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </button>
+            </span>
           )}
           {standings && standings.stages.length > 1 && (
             <div className="flex items-center gap-1 bg-rw-deep p-1 rounded-lg border border-rw-border ml-auto overflow-x-auto max-w-full">

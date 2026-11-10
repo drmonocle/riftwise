@@ -353,6 +353,18 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
           >
             {tl("Compare")}
           </button>
+          <button
+            type="button"
+            onClick={() =>
+              navigateHub({
+                kind: "finder",
+                query: `team=${encodeURIComponent(prettySlug(left.name || left.code))}&vs=${encodeURIComponent(prettySlug(right.name || right.code))}`,
+              })
+            }
+            className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Game finder")}
+          </button>
           <SectionCard
             section={finished ? tl("Game {n} · final", { n: game.number }) : tl("Game {n} · live", { n: game.number })}
             name={`${left.code} vs ${right.code}`}

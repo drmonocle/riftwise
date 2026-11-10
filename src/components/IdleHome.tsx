@@ -63,6 +63,20 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               }
             />
           )}
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "tournaments" })}
+            className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
+          >
+            {tl("Tournaments")}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "finder" })}
+            className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
+          >
+            {tl("Game finder")}
+          </button>
           <button type="button" onClick={() => onSelectTab("schedule")} className="text-rw-accent hover:underline text-[11px] font-medium">
             {tl("All results →")}
           </button>
@@ -223,6 +237,17 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
                 title={tl("Compare {a} and {b}", { a: top[0][1], b: top[1][1] })}
               >
                 {tl("Compare")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  navigateHub({ kind: "finder", query: `team=${encodeURIComponent(top[0][0])}` });
+                  onSelectTab("stats");
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
+                title={tl("Game finder")}
+              >
+                {tl("Game finder")}
               </button>
             </>
           )}

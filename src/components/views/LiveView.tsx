@@ -687,6 +687,18 @@ const LiveMatchBlock: React.FC<{
                 >
                   {tl("Compare")}
                 </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigateHub({
+                      kind: "finder",
+                      query: `team=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))}&vs=${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}`,
+                    })
+                  }
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+                >
+                  {tl("Game finder")}
+                </button>
               </>
             )}
           </span>
@@ -1036,6 +1048,18 @@ const NextMatchCard: React.FC<{
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
                   {tl("Compare")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigateHub({
+                      kind: "finder",
+                      query: `team=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))}&vs=${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}`,
+                    })
+                  }
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+                >
+                  {tl("Game finder")}
                 </button>
               </>
             )}

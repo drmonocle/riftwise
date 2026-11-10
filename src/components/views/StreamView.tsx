@@ -545,6 +545,19 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                                 onClick={() => {
                                   const y = /\b(20\d\d)\b/.exec(e.season || "")?.[1];
                                   navigateHub({
+                                    kind: "draft",
+                                    query: `teams=${encodeURIComponent(teamSlug(e.team1!))},${encodeURIComponent(teamSlug(e.team2!))}${y ? `&p=y${y}` : ""}`,
+                                  });
+                                }}
+                                className="hidden sm:inline text-[10px] text-rw-sub hover:text-rw-accent hover:underline"
+                              >
+                                {tl("Draft board")}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const y = /\b(20\d\d)\b/.exec(e.season || "")?.[1];
+                                  navigateHub({
                                     kind: "compare",
                                     mode: "team",
                                     a: teamSlug(e.team1!),
@@ -555,6 +568,19 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                                 className="hidden md:inline text-[10px] text-rw-sub hover:text-rw-accent hover:underline"
                               >
                                 {tl("Compare")}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const y = /\b(20\d\d)\b/.exec(e.season || "")?.[1];
+                                  navigateHub({
+                                    kind: "finder",
+                                    query: `team=${encodeURIComponent(teamSlug(e.team1!))}&vs=${encodeURIComponent(teamSlug(e.team2!))}${y ? `&year=${y}` : ""}`,
+                                  });
+                                }}
+                                className="hidden lg:inline text-[10px] text-rw-sub hover:text-rw-accent hover:underline"
+                              >
+                                {tl("Game finder")}
                               </button>
                             </>
                           )}

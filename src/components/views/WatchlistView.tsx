@@ -481,6 +481,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   >
                     {tl("Compare")} →
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}` })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Game finder")} →
+                  </button>
                 </span>
               );
             })()}
@@ -755,6 +762,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Compare")} →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "finder", query: `player=${encodeURIComponent(a)}` })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Game finder")} →
                   </button>
                 </span>
               );
