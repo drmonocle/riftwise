@@ -156,8 +156,10 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
               section={tl("Latest pentakills")}
               name={tl("Records")}
               rows={() =>
-                p.recent.slice(0, 10).map((x) => ({
+                p.recent.slice(0, 10).map((x, idx) => ({
+                  rank: idx + 1,
                   champ: x.c,
+                  team: x.a,
                   label: `${x.n} (${champName(x.c)})`,
                   sub: `${x.a} vs ${x.b} · ${x.t} · ${fmtDate(x.date)}`,
                   value: x.x > 1 ? `×${x.x}` : "5K",
@@ -337,7 +339,8 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
           section={tl("Closest to falling")}
           name={label}
           rows={() =>
-            rows.map((r) => ({
+            rows.map((r, idx) => ({
+              rank: idx + 1,
               label: r.title,
               sub: tl("Record {value} ({who}) · best this year {best} ({by})", { value: r.fmt(r.rec), who: r.recBy, best: r.fmt(r.best), by: r.bestBy }),
               value: `${Math.round(r.share * 100)}%`,
@@ -983,7 +986,8 @@ export const TitlesPanel: React.FC = () => {
                     name={tl(TITLE_FILTERS.find((f) => f.key === kind)?.label || kind)}
                     sub={search.trim() || undefined}
                     rows={() =>
-                      rows.slice(0, 12).map((x) => ({
+                      rows.slice(0, 12).map((x, idx) => ({
+                        rank: idx + 1,
                         team: x.as,
                         label: `${x.as} · ${eventTitle(x.t)}`,
                         sub: `${x.score} vs ${x.l} · ${fmtDate(x.date)}`,

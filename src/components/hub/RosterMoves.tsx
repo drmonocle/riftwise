@@ -49,7 +49,8 @@ export const RosterMoves: React.FC = () => {
                 name={all ? tl("All leagues") : tl("Top leagues")}
                 sub={fmtDate(moves.data.since)}
                 rows={() =>
-                  list.slice(0, 12).map((m) => ({
+                  list.slice(0, 12).map((m, idx) => ({
+                    rank: idx + 1,
                     team: m.to.n,
                     label: `${m.n}${m.r ? ` (${roleName(m.r)})` : ""}`,
                     sub: `${m.from.n} → ${m.to.n}${m.lu && name.get(m.lu) ? ` · ${name.get(m.lu)}` : ""}`,

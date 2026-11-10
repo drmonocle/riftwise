@@ -222,6 +222,7 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
                   label: `${teamName} vs ${r[1]}`,
                   sub: `${r[5]} · ${fmtDate(r[0])}`,
                   value: `${r[3]}-${r[4]}`,
+                  win: r[3] > r[4],
                 }))
               }
             />
@@ -296,6 +297,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                   label: `${aName} ${r[3]} – ${r[4]} ${bName}`,
                   sub: `${r[5]} · ${fmtDate(r[0])}`,
                   value: r[3] > r[4] ? aName : bName,
+                  win: r[3] > r[4],
                 }))
               }
             />
@@ -563,9 +565,11 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string; p
                 shown.slice(0, 10).map((r, idx) => ({
                   rank: idx + 1,
                   champ: r[2],
+                  team: r[7] || r[8],
                   label: `${champName(r[2])} (${r[3]}/${r[4]}/${r[5]}) vs ${r[8]}`,
                   sub: `${r[9]} · ${fmtDate(r[0])}`,
                   value: r[6] ? tc("short result", "W") : tc("short result", "L"),
+                  win: Boolean(r[6]),
                 }))
               }
             />

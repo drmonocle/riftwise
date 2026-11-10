@@ -12,7 +12,7 @@ import { tl, tn, tk, tc, regionName, roleName, LANGUAGES } from "../../i18n";
 import { loadEventsOfYear, loadHubHome, loadHubMeta, loadLeagues, loadPatches, loadRatings } from "../../hub/data";
 import { UpNextTable } from "../UpNextTable";
 import { formatMatchTime } from "../../matchTime";
-import { RatingBadge } from "./PlayerRating";
+import { fmtRating, RatingBadge } from "./PlayerRating";
 import { useRecentPages } from "../../hub/recent";
 import { loadPopular } from "../../hub/popular";
 import { champName } from "../../champions";
@@ -752,7 +752,7 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                   team: p.t,
                   label: p.n,
                   sub: [p.r ? roleName(p.r) : "", p.t, `${p.g}G`].filter(Boolean).join(" · "),
-                  value: String(Math.round(p.rt)),
+                  value: fmtRating(p.rt),
                   win: true,
                 }))
               }
@@ -983,7 +983,8 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
           name={scope === "main" ? tl("Main leagues & internationals") : tl("Everything")}
           sub={`${rows.length}`}
           rows={() =>
-            rows.slice(0, 12).map((e) => ({
+            rows.slice(0, 12).map((e, idx) => ({
+              rank: idx + 1,
               team: e.w || undefined,
               label: e.n,
               sub: [e.r ? regionName(e.r, e.r) : null, fmtDate(e.st, false)].filter(Boolean).join(" · "),

@@ -10,7 +10,6 @@ import { tl, tn, locale, roleName } from "../../i18n";
 import { champName } from "../../champions";
 import { loadWeekly, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import type { HubWeekly } from "../../hub/types";
-import { SITE_URL } from "../../platform";
 import { card, ChampIcon, ChampLink, EventLink, fmtDate, HubLink, hubShareUrl, Page, PlayerLink, PlayerPhoto, RevealButton, Section, TeamLink, TeamLogo, th, td, useHidden, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
 import { BroadcastCardButton, listCard, SectionCard } from "./BroadcastCard";
@@ -53,7 +52,7 @@ function markdown(w: HubWeekly): string {
   }
   if (w.best.length) {
     L.push("## Best games (game rating 0-100)", "");
-    for (const b of w.best) L.push(`- ${b.r}: ${b.a} vs ${b.b}, game ${b.gn} · ${b.t} · ${SITE_URL}match/${b.g}?g=${b.gn}`);
+    for (const b of w.best) L.push(`- ${b.r}: ${b.a} vs ${b.b}, game ${b.gn} · ${b.t} · ${hubShareUrl({ kind: "match", slug: b.g, game: b.gn })}`);
     L.push("");
   }
   if (w.players?.length) {
@@ -210,7 +209,8 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   section={tl("Biggest upsets")}
                   name={range}
                   rows={() =>
-                    w.upsets.map((u) => ({
+                    w.upsets.map((u, idx) => ({
+                      rank: idx + 1,
                       team: u.w,
                       label: `${tl("{w} beat {l}", { w: u.w, l: u.l })} (${u.s})`,
                       sub: `${u.t} · ${fmtDate(u.date)}`,
@@ -273,7 +273,8 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   section={tl("Power rankings movers")}
                   name={range}
                   rows={() =>
-                    w.movers.map((m) => ({
+                    w.movers.map((m, idx) => ({
+                      rank: idx + 1,
                       team: m.n,
                       label: m.n,
                       sub: `${m.lg} · ${m.r.toLocaleString(locale())}`,
@@ -342,7 +343,9 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   section={tl("All-time records set")}
                   name={range}
                   rows={() =>
-                    w.records.map((r) => ({
+                    w.records.map((r, idx) => ({
+                      rank: idx + 1,
+                      team: String(r.r.team || r.r.w || "") || undefined,
                       label: tl(RECORD_TITLES[`${r.s}/${r.k}`] || r.k),
                       sub: recordWho(r.r),
                       value: recordValue(r.k, Number(r.r.v)),
@@ -405,7 +408,8 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   section={tl("Best games")}
                   name={range}
                   rows={() =>
-                    w.best.map((b) => ({
+                    w.best.map((b, idx) => ({
+                      rank: idx + 1,
                       team: b.a,
                       label: tl("{a} vs {b}, game {n}", { a: b.a, b: b.b, n: b.gn }),
                       sub: `${b.t} · ${fmtDate(b.date)}`,
@@ -667,7 +671,27 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             </Section>
           )}
           <div className="md:col-span-2">
-            <Section title={tl("Every result")} share="weekly-results">
+            <Section
+              title={tl("Every result")}
+              right={
+                w.results.length > 0 ? (
+                  <SectionCard
+                    section={tl("Every result")}
+                    name={range}
+                    rows={() =>
+                      w.results.slice(0, 12).map((r) => ({
+                        team: r.sa >= r.sb ? r.a : r.b,
+                        label: `${r.a} vs ${r.b}`,
+                        sub: `${r.t} · ${fmtDate(r.date, false)}`,
+                        value: `${r.sa}–${r.sb}`,
+                        win: true,
+                      }))
+                    }
+                  />
+                ) : undefined
+              }
+              share="weekly-results"
+            >
               <ul className="text-xs divide-y divide-rw-border/60">
                 {w.results.map((r) => (
                   <li key={r.g} className="flex items-center gap-2 py-1 min-w-0">

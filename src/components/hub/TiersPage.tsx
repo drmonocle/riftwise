@@ -154,18 +154,20 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                 name={label(key)}
                 sub={`${block.games}G`}
                 rows={() =>
-                  shown.flatMap((r) =>
-                    (byRole.get(r) || [])
-                      .filter((c) => tierOf(c.score).t === "S" || tierOf(c.score).t === "A")
-                      .slice(0, role ? 12 : 3)
-                      .map((c) => ({
-                        champ: c.c,
-                        label: `${champName(c.c)} (${roleName(r)})`,
-                        sub: `${tierOf(c.score).t} · ${fmtDec(c.presence * 100)}% ${tl("Presence")} · ${c.p}G`,
-                        value: c.wr != null && c.p >= 5 ? `${Math.round(c.wr * 100)}%` : `${fmtDec(c.presence * 100)}%`,
-                        win: c.wr != null ? c.wr >= 0.5 : true,
-                      })),
-                  )
+                  shown
+                    .flatMap((r) =>
+                      (byRole.get(r) || [])
+                        .filter((c) => tierOf(c.score).t === "S" || tierOf(c.score).t === "A")
+                        .slice(0, role ? 12 : 3)
+                        .map((c) => ({
+                          champ: c.c,
+                          label: `${champName(c.c)} (${roleName(r)})`,
+                          sub: `${tierOf(c.score).t} · ${fmtDec(c.presence * 100)}% ${tl("Presence")} · ${c.p}G`,
+                          value: c.wr != null && c.p >= 5 ? `${Math.round(c.wr * 100)}%` : `${fmtDec(c.presence * 100)}%`,
+                          win: c.wr != null ? c.wr >= 0.5 : true,
+                        })),
+                    )
+                    .map((row, idx) => ({ rank: idx + 1, ...row }))
                 }
               />
               <CopyTiersPost title={`${tl("Pro tier list")} · ${label(key)} (${block.games}G)`} byRole={byRole} shown={shown} query={query} />
@@ -282,7 +284,8 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                       name={label(key)}
                       sub={`${block.games}G`}
                       rows={() =>
-                        (byRole.get(r) || []).slice(0, 12).map((c) => ({
+                        (byRole.get(r) || []).slice(0, 12).map((c, idx) => ({
+                          rank: idx + 1,
                           champ: c.c,
                           label: `${tierOf(c.score).t} · ${champName(c.c)}`,
                           sub: `${fmtDec(c.presence * 100)}% ${tl("Presence")} · ${c.p} ${tl("Picks")}`,

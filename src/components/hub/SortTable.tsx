@@ -34,16 +34,24 @@ const csvCell = (raw: string) => {
 
 /** Copy (for pasting into a spreadsheet) and CSV download buttons for a table. */
 export const TableExport: React.FC<{ tableRef: React.RefObject<HTMLTableElement | null>; name: string }> = ({ tableRef, name }) => {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     if (!tableRef.current) return;
     const text = tableRows(tableRef.current).map((r) => r.join("\t")).join("\n");
-    navigator.clipboard?.writeText(text).then(
+    if (!navigator.clipboard?.writeText) {
+      setCopied("failed");
+      setTimeout(() => setCopied("idle"), 1800);
+      return;
+    }
+    navigator.clipboard.writeText(text).then(
       () => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1800);
+        setCopied("copied");
+        setTimeout(() => setCopied("idle"), 1800);
       },
-      () => {},
+      () => {
+        setCopied("failed");
+        setTimeout(() => setCopied("idle"), 1800);
+      },
     );
   };
   const download = () => {
@@ -62,7 +70,7 @@ export const TableExport: React.FC<{ tableRef: React.RefObject<HTMLTableElement 
     <div className="flex justify-end gap-1.5 text-[10px]">
       <button type="button" onClick={copy} className={btn} title={tl("Copy the table to paste into a spreadsheet")}>
         <ClipboardCopy className="w-3 h-3" />
-        {copied ? tl("Copied") : tl("Copy")}
+        {copied === "copied" ? tl("Copied") : copied === "failed" ? tl("Couldn't copy") : tl("Copy")}
       </button>
       {IS_WEB && (
         <button type="button" onClick={download} className={btn} title={tl("Download as a CSV file")}>

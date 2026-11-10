@@ -102,20 +102,31 @@ const TwitchIcon = () => (
 );
 
 const CopyButton: React.FC<{ text: string }> = ({ text }) => {
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState<"idle" | "copied" | "failed">("idle");
   return (
     <button
       type="button"
       className={plain}
-      onClick={() =>
-        navigator.clipboard?.writeText(text).then(() => {
-          setDone(true);
-          setTimeout(() => setDone(false), 1800);
-        }, () => {})
-      }
+      onClick={() => {
+        if (!navigator.clipboard?.writeText) {
+          setDone("failed");
+          setTimeout(() => setDone("idle"), 1800);
+          return;
+        }
+        navigator.clipboard.writeText(text).then(
+          () => {
+            setDone("copied");
+            setTimeout(() => setDone("idle"), 1800);
+          },
+          () => {
+            setDone("failed");
+            setTimeout(() => setDone("idle"), 1800);
+          },
+        );
+      }}
     >
-      {done ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-      {done ? tl("Copied") : tl("Copy")}
+      {done === "copied" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+      {done === "copied" ? tl("Copied") : done === "failed" ? tl("Couldn't copy") : tl("Copy")}
     </button>
   );
 };

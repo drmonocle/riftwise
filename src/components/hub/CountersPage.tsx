@@ -543,7 +543,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     name={cName}
                     sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
                     rows={() =>
-                      good.map((x) => ({
+                      good.map((x, idx) => ({
+                        rank: idx + 1,
                         champ: x.c,
                         label: champName(x.c),
                         sub: `${x.role >= 0 ? `${roleName(ROLES[x.role])} · ` : ""}${x.g}G${x.gd != null ? ` · ${x.gd > 0 ? "+" : ""}${x.gd} GD@15` : ""}`,
@@ -614,7 +615,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     name={cName}
                     sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
                     rows={() =>
-                      bad.map((x) => ({
+                      bad.map((x, idx) => ({
+                        rank: idx + 1,
                         champ: x.c,
                         label: champName(x.c),
                         sub: `${x.role >= 0 ? `${roleName(ROLES[x.role])} · ` : ""}${x.g}G${x.gd != null ? ` · ${x.gd > 0 ? "+" : ""}${x.gd} GD@15` : ""}`,
@@ -689,7 +691,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     name={cName}
                     sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
                     rows={() =>
-                      rows.slice(0, 14).map((x) => ({
+                      rows.slice(0, 14).map((x, idx) => ({
+                        rank: idx + 1,
                         champ: x.c,
                         label: champName(x.c),
                         sub: `${x.role >= 0 ? `${roleName(ROLES[x.role])} · ` : ""}${x.g}G${x.gd != null ? ` · ${x.gd > 0 ? "+" : ""}${x.gd} GD@15` : ""}`,
@@ -736,7 +739,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     section={tl("Bot lane partners")}
                     name={cName}
                     rows={() =>
-                      data.data!.ch!.duos!.slice(0, 12).map(([pc, g, w]) => ({
+                      data.data!.ch!.duos!.slice(0, 12).map(([pc, g, w], idx) => ({
+                        rank: idx + 1,
                         champ: pc,
                         label: champName(pc),
                         sub: `${g}G`,

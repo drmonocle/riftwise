@@ -18,7 +18,7 @@ export function calendarFeedUrl(settings: Pick<AppSettings, "followedTeams" | "f
 }
 
 export const CalendarFeed: React.FC<{ settings: AppSettings; onOpenUrl?: (url: string) => void }> = ({ settings, onOpenUrl }) => {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"idle" | "copied" | "failed">("idle");
   const https = calendarFeedUrl(settings);
   const webcal = https.replace(/^https:/, "webcal:");
   const google = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcal)}`;
@@ -52,18 +52,26 @@ export const CalendarFeed: React.FC<{ settings: AppSettings; onOpenUrl?: (url: s
           type="button"
           className={btn}
           onClick={() => {
+            if (!navigator.clipboard?.writeText) {
+              setCopied("failed");
+              window.setTimeout(() => setCopied("idle"), 1800);
+              return;
+            }
             navigator.clipboard
-              ?.writeText(https)
+              .writeText(https)
               .then(() => {
-                setCopied(true);
-                window.setTimeout(() => setCopied(false), 1800);
+                setCopied("copied");
+                window.setTimeout(() => setCopied("idle"), 1800);
               })
-              .catch(() => {});
+              .catch(() => {
+                setCopied("failed");
+                window.setTimeout(() => setCopied("idle"), 1800);
+              });
           }}
           title={https}
         >
-          {copied ? <Check className="w-3.5 h-3.5 text-rw-teal" /> : <Copy className="w-3.5 h-3.5" />}
-          {copied ? tl("Copied") : tl("Copy the calendar link")}
+          {copied === "copied" ? <Check className="w-3.5 h-3.5 text-rw-teal" /> : <Copy className="w-3.5 h-3.5" />}
+          {copied === "copied" ? tl("Copied") : copied === "failed" ? tl("Couldn't copy") : tl("Copy the calendar link")}
         </button>
       </div>
     </div>

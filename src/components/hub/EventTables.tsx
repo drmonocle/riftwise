@@ -257,6 +257,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
                   label: p.n,
                   sub: `${p.t} · ${roleName(p.r)} · ${pct(per(p.w, p.g, 3))}`,
                   value: `${per(p.k + p.a, Math.max(p.d, 1), 2) ?? "–"} KDA`,
+                  win: p.g >= 2 ? p.w / p.g >= 0.5 : undefined,
                 }))
             }
           />
@@ -495,6 +496,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
                   label: t.t,
                   sub: `${t.w}-${t.g - t.w} · ${per(t.min, t.g) ?? "–"} min`,
                   value: pct(per(t.w, t.g, 3)),
+                  win: t.g > 0 ? t.w / t.g >= 0.5 : undefined,
                 }))
             }
           />

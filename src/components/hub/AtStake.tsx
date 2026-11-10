@@ -16,6 +16,7 @@ import {
   noteText,
 } from "./Storylines";
 import { GRID_COLS, HubLink, Section, TeamLogo, useColumns } from "./ui";
+import { SectionCard } from "./BroadcastCard";
 import { WinChanceLine } from "../WinChanceLine";
 
 /** hub/stakes.json: team slug -> its storylines and its starters' (name, slug, role, as of, notes) */
@@ -118,6 +119,22 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
     <Section
       title={tl("On the line today")}
       share="riftwise-on-the-line-today"
+      right={
+        <SectionCard
+          section={tl("On the line today")}
+          name="RiftWise"
+          sub={tl("Milestones and streaks for the matches in the next 24 hours.")}
+          rows={() =>
+            blocks.slice(0, 8).map(({ m }, idx) => ({
+              rank: idx + 1,
+              team: m.team1Name || m.team1Code,
+              label: `${m.team1Code} vs ${m.team2Code}`,
+              sub: m.leagueName,
+              value: m.state === "inProgress" ? tl("Live now") : time(m.startTimeUtc),
+            }))
+          }
+        />
+      }
     >
       <p className="text-[11px] text-rw-muted">
         {tl("Milestones and streaks for the matches in the next 24 hours.")}

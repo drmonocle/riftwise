@@ -71,6 +71,7 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                   label: r.name,
                   sub: `${r.sw}-${r.sl} · #1 ${pctText(r.first)}`,
                   value: pctText(r.top[ci]),
+                  win: r.top[ci] >= 0.5,
                 }))
               }
             />

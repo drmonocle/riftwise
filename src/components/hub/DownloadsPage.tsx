@@ -8,7 +8,7 @@ import { tl, tn } from "../../i18n";
 import { load } from "../../stats";
 import { IS_WEB, SITE_URL } from "../../platform";
 import { downloadEventCsv, downloadStagesCsv, joinCsvs, saveCsv } from "../../hub/data";
-import { navigateHub } from "../../hub/route";
+import { hubShareUrl, navigateHub } from "../../hub/route";
 import { card, EventLink, Failed, fmtNum, HubLink, Loading, Section, useLoad, usePageTitle } from "./ui";
 
 export { saveCsv, downloadEventCsv, downloadStagesCsv };
@@ -61,7 +61,7 @@ export const DownloadsPage: React.FC<{ onOpenUrl?: (url: string) => void; query?
         {!IS_WEB && (
           <button
             type="button"
-            onClick={() => onOpenUrl?.(`${SITE_URL}stats/data`)}
+            onClick={() => onOpenUrl?.(hubShareUrl({ kind: "data" }))}
             className="text-rw-accent hover:underline font-semibold"
           >
             {tl("Downloads work best in your browser: open this page there")}
@@ -172,7 +172,7 @@ const YearDownloads: React.FC<{
   const [busy, setBusy] = useState("");
   const runYear = async (label: string, evs: [string, string, number, string][]) => {
     if (!IS_WEB && onOpenUrl) {
-      onOpenUrl(`${SITE_URL}stats/data?year=${encodeURIComponent(activeYear)}`);
+      onOpenUrl(hubShareUrl({ kind: "data", query: `year=${encodeURIComponent(activeYear)}` }));
       return;
     }
     try {
@@ -252,7 +252,7 @@ const LeagueYears: React.FC<{ league: DownloadLeague; initialYear?: string; onOp
   const [busy, setBusy] = useState<string>("");
   const wholeYear = async (y: string) => {
     if (!IS_WEB && onOpenUrl) {
-      onOpenUrl(`${SITE_URL}stats/data?league=${encodeURIComponent(league.u)}&year=${encodeURIComponent(y)}`);
+      onOpenUrl(hubShareUrl({ kind: "data", query: `league=${encodeURIComponent(league.u)}&year=${encodeURIComponent(y)}` }));
       return;
     }
     const evs = league.y[y];

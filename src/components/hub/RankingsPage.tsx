@@ -54,7 +54,16 @@ export const RankingsPage: React.FC = () => {
 const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
   const route = useHubRoute();
   const q = new URLSearchParams(route.kind === "rankings" && "query" in route ? route.query || "" : "");
-  const league = q.get("league") || "";
+  const rawLeague = q.get("league") || "";
+  const league = useMemo(() => {
+    if (!rawLeague || rawLeague === "*") return rawLeague;
+    if (d.teams.some((r) => r[3] === rawLeague)) return rawLeague;
+    const low = rawLeague.toLowerCase();
+    const match = d.teams.find(
+      (r) => (r[3] && r[3].toLowerCase() === low) || (r[4] && r[4].toLowerCase() === low) || (r[10] && r[10].toLowerCase() === low),
+    );
+    return match ? match[3] : rawLeague;
+  }, [d.teams, rawLeague]);
   const setLeague = (v: string) => {
     const next = new URLSearchParams(q);
     if (!v) next.delete("league");

@@ -90,6 +90,15 @@ const pctOf = (w: number, g: number) => (!g ? "–" : w > 0 && (w / g) * 100 < 0
 const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
   const ddReady = useDDragon();
   const [recentHidden, revealRecent] = useHidden(`champ-recent:${c.u}`, c.recent[0]?.date);
+  const teamByPlayer = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const r of c.recent) {
+      if (r.team && (r.u || r.n) && !m.has(r.u || r.n)) {
+        m.set(r.u || r.n, r.team);
+      }
+    }
+    return m;
+  }, [c.recent]);
   const maxYear = Math.max(1, ...c.years.map((y) => y.p + y.b));
   const totalRoles = c.roles.reduce((s, r) => s + r.p, 0) || 1;
   const mainRoles = c.roles.filter((r) => r.p / totalRoles >= 0.1).map((r) => r.r);
@@ -279,13 +288,16 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 name={champName(c.name)}
                 sub={[buildRole ? roleName(buildRole) : tl("All roles"), `${fmtNum(activeBuilds.g)}G`].join(" · ")}
                 rows={() => [
-                  ...items.slice(0, 6).map(([it, g, w]) => ({
+                  ...items.slice(0, 6).map(([it, g, w], idx) => ({
+                    rank: idx + 1,
+                    champ: c.name,
                     label: itemName(it),
                     sub: `${tl("Items")} · ${pctOf(g, activeBuilds.g)}`,
                     value: pctOf(w, g),
                     win: w / Math.max(g, 1) >= 0.5,
                   })),
                   ...activeBuilds.keys.slice(0, 3).map(([k, g, w]) => ({
+                    champ: c.name,
                     label: runeName(k),
                     sub: `${tl("Keystones")} · ${pctOf(g, activeBuilds.g)}`,
                     value: pctOf(w, g),
@@ -748,6 +760,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 (playersRecent ? recentPlayersList : c.players).slice(0, 12).map((p, idx) => ({
                   rank: idx + 1,
                   champ: c.name,
+                  team: teamByPlayer.get(p.u || p.n),
                   label: p.n,
                   sub: `${p.g}G · ${fmtN(p.kda)} ${tl("KDA")}`,
                   value: winRate(p.w, p.g),
@@ -771,12 +784,6 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
             {(() => {
               const pList = (playersRecent ? recentPlayersList : c.players).slice(0, 25);
               const maxPG = Math.max(1, ...pList.map((x) => x.g));
-              const teamByPlayer = new Map<string, string>();
-              for (const r of c.recent) {
-                if (r.team && (r.u || r.n) && !teamByPlayer.has(r.u || r.n)) {
-                  teamByPlayer.set(r.u || r.n, r.team);
-                }
-              }
               return pList.map((p) => {
                 const pTeam = teamByPlayer.get(p.u || p.n);
                 return (
@@ -868,6 +875,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     .map((r) => ({
                       win: !!r.win,
                       champ: c.name,
+                      team: r.team || r.opp,
                       label: `${r.n} (${r.k}/${r.d}/${r.a}) vs ${r.opp}`,
                       sub: r.en,
                       value: fmtDate(r.date, false),
@@ -988,6 +996,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               name={champName(c.name)}
               rows={() =>
                 Object.entries(c.slots!).map(([slot, [g, w]]) => ({
+                  champ: c.name,
                   label: slot,
                   sub: tl("{n} games", { n: fmtNum(g) }),
                   value: g >= 5 ? pctOf(w, g) : "–",
@@ -1040,9 +1049,11 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                   c.patches!.map((p) => {
                     const pres = (p.pr ?? p.pk + p.b) / Math.max(p.g, 1);
                     return {
+                      champ: c.name,
                       label: `${tl("Patch")} ${p.p}`,
                       sub: `${p.pk} ${tl("Picks")} · ${p.b} ${tl("Bans")}`,
                       value: `${Math.round(pres * 100)}% · ${p.pk ? pctOf(p.w, p.pk) : "–"}`,
+                      win: p.pk >= 5 ? p.w / p.pk >= 0.5 : undefined,
                     };
                   })
                 }

@@ -494,8 +494,10 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                 [...points]
                   .reverse()
                   .slice(0, 10)
-                  .map((pt) => ({
+                  .map((pt, idx) => ({
+                    rank: idx + 1,
                     champ: pt.champ,
+                    team: pt.team || pt.opp,
                     win: pt.won,
                     label: `${champName(pt.champ)} vs ${pt.opp}`,
                     sub: `${pt.k}/${pt.d}/${pt.a} · ${pt.event}`,
@@ -803,7 +805,8 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
               name={p.name}
               sub={cardSub}
               rows={() =>
-                topChamps.map((c) => ({
+                topChamps.map((c, idx) => ({
+                  rank: idx + 1,
                   champ: c.c,
                   win: c.w / Math.max(1, c.g) >= 0.5,
                   label: champName(c.c),
@@ -946,6 +949,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                 ...(series.length > 0
                   ? [
                       {
+                        team: t.name,
                         label: tl("Recent series"),
                         sub: `${gameWins}-${gameLosses} ${tl("Games")}`,
                         value: `${seriesWins}-${series.length - seriesWins} (${winRate(seriesWins, series.length)})`,
@@ -956,12 +960,14 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                 ...(hasSides
                   ? [
                       {
+                        team: t.name,
                         label: tl("Blue side"),
                         sub: `${blueW}-${blueG - blueW}`,
                         value: winRate(blueW, blueG),
                         win: blueWr >= 50,
                       },
                       {
+                        team: t.name,
                         label: tl("Red side"),
                         sub: `${redW}-${redG - redW}`,
                         value: winRate(redW, redG),
@@ -972,6 +978,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                 ...(t.obj
                   ? [
                       {
+                        team: t.name,
                         label: `${tl("Dragons")} · ${tl("Barons")} · ${tl("Towers")}`,
                         sub: tl("Per game"),
                         value: `${fmtDec(t.obj.dragons, 2)} · ${fmtDec(t.obj.barons, 2)} · ${fmtDec(t.obj.towers, 1)}`,
@@ -1333,6 +1340,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
             sub={`${fmtNum(c.p)} ${tl("Picks")} · ${fmtNum(c.b)} ${tl("Bans")} · ${winRate(c.w, c.p)}`}
             rows={() => [
               ...topRoles.slice(0, 3).map((r) => ({
+                champ: c.name,
                 label: roleName(r.r),
                 sub: `${fmtNum(r.p)} ${tl("Picks")}`,
                 value: `${Math.round((r.p / totalRoles) * 100)}%`,
@@ -1344,6 +1352,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                 .map((p) => {
                   const pr = Math.round(((p.pr ?? p.pk + p.b) / Math.max(1, p.g)) * 100);
                   return {
+                    champ: c.name,
                     label: tl("Patch {patch}", { patch: p.p }),
                     sub: `${p.pk} ${tl("Picks")} · ${p.b} ${tl("Bans")}`,
                     value: `${pr}% · ${p.pk ? winRate(p.w, p.pk) : "–"}`,

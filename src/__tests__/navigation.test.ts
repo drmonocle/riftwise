@@ -35,6 +35,8 @@ describe("page tabs in the address", () => {
     expect(parseHubPath("/stats/players", "?role=Mid&since=2024")).toEqual({ kind: "players", query: "role=Mid&since=2024" });
     expect(parseHubPath("/stats/teams", "")).toEqual({ kind: "teams" });
     expect(hubPath({ kind: "teams", query: "region=Korea" })).toBe("/stats/teams?region=Korea");
+    expect(parseHubPath("/stats/rankings", "?league=LCK")).toEqual({ kind: "rankings", query: "league=LCK" });
+    expect(hubPath({ kind: "rankings", query: "league=LCK" })).toBe("/stats/rankings?league=LCK");
     expect(parseHubPath("/stats/data", "?year=2018")).toEqual({ kind: "data", query: "year=2018" });
     expect(hubPath({ kind: "data", query: "league=lck&year=2026" })).toBe("/stats/data?league=lck&year=2026");
   });
