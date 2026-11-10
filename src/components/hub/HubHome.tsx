@@ -536,14 +536,20 @@ const FeaturedMatch: React.FC<{
           </button>
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "tiers" })}
+            onClick={() => {
+              const yr = m.startTimeUtc?.slice(0, 4);
+              navigateHub({ kind: "tiers", ...(yr ? { query: `key=y${encodeURIComponent(yr)}` } : {}) });
+            }}
             className="inline-flex items-center gap-1.5 rounded-lg border border-rw-border bg-rw-bg hover:border-rw-accent text-rw-text font-semibold transition-colors px-2.5 py-1 text-[11px]"
           >
             {tl("Pro tier list")}
           </button>
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "leaders" })}
+            onClick={() => {
+              const yr = m.startTimeUtc?.slice(0, 4);
+              navigateHub({ kind: "leaders", ...(yr ? { query: `year=${encodeURIComponent(yr)}` } : {}) });
+            }}
             className="inline-flex items-center gap-1.5 rounded-lg border border-rw-border bg-rw-bg hover:border-rw-accent text-rw-text font-semibold transition-colors px-2.5 py-1 text-[11px]"
           >
             {tl("Player leaderboards")}
@@ -665,69 +671,91 @@ const LatestTournaments: React.FC<{ latest: EventListItem[] }> = ({ latest }) =>
     right={
       latest.length > 0 ? (
         <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
-          {latest[0]?.w && latest[1]?.w && latest[0].w !== latest[1].w && (
-            <>
-              <HubLink
-                to={{
-                  kind: "prep",
-                  a: latest[0].wu || prettySlug(latest[0].w),
-                  b: latest[1].wu || prettySlug(latest[1].w),
-                }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Match prep")} →
-              </HubLink>
-              <HubLink
-                to={{
-                  kind: "draft",
-                  query: `teams=${encodeURIComponent(latest[0].wu || prettySlug(latest[0].w))},${encodeURIComponent(latest[1].wu || prettySlug(latest[1].w))}`,
-                }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Draft board")} →
-              </HubLink>
-              <HubLink
-                to={{
-                  kind: "compare",
-                  mode: "team",
-                  a: latest[0].wu || prettySlug(latest[0].w),
-                  b: latest[1].wu || prettySlug(latest[1].w),
-                }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Compare")} →
-              </HubLink>
-            </>
-          )}
-          <HubLink to={{ kind: "titles" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
-            {tl("Titles")} →
-          </HubLink>
-          <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
-            {tl("Power rankings")} →
-          </HubLink>
-          <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
-            {tl("Player leaderboards")} →
-          </HubLink>
-          <HubLink to={{ kind: "best" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
-            {tl("Best games")} →
-          </HubLink>
-          <HubLink to={{ kind: "records" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
-            {tl("Records")} →
-          </HubLink>
-          {latest[0]?.u && (
-            <HubLink
-              to={{ kind: "finder", query: `event=${encodeURIComponent(latest[0].u)}` }}
-              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-            >
-              {tl("Game finder")} →
-            </HubLink>
-          )}
-          <HubLink to={{ kind: "tournaments" }} className="text-[11px] text-rw-accent hover:underline">
-            {tl("Tournaments")} →
-          </HubLink>
-          <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
-            {tl("Pro tier list")} →
-          </HubLink>
+          {(() => {
+            const rawYr = (latest[0]?.en || latest[0]?.st || "").slice(0, 4);
+            const latestYr = /^\d{4}$/.test(rawYr) ? rawYr : undefined;
+            return (
+              <>
+                {latest[0]?.w && latest[1]?.w && latest[0].w !== latest[1].w && (
+                  <>
+                    <HubLink
+                      to={{
+                        kind: "prep",
+                        a: latest[0].wu || prettySlug(latest[0].w),
+                        b: latest[1].wu || prettySlug(latest[1].w),
+                        ...(latestYr ? { period: `y${latestYr}` } : {}),
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(latest[0].wu || prettySlug(latest[0].w))},${encodeURIComponent(latest[1].wu || prettySlug(latest[1].w))}${latestYr ? `&p=y${encodeURIComponent(latestYr)}` : ""}`,
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "compare",
+                        mode: "team",
+                        a: latest[0].wu || prettySlug(latest[0].w),
+                        b: latest[1].wu || prettySlug(latest[1].w),
+                        ...(latestYr ? { period: `y${latestYr}` } : {}),
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                  </>
+                )}
+                <HubLink to={{ kind: "titles" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Titles")} →
+                </HubLink>
+                <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Power rankings")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "leaders", ...(latestYr ? { query: `year=${encodeURIComponent(latestYr)}` } : {}) }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "best", ...(latestYr ? { query: `year=${encodeURIComponent(latestYr)}` } : {}) }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Best games")} →
+                </HubLink>
+                <HubLink to={{ kind: "records" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Records")} →
+                </HubLink>
+                {latest[0]?.u && (
+                  <HubLink
+                    to={{ kind: "finder", query: `event=${encodeURIComponent(latest[0].u)}` }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Game finder")} →
+                  </HubLink>
+                )}
+                <HubLink
+                  to={{ kind: "tournaments", ...(latestYr ? { year: latestYr } : {}) }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Tournaments")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "tiers", ...(latestYr ? { query: `key=y${encodeURIComponent(latestYr)}` } : {}) }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
+              </>
+            );
+          })()}
           <SectionCard
             section={tl("Latest tournaments")}
             name="RiftWise"
@@ -1258,7 +1286,12 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
           {rows.length >= 2 && rows[0].w && rows[1].w && rows[0].w !== rows[1].w && (
             <>
               <HubLink
-                to={{ kind: "prep", a: rows[0].wu || prettySlug(rows[0].w), b: rows[1].wu || prettySlug(rows[1].w) }}
+                to={{
+                  kind: "prep",
+                  a: rows[0].wu || prettySlug(rows[0].w),
+                  b: rows[1].wu || prettySlug(rows[1].w),
+                  ...(year ? { period: `y${year}` } : {}),
+                }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Match prep")} →
@@ -1266,14 +1299,20 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(rows[0].wu || prettySlug(rows[0].w))},${encodeURIComponent(rows[1].wu || prettySlug(rows[1].w))}`,
+                  query: `teams=${encodeURIComponent(rows[0].wu || prettySlug(rows[0].w))},${encodeURIComponent(rows[1].wu || prettySlug(rows[1].w))}${year ? `&p=y${encodeURIComponent(year)}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Draft board")} →
               </HubLink>
               <HubLink
-                to={{ kind: "compare", mode: "team", a: rows[0].wu || prettySlug(rows[0].w), b: rows[1].wu || prettySlug(rows[1].w) }}
+                to={{
+                  kind: "compare",
+                  mode: "team",
+                  a: rows[0].wu || prettySlug(rows[0].w),
+                  b: rows[1].wu || prettySlug(rows[1].w),
+                  ...(year ? { period: `y${year}` } : {}),
+                }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Compare")} →

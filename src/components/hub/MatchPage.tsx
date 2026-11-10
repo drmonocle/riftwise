@@ -618,7 +618,7 @@ const SeriesGames: React.FC<{
           {s.a.u && s.b.u && (
             <span className="ml-auto flex items-center gap-2">
               <HubLink
-                to={{ kind: "prep", a: s.a.u, b: s.b.u }}
+                to={{ kind: "prep", a: s.a.u, b: s.b.u, ...(seriesYear ? { period: `y${seriesYear}` } : {}) }}
                 className="text-rw-accent hover:underline font-semibold"
               >
                 {tl("Match prep")} →
@@ -626,14 +626,14 @@ const SeriesGames: React.FC<{
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(s.a.u)},${encodeURIComponent(s.b.u)}`,
+                  query: `teams=${encodeURIComponent(s.a.u)},${encodeURIComponent(s.b.u)}${seriesYear ? `&p=y${encodeURIComponent(seriesYear)}` : ""}`,
                 }}
                 className="text-rw-accent hover:underline font-semibold"
               >
                 {tl("Draft board")} →
               </HubLink>
               <HubLink
-                to={{ kind: "compare", mode: "team", a: s.a.u, b: s.b.u }}
+                to={{ kind: "compare", mode: "team", a: s.a.u, b: s.b.u, ...(seriesYear ? { period: `y${seriesYear}` } : {}) }}
                 className="text-rw-accent hover:underline font-semibold"
               >
                 {tl("Compare")} →
@@ -641,7 +641,7 @@ const SeriesGames: React.FC<{
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `team=${encodeURIComponent(s.a.u)}&vs=${encodeURIComponent(s.b.u)}`,
+                  query: `team=${encodeURIComponent(s.a.u)}&vs=${encodeURIComponent(s.b.u)}${seriesYear ? `&year=${encodeURIComponent(seriesYear)}` : ""}`,
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -924,8 +924,8 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
       )}
       {!hidden && (blue.length > 0 || red.length > 0) && (
         <div className="grid gap-3 lg:grid-cols-2">
-          <Scoreboard name={blueTeam.n} u={blueTeam.u} side="blue" players={blue} hidden={hidden} won={blueWon} minutes={g.min} ratings={ratings} top={top?.[0]} period={gamePeriod} />
-          <Scoreboard name={redTeam.n} u={redTeam.u} side="red" players={red} hidden={hidden} won={redWon} minutes={g.min} ratings={ratings} top={top?.[0]} period={gamePeriod} />
+          <Scoreboard name={blueTeam.n} u={blueTeam.u} oppU={redTeam.u} side="blue" players={blue} hidden={hidden} won={blueWon} minutes={g.min} ratings={ratings} top={top?.[0]} period={gamePeriod} />
+          <Scoreboard name={redTeam.n} u={redTeam.u} oppU={blueTeam.u} side="red" players={red} hidden={hidden} won={redWon} minutes={g.min} ratings={ratings} top={top?.[0]} period={gamePeriod} />
         </div>
       )}
       {!hidden && <Leads g={g} blueName={blueTeam.n} redName={redTeam.n} blueU={blueTeam.u} redU={redTeam.u} blue={blue} red={red} period={gamePeriod} />}
@@ -1821,6 +1821,7 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; t
 const Scoreboard: React.FC<{
   name: string;
   u?: string | null;
+  oppU?: string | null;
   side: "blue" | "red";
   players: GamePlayer[];
   hidden: boolean;
@@ -1829,7 +1830,7 @@ const Scoreboard: React.FC<{
   ratings?: Map<GamePlayer, number>;
   top?: GamePlayer;
   period?: string;
-}> = ({ name, u, side, players, hidden, won, minutes, ratings, top, period }) => {
+}> = ({ name, u, oppU, side, players, hidden, won, minutes, ratings, top, period }) => {
   const color = side === "blue" ? "#4a9eff" : "var(--rw-red)";
   const totalK = players.reduce((s, p) => s + p.k, 0);
   const totalDmg = players.reduce((s, p) => s + (p.dm || 0), 0);
@@ -1847,13 +1848,13 @@ const Scoreboard: React.FC<{
         {u && (
           <span className="ml-auto flex items-center gap-2 shrink-0 font-normal">
             <HubLink
-              to={{ kind: "prep", a: u, ...(period ? { period } : {}) }}
+              to={{ kind: "prep", a: u, ...(oppU ? { b: oppU } : {}), ...(period ? { period } : {}) }}
               className="text-[11px] text-rw-accent hover:underline"
             >
               {tl("Match prep")} →
             </HubLink>
             <HubLink
-              to={{ kind: "compare", mode: "team", a: u, ...(period ? { period } : {}) }}
+              to={{ kind: "compare", mode: "team", a: u, ...(oppU ? { b: oppU } : {}), ...(period ? { period } : {}) }}
               className="text-[11px] text-rw-accent hover:underline"
             >
               {tl("Compare")} →
@@ -1877,7 +1878,10 @@ const Scoreboard: React.FC<{
               {tl("Matches")} →
             </HubLink>
             <HubLink
-              to={{ kind: "draft", query: `teams=${encodeURIComponent(u)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+              to={{
+                kind: "draft",
+                query: `teams=${encodeURIComponent(u)}${oppU ? `,${encodeURIComponent(oppU)}` : ""}${period ? `&p=${encodeURIComponent(period)}` : ""}`,
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Draft board")} →
@@ -1892,7 +1896,10 @@ const Scoreboard: React.FC<{
               {tl("Player leaderboards")} →
             </HubLink>
             <HubLink
-              to={{ kind: "finder", query: `team=${encodeURIComponent(u)}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}` }}
+              to={{
+                kind: "finder",
+                query: `team=${encodeURIComponent(u)}${oppU ? `&vs=${encodeURIComponent(oppU)}` : ""}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Game finder")} →
@@ -2065,6 +2072,7 @@ const PlayerRow: React.FC<{
                     item: prettySlug(it),
                     ...(p.u ? { player: p.u } : {}),
                     ...(p.c ? { champ: prettySlug(p.c) } : {}),
+                    ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
                   }).toString(),
                 }}
                 className="hover:opacity-80"
@@ -2080,6 +2088,7 @@ const PlayerRow: React.FC<{
                     item: prettySlug(p.tr),
                     ...(p.u ? { player: p.u } : {}),
                     ...(p.c ? { champ: prettySlug(p.c) } : {}),
+                    ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
                   }).toString(),
                 }}
                 className="hover:opacity-80"
