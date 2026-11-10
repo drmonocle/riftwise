@@ -8,7 +8,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ClipboardCopy, Check } from "lucide-react";
 import { tl, tn, locale, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { loadWeekly, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, loadWeekly, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { navigateHub, useHubRoute } from "../../hub/route";
 import type { HubWeekly } from "../../hub/types";
 import { card, ChampIcon, ChampLink, EventLink, fmtDate, HubLink, hubShareUrl, Page, PlayerLink, PlayerPhoto, RevealButton, Section, TeamLink, TeamLogo, th, td, useHidden, useLoad, usePageTitle } from "./ui";
@@ -175,14 +175,14 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
   const wy = /^\d{4}/.test(w.to || "") ? w.to.slice(0, 4) : /^\d{4}/.test(w.from || "") ? w.from.slice(0, 4) : "";
   const pct = (p: number) => `${Math.round(p * 100)}%`;
   const rTerms = resultFilter
-    .toLowerCase()
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-    .map((s) => s.trim())
+    .map((s) => normText(s.trim()))
     .filter(Boolean);
   const shownResults = rTerms.length
     ? w.results.filter((r) => {
-        const hay = `${r.a} ${r.au || ""} ${r.b} ${r.bu || ""} ${r.t} ${r.e || ""}`.toLowerCase();
-        return rTerms.some((t) => hay.includes(t));
+        const hay = normText(`${r.a} ${r.au || ""} ${r.b} ${r.bu || ""} ${r.t} ${r.e || ""}`);
+        const hayBare = bare(hay);
+        return rTerms.some((t) => hay.includes(t) || (t.length >= 2 && hayBare.includes(bare(t))));
       })
     : w.results;
   return (

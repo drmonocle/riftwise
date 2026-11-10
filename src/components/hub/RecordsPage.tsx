@@ -10,7 +10,7 @@ import {
 } from "../../stats";
 import { tl, tk, tc, eventTitle, fmtDec } from "../../i18n";
 import { champName, useChampionNames } from "../../champions";
-import { loadHubMeta, loadHubRecords, loadHubTitles, loadRecordsYear, matchesChampSearch, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, loadHubMeta, loadHubRecords, loadHubTitles, loadRecordsYear, matchesChampSearch, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
 import type { HubRecords, HubRecordsYear, HubTitle } from "../../hub/types";
 import {
   CompareRoute,
@@ -355,7 +355,12 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]>; matchTe
                       {tl("Pro tier list")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "rankings" }}
+                      to={{
+                        kind: "rankings",
+                        ...(recentRows[0]?.a && recentRows[0]?.b
+                          ? { query: `q=${encodeURIComponent(`${prettySlug(recentRows[0].a)},${prettySlug(recentRows[0].b)}`)}` }
+                          : {}),
+                      }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Power rankings")} →
@@ -705,7 +710,11 @@ export const RecordsPanel: React.FC = () => {
   const q = new URLSearchParams(route.kind === "records" && "query" in route ? route.query || "" : "");
   // all time, or one year (its own file; team streaks, titles and career totals are all-time only)
   const year = q.get("year") || "all";
-  const [search, setSearch] = useState(() => q.get("q") || "");
+  const urlQ = q.get("q") || "";
+  const [search, setSearch] = useState(urlQ);
+  useEffect(() => {
+    setSearch(urlQ);
+  }, [urlQ]);
   const setRecordsUrl = (nextYear: string, nextQ: string) => {
     const next = new URLSearchParams(q);
     if (!nextYear || nextYear === "all") next.delete("year");
@@ -727,9 +736,11 @@ export const RecordsPanel: React.FC = () => {
   const matchText = terms.length
     ? (s: string, champ?: string, playerSlug?: string) => {
         const hay = normText(s);
+        const hayBare = bare(hay);
         return terms.some(
           (t) =>
             hay.includes(t) ||
+            (t.length >= 2 && hayBare.includes(bare(t))) ||
             (champ ? matchesChampSearch(champ, t) : false) ||
             (playerSlug ? resolvePlayerSlug(t) === playerSlug : false),
         );
@@ -830,13 +841,22 @@ export const RecordsPanel: React.FC = () => {
                           {tl("Game finder")} →
                         </HubLink>
                         <HubLink
-                          to={{ kind: "rankings" }}
+                          to={{
+                            kind: "rankings",
+                            query: `q=${encodeURIComponent(`${prettySlug(rows[0].w)},${prettySlug(rows[0].w === rows[0].a ? rows[0].b : rows[0].a)}`)}`,
+                          }}
                           className="text-rw-sub hover:text-rw-accent hover:underline"
                         >
                           {tl("Power rankings")} →
                         </HubLink>
                         <HubLink
-                          to={{ kind: "best", ...(year !== "all" ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+                          to={{
+                            kind: "best",
+                            query: new URLSearchParams({
+                              ...(year !== "all" ? { year } : {}),
+                              q: `${rows[0].w},${rows[0].w === rows[0].a ? rows[0].b : rows[0].a}`,
+                            }).toString(),
+                          }}
                           className="text-rw-sub hover:text-rw-accent hover:underline"
                         >
                           {tl("Best games")} →
@@ -848,7 +868,13 @@ export const RecordsPanel: React.FC = () => {
                           {tl("Pro tier list")} →
                         </HubLink>
                         <HubLink
-                          to={{ kind: "leaders", ...(year !== "all" ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+                          to={{
+                            kind: "leaders",
+                            query: new URLSearchParams({
+                              ...(year !== "all" ? { year } : {}),
+                              q: `${rows[0].w},${rows[0].w === rows[0].a ? rows[0].b : rows[0].a}`,
+                            }).toString(),
+                          }}
                           className="text-rw-sub hover:text-rw-accent hover:underline"
                         >
                           {tl("Player leaderboards")} →
@@ -1046,7 +1072,10 @@ export const RecordsPanel: React.FC = () => {
                       </>
                     )}
                     <HubLink
-                      to={{ kind: "rankings" }}
+                      to={{
+                        kind: "rankings",
+                        ...(rows[0].opp ? { query: `q=${encodeURIComponent(prettySlug(rows[0].opp))}` } : {}),
+                      }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Power rankings")} →
@@ -1201,7 +1230,10 @@ export const RecordsPanel: React.FC = () => {
                       {tl("Item history")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "leaders" }}
+                      to={{
+                        kind: "leaders",
+                        query: `q=${encodeURIComponent(rows[0].pl)}`,
+                      }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Player leaderboards")} →
@@ -1651,7 +1683,11 @@ export const TitlesPanel: React.FC = () => {
   const kindParam = q.get("kind") as (typeof TITLE_FILTERS)[number]["key"] | null;
   const kind: (typeof TITLE_FILTERS)[number]["key"] =
     kindParam && TITLE_FILTERS.some((f) => f.key === kindParam) ? kindParam : "International";
-  const [search, setSearch] = useState(() => q.get("q") || "");
+  const urlQ = q.get("q") || "";
+  const [search, setSearch] = useState(urlQ);
+  useEffect(() => {
+    setSearch(urlQ);
+  }, [urlQ]);
   const setTitleUrl = (nextKind: string, nextQ: string) => {
     const next = new URLSearchParams();
     if (nextKind && nextKind !== "International") next.set("kind", nextKind);
@@ -1704,19 +1740,12 @@ export const TitlesPanel: React.FC = () => {
                     ? x.kind === "Worlds"
                     : x.kind === "Regional",
             )
-            .filter(
-              (x) =>
-                !terms.length ||
-                terms.some(
-                  (t) =>
-                    normText(eventTitle(x.t)).includes(t) ||
-                    normText(x.t).includes(t) ||
-                    normText(x.w).includes(t) ||
-                    normText(x.as).includes(t) ||
-                    normText(x.l).includes(t) ||
-                    (x.u && normText(x.u).includes(t)),
-                ),
-            )
+            .filter((x) => {
+              if (!terms.length) return true;
+              const hay = normText(`${eventTitle(x.t)} ${x.t} ${x.w} ${x.as} ${x.l} ${x.u || ""}`);
+              const hayBare = bare(hay);
+              return terms.some((t) => hay.includes(t) || (t.length >= 2 && hayBare.includes(bare(t))));
+            })
             .slice(0, 300);
           return (
             <div className={`${card} space-y-2 overflow-x-auto`}>
@@ -1768,7 +1797,16 @@ export const TitlesPanel: React.FC = () => {
                     </>
                   )}
                   <HubLink
-                    to={{ kind: "rankings" }}
+                    to={{
+                      kind: "rankings",
+                      ...(terms.length > 0 && rows[0]
+                        ? {
+                            query: `q=${encodeURIComponent(
+                              `${rows[0].u || prettySlug(rows[0].as)}${rows[0].l ? `,${prettySlug(rows[0].l)}` : ""}`,
+                            )}`,
+                          }
+                        : {}),
+                    }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Power rankings")} →
@@ -1781,6 +1819,8 @@ export const TitlesPanel: React.FC = () => {
                   </HubLink>
                   {(() => {
                     const tYr = /^\d{4}$/.test((rows[0].date || "").slice(0, 4)) ? (rows[0].date || "").slice(0, 4) : "";
+                    const tEv = terms.length > 0 && rows[0]?.e ? rows[0].e : "";
+                    const tQ = terms.length > 0 && rows[0] ? `${rows[0].as}${rows[0].l ? `,${rows[0].l}` : ""}` : "";
                     return (
                       <>
                         <HubLink
@@ -1790,25 +1830,66 @@ export const TitlesPanel: React.FC = () => {
                           {tl("Tournaments")} →
                         </HubLink>
                         <HubLink
-                          to={{ kind: "records", ...(tYr ? { query: `year=${tYr}` } : {}) }}
+                          to={{
+                            kind: "records",
+                            ...((tYr || tQ)
+                              ? {
+                                  query: new URLSearchParams({
+                                    ...(tYr ? { year: tYr } : {}),
+                                    ...(tQ ? { q: rows[0].as } : {}),
+                                  }).toString(),
+                                }
+                              : {}),
+                          }}
                           className="text-rw-sub hover:text-rw-accent hover:underline"
                         >
                           {tl("Records")} →
                         </HubLink>
                         <HubLink
-                          to={{ kind: "leaders", ...(tYr ? { query: `year=${tYr}` } : {}) }}
+                          to={{
+                            kind: "leaders",
+                            ...((tYr || tEv || tQ)
+                              ? {
+                                  query: new URLSearchParams({
+                                    ...(tEv ? { event: tEv } : {}),
+                                    ...(tYr ? { year: tYr } : {}),
+                                    ...(tQ ? { q: tQ } : {}),
+                                  }).toString(),
+                                }
+                              : {}),
+                          }}
                           className="text-rw-sub hover:text-rw-accent hover:underline"
                         >
                           {tl("Player leaderboards")} →
                         </HubLink>
                         <HubLink
-                          to={{ kind: "tiers", ...(tYr ? { query: `key=y${tYr}` } : {}) }}
+                          to={{
+                            kind: "tiers",
+                            ...((tYr || tEv)
+                              ? {
+                                  query: new URLSearchParams({
+                                    ...(tEv ? { event: tEv } : {}),
+                                    ...(tYr ? { key: `y${tYr}` } : {}),
+                                  }).toString(),
+                                }
+                              : {}),
+                          }}
                           className="text-rw-sub hover:text-rw-accent hover:underline"
                         >
                           {tl("Pro tier list")} →
                         </HubLink>
                         <HubLink
-                          to={{ kind: "best", ...(tYr ? { query: `year=${tYr}` } : {}) }}
+                          to={{
+                            kind: "best",
+                            ...((tYr || tQ)
+                              ? {
+                                  query: new URLSearchParams({
+                                    ...(tYr ? { year: tYr } : {}),
+                                    ...(tQ ? { q: tQ } : {}),
+                                  }).toString(),
+                                }
+                              : {}),
+                          }}
                           className="text-rw-sub hover:text-rw-accent hover:underline"
                         >
                           {tl("Best games")} →

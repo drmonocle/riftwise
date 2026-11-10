@@ -374,7 +374,10 @@ export const LiveNextGamePreview: React.FC<{
             <HubLink
               to={{
                 kind: "rankings",
-                ...(match.leagueSlug ? { query: `league=${encodeURIComponent(resolveLeagueSlug(match.leagueSlug))}` } : {}),
+                query: new URLSearchParams({
+                  ...(match.leagueSlug ? { league: resolveLeagueSlug(match.leagueSlug) } : {}),
+                  q: `${draftIntel.slugA},${draftIntel.slugB}`,
+                }).toString(),
               }}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -400,6 +403,7 @@ export const LiveNextGamePreview: React.FC<{
                   new URLSearchParams({
                     ...(match.leagueSlug ? { league: resolveLeagueSlug(match.leagueSlug) } : {}),
                     ...(draftIntel.period.startsWith("y") && draftIntel.period.length === 5 ? { year: draftIntel.period.slice(1) } : {}),
+                    q: `${match.team1Name || match.team1Code},${match.team2Name || match.team2Code}`,
                   }).toString() || undefined,
               }}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"

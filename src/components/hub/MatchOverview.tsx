@@ -156,7 +156,10 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               onClose();
               navigateHub({
                 kind: "rankings",
-                query: s.team.rating?.rank == null && s.team.rating?.league ? `league=${encodeURIComponent(s.team.rating.league)}` : undefined,
+                query: new URLSearchParams({
+                  ...(s.team.rating?.rank == null && s.team.rating?.league ? { league: s.team.rating.league } : {}),
+                  q: s.team.u,
+                }).toString(),
               });
             }}
             className="hover:text-rw-accent hover:underline"
@@ -274,6 +277,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   const q = new URLSearchParams({
                     ...(lg ? { league: lg } : {}),
                     ...(yr ? { year: yr } : {}),
+                    q: `${x.team.name},${y.team.name}`,
                   }).toString();
                   onClose();
                   navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
@@ -313,8 +317,12 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                 type="button"
                 onClick={() => {
                   const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
+                  const q = new URLSearchParams({
+                    ...(lg ? { league: lg } : {}),
+                    q: `${x.team.u},${y.team.u}`,
+                  }).toString();
                   onClose();
-                  navigateHub({ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) });
+                  navigateHub({ kind: "rankings", query: q });
                 }}
                 className="hover:text-rw-accent hover:underline"
               >
@@ -547,7 +555,10 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               onClose();
               navigateHub({
                 kind: "rankings",
-                query: x.team.rating?.rank == null && x.team.rating?.league ? `league=${encodeURIComponent(x.team.rating.league)}` : undefined,
+                query: new URLSearchParams({
+                  ...(x.team.rating?.rank == null && x.team.rating?.league ? { league: x.team.rating.league } : {}),
+                  q: `${x.team.u},${y.team.u}`,
+                }).toString(),
               });
             }}
             className="flex items-center gap-1 px-2 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
@@ -581,6 +592,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 ...(yr ? { year: yr } : {}),
+                q: `${x.team.name},${y.team.name}`,
               }).toString();
               onClose();
               navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });

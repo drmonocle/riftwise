@@ -160,9 +160,10 @@ export const ChampionsPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ m
   const index = useLoad(loadChampIndex, []);
   const leagues = index.data || [];
   const evSlug = q.get("event") || "";
-  const evPrefix = evSlug.replace(/-20\d{2}.*$/, "");
+  const canonEvSlug = evSlug ? resolveEventSlug(evSlug) : "";
+  const evPrefix = (canonEvSlug || evSlug).replace(/-20\d{2}.*$/, "");
   const inferredLeague =
-    !q.get("league") && !q.get("scope") && evPrefix && evPrefix !== evSlug
+    !q.get("league") && !q.get("scope") && evPrefix && evPrefix !== (canonEvSlug || evSlug)
       ? aliases.data?.league[evPrefix.toLowerCase()] || resolveLeagueSlug(evPrefix)
       : "";
   const asked =

@@ -254,7 +254,15 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
             </button>
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) })}
+              onClick={() =>
+                navigateHub({
+                  kind: "rankings",
+                  query: new URLSearchParams({
+                    ...(lg ? { league: lg } : {}),
+                    q: `${aSlug},${bSlug}`,
+                  }).toString(),
+                })
+              }
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
             >
               {tl("Power rankings")}
@@ -283,14 +291,11 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
               onClick={() =>
                 navigateHub({
                   kind: "leaders",
-                  ...((lg || year)
-                    ? {
-                        query: new URLSearchParams({
-                          ...(lg ? { league: lg } : {}),
-                          ...(year ? { year } : {}),
-                        }).toString(),
-                      }
-                    : {}),
+                  query: new URLSearchParams({
+                    ...(lg ? { league: lg } : {}),
+                    ...(year ? { year } : {}),
+                    ...(now.team1 && now.team2 ? { q: `${now.team1},${now.team2}` } : {}),
+                  }).toString(),
                 })
               }
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
@@ -302,14 +307,11 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
               onClick={() =>
                 navigateHub({
                   kind: "best",
-                  ...((lg || year)
-                    ? {
-                        query: new URLSearchParams({
-                          ...(lg ? { league: lg } : {}),
-                          ...(year ? { year } : {}),
-                        }).toString(),
-                      }
-                    : {}),
+                  query: new URLSearchParams({
+                    ...(lg ? { league: lg } : {}),
+                    ...(year ? { year } : {}),
+                    ...(now.team1 && now.team2 ? { q: `${now.team1},${now.team2}` } : {}),
+                  }).toString(),
                 })
               }
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
@@ -627,7 +629,15 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                     </button>
                     <button
                       type="button"
-                      onClick={() => navigateHub({ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) })}
+                      onClick={() =>
+                        navigateHub({
+                          kind: "rankings",
+                          query: new URLSearchParams({
+                            ...(lg ? { league: lg } : {}),
+                            q: `${aSlug},${bSlug}`,
+                          }).toString(),
+                        })
+                      }
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Power rankings")} →

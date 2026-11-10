@@ -155,13 +155,25 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
             {tl("Game finder")} →
           </HubLink>
           <HubLink
-            to={{ kind: "leaders", query: `event=${encodeURIComponent(ev.u)}` }}
+            to={{
+              kind: "leaders",
+              query: new URLSearchParams({
+                event: ev.u,
+                ...(which.year ? { year: which.year } : {}),
+              }).toString(),
+            }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Player leaderboards")} →
           </HubLink>
           <HubLink
-            to={{ kind: "tiers", ...(which.year ? { query: `key=y${encodeURIComponent(which.year)}` } : {}) }}
+            to={{
+              kind: "tiers",
+              query: new URLSearchParams({
+                event: ev.u,
+                ...(which.year ? { key: `y${which.year}` } : {}),
+              }).toString(),
+            }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Pro tier list")} →
@@ -277,11 +289,29 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           </>
         )}
         {" · "}
-        <HubLink to={{ kind: "champions", query: `key=y${encodeURIComponent(which.year)}` }} className="text-rw-accent hover:underline">
+        <HubLink
+          to={{
+            kind: "champions",
+            query: new URLSearchParams({
+              event: ev.u,
+              ...(which.year ? { key: `y${which.year}` } : {}),
+            }).toString(),
+          }}
+          className="text-rw-accent hover:underline"
+        >
           {tl("Champions")}
         </HubLink>
         {" · "}
-        <HubLink to={{ kind: "tiers", query: `key=y${encodeURIComponent(which.year)}` }} className="text-rw-accent hover:underline">
+        <HubLink
+          to={{
+            kind: "tiers",
+            query: new URLSearchParams({
+              event: ev.u,
+              ...(which.year ? { key: `y${which.year}` } : {}),
+            }).toString(),
+          }}
+          className="text-rw-accent hover:underline"
+        >
           {tl("Pro tier list")}
         </HubLink>
         {" · "}
@@ -289,11 +319,29 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           {tl("Power rankings")}
         </HubLink>
         {" · "}
-        <HubLink to={{ kind: "leaders", query: `year=${encodeURIComponent(which.year)}` }} className="text-rw-accent hover:underline">
+        <HubLink
+          to={{
+            kind: "leaders",
+            query: new URLSearchParams({
+              event: ev.u,
+              ...(which.year ? { year: which.year } : {}),
+            }).toString(),
+          }}
+          className="text-rw-accent hover:underline"
+        >
           {tl("Player leaderboards")}
         </HubLink>
         {" · "}
-        <HubLink to={{ kind: "best", query: `year=${encodeURIComponent(which.year)}` }} className="text-rw-accent hover:underline">
+        <HubLink
+          to={{
+            kind: "best",
+            query: new URLSearchParams({
+              ...(which.year ? { year: which.year } : {}),
+              q: ev.n,
+            }).toString(),
+          }}
+          className="text-rw-accent hover:underline"
+        >
           {tl("Best games")}
         </HubLink>
         {" · "}

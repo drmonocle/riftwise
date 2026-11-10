@@ -7,7 +7,7 @@
 import React, { useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { tl, roleName } from "../../i18n";
-import { loadLeagues, loadMoves, normText } from "../../hub/data";
+import { bare, loadLeagues, loadMoves, normText, resolvePlayerSlug } from "../../hub/data";
 import { fmtDate, HubLink, hubShareUrl, PlayerLink, PlayerPhoto, TeamLink, TeamLogo, useLoad } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 
@@ -28,7 +28,16 @@ export const RosterMoves: React.FC = () => {
     if (!all && !terms.length && !(m.lu && top.has(m.lu))) return false;
     if (terms.length) {
       const hay = normText(`${m.n} ${m.u} ${m.r || ""} ${m.from.n} ${m.from.u} ${m.to.n} ${m.to.u} ${m.lu ? name.get(m.lu) || m.lu : ""}`);
-      if (!terms.some((t) => hay.includes(t))) return false;
+      const hayBare = bare(hay);
+      if (
+        !terms.some(
+          (t) =>
+            hay.includes(t) ||
+            (t.length >= 2 && hayBare.includes(bare(t))) ||
+            resolvePlayerSlug(t) === m.u,
+        )
+      )
+        return false;
     }
     return true;
   });
@@ -70,12 +79,15 @@ export const RosterMoves: React.FC = () => {
               <HubLink
                 to={{
                   kind: "leaders",
-                  ...((lg0 || yr0 || role0)
+                  ...((lg0 || yr0 || role0 || (terms.length > 0 && list[0]))
                     ? {
                         query: new URLSearchParams({
                           ...(lg0 ? { league: lg0 } : {}),
                           ...(yr0 ? { year: yr0 } : {}),
                           ...(role0 ? { role: role0 } : {}),
+                          ...(terms.length > 0 && list[0]
+                            ? { q: list.length === 1 ? list[0].n : `${list[0].to.n},${list[0].from.n}` }
+                            : {}),
                         }).toString(),
                       }
                     : {}),
@@ -85,7 +97,17 @@ export const RosterMoves: React.FC = () => {
                 {tl("Player leaderboards")} →
               </HubLink>
               <HubLink
-                to={{ kind: "rankings", ...(lg0 ? { query: `league=${encodeURIComponent(lg0)}` } : {}) }}
+                to={{
+                  kind: "rankings",
+                  ...((lg0 || (terms.length > 0 && list[0]))
+                    ? {
+                        query: new URLSearchParams({
+                          ...(lg0 ? { league: lg0 } : {}),
+                          ...(terms.length > 0 && list[0] ? { q: `${list[0].to.u},${list[0].from.u}` } : {}),
+                        }).toString(),
+                      }
+                    : {}),
+                }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Power rankings")} →

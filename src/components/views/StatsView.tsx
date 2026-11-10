@@ -245,7 +245,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
         {route.kind === "data" && <DownloadsPage onOpenUrl={IS_WEB ? undefined : onOpenUrl} query={"query" in route ? route.query : undefined} />}
         {route.kind === "about" && <AboutPage onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
         {route.kind === "prep" && <PrepPage route={route as PrepRoute} />}
-        {route.kind === "rankings" && <RankingsPage />}
+        {route.kind === "rankings" && <RankingsPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "finder" && <FinderPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "draft" && <DraftPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "best" && <BestPage query={"query" in route ? route.query : undefined} />}

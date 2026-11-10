@@ -374,7 +374,11 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
             type="button"
             onClick={() => {
               const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
-              navigateHub({ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) });
+              const q = new URLSearchParams({
+                ...(lg ? { league: lg } : {}),
+                q: `${prettySlug(left.name || left.code)},${prettySlug(right.name || right.code)}`,
+              }).toString();
+              navigateHub({ kind: "rankings", query: q });
             }}
             className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
           >
@@ -385,9 +389,14 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
             onClick={() => {
               const yr = match.startTimeUtc?.slice(0, 4);
               const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+              const patchKey = win.gameMetadata.patchVersion
+                ? `p${win.gameMetadata.patchVersion.split(".").slice(0, 2).join(".")}`
+                : yr
+                  ? `y${yr}`
+                  : "";
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
-                ...(yr ? { key: `y${yr}` } : {}),
+                ...(patchKey ? { key: patchKey } : {}),
               }).toString();
               navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
             }}
@@ -403,6 +412,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 ...(yr ? { year: yr } : {}),
+                q: `${left.name || left.code},${right.name || right.code}`,
               }).toString();
               navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
             }}
@@ -653,7 +663,12 @@ const UpsetMeter: React.FC<{ leftCode: string; leftName?: string; rightCode: str
       <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-[10px] text-rw-sub">
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "rankings" })}
+          onClick={() =>
+            navigateHub({
+              kind: "rankings",
+              query: `q=${encodeURIComponent(`${prettySlug(leftName || leftCode)},${prettySlug(rightName || rightCode)}`)}`,
+            })
+          }
           className={`${LABEL} hover:text-rw-accent hover:underline`}
         >
           {tl("Upset meter")} · <span className={hot ? "text-rw-accent" : "text-rw-sub"}>{label}</span>

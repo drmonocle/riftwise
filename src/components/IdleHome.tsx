@@ -115,7 +115,15 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
             type="button"
             onClick={() => {
               const lg = done[0]?.leagueSlug ? resolveLeagueSlug(done[0].leagueSlug) : "";
-              navigateHub({ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) });
+              const q = new URLSearchParams({
+                ...(lg ? { league: lg } : {}),
+                ...(done[0]
+                  ? {
+                      q: `${prettySlug(done[0].team1Name || done[0].team1Code)},${prettySlug(done[0].team2Name || done[0].team2Code)}`,
+                    }
+                  : {}),
+              }).toString();
+              navigateHub({ kind: "rankings", ...(q ? { query: q } : {}) });
             }}
             className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
           >
@@ -129,6 +137,11 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 ...(yr ? { year: yr } : {}),
+                ...(done[0]
+                  ? {
+                      q: `${done[0].team1Name || done[0].team1Code},${done[0].team2Name || done[0].team2Code}`,
+                    }
+                  : {}),
               }).toString();
               navigateHub({ kind: "best", ...(q ? { query: q } : {}) });
             }}
@@ -180,6 +193,11 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 ...(yr ? { year: yr } : {}),
+                ...(done[0]
+                  ? {
+                      q: `${done[0].team1Name || done[0].team1Code},${done[0].team2Name || done[0].team2Code}`,
+                    }
+                  : {}),
               }).toString();
               navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
             }}
