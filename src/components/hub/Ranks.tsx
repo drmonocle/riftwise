@@ -699,13 +699,13 @@ export const PlayerRanks: React.FC<{
             hide={prefs.hide}
             rankTo={(r) => ({
               kind: "leaders",
-              query: new URLSearchParams({ league: lu, year, role: me.r, stat: r.key }).toString(),
+              query: new URLSearchParams({ league: lu, year, role: me.r, stat: r.key, q: name || me.n || slug }).toString(),
             })}
             lastTo={{ kind: "player", slug, tab: "matches" }}
           />
           <p className="text-[10px] text-rw-muted">
             <HubLink
-              to={{ kind: "leaders", query: new URLSearchParams({ league: lu, year, role: me.r }).toString() }}
+              to={{ kind: "leaders", query: new URLSearchParams({ league: lu, year, role: me.r, q: name || me.n || slug }).toString() }}
               className="hover:text-rw-accent hover:underline"
             >
               {tl(
@@ -771,6 +771,22 @@ export const PlayerRanks: React.FC<{
               >
                 {tl("Item history")} →
               </HubLink>
+              {(me?.t || me?.r) && (
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: new URLSearchParams({
+                      ...(me?.t ? { teams: prettySlug(me.t) } : {}),
+                      ...(year ? { p: `y${year}` } : {}),
+                      ...(me?.r ? { role: me.r } : {}),
+                      ...(games?.[0]?.[2] ? { champ: games[0][2] } : {}),
+                    }).toString(),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+              )}
               <HubLink
                 to={{
                   kind: "tiers",
@@ -778,6 +794,7 @@ export const PlayerRanks: React.FC<{
                     scope: lu,
                     key: `y${year}`,
                     ...(me?.r ? { role: me.r } : {}),
+                    ...(games?.[0]?.[2] ? { q: games[0][2] } : {}),
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -785,7 +802,17 @@ export const PlayerRanks: React.FC<{
                 {tl("Pro tier list")} →
               </HubLink>
               <HubLink
-                to={{ kind: "counters", ...(me?.r ? { query: `role=${encodeURIComponent(me.r)}` } : {}) }}
+                to={{
+                  kind: "counters",
+                  ...((games?.[0]?.[2] || me?.r)
+                    ? {
+                        query: new URLSearchParams({
+                          ...(games?.[0]?.[2] ? { champ: prettySlug(games[0][2]) } : {}),
+                          ...(me?.r ? { role: me.r } : {}),
+                        }).toString(),
+                      }
+                    : {}),
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Counters")} →

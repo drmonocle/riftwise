@@ -9,7 +9,7 @@
 import React, { useId, useMemo, useState } from "react";
 import { tl, tc, eventTitle } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadPlayerGames, loadPlayerGames2y, prettySlug } from "../../hub/data";
+import { bare, loadPlayerGames, loadPlayerGames2y, normText, prettySlug } from "../../hub/data";
 import { playerRowLine, rateLine, type RatingFile } from "../../hub/playerRating";
 import type { HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
 import { smoothPath } from "../../useWidth";
@@ -750,11 +750,11 @@ export const PlayerOpponents: React.FC<{
   }, [chartOpps, opps, activeMetric]);
 
   const filteredOpps = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean) : [];
+    const q = normText(search);
+    const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
     if (!terms.length) return opps;
     return opps.filter((o) => {
-      const hay = `${o.opp} ${o.u || ""}`.toLowerCase();
+      const hay = normText(`${o.opp} ${o.u || ""} ${o.champs.map((c) => `${c.c} ${champName(c.c)}`).join(" ")}`);
       const hayBare = bare(hay);
       return terms.some((t) => {
         const tb = bare(t);
@@ -924,13 +924,14 @@ export const PlayerOpponents: React.FC<{
                 <HubLink
                   to={{
                     kind: "tiers",
-                    ...(yr
-                      ? { query: `key=y${encodeURIComponent(yr)}` }
-                      : ev
-                        ? { query: `event=${encodeURIComponent(ev)}` }
-                        : activeP.startsWith("p:")
-                          ? { query: `key=p${encodeURIComponent(activeP.slice(2))}` }
-                          : {}),
+                    ...(yr || ev || activeP.startsWith("p:") || topChamp
+                      ? {
+                          query: new URLSearchParams({
+                            ...(yr ? { key: `y${yr}` } : ev ? { event: ev } : activeP.startsWith("p:") ? { key: `p${activeP.slice(2)}` } : {}),
+                            ...(topChamp ? { q: topChamp } : {}),
+                          }).toString(),
+                        }
+                      : {}),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -1097,7 +1098,11 @@ export const PlayerOpponents: React.FC<{
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(expanded.u || prettySlug(expanded.opp))}${period || scope !== "all" ? `&p=${encodeURIComponent(period || scope)}` : ""}`,
+                  query: new URLSearchParams({
+                    teams: expanded.u || prettySlug(expanded.opp),
+                    ...(period || scope !== "all" ? { p: (period || scope)! } : {}),
+                    ...(expanded.champs[0]?.c ? { champ: expanded.champs[0].c } : {}),
+                  }).toString(),
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -1129,13 +1134,20 @@ export const PlayerOpponents: React.FC<{
                     <HubLink
                       to={{
                         kind: "tiers",
-                        ...(yr
-                          ? { query: `key=y${encodeURIComponent(yr)}` }
-                          : ev
-                            ? { query: `event=${encodeURIComponent(ev)}` }
-                            : (period || scope)?.startsWith("p:")
-                              ? { query: `key=p${encodeURIComponent((period || scope)!.slice(2))}` }
-                              : {}),
+                        ...(yr || ev || (period || scope)?.startsWith("p:") || expanded.champs[0]?.c
+                          ? {
+                              query: new URLSearchParams({
+                                ...(yr
+                                  ? { key: `y${yr}` }
+                                  : ev
+                                    ? { event: ev }
+                                    : (period || scope)?.startsWith("p:")
+                                      ? { key: `p${(period || scope)!.slice(2)}` }
+                                      : {}),
+                                ...(expanded.champs[0]?.c ? { q: expanded.champs[0].c } : {}),
+                              }).toString(),
+                            }
+                          : {}),
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
@@ -1417,11 +1429,11 @@ export const TeamOpponentsChart: React.FC<{
   );
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean) : [];
+    const q = normText(search);
+    const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
     if (!terms.length) return opps;
     return opps.filter((o) => {
-      const hay = `${o.n} ${o.u || ""}`.toLowerCase();
+      const hay = normText(`${o.n} ${o.u || ""}`);
       const hayBare = bare(hay);
       return terms.some((t) => {
         const tb = bare(t);
@@ -1755,11 +1767,11 @@ export const TeamPeriodOpponents: React.FC<{
   });
 
   const maxPeriodOppG = Math.max(1, ...opps.map((o) => o.g));
-  const q = search.trim().toLowerCase();
-  const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean) : [];
+  const q = normText(search);
+  const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
   const filtered = terms.length
     ? opps.filter((o) => {
-        const hay = `${o.opp} ${o.u || ""}`.toLowerCase();
+        const hay = normText(`${o.opp} ${o.u || ""}`);
         const hayBare = bare(hay);
         return terms.some((t) => {
           const tb = bare(t);

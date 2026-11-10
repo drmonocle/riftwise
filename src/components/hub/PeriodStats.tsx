@@ -897,7 +897,9 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
     kind: "leaders",
     query: new URLSearchParams({
       stat,
+      ...(who?.name ? { q: who.name } : { q: slug }),
       ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
+      ...(agg.champs.length === 1 ? { champ: agg.champs[0].c } : {}),
       ...(/^y\d{4}$/.test(period) ? { year: period.slice(1) } : period.startsWith("e:") ? { event: period.slice(2) } : {}),
     }).toString(),
   });
@@ -976,7 +978,12 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                   <HubLink
                     to={{
                       kind: "draft",
-                      query: `teams=${encodeURIComponent(prettySlug(who.club))}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                      query: new URLSearchParams({
+                        teams: prettySlug(who.club),
+                        ...(period !== "all" ? { p: period } : {}),
+                        ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
+                        ...(agg.champs[0] ? { champ: agg.champs[0].c } : {}),
+                      }).toString(),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -993,10 +1000,11 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
               <HubLink
                 to={{
                   kind: "tiers",
-                  ...(agg.roles[0] || /^y\d{4}$/.test(period) || period.startsWith("p:") || period.startsWith("e:")
+                  ...(agg.roles[0] || agg.champs[0] || /^y\d{4}$/.test(period) || period.startsWith("p:") || period.startsWith("e:")
                     ? {
                         query: new URLSearchParams({
                           ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
+                          ...(agg.champs[0] ? { q: agg.champs[0].c } : {}),
                           ...(/^y\d{4}$/.test(period)
                             ? { key: period }
                             : period.startsWith("p:")
@@ -1172,10 +1180,11 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 <HubLink
                   to={{
                     kind: "tiers",
-                    ...(agg.roles[0] || /^y\d{4}$/.test(period) || period.startsWith("p:") || period.startsWith("e:")
+                    ...(agg.roles[0] || agg.champs[0] || /^y\d{4}$/.test(period) || period.startsWith("p:") || period.startsWith("e:")
                       ? {
                           query: new URLSearchParams({
                             ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
+                            ...(agg.champs[0] ? { q: agg.champs[0].c } : {}),
                             ...(/^y\d{4}$/.test(period)
                               ? { key: period }
                               : period.startsWith("p:")
@@ -1227,7 +1236,12 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                     <HubLink
                       to={{
                         kind: "draft",
-                        query: `teams=${encodeURIComponent(prettySlug(who.club))}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                        query: new URLSearchParams({
+                          teams: prettySlug(who.club),
+                          ...(period !== "all" ? { p: period } : {}),
+                          ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
+                          ...(agg.champs[0] ? { champ: agg.champs[0].c } : {}),
+                        }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -1409,7 +1423,14 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                 {tl("Match prep")} →
               </HubLink>
               <HubLink
-                to={{ kind: "draft", query: `teams=${encodeURIComponent(slug)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                to={{
+                  kind: "draft",
+                  query: new URLSearchParams({
+                    teams: slug,
+                    ...(period !== "all" ? { p: period } : {}),
+                    ...(t.picks[0] ? { champ: t.picks[0][0] } : {}),
+                  }).toString(),
+                }}
                 className="text-[11px] font-semibold text-rw-accent hover:underline"
               >
                 {tl("Draft board")} →
@@ -1426,13 +1447,20 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
               <HubLink
                 to={{
                   kind: "champions",
-                  ...(/^y\d{4}$/.test(period)
-                    ? { query: `year=${encodeURIComponent(period.slice(1))}` }
-                    : period.startsWith("p:")
-                      ? { query: `patch=${encodeURIComponent(period.slice(2))}` }
-                      : period.startsWith("e:")
-                        ? { query: `event=${encodeURIComponent(period.slice(2))}` }
-                        : {}),
+                  ...(t.picks[0] || /^y\d{4}$/.test(period) || period.startsWith("p:") || period.startsWith("e:")
+                    ? {
+                        query: new URLSearchParams({
+                          ...(t.picks[0] ? { q: t.picks[0][0] } : {}),
+                          ...(/^y\d{4}$/.test(period)
+                            ? { year: period.slice(1) }
+                            : period.startsWith("p:")
+                              ? { patch: period.slice(2) }
+                              : period.startsWith("e:")
+                                ? { event: period.slice(2) }
+                                : {}),
+                        }).toString(),
+                      }
+                    : {}),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -1463,13 +1491,20 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
               <HubLink
                 to={{
                   kind: "tiers",
-                  ...(/^y\d{4}$/.test(period)
-                    ? { query: `key=${encodeURIComponent(period)}` }
-                    : period.startsWith("p:")
-                      ? { query: `key=${encodeURIComponent(`p${period.slice(2)}`)}` }
-                      : period.startsWith("e:")
-                        ? { query: `event=${encodeURIComponent(period.slice(2))}` }
-                        : {}),
+                  ...(t.picks[0] || /^y\d{4}$/.test(period) || period.startsWith("p:") || period.startsWith("e:")
+                    ? {
+                        query: new URLSearchParams({
+                          ...(t.picks[0] ? { q: t.picks[0][0] } : {}),
+                          ...(/^y\d{4}$/.test(period)
+                            ? { key: period }
+                            : period.startsWith("p:")
+                              ? { key: `p${period.slice(2)}` }
+                              : period.startsWith("e:")
+                                ? { event: period.slice(2) }
+                                : {}),
+                        }).toString(),
+                      }
+                    : {}),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
