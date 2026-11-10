@@ -922,6 +922,12 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
               >
                 {tl("Leaderboards")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "tiers", ...(agg.roles[0] ? { query: `role=${encodeURIComponent(agg.roles[0])}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
               <CopyPeriodTextPost
               url={hubShareUrl({
                 kind: "player",
@@ -1148,7 +1154,16 @@ const ChampCounts: React.FC<{ title: string; list: [string, number][]; tone?: "b
   return (
     <div className="min-w-0">
       <div className="text-[10px] font-semibold text-rw-muted mb-1">
-        {title}
+        {slug ? (
+          <HubLink
+            to={{ kind: "draft", query: `teams=${encodeURIComponent(slug)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
+            className="hover:text-rw-accent hover:underline"
+          >
+            {title}
+          </HubLink>
+        ) : (
+          title
+        )}
       </div>
       <ul className="text-xs space-y-1">
         {list.map(([c, n]) => (
@@ -1396,7 +1411,12 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                   return (
                     <div className="min-w-0">
                       <div className="text-[10px] font-semibold text-rw-muted mb-1">
-                        {tl("Most picked champions")}
+                        <HubLink
+                          to={{ kind: "team", slug, tab: "champions", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+                          className="hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Most picked champions")}
+                        </HubLink>
                       </div>
                       <ul className="text-xs space-y-1">
                         {t.picks.map(([c, n, w]) => {

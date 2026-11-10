@@ -91,6 +91,20 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                 >
                   {tl("Compare")} →
                 </HubLink>
+                <HubLink
+                  data-nocapture="1"
+                  to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }}
+                  className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
+                <HubLink
+                  data-nocapture="1"
+                  to={{ kind: "rankings" }}
+                  className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+                >
+                  {tl("Power rankings")} →
+                </HubLink>
               </>
             )}
             <CopyPlayoffOddsPost

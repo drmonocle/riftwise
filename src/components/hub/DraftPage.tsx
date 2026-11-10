@@ -941,6 +941,12 @@ const Board: React.FC<{
           <HubLink to={{ kind: "counters" }} className="text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Counters")}
           </HubLink>
+          <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Pro tier list")}
+          </HubLink>
+          <HubLink to={{ kind: "items" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Item history")}
+          </HubLink>
           <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Power rankings")}
           </HubLink>
@@ -1709,6 +1715,21 @@ const DraftMatchupPanel: React.FC<{
           )}
           <HubLink
             to={{
+              kind: "items",
+              ...(bluePicks[0] ? { query: `champ=${encodeURIComponent(prettySlug(bluePicks[0]))}` } : {}),
+            }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Item history")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "tiers" }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")} →
+          </HubLink>
+          <HubLink
+            to={{
               kind: "finder",
               query: `team=${encodeURIComponent(blue.team.u)}&vs=${encodeURIComponent(red.team.u)}${
                 bluePicks.length ? `&champ=${encodeURIComponent(bluePicks.slice(0, 3).join(","))}` : ""
@@ -1830,6 +1851,16 @@ const DraftMatchupPanel: React.FC<{
                       className="text-rw-muted hover:text-rw-accent hover:underline"
                     >
                       {tl("Counter-picks")}
+                    </HubLink>
+                    <span>·</span>
+                    <HubLink
+                      to={{
+                        kind: "items",
+                        query: `champ=${encodeURIComponent(prettySlug(bChamp))}`,
+                      }}
+                      className="text-rw-muted hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Item history")}
                     </HubLink>
                     <span>·</span>
                     <HubLink
@@ -2251,6 +2282,24 @@ const PlayerPools: React.FC<{
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Champions")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "tiers",
+              ...(roleFilter != null ? { query: `role=${encodeURIComponent(ROLES[roleFilter])}` } : {}),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "leaders",
+              ...(roleFilter != null ? { query: `role=${encodeURIComponent(ROLES[roleFilter])}` } : {}),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Player leaderboards")} →
           </HubLink>
           <HubLink
             to={{
@@ -2832,6 +2881,14 @@ const Priorities: React.FC<{
           >
             {tl("Pro tier list")} →
           </HubLink>
+          {open[0] && (
+            <HubLink
+              to={{ kind: "items", query: `champ=${encodeURIComponent(prettySlug(open[0][0]))}` }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Item history")} →
+            </HubLink>
+          )}
           <HubLink
             to={{
               kind: "team",

@@ -401,14 +401,30 @@ export const DraftTendencies: React.FC<{
                   {tl("Draft board")} →
                 </HubLink>
                 {(d.b1[0] || d.r12[0]) && (
-                  <HubLink
-                    to={{ kind: "counters", query: `champ=${encodeURIComponent(prettySlug((d.b1[0] || d.r12[0])[0]))}` }}
-                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                    data-nocapture="1"
-                  >
-                    {tl("Counters")} →
-                  </HubLink>
+                  <>
+                    <HubLink
+                      to={{ kind: "counters", query: `champ=${encodeURIComponent(prettySlug((d.b1[0] || d.r12[0])[0]))}` }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                      data-nocapture="1"
+                    >
+                      {tl("Counters")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "items", query: `champ=${encodeURIComponent(prettySlug((d.b1[0] || d.r12[0])[0]))}` }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                      data-nocapture="1"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
+                  </>
                 )}
+                <HubLink
+                  to={{ kind: "tiers" }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
                 <HubLink
                   to={{ kind: "finder", query: `team=${encodeURIComponent(resolvedSlug)}${periodParam}` }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

@@ -167,6 +167,12 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; nam
           <HubLink to={{ kind: "leagues" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
             {tl("Leagues")} →
           </HubLink>
+          <HubLink to={{ kind: "tournaments" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            {tl("Tournaments")} →
+          </HubLink>
+          <HubLink to={{ kind: "titles" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            {tl("Titles")} →
+          </HubLink>
           <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
             {tl("Power rankings")} →
           </HubLink>
@@ -444,6 +450,12 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
             <span className="flex flex-wrap items-center gap-2">
               <HubLink to={{ kind: "leagues" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
                 {tl("Leagues")} →
+              </HubLink>
+              <HubLink to={{ kind: "tournaments" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+                {tl("Tournaments")} →
+              </HubLink>
+              <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+                {tl("Power rankings")} →
               </HubLink>
               <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
                 {tl("Game finder")} →

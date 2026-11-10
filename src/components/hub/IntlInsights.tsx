@@ -285,6 +285,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 </HubLink>
               </>
             )}
+            <HubLink
+              to={{ kind: "finder", ...(!all && sorted[0] ? { query: `year=${encodeURIComponent(yearOnly(sorted[0].year))}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Game finder")} →
+            </HubLink>
             <SectionCard
               section={tl("Swiss stage")}
               name={name}
@@ -418,6 +425,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             <HubLink to={{ kind: "tournaments" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
               {tl("Tournaments")} →
             </HubLink>
+            <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Game finder")} →
+            </HubLink>
             <SectionCard
               section={tl("Cinderella runs")}
               name={name}
@@ -482,6 +492,12 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 </HubLink>
               </>
             )}
+            <HubLink to={{ kind: "titles" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Titles")} →
+            </HubLink>
+            <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Game finder")} →
+            </HubLink>
             <CopyInsightPost
               title={`${tl("Most finals")} · ${name}`}
               rows={fin.mostReached.slice(0, 6).map((r) => `${r.name}: ${r.n} (${tl("{w} won · {l} lost", { w: r.won, l: r.n - r.won })})`)}
@@ -672,6 +688,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             >
               {tl("Titles")} →
             </HubLink>
+            <HubLink
+              to={{ kind: "finder", ...(titles[0]?.u ? { query: `player=${encodeURIComponent(titles[0].u)}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Game finder")} →
+            </HubLink>
             <CopyInsightPost
               title={`${tl("Players with the most titles")} · ${name}`}
               rows={titles.slice(0, 6).map((p) => `${p.name}: ${tl("{n} titles", { n: p.titles.length })} (${p.titles.map(yearOnly).sort().join(", ")})`)}
@@ -744,6 +767,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             </HubLink>
             <HubLink to={{ kind: "titles" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
               {tl("Titles")} →
+            </HubLink>
+            <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Game finder")} →
             </HubLink>
             <SectionCard
               section={tl("Home region")}
