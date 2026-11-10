@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { tl, tn, tc, roleName, stageLabel, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
 import { loadPlayerGames, loadPlayerItems, loadTeamSeries, prettySlug } from "../../hub/data";
+import { inPeriod, playerRowRef, type PeriodKey } from "../../hub/period";
 import type { PlayerGameRow, TeamSeriesRow } from "../../hub/types";
 import { isFinishedItem } from "../../hub/ddragon";
 import { SectionCard } from "./BroadcastCard";
@@ -313,7 +314,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
 
 /** `champ`: open on that champion's games (the Champions tab's "Every game" button). Each game shows the items the
  *  player ended it with (hub/playeritems/: the finished ones first). */
-const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }> = ({ slug, champ: startChamp, year: startYear }) => {
+const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string; period?: PeriodKey }> = ({ slug, champ: startChamp, year: startYear, period }) => {
   const state = useLoad(() => loadPlayerGames(slug), [slug]);
   const owned = useLoad(() => loadPlayerItems(slug).catch(() => null), [slug]);
   const [year, setYear] = useState(startYear || "all");
@@ -333,14 +334,18 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }>
       setN(PAGE);
     }
   }, [startYear]);
-  const data = state.data || [];
+  const rawData = state.data || [];
+  const data = useMemo(
+    () => (period && period !== "all" && !/^y\d{4}$/.test(period) ? inPeriod(rawData, period, playerRowRef) : rawData),
+    [rawData, period],
+  );
   // each game's final items: playeritems lists, for every item, the rows of this log it was in
   const itemsOf = useMemo(() => {
     const m = new Map<PlayerGameRow, string[]>();
-    for (const [it, pos] of owned.data || []) for (const p of pos) if (data[p]) m.set(data[p], [...(m.get(data[p]) || []), it]);
+    for (const [it, pos] of owned.data || []) for (const p of pos) if (rawData[p]) m.set(rawData[p], [...(m.get(rawData[p]) || []), it]);
     for (const [r, its] of m) m.set(r, [...its].sort((a, b) => Number(isFinishedItem(b)) - Number(isFinishedItem(a))));
     return m;
-  }, [owned.data, data]);
+  }, [owned.data, rawData]);
   const years = useMemo(() => [...new Set(data.map((r) => r[0].slice(0, 4)))], [data]);
   const champs = useMemo(() => {
     const count = new Map<string, number>();
@@ -531,7 +536,7 @@ export const PlayerGamesArchive: React.FC<{ slug: string }> = ({ slug }) => (
 );
 
 /** Every game of a player on one champion, open at once (the Champions tab, after a champion is picked). */
-export const PlayerChampGames: React.FC<{ slug: string; champ: string; year?: string; onClose: () => void }> = ({ slug, champ, year, onClose }) => (
+export const PlayerChampGames: React.FC<{ slug: string; champ: string; year?: string; period?: PeriodKey; onClose: () => void }> = ({ slug, champ, year, period, onClose }) => (
   <Section
     title={tl("Every game on {champ}", { champ: champName(champ) })}
     right={
@@ -540,7 +545,7 @@ export const PlayerChampGames: React.FC<{ slug: string; champ: string; year?: st
       </button>
     }
   >
-    <PlayerGamesBody slug={slug} champ={champ} year={year} />
+    <PlayerGamesBody slug={slug} champ={champ} year={year} period={period} />
   </Section>
 );
 

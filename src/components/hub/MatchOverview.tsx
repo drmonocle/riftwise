@@ -15,7 +15,7 @@ import { navigateHub } from "../../hub/route";
 import { Change } from "./RankingsPage";
 import { chancesOf, prepLines, rankText, type Side } from "./PrepPage";
 import { BroadcastCardButton, prepOverviewCard } from "./BroadcastCard";
-import { fmtDate, isFresh, Loading, PlayerPhoto, RevealButton, TeamLogo, useHidden, useLoad } from "./ui";
+import { fmtDate, isFresh, Loading, PlayerLink, PlayerPhoto, RevealButton, TeamLink, TeamLogo, useHidden, useLoad } from "./ui";
 
 export { teamStarter };
 
@@ -95,9 +95,13 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
   const h2hWins = meetings.filter((r) => r[3] > r[4]).length;
   const lines = useMemo(() => prepLines(x, y), [x, y]);
   const last = lines.find((l) => l.key === "last" || l.key === "first");
-  const stories = lines
-    .filter((l) => l.key !== "h2h" && l.key !== "last" && l.key !== "first" && (typeof l.text === "string" || typeof l.text === "number"))
-    .map((l) => (l.who ? `${l.who.name}: ${l.text}` : String(l.text)));
+  const storyLines = lines.filter((l) => l.key !== "h2h" && l.key !== "last" && l.key !== "first");
+  const stories = storyLines
+    .map((l) => {
+      const txt = l.plain ?? (typeof l.text === "string" || typeof l.text === "number" ? String(l.text) : "");
+      return txt ? (l.who ? `${l.who.name}: ${txt}` : txt) : "";
+    })
+    .filter(Boolean);
   const lanePairs = useMemo(
     () => ROLES.map((r) => ({ role: r, a: teamStarter(x.team, r), b: teamStarter(y.team, r) })),
     [x.team, y.team],
@@ -304,14 +308,43 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               })}
             </ul>
           ) : (
-            last && <p className="text-[11px] text-rw-sub">{last.text}</p>
+            last && (
+              <p
+                className="text-[11px] text-rw-sub"
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).closest("a")) onClose();
+                }}
+              >
+                {last.text}
+              </p>
+            )
           )}
-          {stories.length > 0 && (
-            <ul className="space-y-1 border-t border-rw-border pt-2">
-              {stories.slice(0, 3).map((t, i) => (
+          {storyLines.length > 0 && (
+            <ul
+              className="space-y-1 border-t border-rw-border pt-2"
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest("a")) onClose();
+              }}
+            >
+              {storyLines.slice(0, 3).map((l, i) => (
                 <li key={i} className="flex gap-1.5">
                   <span className="text-rw-accent">•</span>
-                  <span className="text-rw-text">{t}</span>
+                  <span className="text-rw-text">
+                    {l.who && (
+                      <>
+                        {l.who.to.kind === "team" ? (
+                          <span className="inline-flex items-center gap-1 align-baseline font-semibold">
+                            <TeamLogo name={l.who.name} size={13} />
+                            <TeamLink name={l.who.name} u={l.who.to.slug} />
+                          </span>
+                        ) : (
+                          <PlayerLink name={l.who.name} u={l.who.to.slug} />
+                        )}
+                        {": "}
+                      </>
+                    )}
+                    {l.text}
+                  </span>
                 </li>
               ))}
             </ul>

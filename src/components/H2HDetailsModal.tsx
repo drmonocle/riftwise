@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { X, Swords, Eye, EyeOff, Globe, Home, ClipboardList, GitCompare } from "lucide-react";
 import { findHubTeam, loadHubIndexQuick, prettySlug } from "../hub/data";
 import { navigateHub } from "../hub/route";
+import { RIOT_PREFIX } from "../hub/riotMatch";
+import { findSeriesSlug } from "../hub/seriesLookup";
 import { Match, CatalogData } from "../types";
 import { computeHeadToHead, h2hKey, normalizeTeamCode, pickTeamByCode, recentMeetings, H2HMeeting } from "../helpers";
 import { fetchH2HSeries, H2HSeriesEntry } from "../api";
@@ -236,7 +238,20 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                     <span className="text-rw-muted mx-1.5">–</span>
                     <span style={{ color: T2_COLOR }}>{hideTotals ? "?" : h2h.team2Wins}</span>
                   </div>
-                  <div className="text-[10px] text-rw-muted">{tl("{n} games · all tournaments", { n: total })}</div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigateHub({
+                        kind: "finder",
+                        query: new URLSearchParams({ team: prettySlug(t1.name), vs: prettySlug(t2.name) }).toString(),
+                      });
+                      onClose();
+                    }}
+                    className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
+                    title={tl("Game finder")}
+                  >
+                    {tl("{n} games · all tournaments", { n: total })}
+                  </button>
                 </>
               ) : (
                 <div className="text-xs text-rw-muted">{tl("No recorded games")}</div>
@@ -304,14 +319,55 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                         <div className="text-[10px] text-rw-muted font-mono">{fmtDate(m.date)}</div>
                       </div>
                       {revealed ? (
-                        <div className="inline-flex items-center gap-2 font-mono font-bold shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            findSeriesSlug({
+                              team1Name: t1.name,
+                              team1Code: c1,
+                              team2Name: t2.name,
+                              team2Code: c2,
+                              startTimeUtc: m.date,
+                            })
+                              .then((slug) => {
+                                if (slug) {
+                                  navigateHub({ kind: "match", slug });
+                                  onClose();
+                                  return;
+                                }
+                                const day = m.date.slice(0, 10);
+                                const hit = schedule.find(
+                                  (sm) =>
+                                    sm.startTimeUtc.slice(0, 10) === day &&
+                                    ((normalizeTeamCode(sm.team1Code) === c1 && normalizeTeamCode(sm.team2Code) === c2) ||
+                                      (normalizeTeamCode(sm.team1Code) === c2 && normalizeTeamCode(sm.team2Code) === c1)),
+                                );
+                                if (hit) {
+                                  navigateHub({ kind: "match", slug: `${RIOT_PREFIX}${hit.matchId}` });
+                                } else {
+                                  navigateHub({
+                                    kind: "finder",
+                                    query: new URLSearchParams({
+                                      team: prettySlug(t1.name),
+                                      vs: prettySlug(t2.name),
+                                      ...(m.date.length >= 4 ? { year: m.date.slice(0, 4) } : {}),
+                                    }).toString(),
+                                  });
+                                }
+                                onClose();
+                              })
+                              .catch(() => {});
+                          }}
+                          className="inline-flex items-center gap-2 font-mono font-bold shrink-0 hover:opacity-80"
+                          title={tl("Details")}
+                        >
                           {tot > 0 && (
                             <span className="hidden sm:inline-flex w-9 h-1 rounded-full bg-rw-border/70 overflow-hidden gap-[1px] shrink-0" aria-hidden="true">
                               <span className="h-full" style={{ width: `${share1}%`, backgroundColor: T1_COLOR }} />
                               <span className="h-full flex-1" style={{ backgroundColor: T2_COLOR }} />
                             </span>
                           )}
-                          <span>
+                          <span className="hover:underline">
                             <span style={{ color: T1_COLOR }}>{c1} {m.team1Score}</span>
                             <span className="text-rw-muted"> – </span>
                             <span style={{ color: T2_COLOR }}>{m.team2Score} {c2}</span>
@@ -319,7 +375,7 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                           <span className="text-[10px] font-sans font-semibold" style={{ color: t1Won ? T1_COLOR : T2_COLOR }}>
                             {tl("{team} won", { team: t1Won ? c1 : c2 })}
                           </span>
-                        </div>
+                        </button>
                       ) : (
                         <span className="text-[10px] text-rw-muted shrink-0">{tl("score hidden")}</span>
                       )}

@@ -105,7 +105,11 @@ const PlayerView: React.FC<{
   const routeQuery = nowRoute.kind === "player" && nowRoute.slug === p.u ? nowRoute.query : undefined;
   const urlParams = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
   const champParam = urlParams.get("champ");
-  const [champPeriod, setChampPeriod] = useState<PeriodKey>(urlParams.get("p") || "all");
+  const pParam = urlParams.get("p");
+  const [champPeriod, setChampPeriod] = useState<PeriodKey>(pParam || "all");
+  useEffect(() => {
+    if (pParam) setChampPeriod(pParam);
+  }, [pParam]);
   // the Champions tab: a champion's every game, with the items of each (TV, 2026-10-28)
   const [gamesOn, setGamesOn] = useState<string | null>(() => {
     if (!champParam) return null;
@@ -371,7 +375,7 @@ const PlayerView: React.FC<{
               </thead>
               <tbody>
                 {events.map((x) => (
-                  <PlayerEventRow key={x.e} x={x} />
+                  <PlayerEventRow key={x.e} x={x} playerSlug={p.u} />
                 ))}
               </tbody>
             </STable>
@@ -438,6 +442,7 @@ const PlayerView: React.FC<{
           slug={p.u}
           champ={gamesOn}
           year={/^y\d{4}$/.test(champPeriod) ? champPeriod.slice(1) : "all"}
+          period={champPeriod}
           onClose={() => setGamesOn(null)}
         />
       )}
@@ -800,8 +805,9 @@ const PlayerChampionsTab: React.FC<{
   );
 };
 
-const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number] }> = ({
+const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number]; playerSlug: string }> = ({
   x,
+  playerSlug,
 }) => {
   const [hidden, reveal] = useHidden(`player-event:${x.e}`, x.date);
   return (
@@ -822,7 +828,16 @@ const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number] }> = ({
         {hidden ? <RevealButton onReveal={reveal} small /> : x.pl || "–"}
       </td>
       <td className={`${td} text-rw-sub`} data-sort={hidden ? x.g : x.g ? x.w / x.g : 0}>
-        {hidden ? x.g : <WinBar w={x.w} g={x.g} showRecord />}
+        {hidden ? (
+          x.g
+        ) : (
+          <HubLink
+            to={{ kind: "player", slug: playerSlug, tab: "stats", query: `p=e:${encodeURIComponent(x.en)}` }}
+            className="hover:text-rw-accent hover:underline"
+          >
+            <WinBar w={x.w} g={x.g} showRecord />
+          </HubLink>
+        )}
       </td>
       <td className={`${td} text-rw-sub`} data-sort={x.kda}>
         <KdaBar kda={x.kda} />
@@ -831,7 +846,11 @@ const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number] }> = ({
       <td className={td}>
         <span className="flex gap-0.5">
           {x.c.map((c) => (
-            <HubLink key={c} to={{ kind: "champ", slug: prettySlug(c) }}>
+            <HubLink
+              key={c}
+              to={{ kind: "player", slug: playerSlug, tab: "champions", query: `champ=${encodeURIComponent(c)}&p=e:${encodeURIComponent(x.en)}` }}
+              title={`${champName(c)} · ${x.en}`}
+            >
               <ChampIcon name={c} size={16} />
             </HubLink>
           ))}

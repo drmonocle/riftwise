@@ -760,7 +760,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 .slice(0, 2)
                 .map((r) => roleName(r))
                 .join(" · ")}
-              to={{ kind: "player", slug, tab: "champions" }}
+              to={{ kind: "player", slug, tab: "champions", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
             />
           </div>
           <div className="grid gap-4 xl:grid-cols-2 items-start [&>*:only-child]:col-span-full">
@@ -1000,7 +1000,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
               label={tl("Champions")}
               value={t.nPicks}
               sub={tl("different champions picked")}
-              to={{ kind: "team", slug, tab: "champions" }}
+              to={{ kind: "team", slug, tab: "champions", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
             />
           </div>
           <div className="grid gap-4 xl:grid-cols-2 items-start">

@@ -79,7 +79,12 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
   const [typed, setTyped] = useState("");
   const found = useMemo(() => findPlayers(people.data?.players || [], typed), [people.data, typed]);
   const who = useMemo(() => (people.data?.players || []).find((r) => playerSlug(r) === player), [people.data, player]);
-  const itemRow = useMemo(() => (items.data || []).find((r) => r[1] === item), [items.data, item]);
+  const itemRow = useMemo(
+    () => (items.data || []).find((r) => r[1] === item || (item && r[1].replace(/-/g, "") === item.replace(/-/g, ""))),
+    [items.data, item],
+  );
+  const resolvedItem = itemRow?.[1] || item;
+  const resolvedPicks: Picks = { ...picks, item: resolvedItem };
   const champs = useMemo(() => [...(people.data?.champs || [])].sort((a, b) => champName(a[0]).localeCompare(champName(b[0]))), [people.data]);
   const champRow = useMemo(() => champs.find((r) => prettySlug(r[0]) === champ), [champs, champ]);
   const champLabel = champRow ? champName(champRow[0]) : champ;
@@ -214,13 +219,13 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
         </div>
       </div>
       {player ? (
-        <PlayerItemsView slug={player} name={who?.[0] || player} picks={picks} champLabel={champLabel} scope={scope} itemTitle={itemRow?.[0]} onItem={(s) => set({ item: s })} />
-      ) : item && champ ? (
-        <ItemChampView picks={picks} champLabel={champLabel} players={people.data?.players} onPlayer={(s) => set({ player: s })} />
-      ) : item && year ? (
-        <ItemYearView picks={picks} players={people.data?.players} onPlayer={(s) => set({ player: s })} onChamp={(c) => set({ champ: prettySlug(c) })} />
-      ) : item ? (
-        <ItemPlayersView slug={item} players={people.data?.players} onPlayer={(s) => set({ player: s })} onChamp={(c) => set({ champ: prettySlug(c) })} onYear={(y) => set({ year: y })} />
+        <PlayerItemsView slug={player} name={who?.[0] || player} picks={resolvedPicks} champLabel={champLabel} scope={scope} itemTitle={itemRow?.[0]} onItem={(s) => set({ item: s })} />
+      ) : resolvedItem && champ ? (
+        <ItemChampView picks={resolvedPicks} champLabel={champLabel} players={people.data?.players} onPlayer={(s) => set({ player: s })} />
+      ) : resolvedItem && year ? (
+        <ItemYearView picks={resolvedPicks} players={people.data?.players} onPlayer={(s) => set({ player: s })} onChamp={(c) => set({ champ: prettySlug(c) })} />
+      ) : resolvedItem ? (
+        <ItemPlayersView slug={resolvedItem} players={people.data?.players} onPlayer={(s) => set({ player: s })} onChamp={(c) => set({ champ: prettySlug(c) })} onYear={(y) => set({ year: y })} />
       ) : (
         <ItemStats loading={items.loading} rows={items.data ?? undefined} scope={scope} to={(slug) => ({ kind: "items", query: queryWith({ item: slug }) })} />
       )}
@@ -255,7 +260,7 @@ const PlayerItemsView: React.FC<{
     </HubLink>
   );
   if (item) {
-    const hit = mine.data.find(([it]) => prettySlug(it) === item);
+    const hit = mine.data.find(([it]) => prettySlug(it) === item || prettySlug(it).replace(/-/g, "") === item.replace(/-/g, ""));
     const label = itemName(hit?.[0] || itemTitle || item);
     const g = hit ? games(hit[1]) : [];
     if (!g.length)

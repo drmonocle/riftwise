@@ -190,6 +190,22 @@ export function itemIconById(id: number | undefined): string | null {
   return `${DD}/${maps.v}/img/item/${id}.png`;
 }
 
+/** Normalized item key ("rabadonsdeathcap") from Riot item id ("3089"). */
+export function itemKeyById(id: number | undefined): string | null {
+  if (!maps || !id) return null;
+  const target = String(id);
+  for (const [k, v] of Object.entries(maps.item)) {
+    if (v === target) return k;
+  }
+  return null;
+}
+
+/** Item name in the reader's language (when loaded) from Riot item id. */
+export function itemLabelById(id: number | undefined): string | null {
+  if (!maps || !id) return null;
+  return maps.locItem?.[String(id)] || null;
+}
+
 /** The names to look an item up by: as it is, without a "(0.9.25.21 - 10.22)" patch range, without a " - Warrior"
  *  enchantment (scripts/stats/ddragon_maps.py item_keys too). */
 function itemKeys(name: string): string[] {

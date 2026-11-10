@@ -601,7 +601,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
               </thead>
               <tbody>
                 {events.map((x) => (
-                  <EventRow key={x.e} x={x} teamName={t.name} />
+                  <EventRow key={x.e} x={x} teamName={t.name} teamSlug={t.u} />
                 ))}
               </tbody>
             </STable>
@@ -755,34 +755,15 @@ const TeamChampionsTab: React.FC<{
           right={<SectionCard section={tl("Most banned by them")} name={t.name} rows={() => bans.map((c) => ({ champ: c.c, label: champName(c.c), value: String(c.g) }))} />}
         >
           <ul className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
-            {bans.map((c) => (
-              <li key={c.c} className="flex items-center justify-between gap-1.5 min-w-0">
-                <button
-                  type="button"
-                  onClick={() => pickChamp(c.c)}
-                  className="flex items-center gap-1.5 min-w-0 text-left hover:text-rw-accent truncate"
+            {bans.map((c) => {
+              const isSel = selectedChamp?.toLowerCase() === c.c.toLowerCase();
+              return (
+                <li
+                  key={c.c}
+                  className={`flex items-center justify-between gap-1.5 min-w-0 rounded px-1 py-0.5 transition-colors ${
+                    isSel ? "bg-rw-accent/15 ring-1 ring-rw-accent/50" : "hover:bg-rw-raised/60"
+                  }`}
                 >
-                  <ChampIcon name={c.c} size={16} />
-                  <span className="truncate text-rw-text">{champName(c.c)}</span>
-                </button>
-                <span className="inline-flex items-center gap-1.5 text-rw-muted shrink-0 tabular-nums">
-                  <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden lg:inline-block shrink-0">
-                    <span className="block h-full bg-rw-accent/65 rounded-full" style={{ width: `${Math.max(8, Math.round((c.g / maxBanG) * 100))}%` }} />
-                  </span>
-                  <span className="w-5 text-right">{c.g}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Section>
-        {bansVs.length > 0 && (
-          <Section
-            title={tl("Most banned against them")}
-            right={<SectionCard section={tl("Most banned against them")} name={t.name} rows={() => bansVs.map((c) => ({ champ: c.c, label: champName(c.c), value: String(c.g) }))} />}
-          >
-            <ul className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
-              {bansVs.map((c) => (
-                <li key={c.c} className="flex items-center justify-between gap-1.5 min-w-0">
                   <button
                     type="button"
                     onClick={() => pickChamp(c.c)}
@@ -791,14 +772,57 @@ const TeamChampionsTab: React.FC<{
                     <ChampIcon name={c.c} size={16} />
                     <span className="truncate text-rw-text">{champName(c.c)}</span>
                   </button>
-                  <span className="inline-flex items-center gap-1.5 text-rw-muted shrink-0 tabular-nums">
+                  <button
+                    type="button"
+                    onClick={() => pickChamp(c.c)}
+                    className="inline-flex items-center gap-1.5 text-rw-muted hover:text-rw-accent shrink-0 tabular-nums"
+                  >
                     <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden lg:inline-block shrink-0">
-                      <span className="block h-full bg-rw-red/70 rounded-full" style={{ width: `${Math.max(8, Math.round((c.g / maxBanVsG) * 100))}%` }} />
+                      <span className="block h-full bg-rw-accent/65 rounded-full" style={{ width: `${Math.max(8, Math.round((c.g / maxBanG) * 100))}%` }} />
                     </span>
                     <span className="w-5 text-right">{c.g}</span>
-                  </span>
+                  </button>
                 </li>
-              ))}
+              );
+            })}
+          </ul>
+        </Section>
+        {bansVs.length > 0 && (
+          <Section
+            title={tl("Most banned against them")}
+            right={<SectionCard section={tl("Most banned against them")} name={t.name} rows={() => bansVs.map((c) => ({ champ: c.c, label: champName(c.c), value: String(c.g) }))} />}
+          >
+            <ul className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
+              {bansVs.map((c) => {
+                const isSel = selectedChamp?.toLowerCase() === c.c.toLowerCase();
+                return (
+                  <li
+                    key={c.c}
+                    className={`flex items-center justify-between gap-1.5 min-w-0 rounded px-1 py-0.5 transition-colors ${
+                      isSel ? "bg-rw-accent/15 ring-1 ring-rw-accent/50" : "hover:bg-rw-raised/60"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => pickChamp(c.c)}
+                      className="flex items-center gap-1.5 min-w-0 text-left hover:text-rw-accent truncate"
+                    >
+                      <ChampIcon name={c.c} size={16} />
+                      <span className="truncate text-rw-text">{champName(c.c)}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => pickChamp(c.c)}
+                      className="inline-flex items-center gap-1.5 text-rw-muted hover:text-rw-accent shrink-0 tabular-nums"
+                    >
+                      <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden lg:inline-block shrink-0">
+                        <span className="block h-full bg-rw-red/70 rounded-full" style={{ width: `${Math.max(8, Math.round((c.g / maxBanVsG) * 100))}%` }} />
+                      </span>
+                      <span className="w-5 text-right">{c.g}</span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </Section>
         )}
@@ -1395,8 +1419,9 @@ const TeamChampGames: React.FC<{
   );
 };
 
-const EventRow: React.FC<{ x: HubTeam["events"][number]; teamName: string }> = ({ x, teamName }) => {
+const EventRow: React.FC<{ x: HubTeam["events"][number]; teamName: string; teamSlug: string }> = ({ x, teamName, teamSlug }) => {
   const [hidden, reveal] = useHidden(`team-event:${x.e}`, x.date);
+  const finderQuery = new URLSearchParams({ team: teamSlug, event: x.e || prettySlug(x.en) }).toString();
   return (
     <tr className="border-t border-rw-border">
       <td className={`${td} max-w-[14rem] truncate`} data-sort={x.en}>
@@ -1410,10 +1435,26 @@ const EventRow: React.FC<{ x: HubTeam["events"][number]; teamName: string }> = (
         {hidden ? <RevealButton onReveal={reveal} small /> : x.pl || "–"}
       </td>
       <td className={`${td} text-rw-sub`} data-sort={hidden ? x.sg : x.sg ? x.sw / x.sg : 0}>
-        {hidden ? "–" : x.sg > 0 ? <WinBar w={x.sw} g={x.sg} showRecord /> : "–"}
+        {hidden ? (
+          "–"
+        ) : x.sg > 0 ? (
+          <HubLink to={{ kind: "finder", query: finderQuery }} className="hover:opacity-85" title={tl("Game finder")}>
+            <WinBar w={x.sw} g={x.sg} showRecord />
+          </HubLink>
+        ) : (
+          "–"
+        )}
       </td>
       <td className={`${td} text-rw-sub`} data-sort={hidden ? x.g : x.g ? x.w / x.g : 0}>
-        {hidden ? "–" : x.g > 0 ? <WinBar w={x.w} g={x.g} showRecord /> : "–"}
+        {hidden ? (
+          "–"
+        ) : x.g > 0 ? (
+          <HubLink to={{ kind: "finder", query: finderQuery }} className="hover:opacity-85" title={tl("Game finder")}>
+            <WinBar w={x.w} g={x.g} showRecord />
+          </HubLink>
+        ) : (
+          "–"
+        )}
       </td>
       <td className={`${td} text-rw-muted`} data-sort={x.usd && !hidden ? x.usd : 0}>{x.usd && !hidden ? fmtUsd(x.usd) : ""}</td>
     </tr>

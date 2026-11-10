@@ -26,7 +26,7 @@ import {
   fetchLiveWindow,
   feedNow,
 } from "../liveGame";
-import { champIcon, champNameById, itemIconById, useDDragon } from "../hub/ddragon";
+import { champIcon, champNameById, itemIconById, itemKeyById, itemLabelById, useDDragon } from "../hub/ddragon";
 import { champName } from "../champions";
 import { useMatchRatings } from "../hub/matchRatings";
 import { gameStory } from "../gameStory";
@@ -713,7 +713,22 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
             <div className={`flex flex-wrap gap-0.5 ${right ? "justify-end" : ""}`}>
               {items.map((id, i) => {
                 const src = itemIconById(id);
-                return src ? <img key={`${id}-${i}`} src={src} alt="" width={18} height={18} className="rounded" /> : null;
+                if (!src) return null;
+                const iKey = itemKeyById(id);
+                const iLabel = itemLabelById(id) || tl("Item history");
+                return iKey ? (
+                  <button
+                    key={`${id}-${i}`}
+                    type="button"
+                    onClick={() => navigateHub({ kind: "items", query: new URLSearchParams({ player: prettySlug(pName), item: iKey }).toString() })}
+                    title={iLabel}
+                    className="rounded hover:ring-1 hover:ring-rw-accent transition-all"
+                  >
+                    <img src={src} alt={iLabel} width={18} height={18} className="rounded" />
+                  </button>
+                ) : (
+                  <img key={`${id}-${i}`} src={src} alt="" width={18} height={18} className="rounded" />
+                );
               })}
             </div>
           )}

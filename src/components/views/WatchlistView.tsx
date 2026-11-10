@@ -455,7 +455,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center justify-end gap-1.5">
                       <button
                         type="button"
                         onClick={() => navigateHub({ kind: "prep", a: prettySlug(team.name) })}
@@ -465,10 +465,24 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       </button>
                       <button
                         type="button"
+                        onClick={() => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(prettySlug(team.name))}` })}
+                        className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden sm:inline-block"
+                      >
+                        {tl("Draft board")}
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => navigateHub({ kind: "compare", mode: "team", a: prettySlug(team.name) })}
                         className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors"
                       >
                         {tl("Compare")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(prettySlug(team.name))}` })}
+                        className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden sm:inline-block"
+                      >
+                        {tl("Game finder")}
                       </button>
                       {roster.length > 0 && (
                         <button
@@ -517,14 +531,30 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                               </button>
                               {p.realName && <span className="text-rw-muted">({p.realName})</span>}
                             </div>
-                            <button
-                              onClick={() => togglePlayer(p.name)}
-                              className={`text-[10px] font-semibold ${
-                                isPlayerFollowed ? "text-rw-teal" : "text-rw-muted hover:text-rw-accent"
-                              }`}
-                            >
-                              {isPlayerFollowed ? "★ " + tl("Following") : "☆ " + tl("Follow")}
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => navigateHub({ kind: "compare", mode: "player", a: prettySlug(p.name) })}
+                                className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
+                              >
+                                {tl("Compare")}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => navigateHub({ kind: "finder", query: `player=${encodeURIComponent(prettySlug(p.name))}` })}
+                                className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline hidden sm:inline"
+                              >
+                                {tl("Game finder")}
+                              </button>
+                              <button
+                                onClick={() => togglePlayer(p.name)}
+                                className={`text-[10px] font-semibold ${
+                                  isPlayerFollowed ? "text-rw-teal" : "text-rw-muted hover:text-rw-accent"
+                                }`}
+                              >
+                                {isPlayerFollowed ? "★ " + tl("Following") : "☆ " + tl("Follow")}
+                              </button>
+                            </div>
                           </div>
                         );
                       })}
@@ -608,7 +638,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -618,6 +648,16 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors"
                     >
                       {tl("Compare")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigateHub({ kind: "finder", query: `player=${encodeURIComponent(prettySlug(player.name))}` });
+                      }}
+                      className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden sm:inline-block"
+                    >
+                      {tl("Game finder")}
                     </button>
                     <button
                       onClick={(e) => {

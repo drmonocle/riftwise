@@ -10,7 +10,7 @@ import type { HubEvent } from "../../hub/types";
 import { playoffOdds } from "../../hub/playoffOdds";
 import { chanceShade } from "../SwissStandings";
 import { SectionCard } from "./BroadcastCard";
-import { RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad } from "./ui";
+import { HubLink, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad } from "./ui";
 import { STable } from "../STable";
 
 const pctText = (p: number) => (p === 0 ? "0%" : p < 0.005 ? "<1%" : p > 0.995 && p < 1 ? ">99%" : `${Math.round(p * 100)}%`);
@@ -43,6 +43,16 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                 </button>
               ))}
             </span>
+            {rows.length >= 2 && (
+              <HubLink
+                data-nocapture="1"
+                to={{ kind: "compare", mode: "team", a: rows[0].u, b: rows[1].u, period: `e:${e.n}` }}
+                className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+                title={tl("Compare {a} and {b}", { a: rows[0].name, b: rows[1].name })}
+              >
+                {tl("Compare")} →
+              </HubLink>
+            )}
             <CopyPlayoffOddsPost
               eventName={e.n}
               slug={e.u}
@@ -105,9 +115,13 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                             <span className="h-full bg-rw-red/75" style={{ width: `${100 - Math.round((r.sw / (r.sw + r.sl)) * 100)}%` }} />
                           </span>
                         )}
-                        <span>
+                        <HubLink
+                          to={{ kind: "finder", query: new URLSearchParams({ event: e.u, team: r.u }).toString() }}
+                          className="hover:text-rw-accent hover:underline"
+                          title={tl("Game finder")}
+                        >
                           {r.sw}-{r.sl}
-                        </span>
+                        </HubLink>
                       </span>
                     </td>
                     <td className="px-2 py-1 text-right tabular-nums text-rw-muted max-sm:hidden" data-sort={r.left}>{r.left}</td>
