@@ -318,6 +318,29 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                     >
                       {tl("Champions")} →
                     </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "items",
+                        query: `champ=${prettySlug(byRole.get(r)![0].c)}`,
+                      }}
+                      className="text-[11px] font-semibold text-rw-accent hover:underline"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "finder",
+                        query: new URLSearchParams({
+                          champ: byRole.get(r)![0].c,
+                          role: r,
+                          ...(isLeague ? { league: rawScope } : {}),
+                          ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
+                        }).toString(),
+                      }}
+                      className="text-[11px] font-semibold text-rw-accent hover:underline"
+                    >
+                      {tl("Game finder")} →
+                    </HubLink>
                     <SectionCard
                       section={`${tl("Pro tier list")} · ${roleName(r)}`}
                       name={fullLabel}

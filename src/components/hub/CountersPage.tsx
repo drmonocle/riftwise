@@ -403,6 +403,15 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               >
                 {tl("Pro tier list")} →
               </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `champ=${encodeURIComponent(rawChamp || cName)}${vsMatch ? `&vschamp=${encodeURIComponent(vsMatch.oppCanon)}` : ""}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                }}
+                className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
+              >
+                {tl("Game finder")} →
+              </HubLink>
             </span>
           )}
         </div>
@@ -747,6 +756,17 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       aria-label={tl("Search champions…")}
                       className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted w-36"
                     />
+                  )}
+                  {filteredRows.length >= 1 && (
+                    <HubLink
+                      to={{
+                        kind: "finder",
+                        query: `champ=${encodeURIComponent(rawChamp || cName)}&vschamp=${encodeURIComponent(filteredRows[0].c)}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Game finder")} →
+                    </HubLink>
                   )}
                   <SectionCard
                     section={tl("Every lane matchup: {champ}", { champ: cName })}

@@ -1135,8 +1135,32 @@ const Tendencies: React.FC<{ side: Side; rows: TeamGameRow[]; period: PeriodKey;
     <Section
       title={tl("{team}: tendencies", { team: side.team.name })}
       right={
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center gap-2">
           <span className="text-[11px] text-rw-sub">{periodLabel}</span>
+          <HubLink
+            to={{
+              kind: "draft",
+              query: `teams=${encodeURIComponent(side.team.u)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+            }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Draft board")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "finder",
+              query: `team=${encodeURIComponent(side.team.u)}${
+                period.startsWith("y") && period.length === 5
+                  ? `&year=${encodeURIComponent(period.slice(1))}`
+                  : period.startsWith("e:")
+                    ? `&event=${encodeURIComponent(period.slice(2))}`
+                    : ""
+              }`,
+            }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Game finder")} →
+          </HubLink>
           <SectionCard
             section={tl("{team}: tendencies", { team: side.team.name })}
             sub={periodLabel}
@@ -1678,6 +1702,30 @@ const Lanes: React.FC<{
                   {tl("Counters")} →
                 </HubLink>
               )}
+              <HubLink
+                to={{
+                  kind: "items",
+                  query: `player=${encodeURIComponent(pa.p.u)}${sa?.champs[0]?.c ? `&champ=${encodeURIComponent(prettySlug(sa.champs[0].c))}` : ""}${period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+              >
+                {tl("Item history")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `player=${encodeURIComponent(pa.p.u)}&role=${encodeURIComponent(r)}${
+                    period.startsWith("y") && period.length === 5
+                      ? `&year=${encodeURIComponent(period.slice(1))}`
+                      : period.startsWith("e:")
+                        ? `&event=${encodeURIComponent(period.slice(2))}`
+                        : ""
+                  }`,
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+              >
+                {tl("Game finder")} →
+              </HubLink>
             </>
           ) : null
         }

@@ -298,6 +298,16 @@ const PlayerItemsView: React.FC<{
             <HubLink
               to={{
                 kind: "finder",
+                query: `player=${encodeURIComponent(slug)}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+              }}
+              className="text-[11px] text-rw-accent hover:underline font-semibold"
+              data-nocapture="1"
+            >
+              {tl("Game finder")} →
+            </HubLink>
+            <HubLink
+              to={{
+                kind: "finder",
                 query: new URLSearchParams({
                   player: slug,
                   ...(champ ? { champ } : {}),
@@ -377,6 +387,16 @@ const PlayerItemsView: React.FC<{
               data-nocapture="1"
             >
               {tl("Compare")} →
+            </HubLink>
+            <HubLink
+              to={{
+                kind: "finder",
+                query: `player=${encodeURIComponent(slug)}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+              }}
+              className="text-[11px] text-rw-accent hover:underline font-semibold"
+              data-nocapture="1"
+            >
+              {tl("Game finder")} →
             </HubLink>
             <CopyItemsPost
               title={tl("Every item {player} finished pro games with", { player: name })}
@@ -570,13 +590,29 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
               className="bg-rw-bg border border-rw-border rounded-lg px-2 py-0.5 text-xs text-rw-text placeholder:text-rw-muted w-36 focus:border-rw-accent focus:outline-none"
             />
           )}
-          {filteredPlayers.length >= 2 && (
-            <HubLink
-              to={{ kind: "compare", mode: "player", a: filteredPlayers[0][1], b: filteredPlayers[1][1] }}
-              className="text-[11px] text-rw-accent hover:underline"
-            >
-              {tl("Compare")} →
-            </HubLink>
+          {filteredPlayers.length >= 1 && (
+            <>
+              <HubLink
+                to={{
+                  kind: "compare",
+                  mode: "player",
+                  a: filteredPlayers[0][1],
+                  ...(filteredPlayers[1] ? { b: filteredPlayers[1][1] } : {}),
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `player=${encodeURIComponent(filteredPlayers[0][1])}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
+            </>
           )}
           <CopyItemsPost
             title={tl("Who built {item} most", { item: itemName(it.n) })}
@@ -725,13 +761,24 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
               className="bg-rw-bg border border-rw-border rounded-lg px-2 py-0.5 text-xs text-rw-text placeholder:text-rw-muted w-36 focus:border-rw-accent focus:outline-none"
             />
           )}
-          {topA && topB && (
-            <HubLink
-              to={{ kind: "compare", mode: "player", a: topA, b: topB, period: year ? `y${year}` : undefined }}
-              className="text-[11px] text-rw-accent hover:underline"
-            >
-              {tl("Compare")} →
-            </HubLink>
+          {topA && (
+            <>
+              <HubLink
+                to={{ kind: "compare", mode: "player", a: topA, ...(topB ? { b: topB } : {}), period: year ? `y${year}` : undefined }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `player=${encodeURIComponent(topA)}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
+            </>
           )}
           {rows.length > 0 && (
             <>
@@ -894,13 +941,24 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
               className="bg-rw-bg border border-rw-border rounded-lg px-2 py-0.5 text-xs text-rw-text placeholder:text-rw-muted w-36 focus:border-rw-accent focus:outline-none"
             />
           )}
-          {topA && topB && (
-            <HubLink
-              to={{ kind: "compare", mode: "player", a: topA, b: topB, period: year ? `y${year}` : undefined }}
-              className="text-[11px] text-rw-accent hover:underline"
-            >
-              {tl("Compare")} →
-            </HubLink>
+          {topA && (
+            <>
+              <HubLink
+                to={{ kind: "compare", mode: "player", a: topA, ...(topB ? { b: topB } : {}), period: year ? `y${year}` : undefined }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `player=${encodeURIComponent(topA)}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
+            </>
           )}
           {y && y.p.length > 0 && (
             <>
@@ -1418,17 +1476,28 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                     </span>
                   ))}
                 {r[7] && r[8] && (
-                  <HubLink
-                    to={{
-                      kind: "prep",
-                      a: prettySlug(r[7]),
-                      b: prettySlug(r[8]),
-                      ...(/^\d{4}$/.test((r[0] || "").slice(0, 4)) ? { period: `y${(r[0] || "").slice(0, 4)}` } : {}),
-                    }}
-                    className="hidden sm:inline text-[10px] hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Match prep")}
-                  </HubLink>
+                  <>
+                    <HubLink
+                      to={{
+                        kind: "prep",
+                        a: prettySlug(r[7]),
+                        b: prettySlug(r[8]),
+                        ...(/^\d{4}$/.test((r[0] || "").slice(0, 4)) ? { period: `y${(r[0] || "").slice(0, 4)}` } : {}),
+                      }}
+                      className="hidden sm:inline text-[10px] hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Match prep")}
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(prettySlug(r[7]))},${encodeURIComponent(prettySlug(r[8]))}${/^\d{4}$/.test((r[0] || "").slice(0, 4)) ? `&p=y${encodeURIComponent((r[0] || "").slice(0, 4))}` : ""}`,
+                      }}
+                      className="hidden sm:inline text-[10px] hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")}
+                    </HubLink>
+                  </>
                 )}
                 {r[1] ? (
                   <HubLink

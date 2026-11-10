@@ -2176,7 +2176,18 @@ const PlayerPools: React.FC<{
     <Section
       title={tl("{team}: player pools", { team: side.team.name })}
       right={
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center gap-2">
+          <HubLink
+            to={{
+              kind: "team",
+              slug: side.team.u,
+              tab: "champions",
+              ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Champions")} →
+          </HubLink>
           <HubLink
             to={{
               kind: "finder",
@@ -2735,8 +2746,19 @@ const Priorities: React.FC<{
     <Section
       title={side.team.name}
       right={
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center gap-2">
           <TeamLink name={side.team.name} u={side.team.u} className={`text-[11px] font-semibold ${color} hover:underline`} />
+          {open.length >= 2 && (
+            <HubLink
+              to={{
+                kind: "counters",
+                query: `champ=${prettySlug(open[0][0])}&vs=${encodeURIComponent(open[1][0])}`,
+              }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Counters")} →
+            </HubLink>
+          )}
           <HubLink
             to={{
               kind: "team",

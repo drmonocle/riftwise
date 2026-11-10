@@ -1027,6 +1027,30 @@ export const TeamRows: React.FC<{
                     {tl("Counters")} →
                   </HubLink>
                 )}
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(s.u)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "finder",
+                    query: `team=${encodeURIComponent(s.u)}${
+                      period && period.startsWith("y") && period.length === 5
+                        ? `&year=${encodeURIComponent(period.slice(1))}`
+                        : period && period.startsWith("e:")
+                          ? `&event=${encodeURIComponent(period.slice(2))}`
+                          : ""
+                    }`,
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
                 <SectionCard
                   section={tl("Most picked: {team}", { team: s.n })}
                   sub={periodLabel}
@@ -1397,6 +1421,30 @@ const PlayerRows: React.FC<{
                     {tl("Counters")} →
                   </HubLink>
                 )}
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: `player=${encodeURIComponent(s.u)}${s.p.champs[0] ? `&champ=${encodeURIComponent(prettySlug(s.p.champs[0].c))}` : ""}${period && period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "finder",
+                    query: `player=${encodeURIComponent(s.u)}${
+                      period && period.startsWith("y") && period.length === 5
+                        ? `&year=${encodeURIComponent(period.slice(1))}`
+                        : period && period.startsWith("e:")
+                          ? `&event=${encodeURIComponent(period.slice(2))}`
+                          : ""
+                    }`,
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
                 <SectionCard
                   section={tl("Champions: {player}", { player: s.n })}
                   sub={periodLabel}
@@ -1492,6 +1540,30 @@ const PlayerRows: React.FC<{
                   {tl("Counters")} →
                 </HubLink>
               )}
+              <HubLink
+                to={{
+                  kind: "items",
+                  query: `champ=${encodeURIComponent(prettySlug(shared[0].c.c))}${period && period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `champ=${encodeURIComponent(shared[0].c.c)}${
+                    period && period.startsWith("y") && period.length === 5
+                      ? `&year=${encodeURIComponent(period.slice(1))}`
+                      : period && period.startsWith("e:")
+                        ? `&event=${encodeURIComponent(period.slice(2))}`
+                        : ""
+                  }`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
               <SectionCard
                 section={tl("Champions both played")}
                 sub={`${x.name} vs ${y.name} · ${periodLabel}`}
@@ -1708,6 +1780,18 @@ const PlayerHeadToHead: React.FC<{
                 className="bg-rw-bg border border-rw-border rounded-lg px-2 py-0.5 text-xs text-rw-text placeholder:text-rw-muted w-36 focus:border-rw-accent focus:outline-none"
               />
             )}
+            <HubLink
+              to={{ kind: "items", query: `player=${encodeURIComponent(sa)}` }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Item history")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "finder", query: `player=${encodeURIComponent(sa)}` }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Game finder")} →
+            </HubLink>
             <SectionCard
               section={`${tl("Head to head")} · ${aName} vs ${bName}`}
               sub={`${aName} ${s.w} – ${s.l} ${bName}`}
@@ -2045,21 +2129,34 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
             </>
           )}
           {mode === "player" && rows.length >= 1 && (
-            <HubLink
-              to={{
-                kind: "finder",
-                query: `player=${encodeURIComponent(rows[0].slug)}${
-                  period.startsWith("y") && period.length === 5
-                    ? `&year=${encodeURIComponent(period.slice(1))}`
-                    : period.startsWith("e:")
-                      ? `&event=${encodeURIComponent(period.slice(2))}`
-                      : ""
-                }`,
-              }}
-              className="text-rw-accent hover:underline"
-            >
-              {tl("Game finder")}
-            </HubLink>
+            <>
+              <HubLink
+                to={{
+                  kind: "items",
+                  query: `player=${encodeURIComponent(rows[0].slug)}${
+                    period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : ""
+                  }`,
+                }}
+                className="text-rw-accent hover:underline"
+              >
+                {tl("Item history")}
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `player=${encodeURIComponent(rows[0].slug)}${
+                    period.startsWith("y") && period.length === 5
+                      ? `&year=${encodeURIComponent(period.slice(1))}`
+                      : period.startsWith("e:")
+                        ? `&event=${encodeURIComponent(period.slice(2))}`
+                        : ""
+                  }`,
+                }}
+                className="text-rw-accent hover:underline"
+              >
+                {tl("Game finder")}
+              </HubLink>
+            </>
           )}
           <span className="text-rw-muted">{tl("Stats for")}</span>
           <QuickPeriods options={options} value={period} onChange={(p) => set({ period: p })} />

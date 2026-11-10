@@ -1041,14 +1041,32 @@ const Cohort: React.FC<{
       <div className="min-w-0">
         <div className="flex items-center justify-between gap-2 text-[10px] font-semibold text-rw-muted mb-1">
           <span>{title}</span>
-          {wr && rows.length >= 2 && (
-            <HubLink
-              to={{ kind: "counters", query: `champ=${prettySlug(rows[0][0])}&vs=${encodeURIComponent(rows[1][0])}` }}
-              className="text-rw-accent hover:underline shrink-0"
-            >
-              {tl("Counters")} →
-            </HubLink>
-          )}
+          <span className="flex items-center gap-2 shrink-0">
+            {wr && rows.length >= 2 && (
+              <HubLink
+                to={{ kind: "counters", query: `champ=${prettySlug(rows[0][0])}&vs=${encodeURIComponent(rows[1][0])}` }}
+                className="text-rw-accent hover:underline"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
+            {wr && rows.length >= 1 && (
+              <HubLink
+                to={{ kind: "items", query: `champ=${prettySlug(rows[0][0])}` }}
+                className="text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
+              </HubLink>
+            )}
+            {!wr && rows.length >= 1 && (
+              <HubLink
+                to={{ kind: "counters", query: `champ=${prettySlug(rows[0][0])}` }}
+                className="text-rw-accent hover:underline"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
+          </span>
         </div>
         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
           {rows.map(([c, [g, w]]) => {
