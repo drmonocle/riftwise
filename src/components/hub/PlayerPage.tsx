@@ -521,7 +521,7 @@ const PlayerView: React.FC<{
                       to={{
                         kind: "tiers",
                         query: new URLSearchParams({
-                          ...(oneEv ? { event: oneEv } : evYr ? { key: `y${evYr}` } : {}),
+                          ...(oneEv ? { event: oneEv, ...(topEv?.c?.[0] ? { q: topEv.c[0] } : {}) } : evYr ? { key: `y${evYr}` } : {}),
                           ...(p.role ? { role: p.role } : {}),
                         }).toString(),
                       }}
@@ -868,6 +868,7 @@ const PlayerView: React.FC<{
                             new URLSearchParams({
                               ...(r0Yr ? { key: `y${r0Yr}` } : {}),
                               ...(p.role ? { role: p.role } : {}),
+                              ...(p.recent[0]?.c ? { q: p.recent[0].c } : {}),
                             }).toString() || undefined,
                         }}
                         className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1045,7 +1046,7 @@ const PlayerView: React.FC<{
                 return (
                   <>
                     <HubLink
-                      to={{ kind: "records" }}
+                      to={{ kind: "records", query: `q=${encodeURIComponent(p.name)}` }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
                       {tl("Records")} →
@@ -1099,15 +1100,22 @@ const PlayerView: React.FC<{
                     >
                       {tl("Game finder")} →
                     </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "tiers",
+                        query:
+                          new URLSearchParams({
+                            ...(p.role ? { role: p.role } : {}),
+                            ...(bestChamp ? { q: bestChamp } : {}),
+                          }).toString() || undefined,
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Pro tier list")} →
+                    </HubLink>
                   </>
                 );
               })()}
-              <HubLink
-                to={{ kind: "tiers", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
-                className="text-[11px] text-rw-accent hover:underline"
-              >
-                {tl("Pro tier list")} →
-              </HubLink>
               <HubLink
                 to={{
                   kind: "rankings",
@@ -1256,13 +1264,16 @@ const PlayerView: React.FC<{
                 {tl("Titles")} →
               </HubLink>
               <HubLink
-                to={{ kind: "tournaments" }}
+                to={{
+                  kind: "tournaments",
+                  ...(p.titles[0]?.date && /^\d{4}/.test(p.titles[0].date) ? { year: p.titles[0].date.slice(0, 4) } : {}),
+                }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Tournaments")} →
               </HubLink>
               <HubLink
-                to={{ kind: "records" }}
+                to={{ kind: "records", query: `q=${encodeURIComponent(p.name)}` }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Records")} →
@@ -1368,7 +1379,7 @@ const PlayerView: React.FC<{
                 return (
                   <>
                     <HubLink
-                      to={{ kind: "records" }}
+                      to={{ kind: "records", query: `q=${encodeURIComponent(p.name)}` }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
                       {tl("Records")} →
@@ -1428,6 +1439,7 @@ const PlayerView: React.FC<{
                         query: new URLSearchParams({
                           ...(pentaYr ? { key: `y${pentaYr}` } : {}),
                           ...(p.role ? { role: p.role } : {}),
+                          ...(pentaChamp ? { q: pentaChamp } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
@@ -1624,7 +1636,11 @@ const PlayerChampionsTab: React.FC<{
                     <HubLink
                       to={{
                         kind: "draft",
-                        query: `teams=${encodeURIComponent(p.clubU || prettySlug(p.club))}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                        query: `teams=${encodeURIComponent(p.clubU || prettySlug(p.club))}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}${
+                          (search.trim() && shownChamps.length >= 1) || shownChamps.length === 1
+                            ? `&champ=${encodeURIComponent(shownChamps[0].c)}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`
+                            : ""
+                        }`,
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
@@ -1677,6 +1693,7 @@ const PlayerChampionsTab: React.FC<{
                             ? { event: period.slice(2) }
                             : {}),
                       ...(p.role ? { role: p.role } : {}),
+                      ...((search.trim() && shownChamps.length >= 1) || shownChamps.length === 1 ? { q: shownChamps[0].c } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
@@ -2030,7 +2047,7 @@ const CareerTimeline: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
                 </div>
                 {stintTitles.length > 0 && (
                   <HubLink
-                    to={{ kind: "titles" }}
+                    to={{ kind: "titles", query: `kind=All&q=${encodeURIComponent(t.n)}` }}
                     className="inline-flex items-center gap-1 text-[10px] font-semibold text-rw-accent hover:underline shrink-0"
                     title={stintTitles.map((x) => `${eventTitle(x.t)} (${x.date.slice(0, 4)})`).join(" · ")}
                   >
