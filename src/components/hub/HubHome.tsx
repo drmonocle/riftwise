@@ -169,7 +169,13 @@ export const HubHome: React.FC<{
                   <span className="inline-flex items-center gap-1 text-rw-muted truncate ml-auto">
                     {p.t && <TeamLogo name={p.t} size={13} />}
                     <span className="truncate">
-                      {p.r ? roleName(p.r) : ""}
+                      {p.r ? (
+                        <HubLink to={{ kind: "player", slug: p.u || prettySlug(p.n), tab: "stats" }} className="hover:text-rw-accent hover:underline">
+                          {roleName(p.r)}
+                        </HubLink>
+                      ) : (
+                        ""
+                      )}
                       {p.r && p.t ? " · " : ""}
                       {p.t ? <TeamLink name={p.t} className="text-rw-muted hover:text-rw-accent hover:underline" /> : null}
                     </span>
@@ -735,7 +741,16 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                     <PlayerLink name={p.n} u={p.u} />
                     {p.t && <TeamLogo name={p.t} size={13} />}
                     <span className="text-rw-muted truncate">
-                      {p.r ? `· ${roleName(p.r)}` : ""}
+                      {p.r ? (
+                        <>
+                          {"· "}
+                          <HubLink to={{ kind: "player", slug: p.u || prettySlug(p.n), tab: "stats" }} className="hover:text-rw-accent hover:underline">
+                            {roleName(p.r)}
+                          </HubLink>
+                        </>
+                      ) : (
+                        ""
+                      )}
                       {p.t ? (
                         <>
                           {" · "}
@@ -821,7 +836,10 @@ const LatestRow: React.FC<{ e: EventListItem }> = ({ e }) => {
     <li className="flex items-center justify-between gap-2 min-w-0">
       <span className="truncate min-w-0">
         <EventLink name={e.n} u={e.u} />
-        <span className="text-rw-muted"> · {fmtDate(e.en, false)}</span>
+        <span className="text-rw-muted">
+          {" · "}
+          <EventLink name={fmtDate(e.en, false)} u={e.u} className="text-rw-muted hover:text-rw-accent hover:underline" />
+        </span>
       </span>
       {e.w && (
         <span className="shrink-0 flex items-center gap-1 text-rw-accent">
@@ -947,8 +965,11 @@ const BrowseRow: React.FC<{ e: EventListItem; maxG: number; q?: string; onSetQ?:
         <EventLink name={e.n} u={e.u} />
       </td>
       <td className={`${td} text-rw-muted`} data-sort={e.st}>
-        {fmtDate(e.st, false)}
-        {e.en && e.en !== e.st ? ` – ${fmtDate(e.en, false)}` : ""}
+        <EventLink
+          name={`${fmtDate(e.st, false)}${e.en && e.en !== e.st ? ` – ${fmtDate(e.en, false)}` : ""}`}
+          u={e.u}
+          className="text-rw-muted hover:text-rw-accent hover:underline"
+        />
       </td>
       <td className={`${td} text-rw-sub max-w-[8rem] truncate hidden sm:table-cell`} data-sort={e.r ? regionName(e.r, e.r) : ""}>
         {e.r ? (

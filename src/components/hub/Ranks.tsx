@@ -396,7 +396,7 @@ const RankControls: React.FC<{ prefs: RankPrefs; set: (p: RankPrefs) => void }> 
   );
 };
 
-const Bars: React.FC<{ rows: RankRow[]; hide: ColId[]; rankTo?: (r: RankRow) => HubRoute }> = ({ rows, hide, rankTo }) => {
+const Bars: React.FC<{ rows: RankRow[]; hide: ColId[]; rankTo?: (r: RankRow) => HubRoute; lastTo?: HubRoute }> = ({ rows, hide, rankTo, lastTo }) => {
   // Percentile dots: a hairline track per stat with a dot at its percentile (the number in it), red at the bottom of
   // the league, plain in the middle, teal at the top; then the value and rank, the league's average, the difference
   // and the last ten games. Long names ("Gold lead over the lane opponent at 15 minutes") wrap instead of being cut;
@@ -504,13 +504,41 @@ const Bars: React.FC<{ rows: RankRow[]; hide: ColId[]; rankTo?: (r: RankRow) => 
             {show("avg") && (
               <span className="text-rw-sub sm:order-4 sm:text-right">
                 <span className="sm:hidden text-rw-muted">{tl("avg")} </span>
-                {r.avg}
+                {rankTo ? (
+                  <HubLink to={rankTo(r)} className="hover:text-rw-accent hover:underline">
+                    {r.avg}
+                  </HubLink>
+                ) : (
+                  r.avg
+                )}
               </span>
             )}
             {show("diff") && (
-              <span className={`sm:order-5 sm:text-right ${r.better == null ? "text-rw-muted" : r.better ? "text-rw-teal" : "text-rw-red"}`}>{r.diff}</span>
+              <span className={`sm:order-5 sm:text-right ${r.better == null ? "text-rw-muted" : r.better ? "text-rw-teal" : "text-rw-red"}`}>
+                {rankTo ? (
+                  <HubLink to={rankTo(r)} className="hover:underline">
+                    {r.diff}
+                  </HubLink>
+                ) : (
+                  r.diff
+                )}
+              </span>
             )}
-            {show("last") && <span className="sm:order-6 sm:text-right">{r.last ? <Spark {...r.last} /> : <span className="text-rw-muted">–</span>}</span>}
+            {show("last") && (
+              <span className="sm:order-6 sm:text-right">
+                {r.last ? (
+                  lastTo ? (
+                    <HubLink to={lastTo} className="inline-block hover:opacity-80">
+                      <Spark {...r.last} />
+                    </HubLink>
+                  ) : (
+                    <Spark {...r.last} />
+                  )
+                ) : (
+                  <span className="text-rw-muted">–</span>
+                )}
+              </span>
+            )}
           </span>
         </li>
       ))}
@@ -673,6 +701,7 @@ export const PlayerRanks: React.FC<{
               kind: "leaders",
               query: new URLSearchParams({ league: lu, year, role: me.r, stat: r.key }).toString(),
             })}
+            lastTo={{ kind: "player", slug, tab: "matches" }}
           />
           <p className="text-[10px] text-rw-muted">
             <HubLink
@@ -804,6 +833,7 @@ export const TeamRanks: React.FC<{
           rows={rows}
           hide={prefs.hide}
           rankTo={() => ({ kind: "league", slug: lu, year })}
+          lastTo={{ kind: "team", slug, tab: "matches" }}
         />
         <p className="text-[10px] text-rw-muted">
           <HubLink to={{ kind: "league", slug: lu, year }} className="hover:text-rw-accent hover:underline">

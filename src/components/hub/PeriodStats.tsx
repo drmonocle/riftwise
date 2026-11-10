@@ -270,7 +270,13 @@ export const Playstyle: React.FC<{ t: TeamAgg }> = ({ t }) => {
 };
 
 /** Win rate by what happened early: each first objective got or given up, and the gold lead at 15 in four bands. */
-export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; periodLabel?: string }> = ({ rows, teamName, periodLabel }) => {
+export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; teamSlug?: string; period?: string; periodLabel?: string }> = ({
+  rows,
+  teamName,
+  teamSlug,
+  period,
+  periodLabel,
+}) => {
   const d = useMemo(() => winWhen(rows), [rows]);
   if (d.n < 10) return null;
   const label: Record<string, string> = {
@@ -285,12 +291,23 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; periodL
     b0: tl("Behind, under 2,000"),
     b2: tl("2,000+ gold behind"),
   };
+  const finderQuery = teamSlug
+    ? `team=${encodeURIComponent(teamSlug)}${
+        period && /^y\d{4}$/.test(period)
+          ? `&year=${encodeURIComponent(period.slice(1))}`
+          : period?.startsWith("e:")
+            ? `&event=${encodeURIComponent(period.slice(2))}`
+            : period?.startsWith("p:")
+              ? `&patch=${encodeURIComponent(period.slice(2))}`
+              : ""
+      }`
+    : "";
   const wrCell = ([g, w]: [number, number]) => {
     if (!g) return <span className="text-rw-muted">–</span>;
     const pctVal = Math.round((w / g) * 100);
     const good = w / g >= 0.5;
-    return (
-      <span className="inline-flex items-center justify-end gap-1.5 font-mono tabular-nums">
+    const inner = (
+      <>
         <span className="w-10 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
           <span className={`block h-full rounded-full ${good ? "bg-rw-teal/80" : "bg-rw-red/75"}`} style={{ width: `${Math.max(4, pctVal)}%` }} />
         </span>
@@ -298,6 +315,19 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; periodL
           <span className={`font-semibold ${good ? "text-rw-teal" : "text-rw-red"}`}>{pctVal}%</span>
           <span className="text-rw-muted text-[10px]"> ({g})</span>
         </span>
+      </>
+    );
+    return finderQuery ? (
+      <HubLink
+        to={{ kind: "finder", query: finderQuery }}
+        className="inline-flex items-center justify-end gap-1.5 font-mono tabular-nums hover:underline"
+        title={tl("Game finder")}
+      >
+        {inner}
+      </HubLink>
+    ) : (
+      <span className="inline-flex items-center justify-end gap-1.5 font-mono tabular-nums">
+        {inner}
       </span>
     );
   };
@@ -656,12 +686,34 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
             label: tl("CS/m"),
             title: tl("CS per minute"),
             value: (c) => c.csm,
+            render: (c) =>
+              c.csm != null ? (
+                <HubLink
+                  to={{ kind: "player", slug, tab: "champions", query: `champ=${encodeURIComponent(c.c)}&p=${encodeURIComponent(period)}` }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {c.csm}
+                </HubLink>
+              ) : (
+                "–"
+              ),
           },
           {
             key: "dpm",
             label: tl("DPM"),
             title: tl("Damage per minute"),
             value: (c) => c.dpm,
+            render: (c) =>
+              c.dpm != null ? (
+                <HubLink
+                  to={{ kind: "player", slug, tab: "champions", query: `champ=${encodeURIComponent(c.c)}&p=${encodeURIComponent(period)}` }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {fmtNum(c.dpm)}
+                </HubLink>
+              ) : (
+                "–"
+              ),
           },
         ] as Column<(typeof agg.champs)[number]>[])
       : []),
@@ -672,14 +724,34 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
             label: "GD@15",
             title: tl("Gold lead over the lane opponent at 15 minutes"),
             value: (c) => c.gd15,
-            render: (c) => signed(c.gd15),
+            render: (c) =>
+              c.gd15 != null ? (
+                <HubLink
+                  to={{ kind: "player", slug, tab: "champions", query: `champ=${encodeURIComponent(c.c)}&p=${encodeURIComponent(period)}` }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {signed(c.gd15)}
+                </HubLink>
+              ) : (
+                "–"
+              ),
           },
           {
             key: "csd15",
             label: "CSD@15",
             title: tl("CS lead over the lane opponent at 15 minutes"),
             value: (c) => c.csd15,
-            render: (c) => signed(c.csd15),
+            render: (c) =>
+              c.csd15 != null ? (
+                <HubLink
+                  to={{ kind: "player", slug, tab: "champions", query: `champ=${encodeURIComponent(c.c)}&p=${encodeURIComponent(period)}` }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {signed(c.csd15)}
+                </HubLink>
+              ) : (
+                "–"
+              ),
           },
         ] as Column<(typeof agg.champs)[number]>[])
       : []),
@@ -1051,7 +1123,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
             <div className="space-y-4 min-w-0">
               <TeamEarly t={t} />
               <Playstyle t={t} />
-              <WinWhen rows={sel} teamName={who?.name} periodLabel={periodText} />
+              <WinWhen rows={sel} teamName={who?.name} teamSlug={slug} period={period} periodLabel={periodText} />
             </div>
             <div className="space-y-4 min-w-0">
               <div className="grid sm:grid-cols-3 gap-4">

@@ -115,7 +115,20 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
         </span>
       ),
     },
-    { key: "c", label: tl("Short name"), value: (t) => (t[5] || "").split(" | ")[0] || null, className: "text-rw-sub" },
+    {
+      key: "c",
+      label: tl("Short name"),
+      value: (t) => (t[5] || "").split(" | ")[0] || null,
+      render: (t) => {
+        const c = (t[5] || "").split(" | ")[0];
+        return c ? (
+          <HubLink to={{ kind: "team", slug: t[1] || prettySlug(t[0]) }} className="hover:text-rw-accent hover:underline">
+            {c}
+          </HubLink>
+        ) : null;
+      },
+      className: "text-rw-sub",
+    },
     {
       key: "r",
       label: tl("Region"),
@@ -369,7 +382,18 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       ),
       className: "tabular-nums",
     },
-    { key: "real", label: tl("Name"), value: (p) => p[6] || null, className: "text-rw-muted max-w-[12rem] truncate" },
+    {
+      key: "real",
+      label: tl("Name"),
+      value: (p) => p[6] || null,
+      render: (p) =>
+        p[6] ? (
+          <HubLink to={{ kind: "player", slug: p[1] || prettySlug(p[0]) }} className="hover:text-rw-accent hover:underline">
+            {p[6]}
+          </HubLink>
+        ) : null,
+      className: "text-rw-muted max-w-[12rem] truncate",
+    },
     {
       key: "act",
       label: "",

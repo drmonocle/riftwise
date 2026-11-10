@@ -718,11 +718,19 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                       </span>
                     )
                   )}
-                  {sel.gd15 != null && (
-                    <span className={`font-mono text-[11px] tabular-nums ${sel.gd15 >= 0 ? "text-rw-teal" : "text-rw-red"}`}>
-                      GD@15 {signed(sel.gd15)}
-                    </span>
-                  )}
+                  {sel.gd15 != null &&
+                    (sel.seriesSlug ? (
+                      <HubLink
+                        to={{ kind: "match", slug: sel.seriesSlug, game: sel.gn }}
+                        className={`font-mono text-[11px] tabular-nums hover:underline ${sel.gd15 >= 0 ? "text-rw-teal" : "text-rw-red"}`}
+                      >
+                        GD@15 {signed(sel.gd15)}
+                      </HubLink>
+                    ) : (
+                      <span className={`font-mono text-[11px] tabular-nums ${sel.gd15 >= 0 ? "text-rw-teal" : "text-rw-red"}`}>
+                        GD@15 {signed(sel.gd15)}
+                      </span>
+                    ))}
                   <span className="inline-flex items-center gap-1.5 text-rw-sub truncate">
                     <HubLink
                       to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}&vs=${encodeURIComponent(prettySlug(sel.opp))}` }}
@@ -737,7 +745,16 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                 </span>
               </span>
               <span className="flex items-center gap-2 shrink-0 text-rw-muted">
-                <span>{fmtDate(sel.date)}</span>
+                {sel.seriesSlug ? (
+                  <HubLink
+                    to={{ kind: "match", slug: sel.seriesSlug, game: sel.gn }}
+                    className="hover:text-rw-accent hover:underline"
+                  >
+                    {fmtDate(sel.date)}
+                  </HubLink>
+                ) : (
+                  <span>{fmtDate(sel.date)}</span>
+                )}
                 {sel.seriesSlug && (
                   <HubLink
                     to={{ kind: "match", slug: sel.seriesSlug, game: sel.gn }}
@@ -1090,7 +1107,13 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                       <EventLink name={sel.en} u={sel.e} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
                     </span>
                     <span className="flex items-center gap-2 shrink-0 text-rw-muted">
-                      <span>{fmtDate(sel.date, false)}</span>
+                      {sel.g ? (
+                        <HubLink to={{ kind: "match", slug: sel.g }} className="hover:text-rw-accent hover:underline">
+                          {fmtDate(sel.date, false)}
+                        </HubLink>
+                      ) : (
+                        <span>{fmtDate(sel.date, false)}</span>
+                      )}
                       <HubLink
                         to={{ kind: "prep", a: t.u, b: oppSlug, period: selPeriod }}
                         className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
