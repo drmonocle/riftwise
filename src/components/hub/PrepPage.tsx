@@ -16,7 +16,7 @@ import { Change } from "./RankingsPage";
 import type { HubPlayer, HubTeam, PlayerGameRow, TeamGameRow, TeamSeriesRow } from "../../hub/types";
 import { PrepRoute, hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
-import { PeriodKey, inPeriod, playerAgg, playerHeadToHead, playerRowRef, teamAgg, teamRowRef } from "../../hub/period";
+import { PeriodKey, inPeriod, matchesPeriodEvent, playerAgg, playerHeadToHead, playerRowRef, teamAgg, teamRowRef } from "../../hub/period";
 import { HeadToHeadSeries } from "./Archives";
 import { ComparePick, TeamRows, bothOptions } from "./ComparePage";
 import { PeriodPicker, Playstyle, QuickPeriods, TeamEarly, defaultPeriod } from "./PeriodStats";
@@ -62,7 +62,7 @@ export function needsFullLogs(period: PeriodKey, teamGames: TeamGameRow[]): bool
   const cutoff = new Date(Date.now() - 730 * 86400000).toISOString().slice(0, 10);
   if (period.startsWith("y")) return period.slice(1) < cutoff.slice(0, 4);
   if (period.startsWith("e:")) {
-    const first = teamGames.find((r) => r[2] === period.slice(2));
+    const first = teamGames.find((r) => matchesPeriodEvent(r[2], r[3], period.slice(2)));
     return !!first && first[0] < cutoff;
   }
   const last = /^last(\d+)$/.exec(period);
@@ -1123,7 +1123,10 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
   set,
   onFull,
 }) => {
-  const options = useMemo(() => bothOptions(a.games.map(teamRowRef), b.games.map(teamRowRef)), [a.games, b.games]);
+  const options = useMemo(
+    () => bothOptions(a.games.map(teamRowRef), b.games.map(teamRowRef), route.period),
+    [a.games, b.games, route.period],
+  );
   const period: PeriodKey = route.period && options.some((o) => o.key === route.period) ? route.period : defaultPeriod(options);
   // an older period needs the players' whole careers: fetch them once, then stay on them
   // (also a shared link to an older season, which the two-year lists don't offer yet)

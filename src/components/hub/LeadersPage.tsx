@@ -86,13 +86,14 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
           (u && resolvePlayerSlug(term) === (p.u || "").toLowerCase()) ||
           t.includes(term) ||
           tu.includes(term) ||
+          ((tu || t) && (aliases.data?.team[term] || prettySlug(term)) === (p.tu || prettySlug(p.t)).toLowerCase()) ||
           (bare(term).length >= 2 && (bare(n).includes(bare(term)) || bare(t).includes(bare(term)))) ||
           cs.some((c) => matchesChampSearch(c, term)),
       );
     });
     if (filtered.length === 0 && !q.get("q") && q.get("champ") && search === q.get("champ")) return rows;
     return filtered;
-  }, [rows, search, q]);
+  }, [rows, aliases.data, search, q]);
   // z-scores: each stat against the average of the player's own role in this list (support vision next to mid CS)
   const zMode = q.get("show") === "z";
   const roleStats = useMemo(() => {

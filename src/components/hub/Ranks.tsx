@@ -6,6 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, tk, roleName, fmtDec } from "../../i18n";
 import { loadLeagueSeason, loadLeagues, loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y, prettySlug } from "../../hub/data";
+import { matchesPeriodEvent } from "../../hub/period";
 import type { EventPlayer, EventTeamStats, LeagueRow, PlayerGameRow, TeamGameRow } from "../../hub/types";
 import { hubShareUrl, type HubRoute } from "../../hub/route";
 import { HubLink, isFresh, Loading, RevealButton, Section, useHidden, useLoad } from "./ui";
@@ -629,19 +630,55 @@ function useSeasons(events: { lu?: string; date: string; g: number }[], min: num
   return useMemo(() => filterBuiltSeasons(events, min, leagues.data), [events, min, leagues.data]);
 }
 
+function defaultRankSeason(
+  seasons: [string, string, number][],
+  events: { e?: string; lu?: string; date: string; g: number }[],
+  query?: string,
+): string {
+  if (!seasons.length) return "";
+  const search = query ?? (typeof window !== "undefined" ? window.location.search : "");
+  if (search) {
+    const params = new URLSearchParams(search);
+    const p = params.get("p") || "";
+    const y = params.get("y") || (/^y(\d{4})$/.exec(p)?.[1] ?? "");
+    if (p.startsWith("e:")) {
+      const evSlug = p.slice(2);
+      const ev = events.find((e) => e.e && matchesPeriodEvent(e.e, undefined, evSlug));
+      const evYr = (ev?.date || "").slice(0, 4);
+      if (ev?.lu && /^\d{4}$/.test(evYr)) {
+        const hit = seasons.find((s) => s[0] === ev.lu && s[1] === evYr);
+        if (hit) return `${hit[0]}|${hit[1]}`;
+      }
+      const yrFromSlug = /(?:^|-)(20\d{2})(?:-|$)/.exec(evSlug)?.[1];
+      if (yrFromSlug) {
+        const hit = seasons.find((s) => s[1] === yrFromSlug);
+        if (hit) return `${hit[0]}|${hit[1]}`;
+      }
+    }
+    if (/^\d{4}$/.test(y)) {
+      const hit = seasons.find((s) => s[1] === y);
+      if (hit) return `${hit[0]}|${hit[1]}`;
+    }
+  }
+  return `${seasons[0][0]}|${seasons[0][1]}`;
+}
+
 export const PlayerRanks: React.FC<{
   slug: string;
   name?: string;
   events: { e?: string; lu?: string; date: string; g: number }[];
   has2y?: boolean;
-}> = ({ slug, name, events, has2y }) => {
+  query?: string;
+}> = ({ slug, name, events, has2y, query }) => {
   const seasons = useSeasons(events, 5);
-  const [pick, setPick] = useState(() =>
-    seasons[0] ? `${seasons[0][0]}|${seasons[0][1]}` : "",
-  );
+  const [pick, setPick] = useState(() => defaultRankSeason(seasons, events, query));
   useEffect(() => {
-    if (seasons.length && !seasons.some((s) => `${s[0]}|${s[1]}` === pick)) setPick(`${seasons[0][0]}|${seasons[0][1]}`);
-  }, [seasons, pick]);
+    if (seasons.length && !seasons.some((s) => `${s[0]}|${s[1]}` === pick)) setPick(defaultRankSeason(seasons, events, query));
+  }, [seasons, pick, events, query]);
+  useEffect(() => {
+    if (!seasons.length || !query) return;
+    setPick(defaultRankSeason(seasons, events, query));
+  }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
   const names = useLeagueNames();
   const [lu, year] = pick.split("|");
   const state = useLoad(
@@ -881,14 +918,17 @@ export const TeamRanks: React.FC<{
   name?: string;
   events: { e?: string; lu?: string; date: string; g: number }[];
   has2y?: boolean;
-}> = ({ slug, name, events, has2y }) => {
+  query?: string;
+}> = ({ slug, name, events, has2y, query }) => {
   const seasons = useSeasons(events, 5);
-  const [pick, setPick] = useState(() =>
-    seasons[0] ? `${seasons[0][0]}|${seasons[0][1]}` : "",
-  );
+  const [pick, setPick] = useState(() => defaultRankSeason(seasons, events, query));
   useEffect(() => {
-    if (seasons.length && !seasons.some((s) => `${s[0]}|${s[1]}` === pick)) setPick(`${seasons[0][0]}|${seasons[0][1]}`);
-  }, [seasons, pick]);
+    if (seasons.length && !seasons.some((s) => `${s[0]}|${s[1]}` === pick)) setPick(defaultRankSeason(seasons, events, query));
+  }, [seasons, pick, events, query]);
+  useEffect(() => {
+    if (!seasons.length || !query) return;
+    setPick(defaultRankSeason(seasons, events, query));
+  }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
   const names = useLeagueNames();
   const [lu, year] = pick.split("|");
   const state = useLoad(

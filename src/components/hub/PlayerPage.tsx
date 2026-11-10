@@ -415,8 +415,9 @@ const PlayerView: React.FC<{
             has2y={!!p.g2y}
             preferAll={!!p.bio.retired || (p.clubTo ? p.clubTo.slice(0, 4) < String(new Date().getFullYear() - 1) : false)}
             who={{ name: p.name, role: p.role ? roleName(p.role) : undefined, club: p.club }}
+            query={routeQuery}
           />
-          <PlayerRanks slug={p.u} name={p.name} events={p.events} has2y={!!p.g2y} />
+          <PlayerRanks slug={p.u} name={p.name} events={p.events} has2y={!!p.g2y} query={routeQuery} />
         </div>
       )}
 

@@ -618,7 +618,10 @@ const Board: React.FC<{
   onSwap: () => void;
   onSides: (blue: Side, red: Side) => void;
 }> = ({ blue, red, period: periodQ, initChamp, initRole, gameNum, slots, used, fearless, history, onPeriod, onSlots, onUsed, onFearless, onHistory, onNextGame, onLoadPastGame, onSwap, onSides }) => {
-  const options = useMemo(() => bothOptions(blue.games.map(teamRowRef), red.games.map(teamRowRef)), [blue.games, red.games]);
+  const options = useMemo(
+    () => bothOptions(blue.games.map(teamRowRef), red.games.map(teamRowRef), periodQ),
+    [blue.games, red.games, periodQ],
+  );
   const period: PeriodKey = periodQ && options.some((o) => o.key === periodQ) ? periodQ : defaultPeriod(options);
   const notFull = blue.gamesFull === false || red.gamesFull === false || [...blue.players, ...red.players].some((p) => p && !p.full);
   const askedOlder = !!periodQ && !options.some((o) => o.key === periodQ);

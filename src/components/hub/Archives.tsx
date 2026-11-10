@@ -2,9 +2,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, tn, tc, roleName, stageLabel, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadPlayerGames, loadPlayerItems, loadTeamSeries, matchesChampSearch, normText, prettySlug, sameChamp } from "../../hub/data";
+import { bare, loadAliases, loadPlayerGames, loadPlayerItems, loadTeamSeries, matchesChampSearch, normText, prettySlug, sameChamp } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
-import { inPeriod, playerRowRef, type PeriodKey } from "../../hub/period";
+import { inPeriod, matchesPeriodEvent, playerRowRef, type PeriodKey } from "../../hub/period";
 import type { PlayerGameRow, TeamSeriesRow } from "../../hub/types";
 import { isFinishedItem, itemName } from "../../hub/ddragon";
 import { SectionCard } from "./BroadcastCard";
@@ -196,6 +196,7 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string; initialQ?: stri
   initialYear,
 }) => {
   const state = useLoad(() => loadTeamSeries(slug), [slug]);
+  const aliases = useLoad(loadAliases, []);
   const [year, setYear] = useState(initialYear || "all");
   const [q, setQ] = useState(initialQ);
   const [order, setOrder] = useState<"d" | "r">("d");
@@ -217,10 +218,16 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string; initialQ?: stri
         (!terms.length ||
           terms.some((qq) => {
             const hay = normText(`${r[1]} ${r[2] || ""} ${r[5]} ${r[6] || ""}`);
-            return hay.includes(qq) || (bare(qq).length >= 2 && bare(hay).includes(bare(qq)));
+            const canonTeam = aliases.data?.team[qq] || prettySlug(qq);
+            return (
+              hay.includes(qq) ||
+              (bare(qq).length >= 2 && bare(hay).includes(bare(qq))) ||
+              Boolean(r[2] && canonTeam === r[2].toLowerCase()) ||
+              Boolean(r[6] && matchesPeriodEvent(r[6], r[5], qq))
+            );
           })),
     );
-  }, [state.data, year, q]);
+  }, [state.data, aliases.data, year, q]);
   // the same spoiler switch as the list below: while its fresh results are hidden, so is the count of wins
   const [seriesHidden] = useHidden(`teamseries:${slug}:${year}:${q}`, rows.find((r) => isFresh(r[0]))?.[0]);
   // best-rated first; results still hidden by spoiler mode stay out so the order gives nothing away
@@ -713,6 +720,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
     () => (champ === "all" ? "all" : champs.find(([c]) => sameChamp(c, champ))?.[0] || champ),
     [champ, champs],
   );
+  const aliases = useLoad(loadAliases, []);
   const rows = useMemo(() => {
     const terms = q
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
@@ -725,11 +733,18 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
         (opp === "all" || r[8] === opp) &&
         (!terms.length ||
           terms.some((term) => {
-            const hay = normText(`${r[2] || ""} ${champName(r[2] || "")} ${r[7] || ""} ${r[8] || ""} ${r[9] || ""} ${r[10] || ""}`);
-            return hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term))) || Boolean(r[2] && matchesChampSearch(r[2], term));
+            const hay = normText(`${r[2] || ""} ${champName(r[2] || "")} ${r[7] || ""} ${r[8] || ""} ${r[9] || ""} ${r[10] || ""} ${r[11] || ""}`);
+            const canonTeam = aliases.data?.team[term] || prettySlug(term);
+            return (
+              hay.includes(term) ||
+              (bare(term).length >= 2 && bare(hay).includes(bare(term))) ||
+              Boolean(r[2] && matchesChampSearch(r[2], term)) ||
+              Boolean(r[8] && canonTeam === prettySlug(r[8])) ||
+              Boolean(r[11] && matchesPeriodEvent(r[11], r[9], term))
+            );
           })),
     );
-  }, [data, year, champ, opp, q]);
+  }, [data, aliases.data, year, champ, opp, q]);
   const [hidden, reveal] = useHidden(`playergames:${slug}:${year}:${champ}:${opp}:${q}`, rows.find((r) => isFresh(r[0]))?.[0]);
   const shown = useMemo(
     () => (order === "r" ? rows.filter((r) => r[23] != null && !(hidden && isFresh(r[0]))).sort((x, y) => (y[23] || 0) - (x[23] || 0)) : rows),

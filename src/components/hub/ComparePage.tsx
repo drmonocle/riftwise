@@ -27,6 +27,7 @@ import {
   teamAgg,
   teamHeadToHead,
   teamRowRef,
+  withRequestedPeriod,
 } from "../../hub/period";
 import { HeadToHeadSeries } from "./Archives";
 import { PeriodPicker, QuickPeriods } from "./PeriodStats";
@@ -376,9 +377,13 @@ const sgn = (v: number | null) => (v == null ? "–" : `${v > 0 ? "+" : ""}${fmt
 const perGame = (n: number, g: number) => (g ? Number((n / g).toFixed(1)) : null);
 
 /** Choices both logs offer: all, last N, years and tournaments of either, newest first. */
-export function bothOptions(a: { date: string; e: string; en: string }[], b: { date: string; e: string; en: string }[]): PeriodOption[] {
+export function bothOptions(
+  a: { date: string; e: string; en: string }[],
+  b: { date: string; e: string; en: string }[],
+  wantedPeriod?: PeriodKey | null,
+): PeriodOption[] {
   const merged = [...a, ...b].sort((x, y) => (x.date < y.date ? 1 : x.date > y.date ? -1 : 0));
-  const opts = periodOptions(merged, 80);
+  const opts = withRequestedPeriod(periodOptions(merged, 80), wantedPeriod, merged);
   const n = Math.min(a.length, b.length);
   return opts.filter((o) => !/^last(\d+)$/.test(o.key) || Number(o.key.slice(4)) < n);
 }
@@ -430,7 +435,7 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
   }, [ready, mode, info.a, info.b]);
   const refs = (rows: (TeamGameRow | PlayerGameRow)[]) =>
     mode === "team" ? (rows as TeamGameRow[]).map(teamRowRef) : (rows as PlayerGameRow[]).map(playerRowRef);
-  const options = useMemo(() => (ready ? bothOptions(refs(logs.a!), refs(logs.b!)) : []), [ready, logs]); // eslint-disable-line react-hooks/exhaustive-deps
+  const options = useMemo(() => (ready ? bothOptions(refs(logs.a!), refs(logs.b!), route.period) : []), [ready, logs, route.period]); // eslint-disable-line react-hooks/exhaustive-deps
   const defaultComparePeriod = useMemo<PeriodKey>(() => {
     if (!ready) return "all";
     const topYr = options.find((o) => o.group === "year")?.key;
@@ -2657,8 +2662,8 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
     if (!rows || !rows.length) return [];
     const merged = rows.flatMap((r) => refs(r.log)).sort((x, y) => (x.date < y.date ? 1 : x.date > y.date ? -1 : 0));
     const n = Math.min(...rows.map((r) => r.log.length));
-    return periodOptions(merged, 80).filter((o) => !/^last(\d+)$/.test(o.key) || Number(o.key.slice(4)) < n);
-  }, [rows]); // eslint-disable-line react-hooks/exhaustive-deps
+    return withRequestedPeriod(periodOptions(merged, 80), wanted, merged).filter((o) => !/^last(\d+)$/.test(o.key) || Number(o.key.slice(4)) < n);
+  }, [rows, wanted]); // eslint-disable-line react-hooks/exhaustive-deps
   const period: PeriodKey = wanted && options.some((o) => o.key === wanted) ? wanted : "all";
   const opt = options.find((o) => o.key === period);
   const periodLabel = !opt || opt.key === "all" ? tl("All time") : opt.group === "basic" ? tl("Last {n} games", { n: opt.label }) : opt.label;

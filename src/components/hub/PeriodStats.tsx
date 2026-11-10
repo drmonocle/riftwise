@@ -19,7 +19,10 @@ import {
   playerAgg,
   playerRowRef,
   teamAgg,
-  teamRowRef, winWhen } from "../../hub/period";
+  teamRowRef,
+  winWhen,
+  withRequestedPeriod,
+} from "../../hub/period";
 import { useDDragon } from "../../hub/ddragon";
 import { SortTable, type Column } from "./SortTable";
 import { TrendChart } from "./TrendChart";
@@ -543,7 +546,8 @@ export const PeriodPicker: React.FC<{
   options: PeriodOption[];
   value: PeriodKey;
   onChange: (k: PeriodKey) => void;
-}> = ({ options, value, onChange }) => {
+}> = ({ options: rawOptions, value, onChange }) => {
+  const options = useMemo(() => withRequestedPeriod(rawOptions, value), [rawOptions, value]);
   const basic = options.filter((o) => o.group === "basic");
   const years = options.filter((o) => o.group === "year");
   const patches = options.filter((o) => o.group === "patch");
@@ -612,11 +616,13 @@ export const QuickPeriods: React.FC<{
   options: PeriodOption[];
   value: PeriodKey;
   onChange: (k: PeriodKey) => void;
-}> = ({ options, value, onChange }) => {
+}> = ({ options: rawOptions, value, onChange }) => {
+  const options = useMemo(() => withRequestedPeriod(rawOptions, value), [rawOptions, value]);
   const topYear = options.find((o) => o.group === "year");
   const topPatch = options.find((o) => o.group === "patch");
   const topEvent = options.find((o) => o.group === "event");
   const last20 = options.find((o) => o.key === "last20");
+  const current = options.find((o) => o.key === value);
   const pills: { key: PeriodKey; label: string }[] = [
     { key: "all", label: tl("All time") },
     ...(last20 ? [{ key: "last20", label: tl("Last {n} games", { n: "20" }) }] : []),
@@ -624,6 +630,17 @@ export const QuickPeriods: React.FC<{
     ...(topPatch ? [{ key: topPatch.key, label: `${tl("Patch")} ${topPatch.label}` }] : []),
     ...(topEvent ? [{ key: topEvent.key, label: topEvent.label }] : []),
   ];
+  if (current && !pills.some((p) => p.key === current.key)) {
+    pills.push({
+      key: current.key,
+      label:
+        current.group === "basic"
+          ? tl("Last {n} games", { n: current.label })
+          : current.group === "patch"
+            ? `${tl("Patch")} ${current.label}`
+            : current.label,
+    });
+  }
   return (
     <div data-nocapture="1" className="flex flex-wrap items-center gap-1 text-[11px]">
       {pills.map((p) => (
@@ -667,10 +684,12 @@ const OnlyPicker: React.FC<{ value: GameOnly; onChange: (v: GameOnly) => void; s
 const onlyText = (v: GameOnly) =>
   ({ "": "", w: tl("Wins only"), l: tl("Losses only"), b: tl("Blue side only"), r: tl("Red side only") })[v];
 
-/** Default period: ?p= from the address if present, "all" for inactive/disbanded teams/players, else the newest year. */
-export const defaultPeriod = (opts: PeriodOption[], preferAll = false): PeriodKey => {
-  if (typeof window !== "undefined") {
-    const p = new URLSearchParams(window.location.search).get("p");
+/** Default period: ?p= (or ?y=YYYY) from the address if present, "all" for inactive/disbanded teams/players, else the newest year. */
+export const defaultPeriod = (opts: PeriodOption[], preferAll = false, query?: string): PeriodKey => {
+  const search = query ?? (typeof window !== "undefined" ? window.location.search : "");
+  if (search) {
+    const params = new URLSearchParams(search);
+    const p = params.get("p") || (params.get("y") && /^\d{4}$/.test(params.get("y")!) ? `y${params.get("y")}` : null);
     if (p && (opts.some((o) => o.key === p) || /^(all|last\d+|y\d{4}|p:.+|e:.+)$/.test(p))) return p;
   }
   if (preferAll) return "all";
@@ -702,22 +721,35 @@ function useGameLog<T>(slug: string, has2y: boolean | undefined, recent: (s: str
   return { loading: first.loading, rows: all && all.slug === slug ? all.rows : first.data };
 }
 
-export const PlayerPeriodStats: React.FC<{ slug: string; who?: Who; has2y?: boolean; preferAll?: boolean }> = ({ slug, who, has2y, preferAll }) => {
+export const PlayerPeriodStats: React.FC<{ slug: string; who?: Who; has2y?: boolean; preferAll?: boolean; query?: string }> = ({
+  slug,
+  who,
+  has2y,
+  preferAll,
+  query,
+}) => {
   const { loading, rows } = useGameLog(slug, has2y, loadPlayerGames2y, loadPlayerGames);
   if (loading) return null;
   if (!rows || !rows.length) return null;
-  return <PlayerPeriodView slug={slug} rows={rows} who={who} preferAll={preferAll} />;
+  return <PlayerPeriodView slug={slug} rows={rows} who={who} preferAll={preferAll} query={query} />;
 };
 
-const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Who; preferAll?: boolean }> = ({
+const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Who; preferAll?: boolean; query?: string }> = ({
   slug,
   rows,
   who,
   preferAll,
+  query,
 }) => {
   useDDragon();
-  const options = useMemo(() => periodOptions(rows.map(playerRowRef)), [rows]);
-  const [period, setPeriod] = useState<PeriodKey>(() => defaultPeriod(options, preferAll));
+  const refs = useMemo(() => rows.map(playerRowRef), [rows]);
+  const baseOptions = useMemo(() => periodOptions(refs), [refs]);
+  const [period, setPeriod] = useState<PeriodKey>(() => defaultPeriod(baseOptions, preferAll, query));
+  useEffect(() => {
+    if (!query) return;
+    setPeriod(defaultPeriod(baseOptions, preferAll, query));
+  }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
+  const options = useMemo(() => withRequestedPeriod(baseOptions, period, refs), [baseOptions, period, refs]);
   const [only, setOnly] = useState<GameOnly>("");
   const sel = useMemo(
     () => inPeriod(rows, period, playerRowRef).filter((r) => (only === "w" ? r[6] === 1 : only === "l" ? r[6] === 0 : true)),
@@ -1304,11 +1336,17 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
 
 type TeamWho = { name: string; sub?: string; code?: string; roster?: RosterPlayer[] };
 
-export const TeamPeriodStats: React.FC<{ slug: string; has2y?: boolean; who?: TeamWho; preferAll?: boolean }> = ({ slug, has2y, who, preferAll }) => {
+export const TeamPeriodStats: React.FC<{ slug: string; has2y?: boolean; who?: TeamWho; preferAll?: boolean; query?: string }> = ({
+  slug,
+  has2y,
+  who,
+  preferAll,
+  query,
+}) => {
   const { loading, rows } = useGameLog(slug, has2y, loadTeamGames2y, loadTeamGames);
   if (loading) return <Loading />;
   if (!rows || !rows.length) return null;
-  return <TeamPeriodView slug={slug} rows={rows} who={who} preferAll={preferAll} />;
+  return <TeamPeriodView slug={slug} rows={rows} who={who} preferAll={preferAll} query={query} />;
 };
 
 const ChampCounts: React.FC<{ title: string; list: [string, number][]; tone?: "ban" | "banVs"; slug?: string; period?: string }> = ({
@@ -1363,15 +1401,22 @@ const ChampCounts: React.FC<{ title: string; list: [string, number][]; tone?: "b
   );
 };
 
-const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWho; preferAll?: boolean }> = ({
+const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWho; preferAll?: boolean; query?: string }> = ({
   slug,
   rows,
   who,
   preferAll,
+  query,
 }) => {
   useDDragon();
-  const options = useMemo(() => periodOptions(rows.map(teamRowRef)), [rows]);
-  const [period, setPeriod] = useState<PeriodKey>(() => defaultPeriod(options, preferAll));
+  const refs = useMemo(() => rows.map(teamRowRef), [rows]);
+  const baseOptions = useMemo(() => periodOptions(refs), [refs]);
+  const [period, setPeriod] = useState<PeriodKey>(() => defaultPeriod(baseOptions, preferAll, query));
+  useEffect(() => {
+    if (!query) return;
+    setPeriod(defaultPeriod(baseOptions, preferAll, query));
+  }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
+  const options = useMemo(() => withRequestedPeriod(baseOptions, period, refs), [baseOptions, period, refs]);
   const [only, setOnly] = useState<GameOnly>("");
   const sel = useMemo(
     () =>

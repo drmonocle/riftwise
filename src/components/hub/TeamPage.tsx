@@ -544,8 +544,9 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
             has2y={!!t.g2y}
             preferAll={!!t.disbanded || t.to.slice(0, 4) < String(new Date().getFullYear() - 1)}
             who={{ name: t.name, sub: [t.region, t.rating?.league].filter(Boolean).join(" · ") || undefined, code: t.codes[0], roster: t.roster[0]?.p }}
+            query={routeQuery}
           />
-          <TeamRanks slug={t.u} name={t.name} events={t.events} has2y={!!t.g2y} />
+          <TeamRanks slug={t.u} name={t.name} events={t.events} has2y={!!t.g2y} query={routeQuery} />
         </div>
       )}
 

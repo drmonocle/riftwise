@@ -5,6 +5,7 @@ import { rateLine, profile, type RatingFile } from "../hub/playerRating";
 import { filterBuiltSeasons } from "../components/hub/Ranks";
 import { matchSide } from "../components/hub/FinderPage";
 import { champAgg, matchedEventLabel, matchEventIndices } from "../hub/champAgg";
+import { inPeriod, matchesPeriodEvent, periodOptions, withRequestedPeriod } from "../hub/period";
 import { champPairShortcuts, matchupShortcuts, pageShortcuts } from "../components/hub/HubSearch";
 import { groupOf, MENU, MENU_ITEMS } from "../components/hub/menu";
 import { NAV_GROUP } from "../components/navGroups";
@@ -291,5 +292,17 @@ describe("search shortcuts", () => {
       query: "q=t1",
     });
     expect(hubPath({ kind: "league", slug: "lck", year: "2025", query: "q=t1" })).toBe("/league/lck/2025?q=t1");
+  });
+  it("matches parent-event period keys and synthesizes parent tournament options", () => {
+    const rows = [
+      { date: "2025-11-02", e: "worlds-2025-main-event", en: "Worlds 2025 Main Event" },
+      { date: "2025-10-10", e: "worlds-2025-swiss", en: "Worlds 2025 Swiss" },
+      { date: "2025-08-30", e: "lck-2025-summer-playoffs", en: "LCK 2025 Summer Playoffs" },
+    ];
+    expect(matchesPeriodEvent("worlds-2025-main-event", "Worlds 2025 Main Event", "worlds-2025")).toBe(true);
+    expect(matchesPeriodEvent("worlds-2025-main-event", "Worlds 2025 Main Event", "worlds")).toBe(false);
+    expect(inPeriod(rows, "e:worlds-2025", (r) => r)).toHaveLength(2);
+    const opts = withRequestedPeriod(periodOptions(rows), "e:worlds-2025", rows);
+    expect(opts.find((o) => o.key === "e:worlds-2025")?.label).toBe("Worlds 2025");
   });
 });

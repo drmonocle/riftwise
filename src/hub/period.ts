@@ -3,6 +3,7 @@
  * (hub/playergames, hub/teamgames): all time, the last N games, a year, or one tournament. This is what
  * gol.gg's season / split selectors do, without a request per choice.
  */
+import { prettySlug, resolveEventSlug } from "./data";
 import type { PlayerGameRow, PlayerTimeline, TeamGameRow, TeamTimeline } from "./types";
 
 /** "all", "last20", "y2026", "p:26.18", "e:<event slug>" */
@@ -16,6 +17,63 @@ export interface PeriodOption {
 }
 
 const LAST = [10, 20, 50];
+
+/** Does an event row (`rowSlug`, `rowName`) match a requested event slug `ev` (including aliases and parent-event prefixes like `lec-2024-winter` -> `lec-2024-winter-playoffs`)? */
+export function matchesPeriodEvent(rowSlug: string, rowName: string | undefined, ev: string): boolean {
+  if (!ev) return true;
+  if (rowSlug === ev || rowName === ev) return true;
+  const canon = resolveEventSlug(ev);
+  if (rowSlug === canon || rowName === canon) return true;
+  for (const p of canon && canon !== ev ? [ev, canon] : [ev]) {
+    if (rowSlug && rowSlug.startsWith(`${p}-`)) {
+      const nextSeg = rowSlug.slice(p.length + 1).split("-")[0];
+      if (!/^\d{4}$/.test(nextSeg)) return true;
+    }
+  }
+  return false;
+}
+
+function commonEventLabel(names: string[], fallbackSlug: string): string {
+  const clean = [...new Set(names.filter(Boolean))];
+  if (clean.length === 1) return clean[0];
+  if (clean.length > 1) {
+    const words = clean[0].split(/\s+/);
+    let len = words.length;
+    for (const n of clean.slice(1)) {
+      const nw = n.split(/\s+/);
+      let j = 0;
+      while (j < len && j < nw.length && words[j].toLowerCase() === nw[j].toLowerCase()) j++;
+      len = j;
+    }
+    const common = words.slice(0, len).join(" ").replace(/[-:–—\s]+$/, "");
+    if (common) return common;
+  }
+  return prettySlug(resolveEventSlug(fallbackSlug) || fallbackSlug);
+}
+
+/** Ensures a requested `e:<slug>` period (e.g. a whole-event parent slug like `e:worlds-2025` or an older tournament) appears in `options` when matching stage rows exist. */
+export function withRequestedPeriod(
+  options: PeriodOption[],
+  key?: PeriodKey | null,
+  rows?: { e: string; en: string }[],
+): PeriodOption[] {
+  if (!key || options.some((o) => o.key === key)) return options;
+  if (key.startsWith("e:")) {
+    const ev = key.slice(2);
+    const matchedOpts = options.filter((o) => o.group === "event" && matchesPeriodEvent(o.key.slice(2), o.label, ev));
+    const matchedRows = !matchedOpts.length && rows ? rows.filter((r) => matchesPeriodEvent(r.e, r.en, ev)) : [];
+    if (matchedOpts.length > 0 || matchedRows.length > 0) {
+      const names = matchedOpts.length > 0 ? matchedOpts.map((o) => o.label) : matchedRows.map((r) => r.en);
+      const label = commonEventLabel(names, ev);
+      const firstEventIdx = options.findIndex((o) => o.group === "event");
+      const next = [...options];
+      const insertAt = matchedOpts.length > 0 ? options.indexOf(matchedOpts[0]) : firstEventIdx >= 0 ? firstEventIdx : next.length;
+      next.splice(insertAt, 0, { key, label, group: "event" });
+      return next;
+    }
+  }
+  return options;
+}
 
 /** Choices for a game log (newest first): all time, last N games, every year, recent patches, the tournaments played. */
 export function periodOptions(rows: { date: string; e: string; en: string; patch?: string | null }[], maxEvents = 60): PeriodOption[] {
@@ -51,7 +109,7 @@ export function inPeriod<T>(rows: T[], key: PeriodKey, get: (r: T) => { date: st
     const ev = key.slice(2);
     return rows.filter((r) => {
       const g = get(r);
-      return g.e === ev || g.en === ev;
+      return matchesPeriodEvent(g.e, g.en, ev);
     });
   }
   return rows;
