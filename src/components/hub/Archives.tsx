@@ -278,6 +278,12 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
                 >
                   {tl("Draft board")} →
                 </HubLink>
+                <HubLink
+                  to={{ kind: "rankings" }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Power rankings")} →
+                </HubLink>
               </>
             )}
             <CopyArchivePost
@@ -326,6 +332,9 @@ export const TeamSeriesArchive: React.FC<{ slug: string; teamName: string }> = (
         </HubLink>
         <HubLink to={{ kind: "rankings" }} className="text-rw-accent hover:underline">
           {tl("Power rankings")} →
+        </HubLink>
+        <HubLink to={{ kind: "tiers" }} className="text-rw-accent hover:underline">
+          {tl("Pro tier list")} →
         </HubLink>
         <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(slug)}` }} className="text-rw-accent hover:underline">
           {tl("Game finder")} →
@@ -397,6 +406,15 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
               className="text-rw-muted hover:text-rw-accent hover:underline"
             >
               {tl("Power rankings")} →
+            </HubLink>
+            <HubLink
+              to={{
+                kind: "tiers",
+                ...(year !== "all" ? { query: `key=y${encodeURIComponent(year)}` } : {}),
+              }}
+              className="text-rw-muted hover:text-rw-accent hover:underline"
+            >
+              {tl("Pro tier list")} →
             </HubLink>
             <HubLink
               to={{
@@ -738,6 +756,18 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                 {tl("Counters")} →
               </HubLink>
             )}
+            <HubLink
+              to={{ kind: "leaders", ...(year !== "all" ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Player leaderboards")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "tiers", ...(year !== "all" ? { query: `key=y${encodeURIComponent(year)}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Pro tier list")} →
+            </HubLink>
             <CopyArchivePost
               title={`${tl("Every game")} · ${displayName}${champ !== "all" ? ` · ${champName(champ)}` : ""}${year !== "all" ? ` (${year})` : ""}`}
               sub={`${tn("{n} game", "{n} games", rows.length)} · ${Math.round((won / rows.length) * 100)}% · KDA ${fmtDec((k + a) / Math.max(d, 1), 2)}`}

@@ -821,6 +821,24 @@ const FinderBody: React.FC<{
                   >
                     {tl("Compare")} →
                   </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "rankings",
+                      ...(q.get("league") ? { query: `league=${encodeURIComponent(q.get("league")!)}` } : {}),
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Power rankings")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "tiers",
+                      ...(year ? { query: `key=y${encodeURIComponent(year)}` } : {}),
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Pro tier list")} →
+                  </HubLink>
                 </>
               )}
               {q.get("team") && q.get("vs") && (
@@ -993,6 +1011,20 @@ const FinderBody: React.FC<{
                   >
                     {tl("Player leaderboards")} →
                   </HubLink>
+                  {!champs[0] && (
+                    <HubLink
+                      to={{
+                        kind: "tiers",
+                        query: new URLSearchParams({
+                          ...(q.get("role") ? { role: q.get("role")! } : {}),
+                          ...(year ? { key: `y${year}` } : {}),
+                        }).toString(),
+                      }}
+                      className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                    >
+                      {tl("Pro tier list")} →
+                    </HubLink>
+                  )}
                 </>
               )}
             </div>

@@ -449,6 +449,18 @@ const PlayerView: React.FC<{
               >
                 {tl("Player leaderboards")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "tournaments" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Tournaments")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
               <SectionCard
                 section={tl("Tournaments")}
                 name={p.name}
@@ -523,6 +535,12 @@ const PlayerView: React.FC<{
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
               </HubLink>
               <SectionCard
                 section={tl("By year")}
@@ -647,6 +665,12 @@ const PlayerView: React.FC<{
                   className="text-[11px] text-rw-accent hover:underline"
                 >
                   {tl("Player leaderboards")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "tiers", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")} →
                 </HubLink>
                 <SectionCard
                   section={tl("Recent games")}
@@ -780,6 +804,12 @@ const PlayerView: React.FC<{
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Records")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "compare", mode: "player", a: p.u }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
               </HubLink>
               <HubLink
                 to={{ kind: "leaders", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}

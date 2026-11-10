@@ -171,6 +171,20 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                   {tl("Draft board")} →
                 </HubLink>
                 <HubLink
+                  to={{ kind: "tiers" }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "rankings" }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Power rankings")} →
+                </HubLink>
+                <HubLink
                   to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}` }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -427,9 +441,14 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
             </span>
             <span className="flex items-center gap-2">
               {slug && (
-                <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
-                  {tl("Game finder")} →
-                </HubLink>
+                <>
+                  <HubLink to={{ kind: "leaders", query: `event=${encodeURIComponent(slug)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                    {tl("Player leaderboards")} →
+                  </HubLink>
+                  <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                    {tl("Game finder")} →
+                  </HubLink>
+                </>
               )}
               <HubLink to={{ kind: "records" }} className="text-[11px] text-rw-accent hover:underline">
                 {tl("Records")} →
@@ -641,6 +660,12 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
           {filteredRosters.length > 0 && (
             <>
               <HubLink
+                to={{ kind: "teams" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Teams")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "leaders", ...(eventSlug ? { query: `event=${encodeURIComponent(eventSlug)}` } : {}) }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -651,6 +676,12 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Power rankings")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
               </HubLink>
               {eventSlug && (
                 <HubLink
@@ -811,6 +842,20 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
             data-nocapture="1"
           >
             {tl("Leagues")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "leaders", query: `event=${encodeURIComponent(e.u)}` }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Player leaderboards")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "best" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Best games")} →
           </HubLink>
           <HubLink
             to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }}

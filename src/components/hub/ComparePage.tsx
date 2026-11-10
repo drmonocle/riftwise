@@ -1723,6 +1723,12 @@ const PlayerRows: React.FC<{
               >
                 {tl("Pro tier list")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "leaders", ...(x.role ? { query: `role=${encodeURIComponent(x.role)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
               <SectionCard
                 section={tl("Champions both played")}
                 sub={`${x.name} vs ${y.name} · ${periodLabel}`}
@@ -1967,6 +1973,12 @@ const PlayerHeadToHead: React.FC<{
               className="text-[11px] text-rw-accent hover:underline"
             >
               {tl("Player leaderboards")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "tiers" }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Pro tier list")} →
             </HubLink>
             <SectionCard
               section={`${tl("Head to head")} · ${aName} vs ${bName}`}

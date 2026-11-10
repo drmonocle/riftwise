@@ -1131,6 +1131,10 @@ const MetaSpotlight: React.FC<{
                 <HubLink to={{ kind: "finder", query: `champ=${encodeURIComponent(item.c)}` }} className="hover:text-rw-accent hover:underline">
                   {tl("Game finder")}
                 </HubLink>
+                {" · "}
+                <HubLink to={{ kind: "tiers" }} className="hover:text-rw-accent hover:underline">
+                  {tl("Pro tier list")}
+                </HubLink>
               </div>
             )}
           </div>

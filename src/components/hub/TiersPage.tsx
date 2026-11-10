@@ -203,6 +203,15 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
               </HubLink>
               <HubLink
                 to={{
+                  kind: "rankings",
+                  ...(isLeague ? { query: `league=${encodeURIComponent(rawScope)}` } : {}),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
+              <HubLink
+                to={{
                   kind: "finder",
                   ...(key.startsWith("p")
                     ? { query: `patch=${encodeURIComponent(key.slice(1))}${role ? `&role=${encodeURIComponent(role)}` : ""}` }

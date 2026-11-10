@@ -1674,6 +1674,15 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                     >
                       {tl("Draft board")}
                     </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "finder",
+                        query: `team=${encodeURIComponent(prettySlug(r[7]))}&vs=${encodeURIComponent(prettySlug(r[8]))}`,
+                      }}
+                      className="hidden sm:inline text-[10px] hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Game finder")}
+                    </HubLink>
                   </>
                 )}
                 {r[1] ? (

@@ -249,6 +249,30 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                   >
                     {tl("Game finder")}
                   </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "rankings",
+                      ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}),
+                    }}
+                    className={heroBtn()}
+                  >
+                    {tl("Power rankings")}
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "best",
+                      ...(e.lu
+                        ? {
+                            query: `league=${encodeURIComponent(e.lu)}${
+                              e.start || e.end ? `&year=${encodeURIComponent((e.start || e.end || "").slice(0, 4))}` : ""
+                            }`,
+                          }
+                        : {}),
+                    }}
+                    className={heroBtn()}
+                  >
+                    {tl("Best games")}
+                  </HubLink>
                   <button
                     type="button"
                     onClick={() =>
@@ -458,9 +482,21 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
         <Section
           title={tl("Stages")}
           right={
-            <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+            <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
               <HubLink to={{ kind: "tournaments" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Tournaments")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "rankings", ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}) }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers", ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}) }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
               </HubLink>
               <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Game finder")} →
@@ -1356,6 +1392,15 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
               </HubLink>
             </>
           )}
+          <HubLink
+            to={{
+              kind: "tiers",
+              ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")} →
+          </HubLink>
           <HubLink
             to={{
               kind: "leaders",

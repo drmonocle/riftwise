@@ -455,6 +455,9 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Player leaderboards")} →
                 </HubLink>
+                <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Power rankings")} →
+                </HubLink>
                 <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Game finder")} →
                 </HubLink>

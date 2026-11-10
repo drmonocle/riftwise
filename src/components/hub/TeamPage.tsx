@@ -171,6 +171,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   {tl("Power rankings")} →
                 </HubLink>
                 <HubLink
+                  to={{ kind: "tiers", query: `key=y${encodeURIComponent(activeRoster.y)}` }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
+                <HubLink
                   to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${activeRoster.y}` }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
@@ -385,6 +391,9 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
               </HubLink>
               <HubLink to={{ kind: "tiers" }} className={heroLink}>
                 {tl("Pro tier list")}
+              </HubLink>
+              <HubLink to={{ kind: "leaders" }} className={heroLink}>
+                {tl("Player leaderboards")}
               </HubLink>
               <PhotosLink q={t.name} className={heroLink} />
               {/* its own calendar and results feed, while it still plays (the schedule only has current teams) */}
@@ -2287,6 +2296,9 @@ const TeamPlaystyleOverview: React.FC<{ t: HubTeam }> = ({ t }) => {
             </HubLink>
             <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Power rankings")} →
+            </HubLink>
+            <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Pro tier list")} →
             </HubLink>
             <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Game finder")} →
