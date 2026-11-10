@@ -258,7 +258,12 @@ const LeagueFilters: React.FC<{ league: string; years: string[]; q: URLSearchPar
           </option>
         ))}
       </select>
-      <select value={q.get("patch") || ""} onChange={(e) => setQ({ patch: e.target.value || undefined })} aria-label={tl("Patches")} className={sel}>
+      <select
+        value={q.get("patch") || (q.get("key")?.startsWith("p") ? q.get("key")!.slice(1) : "")}
+        onChange={(e) => setQ({ patch: e.target.value || undefined, key: undefined })}
+        aria-label={tl("Patches")}
+        className={sel}
+      >
         <option value="">{tl("All patches")}</option>
         {patches.map((p) => (
           <option key={p} value={p}>
@@ -313,16 +318,17 @@ const LeagueTable: React.FC<{
   const roleQ = q.get("role") || "";
   const rawSide = q.get("side");
   const side: "b" | "r" | undefined = rawSide === "b" || rawSide === "blue" ? "b" : rawSide === "r" || rawSide === "red" ? "r" : undefined;
-  const vs = q.get("vs") || "";
+  const patchQ = q.get("patch") || (q.get("key")?.startsWith("p") ? q.get("key")!.slice(1) : undefined);
+  const rawVs = q.get("vs") || "";
+  const vs = rawVs.startsWith("p") ? rawVs.slice(1) : rawVs;
   const result = useMemo(() => {
     if (!file.data) return null;
     const ei = eventSlug ? file.data.events.findIndex(([s]) => s === eventSlug) : -1;
     const f = { event: ei >= 0 ? ei : undefined, side, role: roleQ ? ROLES.indexOf(roleQ) : undefined };
-    const patchQ = q.get("patch") || (q.get("key")?.startsWith("p") ? q.get("key")!.slice(1) : undefined);
     const now = champAgg(file.data.games, { ...f, patch: patchQ });
     const then = vs ? champAgg(file.data.games, { ...f, patch: vs }) : null;
     return { games: now.games, thenGames: then?.games || 0, rows: deltas(now.rows, then && then.games ? then.rows : null, 5) };
-  }, [file.data, eventSlug, q, side, roleQ, vs]);
+  }, [file.data, eventSlug, patchQ, side, roleQ, vs]);
   const patchList = useMemo(
     () => [...new Set((file.data?.games || []).map((g) => g[1]).filter(Boolean))].sort(patchCompare).reverse(),
     [file.data],
@@ -376,7 +382,7 @@ const LeagueTable: React.FC<{
           league,
           ...(year ? { year } : {}),
           ...(eventSlug ? { event: eventSlug } : {}),
-          ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
+          ...(patchQ ? { patch: patchQ } : {}),
           ...(c.p > 0 && side ? { side } : {}),
           ...(c.p > 0 && roleQ ? { role: roleQ } : {}),
         }).toString();
@@ -394,7 +400,7 @@ const LeagueTable: React.FC<{
           league,
           ...(year ? { year } : {}),
           ...(eventSlug ? { event: eventSlug } : {}),
-          ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
+          ...(patchQ ? { patch: patchQ } : {}),
           ...(side ? { side } : {}),
           ...(roleQ ? { role: roleQ } : {}),
         }).toString();
@@ -424,7 +430,7 @@ const LeagueTable: React.FC<{
           league,
           ...(year ? { year } : {}),
           ...(eventSlug ? { event: eventSlug } : {}),
-          ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
+          ...(patchQ ? { patch: patchQ } : {}),
         }).toString();
         return (
           <span className="inline-flex flex-col gap-0.5 min-w-[2.5rem] tabular-nums">
@@ -452,7 +458,7 @@ const LeagueTable: React.FC<{
           league,
           ...(year ? { year } : {}),
           ...(eventSlug ? { event: eventSlug } : {}),
-          ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
+          ...(patchQ ? { patch: patchQ } : {}),
           ...(side ? { side } : {}),
           ...(roleQ ? { role: roleQ } : {}),
         }).toString();
@@ -505,7 +511,7 @@ const LeagueTable: React.FC<{
                 side: "b",
                 ...(year ? { year } : {}),
                 ...(eventSlug ? { event: eventSlug } : {}),
-                ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
+                ...(patchQ ? { patch: patchQ } : {}),
               }).toString(),
             }}
             className="hover:text-rw-accent hover:underline"
@@ -573,12 +579,12 @@ const LeagueTable: React.FC<{
         />
         <CompareWith
           value={vs}
-          options={patchList.filter((p) => p !== q.get("patch")).map((p) => [p, p])}
+          options={patchList.filter((p) => p !== patchQ).map((p) => [p, p])}
           onChange={(v) => setQ({ vs: v || undefined, new: undefined })}
           emerging={emerging}
           onEmerging={(v) => setQ({ new: v ? "1" : undefined })}
         />
-        {vs && !q.get("patch") && <span className="text-[10px] text-rw-muted">{tl("Pick a patch above to compare it with this one.")}</span>}
+        {vs && !patchQ && <span className="text-[10px] text-rw-muted">{tl("Pick a patch above to compare it with this one.")}</span>}
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-rw-muted">
         <span>
@@ -589,7 +595,7 @@ const LeagueTable: React.FC<{
                 league,
                 ...(year ? { year } : {}),
                 ...(eventSlug ? { event: eventSlug } : {}),
-                ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
+                ...(patchQ ? { patch: patchQ } : {}),
                 ...(side ? { side } : {}),
                 ...(roleQ ? { role: roleQ } : {}),
               }).toString(),
@@ -642,7 +648,7 @@ const LeagueTable: React.FC<{
               {tl("Counter-pick finder")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tiers", query: `scope=${encodeURIComponent(league)}${q.get("patch") ? `&key=p${encodeURIComponent(q.get("patch")!)}` : year ? `&key=y${encodeURIComponent(year)}` : ""}` }}
+              to={{ kind: "tiers", query: `scope=${encodeURIComponent(league)}${patchQ ? `&key=p${encodeURIComponent(patchQ)}` : year ? `&key=y${encodeURIComponent(year)}` : ""}${roleQ ? `&role=${encodeURIComponent(roleQ)}` : ""}` }}
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Pro tier list")} →
@@ -662,8 +668,8 @@ const LeagueTable: React.FC<{
             <HubLink
               to={{
                 kind: "draft",
-                ...(q.get("patch")
-                  ? { query: `p=p:${encodeURIComponent(q.get("patch")!)}` }
+                ...(patchQ
+                  ? { query: `p=p:${encodeURIComponent(patchQ)}` }
                   : year
                     ? { query: `p=y${encodeURIComponent(year)}` }
                     : {}),
@@ -679,7 +685,7 @@ const LeagueTable: React.FC<{
                   league,
                   ...(year ? { year } : {}),
                   ...(eventSlug ? { event: eventSlug } : {}),
-                  ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
+                  ...(patchQ ? { patch: patchQ } : {}),
                   ...(side ? { side } : {}),
                   ...(roleQ ? { role: roleQ } : {}),
                   ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { champ: shownRows[0].c } : {}),
@@ -697,6 +703,7 @@ const LeagueTable: React.FC<{
                   ...(year ? { year } : {}),
                   ...(eventSlug ? { event: eventSlug } : {}),
                   ...(roleQ ? { role: roleQ } : {}),
+                  ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { champ: shownRows[0].c } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -711,7 +718,7 @@ const LeagueTable: React.FC<{
             </HubLink>
             <SectionCard
               section={tl("Champions")}
-              name={[leagueName, year, q.get("patch") && tl("Patch {patch}", { patch: q.get("patch")! })].filter(Boolean).join(" · ")}
+              name={[leagueName, year, patchQ && tl("Patch {patch}", { patch: patchQ })].filter(Boolean).join(" · ")}
               sub={tl("{n} games", { n: fmtNum(result.games) })}
               rows={() =>
                 shownRows.slice(0, 12).map((c, i) => ({
@@ -725,7 +732,7 @@ const LeagueTable: React.FC<{
               }
             />
             <CopyChampsPost
-              title={[tl("Champions"), leagueName, year, q.get("patch") && tl("Patch {patch}", { patch: q.get("patch")! })].filter(Boolean).join(" · ")}
+              title={[tl("Champions"), leagueName, year, patchQ && tl("Patch {patch}", { patch: patchQ })].filter(Boolean).join(" · ")}
               rows={shownRows}
               query={q.toString()}
             />
@@ -739,7 +746,7 @@ const LeagueTable: React.FC<{
           league={league}
           year={year}
           event={eventSlug || undefined}
-          patch={q.get("patch") || undefined}
+          patch={patchQ || undefined}
           role={roleQ || undefined}
         />
       )}
@@ -753,7 +760,7 @@ const LeagueTable: React.FC<{
           initial={{ key: vs ? "dPres" : roleQ ? "p" : "presence", desc: true }}
           key={vs ? "by-delta" : roleQ ? "by-picks" : "by-presence"}
           rowKey={(c) => c.c}
-          copyName={["champions", q.get("league"), year, q.get("event"), q.get("patch"), q.get("side"), q.get("role")].filter(Boolean).join("-")}
+          copyName={["champions", q.get("league"), year, q.get("event"), patchQ, q.get("side"), q.get("role")].filter(Boolean).join("-")}
         />
       )}
       <p className="text-[10px] text-rw-muted">
@@ -1036,6 +1043,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
                 query: new URLSearchParams({
                   ...(key.startsWith("y") ? { year: key.slice(1) } : {}),
                   ...(roleQ ? { role: roleQ } : {}),
+                  ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { champ: shownRows[0].c } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"

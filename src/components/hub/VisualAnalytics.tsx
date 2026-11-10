@@ -8,7 +8,7 @@ import React, { useEffect, useId, useMemo, useState } from "react";
 import { tl, tc, roleName, fmtDec, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { loadPlayerGames, loadPlayerGames2y, prettySlug } from "../../hub/data";
+import { loadPlayerGames, loadPlayerGames2y, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import type { HubChamp, HubPlayer, HubTeam, PlayerGameRow, PlayerTimeline } from "../../hub/types";
 import { playerAgg, type PlayerAgg } from "../../hub/period";
 import { playerRowLine, rateLine } from "../../hub/playerRating";
@@ -970,52 +970,93 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                 >
                   {tl("Counters")}
                 </HubLink>
-                <HubLink
-                  to={{ kind: "items", query: `player=${encodeURIComponent(p.u)}&champ=${encodeURIComponent(prettySlug(sel.champ))}` }}
-                  className="text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Item history")}
-                </HubLink>
-                <HubLink
-                  to={{ kind: "compare", mode: "player", a: p.u }}
-                  className="text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Compare")}
-                </HubLink>
-                <HubLink
-                  to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}&champ=${encodeURIComponent(sel.champ)}` }}
-                  className="text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Game finder")}
-                </HubLink>
-                {sel.team && sel.opp && (
-                  <>
-                    <HubLink
-                      to={{ kind: "prep", a: prettySlug(sel.team), b: prettySlug(sel.opp) }}
-                      className="text-rw-sub hover:text-rw-accent hover:underline"
-                    >
-                      {tl("Match prep")}
-                    </HubLink>
-                    <HubLink
-                      to={{ kind: "draft", query: `teams=${encodeURIComponent(prettySlug(sel.team))},${encodeURIComponent(prettySlug(sel.opp))}` }}
-                      className="text-rw-sub hover:text-rw-accent hover:underline"
-                    >
-                      {tl("Draft board")}
-                    </HubLink>
-                  </>
-                )}
-                <HubLink
-                  to={{ kind: "tiers", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
-                  className="text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Pro tier list")}
-                </HubLink>
-                <HubLink
-                  to={{ kind: "leaders", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
-                  className="text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Player leaderboards")}
-                </HubLink>
+                {(() => {
+                  const selYr = sel.date && /^\d{4}/.test(sel.date) ? sel.date.slice(0, 4) : undefined;
+                  return (
+                    <>
+                      <HubLink
+                        to={{
+                          kind: "items",
+                          query: new URLSearchParams({
+                            player: p.u,
+                            champ: prettySlug(sel.champ),
+                            ...(selYr ? { year: selYr } : {}),
+                          }).toString(),
+                        }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Item history")}
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "compare", mode: "player", a: p.u, ...(selYr ? { period: `y${selYr}` } : {}) }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Compare")}
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "finder",
+                          query: new URLSearchParams({
+                            player: p.u,
+                            champ: sel.champ,
+                            ...(selYr ? { year: selYr } : {}),
+                          }).toString(),
+                        }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Game finder")}
+                      </HubLink>
+                      {sel.team && sel.opp && (
+                        <>
+                          <HubLink
+                            to={{ kind: "prep", a: prettySlug(sel.team), b: prettySlug(sel.opp), ...(selYr ? { period: `y${selYr}` } : {}) }}
+                            className="text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Match prep")}
+                          </HubLink>
+                          <HubLink
+                            to={{
+                              kind: "draft",
+                              query: `teams=${encodeURIComponent(prettySlug(sel.team))},${encodeURIComponent(prettySlug(sel.opp))}${selYr ? `&p=y${encodeURIComponent(selYr)}` : ""}`,
+                            }}
+                            className="text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Draft board")}
+                          </HubLink>
+                        </>
+                      )}
+                      <HubLink
+                        to={{
+                          kind: "tiers",
+                          ...(p.role || selYr
+                            ? {
+                                query: new URLSearchParams({
+                                  ...(selYr ? { key: `y${selYr}` } : {}),
+                                  ...(p.role ? { role: p.role } : {}),
+                                }).toString(),
+                              }
+                            : {}),
+                        }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Pro tier list")}
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "leaders",
+                          query: new URLSearchParams({
+                            ...(selYr ? { year: selYr } : {}),
+                            ...(p.role ? { role: p.role } : {}),
+                            ...(sel.champ ? { champ: sel.champ } : {}),
+                          }).toString(),
+                        }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Player leaderboards")}
+                      </HubLink>
+                    </>
+                  );
+                })()}
                 <HubLink
                   to={{ kind: "rankings" }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -1116,7 +1157,13 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
                   {tl("Pro tier list")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "leaders", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+                  to={{
+                    kind: "leaders",
+                    query: new URLSearchParams({
+                      ...(p.role ? { role: p.role } : {}),
+                      ...(topChamps[0]?.c ? { champ: topChamps[0].c } : {}),
+                    }).toString(),
+                  }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Player leaderboards")} →
@@ -1553,30 +1600,61 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                       >
                         {tl("Compare")}
                       </HubLink>
-                      <HubLink
-                        to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&vs=${encodeURIComponent(oppSlug)}` }}
-                        className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
-                      >
-                        {tl("Game finder")}
-                      </HubLink>
-                      <HubLink
-                        to={{ kind: "tiers" }}
-                        className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
-                      >
-                        {tl("Pro tier list")}
-                      </HubLink>
-                      <HubLink
-                        to={{ kind: "rankings" }}
-                        className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
-                      >
-                        {tl("Power rankings")}
-                      </HubLink>
-                      <HubLink
-                        to={{ kind: "leaders", ...(selPeriod ? { query: `year=${encodeURIComponent(selPeriod.slice(1))}` } : {}) }}
-                        className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
-                      >
-                        {tl("Player leaderboards")}
-                      </HubLink>
+                      {(() => {
+                        const lg = t.rating?.league ? resolveLeagueSlug(t.rating.league) : undefined;
+                        return (
+                          <>
+                            <HubLink
+                              to={{
+                                kind: "finder",
+                                query: `team=${encodeURIComponent(t.u)}&vs=${encodeURIComponent(oppSlug)}${selPeriod ? `&year=${encodeURIComponent(selPeriod.slice(1))}` : ""}`,
+                              }}
+                              className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
+                            >
+                              {tl("Game finder")}
+                            </HubLink>
+                            <HubLink
+                              to={{
+                                kind: "tiers",
+                                ...(lg || selPeriod
+                                  ? {
+                                      query: new URLSearchParams({
+                                        ...(lg ? { scope: lg } : {}),
+                                        ...(selPeriod ? { key: selPeriod } : {}),
+                                      }).toString(),
+                                    }
+                                  : {}),
+                              }}
+                              className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
+                            >
+                              {tl("Pro tier list")}
+                            </HubLink>
+                            <HubLink
+                              to={{ kind: "rankings", ...(t.rating?.league ? { query: `league=${encodeURIComponent(t.rating.league)}` } : {}) }}
+                              className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
+                            >
+                              {tl("Power rankings")}
+                            </HubLink>
+                            <HubLink
+                              to={{
+                                kind: "leaders",
+                                ...(lg || selPeriod || sel.e
+                                  ? {
+                                      query: new URLSearchParams({
+                                        ...(lg ? { league: lg } : {}),
+                                        ...(selPeriod ? { year: selPeriod.slice(1) } : {}),
+                                        ...(sel.e ? { event: prettySlug(sel.e) } : {}),
+                                      }).toString(),
+                                    }
+                                  : {}),
+                              }}
+                              className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
+                            >
+                              {tl("Player leaderboards")}
+                            </HubLink>
+                          </>
+                        );
+                      })()}
                       {sel.g && (
                         <HubLink to={{ kind: "match", slug: sel.g }} className="text-rw-accent font-semibold hover:underline">
                           {tl("Details")} →
@@ -1777,7 +1855,17 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
               {tl("Counters")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tiers", ...(primaryRole ? { query: `role=${encodeURIComponent(primaryRole)}` } : {}) }}
+              to={{
+                kind: "tiers",
+                ...(sel || primaryRole
+                  ? {
+                      query: new URLSearchParams({
+                        ...(sel ? { key: `p${sel.p}` } : {}),
+                        ...(primaryRole ? { role: primaryRole } : {}),
+                      }).toString(),
+                    }
+                  : {}),
+              }}
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Pro tier list")} →
@@ -1852,7 +1940,13 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
               {tl("Champions")} →
             </HubLink>
             <HubLink
-              to={{ kind: "leaders", ...(primaryRole ? { query: `role=${encodeURIComponent(primaryRole)}` } : {}) }}
+              to={{
+                kind: "leaders",
+                query: new URLSearchParams({
+                  champ: c.name,
+                  ...(primaryRole ? { role: primaryRole } : {}),
+                }).toString(),
+              }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Player leaderboards")} →
@@ -2071,7 +2165,10 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                     </HubLink>{" "}
                     ·{" "}
                     <HubLink
-                      to={{ kind: "counters", query: `champ=${prettySlug(c.name)}` }}
+                      to={{
+                        kind: "counters",
+                        query: `champ=${prettySlug(c.name)}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}`,
+                      }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Counters")} →
@@ -2092,14 +2189,26 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                     </HubLink>{" "}
                     ·{" "}
                     <HubLink
-                      to={{ kind: "tiers", ...(primaryRole ? { query: `role=${encodeURIComponent(primaryRole)}` } : {}) }}
+                      to={{
+                        kind: "tiers",
+                        query: new URLSearchParams({
+                          key: `p${sel.p}`,
+                          ...(primaryRole ? { role: primaryRole } : {}),
+                        }).toString(),
+                      }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Pro tier list")} →
                     </HubLink>{" "}
                     ·{" "}
                     <HubLink
-                      to={{ kind: "leaders", ...(primaryRole ? { query: `role=${encodeURIComponent(primaryRole)}` } : {}) }}
+                      to={{
+                        kind: "leaders",
+                        query: new URLSearchParams({
+                          champ: c.name,
+                          ...(primaryRole ? { role: primaryRole } : {}),
+                        }).toString(),
+                      }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Player leaderboards")} →

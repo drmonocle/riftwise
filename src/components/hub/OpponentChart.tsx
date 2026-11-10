@@ -538,11 +538,15 @@ const ColoredOpponentGraph: React.FC<{
             <HubLink
               to={{
                 kind: "leaders",
-                ...(period && /^y:?(\d{4})$/.test(period)
-                  ? { query: `year=${encodeURIComponent(/^y:?(\d{4})$/.exec(period)![1])}` }
-                  : period?.startsWith("e:")
-                    ? { query: `event=${encodeURIComponent(period.slice(2))}` }
-                    : {}),
+                ...(period && /^y:?(\d{4})$/.test(period) || period?.startsWith("e:") || active.champs?.[0]?.c
+                  ? {
+                      query: new URLSearchParams({
+                        ...(period && /^y:?(\d{4})$/.test(period) ? { year: /^y:?(\d{4})$/.exec(period)![1] } : {}),
+                        ...(period?.startsWith("e:") ? { event: period.slice(2) } : {}),
+                        ...(active.champs?.[0]?.c ? { champ: active.champs[0].c } : {}),
+                      }).toString(),
+                    }
+                  : {}),
               }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
             >
@@ -896,7 +900,15 @@ export const PlayerOpponents: React.FC<{
                 <HubLink
                   to={{
                     kind: "leaders",
-                    ...(yr ? { query: `year=${encodeURIComponent(yr)}` } : ev ? { query: `event=${encodeURIComponent(ev)}` } : {}),
+                    ...(yr || ev || topChamp
+                      ? {
+                          query: new URLSearchParams({
+                            ...(yr ? { year: yr } : {}),
+                            ...(ev ? { event: ev } : {}),
+                            ...(topChamp ? { champ: topChamp } : {}),
+                          }).toString(),
+                        }
+                      : {}),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -1091,24 +1103,43 @@ export const PlayerOpponents: React.FC<{
               >
                 {tl("Game finder")}
               </HubLink>
-              <HubLink
-                to={{ kind: "tiers" }}
-                className="text-[11px] text-rw-accent hover:underline"
-              >
-                {tl("Pro tier list")}
-              </HubLink>
-              <HubLink
-                to={{ kind: "rankings" }}
-                className="text-[11px] text-rw-accent hover:underline"
-              >
-                {tl("Power rankings")}
-              </HubLink>
-              <HubLink
-                to={{ kind: "leaders" }}
-                className="text-[11px] text-rw-accent hover:underline"
-              >
-                {tl("Player leaderboards")}
-              </HubLink>
+              {(() => {
+                const yr = (period || scope) && /^y:?(\d{4})$/.test((period || scope)!) ? /^y:?(\d{4})$/.exec((period || scope)!)![1] : undefined;
+                const ev = (period || scope)?.startsWith("e:") ? (period || scope)!.slice(2) : undefined;
+                return (
+                  <>
+                    <HubLink
+                      to={{ kind: "tiers", ...(yr ? { query: `key=y${encodeURIComponent(yr)}` } : {}) }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Pro tier list")}
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "rankings" }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Power rankings")}
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "leaders",
+                        ...(yr || ev || expanded.champs[0]?.c
+                          ? {
+                              query: new URLSearchParams({
+                                ...(yr ? { year: yr } : {}),
+                                ...(ev ? { event: ev } : {}),
+                                ...(expanded.champs[0]?.c ? { champ: expanded.champs[0].c } : {}),
+                              }).toString(),
+                            }
+                          : {}),
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Player leaderboards")}
+                    </HubLink>
+                  </>
+                );
+              })()}
               <button
                 type="button"
                 onClick={() => setSelectedOpp(null)}

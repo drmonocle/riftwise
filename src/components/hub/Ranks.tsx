@@ -764,7 +764,14 @@ export const PlayerRanks: React.FC<{
                 {tl("Item history")} →
               </HubLink>
               <HubLink
-                to={{ kind: "tiers", ...(me?.r ? { query: `role=${encodeURIComponent(me.r)}` } : {}) }}
+                to={{
+                  kind: "tiers",
+                  query: new URLSearchParams({
+                    scope: lu,
+                    key: `y${year}`,
+                    ...(me?.r ? { role: me.r } : {}),
+                  }).toString(),
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Pro tier list")} →
