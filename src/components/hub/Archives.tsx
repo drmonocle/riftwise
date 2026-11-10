@@ -93,7 +93,20 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
                 )}
                 <span className="text-rw-muted">
                   · <EventLink name={r[5]} u={r[6]} className="text-rw-muted hover:text-rw-accent hover:underline" />
-                  {r[8] ? ` · ${stageLabel(r[8])}` : ""}
+                  {r[8] ? (
+                    r[6] ? (
+                      <>
+                        {" · "}
+                        <HubLink to={{ kind: "event", slug: r[6] }} className="hover:text-rw-accent hover:underline">
+                          {stageLabel(r[8])}
+                        </HubLink>
+                      </>
+                    ) : (
+                      ` · ${stageLabel(r[8])}`
+                    )
+                  ) : (
+                    ""
+                  )}
                 </span>
               </span>
               <span className="flex items-center gap-2 shrink-0 text-rw-muted">
@@ -310,7 +323,15 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                       {wa}
                     </HubLink>
                   </span>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">{tl("Series")}</span>
+                  <HubLink
+                    to={{
+                      kind: "finder",
+                      query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${event !== "all" ? `&event=${encodeURIComponent(event)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                    }}
+                    className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Series")}
+                  </HubLink>
                   <span className="inline-flex items-center justify-end gap-1.5 text-rw-side-b truncate text-right min-w-0">
                     <HubLink
                       to={{

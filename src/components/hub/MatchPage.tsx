@@ -174,7 +174,20 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
               {fmtDate(s.date)}
             </HubLink>
           </span>
-          <span>· {tc("series length", "Best of {n}", { n: s.bo })}</span>
+          <span>
+            ·{" "}
+            {s.a.u && s.b.u ? (
+              <HubLink
+                to={{ kind: "prep", a: s.a.u, b: s.b.u, period: seriesPeriod }}
+                className="hover:text-rw-accent hover:underline"
+                title={tl("Match prep")}
+              >
+                {tc("series length", "Best of {n}", { n: s.bo })}
+              </HubLink>
+            ) : (
+              tc("series length", "Best of {n}", { n: s.bo })
+            )}
+          </span>
           <span>
             ·{" "}
             <PhotosLink
@@ -641,7 +654,13 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
             {g.min != null && (
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                {hidden ? "–" : fmtMin(g.min)}
+                {hidden ? (
+                  "–"
+                ) : (
+                  <HubLink to={{ kind: "records" }} className="hover:text-rw-accent hover:underline" title={tl("Records")}>
+                    {fmtMin(g.min)}
+                  </HubLink>
+                )}
               </span>
             )}
             {g.patch && (
@@ -652,7 +671,17 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                 {tl("Patch {patch}", { patch: g.patch })}
               </HubLink>
             )}
-            {g.date && <span>{new Date(`${g.date.replace(" ", "T")}Z`).toLocaleString(locale(), { dateStyle: "medium", timeStyle: "short" })}</span>}
+            {g.date &&
+              (s.a.u && s.b.u ? (
+                <HubLink
+                  to={{ kind: "finder", query: `team=${encodeURIComponent(s.a.u)}&vs=${encodeURIComponent(s.b.u)}` }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {new Date(`${g.date.replace(" ", "T")}Z`).toLocaleString(locale(), { dateStyle: "medium", timeStyle: "short" })}
+                </HubLink>
+              ) : (
+                <span>{new Date(`${g.date.replace(" ", "T")}Z`).toLocaleString(locale(), { dateStyle: "medium", timeStyle: "short" })}</span>
+              ))}
             {g.ff ? <span className="text-rw-accent">{tl("Forfeit")}</span> : null}
             {g.mvp && !hidden && (
               <span className="flex items-center gap-1 text-rw-accent">
@@ -1314,9 +1343,20 @@ const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red
   return (
     <div className={`min-w-0 ${right ? "text-right" : ""}`}>
       <div className={`flex items-center gap-2 ${right ? "justify-end" : ""}`}>
-        <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color }}>
-          {side === "blue" ? tl("Blue side") : tl("Red side")}
-        </span>
+        {u ? (
+          <HubLink
+            to={{ kind: "finder", query: `team=${encodeURIComponent(u)}&side=${side === "blue" ? "b" : "r"}` }}
+            className="text-[10px] uppercase font-bold tracking-wider hover:underline"
+            style={{ color }}
+            title={tl("Game finder")}
+          >
+            {side === "blue" ? tl("Blue side") : tl("Red side")}
+          </HubLink>
+        ) : (
+          <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color }}>
+            {side === "blue" ? tl("Blue side") : tl("Red side")}
+          </span>
+        )}
         {won && <span className="text-[10px] font-bold text-rw-teal">{tc("short result", "W")}</span>}
       </div>
       <div className={`flex items-center gap-1.5 min-w-0 ${right ? "flex-row-reverse" : ""}`}>
@@ -1342,11 +1382,22 @@ const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red
       {drakes.length > 0 && <div className="text-[10px] text-rw-muted mt-0.5">{drakes.join(" · ")}</div>}
       {firsts.length > 0 && (
         <div className={`mt-1 flex flex-wrap gap-1 ${right ? "justify-end" : ""}`}>
-          {firsts.map((f) => (
-            <span key={f} className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-rw-accent/15 border border-rw-accent/40 text-rw-text">
-              {f}
-            </span>
-          ))}
+          {firsts.map((f) =>
+            u ? (
+              <HubLink
+                key={f}
+                to={{ kind: "team", slug: u, tab: "stats" }}
+                className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-rw-accent/15 border border-rw-accent/40 text-rw-text hover:border-rw-accent"
+                title={tl("Stats")}
+              >
+                {f}
+              </HubLink>
+            ) : (
+              <span key={f} className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-rw-accent/15 border border-rw-accent/40 text-rw-text">
+                {f}
+              </span>
+            ),
+          )}
         </div>
       )}
     </div>

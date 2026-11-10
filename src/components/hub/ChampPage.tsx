@@ -202,6 +202,9 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
           aside={
             <div className="flex flex-wrap gap-2 md:justify-end">
               <CountersLink slug={c.u} className={heroBtn(true)} />
+              <HubLink to={{ kind: "tiers" }} className={heroBtn()}>
+                {tl("Pro tier list")}
+              </HubLink>
               <HubLink to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}` }} className={heroBtn()}>
                 {tl("Game finder")}
               </HubLink>
@@ -885,7 +888,11 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                       </span>
                     )}
                     <PlayerPhoto name={r.n} team={r.team} slug={r.u ?? undefined} size={16} />
-                    {r.team && <TeamLogo name={r.team} size={13} />}
+                    {r.team && (
+                      <HubLink to={{ kind: "team", slug: prettySlug(r.team) }} className="shrink-0 hover:opacity-80" title={r.team}>
+                        <TeamLogo name={r.team} size={13} />
+                      </HubLink>
+                    )}
                     <PlayerLink name={r.n} u={r.u} />
                     {r.g ? (
                       <HubLink to={{ kind: "match", slug: r.g, game: r.gn }} className="text-rw-sub hover:text-rw-accent hover:underline tabular-nums shrink-0">

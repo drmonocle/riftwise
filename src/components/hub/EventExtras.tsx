@@ -218,7 +218,13 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                   <span className="text-rw-text inline-flex items-center gap-1">
                     <TeamLogo name={o.best.a} size={13} />
                     <TeamLink name={o.best.a} />
-                    <span>vs</span>
+                    <HubLink
+                      to={{ kind: "compare", mode: "team", a: prettySlug(o.best.a), b: prettySlug(o.best.b) }}
+                      className="text-rw-muted hover:text-rw-accent hover:underline"
+                      title={tl("Compare")}
+                    >
+                      vs
+                    </HubLink>
                     <TeamLogo name={o.best.b} size={13} />
                     <TeamLink name={o.best.b} />
                   </span>
@@ -597,7 +603,11 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
                 </td>
                 <td className={`${td} tabular-nums`} data-sort={r.wa - r.wb}>
                   <span className="inline-flex items-center gap-2">
-                    <span>
+                    <HubLink
+                      to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }}
+                      className="hover:underline"
+                      title={tl("Game finder")}
+                    >
                       <span
                         className={
                           r.wa > r.wb ? "text-rw-teal font-bold" : "text-rw-sub"
@@ -613,7 +623,7 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
                       >
                         {r.wb}
                       </span>
-                    </span>
+                    </HubLink>
                     {total > 0 && (
                       <>
                         <span className="w-16 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">

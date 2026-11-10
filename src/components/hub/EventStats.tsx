@@ -140,9 +140,13 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                     <ChampIcon name={r.champ} size={18} />
                   </HubLink>
                 ) : r.player ? (
-                  <PlayerPhoto name={r.label} slug={r.player} size={18} />
+                  <HubLink to={{ kind: "player", slug: r.player }} className="relative shrink-0">
+                    <PlayerPhoto name={r.label} slug={r.player} size={18} />
+                  </HubLink>
                 ) : r.team ? (
-                  <TeamLogo name={r.label} size={16} />
+                  <HubLink to={{ kind: "team", slug: r.team }} className="relative shrink-0">
+                    <TeamLogo name={r.label} size={16} />
+                  </HubLink>
                 ) : null}
                 <span className="relative min-w-0 flex-1">
                   {r.player ? (

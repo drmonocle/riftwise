@@ -241,7 +241,13 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     {regionName(t.region, t.region)}
                   </HubLink>
                 ) : null,
-                tl("Pro games from {from} to {to}", { from: fmtDate(t.from), to: fmtDate(t.to) }),
+                <HubLink
+                  key="span"
+                  to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}` }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {tl("Pro games from {from} to {to}", { from: fmtDate(t.from), to: fmtDate(t.to) })}
+                </HubLink>,
                 t.disbanded ? tl("Disbanded") : null,
               ] as React.ReactNode[]
             )
@@ -1160,6 +1166,9 @@ const TeamChampGames: React.FC<{
           <HubLink to={{ kind: "champ", slug: prettySlug(canonical) }} className="text-[11px] text-rw-accent hover:underline">
             {champName(canonical)} →
           </HubLink>
+          <HubLink to={{ kind: "counters", query: `champ=${encodeURIComponent(prettySlug(canonical))}` }} className="text-[11px] text-rw-accent hover:underline">
+            {tl("Counter-picks")} →
+          </HubLink>
           {!hidden && totalG > 0 && (
             <>
               <CopyTeamChampPost
@@ -1265,7 +1274,20 @@ const TeamChampGames: React.FC<{
                         >
                           {pl.g}G · {pl.w}–{pl.g - pl.w} ({winRate(pl.w, pl.g)})
                         </button>
-                        {pl.kdaGames > 0 && ` · KDA ${fmtDec((pl.k + pl.a) / Math.max(pl.d, 1), 2)}`}
+                        {pl.kdaGames > 0 &&
+                          (pl.u ? (
+                            <>
+                              {" · "}
+                              <HubLink
+                                to={{ kind: "player", slug: pl.u, tab: "champions", query: `champ=${encodeURIComponent(canonical)}` }}
+                                className="hover:text-rw-accent hover:underline"
+                              >
+                                {`KDA ${fmtDec((pl.k + pl.a) / Math.max(pl.d, 1), 2)}`}
+                              </HubLink>
+                            </>
+                          ) : (
+                            ` · KDA ${fmtDec((pl.k + pl.a) / Math.max(pl.d, 1), 2)}`
+                          ))}
                         {pl.gdGames > 0 && (
                           <span className="text-rw-muted">
                             {` · GD@15 ${Math.round(pl.gdSum / pl.gdGames) > 0 ? "+" : ""}${Math.round(pl.gdSum / pl.gdGames)}`}
@@ -1458,7 +1480,20 @@ const TeamChampGames: React.FC<{
                           </HubLink>
                           <TeamLogo name={r[4]} size={13} />
                           <TeamLink name={r[4]} u={r[5]} />
-                          {roleStr && <span>· {roleName(roleStr)}</span>}
+                          {roleStr && (
+                            <span>
+                              ·{" "}
+                              <HubLink
+                                to={{
+                                  kind: "finder",
+                                  query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(canonical)}&role=${encodeURIComponent(roleStr)}`,
+                                }}
+                                className="hover:text-rw-accent hover:underline"
+                              >
+                                {roleName(roleStr)}
+                              </HubLink>
+                            </span>
+                          )}
                         </span>{" "}
                         <span className="text-rw-muted truncate">
                           · <EventLink name={r[3]} u={r[2]} className="text-rw-muted hover:text-rw-accent hover:underline" />

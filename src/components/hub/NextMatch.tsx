@@ -152,7 +152,16 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
             {m.leagueName}
           </HubLink>
           {m.blockName && <span className="text-rw-sub"> · {m.blockName}</span>}
-          <span className="text-rw-muted"> · {tc("short best of", "Bo{n}", { n: m.bestOf || 1 })}</span>
+          <span className="text-rw-muted">
+            {" · "}
+            {c.opp ? (
+              <HubLink to={{ kind: "prep", a: t.u, b: c.opp }} className="hover:text-rw-accent hover:underline" title={tl("Match prep")}>
+                {tc("short best of", "Bo{n}", { n: m.bestOf || 1 })}
+              </HubLink>
+            ) : (
+              tc("short best of", "Bo{n}", { n: m.bestOf || 1 })
+            )}
+          </span>
         </span>
         {live ? (
           <span className="flex items-center gap-1 font-semibold text-rw-red shrink-0">
@@ -160,7 +169,9 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
             {tl("On now")}
           </span>
         ) : (
-          <span className="font-mono font-medium text-rw-text shrink-0">{formatMatchTime(m.startTimeUtc)}</span>
+          <HubLink to={{ kind: "match", slug: RIOT_PREFIX + m.matchId }} className="font-mono font-medium text-rw-text hover:text-rw-accent hover:underline shrink-0">
+            {formatMatchTime(m.startTimeUtc)}
+          </HubLink>
         )}
       </div>
       <div className="flex items-center justify-center gap-3 min-w-0">

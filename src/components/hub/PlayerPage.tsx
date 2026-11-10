@@ -207,7 +207,9 @@ const PlayerView: React.FC<{
               <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
                 <TeamLogo name={p.club} size={15} />
                 <TeamLink name={p.club} u={p.clubU} className="font-semibold text-rw-text hover:text-rw-accent hover:underline" />{" "}
-                <span>{tl("(last game {date})", { date: fmtDate(p.clubTo) })}</span>
+                <HubLink to={{ kind: "player", slug: p.u, tab: "matches" }} className="hover:text-rw-accent hover:underline">
+                  {tl("(last game {date})", { date: fmtDate(p.clubTo) })}
+                </HubLink>
                 {p.bio.contract && <span>· {tl("Contract until {date}", { date: fmtDate(p.bio.contract) })}</span>}
                 {p.bio.res && (
                   <span>
@@ -725,7 +727,15 @@ const PlayerView: React.FC<{
                     <HubLink to={{ kind: "champ", slug: prettySlug(x.c) }} className="hover:text-rw-accent hover:underline">
                       {champName(x.c)}
                     </HubLink>
-                    {x.x > 1 && <span className="text-rw-accent"> ×{x.x}</span>}
+                    {x.x > 1 &&
+                      (x.g ? (
+                        <HubLink to={{ kind: "match", slug: x.g, game: x.gn }} className="text-rw-accent hover:underline">
+                          {" "}
+                          ×{x.x}
+                        </HubLink>
+                      ) : (
+                        <span className="text-rw-accent"> ×{x.x}</span>
+                      ))}
                     <span className="text-rw-muted">
                       {" · "}
                       <EventLink name={x.en} u={p.events.find((ev) => ev.en === x.en)?.e} className="text-rw-muted hover:text-rw-accent hover:underline" />

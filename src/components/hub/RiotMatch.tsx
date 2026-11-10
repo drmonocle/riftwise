@@ -146,7 +146,16 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
                 {fmtDate(m.startTimeUtc.slice(0, 10))}
               </HubLink>
             </span>
-            <span>· {tc("series length", "Best of {n}", { n: m.bestOf })}</span>
+            <span>
+              ·{" "}
+              <HubLink
+                to={{ kind: "prep", a: prettySlug(m.team1Name), b: prettySlug(m.team2Name) }}
+                className="hover:text-rw-accent hover:underline"
+                title={tl("Match prep")}
+              >
+                {tc("series length", "Best of {n}", { n: m.bestOf })}
+              </HubLink>
+            </span>
             {live && <span className="text-rw-red font-bold">· {tl("LIVE")}</span>}
           </span>
           <span className="flex flex-wrap items-center gap-1.5">

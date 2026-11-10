@@ -246,9 +246,14 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
         {d && (
           <span className="flex flex-wrap items-center gap-1.5 ml-auto">
             {d.parent && (
-              <HubLink to={{ kind: "event", slug: d.parent.u }} className={btn}>
-                {tl("Bracket, standings and every series")}
-              </HubLink>
+              <>
+                <HubLink to={{ kind: "event", slug: d.parent.u }} className={btn}>
+                  {tl("Bracket, standings and every series")}
+                </HubLink>
+                <HubLink to={{ kind: "leaders", query: `event=${encodeURIComponent(d.parent.u)}` }} className={btn}>
+                  {tl("Leaderboards")} →
+                </HubLink>
+              </>
             )}
             <CopyIntlPost d={d} kind={kind} title={title} />
           </span>
@@ -787,7 +792,13 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                   {/* phones: the final and the runner-up under the champion instead of two more columns */}
                   {x.l && (
                     <span className="sm:hidden block pl-[18px] text-[10px] text-rw-sub tabular-nums">
-                      {x.score}{" "}
+                      {x.e ? (
+                        <HubLink to={{ kind: "event", slug: x.e }} className="hover:text-rw-accent hover:underline">
+                          {x.score}
+                        </HubLink>
+                      ) : (
+                        x.score
+                      )}{" "}
                       <HubLink
                         to={{ kind: "compare", mode: "team", a: x.u || prettySlug(x.as), b: prettySlug(x.l), period: `y${x.y}` }}
                         className="text-rw-muted hover:text-rw-accent hover:underline"
