@@ -97,7 +97,7 @@ const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; onD
       <button
         type="button"
         disabled={busy}
-        onClick={() => openRoute((slug) => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(slug)},` }))}
+        onClick={() => openRoute((slug) => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(slug)}` }))}
         className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
       >
         {tl("Draft board")}
@@ -131,7 +131,7 @@ const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; onD
       <button
         type="button"
         disabled={busy}
-        onClick={() => openRoute(() => navigateHub({ kind: "tiers", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) }))}
+        onClick={() => openRoute(() => navigateHub({ kind: "tiers", ...(lg ? { query: `scope=${encodeURIComponent(lg)}` } : {}) }))}
         className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
       >
         {tl("Pro tier list")}
@@ -140,11 +140,11 @@ const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; onD
         type="button"
         disabled={busy}
         onClick={() =>
-          openRoute(() =>
+          openRoute((slug) =>
             navigateHub({
               kind: "leaders",
               query: new URLSearchParams({
-                q: name,
+                q: slug,
                 ...(lg ? { league: lg } : {}),
               }).toString(),
             }),

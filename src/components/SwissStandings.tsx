@@ -113,7 +113,7 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
               <button
                 type="button"
                 onClick={() => {
-                  navigateHub({ kind: "tiers", query: `league=world-championship&key=y${encodeURIComponent(wy)}` });
+                  navigateHub({ kind: "tiers", query: `scope=world-championship&key=y${encodeURIComponent(wy)}` });
                   onOpen();
                 }}
                 className="text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline"
@@ -128,7 +128,7 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
                     query: new URLSearchParams({
                       league: "world-championship",
                       year: wy,
-                      q: `${d.rows[0].name || d.rows[0].code},${d.rows[1].name || d.rows[1].code}`,
+                      q: `${d.rows[0].u},${d.rows[1].u}`,
                     }).toString(),
                   });
                   onOpen();

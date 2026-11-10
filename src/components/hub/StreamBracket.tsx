@@ -7,7 +7,7 @@ import { Eye } from "lucide-react";
 import { StreamEvent } from "../../types";
 import { tl, locale } from "../../i18n";
 import { normalizeTeamCode, streamEventTitle } from "../../helpers";
-import { loadEventsOfYear, loadHubEvent } from "../../hub/data";
+import { loadEventsOfYear, loadHubEvent, prettySlug } from "../../hub/data";
 import type { HubEvent, SeriesRow } from "../../hub/types";
 import { Bracket, SeriesBox, Standings } from "./EventPage";
 import { stageLabel } from "../../i18n";
@@ -179,7 +179,20 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
             {tl("Pro tier list")} →
           </HubLink>
           <HubLink
-            to={{ kind: "rankings" }}
+            to={{
+              kind: "rankings",
+              ...(ev.standings?.[0]?.rows?.length
+                ? {
+                    query: `q=${encodeURIComponent(
+                      ev.standings[0].rows
+                        .slice(0, 2)
+                        .map((r) => prettySlug(r.t))
+                        .filter(Boolean)
+                        .join(","),
+                    )}`,
+                  }
+                : {}),
+            }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Power rankings")} →
@@ -315,7 +328,23 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           {tl("Pro tier list")}
         </HubLink>
         {" · "}
-        <HubLink to={{ kind: "rankings" }} className="text-rw-accent hover:underline">
+        <HubLink
+          to={{
+            kind: "rankings",
+            ...(ev.standings?.[0]?.rows?.length
+              ? {
+                  query: `q=${encodeURIComponent(
+                    ev.standings[0].rows
+                      .slice(0, 2)
+                      .map((r) => prettySlug(r.t))
+                      .filter(Boolean)
+                      .join(","),
+                  )}`,
+                }
+              : {}),
+          }}
+          className="text-rw-accent hover:underline"
+        >
           {tl("Power rankings")}
         </HubLink>
         {" · "}
@@ -345,7 +374,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           {tl("Best games")}
         </HubLink>
         {" · "}
-        <HubLink to={{ kind: "finder", query: `q=${encodeURIComponent(ev.n)}` }} className="text-rw-accent hover:underline">
+        <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(ev.u)}` }} className="text-rw-accent hover:underline">
           {tl("Game finder")}
         </HubLink>
         {" · "}

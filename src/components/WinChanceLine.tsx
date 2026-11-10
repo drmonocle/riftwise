@@ -8,7 +8,7 @@ import { TrendingUp } from "lucide-react";
 import type { Match } from "../types";
 import { tl } from "../i18n";
 import { navigateHub } from "../hub/route";
-import { resolveLeagueSlug } from "../hub/data";
+import { prettySlug, resolveLeagueSlug } from "../hub/data";
 import { pct } from "../hub/winChance";
 import { useMatchRatings } from "../hub/matchRatings";
 
@@ -20,12 +20,17 @@ export const WinChanceLine: React.FC<{ match: Match }> = ({ match }) => {
   return (
     <button
       type="button"
-      onClick={() =>
+      onClick={() => {
+        const lg = r?.a?.world == null && r?.b?.world == null && match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+        const q = new URLSearchParams({
+          ...(lg ? { league: lg } : {}),
+          q: `${prettySlug(match.team1Name || match.team1Code)},${prettySlug(match.team2Name || match.team2Code)}`,
+        }).toString();
         navigateHub({
           kind: "rankings",
-          query: r?.a?.world == null && r?.b?.world == null && match.leagueSlug ? `league=${encodeURIComponent(resolveLeagueSlug(match.leagueSlug))}` : undefined,
-        })
-      }
+          query: q,
+        });
+      }}
       className="block w-full text-left space-y-0.5 group"
       title={`${tl("From the power rankings (every pro game since 2011).")} ${tl("Win chance before the series: {a} {pa} · {b} {pb}", { a: match.team1Code, pa: pct(p), b: match.team2Code, pb: pct(1 - p) })}`}
     >
@@ -72,9 +77,15 @@ export const TeamRatingSub: React.FC<{ match: Match; side: "a" | "b"; align?: "l
             type="button"
             onClick={(e) => {
               e.stopPropagation();
+              const lg = s.world == null && match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+              const teamSlug = prettySlug(side === "a" ? match.team1Name || match.team1Code : match.team2Name || match.team2Code);
+              const q = new URLSearchParams({
+                ...(lg ? { league: lg } : {}),
+                ...(teamSlug ? { q: teamSlug } : {}),
+              }).toString();
               navigateHub({
                 kind: "rankings",
-                query: s.world == null && match.leagueSlug ? `league=${encodeURIComponent(resolveLeagueSlug(match.leagueSlug))}` : undefined,
+                ...(q ? { query: q } : {}),
               });
             }}
             className="hover:text-rw-accent hover:underline"

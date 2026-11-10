@@ -17,7 +17,8 @@ import { tl, tc, locale, regionName } from "../../i18n";
 import { STable } from "../STable";
 import { riotImg } from "../../riotImage";
 import { navigateHub } from "../../hub/route";
-import { prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { searchAlias } from "../../searchAliases";
 import { SectionCard } from "../hub/BroadcastCard";
 import { useTeamLogo } from "../hub/ui";
 
@@ -220,7 +221,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => navigateHub({ kind: "tiers", query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` })}
+                onClick={() => navigateHub({ kind: "tiers", query: `scope=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` })}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Pro tier list")} →
@@ -310,19 +311,17 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
               const allGroupTeams = sec.rows.flatMap((r) => r.teams.map((t) => ({ rank: r.rank, team: t })));
               const groupTerms = groupSearch
                 .trim()
-                .toLowerCase()
                 .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-                .map((s) => s.trim())
+                .map((s) => normText(searchAlias(s.trim())))
                 .filter(Boolean);
               const filteredGroupEntries =
                 groupTerms.length > 0
-                  ? allGroupTeams.filter(({ team }) =>
-                      groupTerms.some(
-                        (q) =>
-                          (team.name || "").toLowerCase().includes(q) ||
-                          (team.code || "").toLowerCase().includes(q),
-                      ),
-                    )
+                  ? allGroupTeams.filter(({ team }) => {
+                      const hay = normText(`${team.name || ""} ${team.code || ""}`);
+                      return groupTerms.some(
+                        (q) => hay.includes(q) || (bare(q).length >= 2 && bare(hay).includes(bare(q))),
+                      );
+                    })
                   : allGroupTeams;
               const groupTeams = filteredGroupEntries.map((e) => e.team).filter((t) => t.code && t.code !== "TBD");
               return (
@@ -379,6 +378,35 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                             >
                               {tl("Game finder")} →
                             </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                navigateHub({
+                                  kind: "rankings",
+                                  query: new URLSearchParams({
+                                    ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
+                                    q: a,
+                                  }).toString(),
+                                })
+                              }
+                              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                            >
+                              {tl("Power rankings")} →
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const q = new URLSearchParams({
+                                  ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
+                                  ...(yr ? { year: yr } : {}),
+                                  q: a,
+                                }).toString();
+                                navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
+                              }}
+                              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                            >
+                              {tl("Player leaderboards")} →
+                            </button>
                           </>
                         );
                       }
@@ -430,7 +458,10 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                             onClick={() =>
                               navigateHub({
                                 kind: "rankings",
-                                ...(activeLeague ? { query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` } : {}),
+                                query: new URLSearchParams({
+                                  ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
+                                  q: `${a},${b}`,
+                                }).toString(),
                               })
                             }
                             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -441,7 +472,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                             type="button"
                             onClick={() => {
                               const q = new URLSearchParams({
-                                ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
+                                ...(activeLeague ? { scope: resolveLeagueSlug(activeLeague) } : {}),
                                 ...(yr ? { key: `y${yr}` } : {}),
                               }).toString();
                               navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
@@ -456,6 +487,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                               const q = new URLSearchParams({
                                 ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
                                 ...(yr ? { year: yr } : {}),
+                                q: `${a},${b}`,
                               }).toString();
                               navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
                             }}
@@ -661,12 +693,13 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                           )}
                           <button
                             type="button"
-                            onClick={() =>
-                              navigateHub({
-                                kind: "rankings",
-                                ...(activeLeague ? { query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` } : {}),
-                              })
-                            }
+                            onClick={() => {
+                              const q = new URLSearchParams({
+                                ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
+                                ...(a && b ? { q: `${a},${b}` } : {}),
+                              }).toString();
+                              navigateHub({ kind: "rankings", ...(q ? { query: q } : {}) });
+                            }}
                             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                           >
                             {tl("Power rankings")} →
@@ -675,7 +708,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                             type="button"
                             onClick={() => {
                               const q = new URLSearchParams({
-                                ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
+                                ...(activeLeague ? { scope: resolveLeagueSlug(activeLeague) } : {}),
                                 ...(yr ? { key: `y${yr}` } : {}),
                               }).toString();
                               navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
@@ -690,6 +723,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                               const q = new URLSearchParams({
                                 ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
                                 ...(yr ? { year: yr } : {}),
+                                ...(a && b ? { q: `${a},${b}` } : {}),
                               }).toString();
                               navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
                             }}

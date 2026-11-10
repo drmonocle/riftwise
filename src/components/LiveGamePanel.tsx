@@ -395,7 +395,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
                   ? `y${yr}`
                   : "";
               const q = new URLSearchParams({
-                ...(lg ? { league: lg } : {}),
+                ...(lg ? { scope: lg } : {}),
                 ...(patchKey ? { key: patchKey } : {}),
               }).toString();
               navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
@@ -412,7 +412,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 ...(yr ? { year: yr } : {}),
-                q: `${left.name || left.code},${right.name || right.code}`,
+                q: `${prettySlug(left.name || left.code)},${prettySlug(right.name || right.code)}`,
               }).toString();
               navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
             }}
@@ -830,7 +830,7 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
                       onClick={() =>
                         navigateHub({
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(champNameById(l[i].meta!.championId))}&vs=${encodeURIComponent(champNameById(r[i].meta!.championId))}&role=${encodeURIComponent(ROLE_LABEL[role])}`,
+                          query: `champ=${encodeURIComponent(prettySlug(champNameById(l[i].meta!.championId)))}&vs=${encodeURIComponent(prettySlug(champNameById(r[i].meta!.championId)))}&role=${encodeURIComponent(ROLE_LABEL[role])}`,
                         })
                       }
                       className="block w-full text-[9px] normal-case text-rw-muted hover:text-rw-accent hover:underline mt-0.5"
@@ -1266,6 +1266,36 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
             className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Game finder")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+              const q = new URLSearchParams({
+                ...(lg ? { league: lg } : {}),
+                q: `${prettySlug(left.name || left.code)},${prettySlug(right.name || right.code)}`,
+              }).toString();
+              navigateHub({ kind: "rankings", query: q });
+            }}
+            className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Power rankings")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const yr = match.startTimeUtc?.slice(0, 4);
+              const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+              const q = new URLSearchParams({
+                ...(lg ? { league: lg } : {}),
+                ...(yr ? { year: yr } : {}),
+                q: `${prettySlug(left.name || left.code)},${prettySlug(right.name || right.code)}`,
+              }).toString();
+              navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
+            }}
+            className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Player leaderboards")}
           </button>
           <Suspense fallback={null}>
             <LiveGameDraftLink match={match} gameNum={number} win={win} />

@@ -16,7 +16,7 @@ import { winRate } from "../stats";
 import { champName } from "../champions";
 import { fetchLiveStart, type LiveParticipantMeta, type LiveWindow } from "../liveGame";
 import { champNameById, useDDragon } from "../hub/ddragon";
-import { findHubTeam, loadHubIndex, loadHubIndexQuick, prettySlug, resolveLeagueSlug } from "../hub/data";
+import { findHubTeam, loadHubIndex, loadHubIndexQuick, prettySlug, resolveLeagueSlug, sameChamp } from "../hub/data";
 import { teamRowRef } from "../hub/period";
 import { bothOptions } from "./hub/ComparePage";
 import { defaultPeriod } from "./hub/PeriodStats";
@@ -163,7 +163,10 @@ export const LiveNextGamePreview: React.FC<{
     return s;
   }, [fearlessUsed]);
 
-  const isLocked = (c: string) => lockedLower.has(c.toLowerCase()) || lockedLower.has(champName(c).toLowerCase());
+  const isLocked = (c: string) =>
+    lockedLower.has(c.toLowerCase()) ||
+    lockedLower.has(champName(c).toLowerCase()) ||
+    fearlessUsed.some((u) => sameChamp(u, c));
 
   const draftIntel = useMemo(() => {
     if (!sides.a || !sides.b) return null;
@@ -388,8 +391,11 @@ export const LiveNextGamePreview: React.FC<{
                 kind: "tiers",
                 query:
                   new URLSearchParams({
-                    ...(match.leagueSlug ? { league: resolveLeagueSlug(match.leagueSlug) } : {}),
+                    ...(match.leagueSlug ? { scope: resolveLeagueSlug(match.leagueSlug) } : {}),
                     ...(draftIntel.period.startsWith("y") && draftIntel.period.length === 5 ? { key: draftIntel.period } : {}),
+                    ...(draftIntel.rolesA[0]?.open[0]?.c || draftIntel.rolesB[0]?.open[0]?.c
+                      ? { q: [draftIntel.rolesA[0]?.open[0]?.c, draftIntel.rolesB[0]?.open[0]?.c].filter(Boolean).join(",") }
+                      : {}),
                   }).toString() || undefined,
               }}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
@@ -403,7 +409,7 @@ export const LiveNextGamePreview: React.FC<{
                   new URLSearchParams({
                     ...(match.leagueSlug ? { league: resolveLeagueSlug(match.leagueSlug) } : {}),
                     ...(draftIntel.period.startsWith("y") && draftIntel.period.length === 5 ? { year: draftIntel.period.slice(1) } : {}),
-                    q: `${match.team1Name || match.team1Code},${match.team2Name || match.team2Code}`,
+                    q: `${draftIntel.slugA},${draftIntel.slugB}`,
                   }).toString() || undefined,
               }}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"

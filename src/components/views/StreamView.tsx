@@ -275,7 +275,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                   ...((lg || year)
                     ? {
                         query: new URLSearchParams({
-                          ...(lg ? { league: lg } : {}),
+                          ...(lg ? { scope: lg } : {}),
                           ...(year ? { key: `y${year}` } : {}),
                         }).toString(),
                       }
@@ -294,7 +294,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                   query: new URLSearchParams({
                     ...(lg ? { league: lg } : {}),
                     ...(year ? { year } : {}),
-                    ...(active?.team1 && active?.team2 ? { q: `${active.team1},${active.team2}` } : {}),
+                    ...(aSlug && bSlug ? { q: `${aSlug},${bSlug}` } : {}),
                   }).toString(),
                 })
               }
@@ -310,7 +310,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                   query: new URLSearchParams({
                     ...(lg ? { league: lg } : {}),
                     ...(year ? { year } : {}),
-                    ...(active?.team1 && active?.team2 ? { q: `${active.team1},${active.team2}` } : {}),
+                    ...(aSlug && bSlug ? { q: `${aSlug},${bSlug}` } : {}),
                   }).toString(),
                 })
               }
@@ -641,6 +641,22 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Power rankings")} →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigateHub({
+                          kind: "leaders",
+                          query: new URLSearchParams({
+                            ...(lg ? { league: lg } : {}),
+                            ...(yr ? { year: yr } : {}),
+                            q: `${aSlug},${bSlug}`,
+                          }).toString(),
+                        })
+                      }
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Player leaderboards")} →
                     </button>
                   </>
                 );

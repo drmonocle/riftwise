@@ -277,7 +277,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   const q = new URLSearchParams({
                     ...(lg ? { league: lg } : {}),
                     ...(yr ? { year: yr } : {}),
-                    q: `${x.team.name},${y.team.name}`,
+                    q: `${x.team.u},${y.team.u}`,
                   }).toString();
                   onClose();
                   navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
@@ -292,7 +292,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
                   const yr = match.startTimeUtc?.slice(0, 4);
                   const q = new URLSearchParams({
-                    ...(lg ? { league: lg } : {}),
+                    ...(lg ? { scope: lg } : {}),
                     ...(yr ? { key: `y${yr}` } : {}),
                   }).toString();
                   onClose();
@@ -571,7 +571,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
               const yr = match.startTimeUtc?.slice(0, 4);
               const q = new URLSearchParams({
-                ...(lg ? { league: lg } : {}),
+                ...(lg ? { scope: lg } : {}),
                 ...(yr ? { key: `y${yr}` } : {}),
               }).toString();
               onClose();
@@ -592,7 +592,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 ...(yr ? { year: yr } : {}),
-                q: `${x.team.name},${y.team.name}`,
+                q: `${x.team.u},${y.team.u}`,
               }).toString();
               onClose();
               navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });

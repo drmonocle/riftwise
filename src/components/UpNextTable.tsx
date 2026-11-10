@@ -123,7 +123,7 @@ export const UpNextTable: React.FC<{
             const yr = matches[0]?.startTimeUtc?.slice(0, 4);
             const lg = matches[0]?.leagueSlug ? resolveLeagueSlug(matches[0].leagueSlug) : "";
             const q = new URLSearchParams({
-              ...(lg ? { league: lg } : {}),
+              ...(lg ? { scope: lg } : {}),
               ...(yr ? { key: `y${yr}` } : {}),
             }).toString();
             navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
@@ -142,7 +142,7 @@ export const UpNextTable: React.FC<{
               ...(yr ? { year: yr } : {}),
               ...(matches[0]
                 ? {
-                    q: `${matches[0].team1Name || matches[0].team1Code},${matches[0].team2Name || matches[0].team2Code}`,
+                    q: `${prettySlug(matches[0].team1Name || matches[0].team1Code)},${prettySlug(matches[0].team2Name || matches[0].team2Code)}`,
                   }
                 : {}),
             }).toString();

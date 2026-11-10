@@ -8,6 +8,7 @@ import React, { useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { tl, roleName } from "../../i18n";
 import { bare, loadLeagues, loadMoves, normText, resolvePlayerSlug } from "../../hub/data";
+import { searchAlias } from "../../searchAliases";
 import { fmtDate, HubLink, hubShareUrl, PlayerLink, PlayerPhoto, TeamLink, TeamLogo, useLoad } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 
@@ -22,7 +23,7 @@ export const RosterMoves: React.FC = () => {
   if (!moves.data || !moves.data.list.length) return null;
   const terms = search
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-    .map((s) => normText(s.trim()))
+    .map((s) => normText(searchAlias(s.trim())))
     .filter(Boolean);
   const list = moves.data.list.filter((m) => {
     if (!all && !terms.length && !(m.lu && top.has(m.lu))) return false;
@@ -118,7 +119,7 @@ export const RosterMoves: React.FC = () => {
                   ...((lg0 || yr0 || role0)
                     ? {
                         query: new URLSearchParams({
-                          ...(lg0 ? { league: lg0 } : {}),
+                          ...(lg0 ? { scope: lg0 } : {}),
                           ...(yr0 ? { key: `y${yr0}` } : {}),
                           ...(role0 ? { role: role0 } : {}),
                         }).toString(),

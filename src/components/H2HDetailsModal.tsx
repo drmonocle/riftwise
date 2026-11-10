@@ -527,7 +527,12 @@ const PrepButton: React.FC<{
           type="button"
           disabled={state === "busy"}
           onClick={() =>
-            openRoute((a, b) => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}` }))
+            openRoute((a, b) =>
+              navigateHub({
+                kind: "finder",
+                query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+              }),
+            )
           }
           className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/40 text-xs font-semibold disabled:opacity-60"
         >
@@ -563,7 +568,7 @@ const PrepButton: React.FC<{
                 ...((lg || year)
                   ? {
                       query: new URLSearchParams({
-                        ...(lg ? { league: lg } : {}),
+                        ...(lg ? { scope: lg } : {}),
                         ...(year ? { key: `y${year}` } : {}),
                       }).toString(),
                     }
@@ -579,17 +584,14 @@ const PrepButton: React.FC<{
           type="button"
           disabled={state === "busy"}
           onClick={() =>
-            openRoute(() =>
+            openRoute((a, b) =>
               navigateHub({
                 kind: "leaders",
-                ...((lg || year)
-                  ? {
-                      query: new URLSearchParams({
-                        ...(lg ? { league: lg } : {}),
-                        ...(year ? { year } : {}),
-                      }).toString(),
-                    }
-                  : {}),
+                query: new URLSearchParams({
+                  q: `${a},${b}`,
+                  ...(lg ? { league: lg } : {}),
+                  ...(year ? { year } : {}),
+                }).toString(),
               }),
             )
           }
