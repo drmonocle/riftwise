@@ -234,6 +234,13 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
               </button>
               <button
                 type="button"
+                onClick={() => navigateHub({ kind: "rankings", query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` })}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </button>
+              <button
+                type="button"
                 onClick={() => navigateHub({ kind: "finder", query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` })}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >

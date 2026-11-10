@@ -317,6 +317,20 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                   </button>
                   <button
                     type="button"
+                    onClick={() => navigateHub({ kind: "rankings", query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` })}
+                    className="hidden md:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                  >
+                    {tl("Power rankings")} →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "leaders", query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` })}
+                    className="hidden lg:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                  >
+                    {tl("Player leaderboards")} →
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => navigateHub({ kind: "finder", query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` })}
                     className="hidden lg:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                   >

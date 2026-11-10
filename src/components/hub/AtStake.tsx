@@ -152,6 +152,19 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
               className="bg-rw-bg border border-rw-border rounded-md px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted focus:border-rw-accent focus:outline-none w-36"
             />
           )}
+          {!narrow && terms.length === 0 && (
+            <span className="flex items-center gap-2" data-nocapture="1">
+              <HubLink to={{ kind: "records" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Records")} →
+              </HubLink>
+              <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Power rankings")} →
+              </HubLink>
+              <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Player leaderboards")} →
+              </HubLink>
+            </span>
+          )}
           {terms.length > 0 && blocks.length >= 1 && (() => {
             const m0 = blocks[0].m;
             const a = findHubTeam(data.index, m0.team1Name, m0.team1Code) || prettySlug(m0.team1Name || m0.team1Code);
@@ -287,6 +300,19 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] text-rw-muted hover:text-rw-accent hover:border-rw-accent/60 transition-colors"
                 >
                   {tl("Compare")}
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "finder",
+                    query: `team=${encodeURIComponent(
+                      findHubTeam(data.index, m.team1Name, m.team1Code) || prettySlug(m.team1Name || m.team1Code),
+                    )}&vs=${encodeURIComponent(
+                      findHubTeam(data.index, m.team2Name, m.team2Code) || prettySlug(m.team2Name || m.team2Code),
+                    )}`,
+                  }}
+                  className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] text-rw-muted hover:text-rw-accent hover:border-rw-accent/60 transition-colors"
+                >
+                  {tl("Game finder")}
                 </HubLink>
               </span>
             </div>

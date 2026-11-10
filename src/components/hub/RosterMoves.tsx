@@ -60,6 +60,15 @@ export const RosterMoves: React.FC = () => {
           ))}
           {list.length > 0 && (
             <>
+              <HubLink to={{ kind: "players" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Players")} →
+              </HubLink>
+              <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Power rankings")} →
+              </HubLink>
               {terms.length > 0 && list.length >= 2 && list[0].u !== list[1].u && (
                 <HubLink
                   to={{ kind: "compare", mode: "player", a: list[0].u, b: list[1].u }}

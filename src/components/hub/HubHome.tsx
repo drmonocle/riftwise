@@ -509,6 +509,16 @@ const FeaturedMatch: React.FC<{
           >
             {tl("Game finder")}
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
+              navigateHub({ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) });
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-rw-border bg-rw-bg hover:border-rw-accent text-rw-text font-semibold transition-colors px-2.5 py-1 text-[11px]"
+          >
+            {tl("Power rankings")}
+          </button>
           <MatchOverviewButton match={m} />
           <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} />
           <ShareMatchButton match={m} className="border border-rw-border bg-rw-bg p-1.5" />
@@ -641,6 +651,12 @@ const LatestTournaments: React.FC<{ latest: EventListItem[] }> = ({ latest }) =>
           )}
           <HubLink to={{ kind: "titles" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Titles")} →
+          </HubLink>
+          <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Power rankings")} →
+          </HubLink>
+          <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Player leaderboards")} →
           </HubLink>
           {latest[0]?.u && (
             <HubLink
@@ -885,6 +901,9 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                 </HubLink>
               </>
             )}
+            <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Power rankings")}
+            </HubLink>
             <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Pro tier list")}
             </HubLink>
@@ -1178,6 +1197,12 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
           </HubLink>
           <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Power rankings")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "leaders", ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Player leaderboards")} →
           </HubLink>
           {year && (
             <>

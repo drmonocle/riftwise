@@ -93,6 +93,16 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
               >
                 {tl("Compare")}
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  navigateHub({ kind: "rankings" });
+                  onOpen();
+                }}
+                className="text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")}
+              </button>
             </>
           )}
           <SectionCard

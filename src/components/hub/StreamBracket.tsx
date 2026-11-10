@@ -253,6 +253,18 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           </>
         )}
         {" · "}
+        <HubLink to={{ kind: "champions", query: `key=y${encodeURIComponent(which.year)}` }} className="text-rw-accent hover:underline">
+          {tl("Champions")}
+        </HubLink>
+        {" · "}
+        <HubLink to={{ kind: "leaders", query: `year=${encodeURIComponent(which.year)}` }} className="text-rw-accent hover:underline">
+          {tl("Player leaderboards")}
+        </HubLink>
+        {" · "}
+        <HubLink to={{ kind: "best", query: `year=${encodeURIComponent(which.year)}` }} className="text-rw-accent hover:underline">
+          {tl("Best games")}
+        </HubLink>
+        {" · "}
         <HubLink to={{ kind: "finder", query: `q=${encodeURIComponent(ev.n)}` }} className="text-rw-accent hover:underline">
           {tl("Game finder")}
         </HubLink>

@@ -65,6 +65,20 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
           )}
           <button
             type="button"
+            onClick={() => navigateHub({ kind: "rankings" })}
+            className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
+          >
+            {tl("Power rankings")}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "best" })}
+            className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
+          >
+            {tl("Best games")}
+          </button>
+          <button
+            type="button"
             onClick={() => navigateHub({ kind: "tournaments" })}
             className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
           >
@@ -251,6 +265,26 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
               </button>
             </>
           )}
+          <button
+            type="button"
+            onClick={() => {
+              navigateHub({ kind: "leaders" });
+              onSelectTab("stats");
+            }}
+            className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
+          >
+            {tl("Player leaderboards")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              navigateHub({ kind: "tiers" });
+              onSelectTab("stats");
+            }}
+            className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
+          >
+            {tl("Pro tier list")}
+          </button>
           <SectionCard
             section={tl("Power rankings")}
             name={tl("Power rankings")}
