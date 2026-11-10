@@ -1169,7 +1169,7 @@ const Board: React.FC<{
               {tl("Numbers on a champion: games each team picked it in this period. Click a filled slot to change it.")}
             </p>
           </div>
-          {focus && <ChampInfo c={focus} pools={pools} blue={blue} red={red} taken={taken} hideTaken={hideTaken} />}
+          {focus && <ChampInfo c={focus} pools={pools} blue={blue} red={red} taken={taken} hideTaken={hideTaken} period={period} />}
         </div>
         <TeamColumn who="r" side={red} pool={pools.r} slots={slots} step={step} champMap={champMap} onSelect={(i) => selectSlot(i, true)} />
       </div>
@@ -1191,6 +1191,7 @@ const Board: React.FC<{
           who="b"
           side={blue}
           pool={pools.b}
+          period={period}
           taken={taken}
           hideTaken={hideTaken}
           roleFilter={typeof role === "number" ? role : null}
@@ -1203,6 +1204,7 @@ const Board: React.FC<{
           who="r"
           side={red}
           pool={pools.r}
+          period={period}
           taken={taken}
           hideTaken={hideTaken}
           roleFilter={typeof role === "number" ? role : null}
@@ -1670,9 +1672,24 @@ const DraftMatchupPanel: React.FC<{
                           <PlayerPhoto name={bPlayer.name} team={blue.team.name} slug={bPlayer.u ?? undefined} size={13} />
                           <span className="truncate">
                             <PlayerLink name={bPlayer.name} u={bPlayer.u} className="text-rw-muted hover:text-rw-accent hover:underline" />
-                            {bPlayer.g > 0
-                              ? ` · ${bPlayer.g}G (${winRate(bPlayer.w, bPlayer.g)})`
-                              : ` · ${tl("pocket pick")} (${bPlayer.cg}G)`}
+                            {" · "}
+                            {bPlayer.u ? (
+                              <HubLink
+                                to={{
+                                  kind: "player",
+                                  slug: bPlayer.u,
+                                  tab: "champions",
+                                  query: `champ=${encodeURIComponent(bChamp)}${bPlayer.g > 0 && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                                }}
+                                className="hover:text-rw-accent hover:underline"
+                              >
+                                {bPlayer.g > 0 ? `${bPlayer.g}G (${winRate(bPlayer.w, bPlayer.g)})` : `${tl("pocket pick")} (${bPlayer.cg}G)`}
+                              </HubLink>
+                            ) : bPlayer.g > 0 ? (
+                              `${bPlayer.g}G (${winRate(bPlayer.w, bPlayer.g)})`
+                            ) : (
+                              `${tl("pocket pick")} (${bPlayer.cg}G)`
+                            )}
                           </span>
                         </>
                       ) : (
@@ -1759,9 +1776,24 @@ const DraftMatchupPanel: React.FC<{
                         <>
                           <span className="truncate">
                             <PlayerLink name={rPlayer.name} u={rPlayer.u} className="text-rw-muted hover:text-rw-accent hover:underline" />
-                            {rPlayer.g > 0
-                              ? ` · ${rPlayer.g}G (${winRate(rPlayer.w, rPlayer.g)})`
-                              : ` · ${tl("pocket pick")} (${rPlayer.cg}G)`}
+                            {" · "}
+                            {rPlayer.u ? (
+                              <HubLink
+                                to={{
+                                  kind: "player",
+                                  slug: rPlayer.u,
+                                  tab: "champions",
+                                  query: `champ=${encodeURIComponent(rChamp)}${rPlayer.g > 0 && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                                }}
+                                className="hover:text-rw-accent hover:underline"
+                              >
+                                {rPlayer.g > 0 ? `${rPlayer.g}G (${winRate(rPlayer.w, rPlayer.g)})` : `${tl("pocket pick")} (${rPlayer.cg}G)`}
+                              </HubLink>
+                            ) : rPlayer.g > 0 ? (
+                              `${rPlayer.g}G (${winRate(rPlayer.w, rPlayer.g)})`
+                            ) : (
+                              `${tl("pocket pick")} (${rPlayer.cg}G)`
+                            )}
                           </span>
                           <PlayerPhoto name={rPlayer.name} team={red.team.name} slug={rPlayer.u ?? undefined} size={13} />
                         </>
@@ -2056,6 +2088,7 @@ const PlayerPools: React.FC<{
   who: Who;
   side: Side;
   pool: Pool;
+  period?: PeriodKey;
   taken: Set<string>;
   hideTaken?: boolean;
   roleFilter?: number | null;
@@ -2063,7 +2096,7 @@ const PlayerPools: React.FC<{
   onPick: (c: string) => void;
   onFocus: (c: string) => void;
   onSwap?: (roleIdx: number, slug: string) => void;
-}> = ({ who, side, pool: p, taken, hideTaken = true, roleFilter = null, minGames = 0, onPick, onFocus, onSwap }) => {
+}> = ({ who, side, pool: p, period = "all", taken, hideTaken = true, roleFilter = null, minGames = 0, onPick, onFocus, onSwap }) => {
   const color = who === "b" ? "text-rw-side-a" : "text-rw-side-b";
   const chip = (c: string, label: string, title: string, pocket: boolean) => {
     const off = isChampTaken(c, taken);
@@ -2132,7 +2165,10 @@ const PlayerPools: React.FC<{
                   <span className="flex items-center gap-1.5 min-w-0">
                     <PlayerPhoto name={pl.name} team={side.team.name} slug={pl.u ?? undefined} size={18} />
                     {pl.u ? (
-                      <HubLink to={{ kind: "player", slug: pl.u }} className="font-semibold text-rw-text hover:text-rw-accent truncate">
+                      <HubLink
+                        to={{ kind: "player", slug: pl.u, query: period !== "all" ? `p=${encodeURIComponent(period)}` : undefined }}
+                        className="font-semibold text-rw-text hover:text-rw-accent truncate"
+                      >
                         {pl.name}
                       </HubLink>
                     ) : (
@@ -2280,13 +2316,22 @@ const LaneCounters: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Sid
 };
 
 /** What both teams have done with the champion under the pointer. */
-const ChampInfo: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Side; red: Side; taken: Set<string>; hideTaken?: boolean }> = ({
+const ChampInfo: React.FC<{
+  c: string;
+  pools: { b: Pool; r: Pool };
+  blue: Side;
+  red: Side;
+  taken: Set<string>;
+  hideTaken?: boolean;
+  period?: PeriodKey;
+}> = ({
   c,
   pools,
   blue,
   red,
   taken,
   hideTaken = true,
+  period = "all",
 }) => (
   <Section
     title={champName(c)}
@@ -2320,7 +2365,12 @@ const ChampInfo: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Side; 
             <div className="text-rw-sub">
               {pk ? (
                 <HubLink
-                  to={{ kind: "finder", query: `team=${encodeURIComponent(s.team.name)}&champ=${encodeURIComponent(c)}` }}
+                  to={{
+                    kind: "team",
+                    slug: s.team.u,
+                    tab: "champions",
+                    query: `champ=${encodeURIComponent(c)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                  }}
                   className="hover:text-rw-accent hover:underline"
                 >
                   {tl("Picked {n} times, won {pct}", { n: pk[0], pct: winRate(pk[1], pk[0]) })}
@@ -2333,7 +2383,12 @@ const ChampInfo: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Side; 
             <div className="text-rw-sub">
               {(p.bans.get(c) || 0) + (p.bansVs.get(c) || 0) > 0 ? (
                 <HubLink
-                  to={{ kind: "finder", query: `team=${encodeURIComponent(s.team.name)}&ban=${encodeURIComponent(c)}` }}
+                  to={{
+                    kind: "team",
+                    slug: s.team.u,
+                    tab: "champions",
+                    query: `ban=${encodeURIComponent(c)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                  }}
                   className="hover:text-rw-accent hover:underline"
                 >
                   {tl("Banned it {n} times · banned against them {m} times", { n: p.bans.get(c) || 0, m: p.bansVs.get(c) || 0 })}
@@ -2352,7 +2407,21 @@ const ChampInfo: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Side; 
                     <PlayerLink name={x.name} u={x.u} className="font-semibold text-rw-text hover:text-rw-accent hover:underline" />:{" "}
                     {x.g ? (
                       <>
-                        {tl("{n} games, won {pct}", { n: x.g, pct: winRate(x.w, x.g) })}
+                        {x.u ? (
+                          <HubLink
+                            to={{
+                              kind: "player",
+                              slug: x.u,
+                              tab: "champions",
+                              query: `champ=${encodeURIComponent(c)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                            }}
+                            className="hover:text-rw-accent hover:underline"
+                          >
+                            {tl("{n} games, won {pct}", { n: x.g, pct: winRate(x.w, x.g) })}
+                          </HubLink>
+                        ) : (
+                          tl("{n} games, won {pct}", { n: x.g, pct: winRate(x.w, x.g) })
+                        )}
                         {x.kda != null && ` · ${fmtN(x.kda)} KDA`}
                         {x.gd15 != null && (
                           <span className="text-rw-sub" title={tl("Average lead over the lane opponent at 15 minutes")}>
@@ -2368,9 +2437,20 @@ const ChampInfo: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Side; 
                     <span className="text-rw-muted">
                       {" "}
                       (
-                      {full
-                        ? tl("career {n} games, won {pct}, {kda} KDA", { n: x.cg, pct: winRate(x.cw, x.cg), kda: x.ckda })
-                        : tl("last two years {n} games, won {pct}, {kda} KDA", { n: x.cg, pct: winRate(x.cw, x.cg), kda: x.ckda })}
+                      {x.u ? (
+                        <HubLink
+                          to={{ kind: "player", slug: x.u, tab: "champions", query: `champ=${encodeURIComponent(c)}` }}
+                          className="hover:text-rw-accent hover:underline"
+                        >
+                          {full
+                            ? tl("career {n} games, won {pct}, {kda} KDA", { n: x.cg, pct: winRate(x.cw, x.cg), kda: x.ckda })
+                            : tl("last two years {n} games, won {pct}, {kda} KDA", { n: x.cg, pct: winRate(x.cw, x.cg), kda: x.ckda })}
+                        </HubLink>
+                      ) : full ? (
+                        tl("career {n} games, won {pct}, {kda} KDA", { n: x.cg, pct: winRate(x.cw, x.cg), kda: x.ckda })
+                      ) : (
+                        tl("last two years {n} games, won {pct}, {kda} KDA", { n: x.cg, pct: winRate(x.cw, x.cg), kda: x.ckda })
+                      )}
                       )
                     </span>
                   </div>

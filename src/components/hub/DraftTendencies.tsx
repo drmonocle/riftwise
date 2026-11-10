@@ -151,17 +151,24 @@ export function draftTendencies(rows: TeamGameRow[]) {
   };
 }
 
-const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boolean; teamName?: string; isBan?: boolean; side?: "b" | "r" }> = ({
+const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boolean; teamName?: string; period?: string; isBan?: boolean; side?: "b" | "r" }> = ({
   title,
   hint,
   list,
   showWr,
   teamName,
+  period,
   isBan,
   side,
 }) => {
   if (!list.length) return null;
   const maxN = Math.max(1, ...list.map(([, n]) => n));
+  const periodParam =
+    period?.startsWith("y") && period.length === 5
+      ? `&year=${encodeURIComponent(period.slice(1))}`
+      : period?.startsWith("e:")
+        ? `&event=${encodeURIComponent(period.slice(2))}`
+        : "";
   return (
     <div className="min-w-0">
       <div className="text-[10px] font-semibold text-rw-muted" title={hint}>
@@ -172,7 +179,7 @@ const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boo
       <ul className="text-xs space-y-1">
         {list.map(([c, n, w]) => {
           const good = n > 0 && w / n >= 0.5;
-          const finderQuery = `${teamName ? `team=${encodeURIComponent(teamName)}&` : ""}${isBan ? "ban" : "champ"}=${encodeURIComponent(c)}${side ? `&side=${side}` : ""}`;
+          const finderQuery = `${teamName ? `team=${encodeURIComponent(teamName)}&` : ""}${isBan ? "ban" : "champ"}=${encodeURIComponent(c)}${side ? `&side=${side}` : ""}${periodParam}`;
           return (
             <li key={c} className="flex items-center justify-between gap-2 min-w-0">
               <ChampLink name={c} size={16} />
@@ -225,9 +232,15 @@ const RoleLine: React.FC<{ title: string; shares: [number, number][] }> = ({ tit
 /** [champion a, champion b, games, wins, their combined gold lead at 15 or null] */
 type Pair = [string, string, number, number, number | null];
 
-const Pairs: React.FC<{ title: string; hint?: string; list: Pair[]; teamName?: string; side?: "b" | "r" }> = ({ title, hint, list, teamName, side }) => {
+const Pairs: React.FC<{ title: string; hint?: string; list: Pair[]; teamName?: string; period?: string; side?: "b" | "r" }> = ({ title, hint, list, teamName, period, side }) => {
   if (!list.length) return null;
   const maxN = Math.max(1, ...list.map(([, , n]) => n));
+  const periodParam =
+    period?.startsWith("y") && period.length === 5
+      ? `&year=${encodeURIComponent(period.slice(1))}`
+      : period?.startsWith("e:")
+        ? `&event=${encodeURIComponent(period.slice(2))}`
+        : "";
   return (
     <div className="min-w-0">
       <div className="text-[10px] font-semibold text-rw-muted mb-1" title={hint}>
@@ -236,7 +249,7 @@ const Pairs: React.FC<{ title: string; hint?: string; list: Pair[]; teamName?: s
       <ul className="text-xs space-y-1">
         {list.map(([a, b, n, w, gd]) => {
           const good = n > 0 && w / n >= 0.5;
-          const finderQuery = `${teamName ? `team=${encodeURIComponent(teamName)}&` : ""}champ=${encodeURIComponent(`${a},${b}`)}${side ? `&side=${side}` : ""}`;
+          const finderQuery = `${teamName ? `team=${encodeURIComponent(teamName)}&` : ""}champ=${encodeURIComponent(`${a},${b}`)}${side ? `&side=${side}` : ""}${periodParam}`;
           return (
             <li key={`${a}-${b}`} className="flex items-center justify-between gap-2 min-w-0">
               <span className="flex items-center gap-1 min-w-0 truncate" title={`${champName(a)} + ${champName(b)}`}>
@@ -270,9 +283,16 @@ const Pairs: React.FC<{ title: string; hint?: string; list: Pair[]; teamName?: s
   );
 };
 
-export const DraftTendencies: React.FC<{ rows: TeamGameRow[]; teamName?: string; periodLabel?: string }> = ({ rows, teamName, periodLabel }) => {
+export const DraftTendencies: React.FC<{
+  rows: TeamGameRow[];
+  teamName?: string;
+  teamSlug?: string;
+  period?: string;
+  periodLabel?: string;
+}> = ({ rows, teamName, teamSlug, period, periodLabel }) => {
   const d = useMemo(() => draftTendencies(rows), [rows]);
   if (d.games < 3) return null;
+  const resolvedSlug = teamSlug || undefined;
   const roleStr = (shares: [number, number][]) =>
     shares.length ? shares.slice(0, 2).map(([r, v]) => `${roleName(ROLES[r])} ${Math.round(v * 100)}%`).join(" · ") : "–";
   const champStr = (list: Count[], n = 3) =>
@@ -286,6 +306,21 @@ export const DraftTendencies: React.FC<{ rows: TeamGameRow[]; teamName?: string;
         </div>
         {teamName && (
           <span className="flex items-center gap-2">
+            {resolvedSlug && (
+              <HubLink
+                to={{
+                  kind: "draft",
+                  query: new URLSearchParams({
+                    teams: resolvedSlug,
+                    ...(period && period !== "all" ? { p: period } : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] font-semibold text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+            )}
             <CopyDraftTendenciesPost
               teamName={teamName}
               sub={periodLabel ? `${periodLabel} · ${tl("{n} games", { n: d.games })}` : tl("{n} games", { n: d.games })}
@@ -316,10 +351,10 @@ export const DraftTendencies: React.FC<{ rows: TeamGameRow[]; teamName?: string;
         )}
       </div>
       <div className="grid grid-cols-2 @3xl:grid-cols-4 gap-x-6 gap-y-3">
-        <List title={tl("First pick (blue)")} hint={tl("Their first pick when on blue side (B1)")} list={d.b1} showWr teamName={teamName} side="b" />
-        <List title={tl("First picks (red)")} hint={tl("Their first two picks when on red side (R1-R2)")} list={d.r12} showWr teamName={teamName} side="r" />
-        <List title={tl("Bans, phase 1")} hint={tl("Their first three bans")} list={d.bans1} teamName={teamName} isBan />
-        <List title={tl("Bans, phase 2")} hint={tl("Their last two bans")} list={d.bans2} teamName={teamName} isBan />
+        <List title={tl("First pick (blue)")} hint={tl("Their first pick when on blue side (B1)")} list={d.b1} showWr teamName={teamName} period={period} side="b" />
+        <List title={tl("First picks (red)")} hint={tl("Their first two picks when on red side (R1-R2)")} list={d.r12} showWr teamName={teamName} period={period} side="r" />
+        <List title={tl("Bans, phase 1")} hint={tl("Their first three bans")} list={d.bans1} teamName={teamName} period={period} isBan />
+        <List title={tl("Bans, phase 2")} hint={tl("Their last two bans")} list={d.bans2} teamName={teamName} period={period} isBan />
       </div>
       <dl className="grid grid-cols-1 @md:grid-cols-[auto_1fr] gap-x-4 gap-y-1">
         <RoleLine title={tl("First role locked in")} shares={d.firstRole} />
@@ -336,9 +371,10 @@ export const DraftTendencies: React.FC<{ rows: TeamGameRow[]; teamName?: string;
             hint={tl("Games · win rate · combined gold lead at 15")}
             list={d.midJungle}
             teamName={teamName}
+            period={period}
           />
-          <Pairs title={tl("Bot lane pairs")} hint={tl("Games · win rate · combined gold lead at 15")} list={d.botDuos} teamName={teamName} />
-          <Pairs title={tl("Red openers (R1 + R2)")} list={d.r12pairs} teamName={teamName} side="r" />
+          <Pairs title={tl("Bot lane pairs")} hint={tl("Games · win rate · combined gold lead at 15")} list={d.botDuos} teamName={teamName} period={period} />
+          <Pairs title={tl("Red openers (R1 + R2)")} list={d.r12pairs} teamName={teamName} period={period} side="r" />
         </div>
       )}
       <div className="text-xs flex flex-wrap items-baseline gap-x-2 gap-y-0.5" title={tl("Champions each role played in this period (in brackets: 2+ games). In Fearless, a Bo5 needs up to five per role.")}>
@@ -353,12 +389,29 @@ export const DraftTendencies: React.FC<{ rows: TeamGameRow[]; teamName?: string;
       {d.flex.length > 0 && (
         <div className="text-xs flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="text-[10px] font-semibold text-rw-muted">{tl("Flex picks")}</span>
-          {d.flex.map(([c, roles]) => (
-            <span key={c} className="flex items-center gap-1">
-              <ChampLink name={c} size={16} />
-              <span className="text-rw-muted">({roles.map((r) => roleName(ROLES[r])).join(" / ")})</span>
-            </span>
-          ))}
+          {d.flex.map(([c, roles]) => {
+            const roleLabel = `(${roles.map((r) => roleName(ROLES[r])).join(" / ")})`;
+            return (
+              <span key={c} className="flex items-center gap-1">
+                <ChampLink name={c} size={16} />
+                {resolvedSlug ? (
+                  <HubLink
+                    to={{
+                      kind: "team",
+                      slug: resolvedSlug,
+                      tab: "champions",
+                      query: `champ=${encodeURIComponent(c)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                    }}
+                    className="text-rw-muted hover:text-rw-accent hover:underline"
+                  >
+                    {roleLabel}
+                  </HubLink>
+                ) : (
+                  <span className="text-rw-muted">{roleLabel}</span>
+                )}
+              </span>
+            );
+          })}
         </div>
       )}
     </div>

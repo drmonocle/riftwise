@@ -1061,7 +1061,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                   period={period}
                 />
               </div>
-              <DraftTendencies rows={sel} teamName={who?.name} periodLabel={periodText} />
+              <DraftTendencies rows={sel} teamName={who?.name} teamSlug={slug} period={period} periodLabel={periodText} />
               <TrendChart games={sel.map((r) => ({ date: r[0], won: r[7] }))} />
             </div>
           </div>

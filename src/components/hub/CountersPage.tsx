@@ -88,10 +88,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   const sel = "bg-rw-bg border border-rw-border rounded px-2 py-1 text-xs text-rw-text";
   const rawChamp = data.data?.m.c || "";
   const cName = rawChamp ? champName(rawChamp) : "";
-  const finderLink = (opp: string, n: number) =>
-    rawChamp ? (
+  const finderLink = (opp: string, n: number, roleIdx?: number) => {
+    const rStr = roleIdx != null && roleIdx >= 0 ? ROLES[roleIdx] : role || "";
+    return rawChamp ? (
       <HubLink
-        to={{ kind: "finder", query: `champ=${encodeURIComponent(rawChamp)}&vschamp=${encodeURIComponent(opp)}` }}
+        to={{
+          kind: "finder",
+          query: `champ=${encodeURIComponent(rawChamp)}&vschamp=${encodeURIComponent(opp)}${rStr ? `&role=${encodeURIComponent(rStr)}` : ""}`,
+        }}
         className="hover:text-rw-accent hover:underline"
         title={tl("Game finder")}
       >
@@ -100,6 +104,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
     ) : (
       n
     );
+  };
   const maxRowG = useMemo(() => Math.max(1, ...rows.map((r) => r.g)), [rows]);
   const hasCsd = useMemo(() => rows.some((r) => r.csd != null), [rows]);
   const columns: Column<Row>[] = [
@@ -130,7 +135,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
         const w = Math.max(6, Math.round((x.g / maxRowG) * 100));
         return (
           <span className="inline-flex flex-col gap-0.5 min-w-[2.75rem]">
-            <span>{finderLink(x.c, x.g)}</span>
+            <span>{finderLink(x.c, x.g, x.role)}</span>
             <span className="h-1 w-10 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
               <span className="block h-full rounded-full bg-rw-accent/65" style={{ width: `${w}%` }} />
             </span>
@@ -457,7 +462,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           <div className="text-[10px] text-rw-muted uppercase">{r.role >= 0 ? roleName(ROLES[r.role]) : tl("Role")}</div>
                           <div className={`font-mono font-bold ${wr >= 50 ? "text-rw-teal" : "text-rw-red"}`}>{wr}%</div>
                           <div className="text-[10px] font-mono text-rw-sub">
-                            {finderLink(vsMatch.oppCanon, r.g)}G
+                            {finderLink(vsMatch.oppCanon, r.g, r.role)}G
                             {r.gd != null ? ` · ${r.gd > 0 ? "+" : ""}${r.gd} GD@15` : ""}
                           </div>
                         </div>
@@ -512,7 +517,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                 {x.gd} GD@15{" "}
                               </span>
                             )}
-                            <span className="text-rw-muted font-normal">({finderLink(x.c, x.g)})</span>
+                            <span className="text-rw-muted font-normal">({finderLink(x.c, x.g, x.role)})</span>
                           </span>
                         </div>
                         <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
@@ -565,7 +570,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                 {x.gd} GD@15{" "}
                               </span>
                             )}
-                            <span className="text-rw-muted font-normal">({finderLink(x.c, x.g)})</span>
+                            <span className="text-rw-muted font-normal">({finderLink(x.c, x.g, x.role)})</span>
                           </span>
                         </div>
                         <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">

@@ -530,9 +530,9 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
             <RevealButton onReveal={reveal} />
           </div>
         ) : mode === "team" ? (
-          <TeamRows x={info.a as HubTeam} y={info.b as HubTeam} ra={selA as TeamGameRow[]} rb={selB as TeamGameRow[]} bSlug={b!} career={period === "all"} periodLabel={periodLabel} />
+          <TeamRows x={info.a as HubTeam} y={info.b as HubTeam} ra={selA as TeamGameRow[]} rb={selB as TeamGameRow[]} bSlug={b!} career={period === "all"} period={period} periodLabel={periodLabel} />
         ) : (
-          <PlayerRows x={info.a as HubPlayer} y={info.b as HubPlayer} ra={selA as PlayerGameRow[]} rb={selB as PlayerGameRow[]} career={period === "all"} periodLabel={periodLabel} />
+          <PlayerRows x={info.a as HubPlayer} y={info.b as HubPlayer} ra={selA as PlayerGameRow[]} rb={selB as PlayerGameRow[]} career={period === "all"} period={period} periodLabel={periodLabel} />
         ))}
       {mode === "team" && ready && <HeadToHeadSeries a={a!} b={b!} aName={info.a!.name} bName={info.b!.name} />}
       {mode === "player" && ready && (
@@ -583,10 +583,11 @@ export const TeamRows: React.FC<{
   rb: TeamGameRow[];
   bSlug: string;
   career: boolean;
+  period?: PeriodKey;
   periodLabel: string;
   /** win chance of x and y in percent (Match prep), for the 16:9 card */
   chance?: [number, number] | null;
-}> = ({ x, y, ra, rb, bSlug, career, periodLabel, chance }) => {
+}> = ({ x, y, ra, rb, bSlug, career, period, periodLabel, chance }) => {
   const A = useMemo(() => teamAgg(ra), [ra]);
   const B = useMemo(() => teamAgg(rb), [rb]);
   const h2h = useMemo(() => teamHeadToHead(ra, bSlug), [ra, bSlug]);
@@ -626,7 +627,21 @@ export const TeamRows: React.FC<{
       va: h2h.g ? h2h.w : null,
       vb: h2h.g ? h2h.g - h2h.w : null,
     },
-    { key: "games", group: gOverview, label: tl("Games won"), a: `${A.w}-${A.g - A.w}`, b: `${B.w}-${B.g - B.w}` },
+    {
+      key: "games",
+      group: gOverview,
+      label: tl("Games won"),
+      a: (
+        <HubLink to={{ kind: "team", slug: x.u, tab: "matches" }} className="hover:text-rw-accent hover:underline">
+          {`${A.w}-${A.g - A.w}`}
+        </HubLink>
+      ),
+      b: (
+        <HubLink to={{ kind: "team", slug: y.u, tab: "matches" }} className="hover:text-rw-accent hover:underline">
+          {`${B.w}-${B.g - B.w}`}
+        </HubLink>
+      ),
+    },
     { key: "wr", group: gOverview, label: tl("Win rate"), a: winRate(A.w, A.g), b: winRate(B.w, B.g), va: wr(A.w, A.g), vb: wr(B.w, B.g), ...pc("wr") },
     {
       key: "blue",
@@ -778,7 +793,7 @@ export const TeamRows: React.FC<{
             {rolePairs.map(({ role, short, pa, pb }) => (
               <HubLink
                 key={role}
-                to={{ kind: "compare", mode: "player", a: pa!.u, b: pb!.u }}
+                to={{ kind: "compare", mode: "player", a: pa!.u, b: pb!.u, period }}
                 className="flex flex-col items-center justify-center px-2 py-1.5 rounded-lg bg-rw-bg/70 hover:bg-rw-raised border border-rw-border/70 hover:border-rw-accent/50 transition-colors min-w-0"
               >
                 <span className="text-[9px] font-bold uppercase tracking-wider text-rw-muted">{short}</span>
@@ -803,8 +818,8 @@ export const TeamRows: React.FC<{
       </Section>
       <div className="grid sm:grid-cols-2 gap-3">
         {[
-          { n: x.name, t: A, rows: ra },
-          { n: y.name, t: B, rows: rb },
+          { n: x.name, u: x.u, t: A, rows: ra },
+          { n: y.name, u: y.u, t: B, rows: rb },
         ].map((s) => (
           <Section
             key={s.n}
@@ -844,9 +859,14 @@ export const TeamRows: React.FC<{
                           <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(8, Math.round((n / maxPickN) * 100))}%` }} />
                         </span>
                         <HubLink
-                          to={{ kind: "finder", query: `team=${encodeURIComponent(s.n)}&champ=${encodeURIComponent(c)}` }}
+                          to={{
+                            kind: "team",
+                            slug: s.u,
+                            tab: "champions",
+                            query: `champ=${encodeURIComponent(c)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                          }}
                           className="hover:text-rw-accent hover:underline"
-                          title={tl("Game finder")}
+                          title={tl("Every game")}
                         >
                           {n}
                         </HubLink>
@@ -858,7 +878,7 @@ export const TeamRows: React.FC<{
                 });
               })()}
             </ul>
-            <DraftTendencies rows={s.rows} teamName={s.n} periodLabel={periodLabel} />
+            <DraftTendencies rows={s.rows} teamName={s.n} teamSlug={s.u} period={period} periodLabel={periodLabel} />
           </Section>
         ))}
       </div>
@@ -866,12 +886,21 @@ export const TeamRows: React.FC<{
   );
 };
 
-const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb: PlayerGameRow[]; career: boolean; periodLabel: string }> = ({
+const PlayerRows: React.FC<{
+  x: HubPlayer;
+  y: HubPlayer;
+  ra: PlayerGameRow[];
+  rb: PlayerGameRow[];
+  career: boolean;
+  period?: PeriodKey;
+  periodLabel: string;
+}> = ({
   x,
   y,
   ra,
   rb,
   career,
+  period,
   periodLabel,
 }) => {
   const A = useMemo(() => playerAgg(ra), [ra]);
@@ -908,12 +937,18 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
       group: gOverview,
       label: tl("Champions played"),
       a: (
-        <HubLink to={{ kind: "player", slug: x.u, tab: "champions" }} className="hover:text-rw-accent hover:underline">
+        <HubLink
+          to={{ kind: "player", slug: x.u, tab: "champions", query: period && period !== "all" ? `p=${encodeURIComponent(period)}` : undefined }}
+          className="hover:text-rw-accent hover:underline"
+        >
           {A.champs.length}
         </HubLink>
       ),
       b: (
-        <HubLink to={{ kind: "player", slug: y.u, tab: "champions" }} className="hover:text-rw-accent hover:underline">
+        <HubLink
+          to={{ kind: "player", slug: y.u, tab: "champions", query: period && period !== "all" ? `p=${encodeURIComponent(period)}` : undefined }}
+          className="hover:text-rw-accent hover:underline"
+        >
           {B.champs.length}
         </HubLink>
       ),
@@ -1046,7 +1081,12 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
                           <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(8, Math.round((c.g / maxChampG) * 100))}%` }} />
                         </span>
                         <HubLink
-                          to={{ kind: "player", slug: s.u, tab: "champions", query: `champ=${encodeURIComponent(c.c)}` }}
+                          to={{
+                            kind: "player",
+                            slug: s.u,
+                            tab: "champions",
+                            query: `champ=${encodeURIComponent(c.c)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                          }}
                           className="hover:text-rw-accent hover:underline"
                           title={tl("Every game")}
                         >
@@ -1102,7 +1142,12 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
                   <tr key={c.c} className="border-t border-rw-border">
                     <td className={`${td} text-right tabular-nums w-2/5`} data-sort={c.g}>
                       <HubLink
-                        to={{ kind: "player", slug: x.u, tab: "champions", query: `champ=${encodeURIComponent(c.c)}` }}
+                        to={{
+                          kind: "player",
+                          slug: x.u,
+                          tab: "champions",
+                          query: `champ=${encodeURIComponent(c.c)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                        }}
                         className="hover:text-rw-accent hover:underline"
                         title={tl("Every game")}
                       >
@@ -1124,7 +1169,12 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
                     </td>
                     <td className={`${td} tabular-nums w-2/5`} data-sort={o.g}>
                       <HubLink
-                        to={{ kind: "player", slug: y.u, tab: "champions", query: `champ=${encodeURIComponent(c.c)}` }}
+                        to={{
+                          kind: "player",
+                          slug: y.u,
+                          tab: "champions",
+                          query: `champ=${encodeURIComponent(c.c)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                        }}
                         className="hover:text-rw-accent hover:underline"
                         title={tl("Every game")}
                       >

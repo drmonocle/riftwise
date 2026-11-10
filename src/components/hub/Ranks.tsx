@@ -432,24 +432,53 @@ const Bars: React.FC<{ rows: RankRow[]; hide: ColId[]; rankTo?: (r: RankRow) => 
       </li>
       {sorted.map((r) => (
         <li key={r.key} className={`grid grid-cols-[minmax(0,1fr)_auto] ${grid} items-center gap-x-3 min-w-0`}>
-          <span className="order-1 text-rw-sub leading-tight break-words min-w-0" title={r.label}>
-            {r.label}
-          </span>
-          {show("pct") && (
-            <span className="order-3 sm:order-2 relative h-6" title={tl("Percentile {p} (100 = the best)", { p: r.pct })}>
-              <span className="absolute inset-x-3 top-1/2 -translate-y-1/2 h-1 rounded-full bg-rw-line/70" />
-              <span
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-1 rounded-full opacity-55"
-                style={{ width: `calc((100% - 1.5rem) * ${r.pct / 100})`, background: pctShade(r.pct) }}
-              />
-              <span
-                className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full grid place-items-center text-[10px] font-semibold tabular-nums text-rw-bg"
-                style={{ left: `calc(0.75rem + (100% - 1.5rem) * ${r.pct / 100})`, background: pctShade(r.pct) }}
-              >
-                {r.pct}
-              </span>
+          {rankTo ? (
+            <HubLink
+              to={rankTo(r)}
+              className="order-1 text-rw-sub hover:text-rw-accent hover:underline leading-tight break-words min-w-0"
+              title={r.label}
+            >
+              {r.label}
+            </HubLink>
+          ) : (
+            <span className="order-1 text-rw-sub leading-tight break-words min-w-0" title={r.label}>
+              {r.label}
             </span>
           )}
+          {show("pct") &&
+            (rankTo ? (
+              <HubLink
+                to={rankTo(r)}
+                className="order-3 sm:order-2 relative h-6 block group"
+                title={tl("Percentile {p} (100 = the best)", { p: r.pct })}
+              >
+                <span className="absolute inset-x-3 top-1/2 -translate-y-1/2 h-1 rounded-full bg-rw-line/70" />
+                <span
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-1 rounded-full opacity-55 group-hover:opacity-80"
+                  style={{ width: `calc((100% - 1.5rem) * ${r.pct / 100})`, background: pctShade(r.pct) }}
+                />
+                <span
+                  className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full grid place-items-center text-[10px] font-semibold tabular-nums text-rw-bg group-hover:ring-1 group-hover:ring-rw-accent"
+                  style={{ left: `calc(0.75rem + (100% - 1.5rem) * ${r.pct / 100})`, background: pctShade(r.pct) }}
+                >
+                  {r.pct}
+                </span>
+              </HubLink>
+            ) : (
+              <span className="order-3 sm:order-2 relative h-6" title={tl("Percentile {p} (100 = the best)", { p: r.pct })}>
+                <span className="absolute inset-x-3 top-1/2 -translate-y-1/2 h-1 rounded-full bg-rw-line/70" />
+                <span
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-1 rounded-full opacity-55"
+                  style={{ width: `calc((100% - 1.5rem) * ${r.pct / 100})`, background: pctShade(r.pct) }}
+                />
+                <span
+                  className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full grid place-items-center text-[10px] font-semibold tabular-nums text-rw-bg"
+                  style={{ left: `calc(0.75rem + (100% - 1.5rem) * ${r.pct / 100})`, background: pctShade(r.pct) }}
+                >
+                  {r.pct}
+                </span>
+              </span>
+            ))}
           {show("value") && (
             <span className="order-2 sm:order-3 tabular-nums text-rw-text whitespace-nowrap text-right">
               {r.text}{" "}

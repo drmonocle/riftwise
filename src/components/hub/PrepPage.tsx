@@ -908,8 +908,8 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
             <FearlessDepth a={a} b={b} period={period} periodLabel={periodLabel} title={title} />
           </div>
           <div id="prep-tendencies" className="rw-span grid gap-3 xl:grid-cols-2 items-start">
-            <Tendencies side={a} rows={ra} periodLabel={periodLabel} />
-            <Tendencies side={b} rows={rb} periodLabel={periodLabel} />
+            <Tendencies side={a} rows={ra} period={period} periodLabel={periodLabel} />
+            <Tendencies side={b} rows={rb} period={period} periodLabel={periodLabel} />
           </div>
         </>
       )}
@@ -1018,14 +1018,14 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
 
 /** A scouting report's tendencies for one team over the chosen period: its early game (Oracle's Elixir) and how it
  *  drafts (first picks, bans by phase, which role it locks first or keeps for last, pairs, flex picks). */
-const Tendencies: React.FC<{ side: Side; rows: TeamGameRow[]; periodLabel: string }> = ({ side, rows, periodLabel }) => {
+const Tendencies: React.FC<{ side: Side; rows: TeamGameRow[]; period: PeriodKey; periodLabel: string }> = ({ side, rows, period, periodLabel }) => {
   const t = useMemo(() => teamAgg(rows), [rows]);
   if (!rows.length) return null;
   return (
     <Section title={tl("{team}: tendencies", { team: side.team.name })} right={<span className="text-[11px] text-rw-sub">{periodLabel}</span>} share={`${side.team.u}-tendencies-${periodLabel}`}>
       <Playstyle t={t} />
       <TeamEarly t={t} />
-      <DraftTendencies rows={rows} teamName={side.team.name} periodLabel={periodLabel} />
+      <DraftTendencies rows={rows} teamName={side.team.name} teamSlug={side.team.u} period={period} periodLabel={periodLabel} />
     </Section>
   );
 };
@@ -1170,7 +1170,12 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
                   <TeamLink name={s.team.name} u={s.team.u} className="truncate hover:text-rw-accent hover:underline" />
                 </span>
                 <span className="inline-flex items-center gap-1 w-20 tabular-nums shrink-0">
-                  <span className="text-rw-sub">{w}-{rows.length - w}</span>
+                  <HubLink
+                    to={{ kind: "team", slug: s.team.u, tab: "matches" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {w}-{rows.length - w}
+                  </HubLink>
                   {rows.length > 0 && (
                     <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0" title={`${wrPct}%`}>
                       <span className="h-full bg-rw-teal/85" style={{ width: `${wrPct}%` }} />
@@ -1289,7 +1294,12 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
             return (
               <HubLink
                 key={c}
-                to={{ kind: "player", slug: x.slug, tab: "champions", query: `champ=${encodeURIComponent(c)}` }}
+                to={{
+                  kind: "player",
+                  slug: x.slug,
+                  tab: "champions",
+                  query: `champ=${encodeURIComponent(c)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                }}
                 className={`flex items-center gap-0.5 text-[10px] hover:text-rw-accent hover:underline ${toneCls}`}
                 title={`${champName(c)} · ${g} · ${winRate(w, g)}`}
               >
@@ -1394,7 +1404,12 @@ const Lanes: React.FC<{
             slug ? (
               <HubLink
                 key={c.c}
-                to={{ kind: "player", slug, tab: "champions", query: `champ=${encodeURIComponent(c.c)}` }}
+                to={{
+                  kind: "player",
+                  slug,
+                  tab: "champions",
+                  query: `champ=${encodeURIComponent(c.c)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                }}
                 className="flex items-center gap-0.5 text-[10px] text-rw-sub hover:text-rw-accent hover:underline"
                 title={`${champName(c.c)} · ${c.g} · ${winRate(c.w, c.g)}`}
               >
