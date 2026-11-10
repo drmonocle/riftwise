@@ -500,20 +500,47 @@ export const RecordsPanel: React.FC = () => {
               title={title}
               right={
                 rows.length > 0 ? (
-                  <SectionCard
-                    section={title}
-                    name={recScopeLabel}
-                    rows={() =>
-                      rows.slice(0, 10).map((g, i) => ({
-                        rank: i + 1,
-                        team: g.w,
-                        label: tl("{w} beat {l}", { w: g.w, l: g.w === g.a ? g.b : g.a }),
-                        sub: `${g.t} · ${fmtDate(g.date)}`,
-                        value: fmt(g.v),
-                        win: true,
-                      }))
-                    }
-                  />
+                  <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                    {rows[0].w && rows[0].a && rows[0].b && (
+                      <>
+                        <HubLink
+                          to={{
+                            kind: "prep",
+                            a: prettySlug(rows[0].w),
+                            b: prettySlug(rows[0].w === rows[0].a ? rows[0].b : rows[0].a),
+                          }}
+                          className="text-rw-accent hover:underline font-semibold"
+                        >
+                          {tl("Match prep")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "compare",
+                            mode: "team",
+                            a: prettySlug(rows[0].w),
+                            b: prettySlug(rows[0].w === rows[0].a ? rows[0].b : rows[0].a),
+                          }}
+                          className="text-rw-accent hover:underline font-semibold"
+                        >
+                          {tl("Compare")} →
+                        </HubLink>
+                      </>
+                    )}
+                    <SectionCard
+                      section={title}
+                      name={recScopeLabel}
+                      rows={() =>
+                        rows.slice(0, 10).map((g, i) => ({
+                          rank: i + 1,
+                          team: g.w,
+                          label: tl("{w} beat {l}", { w: g.w, l: g.w === g.a ? g.b : g.a }),
+                          sub: `${g.t} · ${fmtDate(g.date)}`,
+                          value: fmt(g.v),
+                          win: true,
+                        }))
+                      }
+                    />
+                  </span>
                 ) : undefined
               }
               share={shareName(title)}
@@ -605,20 +632,35 @@ export const RecordsPanel: React.FC = () => {
               title={title}
               right={
                 rows.length > 0 ? (
-                  <SectionCard
-                    section={title}
-                    name={recScopeLabel}
-                    rows={() =>
-                      rows.slice(0, 10).map((p, i) => ({
-                        rank: i + 1,
-                        champ: p.c,
-                        label: `${p.pl} (${champName(p.c)})`,
-                        sub: `${p.kda} vs ${p.opp} · ${p.t} · ${fmtDate(p.date)}`,
-                        value: fmt(p.v),
-                        win: true,
-                      }))
-                    }
-                  />
+                  <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                    {rows.length >= 2 && (
+                      <HubLink
+                        to={{
+                          kind: "compare",
+                          mode: "player",
+                          a: rows[0].u || prettySlug(rows[0].pl),
+                          b: rows[1].u || prettySlug(rows[1].pl),
+                        }}
+                        className="text-rw-accent hover:underline font-semibold"
+                      >
+                        {tl("Compare")} →
+                      </HubLink>
+                    )}
+                    <SectionCard
+                      section={title}
+                      name={recScopeLabel}
+                      rows={() =>
+                        rows.slice(0, 10).map((p, i) => ({
+                          rank: i + 1,
+                          champ: p.c,
+                          label: `${p.pl} (${champName(p.c)})`,
+                          sub: `${p.kda} vs ${p.opp} · ${p.t} · ${fmtDate(p.date)}`,
+                          value: fmt(p.v),
+                          win: true,
+                        }))
+                      }
+                    />
+                  </span>
                 ) : undefined
               }
               share={shareName(title)}
@@ -1124,7 +1166,43 @@ export const TitlesPanel: React.FC = () => {
           return (
             <div className={`${card} space-y-2 overflow-x-auto`}>
               {rows.length > 0 && (
-                <div className="flex items-center justify-end gap-2" data-nocapture="1">
+                <div className="flex flex-wrap items-center justify-end gap-2 text-[11px]" data-nocapture="1">
+                  {rows[0].l && (
+                    <>
+                      <HubLink
+                        to={{
+                          kind: "prep",
+                          a: rows[0].u || prettySlug(rows[0].as),
+                          b: prettySlug(rows[0].l),
+                          ...(/^\d{4}$/.test((rows[0].date || "").slice(0, 4)) ? { period: `y${(rows[0].date || "").slice(0, 4)}` } : {}),
+                        }}
+                        className="text-rw-accent hover:underline font-semibold"
+                      >
+                        {tl("Match prep")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "draft",
+                          query: `teams=${encodeURIComponent(rows[0].u || prettySlug(rows[0].as))},${encodeURIComponent(prettySlug(rows[0].l))}${/^\d{4}$/.test((rows[0].date || "").slice(0, 4)) ? `&p=y${(rows[0].date || "").slice(0, 4)}` : ""}`,
+                        }}
+                        className="text-rw-accent hover:underline font-semibold"
+                      >
+                        {tl("Draft board")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "compare",
+                          mode: "team",
+                          a: rows[0].u || prettySlug(rows[0].as),
+                          b: prettySlug(rows[0].l),
+                          ...(/^\d{4}$/.test((rows[0].date || "").slice(0, 4)) ? { period: `y${(rows[0].date || "").slice(0, 4)}` } : {}),
+                        }}
+                        className="text-rw-accent hover:underline font-semibold"
+                      >
+                        {tl("Compare")} →
+                      </HubLink>
+                    </>
+                  )}
                   <SectionCard
                     section={tl("Titles")}
                     name={tl(TITLE_FILTERS.find((f) => f.key === kind)?.label || kind)}

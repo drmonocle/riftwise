@@ -7,7 +7,7 @@ import { tl, roleName, fmtDec, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
-import { loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y } from "../../hub/data";
+import { loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y, prettySlug } from "../../hub/data";
 import type { PlayerGameRow, TeamGameRow } from "../../hub/types";
 import {
   PeriodKey,
@@ -843,6 +843,35 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
               >
                 {tl("Compare")} →
               </HubLink>
+              <HubLink
+                to={{
+                  kind: "items",
+                  query: new URLSearchParams({
+                    player: slug,
+                    ...(/^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] font-semibold text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `player=${encodeURIComponent(slug)}${
+                    /^y\d{4}$/.test(period)
+                      ? `&year=${encodeURIComponent(period.slice(1))}`
+                      : period.startsWith("e:")
+                        ? `&event=${encodeURIComponent(period.slice(2))}`
+                        : period.startsWith("p:")
+                          ? `&patch=${encodeURIComponent(period.slice(2))}`
+                          : ""
+                  }`,
+                }}
+                className="text-[11px] font-semibold text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
               <CopyPeriodTextPost
               url={hubShareUrl({
                 kind: "player",
@@ -970,22 +999,35 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
           {agg.champs.length > 0 && (
             <div className="flex items-center justify-between gap-2">
               <Sub>{tl("Champions")}</Sub>
-              <SectionCard
-                section={who ? `${who.name} · ${tl("Champions")}` : tl("Champions")}
-                sub={periodText}
-                name={`${slug}-champions-${period}`}
-                rows={() =>
-                  agg.champs.slice(0, 10).map((c, idx) => ({
-                    rank: idx + 1,
-                    champ: c.c,
-                    team: who?.club || undefined,
-                    label: champName(c.c),
-                    sub: `${c.g}G · KDA ${fmtN(c.kda)}${c.gd15 != null ? ` · GD@15 ${signed(c.gd15)}` : ""}`,
-                    value: winRate(c.w, c.g),
-                    win: c.g > 0 ? c.w / c.g >= 0.5 : undefined,
-                  }))
-                }
-              />
+              <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                {agg.champs.length >= 2 && (
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      query: `champ=${prettySlug(agg.champs[0].c)}&vs=${encodeURIComponent(agg.champs[1].c)}${agg.roles[0] ? `&role=${encodeURIComponent(agg.roles[0])}` : ""}`,
+                    }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Counters")} →
+                  </HubLink>
+                )}
+                <SectionCard
+                  section={who ? `${who.name} · ${tl("Champions")}` : tl("Champions")}
+                  sub={periodText}
+                  name={`${slug}-champions-${period}`}
+                  rows={() =>
+                    agg.champs.slice(0, 10).map((c, idx) => ({
+                      rank: idx + 1,
+                      champ: c.c,
+                      team: who?.club || undefined,
+                      label: champName(c.c),
+                      sub: `${c.g}G · KDA ${fmtN(c.kda)}${c.gd15 != null ? ` · GD@15 ${signed(c.gd15)}` : ""}`,
+                      value: winRate(c.w, c.g),
+                      win: c.g > 0 ? c.w / c.g >= 0.5 : undefined,
+                    }))
+                  }
+                />
+              </span>
             </div>
           )}
           <SortTable
@@ -1125,10 +1167,19 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                 {tl("Match prep")} →
               </HubLink>
               <HubLink
+                to={{ kind: "draft", query: `teams=${encodeURIComponent(slug)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                className="text-[11px] font-semibold text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "compare", mode: "team", a: slug, ...(period !== "all" ? { period } : {}) }}
                 className="text-[11px] font-semibold text-rw-accent hover:underline"
               >
                 {tl("Compare")} →
+              </HubLink>
+              <HubLink to={teamFinderTo} className="text-[11px] font-semibold text-rw-accent hover:underline">
+                {tl("Game finder")} →
               </HubLink>
               <CopyPeriodTextPost
               url={hubShareUrl({

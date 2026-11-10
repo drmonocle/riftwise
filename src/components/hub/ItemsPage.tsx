@@ -287,7 +287,28 @@ const PlayerItemsView: React.FC<{
       <Section
         title={label}
         right={
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center gap-2">
+            <HubLink
+              to={{ kind: "compare", mode: "player", a: slug, ...(year ? { period: `y${year}` } : {}) }}
+              className="text-[11px] text-rw-accent hover:underline font-semibold"
+              data-nocapture="1"
+            >
+              {tl("Compare")} →
+            </HubLink>
+            <HubLink
+              to={{
+                kind: "finder",
+                query: new URLSearchParams({
+                  player: slug,
+                  ...(champ ? { champ } : {}),
+                  ...(year ? { year } : {}),
+                }).toString(),
+              }}
+              className="text-[11px] text-rw-accent hover:underline font-semibold"
+              data-nocapture="1"
+            >
+              {tl("Game finder")} →
+            </HubLink>
             <CopyItemsPost
               title={`${name} · ${label}`}
               sub={`${fmtNum(g.length)}G${scope ? ` · ${scope}` : ""}`}
@@ -349,7 +370,14 @@ const PlayerItemsView: React.FC<{
       title={tl("Every item {player} finished pro games with", { player: name })}
       right={
         list.length > 0 ? (
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center gap-2">
+            <HubLink
+              to={{ kind: "compare", mode: "player", a: slug, ...(year ? { period: `y${year}` } : {}) }}
+              className="text-[11px] text-rw-accent hover:underline font-semibold"
+              data-nocapture="1"
+            >
+              {tl("Compare")} →
+            </HubLink>
             <CopyItemsPost
               title={tl("Every item {player} finished pro games with", { player: name })}
               sub={scope || undefined}
@@ -1389,6 +1417,19 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                       {r[23].toFixed(0)}
                     </span>
                   ))}
+                {r[7] && r[8] && (
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: prettySlug(r[7]),
+                      b: prettySlug(r[8]),
+                      ...(/^\d{4}$/.test((r[0] || "").slice(0, 4)) ? { period: `y${(r[0] || "").slice(0, 4)}` } : {}),
+                    }}
+                    className="hidden sm:inline text-[10px] hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Match prep")}
+                  </HubLink>
+                )}
                 {r[1] ? (
                   <HubLink
                     to={{ kind: "match", slug: r[1], ...(r[22] ? { game: r[22] } : {}) }}

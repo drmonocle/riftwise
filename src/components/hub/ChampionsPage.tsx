@@ -646,6 +646,18 @@ const LeagueTable: React.FC<{
             >
               {tl("Pro tier list")} →
             </HubLink>
+            <HubLink
+              to={{
+                kind: "items",
+                query: new URLSearchParams({
+                  ...(shownRows[0] ? { champ: prettySlug(shownRows[0].c) } : {}),
+                  ...(year ? { year } : {}),
+                }).toString(),
+              }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Item history")} →
+            </HubLink>
             <SectionCard
               section={tl("Champions")}
               name={[leagueName, year, q.get("patch") && tl("Patch {patch}", { patch: q.get("patch")! })].filter(Boolean).join(" · ")}
@@ -918,6 +930,18 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
             >
               {tl("Pro tier list")} →
             </HubLink>
+            <HubLink
+              to={{
+                kind: "items",
+                query: new URLSearchParams({
+                  ...(shownRows[0] ? { champ: prettySlug(shownRows[0].c) } : {}),
+                  ...(key.startsWith("y") ? { year: key.slice(1) } : {}),
+                }).toString(),
+              }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Item history")} →
+            </HubLink>
             <SectionCard
               section={tl("Champions")}
               name={label(key)}
@@ -1002,6 +1026,10 @@ const MetaSpotlight: React.FC<{
               <div className="text-[10px] text-rw-muted font-mono">
                 <HubLink to={{ kind: "champ", slug: prettySlug(item.c) }} className="hover:text-rw-accent hover:underline">
                   {item.sub}
+                </HubLink>
+                {" · "}
+                <HubLink to={{ kind: "counters", query: `champ=${prettySlug(item.c)}` }} className="hover:text-rw-accent hover:underline">
+                  {tl("Counters")}
                 </HubLink>
               </div>
             )}

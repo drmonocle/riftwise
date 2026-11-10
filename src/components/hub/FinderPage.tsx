@@ -723,33 +723,98 @@ const FinderBody: React.FC<{
                   </HubLink>
                 </>
               )}
-              {champs[0] && q.get("vschamp") && (
-                <HubLink
-                  to={{
-                    kind: "counters",
-                    query: new URLSearchParams({
-                      champ: prettySlug(champs[0]),
-                      vs: q.get("vschamp")!,
-                      ...(q.get("role") ? { role: q.get("role")! } : {}),
-                    }).toString(),
-                  }}
-                  className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
-                >
-                  {tl("Counter-pick finder")} →
-                </HubLink>
+              {q.get("team") && !q.get("vs") && (
+                <>
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: teamOption(opts.teams, q.get("team")) || q.get("team")!,
+                      period: year ? `y${year}` : undefined,
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "draft",
+                      query: `teams=${encodeURIComponent(teamOption(opts.teams, q.get("team")) || q.get("team")!)}${year ? `&p=y${encodeURIComponent(year)}` : ""}`,
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      mode: "team",
+                      a: teamOption(opts.teams, q.get("team")) || q.get("team")!,
+                      period: year ? `y${year}` : undefined,
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                </>
+              )}
+              {champs[0] && (
+                <>
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      query: new URLSearchParams({
+                        champ: prettySlug(champs[0]),
+                        ...(q.get("vschamp") ? { vs: q.get("vschamp")! } : champs[1] ? { vs: champs[1] } : {}),
+                        ...(q.get("role") ? { role: q.get("role")! } : {}),
+                      }).toString(),
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Counter-pick finder")} →
+                  </HubLink>
+                  {!q.get("player") && (
+                    <HubLink
+                      to={{
+                        kind: "items",
+                        query: new URLSearchParams({
+                          champ: prettySlug(champs[0]),
+                          ...(year ? { year } : {}),
+                        }).toString(),
+                      }}
+                      className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
+                  )}
+                </>
               )}
               {q.get("player") && (
-                <HubLink
-                  to={{
-                    kind: "compare",
-                    mode: "player",
-                    a: playerOption(opts.players, q.get("player")) || q.get("player")!,
-                    period: year ? `y${year}` : undefined,
-                  }}
-                  className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
-                >
-                  {tl("Compare")} →
-                </HubLink>
+                <>
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      mode: "player",
+                      a: playerOption(opts.players, q.get("player")) || q.get("player")!,
+                      period: year ? `y${year}` : undefined,
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "items",
+                      query: new URLSearchParams({
+                        player: playerOption(opts.players, q.get("player")) || q.get("player")!,
+                        ...(champs[0] ? { champ: prettySlug(champs[0]) } : {}),
+                        ...(year ? { year } : {}),
+                      }).toString(),
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Item history")} →
+                  </HubLink>
+                </>
               )}
             </div>
             <div className="overflow-x-auto">

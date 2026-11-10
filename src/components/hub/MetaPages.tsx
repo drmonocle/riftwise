@@ -420,19 +420,27 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number;
       <div className="flex items-center justify-between gap-2">
         {title ? <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{title}</h3> : <span />}
         {list.length > 0 && (
-          <SectionCard
-            section={title || tl("Leagues")}
-            name={tl("Leagues")}
-            rows={() =>
-              list.slice(0, 12).map((l, idx) => ({
-                rank: idx + 1,
-                label: l.s ? `${l.s} · ${l.l}` : l.l,
-                sub: [l.r ? regionName(l.r, l.r) : "", l.from && l.to ? (l.from === l.to ? l.from : `${l.from}–${l.to}`) : ""].filter(Boolean).join(" · "),
-                value: `${fmtNum(l.g)} ${tl("Games")}`,
-                win: true,
-              }))
-            }
-          />
+          <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+            <HubLink to={{ kind: "rankings" }} className="text-rw-accent hover:underline font-semibold">
+              {tl("Power rankings")} →
+            </HubLink>
+            <HubLink to={{ kind: "tournaments" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Tournaments")} →
+            </HubLink>
+            <SectionCard
+              section={title || tl("Leagues")}
+              name={tl("Leagues")}
+              rows={() =>
+                list.slice(0, 12).map((l, idx) => ({
+                  rank: idx + 1,
+                  label: l.s ? `${l.s} · ${l.l}` : l.l,
+                  sub: [l.r ? regionName(l.r, l.r) : "", l.from && l.to ? (l.from === l.to ? l.from : `${l.from}–${l.to}`) : ""].filter(Boolean).join(" · "),
+                  value: `${fmtNum(l.g)} ${tl("Games")}`,
+                  win: true,
+                }))
+              }
+            />
+          </span>
         )}
       </div>
       <STable className="w-full text-xs">

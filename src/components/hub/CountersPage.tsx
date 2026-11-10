@@ -391,6 +391,18 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                   {champName(vsMatch.oppCanon)} →
                 </HubLink>
               )}
+              <HubLink
+                to={{ kind: "items", query: `champ=${encodeURIComponent(slug)}` }}
+                className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
+              >
+                {tl("Item history")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+                className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
             </span>
           )}
         </div>
@@ -798,16 +810,29 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     <SectionCard
                       section={tl("Bot lane partners")}
                       name={cName}
-                      rows={() =>
-                        data.data!.ch!.duos!.slice(0, 12).map(([pc, g, w], idx) => ({
+                      rows={() => {
+                        const raw = duoSearch.trim().toLowerCase();
+                        const terms = raw
+                          .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+                          .map((s) => s.trim())
+                          .filter(Boolean);
+                        const list = terms.length
+                          ? data.data!.ch!.duos!.filter(([pc]) => {
+                              const cDisp = champName(pc).toLowerCase();
+                              const cRaw = pc.toLowerCase();
+                              const cBare = bare(cDisp);
+                              return terms.some((t) => cDisp.includes(t) || cRaw.includes(t) || (bare(t).length >= 2 && cBare.includes(bare(t))));
+                            })
+                          : data.data!.ch!.duos!;
+                        return list.slice(0, 12).map(([pc, g, w], idx) => ({
                           rank: idx + 1,
                           champ: pc,
                           label: champName(pc),
                           sub: `${g}G`,
                           value: `${Math.round((w / g) * 100)}%`,
                           win: w / g >= 0.5,
-                        }))
-                      }
+                        }));
+                      }}
                     />
                   </span>
                 }
