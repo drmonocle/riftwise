@@ -44,8 +44,8 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
               <HubLink
                 to={{
                   kind: "prep",
-                  a: teams[0].u || teams[0].t,
-                  b: teams[1].u || teams[1].t,
+                  a: teams[0].u || prettySlug(teams[0].t),
+                  b: teams[1].u || prettySlug(teams[1].t),
                   period: `y${year}`,
                 }}
                 className="text-rw-accent hover:underline"
@@ -54,10 +54,19 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
               </HubLink>
               <HubLink
                 to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(teams[0].u || prettySlug(teams[0].t))},${encodeURIComponent(teams[1].u || prettySlug(teams[1].t))}&p=y${encodeURIComponent(year)}`,
+                }}
+                className="text-rw-accent hover:underline"
+              >
+                {tl("Draft board")}
+              </HubLink>
+              <HubLink
+                to={{
                   kind: "compare",
                   mode: "team",
-                  a: teams[0].u || teams[0].t,
-                  b: teams[1].u || teams[1].t,
+                  a: teams[0].u || prettySlug(teams[0].t),
+                  b: teams[1].u || prettySlug(teams[1].t),
                   period: `y${year}`,
                 }}
                 className="text-rw-accent hover:underline"
@@ -145,7 +154,35 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
         )}
         {regular.length > 0 && (
           <div className="min-w-0">
-            <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Standout players")}</div>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <div className="text-[10px] font-semibold text-rw-muted">{tl("Standout players")}</div>
+              <span data-nocapture="1">
+                <SectionCard
+                  section={tl("Standout players")}
+                  name={`${name} ${year}`}
+                  sub={tl("{name} {year} at a glance", { name, year })}
+                  rows={() =>
+                    PLAYER_METRICS.filter((m) => STANDOUT.includes(m.key))
+                      .map((m, idx) => {
+                        const top = regular
+                          .map((p) => ({ p, v: m.value(p) }))
+                          .filter((x): x is { p: EventPlayer; v: number } => x.v != null)
+                          .sort((a, b) => (m.low ? a.v - b.v : b.v - a.v))[0];
+                        if (!top) return null;
+                        return {
+                          rank: idx + 1,
+                          team: top.p.t,
+                          label: `${top.p.n} (${top.p.t})`,
+                          sub: m.label,
+                          value: m.fmt(top.v),
+                          win: true,
+                        };
+                      })
+                      .filter((x): x is NonNullable<typeof x> => !!x)
+                  }
+                />
+              </span>
+            </div>
             <div className="grid gap-x-4 gap-y-2 sm:grid-cols-2 xl:grid-cols-3">
               {PLAYER_METRICS.filter((m) => STANDOUT.includes(m.key)).map((m) => {
                 const top = regular

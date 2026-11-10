@@ -371,15 +371,24 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                 <SectionCard
                   section={tl("Player leaderboards")}
                   name={scope}
-                  sub={role ? roleName(role) : undefined}
+                  sub={[role ? roleName(role) : null, statMetric ? statMetric.short || statMetric.label : null].filter(Boolean).join(" · ") || undefined}
                   rows={() => {
                     const kdaM = PLAYER_METRICS.find((m) => m.key === "kda")!;
                     const dpmM = PLAYER_METRICS.find((m) => m.key === "dpm")!;
                     const wrM = PLAYER_METRICS.find((m) => m.key === "wr")!;
+                    const primaryM = statMetric || kdaM;
                     return [...shownRows]
-                      .sort((a, b) => (kdaM.value(b) || 0) - (kdaM.value(a) || 0))
+                      .sort((a, b) => {
+                        const va = primaryM.value(a);
+                        const vb = primaryM.value(b);
+                        if (va == null && vb == null) return 0;
+                        if (va == null) return 1;
+                        if (vb == null) return -1;
+                        return primaryM.low ? va - vb : vb - va;
+                      })
                       .slice(0, 12)
                       .map((p, i) => {
+                        const pv = primaryM.value(p);
                         const kda = kdaM.value(p);
                         const dpm = dpmM.value(p);
                         const wr = wrM.value(p);
@@ -387,16 +396,22 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                           rank: i + 1,
                           team: p.t,
                           label: `${p.n} (${p.t})`,
-                          sub: [roleName(p.r), `${p.g}G`, dpm != null ? `${dpmM.fmt(dpm)} DPM` : null, wr != null ? wrM.fmt(wr) : null]
+                          sub: [
+                            roleName(p.r),
+                            `${p.g}G`,
+                            primaryM.key !== "kda" && kda != null ? `${kdaM.fmt(kda)} KDA` : null,
+                            primaryM.key !== "dpm" && dpm != null ? `${dpmM.fmt(dpm)} DPM` : null,
+                            primaryM.key !== "wr" && wr != null ? wrM.fmt(wr) : null,
+                          ]
                             .filter(Boolean)
                             .join(" · "),
-                          value: kda != null ? `${kdaM.fmt(kda)} KDA` : `${p.g}G`,
+                          value: pv != null ? `${primaryM.fmt(pv)} ${primaryM.short || primaryM.label}` : `${p.g}G`,
                           win: wr != null ? wr >= 0.5 : undefined,
                         };
                       });
                   }}
                 />
-                <CopyLeadersPost scope={scope} role={role} rows={shownRows} query={query} />
+                <CopyLeadersPost scope={scope} role={role} rows={shownRows} query={query} statMetric={statMetric} />
               </span>
             ) : undefined
           }
@@ -539,10 +554,10 @@ const LeaderSpotlight: React.FC<{
   );
 };
 
-const CopyLeadersPost: React.FC<{ scope: string; role: string; rows: EventPlayer[]; query?: string }> = ({ scope, role, rows, query }) => {
+const CopyLeadersPost: React.FC<{ scope: string; role: string; rows: EventPlayer[]; query?: string; statMetric?: (typeof PLAYER_METRICS)[number] }> = ({ scope, role, rows, query, statMetric }) => {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
-    const keys = ["kda", "dpm", "csm", "g15", "kp"] as const;
+    const keys = statMetric ? [statMetric.key, ...(["kda", "dpm", "csm", "g15", "kp"] as const).filter((k) => k !== statMetric.key)] : (["kda", "dpm", "csm", "g15", "kp"] as const);
     const leaders = keys
       .map((k) => {
         const m = PLAYER_METRICS.find((x) => x.key === k);
@@ -550,7 +565,7 @@ const CopyLeadersPost: React.FC<{ scope: string; role: string; rows: EventPlayer
         const ranked = rows
           .map((p) => ({ p, v: m.value(p) }))
           .filter((x): x is { p: EventPlayer; v: number } => x.v != null && isFinite(x.v))
-          .sort((a, b) => b.v - a.v);
+          .sort((a, b) => (m.low ? a.v - b.v : b.v - a.v));
         if (!ranked.length) return null;
         return `${m.short || m.label}: ${ranked[0].p.n} (${ranked[0].p.t}) — ${m.fmt(ranked[0].v)}`;
       })

@@ -812,7 +812,13 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
   ];
   const periodText = (() => {
     const o = options.find((x) => x.key === period);
-    return !o || o.key === "all" ? tl("All time") : o.group === "basic" ? tl("Last {n} games", { n: o.label }) : o.label;
+    return !o || o.key === "all"
+      ? tl("All time")
+      : o.group === "basic"
+        ? tl("Last {n} games", { n: o.label })
+        : o.group === "patch"
+          ? `${tl("Patch")} ${o.label}`
+          : o.label;
   })();
   const leaderTo = (stat: string): import("../../hub/route").HubRoute => ({
     kind: "leaders",
@@ -1075,7 +1081,13 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
   );
   const periodText = (() => {
     const o = options.find((x) => x.key === period);
-    return !o || o.key === "all" ? tl("All time") : o.group === "basic" ? tl("Last {n} games", { n: o.label }) : o.label;
+    return !o || o.key === "all"
+      ? tl("All time")
+      : o.group === "basic"
+        ? tl("Last {n} games", { n: o.label })
+        : o.group === "patch"
+          ? `${tl("Patch")} ${o.label}`
+          : o.label;
   })();
   const teamFinderTo: import("../../hub/route").HubRoute = {
     kind: "finder",

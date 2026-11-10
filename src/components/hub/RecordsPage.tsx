@@ -10,7 +10,7 @@ import {
 } from "../../stats";
 import { tl, tk, tc, eventTitle, fmtDec } from "../../i18n";
 import { champName, useChampionNames } from "../../champions";
-import { loadHubMeta, loadHubRecords, loadHubTitles, loadRecordsYear, prettySlug } from "../../hub/data";
+import { loadHubMeta, loadHubRecords, loadHubTitles, loadRecordsYear, normText, prettySlug } from "../../hub/data";
 import type { HubRecords, HubRecordsYear, HubTitle } from "../../hub/types";
 import {
   CompareRoute,
@@ -59,10 +59,11 @@ import { SectionCard } from "./BroadcastCard";
  */
 const CareerRecords: React.FC<{
   r: HubRecords;
-  list: (title: string, rows: HubRecords["career"]["games"]) => React.ReactNode;
+  list: (title: string, rows: HubRecords["career"]["games"], scopeLabel?: string) => React.ReactNode;
 }> = ({ r, list }) => {
   const [all, setAll] = useState(true);
   const c = all && r.careerAll ? r.careerAll : r.career;
+  const scopeLabel = all && r.careerAll ? tl("All pro games") : tl("Top leagues & internationals");
   const pill = (on: boolean) =>
     `px-2.5 py-1 rounded-full text-[11px] font-semibold border ${on ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"}`;
   return (
@@ -86,10 +87,10 @@ const CareerRecords: React.FC<{
           : tl("Only top leagues and international events (Worlds, MSI, First Stand).")}
       </p>
       <div className="grid gap-3 md:grid-cols-2 3xl:grid-cols-4 items-start">
-        {list(tl("Most pro games"), c.games)}
-        {list(tl("Most career kills"), c.kills)}
-        {list(tl("Most career assists"), c.assists)}
-        {list(tl("Biggest champion pools"), c.pool)}
+        {list(tl("Most pro games"), c.games, scopeLabel)}
+        {list(tl("Most career kills"), c.kills, scopeLabel)}
+        {list(tl("Most career assists"), c.assists, scopeLabel)}
+        {list(tl("Biggest champion pools"), c.pool, scopeLabel)}
       </div>
     </div>
   );
@@ -667,6 +668,7 @@ export const RecordsPanel: React.FC = () => {
         const careerList = (
           title: string,
           rows: HubRecords["career"]["games"],
+          scopeLabel?: string,
         ) => {
           const maxV = Math.max(1, rows[0]?.v || 1);
           return (
@@ -677,6 +679,7 @@ export const RecordsPanel: React.FC = () => {
                   <SectionCard
                     section={title}
                     name={tl("Career totals")}
+                    sub={scopeLabel}
                     rows={() => rows.slice(0, 12).map((p, i) => ({ rank: i + 1, label: p.pl, value: fmtNum(p.v), win: true }))}
                   />
                 ) : undefined
@@ -951,9 +954,8 @@ export const TitlesPanel: React.FC = () => {
       <Page state={state}>
         {(data) => {
           const terms = search
-            .toLowerCase()
             .split(",")
-            .map((s) => s.trim())
+            .map((s) => normText(s.trim()))
             .filter(Boolean);
           const rows = data
             .filter((x) =>
@@ -970,10 +972,12 @@ export const TitlesPanel: React.FC = () => {
                 !terms.length ||
                 terms.some(
                   (t) =>
-                    x.t.toLowerCase().includes(t) ||
-                    x.w.toLowerCase().includes(t) ||
-                    x.as.toLowerCase().includes(t) ||
-                    x.l.toLowerCase().includes(t),
+                    normText(eventTitle(x.t)).includes(t) ||
+                    normText(x.t).includes(t) ||
+                    normText(x.w).includes(t) ||
+                    normText(x.as).includes(t) ||
+                    normText(x.l).includes(t) ||
+                    (x.u && normText(x.u).includes(t)),
                 ),
             )
             .slice(0, 300);

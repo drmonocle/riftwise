@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Crown, ClipboardCopy } from "lucide-react";
 import { tl, tn, regionName } from "../../i18n";
-import { loadLeague, loadLeagues, loadPatches, prettySlug } from "../../hub/data";
+import { loadLeague, loadLeagues, loadPatches, normText, prettySlug } from "../../hub/data";
 import type { HubLeague, LeagueRow, LeagueStep, PatchMove, PatchRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import {
@@ -40,17 +40,40 @@ export const PatchesPanel: React.FC = () => {
   useDDragon();
   const state = useLoad(loadPatches, []);
   const [n, setN] = useState(24);
+  const [q, setQ] = useState("");
   return (
     <Page state={state}>
-      {(rows: PatchRow[]) => (
+      {(rows: PatchRow[]) => {
+        const term = normText(q.trim());
+        const filtered = term
+          ? rows.filter(
+              (p) =>
+                p.p.toLowerCase().includes(term) ||
+                p.c.some(([c]) => normText(champName(c)).includes(term) || normText(c).includes(term)) ||
+                (p.up || []).some(([c]) => normText(champName(c)).includes(term) || normText(c).includes(term)) ||
+                (p.down || []).some(([c]) => normText(champName(c)).includes(term) || normText(c).includes(term)),
+            )
+          : rows;
+        return (
         <div className="space-y-3">
-          <p className="text-[11px] text-rw-muted">
-            {tl(
-              "The most picked or banned champions on every patch, newest first (all pro leagues). Percent = presence: picked or banned in that share of games.",
-            )}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[11px] text-rw-muted">
+              {tl(
+                "The most picked or banned champions on every patch, newest first (all pro leagues). Percent = presence: picked or banned in that share of games.",
+              )}
+            </p>
+            <input
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={tl("Search champions…")}
+              aria-label={tl("Search champions…")}
+              className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1 text-xs text-rw-text w-48"
+              data-nocapture="1"
+            />
+          </div>
           <div className="grid gap-3 xl:grid-cols-2">
-          {rows.slice(0, n).map((p) => (
+          {filtered.slice(0, n).map((p) => (
             <div key={p.p} className={`${card} p-3`}>
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <div className="flex flex-wrap items-baseline gap-2">
@@ -93,7 +116,8 @@ export const PatchesPanel: React.FC = () => {
                         value: `${Math.round(((pr ?? pk + b) / Math.max(p.g, 1)) * 100)}%`,
                         win: pk >= 5 ? w / pk >= 0.5 : undefined,
                       })),
-                      ...(p.up || []).slice(0, 2).map(([c, now, was]) => ({
+                      ...(p.up || []).slice(0, 2).map(([c, now, was], uIdx) => ({
+                        rank: p.c.slice(0, 10).length + uIdx + 1,
                         champ: c,
                         label: `▲ ${champName(c)}`,
                         sub: p.prev ? tl("Rising since {patch}", { patch: p.prev }) : undefined,
@@ -173,17 +197,18 @@ export const PatchesPanel: React.FC = () => {
             </div>
           ))}
           </div>
-          {rows.length > n && (
+          {filtered.length > n && (
             <button
               type="button"
               onClick={() => setN((x) => x + 48)}
               className="text-xs text-rw-accent hover:underline"
             >
-              {tl("Show more ({n} left)", { n: rows.length - n })}
+              {tl("Show more ({n} left)", { n: filtered.length - n })}
             </button>
           )}
         </div>
-      )}
+        );
+      }}
     </Page>
   );
 };

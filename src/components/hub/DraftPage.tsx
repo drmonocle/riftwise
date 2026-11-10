@@ -33,6 +33,7 @@ export interface PlayerOnChamp {
   c: string;
   name: string;
   u?: string | null;
+  img?: string;
   /** roster slot = role index (0 top .. 4 support) */
   role: number;
   /** this period: games, wins, KDA, average gold lead over the lane opponent at 15 (Oracle's Elixir games) */
@@ -49,6 +50,7 @@ export interface PlayerOnChamp {
 export interface PlayerPool {
   name: string;
   u: string | null;
+  img?: string;
   role: number;
   full: boolean;
   champs: PlayerOnChamp[];
@@ -128,6 +130,7 @@ export function pool(side: Side, period: PeriodKey, sideOnly?: "b" | "r"): Pool 
         c,
         name: pl.p.name,
         u: pl.p.u,
+        img: pl.p.img,
         role,
         g: x[0],
         w: x[1],
@@ -140,7 +143,7 @@ export function pool(side: Side, period: PeriodKey, sideOnly?: "b" | "r"): Pool 
       mine.push(row);
       p.players.set(c, [...(p.players.get(c) || []), row]);
     }
-    p.byPlayer.push({ name: pl.p.name, u: pl.p.u, role, full: pl.full, champs: mine });
+    p.byPlayer.push({ name: pl.p.name, u: pl.p.u, img: pl.p.img, role, full: pl.full, champs: mine });
   });
   return p;
 }
@@ -1692,7 +1695,7 @@ const DraftMatchupPanel: React.FC<{
                     <div className="text-[10px] text-rw-muted truncate tabular-nums flex items-center gap-1">
                       {bPlayer ? (
                         <>
-                          <PlayerPhoto name={bPlayer.name} team={blue.team.name} slug={bPlayer.u ?? undefined} size={13} />
+                          <PlayerPhoto name={bPlayer.name} team={blue.team.name} slug={bPlayer.u ?? undefined} img={bPlayer.img} size={13} />
                           <span className="truncate">
                             <PlayerLink name={bPlayer.name} u={bPlayer.u} className="text-rw-muted hover:text-rw-accent hover:underline" />
                             {" · "}
@@ -1822,7 +1825,7 @@ const DraftMatchupPanel: React.FC<{
                               `${tl("pocket pick")} (${rPlayer.cg}G)`
                             )}
                           </span>
-                          <PlayerPhoto name={rPlayer.name} team={red.team.name} slug={rPlayer.u ?? undefined} size={13} />
+                          <PlayerPhoto name={rPlayer.name} team={red.team.name} slug={rPlayer.u ?? undefined} img={rPlayer.img} size={13} />
                         </>
                       ) : (
                         "–"
@@ -2199,7 +2202,7 @@ const PlayerPools: React.FC<{
               <div key={pl.role} className="flex flex-wrap items-start gap-1.5 min-w-0">
                 <span className="w-28 shrink-0 min-w-0 leading-tight">
                   <span className="flex items-center gap-1.5 min-w-0">
-                    <PlayerPhoto name={pl.name} team={side.team.name} slug={pl.u ?? undefined} size={18} />
+                    <PlayerPhoto name={pl.name} team={side.team.name} slug={pl.u ?? undefined} img={pl.img} size={18} />
                     {pl.u ? (
                       <HubLink
                         to={{ kind: "player", slug: pl.u, query: period !== "all" ? `p=${encodeURIComponent(period)}` : undefined }}
@@ -2408,6 +2411,40 @@ const ChampInfo: React.FC<{
     title={champName(c)}
     right={
       <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+        <SectionCard
+          section={champName(c)}
+          name={`${blue.team.name} vs ${red.team.name}`}
+          rows={() => {
+            const out: { rank?: number; champ?: string; team?: string; label: string; sub?: string; value: string; win?: boolean }[] = [];
+            for (const [w, s] of [["b", blue], ["r", red]] as [Who, Side][]) {
+              const p = pools[w];
+              const pk = p.picks.get(c);
+              const bn = p.bans.get(c) || 0;
+              const bv = p.bansVs.get(c) || 0;
+              out.push({
+                rank: out.length + 1,
+                champ: c,
+                team: s.team.name,
+                label: s.team.name,
+                sub: `${tl("Banned it {n} times · banned against them {m} times", { n: bn, m: bv })}`,
+                value: pk ? `${pk[0]}G · ${winRate(pk[1], pk[0])}` : "0G",
+                win: pk && pk[0] >= 2 ? pk[1] / pk[0] >= 0.5 : undefined,
+              });
+              for (const x of [...(p.players.get(c) || [])].sort((a, b) => b.g - a.g || b.cg - a.cg)) {
+                out.push({
+                  rank: out.length + 1,
+                  champ: c,
+                  team: s.team.name,
+                  label: `${x.name} (${s.team.name})`,
+                  sub: x.g > 0 ? `${x.cg}G ${tl("All time")} (${winRate(x.cw, x.cg)})` : tl("pocket pick"),
+                  value: x.g > 0 ? `${x.g}G · ${winRate(x.w, x.g)}` : `${x.cg}G · ${winRate(x.cw, x.cg)}`,
+                  win: (x.g > 0 ? x.w / x.g : x.cw / Math.max(1, x.cg)) >= 0.5,
+                });
+              }
+            }
+            return out.slice(0, 12);
+          }}
+        />
         <HubLink to={{ kind: "champ", slug: prettySlug(c) }} className="text-rw-accent hover:underline font-semibold">
           {champName(c)} →
         </HubLink>
@@ -2493,10 +2530,10 @@ const ChampInfo: React.FC<{
                   <div key={x.name} className="text-rw-text flex flex-wrap items-center gap-x-1">
                     {x.u ? (
                       <HubLink to={{ kind: "player", slug: x.u }} className="shrink-0">
-                        <PlayerPhoto name={x.name} team={s.team.name} slug={x.u} size={15} />
+                        <PlayerPhoto name={x.name} team={s.team.name} slug={x.u} img={x.img} size={15} />
                       </HubLink>
                     ) : (
-                      <PlayerPhoto name={x.name} team={s.team.name} slug={undefined} size={15} />
+                      <PlayerPhoto name={x.name} team={s.team.name} slug={undefined} img={x.img} size={15} />
                     )}
                     <PlayerLink name={x.name} u={x.u} className="font-semibold text-rw-text hover:text-rw-accent hover:underline" />:{" "}
                     {x.g ? (

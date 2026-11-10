@@ -12,7 +12,7 @@ import type { HubRoute } from "../../hub/route";
 import { tl, tc } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemIndex, loadPlayerGames, loadPlayerItems, normText, prettySlug } from "../../hub/data";
+import { loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemIndex, loadPlayerGames, loadPlayerItems, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
 import type { ItemIndexRow, PlayerGameRow, SearchPlayerRow } from "../../hub/types";
 import { navigateHub, hubShareUrl } from "../../hub/route";
 import { isFinishedItem, itemName, useDDragon } from "../../hub/ddragon";
@@ -62,7 +62,7 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
   useDDragon();
   const q = new URLSearchParams(query || "");
   const picks: Picks = {
-    player: prettySlug(q.get("player") || ""),
+    player: resolvePlayerSlug(prettySlug(q.get("player") || "")),
     item: prettySlug(q.get("item") || ""),
     champ: prettySlug(q.get("champ") || ""),
     year: q.get("year") || "",
@@ -302,7 +302,7 @@ const PlayerItemsView: React.FC<{
                 g.slice(0, 12).map((r, idx) => ({
                   rank: idx + 1,
                   champ: r[2],
-                  team: r[8],
+                  team: r[7] || r[8],
                   label: `${champName(r[2])} ${tl("vs")} ${r[8]}`,
                   sub: `${r[9]} · ${fmtDate(r[0], false)}`,
                   value: `${r[3]}/${r[4]}/${r[5]}`,
@@ -362,6 +362,7 @@ const PlayerItemsView: React.FC<{
                   return {
                     rank: idx + 1,
                     champ: g[0]?.[2],
+                    team: g[0]?.[7] || undefined,
                     label: itemName(it),
                     sub: `${fmtNum(g.length)}G${g[0] ? ` · ${fmtDate(g[0][0], false)}` : ""}`,
                     value: winRate(won, g.length),
@@ -650,6 +651,7 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                 rows={() =>
                   rows.slice(0, 12).map((r, i) => ({
                     rank: i + 1,
+                    champ: head.data?.c?.find(([c]) => prettySlug(c) === champ)?.[0] || champLabel || champ,
                     team: players?.[r.k]?.[2] || undefined,
                     label: players?.[r.k]?.[0] || "–",
                     sub: yearSpan(r.ys),
@@ -783,6 +785,7 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                 rows={() =>
                   y.p.slice(0, 12).map(([k, g], i) => ({
                     rank: i + 1,
+                    champ: y.c[0]?.[0],
                     team: players?.[k]?.[2] || undefined,
                     label: players?.[k]?.[0] || "–",
                     value: `${fmtNum(g)}G`,
@@ -1204,6 +1207,11 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                     </HubLink>
                   ) : (
                     <span className="text-rw-text tabular-nums shrink-0">{hide ? "–" : `${r[3]}/${r[4]}/${r[5]}`}</span>
+                  )}
+                  {r[7] && (
+                    <HubLink to={{ kind: "team", slug: prettySlug(r[7]) }} title={r[7]} className="shrink-0">
+                      <TeamLogo name={r[7]} size={13} />
+                    </HubLink>
                   )}
                   {r[7] && r[8] ? (
                     <HubLink

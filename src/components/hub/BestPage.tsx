@@ -467,6 +467,13 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
                   {tl("Match prep")}
                 </HubLink>
                 <span>·</span>
+                <HubLink
+                  to={{ kind: "draft", query: `teams=${encodeURIComponent(aSlug)},${encodeURIComponent(bSlug)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")}
+                </HubLink>
+                <span>·</span>
                 <HubLink to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
                   {tl("Compare")}
                 </HubLink>
@@ -487,6 +494,13 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
                 <span>·</span>
                 <HubLink to={{ kind: "prep", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
                   {tl("Match prep")}
+                </HubLink>
+                <span>·</span>
+                <HubLink
+                  to={{ kind: "draft", query: `teams=${encodeURIComponent(aSlug)},${encodeURIComponent(bSlug)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")}
                 </HubLink>
                 <span>·</span>
                 <HubLink to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">

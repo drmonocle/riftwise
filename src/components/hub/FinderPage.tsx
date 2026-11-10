@@ -7,7 +7,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { tl, tn, tc, fmtDec, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { loadAliases, loadChampGames, loadChampIndex, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, loadAliases, loadChampGames, loadChampIndex, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import type { ChampGame, ChampGamesFile, ChampPick } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
@@ -52,6 +52,9 @@ const patchSort = (p: string) => {
   return (a || 0) * 1000 + (b || 0);
 };
 
+const eqSlug = (a: string | null | undefined, b: string | null | undefined) =>
+  !!a && !!b && (a === b || bare(a) === bare(b));
+
 function matchSide(g: ChampGame, q: Q, eventIdx: number | null): number {
   if (eventIdx != null && g[2] !== eventIdx) return -1;
   const patch = q.get("patch");
@@ -61,7 +64,7 @@ function matchSide(g: ChampGame, q: Q, eventIdx: number | null): number {
   if (minLen && (g[4] == null || g[4] < minLen)) return -1;
   if (maxLen && (g[4] == null || g[4] > maxLen)) return -1;
   const ban = q.get("ban");
-  if (ban && !g[7].includes(ban) && !g[8].includes(ban)) return -1;
+  if (ban && !g[7].some((c) => eqSlug(c, ban)) && !g[8].some((c) => eqSlug(c, ban))) return -1;
   const team = q.get("team");
   const vs = q.get("vs") || q.get("vsteam");
   const rawSide = q.get("side");
@@ -81,22 +84,22 @@ function matchSide(g: ChampGame, q: Q, eventIdx: number | null): number {
     const theirTeam = teamKey(g, 1 - s);
     const won = s === 0 ? g[3] === 1 : g[3] === 0;
     // a team filter is the team's page (one entry across a rename), or a name from an older link
-    if (team && myTeam !== team && (s === 0 ? g[10] : g[11]) !== team) continue;
-    if (vs && theirTeam !== vs && (s === 0 ? g[11] : g[10]) !== vs) continue;
+    if (team && !eqSlug(myTeam, team) && !eqSlug(s === 0 ? g[10] : g[11], team)) continue;
+    if (vs && !eqSlug(theirTeam, vs) && !eqSlug(s === 0 ? g[11] : g[10], vs)) continue;
     if (side && side !== (s === 0 ? "b" : "r")) continue;
     if (result && sided && (result === "w") !== won) continue;
     if (champs.length) {
       if (roleIdx >= 0) {
-        if (!mine.some((p) => p[0] === champs[0] && p[1] === roleIdx)) continue;
-        if (champs.slice(1).some((c) => !mine.some((p) => p[0] === c))) continue;
-      } else if (champs.some((c) => !mine.some((p) => p[0] === c))) continue;
+        if (!mine.some((p) => eqSlug(p[0], champs[0]) && p[1] === roleIdx)) continue;
+        if (champs.slice(1).some((c) => !mine.some((p) => eqSlug(p[0], c)))) continue;
+      } else if (champs.some((c) => !mine.some((p) => eqSlug(p[0], c)))) continue;
     }
     if (vsChamp) {
       if (roleIdx >= 0 && champs.length > 0) {
-        if (!theirs.some((p) => p[0] === vsChamp && (p[1] < 0 || p[1] === roleIdx))) continue;
-      } else if (!theirs.some((p) => p[0] === vsChamp)) continue;
+        if (!theirs.some((p) => eqSlug(p[0], vsChamp) && (p[1] < 0 || p[1] === roleIdx))) continue;
+      } else if (!theirs.some((p) => eqSlug(p[0], vsChamp))) continue;
     }
-    if (player && !mine.some((p) => (p[9] === player || p[8] === player) && (roleIdx < 0 || p[1] === roleIdx)))
+    if (player && !mine.some((p) => (eqSlug(p[9], player) || eqSlug(p[8], player)) && (roleIdx < 0 || p[1] === roleIdx)))
       continue;
     if (roleIdx >= 0 && !champs.length && !player && !mine.some((p) => p[1] === roleIdx))
       continue;
@@ -281,7 +284,15 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
 
 /** The dropdown entry for a team filter: its page, or (older links) its name. */
 const teamOption = (teams: [string, string][], v: string | null) =>
-  !v ? "" : (teams.find(([k, n]) => k === v || n === v)?.[0] ?? v);
+  !v ? "" : (teams.find(([k, n]) => eqSlug(k, v) || eqSlug(n, v))?.[0] ?? v);
+const teamLabel = (teams: [string, string][], v: string | null) =>
+  !v ? "" : (teams.find(([k, n]) => eqSlug(k, v) || eqSlug(n, v))?.[1] ?? v);
+const champOption = (champs: string[], v: string | null) =>
+  !v ? "" : (champs.find((c) => eqSlug(c, v)) ?? v);
+const playerOption = (players: [string, string][], v: string | null) =>
+  !v ? "" : (players.find(([k, n]) => eqSlug(k, v) || eqSlug(n, v))?.[0] ?? v);
+const playerLabel = (players: [string, string][], v: string | null) =>
+  !v ? "" : (players.find(([k, n]) => eqSlug(k, v) || eqSlug(n, v))?.[1] ?? v);
 
 const FinderBody: React.FC<{
   games: ChampGame[];
@@ -362,7 +373,7 @@ const FinderBody: React.FC<{
     selectedPrefix?: string,
   ) => (
     <select
-      value={value}
+      value={champOption(list, value)}
       onChange={(e) => onChange(e.target.value)}
       aria-label={label}
       className={sel}
@@ -489,7 +500,7 @@ const FinderBody: React.FC<{
             <option value="l">{tl("Lost")}</option>
           </select>
           <select
-            value={q.get("player") || ""}
+            value={playerOption(opts.players, q.get("player"))}
             onChange={(e) => setQ({ player: e.target.value || undefined })}
             aria-label={tl("Player")}
             className={sel}
@@ -603,7 +614,14 @@ const FinderBody: React.FC<{
               </button>
               <SectionCard
                 section={tl("Game finder")}
-                name={[q.get("team"), q.get("vs") && `vs ${q.get("vs")}`, q.get("champ") && champName(q.get("champ")!), q.get("role") && roleName(q.get("role")!), q.get("player"), q.get("patch") && `Patch ${q.get("patch")}`]
+                name={[
+                  teamLabel(opts.teams, q.get("team")),
+                  (q.get("vs") || q.get("vsteam")) && `vs ${teamLabel(opts.teams, q.get("vs") || q.get("vsteam"))}`,
+                  q.get("champ") && champName(champOption(opts.champs, q.get("champ")!)),
+                  q.get("role") && roleName(q.get("role")!),
+                  playerLabel(opts.players, q.get("player")),
+                  q.get("patch") && `Patch ${q.get("patch")}`,
+                ]
                   .filter(Boolean)
                   .join(" · ") || name}
                 sub={
@@ -616,9 +634,10 @@ const FinderBody: React.FC<{
                     const bWon = g[3] === 1;
                     const winSide = sideCond ? (s === 0 ? bWon : !bWon) : undefined;
                     const focusTeam = sideCond ? (s === 0 ? g[10] : g[11]) : bWon ? g[10] : g[11];
+                    const focusPicks = sideCond ? (s === 0 ? g[5] : g[6]) : bWon ? g[5] : g[6];
                     return {
                       rank: idx + 1,
-                      champ: champs[0] || undefined,
+                      champ: (champs[0] && champOption(opts.champs, champs[0])) || focusPicks[0]?.[0] || undefined,
                       team: focusTeam || undefined,
                       label: `${g[10] || tl("Blue")} vs ${g[11] || tl("Red")}${g[15] ? ` (${tc("short game", "G{n}", { n: g[15] })})` : ""}`,
                       sub: [events[g[2]]?.[1], g[1] && `P${g[1]}`, fmtDate(g[0])].filter(Boolean).join(" · "),
@@ -632,6 +651,7 @@ const FinderBody: React.FC<{
                 found={found}
                 events={events}
                 q={q}
+                opts={opts}
                 sideCond={sideCond}
                 won={won}
                 avg={avg}
@@ -882,7 +902,7 @@ const Cohort: React.FC<{
       // the side the filters are about: its champion's / player's lead in lane at 15, else the team's (the five add up)
       if (sideCond) {
         const mine = s === 0 ? g[5] : g[6];
-        const one = champ ? mine.find((p) => p[0] === champ) : player ? mine.find((p) => p[9] === player || p[8] === player) : null;
+        const one = champ ? mine.find((p) => eqSlug(p[0], champ)) : player ? mine.find((p) => eqSlug(p[9], player) || eqSlug(p[8], player)) : null;
         if (one) {
           if (one[10] != null) {
             gd += one[10];
@@ -1093,19 +1113,20 @@ const CopyFinderPost: React.FC<{
   found: Found;
   events: [string, string][];
   q: Q;
+  opts: { teams: [string, string][]; champs: string[]; players: [string, string][] };
   sideCond: boolean;
   won: number;
   avg: number | null;
-}> = ({ found, events, q, sideCond, won, avg }) => {
+}> = ({ found, events, q, opts, sideCond, won, avg }) => {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const parts = [
-      q.get("team"),
-      q.get("vs") && `vs ${q.get("vs")}`,
-      q.get("champ") && champName(q.get("champ")!),
+      teamLabel(opts.teams, q.get("team")),
+      (q.get("vs") || q.get("vsteam")) && `vs ${teamLabel(opts.teams, q.get("vs") || q.get("vsteam"))}`,
+      q.get("champ") && champName(champOption(opts.champs, q.get("champ")!)),
       q.get("role") && roleName(q.get("role")!),
-      q.get("vschamp") && `vs ${champName(q.get("vschamp")!)}`,
-      q.get("player"),
+      q.get("vschamp") && `vs ${champName(champOption(opts.champs, q.get("vschamp")!))}`,
+      playerLabel(opts.players, q.get("player")),
       q.get("patch") && `Patch ${q.get("patch")}`,
     ].filter(Boolean);
     const lines: string[] = [

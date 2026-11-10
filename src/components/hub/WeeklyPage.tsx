@@ -62,7 +62,7 @@ function markdown(w: HubWeekly): string {
   }
   if (w.champs?.length) {
     L.push("## Most picked or banned", "");
-    for (const [c, pk, bn, wn] of w.champs.slice(0, 5)) L.push(`- ${c}: ${pk} picks (${pk ? Math.round((wn / pk) * 100) : 0}% wins), ${bn} bans`);
+    for (const [c, pk, bn, wn] of w.champs.slice(0, 5)) L.push(`- ${champName(c)}: ${pk} picks (${pk ? Math.round((wn / pk) * 100) : 0}% wins), ${bn} bans`);
     L.push("");
   }
   L.push(`Every result, chance and record: ${hubShareUrl({ kind: "weekly" })}`);
@@ -345,6 +345,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   rows={() =>
                     w.records.map((r, idx) => ({
                       rank: idx + 1,
+                      champ: r.r.c ? String(r.r.c) : undefined,
                       team: String(r.r.team || r.r.w || "") || undefined,
                       label: tl(RECORD_TITLES[`${r.s}/${r.k}`] || r.k),
                       sub: recordWho(r.r),
@@ -747,6 +748,15 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           className="text-rw-muted hover:text-rw-accent hover:underline"
                         >
                           {tl("Match prep")}
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "draft",
+                            query: `teams=${encodeURIComponent(r.au)},${encodeURIComponent(r.bu)}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
+                          }}
+                          className="text-rw-muted hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Draft board")}
                         </HubLink>
                         <HubLink
                           to={{
