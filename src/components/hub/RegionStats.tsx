@@ -185,6 +185,9 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; nam
           <HubLink to={{ kind: "best" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
             {tl("Best games")} →
           </HubLink>
+          <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            {tl("Player leaderboards")} →
+          </HubLink>
           <CopyRegionStatsPost
             title={`${tl("Region strength over time")} · ${name}`}
             rows={t.rows.slice(0, 6).map((c) => {
@@ -322,6 +325,9 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
             </HubLink>
             <HubLink to={{ kind: "best" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
               {tl("Best games")} →
+            </HubLink>
+            <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Player leaderboards")} →
             </HubLink>
             <CopyRegionStatsPost
               title={`${tl("Regions")} · ${name}`}
@@ -486,6 +492,9 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
               </HubLink>
               <HubLink to={{ kind: "best" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
                 {tl("Best games")} →
+              </HubLink>
+              <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+                {tl("Player leaderboards")} →
               </HubLink>
               {pairs.length > 6 && (
                 <input

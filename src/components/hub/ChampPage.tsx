@@ -234,6 +234,9 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               >
                 {tl("Player leaderboards")}
               </HubLink>
+              <HubLink to={{ kind: "rankings" }} className={heroBtn()}>
+                {tl("Power rankings")}
+              </HubLink>
               <BroadcastCardButton hero data={() => champCardData(c, champName(c.name))} name={`${c.u}-pro-play`} label={tl("Overview card")} />
               <CopyChampPost c={c} />
             </div>
@@ -334,6 +337,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
               </HubLink>
               <SectionCard
                 section={tl("Pro builds in the last 12 months")}
@@ -572,6 +581,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
               </HubLink>
               <SectionCard
                 section={`${tl("Matchups")} · ${roleName(muRole)}`}
@@ -866,6 +881,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               >
                 {tl("Player leaderboards")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
               <SectionCard
                 section={tl("Bot lane partners")}
                 name={champName(c.name)}
@@ -1042,6 +1063,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     className="text-[11px] text-rw-accent hover:underline"
                   >
                     {tl("Pro tier list")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "rankings" }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Power rankings")} →
                   </HubLink>
                   <SectionCard
                     section={tl("Most games on {champion}", { champion: champName(c.name) })}
@@ -1220,6 +1247,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Game finder")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
               </HubLink>
               <SectionCard
                 section={tl("Latest pro games")}
@@ -1441,6 +1474,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               >
                 {tl("Player leaderboards")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
               <SectionCard
                 section={tl("By pick order")}
                 name={champName(c.name)}
@@ -1529,6 +1568,18 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Game finder")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "leaders", ...(c.roles[0]?.r ? { query: `role=${encodeURIComponent(c.roles[0].r)}` } : {}) }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
               </HubLink>
               <SectionCard
                 section={tl("Recent patches")}
@@ -1629,6 +1680,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               className="text-[11px] text-rw-accent hover:underline"
             >
               {tl("Player leaderboards")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "rankings" }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Power rankings")} →
             </HubLink>
             <BroadcastCardButton data={() => champCardData(c, champName(c.name))} name={`${c.u}-pro-play`} label={tl("Overview card")} />
             <SectionCard

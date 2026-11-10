@@ -795,6 +795,12 @@ export const PlayerOpponents: React.FC<{
               >
                 {tl("Game finder")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
             </>
           )}
           {filteredOpps.length > 10 && !search.trim() && (
@@ -950,6 +956,18 @@ export const PlayerOpponents: React.FC<{
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Pro tier list")}
+              </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")}
+              </HubLink>
+              <HubLink
+                to={{ kind: "leaders" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")}
               </HubLink>
               <button
                 type="button"
@@ -1682,6 +1700,25 @@ export const TeamPeriodOpponents: React.FC<{
                 className="text-rw-muted hover:text-rw-accent hover:underline"
               >
                 {tl("Pro tier list")}
+              </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-rw-muted hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")}
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "leaders",
+                  ...(period && /^y\d{4}$/.test(period)
+                    ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                    : period?.startsWith("e:")
+                      ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                      : {}),
+                }}
+                className="text-rw-muted hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")}
               </HubLink>
               <button type="button" onClick={() => setSelectedOpp(null)} className="text-rw-muted hover:text-rw-accent">
                 {tl("Close")}

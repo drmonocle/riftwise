@@ -286,6 +286,9 @@ export const HubHome: React.FC<{
               <HubLink to={{ kind: "records" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Records")} →
               </HubLink>
+              <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Power rankings")} →
+              </HubLink>
             </span>
           </div>
           <ul className="text-xs space-y-1.5">
@@ -538,6 +541,13 @@ const FeaturedMatch: React.FC<{
           >
             {tl("Pro tier list")}
           </button>
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "leaders" })}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-rw-border bg-rw-bg hover:border-rw-accent text-rw-text font-semibold transition-colors px-2.5 py-1 text-[11px]"
+          >
+            {tl("Player leaderboards")}
+          </button>
           <MatchOverviewButton match={m} />
           <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} />
           <ShareMatchButton match={m} className="border border-rw-border bg-rw-bg p-1.5" />
@@ -693,6 +703,9 @@ const LatestTournaments: React.FC<{ latest: EventListItem[] }> = ({ latest }) =>
           )}
           <HubLink to={{ kind: "tournaments" }} className="text-[11px] text-rw-accent hover:underline">
             {tl("Tournaments")} →
+          </HubLink>
+          <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Pro tier list")} →
           </HubLink>
           <SectionCard
             section={tl("Latest tournaments")}

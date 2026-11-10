@@ -1135,6 +1135,14 @@ const MetaSpotlight: React.FC<{
                 <HubLink to={{ kind: "tiers" }} className="hover:text-rw-accent hover:underline">
                   {tl("Pro tier list")}
                 </HubLink>
+                {" · "}
+                <HubLink to={{ kind: "draft" }} className="hover:text-rw-accent hover:underline">
+                  {tl("Draft board")}
+                </HubLink>
+                {" · "}
+                <HubLink to={{ kind: "leaders" }} className="hover:text-rw-accent hover:underline">
+                  {tl("Player leaderboards")}
+                </HubLink>
               </div>
             )}
           </div>

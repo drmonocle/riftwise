@@ -456,6 +456,9 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
               <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Pro tier list")} →
               </HubLink>
+              <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Power rankings")} →
+              </HubLink>
             </span>
           </div>
           <ul className="space-y-1">
@@ -521,6 +524,9 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
               )}
               <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Power rankings")} →
               </HubLink>
             </span>
           </div>

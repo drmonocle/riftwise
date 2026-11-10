@@ -221,6 +221,13 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                 >
                   {tl("Pro tier list")} →
                 </HubLink>
+                <HubLink
+                  to={{ kind: "rankings" }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Power rankings")} →
+                </HubLink>
               </>
             ) : !f.rows[0].player && !f.rows[0].champ && f.rows[0].team && f.rows[1].team && f.rows[0].team !== f.rows[1].team ? (
               <>
@@ -287,6 +294,13 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                 >
                   {tl("Pro tier list")} →
                 </HubLink>
+                <HubLink
+                  to={{ kind: "leaders", ...(eventSlug ? { query: `event=${encodeURIComponent(eventSlug)}` } : {}) }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
               </>
             ) : f.rows[0].champ && f.rows[1].champ && f.rows[0].champ !== f.rows[1].champ ? (
               <>
@@ -346,6 +360,13 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   data-nocapture="1"
                 >
                   {tl("Power rankings")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "leaders", ...(eventSlug ? { query: `event=${encodeURIComponent(eventSlug)}` } : {}) }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Player leaderboards")} →
                 </HubLink>
               </>
             ) : null)}

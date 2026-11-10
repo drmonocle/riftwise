@@ -517,6 +517,19 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
             >
               {tl("Pro tier list")}
             </HubLink>
+            <HubLink
+              to={{
+                kind: "leaders",
+                ...(period.startsWith("y") && period.length === 5
+                  ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                  : period.startsWith("e:")
+                    ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                    : {}),
+              }}
+              className="text-rw-accent hover:underline"
+            >
+              {tl("Player leaderboards")}
+            </HubLink>
           </>
         )}
         {ready && mode === "player" && (
@@ -588,6 +601,9 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
               className="text-rw-accent hover:underline"
             >
               {tl("Pro tier list")}
+            </HubLink>
+            <HubLink to={{ kind: "rankings" }} className="text-rw-accent hover:underline">
+              {tl("Power rankings")}
             </HubLink>
           </>
         )}
@@ -1155,6 +1171,25 @@ export const TeamRows: React.FC<{
                 >
                   {tl("Pro tier list")} →
                 </HubLink>
+                <HubLink
+                  to={{ kind: "rankings" }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Power rankings")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "leaders",
+                    ...(period && period.startsWith("y") && period.length === 5
+                      ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                      : period && period.startsWith("e:")
+                        ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                        : {}),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
                 <SectionCard
                   section={tl("Most picked: {team}", { team: s.n })}
                   sub={periodLabel}
@@ -1616,6 +1651,21 @@ const PlayerRows: React.FC<{
                 >
                   {tl("Pro tier list")} →
                 </HubLink>
+                <HubLink
+                  to={{
+                    kind: "leaders",
+                    ...(s.p.roles[0] ? { query: `role=${encodeURIComponent(s.p.roles[0])}` } : {}),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "rankings" }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Power rankings")} →
+                </HubLink>
                 <SectionCard
                   section={tl("Champions: {player}", { player: s.n })}
                   sub={periodLabel}
@@ -1749,6 +1799,12 @@ const PlayerRows: React.FC<{
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
               </HubLink>
               <SectionCard
                 section={tl("Champions both played")}
@@ -2412,6 +2468,13 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
               data-nocapture="1"
             >
               {tl("Pro tier list")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "rankings" }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Power rankings")} →
             </HubLink>
             <SectionCard
               section={`${tl("Compare")} · ${periodLabel}`}

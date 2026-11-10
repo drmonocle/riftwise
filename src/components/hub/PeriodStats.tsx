@@ -415,6 +415,19 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; teamSlu
                   {tl("Game finder")} →
                 </HubLink>
               )}
+              <HubLink
+                to={{
+                  kind: "leaders",
+                  ...(period && /^y\d{4}$/.test(period)
+                    ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                    : period?.startsWith("e:")
+                      ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                      : {}),
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
             </>
           )}
           <CopyPeriodTextPost
@@ -1118,6 +1131,12 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Compare")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "rankings" }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Power rankings")} →
                 </HubLink>
                 <SectionCard
                   section={who ? `${who.name} · ${tl("Champions")}` : tl("Champions")}
