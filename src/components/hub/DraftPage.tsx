@@ -1677,22 +1677,41 @@ const DraftMatchupPanel: React.FC<{
     <Section
       title={`${tl("Lane by lane")} · ${tl("Matchups")}`}
       right={
-        <SectionCard
-          section={`${tl("Lane by lane")} · ${tl("Matchups")}`}
-          sub={`${blue.team.name} vs ${red.team.name}`}
-          name={`${blue.team.name}-${red.team.name}-draft-lanes`}
-          rows={() =>
-            byRole.map(({ rKey, bChamp, rChamp, bPlayer, rPlayer, laneStats }, idx) => ({
-              rank: idx + 1,
-              champ: bChamp || rChamp || undefined,
-              team: blue.team.name,
-              label: `${roleName(rKey)}: ${bChamp ? champName(bChamp) : "–"} vs ${rChamp ? champName(rChamp) : "–"}`,
-              sub: [bPlayer ? `${bPlayer.name} (${bPlayer.g}G)` : "", rPlayer ? `${rPlayer.name} (${rPlayer.g}G)` : ""].filter(Boolean).join(" vs ") || undefined,
-              value: laneStats ? `${winRate(laneStats.bw, laneStats.g)} (${laneStats.g}G)` : undefined,
-              win: laneStats && laneStats.g > 0 ? laneStats.bw / laneStats.g >= 0.5 : undefined,
-            }))
-          }
-        />
+        <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+          <HubLink
+            to={{ kind: "prep", a: blue.team.u, b: red.team.u, ...(period !== "all" ? { period } : {}) }}
+            className="text-rw-accent hover:underline"
+          >
+            {tl("Match prep")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "finder",
+              query: `team=${encodeURIComponent(blue.team.u)}&vs=${encodeURIComponent(red.team.u)}${
+                bluePicks.length ? `&champ=${encodeURIComponent(bluePicks.slice(0, 3).join(","))}` : ""
+              }${redPicks.length ? `&vschamp=${encodeURIComponent(redPicks.slice(0, 3).join(","))}` : ""}`,
+            }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Game finder")} →
+          </HubLink>
+          <SectionCard
+            section={`${tl("Lane by lane")} · ${tl("Matchups")}`}
+            sub={`${blue.team.name} vs ${red.team.name}`}
+            name={`${blue.team.name}-${red.team.name}-draft-lanes`}
+            rows={() =>
+              byRole.map(({ rKey, bChamp, rChamp, bPlayer, rPlayer, laneStats }, idx) => ({
+                rank: idx + 1,
+                champ: bChamp || rChamp || undefined,
+                team: blue.team.name,
+                label: `${roleName(rKey)}: ${bChamp ? champName(bChamp) : "–"} vs ${rChamp ? champName(rChamp) : "–"}`,
+                sub: [bPlayer ? `${bPlayer.name} (${bPlayer.g}G)` : "", rPlayer ? `${rPlayer.name} (${rPlayer.g}G)` : ""].filter(Boolean).join(" vs ") || undefined,
+                value: laneStats ? `${winRate(laneStats.bw, laneStats.g)} (${laneStats.g}G)` : undefined,
+                win: laneStats && laneStats.g > 0 ? laneStats.bw / laneStats.g >= 0.5 : undefined,
+              }))
+            }
+          />
+        </span>
       }
     >
       <div className="divide-y divide-rw-border/60 text-xs">
@@ -2177,6 +2196,17 @@ const PlayerPools: React.FC<{
       title={tl("{team}: player pools", { team: side.team.name })}
       right={
         <span className="flex flex-wrap items-center gap-2">
+          {rows[0]?.champs[0]?.c && (
+            <HubLink
+              to={{
+                kind: "counters",
+                query: `champ=${encodeURIComponent(prettySlug(rows[0].champs[0].c))}&role=${encodeURIComponent(ROLES[rows[0].role])}`,
+              }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Counters")} →
+            </HubLink>
+          )}
           <HubLink
             to={{
               kind: "team",

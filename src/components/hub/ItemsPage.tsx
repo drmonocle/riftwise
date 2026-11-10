@@ -305,20 +305,18 @@ const PlayerItemsView: React.FC<{
             >
               {tl("Game finder")} →
             </HubLink>
-            <HubLink
-              to={{
-                kind: "finder",
-                query: new URLSearchParams({
-                  player: slug,
-                  ...(champ ? { champ } : {}),
-                  ...(year ? { year } : {}),
-                }).toString(),
-              }}
-              className="text-[11px] text-rw-accent hover:underline font-semibold"
-              data-nocapture="1"
-            >
-              {tl("Game finder")} →
-            </HubLink>
+            {(champ || g[0]?.[2]) && (
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: `champ=${encodeURIComponent(champ || prettySlug(g[0][2]))}`,
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
             <CopyItemsPost
               title={`${name} · ${label}`}
               sub={`${fmtNum(g.length)}G${scope ? ` · ${scope}` : ""}`}
@@ -612,6 +610,17 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
               >
                 {tl("Game finder")} →
               </HubLink>
+              {it.c?.[0] && (
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: `champ=${encodeURIComponent(prettySlug(it.c[0][0]))}`,
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+              )}
             </>
           )}
           <CopyItemsPost
@@ -778,6 +787,17 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
               >
                 {tl("Game finder")} →
               </HubLink>
+              {champ && (
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: `champ=${encodeURIComponent(champ)}`,
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+              )}
             </>
           )}
           {rows.length > 0 && (
@@ -958,6 +978,17 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
               >
                 {tl("Game finder")} →
               </HubLink>
+              {y?.c[0] && (
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: `champ=${encodeURIComponent(prettySlug(y.c[0][0]))}`,
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+              )}
             </>
           )}
           {y && y.p.length > 0 && (
@@ -1083,7 +1114,13 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
       title={tl("Item stats")}
       right={
         shown.length > 0 ? (
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center gap-2">
+            <HubLink to={{ kind: "champions" }} className="text-[11px] text-rw-accent hover:underline">
+              {tl("Champions")} →
+            </HubLink>
+            <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Pro tier list")} →
+            </HubLink>
             <CopyItemsPost
               title={tl("Item stats")}
               sub={scope || undefined}

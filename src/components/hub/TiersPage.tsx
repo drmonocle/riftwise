@@ -164,10 +164,38 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                 {tl("Counter-pick finder")} →
               </HubLink>
               <HubLink
+                to={{
+                  kind: "draft",
+                  ...(key.startsWith("p")
+                    ? { query: `p=p:${encodeURIComponent(key.slice(1))}` }
+                    : key.startsWith("y")
+                      ? { query: `p=${encodeURIComponent(key)}` }
+                      : {}),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "items" }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Item history")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  ...(key.startsWith("p")
+                    ? { query: `patch=${encodeURIComponent(key.slice(1))}${role ? `&role=${encodeURIComponent(role)}` : ""}` }
+                    : key.startsWith("y")
+                      ? { query: `year=${encodeURIComponent(key.slice(1))}${role ? `&role=${encodeURIComponent(role)}` : ""}` }
+                      : role
+                        ? { query: `role=${encodeURIComponent(role)}` }
+                        : {}),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
               </HubLink>
               <SectionCard
                 section={tl("Pro tier list")}

@@ -392,6 +392,18 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 </HubLink>
               )}
               <HubLink
+                to={{ kind: "champions", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+                className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
+              >
+                {tl("Champions")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "draft" }}
+                className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "items", query: `champ=${encodeURIComponent(slug)}` }}
                 className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
               >
@@ -600,21 +612,34 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               <Section
                 title={tl("{champ} does best against", { champ: cName })}
                 right={
-                  <SectionCard
-                    section={tl("{champ} does best against", { champ: cName })}
-                    name={cName}
-                    sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
-                    rows={() =>
-                      good.map((x, idx) => ({
-                        rank: idx + 1,
-                        champ: x.c,
-                        label: champName(x.c),
-                        sub: `${x.role >= 0 ? `${roleName(ROLES[x.role])} · ` : ""}${x.g}G${x.gd != null ? ` · ${x.gd > 0 ? "+" : ""}${x.gd} GD@15` : ""}`,
-                        value: `${Math.round((x.w / x.g) * 100)}%`,
-                        win: true,
-                      }))
-                    }
-                  />
+                  <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+                    {good[0] && (
+                      <HubLink
+                        to={{
+                          kind: "finder",
+                          query: `champ=${encodeURIComponent(rawChamp || cName)}&vschamp=${encodeURIComponent(good[0].c)}${good[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[good[0].role])}` : ""}`,
+                        }}
+                        className="text-[11px] text-rw-accent hover:underline"
+                      >
+                        {tl("Game finder")} →
+                      </HubLink>
+                    )}
+                    <SectionCard
+                      section={tl("{champ} does best against", { champ: cName })}
+                      name={cName}
+                      sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
+                      rows={() =>
+                        good.map((x, idx) => ({
+                          rank: idx + 1,
+                          champ: x.c,
+                          label: champName(x.c),
+                          sub: `${x.role >= 0 ? `${roleName(ROLES[x.role])} · ` : ""}${x.g}G${x.gd != null ? ` · ${x.gd > 0 ? "+" : ""}${x.gd} GD@15` : ""}`,
+                          value: `${Math.round((x.w / x.g) * 100)}%`,
+                          win: true,
+                        }))
+                      }
+                    />
+                  </span>
                 }
               >
                 <ul className="text-xs space-y-1.5">
@@ -672,21 +697,34 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               <Section
                 title={tl("{champ} struggles against", { champ: cName })}
                 right={
-                  <SectionCard
-                    section={tl("{champ} struggles against", { champ: cName })}
-                    name={cName}
-                    sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
-                    rows={() =>
-                      bad.map((x, idx) => ({
-                        rank: idx + 1,
-                        champ: x.c,
-                        label: champName(x.c),
-                        sub: `${x.role >= 0 ? `${roleName(ROLES[x.role])} · ` : ""}${x.g}G${x.gd != null ? ` · ${x.gd > 0 ? "+" : ""}${x.gd} GD@15` : ""}`,
-                        value: `${Math.round((x.w / x.g) * 100)}%`,
-                        win: false,
-                      }))
-                    }
-                  />
+                  <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+                    {bad[0] && (
+                      <HubLink
+                        to={{
+                          kind: "finder",
+                          query: `champ=${encodeURIComponent(rawChamp || cName)}&vschamp=${encodeURIComponent(bad[0].c)}${bad[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[bad[0].role])}` : ""}`,
+                        }}
+                        className="text-[11px] text-rw-accent hover:underline"
+                      >
+                        {tl("Game finder")} →
+                      </HubLink>
+                    )}
+                    <SectionCard
+                      section={tl("{champ} struggles against", { champ: cName })}
+                      name={cName}
+                      sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
+                      rows={() =>
+                        bad.map((x, idx) => ({
+                          rank: idx + 1,
+                          champ: x.c,
+                          label: champName(x.c),
+                          sub: `${x.role >= 0 ? `${roleName(ROLES[x.role])} · ` : ""}${x.g}G${x.gd != null ? ` · ${x.gd > 0 ? "+" : ""}${x.gd} GD@15` : ""}`,
+                          value: `${Math.round((x.w / x.g) * 100)}%`,
+                          win: false,
+                        }))
+                      }
+                    />
+                  </span>
                 }
               >
                 <ul className="text-xs space-y-1.5">
@@ -826,6 +864,17 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         aria-label={tl("Search champions…")}
                         className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted w-36"
                       />
+                    )}
+                    {data.data.ch.duos[0] && (
+                      <HubLink
+                        to={{
+                          kind: "finder",
+                          query: `champ=${encodeURIComponent(`${rawChamp || cName},${data.data.ch.duos[0][0]}`)}`,
+                        }}
+                        className="text-[11px] text-rw-accent hover:underline"
+                      >
+                        {tl("Game finder")} →
+                      </HubLink>
                     )}
                     <SectionCard
                       section={tl("Bot lane partners")}

@@ -273,7 +273,17 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
     <Section
       title={tl("Win chances")}
       share={`${a.u}-vs-${b.u}-win-chances`}
-      right={overview ? <BroadcastCardButton data={overview} name={`${a.name}-vs-${b.name}-match-prep`} label={tl("Overview card")} /> : undefined}
+      right={
+        <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+          <HubLink to={{ kind: "rankings", ...(rankQuery ? { query: rankQuery } : {}) }} className="text-rw-accent hover:underline">
+            {tl("Power rankings")} →
+          </HubLink>
+          <HubLink to={{ kind: "compare", mode: "team", a: a.u, b: b.u }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Compare")} →
+          </HubLink>
+          {overview && <BroadcastCardButton data={overview} name={`${a.name}-vs-${b.name}-match-prep`} label={tl("Overview card")} />}
+        </span>
+      }
     >
       <div className="flex items-center justify-between gap-2 text-xs font-bold">
         <span className="flex items-center gap-1.5 min-w-0 text-rw-side-a">
@@ -796,20 +806,31 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
       title={tl("Calculated")}
       share={`${a.team.u}-vs-${b.team.u}-calculated`}
       right={
-        <SectionCard
-          section={tl("Calculated")}
-          sub={`${a.team.name} vs ${b.team.name}`}
-          name={`${a.team.u}-vs-${b.team.u}-calculated`}
-          rows={() =>
-            rows.map((r, idx) => ({
-              rank: idx + 1,
-              team: a.team.name,
-              label: r.label,
-              sub: r.how,
-              value: r.textValue || (typeof r.value === "string" ? r.value : ""),
-            }))
-          }
-        />
+        <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+          <HubLink
+            to={{ kind: "compare", mode: "team", a: a.team.u, b: b.team.u, ...(period !== "all" ? { period } : {}) }}
+            className="text-rw-accent hover:underline"
+          >
+            {tl("Compare")} →
+          </HubLink>
+          <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Power rankings")} →
+          </HubLink>
+          <SectionCard
+            section={tl("Calculated")}
+            sub={`${a.team.name} vs ${b.team.name}`}
+            name={`${a.team.u}-vs-${b.team.u}-calculated`}
+            rows={() =>
+              rows.map((r, idx) => ({
+                rank: idx + 1,
+                team: a.team.name,
+                label: r.label,
+                sub: r.how,
+                value: r.textValue || (typeof r.value === "string" ? r.value : ""),
+              }))
+            }
+          />
+        </span>
       }
     >
       <dl className="divide-y divide-rw-border/70 text-xs">
@@ -1323,27 +1344,35 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
       share={`${a.team.name}-vs-${b.team.name}-form`}
       right={
         !hidden && (la.length > 0 || lb.length > 0) ? (
-          <SectionCard
-            section={tl("Form: last 10 series")}
-            sub={`${a.team.name} vs ${b.team.name}`}
-            name={`${a.team.name}-vs-${b.team.name}-form`}
-            rows={() =>
-              [
-                { s: a, rows: la },
-                { s: b, rows: lb },
-              ].map(({ s, rows }, idx) => {
-                const w = rows.filter((r) => r[3] > r[4]).length;
-                return {
-                  rank: idx + 1,
-                  team: s.team.name,
-                  label: s.team.name,
-                  sub: rows.map((r) => `${r[3] > r[4] ? tc("short result", "W") : tc("short result", "L")} (${r[3]}-${r[4]} vs ${r[1]})`).slice(0, 5).join(" · "),
-                  value: `${w}–${rows.length - w}`,
-                  win: rows.length > 0 ? w >= rows.length - w : undefined,
-                };
-              })
-            }
-          />
+          <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+            <HubLink
+              to={{ kind: "finder", query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}` }}
+              className="text-rw-accent hover:underline"
+            >
+              {tl("Game finder")} →
+            </HubLink>
+            <SectionCard
+              section={tl("Form: last 10 series")}
+              sub={`${a.team.name} vs ${b.team.name}`}
+              name={`${a.team.name}-vs-${b.team.name}-form`}
+              rows={() =>
+                [
+                  { s: a, rows: la },
+                  { s: b, rows: lb },
+                ].map(({ s, rows }, idx) => {
+                  const w = rows.filter((r) => r[3] > r[4]).length;
+                  return {
+                    rank: idx + 1,
+                    team: s.team.name,
+                    label: s.team.name,
+                    sub: rows.map((r) => `${r[3] > r[4] ? tc("short result", "W") : tc("short result", "L")} (${r[3]}-${r[4]} vs ${r[1]})`).slice(0, 5).join(" · "),
+                    value: `${w}–${rows.length - w}`,
+                    win: rows.length > 0 ? w >= rows.length - w : undefined,
+                  };
+                })
+              }
+            />
+          </span>
         ) : undefined
       }
     >
@@ -1545,8 +1574,18 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
     <Section
       title={tl("Fearless pool depth")}
       right={
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center gap-2">
           <span className="text-[11px] text-rw-sub">{periodLabel}</span>
+          <HubLink
+            to={{
+              kind: "draft",
+              query: `teams=${encodeURIComponent(a.team.u)},${encodeURIComponent(b.team.u)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+            }}
+            className="text-[11px] text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Draft board")} →
+          </HubLink>
           <BroadcastCardButton
             data={() =>
               fearlessCard({

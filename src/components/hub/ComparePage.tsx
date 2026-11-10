@@ -1780,6 +1780,17 @@ const PlayerHeadToHead: React.FC<{
                 className="bg-rw-bg border border-rw-border rounded-lg px-2 py-0.5 text-xs text-rw-text placeholder:text-rw-muted w-36 focus:border-rw-accent focus:outline-none"
               />
             )}
+            {s.top[0] && (
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: `champ=${prettySlug(s.top[0].ca)}&vs=${encodeURIComponent(s.top[0].cb)}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
             <HubLink
               to={{ kind: "items", query: `player=${encodeURIComponent(sa)}` }}
               className="text-[11px] text-rw-accent hover:underline"

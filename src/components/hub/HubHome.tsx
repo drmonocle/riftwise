@@ -582,20 +582,38 @@ const LatestTournaments: React.FC<{ latest: EventListItem[] }> = ({ latest }) =>
     title={tl("Latest tournaments")}
     right={
       latest.length > 0 ? (
-        <SectionCard
-          section={tl("Latest tournaments")}
-          name="RiftWise"
-          rows={() =>
-            latest.slice(0, 6).map((e, idx) => ({
-              rank: idx + 1,
-              team: e.w || undefined,
-              label: e.n,
-              sub: fmtDate(e.en, false),
-              value: e.w || fmtDate(e.en, false),
-              win: Boolean(e.w),
-            }))
-          }
-        />
+        <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+          {latest[0]?.w && latest[1]?.w && latest[0].w !== latest[1].w && (
+            <HubLink
+              to={{
+                kind: "compare",
+                mode: "team",
+                a: latest[0].wu || prettySlug(latest[0].w),
+                b: latest[1].wu || prettySlug(latest[1].w),
+              }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Compare")} →
+            </HubLink>
+          )}
+          <HubLink to={{ kind: "tournaments" }} className="text-[11px] text-rw-accent hover:underline">
+            {tl("Tournaments")} →
+          </HubLink>
+          <SectionCard
+            section={tl("Latest tournaments")}
+            name="RiftWise"
+            rows={() =>
+              latest.slice(0, 6).map((e, idx) => ({
+                rank: idx + 1,
+                team: e.w || undefined,
+                label: e.n,
+                sub: fmtDate(e.en, false),
+                value: e.w || fmtDate(e.en, false),
+                win: Boolean(e.w),
+              }))
+            }
+          />
+        </span>
       ) : undefined
     }
   >
@@ -798,12 +816,20 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
               </HubLink>
             )}
             {rows.length >= 1 && (
-              <HubLink
-                to={{ kind: "items", query: `player=${encodeURIComponent(rows[0].u || prettySlug(rows[0].n))}` }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Item history")}
-              </HubLink>
+              <>
+                <HubLink
+                  to={{ kind: "items", query: `player=${encodeURIComponent(rows[0].u || prettySlug(rows[0].n))}` }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Item history")}
+                </HubLink>
+                <HubLink
+                  to={{ kind: "finder", query: `player=${encodeURIComponent(rows[0].u || prettySlug(rows[0].n))}` }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")}
+                </HubLink>
+              </>
             )}
             <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-accent hover:underline">
               {tl("Player leaderboards")}
@@ -1065,7 +1091,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
               </HubLink>
             </>
           )}
-          {q.trim() && rows.length >= 2 && rows[0].w && rows[1].w && rows[0].w !== rows[1].w && (
+          {rows.length >= 2 && rows[0].w && rows[1].w && rows[0].w !== rows[1].w && (
             <>
               <HubLink
                 to={{ kind: "prep", a: rows[0].wu || prettySlug(rows[0].w), b: rows[1].wu || prettySlug(rows[1].w) }}
@@ -1081,6 +1107,9 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
               </HubLink>
             </>
           )}
+          <HubLink to={{ kind: "titles" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Titles")} →
+          </HubLink>
           <SectionCard
             section={tl("Tournaments")}
             name={scope === "main" ? tl("Main leagues & internationals") : tl("Everything")}
