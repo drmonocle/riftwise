@@ -1057,6 +1057,10 @@ const MetaSpotlight: React.FC<{
                 <HubLink to={{ kind: "counters", query: `champ=${prettySlug(item.c)}` }} className="hover:text-rw-accent hover:underline">
                   {tl("Counters")}
                 </HubLink>
+                {" · "}
+                <HubLink to={{ kind: "items", query: `champ=${encodeURIComponent(prettySlug(item.c))}` }} className="hover:text-rw-accent hover:underline">
+                  {tl("Item history")}
+                </HubLink>
               </div>
             )}
           </div>

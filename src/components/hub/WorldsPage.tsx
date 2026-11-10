@@ -253,6 +253,37 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
                 <HubLink to={{ kind: "leaders", query: `event=${encodeURIComponent(d.parent.u)}` }} className={btn}>
                   {tl("Leaderboards")} →
                 </HubLink>
+                <HubLink
+                  to={{
+                    kind: "champions",
+                    query: `league=${encodeURIComponent(def.league)}&year=${encodeURIComponent(d.year)}&event=${encodeURIComponent(d.parent.u)}`,
+                  }}
+                  className={btn}
+                >
+                  {tl("Champions")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "finder",
+                    query: `league=${encodeURIComponent(def.league)}&year=${encodeURIComponent(d.year)}&event=${encodeURIComponent(d.parent.u)}`,
+                  }}
+                  className={btn}
+                >
+                  {tl("Game finder")} →
+                </HubLink>
+              </>
+            )}
+            {d.all && (
+              <>
+                <HubLink
+                  to={{ kind: "titles", query: kind === "worlds" ? "kind=Worlds" : "kind=International" }}
+                  className={btn}
+                >
+                  {tl("Titles")} →
+                </HubLink>
+                <HubLink to={{ kind: "records" }} className={btn}>
+                  {tl("Records")} →
+                </HubLink>
               </>
             )}
             <CopyIntlPost d={d} kind={kind} title={title} />
@@ -393,7 +424,31 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
             title={tl("Knockouts")}
             right={
               ko.qf.some((m) => m.w) ? (
-                <BroadcastCardButton data={() => bracketPicksCard(ko, byU, d.name)} name={`worlds-${d.year}-knockouts`} label={tl("Overview card")} />
+                <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+                  {ko.final?.a && ko.final?.b && (
+                    <>
+                      <HubLink
+                        to={{ kind: "prep", a: ko.final.a, b: ko.final.b, period: `y${d.year}` }}
+                        className="text-[11px] font-semibold text-rw-accent hover:underline"
+                      >
+                        {tl("Match prep")} →
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "draft", query: `teams=${encodeURIComponent(ko.final.a)},${encodeURIComponent(ko.final.b)}&p=y${d.year}` }}
+                        className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Draft board")} →
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "compare", mode: "team", a: ko.final.a, b: ko.final.b, period: `y${d.year}` }}
+                        className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Compare")} →
+                      </HubLink>
+                    </>
+                  )}
+                  <BroadcastCardButton data={() => bracketPicksCard(ko, byU, d.name)} name={`worlds-${d.year}-knockouts`} label={tl("Overview card")} />
+                </span>
               ) : undefined
             }
           >
@@ -486,7 +541,7 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
             aria-label={tl("Filter by name or team…")}
             className="bg-rw-bg border border-rw-border rounded-md px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted focus:border-rw-accent focus:outline-none w-40"
           />
-          {terms.length > 0 && rows.length >= 1 && (() => {
+          {rows.length >= 1 && (() => {
             const opp = rows.length >= 2 ? rows[1] : next.get(rows[0]) || undefined;
             return (
               <span className="flex items-center gap-2">
@@ -627,7 +682,34 @@ const BracketNow: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Bracket
         title={tl("Bracket")}
         right={
           res.matches.some((m) => m.w) ? (
-            <BroadcastCardButton data={() => msiBracketCard(res, byU, d.name, kind)} name={`${kind}-${d.year}-bracket`} label={tl("Overview card")} />
+            <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+              {(() => {
+                const topM = [...res.matches].reverse().find((m) => m.a && m.b);
+                return topM ? (
+                  <>
+                    <HubLink
+                      to={{ kind: "prep", a: topM.a, b: topM.b, period: `y${d.year}` }}
+                      className="text-[11px] font-semibold text-rw-accent hover:underline"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(topM.a)},${encodeURIComponent(topM.b)}&p=y${d.year}` }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "compare", mode: "team", a: topM.a, b: topM.b, period: `y${d.year}` }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                  </>
+                ) : null;
+              })()}
+              <BroadcastCardButton data={() => msiBracketCard(res, byU, d.name, kind)} name={`${kind}-${d.year}-bracket`} label={tl("Overview card")} />
+            </span>
           ) : undefined
         }
       >

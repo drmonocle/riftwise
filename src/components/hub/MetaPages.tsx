@@ -156,6 +156,12 @@ export const PatchesPanel: React.FC = () => {
                   >
                     {tl("Item history")}
                   </HubLink>
+                  <HubLink
+                    to={{ kind: "draft", query: `p=p:${encodeURIComponent(p.p)}` }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Draft board")}
+                  </HubLink>
                   <SectionCard
                     section={tl("Patch {patch}", { patch: p.p })}
                     name={`${fmtDate(p.from)} – ${fmtDate(p.to)}`}
@@ -836,6 +842,48 @@ const LeagueEventsSection: React.FC<{
       right={
         events.length > 0 ? (
           <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+            {shownEvents.length >= 2 &&
+              shownEvents[0].w &&
+              shownEvents[1].w &&
+              shownEvents[0].w !== shownEvents[1].w &&
+              !isHidden(`event:${shownEvents[0].u}`, shownEvents[0].en) &&
+              !isHidden(`event:${shownEvents[1].u}`, shownEvents[1].en) && (
+                <>
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: shownEvents[0].wu || prettySlug(shownEvents[0].w),
+                      b: shownEvents[1].wu || prettySlug(shownEvents[1].w),
+                    }}
+                    className="text-[11px] font-semibold text-rw-accent hover:underline"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      mode: "team",
+                      a: shownEvents[0].wu || prettySlug(shownEvents[0].w),
+                      b: shownEvents[1].wu || prettySlug(shownEvents[1].w),
+                    }}
+                    className="text-[11px] font-semibold text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                </>
+              )}
+            <HubLink
+              to={{ kind: "champions", query: `league=${encodeURIComponent(l.u)}${season ? `&year=${encodeURIComponent(season)}` : ""}` }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Champions")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "finder", query: `league=${encodeURIComponent(l.u)}${season ? `&year=${encodeURIComponent(season)}` : ""}` }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Game finder")} →
+            </HubLink>
             {events.length > 10 && (
               <input
                 value={evSearch}

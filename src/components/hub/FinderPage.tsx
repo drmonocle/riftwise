@@ -687,6 +687,42 @@ const FinderBody: React.FC<{
                 won={won}
                 avg={avg}
               />
+              {!q.get("team") && !q.get("vs") && found[0]?.g[10] && found[0]?.g[11] && (
+                <>
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: found[0].g[12] || prettySlug(found[0].g[10]!),
+                      b: found[0].g[13] || prettySlug(found[0].g[11]!),
+                      period: year ? `y${year}` : undefined,
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "draft",
+                      query: `teams=${encodeURIComponent(found[0].g[12] || prettySlug(found[0].g[10]!))},${encodeURIComponent(found[0].g[13] || prettySlug(found[0].g[11]!))}${year ? `&p=y${encodeURIComponent(year)}` : ""}`,
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      mode: "team",
+                      a: found[0].g[12] || prettySlug(found[0].g[10]!),
+                      b: found[0].g[13] || prettySlug(found[0].g[11]!),
+                      period: year ? `y${year}` : undefined,
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                </>
+              )}
               {q.get("team") && q.get("vs") && (
                 <>
                   <HubLink
@@ -1051,20 +1087,36 @@ const Cohort: React.FC<{
               </HubLink>
             )}
             {wr && rows.length >= 1 && (
-              <HubLink
-                to={{ kind: "items", query: `champ=${prettySlug(rows[0][0])}` }}
-                className="text-rw-accent hover:underline"
-              >
-                {tl("Item history")} →
-              </HubLink>
+              <>
+                <HubLink
+                  to={{ kind: "items", query: `champ=${prettySlug(rows[0][0])}` }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "tiers" }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
+              </>
             )}
             {!wr && rows.length >= 1 && (
-              <HubLink
-                to={{ kind: "counters", query: `champ=${prettySlug(rows[0][0])}` }}
-                className="text-rw-accent hover:underline"
-              >
-                {tl("Counters")} →
-              </HubLink>
+              <>
+                <HubLink
+                  to={{ kind: "counters", query: `champ=${prettySlug(rows[0][0])}` }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "draft" }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+              </>
             )}
           </span>
         </div>
