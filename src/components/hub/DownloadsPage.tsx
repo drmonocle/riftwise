@@ -205,7 +205,24 @@ const YearDownloads: React.FC<{
             ))}
           </select>
         </div>
-        {busy && <span className="text-[11px] text-rw-accent">{busy}</span>}
+        <span className="flex flex-wrap items-center gap-2 text-[11px]">
+          {busy && <span className="text-rw-accent">{busy}</span>}
+          <HubLink to={{ kind: "finder", query: `year=${encodeURIComponent(activeYear)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Game finder")} →
+          </HubLink>
+          <HubLink to={{ kind: "tournaments", year: activeYear }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Tournaments")} →
+          </HubLink>
+          <HubLink to={{ kind: "best", query: `year=${encodeURIComponent(activeYear)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Best games")} →
+          </HubLink>
+          <HubLink to={{ kind: "leaders", query: `year=${encodeURIComponent(activeYear)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Player leaderboards")} →
+          </HubLink>
+          <HubLink to={{ kind: "tiers", query: `key=y${encodeURIComponent(activeYear)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Pro tier list")} →
+          </HubLink>
+        </span>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {mainEvs.length > 0 && (
@@ -267,19 +284,80 @@ const LeagueYears: React.FC<{ league: DownloadLeague; initialYear?: string; onOp
       setBusy(tl("Download failed. Try again in a minute."));
     }
   };
+  const activeLeagueYear = open || years[0] || "";
   return (
     <div className={`${card} space-y-1`}>
-      <div className="flex items-baseline justify-between gap-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-sm font-bold text-rw-text">
           {league.u ? (
-            <HubLink to={{ kind: "league", slug: league.u }} className="hover:text-rw-accent hover:underline">
+            <HubLink to={{ kind: "league", slug: league.u, ...(activeLeagueYear ? { year: activeLeagueYear } : {}) }} className="hover:text-rw-accent hover:underline">
               {league.l || league.u}
             </HubLink>
           ) : (
             league.l || league.u
           )}
         </h3>
-        {busy && <span className="text-[11px] text-rw-accent">{busy}</span>}
+        <span className="flex flex-wrap items-center gap-2 text-[11px]">
+          {busy && <span className="text-rw-accent">{busy}</span>}
+          {league.u && (
+            <>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: new URLSearchParams({
+                    league: league.u,
+                    ...(activeLeagueYear ? { year: activeLeagueYear } : {}),
+                  }).toString(),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "rankings", query: `league=${encodeURIComponent(league.u)}` }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "leaders",
+                  query: new URLSearchParams({
+                    league: league.u,
+                    ...(activeLeagueYear ? { year: activeLeagueYear } : {}),
+                  }).toString(),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "tiers",
+                  query: new URLSearchParams({
+                    league: league.u,
+                    ...(activeLeagueYear ? { key: `y${activeLeagueYear}` } : {}),
+                  }).toString(),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "best",
+                  query: new URLSearchParams({
+                    league: league.u,
+                    ...(activeLeagueYear ? { year: activeLeagueYear } : {}),
+                  }).toString(),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Best games")} →
+              </HubLink>
+            </>
+          )}
+        </span>
       </div>
       {years.map((y) => {
         const evs = league.y[y];

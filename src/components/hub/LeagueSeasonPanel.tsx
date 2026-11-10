@@ -216,7 +216,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                     <HubLink
                       to={{
                         kind: "items",
-                        query: `player=${encodeURIComponent(regular[0].u || prettySlug(regular[0].n))}&year=${encodeURIComponent(year)}`,
+                        query: `player=${encodeURIComponent(regular[0].u || prettySlug(regular[0].n))}&year=${encodeURIComponent(year)}${terms.length > 0 && regular[0].r ? `&role=${encodeURIComponent(regular[0].r)}` : ""}`,
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline"
                     >
@@ -264,11 +264,20 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                     <HubLink
                       to={{
                         kind: "tiers",
-                        query: `league=${encodeURIComponent(league)}&key=y${encodeURIComponent(year)}`,
+                        query: `league=${encodeURIComponent(league)}&key=y${encodeURIComponent(year)}${terms.length > 0 && regular[0].r ? `&role=${encodeURIComponent(regular[0].r)}` : ""}`,
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline"
                     >
                       {tl("Pro tier list")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "leaders",
+                        query: `league=${encodeURIComponent(league)}&year=${encodeURIComponent(year)}${terms.length > 0 && regular[0].r ? `&role=${encodeURIComponent(regular[0].r)}` : ""}`,
+                      }}
+                      className="text-[11px] font-semibold text-rw-accent hover:underline"
+                    >
+                      {tl("Player leaderboards")} →
                     </HubLink>
                     <HubLink
                       to={{

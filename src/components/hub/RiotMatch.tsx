@@ -125,19 +125,22 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
   const t1Slug = (index.data && findHubTeam(index.data, m.team1Name, m.team1Code)) || prettySlug(m.team1Name);
   const t2Slug = (index.data && findHubTeam(index.data, m.team2Name, m.team2Code)) || prettySlug(m.team2Name);
   const live = m.state === "inProgress";
+  const yr = m.startTimeUtc && /^\d{4}$/.test(m.startTimeUtc.slice(0, 4)) ? m.startTimeUtc.slice(0, 4) : "";
+  const period = yr ? `y${yr}` : undefined;
+  const lg = m.leagueSlug || m.leagueName ? resolveLeagueSlug(m.leagueSlug || m.leagueName) : "";
   return (
     <div className="space-y-3">
       <div className={card}>
         <div className="text-[11px] text-rw-muted flex flex-wrap items-center justify-between gap-2">
           <span className="flex flex-wrap gap-x-2">
-            <HubLink to={{ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) }} className="text-rw-accent hover:underline">
+            <HubLink to={{ kind: "league", slug: lg || resolveLeagueSlug(m.leagueSlug || m.leagueName), ...(yr ? { year: yr } : {}) }} className="text-rw-accent hover:underline">
               {m.leagueName}
             </HubLink>
             {m.blockName && (
               <span>
                 ·{" "}
                 <HubLink
-                  to={{ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) }}
+                  to={{ kind: "league", slug: lg || resolveLeagueSlug(m.leagueSlug || m.leagueName), ...(yr ? { year: yr } : {}) }}
                   className="hover:text-rw-accent hover:underline"
                 >
                   {stageLabel(m.blockName)}
@@ -149,7 +152,12 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `team=${encodeURIComponent(t1Slug)}&vs=${encodeURIComponent(t2Slug)}`,
+                  query: new URLSearchParams({
+                    team: t1Slug,
+                    vs: t2Slug,
+                    ...(yr ? { year: yr } : {}),
+                    ...(lg ? { league: lg } : {}),
+                  }).toString(),
                 }}
                 className="hover:text-rw-accent hover:underline"
               >
@@ -159,7 +167,7 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
             <span>
               ·{" "}
               <HubLink
-                to={{ kind: "prep", a: t1Slug, b: t2Slug }}
+                to={{ kind: "prep", a: t1Slug, b: t2Slug, period }}
                 className="hover:text-rw-accent hover:underline"
                 title={tl("Match prep")}
               >
@@ -200,31 +208,49 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
             <MatchOverviewButton match={m} />
             <MatchPrepButton match={m} />
             <HubLink
-              to={{ kind: "draft", query: `teams=${encodeURIComponent(t1Slug)},${encodeURIComponent(t2Slug)}` }}
+              to={{ kind: "draft", query: `teams=${encodeURIComponent(t1Slug)},${encodeURIComponent(t2Slug)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
             >
               {tl("Draft board")}
             </HubLink>
             <HubLink
-              to={{ kind: "compare", mode: "team", a: t1Slug, b: t2Slug }}
+              to={{ kind: "compare", mode: "team", a: t1Slug, b: t2Slug, period }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
             >
               {tl("Compare")}
             </HubLink>
             <HubLink
-              to={{ kind: "finder", query: `team=${encodeURIComponent(t1Slug)}&vs=${encodeURIComponent(t2Slug)}` }}
+              to={{
+                kind: "finder",
+                query: new URLSearchParams({
+                  team: t1Slug,
+                  vs: t2Slug,
+                  ...(yr ? { year: yr } : {}),
+                  ...(lg ? { league: lg } : {}),
+                }).toString(),
+              }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
             >
               {tl("Game finder")}
             </HubLink>
             <HubLink
-              to={{ kind: "rankings" }}
+              to={{ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
             >
               {tl("Power rankings")}
             </HubLink>
             <HubLink
-              to={{ kind: "tiers" }}
+              to={{
+                kind: "tiers",
+                ...((lg || period)
+                  ? {
+                      query: new URLSearchParams({
+                        ...(lg ? { league: lg } : {}),
+                        ...(period ? { key: period } : {}),
+                      }).toString(),
+                    }
+                  : {}),
+              }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
             >
               {tl("Pro tier list")}
@@ -232,7 +258,14 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
             <HubLink
               to={{
                 kind: "leaders",
-                ...(m.leagueSlug || m.leagueName ? { query: `league=${encodeURIComponent(resolveLeagueSlug(m.leagueSlug || m.leagueName))}` } : {}),
+                ...((lg || yr)
+                  ? {
+                      query: new URLSearchParams({
+                        ...(lg ? { league: lg } : {}),
+                        ...(yr ? { year: yr } : {}),
+                      }).toString(),
+                    }
+                  : {}),
               }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
             >
@@ -256,7 +289,7 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
                 </>
               ) : (
                 <HubLink
-                  to={{ kind: "compare", mode: "team", a: t1Slug, b: t2Slug }}
+                  to={{ kind: "compare", mode: "team", a: t1Slug, b: t2Slug, period }}
                   className="hover:text-rw-accent hover:underline"
                   title={tl("Compare")}
                 >

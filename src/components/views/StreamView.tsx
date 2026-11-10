@@ -23,6 +23,14 @@ function streamEventRoute(e: StreamEvent): HubRoute | null {
   return null;
 }
 
+function streamEventLeague(e?: StreamEvent | null): string | undefined {
+  if (!e) return undefined;
+  if (e.event === "Worlds") return "world-championship";
+  if (e.event === "MSI") return "msi";
+  if (e.event === "First Stand") return "first-stand";
+  return undefined;
+}
+
 interface StreamViewProps {
   events: StreamEvent[];
   status?: StreamStatus | null;
@@ -184,6 +192,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
     const aSlug = active?.team1 ? teamSlug(active.team1) : "";
     const bSlug = active?.team2 ? teamSlug(active.team2) : "";
     const year = /\b(20\d\d)\b/.exec(active?.season || "")?.[1];
+    const lg = streamEventLeague(active);
     return (
       <div className="flex flex-wrap items-center gap-2">
         <button
@@ -231,7 +240,12 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
               onClick={() =>
                 navigateHub({
                   kind: "finder",
-                  query: `team=${encodeURIComponent(aSlug)}&vs=${encodeURIComponent(bSlug)}${year ? `&year=${year}` : ""}`,
+                  query: new URLSearchParams({
+                    team: aSlug,
+                    vs: bSlug,
+                    ...(year ? { year } : {}),
+                    ...(lg ? { league: lg } : {}),
+                  }).toString(),
                 })
               }
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
@@ -240,28 +254,64 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
             </button>
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "rankings" })}
+              onClick={() => navigateHub({ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) })}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
             >
               {tl("Power rankings")}
             </button>
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "tiers", ...(year ? { query: `key=y${encodeURIComponent(year)}` } : {}) })}
+              onClick={() =>
+                navigateHub({
+                  kind: "tiers",
+                  ...((lg || year)
+                    ? {
+                        query: new URLSearchParams({
+                          ...(lg ? { league: lg } : {}),
+                          ...(year ? { key: `y${year}` } : {}),
+                        }).toString(),
+                      }
+                    : {}),
+                })
+              }
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
             >
               {tl("Pro tier list")}
             </button>
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "leaders", ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}) })}
+              onClick={() =>
+                navigateHub({
+                  kind: "leaders",
+                  ...((lg || year)
+                    ? {
+                        query: new URLSearchParams({
+                          ...(lg ? { league: lg } : {}),
+                          ...(year ? { year } : {}),
+                        }).toString(),
+                      }
+                    : {}),
+                })
+              }
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
             >
               {tl("Player leaderboards")}
             </button>
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "best", ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}) })}
+              onClick={() =>
+                navigateHub({
+                  kind: "best",
+                  ...((lg || year)
+                    ? {
+                        query: new URLSearchParams({
+                          ...(lg ? { league: lg } : {}),
+                          ...(year ? { year } : {}),
+                        }).toString(),
+                      }
+                    : {}),
+                })
+              }
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
             >
               {tl("Best games")}
@@ -528,6 +578,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                 const aSlug = teamSlug(first.team1);
                 const bSlug = teamSlug(first.team2);
                 const yr = /\b(20\d\d)\b/.exec(first.season || "")?.[1];
+                const lg = streamEventLeague(first);
                 if (!aSlug || !bSlug) return null;
                 return (
                   <>
@@ -562,7 +613,12 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                       onClick={() =>
                         navigateHub({
                           kind: "finder",
-                          query: `team=${encodeURIComponent(aSlug)}&vs=${encodeURIComponent(bSlug)}${yr ? `&year=${yr}` : ""}`,
+                          query: new URLSearchParams({
+                            team: aSlug,
+                            vs: bSlug,
+                            ...(yr ? { year: yr } : {}),
+                            ...(lg ? { league: lg } : {}),
+                          }).toString(),
                         })
                       }
                       className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -571,7 +627,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                     </button>
                     <button
                       type="button"
-                      onClick={() => navigateHub({ kind: "rankings" })}
+                      onClick={() => navigateHub({ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) })}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Power rankings")} →

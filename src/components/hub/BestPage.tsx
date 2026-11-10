@@ -185,7 +185,7 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                       to={{
                         kind: "tiers",
                         query: new URLSearchParams({
-                          ...(league ? { scope: league } : {}),
+                          ...(league ? { league } : {}),
                           ...(year ? { key: `y${year}` } : {}),
                         }).toString(),
                       }}
@@ -404,7 +404,7 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                   to={{
                     kind: "tiers",
                     query: new URLSearchParams({
-                      ...(league ? { scope: league } : {}),
+                      ...(league ? { league } : {}),
                       ...(year ? { key: `y${year}` } : {}),
                     }).toString(),
                   }}
@@ -574,7 +574,10 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
                 {tl("Compare")}
               </HubLink>
               <HubLink
-                to={{ kind: "finder", query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}` }}
+                to={{
+                  kind: "finder",
+                  query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${eslug ? `&event=${encodeURIComponent(eslug)}` : /^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
+                }}
                 className="hover:text-rw-accent hover:underline"
               >
                 {tl("Game finder")}
@@ -681,7 +684,10 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
                 </HubLink>
                 <span>·</span>
                 <HubLink
-                  to={{ kind: "finder", query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}` }}
+                  to={{
+                    kind: "finder",
+                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${eslug ? `&event=${encodeURIComponent(eslug)}` : /^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
+                  }}
                   className="hover:text-rw-accent hover:underline"
                 >
                   {tl("Game finder")}
@@ -717,7 +723,10 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
                 </HubLink>
                 <span>·</span>
                 <HubLink
-                  to={{ kind: "finder", query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}` }}
+                  to={{
+                    kind: "finder",
+                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${eslug ? `&event=${encodeURIComponent(eslug)}` : /^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
+                  }}
                   className="hover:text-rw-accent hover:underline"
                 >
                   {tl("Game finder")}

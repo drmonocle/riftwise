@@ -60,6 +60,8 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
   }, [t.u, t.disbanded]);
   if (!list.length) return null;
   const [first, ...rest] = list;
+  const firstYr = first.m.startTimeUtc && /^\d{4}$/.test(first.m.startTimeUtc.slice(0, 4)) ? first.m.startTimeUtc.slice(0, 4) : "";
+  const firstLg = first.m.leagueSlug || first.m.leagueName ? resolveLeagueSlug(first.m.leagueSlug || first.m.leagueName) : "";
   return (
     <Section
       title={tl("Next match")}
@@ -73,7 +75,7 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                   kind: "prep",
                   a: t.u,
                   b: first.opp,
-                  ...(first.m.startTimeUtc && /^\d{4}$/.test(first.m.startTimeUtc.slice(0, 4)) ? { period: `y${first.m.startTimeUtc.slice(0, 4)}` } : {}),
+                  ...(firstYr ? { period: `y${firstYr}` } : {}),
                 }}
                 className="text-rw-accent hover:underline font-semibold"
               >
@@ -82,7 +84,7 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(t.u)},${encodeURIComponent(first.opp)}${first.m.startTimeUtc && /^\d{4}$/.test(first.m.startTimeUtc.slice(0, 4)) ? `&p=y${first.m.startTimeUtc.slice(0, 4)}` : ""}`,
+                  query: `teams=${encodeURIComponent(t.u)},${encodeURIComponent(first.opp)}${firstYr ? `&p=y${firstYr}` : ""}`,
                 }}
                 className="text-rw-accent hover:underline font-semibold"
               >
@@ -94,7 +96,7 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                   mode: "team",
                   a: t.u,
                   b: first.opp,
-                  ...(first.m.startTimeUtc && /^\d{4}$/.test(first.m.startTimeUtc.slice(0, 4)) ? { period: `y${first.m.startTimeUtc.slice(0, 4)}` } : {}),
+                  ...(firstYr ? { period: `y${firstYr}` } : {}),
                 }}
                 className="text-rw-accent hover:underline font-semibold"
               >
@@ -103,14 +105,19 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `team=${encodeURIComponent(t.u)}&vs=${encodeURIComponent(first.opp)}`,
+                  query: new URLSearchParams({
+                    team: t.u,
+                    vs: first.opp,
+                    ...(firstYr ? { year: firstYr } : {}),
+                    ...(firstLg ? { league: firstLg } : {}),
+                  }).toString(),
                 }}
                 className="text-rw-accent hover:underline font-semibold"
               >
                 {tl("Game finder")} →
               </HubLink>
               <HubLink
-                to={{ kind: "rankings" }}
+                to={{ kind: "rankings", ...(firstLg ? { query: `league=${encodeURIComponent(firstLg)}` } : {}) }}
                 className="text-rw-accent hover:underline font-semibold"
               >
                 {tl("Power rankings")} →
@@ -118,8 +125,13 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
               <HubLink
                 to={{
                   kind: "tiers",
-                  ...(first.m.startTimeUtc && /^\d{4}$/.test(first.m.startTimeUtc.slice(0, 4))
-                    ? { query: `key=y${first.m.startTimeUtc.slice(0, 4)}` }
+                  ...((firstLg || firstYr)
+                    ? {
+                        query: new URLSearchParams({
+                          ...(firstLg ? { league: firstLg } : {}),
+                          ...(firstYr ? { key: `y${firstYr}` } : {}),
+                        }).toString(),
+                      }
                     : {}),
                 }}
                 className="text-rw-accent hover:underline font-semibold"
@@ -127,7 +139,17 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                 {tl("Pro tier list")} →
               </HubLink>
               <HubLink
-                to={{ kind: "leaders" }}
+                to={{
+                  kind: "leaders",
+                  ...((firstLg || firstYr)
+                    ? {
+                        query: new URLSearchParams({
+                          ...(firstLg ? { league: firstLg } : {}),
+                          ...(firstYr ? { year: firstYr } : {}),
+                        }).toString(),
+                      }
+                    : {}),
+                }}
                 className="text-rw-accent hover:underline font-semibold"
               >
                 {tl("Player leaderboards")} →
@@ -204,7 +226,15 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                         {tl("Compare")}
                       </HubLink>
                       <HubLink
-                        to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&vs=${encodeURIComponent(c.opp)}` }}
+                        to={{
+                          kind: "finder",
+                          query: new URLSearchParams({
+                            team: t.u,
+                            vs: c.opp,
+                            ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
+                            ...(c.m.leagueSlug || c.m.leagueName ? { league: resolveLeagueSlug(c.m.leagueSlug || c.m.leagueName) } : {}),
+                          }).toString(),
+                        }}
                         className="text-[11px] font-medium text-rw-accent hover:underline"
                       >
                         {tl("Game finder")}
@@ -266,6 +296,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
   const hasLanePairs = lanePairs.filter((lp) => lp.a && lp.b).length >= 3;
   const yr = m.startTimeUtc?.slice(0, 4);
   const period = yr && /^\d{4}$/.test(yr) ? `y${yr}` : undefined;
+  const lg = m.leagueSlug || m.leagueName ? resolveLeagueSlug(m.leagueSlug || m.leagueName) : "";
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px]">
@@ -336,7 +367,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px]">
           {chance != null && (
             <HubLink
-              to={{ kind: "rankings" }}
+              to={{ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) }}
               className="flex items-center gap-1.5 w-48 max-w-full hover:opacity-90"
               title={tl("Chance to win the series, from the power rankings (every pro game since 2011)")}
             >
@@ -414,7 +445,15 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
               {tl("Compare")}
             </HubLink>
             <HubLink
-              to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&vs=${encodeURIComponent(c.opp)}${yr && /^\d{4}$/.test(yr) ? `&year=${encodeURIComponent(yr)}` : ""}` }}
+              to={{
+                kind: "finder",
+                query: new URLSearchParams({
+                  team: t.u,
+                  vs: c.opp,
+                  ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
+                  ...(lg ? { league: lg } : {}),
+                }).toString(),
+              }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
             >
               {tl("Game finder")}
@@ -422,19 +461,39 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
           </>
         )}
         <HubLink
-          to={{ kind: "rankings" }}
+          to={{ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
         >
           {tl("Power rankings")}
         </HubLink>
         <HubLink
-          to={{ kind: "tiers", ...(period ? { query: `key=${encodeURIComponent(period)}` } : {}) }}
+          to={{
+            kind: "tiers",
+            ...((lg || period)
+              ? {
+                  query: new URLSearchParams({
+                    ...(lg ? { league: lg } : {}),
+                    ...(period ? { key: period } : {}),
+                  }).toString(),
+                }
+              : {}),
+          }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
         >
           {tl("Pro tier list")}
         </HubLink>
         <HubLink
-          to={{ kind: "leaders" }}
+          to={{
+            kind: "leaders",
+            ...((lg || (yr && /^\d{4}$/.test(yr)))
+              ? {
+                  query: new URLSearchParams({
+                    ...(lg ? { league: lg } : {}),
+                    ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
+                  }).toString(),
+                }
+              : {}),
+          }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
         >
           {tl("Player leaderboards")}

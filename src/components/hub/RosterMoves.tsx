@@ -58,18 +58,53 @@ export const RosterMoves: React.FC = () => {
               {v ? tl("All leagues") : tl("Top leagues")}
             </button>
           ))}
-          {list.length > 0 && (
+          {list.length > 0 && (() => {
+            const yr0 = list[0]?.d && /^\d{4}/.test(list[0].d) ? list[0].d.slice(0, 4) : "";
+            const lg0 = terms.length > 0 && list[0]?.lu ? list[0].lu : "";
+            const role0 = terms.length > 0 && list[0]?.r ? list[0].r : "";
+            return (
             <>
               <HubLink to={{ kind: "players" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Players")} →
               </HubLink>
-              <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{
+                  kind: "leaders",
+                  ...((lg0 || yr0 || role0)
+                    ? {
+                        query: new URLSearchParams({
+                          ...(lg0 ? { league: lg0 } : {}),
+                          ...(yr0 ? { year: yr0 } : {}),
+                          ...(role0 ? { role: role0 } : {}),
+                        }).toString(),
+                      }
+                    : {}),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {tl("Player leaderboards")} →
               </HubLink>
-              <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{ kind: "rankings", ...(lg0 ? { query: `league=${encodeURIComponent(lg0)}` } : {}) }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {tl("Power rankings")} →
               </HubLink>
-              <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{
+                  kind: "tiers",
+                  ...((lg0 || yr0 || role0)
+                    ? {
+                        query: new URLSearchParams({
+                          ...(lg0 ? { league: lg0 } : {}),
+                          ...(yr0 ? { key: `y${yr0}` } : {}),
+                          ...(role0 ? { role: role0 } : {}),
+                        }).toString(),
+                      }
+                    : {}),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {tl("Pro tier list")} →
               </HubLink>
               <HubLink to={{ kind: "teams" }} className="text-rw-sub hover:text-rw-accent hover:underline">
@@ -79,8 +114,17 @@ export const RosterMoves: React.FC = () => {
                 to={{
                   kind: "finder",
                   ...(terms.length > 0 && list[0]
-                    ? { query: `player=${encodeURIComponent(list[0].u)}&team=${encodeURIComponent(list[0].to.u)}` }
-                    : {}),
+                    ? {
+                        query: new URLSearchParams({
+                          player: list[0].u,
+                          team: list[0].to.u,
+                          ...(yr0 ? { year: yr0 } : {}),
+                          ...(lg0 ? { league: lg0 } : {}),
+                        }).toString(),
+                      }
+                    : yr0
+                      ? { query: `year=${encodeURIComponent(yr0)}` }
+                      : {}),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -89,13 +133,16 @@ export const RosterMoves: React.FC = () => {
               {terms.length > 0 && list[0] && (
                 <>
                   <HubLink
-                    to={{ kind: "prep", a: list[0].to.u, b: list[0].from.u }}
+                    to={{ kind: "prep", a: list[0].to.u, b: list[0].from.u, ...(yr0 ? { period: `y${yr0}` } : {}) }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Match prep")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "draft", query: `teams=${encodeURIComponent(list[0].to.u)},${encodeURIComponent(list[0].from.u)}` }}
+                    to={{
+                      kind: "draft",
+                      query: `teams=${encodeURIComponent(list[0].to.u)},${encodeURIComponent(list[0].from.u)}${yr0 ? `&p=y${encodeURIComponent(yr0)}` : ""}`,
+                    }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Draft board")} →
@@ -105,13 +152,20 @@ export const RosterMoves: React.FC = () => {
               {terms.length > 0 && list.length === 1 && list[0] && (
                 <>
                   <HubLink
-                    to={{ kind: "compare", mode: "player", a: list[0].u }}
+                    to={{ kind: "compare", mode: "player", a: list[0].u, ...(yr0 ? { period: `y${yr0}` } : {}) }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Compare")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "items", query: `player=${encodeURIComponent(list[0].u)}` }}
+                    to={{
+                      kind: "items",
+                      query: new URLSearchParams({
+                        player: list[0].u,
+                        ...(yr0 ? { year: yr0 } : {}),
+                        ...(role0 ? { role: role0 } : {}),
+                      }).toString(),
+                    }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Item history")} →
@@ -120,7 +174,7 @@ export const RosterMoves: React.FC = () => {
               )}
               {terms.length > 0 && list.length >= 2 && list[0].u !== list[1].u && (
                 <HubLink
-                  to={{ kind: "compare", mode: "player", a: list[0].u, b: list[1].u }}
+                  to={{ kind: "compare", mode: "player", a: list[0].u, b: list[1].u, ...(yr0 ? { period: `y${yr0}` } : {}) }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Compare")} →
@@ -145,7 +199,8 @@ export const RosterMoves: React.FC = () => {
                 }
               />
             </>
-          )}
+            );
+          })()}
         </div>
       </div>
       <p className="text-[11px] text-rw-muted">
@@ -156,10 +211,20 @@ export const RosterMoves: React.FC = () => {
       {/* two columns, newest first down each, when the list is wide (one line a move left most of the row empty) */}
       <div className="@container">
       <ul className="text-xs @min-[64rem]:columns-2 gap-x-10">
-        {list.slice(0, shown).map((m) => (
+        {list.slice(0, shown).map((m) => {
+          const myr = m.d && /^\d{4}/.test(m.d) ? m.d.slice(0, 4) : "";
+          return (
           <li key={`${m.u}-${m.d}`} className="py-1.5 border-b border-rw-border break-inside-avoid flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
             <HubLink
-              to={{ kind: "finder", query: `player=${encodeURIComponent(m.u)}&team=${encodeURIComponent(m.to.u)}` }}
+              to={{
+                kind: "finder",
+                query: new URLSearchParams({
+                  player: m.u,
+                  team: m.to.u,
+                  ...(myr ? { year: myr } : {}),
+                  ...(m.lu ? { league: m.lu } : {}),
+                }).toString(),
+              }}
               className="text-rw-muted hover:text-rw-accent hover:underline tabular-nums w-20 shrink-0"
               title={tl("Game finder")}
             >
@@ -169,7 +234,10 @@ export const RosterMoves: React.FC = () => {
               <PlayerPhoto name={m.n} team={m.to.n} slug={m.u} size={18} />
               <PlayerLink name={m.n} u={m.u} className="font-semibold text-rw-text hover:text-rw-accent" />
               {m.r && (
-                <HubLink to={{ kind: "player", slug: m.u, tab: "stats" }} className="text-rw-muted hover:text-rw-accent hover:underline">
+                <HubLink
+                  to={{ kind: "player", slug: m.u, tab: "stats", ...(myr ? { query: `p=y${encodeURIComponent(myr)}` } : {}) }}
+                  className="text-rw-muted hover:text-rw-accent hover:underline"
+                >
                   · {roleName(m.r)}
                 </HubLink>
               )}
@@ -182,7 +250,7 @@ export const RosterMoves: React.FC = () => {
                 <TeamLink name={m.from.n} u={m.from.u} className="hover:text-rw-accent truncate" />
               </span>
               <HubLink
-                to={{ kind: "compare", mode: "team", a: m.from.u, b: m.to.u }}
+                to={{ kind: "compare", mode: "team", a: m.from.u, b: m.to.u, ...(myr ? { period: `y${myr}` } : {}) }}
                 className="text-rw-accent hover:opacity-80 shrink-0"
                 title={tl("Compare")}
               >
@@ -196,32 +264,43 @@ export const RosterMoves: React.FC = () => {
               </span>
             </span>
             {m.lu && name.get(m.lu) && (
-              <HubLink to={{ kind: "league", slug: m.lu }} className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline">
+              <HubLink to={{ kind: "league", slug: m.lu, ...(myr ? { year: myr } : {}) }} className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline">
                 {name.get(m.lu)}
               </HubLink>
             )}
             <span className="ml-auto hidden sm:inline-flex items-center gap-1.5 text-[10px]">
               <HubLink
-                to={{ kind: "prep", a: m.to.u, b: m.from.u }}
+                to={{ kind: "prep", a: m.to.u, b: m.from.u, ...(myr ? { period: `y${myr}` } : {}) }}
                 className="text-rw-muted hover:text-rw-accent hover:underline"
               >
                 {tl("Match prep")}
               </HubLink>
               <HubLink
-                to={{ kind: "draft", query: `teams=${encodeURIComponent(m.to.u)},${encodeURIComponent(m.from.u)}` }}
+                to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(m.to.u)},${encodeURIComponent(m.from.u)}${myr ? `&p=y${encodeURIComponent(myr)}` : ""}`,
+                }}
                 className="text-rw-muted hover:text-rw-accent hover:underline"
               >
                 {tl("Draft board")}
               </HubLink>
               <HubLink
-                to={{ kind: "items", query: `player=${encodeURIComponent(m.u)}` }}
+                to={{
+                  kind: "items",
+                  query: new URLSearchParams({
+                    player: m.u,
+                    ...(myr ? { year: myr } : {}),
+                    ...(m.r ? { role: m.r } : {}),
+                  }).toString(),
+                }}
                 className="text-rw-muted hover:text-rw-accent hover:underline"
               >
                 {tl("Item history")}
               </HubLink>
             </span>
           </li>
-        ))}
+          );
+        })}
         {!list.length && <li className="py-2 text-rw-muted">{tl("No moves in the top leagues yet. See every league.")}</li>}
       </ul>
       </div>

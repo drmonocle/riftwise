@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { X, Swords, Eye, EyeOff, Globe, Home, ClipboardList, GitCompare } from "lucide-react";
-import { findHubTeam, loadHubIndexQuick, prettySlug } from "../hub/data";
+import { findHubTeam, loadHubIndexQuick, prettySlug, resolveLeagueSlug } from "../hub/data";
 import { navigateHub } from "../hub/route";
 import { RIOT_PREFIX } from "../hub/riotMatch";
 import { findSeriesSlug } from "../hub/seriesLookup";
@@ -29,7 +29,7 @@ interface H2HDetailsModalProps {
 
 function teamInfo(catalog: CatalogData | undefined, code: string) {
   const t = catalog ? pickTeamByCode(catalog.teams, code) : undefined;
-  return { name: t?.name || code, image: t?.image };
+  return { name: t?.name || code, image: t?.image, league: t?.league ? resolveLeagueSlug(t.league) : undefined };
 }
 
 const Split: React.FC<{ icon: React.ReactNode; label: string; wins: [number, number]; c1: string; c2: string; onClick?: () => void }> = ({
@@ -452,7 +452,12 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
               </ul>
             )}
           </div>
-          <PrepButton t1={{ code: team1Code, name: t1.name }} t2={{ code: team2Code, name: t2.name }} onDone={onClose} />
+          <PrepButton
+            t1={{ code: team1Code, name: t1.name, league: t1.league }}
+            t2={{ code: team2Code, name: t2.name, league: t2.league }}
+            year={meetings[0]?.date && /^\d{4}/.test(meetings[0].date) ? meetings[0].date.slice(0, 4) : undefined}
+            onDone={onClose}
+          />
         </div>
       </div>
     </div>
@@ -460,9 +465,15 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
 };
 
 /** "Match prep" + "Draft board" + "Compare": opens the stats hub's tools for these two teams (when both are in the stats). */
-const PrepButton: React.FC<{ t1: { code: string; name: string }; t2: { code: string; name: string }; onDone: () => void }> = ({ t1, t2, onDone }) => {
+const PrepButton: React.FC<{
+  t1: { code: string; name: string; league?: string };
+  t2: { code: string; name: string; league?: string };
+  year?: string;
+  onDone: () => void;
+}> = ({ t1, t2, year, onDone }) => {
   const [state, setState] = useState<"" | "busy" | "missing">("");
   if (state === "missing") return null;
+  const lg = t1.league && t1.league === t2.league ? t1.league : t1.league || t2.league;
   const openRoute = (dest: (a: string, b: string) => void) => {
     setState("busy");
     loadHubIndexQuick()
@@ -522,7 +533,7 @@ const PrepButton: React.FC<{ t1: { code: string; name: string }; t2: { code: str
         <button
           type="button"
           disabled={state === "busy"}
-          onClick={() => openRoute(() => navigateHub({ kind: "rankings" }))}
+          onClick={() => openRoute(() => navigateHub({ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) }))}
           className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/40 text-xs font-semibold disabled:opacity-60"
         >
           {tl("Power rankings")}
@@ -530,7 +541,21 @@ const PrepButton: React.FC<{ t1: { code: string; name: string }; t2: { code: str
         <button
           type="button"
           disabled={state === "busy"}
-          onClick={() => openRoute(() => navigateHub({ kind: "tiers" }))}
+          onClick={() =>
+            openRoute(() =>
+              navigateHub({
+                kind: "tiers",
+                ...((lg || year)
+                  ? {
+                      query: new URLSearchParams({
+                        ...(lg ? { league: lg } : {}),
+                        ...(year ? { key: `y${year}` } : {}),
+                      }).toString(),
+                    }
+                  : {}),
+              }),
+            )
+          }
           className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/40 text-xs font-semibold disabled:opacity-60"
         >
           {tl("Pro tier list")}
@@ -538,7 +563,21 @@ const PrepButton: React.FC<{ t1: { code: string; name: string }; t2: { code: str
         <button
           type="button"
           disabled={state === "busy"}
-          onClick={() => openRoute(() => navigateHub({ kind: "leaders" }))}
+          onClick={() =>
+            openRoute(() =>
+              navigateHub({
+                kind: "leaders",
+                ...((lg || year)
+                  ? {
+                      query: new URLSearchParams({
+                        ...(lg ? { league: lg } : {}),
+                        ...(year ? { year } : {}),
+                      }).toString(),
+                    }
+                  : {}),
+              }),
+            )
+          }
           className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/40 text-xs font-semibold disabled:opacity-60"
         >
           {tl("Player leaderboards")}
