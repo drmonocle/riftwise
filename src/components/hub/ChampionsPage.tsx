@@ -550,7 +550,22 @@ const LeagueTable: React.FC<{
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-rw-muted">
         <span>
-          {tl("{n} games", { n: fmtNum(result.games) })}
+          <HubLink
+            to={{
+              kind: "finder",
+              query: new URLSearchParams({
+                league,
+                ...(year ? { year } : {}),
+                ...(eventSlug ? { event: eventSlug } : {}),
+                ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
+                ...(side ? { side } : {}),
+                ...(roleQ ? { role: roleQ } : {}),
+              }).toString(),
+            }}
+            className="hover:text-rw-accent hover:underline"
+          >
+            {tl("{n} games", { n: fmtNum(result.games) })}
+          </HubLink>
           {vs && result.thenGames > 0 && ` · ${tl("{n} games on {patch}", { n: fmtNum(result.thenGames), patch: vs })}`}
           {eventName && eventSlug && (
             <>
@@ -780,7 +795,20 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
             onEmerging={(v) => setQ({ new: v ? "1" : undefined })}
           />
         )}
-        {block && <span className="text-rw-muted">{tl("{n} games", { n: fmtNum(block.games) })}</span>}
+        {block && (
+          <HubLink
+            to={{
+              kind: "finder",
+              query: new URLSearchParams({
+                ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
+                ...(roleQ ? { role: roleQ } : {}),
+              }).toString(),
+            }}
+            className="text-rw-muted hover:text-rw-accent hover:underline"
+          >
+            {tl("{n} games", { n: fmtNum(block.games) })}
+          </HubLink>
+        )}
         {block && rows.length > 0 && (
           <span className="ml-auto flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
             <HubLink

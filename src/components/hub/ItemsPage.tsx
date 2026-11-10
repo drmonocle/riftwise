@@ -367,7 +367,16 @@ const PlayerItemsView: React.FC<{
           <input type="checkbox" checked={finishedOnly} onChange={(e) => setFinishedOnly(e.target.checked)} />
           {tl("Finished items only")}
         </label>
-        <span className="text-rw-muted">{tl("{n} pro games with a full scoreboard", { n: fmtNum(counted) })}</span>
+        <HubLink
+          to={{
+            kind: "finder",
+            query: `player=${encodeURIComponent(slug)}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+          }}
+          className="text-rw-muted hover:text-rw-accent hover:underline"
+          title={tl("Game finder")}
+        >
+          {tl("{n} pro games with a full scoreboard", { n: fmtNum(counted) })}
+        </HubLink>
       </div>
       <STable className="w-full text-xs">
         <thead>
@@ -678,7 +687,15 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                         )}
                         <span className="block h-1 mt-0.5 rounded-sm bg-rw-accent/55" style={{ width: `${Math.max(4, Math.round((r.g / maxG) * 100))}%` }} aria-hidden="true" />
                       </td>
-                      <td className={`${td} text-rw-muted max-sm:hidden`} data-sort={r.ys[r.ys.length - 1] || 0}>{yearSpan(r.ys)}</td>
+                      <td className={`${td} text-rw-muted max-sm:hidden`} data-sort={r.ys[r.ys.length - 1] || 0}>
+                        {u ? (
+                          <button type="button" onClick={() => onPlayer(u)} className="hover:text-rw-accent hover:underline" title={tl("Their games")}>
+                            {yearSpan(r.ys)}
+                          </button>
+                        ) : (
+                          yearSpan(r.ys)
+                        )}
+                      </td>
                       <td className={`${td} text-right`}>{u && <TheirGames onClick={() => onPlayer(u)} />}</td>
                     </tr>
                   );

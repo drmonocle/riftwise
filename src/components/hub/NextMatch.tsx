@@ -166,8 +166,12 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
       <div className="flex items-center justify-center gap-3 min-w-0">
         {/* short names on a phone ("Movistar KOI" didn't fit beside its logo) */}
         <span className="flex items-center gap-2 min-w-0 justify-end flex-1">
-          <span className="font-bold text-sm text-rw-text truncate max-sm:hidden">{t.name}</span>
-          <span className="font-bold text-sm text-rw-text sm:hidden">{ours.code || t.name}</span>
+          <span className="font-bold text-sm text-rw-text truncate max-sm:hidden">
+            <TeamLink name={t.name} u={t.u} />
+          </span>
+          <span className="font-bold text-sm text-rw-text sm:hidden">
+            <TeamLink name={ours.code || t.name} u={t.u} />
+          </span>
           <TeamLogo name={t.name} code={ours.code} src={ours.img} size={32} className="shrink-0" />
         </span>
         {c.opp ? (
@@ -194,13 +198,17 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
       {(chance != null || h2h) && (
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px]">
           {chance != null && (
-            <span className="flex items-center gap-1.5 w-48 max-w-full" title={tl("Chance to win the series, from the power rankings (every pro game since 2011)")}>
-              <span className="font-mono tabular-nums text-rw-side-a w-8 text-right">{chance}%</span>
+            <HubLink
+              to={{ kind: "rankings" }}
+              className="flex items-center gap-1.5 w-48 max-w-full hover:opacity-90"
+              title={tl("Chance to win the series, from the power rankings (every pro game since 2011)")}
+            >
+              <span className="font-mono tabular-nums text-rw-side-a w-8 text-right hover:underline">{chance}%</span>
               <span className="flex-1 h-1.5 rounded-sm overflow-hidden bg-rw-side-b/70" aria-hidden="true">
                 <span className="block h-full bg-rw-side-a" style={{ width: `${chance}%` }} />
               </span>
-              <span className="font-mono tabular-nums text-rw-side-b w-8">{100 - chance}%</span>
-            </span>
+              <span className="font-mono tabular-nums text-rw-side-b w-8 hover:underline">{100 - chance}%</span>
+            </HubLink>
           )}
           {h2h && (
             <HubLink

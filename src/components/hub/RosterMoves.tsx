@@ -80,7 +80,11 @@ export const RosterMoves: React.FC = () => {
             <span className="inline-flex items-center gap-1.5 min-w-0">
               <PlayerPhoto name={m.n} team={m.to.n} slug={m.u} size={18} />
               <PlayerLink name={m.n} u={m.u} className="font-semibold text-rw-text hover:text-rw-accent" />
-              {m.r && <span className="text-rw-muted">· {roleName(m.r)}</span>}
+              {m.r && (
+                <HubLink to={{ kind: "player", slug: m.u, tab: "stats" }} className="text-rw-muted hover:text-rw-accent hover:underline">
+                  · {roleName(m.r)}
+                </HubLink>
+              )}
             </span>
             <span className="flex items-center gap-1.5 min-w-0 text-rw-sub">
               <span className="inline-flex items-center gap-1 min-w-0">

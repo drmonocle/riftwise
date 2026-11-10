@@ -451,7 +451,9 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
           </div>
         ) : (
           <div className="text-[10px] text-rw-muted mt-0.5 flex flex-wrap items-center gap-x-1.5">
-            <span>{tn("{n} game", "{n} games", games)}</span>
+            <HubLink to={{ kind: "match", slug }} className="hover:underline hover:text-rw-accent">
+              {tn("{n} game", "{n} games", games)}
+            </HubLink>
             <span>·</span>
             <HubLink to={{ kind: "match", slug, game: bestN }} className="hover:underline hover:text-rw-accent">
               {tl("best: game {n}", { n: bestN })}

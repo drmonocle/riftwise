@@ -518,9 +518,14 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                         return (
                           <div key={`${p.teamSlug || p.teamCode}-${p.name}`} className="flex items-center justify-between text-[11px] py-0.5">
                             <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-mono px-1.5 rounded bg-rw-deep text-rw-teal min-w-12 text-center whitespace-nowrap shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => navigateHub({ kind: "leaders", query: `role=${encodeURIComponent(p.role)}` })}
+                                className="text-[10px] font-mono px-1.5 rounded bg-rw-deep text-rw-teal hover:text-rw-accent min-w-12 text-center whitespace-nowrap shrink-0"
+                                title={tl("Player leaderboards")}
+                              >
                                 {roleName(p.role)}
-                              </span>
+                              </button>
                               <PlayerPhoto name={p.name} team={team.name} img={p.image} size={18} linkFallback={false} />
                               <button
                                 type="button"
@@ -721,7 +726,16 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   <div className="flex items-center gap-3">
                     <span className="text-xl">{region.badge}</span>
                     <div>
-                      <div className="font-bold text-xs text-rw-text">{regionName(region.code, region.name)}</div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigateHub({ kind: "leagues" });
+                        }}
+                        className="font-bold text-xs text-rw-text hover:text-rw-accent hover:underline text-left block"
+                      >
+                        {regionName(region.code, region.name)}
+                      </button>
                       <div className="text-[10px] text-rw-muted flex flex-wrap items-center gap-x-1">
                         {region.leagues.map((l, idx) => (
                           <React.Fragment key={l}>
@@ -831,7 +845,16 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       >
                         {league.name}
                       </button>
-                      <div className="text-[10px] text-rw-muted uppercase">{league.region ? regionName(league.region) : tl("Global")}</div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigateHub({ kind: "leagues" });
+                        }}
+                        className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline uppercase block text-left"
+                      >
+                        {league.region ? regionName(league.region) : tl("Global")}
+                      </button>
                     </div>
                   </div>
 

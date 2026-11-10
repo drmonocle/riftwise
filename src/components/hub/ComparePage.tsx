@@ -1531,7 +1531,13 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
         <div className={`${card} py-2 space-y-1`}>
           <div className="text-[10px] text-rw-muted">{tl("Games")}</div>
           <div className="font-bold text-rw-text tabular-nums">
-            {aName} {s.w} – {s.l} {bName}
+            <HubLink to={{ kind: "player", slug: prettySlug(aName), tab: "matches" }} className="hover:text-rw-accent hover:underline">
+              {aName} {s.w}
+            </HubLink>{" "}
+            –{" "}
+            <HubLink to={{ kind: "player", slug: prettySlug(bName), tab: "matches" }} className="hover:text-rw-accent hover:underline">
+              {s.l} {bName}
+            </HubLink>
           </div>
           {s.w + s.l > 0 && (
             <div className="h-1.5 rounded-full bg-rw-raised overflow-hidden flex gap-[2px]">
@@ -1602,9 +1608,12 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
         {shown.slice(0, n).map((m, i) => (
           <li key={i} className="flex items-center justify-between gap-2 min-w-0">
             <span className="flex items-center gap-1.5 min-w-0">
-              <span className={`w-3.5 shrink-0 font-bold ${m.a[6] ? "text-rw-teal" : "text-rw-red"}`}>
+              <HubLink
+                to={{ kind: "match", slug: m.a[1], game: m.a[22] || undefined }}
+                className={`w-3.5 shrink-0 font-bold hover:underline ${m.a[6] ? "text-rw-teal" : "text-rw-red"}`}
+              >
                 {m.a[6] ? tc("short result", "W") : tc("short result", "L")}
-              </span>
+              </HubLink>
               <HubLink to={{ kind: "champ", slug: prettySlug(m.a[2]) }}>
                 <ChampIcon name={m.a[2]} size={18} />
               </HubLink>

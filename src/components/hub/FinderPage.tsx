@@ -563,6 +563,7 @@ const FinderBody: React.FC<{
               player={q.get("player") || ""}
               onPick={(c) => setChamp(0, champs[0] === c ? "" : c)}
               onBan={(c) => setQ({ ban: q.get("ban") === c ? undefined : c })}
+              onSide={(s) => setQ({ side: q.get("side") === s ? undefined : s })}
             />
             <div className="flex flex-wrap items-center gap-2">
               <TableExport tableRef={tableRef} name={name} />
@@ -799,7 +800,8 @@ const Cohort: React.FC<{
   player: string;
   onPick?: (c: string) => void;
   onBan?: (c: string) => void;
-}> = ({ found, sideCond, champ, player, onPick, onBan }) => {
+  onSide?: (s: "b" | "r") => void;
+}> = ({ found, sideCond, champ, player, onPick, onBan, onSide }) => {
   const d = useMemo(() => {
     let blueW = 0, kills = 0, kg = 0, kMin = 0, gd = 0, gdn = 0;
     const picks = new Map<string, [number, number]>();
@@ -918,7 +920,13 @@ const Cohort: React.FC<{
     <div className="space-y-2 pb-2 border-b border-rw-border text-xs">
       <div className="space-y-1">
         <p className="text-rw-sub">
-          {tl("Blue side won {p}", { p: `${bluePct}%` })}
+          {onSide ? (
+            <button type="button" onClick={() => onSide("b")} className="hover:text-rw-accent hover:underline">
+              {tl("Blue side won {p}", { p: `${bluePct}%` })}
+            </button>
+          ) : (
+            tl("Blue side won {p}", { p: `${bluePct}%` })
+          )}
           {d.kpg != null && ` · ${tl("{n} kills per game", { n: fmtDec(d.kpg) })}`}
           {d.ckpm != null && ` · ${tl("{n} kills per minute", { n: fmtDec(d.ckpm, 2) })}`}
           {d.gd15 != null && (

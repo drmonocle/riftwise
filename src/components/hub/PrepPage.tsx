@@ -277,12 +277,16 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
       <div className="space-y-1.5">
         {rows.map(([label, x]) => (
           <div key={label} className="grid grid-cols-[3rem_1fr_3rem] sm:grid-cols-[3.5rem_1fr_3.5rem] items-center gap-2 text-xs">
-            <span className="tabular-nums font-bold text-rw-side-a">{pct(x)}</span>
+            <HubLink to={{ kind: "rankings" }} className="tabular-nums font-bold text-rw-side-a hover:underline">
+              {pct(x)}
+            </HubLink>
             <div className="relative h-4 rounded bg-rw-side-b/70 overflow-hidden">
               <div className="absolute inset-y-0 left-0 bg-rw-side-a/80" style={{ width: `${x * 100}%` }} />
               <span className="absolute inset-0 flex items-center justify-center text-[10px] text-rw-text font-semibold">{label}</span>
             </div>
-            <span className="tabular-nums font-bold text-rw-side-b text-right">{pct(1 - x)}</span>
+            <HubLink to={{ kind: "rankings" }} className="tabular-nums font-bold text-rw-side-b text-right hover:underline">
+              {pct(1 - x)}
+            </HubLink>
           </div>
         ))}
       </div>
@@ -290,15 +294,23 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
         {[a, b].map((t) => (
           <p key={t.u}>
             <TeamLink name={t.name} u={t.u} className="text-rw-text font-semibold hover:text-rw-accent hover:underline" />{" "}
-            {t.rating!.rank != null
-              ? tl("#{rank} of {of} worldwide · #{lrank} in {league} · rating {r}", {
-                  rank: t.rating!.rank,
-                  of: t.rating!.of,
-                  lrank: t.rating!.lrank,
-                  league: t.rating!.league || "–",
-                  r: Math.round(liveRating(ratings.data!, t.u, t.rating!.r)),
-                })
-              : tl("#{lrank} in {league} · rating {r}", { lrank: t.rating!.lrank, league: t.rating!.league || "–", r: Math.round(liveRating(ratings.data!, t.u, t.rating!.r)) })}{" "}
+            <HubLink
+              to={{
+                kind: "rankings",
+                ...(t.rating!.rank == null && t.rating!.league ? { query: `league=${encodeURIComponent(t.rating!.league)}` } : {}),
+              }}
+              className="hover:text-rw-accent hover:underline"
+            >
+              {t.rating!.rank != null
+                ? tl("#{rank} of {of} worldwide · #{lrank} in {league} · rating {r}", {
+                    rank: t.rating!.rank,
+                    of: t.rating!.of,
+                    lrank: t.rating!.lrank,
+                    league: t.rating!.league || "–",
+                    r: Math.round(liveRating(ratings.data!, t.u, t.rating!.r)),
+                  })
+                : tl("#{lrank} in {league} · rating {r}", { lrank: t.rating!.lrank, league: t.rating!.league || "–", r: Math.round(liveRating(ratings.data!, t.u, t.rating!.r)) })}
+            </HubLink>{" "}
             (<Change v={t.rating!.chg30} /> {tl("in 30 days")})
           </p>
         ))}

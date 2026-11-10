@@ -75,7 +75,22 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
                     </span>{" "}
                   </>
                 )}
-                {r[9] !== teamName && <span className="text-rw-muted text-[10px]">({tl("as {name}", { name: r[9] })}) </span>}
+                {r[9] !== teamName && (
+                  <span className="text-rw-muted text-[10px]">
+                    (
+                    {teamSlug && /^\d{4}/.test(r[0]) ? (
+                      <HubLink
+                        to={{ kind: "team", slug: teamSlug, tab: "stats", query: `p=y${r[0].slice(0, 4)}` }}
+                        className="hover:text-rw-accent hover:underline"
+                      >
+                        {tl("as {name}", { name: r[9] })}
+                      </HubLink>
+                    ) : (
+                      tl("as {name}", { name: r[9] })
+                    )}
+                    ){" "}
+                  </span>
+                )}
                 <span className="text-rw-muted">
                   · <EventLink name={r[5]} u={r[6]} className="text-rw-muted hover:text-rw-accent hover:underline" />
                   {r[8] ? ` · ${stageLabel(r[8])}` : ""}
@@ -164,13 +179,14 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
           aria-label={tl("Filter by opponent or tournament…")}
           className={`${select} flex-1 min-w-[10rem] placeholder-rw-muted`}
         />
-        <span
-          className="inline-flex items-center gap-2 text-[11px] text-rw-sub"
-          title={!seriesHidden && rows.length > 0 ? tl("{w} won", { w: won }) : undefined}
+        <HubLink
+          to={{ kind: "finder", query: `team=${encodeURIComponent(slug)}${year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}` }}
+          className="inline-flex items-center gap-2 text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          title={!seriesHidden && rows.length > 0 ? tl("{w} won", { w: won }) : tl("Game finder")}
         >
           <span>{tn("{n} series", "{n} series", rows.length)}</span>
           {!seriesHidden && rows.length > 0 && <WinBar w={won} g={rows.length} showRecord />}
-        </span>
+        </HubLink>
         {!seriesHidden && shown.length > 0 && (
           <>
             <CopyArchivePost
@@ -482,14 +498,18 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string; p
           <option value="d">{tl("Newest first")}</option>
           <option value="r">{tl("Top rated")}</option>
         </select>
-        <span
-          className="inline-flex flex-wrap items-center gap-2 text-[11px] text-rw-sub"
-          title={!hidden && rows.length > 0 ? tl("KDA {n}", { n: fmtDec((k + a) / Math.max(d, 1), 2) }) : undefined}
+        <HubLink
+          to={{
+            kind: "finder",
+            query: `player=${encodeURIComponent(slug)}${champ !== "all" ? `&champ=${encodeURIComponent(champ)}` : ""}${year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}${opp !== "all" ? `&vs=${encodeURIComponent(prettySlug(opp))}` : ""}`,
+          }}
+          className="inline-flex flex-wrap items-center gap-2 text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          title={!hidden && rows.length > 0 ? tl("KDA {n}", { n: fmtDec((k + a) / Math.max(d, 1), 2) }) : tl("Game finder")}
         >
           <span>{tn("{n} game", "{n} games", rows.length)}</span>
           {!hidden && rows.length > 0 && <WinBar w={won} g={rows.length} />}
           {!hidden && rows.length > 0 && <KdaBar kda={Number(((k + a) / Math.max(d, 1)).toFixed(2))} />}
-        </span>
+        </HubLink>
         {!hidden && shown.length > 0 && (
           <>
             <CopyArchivePost
@@ -563,7 +583,20 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string; p
                     </HubLink>
                     <TeamLogo name={r[8]} size={13} />
                     <TeamLink name={r[8]} />
-                    {r[10] ? ` · ${roleName(r[10])}` : ""}
+                    {r[10] ? (
+                      <>
+                        {" · "}
+                        <HubLink
+                          to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&role=${encodeURIComponent(r[10])}` }}
+                          className="hover:text-rw-accent hover:underline"
+                          title={tl("Game finder")}
+                        >
+                          {roleName(r[10])}
+                        </HubLink>
+                      </>
+                    ) : (
+                      ""
+                    )}
                   </span>{" "}
                   <span className="text-rw-muted">
                     · <EventLink name={r[9]} u={r[11]} className="text-rw-muted hover:text-rw-accent hover:underline" />
