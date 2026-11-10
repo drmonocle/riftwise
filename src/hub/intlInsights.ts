@@ -250,7 +250,7 @@ export function finalsRecords(fs: Final[]) {
 export function playerTitles(files: FileRef[]) {
   const byYear = new Map<string, FileRef[]>();
   for (const r of files) byYear.set(r.year, [...(byYear.get(r.year) || []), r]);
-  const players = new Map<string, { name: string; u: string | null; titles: string[]; finals: number }>();
+  const players = new Map<string, { name: string; u: string | null; team?: string; titles: string[]; finals: number }>();
   for (const [year, refs] of byYear) {
     const pl = Object.assign({}, ...refs.map((r) => r.f.pl || {})) as Record<string, string>;
     const seen = new Set<string>();
@@ -260,15 +260,19 @@ export function playerTitles(files: FileRef[]) {
         const s = g && ref.f.s[g[0]];
         if (!s) continue;
         const team = p[1] === 0 ? s[4] : s[7];
+        const teamName = p[1] === 0 ? s[3] : s[6];
         const place = pl[team];
         if (place !== "1" && place !== "2") continue;
         const key = p[3] || p[2];
         if (seen.has(key)) continue;
         seen.add(key);
-        const x = players.get(key) || { name: p[2], u: p[3], titles: [], finals: 0 };
+        const x = players.get(key) || { name: p[2], u: p[3], team: undefined, titles: [], finals: 0 };
         x.name = p[2];
         x.finals++;
-        if (place === "1") x.titles.push(year);
+        if (place === "1") {
+          x.titles.push(year);
+          if (teamName) x.team = teamName;
+        }
         players.set(key, x);
       }
     }
@@ -421,7 +425,7 @@ const hostFix = (refs: FileRef[]) => Object.entries(HOST_FIX).find(([page]) => r
 export function hosts(files: FileRef[]) {
   const byYear = new Map<string, FileRef[]>();
   for (const r of files) byYear.set(r.year, [...(byYear.get(r.year) || []), r]);
-  const out: { year: string; country: string; region: string | null; best: number | null; team: string | null }[] = [];
+  const out: { year: string; country: string; region: string | null; best: number | null; team: string | null; teamU: string | null }[] = [];
   for (const [year, refs] of byYear) {
     // only finished editions (one with a winner)
     if (!refs.some((r) => Object.values(r.f.pl || {}).includes("1"))) continue;
@@ -430,6 +434,7 @@ export function hosts(files: FileRef[]) {
     const region = HOST_REGION[country] || (country.split(/,\s*/).map((c) => HOST_REGION[c]).find(Boolean) ?? null);
     let best: number | null = null;
     let team: string | null = null;
+    let teamU: string | null = null;
     if (region)
       for (const ref of refs)
         for (const [u, p] of Object.entries(ref.f.pl || {})) {
@@ -438,9 +443,10 @@ export function hosts(files: FileRef[]) {
           if (!Number.isNaN(n) && (best == null || n < best)) {
             best = n;
             team = ref.f.s.find((s) => s[4] === u)?.[3] || ref.f.s.find((s) => s[7] === u)?.[6] || u;
+            teamU = u;
           }
         }
-    out.push({ year, country, region, best, team });
+    out.push({ year, country, region, best, team, teamU });
   }
   return out.sort((x, y) => yearNum(y.year) - yearNum(x.year));
 }

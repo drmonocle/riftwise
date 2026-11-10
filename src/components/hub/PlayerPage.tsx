@@ -487,6 +487,7 @@ const PlayerView: React.FC<{
       {tab === "champions" && gamesOn && (
         <PlayerChampGames
           slug={p.u}
+          playerName={p.name}
           champ={gamesOn}
           year={/^y\d{4}$/.test(champPeriod) ? champPeriod.slice(1) : "all"}
           period={champPeriod}
@@ -846,7 +847,7 @@ const PlayerView: React.FC<{
 
       {tab === "matches" && (
         <div className="rw-span">
-          <PlayerGamesArchive slug={p.u} />
+          <PlayerGamesArchive slug={p.u} playerName={p.name} />
         </div>
       )}
       </div>

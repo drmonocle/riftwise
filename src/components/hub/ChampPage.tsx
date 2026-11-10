@@ -296,7 +296,8 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     value: pctOf(w, g),
                     win: w / Math.max(g, 1) >= 0.5,
                   })),
-                  ...activeBuilds.keys.slice(0, 3).map(([k, g, w]) => ({
+                  ...activeBuilds.keys.slice(0, 3).map(([k, g, w], kIdx) => ({
+                    rank: items.slice(0, 6).length + kIdx + 1,
                     champ: c.name,
                     label: runeName(k),
                     sub: `${tl("Keystones")} · ${pctOf(g, activeBuilds.g)}`,

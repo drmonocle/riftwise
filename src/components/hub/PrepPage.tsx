@@ -1098,7 +1098,35 @@ const Tendencies: React.FC<{ side: Side; rows: TeamGameRow[]; period: PeriodKey;
   const t = useMemo(() => teamAgg(rows), [rows]);
   if (!rows.length) return null;
   return (
-    <Section title={tl("{team}: tendencies", { team: side.team.name })} right={<span className="text-[11px] text-rw-sub">{periodLabel}</span>} share={`${side.team.u}-tendencies-${periodLabel}`}>
+    <Section
+      title={tl("{team}: tendencies", { team: side.team.name })}
+      right={
+        <span className="flex items-center gap-2">
+          <span className="text-[11px] text-rw-sub">{periodLabel}</span>
+          <SectionCard
+            section={tl("{team}: tendencies", { team: side.team.name })}
+            sub={periodLabel}
+            name={`${side.team.u}-tendencies-${periodLabel}`}
+            rows={() =>
+              [
+                { team: side.team.name, label: tl("Win rate"), sub: `${t.w}-${t.g - t.w}`, value: winRate(t.w, t.g), win: t.g > 0 ? t.w / t.g >= 0.5 : undefined },
+                ...(t.min != null ? [{ team: side.team.name, label: tl("Avg game"), sub: t.kills != null ? `${t.kills} ${tl("Kills / game")}` : undefined, value: `${fmtDec(t.min)} min` }] : []),
+                ...(t.tl
+                  ? [
+                      { team: side.team.name, label: "GD@10 / 15 / 20", value: `${sgn(t.tl.gd10)} · ${sgn(t.tl.gd15)} · ${sgn(t.tl.gd20)}`, win: (t.tl.gd15 ?? 0) >= 0 },
+                      { team: side.team.name, label: tl("Ahead at 15"), value: pct((t.tl.lead15 ?? 0) / 100), win: (t.tl.lead15 ?? 0) >= 50 },
+                      { team: side.team.name, label: tl("First blood"), value: pct((t.tl.fb ?? 0) / 100), win: (t.tl.fb ?? 0) >= 50 },
+                      { team: side.team.name, label: tl("First tower"), value: pct((t.tl.ft ?? 0) / 100), win: (t.tl.ft ?? 0) >= 50 },
+                      { team: side.team.name, label: tl("First dragon"), value: pct((t.tl.fd ?? 0) / 100), win: (t.tl.fd ?? 0) >= 50 },
+                    ]
+                  : []),
+              ].map((row, idx) => ({ rank: idx + 1, ...row }))
+            }
+          />
+        </span>
+      }
+      share={`${side.team.u}-tendencies-${periodLabel}`}
+    >
       <Playstyle t={t} />
       <TeamEarly t={t} />
       <DraftTendencies rows={rows} teamName={side.team.name} teamSlug={side.team.u} period={period} periodLabel={periodLabel} />
@@ -1134,13 +1162,14 @@ export function prepLines(a: Side, b: Side): StoryLine[] {
   const meetings = a.series.filter((r) => r[2] === b.team.u).sort((x, y) => (x[0] < y[0] ? 1 : -1));
   if (!meetings.length) {
     const t = tl("First ever meeting between these teams");
-    lines.push({ key: "first", text: t, plain: t });
+    lines.push({ key: "first", text: t, plain: t, team: a.team.name });
   } else {
     const [date, , , won, lost, en, , seriesSlug] = meetings[0];
     const winner = won > lost ? a.team.name : b.team.name;
     const lastTxt = tl("Last meeting: {team} won {score} ({event}, {date})", { team: winner, score: `${Math.max(won, lost)}-${Math.min(won, lost)}`, event: en, date: fmtDate(date) });
     lines.push({
       key: "last",
+      team: winner,
       text: seriesSlug ? (
         <HubLink to={{ kind: "match", slug: seriesSlug }} className="hover:text-rw-accent hover:underline">
           {lastTxt}
@@ -1158,9 +1187,11 @@ export function prepLines(a: Side, b: Side): StoryLine[] {
       n++;
     }
     if (n >= 2) {
-      const stTxt = tl("{team} have won the last {n} meetings", { team: aWonFirst ? a.team.name : b.team.name, n });
+      const streakTeam = aWonFirst ? a.team.name : b.team.name;
+      const stTxt = tl("{team} have won the last {n} meetings", { team: streakTeam, n });
       lines.push({
         key: "h2hstreak",
+        team: streakTeam,
         text: (
           <HubLink
             to={{ kind: "finder", query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}` }}
@@ -1177,6 +1208,7 @@ export function prepLines(a: Side, b: Side): StoryLine[] {
     const h2hTxt = tl("Series between them: {a} {wa}-{wb} {b}", { a: a.team.name, b: b.team.name, wa, wb: meetings.length - wa });
     lines.push({
       key: "h2h",
+      team: wa >= meetings.length - wa ? a.team.name : b.team.name,
       text: (
         <HubLink
           to={{ kind: "finder", query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}` }}
@@ -1191,11 +1223,27 @@ export function prepLines(a: Side, b: Side): StoryLine[] {
   }
   for (const s of [a, b]) {
     for (const [i, nt] of (s.team.notes?.list || []).entries())
-      lines.push({ key: `${s.team.u}-${i}`, who: { name: s.team.name, to: { kind: "team", slug: s.team.u } }, text: noteText(nt, { kind: "team", slug: s.team.u }), plain: notePlainText(nt), champ: nt.c, asOf: s.team.notes?.asOf });
+      lines.push({
+        key: `${s.team.u}-${i}`,
+        who: { name: s.team.name, team: s.team.name, to: { kind: "team", slug: s.team.u } },
+        team: s.team.name,
+        text: noteText(nt, { kind: "team", slug: s.team.u }),
+        plain: notePlainText(nt),
+        champ: nt.c,
+        asOf: s.team.notes?.asOf,
+      });
     for (const pl of s.players)
       if (pl?.p.notes)
         for (const [i, nt] of pl.p.notes.list.entries())
-          lines.push({ key: `${pl.p.u}-${i}`, who: { name: pl.p.name, to: { kind: "player", slug: pl.p.u } }, text: noteText(nt, { kind: "player", slug: pl.p.u }), plain: notePlainText(nt), champ: nt.c, asOf: pl.p.notes.asOf });
+          lines.push({
+            key: `${pl.p.u}-${i}`,
+            who: { name: pl.p.name, team: s.team.name, to: { kind: "player", slug: pl.p.u } },
+            team: s.team.name,
+            text: noteText(nt, { kind: "player", slug: pl.p.u }),
+            plain: notePlainText(nt),
+            champ: nt.c,
+            asOf: pl.p.notes.asOf,
+          });
   }
   return lines;
 }
@@ -1334,7 +1382,7 @@ function fearlessPools(a: Side, b: Side, period: PeriodKey, exclude?: Set<string
       m.set(g[2], x);
     }
     const list = [...m.entries()].sort((p, q) => q[1][0] - p[1][0]);
-    return { name: pl.p.name, slug: pl.p.u, list, deep: list.filter(([, x]) => x[0] >= 2).length };
+    return { name: pl.p.name, slug: pl.p.u, img: pl.p.img, list, deep: list.filter(([, x]) => x[0] >= 2).length };
   };
   const pa = a.players.map(of);
   const pb = b.players.map(of);
@@ -1360,13 +1408,13 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
   if (!pools.enough) return null;
   const minDeep = pools.minDeep;
   const line = (x: (typeof pools.a)[number]): PoolLine | null => (x ? { name: x.name, list: x.list.map(([c, [g]]) => [c, g]), deep: x.deep } : null);
-  const cell = (x: (typeof pools.a)[number], right: boolean) =>
+  const cell = (x: (typeof pools.a)[number], right: boolean, teamName: string) =>
     !x ? (
       <span className="text-rw-muted">–</span>
     ) : (
       <div className={`min-w-0 space-y-1 ${right ? "text-right" : ""}`}>
         <div className={`text-[11px] flex flex-wrap items-center gap-1.5 ${right ? "justify-end" : ""} ${x.deep === minDeep ? "text-rw-red font-bold" : "text-rw-sub"}`}>
-          <PlayerPhoto name={x.name} slug={x.slug ?? undefined} size={16} />
+          <PlayerPhoto name={x.name} team={teamName} slug={x.slug ?? undefined} img={x.img} size={16} />
           <span>
             <PlayerLink name={x.name} u={x.slug} /> ·{" "}
             {x.slug ? (
@@ -1459,7 +1507,7 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
       <ul className="divide-y divide-rw-border">
         {ROLES.map((r, i) => (
           <li key={r} className="grid grid-cols-[1fr_auto_1fr] items-start gap-3 py-2">
-            {cell(pools.a[i], false)}
+            {cell(pools.a[i], false, a.team.name)}
             <span className="text-[10px] uppercase tracking-wider font-bold text-rw-accent text-center min-w-14 px-1 whitespace-nowrap pt-0.5">
               {pools.a[i]?.slug && pools.b[i]?.slug ? (
                 <HubLink
@@ -1473,7 +1521,7 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
                 roleName(r)
               )}
             </span>
-            {cell(pools.b[i], true)}
+            {cell(pools.b[i], true, b.team.name)}
           </li>
         ))}
       </ul>
@@ -1563,7 +1611,13 @@ const Lanes: React.FC<{
     const val = "tabular-nums text-[11px] py-0.5";
     const laneCard = (): CardData | null =>
       pa && pb && sa && sb
-        ? playerCardData({ name: pa.p.name, role: roleName(r), club: a.team.name }, sa, periodLabel, { name: pb.p.name, role: roleName(r), club: b.team.name }, sb)
+        ? playerCardData(
+            { name: pa.p.name, role: roleName(r), club: a.team.name, slug: pa.p.u },
+            sa,
+            periodLabel,
+            { name: pb.p.name, role: roleName(r), club: b.team.name, slug: pb.p.u },
+            sb,
+          )
         : null;
     return (
       <LaneBlock

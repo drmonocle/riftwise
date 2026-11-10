@@ -468,17 +468,17 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
         ))}
         {ready && mode === "team" && (
           <>
-            <HubLink to={{ kind: "prep", a: a!, b: b!, period: route.period }} className="text-rw-accent hover:underline">
+            <HubLink to={{ kind: "prep", a: info.a!.u, b: info.b!.u, period: route.period }} className="text-rw-accent hover:underline">
               {tl("Match prep")}
             </HubLink>
             <HubLink
-              to={{ kind: "draft", query: `teams=${encodeURIComponent(a!)},${encodeURIComponent(b!)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
+              to={{ kind: "draft", query: `teams=${encodeURIComponent(info.a!.u)},${encodeURIComponent(info.b!.u)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
               className="text-rw-accent hover:underline"
             >
               {tl("Draft board")}
             </HubLink>
             <HubLink
-              to={{ kind: "finder", query: `team=${encodeURIComponent(a!)}&vs=${encodeURIComponent(b!)}` }}
+              to={{ kind: "finder", query: `team=${encodeURIComponent(info.a!.u)}&vs=${encodeURIComponent(info.b!.u)}` }}
               className="text-rw-accent hover:underline"
             >
               {tl("Game finder")}
@@ -488,7 +488,7 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
         {ready && mode === "player" && (
           <>
             <HubLink
-              to={{ kind: "finder", query: `player=${encodeURIComponent(a!)}` }}
+              to={{ kind: "finder", query: `player=${encodeURIComponent(info.a!.u)}` }}
               className="text-rw-accent hover:underline"
             >
               {tl("Game finder")}
@@ -517,13 +517,13 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
             {side.s && side.i && (
               <div className={`text-sm font-bold flex items-center gap-2 min-w-0 ${side.key === "a" ? "text-rw-side-a" : "text-rw-side-b"}`}>
                 {mode === "team" ? (
-                  <HubLink to={{ kind: "team", slug: side.s }} className="shrink-0">
+                  <HubLink to={{ kind: "team", slug: side.i.u || side.s }} className="shrink-0">
                     <TeamLogo name={side.i.name} size={20} />
                   </HubLink>
                 ) : (
-                  <PlayerPhoto name={side.i.name} slug={side.s} img={(side.i as HubPlayer).img} size={22} />
+                  <PlayerPhoto name={side.i.name} team={(side.i as HubPlayer).club} slug={side.i.u || side.s} img={(side.i as HubPlayer).img} size={22} />
                 )}
-                <HubLink to={{ kind: mode, slug: side.s }} className="truncate hover:underline">
+                <HubLink to={{ kind: mode, slug: side.i.u || side.s }} className="truncate hover:underline">
                   {side.i.name}
                 </HubLink>
               </div>
@@ -552,13 +552,21 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
             <RevealButton onReveal={reveal} />
           </div>
         ) : mode === "team" ? (
-          <TeamRows x={info.a as HubTeam} y={info.b as HubTeam} ra={selA as TeamGameRow[]} rb={selB as TeamGameRow[]} bSlug={b!} career={period === "all"} period={period} periodLabel={periodLabel} />
+          <TeamRows x={info.a as HubTeam} y={info.b as HubTeam} ra={selA as TeamGameRow[]} rb={selB as TeamGameRow[]} bSlug={(info.b as HubTeam).u} career={period === "all"} period={period} periodLabel={periodLabel} />
         ) : (
           <PlayerRows x={info.a as HubPlayer} y={info.b as HubPlayer} ra={selA as PlayerGameRow[]} rb={selB as PlayerGameRow[]} career={period === "all"} period={period} periodLabel={periodLabel} />
         ))}
-      {mode === "team" && ready && <HeadToHeadSeries a={a!} b={b!} aName={info.a!.name} bName={info.b!.name} />}
+      {mode === "team" && ready && <HeadToHeadSeries a={info.a!.u} b={info.b!.u} aName={info.a!.name} bName={info.b!.name} />}
       {mode === "player" && ready && (
-        <PlayerHeadToHead a={logs.a as PlayerGameRow[]} b={logs.b as PlayerGameRow[]} aName={info.a!.name} bName={info.b!.name} spoilerKey={`h2hp:${a}:${b}`} />
+        <PlayerHeadToHead
+          a={logs.a as PlayerGameRow[]}
+          b={logs.b as PlayerGameRow[]}
+          aName={info.a!.name}
+          bName={info.b!.name}
+          aSlug={info.a!.u}
+          bSlug={info.b!.u}
+          spoilerKey={`h2hp:${info.a!.u}:${info.b!.u}`}
+        />
       )}
     </div>
     </CaptureContext.Provider>
@@ -1514,13 +1522,25 @@ const PlayerRows: React.FC<{
  * Every game two players played against each other (all time): the record, the lane gold lead at 15 minutes when
  * they faced each other in lane, their most common champion matchups and the games themselves.
  */
-const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName: string; bName: string; spoilerKey: string }> = ({
+const PlayerHeadToHead: React.FC<{
+  a: PlayerGameRow[];
+  b: PlayerGameRow[];
+  aName: string;
+  bName: string;
+  aSlug?: string;
+  bSlug?: string;
+  spoilerKey: string;
+}> = ({
   a,
   b,
   aName,
   bName,
+  aSlug,
+  bSlug,
   spoilerKey,
 }) => {
+  const sa = aSlug || prettySlug(aName);
+  const sb = bSlug || prettySlug(bName);
   const meetings = useMemo(() => playerMeetings(a, b), [a, b]);
   const [hidden, reveal] = useHidden(spoilerKey, meetings.find((m) => isFresh(m.a[0]))?.a[0]);
   const [n, setN] = useState(10);
@@ -1530,6 +1550,8 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
     // lane leads only when they played the same role (then each one's lead is over the other)
     const lane = shown.filter((m) => m.a[10] && m.a[10] === m.b[10] && m.a[21]?.[3] != null);
     const gd15 = lane.length ? lane.reduce((t, m) => t + (m.a[21]![3] as number), 0) / lane.length : null;
+    const laneCsd = shown.filter((m) => m.a[10] && m.a[10] === m.b[10] && m.a[21]?.[4] != null);
+    const csd15 = laneCsd.length ? laneCsd.reduce((t, m) => t + (m.a[21]![4] as number), 0) / laneCsd.length : null;
     const pairs = new Map<string, { ca: string; cb: string; g: number; w: number }>();
     for (const m of shown) {
       const k = `${m.a[2]}|${m.b[2]}`;
@@ -1542,7 +1564,7 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
     for (const m of shown) series.set(m.a[1], (series.get(m.a[1]) || 0) + (m.a[6] ? 1 : -1));
     const sw = [...series.values()].filter((v) => v > 0).length;
     const sl = [...series.values()].filter((v) => v < 0).length;
-    return { w, l: shown.length - w, gd15, lane: lane.length, top: [...pairs.values()].sort((x, y) => y.g - x.g).slice(0, 5), sw, sl };
+    return { w, l: shown.length - w, gd15, csd15, lane: lane.length, top: [...pairs.values()].sort((x, y) => y.g - x.g).slice(0, 5), sw, sl };
   }, [shown]);
   if (meetings.length === 0) return null;
   return (
@@ -1575,11 +1597,11 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
         <div className={`${card} py-2 space-y-1`}>
           <div className="text-[10px] text-rw-muted">{tl("Games")}</div>
           <div className="font-bold text-rw-text tabular-nums">
-            <HubLink to={{ kind: "player", slug: prettySlug(aName), tab: "matches" }} className="hover:text-rw-accent hover:underline">
+            <HubLink to={{ kind: "player", slug: sa, tab: "matches" }} className="hover:text-rw-accent hover:underline">
               {aName} {s.w}
             </HubLink>{" "}
             –{" "}
-            <HubLink to={{ kind: "player", slug: prettySlug(bName), tab: "matches" }} className="hover:text-rw-accent hover:underline">
+            <HubLink to={{ kind: "player", slug: sb, tab: "matches" }} className="hover:text-rw-accent hover:underline">
               {s.l} {bName}
             </HubLink>
           </div>
@@ -1593,11 +1615,11 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
         <div className={`${card} py-2 space-y-1`}>
           <div className="text-[10px] text-rw-muted">{tl("Series")}</div>
           <div className="font-bold text-rw-text tabular-nums">
-            <HubLink to={{ kind: "player", slug: prettySlug(aName), tab: "matches" }} className="hover:text-rw-accent hover:underline">
+            <HubLink to={{ kind: "player", slug: sa, tab: "matches" }} className="hover:text-rw-accent hover:underline">
               {s.sw}
             </HubLink>{" "}
             –{" "}
-            <HubLink to={{ kind: "player", slug: prettySlug(bName), tab: "matches" }} className="hover:text-rw-accent hover:underline">
+            <HubLink to={{ kind: "player", slug: sb, tab: "matches" }} className="hover:text-rw-accent hover:underline">
               {s.sl}
             </HubLink>
           </div>
@@ -1612,11 +1634,23 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
           <div className={`${card} py-2`} title={tl("{name}'s gold lead over the other at 15 minutes, in the {n} games they faced each other in lane", { name: aName, n: s.lane })}>
             <div className="text-[10px] text-rw-muted">{tl("Gold lead at 15 in lane")}</div>
             <HubLink
-              to={{ kind: "player", slug: prettySlug(aName), tab: "stats" }}
+              to={{ kind: "player", slug: sa, tab: "stats" }}
               className={`font-bold tabular-nums hover:underline ${s.gd15 >= 0 ? "text-rw-teal" : "text-rw-red"}`}
             >
               {s.gd15 >= 0 ? "+" : ""}
               {fmtNum(Math.round(s.gd15))}
+            </HubLink>
+          </div>
+        )}
+        {s.csd15 != null && (
+          <div className={`${card} py-2`} title={tl("CS lead over the lane opponent at 15 minutes")}>
+            <div className="text-[10px] text-rw-muted">CSD@15 ({aName})</div>
+            <HubLink
+              to={{ kind: "player", slug: sa, tab: "stats" }}
+              className={`font-bold tabular-nums hover:underline ${s.csd15 >= 0 ? "text-rw-teal" : "text-rw-red"}`}
+            >
+              {s.csd15 >= 0 ? "+" : ""}
+              {fmtDec(s.csd15, 1)}
             </HubLink>
           </div>
         )}
@@ -1735,8 +1769,9 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
       slugs.map(async (slug) => {
         try {
           const info = await (mode === "team" ? loadHubTeam(slug) : loadHubPlayer(slug));
-          const log = await (mode === "team" ? loadTeamGames(slug) : loadPlayerGames(slug)).catch(() => [] as (TeamGameRow | PlayerGameRow)[]);
-          return { slug, info, log } as Loaded;
+          const canon = info.u || slug;
+          const log = await (mode === "team" ? loadTeamGames(canon) : loadPlayerGames(canon)).catch(() => [] as (TeamGameRow | PlayerGameRow)[]);
+          return { slug: canon, info, log } as Loaded;
         } catch {
           return null;
         }
@@ -1821,7 +1856,7 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
                 <TeamLogo name={r.info.name} size={16} />
               </HubLink>
             ) : (
-              <PlayerPhoto name={r.info.name} slug={r.slug} img={(r.info as HubPlayer).img} size={18} />
+              <PlayerPhoto name={r.info.name} team={(r.info as HubPlayer).club} slug={r.slug} img={(r.info as HubPlayer).img} size={18} />
             )}
             <HubLink to={{ kind: mode, slug: r.slug }} className="font-bold hover:underline">
               {r.info.name}
@@ -1910,7 +1945,7 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
                           <TeamLogo name={r.info.name} size={15} />
                         </HubLink>
                       ) : (
-                        <PlayerPhoto name={r.info.name} slug={r.slug} img={(r.info as HubPlayer).img} size={16} />
+                        <PlayerPhoto name={r.info.name} team={(r.info as HubPlayer).club} slug={r.slug} img={(r.info as HubPlayer).img} size={16} />
                       )}
                       <HubLink to={{ kind: mode, slug: r.slug }} className="hover:text-rw-accent hover:underline">
                         {r.info.name}

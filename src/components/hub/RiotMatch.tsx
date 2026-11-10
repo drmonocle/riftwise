@@ -12,9 +12,9 @@ import { MatchPrepButton } from "../MatchPrepButton";
 import { riotMatchById, riotMatchFor } from "../../hub/riotMatch";
 import { findSeriesSlug } from "../../hub/seriesLookup";
 import { navigateHub } from "../../hub/route";
-import { prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { findHubTeam, loadHubIndexQuick, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import type { HubSeries } from "../../hub/types";
-import { card, fmtDate, HubLink, hubShareUrl, Loading, RevealButton, TeamLogo, useHidden, usePageTitle } from "./ui";
+import { card, fmtDate, HubLink, hubShareUrl, Loading, RevealButton, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
 
 const CopyRiotMatchPost: React.FC<{ match: Match }> = ({ match }) => {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
@@ -104,6 +104,7 @@ export const RiotGamesFor: React.FC<{ s: HubSeries; showStats: boolean; fallback
 /** /match/riot-<id>: a match the stats hub doesn't have yet. */
 export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
   const m = useRiotMatch(() => riotMatchById(matchId), matchId);
+  const index = useLoad(loadHubIndexQuick, []);
   usePageTitle(m ? `${m.team1Name} vs ${m.team2Name} – ${m.leagueName}` : null);
   // the same reveal as the score on the schedule ("YYYY-MM-DD HH:MM:SS": the stats' date form)
   const [hidden, reveal] = useHidden(`match:${matchId}`, m?.startTimeUtc.slice(0, 19).replace("T", " "));
@@ -120,6 +121,8 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
   }, [m?.state, m?.matchId]); // eslint-disable-line react-hooks/exhaustive-deps
   if (m === undefined) return <Loading />;
   if (!m) return <p className="text-xs text-rw-sub py-6 text-center">{tl("This match isn't in the current schedule window.")}</p>;
+  const t1Slug = (index.data && findHubTeam(index.data, m.team1Name, m.team1Code)) || prettySlug(m.team1Name);
+  const t2Slug = (index.data && findHubTeam(index.data, m.team2Name, m.team2Code)) || prettySlug(m.team2Name);
   const live = m.state === "inProgress";
   return (
     <div className="space-y-3">
@@ -145,7 +148,7 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `team=${encodeURIComponent(prettySlug(m.team1Name))}&vs=${encodeURIComponent(prettySlug(m.team2Name))}`,
+                  query: `team=${encodeURIComponent(t1Slug)}&vs=${encodeURIComponent(t2Slug)}`,
                 }}
                 className="hover:text-rw-accent hover:underline"
               >
@@ -155,7 +158,7 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
             <span>
               ·{" "}
               <HubLink
-                to={{ kind: "prep", a: prettySlug(m.team1Name), b: prettySlug(m.team2Name) }}
+                to={{ kind: "prep", a: t1Slug, b: t2Slug }}
                 className="hover:text-rw-accent hover:underline"
                 title={tl("Match prep")}
               >
@@ -169,19 +172,19 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
             <MatchOverviewButton match={m} />
             <MatchPrepButton match={m} />
             <HubLink
-              to={{ kind: "draft", query: `teams=${encodeURIComponent(prettySlug(m.team1Name))},${encodeURIComponent(prettySlug(m.team2Name))}` }}
+              to={{ kind: "draft", query: `teams=${encodeURIComponent(t1Slug)},${encodeURIComponent(t2Slug)}` }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
             >
               {tl("Draft board")}
             </HubLink>
             <HubLink
-              to={{ kind: "compare", mode: "team", a: prettySlug(m.team1Name), b: prettySlug(m.team2Name) }}
+              to={{ kind: "compare", mode: "team", a: t1Slug, b: t2Slug }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
             >
               {tl("Compare")}
             </HubLink>
             <HubLink
-              to={{ kind: "finder", query: `team=${encodeURIComponent(prettySlug(m.team1Name))}&vs=${encodeURIComponent(prettySlug(m.team2Name))}` }}
+              to={{ kind: "finder", query: `team=${encodeURIComponent(t1Slug)}&vs=${encodeURIComponent(t2Slug)}` }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
             >
               {tl("Game finder")}
@@ -190,7 +193,7 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
         </div>
         <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className={`text-right text-base sm:text-lg font-bold truncate ${!hidden && m.team1Score > m.team2Score && !live ? "text-rw-teal" : "text-rw-text"}`}>
-            <HubLink to={{ kind: "team", slug: prettySlug(m.team1Name) }} className="inline-flex items-center justify-end gap-2 hover:text-rw-accent max-w-full">
+            <HubLink to={{ kind: "team", slug: t1Slug }} className="inline-flex items-center justify-end gap-2 hover:text-rw-accent max-w-full">
               <span className="sm:hidden truncate">{m.team1Code}</span>
               <span className="hidden sm:inline truncate">{m.team1Name}</span>
               <TeamLogo name={m.team1Name} code={m.team1Code} src={m.team1Image} size={22} />
@@ -204,7 +207,7 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
                 </>
               ) : (
                 <HubLink
-                  to={{ kind: "compare", mode: "team", a: prettySlug(m.team1Name), b: prettySlug(m.team2Name) }}
+                  to={{ kind: "compare", mode: "team", a: t1Slug, b: t2Slug }}
                   className="hover:text-rw-accent hover:underline"
                   title={tl("Compare")}
                 >
@@ -223,7 +226,7 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
             )}
           </div>
           <div className={`text-base sm:text-lg font-bold truncate ${!hidden && m.team2Score > m.team1Score && !live ? "text-rw-teal" : "text-rw-text"}`}>
-            <HubLink to={{ kind: "team", slug: prettySlug(m.team2Name) }} className="inline-flex items-center gap-2 hover:text-rw-accent max-w-full">
+            <HubLink to={{ kind: "team", slug: t2Slug }} className="inline-flex items-center gap-2 hover:text-rw-accent max-w-full">
               <TeamLogo name={m.team2Name} code={m.team2Code} src={m.team2Image} size={22} />
               <span className="sm:hidden truncate">{m.team2Code}</span>
               <span className="hidden sm:inline truncate">{m.team2Name}</span>

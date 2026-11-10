@@ -594,7 +594,7 @@ export const loadPlayerGames2y = (slug: string): Promise<import("./types").Playe
   return p;
 };
 /** a team's last two years of games (only teams whose page says g2y have one) */
-export const loadTeamGames2y = (slug: string) => load<import("./types").TeamGameRow[]>(`hub/teamgames2y/${slug}.json`);
+export const loadTeamGames2y = (slug: string) => teamFile<import("./types").TeamGameRow[]>("teamgames2y", slug);
 /** The best-rated games and series: all time, a year, a league, or a league's year. */
 export const loadBest = (year?: string, league?: string) =>
   load<import("./types").BestFile>(

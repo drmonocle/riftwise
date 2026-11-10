@@ -6,7 +6,7 @@ import { loadPlayerGames, loadPlayerItems, loadTeamSeries, prettySlug } from "..
 import { hubShareUrl } from "../../hub/route";
 import { inPeriod, playerRowRef, type PeriodKey } from "../../hub/period";
 import type { PlayerGameRow, TeamSeriesRow } from "../../hub/types";
-import { isFinishedItem } from "../../hub/ddragon";
+import { isFinishedItem, itemName } from "../../hub/ddragon";
 import { SectionCard } from "./BroadcastCard";
 import { KdaBar, WinBar } from "./OpponentChart";
 import { ChampIcon, EventLink, Failed, fmtDate, HubLink, isFresh, ItemIcon, Loading, ratingTextClass, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad } from "./ui";
@@ -443,7 +443,14 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
 
 /** `champ`: open on that champion's games (the Champions tab's "Every game" button). Each game shows the items the
  *  player ended it with (hub/playeritems/: the finished ones first). */
-const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string; period?: PeriodKey }> = ({ slug, champ: startChamp, year: startYear, period }) => {
+const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: string; year?: string; period?: PeriodKey }> = ({
+  slug,
+  playerName,
+  champ: startChamp,
+  year: startYear,
+  period,
+}) => {
+  const displayName = playerName || slug;
   const state = useLoad(() => loadPlayerGames(slug), [slug]);
   const owned = useLoad(() => loadPlayerItems(slug).catch(() => null), [slug]);
   const [year, setYear] = useState(startYear || "all");
@@ -547,7 +554,7 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string; p
         {!hidden && shown.length > 0 && (
           <>
             <CopyArchivePost
-              title={`${tl("Every game")} · ${slug}${champ !== "all" ? ` · ${champName(champ)}` : ""}${year !== "all" ? ` (${year})` : ""}`}
+              title={`${tl("Every game")} · ${displayName}${champ !== "all" ? ` · ${champName(champ)}` : ""}${year !== "all" ? ` (${year})` : ""}`}
               sub={`${tn("{n} game", "{n} games", rows.length)} · ${Math.round((won / rows.length) * 100)}% · KDA ${fmtDec((k + a) / Math.max(d, 1), 2)}`}
               rows={shown.slice(0, 5).map((r) => `${r[6] ? tc("short result", "W") : tc("short result", "L")} ${champName(r[2])} (${r[3]}/${r[4]}/${r[5]}) vs ${r[8]} · ${r[9]} (${fmtDate(r[0])})`)}
               url={hubShareUrl({
@@ -558,7 +565,7 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string; p
               })}
             />
             <SectionCard
-              section={`${tl("Every game")} · ${slug}`}
+              section={`${tl("Every game")} · ${displayName}`}
               sub={`${tn("{n} game", "{n} games", rows.length)} · ${Math.round((won / rows.length) * 100)}%`}
               name={`${slug}-games-${year}-${champ}`}
               rows={() =>
@@ -612,6 +619,11 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string; p
                     <span className="text-rw-text tabular-nums">{hide ? "?/?/?" : `${r[3]}/${r[4]}/${r[5]}`}</span>
                   )}{" "}
                   <span className="text-rw-sub inline-flex items-center gap-1 align-baseline">
+                    {r[7] && (
+                      <HubLink to={{ kind: "team", slug: prettySlug(r[7]) }} title={r[7]} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                        <TeamLogo name={r[7]} size={13} />
+                      </HubLink>
+                    )}
                     <HubLink
                       to={{
                         kind: "finder",
@@ -683,6 +695,7 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string; p
                     key={it}
                     to={{ kind: "items", query: new URLSearchParams({ player: slug, item: prettySlug(it), ...(r[2] ? { champ: prettySlug(r[2]) } : {}) }).toString() }}
                     className="hover:opacity-80"
+                    title={itemName(it)}
                   >
                     <ItemIcon name={it} size={18} />
                   </HubLink>
@@ -702,14 +715,21 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string; p
   );
 };
 
-export const PlayerGamesArchive: React.FC<{ slug: string }> = ({ slug }) => (
+export const PlayerGamesArchive: React.FC<{ slug: string; playerName?: string }> = ({ slug, playerName }) => (
   <Section title={tl("Every game")} right={<span className="text-[11px] text-rw-muted">{tl("Show every game, with filters for year and champion")}</span>}>
-    <PlayerGamesBody slug={slug} />
+    <PlayerGamesBody slug={slug} playerName={playerName} />
   </Section>
 );
 
 /** Every game of a player on one champion, open at once (the Champions tab, after a champion is picked). */
-export const PlayerChampGames: React.FC<{ slug: string; champ: string; year?: string; period?: PeriodKey; onClose: () => void }> = ({ slug, champ, year, period, onClose }) => (
+export const PlayerChampGames: React.FC<{ slug: string; playerName?: string; champ: string; year?: string; period?: PeriodKey; onClose: () => void }> = ({
+  slug,
+  playerName,
+  champ,
+  year,
+  period,
+  onClose,
+}) => (
   <Section
     title={tl("Every game on {champ}", { champ: champName(champ) })}
     right={
@@ -718,7 +738,7 @@ export const PlayerChampGames: React.FC<{ slug: string; champ: string; year?: st
       </button>
     }
   >
-    <PlayerGamesBody slug={slug} champ={champ} year={year} period={period} />
+    <PlayerGamesBody slug={slug} playerName={playerName} champ={champ} year={year} period={period} />
   </Section>
 );
 

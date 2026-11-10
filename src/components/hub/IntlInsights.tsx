@@ -375,11 +375,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
           <SectionCard
             section={tl("Cinderella runs")}
             name={name}
-            rows={() => [
-              ...cind.playIn.slice(0, 4).map((r) => ({ team: r.team, label: `${r.team} · ${tl("from the Play-In")}`, sub: all ? yearOnly(r.year) : undefined, value: placeText(r.place) })),
-              ...cind.underdogs.slice(0, 4).map((r) => ({ team: r.team, label: `${r.team} · ${tl("underdog")}`, sub: all ? yearOnly(r.year) : undefined, value: placeText(r.place) })),
-              ...(all ? cind.debuts.slice(0, 4).map((r) => ({ team: r.team, label: `${r.team} · ${tl("debut")}`, sub: yearOnly(r.year), value: placeText(r.place) })) : []),
-            ]}
+            rows={() =>
+              [
+                ...cind.playIn.slice(0, 4).map((r) => ({ team: r.team, label: `${r.team} · ${tl("from the Play-In")}`, sub: all ? yearOnly(r.year) : undefined, value: placeText(r.place) })),
+                ...cind.underdogs.slice(0, 4).map((r) => ({ team: r.team, label: `${r.team} · ${tl("underdog")}`, sub: all ? yearOnly(r.year) : undefined, value: placeText(r.place) })),
+                ...(all ? cind.debuts.slice(0, 4).map((r) => ({ team: r.team, label: `${r.team} · ${tl("debut")}`, sub: yearOnly(r.year), value: placeText(r.place) })) : []),
+              ].map((row, idx) => ({ rank: idx + 1, ...row }))
+            }
           />
         }
       >
@@ -497,40 +499,44 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
           <>
             <h4 className="text-[10px] font-bold uppercase tracking-wider text-rw-muted pt-2">{tl("Rematches in the final")}</h4>
             <List>
-              {fin.repeats.map((l, i) => (
-                <Item
-                  key={i}
-                  left={
-                    <span className="inline-flex items-center gap-1 min-w-0">
-                      <HubLink to={{ kind: "team", slug: prettySlug(l[0].winner) }} className="shrink-0">
-                        <TeamLogo name={l[0].winner} size={14} />
-                      </HubLink>
-                      <TeamLink name={l[0].winner} className="text-rw-text hover:text-rw-accent hover:underline" />
+              {fin.repeats.map((l, i) => {
+                const wSlug = l[0].winnerU || prettySlug(l[0].winner);
+                const lSlug = l[0].loserU || prettySlug(l[0].loser);
+                return (
+                  <Item
+                    key={i}
+                    left={
+                      <span className="inline-flex items-center gap-1 min-w-0">
+                        <HubLink to={{ kind: "team", slug: wSlug }} className="shrink-0">
+                          <TeamLogo name={l[0].winner} size={14} />
+                        </HubLink>
+                        <TeamLink name={l[0].winner} u={l[0].winnerU} className="text-rw-text hover:text-rw-accent hover:underline" />
+                        <HubLink
+                          to={{ kind: "compare", mode: "team", a: wSlug, b: lSlug }}
+                          className="text-rw-muted hover:text-rw-accent hover:underline"
+                          title={tl("Compare")}
+                        >
+                          vs
+                        </HubLink>
+                        <HubLink to={{ kind: "team", slug: lSlug }} className="shrink-0">
+                          <TeamLogo name={l[0].loser} size={14} />
+                        </HubLink>
+                        <TeamLink name={l[0].loser} u={l[0].loserU} className="text-rw-text hover:text-rw-accent hover:underline" />
+                      </span>
+                    }
+                    sub={l.map((f) => `${yearOnly(f.year)}: ${f.winner} ${f.score}`).join(" · ")}
+                    right={
                       <HubLink
-                        to={{ kind: "compare", mode: "team", a: prettySlug(l[0].winner), b: prettySlug(l[0].loser) }}
-                        className="text-rw-muted hover:text-rw-accent hover:underline"
+                        to={{ kind: "compare", mode: "team", a: wSlug, b: lSlug }}
+                        className="hover:underline"
                         title={tl("Compare")}
                       >
-                        vs
+                        ×{l.length}
                       </HubLink>
-                      <HubLink to={{ kind: "team", slug: prettySlug(l[0].loser) }} className="shrink-0">
-                        <TeamLogo name={l[0].loser} size={14} />
-                      </HubLink>
-                      <TeamLink name={l[0].loser} className="text-rw-text hover:text-rw-accent hover:underline" />
-                    </span>
-                  }
-                  sub={l.map((f) => `${yearOnly(f.year)}: ${f.winner} ${f.score}`).join(" · ")}
-                  right={
-                    <HubLink
-                      to={{ kind: "compare", mode: "team", a: prettySlug(l[0].winner), b: prettySlug(l[0].loser) }}
-                      className="hover:underline"
-                      title={tl("Compare")}
-                    >
-                      ×{l.length}
-                    </HubLink>
-                  }
-                />
-              ))}
+                    }
+                  />
+                );
+              })}
             </List>
           </>
         )}
@@ -554,6 +560,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               rows={() =>
                 titles.map((p, idx) => ({
                   rank: idx + 1,
+                  team: p.team,
                   label: p.name,
                   sub: p.titles.map(yearOnly).join(", "),
                   value: tl("{n} titles", { n: p.titles.length }),
@@ -573,10 +580,10 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   <span className="inline-flex items-center gap-1.5 min-w-0">
                     {p.u ? (
                       <HubLink to={{ kind: "player", slug: p.u }} className="shrink-0">
-                        <PlayerPhoto name={p.name} slug={p.u} size={18} />
+                        <PlayerPhoto name={p.name} team={p.team} slug={p.u} size={18} />
                       </HubLink>
                     ) : (
-                      <PlayerPhoto name={p.name} slug={undefined} size={18} />
+                      <PlayerPhoto name={p.name} team={p.team} slug={undefined} size={18} />
                     )}
                     <PlayerLink name={p.name} u={p.u} className="text-rw-text hover:text-rw-accent truncate" />
                   </span>
@@ -613,7 +620,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             section={tl("Home region")}
             name={name}
             rows={() =>
-              hs.map((h) => ({
+              hs.map((h, idx) => ({
+                rank: idx + 1,
                 team: h.team || undefined,
                 label: `${yearOnly(h.year)} · ${h.country}`,
                 sub: h.team || undefined,
@@ -642,16 +650,16 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 {h.team && (
                   <span className="inline-flex items-center gap-1 truncate text-rw-muted">
                     <span>·</span>
-                    <HubLink to={{ kind: "team", slug: prettySlug(h.team) }} className="shrink-0">
+                    <HubLink to={{ kind: "team", slug: h.teamU || prettySlug(h.team) }} className="shrink-0">
                       <TeamLogo name={h.team} size={14} />
                     </HubLink>
-                    <TeamLink name={h.team} className="truncate text-rw-muted hover:text-rw-accent hover:underline" />
+                    <TeamLink name={h.team} u={h.teamU} className="truncate text-rw-muted hover:text-rw-accent hover:underline" />
                   </span>
                 )}
               </span>
               {h.region && h.team ? (
                 <HubLink
-                  to={{ kind: "team", slug: prettySlug(h.team), tab: "tournaments" }}
+                  to={{ kind: "team", slug: h.teamU || prettySlug(h.team), tab: "tournaments" }}
                   className={`shrink-0 font-semibold hover:underline ${h.best === 1 ? "text-rw-accent" : "text-rw-sub hover:text-rw-accent"}`}
                 >
                   {placeText(h.best)}
@@ -681,7 +689,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 section={tl("Year by year")}
                 name={name}
                 rows={() =>
-                  ys.map((y) => ({
+                  ys.map((y, idx) => ({
+                    rank: idx + 1,
                     champ: y.top?.[0],
                     label: yearOnly(y.year),
                     sub: `${y.top ? champName(y.top[0]) : "–"} · ${tl("blue {p}%", { p: y.blue ?? "–" })}`,
