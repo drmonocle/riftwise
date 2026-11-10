@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { tl, locale } from "../../i18n";
 import { load } from "../../stats";
 import type { Match } from "../../types";
-import { findHubTeam, loadHubIndexQuick, prettySlug, resolveLeagueSlug, type HubIndex } from "../../hub/data";
+import { bare, findHubTeam, loadHubIndexQuick, matchesChampSearch, normText, prettySlug, resolveLeagueSlug, type HubIndex } from "../../hub/data";
 import { MatchOverviewButton } from "../MatchOverviewButton";
 import { MatchPrepButton } from "../MatchPrepButton";
 import {
@@ -113,17 +113,24 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
     .map((m) => ({ m, lines: matchLines(m, data.index, data.stakes) }))
     .filter((x) => x.lines.length);
   if (!allBlocks.length) return null;
-  const q = search.trim().toLowerCase();
-  const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean) : [];
+  const q = normText(search.trim());
+  const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s.trim())).filter(Boolean) : [];
   // a phone shows the next four matches; each extra column of room shows four more
   const blocks = terms.length
     ? allBlocks
         .map(({ m, lines }) => {
-          const mHay = `${m.team1Code} ${m.team1Name} ${m.team2Code} ${m.team2Name} ${m.leagueName}`.toLowerCase();
-          if (terms.some((t) => mHay.includes(t))) return { m, lines };
+          const mHay = normText(`${m.team1Code} ${m.team1Name} ${m.team2Code} ${m.team2Name} ${m.leagueName}`);
+          const mHayBare = bare(mHay);
+          if (terms.some((t) => mHay.includes(t) || (t.length >= 2 && mHayBare.includes(bare(t))))) return { m, lines };
           const filteredLines = lines.filter((l) => {
-            const lHay = `${l.who?.name || ""} ${l.champ || ""} ${l.plain || ""}`.toLowerCase();
-            return terms.some((t) => lHay.includes(t));
+            const lHay = normText(`${l.who?.name || ""} ${l.champ || ""} ${l.plain || ""}`);
+            const lHayBare = bare(lHay);
+            return terms.some(
+              (t) =>
+                lHay.includes(t) ||
+                (t.length >= 2 && lHayBare.includes(bare(t))) ||
+                (l.champ ? matchesChampSearch(l.champ, t) : false),
+            );
           });
           return { m, lines: filteredLines };
         })
@@ -182,7 +189,15 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
               <HubLink
                 to={{
                   kind: "rankings",
-                  ...(blocks[0]?.m.leagueSlug ? { query: `league=${encodeURIComponent(resolveLeagueSlug(blocks[0].m.leagueSlug))}` } : {}),
+                  query:
+                    new URLSearchParams({
+                      ...(blocks[0]?.m.leagueSlug ? { league: resolveLeagueSlug(blocks[0].m.leagueSlug) } : {}),
+                      ...(blocks[0]?.m
+                        ? {
+                            q: `${findHubTeam(data.index, blocks[0].m.team1Name, blocks[0].m.team1Code) || prettySlug(blocks[0].m.team1Name || blocks[0].m.team1Code)},${findHubTeam(data.index, blocks[0].m.team2Name, blocks[0].m.team2Code) || prettySlug(blocks[0].m.team2Name || blocks[0].m.team2Code)}`,
+                          }
+                        : {}),
+                    }).toString() || undefined,
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -195,6 +210,11 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                     new URLSearchParams({
                       ...(blocks[0]?.m.leagueSlug ? { league: resolveLeagueSlug(blocks[0].m.leagueSlug) } : {}),
                       ...(blocks[0]?.m.startTimeUtc ? { year: blocks[0].m.startTimeUtc.slice(0, 4) } : {}),
+                      ...(blocks[0]?.m
+                        ? {
+                            q: `${blocks[0].m.team1Name || blocks[0].m.team1Code},${blocks[0].m.team2Name || blocks[0].m.team2Code}`,
+                          }
+                        : {}),
                     }).toString() || undefined,
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -253,7 +273,13 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   {tl("Game finder")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) }}
+                  to={{
+                    kind: "rankings",
+                    query: new URLSearchParams({
+                      ...(lg ? { league: lg } : {}),
+                      q: `${a},${b}`,
+                    }).toString(),
+                  }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Power rankings")} →
@@ -278,6 +304,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                       new URLSearchParams({
                         ...(lg ? { league: lg } : {}),
                         ...(yr ? { year: yr } : {}),
+                        q: `${m0.team1Name || m0.team1Code},${m0.team2Name || m0.team2Code}`,
                       }).toString() || undefined,
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"

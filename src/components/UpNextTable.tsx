@@ -103,7 +103,15 @@ export const UpNextTable: React.FC<{
           type="button"
           onClick={() => {
             const lg = matches[0]?.leagueSlug ? resolveLeagueSlug(matches[0].leagueSlug) : "";
-            navigateHub({ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) });
+            const q = new URLSearchParams({
+              ...(lg ? { league: lg } : {}),
+              ...(matches[0]
+                ? {
+                    q: `${prettySlug(matches[0].team1Name || matches[0].team1Code)},${prettySlug(matches[0].team2Name || matches[0].team2Code)}`,
+                  }
+                : {}),
+            }).toString();
+            navigateHub({ kind: "rankings", ...(q ? { query: q } : {}) });
           }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
@@ -132,6 +140,11 @@ export const UpNextTable: React.FC<{
             const q = new URLSearchParams({
               ...(lg ? { league: lg } : {}),
               ...(yr ? { year: yr } : {}),
+              ...(matches[0]
+                ? {
+                    q: `${matches[0].team1Name || matches[0].team1Code},${matches[0].team2Name || matches[0].team2Code}`,
+                  }
+                : {}),
             }).toString();
             navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
           }}

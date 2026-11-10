@@ -294,7 +294,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                   query: new URLSearchParams({
                     ...(lg ? { league: lg } : {}),
                     ...(year ? { year } : {}),
-                    ...(now.team1 && now.team2 ? { q: `${now.team1},${now.team2}` } : {}),
+                    ...(active?.team1 && active?.team2 ? { q: `${active.team1},${active.team2}` } : {}),
                   }).toString(),
                 })
               }
@@ -310,7 +310,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                   query: new URLSearchParams({
                     ...(lg ? { league: lg } : {}),
                     ...(year ? { year } : {}),
-                    ...(now.team1 && now.team2 ? { q: `${now.team1},${now.team2}` } : {}),
+                    ...(active?.team1 && active?.team2 ? { q: `${active.team1},${active.team2}` } : {}),
                   }).toString(),
                 })
               }
