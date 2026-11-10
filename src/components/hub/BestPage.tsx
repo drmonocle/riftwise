@@ -403,7 +403,10 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                 <HubLink
                   to={{
                     kind: "tiers",
-                    ...(year ? { query: `key=y${encodeURIComponent(year)}` } : {}),
+                    query: new URLSearchParams({
+                      ...(league ? { scope: league } : {}),
+                      ...(year ? { key: `y${year}` } : {}),
+                    }).toString(),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -412,7 +415,10 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                 <HubLink
                   to={{
                     kind: "leaders",
-                    ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}),
+                    query: new URLSearchParams({
+                      ...(league ? { league } : {}),
+                      ...(year ? { year } : {}),
+                    }).toString(),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >

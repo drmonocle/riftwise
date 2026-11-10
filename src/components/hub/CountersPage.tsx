@@ -455,18 +455,40 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 <HubLink to={{ kind: "draft" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Draft board")} →
                 </HubLink>
-                <HubLink to={{ kind: "items" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-                  {tl("Item history")} →
-                </HubLink>
-                <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-                  {tl("Player leaderboards")} →
-                </HubLink>
-                <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-                  {tl("Power rankings")} →
-                </HubLink>
-                <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-                  {tl("Game finder")} →
-                </HubLink>
+                {(() => {
+                  const qBare = bare(inputVal.trim());
+                  const topC = qBare
+                    ? index.data.champs.find((c) => bare(c[0]).includes(qBare) || bare(champName(c[0])).includes(qBare) || c[1].includes(qBare))
+                    : undefined;
+                  return (
+                    <>
+                      <HubLink
+                        to={{
+                          kind: "items",
+                          ...(topC ? { query: `champ=${encodeURIComponent(champSlug(topC))}` } : {}),
+                        }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Item history")} →
+                      </HubLink>
+                      <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                        {tl("Player leaderboards")} →
+                      </HubLink>
+                      <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                        {tl("Power rankings")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "finder",
+                          ...(topC ? { query: `champ=${encodeURIComponent(topC[0])}` } : {}),
+                        }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Game finder")} →
+                      </HubLink>
+                    </>
+                  );
+                })()}
               </span>
             }
           >
@@ -1035,28 +1057,44 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted w-36"
                       />
                     )}
-                    {data.data.ch.duos[0] && (
-                      <>
-                        <HubLink
-                          to={{
-                            kind: "finder",
-                            query: `champ=${encodeURIComponent(`${rawChamp || cName},${data.data.ch.duos[0][0]}`)}`,
-                          }}
-                          className="text-[11px] text-rw-accent hover:underline"
-                        >
-                          {tl("Game finder")} →
-                        </HubLink>
-                        <HubLink
-                          to={{
-                            kind: "counters",
-                            query: `champ=${encodeURIComponent(prettySlug(data.data.ch.duos[0][0]))}`,
-                          }}
-                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                        >
-                          {tl("Counters")} →
-                        </HubLink>
-                      </>
-                    )}
+                    {(() => {
+                      const raw = duoSearch.trim().toLowerCase();
+                      const terms = raw
+                        .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+                        .map((s) => s.trim())
+                        .filter(Boolean);
+                      const dList = terms.length
+                        ? data.data!.ch!.duos!.filter(([pc]) => {
+                            const cDisp = champName(pc).toLowerCase();
+                            const cRaw = pc.toLowerCase();
+                            const cBare = bare(cDisp);
+                            return terms.some((t) => cDisp.includes(t) || cRaw.includes(t) || (bare(t).length >= 2 && cBare.includes(bare(t))));
+                          })
+                        : data.data!.ch!.duos!;
+                      const topDuo = dList[0] || data.data!.ch!.duos![0];
+                      return topDuo ? (
+                        <>
+                          <HubLink
+                            to={{
+                              kind: "finder",
+                              query: `champ=${encodeURIComponent(`${rawChamp || cName},${topDuo[0]}`)}`,
+                            }}
+                            className="text-[11px] text-rw-accent hover:underline"
+                          >
+                            {tl("Game finder")} →
+                          </HubLink>
+                          <HubLink
+                            to={{
+                              kind: "counters",
+                              query: `champ=${encodeURIComponent(prettySlug(topDuo[0]))}`,
+                            }}
+                            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Counters")} →
+                          </HubLink>
+                        </>
+                      ) : null;
+                    })()}
                     <HubLink
                       to={{ kind: "items", query: `champ=${encodeURIComponent(slug)}` }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

@@ -341,7 +341,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
             aria-label={tl("Filter by name or team…")}
             className={`${sel} w-44`}
           />
-          {shownRows.length >= 1 && (shownRows.length === 2 || (search.trim() && shownRows.length <= 4)) && shownRows[0].u && (
+          {shownRows.length >= 1 && (shownRows.length === 2 || (search.trim() && shownRows.length <= 15)) && shownRows[0].u && (
             <>
               <HubLink
                 to={{
@@ -356,7 +356,10 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                 {tl("Compare")} →
               </HubLink>
               <HubLink
-                to={{ kind: "items", query: `player=${encodeURIComponent(shownRows[0].u)}` }}
+                to={{
+                  kind: "items",
+                  query: `player=${encodeURIComponent(shownRows[0].u)}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                }}
                 className="text-rw-accent hover:underline font-semibold"
               >
                 {tl("Item history")} →
@@ -364,7 +367,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `player=${encodeURIComponent(shownRows[0].u)}${!event && year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                  query: `player=${encodeURIComponent(shownRows[0].u)}${!event && year ? `&year=${encodeURIComponent(year)}` : ""}${event ? `&event=${encodeURIComponent(event)}` : ""}`,
                 }}
                 className="text-rw-accent hover:underline font-semibold"
               >
@@ -560,6 +563,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                       ...(year ? { year } : {}),
                       ...(event ? { event } : {}),
                       ...(role ? { role } : {}),
+                      ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { player: shownRows[0].u || shownRows[0].n } : {}),
                     }).toString(),
                   }}
                   className="text-xs text-rw-sub hover:text-rw-accent hover:underline"

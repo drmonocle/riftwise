@@ -681,6 +681,7 @@ const LeagueTable: React.FC<{
                   ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
                   ...(side ? { side } : {}),
                   ...(roleQ ? { role: roleQ } : {}),
+                  ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { champ: shownRows[0].c } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -1010,6 +1011,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
                 query: new URLSearchParams({
                   ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
                   ...(roleQ ? { role: roleQ } : {}),
+                  ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { champ: shownRows[0].c } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"

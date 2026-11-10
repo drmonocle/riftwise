@@ -769,6 +769,9 @@ const FinderBody: React.FC<{
               sideCond={sideCond}
               champ={champs[0] || ""}
               player={q.get("player") || ""}
+              league={q.get("league") || ""}
+              year={year || ""}
+              role={q.get("role") || ""}
               onPick={(c) => setChamp(0, champs[0] === c ? "" : c)}
               onBan={(c) => setQ({ ban: q.get("ban") === c ? undefined : c })}
               onSide={(s) => setQ({ side: q.get("side") === s ? undefined : s })}
@@ -1269,10 +1272,13 @@ const Cohort: React.FC<{
   sideCond: boolean;
   champ: string;
   player: string;
+  league?: string;
+  year?: string;
+  role?: string;
   onPick?: (c: string) => void;
   onBan?: (c: string) => void;
   onSide?: (s: "b" | "r") => void;
-}> = ({ found, sideCond, champ, player, onPick, onBan, onSide }) => {
+}> = ({ found, sideCond, champ, player, league, year, role, onPick, onBan, onSide }) => {
   const d = useMemo(() => {
     let blueW = 0, kills = 0, kg = 0, kMin = 0, gd = 0, gdn = 0;
     const picks = new Map<string, [number, number]>();
@@ -1338,36 +1344,53 @@ const Cohort: React.FC<{
         <div className="flex items-center justify-between gap-2 text-[10px] font-semibold text-rw-muted mb-1">
           <span>{title}</span>
           <span className="flex items-center gap-2 shrink-0">
-            {wr && rows.length >= 2 && (
-              <HubLink
-                to={{ kind: "counters", query: `champ=${prettySlug(rows[0][0])}&vs=${encodeURIComponent(rows[1][0])}` }}
-                className="text-rw-accent hover:underline"
-              >
-                {tl("Counters")} →
-              </HubLink>
-            )}
             {wr && rows.length >= 1 && (
               <>
                 <HubLink
-                  to={{ kind: "items", query: `champ=${prettySlug(rows[0][0])}` }}
+                  to={{
+                    kind: "counters",
+                    query: `champ=${prettySlug(rows[0][0])}${rows[1] ? `&vs=${encodeURIComponent(rows[1][0])}` : ""}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: `champ=${prettySlug(rows[0][0])}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                  }}
                   className="text-rw-accent hover:underline"
                 >
                   {tl("Item history")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "tiers" }}
+                  to={{
+                    kind: "tiers",
+                    query: new URLSearchParams({
+                      ...(league ? { scope: league } : {}),
+                      ...(year ? { key: `y${year}` } : {}),
+                      ...(role ? { role } : {}),
+                    }).toString(),
+                  }}
                   className="text-rw-accent hover:underline"
                 >
                   {tl("Pro tier list")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "draft" }}
+                  to={{
+                    kind: "draft",
+                    ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}),
+                  }}
                   className="text-rw-accent hover:underline"
                 >
                   {tl("Draft board")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "rankings" }}
+                  to={{
+                    kind: "rankings",
+                    ...(league ? { query: `league=${encodeURIComponent(league)}` } : {}),
+                  }}
                   className="text-rw-accent hover:underline"
                 >
                   {tl("Power rankings")} →
@@ -1377,25 +1400,50 @@ const Cohort: React.FC<{
             {!wr && rows.length >= 1 && (
               <>
                 <HubLink
-                  to={{ kind: "counters", query: `champ=${prettySlug(rows[0][0])}` }}
+                  to={{
+                    kind: "counters",
+                    query: `champ=${prettySlug(rows[0][0])}${rows[1] ? `&vs=${encodeURIComponent(rows[1][0])}` : ""}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                  }}
                   className="text-rw-accent hover:underline"
                 >
                   {tl("Counters")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "tiers" }}
+                  to={{
+                    kind: "items",
+                    query: `champ=${prettySlug(rows[0][0])}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "tiers",
+                    query: new URLSearchParams({
+                      ...(league ? { scope: league } : {}),
+                      ...(year ? { key: `y${year}` } : {}),
+                      ...(role ? { role } : {}),
+                    }).toString(),
+                  }}
                   className="text-rw-accent hover:underline"
                 >
                   {tl("Pro tier list")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "draft" }}
+                  to={{
+                    kind: "draft",
+                    ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}),
+                  }}
                   className="text-rw-accent hover:underline"
                 >
                   {tl("Draft board")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "rankings" }}
+                  to={{
+                    kind: "rankings",
+                    ...(league ? { query: `league=${encodeURIComponent(league)}` } : {}),
+                  }}
                   className="text-rw-accent hover:underline"
                 >
                   {tl("Power rankings")} →

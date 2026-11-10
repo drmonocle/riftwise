@@ -1738,6 +1738,51 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
             aria-label={tl("Filter by name or team…")}
             className="bg-rw-bg border border-rw-border rounded-lg px-2 py-0.5 text-xs text-rw-text placeholder:text-rw-muted w-44 focus:border-rw-accent focus:outline-none"
           />
+          {gTerms.length > 0 && filteredGames[0]?.[7] && filteredGames[0]?.[8] && (
+            <>
+              <HubLink
+                to={{
+                  kind: "prep",
+                  a: prettySlug(filteredGames[0][7]),
+                  b: prettySlug(filteredGames[0][8]),
+                  ...(/^\d{4}$/.test((filteredGames[0][0] || "").slice(0, 4)) ? { period: `y${(filteredGames[0][0] || "").slice(0, 4)}` } : {}),
+                }}
+                className="text-[11px] text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "compare",
+                  mode: "team",
+                  a: prettySlug(filteredGames[0][7]),
+                  b: prettySlug(filteredGames[0][8]),
+                  ...(/^\d{4}$/.test((filteredGames[0][0] || "").slice(0, 4)) ? { period: `y${(filteredGames[0][0] || "").slice(0, 4)}` } : {}),
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(prettySlug(filteredGames[0][7]))},${encodeURIComponent(prettySlug(filteredGames[0][8]))}${/^\d{4}$/.test((filteredGames[0][0] || "").slice(0, 4)) ? `&p=y${encodeURIComponent((filteredGames[0][0] || "").slice(0, 4))}` : ""}`,
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `team=${encodeURIComponent(prettySlug(filteredGames[0][7]))}&vs=${encodeURIComponent(prettySlug(filteredGames[0][8]))}${filteredGames[0][2] ? `&champ=${encodeURIComponent(filteredGames[0][2])}` : ""}`,
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
+            </>
+          )}
         </div>
       )}
       <ul className="text-xs space-y-1">

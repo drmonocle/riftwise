@@ -232,13 +232,12 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
               <HubLink
                 to={{
                   kind: "finder",
-                  ...(key.startsWith("p")
-                    ? { query: `patch=${encodeURIComponent(key.slice(1))}${role ? `&role=${encodeURIComponent(role)}` : ""}` }
-                    : key.startsWith("y")
-                      ? { query: `year=${encodeURIComponent(key.slice(1))}${role ? `&role=${encodeURIComponent(role)}` : ""}` }
-                      : role
-                        ? { query: `role=${encodeURIComponent(role)}` }
-                        : {}),
+                  query: new URLSearchParams({
+                    ...(isLeague ? { league: rawScope } : {}),
+                    ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
+                    ...(role ? { role } : {}),
+                    ...(champFilter.trim() && topChamp ? { champ: topChamp.c } : {}),
+                  }).toString(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
