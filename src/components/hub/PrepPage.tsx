@@ -1999,6 +1999,32 @@ const Lanes: React.FC<{
           >
             {tl("Leaderboards")} →
           </HubLink>
+          <HubLink
+            to={{
+              kind: "draft",
+              query: `teams=${encodeURIComponent(a.team.u)},${encodeURIComponent(b.team.u)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Draft board")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "finder",
+              query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
+                period.startsWith("y") && period.length === 5
+                  ? `&year=${encodeURIComponent(period.slice(1))}`
+                  : period.startsWith("e:")
+                    ? `&event=${encodeURIComponent(period.slice(2))}`
+                    : ""
+              }`,
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Game finder")} →
+          </HubLink>
           <BroadcastCardButton
             data={() =>
               lineupCard({
@@ -2274,6 +2300,26 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Open →")}
+          </HubLink>
+          {(bansByA[0] || picksA[0]) && (
+            <HubLink
+              to={{
+                kind: "counters",
+                query: `champ=${encodeURIComponent(prettySlug((bansByA[0] || picksA[0]).c))}`,
+              }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Counters")} →
+            </HubLink>
+          )}
+          <HubLink
+            to={{
+              kind: "tiers",
+              ...(period && period.startsWith("y") && period.length === 5 ? { query: `key=${encodeURIComponent(period)}` } : {}),
+            }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")} →
           </HubLink>
         </span>
       }

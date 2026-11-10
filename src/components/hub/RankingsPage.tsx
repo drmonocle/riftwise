@@ -821,7 +821,27 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           </div>
         </Section>
 
-        <Section title={tl("How the chances hold up")}>
+        <Section
+          title={tl("How the chances hold up")}
+          right={
+            <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+              {top && rows[1]?.r && (
+                <HubLink
+                  to={{ kind: "prep", a: top[0], b: rows[1].r[0] }}
+                  className="text-rw-accent hover:underline font-semibold"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+              )}
+              <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Game finder")} →
+              </HubLink>
+              <HubLink to={{ kind: "about" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("About")} →
+              </HubLink>
+            </span>
+          }
+        >
           <p className="text-[11px] text-rw-muted">
             {tl(
               "Every game since {year}, using only what was known before it: when we made a team the favourite by this much, how often it won.",

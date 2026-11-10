@@ -163,7 +163,16 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; nam
     <Section
       title={tl("Region strength over time")}
       right={
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center gap-2">
+          <HubLink to={{ kind: "leagues" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
+            {tl("Leagues")} →
+          </HubLink>
+          <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            {tl("Power rankings")} →
+          </HubLink>
+          <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            {tl("Game finder")} →
+          </HubLink>
           <CopyRegionStatsPost
             title={`${tl("Region strength over time")} · ${name}`}
             rows={t.rows.slice(0, 6).map((c) => {
@@ -280,7 +289,16 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
       <Section
         title={tl("Regions")}
         right={
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center gap-2">
+            <HubLink to={{ kind: "leagues" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Leagues")} →
+            </HubLink>
+            <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Power rankings")} →
+            </HubLink>
+            <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Game finder")} →
+            </HubLink>
             <CopyRegionStatsPost
               title={`${tl("Regions")} · ${name}`}
               rows={list.slice(0, 6).map((r) => `${regionLabel(r.code)}: ${tl("Series {w}-{l}", { w: r.sw, l: r.sl })} · ${all ? tl("{n} titles", { n: r.titles }) : bestText(r.best)}`)}
@@ -424,6 +442,12 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
           title={tl("Region vs region")}
           right={
             <span className="flex flex-wrap items-center gap-2">
+              <HubLink to={{ kind: "leagues" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
+                {tl("Leagues")} →
+              </HubLink>
+              <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+                {tl("Game finder")} →
+              </HubLink>
               {pairs.length > 6 && (
                 <input
                   type="search"

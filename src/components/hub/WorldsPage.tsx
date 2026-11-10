@@ -264,6 +264,24 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
                 </HubLink>
                 <HubLink
                   to={{
+                    kind: "tiers",
+                    query: `league=${encodeURIComponent(def.league)}&key=y${encodeURIComponent(d.year)}`,
+                  }}
+                  className={btn}
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: `p=e:${encodeURIComponent(d.parent.u)}`,
+                  }}
+                  className={btn}
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
+                  to={{
                     kind: "finder",
                     query: `league=${encodeURIComponent(def.league)}&year=${encodeURIComponent(d.year)}&event=${encodeURIComponent(d.parent.u)}`,
                   }}
@@ -283,6 +301,18 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
                 </HubLink>
                 <HubLink to={{ kind: "records" }} className={btn}>
                   {tl("Records")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "champions", query: `league=${encodeURIComponent(def.league)}` }}
+                  className={btn}
+                >
+                  {tl("Champions")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "finder", query: `league=${encodeURIComponent(def.league)}` }}
+                  className={btn}
+                >
+                  {tl("Game finder")} →
                 </HubLink>
               </>
             )}
@@ -460,9 +490,23 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
         <Section
           title={tl("Swiss stage")}
           right={
-            Object.keys(swiss.rec).length > 0 ? (
-              <BroadcastCardButton data={() => swissPicksCard(swiss.rec, byU, d.name)} name={`worlds-${d.year}-swiss`} label={tl("Overview card")} />
-            ) : undefined
+            <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+              <HubLink
+                to={{ kind: "champions", query: `league=world-championship&year=${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Champions")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "finder", query: `event=${encodeURIComponent(main.u)}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
+              {Object.keys(swiss.rec).length > 0 && (
+                <BroadcastCardButton data={() => swissPicksCard(swiss.rec, byU, d.name)} name={`worlds-${d.year}-swiss`} label={tl("Overview card")} />
+              )}
+            </span>
           }
         >
           {onPick && <p className="text-[11px] text-rw-sub">{tl("Pick a winner to play the rest out in the picker.")}</p>}

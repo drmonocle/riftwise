@@ -1075,6 +1075,26 @@ export const TeamRows: React.FC<{
                 >
                   {tl("Game finder")} →
                 </HubLink>
+                <HubLink
+                  to={{
+                    kind: "team",
+                    slug: s.u,
+                    tab: "champions",
+                    ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Champions")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "tiers",
+                    ...(period && period.startsWith("y") && period.length === 5 ? { query: `key=${encodeURIComponent(period)}` } : {}),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
                 <SectionCard
                   section={tl("Most picked: {team}", { team: s.n })}
                   sub={periodLabel}
@@ -1502,6 +1522,17 @@ const PlayerRows: React.FC<{
                 >
                   {tl("Game finder")} →
                 </HubLink>
+                <HubLink
+                  to={{
+                    kind: "player",
+                    slug: s.u,
+                    tab: "champions",
+                    ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Champions")} →
+                </HubLink>
                 <SectionCard
                   section={tl("Champions: {player}", { player: s.n })}
                   sub={periodLabel}
@@ -1620,6 +1651,15 @@ const PlayerRows: React.FC<{
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Game finder")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "tiers",
+                  ...(period && period.startsWith("y") && period.length === 5 ? { query: `key=${encodeURIComponent(period)}` } : {}),
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
               </HubLink>
               <SectionCard
                 section={tl("Champions both played")}
@@ -2236,6 +2276,26 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
         share={`riftwise-compare-${slugs.join("-")}`}
         right={
           <span className="flex flex-wrap items-center gap-2">
+            {mode === "team" ? (
+              <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+                {tl("Power rankings")} →
+              </HubLink>
+            ) : (
+              <HubLink
+                to={{
+                  kind: "leaders",
+                  ...(period && period.startsWith("y") && period.length === 5
+                    ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                    : period && period.startsWith("e:")
+                      ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                      : {}),
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
+            )}
             <SectionCard
               section={`${tl("Compare")} · ${periodLabel}`}
               sub={rows.map((r) => r.info.name).join(" · ")}

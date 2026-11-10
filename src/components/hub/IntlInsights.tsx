@@ -81,7 +81,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         key="upsets"
         title={tl("Biggest upsets")}
         right={
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center gap-2">
+            <HubLink to={{ kind: "rankings" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Power rankings")} →
+            </HubLink>
+            <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Game finder")} →
+            </HubLink>
             <CopyInsightPost
               title={`${tl("Biggest upsets")} · ${name}`}
               rows={up.games.slice(0, 5).map((u) => `${u.winner} ${tl("beat")} ${u.loser} (${u.chance}%) · ${all ? yearOnly(u.year) + " · " : ""}${u.stage}`)}
@@ -168,7 +174,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         key="comebacks"
         title={tl("Biggest comebacks")}
         right={
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center gap-2">
+            <HubLink to={{ kind: "records" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Records")} →
+            </HubLink>
+            <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Game finder")} →
+            </HubLink>
             <CopyInsightPost
               title={`${tl("Biggest comebacks")} · ${name}`}
               rows={cb.slice(0, 5).map((c) => `${c.winner} ${tl("beat")} ${c.loser} (−${k(c.behind)} @15) · ${all ? yearOnly(c.year) + " · " : ""}${c.stage}`)}
@@ -399,17 +411,25 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         key="cinderella"
         title={tl("Cinderella runs")}
         right={
-          <SectionCard
-            section={tl("Cinderella runs")}
-            name={name}
-            rows={() =>
-              [
-                ...cind.playIn.slice(0, 4).map((r) => ({ team: r.team, label: `${r.team} · ${tl("from the Play-In")}`, sub: all ? yearOnly(r.year) : undefined, value: placeText(r.place) })),
-                ...cind.underdogs.slice(0, 4).map((r) => ({ team: r.team, label: `${r.team} · ${tl("underdog")}`, sub: all ? yearOnly(r.year) : undefined, value: placeText(r.place) })),
-                ...(all ? cind.debuts.slice(0, 4).map((r) => ({ team: r.team, label: `${r.team} · ${tl("debut")}`, sub: yearOnly(r.year), value: placeText(r.place) })) : []),
-              ].map((row, idx) => ({ rank: idx + 1, ...row }))
-            }
-          />
+          <span className="flex flex-wrap items-center gap-2">
+            <HubLink to={{ kind: "rankings" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Power rankings")} →
+            </HubLink>
+            <HubLink to={{ kind: "tournaments" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Tournaments")} →
+            </HubLink>
+            <SectionCard
+              section={tl("Cinderella runs")}
+              name={name}
+              rows={() =>
+                [
+                  ...cind.playIn.slice(0, 4).map((r) => ({ team: r.team, label: `${r.team} · ${tl("from the Play-In")}`, sub: all ? yearOnly(r.year) : undefined, value: placeText(r.place) })),
+                  ...cind.underdogs.slice(0, 4).map((r) => ({ team: r.team, label: `${r.team} · ${tl("underdog")}`, sub: all ? yearOnly(r.year) : undefined, value: placeText(r.place) })),
+                  ...(all ? cind.debuts.slice(0, 4).map((r) => ({ team: r.team, label: `${r.team} · ${tl("debut")}`, sub: yearOnly(r.year), value: placeText(r.place) })) : []),
+                ].map((row, idx) => ({ rank: idx + 1, ...row }))
+              }
+            />
+          </span>
         }
       >
         {cind.playIn.length > 0 && (
@@ -638,6 +658,20 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 </HubLink>
               </>
             )}
+            <HubLink
+              to={{ kind: "leaders" }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Player leaderboards")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "titles" }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Titles")} →
+            </HubLink>
             <CopyInsightPost
               title={`${tl("Players with the most titles")} · ${name}`}
               rows={titles.slice(0, 6).map((p) => `${p.name}: ${tl("{n} titles", { n: p.titles.length })} (${p.titles.map(yearOnly).sort().join(", ")})`)}
@@ -704,20 +738,28 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         key="hosts"
         title={tl("Home region")}
         right={
-          <SectionCard
-            section={tl("Home region")}
-            name={name}
-            rows={() =>
-              hs.map((h, idx) => ({
-                rank: idx + 1,
-                team: h.team || undefined,
-                label: `${yearOnly(h.year)} · ${h.country}`,
-                sub: h.team || undefined,
-                value: placeText(h.best),
-                win: h.best === 1,
-              }))
-            }
-          />
+          <span className="flex flex-wrap items-center gap-2">
+            <HubLink to={{ kind: "leagues" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Leagues")} →
+            </HubLink>
+            <HubLink to={{ kind: "titles" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Titles")} →
+            </HubLink>
+            <SectionCard
+              section={tl("Home region")}
+              name={name}
+              rows={() =>
+                hs.map((h, idx) => ({
+                  rank: idx + 1,
+                  team: h.team || undefined,
+                  label: `${yearOnly(h.year)} · ${h.country}`,
+                  sub: h.team || undefined,
+                  value: placeText(h.best),
+                  win: h.best === 1,
+                }))
+              }
+            />
+          </span>
         }
       >
         <p className="text-[11px] text-rw-muted">
@@ -768,7 +810,16 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         <Section
           title={tl("Year by year")}
           right={
-            <span className="flex items-center gap-2">
+            <span className="flex flex-wrap items-center gap-2">
+              <HubLink to={{ kind: "champions" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
+                {tl("Champions")} →
+              </HubLink>
+              <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+                {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+                {tl("Game finder")} →
+              </HubLink>
               <CopyInsightPost
                 title={`${tl("Year by year")} · ${name}`}
                 rows={ys.slice(0, 6).map((y) => `${yearOnly(y.year)}: ${y.games}G · ${mmss(y.min)} · ${y.top ? champName(y.top[0]) : "–"}`)}
@@ -903,7 +954,16 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         <Section
           title={tl("Regions year by year")}
           right={
-            <span className="flex items-center gap-2">
+            <span className="flex flex-wrap items-center gap-2">
+              <HubLink to={{ kind: "leagues" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
+                {tl("Leagues")} →
+              </HubLink>
+              <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+                {tl("Power rankings")} →
+              </HubLink>
+              <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+                {tl("Game finder")} →
+              </HubLink>
               <CopyInsightPost
                 title={`${tl("Regions year by year")} · ${name}`}
                 rows={trend.regions.slice(0, 6).map((code) => {

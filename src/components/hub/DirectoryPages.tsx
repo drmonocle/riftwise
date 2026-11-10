@@ -294,6 +294,18 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
         >
           {tl("Power rankings")} →
         </HubLink>
+        <HubLink
+          to={{ kind: "tournaments" }}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {tl("Tournaments")} →
+        </HubLink>
+        <HubLink
+          to={{ kind: "finder" }}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {tl("Game finder")} →
+        </HubLink>
         {list.length > 0 && (
           <>
             <CopyDirectoryPost
@@ -551,6 +563,18 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
           {tl("Player leaderboards")} →
+        </HubLink>
+        <HubLink
+          to={{ kind: "items" }}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {tl("Item history")} →
+        </HubLink>
+        <HubLink
+          to={{ kind: "finder", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {tl("Game finder")} →
         </HubLink>
         {list.length > 0 && (
           <>

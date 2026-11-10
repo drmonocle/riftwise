@@ -633,6 +633,18 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
                   {tl("Counters")} →
                 </HubLink>
               )}
+              <HubLink
+                to={{ kind: "leaders" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "items" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Item stats")} →
+              </HubLink>
             </>
           )}
           <CopyItemsPost
@@ -800,16 +812,30 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                 {tl("Game finder")} →
               </HubLink>
               {champ && (
-                <HubLink
-                  to={{
-                    kind: "counters",
-                    query: `champ=${encodeURIComponent(champ)}`,
-                  }}
-                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Counters")} →
-                </HubLink>
+                <>
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      query: `champ=${encodeURIComponent(champ)}`,
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Counters")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "champ", slug: champ }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Champions")} →
+                  </HubLink>
+                </>
               )}
+              <HubLink
+                to={{ kind: "tiers", ...(year ? { query: `key=y${encodeURIComponent(year)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
             </>
           )}
           {rows.length > 0 && (
@@ -1001,6 +1027,18 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                   {tl("Counters")} →
                 </HubLink>
               )}
+              <HubLink
+                to={{ kind: "champions", ...(year ? { query: `key=y${encodeURIComponent(year)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Champions")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers", ...(year ? { query: `key=y${encodeURIComponent(year)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
             </>
           )}
           {y && y.p.length > 0 && (

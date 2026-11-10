@@ -102,15 +102,29 @@ export const PatchesPanel: React.FC = () => {
                 "The most picked or banned champions on every patch, newest first (all pro leagues). Percent = presence: picked or banned in that share of games.",
               )}
             </p>
-            <input
-              type="search"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder={tl("Search champions…")}
-              aria-label={tl("Search champions…")}
-              className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1 text-xs text-rw-text w-48"
-              data-nocapture="1"
-            />
+            <div className="flex flex-wrap items-center gap-2" data-nocapture="1">
+              <HubLink to={{ kind: "champions" }} className="text-[11px] font-semibold text-rw-accent hover:underline">
+                {tl("Champions")} →
+              </HubLink>
+              <HubLink to={{ kind: "tiers" }} className="text-[11px] font-semibold text-rw-accent hover:underline">
+                {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink to={{ kind: "counters" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Counter-pick finder")} →
+              </HubLink>
+              <HubLink to={{ kind: "draft" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Draft board")} →
+              </HubLink>
+              <input
+                type="search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder={tl("Search champions…")}
+                aria-label={tl("Search champions…")}
+                className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1 text-xs text-rw-text w-48"
+                data-nocapture="1"
+              />
+            </div>
           </div>
           <div className="grid gap-3 xl:grid-cols-2">
           {filtered.slice(0, n).map((p) => (
@@ -441,6 +455,12 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number;
             </HubLink>
             <HubLink to={{ kind: "tournaments" }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Tournaments")} →
+            </HubLink>
+            <HubLink to={{ kind: "champions" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Champions")} →
+            </HubLink>
+            <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Player leaderboards")} →
             </HubLink>
             <SectionCard
               section={title || tl("Leagues")}
@@ -877,6 +897,18 @@ const LeagueEventsSection: React.FC<{
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Champions")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "tiers", query: `league=${encodeURIComponent(l.u)}${season ? `&key=y${encodeURIComponent(season)}` : ""}` }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Pro tier list")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "leaders", query: `league=${encodeURIComponent(l.u)}${season ? `&year=${encodeURIComponent(season)}` : ""}` }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Player leaderboards")} →
             </HubLink>
             <HubLink
               to={{ kind: "finder", query: `league=${encodeURIComponent(l.u)}${season ? `&year=${encodeURIComponent(season)}` : ""}` }}

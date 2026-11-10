@@ -430,7 +430,28 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
       </div>
       {!slug && index.data && (
         <div className="rw-span">
-          <Section title={tl("Most played champions")}>
+          <Section
+            title={tl("Most played champions")}
+            right={
+              <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+                <HubLink to={{ kind: "champions" }} className="text-rw-accent hover:underline font-semibold">
+                  {tl("Champions")} →
+                </HubLink>
+                <HubLink to={{ kind: "tiers" }} className="text-rw-accent hover:underline font-semibold">
+                  {tl("Pro tier list")} →
+                </HubLink>
+                <HubLink to={{ kind: "draft" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink to={{ kind: "items" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Item history")} →
+                </HubLink>
+                <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Game finder")} →
+                </HubLink>
+              </span>
+            }
+          >
             <div className="flex flex-wrap gap-2">
               {(() => {
                 const qBare = bare(inputVal.trim());
@@ -642,6 +663,18 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     >
                       {tl("Item history")} →
                     </HubLink>
+                    <HubLink
+                      to={{ kind: "tiers", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Pro tier list")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "draft" }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
                     <SectionCard
                       section={tl("{champ} does best against", { champ: cName })}
                       name={cName}
@@ -732,6 +765,18 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Item history")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "tiers", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Pro tier list")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "draft" }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
                     </HubLink>
                     <SectionCard
                       section={tl("{champ} struggles against", { champ: cName })}
