@@ -423,6 +423,15 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                     >
                       {tl("Game finder")} →
                     </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "rankings",
+                        ...(isLeague ? { query: `league=${encodeURIComponent(rawScope)}` } : {}),
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Power rankings")} →
+                    </HubLink>
                     <SectionCard
                       section={`${tl("Pro tier list")} · ${roleName(r)}`}
                       name={fullLabel}

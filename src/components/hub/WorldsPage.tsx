@@ -679,6 +679,12 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                 >
                   {tl("Power rankings")} →
                 </HubLink>
+                <HubLink
+                  to={{ kind: "tiers", query: "league=world-championship" }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
               </span>
             );
           })()}
@@ -1518,6 +1524,12 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
                     >
                       {tl("Power rankings")} →
                     </HubLink>
+                    <HubLink
+                      to={{ kind: "tiers", query: `league=world-championship&key=y${encodeURIComponent(year)}` }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Pro tier list")} →
+                    </HubLink>
                   </>
                 ) : null;
               })()}
@@ -1975,6 +1987,12 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Power rankings")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "tiers", query: `key=y${encodeURIComponent(d.year)}` }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Pro tier list")} →
                     </HubLink>
                   </>
                 ) : null;

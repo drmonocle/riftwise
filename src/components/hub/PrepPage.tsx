@@ -299,6 +299,12 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
           >
             {tl("Pro tier list")} →
           </HubLink>
+          <HubLink
+            to={{ kind: "leaders" }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Player leaderboards")} →
+          </HubLink>
           {overview && <BroadcastCardButton data={overview} name={`${a.name}-vs-${b.name}-match-prep`} label={tl("Overview card")} />}
         </span>
       }
@@ -867,6 +873,19 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
           >
             {tl("Pro tier list")} →
           </HubLink>
+          <HubLink
+            to={{
+              kind: "leaders",
+              ...(period.startsWith("y") && period.length === 5
+                ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                : period.startsWith("e:")
+                  ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                  : {}),
+            }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Player leaderboards")} →
+          </HubLink>
           <SectionCard
             section={tl("Calculated")}
             sub={`${a.team.name} vs ${b.team.name}`}
@@ -1309,6 +1328,19 @@ const Tendencies: React.FC<{ side: Side; rows: TeamGameRow[]; period: PeriodKey;
           >
             {tl("Power rankings")} →
           </HubLink>
+          <HubLink
+            to={{
+              kind: "leaders",
+              ...(period.startsWith("y") && period.length === 5
+                ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                : period.startsWith("e:")
+                  ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                  : {}),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Player leaderboards")} →
+          </HubLink>
           <SectionCard
             section={tl("{team}: tendencies", { team: side.team.name })}
             sub={periodLabel}
@@ -1495,6 +1527,9 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
             </HubLink>
             <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Pro tier list")} →
+            </HubLink>
+            <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Player leaderboards")} →
             </HubLink>
             <SectionCard
               section={tl("Form: last 10 series")}
@@ -1991,6 +2026,12 @@ const Lanes: React.FC<{
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
               >
                 {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+              >
+                {tl("Power rankings")} →
               </HubLink>
             </>
           ) : null

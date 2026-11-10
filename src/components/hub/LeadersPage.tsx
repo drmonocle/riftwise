@@ -383,6 +383,15 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
               >
                 {tl("Pro tier list")} →
               </HubLink>
+              <HubLink
+                to={{
+                  kind: "rankings",
+                  ...(league ? { query: `league=${encodeURIComponent(league)}` } : {}),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
               {shownRows.length === 2 && shownRows[0].tu && shownRows[1].tu && shownRows[0].tu !== shownRows[1].tu && (
                 <>
                   <HubLink

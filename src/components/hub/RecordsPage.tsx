@@ -312,6 +312,12 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]>; matchTe
               >
                 {tl("Pro tier list")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
               <SectionCard
                 section={tl("Latest pentakills")}
                 name={tl("Records")}
@@ -731,6 +737,12 @@ export const RecordsPanel: React.FC = () => {
                         >
                           {tl("Best games")} →
                         </HubLink>
+                        <HubLink
+                          to={{ kind: "tiers", ...(year !== "all" ? { query: `key=y${encodeURIComponent(year)}` } : {}) }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Pro tier list")} →
+                        </HubLink>
                       </>
                     )}
                     <SectionCard
@@ -891,6 +903,12 @@ export const RecordsPanel: React.FC = () => {
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Pro tier list")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "rankings" }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Power rankings")} →
                     </HubLink>
                     <SectionCard
                       section={title}
@@ -1061,6 +1079,12 @@ export const RecordsPanel: React.FC = () => {
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Pro tier list")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "rankings" }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Power rankings")} →
                     </HubLink>
                     <SectionCard
                       section={title}

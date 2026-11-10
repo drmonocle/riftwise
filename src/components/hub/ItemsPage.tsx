@@ -902,6 +902,12 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
               >
                 {tl("Draft board")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
             </>
           )}
           {rows.length > 0 && (
@@ -1117,6 +1123,12 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
               >
                 {tl("Draft board")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
             </>
           )}
           {y && y.p.length > 0 && (
@@ -1260,6 +1272,9 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
             </HubLink>
             <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Game finder")} →
+            </HubLink>
+            <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Power rankings")} →
             </HubLink>
             <CopyItemsPost
               title={tl("Item stats")}

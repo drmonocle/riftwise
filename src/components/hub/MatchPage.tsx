@@ -637,6 +637,21 @@ const SeriesGames: React.FC<{
               >
                 {tl("Compare")} →
               </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `team=${encodeURIComponent(s.a.u)}&vs=${encodeURIComponent(s.b.u)}`,
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
             </span>
           )}
         </div>

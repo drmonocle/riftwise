@@ -311,6 +311,52 @@ export const OwnStorylines: React.FC<{
       }))}
       spoilerKey={spoilerKey}
       share={share}
+      right={
+        who ? (
+          <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+            {who.kind === "team" ? (
+              <>
+                <HubLink to={{ kind: "prep", a: who.slug }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink to={{ kind: "draft", query: `teams=${encodeURIComponent(who.slug)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink to={{ kind: "compare", mode: "team", a: who.slug }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Compare")} →
+                </HubLink>
+                <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(who.slug)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Game finder")} →
+                </HubLink>
+                <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Power rankings")} →
+                </HubLink>
+                <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Pro tier list")} →
+                </HubLink>
+              </>
+            ) : (
+              <>
+                <HubLink to={{ kind: "compare", mode: "player", a: who.slug }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Compare")} →
+                </HubLink>
+                <HubLink to={{ kind: "items", query: `player=${encodeURIComponent(who.slug)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Item history")} →
+                </HubLink>
+                <HubLink to={{ kind: "finder", query: `player=${encodeURIComponent(who.slug)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Game finder")} →
+                </HubLink>
+                <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Player leaderboards")} →
+                </HubLink>
+                <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Pro tier list")} →
+                </HubLink>
+              </>
+            )}
+          </span>
+        ) : undefined
+      }
     />
   ) : null;
 
@@ -389,6 +435,12 @@ export const HomeStorylines: React.FC = () => {
                     >
                       {tl("Game finder")} →
                     </HubLink>
+                    <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                      {tl("Power rankings")} →
+                    </HubLink>
+                    <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                      {tl("Pro tier list")} →
+                    </HubLink>
                   </>
                 );
               }
@@ -413,6 +465,12 @@ export const HomeStorylines: React.FC = () => {
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Game finder")} →
+                    </HubLink>
+                    <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                      {tl("Player leaderboards")} →
+                    </HubLink>
+                    <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                      {tl("Pro tier list")} →
                     </HubLink>
                   </>
                 );

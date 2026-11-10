@@ -194,6 +194,12 @@ export const PatchesPanel: React.FC = () => {
                   >
                     {tl("Game finder")}
                   </HubLink>
+                  <HubLink
+                    to={{ kind: "rankings" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Power rankings")}
+                  </HubLink>
                   <SectionCard
                     section={tl("Patch {patch}", { patch: p.p })}
                     name={`${fmtDate(p.from)} – ${fmtDate(p.to)}`}
@@ -807,6 +813,12 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Pro tier list")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "leaders", query: `league=${encodeURIComponent(l.u)}` }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Player leaderboards")} →
                 </HubLink>
                 <SectionCard
                   section={tl("Most titles")}

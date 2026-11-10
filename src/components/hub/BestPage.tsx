@@ -400,6 +400,24 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                 >
                   {tl("Power rankings")} →
                 </HubLink>
+                <HubLink
+                  to={{
+                    kind: "tiers",
+                    ...(year ? { query: `key=y${encodeURIComponent(year)}` } : {}),
+                  }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "leaders",
+                    ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}),
+                  }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
               </span>
             );
           })()}

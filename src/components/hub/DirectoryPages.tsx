@@ -222,6 +222,12 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(u)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Game finder")}
             </HubLink>
+            <HubLink
+              to={{ kind: "rankings", ...(t[6] ? { query: `league=${encodeURIComponent(t[6])}` } : {}) }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Power rankings")}
+            </HubLink>
           </span>
         );
       },
@@ -514,6 +520,12 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
             </HubLink>
             <HubLink to={{ kind: "items", query: `player=${encodeURIComponent(u)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Item history")}
+            </HubLink>
+            <HubLink
+              to={{ kind: "leaders", ...(ROLE_OF[p[5]] ? { query: `role=${encodeURIComponent(ROLE_OF[p[5]])}` } : {}) }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Leaderboards")}
             </HubLink>
           </span>
         );

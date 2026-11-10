@@ -523,6 +523,18 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                 >
                   {tl("Game finder")} →
                 </HubLink>
+                <HubLink
+                  to={{ kind: "tiers", ...(league && league !== "*" ? { query: `league=${encodeURIComponent(prettySlug(league))}` } : {}) }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "leaders", ...(league && league !== "*" ? { query: `league=${encodeURIComponent(prettySlug(league))}` } : {}) }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
               </>
             )}
             {search.trim() && shownRows.length === 1 && (shownRows[0].r[0] || shownRows[0].r[1]) && (() => {
@@ -553,6 +565,18 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                     className="text-rw-accent hover:underline"
                   >
                     {tl("Game finder")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "tiers", ...(league && league !== "*" ? { query: `league=${encodeURIComponent(prettySlug(league))}` } : {}) }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Pro tier list")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "leaders", ...(league && league !== "*" ? { query: `league=${encodeURIComponent(prettySlug(league))}` } : {}) }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")} →
                   </HubLink>
                 </>
               );
@@ -585,6 +609,18 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Game finder")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "tiers", ...(league && league !== "*" ? { query: `league=${encodeURIComponent(prettySlug(league))}` } : {}) }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Pro tier list")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "leaders", ...(league && league !== "*" ? { query: `league=${encodeURIComponent(prettySlug(league))}` } : {}) }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")} →
                   </HubLink>
                 </>
               );
@@ -935,6 +971,9 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               </HubLink>
               <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Player leaderboards")} →
               </HubLink>
               <HubLink to={{ kind: "about" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("About")} →

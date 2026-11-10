@@ -877,6 +877,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   >
                     {tl("Player leaderboards")} →
                   </HubLink>
+                  <HubLink
+                    to={{ kind: "rankings" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Power rankings")} →
+                  </HubLink>
                   <SectionCard
                     section={tl("Picks and bans this week")}
                     name={range}
@@ -1059,6 +1065,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           className="text-[11px] font-semibold text-rw-accent hover:underline"
                         >
                           {tl("Pro tier list")} →
+                        </HubLink>
+                        <HubLink
+                          to={{ kind: "leaders" }}
+                          className="text-[11px] font-semibold text-rw-accent hover:underline"
+                        >
+                          {tl("Player leaderboards")} →
                         </HubLink>
                       </>
                     )}
