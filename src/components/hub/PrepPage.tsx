@@ -825,6 +825,30 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
           >
             {tl("Compare")} →
           </HubLink>
+          <HubLink
+            to={{
+              kind: "draft",
+              query: `teams=${encodeURIComponent(a.team.u)},${encodeURIComponent(b.team.u)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+            }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Draft board")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "finder",
+              query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
+                period.startsWith("y") && period.length === 5
+                  ? `&year=${encodeURIComponent(period.slice(1))}`
+                  : period.startsWith("e:")
+                    ? `&event=${encodeURIComponent(period.slice(2))}`
+                    : ""
+              }`,
+            }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Game finder")} →
+          </HubLink>
           <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Power rankings")} →
           </HubLink>
@@ -1113,6 +1137,15 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           >
             {tl("Game finder")}
           </HubLink>
+          <HubLink
+            to={{
+              kind: "tiers",
+              ...(period.startsWith("y") && period.length === 5 ? { query: `key=${encodeURIComponent(period)}` } : {}),
+            }}
+            className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")}
+          </HubLink>
           {/* icons with their name on hover, to keep the bar short */}
           <button
             type="button"
@@ -1170,6 +1203,28 @@ const Tendencies: React.FC<{ side: Side; rows: TeamGameRow[]; period: PeriodKey;
       right={
         <span className="flex flex-wrap items-center gap-2">
           <span className="text-[11px] text-rw-sub">{periodLabel}</span>
+          <HubLink
+            to={{
+              kind: "team",
+              slug: side.team.u,
+              tab: "stats",
+              ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+            }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Stats")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "team",
+              slug: side.team.u,
+              tab: "champions",
+              ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+            }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Champions")} →
+          </HubLink>
           <HubLink
             to={{
               kind: "draft",
@@ -1629,6 +1684,16 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
             data-nocapture="1"
           >
             {tl("Game finder")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "tiers",
+              ...(period.startsWith("y") && period.length === 5 ? { query: `key=${encodeURIComponent(period)}` } : {}),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Pro tier list")} →
           </HubLink>
           <BroadcastCardButton
             data={() =>

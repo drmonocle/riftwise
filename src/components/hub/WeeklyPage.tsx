@@ -220,6 +220,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Pro tier list")} →
             </HubLink>
+            <HubLink to={{ kind: "items" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Item history")} →
+            </HubLink>
+            <HubLink to={{ kind: "records" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Records")} →
+            </HubLink>
             <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Game finder")} →
             </HubLink>
@@ -372,6 +378,18 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                       </HubLink>
                     </>
                   )}
+                  <HubLink
+                    to={{
+                      kind: "finder",
+                      query:
+                        w.movers.length >= 2
+                          ? `team=${encodeURIComponent(w.movers[0].u)}&vs=${encodeURIComponent(w.movers[1].u)}`
+                          : `team=${encodeURIComponent(w.movers[0].u)}`,
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Game finder")} →
+                  </HubLink>
                   <HubLink
                     to={{ kind: "rankings" }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -660,6 +678,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     {tl("Player leaderboards")} →
                   </HubLink>
                   <HubLink
+                    to={{ kind: "tiers" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Pro tier list")} →
+                  </HubLink>
+                  <HubLink
                     to={{ kind: "finder", query: `player=${encodeURIComponent(w.players[0].u || prettySlug(w.players[0].n))}` }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -795,6 +819,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Champions")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "finder", query: `champ=${encodeURIComponent(w.champs[0][0])}` }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Game finder")} →
                   </HubLink>
                   <SectionCard
                     section={tl("Picks and bans this week")}

@@ -262,7 +262,20 @@ export const HubHome: React.FC<{
           <HubLink to={{ kind: "rankings" }} className={more}>{tl("Every active team on one scale →")}</HubLink>
         </section>
         <section className={`${card} flex flex-col`}>
-          <h2 className="font-head text-lg font-bold text-rw-text flex items-center gap-2 mb-2"><ClipboardList className="w-4 h-4 text-rw-accent" />{tl("Tools")}</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <h2 className="font-head text-lg font-bold text-rw-text flex items-center gap-2"><ClipboardList className="w-4 h-4 text-rw-accent" />{tl("Tools")}</h2>
+            <span className="flex items-center gap-2 text-[11px]">
+              <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink to={{ kind: "counters" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Counters")} →
+              </HubLink>
+              <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Player leaderboards")} →
+              </HubLink>
+            </span>
+          </div>
           <ul className="text-xs space-y-1.5">
             {(
               [
@@ -872,6 +885,9 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                 </HubLink>
               </>
             )}
+            <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Pro tier list")}
+            </HubLink>
             <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-accent hover:underline">
               {tl("Player leaderboards")}
             </HubLink>
@@ -1159,6 +1175,9 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
           )}
           <HubLink to={{ kind: "titles" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Titles")} →
+          </HubLink>
+          <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Power rankings")} →
           </HubLink>
           {year && (
             <>

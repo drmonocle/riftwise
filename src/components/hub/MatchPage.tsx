@@ -1143,6 +1143,15 @@ const PlayerBars: React.FC<{
               >
                 {tl("Game finder")} →
               </HubLink>
+              <HubLink
+                to={{
+                  kind: "leaders",
+                  ...(period && /^y\d{4}$/.test(period) ? { query: `year=${encodeURIComponent(period.slice(1))}` } : {}),
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
             </>
           )}
           <SectionCard
@@ -1419,6 +1428,15 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                   >
                     {tl("Game finder")} →
                   </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "leaders",
+                      ...(period && /^y\d{4}$/.test(period) ? { query: `year=${encodeURIComponent(period.slice(1))}` } : {}),
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")} →
+                  </HubLink>
                 </>
               )}
               <SectionCard
@@ -1593,7 +1611,17 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; t
   <div className={`space-y-1.5 min-w-0 ${right ? "text-right" : ""}`}>
     {st?.bans && st.bans.length > 0 && (
       <div className={`flex flex-wrap items-center gap-1 ${right ? "justify-end" : ""}`}>
-        <span className="text-[10px] text-rw-muted uppercase mr-1">{tl("Bans")}</span>
+        {teamSlug ? (
+          <HubLink
+            to={{ kind: "draft", query: `teams=${encodeURIComponent(teamSlug)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+            className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline uppercase mr-1"
+            title={tl("Draft board")}
+          >
+            {tl("Bans")}
+          </HubLink>
+        ) : (
+          <span className="text-[10px] text-rw-muted uppercase mr-1">{tl("Bans")}</span>
+        )}
         {st.bans.map((c, i) => (
           <HubLink
             key={i}
@@ -1612,7 +1640,17 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; t
     )}
     {st?.picks && st.picks.length > 0 && (
       <div className={`flex flex-wrap items-start gap-1 ${right ? "justify-end" : ""}`}>
-        <span className="text-[10px] text-rw-muted uppercase mr-1 mt-1.5">{tl("Picks")}</span>
+        {teamSlug ? (
+          <HubLink
+            to={{ kind: "draft", query: `teams=${encodeURIComponent(teamSlug)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+            className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline uppercase mr-1 mt-1.5"
+            title={tl("Draft board")}
+          >
+            {tl("Picks")}
+          </HubLink>
+        ) : (
+          <span className="text-[10px] text-rw-muted uppercase mr-1 mt-1.5">{tl("Picks")}</span>
+        )}
         {st.picks.map((c, i) => (
           <HubLink
             key={i}
@@ -1672,6 +1710,12 @@ const Scoreboard: React.FC<{
               className="text-[11px] text-rw-accent hover:underline"
             >
               {tl("Champions")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "team", slug: u, tab: "matches" }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Matches")} →
             </HubLink>
             <HubLink
               to={{ kind: "draft", query: `teams=${encodeURIComponent(u)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
