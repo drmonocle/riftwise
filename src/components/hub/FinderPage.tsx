@@ -7,11 +7,11 @@
 import React, { useMemo, useRef, useState } from "react";
 import { tl, tn, tc, fmtDec, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadAliases, loadChampGames, loadChampIndex, prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, loadAliases, loadChampGames, loadChampIndex, prettySlug, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug } from "../../hub/data";
 import type { ChampGame, ChampGamesFile, ChampPick } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
-import { patchCompare, ROLES } from "../../hub/champAgg";
+import { matchedEventLabel, matchEventIndices, patchCompare, ROLES } from "../../hub/champAgg";
 import { TableExport } from "./SortTable";
 import {
   card,
@@ -59,8 +59,8 @@ const eqChamp = (a: string | null | undefined, b: string | null | undefined) =>
 const eqPlayer = (a: string | null | undefined, b: string | null | undefined) =>
   eqSlug(a, b) || (!!a && !!b && eqSlug(resolvePlayerSlug(a), resolvePlayerSlug(b)));
 
-export function matchSide(g: ChampGame, q: Q, eventIdx: number | null): number {
-  if (eventIdx != null && g[2] !== eventIdx) return -1;
+export function matchSide(g: ChampGame, q: Q, eventIdx: number | Set<number> | null): number {
+  if (eventIdx != null && (typeof eventIdx === "number" ? g[2] !== eventIdx : !eventIdx.has(g[2]))) return -1;
   const patch = q.get("patch");
   if (patch && g[1] !== patch) return -1;
   const minLen = Number(q.get("min") || 0);
@@ -521,15 +521,23 @@ const FinderBody: React.FC<{
     };
   }, [games]);
   const eventSlug = q.get("event");
-  const eventIdx = eventSlug ? events.findIndex(([s]) => s === eventSlug) : -1;
+  const canonEventSlug = eventSlug ? resolveEventSlug(eventSlug) : "";
+  const eventMatch = useMemo(
+    () => matchEventIndices(events, eventSlug, canonEventSlug),
+    [events, eventSlug, canonEventSlug],
+  );
+  const activeEventValue =
+    typeof eventMatch === "number" ? events[eventMatch]?.[0] || "" : eventMatch ? canonEventSlug || eventSlug || "" : "";
+  const parentEventLabel =
+    eventMatch instanceof Set ? matchedEventLabel(events, eventMatch, canonEventSlug || eventSlug) : null;
   const found = useMemo(() => {
     const out: { g: ChampGame; s: number }[] = [];
     for (const g of games) {
-      const s = matchSide(g, q, eventIdx >= 0 ? eventIdx : null);
+      const s = matchSide(g, q, eventMatch);
       if (s >= 0) out.push({ g, s });
     }
     return out.sort((a, b) => (a.g[0] < b.g[0] ? 1 : a.g[0] > b.g[0] ? -1 : 0));
-  }, [games, q, eventIdx]);
+  }, [games, q, eventMatch]);
   const [limit, setLimit] = useState(100);
   const tableRef = useRef<HTMLTableElement>(null);
   const won = found.filter(({ g, s }) =>
@@ -591,12 +599,15 @@ const FinderBody: React.FC<{
       <div className={`${card} space-y-2 text-xs`}>
         <div className="flex flex-wrap items-center gap-2">
           <select
-            value={eventSlug || ""}
+            value={activeEventValue}
             onChange={(e) => setQ({ event: e.target.value || undefined })}
             aria-label={tl("Tournaments")}
             className={sel}
           >
             <option value="">{tl("All tournaments")}</option>
+            {parentEventLabel && activeEventValue && (
+              <option value={activeEventValue}>{parentEventLabel}</option>
+            )}
             {events.map(([slug, n]) => (
               <option key={slug} value={slug}>
                 {n}

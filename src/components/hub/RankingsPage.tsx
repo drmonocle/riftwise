@@ -5,7 +5,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { tl, tn } from "../../i18n";
-import { loadRatings, loadRatingsHistory, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, loadRatings, loadRatingsHistory, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { hubShareUrl, navigateHub, useHubRoute } from "../../hub/route";
 import { Sparkline } from "./Sparkline";
 import type { HubRatings, RatingRow } from "../../hub/types";
@@ -171,8 +171,8 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       .map((s) => s.trim())
       .filter(Boolean);
     return rows.filter(({ r }) => {
-      const hay = `${r[1]} ${r[2] || ""} ${r[3] || ""} ${r[10] || ""}`.toLowerCase();
-      return terms.some((t) => hay.includes(t));
+      const hay = `${r[0] || ""} ${r[1]} ${r[2] || ""} ${r[3] || ""} ${r[10] || ""}`.toLowerCase();
+      return terms.some((t) => hay.includes(t) || (bare(t).length >= 2 && bare(hay).includes(bare(t))));
     });
   }, [rows, search]);
   const pair =

@@ -4,6 +4,7 @@ import { matchesChampSearch, resolveChampSlug, resolveEventSlug, resolveLeagueSl
 import { rateLine, profile, type RatingFile } from "../hub/playerRating";
 import { filterBuiltSeasons } from "../components/hub/Ranks";
 import { matchSide } from "../components/hub/FinderPage";
+import { champAgg, matchedEventLabel, matchEventIndices } from "../hub/champAgg";
 import { champPairShortcuts, matchupShortcuts, pageShortcuts } from "../components/hub/HubSearch";
 import { groupOf, MENU, MENU_ITEMS } from "../components/hub/menu";
 import { NAV_GROUP } from "../components/navGroups";
@@ -223,5 +224,24 @@ describe("search shortcuts", () => {
     const pair = champPairShortcuts(idx, "faker lb");
     expect(pair.shortcuts).toHaveLength(1);
     expect(hubPath(pair.shortcuts[0].route)).toBe("/player/faker/champions?champ=LeBlanc");
+  });
+  it("matches whole-event parent slugs across multi-stage champgames files", () => {
+    const events: [string, string][] = [
+      ["lec-2024-winter-season", "LEC 2024 Winter Season"],
+      ["lec-2024-winter-groups", "LEC 2024 Winter Groups"],
+      ["lec-2024-winter-playoffs", "LEC 2024 Winter Playoffs"],
+      ["lec-2024-spring-season", "LEC 2024 Spring Season"],
+    ];
+    const m = matchEventIndices(events, "lec-2024-winter");
+    expect(m).toBeInstanceOf(Set);
+    expect([...(m as Set<number>)]).toEqual([0, 1, 2]);
+    expect(matchedEventLabel(events, m, "lec-2024-winter")).toBe("LEC 2024 Winter");
+    const g0 = ["2024-01-13", "14.1", 0, 1, 30, [["Azir", 2, 3, 1, 5, 250, 13000, 20000, "Caps", "caps", 0]], [], [], [], 1] as unknown as import("../hub/types").ChampGame;
+    const g3 = ["2024-03-09", "14.5", 3, 1, 30, [["Ahri", 2, 3, 1, 5, 250, 13000, 20000, "Caps", "caps", 0]], [], [], [], 1] as unknown as import("../hub/types").ChampGame;
+    expect(matchSide(g0, new URLSearchParams(), m)).toBe(0);
+    expect(matchSide(g3, new URLSearchParams(), m)).toBe(-1);
+    const agg = champAgg([g0, g3], { event: m ?? undefined });
+    expect(agg.games).toBe(1);
+    expect(agg.rows.map((r) => r.c)).toEqual(["Azir"]);
   });
 });

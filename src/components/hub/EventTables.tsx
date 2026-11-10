@@ -1,7 +1,7 @@
 /** gol.gg-style stat tables for one tournament: every player and every team, sortable by any column. */
 import React, { useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
-import { prettySlug } from "../../hub/data";
+import { bare, matchesChampSearch, prettySlug, resolvePlayerSlug } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import { champName } from "../../champions";
 import type { EventPlayer, EventTeamStats, HubEvent } from "../../hub/types";
@@ -53,7 +53,15 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
         (role === "All" || p.r === role) &&
         (!regular || p.g >= minG || maxG < 3) &&
         (!terms.length ||
-          terms.some((term) => `${p.n} ${p.u || ""} ${p.t} ${p.tu || ""}`.toLowerCase().includes(term))),
+          terms.some((term) => {
+            const hay = `${p.n} ${p.u || ""} ${p.t} ${p.tu || ""}`.toLowerCase();
+            return (
+              hay.includes(term) ||
+              (bare(term).length >= 2 && bare(hay).includes(bare(term))) ||
+              resolvePlayerSlug(term) === (p.u || prettySlug(p.n)) ||
+              (p.c || []).some((c) => matchesChampSearch(c, term))
+            );
+          })),
     );
   }, [players, role, regular, minG, maxG, search]);
   if (players.length === 0) return null;
@@ -505,7 +513,12 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
       .map((s) => s.trim())
       .filter(Boolean);
-    return !terms.length ? teams : teams.filter((t) => terms.some((term) => `${t.t} ${t.u || ""}`.toLowerCase().includes(term)));
+    return !terms.length
+      ? teams
+      : teams.filter((t) => {
+          const hay = `${t.t} ${t.u || ""}`.toLowerCase();
+          return terms.some((term) => hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term))));
+        });
   }, [teams, search]);
   if (teams.length === 0 || hidden) return null;
   const maxTeamG = Math.max(1, ...teams.map((t) => t.g));

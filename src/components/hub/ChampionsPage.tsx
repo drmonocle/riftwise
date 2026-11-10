@@ -7,10 +7,10 @@
 import React, { useMemo, useState } from "react";
 import { tl, roleName, fmtDec } from "../../i18n";
 import { ChampionStats, StatsMeta, loadChampionStats } from "../../stats";
-import { loadAliases, loadChampGames, loadChampIndex, matchesChampSearch, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { loadAliases, loadChampGames, loadChampIndex, matchesChampSearch, normText, prettySlug, resolveEventSlug, resolveLeagueSlug } from "../../hub/data";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
-import { ChampAggRow, ROLES, champAgg, patchCompare } from "../../hub/champAgg";
+import { ChampAggRow, ROLES, champAgg, matchedEventLabel, matchEventIndices, patchCompare } from "../../hub/champAgg";
 import { SortTable, type Column } from "./SortTable";
 import { card, ChampLink, Failed, fmtNum, HubLink, Loading, useLoad, usePageTitle } from "./ui";
 import { SectionCard } from "./BroadcastCard";
@@ -247,6 +247,16 @@ const LeagueFilters: React.FC<{ league: string; years: string[]; q: URLSearchPar
   const year = q.get("year") || (q.get("key")?.startsWith("y") ? q.get("key")!.slice(1) : "") || (evYr && ys.includes(evYr) ? evYr : "") || ys[0] || "";
   const file = useLoad(() => (year ? loadChampGames(league, year) : Promise.resolve(null)), [league, year]);
   const events = file.data?.events || [];
+  const rawEventSlug = q.get("event") || "";
+  const canonEventSlug = rawEventSlug ? resolveEventSlug(rawEventSlug) : "";
+  const eventMatch = useMemo(
+    () => matchEventIndices(events, rawEventSlug, canonEventSlug),
+    [events, rawEventSlug, canonEventSlug],
+  );
+  const activeEventValue =
+    typeof eventMatch === "number" ? events[eventMatch]?.[0] || "" : eventMatch ? canonEventSlug || rawEventSlug : "";
+  const parentEventLabel =
+    eventMatch instanceof Set ? matchedEventLabel(events, eventMatch, canonEventSlug || rawEventSlug) : null;
   const patches = useMemo(
     () => [...new Set((file.data?.games || []).map((g) => g[1]).filter(Boolean))].sort(patchCompare),
     [file.data],
@@ -260,8 +270,11 @@ const LeagueFilters: React.FC<{ league: string; years: string[]; q: URLSearchPar
           </option>
         ))}
       </select>
-      <select value={q.get("event") || ""} onChange={(e) => setQ({ event: e.target.value || undefined })} aria-label={tl("Tournaments")} className={sel}>
+      <select value={activeEventValue} onChange={(e) => setQ({ event: e.target.value || undefined })} aria-label={tl("Tournaments")} className={sel}>
         <option value="">{tl("All tournaments")}</option>
+        {parentEventLabel && activeEventValue && (
+          <option value={activeEventValue}>{parentEventLabel}</option>
+        )}
         {events.map(([slug, name]) => (
           <option key={slug} value={slug}>
             {name}
@@ -327,20 +340,24 @@ const LeagueTable: React.FC<{
   const year = q.get("year") || (q.get("key")?.startsWith("y") ? q.get("key")!.slice(1) : "") || (evYr && ys.includes(evYr) ? evYr : "") || ys[0] || "";
   const file = useLoad(() => (year ? loadChampGames(league, year) : Promise.resolve(null)), [league, year]);
   const eventSlug = q.get("event") || "";
+  const canonEventSlug = eventSlug ? resolveEventSlug(eventSlug) : "";
   const roleQ = q.get("role") || "";
   const rawSide = q.get("side");
   const side: "b" | "r" | undefined = rawSide === "b" || rawSide === "blue" ? "b" : rawSide === "r" || rawSide === "red" ? "r" : undefined;
   const patchQ = q.get("patch") || (q.get("key")?.startsWith("p") ? q.get("key")!.slice(1) : undefined);
   const rawVs = q.get("vs") || "";
   const vs = rawVs.startsWith("p") ? rawVs.slice(1) : rawVs;
+  const eventMatch = useMemo(
+    () => (file.data ? matchEventIndices(file.data.events, eventSlug, canonEventSlug) : null),
+    [file.data, eventSlug, canonEventSlug],
+  );
   const result = useMemo(() => {
     if (!file.data) return null;
-    const ei = eventSlug ? file.data.events.findIndex(([s]) => s === eventSlug) : -1;
-    const f = { event: ei >= 0 ? ei : undefined, side, role: roleQ ? ROLES.indexOf(roleQ) : undefined };
+    const f = { event: eventMatch ?? undefined, side, role: roleQ ? ROLES.indexOf(roleQ) : undefined };
     const now = champAgg(file.data.games, { ...f, patch: patchQ });
     const then = vs ? champAgg(file.data.games, { ...f, patch: vs }) : null;
     return { games: now.games, thenGames: then?.games || 0, rows: deltas(now.rows, then && then.games ? then.rows : null, 5) };
-  }, [file.data, eventSlug, patchQ, side, roleQ, vs]);
+  }, [file.data, eventMatch, patchQ, side, roleQ, vs]);
   const patchList = useMemo(
     () => [...new Set((file.data?.games || []).map((g) => g[1]).filter(Boolean))].sort(patchCompare).reverse(),
     [file.data],
@@ -348,7 +365,7 @@ const LeagueTable: React.FC<{
   const emerging = q.get("new") === "1";
   if (indexLoading || file.loading) return <Loading />;
   if (!file.data || !result) return <Failed />;
-  const eventName = eventSlug ? file.data.events.find(([s]) => s === eventSlug)?.[1] : null;
+  const eventName = matchedEventLabel(file.data.events, eventMatch, canonEventSlug || eventSlug);
   type LRow = ChampAggRow & Delta;
   const shownRows = useMemo(() => {
     const base = emerging && vs ? result.rows.filter((r) => r.emerging) : result.rows;

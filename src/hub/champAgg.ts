@@ -9,10 +9,53 @@ export const ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"];
 const PICK_POS = { b: [1, 4, 5, 8, 9], r: [2, 3, 6, 7, 10] };
 
 export interface ChampFilter {
-  event?: number; // index in the file's event list; undefined = all
+  event?: number | Set<number>; // index (or set of stage indices) in the file's event list; undefined = all
   patch?: string;
   side?: "b" | "r";
   role?: number; // 0-4; undefined = all roles
+}
+
+/** Match an event slug (or whole-event parent slug like "lec-2024-winter") against a champgames `events` list. */
+export function matchEventIndices(
+  events: [string, string][],
+  rawSlug: string | null | undefined,
+  canonSlug?: string,
+): number | Set<number> | null {
+  if (!rawSlug) return null;
+  const slug = canonSlug || rawSlug;
+  const exact = events.findIndex(([s]) => s === slug || s === rawSlug);
+  if (exact >= 0) return exact;
+  const prefix = slug + "-";
+  const rawPrefix = rawSlug + "-";
+  const indices: number[] = [];
+  events.forEach(([s], idx) => {
+    if (s.startsWith(prefix) || s.startsWith(rawPrefix)) indices.push(idx);
+  });
+  return indices.length === 1 ? indices[0] : indices.length > 1 ? new Set(indices) : null;
+}
+
+/** Human-readable label for a matched stage or whole-event parent across `events`. */
+export function matchedEventLabel(
+  events: [string, string][],
+  match: number | Set<number> | null,
+  fallbackSlug?: string | null,
+): string | null {
+  if (match == null) return null;
+  if (typeof match === "number") return events[match]?.[1] || fallbackSlug || null;
+  const names = [...match].map((i) => events[i]?.[1]).filter(Boolean);
+  if (names.length) {
+    const words = names[0].split(/\s+/);
+    let len = words.length;
+    for (const n of names.slice(1)) {
+      const nw = n.split(/\s+/);
+      let j = 0;
+      while (j < len && j < nw.length && words[j].toLowerCase() === nw[j].toLowerCase()) j++;
+      len = j;
+    }
+    const common = words.slice(0, len).join(" ").replace(/[-:–—\s]+$/, "");
+    if (common) return common;
+  }
+  return fallbackSlug || null;
 }
 
 export interface ChampAggRow {
@@ -56,7 +99,7 @@ export function champAgg(games: ChampGame[], f: ChampFilter): { games: number; r
   let n = 0;
   for (const g of games) {
     const [, patch, ev, blueWon, min, bp, rp, bb, rb, ordered] = g;
-    if (f.event !== undefined && ev !== f.event) continue;
+    if (f.event !== undefined && (typeof f.event === "number" ? ev !== f.event : !f.event.has(ev))) continue;
     if (f.patch && patch !== f.patch) continue;
     n++;
     // a champion counts once per game for presence (blind-pick mirrors, a ban written twice)

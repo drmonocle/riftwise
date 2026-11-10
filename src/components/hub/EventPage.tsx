@@ -10,7 +10,7 @@ import { CountryFlag, countryCode, localCountry } from "./CountryFlag";
 import { tl, tn, tk, regionName, stageLabel, eventTitle } from "../../i18n";
 import { champName } from "../../champions";
 import { winRate } from "../../stats";
-import { downloadEventCsv, downloadStagesCsv, loadHubEvent, normText, prettySlug } from "../../hub/data";
+import { bare, downloadEventCsv, downloadStagesCsv, loadHubEvent, matchesChampSearch, normText, prettySlug } from "../../hub/data";
 import type { HubEvent, SeriesRow, Stage, StandingRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { EventPlayerStats, EventTeamStatsTable } from "./EventTables";
@@ -628,7 +628,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
             const filteredTeams = tTerms.length
               ? e.teams.filter((t) => {
                   const hay = `${t.t} ${t.u || ""}`.toLowerCase();
-                  return tTerms.some((term) => hay.includes(term));
+                  return tTerms.some((term) => hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term))));
                 })
               : e.teams;
             return (
@@ -1194,13 +1194,20 @@ const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: s
       return base.filter((r) => {
         const a = `${r.a} ${r.au || ""}`.toLowerCase();
         const b = `${r.b} ${r.bu || ""}`.toLowerCase();
-        return (a.includes(ta) && b.includes(tb)) || (a.includes(tb) && b.includes(ta));
+        const matchSide = (hay: string, term: string) =>
+          hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term)));
+        return (matchSide(a, ta) && matchSide(b, tb)) || (matchSide(a, tb) && matchSide(b, ta));
       });
     }
     return base.filter((r) => {
       const a = `${r.a} ${r.au || ""}`.toLowerCase();
       const b = `${r.b} ${r.bu || ""}`.toLowerCase();
-      return terms.some((t) => a.includes(t) || b.includes(t));
+      return terms.some(
+        (t) =>
+          a.includes(t) ||
+          b.includes(t) ||
+          (bare(t).length >= 2 && (bare(a).includes(bare(t)) || bare(b).includes(bare(t)))),
+      );
     });
   }, [byRating, rated, terms, isVsMatchup, stages, st.series]);
   return (
@@ -1809,10 +1816,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean }> = ({ e, full }) => 
       .map((s) => normText(s))
       .filter(Boolean);
     if (terms.length)
-      return allChamps.filter((c) => {
-        const hay = `${normText(champName(c.c))} ${normText(c.c)}`;
-        return terms.some((t) => hay.includes(t));
-      });
+      return allChamps.filter((c) => terms.some((t) => matchesChampSearch(c.c, t)));
     return full || showAll ? allChamps : allChamps.slice(0, 20);
   }, [allChamps, search, full, showAll]);
   // the Champions page with this tournament picked: every champion, by patch / side / role, blind picks
@@ -1820,7 +1824,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean }> = ({ e, full }) => 
   const more =
     e.lu && /^\d{4}$/.test(year) ? (
       <HubLink
-        to={{ kind: "champions", query: new URLSearchParams({ league: e.lu, year, ...(e.whole ? {} : { event: e.u }) }).toString() }}
+        to={{ kind: "champions", query: new URLSearchParams({ league: e.lu, year, event: e.u }).toString() }}
         className="text-[11px] text-rw-accent hover:underline"
       >
         {tl("Every champion, with filters")}

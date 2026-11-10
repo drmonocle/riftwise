@@ -7,7 +7,7 @@
 import React, { useMemo, useState } from "react";
 import { PlayCircle } from "lucide-react";
 import { tl, tn, tc, stageLabel, fmtDec } from "../../i18n";
-import { loadAliases, loadBest, loadBestIndex, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, loadAliases, loadBest, loadBestIndex, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import type { BestGame, BestSeries } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { card, EventLink, Failed, fmtDate, HubLink, isFresh, Loading, RatingBadge, ratingTextClass, ratingTier, RevealButton, TeamLink, TeamLogo, th, useHidden, useLoad, usePageTitle } from "./ui";
@@ -100,10 +100,15 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
           ? [(r as BestSeries)[6], (r as BestSeries)[7], (r as BestSeries)[8], (r as BestSeries)[9], (r as BestSeries)[3]]
           : [(r as BestGame)[7], (r as BestGame)[8], (r as BestGame)[9], (r as BestGame)[10], (r as BestGame)[4]];
       const matchesTerm = (term: { norm: string; aliasSlug?: string }) => {
-        const matchName = normText(a).includes(term.norm) || normText(b).includes(term.norm) || normText(en || "").includes(term.norm);
+        const bTerm = bare(term.norm);
+        const matchName =
+          normText(a).includes(term.norm) ||
+          normText(b).includes(term.norm) ||
+          normText(en || "").includes(term.norm) ||
+          (bTerm.length >= 2 && (bare(a).includes(bTerm) || bare(b).includes(bTerm)));
         const matchSlug =
-          (aSlug && (aSlug === term.aliasSlug || normText(aSlug).includes(term.norm))) ||
-          (bSlug && (bSlug === term.aliasSlug || normText(bSlug).includes(term.norm)));
+          (aSlug && (aSlug === term.aliasSlug || normText(aSlug).includes(term.norm) || (bTerm.length >= 2 && bare(aSlug).includes(bTerm)))) ||
+          (bSlug && (bSlug === term.aliasSlug || normText(bSlug).includes(term.norm) || (bTerm.length >= 2 && bare(bSlug).includes(bTerm))));
         return Boolean(matchName || matchSlug);
       };
       if (isVsQuery && teamTerms.length >= 2) {

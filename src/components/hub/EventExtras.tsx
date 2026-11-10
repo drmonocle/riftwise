@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from "react";
 import { Flame, Crown, Timer, Swords } from "lucide-react";
 import { tl, tk, roleName, regionName } from "../../i18n";
-import { prettySlug } from "../../hub/data";
+import { bare, prettySlug, resolvePlayerSlug } from "../../hub/data";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { champName } from "../../champions";
 import type {
@@ -689,7 +689,12 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
     const terms = q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean);
     return rosters.filter((t) => {
       const hay = `${t.t} ${t.u || ""} ${t.r || ""} ${t.r ? regionName(t.r, t.r) : ""} ${t.p.map(([n, u, r]) => `${n} ${u || ""} ${r || ""}`).join(" ")}`.toLowerCase();
-      return terms.some((term) => hay.includes(term));
+      return terms.some(
+        (term) =>
+          hay.includes(term) ||
+          (bare(term).length >= 2 && bare(hay).includes(bare(term))) ||
+          t.p.some(([n, u]) => resolvePlayerSlug(term) === (u || prettySlug(n))),
+      );
     });
   }, [rosters, q]);
   const shownRosters = open || q ? filteredRosters : filteredRosters.slice(0, 4);

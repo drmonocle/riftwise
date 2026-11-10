@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { tl } from "../../i18n";
-import { loadEventLines, prettySlug } from "../../hub/data";
+import { bare, loadEventLines, matchesChampSearch, prettySlug, resolvePlayerSlug } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import { eventFacts, factText, gamesOf, type Fact } from "../../hub/worldsFacts";
 import { moreEventFacts } from "../../hub/eventStats";
@@ -62,7 +62,13 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
         if (cardMatch) return f;
         const matchingRows = f.rows.filter((r) => {
           const hay = `${r.label} ${r.value} ${r.sub || ""} ${r.player || ""} ${r.team || ""} ${r.champ || ""}`.toLowerCase();
-          return terms.some((t) => hay.includes(t));
+          return terms.some(
+            (t) =>
+              hay.includes(t) ||
+              (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
+              (r.champ ? matchesChampSearch(r.champ, t) : false) ||
+              (r.player ? resolvePlayerSlug(t) === r.player : false),
+          );
         });
         if (!matchingRows.length) return null;
         return { ...f, rows: matchingRows };
