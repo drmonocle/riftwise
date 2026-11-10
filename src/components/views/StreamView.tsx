@@ -211,7 +211,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
               onClick={() =>
                 navigateHub({
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(aSlug)},${encodeURIComponent(bSlug)}${year ? `&period=y${year}` : ""}`,
+                  query: `teams=${encodeURIComponent(aSlug)},${encodeURIComponent(bSlug)}${year ? `&p=y${year}` : ""}`,
                 })
               }
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
@@ -442,7 +442,10 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
             {next.team1 && next.team2 ? (
               <button
                 type="button"
-                onClick={() => navigateHub({ kind: "prep", a: teamSlug(next.team1!), b: teamSlug(next.team2!) })}
+                onClick={() => {
+                  const y = /\b(20\d\d)\b/.exec(next.season || "")?.[1];
+                  navigateHub({ kind: "prep", a: teamSlug(next.team1!), b: teamSlug(next.team2!), period: y ? `y${y}` : undefined });
+                }}
                 className="font-mono text-rw-sub hover:text-rw-accent hover:underline shrink-0 ml-auto"
               >
                 {clock(next.utcIso)} · {relTime(next.utcIso, now)}
@@ -468,7 +471,10 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
           {nextBanger.team1 && nextBanger.team2 ? (
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "prep", a: teamSlug(nextBanger.team1!), b: teamSlug(nextBanger.team2!) })}
+              onClick={() => {
+                const y = /\b(20\d\d)\b/.exec(nextBanger.season || "")?.[1];
+                navigateHub({ kind: "prep", a: teamSlug(nextBanger.team1!), b: teamSlug(nextBanger.team2!), period: y ? `y${y}` : undefined });
+              }}
               className="font-mono text-[#ff4655] light:text-[#c8102e] hover:underline shrink-0"
             >
               {relTime(nextBanger.utcIso, now)}

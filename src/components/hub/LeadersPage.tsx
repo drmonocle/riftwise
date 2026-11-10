@@ -63,7 +63,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
   const shownRows = useMemo(() => {
     const terms = search
       .toLowerCase()
-      .split(",")
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
       .map((s) => s.trim())
       .filter(Boolean);
     if (!terms.length) return rows;

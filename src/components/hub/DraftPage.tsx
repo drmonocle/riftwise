@@ -374,6 +374,7 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
     if (ta || tb) next.set("teams", `${ta || ""},${tb || ""}`);
     else next.delete("teams");
     if (patch.p !== undefined) {
+      next.delete("period");
       if (patch.p && patch.p !== "all") next.set("p", patch.p);
       else next.delete("p");
     }
@@ -473,7 +474,7 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
     <Board
       blue={sides.a}
       red={sides.b}
-      period={q.get("p") || undefined}
+      period={q.get("p") || q.get("period") || undefined}
       gameNum={activeGameNum}
       slots={slots}
       used={usedList}

@@ -265,29 +265,56 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
               <div key={si} className="bg-rw-panel border border-rw-border rounded-xl overflow-hidden">
                 <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-rw-accent border-b border-rw-border bg-rw-bg flex items-center justify-between gap-2">
                   <span>{sec.name || stage.name}</span>
-                  {!hideResults && (
-                    <SectionCard
-                      section={sec.name || stage.name}
-                      name={tournamentInfo ? prettyTournament(tournamentInfo) : activeLeague.toUpperCase()}
-                      sub={stage.name}
-                      rows={() =>
-                        sec.rows.flatMap((row) =>
-                          row.teams.map((team) => {
-                            const played = team.wins + team.losses + team.ties;
-                            return {
-                              rank: String(row.rank),
-                              team: team.name || team.code,
-                              label: team.name,
-                              sub: team.code,
-                              value: `${team.wins}–${team.losses}${team.ties > 0 ? `–${team.ties}` : ""}`,
-                              note: played > 0 ? `${Math.round((team.wins / played) * 100)}%` : "",
-                              win: played > 0 ? team.wins / played >= 0.5 : undefined,
-                            };
-                          }),
-                        )
-                      }
-                    />
-                  )}
+                  <span className="flex items-center gap-2 font-normal normal-case tracking-normal">
+                    {(() => {
+                      const groupTeams = sec.rows.flatMap((r) => r.teams).filter((t) => t.code && t.code !== "TBD");
+                      if (groupTeams.length < 2) return null;
+                      const a = prettySlug(groupTeams[0].name || groupTeams[0].code);
+                      const b = prettySlug(groupTeams[1].name || groupTeams[1].code);
+                      const yr = tournamentInfo?.startDate?.slice(0, 4);
+                      return (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => navigateHub({ kind: "prep", a, b, period: yr ? `y${yr}` : undefined })}
+                            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Match prep")} →
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => navigateHub({ kind: "compare", mode: "team", a, b, period: yr ? `y${yr}` : undefined })}
+                            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Compare")} →
+                          </button>
+                        </>
+                      );
+                    })()}
+                    {!hideResults && (
+                      <SectionCard
+                        section={sec.name || stage.name}
+                        name={tournamentInfo ? prettyTournament(tournamentInfo) : activeLeague.toUpperCase()}
+                        sub={stage.name}
+                        rows={() =>
+                          sec.rows.flatMap((row) =>
+                            row.teams.map((team) => {
+                              const played = team.wins + team.losses + team.ties;
+                              return {
+                                rank: String(row.rank),
+                                team: team.name || team.code,
+                                label: team.name,
+                                sub: team.code,
+                                value: `${team.wins}–${team.losses}${team.ties > 0 ? `–${team.ties}` : ""}`,
+                                note: played > 0 ? `${Math.round((team.wins / played) * 100)}%` : "",
+                                win: played > 0 ? team.wins / played >= 0.5 : undefined,
+                              };
+                            }),
+                          )
+                        }
+                      />
+                    )}
+                  </span>
                 </div>
                 <STable className="w-full text-left text-xs">
                   <thead className="bg-rw-bg border-b border-rw-border text-rw-sub font-bold uppercase tracking-wider text-[11px]">
@@ -449,7 +476,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                           key: m.id,
                           teams: m.teams.map((t) => t.code),
                           winner: shown ? m.teams.find((t) => t.outcome === "win")?.code ?? null : null,
-                          node: <MatchCard match={m} hideResults={hideResults} onSelectTeam={onSelectTeam} />,
+                          node: <MatchCard match={m} hideResults={hideResults} onSelectTeam={onSelectTeam} year={tournamentInfo?.startDate?.slice(0, 4)} />,
                         };
                       }),
                     }))}
@@ -547,10 +574,11 @@ const TeamLogo: React.FC<{ code: string; name?: string; image?: string; onClick?
   );
 };
 
-const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectTeam: (code: string, name?: string) => void }> = ({
+const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectTeam: (code: string, name?: string) => void; year?: string }> = ({
   match,
   hideResults,
   onSelectTeam,
+  year,
 }) => {
   const masked = hideResults && match.state !== "unstarted";
   return (
@@ -588,7 +616,7 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
             onClick={() =>
               navigateHub({
                 kind: "finder",
-                query: `team=${encodeURIComponent(prettySlug(match.teams[0].name || match.teams[0].code))}&vs=${encodeURIComponent(prettySlug(match.teams[1].name || match.teams[1].code))}`,
+                query: `team=${encodeURIComponent(prettySlug(match.teams[0].name || match.teams[0].code))}&vs=${encodeURIComponent(prettySlug(match.teams[1].name || match.teams[1].code))}${year ? `&year=${year}` : ""}`,
               })
             }
             className="hover:text-rw-accent hover:underline"
@@ -610,6 +638,7 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
                     kind: "prep",
                     a: prettySlug(match.teams[0].name || match.teams[0].code),
                     b: prettySlug(match.teams[1].name || match.teams[1].code),
+                    period: year ? `y${year}` : undefined,
                   })
                 }
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -622,7 +651,7 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
                 onClick={() =>
                   navigateHub({
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(prettySlug(match.teams[0].name || match.teams[0].code))},${encodeURIComponent(prettySlug(match.teams[1].name || match.teams[1].code))}`,
+                    query: `teams=${encodeURIComponent(prettySlug(match.teams[0].name || match.teams[0].code))},${encodeURIComponent(prettySlug(match.teams[1].name || match.teams[1].code))}${year ? `&p=y${year}` : ""}`,
                   })
                 }
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -638,6 +667,7 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
                     mode: "team",
                     a: prettySlug(match.teams[0].name || match.teams[0].code),
                     b: prettySlug(match.teams[1].name || match.teams[1].code),
+                    period: year ? `y${year}` : undefined,
                   })
                 }
                 className="text-rw-sub hover:text-rw-accent hover:underline"

@@ -7,7 +7,7 @@
 import React, { useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { tl, roleName } from "../../i18n";
-import { loadLeagues, loadMoves } from "../../hub/data";
+import { loadLeagues, loadMoves, normText } from "../../hub/data";
 import { fmtDate, HubLink, hubShareUrl, PlayerLink, PlayerPhoto, TeamLink, TeamLogo, useLoad } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 
@@ -15,11 +15,23 @@ export const RosterMoves: React.FC = () => {
   const moves = useLoad(loadMoves, []);
   const leagues = useLoad(loadLeagues, []);
   const [all, setAll] = useState(false);
+  const [search, setSearch] = useState("");
   const top = useMemo(() => new Set((leagues.data || []).filter((l) => l.pr).map((l) => l.u)), [leagues.data]);
   const name = useMemo(() => new Map((leagues.data || []).map((l) => [l.u, l.s || l.l])), [leagues.data]);
   const [shown, setShown] = useState(25);
   if (!moves.data || !moves.data.list.length) return null;
-  const list = moves.data.list.filter((m) => all || (m.lu && top.has(m.lu)));
+  const terms = search
+    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+    .map((s) => normText(s.trim()))
+    .filter(Boolean);
+  const list = moves.data.list.filter((m) => {
+    if (!all && !terms.length && !(m.lu && top.has(m.lu))) return false;
+    if (terms.length) {
+      const hay = normText(`${m.n} ${m.u} ${m.r || ""} ${m.from.n} ${m.from.u} ${m.to.n} ${m.to.u} ${m.lu ? name.get(m.lu) || m.lu : ""}`);
+      if (!terms.some((t) => hay.includes(t))) return false;
+    }
+    return true;
+  });
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-rw-border">
@@ -27,6 +39,14 @@ export const RosterMoves: React.FC = () => {
           {tl("Roster moves")}
         </h2>
         <div className="flex flex-wrap items-center gap-2 text-[11px]" role="group" aria-label={tl("Leagues")}>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={tl("Filter by name or team…")}
+            aria-label={tl("Filter by name or team…")}
+            className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text w-40"
+          />
           {[false, true].map((v) => (
             <button
               key={String(v)}

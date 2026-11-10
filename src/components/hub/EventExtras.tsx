@@ -1,5 +1,5 @@
 /** Tournament page extras: quick facts, team rosters (with subs and coaches), records between regions. */
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Flame, Crown, Timer, Swords } from "lucide-react";
 import { tl, tk, roleName, regionName } from "../../i18n";
 import { prettySlug } from "../../hub/data";
@@ -443,16 +443,37 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
   eventSlug,
 }) => {
   const [open, setOpen] = useState(rosters.length <= 4);
+  const [search, setSearch] = useState("");
+  const q = search.trim().toLowerCase();
+  const filteredRosters = useMemo(() => {
+    if (!q) return rosters;
+    const terms = q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean);
+    return rosters.filter((t) => {
+      const hay = `${t.t} ${t.u || ""} ${t.r || ""} ${t.r ? regionName(t.r, t.r) : ""} ${t.p.map(([n, u, r]) => `${n} ${u || ""} ${r || ""}`).join(" ")}`.toLowerCase();
+      return terms.some((term) => hay.includes(term));
+    });
+  }, [rosters, q]);
+  const shownRosters = open || q ? filteredRosters : filteredRosters.slice(0, 4);
   return (
     <Section
       title={tl("Team rosters")}
       right={
-        <span className="flex items-center gap-2">
-          {rosters.length > 0 && (
+        <span className="flex flex-wrap items-center gap-2">
+          {rosters.length > 4 && (
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={tl("Filter by name or team…")}
+              aria-label={tl("Filter by name or team…")}
+              className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text w-40"
+            />
+          )}
+          {filteredRosters.length > 0 && (
             <>
               <CopyExtrasPost
                 title={tl("Team rosters")}
-                rows={rosters.slice(0, 6).map((t) => {
+                rows={filteredRosters.slice(0, 6).map((t) => {
                   const starters = t.p
                     .filter(([, , r]) => !/coach/i.test(r || ""))
                     .slice(0, 5)
@@ -465,7 +486,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                 section={tl("Team rosters")}
                 name={tl("Team rosters")}
                 rows={() =>
-                  rosters.slice(0, 12).map((t, idx) => ({
+                  filteredRosters.slice(0, 12).map((t, idx) => ({
                     rank: idx + 1,
                     team: t.t,
                     label: t.t,
@@ -480,7 +501,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
               />
             </>
           )}
-          {rosters.length > 4 && (
+          {rosters.length > 4 && !q && (
             <button
               type="button"
               onClick={() => setOpen((v) => !v)}
@@ -495,7 +516,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
       }
     >
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {(open ? rosters : rosters.slice(0, 4)).map((t) => (
+        {shownRosters.map((t) => (
           <div
             key={t.t}
             className="bg-rw-bg border border-rw-border rounded-lg p-2 text-xs min-w-0"

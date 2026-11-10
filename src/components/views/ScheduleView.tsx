@@ -154,11 +154,23 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
       if (!isMatchFollowed(m, settings, catalog?.leagues, playerTeams)) return false;
     }
 
-    // Search query
+    // Search query (supports "Team A vs Team B" for head-to-head and "Team A, Team B" for multiple teams/leagues)
     if (searchQuery.trim()) {
-      const q = searchAlias(searchQuery).toLowerCase();
-      const text = `${m.team1Code} ${m.team1Name} ${m.team2Code} ${m.team2Name} ${m.leagueName}`.toLowerCase();
-      if (!text.includes(q)) return false;
+      const raw = searchQuery.trim();
+      const text = `${m.team1Code} ${m.team1Name} ${m.team2Code} ${m.team2Name} ${m.leagueName} ${m.blockName || ""}`.toLowerCase();
+      if (/\s+vs\.?\s+|\s+v\s+/i.test(raw)) {
+        const parts = raw
+          .split(/\s+vs\.?\s+|\s+v\s+/i)
+          .map((s) => searchAlias(s.trim()).toLowerCase())
+          .filter(Boolean);
+        if (parts.some((p) => !text.includes(p))) return false;
+      } else {
+        const terms = raw
+          .split(/[,|]+/)
+          .map((s) => searchAlias(s.trim()).toLowerCase())
+          .filter(Boolean);
+        if (terms.length && !terms.some((q) => text.includes(q))) return false;
+      }
     }
 
     return true;
@@ -507,14 +519,16 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           ) : m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD" ? (
                             <button
                               type="button"
-                              onClick={() =>
+                              onClick={() => {
+                                const yr = m.startTimeUtc?.slice(0, 4);
                                 navigateHub({
                                   kind: "compare",
                                   mode: "team",
                                   a: prettySlug(m.team1Name || m.team1Code),
                                   b: prettySlug(m.team2Name || m.team2Code),
-                                })
-                              }
+                                  period: yr ? `y${yr}` : undefined,
+                                });
+                              }}
                               title={tl("Compare")}
                               className="text-rw-sub hover:text-rw-accent hover:underline font-medium"
                             >
@@ -527,13 +541,15 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         {m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD" ? (
                           <button
                             type="button"
-                            onClick={() =>
+                            onClick={() => {
+                              const yr = m.startTimeUtc?.slice(0, 4);
                               navigateHub({
                                 kind: "prep",
                                 a: prettySlug(m.team1Name || m.team1Code),
                                 b: prettySlug(m.team2Name || m.team2Code),
-                              })
-                            }
+                                period: yr ? `y${yr}` : undefined,
+                              });
+                            }}
                             className="@min-[36rem]:hidden text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
                           >
                             {tc("short best of", "Bo{n}", { n: m.bestOf })}
@@ -597,13 +613,15 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       {m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD" ? (
                         <button
                           type="button"
-                          onClick={() =>
+                          onClick={() => {
+                            const yr = m.startTimeUtc?.slice(0, 4);
                             navigateHub({
                               kind: "prep",
                               a: prettySlug(m.team1Name || m.team1Code),
                               b: prettySlug(m.team2Name || m.team2Code),
-                            })
-                          }
+                              period: yr ? `y${yr}` : undefined,
+                            });
+                          }}
                           className="@max-[36rem]:hidden text-[10px] text-rw-sub hover:text-rw-accent bg-rw-bg px-2 py-0.5 rounded border border-rw-border hover:border-rw-accent/60 font-medium transition-colors"
                         >
                           {tc("short best of", "Bo{n}", { n: m.bestOf })}
@@ -632,13 +650,15 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       ) : m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD" ? (
                         <button
                           type="button"
-                          onClick={() =>
+                          onClick={() => {
+                            const yr = m.startTimeUtc?.slice(0, 4);
                             navigateHub({
                               kind: "prep",
                               a: prettySlug(m.team1Name || m.team1Code),
                               b: prettySlug(m.team2Name || m.team2Code),
-                            })
-                          }
+                              period: yr ? `y${yr}` : undefined,
+                            });
+                          }}
                           className="text-[10px] text-rw-accent hover:underline font-semibold whitespace-nowrap truncate min-w-0"
                           title={m.blockName || undefined}
                         >

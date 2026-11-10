@@ -33,6 +33,7 @@ const groupOf = (f: Fact): Group => GROUP_OF[f.id] || "players";
 
 /** The cards under a heading per group (a group with no cards is left out). */
 export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fact) => string; eventSlug?: string }> = ({ facts, link, shareId, eventSlug }) => {
+  const [search, setSearch] = useState("");
   const titles: Record<Group, string> = {
     event: tl("The event"),
     teams: tl("Teams"),
@@ -47,11 +48,44 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [facts.length]);
+  const terms = search
+    .trim()
+    .toLowerCase()
+    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const filteredFacts = useMemo(() => {
+    if (!terms.length) return facts;
+    return facts
+      .map((f) => {
+        const cardMatch = terms.some((t) => `${f.title} ${f.headline}`.toLowerCase().includes(t));
+        if (cardMatch) return f;
+        const matchingRows = f.rows.filter((r) => {
+          const hay = `${r.label} ${r.value} ${r.sub || ""} ${r.player || ""} ${r.team || ""} ${r.champ || ""}`.toLowerCase();
+          return terms.some((t) => hay.includes(t));
+        });
+        if (!matchingRows.length) return null;
+        return { ...f, rows: matchingRows };
+      })
+      .filter((f): f is Fact => f !== null);
+  }, [facts, terms.join("|")]);
   return (
     <div className="space-y-4">
+      {facts.length > 6 && (
+        <div className="flex items-center justify-end">
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={tl("Filter by name or team…")}
+            aria-label={tl("Filter by name or team…")}
+            className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1 text-xs text-rw-text w-48"
+          />
+        </div>
+      )}
       {(["event", "teams", "players", "champs"] as Group[]).map((g) => {
         // the event in numbers leads its group
-        const list = facts.filter((f) => groupOf(f) === g).sort((a, b) => Number(b.id === "totals") - Number(a.id === "totals"));
+        const list = filteredFacts.filter((f) => groupOf(f) === g).sort((a, b) => Number(b.id === "totals") - Number(a.id === "totals"));
         if (!list.length) return null;
         return (
           // the id: a "jump to" link's target (the Worlds page's JumpBar)

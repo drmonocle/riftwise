@@ -64,6 +64,13 @@ const CareerRecords: React.FC<{
   const [all, setAll] = useState(true);
   const c = all && r.careerAll ? r.careerAll : r.career;
   const scopeLabel = all && r.careerAll ? tl("All pro games") : tl("Top leagues & internationals");
+  const cards = [
+    list(tl("Most pro games"), c.games, scopeLabel),
+    list(tl("Most career kills"), c.kills, scopeLabel),
+    list(tl("Most career assists"), c.assists, scopeLabel),
+    list(tl("Biggest champion pools"), c.pool, scopeLabel),
+  ].filter(Boolean);
+  if (!cards.length) return null;
   const pill = (on: boolean) =>
     `px-2.5 py-1 rounded-full text-[11px] font-semibold border ${on ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"}`;
   return (
@@ -87,10 +94,7 @@ const CareerRecords: React.FC<{
           : tl("Only top leagues and international events (Worlds, MSI, First Stand).")}
       </p>
       <div className="grid gap-3 md:grid-cols-2 3xl:grid-cols-4 items-start">
-        {list(tl("Most pro games"), c.games, scopeLabel)}
-        {list(tl("Most career kills"), c.kills, scopeLabel)}
-        {list(tl("Most career assists"), c.assists, scopeLabel)}
-        {list(tl("Biggest champion pools"), c.pool, scopeLabel)}
+        {cards}
       </div>
     </div>
   );
@@ -99,26 +103,32 @@ const CareerRecords: React.FC<{
 /** file name of a records card: "records-fastest-wins" */
 const shareName = (title: string) => "records-" + title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
+const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]>; matchText?: (s: string) => boolean }> = ({
   p,
+  matchText,
 }) => {
   const [n, setN] = useState(8);
+  const mostRows = matchText ? p.most.filter((x) => matchText(`${x.n} ${x.u || ""}`)) : p.most;
+  const recentRows = matchText
+    ? p.recent.filter((x) => matchText(`${x.n} ${x.u || ""} ${x.c} ${champName(x.c)} ${x.a} ${x.b} ${x.t} ${x.e || ""}`))
+    : p.recent;
   const maxPenta = Math.max(1, p.most[0]?.v || 1);
   return (
     <>
+      {mostRows.length > 0 && (
       <Section
         title={tl("Most pentakills")}
         right={
           <SectionCard
             section={tl("Most pentakills")}
             name={tl("Records")}
-            rows={() => p.most.slice(0, 12).map((x, i) => ({ rank: i + 1, label: x.n, value: String(x.v), win: true }))}
+            rows={() => mostRows.slice(0, 12).map((x, i) => ({ rank: i + 1, label: x.n, value: String(x.v), win: true }))}
           />
         }
         share="records-most-pentakills"
       >
         <ol className="text-xs space-y-1.5">
-          {p.most.map((x, i) => (
+          {mostRows.map((x, i) => (
             <li key={i} className="space-y-0.5 min-w-0">
               <div className="flex justify-between gap-2 min-w-0">
                 <span className="inline-flex items-center gap-1.5 min-w-0">
@@ -149,15 +159,17 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
           )}
         </p>
       </Section>
+      )}
+      {recentRows.length > 0 && (
       <Section
         title={tl("Latest pentakills")}
         right={
-          p.recent.length > 0 ? (
+          recentRows.length > 0 ? (
             <SectionCard
               section={tl("Latest pentakills")}
               name={tl("Records")}
               rows={() =>
-                p.recent.slice(0, 10).map((x, idx) => ({
+                recentRows.slice(0, 10).map((x, idx) => ({
                   rank: idx + 1,
                   champ: x.c,
                   team: x.a,
@@ -173,20 +185,21 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
         share="records-latest-pentakills"
       >
         <ol className="text-xs space-y-1.5">
-          {p.recent.slice(0, n).map((x, i) => (
+          {recentRows.slice(0, n).map((x, i) => (
             <PentaRow key={i} x={x} />
           ))}
         </ol>
-        {p.recent.length > n && (
+        {recentRows.length > n && (
           <button
             type="button"
             onClick={() => setN((v) => v + 30)}
             className="text-xs text-rw-accent hover:underline"
           >
-            {tl("Show more ({n} left)", { n: p.recent.length - n })}
+            {tl("Show more ({n} left)", { n: recentRows.length - n })}
           </button>
         )}
       </Section>
+      )}
     </>
   );
 };
@@ -397,17 +410,31 @@ export const RecordsPanel: React.FC = () => {
   const q = new URLSearchParams(route.kind === "records" && "query" in route ? route.query || "" : "");
   // all time, or one year (its own file; team streaks, titles and career totals are all-time only)
   const year = q.get("year") || "all";
-  const setYear = (y: string) => {
+  const [search, setSearch] = useState(() => q.get("q") || "");
+  const setRecordsUrl = (nextYear: string, nextQ: string) => {
     const next = new URLSearchParams(q);
-    if (!y || y === "all") next.delete("year");
-    else next.set("year", y);
+    if (!nextYear || nextYear === "all") next.delete("year");
+    else next.set("year", nextYear);
+    if (nextQ.trim()) next.set("q", nextQ.trim());
+    else next.delete("q");
     const qs = next.toString();
     navigateHub({ kind: "records", ...(qs ? { query: qs } : {}) }, { replace: true });
   };
+  const setYear = (y: string) => setRecordsUrl(y, search);
   const yearState = useLoad(() => (year === "all" ? Promise.resolve(null) : loadRecordsYear(year)), [year]);
   // this year's file too, for "Closest to falling" on the all-time view
   const thisYear = String(new Date().getFullYear());
   const thisYearState = useLoad(() => loadRecordsYear(thisYear).catch(() => null), [thisYear]);
+  const terms = search
+    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+    .map((s) => normText(s.trim()))
+    .filter(Boolean);
+  const matchText = terms.length
+    ? (s: string) => {
+        const hay = normText(s);
+        return terms.some((t) => hay.includes(t));
+      }
+    : undefined;
   return (
     <Page state={state}>
       {(all) => {
@@ -443,12 +470,16 @@ export const RecordsPanel: React.FC = () => {
         const recScopeLabel = year === "all" ? tl("All time") : year;
         const gameList = (
           title: string,
-          rows: HubRecords["game"]["fastest"],
+          rawRows: HubRecords["game"]["fastest"],
           fmt: (v: number) => string,
         ) => {
+          const rows = matchText
+            ? rawRows.filter((g) => matchText(`${g.w} ${g.a} ${g.b} ${g.t} ${g.e || ""} ${title}`))
+            : rawRows;
+          if (!rows.length) return null;
           const minV = Math.min(...rows.map((g) => g.v || 1));
           const maxV = Math.max(1, ...rows.map((g) => g.v || 1));
-          const lowerIsBetter = rows.length > 1 && rows[0].v < rows[rows.length - 1].v;
+          const lowerIsBetter = rawRows.length > 1 && rawRows[0].v < rawRows[rawRows.length - 1].v;
           return (
             <Section
               title={title}
@@ -546,10 +577,14 @@ export const RecordsPanel: React.FC = () => {
         };
         const playerList = (
           title: string,
-          rows: HubRecords["player"]["kills"],
+          rawRows: HubRecords["player"]["kills"],
           fmt: (v: number) => string = fmtNum,
         ) => {
-          const maxV = Math.max(1, rows[0]?.v || 1);
+          const rows = matchText
+            ? rawRows.filter((p) => matchText(`${p.pl} ${p.u || ""} ${p.c} ${champName(p.c)} ${p.opp} ${p.t} ${p.e || ""} ${title}`))
+            : rawRows;
+          if (!rows.length) return null;
+          const maxV = Math.max(1, rawRows[0]?.v || 1);
           return (
             <Section
               title={title}
@@ -667,10 +702,14 @@ export const RecordsPanel: React.FC = () => {
         };
         const careerList = (
           title: string,
-          rows: HubRecords["career"]["games"],
+          rawRows: HubRecords["career"]["games"],
           scopeLabel?: string,
         ) => {
-          const maxV = Math.max(1, rows[0]?.v || 1);
+          const rows = matchText
+            ? rawRows.filter((p) => matchText(`${p.pl} ${p.u || ""} ${title}`))
+            : rawRows;
+          if (!rows.length) return null;
+          const maxV = Math.max(1, rawRows[0]?.v || 1);
           return (
             <Section
               title={title}
@@ -720,12 +759,29 @@ export const RecordsPanel: React.FC = () => {
             </Section>
           );
         };
+        const streakRows = matchText
+          ? r.team.streaks.filter((t) => matchText(`${t.team} ${t.u || ""}`))
+          : r.team.streaks;
+        const titleRecordRows = matchText
+          ? r.team.titles.filter((t) => matchText(`${t.team} ${t.u || ""}`))
+          : r.team.titles;
         return (
           <CaptureContext.Provider value={year === "all" ? tl("All-time pro records") : tl("{year} records", { year })}>
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h1 className="text-lg font-bold text-rw-text">{year === "all" ? tl("Records") : tl("{year} records", { year })}</h1>
               <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setRecordsUrl(year, e.target.value);
+                  }}
+                  placeholder={tl("Filter by name or team…")}
+                  aria-label={tl("Filter by name or team…")}
+                  className="bg-rw-bg border border-rw-border rounded px-2.5 py-1 text-xs text-rw-text w-44"
+                />
                 {yearPick}
                 <CopyRecordsPost year={year} r={r} />
               </span>
@@ -738,7 +794,7 @@ export const RecordsPanel: React.FC = () => {
               {tl("The top records were checked against Leaguepedia.")}
             </p>
             <div className="grid gap-3 md:grid-cols-2 3xl:grid-cols-3 items-start">
-              {year === "all" && thisYearState.data && <ClosestToFalling all={all} year={thisYearState.data} label={thisYear} />}
+              {year === "all" && !matchText && thisYearState.data && <ClosestToFalling all={all} year={thisYearState.data} label={thisYear} />}
               {gameList(tl("Fastest wins"), r.game.fastest, mmss)}
               {gameList(tl("Longest games"), r.game.longest, mmss)}
               {gameList(tl("Most kills in a game"), r.game.bloodiest, (v) =>
@@ -758,18 +814,18 @@ export const RecordsPanel: React.FC = () => {
               {playerList(tl("Most damage in a game"), r.player.dmg)}
               {playerList(tl("Most CS in a game"), r.player.cs)}
               {r.pentas && r.pentas.recent.length > 0 && (
-                <PentakillRecords p={r.pentas} />
+                <PentakillRecords p={r.pentas} matchText={matchText} />
               )}
-              {year === "all" && (
+              {year === "all" && streakRows.length > 0 && (
               <Section
                 title={tl("Longest win streaks")}
                 right={
-                  r.team.streaks.length > 0 ? (
+                  streakRows.length > 0 ? (
                     <SectionCard
                       section={tl("Longest win streaks")}
                       name={tl("Records")}
                       rows={() =>
-                        r.team.streaks.slice(0, 10).map((t, i) => ({
+                        streakRows.slice(0, 10).map((t, i) => ({
                           rank: i + 1,
                           team: t.team,
                           label: t.team,
@@ -786,7 +842,7 @@ export const RecordsPanel: React.FC = () => {
                 <ol className="text-xs space-y-1.5">
                   {(() => {
                     const maxStreak = Math.max(1, r.team.streaks[0]?.v || 1);
-                    return r.team.streaks.map((t, i) => (
+                    return streakRows.map((t, i) => (
                       <li key={i} className="space-y-0.5 min-w-0">
                         <div className="flex justify-between gap-2 min-w-0">
                           <span className="inline-flex items-center gap-1.5 min-w-0">
@@ -820,18 +876,18 @@ export const RecordsPanel: React.FC = () => {
                 </ol>
               </Section>
               )}
-              {year === "all" && (
+              {year === "all" && titleRecordRows.length > 0 && (
               <Section
                 title={tl(
                   "Most international titles (Worlds, MSI, First Stand)",
                 )}
                 right={
-                  r.team.titles.length > 0 ? (
+                  titleRecordRows.length > 0 ? (
                     <SectionCard
                       section={tl("Most international titles (Worlds, MSI, First Stand)")}
                       name={tl("Records")}
                       rows={() =>
-                        r.team.titles.slice(0, 10).map((t, i) => ({
+                        titleRecordRows.slice(0, 10).map((t, i) => ({
                           rank: i + 1,
                           team: t.team,
                           label: t.team,
@@ -848,7 +904,7 @@ export const RecordsPanel: React.FC = () => {
                 <ol className="text-xs space-y-1.5">
                   {(() => {
                     const maxTitles = Math.max(1, r.team.titles[0]?.v || 1);
-                    return r.team.titles.map((t, i) => (
+                    return titleRecordRows.map((t, i) => (
                       <li key={i} className="space-y-0.5 min-w-0">
                         <div className="flex justify-between gap-2 min-w-0">
                           <span className="inline-flex items-center gap-1.5 min-w-0">
@@ -954,7 +1010,7 @@ export const TitlesPanel: React.FC = () => {
       <Page state={state}>
         {(data) => {
           const terms = search
-            .split(",")
+            .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
             .map((s) => normText(s.trim()))
             .filter(Boolean);
           const rows = data

@@ -77,22 +77,40 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
     return m || undefined;
   }, [rows, view]);
   const [spoilerHidden, reveal] = useHidden("best", latestDate);
-  const tq = normText(team.trim());
-  const teamAliasSlug = team.trim() ? aliases.data?.team[team.trim().toLowerCase()] : undefined;
+  const rawTeam = team.trim();
+  const isVsQuery = /\s+vs\.?\s+|\s+v\s+/i.test(rawTeam);
+  const teamTerms = useMemo(() => {
+    if (!rawTeam) return [];
+    const parts = isVsQuery ? rawTeam.split(/\s+vs\.?\s+|\s+v\s+/i) : rawTeam.split(/[,|]+/);
+    return parts
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((s) => ({
+        norm: normText(s),
+        aliasSlug: aliases.data?.team[s.toLowerCase()],
+      }));
+  }, [rawTeam, isVsQuery, aliases.data]);
   const shown = rows.filter((r) => {
     if (spoilerHidden && isFresh(dateOf(r))) return false;
     if (tiers.size && !tiers.has(ratingTier(r[0]))) return false;
     if (vodOnly && (view === "games" ? !(r as BestGame)[15] : !seriesWithVod.has(r[1]))) return false;
-    if (tq) {
-      const [a, aSlug, b, bSlug] =
+    if (teamTerms.length) {
+      const [a, aSlug, b, bSlug, en] =
         view === "series"
-          ? [(r as BestSeries)[6], (r as BestSeries)[7], (r as BestSeries)[8], (r as BestSeries)[9]]
-          : [(r as BestGame)[7], (r as BestGame)[8], (r as BestGame)[9], (r as BestGame)[10]];
-      const matchName = normText(a).includes(tq) || normText(b).includes(tq);
-      const matchSlug =
-        (aSlug && (aSlug === teamAliasSlug || normText(aSlug).includes(tq))) ||
-        (bSlug && (bSlug === teamAliasSlug || normText(bSlug).includes(tq)));
-      if (!matchName && !matchSlug) return false;
+          ? [(r as BestSeries)[6], (r as BestSeries)[7], (r as BestSeries)[8], (r as BestSeries)[9], (r as BestSeries)[3]]
+          : [(r as BestGame)[7], (r as BestGame)[8], (r as BestGame)[9], (r as BestGame)[10], (r as BestGame)[4]];
+      const matchesTerm = (term: { norm: string; aliasSlug?: string }) => {
+        const matchName = normText(a).includes(term.norm) || normText(b).includes(term.norm) || normText(en || "").includes(term.norm);
+        const matchSlug =
+          (aSlug && (aSlug === term.aliasSlug || normText(aSlug).includes(term.norm))) ||
+          (bSlug && (bSlug === term.aliasSlug || normText(bSlug).includes(term.norm)));
+        return Boolean(matchName || matchSlug);
+      };
+      if (isVsQuery && teamTerms.length >= 2) {
+        if (!teamTerms.every(matchesTerm)) return false;
+      } else {
+        if (!teamTerms.some(matchesTerm)) return false;
+      }
     }
     return true;
   });
@@ -235,6 +253,32 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
             />
             {tl("Only games with a VOD")}
           </label>
+          {isVsQuery && shown.length > 0 && (() => {
+            const first = shown[0];
+            const [aName, aSlug, bName, bSlug] =
+              view === "series"
+                ? [(first as BestSeries)[6], (first as BestSeries)[7], (first as BestSeries)[8], (first as BestSeries)[9]]
+                : [(first as BestGame)[7], (first as BestGame)[8], (first as BestGame)[9], (first as BestGame)[10]];
+            const sa = aSlug || prettySlug(aName);
+            const sb = bSlug || prettySlug(bName);
+            if (!sa || !sb || sa === sb) return null;
+            return (
+              <span className="inline-flex items-center gap-2 ml-auto">
+                <HubLink
+                  to={{ kind: "prep", a: sa, b: sb, period: year ? `y${year}` : undefined }}
+                  className="text-rw-accent hover:underline font-semibold"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "compare", mode: "team", a: sa, b: sb, period: year ? `y${year}` : undefined }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              </span>
+            );
+          })()}
         </div>
       </div>
 
