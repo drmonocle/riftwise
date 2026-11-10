@@ -34,7 +34,7 @@ import { ShareMatchButton } from "../ShareMatchButton";
 import { SwissStandings } from "../SwissStandings";
 import { INTL_EVENTS, intlMatchNow } from "../../intlNow";
 import { LatestResults } from "../IdleHome";
-import { prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, prettySlug, resolveEventSlug, resolveLeagueSlug } from "../../hub/data";
 import { BroadcastCardButton, SectionCard, rankingsCard } from "./BroadcastCard";
 import type { TabKey } from "../Navigation";
 
@@ -1340,10 +1340,15 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
     return list.filter((e) => {
       if (terms.length) {
         const lgSlug = e.l ? resolveLeagueSlug(e.l) : "";
-        const hay = `${e.n} ${e.l || ""} ${lgSlug} ${e.r || ""} ${e.w || ""} ${e.u || ""}`.toLowerCase();
+        const hay = `${e.n} ${e.l || ""} ${lgSlug} ${e.r || ""} ${e.w || ""} ${e.wu || ""} ${e.u || ""}`.toLowerCase();
         return terms.some((t) => {
           const resolvedT = resolveLeagueSlug(t);
-          return hay.includes(t) || (resolvedT && lgSlug === resolvedT);
+          return (
+            hay.includes(t) ||
+            (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
+            (resolvedT && lgSlug === resolvedT) ||
+            resolveEventSlug(t) === e.u
+          );
         });
       }
       if (e.p) return false; // stages are listed on their event's page

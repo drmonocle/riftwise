@@ -4,7 +4,7 @@
  * all time or by year and league. Every row opens the match page at that game.
  * Address: /stats/best?view=series&year=2025&league=lol-champions-korea
  */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { PlayCircle } from "lucide-react";
 import { tl, tn, tc, stageLabel, fmtDec } from "../../i18n";
 import { bare, loadAliases, loadBest, loadBestIndex, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
@@ -45,9 +45,21 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
     [year, lgRow?.[0] || "", Boolean(index.data), Boolean(index.error), asked],
   );
   // filters on the list itself (also synced to the address): tiers, games with a VOD, a team
-  const [tiers, setTiers] = useState<Set<string>>(() => new Set((q.get("tier") || "").split(",").filter(Boolean)));
-  const [vodOnly, setVodOnly] = useState(() => q.get("vod") === "1");
-  const [team, setTeam] = useState(() => q.get("team") || "");
+  const urlTiers = q.get("tier") || "";
+  const urlVod = q.get("vod") === "1";
+  const urlTeam = q.get("team") || q.get("q") || "";
+  const [tiers, setTiers] = useState<Set<string>>(() => new Set(urlTiers.split(",").filter(Boolean)));
+  const [vodOnly, setVodOnly] = useState(urlVod);
+  const [team, setTeam] = useState(urlTeam);
+  useEffect(() => {
+    setTiers(new Set(urlTiers.split(",").filter(Boolean)));
+  }, [urlTiers]);
+  useEffect(() => {
+    setVodOnly(urlVod);
+  }, [urlVod]);
+  useEffect(() => {
+    setTeam(urlTeam);
+  }, [urlTeam]);
 
   const setQ = (patch: Record<string, string | undefined>) => {
     const next = new URLSearchParams(q);

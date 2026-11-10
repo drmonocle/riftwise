@@ -3,7 +3,7 @@
  * scripts/stats/ratings.py), league strength, and how often the higher-rated team actually won.
  * Address: /stats/rankings
  */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { tl, tn } from "../../i18n";
 import { bare, loadRatings, loadRatingsHistory, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { hubShareUrl, navigateHub, useHubRoute } from "../../hub/route";
@@ -80,10 +80,16 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
   };
   const [limit, setLimit] = useState(50);
   const [asOf, setAsOf] = useState("");
-  const [search, setSearch] = useState(() => q.get("q") || "");
+  const urlQ = q.get("q") || q.get("team") || q.get("teams") || "";
+  const [search, setSearch] = useState(urlQ);
+  useEffect(() => {
+    setSearch(urlQ);
+  }, [urlQ]);
   const setSearchQ = (v: string) => {
     setSearch(v);
     const next = new URLSearchParams(q);
+    next.delete("team");
+    next.delete("teams");
     if (!v.trim()) next.delete("q");
     else next.set("q", v.trim());
     const qs = next.toString();

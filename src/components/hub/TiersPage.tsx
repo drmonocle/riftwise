@@ -4,15 +4,15 @@
  * picks. From the same files as the Champions page (champions/<key>.json, top leagues or all leagues).
  * Address: /stats/tiers?key=p26.20&scope=all&role=Mid
  */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
 import { ChampRow, ChampionStats, StatsMeta, loadChampionStats } from "../../stats";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
-import { ROLES, champAgg } from "../../hub/champAgg";
+import { ROLES, champAgg, matchedEventLabel, matchEventIndices } from "../../hub/champAgg";
 import { card, ChampIcon, HubLink, Loading, Section, useLoad, usePageTitle } from "./ui";
-import { loadAliases, loadChampGames, loadChampIndex, matchesChampSearch, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { loadAliases, loadChampGames, loadChampIndex, matchesChampSearch, prettySlug, resolveEventSlug, resolveLeagueSlug } from "../../hub/data";
 import { SectionCard } from "./BroadcastCard";
 
 const TIERS: { t: string; min: number; color: string }[] = [
@@ -45,10 +45,25 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
     navigateHub({ kind: "tiers", query: next.toString() }, { replace: true });
   };
   const patchKeys = meta.champions.filter((k) => k.startsWith("p"));
-  const askedKey = q.get("key") || (q.get("patch") ? `p${q.get("patch")}` : q.get("year") ? `y${q.get("year")}` : "");
+  const evSlug = q.get("event") || "";
+  const canonEvSlug = evSlug ? resolveEventSlug(evSlug) : "";
+  const evPrefix = (canonEvSlug || evSlug).replace(/-20\d{2}.*$/, "");
+  const evYr = /(?:^|-)(20\d{2})(?:-|$)/.exec(canonEvSlug || evSlug)?.[1] || "";
+  const askedKey =
+    q.get("key") ||
+    (q.get("patch") ? `p${q.get("patch")}` : q.get("year") ? `y${q.get("year")}` : evYr ? `y${evYr}` : "");
   const key = askedKey && meta.champions.includes(askedKey) ? askedKey : patchKeys[0] || meta.champions[0];
   const aliases = useLoad(loadAliases, []);
-  const askedScope = q.get("league") || q.get("scope") || "major";
+  const index = useLoad(loadChampIndex, []);
+  const leagues = index.data || [];
+  const inferredLeague =
+    !q.get("league") && !q.get("scope") && evPrefix && evPrefix !== (canonEvSlug || evSlug)
+      ? aliases.data?.league[evPrefix.toLowerCase()] || resolveLeagueSlug(evPrefix)
+      : "";
+  const askedScope =
+    q.get("league") ||
+    q.get("scope") ||
+    (inferredLeague && (!leagues.length || leagues.some((l) => l.u === inferredLeague)) ? inferredLeague : "major");
   const rawScope =
     askedScope === "major" || askedScope === "all"
       ? askedScope
@@ -56,8 +71,6 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
   const isLeague = rawScope !== "major" && rawScope !== "all";
   const scope: "major" | "all" = rawScope === "all" ? "all" : "major";
   const role = ROLES.includes(q.get("role") || "") ? q.get("role")! : "";
-  const index = useLoad(loadChampIndex, []);
-  const leagues = index.data || [];
   const mainLeagues = leagues.filter((l) => l.pr);
   const otherLeagues = leagues.filter((l) => !l.pr && Object.values(l.y).reduce((s, n) => s + n, 0) >= 100);
   const state = useLoad<ChampionStats>(() => (isLeague ? Promise.resolve({ games: 0, all: { games: 0, champs: [] }, major: { games: 0, champs: [] } }) : loadChampionStats(key)), [key, isLeague]);
@@ -66,7 +79,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
       if (!isLeague) return Promise.resolve(null);
       const lg = leagues.find((l) => l.u === rawScope);
       const availYears = Object.keys(lg?.y || {}).sort().reverse();
-      if (!availYears.length) return Promise.resolve({ games: 0, champs: [] as ChampRow[] });
+      if (!availYears.length) return Promise.resolve({ games: 0, champs: [] as ChampRow[], events: [] as [string, string][], eventLabel: null as string | null });
       let targetYears: string[] = [];
       let patchFilter: string | undefined;
       if (key.startsWith("y")) {
@@ -80,9 +93,14 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
       } else {
         targetYears = availYears;
       }
-      if (!targetYears.length) return Promise.resolve({ games: 0, champs: [] as ChampRow[] });
+      if (!targetYears.length) return Promise.resolve({ games: 0, champs: [] as ChampRow[], events: [] as [string, string][], eventLabel: null as string | null });
       return Promise.all(targetYears.map((y) => loadChampGames(rawScope, y))).then((files) => {
-        const allGames = files.flatMap((f) => f.games);
+        const allGames = files.flatMap((f) => {
+          if (!evSlug) return f.games;
+          const em = matchEventIndices(f.events, evSlug, canonEvSlug);
+          if (em == null) return [];
+          return f.games.filter((g) => (typeof em === "number" ? g[2] === em : em.has(g[2])));
+        });
         const agg = champAgg(allGames, { patch: patchFilter });
         const champs: ChampRow[] = agg.rows.map((r) => ({
           c: r.c,
@@ -95,13 +113,20 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
           gpm: r.gpm,
           dpm: r.dpm,
         }));
-        return { games: agg.games, champs };
+        const singleEvents = files.length === 1 ? files[0].events : [];
+        const singleMatch = files.length === 1 && evSlug ? matchEventIndices(files[0].events, evSlug, canonEvSlug) : null;
+        const eventLabel = files.length === 1 ? matchedEventLabel(files[0].events, singleMatch, canonEvSlug || evSlug) : null;
+        return { games: agg.games, champs, events: singleEvents, eventLabel };
       });
     },
-    [isLeague, rawScope, key, leagues.length],
+    [isLeague, rawScope, key, leagues.length, evSlug, canonEvSlug],
   );
   const block = isLeague ? lgBlock.data : state.data?.[scope] || state.data?.all;
-  const [champFilter, setChampFilter] = useState(() => q.get("champ") || q.get("q") || "");
+  const urlChampFilter = q.get("champ") || q.get("q") || "";
+  const [champFilter, setChampFilter] = useState(urlChampFilter);
+  useEffect(() => {
+    setChampFilter(urlChampFilter);
+  }, [urlChampFilter]);
 
   const byRole = useMemo(() => {
     const out = new Map<string, Ranked[]>(ROLES.map((r) => [r, []]));
@@ -125,7 +150,9 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
   const label = (k: string) =>
     k === "all" ? tl("All time (2011 to today)") : k.startsWith("p") ? tl("Patch {patch}", { patch: k.slice(1) }) : tl("Year {year}", { year: k.slice(1) });
   const leagueName = isLeague ? leagues.find((l) => l.u === rawScope)?.l || rawScope.toUpperCase() : "";
-  const fullLabel = isLeague ? `${leagueName} · ${label(key)}` : label(key);
+  const fullLabel = isLeague
+    ? `${lgBlock.data?.eventLabel || leagueName} · ${label(key)}`
+    : label(key);
   const sel = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-xs text-rw-text";
   const shown = role ? [role] : ROLES;
   const topChamps = shown
@@ -148,12 +175,14 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                       ? {
                           league: rawScope,
                           ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
+                          ...(evSlug ? { event: evSlug } : {}),
                         }
                       : {
                           key,
                           ...(scope === "all" ? { scope: "all" } : {}),
                         }),
                     ...(role ? { role } : {}),
+                    ...(champFilter.trim() ? { q: champFilter.trim() } : {}),
                   }).toString(),
                 }}
                 className="font-semibold text-rw-accent hover:underline"
@@ -244,6 +273,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                   query: new URLSearchParams({
                     ...(isLeague ? { league: rawScope } : {}),
                     ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
+                    ...(evSlug ? { event: evSlug } : {}),
                     ...(role ? { role } : {}),
                     ...(champFilter.trim() && topChamp ? { champ: topChamp.c } : {}),
                   }).toString(),
@@ -286,12 +316,15 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
           <input
             type="search"
             value={champFilter}
-            onChange={(e) => setChampFilter(e.target.value)}
+            onChange={(e) => {
+              setChampFilter(e.target.value);
+              set({ q: e.target.value.trim() || undefined, champ: undefined });
+            }}
             placeholder={tl("Search champions…")}
             aria-label={tl("Search champions…")}
             className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text placeholder:text-rw-muted w-36 focus:border-rw-accent focus:outline-none"
           />
-          <select value={key} onChange={(e) => set({ key: e.target.value, year: undefined, patch: undefined })} aria-label={tl("Patch or year")} className={sel}>
+          <select value={key} onChange={(e) => set({ key: e.target.value, year: undefined, patch: undefined, event: undefined })} aria-label={tl("Patch or year")} className={sel}>
             {meta.champions.map((k) => (
               <option key={k} value={k}>
                 {label(k)}
@@ -302,7 +335,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
             value={rawScope}
             onChange={(e) => {
               const v = e.target.value;
-              set({ scope: v === "major" ? undefined : v, league: undefined });
+              set({ scope: v === "major" ? undefined : v, league: undefined, event: undefined });
             }}
             aria-label={tl("Leagues")}
             className={sel}
@@ -328,6 +361,28 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
               </optgroup>
             )}
           </select>
+          {isLeague && lgBlock.data?.events && lgBlock.data.events.length > 0 && (() => {
+            const evs = lgBlock.data.events;
+            const em = matchEventIndices(evs, evSlug, canonEvSlug);
+            const activeEv = typeof em === "number" ? evs[em]?.[0] || "" : em ? canonEvSlug || evSlug : "";
+            const parentEvLabel = em instanceof Set ? lgBlock.data.eventLabel : null;
+            return (
+              <select
+                value={activeEv}
+                onChange={(e) => set({ event: e.target.value || undefined })}
+                aria-label={tl("Tournaments")}
+                className={sel}
+              >
+                <option value="">{tl("All tournaments")}</option>
+                {parentEvLabel && activeEv && <option value={activeEv}>{parentEvLabel}</option>}
+                {evs.map(([u, n]) => (
+                  <option key={u} value={u}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            );
+          })()}
           <span className="flex flex-wrap gap-1" role="group" aria-label={tl("Role")}>
             {["", ...ROLES].map((r) => (
               <button
@@ -350,6 +405,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                 query: new URLSearchParams({
                   ...(isLeague ? { league: rawScope } : {}),
                   ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
+                  ...(evSlug ? { event: evSlug } : {}),
                   ...(role ? { role } : {}),
                 }).toString(),
               }}

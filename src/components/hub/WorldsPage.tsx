@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ClipboardCopy, Dice5, Eraser, Lock, RefreshCw, Shuffle, Sparkles, TrendingUp, Trophy } from "lucide-react";
 import { eventName, eventTitle, stageName, tk, tl } from "../../i18n";
-import { loadEventLines, loadHubEvent, loadHubTitles, loadLeague, loadRatings, prettySlug } from "../../hub/data";
+import { bare, loadEventLines, loadHubEvent, loadHubTitles, loadLeague, loadRatings, prettySlug } from "../../hub/data";
 import type { EventListItem, HubEvent, HubLeague, HubRatings } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import {
@@ -672,15 +672,8 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
         const t = byU.get(u);
         const opp = next.get(u);
         const oppT = opp ? byU.get(opp) : undefined;
-        return terms.some(
-          (q) =>
-            u.toLowerCase().includes(q) ||
-            (t?.n || "").toLowerCase().includes(q) ||
-            (t?.c || "").toLowerCase().includes(q) ||
-            (opp || "").toLowerCase().includes(q) ||
-            (oppT?.n || "").toLowerCase().includes(q) ||
-            (oppT?.c || "").toLowerCase().includes(q),
-        );
+        const hay = `${u} ${t?.n || ""} ${t?.c || ""} ${opp || ""} ${oppT?.n || ""} ${oppT?.c || ""}`.toLowerCase();
+        return terms.some((q) => hay.includes(q) || (bare(q).length >= 2 && bare(hay).includes(bare(q))));
       })
     : allRows;
   return (
@@ -730,7 +723,10 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                   {tl("Game finder")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "rankings", query: "league=world-championship" }}
+                  to={{
+                    kind: "rankings",
+                    query: search.trim() && rows.length <= 4 ? `q=${encodeURIComponent(rows.slice(0, 2).join(","))}` : "league=world-championship",
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Power rankings")} →
@@ -738,7 +734,7 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                 <HubLink
                   to={{
                     kind: "tiers",
-                    query: `league=world-championship${eventSlug && /\d{4}/.test(eventSlug) ? `&key=y${/\d{4}/.exec(eventSlug)![0]}` : ""}`,
+                    query: `league=world-championship${eventSlug && /\d{4}/.test(eventSlug) ? `&key=y${/\d{4}/.exec(eventSlug)![0]}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >

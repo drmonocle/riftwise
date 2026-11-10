@@ -223,7 +223,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                       kind: "leaders",
                       query: new URLSearchParams({
                         ...(e.lu ? { league: e.lu } : {}),
-                        ...(!e.whole ? { event: e.u } : {}),
+                        ...(e.u ? { event: e.u } : {}),
                         ...(e.start || e.end ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                       }).toString(),
                     }}
@@ -237,6 +237,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                       query: new URLSearchParams({
                         ...(e.lu ? { league: e.lu } : {}),
                         ...(e.start || e.end ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                        ...(e.u ? { event: e.u } : {}),
                       }).toString() || undefined,
                     }}
                     className={heroBtn()}

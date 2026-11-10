@@ -3,10 +3,10 @@
  * role or all, with a minimum number of games (hub/leagueyear/<league>/<year>.json, hub/event/<slug>.json).
  * Address: /stats/leaders?league=lol-champions-korea&year=2026&event=<tournament>&role=Mid&min=10
  */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { loadAliases, loadHubEvent, loadLeagues, loadLeagueSeason, matchesChampSearch, prettySlug, resolveLeagueSlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, loadAliases, loadHubEvent, loadLeagues, loadLeagueSeason, matchesChampSearch, prettySlug, resolveLeagueSlug, resolvePlayerSlug } from "../../hub/data";
 import type { EventPlayer, LeagueRow } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { ROLES } from "../../hub/champAgg";
@@ -62,7 +62,11 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
   const autoMin = Math.max(1, Math.ceil(Math.max(0, ...inRole.map((p) => p.g)) * 0.3));
   const minG = q.has("min") ? Math.max(1, Number(q.get("min")) || 1) : autoMin;
   const rows = useMemo(() => inRole.filter((p) => p.g >= minG), [inRole, minG]);
-  const [search, setSearch] = useState(() => q.get("q") || q.get("champ") || "");
+  const urlSearch = q.get("q") || q.get("champ") || "";
+  const [search, setSearch] = useState(urlSearch);
+  useEffect(() => {
+    setSearch(urlSearch);
+  }, [urlSearch]);
   const shownRows = useMemo(() => {
     const terms = search
       .toLowerCase()
@@ -83,6 +87,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
           (u && resolvePlayerSlug(term) === u) ||
           t.includes(term) ||
           tu.includes(term) ||
+          (bare(term).length >= 2 && (bare(n).includes(bare(term)) || bare(t).includes(bare(term)))) ||
           cs.some((c) => matchesChampSearch(c, term)),
       );
     });
@@ -333,6 +338,9 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
           </select>
           <select value={event} onChange={(e) => set({ event: e.target.value || undefined })} aria-label={tl("Tournament")} className={sel}>
             <option value="">{tl("Whole season")}</option>
+            {event && !(season.data?.events || []).some(([u]) => u === event) && (
+              <option value={event}>{ev.data?.n || event}</option>
+            )}
             {(season.data?.events || []).map(([u, n]) => (
               <option key={u} value={u}>
                 {n}
@@ -575,6 +583,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                     query: new URLSearchParams({
                       ...(league ? { scope: league } : {}),
                       ...(year ? { key: `y${year}` } : {}),
+                      ...(event ? { event } : {}),
                       ...(role ? { role } : {}),
                     }).toString(),
                   }}

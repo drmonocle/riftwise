@@ -4,7 +4,7 @@
  * browser (blind-pick rate and first picks come from the draft order). Filters live in the address, so a view
  * can be shared: /stats/champions?league=lck&year=2026&patch=26.18&role=Mid
  */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName, fmtDec } from "../../i18n";
 import { ChampionStats, StatsMeta, loadChampionStats } from "../../stats";
 import { loadAliases, loadChampGames, loadChampIndex, matchesChampSearch, normText, prettySlug, resolveEventSlug, resolveLeagueSlug } from "../../hub/data";
@@ -334,7 +334,11 @@ const LeagueTable: React.FC<{
   setQ,
   indexLoading,
 }) => {
-  const [search, setSearch] = useState(() => q.get("champ") || q.get("q") || "");
+  const urlSearch = q.get("champ") || q.get("q") || "";
+  const [search, setSearch] = useState(urlSearch);
+  useEffect(() => {
+    setSearch(urlSearch);
+  }, [urlSearch]);
   const ys = [...years].sort().reverse();
   const evYr = /(?:^|-)(20\d{2})(?:-|$)/.exec(q.get("event") || "")?.[1] || "";
   const year = q.get("year") || (q.get("key")?.startsWith("y") ? q.get("key")!.slice(1) : "") || (evYr && ys.includes(evYr) ? evYr : "") || ys[0] || "";
@@ -597,7 +601,10 @@ const LeagueTable: React.FC<{
         <input
           type="search"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setQ({ q: e.target.value.trim() || undefined, champ: undefined });
+          }}
           placeholder={tl("Search champions…")}
           aria-label={tl("Search champions…")}
           className={`${sel} w-44`}
@@ -673,7 +680,16 @@ const LeagueTable: React.FC<{
               {tl("Counter-pick finder")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tiers", query: `scope=${encodeURIComponent(league)}${patchQ ? `&key=p${encodeURIComponent(patchQ)}` : year ? `&key=y${encodeURIComponent(year)}` : ""}${roleQ ? `&role=${encodeURIComponent(roleQ)}` : ""}` }}
+              to={{
+                kind: "tiers",
+                query: new URLSearchParams({
+                  scope: league,
+                  ...(patchQ ? { key: `p${patchQ}` } : year ? { key: `y${year}` } : {}),
+                  ...(eventSlug ? { event: eventSlug } : {}),
+                  ...(roleQ ? { role: roleQ } : {}),
+                  ...(search.trim() ? { q: search.trim() } : {}),
+                }).toString(),
+              }}
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Pro tier list")} →
@@ -802,7 +818,11 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
   q,
   setQ,
 }) => {
-  const [search, setSearch] = useState(() => q.get("champ") || q.get("q") || "");
+  const urlSearch = q.get("champ") || q.get("q") || "";
+  const [search, setSearch] = useState(urlSearch);
+  useEffect(() => {
+    setSearch(urlSearch);
+  }, [urlSearch]);
   const askedKey = q.get("key") || (q.get("patch") ? `p${q.get("patch")}` : q.get("year") ? `y${q.get("year")}` : "");
   const key = askedKey && meta.champions.includes(askedKey) ? askedKey : meta.champions.find((k) => k.startsWith("p")) || meta.champions[0];
   const state = useLoad<ChampionStats>(() => loadChampionStats(key), [key]);
@@ -971,7 +991,10 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
         <input
           type="search"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setQ({ q: e.target.value.trim() || undefined, champ: undefined });
+          }}
           placeholder={tl("Search champions…")}
           aria-label={tl("Search champions…")}
           className={`${sel} w-44`}
@@ -1015,7 +1038,15 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
               {tl("Counter-pick finder")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tiers", query: `key=${encodeURIComponent(key)}${scope === "all" ? "&scope=all" : ""}${roleQ ? `&role=${encodeURIComponent(roleQ)}` : ""}` }}
+              to={{
+                kind: "tiers",
+                query: new URLSearchParams({
+                  key,
+                  ...(scope === "all" ? { scope: "all" } : {}),
+                  ...(roleQ ? { role: roleQ } : {}),
+                  ...(search.trim() ? { q: search.trim() } : {}),
+                }).toString(),
+              }}
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Pro tier list")} →
