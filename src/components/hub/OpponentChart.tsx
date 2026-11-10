@@ -737,6 +737,17 @@ export const PlayerOpponents: React.FC<{
           {!search.trim() && (
             <>
               <HubLink
+                to={{
+                  kind: "compare",
+                  mode: "player",
+                  a: slug,
+                  ...(period ? { period } : scope !== "all" ? { period: scope } : {}),
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "items", query: `player=${encodeURIComponent(slug)}${periodQuerySuffix(period || scope)}` }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -1178,7 +1189,7 @@ export const TeamOpponentsChart: React.FC<{
               className="bg-rw-bg border border-rw-border rounded-md px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted focus:border-rw-accent focus:outline-none w-36"
             />
           )}
-          {search.trim() && filtered.length >= 1 && (
+          {filtered.length >= 1 && (
             <>
               <HubLink
                 to={{ kind: "prep", a: teamSlug, b: filtered[0].u || prettySlug(filtered[0].n) }}
@@ -1200,14 +1211,12 @@ export const TeamOpponentsChart: React.FC<{
               </HubLink>
             </>
           )}
-          {!search.trim() && (
-            <HubLink
-              to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}` }}
-              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-            >
-              {tl("Game finder")} →
-            </HubLink>
-          )}
+          <HubLink
+            to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}` }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Game finder")} →
+          </HubLink>
           {filtered.length > limit && !search.trim() && (
             <button
               type="button"
@@ -1483,7 +1492,7 @@ export const TeamPeriodOpponents: React.FC<{
               ))}
             </span>
           )}
-          {q && filtered.length >= 1 && (
+          {filtered.length >= 1 && (
             <>
               <HubLink
                 to={{ kind: "prep", a: teamSlug, b: filtered[0].u || prettySlug(filtered[0].opp), period: pVal }}
@@ -1505,14 +1514,12 @@ export const TeamPeriodOpponents: React.FC<{
               </HubLink>
             </>
           )}
-          {!q && (
-            <HubLink
-              to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}${pSuffix}` }}
-              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-            >
-              {tl("Game finder")} →
-            </HubLink>
-          )}
+          <HubLink
+            to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}${pSuffix}` }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Game finder")} →
+          </HubLink>
           {filtered.length > 10 && !q && (
             <button type="button" onClick={() => setShowAll((v) => !v)} className="text-[11px] text-rw-accent hover:underline">
               {showAll ? tl("Show fewer") : tl("Show all {n}", { n: filtered.length })}

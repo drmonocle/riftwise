@@ -118,6 +118,35 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
       right={
         !hidden ? (
           <span className="flex flex-wrap items-center gap-2">
+            {o.best?.a && o.best?.b && (
+              <>
+                <HubLink
+                  to={{
+                    kind: "prep",
+                    a: prettySlug(o.best.a),
+                    b: prettySlug(o.best.b),
+                    ...(slug ? { period: `e:${slug}` } : {}),
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "compare",
+                    mode: "team",
+                    a: prettySlug(o.best.a),
+                    b: prettySlug(o.best.b),
+                    ...(slug ? { period: `e:${slug}` } : {}),
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              </>
+            )}
             {slug && (
               <>
                 <HubLink
@@ -574,6 +603,14 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
           )}
           {filteredRosters.length > 0 && (
             <>
+              {eventSlug && (
+                <HubLink
+                  to={{ kind: "finder", query: `event=${encodeURIComponent(eventSlug)}` }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
+              )}
               <CopyExtrasPost
                 title={tl("Team rosters")}
                 rows={filteredRosters.slice(0, 6).map((t) => {

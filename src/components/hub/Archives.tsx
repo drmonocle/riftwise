@@ -300,7 +300,23 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
 };
 
 export const TeamSeriesArchive: React.FC<{ slug: string; teamName: string }> = ({ slug, teamName }) => (
-  <Section title={tl("Every series")} right={<span className="text-[11px] text-rw-muted">{tl("Show every series this team played")}</span>}>
+  <Section
+    title={tl("Every series")}
+    right={
+      <span className="flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="text-rw-muted">{tl("Show every series this team played")}</span>
+        <HubLink to={{ kind: "prep", a: slug }} className="text-rw-accent hover:underline">
+          {tl("Match prep")} →
+        </HubLink>
+        <HubLink to={{ kind: "draft", query: `teams=${encodeURIComponent(slug)}` }} className="text-rw-accent hover:underline">
+          {tl("Draft board")} →
+        </HubLink>
+        <HubLink to={{ kind: "compare", mode: "team", a: slug }} className="text-rw-accent hover:underline">
+          {tl("Compare")} →
+        </HubLink>
+      </span>
+    }
+  >
     <TeamSeriesBody slug={slug} teamName={teamName} />
   </Section>
 );
@@ -869,7 +885,23 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
 };
 
 export const PlayerGamesArchive: React.FC<{ slug: string; playerName?: string }> = ({ slug, playerName }) => (
-  <Section title={tl("Every game")} right={<span className="text-[11px] text-rw-muted">{tl("Show every game, with filters for year and champion")}</span>}>
+  <Section
+    title={tl("Every game")}
+    right={
+      <span className="flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="text-rw-muted">{tl("Show every game, with filters for year and champion")}</span>
+        <HubLink to={{ kind: "compare", mode: "player", a: slug }} className="text-rw-accent hover:underline">
+          {tl("Compare")} →
+        </HubLink>
+        <HubLink to={{ kind: "items", query: `player=${encodeURIComponent(slug)}` }} className="text-rw-accent hover:underline">
+          {tl("Item history")} →
+        </HubLink>
+        <HubLink to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}` }} className="text-rw-accent hover:underline">
+          {tl("Game finder")} →
+        </HubLink>
+      </span>
+    }
+  >
     <PlayerGamesBody slug={slug} playerName={playerName} />
   </Section>
 );
@@ -886,9 +918,20 @@ export const PlayerChampGames: React.FC<{ slug: string; playerName?: string; cha
   <Section
     title={tl("Every game on {champ}", { champ: champName(champ) })}
     right={
-      <button type="button" onClick={onClose} className="text-[11px] text-rw-accent hover:underline">
-        {tl("Close")}
-      </button>
+      <span className="flex flex-wrap items-center gap-2 text-[11px]">
+        <HubLink to={{ kind: "counters", query: `champ=${encodeURIComponent(prettySlug(champ))}` }} className="text-rw-accent hover:underline">
+          {tl("Counters")} →
+        </HubLink>
+        <HubLink to={{ kind: "items", query: `player=${encodeURIComponent(slug)}&champ=${encodeURIComponent(prettySlug(champ))}` }} className="text-rw-accent hover:underline">
+          {tl("Item history")} →
+        </HubLink>
+        <HubLink to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&champ=${encodeURIComponent(champ)}` }} className="text-rw-accent hover:underline">
+          {tl("Game finder")} →
+        </HubLink>
+        <button type="button" onClick={onClose} className="text-rw-accent hover:underline">
+          {tl("Close")}
+        </button>
+      </span>
     }
   >
     <PlayerGamesBody slug={slug} playerName={playerName} champ={champ} year={year} period={period} />

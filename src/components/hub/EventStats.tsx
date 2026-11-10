@@ -129,44 +129,82 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
         <span className="flex items-center gap-1">
           {f.rows.length >= 2 &&
             (f.rows[0].player && f.rows[1].player && f.rows[0].player !== f.rows[1].player ? (
-              <HubLink
-                to={{
-                  kind: "compare",
-                  mode: "player",
-                  a: f.rows[0].player,
-                  b: f.rows[1].player,
-                  ...(eventSlug ? { period: `e:${eventSlug}` } : {}),
-                }}
-                className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
-                data-nocapture="1"
-              >
-                {tl("Compare")} →
-              </HubLink>
+              <>
+                <HubLink
+                  to={{
+                    kind: "compare",
+                    mode: "player",
+                    a: f.rows[0].player,
+                    b: f.rows[1].player,
+                    ...(eventSlug ? { period: `e:${eventSlug}` } : {}),
+                  }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: `player=${encodeURIComponent(f.rows[0].player)}`,
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+              </>
             ) : !f.rows[0].player && !f.rows[0].champ && f.rows[0].team && f.rows[1].team && f.rows[0].team !== f.rows[1].team ? (
-              <HubLink
-                to={{
-                  kind: "compare",
-                  mode: "team",
-                  a: f.rows[0].team,
-                  b: f.rows[1].team,
-                  ...(eventSlug ? { period: `e:${eventSlug}` } : {}),
-                }}
-                className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
-                data-nocapture="1"
-              >
-                {tl("Compare")} →
-              </HubLink>
+              <>
+                <HubLink
+                  to={{
+                    kind: "prep",
+                    a: f.rows[0].team,
+                    b: f.rows[1].team,
+                    ...(eventSlug ? { period: `e:${eventSlug}` } : {}),
+                  }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "compare",
+                    mode: "team",
+                    a: f.rows[0].team,
+                    b: f.rows[1].team,
+                    ...(eventSlug ? { period: `e:${eventSlug}` } : {}),
+                  }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              </>
             ) : f.rows[0].champ && f.rows[1].champ && f.rows[0].champ !== f.rows[1].champ ? (
-              <HubLink
-                to={{
-                  kind: "counters",
-                  query: `champ=${prettySlug(f.rows[0].champ)}&vs=${encodeURIComponent(f.rows[1].champ)}`,
-                }}
-                className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
-                data-nocapture="1"
-              >
-                {tl("Counters")} →
-              </HubLink>
+              <>
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: `champ=${prettySlug(f.rows[0].champ)}&vs=${encodeURIComponent(f.rows[1].champ)}`,
+                  }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: `champ=${encodeURIComponent(prettySlug(f.rows[0].champ))}`,
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+              </>
             ) : null)}
           <SectionCard
             section={f.title}

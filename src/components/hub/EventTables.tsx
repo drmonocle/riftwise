@@ -236,6 +236,24 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
       share={`${e.u}-players`}
       right={
         <span className="flex flex-wrap items-center gap-2">
+          {rows.length >= 2 && rows[0].u && rows[1].u && (
+            <HubLink
+              to={{ kind: "compare", mode: "player", a: rows[0].u, b: rows[1].u, period: `e:${e.u}` }}
+              className="text-[11px] text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Compare")} →
+            </HubLink>
+          )}
+          {rows.length >= 1 && rows[0].u && (
+            <HubLink
+              to={{ kind: "items", query: `player=${encodeURIComponent(rows[0].u)}` }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Item history")} →
+            </HubLink>
+          )}
           <HubLink
             to={{
               kind: "leaders",
@@ -537,6 +555,35 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
       share={`${e.u}-teams`}
       right={
         <span className="flex flex-wrap items-center gap-2">
+          {rows.length >= 2 && (
+            <>
+              <HubLink
+                to={{
+                  kind: "prep",
+                  a: rows[0].u || prettySlug(rows[0].t),
+                  b: rows[1].u || prettySlug(rows[1].t),
+                  period: `e:${e.u}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "compare",
+                  mode: "team",
+                  a: rows[0].u || prettySlug(rows[0].t),
+                  b: rows[1].u || prettySlug(rows[1].t),
+                  period: `e:${e.u}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            </>
+          )}
           <HubLink
             to={{ kind: "draft", query: `p=e:${encodeURIComponent(e.u)}` }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
