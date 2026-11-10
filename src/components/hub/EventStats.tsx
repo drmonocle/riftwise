@@ -69,11 +69,91 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
       })
       .filter((f): f is Fact => f !== null);
   }, [facts, terms.join("|")]);
+  const allRows = useMemo(() => filteredFacts.flatMap((f) => f.rows), [filteredFacts]);
+  const topTeams = useMemo(() => {
+    const out: string[] = [];
+    for (const r of allRows) {
+      if (r.team && !out.includes(r.team)) out.push(r.team);
+      if (out.length >= 2) break;
+    }
+    return out;
+  }, [allRows]);
+  const topPlayers = useMemo(() => {
+    const out: string[] = [];
+    for (const r of allRows) {
+      if (r.player && !out.includes(r.player)) out.push(r.player);
+      if (out.length >= 2) break;
+    }
+    return out;
+  }, [allRows]);
+  const topChamps = useMemo(() => {
+    const out: string[] = [];
+    for (const r of allRows) {
+      if (r.champ && !out.includes(r.champ)) out.push(r.champ);
+      if (out.length >= 2) break;
+    }
+    return out;
+  }, [allRows]);
   return (
     <div className="space-y-4">
       {facts.length > 6 && (
         <div className="flex flex-wrap items-center justify-between gap-2" data-nocapture="1">
           <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] font-semibold">
+            {topTeams.length >= 1 && (
+              <>
+                <HubLink
+                  to={{
+                    kind: "prep",
+                    a: topTeams[0],
+                    ...(topTeams[1] ? { b: topTeams[1] } : {}),
+                    ...(eventSlug ? { period: `e:${eventSlug}` } : {}),
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "compare",
+                    mode: topPlayers.length >= 1 && terms.length > 0 ? "player" : "team",
+                    a: topPlayers.length >= 1 && terms.length > 0 ? topPlayers[0] : topTeams[0],
+                    ...(topPlayers.length >= 1 && terms.length > 0
+                      ? topPlayers[1]
+                        ? { b: topPlayers[1] }
+                        : {}
+                      : topTeams[1]
+                        ? { b: topTeams[1] }
+                        : {}),
+                    ...(eventSlug ? { period: `e:${eventSlug}` } : {}),
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              </>
+            )}
+            {topChamps.length >= 1 && (
+              <>
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: `champ=${encodeURIComponent(prettySlug(topChamps[0]))}${topChamps[1] ? `&vs=${encodeURIComponent(prettySlug(topChamps[1]))}` : ""}`,
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: `champ=${encodeURIComponent(prettySlug(topChamps[0]))}`,
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+              </>
+            )}
             <HubLink to={{ kind: "records" }} className="text-rw-accent hover:underline">
               {tl("Records")} →
             </HubLink>
@@ -93,7 +173,13 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
               {tl("Pro tier list")} →
             </HubLink>
             <HubLink
-              to={{ kind: "draft", ...(eventSlug ? { query: `p=e:${encodeURIComponent(eventSlug)}` } : {}) }}
+              to={{
+                kind: "draft",
+                query: new URLSearchParams({
+                  ...(topTeams.length >= 1 ? { teams: topTeams.join(",") } : {}),
+                  ...(eventSlug ? { p: `e:${eventSlug}` } : {}),
+                }).toString() || undefined,
+              }}
               className="text-rw-accent hover:underline"
             >
               {tl("Draft board")} →
@@ -210,13 +296,25 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `player=${encodeURIComponent(f.rows[0].player)}`,
+                    query: `player=${encodeURIComponent(f.rows[0].player)}${f.rows[0].champ ? `&champ=${encodeURIComponent(prettySlug(f.rows[0].champ))}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
                 >
                   {tl("Item history")} →
                 </HubLink>
+                {f.rows[0].champ && (
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      query: `champ=${encodeURIComponent(prettySlug(f.rows[0].champ))}${f.rows[1]?.champ && f.rows[1].champ !== f.rows[0].champ ? `&vs=${encodeURIComponent(prettySlug(f.rows[1].champ))}` : ""}`,
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                    data-nocapture="1"
+                  >
+                    {tl("Counters")} →
+                  </HubLink>
+                )}
                 <HubLink
                   to={{
                     kind: "leaders",
@@ -232,6 +330,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                     kind: "finder",
                     query: new URLSearchParams({
                       player: f.rows[0].player,
+                      ...(f.rows[0].champ ? { champ: f.rows[0].champ } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
                     }).toString(),
                   }}
@@ -388,14 +487,60 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   {tl("Power rankings")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "leaders", ...(eventSlug ? { query: `event=${encodeURIComponent(eventSlug)}` } : {}) }}
+                  to={{
+                    kind: "leaders",
+                    query: new URLSearchParams({
+                      champ: f.rows[0].champ,
+                      ...(eventSlug ? { event: eventSlug } : {}),
+                    }).toString(),
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
                 >
                   {tl("Player leaderboards")} →
                 </HubLink>
               </>
-            ) : null)}
+            ) : (
+              <>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    ...(eventSlug ? { query: `p=e:${encodeURIComponent(eventSlug)}` } : {}),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "finder",
+                    ...(eventSlug ? { query: `event=${encodeURIComponent(eventSlug)}` } : {}),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "leaders",
+                    ...(eventSlug ? { query: `event=${encodeURIComponent(eventSlug)}` } : {}),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "tiers" }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
+              </>
+            ))}
           <SectionCard
             section={f.title}
             sub={f.headline}

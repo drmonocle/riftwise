@@ -111,6 +111,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
   const redPct = sideTotal > 0 ? 100 - bluePct : 50;
   const drakes = Object.entries(o.drakes).sort((a, b) => b[1] - a[1]);
   const totalDrakes = drakes.reduce((s, [, n]) => s + n, 0) || 1;
+  const featGame = o.best || o.bloody || o.long || o.short;
   return (
     <Section
       title={tl("Tournament stats")}
@@ -118,13 +119,13 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
       right={
         !hidden ? (
           <span className="flex flex-wrap items-center gap-2">
-            {o.best?.a && o.best?.b && (
+            {featGame?.a && featGame?.b && (
               <>
                 <HubLink
                   to={{
                     kind: "prep",
-                    a: prettySlug(o.best.a),
-                    b: prettySlug(o.best.b),
+                    a: prettySlug(featGame.a),
+                    b: prettySlug(featGame.b),
                     ...(slug ? { period: `e:${slug}` } : {}),
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
@@ -135,7 +136,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(prettySlug(o.best.a))},${encodeURIComponent(prettySlug(o.best.b))}${slug ? `&p=e:${encodeURIComponent(slug)}` : ""}`,
+                    query: `teams=${encodeURIComponent(prettySlug(featGame.a))},${encodeURIComponent(prettySlug(featGame.b))}${slug ? `&p=e:${encodeURIComponent(slug)}` : ""}`,
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -146,8 +147,8 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                   to={{
                     kind: "compare",
                     mode: "team",
-                    a: prettySlug(o.best.a),
-                    b: prettySlug(o.best.b),
+                    a: prettySlug(featGame.a),
+                    b: prettySlug(featGame.b),
                     ...(slug ? { period: `e:${slug}` } : {}),
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
@@ -466,8 +467,22 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                   >
                     {tl("Compare")} →
                   </HubLink>
+                  {o.pentas[0].c && (
+                    <HubLink
+                      to={{
+                        kind: "counters",
+                        query: `champ=${encodeURIComponent(prettySlug(o.pentas[0].c))}${o.pentas[1]?.c && o.pentas[1].c !== o.pentas[0].c ? `&vs=${encodeURIComponent(prettySlug(o.pentas[1].c))}` : ""}`,
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Counters")} →
+                    </HubLink>
+                  )}
                   <HubLink
-                    to={{ kind: "items", query: `player=${encodeURIComponent(o.pentas[0].u || prettySlug(o.pentas[0].n))}` }}
+                    to={{
+                      kind: "items",
+                      query: `player=${encodeURIComponent(o.pentas[0].u || prettySlug(o.pentas[0].n))}${o.pentas[0].c ? `&champ=${encodeURIComponent(prettySlug(o.pentas[0].c))}` : ""}`,
+                    }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Item history")} →
@@ -479,7 +494,13 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                   <HubLink to={{ kind: "leaders", query: `event=${encodeURIComponent(slug)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                     {tl("Player leaderboards")} →
                   </HubLink>
-                  <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                  <HubLink
+                    to={{
+                      kind: "finder",
+                      query: `event=${encodeURIComponent(slug)}${o.pentas[0] ? `&player=${encodeURIComponent(o.pentas[0].u || o.pentas[0].n)}${o.pentas[0].c ? `&champ=${encodeURIComponent(o.pentas[0].c)}` : ""}` : ""}`,
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
                     {tl("Game finder")} →
                   </HubLink>
                 </>
@@ -647,13 +668,13 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
               className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text w-40"
             />
           )}
-          {filteredRosters.length >= 2 && (
+          {filteredRosters.length >= 1 && (
             <>
               <HubLink
                 to={{
                   kind: "prep",
                   a: filteredRosters[0].u || prettySlug(filteredRosters[0].t),
-                  b: filteredRosters[1].u || prettySlug(filteredRosters[1].t),
+                  ...(filteredRosters[1] ? { b: filteredRosters[1].u || prettySlug(filteredRosters[1].t) } : {}),
                   period: eventSlug ? `e:${eventSlug}` : undefined,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -663,7 +684,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(filteredRosters[0].u || prettySlug(filteredRosters[0].t))},${encodeURIComponent(filteredRosters[1].u || prettySlug(filteredRosters[1].t))}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}`,
+                  query: `teams=${encodeURIComponent(filteredRosters[0].u || prettySlug(filteredRosters[0].t))}${filteredRosters[1] ? `,${encodeURIComponent(filteredRosters[1].u || prettySlug(filteredRosters[1].t))}` : ""}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -674,41 +695,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                   kind: "compare",
                   mode: "team",
                   a: filteredRosters[0].u || prettySlug(filteredRosters[0].t),
-                  b: filteredRosters[1].u || prettySlug(filteredRosters[1].t),
-                  period: eventSlug ? `e:${eventSlug}` : undefined,
-                }}
-                className="text-[11px] text-rw-accent hover:underline"
-              >
-                {tl("Compare")} →
-              </HubLink>
-            </>
-          )}
-          {q && filteredRosters.length === 1 && (
-            <>
-              <HubLink
-                to={{
-                  kind: "prep",
-                  a: filteredRosters[0].u || prettySlug(filteredRosters[0].t),
-                  period: eventSlug ? `e:${eventSlug}` : undefined,
-                }}
-                className="text-[11px] text-rw-accent hover:underline"
-              >
-                {tl("Match prep")} →
-              </HubLink>
-              <HubLink
-                to={{
-                  kind: "draft",
-                  query: `teams=${encodeURIComponent(filteredRosters[0].u || prettySlug(filteredRosters[0].t))}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}`,
-                }}
-                className="text-[11px] text-rw-accent hover:underline"
-              >
-                {tl("Draft board")} →
-              </HubLink>
-              <HubLink
-                to={{
-                  kind: "compare",
-                  mode: "team",
-                  a: filteredRosters[0].u || prettySlug(filteredRosters[0].t),
+                  ...(filteredRosters[1] ? { b: filteredRosters[1].u || prettySlug(filteredRosters[1].t) } : {}),
                   period: eventSlug ? `e:${eventSlug}` : undefined,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -892,7 +879,7 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
       right={
         <span className="flex flex-wrap items-center gap-2">
           <HubLink
-            to={{ kind: "rankings" }}
+            to={{ kind: "rankings", ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}) }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
           >
@@ -934,7 +921,7 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
             {tl("Game finder")} →
           </HubLink>
           <HubLink
-            to={{ kind: "tiers" }}
+            to={{ kind: "tiers", ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}) }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
           >
