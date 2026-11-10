@@ -164,6 +164,12 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                       {tl("Compare")} →
                     </HubLink>
                     <HubLink
+                      to={{ kind: "rankings", ...(league ? { query: `league=${encodeURIComponent(league)}` } : {}) }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Power rankings")} →
+                    </HubLink>
+                    <HubLink
                       to={{
                         kind: "finder",
                         query: new URLSearchParams({

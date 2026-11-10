@@ -314,6 +314,9 @@ export const TeamSeriesArchive: React.FC<{ slug: string; teamName: string }> = (
         <HubLink to={{ kind: "compare", mode: "team", a: slug }} className="text-rw-accent hover:underline">
           {tl("Compare")} →
         </HubLink>
+        <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(slug)}` }} className="text-rw-accent hover:underline">
+          {tl("Game finder")} →
+        </HubLink>
       </span>
     }
   >
@@ -896,6 +899,9 @@ export const PlayerGamesArchive: React.FC<{ slug: string; playerName?: string }>
         <HubLink to={{ kind: "items", query: `player=${encodeURIComponent(slug)}` }} className="text-rw-accent hover:underline">
           {tl("Item history")} →
         </HubLink>
+        <HubLink to={{ kind: "leaders" }} className="text-rw-accent hover:underline">
+          {tl("Player leaderboards")} →
+        </HubLink>
         <HubLink to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}` }} className="text-rw-accent hover:underline">
           {tl("Game finder")} →
         </HubLink>
@@ -924,6 +930,9 @@ export const PlayerChampGames: React.FC<{ slug: string; playerName?: string; cha
         </HubLink>
         <HubLink to={{ kind: "items", query: `player=${encodeURIComponent(slug)}&champ=${encodeURIComponent(prettySlug(champ))}` }} className="text-rw-accent hover:underline">
           {tl("Item history")} →
+        </HubLink>
+        <HubLink to={{ kind: "tiers" }} className="text-rw-accent hover:underline">
+          {tl("Pro tier list")} →
         </HubLink>
         <HubLink to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&champ=${encodeURIComponent(champ)}` }} className="text-rw-accent hover:underline">
           {tl("Game finder")} →

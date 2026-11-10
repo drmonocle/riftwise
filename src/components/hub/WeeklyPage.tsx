@@ -509,6 +509,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     {tl("Compare")} →
                   </HubLink>
                   <HubLink
+                    to={{ kind: "finder", query: `team=${encodeURIComponent(prettySlug(w.best[0].a))}&vs=${encodeURIComponent(prettySlug(w.best[0].b))}` }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Game finder")} →
+                  </HubLink>
+                  <HubLink
                     to={{ kind: "best" }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >

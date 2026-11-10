@@ -453,14 +453,22 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
               <Crown className="w-3 h-3" />
               {tl("Most Player of the Game awards")}
             </span>
-            {o.mvp.length >= 2 && o.mvp[0].u && o.mvp[1].u && (
+            <span className="flex items-center gap-2">
+              {o.mvp.length >= 2 && o.mvp[0].u && o.mvp[1].u && (
+                <HubLink
+                  to={{ kind: "compare", mode: "player", a: o.mvp[0].u, b: o.mvp[1].u, period: slug ? `e:${slug}` : undefined }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              )}
               <HubLink
-                to={{ kind: "compare", mode: "player", a: o.mvp[0].u, b: o.mvp[1].u, period: slug ? `e:${slug}` : undefined }}
-                className="text-[11px] text-rw-accent hover:underline"
+                to={{ kind: "leaders", ...(slug ? { query: `event=${encodeURIComponent(slug)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
-                {tl("Compare")} →
+                {tl("Leaderboards")} →
               </HubLink>
-            )}
+            </span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {(() => {
@@ -603,6 +611,12 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
           )}
           {filteredRosters.length > 0 && (
             <>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
               {eventSlug && (
                 <HubLink
                   to={{ kind: "finder", query: `event=${encodeURIComponent(eventSlug)}` }}

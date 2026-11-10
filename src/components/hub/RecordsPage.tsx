@@ -1365,6 +1365,12 @@ export const TitlesPanel: React.FC = () => {
                     </>
                   )}
                   <HubLink
+                    to={{ kind: "rankings" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Power rankings")} →
+                  </HubLink>
+                  <HubLink
                     to={{ kind: "worlds" }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >

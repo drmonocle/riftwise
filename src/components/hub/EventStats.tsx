@@ -153,6 +153,16 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                 >
                   {tl("Item history")} →
                 </HubLink>
+                <HubLink
+                  to={{
+                    kind: "leaders",
+                    ...(eventSlug ? { query: `event=${encodeURIComponent(eventSlug)}` } : {}),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
               </>
             ) : !f.rows[0].player && !f.rows[0].champ && f.rows[0].team && f.rows[1].team && f.rows[0].team !== f.rows[1].team ? (
               <>
@@ -167,6 +177,16 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   data-nocapture="1"
                 >
                   {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(f.rows[0].team)},${encodeURIComponent(f.rows[1].team)}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}`,
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Draft board")} →
                 </HubLink>
                 <HubLink
                   to={{
@@ -203,6 +223,13 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   data-nocapture="1"
                 >
                   {tl("Item history")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "tiers" }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Pro tier list")} →
                 </HubLink>
               </>
             ) : null)}

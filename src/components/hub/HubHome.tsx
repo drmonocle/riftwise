@@ -230,6 +230,12 @@ export const HubHome: React.FC<{
                     <HubLink to={{ kind: "compare", mode: "team", a: top2[0][0], b: top2[1][0] }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                       {tl("Compare")}
                     </HubLink>
+                    <HubLink
+                      to={{ kind: "finder", query: `team=${encodeURIComponent(top2[0][0])}&vs=${encodeURIComponent(top2[1][0])}` }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Game finder")}
+                    </HubLink>
                   </>
                 ) : null;
               })()}
@@ -596,6 +602,9 @@ const LatestTournaments: React.FC<{ latest: EventListItem[] }> = ({ latest }) =>
               {tl("Compare")} →
             </HubLink>
           )}
+          <HubLink to={{ kind: "titles" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Titles")} →
+          </HubLink>
           <HubLink to={{ kind: "tournaments" }} className="text-[11px] text-rw-accent hover:underline">
             {tl("Tournaments")} →
           </HubLink>
@@ -1098,6 +1107,15 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(rows[0].wu || prettySlug(rows[0].w))},${encodeURIComponent(rows[1].wu || prettySlug(rows[1].w))}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
               </HubLink>
               <HubLink
                 to={{ kind: "compare", mode: "team", a: rows[0].wu || prettySlug(rows[0].w), b: rows[1].wu || prettySlug(rows[1].w) }}

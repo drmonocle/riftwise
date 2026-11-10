@@ -451,6 +451,12 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                   ) : null;
                 })()}
                 <HubLink
+                  to={{ kind: "rankings", ...(league ? { query: `league=${encodeURIComponent(league)}` } : {}) }}
+                  className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Power rankings")} →
+                </HubLink>
+                <HubLink
                   to={{
                     kind: "finder",
                     query: new URLSearchParams({

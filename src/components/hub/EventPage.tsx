@@ -291,6 +291,12 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                   </>
                 )}
                 <HubLink
+                  to={{ kind: "rankings", ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}) }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Power rankings")} →
+                </HubLink>
+                <HubLink
                   to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
@@ -853,6 +859,12 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
               >
                 {tl("Compare")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "finder", query: `team=${encodeURIComponent(finalS.au)}&vs=${encodeURIComponent(finalS.bu)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
             </span>
           ) : undefined
         }
@@ -935,6 +947,12 @@ const StageLists: React.FC<{ stages: Stage[] }> = ({ stages }) => {
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Compare")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "finder", query: `team=${encodeURIComponent(shown[0].au)}&vs=${encodeURIComponent(shown[0].bu)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
               </HubLink>
             </>
           )}
@@ -1054,6 +1072,12 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
                 </HubLink>
               </>
             )}
+            <HubLink
+              to={{ kind: "rankings" }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Power rankings")} →
+            </HubLink>
             {eventSlug && (
               <HubLink
                 to={{ kind: "finder", query: `event=${encodeURIComponent(eventSlug)}` }}
@@ -1440,6 +1464,12 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean }> = ({ e, full }) => 
               {tl("Item history")} →
             </HubLink>
           )}
+          <HubLink
+            to={{ kind: "tiers" }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")} →
+          </HubLink>
           <HubLink
             to={{
               kind: "draft",

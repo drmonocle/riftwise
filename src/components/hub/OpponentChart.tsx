@@ -1212,6 +1212,12 @@ export const TeamOpponentsChart: React.FC<{
             </>
           )}
           <HubLink
+            to={{ kind: "rankings" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Power rankings")} →
+          </HubLink>
+          <HubLink
             to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}` }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
@@ -1514,6 +1520,12 @@ export const TeamPeriodOpponents: React.FC<{
               </HubLink>
             </>
           )}
+          <HubLink
+            to={{ kind: "rankings" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Power rankings")} →
+          </HubLink>
           <HubLink
             to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}${pSuffix}` }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
