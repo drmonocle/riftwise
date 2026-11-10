@@ -294,6 +294,29 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                 >
                   {tl("Item history")} →
                 </HubLink>
+                {p.club && (
+                  <>
+                    <HubLink
+                      to={{
+                        kind: "prep",
+                        a: prettySlug(p.club),
+                        ...(periodKey ? { period: periodKey } : {}),
+                      }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(prettySlug(p.club))}${periodKey ? `&p=${encodeURIComponent(periodKey)}` : ""}`,
+                      }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                  </>
+                )}
                 <HubLink
                   to={{
                     kind: "leaders",
@@ -906,6 +929,22 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                 >
                   {tl("Game finder")}
                 </HubLink>
+                {sel.team && sel.opp && (
+                  <>
+                    <HubLink
+                      to={{ kind: "prep", a: prettySlug(sel.team), b: prettySlug(sel.opp) }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Match prep")}
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(prettySlug(sel.team))},${encodeURIComponent(prettySlug(sel.opp))}` }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")}
+                    </HubLink>
+                  </>
+                )}
                 <HubLink
                   to={{ kind: "tiers", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -1914,6 +1953,13 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Item history")} →
+                    </HubLink>{" "}
+                    ·{" "}
+                    <HubLink
+                      to={{ kind: "draft", query: `p=p:${encodeURIComponent(sel.p)}` }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Draft board")} →
                     </HubLink>{" "}
                     ·{" "}
                     <HubLink

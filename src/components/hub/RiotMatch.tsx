@@ -229,6 +229,15 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
             >
               {tl("Pro tier list")}
             </HubLink>
+            <HubLink
+              to={{
+                kind: "leaders",
+                ...(m.leagueSlug || m.leagueName ? { query: `league=${encodeURIComponent(resolveLeagueSlug(m.leagueSlug || m.leagueName))}` } : {}),
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+            >
+              {tl("Player leaderboards")}
+            </HubLink>
           </span>
         </div>
         <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">

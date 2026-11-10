@@ -154,6 +154,28 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
           )}
           {!narrow && terms.length === 0 && (
             <span className="flex items-center gap-2" data-nocapture="1">
+              {blocks.length >= 1 && (() => {
+                const m0 = blocks[0].m;
+                const a = findHubTeam(data.index, m0.team1Name, m0.team1Code) || prettySlug(m0.team1Name || m0.team1Code);
+                const b = findHubTeam(data.index, m0.team2Name, m0.team2Code) || prettySlug(m0.team2Name || m0.team2Code);
+                const p = m0.startTimeUtc ? `y${m0.startTimeUtc.slice(0, 4)}` : undefined;
+                return (
+                  <>
+                    <HubLink to={{ kind: "prep", a, b, period: p }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}${p ? `&p=${encodeURIComponent(p)}` : ""}` }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink to={{ kind: "compare", mode: "team", a, b, period: p }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                      {tl("Compare")} →
+                    </HubLink>
+                  </>
+                );
+              })()}
               <HubLink to={{ kind: "records" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Records")} →
               </HubLink>
@@ -207,6 +229,12 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Pro tier list")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "leaders" }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Player leaderboards")} →
                 </HubLink>
               </span>
             );

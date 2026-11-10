@@ -941,6 +941,29 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                   {tl("Counters")} →
                 </HubLink>
               )}
+              {who?.club && (
+                <>
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: prettySlug(who.club),
+                      ...(period !== "all" ? { period } : {}),
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "draft",
+                      query: `teams=${encodeURIComponent(prettySlug(who.club))}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                </>
+              )}
               <HubLink
                 to={leaderTo("kda")}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1132,6 +1155,29 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 >
                   {tl("Compare")} →
                 </HubLink>
+                {who?.club && (
+                  <>
+                    <HubLink
+                      to={{
+                        kind: "prep",
+                        a: prettySlug(who.club),
+                        ...(period !== "all" ? { period } : {}),
+                      }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(prettySlug(who.club))}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                      }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                  </>
+                )}
                 <HubLink
                   to={{ kind: "rankings" }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"

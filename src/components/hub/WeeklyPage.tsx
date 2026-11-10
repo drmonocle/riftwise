@@ -731,6 +731,40 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   >
                     {tl("Item history")} →
                   </HubLink>
+                  {w.players[0].best?.c && (
+                    <HubLink
+                      to={{
+                        kind: "counters",
+                        query: `champ=${encodeURIComponent(prettySlug(w.players[0].best.c))}${w.players[0].r ? `&role=${encodeURIComponent(w.players[0].r)}` : ""}`,
+                      }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Counters")} →
+                    </HubLink>
+                  )}
+                  {w.players[0].t && (
+                    <>
+                      <HubLink
+                        to={{
+                          kind: "prep",
+                          a: prettySlug(w.players[0].t),
+                          ...(w.players[1]?.t && prettySlug(w.players[1].t) !== prettySlug(w.players[0].t) ? { b: prettySlug(w.players[1].t) } : {}),
+                        }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Match prep")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "draft",
+                          query: `teams=${encodeURIComponent(prettySlug(w.players[0].t))}${w.players[1]?.t && prettySlug(w.players[1].t) !== prettySlug(w.players[0].t) ? `,${encodeURIComponent(prettySlug(w.players[1].t))}` : ""}`,
+                        }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Draft board")} →
+                      </HubLink>
+                    </>
+                  )}
                   <HubLink
                     to={{ kind: "leaders" }}
                     className="text-rw-accent hover:underline font-semibold"
@@ -1061,9 +1095,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         <HubLink
                           to={{
                             kind: "finder",
-                            ...(rTerms.length > 0
-                              ? { query: `team=${encodeURIComponent(shownResults[0].au)}&vs=${encodeURIComponent(shownResults[0].bu)}` }
-                              : {}),
+                            query: `team=${encodeURIComponent(shownResults[0].au)}&vs=${encodeURIComponent(shownResults[0].bu)}`,
                           }}
                           className="text-[11px] font-semibold text-rw-accent hover:underline"
                         >

@@ -1446,9 +1446,39 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
             title={tl("Swiss stage")}
             share={`worlds-${year}-swiss`}
             right={
-              Object.keys(swiss.rec).length > 0 ? (
-                <BroadcastCardButton data={() => swissPicksCard(swiss.rec, byU, d.name)} name={`worlds-${year}-my-swiss`} label={tl("Overview card")} />
-              ) : undefined
+              <span className="flex flex-wrap items-center gap-2">
+                {teams.length >= 2 && (
+                  <>
+                    <HubLink to={{ kind: "prep", a: teams[0].u, b: teams[1].u, period: `y${year}` }} className="text-[11px] text-rw-accent hover:underline">
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(teams[0].u)},${encodeURIComponent(teams[1].u)}&p=y${encodeURIComponent(year)}` }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink to={{ kind: "compare", mode: "team", a: teams[0].u, b: teams[1].u, period: `y${year}` }} className="text-[11px] text-rw-accent hover:underline">
+                      {tl("Compare")} →
+                    </HubLink>
+                  </>
+                )}
+                <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(main.u)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Game finder")} →
+                </HubLink>
+                <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Power rankings")} →
+                </HubLink>
+                <HubLink to={{ kind: "tiers", query: `league=world-championship&key=y${encodeURIComponent(year)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Pro tier list")} →
+                </HubLink>
+                <HubLink to={{ kind: "leaders", query: `event=${encodeURIComponent(main.u)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Player leaderboards")} →
+                </HubLink>
+                {Object.keys(swiss.rec).length > 0 && (
+                  <BroadcastCardButton data={() => swissPicksCard(swiss.rec, byU, d.name)} name={`worlds-${year}-my-swiss`} label={tl("Overview card")} />
+                )}
+              </span>
             }
           >
             <p className="text-[11px] text-rw-muted">
@@ -1479,9 +1509,39 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
           title={tl("Knockouts")}
           share={`worlds-${year}-knockouts`}
           right={
-            swiss.done && ko && ko.qf.some((m) => m.w) ? (
-              <BroadcastCardButton data={() => bracketPicksCard(ko, byU, d.name)} name={`worlds-${year}-my-bracket`} label={tl("Overview card")} />
-            ) : undefined
+            <span className="flex flex-wrap items-center gap-2">
+              {teams.length >= 2 && (
+                <>
+                  <HubLink to={{ kind: "prep", a: teams[0].u, b: teams[1].u, period: `y${year}` }} className="text-[11px] text-rw-accent hover:underline">
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "draft", query: `teams=${encodeURIComponent(teams[0].u)},${encodeURIComponent(teams[1].u)}&p=y${encodeURIComponent(year)}` }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                  <HubLink to={{ kind: "compare", mode: "team", a: teams[0].u, b: teams[1].u, period: `y${year}` }} className="text-[11px] text-rw-accent hover:underline">
+                    {tl("Compare")} →
+                  </HubLink>
+                </>
+              )}
+              <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(main.u)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Game finder")} →
+              </HubLink>
+              <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Power rankings")} →
+              </HubLink>
+              <HubLink to={{ kind: "tiers", query: `league=world-championship&key=y${encodeURIComponent(year)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink to={{ kind: "leaders", query: `event=${encodeURIComponent(main.u)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Player leaderboards")} →
+              </HubLink>
+              {swiss.done && ko && ko.qf.some((m) => m.w) && (
+                <BroadcastCardButton data={() => bracketPicksCard(ko, byU, d.name)} name={`worlds-${year}-my-bracket`} label={tl("Overview card")} />
+              )}
+            </span>
           }
         >
           {!swiss.done ? (
@@ -1667,6 +1727,14 @@ const MatchBox: React.FC<{ m: WMatch; byU: Map<string, WTeam>; onPick: (u: strin
                 title={tl("Draft board")}
               >
                 {tl("Draft board")}
+              </HubLink>
+              <span aria-hidden="true">·</span>
+              <HubLink
+                to={{ kind: "finder", query: `team=${encodeURIComponent(m.a)}&vs=${encodeURIComponent(m.b)}` }}
+                className="hover:text-rw-accent hover:underline"
+                title={tl("Game finder")}
+              >
+                {tl("Game finder")}
               </HubLink>
             </>
           )}
@@ -1930,9 +1998,39 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
         title={tl("Bracket picker")}
         share={`${kind}-${d.year}-bracket`}
         right={
-          res.matches.some((m) => m.w) ? (
-            <BroadcastCardButton data={() => msiBracketCard(res, byU, d.name, kind)} name={`${kind}-${d.year}-my-bracket`} label={tl("Overview card")} />
-          ) : undefined
+          <span className="flex flex-wrap items-center gap-2">
+            {teams.length >= 2 && (
+              <>
+                <HubLink to={{ kind: "prep", a: teams[0].u, b: teams[1].u, period: `y${d.year}` }} className="text-[11px] text-rw-accent hover:underline">
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "draft", query: `teams=${encodeURIComponent(teams[0].u)},${encodeURIComponent(teams[1].u)}&p=y${encodeURIComponent(String(d.year))}` }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink to={{ kind: "compare", mode: "team", a: teams[0].u, b: teams[1].u, period: `y${d.year}` }} className="text-[11px] text-rw-accent hover:underline">
+                  {tl("Compare")} →
+                </HubLink>
+              </>
+            )}
+            <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(main.u)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Game finder")} →
+            </HubLink>
+            <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Power rankings")} →
+            </HubLink>
+            <HubLink to={{ kind: "tiers", query: `key=y${encodeURIComponent(String(d.year))}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Pro tier list")} →
+            </HubLink>
+            <HubLink to={{ kind: "leaders", query: `event=${encodeURIComponent(main.u)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Player leaderboards")} →
+            </HubLink>
+            {res.matches.some((m) => m.w) && (
+              <BroadcastCardButton data={() => msiBracketCard(res, byU, d.name, kind)} name={`${kind}-${d.year}-my-bracket`} label={tl("Overview card")} />
+            )}
+          </span>
         }
       >
         <p className="text-[11px] text-rw-muted">

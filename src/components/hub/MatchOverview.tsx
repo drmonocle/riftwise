@@ -281,6 +281,26 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               >
                 {tl("Pro tier list")} →
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  navigateHub({ kind: "finder", query: `team=${encodeURIComponent(x.team.u)}&vs=${encodeURIComponent(y.team.u)}` });
+                }}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  navigateHub({ kind: "rankings" });
+                }}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </button>
             </span>
           </div>
           <div className="grid grid-cols-1 gap-1">

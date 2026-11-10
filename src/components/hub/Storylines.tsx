@@ -340,6 +340,16 @@ export const OwnStorylines: React.FC<{
               </>
             ) : (
               <>
+                {who.team && (
+                  <>
+                    <HubLink to={{ kind: "prep", a: prettySlug(who.team) }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink to={{ kind: "draft", query: `teams=${encodeURIComponent(prettySlug(who.team))}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                      {tl("Draft board")} →
+                    </HubLink>
+                  </>
+                )}
                 <HubLink to={{ kind: "compare", mode: "player", a: who.slug }} className="text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Compare")} →
                 </HubLink>
@@ -393,6 +403,25 @@ export const HomeStorylines: React.FC = () => {
           <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
             {terms.length === 0 && (
               <>
+                {(() => {
+                  const topTeams = Array.from(new Set(all.filter((r) => r.t === "team").map((r) => r.u)));
+                  return topTeams.length >= 2 ? (
+                    <>
+                      <HubLink to={{ kind: "prep", a: topTeams[0], b: topTeams[1] }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                        {tl("Match prep")} →
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "draft", query: `teams=${encodeURIComponent(topTeams[0])},${encodeURIComponent(topTeams[1])}` }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Draft board")} →
+                      </HubLink>
+                      <HubLink to={{ kind: "compare", mode: "team", a: topTeams[0], b: topTeams[1] }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                        {tl("Compare")} →
+                      </HubLink>
+                    </>
+                  ) : null;
+                })()}
                 <HubLink to={{ kind: "records" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Records")} →
                 </HubLink>

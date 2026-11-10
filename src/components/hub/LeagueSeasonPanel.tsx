@@ -187,14 +187,14 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
             <div className="flex items-center justify-between gap-2 mb-1">
               <div className="text-[10px] font-semibold text-rw-muted">{tl("Standout players")}</div>
               <span className="flex items-center gap-2" data-nocapture="1">
-                {regular.length >= 2 && (
+                {regular.length >= 1 && (
                   <>
                     <HubLink
                       to={{
                         kind: "compare",
                         mode: "player",
                         a: regular[0].u || prettySlug(regular[0].n),
-                        b: regular[1].u || prettySlug(regular[1].n),
+                        ...(regular[1] ? { b: regular[1].u || prettySlug(regular[1].n) } : {}),
                         period: `y${year}`,
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline"
@@ -210,6 +210,36 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                     >
                       {tl("Item history")} →
                     </HubLink>
+                    {(regular[0].tu || regular[0].t) && (
+                      <>
+                        <HubLink
+                          to={{
+                            kind: "prep",
+                            a: regular[0].tu || prettySlug(regular[0].t),
+                            ...(regular[1] && (regular[1].tu || regular[1].t) && (regular[1].tu || prettySlug(regular[1].t)) !== (regular[0].tu || prettySlug(regular[0].t))
+                              ? { b: regular[1].tu || prettySlug(regular[1].t) }
+                              : {}),
+                            period: `y${year}`,
+                          }}
+                          className="text-[11px] font-semibold text-rw-accent hover:underline"
+                        >
+                          {tl("Match prep")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "draft",
+                            query: `teams=${encodeURIComponent(regular[0].tu || prettySlug(regular[0].t))}${
+                              regular[1] && (regular[1].tu || regular[1].t) && (regular[1].tu || prettySlug(regular[1].t)) !== (regular[0].tu || prettySlug(regular[0].t))
+                                ? `,${encodeURIComponent(regular[1].tu || prettySlug(regular[1].t))}`
+                                : ""
+                            }&p=y${encodeURIComponent(year)}`,
+                          }}
+                          className="text-[11px] font-semibold text-rw-accent hover:underline"
+                        >
+                          {tl("Draft board")} →
+                        </HubLink>
+                      </>
+                    )}
                     <HubLink
                       to={{
                         kind: "finder",

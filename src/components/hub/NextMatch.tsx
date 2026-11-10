@@ -190,12 +190,26 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                 <span className="inline-flex items-center gap-1.5 shrink-0">
                   <MatchPrepButton match={c.m} compact />
                   {c.opp && (
-                    <HubLink
-                      to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)},${encodeURIComponent(c.opp)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
-                      className="text-[11px] font-medium text-rw-accent hover:underline"
-                    >
-                      {tl("Draft board")}
-                    </HubLink>
+                    <>
+                      <HubLink
+                        to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)},${encodeURIComponent(c.opp)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                        className="text-[11px] font-medium text-rw-accent hover:underline"
+                      >
+                        {tl("Draft board")}
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "compare", mode: "team", a: t.u, b: c.opp, period }}
+                        className="text-[11px] font-medium text-rw-accent hover:underline"
+                      >
+                        {tl("Compare")}
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&vs=${encodeURIComponent(c.opp)}` }}
+                        className="text-[11px] font-medium text-rw-accent hover:underline"
+                      >
+                        {tl("Game finder")}
+                      </HubLink>
+                    </>
                   )}
                   <MatchOverviewButton match={c.m} compact />
                   <HubLink to={{ kind: "match", slug: RIOT_PREFIX + c.m.matchId }} className="text-rw-muted hover:text-rw-accent hover:underline">

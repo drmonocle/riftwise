@@ -65,11 +65,16 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                 </button>
               ))}
             </span>
-            {filteredRows.length >= 2 && (
+            {filteredRows.length >= 1 && (
               <>
                 <HubLink
                   data-nocapture="1"
-                  to={{ kind: "prep", a: filteredRows[0].u, b: filteredRows[1].u, period: `e:${e.u}` }}
+                  to={{
+                    kind: "prep",
+                    a: filteredRows[0].u,
+                    ...(filteredRows[1] ? { b: filteredRows[1].u } : {}),
+                    period: `e:${e.u}`,
+                  }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
                   title={tl("Match prep")}
                 >
@@ -77,7 +82,10 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                 </HubLink>
                 <HubLink
                   data-nocapture="1"
-                  to={{ kind: "draft", query: `teams=${encodeURIComponent(filteredRows[0].u)},${encodeURIComponent(filteredRows[1].u)}&p=${encodeURIComponent(`e:${e.u}`)}` }}
+                  to={{
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(filteredRows[0].u)}${filteredRows[1] ? `,${encodeURIComponent(filteredRows[1].u)}` : ""}&p=${encodeURIComponent(`e:${e.u}`)}`,
+                  }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
                   title={tl("Draft board")}
                 >
@@ -85,15 +93,24 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                 </HubLink>
                 <HubLink
                   data-nocapture="1"
-                  to={{ kind: "compare", mode: "team", a: filteredRows[0].u, b: filteredRows[1].u, period: `e:${e.u}` }}
+                  to={{
+                    kind: "compare",
+                    mode: "team",
+                    a: filteredRows[0].u,
+                    ...(filteredRows[1] ? { b: filteredRows[1].u } : {}),
+                    period: `e:${e.u}`,
+                  }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
-                  title={tl("Compare {a} and {b}", { a: filteredRows[0].name, b: filteredRows[1].name })}
+                  title={filteredRows[1] ? tl("Compare {a} and {b}", { a: filteredRows[0].name, b: filteredRows[1].name }) : tl("Compare")}
                 >
                   {tl("Compare")} →
                 </HubLink>
                 <HubLink
                   data-nocapture="1"
-                  to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }}
+                  to={{
+                    kind: "finder",
+                    query: `event=${encodeURIComponent(e.u)}${terms.length > 0 ? `&team=${encodeURIComponent(filteredRows[0].u)}${filteredRows[1] ? `&vs=${encodeURIComponent(filteredRows[1].u)}` : ""}` : ""}`,
+                  }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
                   {tl("Game finder")} →
