@@ -599,7 +599,28 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
               <tr key={role} className="border-t border-rw-border/60">
                 <PlayerCells p={l[i]} teamName={left.name} align="left" />
                 <td className="px-1 text-center text-[9px] uppercase text-rw-muted min-w-14 whitespace-nowrap align-middle">
-                  <div>{roleName(ROLE_LABEL[role])}</div>
+                  {l[i].meta && r[i].meta ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigateHub({
+                          kind: "compare",
+                          mode: "player",
+                          a: prettySlug(playerName(l[i].meta!.summonerName)),
+                          b: prettySlug(playerName(r[i].meta!.summonerName)),
+                        })
+                      }
+                      className="hover:text-rw-accent hover:underline"
+                      title={tl("Compare {a} and {b}", {
+                        a: playerName(l[i].meta!.summonerName),
+                        b: playerName(r[i].meta!.summonerName),
+                      })}
+                    >
+                      {roleName(ROLE_LABEL[role])}
+                    </button>
+                  ) : (
+                    <div>{roleName(ROLE_LABEL[role])}</div>
+                  )}
                   {gd != null && (
                     <div
                       className={`font-mono text-[10px] font-semibold tabular-nums normal-case ${gd > 150 ? "text-rw-teal" : gd < -150 ? "text-rw-red" : "text-rw-muted"}`}
@@ -1007,7 +1028,28 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
           return (
             <React.Fragment key={i}>
               {cell(p, left.name, false)}
-              <span className="text-[10px] text-rw-muted text-center w-12">{roleName(ROLE_LABEL[p.role] || p.role)}</span>
+              {p && q ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigateHub({
+                      kind: "compare",
+                      mode: "player",
+                      a: prettySlug(playerName(p.summonerName)),
+                      b: prettySlug(playerName(q.summonerName)),
+                    })
+                  }
+                  className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline text-center w-12"
+                  title={tl("Compare {a} and {b}", {
+                    a: playerName(p.summonerName),
+                    b: playerName(q.summonerName),
+                  })}
+                >
+                  {roleName(ROLE_LABEL[p.role] || p.role)}
+                </button>
+              ) : (
+                <span className="text-[10px] text-rw-muted text-center w-12">{roleName(ROLE_LABEL[p.role] || p.role)}</span>
+              )}
               {cell(q, right.name, true)}
             </React.Fragment>
           );

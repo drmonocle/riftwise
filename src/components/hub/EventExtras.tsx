@@ -136,7 +136,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
               ? undefined
               : tl("{b} blue · {r} red", { b: o.blue, r: o.red })
           }
-          to={slug && !hidden && sideTotal > 0 ? { kind: "finder", query: `event=${encodeURIComponent(slug)}&side=blue` } : undefined}
+          to={slug && !hidden && sideTotal > 0 ? { kind: "finder", query: `event=${encodeURIComponent(slug)}&side=b` } : undefined}
         />
       </div>
       {!hidden && sideTotal > 0 && (
@@ -144,7 +144,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
           <div className="flex items-center justify-between text-xs">
             {slug ? (
               <HubLink
-                to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}&side=blue` }}
+                to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}&side=b` }}
                 className="font-bold flex items-center gap-1.5 text-[#4a9eff] hover:underline"
                 title={tl("Game finder")}
               >
@@ -159,7 +159,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
             )}
             {slug ? (
               <HubLink
-                to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}&side=red` }}
+                to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}&side=r` }}
                 className="font-bold flex items-center gap-1.5 text-rw-red hover:underline"
                 title={tl("Game finder")}
               >

@@ -360,19 +360,29 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
           <>
             <h4 className="text-[10px] font-bold uppercase tracking-wider text-rw-muted pt-2">{tl("Most finals lost")}</h4>
             <List>
-              {fin.mostLost.slice(0, 5).map((r) => (
-                <Item
-                  key={r.u}
-                  left={
-                    <span className="inline-flex items-center gap-1.5 min-w-0">
-                      <TeamLogo name={r.name} size={15} />
-                      <TeamLink name={r.name} u={r.u} className="text-rw-text hover:text-rw-accent truncate" />
-                    </span>
-                  }
-                  sub={r.years.map(yearOnly).join(", ")}
-                  right={r.n}
-                />
-              ))}
+              {(() => {
+                const maxLost = Math.max(1, ...fin.mostLost.slice(0, 5).map((r) => r.n));
+                return fin.mostLost.slice(0, 5).map((r) => (
+                  <Item
+                    key={r.u}
+                    left={
+                      <span className="inline-flex items-center gap-1.5 min-w-0">
+                        <TeamLogo name={r.name} size={15} />
+                        <TeamLink name={r.name} u={r.u} className="text-rw-text hover:text-rw-accent truncate" />
+                      </span>
+                    }
+                    sub={r.years.map(yearOnly).join(", ")}
+                    right={
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
+                          <span className="h-full bg-rw-red/75 rounded-full" style={{ width: `${Math.round((r.n / maxLost) * 100)}%` }} />
+                        </span>
+                        <span>{r.n}</span>
+                      </span>
+                    }
+                  />
+                ));
+              })()}
             </List>
           </>
         )}

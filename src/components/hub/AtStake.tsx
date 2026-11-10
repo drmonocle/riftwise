@@ -134,7 +134,18 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   <TeamLogo name={m.team1Name || m.team1Code} code={m.team1Code} src={m.team1Image} sizeClass="w-3.5 h-3.5" />
                   <span>{m.team1Code}</span>
                 </HubLink>
-                <span className="text-rw-muted font-normal">vs</span>
+                <HubLink
+                  to={{
+                    kind: "compare",
+                    mode: "team",
+                    a: findHubTeam(data.index, m.team1Name, m.team1Code) || prettySlug(m.team1Name || m.team1Code),
+                    b: findHubTeam(data.index, m.team2Name, m.team2Code) || prettySlug(m.team2Name || m.team2Code),
+                  }}
+                  className="text-rw-muted hover:text-rw-accent hover:underline font-normal"
+                  title={tl("Compare")}
+                >
+                  vs
+                </HubLink>
                 <HubLink
                   to={{ kind: "team", slug: findHubTeam(data.index, m.team2Name, m.team2Code) || prettySlug(m.team2Name || m.team2Code) }}
                   className="inline-flex items-center gap-1 hover:text-rw-accent"

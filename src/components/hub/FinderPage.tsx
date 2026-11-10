@@ -65,7 +65,8 @@ function matchSide(g: ChampGame, q: Q, eventIdx: number | null): number {
   if (ban && !g[7].includes(ban) && !g[8].includes(ban)) return -1;
   const team = q.get("team");
   const vs = q.get("vs");
-  const side = q.get("side");
+  const rawSide = q.get("side");
+  const side = rawSide === "blue" ? "b" : rawSide === "red" ? "r" : rawSide;
   const result = q.get("result");
   const champs = (q.get("champ") || "").split(",").filter(Boolean);
   const vsChamp = q.get("vschamp");
@@ -434,7 +435,7 @@ const FinderBody: React.FC<{
             ))}
           </select>
           <select
-            value={q.get("side") || ""}
+            value={q.get("side") === "blue" ? "b" : q.get("side") === "red" ? "r" : q.get("side") || ""}
             onChange={(e) => setQ({ side: e.target.value || undefined })}
             aria-label={tl("Side")}
             className={sel}
@@ -579,10 +580,8 @@ const FinderBody: React.FC<{
                   <HubLink
                     to={{
                       kind: "prep",
-                      query: new URLSearchParams({
-                        a: teamOption(opts.teams, q.get("team")) || q.get("team")!,
-                        b: teamOption(opts.teams, q.get("vs")) || q.get("vs")!,
-                      }).toString(),
+                      a: teamOption(opts.teams, q.get("team")) || q.get("team")!,
+                      b: teamOption(opts.teams, q.get("vs")) || q.get("vs")!,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -591,10 +590,9 @@ const FinderBody: React.FC<{
                   <HubLink
                     to={{
                       kind: "compare",
-                      query: new URLSearchParams({
-                        a: teamOption(opts.teams, q.get("team")) || q.get("team")!,
-                        b: teamOption(opts.teams, q.get("vs")) || q.get("vs")!,
-                      }).toString(),
+                      mode: "team",
+                      a: teamOption(opts.teams, q.get("team")) || q.get("team")!,
+                      b: teamOption(opts.teams, q.get("vs")) || q.get("vs")!,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >

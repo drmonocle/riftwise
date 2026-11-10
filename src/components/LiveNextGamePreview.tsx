@@ -533,9 +533,24 @@ export const LiveNextGamePreview: React.FC<{
               return (
                 <div key={rLabel} className="py-1.5 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
                   {renderPicks(ra, draftIntel.slugA, match.team1Name, false)}
-                  <span className="text-[9px] uppercase font-mono text-rw-muted text-center w-12 shrink-0">
-                    {roleName(rLabel)}
-                  </span>
+                  {ra?.player && rb?.player ? (
+                    <HubLink
+                      to={{
+                        kind: "compare",
+                        mode: "player",
+                        a: ra.u || prettySlug(ra.player),
+                        b: rb.u || prettySlug(rb.player),
+                      }}
+                      className="text-[9px] uppercase font-mono text-rw-muted hover:text-rw-accent hover:underline text-center w-12 shrink-0"
+                      title={tl("Compare {a} and {b}", { a: ra.player, b: rb.player })}
+                    >
+                      {roleName(rLabel)}
+                    </HubLink>
+                  ) : (
+                    <span className="text-[9px] uppercase font-mono text-rw-muted text-center w-12 shrink-0">
+                      {roleName(rLabel)}
+                    </span>
+                  )}
                   {renderPicks(rb, draftIntel.slugB, match.team2Name, true)}
                 </div>
               );

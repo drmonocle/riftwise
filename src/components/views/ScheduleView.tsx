@@ -13,7 +13,7 @@ import { tl, locale, clockOptions, tc } from "../../i18n";
 import { searchAlias } from "../../searchAliases";
 import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 import { findSeriesSlug } from "../../hub/seriesLookup";
-import { resolveLeagueSlug } from "../../hub/data";
+import { prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { RIOT_PREFIX } from "../../hub/riotMatch";
 import { navigateHub, scheduleOfPath, setScheduleAddress } from "../../hub/route";
 import { riotImg } from "../../riotImage";
@@ -478,6 +478,22 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                               title={isLive ? tl("Click to reveal the live score") : tl("Click to reveal final score")}
                             >
                               {tl("Reveal")}
+                            </button>
+                          ) : m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD" ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                navigateHub({
+                                  kind: "compare",
+                                  mode: "team",
+                                  a: prettySlug(m.team1Name || m.team1Code),
+                                  b: prettySlug(m.team2Name || m.team2Code),
+                                })
+                              }
+                              title={tl("Compare")}
+                              className="text-rw-sub hover:text-rw-accent hover:underline font-medium"
+                            >
+                              {tl("VS")}
                             </button>
                           ) : (
                             <span className="text-rw-sub font-medium">{tl("VS")}</span>

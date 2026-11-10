@@ -801,6 +801,13 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                 <td className="px-2 py-1 text-rw-sub max-sm:hidden" data-sort={x.l || ""}>
                   {x.l ? (
                     <span className="inline-flex items-center gap-1.5">
+                      <HubLink
+                        to={{ kind: "compare", mode: "team", a: x.u || prettySlug(x.as), b: prettySlug(x.l) }}
+                        className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
+                        title={tl("Compare")}
+                      >
+                        {tl("vs")}
+                      </HubLink>
                       <TeamLogo name={x.l} size={15} className="shrink-0" />
                       <TeamLink name={x.l} u={prettySlug(x.l)} className="hover:text-rw-accent" />
                     </span>
@@ -1112,7 +1119,17 @@ const MatchBox: React.FC<{ m: WMatch; byU: Map<string, WTeam>; onPick: (u: strin
   return (
     <div className={`rounded-lg border ${m.from === "pick" ? "border-rw-accent/50" : "border-rw-border"} bg-rw-deep/40 p-1 space-y-0.5`}>
       <div className="flex items-center justify-between px-1 text-[10px] text-rw-muted">
-        <span>{tl("Best of {n}", { n: m.bo })}</span>
+        <span className="inline-flex items-center gap-1">
+          <span>{tl("Best of {n}", { n: m.bo })}</span>
+          {m.a && m.b && (
+            <>
+              <span aria-hidden="true">·</span>
+              <HubLink to={{ kind: "prep", a: m.a, b: m.b }} className="hover:text-rw-accent hover:underline" title={tl("Match prep")}>
+                {tl("vs")}
+              </HubLink>
+            </>
+          )}
+        </span>
         {m.from === "real" ? <Lock className="w-3 h-3" aria-label={tl("Played")} /> : m.drawn && !readOnly ? <span>{tl("drawn here")}</span> : null}
       </div>
       {/* a match still to play shows each side's chance, also when it can't be picked here */}

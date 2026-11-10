@@ -810,7 +810,17 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     ) : (
                       <span className="text-rw-sub tabular-nums shrink-0">{r.k}/{r.d}/{r.a}</span>
                     )}
-                    <span className="text-rw-muted shrink-0">vs</span>
+                    {r.team && r.opp ? (
+                      <HubLink
+                        to={{ kind: "compare", mode: "team", a: prettySlug(r.team), b: prettySlug(r.opp) }}
+                        className="text-rw-muted hover:text-rw-accent hover:underline shrink-0"
+                        title={tl("Compare")}
+                      >
+                        vs
+                      </HubLink>
+                    ) : (
+                      <span className="text-rw-muted shrink-0">vs</span>
+                    )}
                     <TeamLogo name={r.opp} size={14} />
                     <TeamLink name={r.opp} className="truncate" />
                   </span>
@@ -870,7 +880,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
             {Object.entries(c.slots).map(([slot, [g, w]]) => {
               const wrPct = g > 0 ? Math.round((w / g) * 100) : 0;
               const good = g >= 5 && w / g >= 0.5;
-              const side = slot.startsWith("B") ? "blue" : slot.startsWith("R") ? "red" : "";
+              const side = slot.startsWith("B") ? "b" : slot.startsWith("R") ? "r" : "";
               return (
                 <HubLink
                   key={slot}

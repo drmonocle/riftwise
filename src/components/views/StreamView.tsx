@@ -112,7 +112,14 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
             {e.team1}
           </span>
         </button>
-        <span className={`text-rw-muted ${big ? "text-sm" : "text-[11px]"}`}>{tl("vs")}</span>
+        <button
+          type="button"
+          onClick={() => navigateHub({ kind: "compare", mode: "team", a: prettySlug(e.team1!), b: prettySlug(e.team2!) })}
+          title={tl("Compare")}
+          className={`text-rw-muted hover:text-rw-accent hover:underline ${big ? "text-sm" : "text-[11px]"}`}
+        >
+          {tl("vs")}
+        </button>
         <button
           type="button"
           onClick={() => navigateHub({ kind: "team", slug: prettySlug(e.team2!) })}
@@ -147,13 +154,22 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
         <Play className="w-3.5 h-3.5 fill-current" /> YouTube
       </button>
       {active?.team1 && active?.team2 && (
-        <button
-          type="button"
-          onClick={() => navigateHub({ kind: "prep", a: prettySlug(active.team1!), b: prettySlug(active.team2!) })}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-accent"
-        >
-          {tl("Match prep")}
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "prep", a: prettySlug(active.team1!), b: prettySlug(active.team2!) })}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-accent"
+          >
+            {tl("Match prep")}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "compare", mode: "team", a: prettySlug(active.team1!), b: prettySlug(active.team2!) })}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
+          >
+            {tl("Compare")}
+          </button>
+        </>
       )}
       <button
         onClick={() => onOpenUrl("https://lolworlds.com/schedule")}

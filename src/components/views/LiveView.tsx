@@ -641,6 +641,21 @@ const LiveMatchBlock: React.FC<{
           <span className="flex flex-wrap items-center gap-2">
             <MatchPrepButton match={m} />
             <MatchOverviewButton match={m} />
+            {m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD" && (
+              <button
+                type="button"
+                onClick={() =>
+                  navigateHub({
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))},${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}`,
+                  })
+                }
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+              >
+                <Swords className="w-3.5 h-3.5" />
+                {tl("Draft board")}
+              </button>
+            )}
           </span>
           <WatchLinks streams={getLeagueBroadcastStreams(m.leagueSlug, m.streamUrl)} onOpenUrl={onOpenUrl} inline />
         </div>
@@ -864,9 +879,27 @@ const NextMatchCard: React.FC<{
         <div className={`flex items-center justify-center w-full my-2 ${compact ? "gap-3" : "gap-3 sm:gap-12"}`}>
           {team(m.team1Code, m.team1Name, m.team1Image || hubLogo1, "a")}
           <div className="flex flex-col items-center">
-            <span className="text-xs font-bold text-rw-sub bg-rw-bg border border-rw-border px-2.5 py-1 rounded-full uppercase tracking-widest font-mono">
-              {tl("VS")}
-            </span>
+            {m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD" ? (
+              <button
+                type="button"
+                onClick={() =>
+                  navigateHub({
+                    kind: "compare",
+                    mode: "team",
+                    a: prettySlug(m.team1Name || m.team1Code),
+                    b: prettySlug(m.team2Name || m.team2Code),
+                  })
+                }
+                title={tl("Compare")}
+                className="text-xs font-bold text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 bg-rw-bg border border-rw-border px-2.5 py-1 rounded-full uppercase tracking-widest font-mono transition-colors"
+              >
+                {tl("VS")}
+              </button>
+            ) : (
+              <span className="text-xs font-bold text-rw-sub bg-rw-bg border border-rw-border px-2.5 py-1 rounded-full uppercase tracking-widest font-mono">
+                {tl("VS")}
+              </span>
+            )}
           </div>
           {team(m.team2Code, m.team2Name, m.team2Image || hubLogo2, "b")}
         </div>
@@ -918,6 +951,21 @@ const NextMatchCard: React.FC<{
             <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} />
             <MatchPrepButton match={m} />
             <MatchOverviewButton match={m} />
+            {m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD" && (
+              <button
+                type="button"
+                onClick={() =>
+                  navigateHub({
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))},${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}`,
+                  })
+                }
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+              >
+                <Swords className="w-3.5 h-3.5" />
+                {tl("Draft board")}
+              </button>
+            )}
             <ShareMatchButton match={m} className="border border-rw-border bg-rw-bg p-1.5" />
           </div>
 

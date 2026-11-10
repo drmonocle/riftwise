@@ -168,6 +168,9 @@ export function hubPath(r: HubRoute): string {
     const q = `${players ? "players" : "teams"}=${[r.a || "", r.b || "", ...more].map(encodeURIComponent).join(",")}`;
     return `${BASE}stats/${r.kind}?${q}${r.period && r.period !== "all" ? `&p=${encodeURIComponent(r.period)}` : ""}`;
   }
+  if ((r.kind === "compare" || r.kind === "prep") && "query" in r && r.query && !("a" in r && (r.a || r.b))) {
+    return `${BASE}stats/${r.kind}?${r.query}`;
+  }
   if (QUERY_SECTIONS.includes(r.kind as HubSection) && "query" in r && r.query) return `${BASE}stats/${r.kind}?${r.query}`;
   if ((SECTIONS as string[]).includes(r.kind)) {
     const y = "year" in r && r.year ? `/${r.year}` : "";

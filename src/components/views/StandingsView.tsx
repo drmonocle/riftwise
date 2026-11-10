@@ -530,19 +530,36 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
         </span>
         <span className="inline-flex items-center gap-1.5">
           {match.teams.length === 2 && match.teams.every((t) => t.code && t.code !== "TBD") && (
-            <button
-              type="button"
-              onClick={() =>
-                navigateHub({
-                  kind: "prep",
-                  a: prettySlug(match.teams[0].name || match.teams[0].code),
-                  b: prettySlug(match.teams[1].name || match.teams[1].code),
-                })
-              }
-              className="text-rw-sub hover:text-rw-accent hover:underline"
-            >
-              {tl("Match prep")}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() =>
+                  navigateHub({
+                    kind: "prep",
+                    a: prettySlug(match.teams[0].name || match.teams[0].code),
+                    b: prettySlug(match.teams[1].name || match.teams[1].code),
+                  })
+                }
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Match prep")}
+              </button>
+              <span aria-hidden="true">·</span>
+              <button
+                type="button"
+                onClick={() =>
+                  navigateHub({
+                    kind: "compare",
+                    mode: "team",
+                    a: prettySlug(match.teams[0].name || match.teams[0].code),
+                    b: prettySlug(match.teams[1].name || match.teams[1].code),
+                  })
+                }
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Compare")}
+              </button>
+            </>
           )}
           {!masked && match.state !== "unstarted" && match.teams.length === 2 && (match.teams[0].gameWins + match.teams[1].gameWins) > 0 && (
             <span className="w-10 h-1 rounded-full bg-rw-border/70 overflow-hidden inline-flex gap-[1px] shrink-0" aria-hidden="true">
