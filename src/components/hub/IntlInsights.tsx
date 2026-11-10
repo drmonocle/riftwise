@@ -85,6 +85,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             <HubLink to={{ kind: "rankings" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
               {tl("Power rankings")} →
             </HubLink>
+            <HubLink to={{ kind: "best" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Best games")} →
+            </HubLink>
             <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
               {tl("Game finder")} →
             </HubLink>
@@ -177,6 +180,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
           <span className="flex flex-wrap items-center gap-2">
             <HubLink to={{ kind: "records" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
               {tl("Records")} →
+            </HubLink>
+            <HubLink to={{ kind: "best" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Best games")} →
             </HubLink>
             <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
               {tl("Game finder")} →
@@ -842,6 +848,12 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               </HubLink>
               <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
                 {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink to={{ kind: "draft" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink to={{ kind: "records" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+                {tl("Records")} →
               </HubLink>
               <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
                 {tl("Game finder")} →

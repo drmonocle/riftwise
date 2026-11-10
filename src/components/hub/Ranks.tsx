@@ -770,6 +770,12 @@ export const PlayerRanks: React.FC<{
                 {tl("Pro tier list")} →
               </HubLink>
               <HubLink
+                to={{ kind: "counters", ...(me?.r ? { query: `role=${encodeURIComponent(me.r)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Counters")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}` }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -945,6 +951,18 @@ export const TeamRanks: React.FC<{
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Power rankings")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "tiers",
+                  query: new URLSearchParams({
+                    ...(lu ? { scope: lu } : {}),
+                    ...(year ? { key: `y${year}` } : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
               </HubLink>
               <HubLink
                 to={{ kind: "finder", query: `team=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}` }}

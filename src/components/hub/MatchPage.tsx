@@ -274,6 +274,15 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
                 >
                   {tl("Leaderboards")}
                 </HubLink>
+                <HubLink
+                  to={{
+                    kind: "tiers",
+                    ...(seriesPeriod ? { query: `key=${encodeURIComponent(seriesPeriod)}` } : {}),
+                  }}
+                  className={heroBtn()}
+                >
+                  {tl("Pro tier list")}
+                </HubLink>
               </>
             )}
             {!hidden && s.games.some((g) => g.w) && (
@@ -802,6 +811,12 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                 >
                   {tl("Pro tier list")}
                 </HubLink>
+                <HubLink
+                  to={{ kind: "rankings" }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline"
+                >
+                  {tl("Power rankings")}
+                </HubLink>
                 {blue[0]?.c && red[0]?.c && (
                   <HubLink
                     to={{
@@ -1188,6 +1203,21 @@ const PlayerBars: React.FC<{
               >
                 {tl("Player leaderboards")} →
               </HubLink>
+              <HubLink
+                to={{
+                  kind: "tiers",
+                  ...(period && /^y\d{4}$/.test(period) ? { query: `key=${encodeURIComponent(period)}` } : {}),
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
             </>
           )}
           <SectionCard
@@ -1388,6 +1418,12 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                   >
                     {tl("Game finder")} →
                   </HubLink>
+                  <HubLink
+                    to={{ kind: "rankings" }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Power rankings")} →
+                  </HubLink>
                 </>
               )}
               <SectionCard
@@ -1472,6 +1508,12 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Player leaderboards")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "rankings" }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Power rankings")} →
                   </HubLink>
                 </>
               )}
@@ -1773,6 +1815,12 @@ const Scoreboard: React.FC<{
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Game finder")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "rankings" }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Power rankings")} →
             </HubLink>
           </span>
         )}

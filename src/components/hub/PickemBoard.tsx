@@ -8,7 +8,7 @@ import React, { useEffect, useState } from "react";
 import { EyeOff, LogIn, Trophy, UserMinus, Upload } from "lucide-react";
 import { tl, tn } from "../../i18n";
 import { pickemBoard, submitPickem, leavePickem, hidePickem, syncAccount, SYNC_EVENT, SyncError, type PickemBoard as Board, type PickemPick, type PickemRow, type PickemTeam } from "../../sync";
-import { Section } from "./ui";
+import { Section, HubLink } from "./ui";
 import { BroadcastCardButton, listCard } from "./BroadcastCard";
 import { OPEN_TAB_EVENT } from "../../a11y";
 
@@ -85,6 +85,13 @@ export const PickemBoard: React.FC<{
       id="leaderboard"
       right={
         <span className="flex flex-wrap items-center gap-1.5">
+          <HubLink
+            to={{ kind: "rankings" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Power rankings")} →
+          </HubLink>
           {rows.length > 8 && (
             <input
               type="search"

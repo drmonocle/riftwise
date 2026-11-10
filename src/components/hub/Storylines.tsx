@@ -350,6 +350,12 @@ export const HomeStorylines: React.FC = () => {
                 <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Power rankings")} →
                 </HubLink>
+                <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Pro tier list")} →
+                </HubLink>
+                <HubLink to={{ kind: "best" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Best games")} →
+                </HubLink>
                 <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Game finder")} →
                 </HubLink>

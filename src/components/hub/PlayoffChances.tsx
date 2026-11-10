@@ -105,6 +105,13 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                 >
                   {tl("Power rankings")} →
                 </HubLink>
+                <HubLink
+                  data-nocapture="1"
+                  to={{ kind: "leaders", query: `event=${encodeURIComponent(e.u)}` }}
+                  className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
               </>
             )}
             <CopyPlayoffOddsPost

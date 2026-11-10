@@ -1277,6 +1277,23 @@ const Tendencies: React.FC<{ side: Side; rows: TeamGameRow[]; period: PeriodKey;
           >
             {tl("Game finder")} →
           </HubLink>
+          <HubLink
+            to={{
+              kind: "compare",
+              mode: "team",
+              a: side.team.u,
+              ...(period !== "all" ? { period } : {}),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Compare")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "rankings" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Power rankings")} →
+          </HubLink>
           <SectionCard
             section={tl("{team}: tendencies", { team: side.team.name })}
             sub={periodLabel}
@@ -1729,6 +1746,20 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
           >
             {tl("Pro tier list")} →
           </HubLink>
+          <HubLink
+            to={{
+              kind: "leaders",
+              ...(period.startsWith("y") && period.length === 5
+                ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                : period.startsWith("e:")
+                  ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                  : {}),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Player leaderboards")} →
+          </HubLink>
           <BroadcastCardButton
             data={() =>
               fearlessCard({
@@ -1923,6 +1954,18 @@ const Lanes: React.FC<{
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
               >
                 {tl("Game finder")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "tiers",
+                  query: new URLSearchParams({
+                    role: r,
+                    ...(period.startsWith("y") && period.length === 5 ? { key: period } : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+              >
+                {tl("Pro tier list")} →
               </HubLink>
             </>
           ) : null
@@ -2139,6 +2182,23 @@ const Lanes: React.FC<{
             data-nocapture="1"
           >
             {tl("Game finder")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "tiers",
+              ...(period.startsWith("y") && period.length === 5 ? { query: `key=${encodeURIComponent(period)}` } : {}),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Pro tier list")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "rankings" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Power rankings")} →
           </HubLink>
           <BroadcastCardButton
             data={() =>
@@ -2435,6 +2495,21 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Pro tier list")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "rankings" }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Power rankings")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "finder",
+              query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}`,
+            }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Game finder")} →
           </HubLink>
         </span>
       }

@@ -261,6 +261,16 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               >
                 {tl("Compare")} →
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  navigateHub({ kind: "leaders" });
+                }}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </button>
             </span>
           </div>
           <div className="grid grid-cols-1 gap-1">
@@ -481,6 +491,19 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
             className="flex items-center gap-1 px-2 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
           >
             {tl("Game finder")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              navigateHub({
+                kind: "rankings",
+                query: x.team.rating?.rank == null && x.team.rating?.league ? `league=${encodeURIComponent(x.team.rating.league)}` : undefined,
+              });
+            }}
+            className="flex items-center gap-1 px-2 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+          >
+            {tl("Power rankings")}
           </button>
         </div>
         <BroadcastCardButton data={card} name={`${x.team.name}-vs-${y.team.name}-overview`} label={tl("Overview card")} />

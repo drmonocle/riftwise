@@ -444,6 +444,12 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           >
             {tl("Game finder")} →
           </HubLink>
+          <HubLink to={{ kind: "draft" }} className="text-rw-accent hover:underline">
+            {tl("Draft board")} →
+          </HubLink>
+          <HubLink to={{ kind: "records" }} className="text-rw-accent hover:underline">
+            {tl("Records")} →
+          </HubLink>
         </div>
       </div>
 
@@ -909,6 +915,9 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                   </HubLink>
                 </>
               )}
+              <HubLink to={{ kind: "best" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Best games")} →
+              </HubLink>
               <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Game finder")} →
               </HubLink>

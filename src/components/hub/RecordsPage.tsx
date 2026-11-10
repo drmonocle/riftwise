@@ -100,6 +100,12 @@ const CareerRecords: React.FC<{
           <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Power rankings")} →
           </HubLink>
+          <HubLink to={{ kind: "draft" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Draft board")} →
+          </HubLink>
+          <HubLink to={{ kind: "titles" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Titles")} →
+          </HubLink>
           <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Game finder")} →
           </HubLink>
@@ -173,6 +179,12 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]>; matchTe
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Player leaderboards")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "tiers" }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Pro tier list")} →
             </HubLink>
             <SectionCard
               section={tl("Most pentakills")}
@@ -274,6 +286,20 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]>; matchTe
               >
                 {tl("Game finder")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "leaders" }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
+              {recentRows[0].c && (
+                <HubLink
+                  to={{ kind: "counters", query: `champ=${encodeURIComponent(prettySlug(recentRows[0].c))}` }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+              )}
               <SectionCard
                 section={tl("Latest pentakills")}
                 name={tl("Records")}
@@ -483,6 +509,18 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Player leaderboards")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "draft", query: `p=y${encodeURIComponent(label)}` }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Draft board")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "rankings" }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Power rankings")} →
           </HubLink>
           <SectionCard
             section={tl("Closest to falling")}
@@ -1000,6 +1038,12 @@ export const RecordsPanel: React.FC = () => {
                     >
                       {tl("Game finder")} →
                     </HubLink>
+                    <HubLink
+                      to={{ kind: "tiers" }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Pro tier list")} →
+                    </HubLink>
                     <SectionCard
                       section={title}
                       name={tl("Career totals")}
@@ -1299,6 +1343,12 @@ export const RecordsPanel: React.FC = () => {
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
                         {tl("Game finder")} →
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "rankings" }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Power rankings")} →
                       </HubLink>
                       <SectionCard
                         section={tl("Most international titles (Worlds, MSI, First Stand)")}

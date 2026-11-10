@@ -950,6 +950,19 @@ const Board: React.FC<{
           <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Power rankings")}
           </HubLink>
+          <HubLink
+            to={{
+              kind: "leaders",
+              ...(period.startsWith("y")
+                ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                : period.startsWith("e:")
+                  ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                  : {}),
+            }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Player leaderboards")}
+          </HubLink>
         </div>
       </div>
 
@@ -2315,6 +2328,27 @@ const PlayerPools: React.FC<{
           </HubLink>
           <HubLink
             to={{
+              kind: "prep",
+              a: side.team.u,
+              ...(period !== "all" ? { period } : {}),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Match prep")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "compare",
+              mode: "team",
+              a: side.team.u,
+              ...(period !== "all" ? { period } : {}),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Compare")} →
+          </HubLink>
+          <HubLink
+            to={{
               kind: "finder",
               query: `team=${encodeURIComponent(side.team.u)}${
                 period.startsWith("y") ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""
@@ -2926,6 +2960,25 @@ const Priorities: React.FC<{
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Champions")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "leaders",
+              ...(period.startsWith("y")
+                ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                : period.startsWith("e:")
+                  ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                  : {}),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Player leaderboards")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "rankings" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Power rankings")} →
           </HubLink>
           <HubLink
             to={{

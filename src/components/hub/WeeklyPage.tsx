@@ -226,6 +226,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             <HubLink to={{ kind: "records" }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Records")} →
             </HubLink>
+            <HubLink to={{ kind: "draft" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Draft board")} →
+            </HubLink>
+            <HubLink to={{ kind: "counters" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Counters")} →
+            </HubLink>
             <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Game finder")} →
             </HubLink>
@@ -476,6 +482,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                 <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
                   <HubLink to={{ kind: "records" }} className="text-rw-accent hover:underline font-semibold">
                     {tl("Records")} →
+                  </HubLink>
+                  <HubLink to={{ kind: "best" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                    {tl("Best games")} →
+                  </HubLink>
+                  <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                    {tl("Player leaderboards")} →
                   </HubLink>
                   <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                     {tl("Game finder")} →

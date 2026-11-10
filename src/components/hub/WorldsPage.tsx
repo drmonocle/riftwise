@@ -495,6 +495,12 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
                       </HubLink>
                     </>
                   )}
+                  <HubLink
+                    to={{ kind: "rankings" }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Power rankings")} →
+                  </HubLink>
                   <BroadcastCardButton data={() => bracketPicksCard(ko, byU, d.name)} name={`worlds-${d.year}-knockouts`} label={tl("Overview card")} />
                 </span>
               ) : undefined
@@ -532,6 +538,18 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Game finder")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "leaders", query: `event=${encodeURIComponent(main.u)}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
               </HubLink>
               {Object.keys(swiss.rec).length > 0 && (
                 <BroadcastCardButton data={() => swissPicksCard(swiss.rec, byU, d.name)} name={`worlds-${d.year}-swiss`} label={tl("Overview card")} />
@@ -797,6 +815,12 @@ const BracketNow: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Bracket
                   </>
                 ) : null;
               })()}
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
               <BroadcastCardButton data={() => msiBracketCard(res, byU, d.name, kind)} name={`${kind}-${d.year}-bracket`} label={tl("Overview card")} />
             </span>
           ) : undefined

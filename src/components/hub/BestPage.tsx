@@ -219,6 +219,15 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                     >
                       {tl("Game finder")} →
                     </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "records",
+                        ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}),
+                      }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Records")} →
+                    </HubLink>
                   </>
                 );
               })()}
