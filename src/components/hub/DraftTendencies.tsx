@@ -215,7 +215,7 @@ const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boo
   );
 };
 
-const RoleLine: React.FC<{ title: string; shares: [number, number][] }> = ({ title, shares }) =>
+const RoleLine: React.FC<{ title: string; shares: [number, number][]; teamSlug?: string; period?: string }> = ({ title, shares, teamSlug, period }) =>
   shares.length ? (
     <>
       <dt className="text-[10px] font-semibold text-rw-muted self-center">{title}</dt>
@@ -224,7 +224,21 @@ const RoleLine: React.FC<{ title: string; shares: [number, number][] }> = ({ tit
           const pctVal = Math.round(v * 100);
           return (
             <span key={r} className="inline-flex items-center gap-1.5 whitespace-nowrap">
-              <span>{roleName(ROLES[r])}</span>
+              {teamSlug ? (
+                <HubLink
+                  to={{
+                    kind: "team",
+                    slug: teamSlug,
+                    tab: "champions",
+                    ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                  }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {roleName(ROLES[r])}
+                </HubLink>
+              ) : (
+                <span>{roleName(ROLES[r])}</span>
+              )}
               <span className="w-7 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
                 <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(6, Math.min(100, pctVal))}%` }} />
               </span>
@@ -281,12 +295,16 @@ const Pairs: React.FC<{ title: string; hint?: string; list: Pair[]; teamName?: s
                   {winRate(w, n)}
                 </HubLink>
                 {gd != null && (
-                  <span
-                    className={gd >= 0 ? "text-rw-teal" : "text-rw-red"}
-                    title={tl("Their combined gold lead over the lane opponents at 15 minutes")}
-                  >
-                    {` · ${gd > 0 ? "+" : ""}${gd}`}
-                  </span>
+                  <>
+                    <span className="text-rw-muted">·</span>
+                    <HubLink
+                      to={{ kind: "finder", query: finderQuery }}
+                      className={`hover:underline ${gd >= 0 ? "text-rw-teal" : "text-rw-red"}`}
+                      title={tl("Their combined gold lead over the lane opponents at 15 minutes")}
+                    >
+                      {`${gd > 0 ? "+" : ""}${gd}`}
+                    </HubLink>
+                  </>
                 )}
               </span>
             </li>
@@ -371,12 +389,12 @@ export const DraftTendencies: React.FC<{
         <List title={tl("Bans, phase 2")} hint={tl("Their last two bans")} list={d.bans2} teamName={resolvedSlug || teamName} period={period} isBan />
       </div>
       <dl className="grid grid-cols-1 @md:grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-        <RoleLine title={tl("First role locked in")} shares={d.firstRole} />
-        <RoleLine title={tl("Role kept for last")} shares={d.lastRole} />
-        <RoleLine title={tl("Phase 1 picks")} shares={d.phase1} />
-        <RoleLine title={tl("Phase 2 picks")} shares={d.phase2} />
-        <RoleLine title={tl("Last pick on red (R5)")} shares={d.r5} />
-        <RoleLine title={tl("Last picks on blue (B4-B5)")} shares={d.b45} />
+        <RoleLine title={tl("First role locked in")} shares={d.firstRole} teamSlug={resolvedSlug} period={period} />
+        <RoleLine title={tl("Role kept for last")} shares={d.lastRole} teamSlug={resolvedSlug} period={period} />
+        <RoleLine title={tl("Phase 1 picks")} shares={d.phase1} teamSlug={resolvedSlug} period={period} />
+        <RoleLine title={tl("Phase 2 picks")} shares={d.phase2} teamSlug={resolvedSlug} period={period} />
+        <RoleLine title={tl("Last pick on red (R5)")} shares={d.r5} teamSlug={resolvedSlug} period={period} />
+        <RoleLine title={tl("Last picks on blue (B4-B5)")} shares={d.b45} teamSlug={resolvedSlug} period={period} />
       </dl>
       {(d.botDuos.length > 0 || d.midJungle.length > 0 || d.r12pairs.length > 0) && (
         <div className="grid grid-cols-1 @md:grid-cols-2 @3xl:grid-cols-3 gap-x-6 gap-y-3">

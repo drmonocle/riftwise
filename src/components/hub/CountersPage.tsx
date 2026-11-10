@@ -176,7 +176,20 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
       label: "GD@15",
       title: tl("Average gold lead over this lane opponent at 15 minutes (Oracle's Elixir)"),
       value: (x) => x.gd,
-      render: (x) => (x.gd == null ? "–" : <span className={x.gd > 150 ? "text-rw-teal" : x.gd < -150 ? "text-rw-red" : ""}>{x.gd > 0 ? "+" : ""}{x.gd}</span>),
+      render: (x) =>
+        x.gd == null ? (
+          "–"
+        ) : (
+          <button
+            type="button"
+            onClick={() => set({ vs: x.c })}
+            className={`hover:underline ${x.gd > 150 ? "text-rw-teal" : x.gd < -150 ? "text-rw-red" : ""}`}
+            title={`${cName} ${tl("vs")} ${champName(x.c)}`}
+          >
+            {x.gd > 0 ? "+" : ""}
+            {x.gd}
+          </button>
+        ),
       className: "tabular-nums",
     },
     ...(hasCsd

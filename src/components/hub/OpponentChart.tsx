@@ -1353,11 +1353,16 @@ export const TeamPeriodOpponents: React.FC<{
                         </HubLink>
                       ))}
                     </span>
-                    {g[9] != null && g[10] != null && (
-                      <span className="tabular-nums text-rw-sub shrink-0">
-                        {g[9]}–{g[10]}
-                      </span>
-                    )}
+                    {g[9] != null && g[10] != null &&
+                      (g[1] ? (
+                        <HubLink to={{ kind: "match", slug: g[1] }} className="tabular-nums text-rw-sub hover:text-rw-accent hover:underline shrink-0">
+                          {g[9]}–{g[10]}
+                        </HubLink>
+                      ) : (
+                        <span className="tabular-nums text-rw-sub shrink-0">
+                          {g[9]}–{g[10]}
+                        </span>
+                      ))}
                     <EventLink name={g[3]} u={g[2]} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
                   </span>
                   <span className="flex items-center gap-2 shrink-0 text-rw-muted tabular-nums">

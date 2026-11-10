@@ -848,7 +848,13 @@ const Board: React.FC<{
               <TeamLogo name={blue.team.name} size={22} />
               <span className="truncate">{blue.team.name}</span>
             </HubLink>
-            <span className="text-rw-muted font-normal">vs</span>
+            <HubLink
+              to={{ kind: "compare", mode: "team", a: blue.team.u, b: red.team.u, period }}
+              className="text-rw-muted hover:text-rw-accent hover:underline font-normal"
+              title={tl("Compare")}
+            >
+              vs
+            </HubLink>
             <HubLink to={{ kind: "team", slug: red.team.u }} className="inline-flex items-center gap-1.5 min-w-0 text-rw-side-b hover:underline">
               <TeamLogo name={red.team.name} size={22} />
               <span className="truncate">{red.team.name}</span>
@@ -986,15 +992,29 @@ const Board: React.FC<{
                       {tl("Game {n}", { n: i + 1 })}
                     </button>
                     <span className="text-rw-side-a">{g.blue === blue.team.u ? blue.team.name : red.team.name}</span>
-                    {ORDER.map((o, k) => (o.side === "b" && !o.ban && g.slots[k] ? <ChampIcon key={k} name={g.slots[k] as string} size={16} /> : null))}
+                    {ORDER.map((o, k) =>
+                      o.side === "b" && !o.ban && g.slots[k] ? (
+                        <span key={k} title={champName(g.slots[k] as string)}>
+                          <ChampIcon name={g.slots[k] as string} size={16} />
+                        </span>
+                      ) : null,
+                    )}
                     <span className="text-rw-side-b ml-1">{g.red === red.team.u ? red.team.name : blue.team.name}</span>
-                    {ORDER.map((o, k) => (o.side === "r" && !o.ban && g.slots[k] ? <ChampIcon key={k} name={g.slots[k] as string} size={16} /> : null))}
+                    {ORDER.map((o, k) =>
+                      o.side === "r" && !o.ban && g.slots[k] ? (
+                        <span key={k} title={champName(g.slots[k] as string)}>
+                          <ChampIcon name={g.slots[k] as string} size={16} />
+                        </span>
+                      ) : null,
+                    )}
                   </div>
                 ))}
                 <div className="flex flex-wrap items-center gap-1">
                   {tl("Used in earlier games:")}
                   {used.map((c) => (
-                    <ChampIcon key={c} name={c} size={16} className="opacity-60" />
+                    <span key={c} title={champName(c)}>
+                      <ChampIcon name={c} size={16} className="opacity-60" />
+                    </span>
                   ))}
                   <button
                     type="button"
@@ -2175,7 +2195,16 @@ const PlayerPools: React.FC<{
                       <span className="font-semibold text-rw-text truncate">{pl.name}</span>
                     )}
                   </span>
-                  <span className="text-[10px] text-rw-muted">{roleName(ROLES[pl.role])}</span>
+                  {pl.u ? (
+                    <HubLink
+                      to={{ kind: "player", slug: pl.u, tab: "stats", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+                      className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
+                    >
+                      {roleName(ROLES[pl.role])}
+                    </HubLink>
+                  ) : (
+                    <span className="text-[10px] text-rw-muted">{roleName(ROLES[pl.role])}</span>
+                  )}
                   {onSwap && <RosterSubPicker side={side} roleIdx={pl.role} onSwap={onSwap} />}
                 </span>
                 <span className="flex flex-wrap gap-1 min-w-0 flex-1">
@@ -2252,15 +2281,41 @@ const LaneCounters: React.FC<{ c: string; pools: { b: Pool; r: Pool }; blue: Sid
       <li key={oc} className="flex items-center justify-between gap-2 min-w-0">
         <span className="flex items-center gap-1 min-w-0">
           <ChampLink name={oc} size={16} />
-          {owner(oc).map((o) => (
-            <span
-              key={o.w}
-              className={`text-[9px] px-1 rounded shrink-0 ${o.w === "b" ? "bg-rw-side-a/20 text-rw-side-a" : "bg-rw-side-b/20 text-rw-side-b"}`}
-              title={tl("{player} ({team}) plays it: {n} games, won {pct}", { player: o.who.name, team: o.team.team.name, n: o.who.g || o.who.cg, pct: winRate(o.who.g ? o.who.w : o.who.cw, o.who.g || o.who.cg) })}
-            >
-              {o.who.name}
-            </span>
-          ))}
+          {owner(oc).map((o) =>
+            o.who.u ? (
+              <HubLink
+                key={o.w}
+                to={{
+                  kind: "player",
+                  slug: o.who.u,
+                  tab: "champions",
+                  query: `champ=${encodeURIComponent(oc)}`,
+                }}
+                className={`text-[9px] px-1 rounded shrink-0 hover:underline ${o.w === "b" ? "bg-rw-side-a/20 text-rw-side-a" : "bg-rw-side-b/20 text-rw-side-b"}`}
+                title={tl("{player} ({team}) plays it: {n} games, won {pct}", {
+                  player: o.who.name,
+                  team: o.team.team.name,
+                  n: o.who.g || o.who.cg,
+                  pct: winRate(o.who.g ? o.who.w : o.who.cw, o.who.g || o.who.cg),
+                })}
+              >
+                {o.who.name}
+              </HubLink>
+            ) : (
+              <span
+                key={o.w}
+                className={`text-[9px] px-1 rounded shrink-0 ${o.w === "b" ? "bg-rw-side-a/20 text-rw-side-a" : "bg-rw-side-b/20 text-rw-side-b"}`}
+                title={tl("{player} ({team}) plays it: {n} games, won {pct}", {
+                  player: o.who.name,
+                  team: o.team.team.name,
+                  n: o.who.g || o.who.cg,
+                  pct: winRate(o.who.g ? o.who.w : o.who.cw, o.who.g || o.who.cg),
+                })}
+              >
+                {o.who.name}
+              </span>
+            ),
+          )}
         </span>
         <span className="inline-flex items-center gap-1.5 tabular-nums text-rw-sub shrink-0" title={tl("{n} games against it", { n: g })}>
           <HubLink

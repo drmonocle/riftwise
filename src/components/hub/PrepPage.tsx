@@ -941,7 +941,13 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
               <TeamLogo name={a.team.name} size={24} />
               <span className="truncate">{a.team.name}</span>
             </HubLink>
-            <span className="text-rw-muted font-normal">vs</span>
+            <HubLink
+              to={{ kind: "compare", mode: "team", a: a.team.u, b: b.team.u, period }}
+              className="text-rw-muted hover:text-rw-accent hover:underline font-normal"
+              title={tl("Compare")}
+            >
+              vs
+            </HubLink>
             <HubLink to={{ kind: "team", slug: b.team.u }} className="inline-flex items-center gap-2 min-w-0 hover:underline">
               <TeamLogo name={b.team.name} size={24} />
               <span className="truncate">{b.team.name}</span>
@@ -1502,7 +1508,27 @@ const Lanes: React.FC<{
                 const pctA = hasBar ? Math.round((va / (va + vb)) * 100) : 50;
                 return (
                   <React.Fragment key={label}>
-                    <span className={`${val} text-right ${better === "a" ? "text-rw-side-a font-semibold" : "text-rw-sub"}`}>{va != null ? f(va) : "–"}</span>
+                    <span className={`${val} text-right ${better === "a" ? "text-rw-side-a font-semibold" : "text-rw-sub"}`}>
+                      {va != null ? (
+                        pa?.p.u ? (
+                          <HubLink
+                            to={{
+                              kind: "player",
+                              slug: pa.p.u,
+                              tab: "stats",
+                              ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                            }}
+                            className="hover:underline"
+                          >
+                            {f(va)}
+                          </HubLink>
+                        ) : (
+                          f(va)
+                        )
+                      ) : (
+                        "–"
+                      )}
+                    </span>
                     <span className={`${val} text-rw-muted text-center w-16 flex flex-col items-center justify-center`} title={hint}>
                       <span>{label}</span>
                       {hasBar && (
@@ -1512,7 +1538,27 @@ const Lanes: React.FC<{
                         </span>
                       )}
                     </span>
-                    <span className={`${val} ${better === "b" ? "text-rw-side-b font-semibold" : "text-rw-sub"}`}>{vb != null ? f(vb) : "–"}</span>
+                    <span className={`${val} ${better === "b" ? "text-rw-side-b font-semibold" : "text-rw-sub"}`}>
+                      {vb != null ? (
+                        pb?.p.u ? (
+                          <HubLink
+                            to={{
+                              kind: "player",
+                              slug: pb.p.u,
+                              tab: "stats",
+                              ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                            }}
+                            className="hover:underline"
+                          >
+                            {f(vb)}
+                          </HubLink>
+                        ) : (
+                          f(vb)
+                        )
+                      ) : (
+                        "–"
+                      )}
+                    </span>
                   </React.Fragment>
                 );
               })}
@@ -1753,7 +1799,15 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
             <ChampIcon name={x.c} size={18} />
             <span className="font-medium text-rw-text">{champName(x.c)}</span>
           </HubLink>
-          {x.role != null && <span className="text-[9px] text-rw-muted">{roleName(ROLES[x.role])}</span>}
+          {x.role != null && (
+            <HubLink
+              to={{ kind: "counters", query: `champ=${encodeURIComponent(prettySlug(x.c))}&role=${encodeURIComponent(ROLES[x.role])}` }}
+              className="text-[9px] text-rw-muted hover:text-rw-accent hover:underline"
+              title={tl("Counter-pick finder")}
+            >
+              {roleName(ROLES[x.role])}
+            </HubLink>
+          )}
           {x.stat && (
             <HubLink
               to={{
