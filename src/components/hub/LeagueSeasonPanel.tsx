@@ -57,7 +57,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
           <HubLink to={{ kind: "champions", query: `league=${league}&year=${year}` }} className="text-rw-accent hover:underline">
             {tl("Champion picks")}
           </HubLink>
-          <HubLink to={{ kind: "tiers", query: `league=${league}&year=${year}` }} className="text-rw-accent hover:underline">
+          <HubLink to={{ kind: "tiers", query: `league=${league}&key=y${year}` }} className="text-rw-accent hover:underline">
             {tl("Tier list")}
           </HubLink>
           <HubLink to={{ kind: "rankings", query: `league=${encodeURIComponent(league)}` }} className="text-rw-accent hover:underline">
@@ -66,7 +66,19 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
           <HubLink to={{ kind: "best", query: `league=${encodeURIComponent(league)}&year=${encodeURIComponent(year)}` }} className="text-rw-accent hover:underline">
             {tl("Best games")}
           </HubLink>
-          <HubLink to={{ kind: "finder", query: `league=${league}&year=${year}` }} className="text-rw-accent hover:underline">
+          <HubLink
+            to={{
+              kind: "finder",
+              query: `league=${league}&year=${year}${
+                terms.length && teams.length >= 1
+                  ? `&team=${encodeURIComponent(teams[0].u || prettySlug(teams[0].t))}${
+                      teams[1] ? `&vs=${encodeURIComponent(teams[1].u || prettySlug(teams[1].t))}` : ""
+                    }`
+                  : ""
+              }`,
+            }}
+            className="text-rw-accent hover:underline"
+          >
             {tl("Game finder")}
           </HubLink>
           {headerTeams.length >= 1 && (
@@ -252,7 +264,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                     <HubLink
                       to={{
                         kind: "tiers",
-                        query: `league=${encodeURIComponent(league)}&year=${encodeURIComponent(year)}`,
+                        query: `league=${encodeURIComponent(league)}&key=y${encodeURIComponent(year)}`,
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline"
                     >

@@ -317,9 +317,11 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             query:
               list.length === 1
                 ? `team=${encodeURIComponent(list[0][1] || prettySlug(list[0][0]))}`
-                : words.trim() && list.length === 2
+                : words.trim() && list.length >= 2
                   ? `team=${encodeURIComponent(list[0][1] || prettySlug(list[0][0]))}&vs=${encodeURIComponent(list[1][1] || prettySlug(list[1][0]))}`
-                  : undefined,
+                  : list[0]
+                    ? `team=${encodeURIComponent(list[0][1] || prettySlug(list[0][0]))}`
+                    : undefined,
           }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
@@ -635,7 +637,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
             kind: "finder",
             query: new URLSearchParams({
               ...(role ? { role } : {}),
-              ...(list.length === 1 ? { player: list[0][1] || prettySlug(list[0][0]) } : {}),
+              ...((words.trim() || list.length === 1) && list[0] ? { player: list[0][1] || prettySlug(list[0][0]) } : {}),
             }).toString() || undefined,
           }}
           className="text-rw-sub hover:text-rw-accent hover:underline"

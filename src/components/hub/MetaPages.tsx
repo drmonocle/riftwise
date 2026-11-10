@@ -103,30 +103,67 @@ export const PatchesPanel: React.FC = () => {
               )}
             </p>
             <div className="flex flex-wrap items-center gap-2" data-nocapture="1">
-              <HubLink to={{ kind: "champions" }} className="text-[11px] font-semibold text-rw-accent hover:underline">
-                {tl("Champions")} →
-              </HubLink>
-              <HubLink to={{ kind: "tiers" }} className="text-[11px] font-semibold text-rw-accent hover:underline">
-                {tl("Pro tier list")} →
-              </HubLink>
-              <HubLink to={{ kind: "counters" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
-                {tl("Counter-pick finder")} →
-              </HubLink>
-              <HubLink to={{ kind: "items" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
-                {tl("Item history")} →
-              </HubLink>
-              <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
-                {tl("Player leaderboards")} →
-              </HubLink>
-              <HubLink to={{ kind: "draft" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
-                {tl("Draft board")} →
-              </HubLink>
-              <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
-                {tl("Game finder")} →
-              </HubLink>
-              <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
-                {tl("Power rankings")} →
-              </HubLink>
+              {(() => {
+                const topP = filtered[0] || rows[0];
+                const topC = topP?.c?.[0]?.[0];
+                const secC = topP?.c?.[1]?.[0];
+                return (
+                  <>
+                    <HubLink
+                      to={{ kind: "champions", ...(topP ? { query: `key=p${encodeURIComponent(topP.p)}` } : {}) }}
+                      className="text-[11px] font-semibold text-rw-accent hover:underline"
+                    >
+                      {tl("Champions")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "tiers", ...(topP ? { query: `key=p${encodeURIComponent(topP.p)}` } : {}) }}
+                      className="text-[11px] font-semibold text-rw-accent hover:underline"
+                    >
+                      {tl("Pro tier list")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "counters",
+                        ...(topC
+                          ? { query: `champ=${encodeURIComponent(prettySlug(topC))}${secC ? `&vs=${encodeURIComponent(secC)}` : ""}` }
+                          : {}),
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Counter-pick finder")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "items", ...(topC ? { query: `champ=${encodeURIComponent(prettySlug(topC))}` } : {}) }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
+                    <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                      {tl("Player leaderboards")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "draft", ...(topP ? { query: `p=p:${encodeURIComponent(topP.p)}` } : {}) }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "finder",
+                        ...(topP
+                          ? { query: `patch=${encodeURIComponent(topP.p)}${q.trim() && topC ? `&champ=${encodeURIComponent(topC)}` : ""}` }
+                          : {}),
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Game finder")} →
+                    </HubLink>
+                    <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                      {tl("Power rankings")} →
+                    </HubLink>
+                  </>
+                );
+              })()}
               <input
                 type="search"
                 value={q}
@@ -795,6 +832,7 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                         mode: "team",
                         a: l.titles[0].u || prettySlug(l.titles[0].t),
                         ...(l.titles[1] ? { b: l.titles[1].u || prettySlug(l.titles[1].t) } : {}),
+                        ...(season ? { period: `y${season}` } : {}),
                       }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
@@ -805,6 +843,7 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                         kind: "prep",
                         a: l.titles[0].u || prettySlug(l.titles[0].t),
                         ...(l.titles[1] ? { b: l.titles[1].u || prettySlug(l.titles[1].t) } : {}),
+                        ...(season ? { period: `y${season}` } : {}),
                       }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
@@ -813,7 +852,7 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                     <HubLink
                       to={{
                         kind: "draft",
-                        query: `teams=${encodeURIComponent(l.titles[0].u || prettySlug(l.titles[0].t))}${l.titles[1] ? `,${encodeURIComponent(l.titles[1].u || prettySlug(l.titles[1].t))}` : ""}`,
+                        query: `teams=${encodeURIComponent(l.titles[0].u || prettySlug(l.titles[0].t))}${l.titles[1] ? `,${encodeURIComponent(l.titles[1].u || prettySlug(l.titles[1].t))}` : ""}${season ? `&p=y${encodeURIComponent(season)}` : ""}`,
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -836,20 +875,20 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `league=${encodeURIComponent(l.u)}${l.titles[0] ? `&team=${encodeURIComponent(l.titles[0].u || l.titles[0].t)}` : ""}`,
+                    query: `league=${encodeURIComponent(l.u)}${season ? `&year=${encodeURIComponent(season)}` : ""}${l.titles[0] ? `&team=${encodeURIComponent(l.titles[0].u || l.titles[0].t)}` : ""}`,
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Game finder")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "tiers", query: `league=${encodeURIComponent(l.u)}` }}
+                  to={{ kind: "tiers", query: `league=${encodeURIComponent(l.u)}${season ? `&key=y${encodeURIComponent(season)}` : ""}` }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Pro tier list")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "leaders", query: `league=${encodeURIComponent(l.u)}` }}
+                  to={{ kind: "leaders", query: `league=${encodeURIComponent(l.u)}${season ? `&year=${encodeURIComponent(season)}` : ""}` }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Player leaderboards")} →

@@ -234,7 +234,7 @@ const LeagueFilters: React.FC<{ league: string; years: string[]; q: URLSearchPar
   setQ,
 }) => {
   const ys = [...years].sort().reverse();
-  const year = q.get("year") || ys[0] || "";
+  const year = q.get("year") || (q.get("key")?.startsWith("y") ? q.get("key")!.slice(1) : "") || ys[0] || "";
   const file = useLoad(() => (year ? loadChampGames(league, year) : Promise.resolve(null)), [league, year]);
   const events = file.data?.events || [];
   const patches = useMemo(
@@ -307,7 +307,7 @@ const LeagueTable: React.FC<{
   indexLoading,
 }) => {
   const [search, setSearch] = useState("");
-  const year = q.get("year") || [...years].sort().reverse()[0] || "";
+  const year = q.get("year") || (q.get("key")?.startsWith("y") ? q.get("key")!.slice(1) : "") || [...years].sort().reverse()[0] || "";
   const file = useLoad(() => (year ? loadChampGames(league, year) : Promise.resolve(null)), [league, year]);
   const eventSlug = q.get("event") || "";
   const roleQ = q.get("role") || "";
@@ -318,7 +318,8 @@ const LeagueTable: React.FC<{
     if (!file.data) return null;
     const ei = eventSlug ? file.data.events.findIndex(([s]) => s === eventSlug) : -1;
     const f = { event: ei >= 0 ? ei : undefined, side, role: roleQ ? ROLES.indexOf(roleQ) : undefined };
-    const now = champAgg(file.data.games, { ...f, patch: q.get("patch") || undefined });
+    const patchQ = q.get("patch") || (q.get("key")?.startsWith("p") ? q.get("key")!.slice(1) : undefined);
+    const now = champAgg(file.data.games, { ...f, patch: patchQ });
     const then = vs ? champAgg(file.data.games, { ...f, patch: vs }) : null;
     return { games: now.games, thenGames: then?.games || 0, rows: deltas(now.rows, then && then.games ? then.rows : null, 5) };
   }, [file.data, eventSlug, q, side, roleQ, vs]);
@@ -760,7 +761,8 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
   setQ,
 }) => {
   const [search, setSearch] = useState("");
-  const key = q.get("key") && meta.champions.includes(q.get("key")!) ? q.get("key")! : meta.champions.find((k) => k.startsWith("p")) || meta.champions[0];
+  const askedKey = q.get("key") || (q.get("patch") ? `p${q.get("patch")}` : q.get("year") ? `y${q.get("year")}` : "");
+  const key = askedKey && meta.champions.includes(askedKey) ? askedKey : meta.champions.find((k) => k.startsWith("p")) || meta.champions[0];
   const state = useLoad<ChampionStats>(() => loadChampionStats(key), [key]);
   const block = state.data?.[scope] || state.data?.all;
   const roleQ = q.get("role") || "";

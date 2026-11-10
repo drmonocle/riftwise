@@ -45,7 +45,8 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
     navigateHub({ kind: "tiers", query: next.toString() }, { replace: true });
   };
   const patchKeys = meta.champions.filter((k) => k.startsWith("p"));
-  const key = q.get("key") && meta.champions.includes(q.get("key")!) ? q.get("key")! : patchKeys[0] || meta.champions[0];
+  const askedKey = q.get("key") || (q.get("patch") ? `p${q.get("patch")}` : q.get("year") ? `y${q.get("year")}` : "");
+  const key = askedKey && meta.champions.includes(askedKey) ? askedKey : patchKeys[0] || meta.champions[0];
   const aliases = useLoad(loadAliases, []);
   const askedScope = q.get("league") || q.get("scope") || "major";
   const rawScope =

@@ -165,7 +165,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
     });
   }, [rows, search]);
   const pair =
-    search.trim() && shownRows.length === 2
+    search.trim() && shownRows.length >= 2 && (shownRows[0].r[0] || shownRows[0].r[1]) && (shownRows[1].r[0] || shownRows[1].r[1])
       ? [shownRows[0].r[0] || prettySlug(shownRows[0].r[1]), shownRows[1].r[0] || prettySlug(shownRows[1].r[1])]
       : null;
   const columns: Column<Row>[] = [
