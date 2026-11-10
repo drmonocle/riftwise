@@ -133,6 +133,15 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]>; matchTe
                 {tl("Compare")} →
               </HubLink>
             )}
+            <HubLink
+              to={{
+                kind: "finder",
+                query: `player=${encodeURIComponent(mostRows[0].u || prettySlug(mostRows[0].n))}`,
+              }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Game finder")} →
+            </HubLink>
             <SectionCard
               section={tl("Most pentakills")}
               name={tl("Records")}
@@ -180,21 +189,45 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]>; matchTe
         title={tl("Latest pentakills")}
         right={
           recentRows.length > 0 ? (
-            <SectionCard
-              section={tl("Latest pentakills")}
-              name={tl("Records")}
-              rows={() =>
-                recentRows.slice(0, 10).map((x, idx) => ({
-                  rank: idx + 1,
-                  champ: x.c,
-                  team: x.a,
-                  label: `${x.n} (${champName(x.c)})`,
-                  sub: `${x.a} vs ${x.b} · ${x.t} · ${fmtDate(x.date)}`,
-                  value: x.x > 1 ? `×${x.x}` : "5K",
-                  win: true,
-                }))
-              }
-            />
+            <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+              {recentRows[0].a && recentRows[0].b && (
+                <HubLink
+                  to={{
+                    kind: "compare",
+                    mode: "team",
+                    a: prettySlug(recentRows[0].a),
+                    b: prettySlug(recentRows[0].b),
+                  }}
+                  className="text-rw-accent hover:underline font-semibold"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              )}
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `player=${encodeURIComponent(recentRows[0].u || prettySlug(recentRows[0].n))}&champ=${encodeURIComponent(recentRows[0].c)}`,
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
+              <SectionCard
+                section={tl("Latest pentakills")}
+                name={tl("Records")}
+                rows={() =>
+                  recentRows.slice(0, 10).map((x, idx) => ({
+                    rank: idx + 1,
+                    champ: x.c,
+                    team: x.a,
+                    label: `${x.n} (${champName(x.c)})`,
+                    sub: `${x.a} vs ${x.b} · ${x.t} · ${fmtDate(x.date)}`,
+                    value: x.x > 1 ? `×${x.x}` : "5K",
+                    win: true,
+                  }))
+                }
+              />
+            </span>
           ) : undefined
         }
         share="records-latest-pentakills"
@@ -524,6 +557,24 @@ export const RecordsPanel: React.FC = () => {
                         >
                           {tl("Compare")} →
                         </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "draft",
+                            query: `teams=${encodeURIComponent(prettySlug(rows[0].w))},${encodeURIComponent(prettySlug(rows[0].w === rows[0].a ? rows[0].b : rows[0].a))}`,
+                          }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Draft board")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "finder",
+                            query: `team=${encodeURIComponent(prettySlug(rows[0].w))}&vs=${encodeURIComponent(prettySlug(rows[0].w === rows[0].a ? rows[0].b : rows[0].a))}`,
+                          }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Game finder")} →
+                        </HubLink>
                       </>
                     )}
                     <SectionCard
@@ -646,6 +697,24 @@ export const RecordsPanel: React.FC = () => {
                         {tl("Compare")} →
                       </HubLink>
                     )}
+                    <HubLink
+                      to={{
+                        kind: "items",
+                        query: `player=${encodeURIComponent(rows[0].u || prettySlug(rows[0].pl))}&champ=${encodeURIComponent(prettySlug(rows[0].c))}`,
+                      }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "finder",
+                        query: `player=${encodeURIComponent(rows[0].u || prettySlug(rows[0].pl))}&champ=${encodeURIComponent(rows[0].c)}`,
+                      }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Game finder")} →
+                    </HubLink>
                     <SectionCard
                       section={title}
                       name={recScopeLabel}
@@ -786,6 +855,21 @@ export const RecordsPanel: React.FC = () => {
                         {tl("Compare")} →
                       </HubLink>
                     )}
+                    <HubLink
+                      to={{
+                        kind: "items",
+                        query: `player=${encodeURIComponent(rows[0].u || prettySlug(rows[0].pl))}`,
+                      }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "leaders" }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Player leaderboards")} →
+                    </HubLink>
                     <SectionCard
                       section={title}
                       name={tl("Career totals")}
@@ -917,6 +1001,15 @@ export const RecordsPanel: React.FC = () => {
                           >
                             {tl("Match prep")} →
                           </HubLink>
+                          <HubLink
+                            to={{
+                              kind: "draft",
+                              query: `teams=${encodeURIComponent(streakRows[0].u || prettySlug(streakRows[0].team))},${encodeURIComponent(streakRows[1].u || prettySlug(streakRows[1].team))}`,
+                            }}
+                            className="text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Draft board")} →
+                          </HubLink>
                         </>
                       )}
                       <SectionCard
@@ -1005,6 +1098,15 @@ export const RecordsPanel: React.FC = () => {
                             className="text-rw-accent hover:underline font-semibold"
                           >
                             {tl("Match prep")} →
+                          </HubLink>
+                          <HubLink
+                            to={{
+                              kind: "draft",
+                              query: `teams=${encodeURIComponent(titleRecordRows[0].u || prettySlug(titleRecordRows[0].team))},${encodeURIComponent(titleRecordRows[1].u || prettySlug(titleRecordRows[1].team))}`,
+                            }}
+                            className="text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Draft board")} →
                           </HubLink>
                         </>
                       )}
@@ -1200,6 +1302,15 @@ export const TitlesPanel: React.FC = () => {
                         className="text-rw-accent hover:underline font-semibold"
                       >
                         {tl("Compare")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "finder",
+                          query: `team=${encodeURIComponent(rows[0].u || prettySlug(rows[0].as))}&vs=${encodeURIComponent(prettySlug(rows[0].l))}`,
+                        }}
+                        className="text-rw-accent hover:underline font-semibold"
+                      >
+                        {tl("Game finder")} →
                       </HubLink>
                     </>
                   )}

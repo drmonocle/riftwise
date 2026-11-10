@@ -412,6 +412,47 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
           right={
             shownRows.length > 0 ? (
               <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+                {shownRows.length >= 2 && (() => {
+                  const primaryM = statMetric || PLAYER_METRICS.find((m) => m.key === "kda")!;
+                  const top2 = [...shownRows]
+                    .sort((a, b) => {
+                      const va = primaryM.value(a);
+                      const vb = primaryM.value(b);
+                      if (va == null && vb == null) return 0;
+                      if (va == null) return 1;
+                      if (vb == null) return -1;
+                      return primaryM.low ? va - vb : vb - va;
+                    })
+                    .slice(0, 2);
+                  return top2.length >= 2 ? (
+                    <HubLink
+                      to={{
+                        kind: "compare",
+                        mode: "player",
+                        a: top2[0].u || prettySlug(top2[0].n),
+                        b: top2[1].u || prettySlug(top2[1].n),
+                        period: event ? `e:${event}` : year ? `y${year}` : undefined,
+                      }}
+                      className="text-xs font-semibold text-rw-accent hover:underline"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                  ) : null;
+                })()}
+                <HubLink
+                  to={{
+                    kind: "finder",
+                    query: new URLSearchParams({
+                      ...(league ? { league } : {}),
+                      ...(year ? { year } : {}),
+                      ...(event ? { event } : {}),
+                      ...(role ? { role } : {}),
+                    }).toString(),
+                  }}
+                  className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
                 <SectionCard
                   section={tl("Player leaderboards")}
                   name={scope}

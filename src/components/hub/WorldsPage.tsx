@@ -855,6 +855,24 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
               >
                 {tl("Compare")} →
               </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `team=${encodeURIComponent(shown[0].u || prettySlug(shown[0].as))}&vs=${encodeURIComponent(prettySlug(shown[0].l))}${shown[0].e ? `&event=${encodeURIComponent(shown[0].e)}` : `&year=${encodeURIComponent(shown[0].y)}`}`,
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "titles",
+                  query: kind === "worlds" ? "kind=Worlds" : "kind=International",
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Titles")} →
+              </HubLink>
             </>
           )}
           <SectionCard
@@ -1342,6 +1360,14 @@ const MatchBox: React.FC<{ m: WMatch; byU: Map<string, WTeam>; onPick: (u: strin
               <span aria-hidden="true">·</span>
               <HubLink to={{ kind: "prep", a: m.a, b: m.b }} className="hover:text-rw-accent hover:underline" title={tl("Match prep")}>
                 {tl("vs")}
+              </HubLink>
+              <span aria-hidden="true">·</span>
+              <HubLink
+                to={{ kind: "draft", query: `teams=${encodeURIComponent(m.a)},${encodeURIComponent(m.b)}` }}
+                className="hover:text-rw-accent hover:underline"
+                title={tl("Draft board")}
+              >
+                {tl("Draft board")}
               </HubLink>
             </>
           )}

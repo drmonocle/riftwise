@@ -403,21 +403,26 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             <Section
               title={tl("All-time records set")}
               right={
-                <SectionCard
-                  section={tl("All-time records set")}
-                  name={range}
-                  rows={() =>
-                    w.records.map((r, idx) => ({
-                      rank: idx + 1,
-                      champ: r.r.c ? String(r.r.c) : undefined,
-                      team: String(r.r.team || r.r.w || "") || undefined,
-                      label: tl(RECORD_TITLES[`${r.s}/${r.k}`] || r.k),
-                      sub: recordWho(r.r),
-                      value: recordValue(r.k, Number(r.r.v)),
-                      win: true,
-                    }))
-                  }
-                />
+                <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                  <HubLink to={{ kind: "records" }} className="text-rw-accent hover:underline font-semibold">
+                    {tl("Records")} →
+                  </HubLink>
+                  <SectionCard
+                    section={tl("All-time records set")}
+                    name={range}
+                    rows={() =>
+                      w.records.map((r, idx) => ({
+                        rank: idx + 1,
+                        champ: r.r.c ? String(r.r.c) : undefined,
+                        team: String(r.r.team || r.r.w || "") || undefined,
+                        label: tl(RECORD_TITLES[`${r.s}/${r.k}`] || r.k),
+                        sub: recordWho(r.r),
+                        value: recordValue(r.k, Number(r.r.v)),
+                        win: true,
+                      }))
+                    }
+                  />
+                </span>
               }
               share="weekly-records"
             >
@@ -862,6 +867,14 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           {tl("Game finder")} →
                         </HubLink>
                       </>
+                    )}
+                    {rTerms.length === 0 && (
+                      <HubLink
+                        to={{ kind: "finder" }}
+                        className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Game finder")} →
+                      </HubLink>
                     )}
                     {w.results.length > 8 && (
                       <input

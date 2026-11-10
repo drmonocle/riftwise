@@ -507,6 +507,32 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                 </>
               );
             })()}
+            {!pair && !search.trim() && shownRows.length >= 2 && (shownRows[0].r[0] || shownRows[0].r[1]) && (shownRows[1].r[0] || shownRows[1].r[1]) && (() => {
+              const s0 = shownRows[0].r[0] || prettySlug(shownRows[0].r[1]);
+              const s1 = shownRows[1].r[0] || prettySlug(shownRows[1].r[1]);
+              return (
+                <>
+                  <HubLink
+                    to={{ kind: "prep", a: s0, b: s1 }}
+                    className="text-rw-accent hover:underline font-medium"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "draft", query: `teams=${encodeURIComponent(s0)},${encodeURIComponent(s1)}` }}
+                    className="text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "compare", mode: "team", a: s0, b: s1 }}
+                    className="text-rw-accent hover:underline font-medium"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                </>
+              );
+            })()}
             <input
               type="search"
               value={search}

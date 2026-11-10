@@ -147,6 +147,15 @@ export const PatchesPanel: React.FC = () => {
                   <HubLink to={{ kind: "champions", query: `key=p${p.p}` }} className="text-rw-accent hover:underline font-semibold">
                     {tl("Champions")}
                   </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "items",
+                      ...(p.c[0] ? { query: `champ=${encodeURIComponent(prettySlug(p.c[0][0]))}` } : {}),
+                    }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Item history")}
+                  </HubLink>
                   <SectionCard
                     section={tl("Patch {patch}", { patch: p.p })}
                     name={`${fmtDate(p.from)} – ${fmtDate(p.to)}`}
@@ -692,8 +701,23 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                     >
                       {tl("Match prep")} →
                     </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(l.titles[0].u || prettySlug(l.titles[0].t))},${encodeURIComponent(l.titles[1].u || prettySlug(l.titles[1].t))}`,
+                      }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
                   </>
                 )}
+                <HubLink
+                  to={{ kind: "titles", query: `kind=All&q=${encodeURIComponent(l.s || l.l)}` }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Titles")} →
+                </HubLink>
                 <SectionCard
                   section={tl("Most titles")}
                   sub={l.l}

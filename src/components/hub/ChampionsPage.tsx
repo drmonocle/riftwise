@@ -658,6 +658,19 @@ const LeagueTable: React.FC<{
             >
               {tl("Item history")} →
             </HubLink>
+            <HubLink
+              to={{
+                kind: "draft",
+                ...(q.get("patch")
+                  ? { query: `p=p:${encodeURIComponent(q.get("patch")!)}` }
+                  : year
+                    ? { query: `p=y${encodeURIComponent(year)}` }
+                    : {}),
+              }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Draft board")} →
+            </HubLink>
             <SectionCard
               section={tl("Champions")}
               name={[leagueName, year, q.get("patch") && tl("Patch {patch}", { patch: q.get("patch")! })].filter(Boolean).join(" · ")}
@@ -941,6 +954,19 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Item history")} →
+            </HubLink>
+            <HubLink
+              to={{
+                kind: "draft",
+                ...(key.startsWith("p")
+                  ? { query: `p=p:${encodeURIComponent(key.slice(1))}` }
+                  : key.startsWith("y")
+                    ? { query: `p=${encodeURIComponent(key)}` }
+                    : {}),
+              }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Draft board")} →
             </HubLink>
             <SectionCard
               section={tl("Champions")}
