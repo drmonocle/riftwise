@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { tl } from "../../i18n";
-import { bare, loadEventLines, matchesChampSearch, prettySlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, loadEventLines, matchesChampSearch, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import { eventFacts, factText, gamesOf, type Fact } from "../../hub/worldsFacts";
 import { moreEventFacts } from "../../hub/eventStats";
@@ -50,18 +50,17 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
   }, [facts.length]);
   const terms = search
     .trim()
-    .toLowerCase()
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-    .map((s) => s.trim())
+    .map((s) => normText(s))
     .filter(Boolean);
   const filteredFacts = useMemo(() => {
     if (!terms.length) return facts;
     return facts
       .map((f) => {
-        const cardMatch = terms.some((t) => `${f.title} ${f.headline}`.toLowerCase().includes(t));
+        const cardMatch = terms.some((t) => normText(`${f.title} ${f.headline}`).includes(t));
         if (cardMatch) return f;
         const matchingRows = f.rows.filter((r) => {
-          const hay = `${r.label} ${r.value} ${r.sub || ""} ${r.player || ""} ${r.team || ""} ${r.champ || ""}`.toLowerCase();
+          const hay = normText(`${r.label} ${r.value} ${r.sub || ""} ${r.player || ""} ${r.team || ""} ${r.champ || ""}`);
           return terms.some(
             (t) =>
               hay.includes(t) ||
@@ -161,7 +160,16 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
                 </HubLink>
               </>
             )}
-            <HubLink to={{ kind: "records" }} className="text-rw-accent hover:underline">
+            <HubLink
+              to={{
+                kind: "records",
+                query: new URLSearchParams({
+                  ...(evYr ? { year: evYr } : {}),
+                  ...(eventSlug ? { q: eventSlug } : {}),
+                }).toString() || undefined,
+              }}
+              className="text-rw-accent hover:underline"
+            >
               {tl("Records")} →
             </HubLink>
             <HubLink
@@ -172,6 +180,7 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
                     ...(evYr ? { year: evYr } : {}),
                     ...(eventSlug ? { event: eventSlug } : {}),
                     ...(topChamps[0] && terms.length > 0 ? { champ: topChamps[0] } : {}),
+                    ...(topPlayers.length >= 1 && terms.length > 0 ? { q: topPlayers.join(",") } : {}),
                   }).toString() || undefined,
               }}
               className="text-rw-accent hover:underline"
@@ -185,13 +194,25 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
                   new URLSearchParams({
                     ...(evYr ? { year: evYr } : {}),
                     ...(eventSlug ? { event: eventSlug } : {}),
+                    ...(topChamps[0] && terms.length > 0 ? { q: topChamps[0] } : {}),
                   }).toString() || undefined,
               }}
               className="text-rw-accent hover:underline"
             >
               {tl("Champions")} →
             </HubLink>
-            <HubLink to={{ kind: "tiers", ...(evYr ? { query: `key=y${evYr}` } : {}) }} className="text-rw-accent hover:underline">
+            <HubLink
+              to={{
+                kind: "tiers",
+                query:
+                  new URLSearchParams({
+                    ...(evYr ? { key: `y${evYr}` } : {}),
+                    ...(eventSlug ? { event: eventSlug } : {}),
+                    ...(topChamps[0] && terms.length > 0 ? { q: topChamps[0] } : {}),
+                  }).toString() || undefined,
+              }}
+              className="text-rw-accent hover:underline"
+            >
               {tl("Pro tier list")} →
             </HubLink>
             <HubLink
@@ -200,13 +221,20 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
                 query: new URLSearchParams({
                   ...(topTeams.length >= 1 ? { teams: topTeams.join(",") } : {}),
                   ...(eventSlug ? { p: `e:${eventSlug}` } : {}),
+                  ...(topChamps[0] ? { champ: topChamps[0] } : {}),
                 }).toString() || undefined,
               }}
               className="text-rw-accent hover:underline"
             >
               {tl("Draft board")} →
             </HubLink>
-            <HubLink to={{ kind: "rankings" }} className="text-rw-accent hover:underline">
+            <HubLink
+              to={{
+                kind: "rankings",
+                ...(topTeams.length >= 1 ? { query: `q=${encodeURIComponent(topTeams.join(","))}` } : {}),
+              }}
+              className="text-rw-accent hover:underline"
+            >
               {tl("Power rankings")} →
             </HubLink>
             <HubLink
@@ -216,6 +244,11 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
                   new URLSearchParams({
                     ...(evYr ? { year: evYr } : {}),
                     ...(eventSlug ? { event: eventSlug } : {}),
+                    ...(terms.length > 0 && topPlayers[0] ? { player: topPlayers[0] } : {}),
+                    ...(terms.length > 0 && !topPlayers[0] && topTeams[0]
+                      ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) }
+                      : {}),
+                    ...(terms.length > 0 && topChamps[0] ? { champ: topChamps[0] } : {}),
                   }).toString() || undefined,
               }}
               className="text-rw-accent hover:underline"
@@ -301,7 +334,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                     <HubLink
                       to={{
                         kind: "draft",
-                        query: `teams=${encodeURIComponent(f.rows[0].team)}${f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? `,${encodeURIComponent(f.rows[1].team)}` : ""}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}`,
+                        query: `teams=${encodeURIComponent(f.rows[0].team)}${f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? `,${encodeURIComponent(f.rows[1].team)}` : ""}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}${f.rows[0].champ ? `&champ=${encodeURIComponent(f.rows[0].champ)}` : ""}`,
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                       data-nocapture="1"
@@ -353,6 +386,9 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                         ...(evYr ? { year: evYr } : {}),
                         ...(eventSlug ? { event: eventSlug } : {}),
                         ...(f.rows[0].champ ? { champ: f.rows[0].champ } : {}),
+                        q: [f.rows[0].player, f.rows[1]?.player && f.rows[1].player !== f.rows[0].player ? f.rows[1].player : ""]
+                          .filter(Boolean)
+                          .join(","),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
@@ -376,14 +412,33 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   {tl("Game finder")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "tiers", ...(evYr ? { query: `key=y${evYr}` } : {}) }}
+                  to={{
+                    kind: "tiers",
+                    query:
+                      new URLSearchParams({
+                        ...(evYr ? { key: `y${evYr}` } : {}),
+                        ...(eventSlug ? { event: eventSlug } : {}),
+                        ...(f.rows[0].champ ? { q: f.rows[0].champ } : {}),
+                      }).toString() || undefined,
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
                 >
                   {tl("Pro tier list")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "rankings" }}
+                  to={{
+                    kind: "rankings",
+                    ...(f.rows[0].team
+                      ? {
+                          query: `q=${encodeURIComponent(
+                            [f.rows[0].team, f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? f.rows[1].team : ""]
+                              .filter(Boolean)
+                              .join(","),
+                          )}`,
+                        }
+                      : {}),
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
                 >
@@ -428,7 +483,14 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   {tl("Compare")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "rankings" }}
+                  to={{
+                    kind: "rankings",
+                    query: `q=${encodeURIComponent(
+                      [f.rows[0].team, f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? f.rows[1].team : ""]
+                        .filter(Boolean)
+                        .join(","),
+                    )}`,
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
                 >
@@ -449,14 +511,31 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   {tl("Game finder")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "tiers", ...(evYr ? { query: `key=y${evYr}` } : {}) }}
+                  to={{
+                    kind: "tiers",
+                    query:
+                      new URLSearchParams({
+                        ...(evYr ? { key: `y${evYr}` } : {}),
+                        ...(eventSlug ? { event: eventSlug } : {}),
+                      }).toString() || undefined,
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
                 >
                   {tl("Pro tier list")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "leaders", ...(eventSlug ? { query: `event=${encodeURIComponent(eventSlug)}` } : {}) }}
+                  to={{
+                    kind: "leaders",
+                    query:
+                      new URLSearchParams({
+                        ...(evYr ? { year: evYr } : {}),
+                        ...(eventSlug ? { event: eventSlug } : {}),
+                        q: [f.rows[0].team, f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? f.rows[1].team : ""]
+                          .filter(Boolean)
+                          .join(","),
+                      }).toString() || undefined,
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
                 >
@@ -486,7 +565,15 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   {tl("Item history")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "tiers", ...(evYr ? { query: `key=y${evYr}` } : {}) }}
+                  to={{
+                    kind: "tiers",
+                    query:
+                      new URLSearchParams({
+                        ...(evYr ? { key: `y${evYr}` } : {}),
+                        ...(eventSlug ? { event: eventSlug } : {}),
+                        q: f.rows[0].champ,
+                      }).toString() || undefined,
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
                 >
@@ -495,7 +582,10 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                 <HubLink
                   to={{
                     kind: "draft",
-                    ...(eventSlug ? { query: `p=e:${encodeURIComponent(eventSlug)}` } : {}),
+                    query: new URLSearchParams({
+                      ...(eventSlug ? { p: `e:${eventSlug}` } : {}),
+                      champ: f.rows[0].champ,
+                    }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
@@ -569,7 +659,14 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   {tl("Player leaderboards")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "tiers", ...(evYr ? { query: `key=y${evYr}` } : {}) }}
+                  to={{
+                    kind: "tiers",
+                    query:
+                      new URLSearchParams({
+                        ...(evYr ? { key: `y${evYr}` } : {}),
+                        ...(eventSlug ? { event: eventSlug } : {}),
+                      }).toString() || undefined,
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
                 >

@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from "react";
 import { Flame, Crown, Timer, Swords } from "lucide-react";
 import { tl, tk, roleName, regionName } from "../../i18n";
-import { bare, prettySlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { champName } from "../../champions";
 import type {
@@ -119,6 +119,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
     new URLSearchParams({
       ...(leagueSlug ? { league: leagueSlug } : {}),
       ...(yr ? { year: yr } : {}),
+      ...(slug ? { event: slug } : {}),
     }).toString() || undefined;
   return (
     <Section
@@ -182,6 +183,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                       ...(leagueSlug ? { league: leagueSlug } : {}),
                       ...(yr ? { year: yr } : {}),
                       event: slug,
+                      ...(featGame?.a ? { q: [featGame.a, featGame.b].filter(Boolean).join(",") } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -204,7 +206,20 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                   {tl("Pro tier list")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "rankings", ...(leagueSlug ? { query: `league=${encodeURIComponent(leagueSlug)}` } : {}) }}
+                  to={{
+                    kind: "rankings",
+                    query:
+                      new URLSearchParams({
+                        ...(leagueSlug ? { league: leagueSlug } : {}),
+                        ...(featGame?.a
+                          ? {
+                              q: [prettySlug(featGame.a), featGame.b ? prettySlug(featGame.b) : ""]
+                                .filter(Boolean)
+                                .join(","),
+                            }
+                          : {}),
+                      }).toString() || undefined,
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
                 >
@@ -517,6 +532,16 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                         ...(yr ? { year: yr } : {}),
                         event: slug,
                         ...(o.pentas[0]?.c ? { champ: o.pentas[0].c } : {}),
+                        ...(o.pentas[0]?.n
+                          ? {
+                              q: [
+                                o.pentas[0].n,
+                                o.pentas[1]?.n && o.pentas[1].n !== o.pentas[0].n ? o.pentas[1].n : "",
+                              ]
+                                .filter(Boolean)
+                                .join(","),
+                            }
+                          : {}),
                       }).toString(),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -534,10 +559,22 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                   </HubLink>
                 </>
               )}
-              <HubLink to={{ kind: "records" }} className="text-[11px] text-rw-accent hover:underline">
+              <HubLink to={{ kind: "records", query: "q=pentakill" }} className="text-[11px] text-rw-accent hover:underline">
                 {tl("Records")} →
               </HubLink>
-              <HubLink to={{ kind: "tiers", query: tiersQuery }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{
+                  kind: "tiers",
+                  query:
+                    new URLSearchParams({
+                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(yr ? { year: yr } : {}),
+                      ...(slug ? { event: slug } : {}),
+                      ...(o.pentas[0]?.c ? { q: o.pentas[0].c } : {}),
+                    }).toString() || undefined,
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {tl("Pro tier list")} →
               </HubLink>
               <HubLink to={{ kind: "rankings", ...(leagueSlug ? { query: `league=${encodeURIComponent(leagueSlug)}` } : {}) }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
@@ -614,6 +651,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                       ...(leagueSlug ? { league: leagueSlug } : {}),
                       ...(yr ? { year: yr } : {}),
                       ...(slug ? { event: slug } : {}),
+                      ...(o.mvp[0] ? { q: [o.mvp[0].n, o.mvp[1]?.n].filter(Boolean).join(",") } : {}),
                     }).toString() || undefined,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -682,13 +720,13 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
 }) => {
   const [open, setOpen] = useState(rosters.length <= 4);
   const [search, setSearch] = useState("");
-  const q = search.trim().toLowerCase();
+  const q = normText(search);
   const yr = year && /^\d{4}$/.test(year) ? year : eventSlug && /\d{4}/.test(eventSlug) ? /\d{4}/.exec(eventSlug)![0] : undefined;
   const filteredRosters = useMemo(() => {
     if (!q) return rosters;
-    const terms = q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean);
+    const terms = q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean);
     return rosters.filter((t) => {
-      const hay = `${t.t} ${t.u || ""} ${t.r || ""} ${t.r ? regionName(t.r, t.r) : ""} ${t.p.map(([n, u, r]) => `${n} ${u || ""} ${r || ""}`).join(" ")}`.toLowerCase();
+      const hay = normText(`${t.t} ${t.u || ""} ${t.r || ""} ${t.r ? regionName(t.r, t.r) : ""} ${t.p.map(([n, u, r]) => `${n} ${u || ""} ${r || ""}`).join(" ")}`);
       return terms.some(
         (term) =>
           hay.includes(term) ||
@@ -752,7 +790,12 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
           {filteredRosters.length > 0 && (
             <>
               <HubLink
-                to={{ kind: "teams" }}
+                to={{
+                  kind: "teams",
+                  ...((q || filteredRosters.length <= 2) && filteredRosters.length >= 1
+                    ? { query: `q=${encodeURIComponent(filteredRosters.slice(0, 2).map((t) => t.t).join(","))}` }
+                    : {}),
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Teams")} →
@@ -765,6 +808,9 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                       ...(leagueSlug ? { league: leagueSlug } : {}),
                       ...(yr ? { year: yr } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
+                      ...((q || filteredRosters.length <= 2) && filteredRosters.length >= 1
+                        ? { q: filteredRosters.slice(0, 2).map((t) => t.t).join(",") }
+                        : {}),
                     }).toString() || undefined,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -772,7 +818,23 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                 {tl("Player leaderboards")} →
               </HubLink>
               <HubLink
-                to={{ kind: "rankings", ...(leagueSlug ? { query: `league=${encodeURIComponent(leagueSlug)}` } : {}) }}
+                to={{
+                  kind: "rankings",
+                  query:
+                    new URLSearchParams({
+                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(filteredRosters[0]
+                        ? {
+                            q: [
+                              filteredRosters[0].u || prettySlug(filteredRosters[0].t),
+                              filteredRosters[1] ? filteredRosters[1].u || prettySlug(filteredRosters[1].t) : "",
+                            ]
+                              .filter(Boolean)
+                              .join(","),
+                          }
+                        : {}),
+                    }).toString() || undefined,
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Power rankings")} →
@@ -784,6 +846,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                     new URLSearchParams({
                       ...(leagueSlug ? { league: leagueSlug } : {}),
                       ...(yr ? { year: yr } : {}),
+                      ...(eventSlug ? { event: eventSlug } : {}),
                     }).toString() || undefined,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

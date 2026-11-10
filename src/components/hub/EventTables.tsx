@@ -1,7 +1,7 @@
 /** gol.gg-style stat tables for one tournament: every player and every team, sortable by any column. */
 import React, { useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
-import { bare, matchesChampSearch, prettySlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, matchesChampSearch, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import { champName } from "../../champions";
 import type { EventPlayer, EventTeamStats, HubEvent } from "../../hub/types";
@@ -44,9 +44,8 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
   const minG = Math.max(2, Math.ceil(maxG * 0.4));
   const rows = useMemo(() => {
     const terms = search
-      .toLowerCase()
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-      .map((s) => s.trim())
+      .map((s) => normText(s))
       .filter(Boolean);
     return players.filter(
       (p) =>
@@ -54,7 +53,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
         (!regular || p.g >= minG || maxG < 3) &&
         (!terms.length ||
           terms.some((term) => {
-            const hay = `${p.n} ${p.u || ""} ${p.t} ${p.tu || ""}`.toLowerCase();
+            const hay = normText(`${p.n} ${p.u || ""} ${p.t} ${p.tu || ""}`);
             return (
               hay.includes(term) ||
               (bare(term).length >= 2 && bare(hay).includes(bare(term))) ||
@@ -306,6 +305,9 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
                 event: e.u,
                 ...(role !== "All" ? { role } : {}),
                 ...((search.trim() || rows.length === 1) && rows[0]?.c?.[0] ? { champ: rows[0].c[0] } : {}),
+                ...((search.trim() || rows.length <= 2) && rows.length >= 1
+                  ? { q: rows.slice(0, 2).map((p) => p.n).join(",") }
+                  : {}),
               }).toString(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -321,6 +323,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
                 ...((e.start || e.end || "").slice(0, 4) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
                 ...(role !== "All" ? { role } : {}),
+                ...((search.trim() || rows.length === 1) && rows[0]?.c?.[0] ? { q: rows[0].c[0] } : {}),
               }).toString(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -334,7 +337,9 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
               query: new URLSearchParams({
                 ...(e.lu ? { league: e.lu } : {}),
                 ...((e.start || e.end || "").slice(0, 4) ? { key: `y${(e.start || e.end || "").slice(0, 4)}` } : {}),
+                event: e.u,
                 ...(role !== "All" ? { role } : {}),
+                ...((search.trim() || rows.length === 1) && rows[0]?.c?.[0] ? { q: rows[0].c[0] } : {}),
               }).toString(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -345,7 +350,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
           <HubLink
             to={{
               kind: "draft",
-              query: `${rows[0]?.t ? `teams=${encodeURIComponent(rows[0].tu || prettySlug(rows[0].t))}${rows[1]?.t && rows[1].t !== rows[0].t ? `,${encodeURIComponent(rows[1].tu || prettySlug(rows[1].t))}` : ""}&` : ""}p=e:${encodeURIComponent(e.u)}`,
+              query: `${rows[0]?.t ? `teams=${encodeURIComponent(rows[0].tu || prettySlug(rows[0].t))}${rows[1]?.t && rows[1].t !== rows[0].t ? `,${encodeURIComponent(rows[1].tu || prettySlug(rows[1].t))}` : ""}&` : ""}p=e:${encodeURIComponent(e.u)}${role !== "All" ? `&role=${encodeURIComponent(role)}` : ""}${rows[0]?.c?.[0] ? `&champ=${encodeURIComponent(rows[0].c[0])}` : ""}`,
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
@@ -363,7 +368,23 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
             {tl("Game finder")} →
           </HubLink>
           <HubLink
-            to={{ kind: "rankings", ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}) }}
+            to={{
+              kind: "rankings",
+              query:
+                new URLSearchParams({
+                  ...(e.lu ? { league: e.lu } : {}),
+                  ...(rows[0]?.t
+                    ? {
+                        q: [
+                          rows[0].tu || prettySlug(rows[0].t),
+                          rows[1]?.t && rows[1].t !== rows[0].t ? rows[1].tu || prettySlug(rows[1].t) : "",
+                        ]
+                          .filter(Boolean)
+                          .join(","),
+                      }
+                    : {}),
+                }).toString() || undefined,
+            }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
           >
@@ -509,14 +530,13 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
   const [search, setSearch] = useState("");
   const rows = useMemo(() => {
     const terms = search
-      .toLowerCase()
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-      .map((s) => s.trim())
+      .map((s) => normText(s))
       .filter(Boolean);
     return !terms.length
       ? teams
       : teams.filter((t) => {
-          const hay = `${t.t} ${t.u || ""}`.toLowerCase();
+          const hay = normText(`${t.t} ${t.u || ""}`);
           return terms.some((term) => hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term))));
         });
   }, [teams, search]);
@@ -730,6 +750,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
               query: new URLSearchParams({
                 ...(e.lu ? { league: e.lu } : {}),
                 ...(e.start?.slice(0, 4) ? { key: `y${e.start.slice(0, 4)}` } : {}),
+                event: e.u,
               }).toString(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -738,7 +759,20 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
             {tl("Pro tier list")} →
           </HubLink>
           <HubLink
-            to={{ kind: "rankings", ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}) }}
+            to={{
+              kind: "rankings",
+              query:
+                new URLSearchParams({
+                  ...(e.lu ? { league: e.lu } : {}),
+                  ...(rows[0]
+                    ? {
+                        q: [rows[0].u || prettySlug(rows[0].t), rows[1] ? rows[1].u || prettySlug(rows[1].t) : ""]
+                          .filter(Boolean)
+                          .join(","),
+                      }
+                    : {}),
+                }).toString() || undefined,
+            }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
           >
@@ -777,6 +811,9 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
                 ...(e.lu ? { league: e.lu } : {}),
                 ...(e.start?.slice(0, 4) ? { year: e.start.slice(0, 4) } : {}),
                 event: e.u,
+                ...((search.trim() || rows.length <= 2) && rows.length >= 1
+                  ? { q: rows.slice(0, 2).map((t) => t.t).join(",") }
+                  : {}),
               }).toString(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
