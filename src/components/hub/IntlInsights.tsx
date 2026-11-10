@@ -247,20 +247,38 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         key="swiss"
         title={tl("Swiss stage")}
         right={
-          <SectionCard
-            section={tl("Swiss stage")}
-            name={name}
-            rows={() =>
-              sorted.map((r, idx) => ({
-                rank: idx + 1,
-                team: r.team,
-                label: `${all ? yearOnly(r.year) + " · " : ""}${r.team}`,
-                sub: r.path.split("").join(" "),
-                value: `${r.wins}-${r.losses}`,
-                win: r.wins >= 3,
-              }))
-            }
-          />
+          <span className="flex flex-wrap items-center gap-2">
+            {!all && sorted.length >= 2 && (
+              <>
+                <HubLink
+                  to={{ kind: "prep", a: sorted[0].u || prettySlug(sorted[0].team), b: sorted[1].u || prettySlug(sorted[1].team), period: `y${yearOnly(sorted[0].year)}` }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "compare", mode: "team", a: sorted[0].u || prettySlug(sorted[0].team), b: sorted[1].u || prettySlug(sorted[1].team), period: `y${yearOnly(sorted[0].year)}` }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              </>
+            )}
+            <SectionCard
+              section={tl("Swiss stage")}
+              name={name}
+              rows={() =>
+                sorted.map((r, idx) => ({
+                  rank: idx + 1,
+                  team: r.team,
+                  label: `${all ? yearOnly(r.year) + " · " : ""}${r.team}`,
+                  sub: r.path.split("").join(" "),
+                  value: `${r.wins}-${r.losses}`,
+                  win: r.wins >= 3,
+                }))
+              }
+            />
+          </span>
         }
       >
         {all ? (
@@ -412,20 +430,42 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         key="finals"
         title={tl("Finals")}
         right={
-          <SectionCard
-            section={tl("Most finals")}
-            name={name}
-            rows={() =>
-              fin.mostReached.map((r, idx) => ({
-                rank: idx + 1,
-                team: r.name,
-                label: r.name,
-                sub: tl("{w} won · {l} lost", { w: r.won, l: r.n - r.won }),
-                value: String(r.n),
-                win: r.won >= r.n - r.won,
-              }))
-            }
-          />
+          <span className="flex flex-wrap items-center gap-2">
+            {fin.mostReached.length >= 2 && (
+              <>
+                <HubLink
+                  to={{ kind: "prep", a: fin.mostReached[0].u, b: fin.mostReached[1].u }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "compare", mode: "team", a: fin.mostReached[0].u, b: fin.mostReached[1].u }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              </>
+            )}
+            <CopyInsightPost
+              title={`${tl("Most finals")} · ${name}`}
+              rows={fin.mostReached.slice(0, 6).map((r) => `${r.name}: ${r.n} (${tl("{w} won · {l} lost", { w: r.won, l: r.n - r.won })})`)}
+            />
+            <SectionCard
+              section={tl("Most finals")}
+              name={name}
+              rows={() =>
+                fin.mostReached.map((r, idx) => ({
+                  rank: idx + 1,
+                  team: r.name,
+                  label: r.name,
+                  sub: tl("{w} won · {l} lost", { w: r.won, l: r.n - r.won }),
+                  value: String(r.n),
+                  win: r.won >= r.n - r.won,
+                }))
+              }
+            />
+          </span>
         }
       >
         <h4 className="text-[10px] font-bold uppercase tracking-wider text-rw-muted">{tl("Most finals")}</h4>
@@ -526,13 +566,22 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     }
                     sub={l.map((f) => `${yearOnly(f.year)}: ${f.winner} ${f.score}`).join(" · ")}
                     right={
-                      <HubLink
-                        to={{ kind: "compare", mode: "team", a: wSlug, b: lSlug }}
-                        className="hover:underline"
-                        title={tl("Compare")}
-                      >
-                        ×{l.length}
-                      </HubLink>
+                      <span className="inline-flex items-center gap-2">
+                        <HubLink
+                          to={{ kind: "prep", a: wSlug, b: lSlug }}
+                          className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
+                          title={tl("Match prep")}
+                        >
+                          {tl("Match prep")}
+                        </HubLink>
+                        <HubLink
+                          to={{ kind: "compare", mode: "team", a: wSlug, b: lSlug }}
+                          className="hover:underline"
+                          title={tl("Compare")}
+                        >
+                          ×{l.length}
+                        </HubLink>
+                      </span>
                     }
                   />
                 );
@@ -549,7 +598,16 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         key="players"
         title={tl("Players with the most titles")}
         right={
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center gap-2">
+            {titles.length >= 2 && titles[0].u && titles[1].u && (
+              <HubLink
+                to={{ kind: "compare", mode: "player", a: titles[0].u, b: titles[1].u }}
+                className="text-[11px] text-rw-accent hover:underline"
+                title={tl("Compare {a} and {b}", { a: titles[0].name, b: titles[1].name })}
+              >
+                {tl("Compare")} →
+              </HubLink>
+            )}
             <CopyInsightPost
               title={`${tl("Players with the most titles")} · ${name}`}
               rows={titles.slice(0, 6).map((p) => `${p.name}: ${tl("{n} titles", { n: p.titles.length })} (${p.titles.map(yearOnly).sort().join(", ")})`)}

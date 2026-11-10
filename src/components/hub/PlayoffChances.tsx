@@ -21,11 +21,21 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
   const today = new Date().toISOString().slice(0, 10);
   const odds = useMemo(() => (ratings.data ? playoffOdds(e, ratings.data, today) : null), [e, ratings.data, today]);
   const [pick, setPick] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
   const [hidden, reveal] = useHidden(`playoffs:${e.u}`, e.end);
   if (!odds) return null;
   const cut = pick != null && odds.cuts.includes(pick) ? pick : odds.cut;
   const ci = odds.cuts.indexOf(cut);
   const rows = [...odds.rows].sort((a, b) => b.top[ci] - a.top[ci] || b.first - a.first || b.sw - a.sw);
+  const terms = search
+    .trim()
+    .toLowerCase()
+    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const filteredRows = terms.length
+    ? rows.filter((r) => terms.some((q) => r.name.toLowerCase().includes(q) || r.u.toLowerCase().includes(q)))
+    : rows;
   const unrated = odds.rows.filter((r) => r.unrated).length;
   const th = "px-1.5 sm:px-2 py-1 font-normal text-[10px] text-rw-muted whitespace-nowrap";
   const seg = (on: boolean) => `px-2 py-1 pointer-coarse:min-h-9 max-sm:min-h-9 ${on ? "bg-rw-accent/15 text-rw-text" : "text-rw-sub hover:text-rw-text"}`;
@@ -37,6 +47,17 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
           <RevealButton onReveal={reveal} small />
         ) : (
           <span className="flex flex-wrap items-center gap-2">
+            {rows.length > 6 && (
+              <input
+                type="search"
+                value={search}
+                onChange={(ev) => setSearch(ev.target.value)}
+                placeholder={tl("Filter by name or team…")}
+                aria-label={tl("Filter by name or team…")}
+                data-nocapture="1"
+                className="bg-rw-bg border border-rw-border rounded-md px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted focus:border-rw-accent focus:outline-none w-36"
+              />
+            )}
             <span data-nocapture="1" className="flex rounded border border-rw-border divide-x divide-rw-border overflow-hidden text-[11px]" role="group" aria-label={tl("Cut line")}>
               {odds.cuts.map((k) => (
                 <button key={k} type="button" aria-pressed={k === cut} onClick={() => setPick(k)} className={seg(k === cut)}>
@@ -44,11 +65,11 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                 </button>
               ))}
             </span>
-            {rows.length >= 2 && (
+            {filteredRows.length >= 2 && (
               <>
                 <HubLink
                   data-nocapture="1"
-                  to={{ kind: "prep", a: rows[0].u, b: rows[1].u, period: `e:${e.u}` }}
+                  to={{ kind: "prep", a: filteredRows[0].u, b: filteredRows[1].u, period: `e:${e.u}` }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
                   title={tl("Match prep")}
                 >
@@ -56,9 +77,17 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                 </HubLink>
                 <HubLink
                   data-nocapture="1"
-                  to={{ kind: "compare", mode: "team", a: rows[0].u, b: rows[1].u, period: `e:${e.u}` }}
+                  to={{ kind: "draft", query: `teams=${encodeURIComponent(filteredRows[0].u)},${encodeURIComponent(filteredRows[1].u)}&p=${encodeURIComponent(`e:${e.u}`)}` }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
-                  title={tl("Compare {a} and {b}", { a: rows[0].name, b: rows[1].name })}
+                  title={tl("Draft board")}
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
+                  data-nocapture="1"
+                  to={{ kind: "compare", mode: "team", a: filteredRows[0].u, b: filteredRows[1].u, period: `e:${e.u}` }}
+                  className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+                  title={tl("Compare {a} and {b}", { a: filteredRows[0].name, b: filteredRows[1].name })}
                 >
                   {tl("Compare")} →
                 </HubLink>
@@ -68,14 +97,14 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
               eventName={e.n}
               slug={e.u}
               cut={cut}
-              rows={rows.slice(0, 8).map((r, idx) => `#${idx + 1} ${r.name} (${r.sw}-${r.sl}): ${tl("Top {n}", { n: cut })} ${pctText(r.top[ci])} · #1 ${pctText(r.first)}`)}
+              rows={filteredRows.slice(0, 8).map((r, idx) => `#${idx + 1} ${r.name} (${r.sw}-${r.sl}): ${tl("Top {n}", { n: cut })} ${pctText(r.top[ci])} · #1 ${pctText(r.first)}`)}
             />
             <SectionCard
               section={tl("Playoff chances")}
               sub={`${e.n} · ${tl("Top {n}", { n: cut })}`}
               name={`${e.u}-playoff-chances-top-${cut}`}
               rows={() =>
-                rows.slice(0, 10).map((r, idx) => ({
+                filteredRows.slice(0, 10).map((r, idx) => ({
                   rank: idx + 1,
                   team: r.name,
                   label: r.name,
@@ -110,7 +139,7 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
+                {filteredRows.map((r) => (
                   <tr key={r.u} className="border-t border-rw-border">
                     <td className="px-1.5 sm:px-2 py-1 truncate" data-sort={r.name}>
                       <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">

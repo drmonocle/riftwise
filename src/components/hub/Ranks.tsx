@@ -737,6 +737,20 @@ export const PlayerRanks: React.FC<{
           />
           {!ranksHidden && cardRows.length > 0 && (
             <>
+              {(() => {
+                const topPeer = season?.players
+                  .filter((p) => p.r === me?.r && p.u && p.u !== slug)
+                  .sort((a, b) => b.w / Math.max(1, b.g) - a.w / Math.max(1, a.g) || b.g - a.g)[0];
+                return topPeer?.u ? (
+                  <HubLink
+                    to={{ kind: "compare", mode: "player", a: slug, b: topPeer.u, period: `y${year}` }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                    title={tl("Compare {a} and {b}", { a: name || me?.n || slug, b: topPeer.n })}
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                ) : null;
+              })()}
               <CopyRanksPost
                 title={`${name || me?.n || slug} · ${leagueLabel} ${year}${me?.r ? ` (${roleName(me.r)})` : ""}`}
                 rows={cardRows}
@@ -867,6 +881,29 @@ export const TeamRanks: React.FC<{
           />
           {!ranksHidden && cardRows.length > 0 && (
             <>
+              {(() => {
+                const topTeam = season?.teamStats
+                  .filter((t) => t.u && t.u !== slug)
+                  .sort((a, b) => b.w / Math.max(1, b.g) - a.w / Math.max(1, a.g) || b.g - a.g)[0];
+                return topTeam?.u ? (
+                  <>
+                    <HubLink
+                      to={{ kind: "prep", a: slug, b: topTeam.u, period: `y${year}` }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                      title={tl("Match prep")}
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "compare", mode: "team", a: slug, b: topTeam.u, period: `y${year}` }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                      title={tl("Compare {a} and {b}", { a: name || me?.t || slug, b: topTeam.t })}
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                  </>
+                ) : null;
+              })()}
               <CopyRanksPost
                 title={`${name || me?.t || slug} · ${leagueLabel} ${year}`}
                 rows={cardRows}

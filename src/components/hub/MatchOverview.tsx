@@ -240,16 +240,28 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
         <div className="border-t border-rw-border pt-2 space-y-1">
           <div className="flex items-center justify-between text-[10px] text-rw-muted uppercase tracking-wider font-semibold">
             <span>{tl("Lane by lane")}</span>
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                navigateHub({ kind: "compare", mode: "team", a: x.team.u, b: y.team.u });
-              }}
-              className="hover:text-rw-accent hover:underline"
-            >
-              {tl("Compare")} →
-            </button>
+            <span className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(x.team.u)},${encodeURIComponent(y.team.u)}` });
+                }}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  navigateHub({ kind: "compare", mode: "team", a: x.team.u, b: y.team.u });
+                }}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </button>
+            </span>
           </div>
           <div className="grid grid-cols-1 gap-1">
             {lanePairs.map(({ role, a, b }) => {

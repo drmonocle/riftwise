@@ -450,9 +450,66 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
   next,
   eventSlug,
 }) => {
-  const rows = Object.keys(rec).sort((a, b) => rec[b][0] - rec[a][0] || rec[a][1] - rec[b][1] || (byU.get(a)?.n || a).localeCompare(byU.get(b)?.n || b));
+  const [search, setSearch] = useState("");
+  const allRows = Object.keys(rec).sort((a, b) => rec[b][0] - rec[a][0] || rec[a][1] - rec[b][1] || (byU.get(a)?.n || a).localeCompare(byU.get(b)?.n || b));
+  const terms = search
+    .trim()
+    .toLowerCase()
+    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const rows = terms.length
+    ? allRows.filter((u) => {
+        const t = byU.get(u);
+        const opp = next.get(u);
+        const oppT = opp ? byU.get(opp) : undefined;
+        return terms.some(
+          (q) =>
+            u.toLowerCase().includes(q) ||
+            (t?.n || "").toLowerCase().includes(q) ||
+            (t?.c || "").toLowerCase().includes(q) ||
+            (opp || "").toLowerCase().includes(q) ||
+            (oppT?.n || "").toLowerCase().includes(q) ||
+            (oppT?.c || "").toLowerCase().includes(q),
+        );
+      })
+    : allRows;
   return (
-    <div className="overflow-x-auto max-w-full">
+    <div className="overflow-x-auto max-w-full space-y-1.5">
+      {allRows.length > 8 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 px-1" data-nocapture="1">
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={tl("Filter by name or team…")}
+            aria-label={tl("Filter by name or team…")}
+            className="bg-rw-bg border border-rw-border rounded-md px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted focus:border-rw-accent focus:outline-none w-40"
+          />
+          {terms.length > 0 && rows.length >= 2 && (
+            <span className="flex items-center gap-2">
+              <HubLink
+                to={{ kind: "prep", a: rows[0], b: rows[1], period: eventSlug ? `e:${eventSlug}` : undefined }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "draft", query: `teams=${encodeURIComponent(rows[0])},${encodeURIComponent(rows[1])}${eventSlug ? `&p=${encodeURIComponent(`e:${eventSlug}`)}` : ""}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: rows[0], b: rows[1], period: eventSlug ? `e:${eventSlug}` : undefined }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            </span>
+          )}
+        </div>
+      )}
       <STable className="w-full text-xs">
         <thead className="text-[10px] text-rw-muted">
           <tr>
@@ -1139,6 +1196,12 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
                     <HubLink to={{ kind: "prep", a: top2[0].u, b: top2[1].u, period: `y${year}` }} className="text-[11px] text-rw-accent hover:underline">
                       {tl("Match prep")} →
                     </HubLink>
+                    <HubLink
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(top2[0].u)},${encodeURIComponent(top2[1].u)}&p=y${year}` }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
                     <HubLink to={{ kind: "compare", mode: "team", a: top2[0].u, b: top2[1].u, period: `y${year}` }} className="text-[11px] text-rw-accent hover:underline">
                       {tl("Compare")} →
                     </HubLink>
@@ -1570,6 +1633,12 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                   <>
                     <HubLink to={{ kind: "prep", a: top2[0].u, b: top2[1].u, period: `y${d.year}` }} className="text-[11px] text-rw-accent hover:underline">
                       {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(top2[0].u)},${encodeURIComponent(top2[1].u)}&p=y${d.year}` }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
                     </HubLink>
                     <HubLink to={{ kind: "compare", mode: "team", a: top2[0].u, b: top2[1].u, period: `y${d.year}` }} className="text-[11px] text-rw-accent hover:underline">
                       {tl("Compare")} →

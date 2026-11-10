@@ -693,6 +693,22 @@ export const PlayerOpponents: React.FC<{
               {tl("All time")}
             </button>
           )}
+          {search.trim() && filteredOpps.length >= 2 && (
+            <>
+              <HubLink
+                to={{ kind: "prep", a: filteredOpps[0].u || prettySlug(filteredOpps[0].opp), b: filteredOpps[1].u || prettySlug(filteredOpps[1].opp), period: period || (scope !== "all" ? scope : undefined) }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: filteredOpps[0].u || prettySlug(filteredOpps[0].opp), b: filteredOpps[1].u || prettySlug(filteredOpps[1].opp), period: period || (scope !== "all" ? scope : undefined) }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            </>
+          )}
           {filteredOpps.length > 10 && !search.trim() && (
             <button
               type="button"
@@ -707,7 +723,7 @@ export const PlayerOpponents: React.FC<{
             name={name}
             sub={cardSub}
             rows={() =>
-              opps.slice(0, 10).map((o, idx) => ({
+              filteredOpps.slice(0, 10).map((o, idx) => ({
                 rank: idx + 1,
                 team: o.opp,
                 label: o.opp,
@@ -808,6 +824,12 @@ export const PlayerOpponents: React.FC<{
               </HubLink>
             </span>
             <span className="flex items-center gap-2">
+              <HubLink
+                to={{ kind: "items", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(expanded.u || expanded.opp)}${periodQuerySuffix(period || scope)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Item history")}
+              </HubLink>
               <HubLink
                 to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(expanded.u || expanded.opp)}${periodQuerySuffix(period || scope)}` }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -1082,7 +1104,40 @@ export const TeamOpponentsChart: React.FC<{
       title={tl("Against other teams")}
       share={`${teamSlug}-opponents`}
       right={
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center gap-2">
+          {compact && opps.length > 8 && (
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={tl("Filter by name or team…")}
+              aria-label={tl("Filter by name or team…")}
+              data-nocapture="1"
+              className="bg-rw-bg border border-rw-border rounded-md px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted focus:border-rw-accent focus:outline-none w-36"
+            />
+          )}
+          {search.trim() && filtered.length >= 1 && (
+            <>
+              <HubLink
+                to={{ kind: "prep", a: teamSlug, b: filtered[0].u || prettySlug(filtered[0].n) }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "draft", query: `teams=${encodeURIComponent(teamSlug)},${encodeURIComponent(filtered[0].u || prettySlug(filtered[0].n))}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: teamSlug, b: filtered[0].u || prettySlug(filtered[0].n) }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            </>
+          )}
           {filtered.length > limit && !search.trim() && (
             <button
               type="button"
@@ -1097,7 +1152,7 @@ export const TeamOpponentsChart: React.FC<{
             name={teamName}
             sub={cardSub}
             rows={() =>
-              opps.slice(0, 10).map((o, idx) => ({
+              filtered.slice(0, 10).map((o, idx) => ({
                 rank: idx + 1,
                 team: o.n,
                 label: o.n,
@@ -1358,6 +1413,28 @@ export const TeamPeriodOpponents: React.FC<{
               ))}
             </span>
           )}
+          {q && filtered.length >= 1 && (
+            <>
+              <HubLink
+                to={{ kind: "prep", a: teamSlug, b: filtered[0].u || prettySlug(filtered[0].opp), period: pVal }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "draft", query: `teams=${encodeURIComponent(teamSlug)},${encodeURIComponent(filtered[0].u || prettySlug(filtered[0].opp))}${pVal ? `&p=${encodeURIComponent(pVal)}` : ""}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: teamSlug, b: filtered[0].u || prettySlug(filtered[0].opp), period: pVal }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            </>
+          )}
           {filtered.length > 10 && !q && (
             <button type="button" onClick={() => setShowAll((v) => !v)} className="text-[11px] text-rw-accent hover:underline">
               {showAll ? tl("Show fewer") : tl("Show all {n}", { n: filtered.length })}
@@ -1368,7 +1445,7 @@ export const TeamPeriodOpponents: React.FC<{
             name={teamName}
             sub={cardSub}
             rows={() =>
-              opps.slice(0, 10).map((o, idx) => ({
+              filtered.slice(0, 10).map((o, idx) => ({
                 rank: idx + 1,
                 team: o.opp,
                 label: o.opp,
