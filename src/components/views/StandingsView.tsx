@@ -46,6 +46,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
   const [loading, setLoading] = useState<"leagues" | "tournaments" | "standings" | null>("leagues");
   const [error, setError] = useState<string | null>(null);
   const [revealedStages, setRevealedStages] = useState<Record<string, boolean>>({});
+  const [groupSearch, setGroupSearch] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -261,13 +262,41 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
       ) : (
         <div className="space-y-4">
           {stage.sections.map((sec, si) =>
-            sec.type === "group" ? (
+            sec.type === "group" ? (() => {
+              const allGroupTeams = sec.rows.flatMap((r) => r.teams.map((t) => ({ rank: r.rank, team: t })));
+              const groupTerms = groupSearch
+                .trim()
+                .toLowerCase()
+                .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+                .map((s) => s.trim())
+                .filter(Boolean);
+              const filteredGroupEntries =
+                groupTerms.length > 0
+                  ? allGroupTeams.filter(({ team }) =>
+                      groupTerms.some(
+                        (q) =>
+                          (team.name || "").toLowerCase().includes(q) ||
+                          (team.code || "").toLowerCase().includes(q),
+                      ),
+                    )
+                  : allGroupTeams;
+              const groupTeams = filteredGroupEntries.map((e) => e.team).filter((t) => t.code && t.code !== "TBD");
+              return (
               <div key={si} className="bg-rw-panel border border-rw-border rounded-xl overflow-hidden">
-                <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-rw-accent border-b border-rw-border bg-rw-bg flex items-center justify-between gap-2">
+                <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-rw-accent border-b border-rw-border bg-rw-bg flex flex-wrap items-center justify-between gap-2">
                   <span>{sec.name || stage.name}</span>
-                  <span className="flex items-center gap-2 font-normal normal-case tracking-normal">
+                  <span className="flex flex-wrap items-center gap-2 font-normal normal-case tracking-normal">
+                    {allGroupTeams.length > 6 && (
+                      <input
+                        type="search"
+                        value={groupSearch}
+                        onChange={(e) => setGroupSearch(e.target.value)}
+                        placeholder={tl("Filter by name or team…")}
+                        aria-label={tl("Filter by name or team…")}
+                        className="bg-rw-panel border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text w-36"
+                      />
+                    )}
                     {(() => {
-                      const groupTeams = sec.rows.flatMap((r) => r.teams).filter((t) => t.code && t.code !== "TBD");
                       if (groupTeams.length < 2) return null;
                       const a = prettySlug(groupTeams[0].name || groupTeams[0].code);
                       const b = prettySlug(groupTeams[1].name || groupTeams[1].code);
@@ -280,6 +309,18 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                           >
                             {tl("Match prep")} →
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigateHub({
+                                kind: "draft",
+                                query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}${yr ? `&p=${encodeURIComponent(`y${yr}`)}` : ""}`,
+                              })
+                            }
+                            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Draft board")} →
                           </button>
                           <button
                             type="button"
@@ -297,20 +338,18 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                         name={tournamentInfo ? prettyTournament(tournamentInfo) : activeLeague.toUpperCase()}
                         sub={stage.name}
                         rows={() =>
-                          sec.rows.flatMap((row) =>
-                            row.teams.map((team) => {
-                              const played = team.wins + team.losses + team.ties;
-                              return {
-                                rank: String(row.rank),
-                                team: team.name || team.code,
-                                label: team.name,
-                                sub: team.code,
-                                value: `${team.wins}–${team.losses}${team.ties > 0 ? `–${team.ties}` : ""}`,
-                                note: played > 0 ? `${Math.round((team.wins / played) * 100)}%` : "",
-                                win: played > 0 ? team.wins / played >= 0.5 : undefined,
-                              };
-                            }),
-                          )
+                          filteredGroupEntries.map(({ rank, team }) => {
+                            const played = team.wins + team.losses + team.ties;
+                            return {
+                              rank: String(rank),
+                              team: team.name || team.code,
+                              label: team.name,
+                              sub: team.code,
+                              value: `${team.wins}–${team.losses}${team.ties > 0 ? `–${team.ties}` : ""}`,
+                              note: played > 0 ? `${Math.round((team.wins / played) * 100)}%` : "",
+                              win: played > 0 ? team.wins / played >= 0.5 : undefined,
+                            };
+                          })
                         }
                       />
                     )}
@@ -326,8 +365,8 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-rw-border/60">
-                    {sec.rows.flatMap((row) =>
-                      row.teams.map((team) => {
+                    {filteredGroupEntries.map(({ rank, team }) => {
+                        const row = { rank };
                         const isFollowed = settings.followedTeams.includes(team.code);
                         const played = team.wins + team.losses + team.ties;
                         return (
@@ -424,12 +463,12 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                             </td>
                           </tr>
                         );
-                      }),
-                    )}
+                    })}
                   </tbody>
                 </STable>
               </div>
-            ) : (
+              );
+            })() : (
               <div key={si} className="bg-rw-panel border border-rw-border rounded-xl overflow-hidden">
                 <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-rw-accent border-b border-rw-border bg-rw-bg flex items-center justify-between gap-2">
                   <span>{sec.name || stage.name}</span>

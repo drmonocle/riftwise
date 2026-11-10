@@ -205,6 +205,17 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
               <button
                 type="button"
                 onClick={() => {
+                  navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(top[0][0])},${encodeURIComponent(top[1][0])}` });
+                  onSelectTab("stats");
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
+                title={tl("Draft board")}
+              >
+                {tl("Draft board")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
                   navigateHub({ kind: "compare", mode: "team", a: top[0][0], b: top[1][0] });
                   onSelectTab("stats");
                 }}

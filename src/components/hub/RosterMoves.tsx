@@ -60,6 +60,14 @@ export const RosterMoves: React.FC = () => {
           ))}
           {list.length > 0 && (
             <>
+              {terms.length > 0 && list.length >= 2 && list[0].u !== list[1].u && (
+                <HubLink
+                  to={{ kind: "compare", mode: "player", a: list[0].u, b: list[1].u }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              )}
               <CopyMovesPost
                 sub={all ? tl("All leagues") : tl("Top leagues")}
                 rows={list.slice(0, 6).map((m) => `${m.n}${m.r ? ` (${roleName(m.r)})` : ""}: ${m.from.n} → ${m.to.n} (${fmtDate(m.d, false)})`)}

@@ -76,6 +76,16 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
               <button
                 type="button"
                 onClick={() => {
+                  navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(d.rows[0].u)},${encodeURIComponent(d.rows[1].u)}` });
+                  onOpen();
+                }}
+                className="text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Draft board")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
                   navigateHub({ kind: "compare", mode: "team", a: d.rows[0].u, b: d.rows[1].u });
                   onOpen();
                 }}

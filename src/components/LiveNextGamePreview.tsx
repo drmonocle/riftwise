@@ -355,6 +355,12 @@ export const LiveNextGamePreview: React.FC<{
               {tl("Match prep")} →
             </HubLink>
             <HubLink
+              to={{ kind: "compare", mode: "team", a: draftIntel.slugA, b: draftIntel.slugB }}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Compare")} →
+            </HubLink>
+            <HubLink
               to={{ kind: "draft", query: draftQuery }}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-accent hover:underline"
             >

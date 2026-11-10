@@ -339,6 +339,39 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                   className="w-full bg-rw-surface border border-rw-border rounded pl-8 pr-3 py-1 text-xs text-rw-text focus:outline-none focus:border-rw-accent"
                 />
               </div>
+              {searchQuery.trim() && (() => {
+                const topPair = filtered.find(
+                  (m) => m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD",
+                );
+                if (!topPair) return null;
+                const a = prettySlug(topPair.team1Name || topPair.team1Code);
+                const b = prettySlug(topPair.team2Name || topPair.team2Code);
+                return (
+                  <div className="flex items-center gap-2 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => navigateHub({ kind: "prep", a, b })}
+                      className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                    >
+                      {tl("Match prep")} →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}` })}
+                      className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                    >
+                      {tl("Draft board")} →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigateHub({ kind: "compare", mode: "team", a, b })}
+                      className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                    >
+                      {tl("Compare")} →
+                    </button>
+                  </div>
+                );
+              })()}
               {filtered.length > 0 && (filterRange !== "results" || !settings.spoilerMode) && (
                 <SectionCard
                   section={filterRange === "today" ? tl("Today") : filterRange === "upcoming" ? tl("Upcoming") : tl("Results")}

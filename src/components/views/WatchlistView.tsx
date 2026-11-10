@@ -125,11 +125,19 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
   const q = search.trim().toLowerCase();
   // 페이커 -> faker, B站 -> bilibili: fans type names the way their community writes them
   const qs = searchAlias(search).trim().toLowerCase();
+  const qTerms = useMemo(
+    () =>
+      search
+        .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+        .map((s) => searchAlias(s).trim().toLowerCase())
+        .filter(Boolean),
+    [search],
+  );
 
   // Filtered TEAMS: searches across all catalog.teams (~778 teams)
   const filteredTeams = useMemo(() => {
     const all = catalog.teams || [];
-    if (!q) {
+    if (!q || qTerms.length === 0) {
       const followed = all.filter((t) => settings.followedTeams.includes(t.code));
       // Prioritize teams from major Tier-1 leagues
       const major = all.filter(
@@ -140,22 +148,24 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
       return [...followed, ...major.slice(0, 50)];
     }
     return all
-      .filter(
-        (t) =>
-          t.code.toLowerCase().includes(qs) ||
-          t.name.toLowerCase().includes(qs) ||
-          t.league.toLowerCase().includes(qs) ||
-          t.region.toLowerCase().includes(qs) ||
-          regionName(t.region).toLowerCase().includes(qs)
+      .filter((t) =>
+        qTerms.some(
+          (term) =>
+            t.code.toLowerCase().includes(term) ||
+            t.name.toLowerCase().includes(term) ||
+            t.league.toLowerCase().includes(term) ||
+            t.region.toLowerCase().includes(term) ||
+            regionName(t.region).toLowerCase().includes(term),
+        ),
       )
       .slice(0, 100);
-  }, [catalog.teams, settings.followedTeams, qs]);
+  }, [catalog.teams, settings.followedTeams, q, qTerms]);
 
   // Filtered PLAYERS: searches across all catalog.players (~4,634 players)
   const filteredPlayers = useMemo(() => {
     // A player Riot lists on a main roster and its academy shows once, with the main team
     const all = mainPlayerEntries(catalog.players || [], catalog.teams);
-    if (!q) {
+    if (!q || qTerms.length === 0) {
       // Show followed players first, then famous popular players
       const followed = all.filter((p) => settings.followedPlayers.includes(p.name));
       const popularNames = POPULAR_PLAYERS.map((p) => p.name.toLowerCase());
@@ -164,16 +174,18 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
       return combined.length > 0 ? combined.slice(0, 40) : all.slice(0, 40);
     }
     return all
-      .filter(
-        (p) =>
-          p.name.toLowerCase().includes(qs) ||
-          p.teamCode.toLowerCase().includes(qs) ||
-          p.teamName.toLowerCase().includes(qs) ||
-          p.role.toLowerCase().includes(qs) ||
-          (p.realName && p.realName.toLowerCase().includes(qs))
+      .filter((p) =>
+        qTerms.some(
+          (term) =>
+            p.name.toLowerCase().includes(term) ||
+            p.teamCode.toLowerCase().includes(term) ||
+            p.teamName.toLowerCase().includes(term) ||
+            p.role.toLowerCase().includes(term) ||
+            (p.realName && p.realName.toLowerCase().includes(term)),
+        ),
       )
       .slice(0, 100);
-  }, [catalog.players, catalog.teams, settings.followedPlayers, qs]);
+  }, [catalog.players, catalog.teams, settings.followedPlayers, q, qTerms]);
 
   // Filtered REGIONS
   const filteredRegions = useMemo(() => {
@@ -401,12 +413,42 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
       {/* 1. TEAMS SUB-TAB */}
       {tab === "teams" && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between text-[11px] text-rw-muted">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-rw-muted">
             <span>
               {!q
                 ? tl("Showing major pro teams ({shown} of {total}) · type above to search all teams", { shown: filteredTeams.length, total: catalog.teams.length })
                 : tl('Found {n} teams matching "{q}"', { n: filteredTeams.length, q }) + (filteredTeams.length === 0 && isNonLatin(search) ? " · " + tl("Names here use English letters. Try the in-game name, like Faker or T1.") : "")}
             </span>
+            {(q ? filteredTeams.length >= 2 : settings.followedTeams.length >= 2 && filteredTeams.length >= 2) && (() => {
+              const a = prettySlug(filteredTeams[0].name || filteredTeams[0].code);
+              const b = prettySlug(filteredTeams[1].name || filteredTeams[1].code);
+              if (a === b) return null;
+              return (
+                <span className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "prep", a, b })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Match prep")} →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}` })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")} →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "compare", mode: "team", a, b })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </button>
+                </span>
+              );
+            })()}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -582,6 +624,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                                 {tl("Game finder")}
                               </button>
                               <button
+                                type="button"
+                                onClick={() => navigateHub({ kind: "items", query: `player=${encodeURIComponent(prettySlug(p.name))}` })}
+                                className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline hidden sm:inline"
+                              >
+                                {tl("Item history")}
+                              </button>
+                              <button
                                 onClick={() => togglePlayer(p.name)}
                                 className={`text-[10px] font-semibold ${
                                   isPlayerFollowed ? "text-rw-teal" : "text-rw-muted hover:text-rw-accent"
@@ -605,12 +654,26 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
       {/* 2. PLAYERS SUB-TAB */}
       {tab === "players" && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between text-[11px] text-rw-muted">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-rw-muted">
             <span>
               {!q
                 ? tl("Showing top pro players ({shown} of {total}) · type above to search all registered pros", { shown: filteredPlayers.length, total: catalog.players.length })
                 : tl('Found {n} players matching "{q}"', { n: filteredPlayers.length, q }) + (filteredPlayers.length === 0 && isNonLatin(search) ? " · " + tl("Names here use English letters. Try the in-game name, like Faker or T1.") : "")}
             </span>
+            {(q ? filteredPlayers.length >= 2 : settings.followedPlayers.length >= 2 && filteredPlayers.length >= 2) && (() => {
+              const a = prettySlug(filteredPlayers[0].name);
+              const b = prettySlug(filteredPlayers[1].name);
+              if (a === b) return null;
+              return (
+                <button
+                  type="button"
+                  onClick={() => navigateHub({ kind: "compare", mode: "player", a, b })}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </button>
+              );
+            })()}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -703,6 +766,16 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden sm:inline-block"
                     >
                       {tl("Game finder")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigateHub({ kind: "items", query: `player=${encodeURIComponent(prettySlug(player.name))}` });
+                      }}
+                      className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden md:inline-block"
+                    >
+                      {tl("Item history")}
                     </button>
                     <button
                       onClick={(e) => {

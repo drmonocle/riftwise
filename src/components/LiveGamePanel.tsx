@@ -725,6 +725,21 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
                       <div className="h-full bg-rw-side-a/85" style={{ width: `${lShare}%` }} />
                     </div>
                   )}
+                  {l[i].meta && r[i].meta && champNameById(l[i].meta!.championId) && champNameById(r[i].meta!.championId) && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigateHub({
+                          kind: "counters",
+                          query: `champ=${encodeURIComponent(champNameById(l[i].meta!.championId))}&vs=${encodeURIComponent(champNameById(r[i].meta!.championId))}&role=${encodeURIComponent(ROLE_LABEL[role])}`,
+                        })
+                      }
+                      className="block w-full text-[9px] normal-case text-rw-muted hover:text-rw-accent hover:underline mt-0.5"
+                      title={tl("Counters")}
+                    >
+                      {tl("Counters")}
+                    </button>
+                  )}
                 </td>
                 <PlayerCells p={r[i]} teamName={right.name} align="right" />
               </tr>
