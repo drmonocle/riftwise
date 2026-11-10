@@ -1976,11 +1976,11 @@ const Lanes: React.FC<{
               >
                 {tl("Compare")} →
               </HubLink>
-              {sa?.champs[0]?.c && sb?.champs[0]?.c && (
+              {(sa?.champs[0]?.c || sb?.champs[0]?.c) && (
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${prettySlug(sa.champs[0].c)}&vs=${encodeURIComponent(sb.champs[0].c)}&role=${encodeURIComponent(r)}`,
+                    query: `champ=${prettySlug((sa?.champs[0]?.c || sb?.champs[0]?.c)!)}${sa?.champs[0]?.c && sb?.champs[0]?.c ? `&vs=${encodeURIComponent(sb.champs[0].c)}` : ""}&role=${encodeURIComponent(r)}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                 >
@@ -2563,17 +2563,32 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
           >
             {tl("Open →")}
           </HubLink>
-          {(bansByA[0] || picksA[0]) && (
-            <HubLink
-              to={{
-                kind: "counters",
-                query: `champ=${encodeURIComponent(prettySlug((bansByA[0] || picksA[0]).c))}`,
-              }}
-              className="text-rw-sub hover:text-rw-accent hover:underline"
-            >
-              {tl("Counters")} →
-            </HubLink>
-          )}
+          {(bansByA[0] || picksA[0] || bansByB[0] || picksB[0]) && (() => {
+            const cA = (bansByA[0] || picksA[0] || bansByB[0] || picksB[0]).c;
+            const cB = (bansByB[0] || picksB[0])?.c;
+            return (
+              <>
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: `champ=${encodeURIComponent(prettySlug(cA))}${cB && cB !== cA ? `&vs=${encodeURIComponent(cB)}` : ""}`,
+                  }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: `champ=${encodeURIComponent(prettySlug(cA))}${period && period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                  }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+              </>
+            );
+          })()}
           <HubLink
             to={{
               kind: "tiers",

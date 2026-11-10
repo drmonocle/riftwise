@@ -400,26 +400,38 @@ export const DraftTendencies: React.FC<{
                 >
                   {tl("Draft board")} →
                 </HubLink>
-                {(d.b1[0] || d.r12[0]) && (
-                  <>
-                    <HubLink
-                      to={{ kind: "counters", query: `champ=${encodeURIComponent(prettySlug((d.b1[0] || d.r12[0])[0]))}` }}
-                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                      data-nocapture="1"
-                    >
-                      {tl("Counters")} →
-                    </HubLink>
-                    <HubLink
-                      to={{ kind: "items", query: `champ=${encodeURIComponent(prettySlug((d.b1[0] || d.r12[0])[0]))}` }}
-                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                      data-nocapture="1"
-                    >
-                      {tl("Item history")} →
-                    </HubLink>
-                  </>
-                )}
+                {(d.b1[0] || d.r12[0]) && (() => {
+                  const topOpeners = Array.from(new Set([...d.b1.map((x) => x[0]), ...d.r12.map((x) => x[0])]));
+                  return (
+                    <>
+                      <HubLink
+                        to={{
+                          kind: "counters",
+                          query: `champ=${encodeURIComponent(prettySlug(topOpeners[0]))}${topOpeners[1] ? `&vs=${encodeURIComponent(topOpeners[1])}` : ""}`,
+                        }}
+                        className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                        data-nocapture="1"
+                      >
+                        {tl("Counters")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "items",
+                          query: `champ=${encodeURIComponent(prettySlug(topOpeners[0]))}${period?.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                        }}
+                        className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                        data-nocapture="1"
+                      >
+                        {tl("Item history")} →
+                      </HubLink>
+                    </>
+                  );
+                })()}
                 <HubLink
-                  to={{ kind: "tiers" }}
+                  to={{
+                    kind: "tiers",
+                    ...(period?.startsWith("y") && period.length === 5 ? { query: `key=${encodeURIComponent(period)}` } : {}),
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
                 >

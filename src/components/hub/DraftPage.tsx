@@ -960,13 +960,46 @@ const Board: React.FC<{
           >
             {tl("Game finder")}
           </HubLink>
-          <HubLink to={{ kind: "counters" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+          <HubLink
+            to={{
+              kind: "counters",
+              ...(() => {
+                const c0 = focus || picksOf("b")[0] || picksOf("r")[0] || shown[0];
+                const c1 = picksOf("b")[0] && picksOf("r")[0] && picksOf("b")[0] !== picksOf("r")[0] ? (c0 === picksOf("b")[0] ? picksOf("r")[0] : picksOf("b")[0]) : undefined;
+                return c0 ? { query: `champ=${encodeURIComponent(prettySlug(c0))}${c1 ? `&vs=${encodeURIComponent(c1)}` : ""}` } : {};
+              })(),
+            }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
             {tl("Counters")}
           </HubLink>
-          <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+          <HubLink
+            to={{
+              kind: "tiers",
+              ...(period.startsWith("y") && period.length === 5 ? { query: `key=${encodeURIComponent(period)}` } : {}),
+            }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
             {tl("Pro tier list")}
           </HubLink>
-          <HubLink to={{ kind: "items" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+          <HubLink
+            to={{
+              kind: "items",
+              ...(() => {
+                const c0 = focus || picksOf("b")[0] || picksOf("r")[0] || shown[0];
+                const yr = period.startsWith("y") && period.length === 5 ? period.slice(1) : "";
+                return c0 || yr
+                  ? {
+                      query: new URLSearchParams({
+                        ...(c0 ? { champ: prettySlug(c0) } : {}),
+                        ...(yr ? { year: yr } : {}),
+                      }).toString(),
+                    }
+                  : {};
+              })(),
+            }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
             {tl("Item history")}
           </HubLink>
           <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
@@ -2968,11 +3001,11 @@ const Priorities: React.FC<{
           >
             {tl("Compare")} →
           </HubLink>
-          {open.length >= 2 && (
+          {open.length >= 1 && (
             <HubLink
               to={{
                 kind: "counters",
-                query: `champ=${prettySlug(open[0][0])}&vs=${encodeURIComponent(open[1][0])}`,
+                query: `champ=${prettySlug(open[0][0])}${open[1] ? `&vs=${encodeURIComponent(open[1][0])}` : ""}`,
               }}
               className="text-[11px] text-rw-accent hover:underline"
             >
@@ -2980,14 +3013,17 @@ const Priorities: React.FC<{
             </HubLink>
           )}
           <HubLink
-            to={{ kind: "tiers" }}
+            to={{ kind: "tiers", ...(period.startsWith("y") && period.length === 5 ? { query: `key=${encodeURIComponent(period)}` } : {}) }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Pro tier list")} →
           </HubLink>
           {open[0] && (
             <HubLink
-              to={{ kind: "items", query: `champ=${encodeURIComponent(prettySlug(open[0][0]))}` }}
+              to={{
+                kind: "items",
+                query: `champ=${encodeURIComponent(prettySlug(open[0][0]))}${period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Item history")} →

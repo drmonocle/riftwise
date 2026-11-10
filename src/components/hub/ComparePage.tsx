@@ -1110,11 +1110,11 @@ export const TeamRows: React.FC<{
             share={`${s.n}-draft-${periodLabel}`}
             right={
               <span className="flex flex-wrap items-center gap-2">
-                {s.t.picks.length >= 2 && (
+                {s.t.picks.length >= 1 && (
                   <HubLink
                     to={{
                       kind: "counters",
-                      query: `champ=${encodeURIComponent(prettySlug(s.t.picks[0][0]))}&vs=${encodeURIComponent(s.t.picks[1][0])}`,
+                      query: `champ=${encodeURIComponent(prettySlug(s.t.picks[0][0]))}${s.t.picks[1] ? `&vs=${encodeURIComponent(s.t.picks[1][0])}` : ""}`,
                     }}
                     className="text-[11px] text-rw-accent hover:underline"
                   >
@@ -1634,11 +1634,11 @@ const PlayerRows: React.FC<{
             title={tl("Champions: {player}", { player: s.n })}
             right={
               <span className="flex flex-wrap items-center gap-2">
-                {s.p.champs.length >= 2 && (
+                {s.p.champs.length >= 1 && (
                   <HubLink
                     to={{
                       kind: "counters",
-                      query: `champ=${encodeURIComponent(prettySlug(s.p.champs[0].c))}&vs=${encodeURIComponent(s.p.champs[1].c)}`,
+                      query: `champ=${encodeURIComponent(prettySlug(s.p.champs[0].c))}${s.p.champs[1] ? `&vs=${encodeURIComponent(s.p.champs[1].c)}` : ""}${s.p.roles[0] ? `&role=${encodeURIComponent(s.p.roles[0])}` : ""}`,
                     }}
                     className="text-[11px] text-rw-accent hover:underline"
                   >
@@ -1811,11 +1811,11 @@ const PlayerRows: React.FC<{
           title={tl("Champions both played")}
           right={
             <span className="flex flex-wrap items-center gap-2">
-              {shared.length >= 2 && (
+              {shared.length >= 1 && (
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${encodeURIComponent(prettySlug(shared[0].c.c))}&vs=${encodeURIComponent(shared[1].c.c)}`,
+                    query: `champ=${encodeURIComponent(prettySlug(shared[0].c.c))}${shared[1] ? `&vs=${encodeURIComponent(shared[1].c.c)}` : ""}`,
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
@@ -2460,36 +2460,73 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
               </HubLink>
             </>
           )}
-          {mode === "player" && rows.length >= 1 && (
-            <>
-              <HubLink
-                to={{
-                  kind: "items",
-                  query: `player=${encodeURIComponent(rows[0].slug)}${
-                    period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : ""
-                  }`,
-                }}
-                className="text-rw-accent hover:underline"
-              >
-                {tl("Item history")}
-              </HubLink>
-              <HubLink
-                to={{
-                  kind: "finder",
-                  query: `player=${encodeURIComponent(rows[0].slug)}${
-                    period.startsWith("y") && period.length === 5
-                      ? `&year=${encodeURIComponent(period.slice(1))}`
-                      : period.startsWith("e:")
-                        ? `&event=${encodeURIComponent(period.slice(2))}`
-                        : ""
-                  }`,
-                }}
-                className="text-rw-accent hover:underline"
-              >
-                {tl("Game finder")}
-              </HubLink>
-            </>
-          )}
+          {mode === "player" && rows.length >= 1 && (() => {
+            const c0 = (aggs[0] as PlayerAgg | null)?.champs[0]?.c;
+            const c1 = (aggs[1] as PlayerAgg | null)?.champs[0]?.c;
+            const r0 = (aggs[0] as PlayerAgg | null)?.roles[0];
+            const ca = (rows[0].info as HubPlayer).club ? prettySlug((rows[0].info as HubPlayer).club!) : "";
+            const cb = rows[1] && (rows[1].info as HubPlayer).club ? prettySlug((rows[1].info as HubPlayer).club!) : "";
+            return (
+              <>
+                {ca && (
+                  <>
+                    <HubLink
+                      to={{ kind: "prep", a: ca, ...(cb && cb !== ca ? { b: cb } : {}), ...(period !== "all" ? { period } : {}) }}
+                      className="text-rw-accent hover:underline"
+                    >
+                      {tl("Match prep")}
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(ca)}${cb && cb !== ca ? `,${encodeURIComponent(cb)}` : ""}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                      }}
+                      className="text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")}
+                    </HubLink>
+                  </>
+                )}
+                {c0 && (
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      query: `champ=${encodeURIComponent(prettySlug(c0))}${c1 && c1 !== c0 ? `&vs=${encodeURIComponent(c1)}` : ""}${r0 ? `&role=${encodeURIComponent(r0)}` : ""}`,
+                    }}
+                    className="text-rw-accent hover:underline"
+                  >
+                    {tl("Counters")}
+                  </HubLink>
+                )}
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: `player=${encodeURIComponent(rows[0].slug)}${c0 ? `&champ=${encodeURIComponent(prettySlug(c0))}` : ""}${
+                      period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : ""
+                    }`,
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Item history")}
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "finder",
+                    query: `player=${encodeURIComponent(rows[0].slug)}${
+                      period.startsWith("y") && period.length === 5
+                        ? `&year=${encodeURIComponent(period.slice(1))}`
+                        : period.startsWith("e:")
+                          ? `&event=${encodeURIComponent(period.slice(2))}`
+                          : ""
+                    }`,
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")}
+                </HubLink>
+              </>
+            );
+          })()}
           <span className="text-rw-muted">{tl("Stats for")}</span>
           <QuickPeriods options={options} value={period} onChange={(p) => set({ period: p })} />
           <PeriodPicker options={options} value={period} onChange={(p) => set({ period: p })} />

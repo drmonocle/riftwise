@@ -906,6 +906,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                   kind: "items",
                   query: new URLSearchParams({
                     player: slug,
+                    ...(agg.champs.length === 1 ? { champ: prettySlug(agg.champs[0].c) } : {}),
                     ...(/^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
                   }).toString(),
                 }}
@@ -934,7 +935,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${prettySlug(agg.champs[0].c)}${agg.roles[0] ? `&role=${encodeURIComponent(agg.roles[0])}` : ""}`,
+                    query: `champ=${prettySlug(agg.champs[0].c)}${agg.champs[1] ? `&vs=${encodeURIComponent(agg.champs[1].c)}` : ""}${agg.roles[0] ? `&role=${encodeURIComponent(agg.roles[0])}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -1369,6 +1370,28 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
               >
                 {tl("Champions")} →
               </HubLink>
+              {t.picks[0] && (
+                <>
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      query: `champ=${encodeURIComponent(prettySlug(t.picks[0][0]))}${t.picks[1] ? `&vs=${encodeURIComponent(t.picks[1][0])}` : ""}`,
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Counters")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "items",
+                      query: `champ=${encodeURIComponent(prettySlug(t.picks[0][0]))}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Item history")} →
+                  </HubLink>
+                </>
+              )}
               <HubLink
                 to={{ kind: "tiers", ...(/^y\d{4}$/.test(period) ? { query: `key=${encodeURIComponent(period)}` } : {}) }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
