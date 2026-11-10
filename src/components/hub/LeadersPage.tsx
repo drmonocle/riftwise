@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadAliases, loadHubEvent, loadLeagues, loadLeagueSeason, matchesChampSearch, prettySlug, resolveLeagueSlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, loadAliases, loadHubEvent, loadLeagues, loadLeagueSeason, matchesChampSearch, normText, prettySlug, resolveLeagueSlug, resolvePlayerSlug } from "../../hub/data";
 import type { EventPlayer, LeagueRow } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { ROLES } from "../../hub/champAgg";
@@ -69,22 +69,21 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
   }, [urlSearch]);
   const shownRows = useMemo(() => {
     const terms = search
-      .toLowerCase()
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-      .map((s) => s.trim())
+      .map((s) => normText(s.trim()))
       .filter(Boolean);
     if (!terms.length) return rows;
     const filtered = rows.filter((p) => {
-      const n = p.n.toLowerCase();
-      const u = (p.u || "").toLowerCase();
-      const t = p.t.toLowerCase();
-      const tu = (p.tu || "").toLowerCase();
+      const n = normText(p.n);
+      const u = normText(p.u || "");
+      const t = normText(p.t);
+      const tu = normText(p.tu || "");
       const cs = p.c || [];
       return terms.some(
         (term) =>
           n.includes(term) ||
           u.includes(term) ||
-          (u && resolvePlayerSlug(term) === u) ||
+          (u && resolvePlayerSlug(term) === (p.u || "").toLowerCase()) ||
           t.includes(term) ||
           tu.includes(term) ||
           (bare(term).length >= 2 && (bare(n).includes(bare(term)) || bare(t).includes(bare(term)))) ||
@@ -437,7 +436,9 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                   query: new URLSearchParams({
                     ...(league ? { scope: league } : {}),
                     ...(year ? { key: `y${year}` } : {}),
+                    ...(event ? { event } : {}),
                     ...(role ? { role } : {}),
+                    ...(q.get("champ") || shownRows[0]?.c?.[0] ? { q: q.get("champ") || shownRows[0].c![0] } : {}),
                   }).toString(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -447,7 +448,21 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
               <HubLink
                 to={{
                   kind: "rankings",
-                  ...(league ? { query: `league=${encodeURIComponent(league)}` } : {}),
+                  query: new URLSearchParams({
+                    ...(league ? { league } : {}),
+                    ...(shownRows[0]?.tu || shownRows[0]?.t
+                      ? {
+                          q: [
+                            shownRows[0].tu || prettySlug(shownRows[0].t),
+                            shownRows[1] && (shownRows[1].tu || shownRows[1].t) && (shownRows[1].tu || prettySlug(shownRows[1].t)) !== (shownRows[0].tu || prettySlug(shownRows[0].t))
+                              ? shownRows[1].tu || prettySlug(shownRows[1].t)
+                              : "",
+                          ]
+                            .filter(Boolean)
+                            .join(","),
+                        }
+                      : {}),
+                  }).toString() || undefined,
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -457,6 +472,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                 const aTeam = shownRows[0].tu || prettySlug(shownRows[0].t);
                 const bRow = shownRows.find((r) => (r.tu || r.t) && (r.tu || prettySlug(r.t)) !== aTeam);
                 const bTeam = bRow ? bRow.tu || prettySlug(bRow.t) : undefined;
+                const activeChamp = q.get("champ") || shownRows[0].c?.[0] || "";
                 return (
                   <>
                     <HubLink
@@ -473,7 +489,12 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                     <HubLink
                       to={{
                         kind: "draft",
-                        query: `teams=${encodeURIComponent(aTeam)}${bTeam ? `,${encodeURIComponent(bTeam)}` : ""}&p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}`,
+                        query: new URLSearchParams({
+                          teams: `${aTeam}${bTeam ? `,${bTeam}` : ""}`,
+                          p: event ? `e:${event}` : `y${year}`,
+                          ...(activeChamp ? { champ: activeChamp } : {}),
+                          ...(role ? { role } : {}),
+                        }).toString(),
                       }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
@@ -558,7 +579,24 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                   ) : null;
                 })()}
                 <HubLink
-                  to={{ kind: "rankings", ...(league ? { query: `league=${encodeURIComponent(league)}` } : {}) }}
+                  to={{
+                    kind: "rankings",
+                    query: new URLSearchParams({
+                      ...(league ? { league } : {}),
+                      ...(shownRows[0]?.tu || shownRows[0]?.t
+                        ? {
+                            q: [
+                              shownRows[0].tu || prettySlug(shownRows[0].t),
+                              shownRows[1] && (shownRows[1].tu || shownRows[1].t) && (shownRows[1].tu || prettySlug(shownRows[1].t)) !== (shownRows[0].tu || prettySlug(shownRows[0].t))
+                                ? shownRows[1].tu || prettySlug(shownRows[1].t)
+                                : "",
+                            ]
+                              .filter(Boolean)
+                              .join(","),
+                          }
+                        : {}),
+                    }).toString() || undefined,
+                  }}
                   className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Power rankings")} →
@@ -571,6 +609,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                       ...(year ? { year } : {}),
                       ...(event ? { event } : {}),
                       ...(role ? { role } : {}),
+                      ...(q.get("champ") || shownRows[0]?.c?.[0] ? { q: q.get("champ") || shownRows[0].c![0] } : {}),
                     }).toString(),
                   }}
                   className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
@@ -585,6 +624,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                       ...(year ? { key: `y${year}` } : {}),
                       ...(event ? { event } : {}),
                       ...(role ? { role } : {}),
+                      ...(q.get("champ") || shownRows[0]?.c?.[0] ? { q: q.get("champ") || shownRows[0].c![0] } : {}),
                     }).toString(),
                   }}
                   className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
@@ -594,16 +634,21 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `${
-                      shownRows[0]?.tu || shownRows[0]?.t
-                        ? `teams=${encodeURIComponent(shownRows[0].tu || prettySlug(shownRows[0].t))}${
-                            (shownRows[1]?.tu || shownRows[1]?.t) &&
-                            (shownRows[1].tu || prettySlug(shownRows[1].t)) !== (shownRows[0].tu || prettySlug(shownRows[0].t))
-                              ? `,${encodeURIComponent(shownRows[1].tu || prettySlug(shownRows[1].t))}`
-                              : ""
-                          }&`
-                        : ""
-                    }p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}`,
+                    query: new URLSearchParams({
+                      ...(shownRows[0]?.tu || shownRows[0]?.t
+                        ? {
+                            teams: `${shownRows[0].tu || prettySlug(shownRows[0].t)}${
+                              (shownRows[1]?.tu || shownRows[1]?.t) &&
+                              (shownRows[1].tu || prettySlug(shownRows[1].t)) !== (shownRows[0].tu || prettySlug(shownRows[0].t))
+                                ? `,${shownRows[1].tu || prettySlug(shownRows[1].t)}`
+                                : ""
+                            }`,
+                          }
+                        : {}),
+                      p: event ? `e:${event}` : `y${year}`,
+                      ...(q.get("champ") || shownRows[0]?.c?.[0] ? { champ: q.get("champ") || shownRows[0].c![0] } : {}),
+                      ...(role ? { role } : {}),
+                    }).toString(),
                   }}
                   className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -684,6 +729,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                         const wr = wrM.value(p);
                         return {
                           rank: i + 1,
+                          champ: p.c?.[0],
                           team: p.t,
                           label: `${p.n} (${p.t})`,
                           sub: [

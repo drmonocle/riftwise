@@ -63,13 +63,15 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
     setVsInput(vsParam ? champName(vsParam) : "");
   }, [vsParam]);
   const matchChamp = (raw: string) => {
-    const resolved = resolveChampSlug(raw.trim());
-    const b = bare(resolved || raw.trim());
+    const trimmed = raw.trim();
+    const resolved = resolveChampSlug(trimmed);
+    const b = bare(resolved || trimmed);
     if (!b) return undefined;
     const list = index.data?.champs || [];
     return (
-      list.find((c) => c[1] === resolved || bare(c[0]) === b || bare(champName(c[0])) === b || c[1] === b) ||
-      (b.length >= 3 ? list.find((c) => bare(c[0]).startsWith(b) || bare(champName(c[0])).startsWith(b)) : undefined)
+      list.find((c) => c[1] === resolved || bare(c[0]) === b || bare(champName(c[0])) === b || c[1] === b || sameChamp(c[0], trimmed)) ||
+      (b.length >= 3 ? list.find((c) => bare(c[0]).startsWith(b) || bare(champName(c[0])).startsWith(b)) : undefined) ||
+      list.find((c) => matchesChampSearch(c[0], trimmed))
     );
   };
   const rows = useMemo<Row[]>(() => {
@@ -1131,7 +1133,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     to={{
                       kind: "tiers",
                       query: new URLSearchParams({
-                        q: rawChamp || cName,
+                        q: [rawChamp || cName, filteredRows[0]?.c].filter(Boolean).join(","),
                         ...(role ? { role } : {}),
                       }).toString(),
                     }}

@@ -7,7 +7,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName, fmtDec } from "../../i18n";
 import { ChampionStats, StatsMeta, loadChampionStats } from "../../stats";
-import { loadAliases, loadChampGames, loadChampIndex, matchesChampSearch, normText, prettySlug, resolveEventSlug, resolveLeagueSlug } from "../../hub/data";
+import { loadAliases, loadChampGames, loadChampIndex, matchesChampSearch, normText, prettySlug, resolveEventSlug, resolveLeagueSlug, sameChamp } from "../../hub/data";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { ChampAggRow, ROLES, champAgg, matchedEventLabel, matchEventIndices, patchCompare } from "../../hub/champAgg";
@@ -84,7 +84,7 @@ function deltas<T extends { c: string; presence: number; p: number; wr: number |
   if (!then) return now.map((r) => ({ ...r, was: null, dPres: null, dWr: null, emerging: false }));
   const by = new Map(then.map((r) => [r.c, r]));
   return now.map((r) => {
-    const t = by.get(r.c);
+    const t = by.get(r.c) || then.find((x) => sameChamp(x.c, r.c));
     const was = t ? t.presence : null;
     return {
       ...r,
@@ -688,7 +688,11 @@ const LeagueTable: React.FC<{
                   ...(patchQ ? { key: `p${patchQ}` } : year ? { key: `y${year}` } : {}),
                   ...(eventSlug ? { event: eventSlug } : {}),
                   ...(roleQ ? { role: roleQ } : {}),
-                  ...(search.trim() ? { q: search.trim() } : {}),
+                  ...(search.trim()
+                    ? { q: search.trim() }
+                    : shownRows[0]
+                      ? { q: shownRows.slice(0, 2).map((r) => r.c).join(",") }
+                      : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -710,11 +714,11 @@ const LeagueTable: React.FC<{
             <HubLink
               to={{
                 kind: "draft",
-                ...(patchQ
-                  ? { query: `p=p:${encodeURIComponent(patchQ)}` }
-                  : year
-                    ? { query: `p=y${encodeURIComponent(year)}` }
-                    : {}),
+                query: new URLSearchParams({
+                  ...(eventSlug ? { p: `e:${eventSlug}` } : patchQ ? { p: `p:${patchQ}` } : year ? { p: `y${year}` } : {}),
+                  ...(shownRows[0] ? { champ: shownRows[0].c } : {}),
+                  ...(roleQ ? { role: roleQ } : {}),
+                }).toString() || undefined,
               }}
               className="text-rw-accent hover:underline font-semibold"
             >
@@ -1045,7 +1049,11 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
                   key,
                   ...(scope === "all" ? { scope: "all" } : {}),
                   ...(roleQ ? { role: roleQ } : {}),
-                  ...(search.trim() ? { q: search.trim() } : {}),
+                  ...(search.trim()
+                    ? { q: search.trim() }
+                    : shownRows[0]
+                      ? { q: shownRows.slice(0, 2).map((r) => r.c).join(",") }
+                      : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -1067,11 +1075,11 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
             <HubLink
               to={{
                 kind: "draft",
-                ...(key.startsWith("p")
-                  ? { query: `p=p:${encodeURIComponent(key.slice(1))}` }
-                  : key.startsWith("y")
-                    ? { query: `p=${encodeURIComponent(key)}` }
-                    : {}),
+                query: new URLSearchParams({
+                  ...(key.startsWith("p") ? { p: `p:${key.slice(1)}` } : key.startsWith("y") ? { p: key } : {}),
+                  ...(shownRows[0] ? { champ: shownRows[0].c } : {}),
+                  ...(roleQ ? { role: roleQ } : {}),
+                }).toString() || undefined,
               }}
               className="text-rw-accent hover:underline font-semibold"
             >
@@ -1258,6 +1266,7 @@ const MetaSpotlight: React.FC<{
                       ...(league ? { scope: league } : scopeAll ? { scope: "all" } : {}),
                       ...(tierKey ? { key: tierKey } : {}),
                       ...(role ? { role } : {}),
+                      q: item.c,
                     }).toString(),
                   }}
                   className="hover:text-rw-accent hover:underline"
@@ -1268,7 +1277,11 @@ const MetaSpotlight: React.FC<{
                 <HubLink
                   to={{
                     kind: "draft",
-                    ...(draftP ? { query: `p=${encodeURIComponent(draftP)}` } : {}),
+                    query: new URLSearchParams({
+                      ...(draftP ? { p: draftP } : {}),
+                      champ: item.c,
+                      ...(role ? { role } : {}),
+                    }).toString(),
                   }}
                   className="hover:text-rw-accent hover:underline"
                 >
@@ -1279,6 +1292,7 @@ const MetaSpotlight: React.FC<{
                   to={{
                     kind: "leaders",
                     query: new URLSearchParams({
+                      champ: item.c,
                       ...(league ? { league } : {}),
                       ...(year ? { year } : {}),
                       ...(event ? { event } : {}),
