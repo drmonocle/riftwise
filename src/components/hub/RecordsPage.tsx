@@ -10,7 +10,7 @@ import {
 } from "../../stats";
 import { tl, tk, tc, eventTitle, fmtDec } from "../../i18n";
 import { champName, useChampionNames } from "../../champions";
-import { loadHubMeta, loadHubRecords, loadHubTitles, loadRecordsYear, normText, prettySlug } from "../../hub/data";
+import { loadHubMeta, loadHubRecords, loadHubTitles, loadRecordsYear, matchesChampSearch, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
 import type { HubRecords, HubRecordsYear, HubTitle } from "../../hub/types";
 import {
   CompareRoute,
@@ -153,14 +153,14 @@ const CareerRecords: React.FC<{
 /** file name of a records card: "records-fastest-wins" */
 const shareName = (title: string) => "records-" + title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]>; matchText?: (s: string) => boolean }> = ({
+const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]>; matchText?: (s: string, champ?: string, playerSlug?: string) => boolean }> = ({
   p,
   matchText,
 }) => {
   const [n, setN] = useState(8);
-  const mostRows = matchText ? p.most.filter((x) => matchText(`${x.n} ${x.u || ""}`)) : p.most;
+  const mostRows = matchText ? p.most.filter((x) => matchText(`${x.n} ${x.u || ""}`, undefined, x.u || prettySlug(x.n))) : p.most;
   const recentRows = matchText
-    ? p.recent.filter((x) => matchText(`${x.n} ${x.u || ""} ${x.c} ${champName(x.c)} ${x.a} ${x.b} ${x.t} ${x.e || ""}`))
+    ? p.recent.filter((x) => matchText(`${x.n} ${x.u || ""} ${x.c} ${champName(x.c)} ${x.a} ${x.b} ${x.t} ${x.e || ""}`, x.c, x.u || prettySlug(x.n)))
     : p.recent;
   const maxPenta = Math.max(1, p.most[0]?.v || 1);
   return (
@@ -725,9 +725,14 @@ export const RecordsPanel: React.FC = () => {
     .map((s) => normText(s.trim()))
     .filter(Boolean);
   const matchText = terms.length
-    ? (s: string) => {
+    ? (s: string, champ?: string, playerSlug?: string) => {
         const hay = normText(s);
-        return terms.some((t) => hay.includes(t));
+        return terms.some(
+          (t) =>
+            hay.includes(t) ||
+            (champ ? matchesChampSearch(champ, t) : false) ||
+            (playerSlug ? resolvePlayerSlug(t) === playerSlug : false),
+        );
       }
     : undefined;
   return (
@@ -947,7 +952,7 @@ export const RecordsPanel: React.FC = () => {
           fmt: (v: number) => string = fmtNum,
         ) => {
           const rows = matchText
-            ? rawRows.filter((p) => matchText(`${p.pl} ${p.u || ""} ${p.c} ${champName(p.c)} ${p.opp} ${p.t} ${p.e || ""} ${title}`))
+            ? rawRows.filter((p) => matchText(`${p.pl} ${p.u || ""} ${p.c} ${champName(p.c)} ${p.opp} ${p.t} ${p.e || ""} ${title}`, p.c, p.u || prettySlug(p.pl)))
             : rawRows;
           if (!rows.length) return null;
           const maxV = Math.max(1, rawRows[0]?.v || 1);
@@ -1163,7 +1168,7 @@ export const RecordsPanel: React.FC = () => {
           scopeLabel?: string,
         ) => {
           const rows = matchText
-            ? rawRows.filter((p) => matchText(`${p.pl} ${p.u || ""} ${title}`))
+            ? rawRows.filter((p) => matchText(`${p.pl} ${p.u || ""} ${title}`, undefined, p.u || prettySlug(p.pl)))
             : rawRows;
           if (!rows.length) return null;
           const maxV = Math.max(1, rawRows[0]?.v || 1);
@@ -1327,7 +1332,7 @@ export const RecordsPanel: React.FC = () => {
                   className="bg-rw-bg border border-rw-border rounded px-2.5 py-1 text-xs text-rw-text w-44"
                 />
                 {yearPick}
-                <CopyRecordsPost year={year} r={r} />
+                <CopyRecordsPost year={year} r={r} search={search} />
               </span>
             </div>
             {year !== "all" && yearState.loading && <Loading />}
@@ -1949,7 +1954,7 @@ export const TitlesPanel: React.FC = () => {
   );
 };
 
-const CopyRecordsPost: React.FC<{ year: string; r: HubRecords }> = ({ year, r }) => {
+const CopyRecordsPost: React.FC<{ year: string; r: HubRecords; search?: string }> = ({ year, r, search }) => {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const f = r.game.fastest[0];
@@ -1957,6 +1962,10 @@ const CopyRecordsPost: React.FC<{ year: string; r: HubRecords }> = ({ year, r })
     const k = r.player.kills[0];
     const d = r.player.dmg[0];
     const p = r.pentas?.most[0];
+    const qp = new URLSearchParams();
+    if (year !== "all") qp.set("year", year);
+    if (search?.trim()) qp.set("q", search.trim());
+    const qs = qp.toString();
     const lines = [
       year === "all" ? tl("All-time pro records") : tl("{year} records", { year }),
       f ? `${tl("Fastest wins")}: ${mmss(f.v)} — ${tl("{w} beat {l}", { w: f.w, l: f.w === f.a ? f.b : f.a })} (${f.t})` : null,
@@ -1964,7 +1973,7 @@ const CopyRecordsPost: React.FC<{ year: string; r: HubRecords }> = ({ year, r })
       k ? `${tl("Most kills by one player")}: ${fmtNum(k.v)} — ${k.pl} (${champName(k.c)}, ${k.kda} vs ${k.opp})` : null,
       d ? `${tl("Most damage in a game")}: ${fmtNum(d.v)} — ${d.pl} (${champName(d.c)} vs ${d.opp})` : null,
       p && year === "all" ? `${tl("Most pentakills")}: ${p.v} — ${p.n}` : null,
-      hubShareUrl({ kind: "records", ...(year !== "all" ? { query: `year=${year}` } : {}) }),
+      hubShareUrl({ kind: "records", ...(qs ? { query: qs } : {}) }),
     ].filter((x): x is string => !!x);
     navigator.clipboard?.writeText(lines.join("\n")).then(
       () => {

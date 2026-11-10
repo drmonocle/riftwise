@@ -5,7 +5,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { tl, roleName, regionName } from "../../i18n";
-import { loadHubIndex, loadHubIndexQuick, normText, prettySlug } from "../../hub/data";
+import { bare, loadHubIndex, loadHubIndexQuick, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
 import { navigateHub, hubShareUrl, type HubSection } from "../../hub/route";
 import type { SearchPlayerRow, SearchTeamRow } from "../../hub/types";
 import { SortTable, type Column } from "./SortTable";
@@ -103,7 +103,8 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       if (since !== "all" && (t[3] || "") < since) return false;
       if (!terms.length) return true;
       const hay = normText(`${t[0]} | ${t[1] || ""} | ${t[4]} | ${t[5]}`);
-      return terms.some((term) => hay.includes(term));
+      const hayBare = bare(hay);
+      return terms.some((term) => hay.includes(term) || (term.length >= 2 && hayBare.includes(bare(term))));
     });
   }, [rows, region, since, words]);
   const maxGames = useMemo(() => Math.max(1, ...list.map((t) => t[2] || 0)), [list]);
@@ -421,8 +422,10 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       if (role && ROLE_OF[p[5]] !== role) return false;
       if (since !== "all" && (p[4] || "") < since) return false;
       if (!terms.length) return true;
-      const hay = normText(`${p[0]} | ${p[1] || ""} | ${p[2]} | ${p[6]}`);
-      return terms.some((term) => hay.includes(term));
+      const u = p[1] || prettySlug(p[0]);
+      const hay = normText(`${p[0]} | ${u} | ${p[2]} | ${p[6]}`);
+      const hayBare = bare(hay);
+      return terms.some((term) => hay.includes(term) || resolvePlayerSlug(term) === u || (term.length >= 2 && hayBare.includes(bare(term))));
     });
   }, [rows, role, since, words]);
   const maxGames = useMemo(() => Math.max(1, ...list.map((p) => p[3] || 0)), [list]);

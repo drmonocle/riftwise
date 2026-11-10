@@ -12,7 +12,7 @@ import type { HubRoute } from "../../hub/route";
 import { tl, tc } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemIndex, loadPlayerGames, loadPlayerItems, normText, prettySlug, resolveChampSlug, resolvePlayerSlug } from "../../hub/data";
+import { loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemIndex, loadPlayerGames, loadPlayerItems, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolvePlayerSlug, sameChamp } from "../../hub/data";
 import type { ItemIndexRow, PlayerGameRow, SearchPlayerRow } from "../../hub/types";
 import { navigateHub, hubShareUrl } from "../../hub/route";
 import { isFinishedItem, itemName, useDDragon } from "../../hub/ddragon";
@@ -29,9 +29,11 @@ const FIRST_YEAR = 2011;
 function findPlayers(rows: SearchPlayerRow[], typed: string, n = 8): SearchPlayerRow[] {
   const q = normText(typed.trim());
   if (!q) return [];
+  const qPlayer = resolvePlayerSlug(q);
   const fit = (r: SearchPlayerRow) => {
     const s = normText(r[0]);
-    return s === q ? 0 : s.startsWith(q) ? 1 : s.includes(q) ? 2 : r[6] && normText(r[6]).includes(q) ? 3 : -1;
+    const u = playerSlug(r);
+    return s === q || u === qPlayer ? 0 : s.startsWith(q) ? 1 : s.includes(q) ? 2 : r[6] && normText(r[6]).includes(q) ? 3 : -1;
   };
   return rows
     .map((r) => [fit(r), r] as const)
@@ -86,7 +88,7 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
   const resolvedItem = itemRow?.[1] || item;
   const resolvedPicks: Picks = { ...picks, item: resolvedItem };
   const champs = useMemo(() => [...(people.data?.champs || [])].sort((a, b) => champName(a[0]).localeCompare(champName(b[0]))), [people.data]);
-  const champRow = useMemo(() => champs.find((r) => (r[1] || prettySlug(r[0])) === champ || prettySlug(r[0]) === champ), [champs, champ]);
+  const champRow = useMemo(() => champs.find((r) => sameChamp(r[1] || r[0], champ) || sameChamp(r[0], champ)), [champs, champ]);
   const champLabel = champRow ? champName(champRow[0]) : champ;
   const thisYear = new Date().getFullYear();
   const years = Array.from({ length: thisYear - FIRST_YEAR + 1 }, (_, i) => String(thisYear - i));
@@ -165,7 +167,14 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
             onChange={(e) => {
               const v = normText(e.target.value.trim());
               const hit = champs.find((r) => normText(r[0]) === v || normText(champName(r[0])) === v);
-              if (hit) set({ champ: prettySlug(hit[0]) });
+              if (hit) set({ champ: hit[1] || prettySlug(hit[0]) });
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                const v = (e.currentTarget.value || "").trim();
+                const hit = champs.find((r) => matchesChampSearch(r[0], v));
+                if (hit) set({ champ: hit[1] || prettySlug(hit[0]) });
+              }
             }}
             className={`${sel} w-40`}
           />
@@ -258,7 +267,7 @@ const PlayerItemsView: React.FC<{
   if (mine.loading || log.loading) return <Loading />;
   if (!mine.data || !log.data) return <p className="text-xs text-rw-sub rw-span">{tl("No item history for this player yet.")}</p>;
   const rows = log.data;
-  const keep = (r: PlayerGameRow) => (!champ || prettySlug(r[2]) === champ) && (!year || r[0].startsWith(year));
+  const keep = (r: PlayerGameRow) => (!champ || sameChamp(r[2], champ)) && (!year || r[0].startsWith(year));
   const games = (pos: number[]) => pos.map((i) => rows[i]).filter((r): r is PlayerGameRow => !!r && keep(r));
   const counted = champ || year ? rows.filter(keep).length : rows.length;
   const whoBuilt = (label: string) => (
@@ -421,13 +430,19 @@ const PlayerItemsView: React.FC<{
     .map((t) => normText(t.trim()))
     .filter(Boolean);
   const list = mine.data
-    .filter(
-      ([it]) =>
-        (!finishedOnly || isFinishedItem(it)) &&
-        (!fTerms.length || fTerms.some((f) => normText(itemName(it)).includes(f) || normText(it).includes(f))),
-    )
+    .filter(([it]) => !finishedOnly || isFinishedItem(it))
     .map(([it, pos]) => [it, games(pos)] as const)
-    .filter(([, g]) => g.length > 0)
+    .filter(
+      ([it, g]) =>
+        g.length > 0 &&
+        (!fTerms.length ||
+          fTerms.some(
+            (f) =>
+              normText(itemName(it)).includes(f) ||
+              normText(it).includes(f) ||
+              g.some((r) => matchesChampSearch(r[2], f)),
+          )),
+    )
     .sort((a, b) => b[1].length - a[1].length);
   return (
     <Section
@@ -694,7 +709,7 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
   const filteredPlayers = terms.length
     ? it.players.filter(([n, u]) => {
         const hay = `${n} ${u} ${teamBySlug.get(u) || ""}`.toLowerCase();
-        return terms.some((t) => hay.includes(t));
+        return terms.some((t) => hay.includes(t) || resolvePlayerSlug(t) === u);
       })
     : it.players;
   return (
@@ -927,8 +942,9 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
     ? rows.filter((r) => {
         const p = players?.[r.k];
         if (!p) return false;
-        const hay = `${p[0]} ${p[2] || ""} ${playerSlug(p)}`.toLowerCase();
-        return terms.some((t) => hay.includes(t));
+        const u = playerSlug(p);
+        const hay = `${p[0]} ${p[2] || ""} ${u}`.toLowerCase();
+        return terms.some((t) => hay.includes(t) || resolvePlayerSlug(t) === u);
       })
     : rows;
   const shown = all || terms.length ? filteredRows : filteredRows.slice(0, 100);
@@ -1185,8 +1201,9 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
       ? y.p.filter(([k]) => {
           const p = players?.[k];
           if (!p) return false;
-          const hay = `${p[0]} ${p[2] || ""} ${playerSlug(p)}`.toLowerCase();
-          return terms.some((t) => hay.includes(t));
+          const u = playerSlug(p);
+          const hay = `${p[0]} ${p[2] || ""} ${u}`.toLowerCase();
+          return terms.some((t) => hay.includes(t) || resolvePlayerSlug(t) === u);
         })
       : y.p
     : [];
@@ -1420,11 +1437,24 @@ const ItemStats: React.FC<{
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
     .map((t) => normText(t))
     .filter(Boolean);
-  const list = (rows || []).filter(
+  const baseList = (rows || []).filter(
     (r) =>
       (!finishedOnly || isFinishedItem(r[0])) &&
-      (!terms.length || terms.some((t) => normText(itemName(r[0])).includes(t) || normText(r[0]).includes(t))),
+      (!terms.length ||
+        terms.some(
+          (t) =>
+            normText(itemName(r[0])).includes(t) ||
+            normText(r[0]).includes(t) ||
+            (r[5] || []).some((c) => matchesChampSearch(c, t)),
+        )),
   );
+  const list = champ
+    ? [...baseList].sort((a, b) => {
+        const aHit = (a[5] || []).some((c) => sameChamp(c, champ)) ? 1 : 0;
+        const bHit = (b[5] || []).some((c) => sameChamp(c, champ)) ? 1 : 0;
+        return bHit - aHit || b[2] - a[2];
+      })
+    : baseList;
   const max = Math.max(1, ...list.map((r) => r[2]));
   const shown = all || terms.length ? list : list.slice(0, 60);
   const activeChamp = champ || shown[0]?.[5]?.[0] || "";
@@ -1793,7 +1823,7 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
   const filteredGames = gTerms.length
     ? games.filter((r) => {
         const hay = normText(`${champName(r[2])} ${r[2]} ${r[7] || ""} ${r[8] || ""} ${r[9] || ""}`);
-        return gTerms.some((t) => hay.includes(t));
+        return gTerms.some((t) => hay.includes(t) || matchesChampSearch(r[2], t));
       })
     : games;
   const shown = all || gTerms.length ? filteredGames : filteredGames.slice(0, 50);

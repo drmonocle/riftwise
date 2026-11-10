@@ -6,11 +6,11 @@
 import React, { useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { loadAliases, loadHubEvent, loadLeagues, loadLeagueSeason, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { loadAliases, loadHubEvent, loadLeagues, loadLeagueSeason, matchesChampSearch, prettySlug, resolveLeagueSlug, resolvePlayerSlug } from "../../hub/data";
 import type { EventPlayer, LeagueRow } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { ROLES } from "../../hub/champAgg";
-import { card, HubLink, Loading, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo, useLoad, usePageTitle } from "./ui";
+import { card, ChampIcon, HubLink, Loading, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo, useLoad, usePageTitle } from "./ui";
 import { SortTable, type Column } from "./SortTable";
 import { PLAYER_METRICS } from "./Ranks";
 import { SectionCard } from "./BroadcastCard";
@@ -75,11 +75,16 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
       const u = (p.u || "").toLowerCase();
       const t = p.t.toLowerCase();
       const tu = (p.tu || "").toLowerCase();
-      const cs = (p.c || [])
-        .map((c) => `${c} ${champName(c)}`)
-        .join(" ")
-        .toLowerCase();
-      return terms.some((term) => n.includes(term) || u.includes(term) || t.includes(term) || tu.includes(term) || cs.includes(term));
+      const cs = p.c || [];
+      return terms.some(
+        (term) =>
+          n.includes(term) ||
+          u.includes(term) ||
+          (u && resolvePlayerSlug(term) === u) ||
+          t.includes(term) ||
+          tu.includes(term) ||
+          cs.some((c) => matchesChampSearch(c, term)),
+      );
     });
     if (filtered.length === 0 && !q.get("q") && q.get("champ") && search === q.get("champ")) return rows;
     return filtered;
@@ -130,6 +135,29 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
             </HubLink>
             <TeamLink name={p.t} u={p.tu} className="text-rw-muted hover:text-rw-accent" />
           </span>
+          {p.c && p.c.length > 0 && (
+            <span className="hidden lg:inline-flex items-center gap-0.5 ml-0.5">
+              {p.c.slice(0, 3).map((c) => (
+                <HubLink
+                  key={c}
+                  to={{
+                    kind: "finder",
+                    query: new URLSearchParams({
+                      ...(league ? { league } : {}),
+                      ...(year ? { year } : {}),
+                      ...(event ? { event } : {}),
+                      player: p.u || p.n,
+                      champ: c,
+                    }).toString(),
+                  }}
+                  title={`${p.n} · ${champName(c)}`}
+                  className="hover:opacity-80 shrink-0"
+                >
+                  <ChampIcon name={c} size={14} />
+                </HubLink>
+              ))}
+            </span>
+          )}
         </span>
       ),
     },

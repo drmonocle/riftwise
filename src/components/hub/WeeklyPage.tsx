@@ -4,11 +4,12 @@
  * night by the stats build (hub/weekly.json). An overview card for X and "Copy for Reddit" (Markdown) make the
  * weekly post with no writing.
  */
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ClipboardCopy, Check } from "lucide-react";
 import { tl, tn, locale, roleName } from "../../i18n";
 import { champName } from "../../champions";
 import { loadWeekly, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { navigateHub, useHubRoute } from "../../hub/route";
 import type { HubWeekly } from "../../hub/types";
 import { card, ChampIcon, ChampLink, EventLink, fmtDate, HubLink, hubShareUrl, Page, PlayerLink, PlayerPhoto, RevealButton, Section, TeamLink, TeamLogo, th, td, useHidden, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
@@ -95,7 +96,7 @@ const CopyMarkdown: React.FC<{ w: HubWeekly }> = ({ w }) => {
 };
 
 /** Short summary for X / Discord (with canonical link). */
-const CopyWeeklyPost: React.FC<{ w: HubWeekly; range: string }> = ({ w, range }) => {
+const CopyWeeklyPost: React.FC<{ w: HubWeekly; range: string; filter?: string }> = ({ w, range, filter }) => {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const text = () => {
     const lines = [
@@ -117,7 +118,8 @@ const CopyWeeklyPost: React.FC<{ w: HubWeekly; range: string }> = ({ w, range })
       const p = w.players[0];
       lines.push(`${tl("Players of the week")}: ${p.n} (${p.rt.toFixed(1)})`);
     }
-    lines.push(hubShareUrl({ kind: "weekly" }));
+    const q = filter?.trim() ? `q=${encodeURIComponent(filter.trim())}` : undefined;
+    lines.push(hubShareUrl({ kind: "weekly", ...(q ? { query: q } : {}) }));
     return lines.join("\n");
   };
   return (
@@ -153,7 +155,22 @@ export const WeeklyPage: React.FC = () => {
 };
 
 const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({ w, hidden, reveal }) => {
-  const [resultFilter, setResultFilter] = useState("");
+  const route = useHubRoute();
+  const urlQ = useMemo(() => {
+    const qp = new URLSearchParams(route.kind === "weekly" && "query" in route ? route.query || "" : "");
+    return qp.get("q") || qp.get("team") || "";
+  }, [route]);
+  const [resultFilter, setResultFilter] = useState(urlQ);
+  useEffect(() => {
+    setResultFilter(urlQ);
+  }, [urlQ]);
+  const updateResultFilter = (val: string) => {
+    setResultFilter(val);
+    const next = new URLSearchParams();
+    if (val.trim()) next.set("q", val.trim());
+    const qs = next.toString();
+    navigateHub({ kind: "weekly", ...(qs ? { query: qs } : {}) }, { replace: true });
+  };
   const range = `${fmtDate(w.from, false)} – ${fmtDate(w.to)}`;
   const wy = /^\d{4}/.test(w.to || "") ? w.to.slice(0, 4) : /^\d{4}/.test(w.from || "") ? w.from.slice(0, 4) : "";
   const pct = (p: number) => `${Math.round(p * 100)}%`;
@@ -164,7 +181,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
     .filter(Boolean);
   const shownResults = rTerms.length
     ? w.results.filter((r) => {
-        const hay = `${r.a} ${r.b} ${r.t} ${r.e || ""}`.toLowerCase();
+        const hay = `${r.a} ${r.au || ""} ${r.b} ${r.bu || ""} ${r.t} ${r.e || ""}`.toLowerCase();
         return rTerms.some((t) => hay.includes(t));
       })
     : w.results;
@@ -203,7 +220,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             name={`riftwise-week-${w.to}`}
             label={tl("Overview card")}
           />
-          <CopyWeeklyPost w={w} range={range} />
+          <CopyWeeklyPost w={w} range={range} filter={resultFilter} />
           <CopyMarkdown w={w} />
           <span className="ml-auto flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
             {(() => {
@@ -1273,7 +1290,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                       <input
                         type="search"
                         value={resultFilter}
-                        onChange={(e) => setResultFilter(e.target.value)}
+                        onChange={(e) => updateResultFilter(e.target.value)}
                         placeholder={tl("Filter by opponent or tournament…")}
                         aria-label={tl("Filter by opponent or tournament…")}
                         className="bg-rw-bg border border-rw-border rounded-lg px-2 py-0.5 text-xs text-rw-text placeholder:text-rw-muted w-48 focus:border-rw-accent focus:outline-none"

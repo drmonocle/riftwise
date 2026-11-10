@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Crown, ClipboardCopy } from "lucide-react";
 import { tl, tn, regionName } from "../../i18n";
-import { loadLeague, loadLeagues, loadPatches, normText, prettySlug } from "../../hub/data";
+import { loadLeague, loadLeagues, loadPatches, matchesChampSearch, normText, prettySlug } from "../../hub/data";
 import type { HubLeague, LeagueRow, LeagueStep, PatchMove, PatchRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import {
@@ -102,9 +102,9 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
               terms.some(
                 (term) =>
                   p.p.toLowerCase().includes(term) ||
-                  p.c.some(([c]) => normText(champName(c)).includes(term) || normText(c).includes(term)) ||
-                  (p.up || []).some(([c]) => normText(champName(c)).includes(term) || normText(c).includes(term)) ||
-                  (p.down || []).some(([c]) => normText(champName(c)).includes(term) || normText(c).includes(term)),
+                  p.c.some(([c]) => matchesChampSearch(c, term)) ||
+                  (p.up || []).some(([c]) => matchesChampSearch(c, term)) ||
+                  (p.down || []).some(([c]) => matchesChampSearch(c, term)),
               ),
             )
           : rows;

@@ -802,8 +802,19 @@ export const loadPlayerItems = (slug: string): Promise<import("./types").PlayerI
   return p;
 };
 export const loadHubItem = (slug: string) => load<import("./types").HubItem>(`hub/items/${prettySlug(slug)}.json`);
-export const loadHubItemChamp = (item: string, champ: string) =>
-  load<import("./types").HubItemChamp>(`hub/items/${prettySlug(item)}/c/${resolveChampSlug(champ)}.json`);
+export const loadHubItemChamp = async (item: string, champ: string) => {
+  const it = prettySlug(item);
+  const first = resolveChampSlug(champ);
+  try {
+    return await load<import("./types").HubItemChamp>(`hub/items/${it}/c/${first}.json`);
+  } catch (err) {
+    if (err instanceof MissingFile) {
+      const alt = prettySlug(champ);
+      if (alt && alt !== first) return load<import("./types").HubItemChamp>(`hub/items/${it}/c/${alt}.json`);
+    }
+    throw err;
+  }
+};
 export const loadHubItemYear = (item: string, year: string) => load<import("./types").HubItemYear>(`hub/items/${prettySlug(item)}/y/${year}.json`);
 export const loadItemIndex = () => load<import("./types").ItemIndexRow[]>("hub/items/index.json");
 /** top-league teams' ratings over the last 120 days: slug -> [date, rating][] */
