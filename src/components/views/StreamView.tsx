@@ -1,15 +1,26 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { StreamEvent, StreamStatus, AppSettings, CatalogData } from "../../types";
-import { streamPhase, streamEventTitle, upcomingStreamMatches } from "../../helpers";
+import { streamPhase, streamEventTitle, upcomingStreamMatches, pickTeamByCode, normalizeTeamCode } from "../../helpers";
 import { Radio, Play, ExternalLink, Flame, Star, Moon, ChevronDown } from "lucide-react";
 import { tl, tn, locale, stageName } from "../../i18n";
 import { lazyPart } from "../../lazyPart";
 import { PartBoundary } from "../PartBoundary";
-import { navigateHub } from "../../hub/route";
+import { navigateHub, type HubRoute } from "../../hub/route";
 import { prettySlug } from "../../hub/data";
 import { useTeamLogo } from "../hub/ui";
 // Loaded with the stats hub code, only when the 24/7 tab is opened
 const StreamBracket = lazyPart(() => import("../hub/StreamBracket").then((m) => m.StreamBracket));
+
+const STREAM_CODE: Record<string, string> = {
+  PNG: "PAIN", "100": "100T", LLL: "LOUD", ITZ: "INTZ", SHR: "RYL", DWG: "DK", SSO: "SSW", KOO: "ROX", "CLG.P": "CLG", NJWS: "NWS",
+};
+
+function streamEventRoute(e: StreamEvent): HubRoute | null {
+  const year = /\b(20\d\d)\b/.exec(e.season || "")?.[1];
+  const kind = e.event === "Worlds" ? "worlds" : e.event === "MSI" ? "msi" : e.event === "First Stand" ? "first-stand" : null;
+  if (kind) return { kind, ...(year ? { year } : {}) };
+  return null;
+}
 
 interface StreamViewProps {
   events: StreamEvent[];
@@ -78,6 +89,25 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
   const followed = (e: StreamEvent) =>
     (!!e.team1 && settings.followedTeams.includes(e.team1)) || (!!e.team2 && settings.followedTeams.includes(e.team2));
 
+  const teamSlug = (code: string) => {
+    const norm = normalizeTeamCode(code);
+    const mapped = STREAM_CODE[norm] || STREAM_CODE[code.toUpperCase()] || code;
+    const found = catalog?.teams ? pickTeamByCode(catalog.teams, mapped) || pickTeamByCode(catalog.teams, code) : undefined;
+    return prettySlug(found?.name || mapped);
+  };
+
+  const EventTitleLink: React.FC<{ e: StreamEvent; className?: string }> = ({ e, className }) => {
+    const route = streamEventRoute(e);
+    const text = `${streamEventTitle(e)}${e.stage ? ` · ${stageName(e.stage)}` : ""}`;
+    return route ? (
+      <button type="button" onClick={() => navigateHub(route)} className={`hover:underline text-left ${className || ""}`}>
+        {text}
+      </button>
+    ) : (
+      <span className={className}>{text}</span>
+    );
+  };
+
   const Logo: React.FC<{ code?: string; size: number }> = ({ code, size }) => {
     const hubLogo = useTeamLogo(code, code);
     if (!code) return null;
@@ -100,7 +130,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
       <span className={`flex items-center ${big ? "gap-3" : "gap-1.5"} min-w-0`}>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: prettySlug(e.team1!) })}
+          onClick={() => navigateHub({ kind: "team", slug: teamSlug(e.team1!) })}
           className={`flex items-center ${big ? "gap-2" : "gap-1.5"} hover:text-rw-accent transition-colors`}
         >
           <Logo code={e.team1} size={big ? 36 : 16} />
@@ -114,7 +144,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
         </button>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "compare", mode: "team", a: prettySlug(e.team1!), b: prettySlug(e.team2!) })}
+          onClick={() => navigateHub({ kind: "compare", mode: "team", a: teamSlug(e.team1!), b: teamSlug(e.team2!) })}
           title={tl("Compare")}
           className={`text-rw-muted hover:text-rw-accent hover:underline ${big ? "text-sm" : "text-[11px]"}`}
         >
@@ -122,7 +152,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
         </button>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: prettySlug(e.team2!) })}
+          onClick={() => navigateHub({ kind: "team", slug: teamSlug(e.team2!) })}
           className={`flex items-center ${big ? "gap-2" : "gap-1.5"} hover:text-rw-accent transition-colors`}
         >
           <Logo code={e.team2} size={big ? 36 : 16} />
@@ -139,46 +169,64 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
       <span className={`font-semibold text-rw-text ${big ? "text-xl" : "text-xs"}`}>{e.name || tl("Broadcast segment")}</span>
     );
 
-  const WatchButtons: React.FC<{ active?: StreamEvent | null }> = ({ active }) => (
-    <div className="flex flex-wrap items-center gap-2">
-      <button
-        onClick={() => onOpenUrl(TWITCH_URL)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#9146ff] hover:bg-[#a970ff] text-white font-bold text-xs"
-      >
-        <Play className="w-3.5 h-3.5 fill-current" /> Twitch
-      </button>
-      <button
-        onClick={() => onOpenUrl(YOUTUBE_LIVE_URL)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#cc0000] hover:bg-[#e60000] text-white font-bold text-xs"
-      >
-        <Play className="w-3.5 h-3.5 fill-current" /> YouTube
-      </button>
-      {active?.team1 && active?.team2 && (
-        <>
-          <button
-            type="button"
-            onClick={() => navigateHub({ kind: "prep", a: prettySlug(active.team1!), b: prettySlug(active.team2!) })}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-accent"
-          >
-            {tl("Match prep")}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigateHub({ kind: "compare", mode: "team", a: prettySlug(active.team1!), b: prettySlug(active.team2!) })}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
-          >
-            {tl("Compare")}
-          </button>
-        </>
-      )}
-      <button
-        onClick={() => onOpenUrl("https://lolworlds.com/schedule")}
-        className="flex items-center gap-1 px-2 py-1.5 text-xs text-rw-sub hover:text-rw-text"
-      >
-        {tl("Full schedule")} <ExternalLink className="w-3 h-3" />
-      </button>
-    </div>
-  );
+  const WatchButtons: React.FC<{ active?: StreamEvent | null }> = ({ active }) => {
+    const aSlug = active?.team1 ? teamSlug(active.team1) : "";
+    const bSlug = active?.team2 ? teamSlug(active.team2) : "";
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => onOpenUrl(TWITCH_URL)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#9146ff] hover:bg-[#a970ff] text-white font-bold text-xs"
+        >
+          <Play className="w-3.5 h-3.5 fill-current" /> Twitch
+        </button>
+        <button
+          onClick={() => onOpenUrl(YOUTUBE_LIVE_URL)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#cc0000] hover:bg-[#e60000] text-white font-bold text-xs"
+        >
+          <Play className="w-3.5 h-3.5 fill-current" /> YouTube
+        </button>
+        {aSlug && bSlug && (
+          <>
+            <button
+              type="button"
+              onClick={() => navigateHub({ kind: "prep", a: aSlug, b: bSlug })}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-accent"
+            >
+              {tl("Match prep")}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(aSlug)},${encodeURIComponent(bSlug)}` })}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
+            >
+              {tl("Draft board")}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateHub({ kind: "compare", mode: "team", a: aSlug, b: bSlug })}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
+            >
+              {tl("Compare")}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(aSlug)}&vs=${encodeURIComponent(bSlug)}` })}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
+            >
+              {tl("Game finder")}
+            </button>
+          </>
+        )}
+        <button
+          onClick={() => onOpenUrl("https://lolworlds.com/schedule")}
+          className="flex items-center gap-1 px-2 py-1.5 text-xs text-rw-sub hover:text-rw-text"
+        >
+          {tl("Full schedule")} <ExternalLink className="w-3 h-3" />
+        </button>
+      </div>
+    );
+  };
 
   // ── On break: the marathon has ended for now ───────────────────────────
   if (phase.kind === "break") {
@@ -211,7 +259,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                   <>
                     <button
                       type="button"
-                      onClick={() => navigateHub({ kind: "team", slug: prettySlug(phase.lastAired!.team1!) })}
+                      onClick={() => navigateHub({ kind: "team", slug: teamSlug(phase.lastAired!.team1!) })}
                       className="text-rw-text hover:text-rw-accent hover:underline font-medium"
                     >
                       {phase.lastAired.team1}
@@ -219,7 +267,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                     vs{" "}
                     <button
                       type="button"
-                      onClick={() => navigateHub({ kind: "team", slug: prettySlug(phase.lastAired!.team2!) })}
+                      onClick={() => navigateHub({ kind: "team", slug: teamSlug(phase.lastAired!.team2!) })}
                       className="text-rw-text hover:text-rw-accent hover:underline font-medium"
                     >
                       {phase.lastAired.team2}
@@ -229,8 +277,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                 ) : (
                   ""
                 )}
-                {streamEventTitle(phase.lastAired)}
-                {phase.lastAired.stage ? ` ${stageName(phase.lastAired.stage)}` : ""}
+                <EventTitleLink e={phase.lastAired} className="hover:text-rw-accent" />
               </p>
             )}
           </div>
@@ -317,8 +364,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
             <div className="space-y-1">
               <Matchup e={current} big />
               <div className="text-xs text-rw-accent font-semibold">
-                {streamEventTitle(current)}
-                {current.stage ? ` · ${stageName(current.stage)}` : ""}
+                <EventTitleLink e={current} />
               </div>
             </div>
           ) : (
@@ -327,8 +373,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                 <div className="text-sm text-rw-sub">{tl("Next match starts {when}", { when: relTime(next.utcIso, now) })}</div>
                 <Matchup e={next} big />
                 <div className="text-xs text-rw-accent font-semibold">
-                  {streamEventTitle(next)}
-                  {next.stage ? ` · ${stageName(next.stage)}` : ""}
+                  <EventTitleLink e={next} />
                 </div>
               </div>
             )
@@ -371,10 +416,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
             <Flame className="w-3.5 h-3.5 text-[#ff4655] fill-current shrink-0" />
             <span className="font-bold text-[#ff4655] light:text-[#c8102e] uppercase tracking-wider text-[10px] shrink-0">{tl("Next banger")}</span>
             <Matchup e={nextBanger} />
-            <span className="text-rw-muted truncate hidden sm:inline">
-              {streamEventTitle(nextBanger)}
-              {nextBanger.stage ? ` · ${stageName(nextBanger.stage)}` : ""}
-            </span>
+            <EventTitleLink e={nextBanger} className="text-rw-muted truncate hidden sm:inline hover:text-rw-accent" />
           </div>
           <span className="font-mono text-[#ff4655] light:text-[#c8102e] shrink-0">{relTime(nextBanger.utcIso, now)}</span>
         </div>
@@ -405,7 +447,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                     <React.Fragment key={String(e.id)}>
                       {group !== prevGroup && (
                         <div className="px-3.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-rw-accent/80 border-t border-rw-border bg-rw-bg">
-                          {group}
+                          <EventTitleLink e={e} className="uppercase tracking-wider" />
                         </div>
                       )}
                       <div
@@ -419,13 +461,22 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                         </span>
                         <span className="flex items-center gap-1.5 shrink-0">
                           {e.team1 && e.team2 && (
-                            <button
-                              type="button"
-                              onClick={() => navigateHub({ kind: "prep", a: prettySlug(e.team1!), b: prettySlug(e.team2!) })}
-                              className="hidden sm:inline text-[10px] text-rw-sub hover:text-rw-accent hover:underline"
-                            >
-                              {tl("Match prep")}
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => navigateHub({ kind: "prep", a: teamSlug(e.team1!), b: teamSlug(e.team2!) })}
+                                className="hidden sm:inline text-[10px] text-rw-sub hover:text-rw-accent hover:underline"
+                              >
+                                {tl("Match prep")}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => navigateHub({ kind: "compare", mode: "team", a: teamSlug(e.team1!), b: teamSlug(e.team2!) })}
+                                className="hidden md:inline text-[10px] text-rw-sub hover:text-rw-accent hover:underline"
+                              >
+                                {tl("Compare")}
+                              </button>
+                            </>
                           )}
                           {fol && <Star className="w-3.5 h-3.5 text-rw-accent fill-current" aria-label={tl("A team you follow")} />}
                           {e.isBanger && <Flame className="w-3.5 h-3.5 text-[#ff4655] fill-current" aria-label={tl("Banger")} />}

@@ -70,7 +70,13 @@ export const RosterMoves: React.FC = () => {
       <ul className="text-xs @min-[64rem]:columns-2 gap-x-10">
         {list.slice(0, shown).map((m) => (
           <li key={`${m.u}-${m.d}`} className="py-1.5 border-b border-rw-border break-inside-avoid flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
-            <span className="text-rw-muted tabular-nums w-20 shrink-0">{fmtDate(m.d, false)}</span>
+            <HubLink
+              to={{ kind: "finder", query: `player=${encodeURIComponent(m.u)}&team=${encodeURIComponent(m.to.u)}` }}
+              className="text-rw-muted hover:text-rw-accent hover:underline tabular-nums w-20 shrink-0"
+              title={tl("Game finder")}
+            >
+              {fmtDate(m.d, false)}
+            </HubLink>
             <span className="inline-flex items-center gap-1.5 min-w-0">
               <PlayerPhoto name={m.n} team={m.to.n} slug={m.u} size={18} />
               <PlayerLink name={m.n} u={m.u} className="font-semibold text-rw-text hover:text-rw-accent" />

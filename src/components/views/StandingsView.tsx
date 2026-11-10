@@ -329,8 +329,13 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                               {hideResults ? (
                                 <span className="text-rw-muted">? – ?</span>
                               ) : (
-                                <span className="inline-flex flex-col items-center gap-0.5">
-                                  <span>
+                                <button
+                                  type="button"
+                                  onClick={() => navigateHub({ kind: "team", slug: prettySlug(team.name || team.code), tab: "matches" })}
+                                  className="inline-flex flex-col items-center gap-0.5 hover:opacity-80"
+                                  title={tl("Full history and stats")}
+                                >
+                                  <span className="hover:underline">
                                     <span className="text-rw-teal">{team.wins}</span>
                                     <span className="text-rw-muted mx-1">–</span>
                                     <span className="text-rw-red">{team.losses}</span>
@@ -342,7 +347,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                       <span className="h-full flex-1 bg-rw-red/70" />
                                     </span>
                                   )}
-                                </span>
+                                </button>
                               )}
                             </td>
                             <td
@@ -543,6 +548,19 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Match prep")}
+              </button>
+              <span aria-hidden="true">·</span>
+              <button
+                type="button"
+                onClick={() =>
+                  navigateHub({
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(prettySlug(match.teams[0].name || match.teams[0].code))},${encodeURIComponent(prettySlug(match.teams[1].name || match.teams[1].code))}`,
+                  })
+                }
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Draft board")}
               </button>
               <span aria-hidden="true">·</span>
               <button

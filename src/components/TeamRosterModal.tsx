@@ -13,6 +13,7 @@ import { navigateHub } from "../hub/route";
 import { RiotCatalogContext } from "../hub/riotCatalog";
 import { PlayerPhoto, PhotosLink, TeamLogo, useTeamLogo } from "./hub/ui";
 import { riotImg } from "../riotImage";
+import { isRevealed, setRevealed, useRevealedVersion } from "../revealed";
 
 interface TeamRosterModalProps {
   teamCode: string | null;
@@ -99,6 +100,14 @@ const TeamStatsLink: React.FC<{ name: string; code: string; onDone: () => void }
       >
         {tl("Draft board")}
       </button>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => openRoute((slug) => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(slug)}` }))}
+        className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
+      >
+        {tl("Game finder")}
+      </button>
     </div>
   );
 };
@@ -114,6 +123,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
   onTogglePlayerFollow,
   onOpenUrl,
 }) => {
+  useRevealedVersion();
   // Close on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -416,14 +426,15 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                     const oppScore = isT1 ? m.team2Score : m.team1Score;
                     const oppName = isT1 ? m.team2Name : m.team1Name;
                     const won = myScore > oppScore;
+                    const shown = !settings.spoilerMode || isRevealed(`match:${m.matchId}`);
 
-                    if (settings.spoilerMode) {
+                    if (!shown) {
                       return (
                         <div
                           key={m.matchId}
-                          className="p-2.5 rounded-lg bg-rw-bg border border-rw-border flex items-center justify-between text-xs"
+                          className="p-2.5 rounded-lg bg-rw-bg border border-rw-border flex items-center justify-between gap-2 text-xs"
                         >
-                          <span className="font-semibold text-rw-text inline-flex items-center gap-1.5">
+                          <span className="font-semibold text-rw-text inline-flex items-center gap-1.5 min-w-0 truncate">
                             <span>vs</span>
                             <TeamLogo name={oppName} size={14} />
                             <button
@@ -432,12 +443,22 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                                 navigateHub({ kind: "team", slug: prettySlug(oppName) });
                                 onClose();
                               }}
-                              className="hover:text-rw-accent hover:underline text-left"
+                              className="hover:text-rw-accent hover:underline text-left truncate"
                             >
                               {oppName}
                             </button>
                           </span>
-                          <span className="text-[10px] text-rw-sub">{tl("Result hidden (spoiler mode)")}</span>
+                          <span className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setRevealed(`match:${m.matchId}`, true)}
+                              className="text-[10px] rounded border border-rw-accent/50 text-rw-accent hover:bg-rw-accent/10 px-1.5 py-0.5"
+                              title={tl("Result hidden (spoiler mode)")}
+                            >
+                              {tl("Reveal")}
+                            </button>
+                            <MatchPrepButton match={m} compact onDone={onClose} />
+                          </span>
                         </div>
                       );
                     }
