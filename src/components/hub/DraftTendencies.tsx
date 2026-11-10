@@ -432,9 +432,11 @@ export const DraftTendencies: React.FC<{
                     kind: "tiers",
                     ...(period?.startsWith("y") && period.length === 5
                       ? { query: `key=${encodeURIComponent(period)}` }
-                      : period?.startsWith("p:")
-                        ? { query: `key=p${encodeURIComponent(period.slice(2))}` }
-                        : {}),
+                      : period?.startsWith("e:")
+                        ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                        : period?.startsWith("p:")
+                          ? { query: `key=p${encodeURIComponent(period.slice(2))}` }
+                          : {}),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -442,7 +444,7 @@ export const DraftTendencies: React.FC<{
                   {tl("Pro tier list")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "rankings" }}
+                  to={{ kind: "rankings", query: `q=${encodeURIComponent(resolvedSlug)}` }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
                 >
@@ -451,15 +453,11 @@ export const DraftTendencies: React.FC<{
                 <HubLink
                   to={{
                     kind: "leaders",
-                    ...(period?.startsWith("y") && period.length === 5 || period?.startsWith("e:") || (d.b1[0] || d.r12[0])
-                      ? {
-                          query: new URLSearchParams({
-                            ...(period?.startsWith("y") && period.length === 5 ? { year: period.slice(1) } : {}),
-                            ...(period?.startsWith("e:") ? { event: period.slice(2) } : {}),
-                            ...((d.b1[0] || d.r12[0]) ? { champ: (d.b1[0] || d.r12[0])[0] } : {}),
-                          }).toString(),
-                        }
-                      : {}),
+                    query: new URLSearchParams({
+                      ...(teamName ? { q: teamName } : (d.b1[0] || d.r12[0]) ? { champ: (d.b1[0] || d.r12[0])[0] } : {}),
+                      ...(period?.startsWith("y") && period.length === 5 ? { year: period.slice(1) } : {}),
+                      ...(period?.startsWith("e:") ? { event: period.slice(2) } : {}),
+                    }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"

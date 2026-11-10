@@ -456,9 +456,9 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                   {tl("Draft board")} →
                 </HubLink>
                 {(() => {
-                  const qBare = bare(inputVal.trim());
-                  const topC = qBare
-                    ? index.data.champs.find((c) => bare(c[0]).includes(qBare) || bare(champName(c[0])).includes(qBare) || c[1].includes(qBare))
+                  const qTrim = inputVal.trim();
+                  const topC = qTrim
+                    ? index.data.champs.find((c) => matchesChampSearch(c[0], qTrim))
                     : undefined;
                   return (
                     <>
@@ -500,9 +500,9 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
           >
             <div className="flex flex-wrap gap-2">
               {(() => {
-                const qBare = bare(inputVal.trim());
-                const list = qBare
-                  ? index.data.champs.filter((c) => bare(c[0]).includes(qBare) || bare(champName(c[0])).includes(qBare) || c[1].includes(qBare))
+                const qTrim = inputVal.trim();
+                const list = qTrim
+                  ? index.data.champs.filter((c) => matchesChampSearch(c[0], qTrim))
                   : index.data.champs.slice(0, 40);
                 return list.map((c) => (
                   <HubLink key={champSlug(c)} to={{ kind: "counters", query: `champ=${champSlug(c)}` }} className="flex items-center gap-1 px-2 py-1 rounded border border-rw-border text-xs hover:border-rw-accent">
@@ -1110,12 +1110,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         .map((s) => s.trim())
                         .filter(Boolean);
                       const dList = terms.length
-                        ? data.data!.ch!.duos!.filter(([pc]) => {
-                            const cDisp = champName(pc).toLowerCase();
-                            const cRaw = pc.toLowerCase();
-                            const cBare = bare(cDisp);
-                            return terms.some((t) => cDisp.includes(t) || cRaw.includes(t) || (bare(t).length >= 2 && cBare.includes(bare(t))));
-                          })
+                        ? data.data!.ch!.duos!.filter(([pc]) => terms.some((t) => matchesChampSearch(pc, t)))
                         : data.data!.ch!.duos!;
                       const topDuo = dList[0] || data.data!.ch!.duos![0];
                       return topDuo ? (
@@ -1184,12 +1179,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           .map((s) => s.trim())
                           .filter(Boolean);
                         const list = terms.length
-                          ? data.data!.ch!.duos!.filter(([pc]) => {
-                              const cDisp = champName(pc).toLowerCase();
-                              const cRaw = pc.toLowerCase();
-                              const cBare = bare(cDisp);
-                              return terms.some((t) => cDisp.includes(t) || cRaw.includes(t) || (bare(t).length >= 2 && cBare.includes(bare(t))));
-                            })
+                          ? data.data!.ch!.duos!.filter(([pc]) => terms.some((t) => matchesChampSearch(pc, t)))
                           : data.data!.ch!.duos!;
                         return list.slice(0, 12).map(([pc, g, w], idx) => ({
                           rank: idx + 1,
@@ -1212,12 +1202,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       .map((s) => s.trim())
                       .filter(Boolean);
                     const list = terms.length
-                      ? data.data.ch.duos.filter(([pc]) => {
-                          const cDisp = champName(pc).toLowerCase();
-                          const cRaw = pc.toLowerCase();
-                          const cBare = bare(cDisp);
-                          return terms.some((t) => cDisp.includes(t) || cRaw.includes(t) || (bare(t).length >= 2 && cBare.includes(bare(t))));
-                        })
+                      ? data.data.ch.duos.filter(([pc]) => terms.some((t) => matchesChampSearch(pc, t)))
                       : data.data.ch.duos;
                     return list.slice(0, terms.length ? 30 : 10).map(([pc, g, w]) => {
                       const wr = Math.round((w / g) * 100);

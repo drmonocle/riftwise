@@ -463,7 +463,10 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
                       <HubLink
                         to={{
                           kind: "rankings",
-                          ...(side?.team.rating?.league ? { query: `league=${encodeURIComponent(side.team.rating.league)}` } : {}),
+                          query: new URLSearchParams({
+                            q: slug,
+                            ...(side?.team.rating?.league ? { league: side.team.rating.league } : {}),
+                          }).toString(),
                         }}
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
@@ -481,7 +484,10 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
                       <HubLink
                         to={{
                           kind: "leaders",
-                          ...(side?.team.rating?.league ? { query: `league=${encodeURIComponent(side.team.rating.league)}` } : {}),
+                          query: new URLSearchParams({
+                            q: side?.team.name || slug,
+                            ...(side?.team.rating?.league ? { league: side.team.rating.league } : {}),
+                          }).toString(),
                         }}
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
@@ -1017,7 +1023,11 @@ const Board: React.FC<{
               query:
                 new URLSearchParams({
                   ...(typeof role === "number" ? { role: ROLES[role] } : {}),
-                  ...(period.startsWith("y") && period.length === 5 ? { key: period } : {}),
+                  ...(period.startsWith("y") && period.length === 5
+                    ? { key: period }
+                    : period.startsWith("e:")
+                      ? { event: period.slice(2) }
+                      : {}),
                 }).toString() || undefined,
             }}
             className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -1044,7 +1054,18 @@ const Board: React.FC<{
           >
             {tl("Item history")}
           </HubLink>
-          <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+          <HubLink
+            to={{
+              kind: "rankings",
+              query: new URLSearchParams({
+                q: `${blue.team.u},${red.team.u}`,
+                ...(blue.team.rating?.league && blue.team.rating.league === red.team.rating?.league
+                  ? { league: blue.team.rating.league }
+                  : {}),
+              }).toString(),
+            }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
             {tl("Power rankings")}
           </HubLink>
           <HubLink
@@ -1053,8 +1074,8 @@ const Board: React.FC<{
               ...(() => {
                 const c0 = focus || picksOf("b")[0] || picksOf("r")[0];
                 const qStr = new URLSearchParams({
+                  ...(c0 ? { champ: c0 } : { q: `${blue.team.name},${red.team.name}` }),
                   ...(typeof role === "number" ? { role: ROLES[role] } : {}),
-                  ...(c0 ? { champ: c0 } : {}),
                   ...(period.startsWith("y")
                     ? { year: period.slice(1) }
                     : period.startsWith("e:")
@@ -1859,7 +1880,11 @@ const DraftMatchupPanel: React.FC<{
                     ? { league: blue.team.rating.league }
                     : {}),
                   ...(activeLane?.rKey ? { role: activeLane.rKey } : {}),
-                  ...(period.startsWith("y") && period.length === 5 ? { key: period } : {}),
+                  ...(period.startsWith("y") && period.length === 5
+                    ? { key: period }
+                    : period.startsWith("e:")
+                      ? { event: period.slice(2) }
+                      : {}),
                 }).toString() || undefined,
             }}
             className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -1869,9 +1894,12 @@ const DraftMatchupPanel: React.FC<{
           <HubLink
             to={{
               kind: "rankings",
-              ...(blue.team.rating?.league && blue.team.rating.league === red.team.rating?.league
-                ? { query: `league=${encodeURIComponent(blue.team.rating.league)}` }
-                : {}),
+              query: new URLSearchParams({
+                q: `${blue.team.u},${red.team.u}`,
+                ...(blue.team.rating?.league && blue.team.rating.league === red.team.rating?.league
+                  ? { league: blue.team.rating.league }
+                  : {}),
+              }).toString(),
             }}
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
@@ -2468,7 +2496,11 @@ const PlayerPools: React.FC<{
                 new URLSearchParams({
                   ...(side.team.rating?.league ? { league: side.team.rating.league } : {}),
                   ...(roleFilter != null ? { role: ROLES[roleFilter] } : {}),
-                  ...(period.startsWith("y") && period.length === 5 ? { key: period } : {}),
+                  ...(period.startsWith("y") && period.length === 5
+                    ? { key: period }
+                    : period.startsWith("e:")
+                      ? { event: period.slice(2) }
+                      : {}),
                 }).toString() || undefined,
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -2480,9 +2512,9 @@ const PlayerPools: React.FC<{
               kind: "leaders",
               query:
                 new URLSearchParams({
+                  q: roleFilter != null && rows[0]?.name ? rows[0].name : side.team.name,
                   ...(side.team.rating?.league ? { league: side.team.rating.league } : {}),
                   ...(roleFilter != null ? { role: ROLES[roleFilter] } : {}),
-                  ...(roleFilter != null && rows[0]?.champs[0]?.c ? { champ: rows[0].champs[0].c } : {}),
                   ...(period.startsWith("y")
                     ? { year: period.slice(1) }
                     : period.startsWith("e:")
@@ -2518,7 +2550,10 @@ const PlayerPools: React.FC<{
           <HubLink
             to={{
               kind: "rankings",
-              ...(side.team.rating?.league ? { query: `league=${encodeURIComponent(side.team.rating.league)}` } : {}),
+              query: new URLSearchParams({
+                q: side.team.u,
+                ...(side.team.rating?.league ? { league: side.team.rating.league } : {}),
+              }).toString(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
@@ -2850,7 +2885,11 @@ const ChampInfo: React.FC<{
         <HubLink
           to={{
             kind: "tiers",
-            ...(period.startsWith("y") && period.length === 5 ? { query: `key=${encodeURIComponent(period)}` } : {}),
+            ...(period.startsWith("y") && period.length === 5
+              ? { query: `key=${encodeURIComponent(period)}` }
+              : period.startsWith("e:")
+                ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                : {}),
           }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
@@ -2872,7 +2911,13 @@ const ChampInfo: React.FC<{
         >
           {tl("Player leaderboards")} →
         </HubLink>
-        <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+        <HubLink
+          to={{
+            kind: "rankings",
+            query: `q=${encodeURIComponent(blue.team.u)},${encodeURIComponent(red.team.u)}`,
+          }}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
           {tl("Power rankings")} →
         </HubLink>
         <HubLink
@@ -3159,7 +3204,11 @@ const Priorities: React.FC<{
               query:
                 new URLSearchParams({
                   ...(side.team.rating?.league ? { league: side.team.rating.league } : {}),
-                  ...(period.startsWith("y") && period.length === 5 ? { key: period } : {}),
+                  ...(period.startsWith("y") && period.length === 5
+                    ? { key: period }
+                    : period.startsWith("e:")
+                      ? { event: period.slice(2) }
+                      : {}),
                 }).toString() || undefined,
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -3193,8 +3242,8 @@ const Priorities: React.FC<{
               kind: "leaders",
               query:
                 new URLSearchParams({
+                  q: side.team.name,
                   ...(side.team.rating?.league ? { league: side.team.rating.league } : {}),
-                  ...(open[0] ? { champ: open[0][0] } : {}),
                   ...(period.startsWith("y")
                     ? { year: period.slice(1) }
                     : period.startsWith("e:")
@@ -3209,7 +3258,10 @@ const Priorities: React.FC<{
           <HubLink
             to={{
               kind: "rankings",
-              ...(side.team.rating?.league ? { query: `league=${encodeURIComponent(side.team.rating.league)}` } : {}),
+              query: new URLSearchParams({
+                q: side.team.u,
+                ...(side.team.rating?.league ? { league: side.team.rating.league } : {}),
+              }).toString(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
