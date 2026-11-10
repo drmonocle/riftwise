@@ -181,7 +181,13 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                       {tl("Compare")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "rankings", ...(league ? { query: `league=${encodeURIComponent(league)}` } : {}) }}
+                      to={{
+                        kind: "rankings",
+                        query: new URLSearchParams({
+                          ...(league ? { league } : {}),
+                          ...(a && b ? { q: `${a},${b}` } : a ? { q: a } : {}),
+                        }).toString() || undefined,
+                      }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Power rankings")} →
@@ -202,7 +208,7 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                       to={{
                         kind: "tiers",
                         query: new URLSearchParams({
-                          ...(league ? { league } : {}),
+                          ...(league ? { scope: league } : {}),
                           ...(year ? { key: `y${year}` } : {}),
                         }).toString(),
                       }}
@@ -216,6 +222,7 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                         query: new URLSearchParams({
                           ...(league ? { league } : {}),
                           ...(year ? { year } : {}),
+                          ...(a && b ? { q: `${a},${b}` } : a ? { q: a } : {}),
                         }).toString(),
                       }}
                       className="text-rw-accent hover:underline font-semibold"
@@ -239,7 +246,10 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                     <HubLink
                       to={{
                         kind: "records",
-                        ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}),
+                        query: new URLSearchParams({
+                          ...(year ? { year } : {}),
+                          ...(rawTeam ? { q: rawTeam } : {}),
+                        }).toString() || undefined,
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -411,7 +421,10 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                 <HubLink
                   to={{
                     kind: "rankings",
-                    ...(league ? { query: `league=${encodeURIComponent(league)}` } : {}),
+                    query: new URLSearchParams({
+                      ...(league ? { league } : {}),
+                      q: `${sa},${sb}`,
+                    }).toString(),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -421,7 +434,7 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                   to={{
                     kind: "tiers",
                     query: new URLSearchParams({
-                      ...(league ? { league } : {}),
+                      ...(league ? { scope: league } : {}),
                       ...(year ? { key: `y${year}` } : {}),
                     }).toString(),
                   }}
@@ -435,6 +448,7 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                     query: new URLSearchParams({
                       ...(league ? { league } : {}),
                       ...(year ? { year } : {}),
+                      q: `${sa},${sb}`,
                     }).toString(),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"

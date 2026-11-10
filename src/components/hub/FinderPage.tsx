@@ -7,7 +7,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { tl, tn, tc, fmtDec, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadAliases, loadChampGames, loadChampIndex, prettySlug, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, loadAliases, loadChampGames, loadChampIndex, prettySlug, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug, sameChamp } from "../../hub/data";
 import type { ChampGame, ChampGamesFile, ChampPick } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
@@ -55,7 +55,7 @@ const patchSort = (p: string) => {
 const eqSlug = (a: string | null | undefined, b: string | null | undefined) =>
   !!a && !!b && (a === b || bare(a) === bare(b));
 const eqChamp = (a: string | null | undefined, b: string | null | undefined) =>
-  eqSlug(a, b) || (!!a && !!b && eqSlug(resolveChampSlug(a), resolveChampSlug(b)));
+  eqSlug(a, b) || (!!a && !!b && (sameChamp(a, b) || eqSlug(resolveChampSlug(a), resolveChampSlug(b))));
 const eqPlayer = (a: string | null | undefined, b: string | null | undefined) =>
   eqSlug(a, b) || (!!a && !!b && eqSlug(resolvePlayerSlug(a), resolvePlayerSlug(b)));
 
@@ -299,6 +299,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                               ...(qPatch ? { key: `p${qPatch}` } : year ? { key: `y${year}` } : {}),
                             }),
                         ...(qRole ? { role: qRole } : {}),
+                        ...(qChamp ? { q: [qChamp, qVsChamp].filter(Boolean).join(",") } : {}),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -311,7 +312,9 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                       query: new URLSearchParams({
                         ...(league && league !== "top" ? { scope: league } : {}),
                         ...(qPatch ? { key: `p${qPatch}` } : year ? { key: `y${year}` } : {}),
+                        ...(qEvent ? { event: qEvent } : {}),
                         ...(qRole ? { role: qRole } : {}),
+                        ...(qChamp ? { q: [qChamp, qVsChamp].filter(Boolean).join(",") } : {}),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -337,6 +340,8 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                       query: new URLSearchParams({
                         ...(qTeam ? { teams: `${qTeam}${qVs ? `,${qVs}` : ""}` } : {}),
                         ...(qEvent ? { p: `e:${qEvent}` } : qPatch ? { p: `p:${qPatch}` } : year ? { p: `y${year}` } : {}),
+                        ...(qChamp ? { champ: qChamp } : {}),
+                        ...(qRole ? { role: qRole } : {}),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -365,6 +370,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                         ...(qEvent ? { event: qEvent } : {}),
                         ...(qRole ? { role: qRole } : {}),
                         ...(qChamp ? { champ: qChamp } : {}),
+                        ...(qPlayer || qTeam ? { q: [qPlayer, qVsPlayer, qTeam, qVs].filter(Boolean).slice(0, 2).join(",") } : {}),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -374,7 +380,10 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                   <HubLink
                     to={{
                       kind: "rankings",
-                      ...(league && league !== "top" ? { query: `league=${encodeURIComponent(league)}` } : {}),
+                      query: new URLSearchParams({
+                        ...(league && league !== "top" ? { league } : {}),
+                        ...(qTeam ? { q: [qTeam, qVs].filter(Boolean).join(",") } : {}),
+                      }).toString() || undefined,
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -1508,7 +1517,9 @@ const Cohort: React.FC<{
                     query: new URLSearchParams({
                       ...(scopeLg ? { scope: scopeLg } : {}),
                       ...(patch ? { key: `p${patch}` } : year ? { key: `y${year}` } : {}),
+                      ...(event ? { event } : {}),
                       ...(role ? { role } : {}),
+                      q: rows.slice(0, 2).map((r) => r[0]).join(","),
                     }).toString(),
                   }}
                   className="text-rw-accent hover:underline"
@@ -1533,13 +1544,11 @@ const Cohort: React.FC<{
                 <HubLink
                   to={{
                     kind: "draft",
-                    ...(event
-                      ? { query: `p=e:${encodeURIComponent(event)}` }
-                      : patch
-                        ? { query: `p=p:${encodeURIComponent(patch)}` }
-                        : year
-                          ? { query: `p=y${encodeURIComponent(year)}` }
-                          : {}),
+                    query: new URLSearchParams({
+                      ...(event ? { p: `e:${event}` } : patch ? { p: `p:${patch}` } : year ? { p: `y${year}` } : {}),
+                      champ: rows[0][0],
+                      ...(role ? { role } : {}),
+                    }).toString(),
                   }}
                   className="text-rw-accent hover:underline"
                 >
@@ -1762,6 +1771,7 @@ const CopyFinderPost: React.FC<{
       q.get("role") && roleName(q.get("role")!),
       q.get("vschamp") && `vs ${champName(champOption(opts.champs, q.get("vschamp")!))}`,
       playerLabel(opts.players, q.get("player")),
+      q.get("vsplayer") && `vs ${playerLabel(opts.players, q.get("vsplayer"))}`,
       q.get("patch") && `Patch ${q.get("patch")}`,
     ].filter(Boolean);
     const lines: string[] = [

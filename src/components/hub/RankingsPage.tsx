@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, tn } from "../../i18n";
-import { bare, loadRatings, loadRatingsHistory, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, loadRatings, loadRatingsHistory, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { hubShareUrl, navigateHub, useHubRoute } from "../../hub/route";
 import { Sparkline } from "./Sparkline";
 import type { HubRatings, RatingRow } from "../../hub/types";
@@ -173,14 +173,14 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
   const minRowRating = useMemo(() => Math.min(1100, ...rows.map((x) => x.r[5])) - 40, [rows]);
   const maxRowGames = useMemo(() => Math.max(1, ...rows.map((x) => x.r[7] || 0)), [rows]);
   const shownRows = useMemo(() => {
-    const sq = search.trim().toLowerCase();
+    const sq = normText(search.trim());
     if (!sq) return rows;
     const terms = sq
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
       .map((s) => s.trim())
       .filter(Boolean);
     const matchRow = (r: RatingRow, t: string) => {
-      const hay = `${r[0] || ""} ${r[1]} ${r[2] || ""} ${r[3] || ""} ${r[10] || ""}`.toLowerCase();
+      const hay = normText(`${r[0] || ""} ${r[1]} ${r[2] || ""} ${r[3] || ""} ${r[10] || ""}`);
       return hay.includes(t) || (bare(t).length >= 2 && bare(hay).includes(bare(t)));
     };
     const pool =
@@ -620,6 +620,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                     query: new URLSearchParams({
                       ...(leagueSlug ? { league: leagueSlug } : {}),
                       ...(asOfYr ? { year: asOfYr } : {}),
+                      q: `${pair[0]},${pair[1]}`,
                     }).toString(),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -685,6 +686,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                       query: new URLSearchParams({
                         ...(leagueSlug ? { league: leagueSlug } : {}),
                         ...(asOfYr ? { year: asOfYr } : {}),
+                        q: s0,
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -752,6 +754,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                       query: new URLSearchParams({
                         ...(leagueSlug ? { league: leagueSlug } : {}),
                         ...(asOfYr ? { year: asOfYr } : {}),
+                        q: `${s0},${s1}`,
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
