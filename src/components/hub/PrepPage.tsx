@@ -1146,6 +1146,25 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           >
             {tl("Pro tier list")}
           </HubLink>
+          <HubLink
+            to={{ kind: "rankings" }}
+            className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-accent hover:underline"
+          >
+            {tl("Power rankings")}
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "leaders",
+              ...(period.startsWith("y") && period.length === 5
+                ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                : period.startsWith("e:")
+                  ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                  : {}),
+            }}
+            className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-accent hover:underline"
+          >
+            {tl("Leaderboards")}
+          </HubLink>
           {/* icons with their name on hover, to keep the bar short */}
           <button
             type="button"
@@ -1233,6 +1252,15 @@ const Tendencies: React.FC<{ side: Side; rows: TeamGameRow[]; period: PeriodKey;
             className="text-[11px] text-rw-accent hover:underline"
           >
             {tl("Draft board")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "tiers",
+              ...(period.startsWith("y") && period.length === 5 ? { query: `key=${encodeURIComponent(period)}` } : {}),
+            }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")} →
           </HubLink>
           <HubLink
             to={{
@@ -1423,6 +1451,12 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Compare")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "draft", query: `teams=${encodeURIComponent(a.team.u)},${encodeURIComponent(b.team.u)}` }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Draft board")} →
             </HubLink>
             <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Power rankings")} →
@@ -1858,6 +1892,22 @@ const Lanes: React.FC<{
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
               >
                 {tl("Item history")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "leaders",
+                  query: new URLSearchParams({
+                    role: r,
+                    ...(period.startsWith("y") && period.length === 5
+                      ? { year: period.slice(1) }
+                      : period.startsWith("e:")
+                        ? { event: period.slice(2) }
+                        : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+              >
+                {tl("Player leaderboards")} →
               </HubLink>
               <HubLink
                 to={{

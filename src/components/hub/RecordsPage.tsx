@@ -94,6 +94,12 @@ const CareerRecords: React.FC<{
           <HubLink to={{ kind: "champions" }} className="text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Champions")} →
           </HubLink>
+          <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Pro tier list")} →
+          </HubLink>
+          <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Power rankings")} →
+          </HubLink>
           <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Game finder")} →
           </HubLink>
@@ -657,6 +663,18 @@ export const RecordsPanel: React.FC = () => {
                         >
                           {tl("Game finder")} →
                         </HubLink>
+                        <HubLink
+                          to={{ kind: "rankings" }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Power rankings")} →
+                        </HubLink>
+                        <HubLink
+                          to={{ kind: "best" }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Best games")} →
+                        </HubLink>
                       </>
                     )}
                     <SectionCard
@@ -811,6 +829,12 @@ export const RecordsPanel: React.FC = () => {
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Player leaderboards")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "tiers" }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Pro tier list")} →
                     </HubLink>
                     <SectionCard
                       section={title}
@@ -1497,6 +1521,24 @@ export const TitlesPanel: React.FC = () => {
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Tournaments")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "records" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Records")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "leaders" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "tiers" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Pro tier list")} →
                   </HubLink>
                   <SectionCard
                     section={tl("Titles")}

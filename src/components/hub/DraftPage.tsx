@@ -2879,6 +2879,18 @@ const Priorities: React.FC<{
       right={
         <span className="flex flex-wrap items-center gap-2">
           <TeamLink name={side.team.name} u={side.team.u} className={`text-[11px] font-semibold ${color} hover:underline`} />
+          <HubLink
+            to={{ kind: "prep", a: side.team.u, ...(period !== "all" ? { period } : {}) }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Match prep")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "compare", mode: "team", a: side.team.u, ...(period !== "all" ? { period } : {}) }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Compare")} →
+          </HubLink>
           {open.length >= 2 && (
             <HubLink
               to={{

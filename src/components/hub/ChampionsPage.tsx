@@ -671,6 +671,26 @@ const LeagueTable: React.FC<{
             >
               {tl("Draft board")} →
             </HubLink>
+            <HubLink
+              to={{
+                kind: "leaders",
+                query: new URLSearchParams({
+                  league,
+                  ...(year ? { year } : {}),
+                  ...(eventSlug ? { event: eventSlug } : {}),
+                  ...(roleQ ? { role: roleQ } : {}),
+                }).toString(),
+              }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Player leaderboards")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "rankings", query: `league=${encodeURIComponent(league)}` }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Power rankings")} →
+            </HubLink>
             <SectionCard
               section={tl("Champions")}
               name={[leagueName, year, q.get("patch") && tl("Patch {patch}", { patch: q.get("patch")! })].filter(Boolean).join(" · ")}
@@ -979,6 +999,24 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Game finder")} →
+            </HubLink>
+            <HubLink
+              to={{
+                kind: "leaders",
+                query: new URLSearchParams({
+                  ...(key.startsWith("y") ? { year: key.slice(1) } : {}),
+                  ...(roleQ ? { role: roleQ } : {}),
+                }).toString(),
+              }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Player leaderboards")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "rankings" }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Power rankings")} →
             </HubLink>
             <SectionCard
               section={tl("Champions")}

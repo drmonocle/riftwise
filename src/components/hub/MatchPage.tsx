@@ -259,6 +259,21 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
                 >
                   {tl("Game finder")}
                 </HubLink>
+                <HubLink to={{ kind: "rankings" }} className={heroBtn()}>
+                  {tl("Power rankings")}
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "leaders",
+                    query: new URLSearchParams({
+                      ...(s.e ? { event: s.e } : {}),
+                      ...(seriesYear ? { year: seriesYear } : {}),
+                    }).toString(),
+                  }}
+                  className={heroBtn()}
+                >
+                  {tl("Leaderboards")}
+                </HubLink>
               </>
             )}
             {!hidden && s.games.some((g) => g.w) && (
@@ -765,6 +780,27 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
                 >
                   {tl("Game finder")}
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "leaders",
+                    query: new URLSearchParams({
+                      ...(s.e ? { event: s.e } : {}),
+                      ...(gameYear ? { year: gameYear } : {}),
+                    }).toString(),
+                  }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline"
+                >
+                  {tl("Player leaderboards")}
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "tiers",
+                    ...(g.patch ? { query: `key=p${encodeURIComponent(g.patch)}` } : gamePeriod ? { query: `key=${encodeURIComponent(gamePeriod)}` } : {}),
+                  }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")}
                 </HubLink>
                 {blue[0]?.c && red[0]?.c && (
                   <HubLink
@@ -1722,6 +1758,15 @@ const Scoreboard: React.FC<{
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Draft board")} →
+            </HubLink>
+            <HubLink
+              to={{
+                kind: "leaders",
+                ...(period && /^y\d{4}$/.test(period) ? { query: `year=${encodeURIComponent(period.slice(1))}` } : {}),
+              }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Player leaderboards")} →
             </HubLink>
             <HubLink
               to={{ kind: "finder", query: `team=${encodeURIComponent(u)}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}` }}

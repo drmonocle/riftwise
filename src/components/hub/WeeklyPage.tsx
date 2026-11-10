@@ -268,6 +268,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   >
                     {tl("Game finder")} →
                   </HubLink>
+                  <HubLink
+                    to={{ kind: "rankings" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Power rankings")} →
+                  </HubLink>
                   <SectionCard
                     section={tl("Biggest upsets")}
                     name={range}
@@ -571,6 +577,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Best games")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "rankings" }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Power rankings")} →
                   </HubLink>
                   <SectionCard
                     section={tl("Best games")}
@@ -990,6 +1002,18 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           className="text-[11px] font-semibold text-rw-accent hover:underline"
                         >
                           {tl("Game finder")} →
+                        </HubLink>
+                        <HubLink
+                          to={{ kind: "rankings" }}
+                          className="text-[11px] font-semibold text-rw-accent hover:underline"
+                        >
+                          {tl("Power rankings")} →
+                        </HubLink>
+                        <HubLink
+                          to={{ kind: "best" }}
+                          className="text-[11px] font-semibold text-rw-accent hover:underline"
+                        >
+                          {tl("Best games")} →
                         </HubLink>
                       </>
                     )}
