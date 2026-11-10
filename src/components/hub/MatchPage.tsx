@@ -509,13 +509,17 @@ const SeriesGames: React.FC<{
               <span className="text-[10px] font-semibold text-rw-sub">{tc("short game", "G{n}", { n: gp.n })}</span>
               <span className={`inline-flex items-center gap-0.5 ${gp.w === 2 ? "opacity-60" : ""}`}>
                 {gp.aPicks.map((c) => (
-                  <ChampIcon key={`a-${c}`} name={c} size={15} />
+                  <span key={`a-${c}`} title={champName(c)}>
+                    <ChampIcon name={c} size={15} />
+                  </span>
                 ))}
               </span>
               <span className="text-[9px] text-rw-muted">vs</span>
               <span className={`inline-flex items-center gap-0.5 ${gp.w === 1 ? "opacity-60" : ""}`}>
                 {gp.bPicks.map((c) => (
-                  <ChampIcon key={`b-${c}`} name={c} size={15} />
+                  <span key={`b-${c}`} title={champName(c)}>
+                    <ChampIcon name={c} size={15} />
+                  </span>
                 ))}
               </span>
             </button>
@@ -1394,7 +1398,18 @@ const PlayerRow: React.FC<{
           <div className="flex items-center gap-1.5 min-w-0">
             <PlayerPhoto name={p.n} team={teamName} slug={p.u ?? undefined} size={16} />
             <PlayerLink name={p.n} u={p.u} className="font-semibold text-rw-text hover:text-rw-accent hover:underline truncate" />
-            {p.r && <span className="text-[10px] text-rw-muted shrink-0">{roleName(p.r)}</span>}
+            {p.r &&
+              (p.u ? (
+                <HubLink
+                  to={{ kind: "player", slug: p.u, tab: "stats", ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+                  className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline shrink-0"
+                  title={tl("Stats")}
+                >
+                  {roleName(p.r)}
+                </HubLink>
+              ) : (
+                <span className="text-[10px] text-rw-muted shrink-0">{roleName(p.r)}</span>
+              ))}
           </div>
           <div className="text-[10px] text-rw-muted truncate">
             {p.c ? (
@@ -1417,7 +1432,26 @@ const PlayerRow: React.FC<{
         {rating != null && <PlayerRatingBadge v={rating} top={top} />}
         <div className="text-right shrink-0">
           <div className="font-bold text-rw-text tabular-nums">
-            {p.k}/{p.d}/{p.a}
+            {p.u || p.c ? (
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: new URLSearchParams({
+                    ...(p.u ? { player: p.u } : {}),
+                    ...(p.c ? { champ: p.c } : {}),
+                    ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
+                  }).toString(),
+                }}
+                className="hover:text-rw-accent hover:underline"
+                title={tl("Game finder")}
+              >
+                {p.k}/{p.d}/{p.a}
+              </HubLink>
+            ) : (
+              <>
+                {p.k}/{p.d}/{p.a}
+              </>
+            )}
           </div>
           <div className="text-[10px] text-rw-muted tabular-nums">
             {p.cs != null && <>{tl("{n} CS", { n: p.cs })}{csm ? ` (${csm})` : ""}</>}

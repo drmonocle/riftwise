@@ -427,7 +427,13 @@ const PlayerView: React.FC<{
                     </HubLink>
                   </td>
                   <td className={`${td} text-rw-sub`} data-sort={y.kda}>
-                    <KdaBar kda={y.kda} />
+                    <HubLink
+                      to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${y.y}` }}
+                      className="inline-flex hover:opacity-85"
+                      title={`${tl("Stats for")} ${y.y}`}
+                    >
+                      <KdaBar kda={y.kda} />
+                    </HubLink>
                   </td>
                 </tr>
               ))}
@@ -529,7 +535,13 @@ const PlayerView: React.FC<{
                           {r.k}/{r.d}/{r.a}
                         </span>
                       )}
-                      <span className="text-rw-muted shrink-0">vs</span>
+                      <HubLink
+                        to={{ kind: "finder", query: new URLSearchParams({ player: p.u, vs: prettySlug(r.opp) }).toString() }}
+                        className="text-rw-muted hover:text-rw-accent hover:underline shrink-0"
+                        title={tl("Game finder")}
+                      >
+                        vs
+                      </HubLink>
                       <TeamLogo name={r.opp} size={15} />
                       <TeamLink name={r.opp} className="text-rw-sub hover:text-rw-accent hover:underline truncate" />
                       {r.en && (
@@ -599,7 +611,13 @@ const PlayerView: React.FC<{
                       <ChampIcon name={b.c} size={14} />
                       <span>{champName(b.c)}</span>
                     </HubLink>
-                    <span>vs</span>
+                    <HubLink
+                      to={{ kind: "finder", query: new URLSearchParams({ player: p.u, vs: prettySlug(b.opp) }).toString() }}
+                      className="text-rw-muted hover:text-rw-accent hover:underline"
+                      title={tl("Game finder")}
+                    >
+                      vs
+                    </HubLink>
                     <TeamLogo name={b.opp} size={13} />
                     <TeamLink name={b.opp} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
                     , {b.date.slice(0, 4)})
@@ -789,10 +807,24 @@ const PlayerChampionsTab: React.FC<{
                     </button>
                   </td>
                   <td className={`${td} text-rw-sub`} data-sort={c.kda}>
-                    <KdaBar kda={c.kda} />
+                    <button
+                      type="button"
+                      onClick={() => onSelectChamp(c.c)}
+                      className="inline-flex hover:opacity-85"
+                      title={tl("Every game")}
+                    >
+                      <KdaBar kda={c.kda} />
+                    </button>
                   </td>
                   <td className={`${td} text-rw-muted`} data-sort={c.k}>
-                    {c.k} / {c.d} / {c.a}
+                    <button
+                      type="button"
+                      onClick={() => onSelectChamp(c.c)}
+                      className="hover:text-rw-accent hover:underline tabular-nums"
+                      title={tl("Every game")}
+                    >
+                      {c.k} / {c.d} / {c.a}
+                    </button>
                   </td>
                   <td className={`${td} text-right whitespace-nowrap`}>
                     <button
@@ -848,9 +880,27 @@ const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number]; playerSlug: str
         )}
       </td>
       <td className={`${td} text-rw-sub`} data-sort={x.kda}>
-        <KdaBar kda={x.kda} />
+        <HubLink
+          to={{ kind: "player", slug: playerSlug, tab: "stats", query: `p=e:${encodeURIComponent(x.e)}` }}
+          className="inline-flex hover:opacity-85"
+          title={x.en}
+        >
+          <KdaBar kda={x.kda} />
+        </HubLink>
       </td>
-      <td className={`${td} text-rw-sub`} data-sort={x.csm ?? -1}>{x.csm ?? "–"}</td>
+      <td className={`${td} text-rw-sub`} data-sort={x.csm ?? -1}>
+        {x.csm != null ? (
+          <HubLink
+            to={{ kind: "player", slug: playerSlug, tab: "stats", query: `p=e:${encodeURIComponent(x.e)}` }}
+            className="hover:text-rw-accent hover:underline tabular-nums"
+            title={x.en}
+          >
+            {x.csm}
+          </HubLink>
+        ) : (
+          "–"
+        )}
+      </td>
       <td className={td}>
         <span className="flex gap-0.5">
           {x.c.map((c) => (

@@ -1253,7 +1253,19 @@ const PlayerRows: React.FC<{
                         >
                           {winRate(c.w, c.g)}
                         </HubLink>
-                        <span className="text-rw-muted">· {fmtN(c.kda)} KDA</span>
+                        <span className="text-rw-muted">·</span>
+                        <HubLink
+                          to={{
+                            kind: "player",
+                            slug: s.u,
+                            tab: "champions",
+                            query: `champ=${encodeURIComponent(c.c)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                          }}
+                          className="text-rw-muted hover:text-rw-accent hover:underline"
+                          title={tl("Every game")}
+                        >
+                          {fmtN(c.kda)} KDA
+                        </HubLink>
                       </span>
                     </li>
                   );
@@ -1326,7 +1338,18 @@ const PlayerRows: React.FC<{
                         {winRate(c.w, c.g)}
                       </HubLink>{" "}
                       ·{" "}
-                      <span className={c.kda != null && o.kda != null && c.kda > o.kda ? "text-rw-side-a font-semibold" : ""}>{fmtN(c.kda)}</span>
+                      <HubLink
+                        to={{
+                          kind: "player",
+                          slug: x.u,
+                          tab: "champions",
+                          query: `champ=${encodeURIComponent(c.c)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                        }}
+                        className={`hover:underline ${c.kda != null && o.kda != null && c.kda > o.kda ? "text-rw-side-a font-semibold" : ""}`}
+                        title={tl("Every game")}
+                      >
+                        {fmtN(c.kda)}
+                      </HubLink>
                     </td>
                     <td className={`${td} text-center`} data-sort={c.c}>
                       <span className="inline-flex flex-col items-center gap-0.5">
@@ -1366,7 +1389,18 @@ const PlayerRows: React.FC<{
                         {winRate(o.w, o.g)}
                       </HubLink>{" "}
                       ·{" "}
-                      <span className={c.kda != null && o.kda != null && o.kda > c.kda ? "text-rw-side-b font-semibold" : ""}>{fmtN(o.kda)}</span>
+                      <HubLink
+                        to={{
+                          kind: "player",
+                          slug: y.u,
+                          tab: "champions",
+                          query: `champ=${encodeURIComponent(c.c)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                        }}
+                        className={`hover:underline ${c.kda != null && o.kda != null && o.kda > c.kda ? "text-rw-side-b font-semibold" : ""}`}
+                        title={tl("Every game")}
+                      >
+                        {fmtN(o.kda)}
+                      </HubLink>
                     </td>
                   </tr>
                 );
@@ -1523,7 +1557,13 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
               <HubLink to={{ kind: "match", slug: m.a[1], game: m.a[22] || undefined }} className="tabular-nums text-rw-text hover:text-rw-accent hover:underline">
                 {m.a[3]}/{m.a[4]}/{m.a[5]}
               </HubLink>
-              <span className="text-rw-muted">vs</span>
+              <HubLink
+                to={{ kind: "counters", query: `champ=${prettySlug(m.a[2])}&vs=${encodeURIComponent(m.b[2])}` }}
+                className="text-rw-muted hover:text-rw-accent hover:underline"
+                title={tl("Counter-pick finder")}
+              >
+                vs
+              </HubLink>
               <HubLink to={{ kind: "champ", slug: prettySlug(m.b[2]) }}>
                 <ChampIcon name={m.b[2]} size={18} />
               </HubLink>
@@ -1757,11 +1797,42 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
                   return (
                     <tr key={label} className="border-t border-rw-border">
                       <td className="py-1.5 pr-2 text-rw-muted whitespace-nowrap">{label}</td>
-                      {vs.map((v, i) => (
-                        <td key={i} className={`py-1.5 px-2 text-right tabular-nums ${best != null && v === best ? "text-rw-teal font-bold" : "text-rw-text"}`}>
-                          {fmt(label, v)}
-                        </td>
-                      ))}
+                      {vs.map((v, i) => {
+                        const cellText = fmt(label, v);
+                        const isStatsLink = v != null && (label === tl("Games") || label === tl("Win rate"));
+                        const isChampsLink = v != null && label === tl("Champion pool");
+                        return (
+                          <td key={i} className={`py-1.5 px-2 text-right tabular-nums ${best != null && v === best ? "text-rw-teal font-bold" : "text-rw-text"}`}>
+                            {isStatsLink ? (
+                              <HubLink
+                                to={{
+                                  kind: mode,
+                                  slug: rows[i].slug,
+                                  tab: "stats",
+                                  ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                                }}
+                                className="hover:text-rw-accent hover:underline"
+                              >
+                                {cellText}
+                              </HubLink>
+                            ) : isChampsLink ? (
+                              <HubLink
+                                to={{
+                                  kind: mode,
+                                  slug: rows[i].slug,
+                                  tab: "champions",
+                                  ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                                }}
+                                className="hover:text-rw-accent hover:underline"
+                              >
+                                {cellText}
+                              </HubLink>
+                            ) : (
+                              cellText
+                            )}
+                          </td>
+                        );
+                      })}
                     </tr>
                   );
                 })}

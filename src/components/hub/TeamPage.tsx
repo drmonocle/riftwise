@@ -177,7 +177,17 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   {i > 0 && !overview && <span className="text-rw-muted/60 mr-0.5">·</span>}
                   <PlayerPhoto name={p.n} team={eraName || t.name} slug={p.u ?? undefined} size={overview ? 22 : 18} />
                   <PlayerLink name={p.n} u={p.u} />
-                  <span className="text-rw-muted">{roleName(p.r)}</span>
+                  {p.u ? (
+                    <HubLink
+                      to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${yr.y}` }}
+                      className="text-rw-muted hover:text-rw-accent hover:underline"
+                      title={`${tl("Stats for")} ${yr.y}`}
+                    >
+                      {roleName(p.r)}
+                    </HubLink>
+                  ) : (
+                    <span className="text-rw-muted">{roleName(p.r)}</span>
+                  )}
                   {overview && <PhotosLink q={p.n} iconOnly className="text-rw-muted hover:text-rw-accent" />}
                 </span>
               ))}
@@ -564,7 +574,19 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   ) : (
                     <span className="tabular-nums">{x.score}</span>
                   )}
-                  <span>vs</span>
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      mode: "team",
+                      a: t.u,
+                      b: t.opps.find((o) => o.n === x.l)?.u || prettySlug(x.l),
+                      period: /^\d{4}/.test(x.date) ? `y${x.date.slice(0, 4)}` : undefined,
+                    }}
+                    className="hover:text-rw-accent hover:underline"
+                    title={tl("Compare")}
+                  >
+                    vs
+                  </HubLink>
                   <TeamLogo name={x.l} size={14} />
                   <TeamLink name={x.l} u={t.opps.find((o) => o.n === x.l)?.u || prettySlug(x.l)} />
                 </span>
@@ -1376,7 +1398,19 @@ const TeamChampGames: React.FC<{
                           </>
                         )}
                         <span className="text-rw-sub inline-flex items-center gap-1">
-                          <span>vs</span>
+                          <HubLink
+                            to={{
+                              kind: "compare",
+                              mode: "team",
+                              a: t.u,
+                              b: r[5] || prettySlug(r[4]),
+                              period: /^\d{4}/.test(r[0]) ? `y${r[0].slice(0, 4)}` : undefined,
+                            }}
+                            className="text-rw-muted hover:text-rw-accent hover:underline"
+                            title={tl("Compare")}
+                          >
+                            vs
+                          </HubLink>
                           <TeamLogo name={r[4]} size={13} />
                           <TeamLink name={r[4]} u={r[5]} />
                           {roleStr && <span>· {roleName(roleStr)}</span>}
