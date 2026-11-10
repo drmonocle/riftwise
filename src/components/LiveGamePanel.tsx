@@ -473,7 +473,14 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
                   const ahead = c.v(x) > c.v(other);
                   return (
                     <td key={c.key} className={`${cell} ${ahead ? "text-rw-teal font-bold" : "text-rw-sub"}`}>
-                      {c.fmt ? c.fmt(c.v(x)) : c.v(x)}
+                      <button
+                        type="button"
+                        onClick={() => navigateHub({ kind: "team", slug: prettySlug(x.name || x.code), tab: "stats" })}
+                        className="hover:text-rw-accent hover:underline"
+                        title={tl("Stats")}
+                      >
+                        {c.fmt ? c.fmt(c.v(x)) : c.v(x)}
+                      </button>
                       {c.extra?.(x)}
                     </td>
                   );
@@ -502,7 +509,21 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
               const d = c.v(left) - c.v(right);
               return (
                 <td key={c.key} className={`${cell} ${d > 0 ? "text-rw-teal" : d < 0 ? "text-rw-red" : "text-rw-muted"}`}>
-                  {sign(c.key === "cs" && minutes ? Math.round(d * 10) / 10 : d, c.fmt)}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigateHub({
+                        kind: "compare",
+                        mode: "team",
+                        a: prettySlug(left.name || left.code),
+                        b: prettySlug(right.name || right.code),
+                      })
+                    }
+                    className="hover:text-rw-accent hover:underline"
+                    title={tl("Compare")}
+                  >
+                    {sign(c.key === "cs" && minutes ? Math.round(d * 10) / 10 : d, c.fmt)}
+                  </button>
                 </td>
               );
             })}
@@ -635,12 +656,23 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
                     <div>{roleName(ROLE_LABEL[role])}</div>
                   )}
                   {gd != null && (
-                    <div
-                      className={`font-mono text-[10px] font-semibold tabular-nums normal-case ${gd > 150 ? "text-rw-teal" : gd < -150 ? "text-rw-red" : "text-rw-muted"}`}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        l[i].meta &&
+                        r[i].meta &&
+                        navigateHub({
+                          kind: "compare",
+                          mode: "player",
+                          a: prettySlug(playerName(l[i].meta!.summonerName)),
+                          b: prettySlug(playerName(r[i].meta!.summonerName)),
+                        })
+                      }
+                      className={`block w-full font-mono text-[10px] font-semibold tabular-nums normal-case hover:underline ${gd > 150 ? "text-rw-teal" : gd < -150 ? "text-rw-red" : "text-rw-muted"}`}
                       title={tl("{a} minus {b}", { a: left.code, b: right.code })}
                     >
                       {gd === 0 ? "0" : `${gd > 0 ? "+" : "−"}${k(Math.abs(gd))}`}
-                    </div>
+                    </button>
                   )}
                   {gd != null && (
                     <div className="w-10 h-1 mx-auto mt-0.5 rounded-full bg-rw-side-b/60 overflow-hidden" aria-hidden="true">
@@ -715,7 +747,12 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
               {p.frame.kills}/{p.frame.deaths}/{p.frame.assists}
             </button>
           </div>
-          <div className="text-[10px] text-rw-sub font-mono">
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "player", slug: prettySlug(pName), tab: "stats" })}
+            className="text-[10px] text-rw-sub hover:text-rw-accent hover:underline font-mono text-left"
+            title={tl("Stats")}
+          >
             <span className="whitespace-nowrap">
               {p.frame.creepScore} CS · {k(p.frame.totalGold)}
             </span>
@@ -734,7 +771,7 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
                 </span>
               </>
             )}
-          </div>
+          </button>
           {items.length > 0 && (
             <div className={`flex flex-wrap gap-0.5 ${right ? "justify-end" : ""}`}>
               {items.map((id, i) => {

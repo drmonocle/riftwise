@@ -131,7 +131,22 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
                 <TeamLogo name={m.team2Name} code={m.team2Code} src={m.team2Image} size={20} className="shrink-0" />
                 <span className="truncate">{m.team2Name}</span>
               </button>
-              <span className="w-16 shrink-0 text-right text-[11px] text-rw-muted">{when(m.startTimeUtc)}</span>
+              {shown ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    findSeriesSlug(m)
+                      .catch(() => null)
+                      .then((slug) => navigateHub({ kind: "match", slug: slug || RIOT_PREFIX + m.matchId }));
+                  }}
+                  className="w-16 shrink-0 text-right text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
+                  title={tl("Details")}
+                >
+                  {when(m.startTimeUtc)}
+                </button>
+              ) : (
+                <span className="w-16 shrink-0 text-right text-[11px] text-rw-muted">{when(m.startTimeUtc)}</span>
+              )}
               <MatchPrepButton match={m} compact />
               {shown && <MatchOverviewButton match={m} compact />}
             </li>

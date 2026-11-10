@@ -134,8 +134,16 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
           value={fmtNum(o.g)}
           to={slug ? { kind: "finder", query: `event=${encodeURIComponent(slug)}` } : undefined}
         />
-        <Stat label={tl("Avg game")} value={o.min ? mmss(o.min) : "–"} />
-        <Stat label={tl("Kills / game")} value={o.kills || "–"} />
+        <Stat
+          label={tl("Avg game")}
+          value={o.min ? mmss(o.min) : "–"}
+          to={slug && o.min ? { kind: "finder", query: `event=${encodeURIComponent(slug)}` } : undefined}
+        />
+        <Stat
+          label={tl("Kills / game")}
+          value={o.kills || "–"}
+          to={slug && o.kills ? { kind: "finder", query: `event=${encodeURIComponent(slug)}` } : undefined}
+        />
         <Stat
           label={tl("Blue side wins")}
           value={
@@ -541,13 +549,13 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
             return (
               <tr key={r.a + r.b} className="border-t border-rw-border">
                 <td className={`${td} text-rw-text`} data-sort={regionName(r.a, r.a)}>
-                  <span className="inline-flex items-center gap-1.5 flex-wrap">
+                  <HubLink to={{ kind: "leagues" }} className="inline-flex items-center gap-1.5 flex-wrap hover:text-rw-accent">
                     <RegionFlag code={r.a} />
-                    <span>{regionName(r.a, r.a)}</span>
+                    <span className="hover:underline">{regionName(r.a, r.a)}</span>
                     <span className="text-rw-muted">vs</span>
                     <RegionFlag code={r.b} />
-                    <span>{regionName(r.b, r.b)}</span>
-                  </span>
+                    <span className="hover:underline">{regionName(r.b, r.b)}</span>
+                  </HubLink>
                 </td>
                 <td className={`${td} tabular-nums`} data-sort={r.wa - r.wb}>
                   <span className="inline-flex items-center gap-2">

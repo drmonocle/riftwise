@@ -511,7 +511,15 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
       {line(r.a, r.au, r.sa, r.w === 1)}
       {line(r.b, r.bu, r.sb, r.w === 2)}
       <div className="flex items-center justify-between gap-2 mt-0.5 text-[10px] text-rw-muted">
-        <span className="truncate">{note ?? fmtDate(r.date, false)}</span>
+        <span className="truncate">
+          {r.g && !hideResult ? (
+            <HubLink to={{ kind: "match", slug: r.g }} className="hover:text-rw-text hover:underline">
+              {note ?? fmtDate(r.date, false)}
+            </HubLink>
+          ) : (
+            note ?? fmtDate(r.date, false)
+          )}
+        </span>
         <span className="flex items-center gap-1.5 shrink-0">
           {hiddenBySpoiler && !hideResult && played && <RevealButton onReveal={reveal} small />}
           {r.au && r.bu && (

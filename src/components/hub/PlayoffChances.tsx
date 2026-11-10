@@ -124,7 +124,15 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                         </HubLink>
                       </span>
                     </td>
-                    <td className="px-2 py-1 text-right tabular-nums text-rw-muted max-sm:hidden" data-sort={r.left}>{r.left}</td>
+                    <td className="px-2 py-1 text-right tabular-nums text-rw-muted max-sm:hidden" data-sort={r.left}>
+                      <HubLink
+                        to={{ kind: "event", slug: e.u, tab: "matches" }}
+                        className="hover:text-rw-accent hover:underline"
+                        title={tl("Matches")}
+                      >
+                        {r.left}
+                      </HubLink>
+                    </td>
                     <td className="px-1 py-0.5 text-right" data-sort={r.first}>
                       <HubLink
                         to={{ kind: "team", slug: r.u, tab: "stats", query: `p=e:${encodeURIComponent(e.u)}` }}

@@ -8,6 +8,7 @@ import { TrendingUp } from "lucide-react";
 import type { Match } from "../types";
 import { tl } from "../i18n";
 import { navigateHub } from "../hub/route";
+import { resolveLeagueSlug } from "../hub/data";
 import { pct } from "../hub/winChance";
 import { useMatchRatings } from "../hub/matchRatings";
 
@@ -61,10 +62,23 @@ export const TeamRatingSub: React.FC<{ match: Match; side: "a" | "b"; align?: "l
       {code}
       {s && (
         <>
-          {" · "}#{s.world ?? s.league}
-          {s.world == null && <span className="text-rw-muted"> {s.leagueName}</span>}
           {" · "}
-          {s.rating}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigateHub({
+                kind: "rankings",
+                query: s.world == null && match.leagueSlug ? `league=${encodeURIComponent(resolveLeagueSlug(match.leagueSlug))}` : undefined,
+              });
+            }}
+            className="hover:text-rw-accent hover:underline"
+          >
+            #{s.world ?? s.league}
+            {s.world == null && <span className="text-rw-muted"> {s.leagueName}</span>}
+            {" · "}
+            {s.rating}
+          </button>
         </>
       )}
     </div>

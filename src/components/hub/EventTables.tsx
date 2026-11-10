@@ -19,19 +19,19 @@ const shareTone = (v: number | null, hi = 0.52, lo = 0.48) => {
 };
 
 /** Oracle's Elixir columns for the player table (leads over the lane opponent at 15, first blood). */
-const playerEarlyCols = (): Column<EventPlayer>[] => [
-  { key: "g15", label: "GD@15", title: tl("Gold lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? per(p.g15 || 0, p.tn, 0) : null), render: (p) => signed(p.tn ? per(p.g15 || 0, p.tn, 0) : null) },
-  { key: "c15", label: "CSD@15", title: tl("CS lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? per(p.c15 || 0, p.tn, 1) : null), render: (p) => signed(p.tn ? per(p.c15 || 0, p.tn, 1) : null) },
-  { key: "x15", label: "XPD@15", title: tl("XP lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? per(p.x15 || 0, p.tn, 0) : null), render: (p) => signed(p.tn ? per(p.x15 || 0, p.tn, 0) : null) },
-  { key: "fbp", label: tl("FB%"), title: tl("Took part in first blood (kill or assist)"), value: (p) => (p.fbn ? per(p.fbp || 0, p.fbn, 3) : null), render: (p) => (p.fbn ? shareTone(per(p.fbp || 0, p.fbn, 3), 0.3, 0.12) : "–") },
+const playerEarlyCols = (wrap: (p: EventPlayer, node: React.ReactNode) => React.ReactNode): Column<EventPlayer>[] => [
+  { key: "g15", label: "GD@15", title: tl("Gold lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? per(p.g15 || 0, p.tn, 0) : null), render: (p) => (p.tn ? wrap(p, signed(per(p.g15 || 0, p.tn, 0))) : "–") },
+  { key: "c15", label: "CSD@15", title: tl("CS lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? per(p.c15 || 0, p.tn, 1) : null), render: (p) => (p.tn ? wrap(p, signed(per(p.c15 || 0, p.tn, 1))) : "–") },
+  { key: "x15", label: "XPD@15", title: tl("XP lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? per(p.x15 || 0, p.tn, 0) : null), render: (p) => (p.tn ? wrap(p, signed(per(p.x15 || 0, p.tn, 0))) : "–") },
+  { key: "fbp", label: tl("FB%"), title: tl("Took part in first blood (kill or assist)"), value: (p) => (p.fbn ? per(p.fbp || 0, p.fbn, 3) : null), render: (p) => (p.fbn ? wrap(p, shareTone(per(p.fbp || 0, p.fbn, 3), 0.3, 0.12)) : "–") },
 ];
 
 /** Oracle's Elixir columns for the team table. */
-const teamEarlyCols = (): Column<EventTeamStats>[] => [
-  { key: "g15", label: "GD@15", title: tl("Gold lead at 15 minutes"), value: (t) => (t.tn ? per(t.g15 || 0, t.tn, 0) : null), render: (t) => signed(t.tn ? per(t.g15 || 0, t.tn, 0) : null) },
-  { key: "fb", label: tl("FB%"), title: tl("First blood rate"), value: (t) => (t.fbn ? per(t.fb || 0, t.fbn, 3) : null), render: (t) => (t.fbn ? shareTone(per(t.fb || 0, t.fbn, 3)) : "–") },
-  { key: "ft", label: tl("FT%"), title: tl("First tower rate"), value: (t) => (t.fbn ? per(t.ft || 0, t.fbn, 3) : null), render: (t) => (t.fbn ? shareTone(per(t.ft || 0, t.fbn, 3)) : "–") },
-  { key: "pl", label: tl("Plates"), title: tl("Turret plates taken per game"), value: (t) => (t.pln ? per(t.pl || 0, t.pln, 1) : null) },
+const teamEarlyCols = (wrap: (t: EventTeamStats, node: React.ReactNode) => React.ReactNode): Column<EventTeamStats>[] => [
+  { key: "g15", label: "GD@15", title: tl("Gold lead at 15 minutes"), value: (t) => (t.tn ? per(t.g15 || 0, t.tn, 0) : null), render: (t) => (t.tn ? wrap(t, signed(per(t.g15 || 0, t.tn, 0))) : "–") },
+  { key: "fb", label: tl("FB%"), title: tl("First blood rate"), value: (t) => (t.fbn ? per(t.fb || 0, t.fbn, 3) : null), render: (t) => (t.fbn ? wrap(t, shareTone(per(t.fb || 0, t.fbn, 3))) : "–") },
+  { key: "ft", label: tl("FT%"), title: tl("First tower rate"), value: (t) => (t.fbn ? per(t.ft || 0, t.fbn, 3) : null), render: (t) => (t.fbn ? wrap(t, shareTone(per(t.ft || 0, t.fbn, 3))) : "–") },
+  { key: "pl", label: tl("Plates"), title: tl("Turret plates taken per game"), value: (t) => (t.pln ? per(t.pl || 0, t.pln, 1) : null), render: (t) => (t.pln ? wrap(t, per(t.pl || 0, t.pln, 1)) : "–") },
 ];
 
 export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ e, hidden }) => {
@@ -55,6 +55,22 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
     );
   }, [players, role, regular, minG, maxG, search]);
   if (players.length === 0) return null;
+  const pStatLink = (p: EventPlayer, node: React.ReactNode) =>
+    node == null || node === "–" ? (
+      "–"
+    ) : (
+      <HubLink
+        to={
+          p.u
+            ? { kind: "player", slug: p.u, tab: "stats", query: `p=e:${encodeURIComponent(e.u)}` }
+            : { kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(p.n)}` }
+        }
+        className="hover:text-rw-accent hover:underline"
+        title={tl("Stats")}
+      >
+        {node}
+      </HubLink>
+    );
   const cols: Column<EventPlayer>[] = [
     {
       key: "n",
@@ -141,17 +157,17 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
           <KdaBar kda={per(p.k + p.a, Math.max(p.d, 1), 2) ?? 0} />
         ),
     },
-    { key: "k", label: "K", title: tl("Kills per game"), value: (p) => per(p.k, p.g) },
-    { key: "d", label: "D", title: tl("Deaths per game"), value: (p) => per(p.d, p.g) },
-    { key: "a", label: "A", title: tl("Assists per game"), value: (p) => per(p.a, p.g) },
-    { key: "kp", label: "KP", title: tl("Kill participation"), value: (p) => per(p.k + p.a, p.tk, 3), render: (p) => shareTone(per(p.k + p.a, p.tk, 3), 0.72, 0.58) },
-    { key: "csm", label: tl("CS/m"), title: tl("CS per minute"), value: (p) => per(p.cs, p.min) },
-    { key: "gpm", label: tl("GPM"), title: tl("Gold per minute"), value: (p) => per(p.gold, p.min, 0) },
-    { key: "dpm", label: tl("DPM"), title: tl("Damage per minute"), value: (p) => (p.dmg ? per(p.dmg, p.dm ?? p.min, 0) : null) },
-    { key: "vpm", label: tl("VS/m"), title: tl("Vision score per minute"), value: (p) => per(p.vis, p.vmin, 2) },
-    { key: "dmgs", label: tl("DMG%"), title: tl("Share of the team's damage to champions"), value: (p) => (p.td ? per(p.sd || 0, p.td, 3) : null), render: (p) => (p.td ? shareTone(per(p.sd || 0, p.td, 3), 0.26, 0.1) : "–") },
-    { key: "golds", label: tl("Gold%"), title: tl("Share of the team's gold"), value: (p) => (p.tg ? per(p.sg || 0, p.tg, 3) : null), render: (p) => (p.tg ? pct(per(p.sg || 0, p.tg, 3)) : "–") },
-    { key: "viss", label: tl("VS%"), title: tl("Share of the team's vision score"), value: (p) => (p.tv ? per(p.sv || 0, p.tv, 3) : null), render: (p) => (p.tv ? pct(per(p.sv || 0, p.tv, 3)) : "–") },
+    { key: "k", label: "K", title: tl("Kills per game"), value: (p) => per(p.k, p.g), render: (p) => pStatLink(p, per(p.k, p.g)) },
+    { key: "d", label: "D", title: tl("Deaths per game"), value: (p) => per(p.d, p.g), render: (p) => pStatLink(p, per(p.d, p.g)) },
+    { key: "a", label: "A", title: tl("Assists per game"), value: (p) => per(p.a, p.g), render: (p) => pStatLink(p, per(p.a, p.g)) },
+    { key: "kp", label: "KP", title: tl("Kill participation"), value: (p) => per(p.k + p.a, p.tk, 3), render: (p) => (p.tk ? pStatLink(p, shareTone(per(p.k + p.a, p.tk, 3), 0.72, 0.58)) : "–") },
+    { key: "csm", label: tl("CS/m"), title: tl("CS per minute"), value: (p) => per(p.cs, p.min), render: (p) => pStatLink(p, per(p.cs, p.min)) },
+    { key: "gpm", label: tl("GPM"), title: tl("Gold per minute"), value: (p) => per(p.gold, p.min, 0), render: (p) => pStatLink(p, per(p.gold, p.min, 0)) },
+    { key: "dpm", label: tl("DPM"), title: tl("Damage per minute"), value: (p) => (p.dmg ? per(p.dmg, p.dm ?? p.min, 0) : null), render: (p) => (p.dmg ? pStatLink(p, per(p.dmg, p.dm ?? p.min, 0)) : "–") },
+    { key: "vpm", label: tl("VS/m"), title: tl("Vision score per minute"), value: (p) => per(p.vis, p.vmin, 2), render: (p) => pStatLink(p, per(p.vis, p.vmin, 2)) },
+    { key: "dmgs", label: tl("DMG%"), title: tl("Share of the team's damage to champions"), value: (p) => (p.td ? per(p.sd || 0, p.td, 3) : null), render: (p) => (p.td ? pStatLink(p, shareTone(per(p.sd || 0, p.td, 3), 0.26, 0.1)) : "–") },
+    { key: "golds", label: tl("Gold%"), title: tl("Share of the team's gold"), value: (p) => (p.tg ? per(p.sg || 0, p.tg, 3) : null), render: (p) => (p.tg ? pStatLink(p, pct(per(p.sg || 0, p.tg, 3))) : "–") },
+    { key: "viss", label: tl("VS%"), title: tl("Share of the team's vision score"), value: (p) => (p.tv ? per(p.sv || 0, p.tv, 3) : null), render: (p) => (p.tv ? pStatLink(p, pct(per(p.sv || 0, p.tv, 3))) : "–") },
     {
       key: "nc",
       label: tl("Champions"),
@@ -207,7 +223,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
         ),
     });
   const early = players.some((p) => p.tn || p.fbn);
-  if (early) cols.splice(cols.length - 1, 0, ...playerEarlyCols());
+  if (early) cols.splice(cols.length - 1, 0, ...playerEarlyCols(pStatLink));
   return (
     <Section
       title={tl("Player stats")}
@@ -296,6 +312,18 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
   }, [teams, search]);
   if (teams.length === 0 || hidden) return null;
   const maxTeamG = Math.max(1, ...teams.map((t) => t.g));
+  const tStatLink = (t: EventTeamStats, node: React.ReactNode) =>
+    node == null || node === "–" ? (
+      "–"
+    ) : (
+      <HubLink
+        to={{ kind: "team", slug: t.u || prettySlug(t.t), tab: "stats", query: `p=e:${encodeURIComponent(e.u)}` }}
+        className="hover:text-rw-accent hover:underline"
+        title={tl("Stats")}
+      >
+        {node}
+      </HubLink>
+    );
   const all: Column<EventTeamStats>[] = [
     {
       key: "t",
@@ -340,7 +368,12 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
         </HubLink>
       ),
     },
-    { key: "min", label: tl("Avg game"), value: (t) => per(t.min, t.g), render: (t) => tl("{n} min", { n: per(t.min, t.g) ?? "–" }) },
+    {
+      key: "min",
+      label: tl("Avg game"),
+      value: (t) => per(t.min, t.g),
+      render: (t) => tStatLink(t, tl("{n} min", { n: per(t.min, t.g) ?? "–" })),
+    },
     {
       key: "kd",
       label: "K:D",
@@ -360,9 +393,9 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
         );
       },
     },
-    { key: "k", label: tl("Kills"), title: tl("Kills per game"), value: (t) => per(t.k, t.g) },
-    { key: "d", label: tl("Deaths"), title: tl("Deaths per game"), value: (t) => per(t.d, t.g) },
-    { key: "gpm", label: tl("GPM"), title: tl("Team gold per minute"), value: (t) => (t.gold ? per(t.gold, t.min, 0) : null) },
+    { key: "k", label: tl("Kills"), title: tl("Kills per game"), value: (t) => per(t.k, t.g), render: (t) => tStatLink(t, per(t.k, t.g)) },
+    { key: "d", label: tl("Deaths"), title: tl("Deaths per game"), value: (t) => per(t.d, t.g), render: (t) => tStatLink(t, per(t.d, t.g)) },
+    { key: "gpm", label: tl("GPM"), title: tl("Team gold per minute"), value: (t) => (t.gold ? per(t.gold, t.min, 0) : null), render: (t) => (t.gold ? tStatLink(t, per(t.gold, t.min, 0)) : "–") },
     {
       key: "gdm",
       label: tl("GD/m"),
@@ -370,7 +403,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
       value: (t) => per(t.gd, t.min, 0),
       render: (t) => {
         const v = per(t.gd, t.min, 0) ?? 0;
-        return <span className={v >= 0 ? "text-rw-teal" : "text-rw-red"}>{`${v >= 0 ? "+" : ""}${v}`}</span>;
+        return tStatLink(t, <span className={v >= 0 ? "text-rw-teal" : "text-rw-red"}>{`${v >= 0 ? "+" : ""}${v}`}</span>);
       },
     },
     {
@@ -412,20 +445,20 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
         );
       },
     },
-    { key: "drag", label: tl("Dragons"), title: tl("Dragons per game"), value: (t) => per(t.drag, t.g, 2) },
-    { key: "drap", label: tl("DRA%"), title: tl("Share of all dragons taken in their games"), value: (t) => (t.odrag != null && t.drag + t.odrag ? per(t.drag, t.drag + t.odrag, 3) : null), render: (t) => (t.odrag != null && t.drag + t.odrag ? shareTone(per(t.drag, t.drag + t.odrag, 3)) : "–") },
-    { key: "bar", label: tl("Barons"), title: tl("Barons per game"), value: (t) => per(t.bar, t.g, 2) },
-    { key: "barp", label: tl("Baron%"), title: tl("Share of all barons taken in their games"), value: (t) => (t.obar != null && t.bar + t.obar ? per(t.bar, t.bar + t.obar, 3) : null), render: (t) => (t.obar != null && t.bar + t.obar ? shareTone(per(t.bar, t.bar + t.obar, 3)) : "–") },
-    { key: "tow", label: tl("Towers"), title: tl("Towers per game"), value: (t) => per(t.tow, t.g, 1) },
-    { key: "tl", label: tl("Lost"), title: tl("Towers lost per game"), value: (t) => (t.tl != null ? per(t.tl, t.g, 1) : null) },
-    { key: "csm", label: tl("CS/m"), title: tl("Team CS per minute"), value: (t) => (t.pmin ? per(t.cs || 0, t.pmin, 1) : null) },
-    { key: "dpm", label: tl("DPM"), title: tl("Team damage per minute"), value: (t) => (t.pmin ? per(t.dmg || 0, t.pmin, 0) : null) },
-    { key: "grub", label: tl("Void grubs"), title: tl("Void grubs per game"), value: (t) => per(t.grub, t.g, 1) },
+    { key: "drag", label: tl("Dragons"), title: tl("Dragons per game"), value: (t) => per(t.drag, t.g, 2), render: (t) => tStatLink(t, per(t.drag, t.g, 2)) },
+    { key: "drap", label: tl("DRA%"), title: tl("Share of all dragons taken in their games"), value: (t) => (t.odrag != null && t.drag + t.odrag ? per(t.drag, t.drag + t.odrag, 3) : null), render: (t) => (t.odrag != null && t.drag + t.odrag ? tStatLink(t, shareTone(per(t.drag, t.drag + t.odrag, 3))) : "–") },
+    { key: "bar", label: tl("Barons"), title: tl("Barons per game"), value: (t) => per(t.bar, t.g, 2), render: (t) => tStatLink(t, per(t.bar, t.g, 2)) },
+    { key: "barp", label: tl("Baron%"), title: tl("Share of all barons taken in their games"), value: (t) => (t.obar != null && t.bar + t.obar ? per(t.bar, t.bar + t.obar, 3) : null), render: (t) => (t.obar != null && t.bar + t.obar ? tStatLink(t, shareTone(per(t.bar, t.bar + t.obar, 3))) : "–") },
+    { key: "tow", label: tl("Towers"), title: tl("Towers per game"), value: (t) => per(t.tow, t.g, 1), render: (t) => tStatLink(t, per(t.tow, t.g, 1)) },
+    { key: "tl", label: tl("Lost"), title: tl("Towers lost per game"), value: (t) => (t.tl != null ? per(t.tl, t.g, 1) : null), render: (t) => (t.tl != null ? tStatLink(t, per(t.tl, t.g, 1)) : "–") },
+    { key: "csm", label: tl("CS/m"), title: tl("Team CS per minute"), value: (t) => (t.pmin ? per(t.cs || 0, t.pmin, 1) : null), render: (t) => (t.pmin ? tStatLink(t, per(t.cs || 0, t.pmin, 1)) : "–") },
+    { key: "dpm", label: tl("DPM"), title: tl("Team damage per minute"), value: (t) => (t.pmin ? per(t.dmg || 0, t.pmin, 0) : null), render: (t) => (t.pmin ? tStatLink(t, per(t.dmg || 0, t.pmin, 0)) : "–") },
+    { key: "grub", label: tl("Void grubs"), title: tl("Void grubs per game"), value: (t) => per(t.grub, t.g, 1), render: (t) => tStatLink(t, per(t.grub, t.g, 1)) },
   ];
   // Void grubs only exist since 2024
   const cols = all.filter((c) => c.key !== "grub" || teams.some((t) => t.grub > 0));
   const early = teams.some((t) => t.tn || t.fbn || t.pln);
-  if (early) cols.push(...teamEarlyCols());
+  if (early) cols.push(...teamEarlyCols(tStatLink));
   const pair = rows.length === 2 && rows[0].u && rows[1].u ? [rows[0].u, rows[1].u] : null;
   return (
     <Section

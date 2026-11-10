@@ -32,7 +32,7 @@ const GROUP_OF: Record<string, Group> = {
 const groupOf = (f: Fact): Group => GROUP_OF[f.id] || "players";
 
 /** The cards under a heading per group (a group with no cards is left out). */
-export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fact) => string }> = ({ facts, link, shareId }) => {
+export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fact) => string; eventSlug?: string }> = ({ facts, link, shareId, eventSlug }) => {
   const titles: Record<Group, string> = {
     event: tl("The event"),
     teams: tl("Teams"),
@@ -62,7 +62,7 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
             </h2>
             <div className="grid gap-3 md:grid-cols-2 3xl:grid-cols-3">
               {list.map((f) => (
-                <FactCard key={f.id} f={f} link={link} shareId={shareId(f)} />
+                <FactCard key={f.id} f={f} link={link} shareId={shareId(f)} eventSlug={eventSlug} />
               ))}
             </div>
           </div>
@@ -72,7 +72,7 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
   );
 };
 
-export const FactCard: React.FC<{ f: Fact; link: string; shareId: string }> = ({ f, link, shareId }) => {
+export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventSlug?: string }> = ({ f, link, shareId, eventSlug }) => {
   const [copied, setCopied] = useState(false);
   const copy = () => {
     navigator.clipboard
@@ -181,6 +181,13 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string }> = ({
                   <HubLink to={{ kind: "champ", slug: prettySlug(r.champ) }} className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums">
                     {r.value}
                   </HubLink>
+                ) : eventSlug ? (
+                  <HubLink
+                    to={{ kind: "finder", query: `event=${encodeURIComponent(eventSlug)}` }}
+                    className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums"
+                  >
+                    {r.value}
+                  </HubLink>
                 ) : (
                   <span className="relative font-bold text-rw-accent shrink-0 tabular-nums">{r.value}</span>
                 )}
@@ -208,5 +215,5 @@ export const EventStatsSection: React.FC<{ slug: string; name: string; end?: str
         </p>
       </Section>
     );
-  return <FactGroups facts={facts} link={hubShareUrl({ kind: "event", slug })} shareId={(f) => `${slug}-${f.id}`} />;
+  return <FactGroups facts={facts} link={hubShareUrl({ kind: "event", slug })} shareId={(f) => `${slug}-${f.id}`} eventSlug={slug} />;
 };

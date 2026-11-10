@@ -195,17 +195,23 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
       {chances && (
         <div className="space-y-1.5">
           {[chances[mine], ...chances.filter((_, i) => i !== mine)].map(([label, p], i) => (
-            <div key={label} className={`grid grid-cols-[3rem_1fr_3rem] items-center gap-2 ${i === 0 ? "" : "opacity-70"}`}>
+            <button
+              key={label}
+              type="button"
+              onClick={onPrep}
+              className={`w-full grid grid-cols-[3rem_1fr_3rem] items-center gap-2 text-left hover:opacity-90 ${i === 0 ? "" : "opacity-70"}`}
+              title={tl("Full match prep")}
+            >
               <span className="tabular-nums font-bold text-rw-side-a">{pct(p)}</span>
-              <div className={`relative rounded bg-rw-side-b/70 overflow-hidden ${i === 0 ? "h-5" : "h-3.5"}`}>
-                <div className="absolute inset-y-0 left-0 bg-rw-side-a/80" style={{ width: `${p * 100}%` }} />
+              <span className={`relative rounded bg-rw-side-b/70 overflow-hidden block ${i === 0 ? "h-5" : "h-3.5"}`}>
+                <span className="absolute inset-y-0 left-0 bg-rw-side-a/80 block" style={{ width: `${p * 100}%` }} />
                 <span className="absolute inset-0 flex items-center justify-center text-[10px] text-rw-text font-semibold">
                   {label}
                   {i === 0 ? ` · ${tl("this match")}` : ""}
                 </span>
-              </div>
+              </span>
               <span className="tabular-nums font-bold text-rw-side-b text-right">{pct(1 - p)}</span>
-            </div>
+            </button>
           ))}
         </div>
       )}

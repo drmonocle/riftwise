@@ -498,7 +498,21 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                   </span>
                 </td>
                 <td className={`px-2 py-1 ${w >= 3 ? "text-rw-teal font-semibold" : l >= 3 ? "text-rw-red" : "text-rw-sub"}`} data-sort={w >= 3 ? 2 : l >= 3 ? 0 : 1}>
-                  {w >= 3 ? tl("through") : l >= 3 ? tl("out") : tl("Still in")}
+                  {eventSlug ? (
+                    <HubLink
+                      to={{ kind: "team", slug: u, tab: "stats", query: `p=e:${encodeURIComponent(eventSlug)}` }}
+                      className="hover:underline"
+                      title={tl("Stats")}
+                    >
+                      {w >= 3 ? tl("through") : l >= 3 ? tl("out") : tl("Still in")}
+                    </HubLink>
+                  ) : w >= 3 ? (
+                    tl("through")
+                  ) : l >= 3 ? (
+                    tl("out")
+                  ) : (
+                    tl("Still in")
+                  )}
                 </td>
                 <td className="px-2 py-1 text-rw-sub whitespace-nowrap" data-sort={opp ? byU.get(opp)?.c || opp : ""}>
                   {opp ? (
@@ -667,7 +681,12 @@ const FactsTab: React.FC<{ d: Loaded; kind: IntlKind }> = ({ d, kind }) => {
       {!facts.length ? (
         <p className="text-xs text-rw-sub">{tl("No games with full stats yet. Stats show up as soon as the first games are in.")}</p>
       ) : (
-        <FactGroups facts={facts} link={hubShareUrl({ kind, year: d.year })} shareId={(f) => `${kind}-${d.year}-${f.id}`} />
+        <FactGroups
+          facts={facts}
+          link={hubShareUrl({ kind, year: d.year })}
+          shareId={(f) => `${kind}-${d.year}-${f.id}`}
+          eventSlug={!d.all ? (stage !== "all" ? stage : d.parent?.u) : undefined}
+        />
       )}
       <div id="jump-regions">
         <RegionStats files={shownFiles} years={years} all={d.all} name={d.name} />
@@ -1315,11 +1334,31 @@ const OddsTable: React.FC<{ odds: Record<string, TeamOdds>; teams: WTeam[] }> = 
                     <TeamLink name={t.n} u={t.u} className="truncate hover:text-rw-accent" />
                   </span>
                 </td>
-                <td className={cell} data-sort={o.r30}>{barCell(o.r30)}</td>
-                <td className={cell} data-sort={o.adv}>{barCell(o.adv)}</td>
-                <td className={cell} data-sort={o.sf}>{barCell(o.sf)}</td>
-                <td className={cell} data-sort={o.final}>{barCell(o.final)}</td>
-                <td className={`${cell} font-bold text-rw-accent`} data-sort={o.win}>{barCell(o.win, true)}</td>
+                <td className={cell} data-sort={o.r30}>
+                  <HubLink to={{ kind: "team", slug: t.u, tab: "stats" }} className="hover:text-rw-accent hover:underline" title={tl("Stats")}>
+                    {barCell(o.r30)}
+                  </HubLink>
+                </td>
+                <td className={cell} data-sort={o.adv}>
+                  <HubLink to={{ kind: "team", slug: t.u, tab: "stats" }} className="hover:text-rw-accent hover:underline" title={tl("Stats")}>
+                    {barCell(o.adv)}
+                  </HubLink>
+                </td>
+                <td className={cell} data-sort={o.sf}>
+                  <HubLink to={{ kind: "team", slug: t.u, tab: "stats" }} className="hover:text-rw-accent hover:underline" title={tl("Stats")}>
+                    {barCell(o.sf)}
+                  </HubLink>
+                </td>
+                <td className={cell} data-sort={o.final}>
+                  <HubLink to={{ kind: "team", slug: t.u, tab: "stats" }} className="hover:text-rw-accent hover:underline" title={tl("Stats")}>
+                    {barCell(o.final)}
+                  </HubLink>
+                </td>
+                <td className={`${cell} font-bold text-rw-accent`} data-sort={o.win}>
+                  <HubLink to={{ kind: "team", slug: t.u, tab: "stats" }} className="hover:underline" title={tl("Stats")}>
+                    {barCell(o.win, true)}
+                  </HubLink>
+                </td>
               </tr>
             );
           })}
@@ -1499,14 +1538,14 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                         const isWin = k === br.reach.length;
                         return (
                           <td key={k} className={`px-2 py-1 text-right tabular-nums ${isWin ? "font-bold text-rw-accent" : ""}`} data-sort={x}>
-                            <span className="inline-flex items-center justify-end gap-1.5">
+                            <HubLink to={{ kind: "team", slug: t.u, tab: "stats" }} className="inline-flex items-center justify-end gap-1.5 hover:underline" title={tl("Stats")}>
                               {pct > 0 && (
                                 <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
                                   <span className={`h-full rounded-full ${isWin ? "bg-rw-accent" : "bg-rw-teal/80"}`} style={{ width: `${Math.max(8, pct)}%` }} />
                                 </span>
                               )}
                               <span className="w-9 text-right">{pctText(x)}</span>
-                            </span>
+                            </HubLink>
                           </td>
                         );
                       })}

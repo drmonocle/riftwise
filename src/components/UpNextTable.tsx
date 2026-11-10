@@ -192,13 +192,24 @@ const ChanceCell: React.FC<{ m: Match }> = ({ m }) => {
   if (r?.series == null) return <span className="text-rw-muted text-center @max-[900px]:hidden">–</span>;
   const a = Math.round(r.series * 100);
   return (
-    <span className="flex items-center gap-1.5 min-w-[7rem]" title={tl("Chance to win the series, from the power rankings (every pro game since 2011)")}>
+    <button
+      type="button"
+      onClick={() =>
+        navigateHub({
+          kind: "prep",
+          a: prettySlug(m.team1Name || m.team1Code),
+          b: prettySlug(m.team2Name || m.team2Code),
+        })
+      }
+      className="flex items-center gap-1.5 min-w-[7rem] hover:opacity-85"
+      title={tl("Chance to win the series, from the power rankings (every pro game since 2011)")}
+    >
       <span className="font-mono tabular-nums text-[11px] text-rw-side-a w-6 text-right">{a}</span>
       <span className="flex-1 h-1.5 rounded-sm overflow-hidden bg-rw-side-b/70" aria-hidden="true">
         <span className="block h-full bg-rw-side-a" style={{ width: `${a}%` }} />
       </span>
-      <span className="font-mono tabular-nums text-[11px] text-rw-side-b w-6">{100 - a}</span>
-    </span>
+      <span className="font-mono tabular-nums text-[11px] text-rw-side-b w-6 text-left">{100 - a}</span>
+    </button>
   );
 };
 

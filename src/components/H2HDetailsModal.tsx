@@ -32,12 +32,13 @@ function teamInfo(catalog: CatalogData | undefined, code: string) {
   return { name: t?.name || code, image: t?.image };
 }
 
-const Split: React.FC<{ icon: React.ReactNode; label: string; wins: [number, number]; c1: string; c2: string }> = ({
+const Split: React.FC<{ icon: React.ReactNode; label: string; wins: [number, number]; c1: string; c2: string; onClick?: () => void }> = ({
   icon,
   label,
   wins,
   c1,
   c2,
+  onClick,
 }) => {
   const total = wins[0] + wins[1];
   if (total === 0) {
@@ -48,8 +49,8 @@ const Split: React.FC<{ icon: React.ReactNode; label: string; wins: [number, num
       </div>
     );
   }
-  return (
-    <div className="py-1">
+  const inner = (
+    <>
       <div className="flex items-center justify-between gap-2 text-[11px] mb-1">
         <span className="flex items-center gap-1.5 text-rw-sub min-w-0 truncate">{icon}{label}</span>
         <span className="font-mono font-bold whitespace-nowrap shrink-0">
@@ -60,7 +61,14 @@ const Split: React.FC<{ icon: React.ReactNode; label: string; wins: [number, num
         </span>
       </div>
       <H2HBar t1Pct={Math.round((wins[0] / total) * 100)} className="h-1" />
-    </div>
+    </>
+  );
+  return onClick ? (
+    <button type="button" onClick={onClick} className="block w-full text-left py-1 hover:opacity-85" title={tl("Game finder")}>
+      {inner}
+    </button>
+  ) : (
+    <div className="py-1">{inner}</div>
   );
 };
 
@@ -263,8 +271,34 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
 
           {h2h && !hideTotals && (
             <div className="rounded-lg bg-rw-bg border border-rw-border px-3 py-1.5">
-              <Split icon={<Globe className="w-3 h-3 text-rw-accent" />} label={tl("Worlds · MSI · First Stand")} wins={intl} c1={c1} c2={c2} />
-              <Split icon={<Home className="w-3 h-3 text-rw-sub" />} label={tl("Domestic & other events")} wins={domestic} c1={c1} c2={c2} />
+              <Split
+                icon={<Globe className="w-3 h-3 text-rw-accent" />}
+                label={tl("Worlds · MSI · First Stand")}
+                wins={intl}
+                c1={c1}
+                c2={c2}
+                onClick={() => {
+                  navigateHub({
+                    kind: "finder",
+                    query: new URLSearchParams({ team: prettySlug(t1.name), vs: prettySlug(t2.name) }).toString(),
+                  });
+                  onClose();
+                }}
+              />
+              <Split
+                icon={<Home className="w-3 h-3 text-rw-sub" />}
+                label={tl("Domestic & other events")}
+                wins={domestic}
+                c1={c1}
+                c2={c2}
+                onClick={() => {
+                  navigateHub({
+                    kind: "finder",
+                    query: new URLSearchParams({ team: prettySlug(t1.name), vs: prettySlug(t2.name) }).toString(),
+                  });
+                  onClose();
+                }}
+              />
               {series === undefined && !failed && (
                 <div className="text-[10px] text-rw-muted py-1">{tl("Loading tournament split…")}</div>
               )}

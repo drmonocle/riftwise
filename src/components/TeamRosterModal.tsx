@@ -229,9 +229,16 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                 </button>
               </div>
               <div className="flex items-center gap-2 mt-1 text-xs text-rw-sub">
-                <span className="font-mono font-bold text-rw-teal bg-rw-teal/10 px-2 py-0.5 rounded border border-rw-teal/30">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigateHub({ kind: "team", slug: prettySlug(displayName) });
+                    onClose();
+                  }}
+                  className="font-mono font-bold text-rw-teal bg-rw-teal/10 px-2 py-0.5 rounded border border-rw-teal/30 hover:bg-rw-teal/20 transition-colors"
+                >
                   {upperCode}
-                </span>
+                </button>
                 {catalogTeam?.league && (
                   <span>
                     ·{" "}
@@ -316,7 +323,16 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                               </button>
                             </div>
                             {p.realName && (
-                              <div className="text-xs text-rw-sub truncate">{p.realName}</div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigateHub({ kind: "player", slug: prettySlug(p.name) });
+                                  onClose();
+                                }}
+                                className="block text-xs text-rw-sub hover:text-rw-accent hover:underline truncate text-left"
+                              >
+                                {p.realName}
+                              </button>
                             )}
                           </div>
                         </div>
@@ -507,13 +523,23 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                         className="p-2.5 rounded-lg bg-rw-bg border border-rw-border flex items-center justify-between gap-2 text-xs"
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <span
-                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${
+                          <button
+                            type="button"
+                            onClick={() => {
+                              findSeriesSlug(m)
+                                .catch(() => null)
+                                .then((slug) => {
+                                  navigateHub({ kind: "match", slug: slug || RIOT_PREFIX + m.matchId });
+                                  onClose();
+                                });
+                            }}
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 hover:opacity-80 ${
                               won ? "bg-rw-teal/20 text-rw-teal" : "bg-rw-red/20 text-rw-red"
                             }`}
+                            title={tl("Details")}
                           >
                             <span className="uppercase">{won ? tl("Win") : tl("Loss")}</span>
-                          </span>
+                          </button>
                           <span className="font-semibold text-rw-text truncate inline-flex items-center gap-1.5">
                             <button
                               type="button"
