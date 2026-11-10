@@ -5,6 +5,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
+import { champName } from "../../champions";
 import { loadAliases, loadHubEvent, loadLeagues, loadLeagueSeason, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import type { EventPlayer, LeagueRow } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
@@ -31,13 +32,15 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
   const q = new URLSearchParams(query || "");
   const leagues = useLoad(loadLeagues, []);
   const aliases = useLoad(loadAliases, []);
-  const asked = q.get("league") || DEFAULT_LEAGUE;
+  const event = q.get("event") || "";
+  const ev = useLoad(() => (event ? loadHubEvent(event) : Promise.resolve(null)), [event]);
+  const asked = q.get("league") || (event && ev.data?.lu ? ev.data.lu : DEFAULT_LEAGUE);
   const league = aliases.data?.league[asked.toLowerCase()] || resolveLeagueSlug(asked);
   const row = leagues.data?.find((l) => l.u === league);
   const years = yearsOf(row);
-  const askedYear = q.get("year") || "";
+  const evYear = event ? (ev.data?.year || (ev.data?.start || ev.data?.end || "").slice(0, 4) || (/\b(20\d{2})\b/.exec(event)?.[1] ?? "")) : "";
+  const askedYear = q.get("year") || (/^\d{4}$/.test(evYear) ? evYear : "");
   const year = (askedYear && (!row?.sy?.length || row.sy.includes(askedYear)) ? askedYear : "") || years[0] || row?.to || String(new Date().getFullYear());
-  const event = q.get("event") || "";
   const role = q.get("role") || "";
   const statParam = q.get("stat") || "";
   const statMetric = PLAYER_METRICS.find((m) => m.key === statParam);
@@ -46,7 +49,6 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
     () => (waitingForLeagues ? Promise.resolve(null) : loadLeagueSeason(league, year)),
     [league, year, waitingForLeagues],
   );
-  const ev = useLoad(() => (event ? loadHubEvent(event) : Promise.resolve(null)), [event]);
   const set = (patch: Record<string, string | undefined>) => {
     const next = new URLSearchParams(query || "");
     for (const [k, v] of Object.entries(patch)) v ? next.set(k, v) : next.delete(k);
@@ -59,7 +61,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
   const autoMin = Math.max(1, Math.ceil(Math.max(0, ...inRole.map((p) => p.g)) * 0.3));
   const minG = q.has("min") ? Math.max(1, Number(q.get("min")) || 1) : autoMin;
   const rows = useMemo(() => inRole.filter((p) => p.g >= minG), [inRole, minG]);
-  const [search, setSearch] = useState(() => q.get("q") || "");
+  const [search, setSearch] = useState(() => q.get("q") || q.get("champ") || "");
   const shownRows = useMemo(() => {
     const terms = search
       .toLowerCase()
@@ -67,12 +69,20 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
       .map((s) => s.trim())
       .filter(Boolean);
     if (!terms.length) return rows;
-    return rows.filter((p) => {
+    const filtered = rows.filter((p) => {
       const n = p.n.toLowerCase();
+      const u = (p.u || "").toLowerCase();
       const t = p.t.toLowerCase();
-      return terms.some((term) => n.includes(term) || t.includes(term));
+      const tu = (p.tu || "").toLowerCase();
+      const cs = (p.c || [])
+        .map((c) => `${c} ${champName(c)}`)
+        .join(" ")
+        .toLowerCase();
+      return terms.some((term) => n.includes(term) || u.includes(term) || t.includes(term) || tu.includes(term) || cs.includes(term));
     });
-  }, [rows, search]);
+    if (filtered.length === 0 && !q.get("q") && q.get("champ") && search === q.get("champ")) return rows;
+    return filtered;
+  }, [rows, search, q]);
   // z-scores: each stat against the average of the player's own role in this list (support vision next to mid CS)
   const zMode = q.get("show") === "z";
   const roleStats = useMemo(() => {
@@ -335,7 +345,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
-              set({ q: e.target.value || undefined });
+              set({ q: e.target.value || undefined, champ: undefined });
             }}
             placeholder={tl("Filter by name or team…")}
             aria-label={tl("Filter by name or team…")}

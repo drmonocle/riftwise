@@ -120,41 +120,69 @@ export const PickemBoard: React.FC<{
           >
             {tl("Game finder")} →
           </HubLink>
-          <HubLink
-            to={{ kind: "rankings" }}
-            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-            data-nocapture="1"
-          >
-            {tl("Power rankings")} →
-          </HubLink>
-          <HubLink
-            to={{ kind: "tournaments" }}
-            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-            data-nocapture="1"
-          >
-            {tl("Tournaments")} →
-          </HubLink>
-          <HubLink
-            to={{ kind: "best" }}
-            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-            data-nocapture="1"
-          >
-            {tl("Best games")} →
-          </HubLink>
-          <HubLink
-            to={{ kind: "leaders" }}
-            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-            data-nocapture="1"
-          >
-            {tl("Player leaderboards")} →
-          </HubLink>
-          <HubLink
-            to={{ kind: "tiers" }}
-            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-            data-nocapture="1"
-          >
-            {tl("Pro tier list")} →
-          </HubLink>
+          {(() => {
+            const evYr = /\b(20\d{2})\b/.exec(event)?.[1];
+            const evLg = event.startsWith("msi-")
+              ? "mid-season-invitational"
+              : event.startsWith("first-stand-")
+                ? "first-stand"
+                : event.startsWith("worlds-")
+                  ? "world-championship"
+                  : undefined;
+            return (
+              <>
+                <HubLink
+                  to={{ kind: "rankings", ...(evLg ? { query: `league=${encodeURIComponent(evLg)}` } : {}) }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Power rankings")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "tournaments", ...(evYr ? { query: `year=${encodeURIComponent(evYr)}` } : {}) }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Tournaments")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "best", ...(evYr ? { query: `year=${encodeURIComponent(evYr)}` } : {}) }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Best games")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "leaders",
+                    query: new URLSearchParams({
+                      ...(evLg ? { league: evLg } : {}),
+                      ...(evYr ? { year: evYr } : {}),
+                      event,
+                    }).toString(),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "tiers",
+                    query:
+                      new URLSearchParams({
+                        ...(evLg ? { league: evLg } : {}),
+                        ...(evYr ? { key: `y${evYr}` } : {}),
+                      }).toString() || undefined,
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
+              </>
+            );
+          })()}
           {rows.length > 8 && (
             <input
               type="search"

@@ -250,7 +250,13 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
                 <HubLink to={{ kind: "event", slug: d.parent.u }} className={btn}>
                   {tl("Bracket, standings and every series")}
                 </HubLink>
-                <HubLink to={{ kind: "leaders", query: `event=${encodeURIComponent(d.parent.u)}` }} className={btn}>
+                <HubLink
+                  to={{
+                    kind: "leaders",
+                    query: `league=${encodeURIComponent(def.league)}&year=${encodeURIComponent(d.year)}&event=${encodeURIComponent(d.parent.u)}`,
+                  }}
+                  className={btn}
+                >
                   {tl("Leaderboards")} →
                 </HubLink>
                 <HubLink
@@ -280,7 +286,7 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
                 >
                   {tl("Draft board")} →
                 </HubLink>
-                <HubLink to={{ kind: "rankings" }} className={btn}>
+                <HubLink to={{ kind: "rankings", query: `league=${encodeURIComponent(def.league)}` }} className={btn}>
                   {tl("Power rankings")} →
                 </HubLink>
                 <HubLink
@@ -317,7 +323,7 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
                 >
                   {tl("Pro tier list")} →
                 </HubLink>
-                <HubLink to={{ kind: "rankings" }} className={btn}>
+                <HubLink to={{ kind: "rankings", query: `league=${encodeURIComponent(def.league)}` }} className={btn}>
                   {tl("Power rankings")} →
                 </HubLink>
                 <HubLink
@@ -502,7 +508,7 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
                     </>
                   )}
                   <HubLink
-                    to={{ kind: "rankings" }}
+                    to={{ kind: "rankings", query: "league=world-championship" }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Power rankings")} →
@@ -514,7 +520,7 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
                     {tl("Pro tier list")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "leaders", query: `event=${encodeURIComponent(main.u)}` }}
+                    to={{ kind: "leaders", query: `league=world-championship&year=${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}` }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Player leaderboards")} →
@@ -596,13 +602,13 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
                 {tl("Game finder")} →
               </HubLink>
               <HubLink
-                to={{ kind: "leaders", query: `event=${encodeURIComponent(main.u)}` }}
+                to={{ kind: "leaders", query: `league=world-championship&year=${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}` }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Player leaderboards")} →
               </HubLink>
               <HubLink
-                to={{ kind: "rankings" }}
+                to={{ kind: "rankings", query: "league=world-championship" }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Power rankings")} →
@@ -724,7 +730,7 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                   {tl("Game finder")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "rankings" }}
+                  to={{ kind: "rankings", query: "league=world-championship" }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Power rankings")} →
@@ -739,7 +745,10 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                   {tl("Pro tier list")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "leaders", ...(eventSlug ? { query: `event=${encodeURIComponent(eventSlug)}` } : { query: "league=world-championship" }) }}
+                  to={{
+                    kind: "leaders",
+                    query: `league=world-championship${eventSlug && /\d{4}/.test(eventSlug) ? `&year=${/\d{4}/.exec(eventSlug)![0]}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}`,
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Player leaderboards")} →
@@ -893,7 +902,7 @@ const BracketNow: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Bracket
                 ) : null;
               })()}
               <HubLink
-                to={{ kind: "rankings" }}
+                to={{ kind: "rankings", query: `league=${encodeURIComponent(INTL[kind].league)}` }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Power rankings")} →
@@ -905,7 +914,7 @@ const BracketNow: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Bracket
                 {tl("Pro tier list")} →
               </HubLink>
               <HubLink
-                to={{ kind: "leaders", query: `event=${encodeURIComponent(main.u)}` }}
+                to={{ kind: "leaders", query: `league=${encodeURIComponent(INTL[kind].league)}&year=${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}` }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Player leaderboards")} →
@@ -1158,7 +1167,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                 {tl("Titles")} →
               </HubLink>
               <HubLink
-                to={{ kind: "rankings" }}
+                to={{ kind: "rankings", query: `league=${encodeURIComponent(INTL[kind].league)}` }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Power rankings")} →
@@ -1170,7 +1179,10 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                 {tl("Pro tier list")} →
               </HubLink>
               <HubLink
-                to={{ kind: "leaders", query: shown[0].e ? `event=${encodeURIComponent(shown[0].e)}` : `year=${encodeURIComponent(shown[0].y)}` }}
+                to={{
+                  kind: "leaders",
+                  query: `league=${encodeURIComponent(INTL[kind].league)}&year=${encodeURIComponent(shown[0].y)}${shown[0].e ? `&event=${encodeURIComponent(shown[0].e)}` : ""}`,
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Player leaderboards")} →
@@ -1507,13 +1519,13 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
                 <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(main.u)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Game finder")} →
                 </HubLink>
-                <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                <HubLink to={{ kind: "rankings", query: "league=world-championship" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Power rankings")} →
                 </HubLink>
                 <HubLink to={{ kind: "tiers", query: `league=world-championship&key=y${encodeURIComponent(year)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Pro tier list")} →
                 </HubLink>
-                <HubLink to={{ kind: "leaders", query: `event=${encodeURIComponent(main.u)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                <HubLink to={{ kind: "leaders", query: `league=world-championship&year=${encodeURIComponent(year)}&event=${encodeURIComponent(main.u)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Player leaderboards")} →
                 </HubLink>
                 {Object.keys(swiss.rec).length > 0 && (
@@ -1570,13 +1582,13 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
               <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(main.u)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Game finder")} →
               </HubLink>
-              <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink to={{ kind: "rankings", query: "league=world-championship" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Power rankings")} →
               </HubLink>
               <HubLink to={{ kind: "tiers", query: `league=world-championship&key=y${encodeURIComponent(year)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Pro tier list")} →
               </HubLink>
-              <HubLink to={{ kind: "leaders", query: `event=${encodeURIComponent(main.u)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink to={{ kind: "leaders", query: `league=world-championship&year=${encodeURIComponent(year)}&event=${encodeURIComponent(main.u)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Player leaderboards")} →
               </HubLink>
               {swiss.done && ko && ko.qf.some((m) => m.w) && (
@@ -1650,7 +1662,7 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
                       {tl("Game finder")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "rankings" }}
+                      to={{ kind: "rankings", query: "league=world-championship" }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Power rankings")} →
@@ -1662,7 +1674,7 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
                       {tl("Pro tier list")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "leaders", query: `event=${encodeURIComponent(main.u)}` }}
+                      to={{ kind: "leaders", query: `league=world-championship&year=${encodeURIComponent(year)}&event=${encodeURIComponent(main.u)}` }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Player leaderboards")} →
@@ -2061,13 +2073,13 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
             <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(main.u)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Game finder")} →
             </HubLink>
-            <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+            <HubLink to={{ kind: "rankings", query: `league=${encodeURIComponent(INTL[kind].league)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Power rankings")} →
             </HubLink>
             <HubLink to={{ kind: "tiers", query: `league=${encodeURIComponent(INTL[kind].league)}&key=y${encodeURIComponent(String(d.year))}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Pro tier list")} →
             </HubLink>
-            <HubLink to={{ kind: "leaders", query: `event=${encodeURIComponent(main.u)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+            <HubLink to={{ kind: "leaders", query: `league=${encodeURIComponent(INTL[kind].league)}&year=${encodeURIComponent(String(d.year))}&event=${encodeURIComponent(main.u)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Player leaderboards")} →
             </HubLink>
             {res.matches.some((m) => m.w) && (
@@ -2160,7 +2172,7 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                       {tl("Game finder")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "rankings" }}
+                      to={{ kind: "rankings", query: `league=${encodeURIComponent(INTL[kind].league)}` }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Power rankings")} →
@@ -2172,7 +2184,7 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                       {tl("Pro tier list")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "leaders", query: `event=${encodeURIComponent(main.u)}` }}
+                      to={{ kind: "leaders", query: `league=${encodeURIComponent(INTL[kind].league)}&year=${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}` }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Player leaderboards")} →

@@ -1564,6 +1564,7 @@ const PlayerChampionsTab: React.FC<{
                     query: new URLSearchParams({
                       ...(p.role ? { role: p.role } : {}),
                       ...(/^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
+                      ...((search.trim() && shownChamps.length >= 1) || shownChamps.length === 1 ? { champ: shownChamps[0].c } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-accent hover:underline"

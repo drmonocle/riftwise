@@ -286,7 +286,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
             aria-label={tl("Search champions…")}
             className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text placeholder:text-rw-muted w-36 focus:border-rw-accent focus:outline-none"
           />
-          <select value={key} onChange={(e) => set({ key: e.target.value })} aria-label={tl("Patch or year")} className={sel}>
+          <select value={key} onChange={(e) => set({ key: e.target.value, year: undefined, patch: undefined })} aria-label={tl("Patch or year")} className={sel}>
             {meta.champions.map((k) => (
               <option key={k} value={k}>
                 {label(k)}

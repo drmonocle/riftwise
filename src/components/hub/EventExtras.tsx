@@ -176,7 +176,14 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                   {tl("Records")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "leaders", query: `event=${encodeURIComponent(slug)}` }}
+                  to={{
+                    kind: "leaders",
+                    query: new URLSearchParams({
+                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(yr ? { year: yr } : {}),
+                      event: slug,
+                    }).toString(),
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
                 >
@@ -502,7 +509,17 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
               )}
               {slug && (
                 <>
-                  <HubLink to={{ kind: "leaders", query: `event=${encodeURIComponent(slug)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                  <HubLink
+                    to={{
+                      kind: "leaders",
+                      query: new URLSearchParams({
+                        ...(leagueSlug ? { league: leagueSlug } : {}),
+                        ...(yr ? { year: yr } : {}),
+                        event: slug,
+                      }).toString(),
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
                     {tl("Player leaderboards")} →
                   </HubLink>
                   <HubLink
@@ -589,7 +606,15 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                 </>
               )}
               <HubLink
-                to={{ kind: "leaders", ...(slug ? { query: `event=${encodeURIComponent(slug)}` } : {}) }}
+                to={{
+                  kind: "leaders",
+                  query:
+                    new URLSearchParams({
+                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(yr ? { year: yr } : {}),
+                      ...(slug ? { event: slug } : {}),
+                    }).toString() || undefined,
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Leaderboards")} →
@@ -727,7 +752,15 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                 {tl("Teams")} →
               </HubLink>
               <HubLink
-                to={{ kind: "leaders", ...(eventSlug ? { query: `event=${encodeURIComponent(eventSlug)}` } : {}) }}
+                to={{
+                  kind: "leaders",
+                  query:
+                    new URLSearchParams({
+                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(yr ? { year: yr } : {}),
+                      ...(eventSlug ? { event: eventSlug } : {}),
+                    }).toString() || undefined,
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Player leaderboards")} →
@@ -921,7 +954,14 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
             {tl("Leagues")} →
           </HubLink>
           <HubLink
-            to={{ kind: "leaders", query: `event=${encodeURIComponent(e.u)}` }}
+            to={{
+              kind: "leaders",
+              query: new URLSearchParams({
+                ...(e.lu ? { league: e.lu } : {}),
+                ...((e.start || e.end) && /^\d{4}/.test(e.start || e.end || "") ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                event: e.u,
+              }).toString(),
+            }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
           >

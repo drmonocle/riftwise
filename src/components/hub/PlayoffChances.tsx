@@ -117,14 +117,21 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                 </HubLink>
                 <HubLink
                   data-nocapture="1"
-                  to={{ kind: "rankings" }}
+                  to={{ kind: "rankings", ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}) }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
                   {tl("Power rankings")} →
                 </HubLink>
                 <HubLink
                   data-nocapture="1"
-                  to={{ kind: "leaders", query: `event=${encodeURIComponent(e.u)}` }}
+                  to={{
+                    kind: "leaders",
+                    query: new URLSearchParams({
+                      ...(e.lu ? { league: e.lu } : {}),
+                      ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                      event: e.u,
+                    }).toString(),
+                  }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
                   {tl("Player leaderboards")} →
@@ -133,7 +140,11 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                   data-nocapture="1"
                   to={{
                     kind: "tiers",
-                    ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { query: `key=y${(e.start || e.end || "").slice(0, 4)}` } : {}),
+                    query:
+                      new URLSearchParams({
+                        ...(e.lu ? { league: e.lu } : {}),
+                        ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { key: `y${(e.start || e.end || "").slice(0, 4)}` } : {}),
+                      }).toString() || undefined,
                   }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >

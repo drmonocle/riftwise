@@ -208,18 +208,25 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       value: () => null,
       render: (t) => {
         const u = t[1] || prettySlug(t[0]);
+        const yr = since !== "all" ? since : undefined;
         return (
           <span className="inline-flex items-center gap-2 text-[11px] whitespace-nowrap">
-            <HubLink to={{ kind: "prep", a: u }} className="text-rw-accent hover:underline">
+            <HubLink to={{ kind: "prep", a: u, ...(yr ? { period: `y${yr}` } : {}) }} className="text-rw-accent hover:underline">
               {tl("Match prep")}
             </HubLink>
-            <HubLink to={{ kind: "draft", query: `teams=${encodeURIComponent(u)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            <HubLink
+              to={{ kind: "draft", query: `teams=${encodeURIComponent(u)}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}` }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
               {tl("Draft board")}
             </HubLink>
-            <HubLink to={{ kind: "compare", mode: "team", a: u }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            <HubLink to={{ kind: "compare", mode: "team", a: u, ...(yr ? { period: `y${yr}` } : {}) }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Compare")}
             </HubLink>
-            <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(u)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            <HubLink
+              to={{ kind: "finder", query: `team=${encodeURIComponent(u)}${yr ? `&year=${encodeURIComponent(yr)}` : ""}` }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
               {tl("Game finder")}
             </HubLink>
             <HubLink
@@ -254,6 +261,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
                 kind: "prep",
                 a: list[0][1] || prettySlug(list[0][0]),
                 ...(list[1] ? { b: list[1][1] || prettySlug(list[1][0]) } : {}),
+                ...(since !== "all" ? { period: `y${since}` } : {}),
               }}
               className="text-rw-accent hover:underline font-semibold"
             >
@@ -262,7 +270,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             <HubLink
               to={{
                 kind: "draft",
-                query: `teams=${encodeURIComponent(list[0][1] || prettySlug(list[0][0]))}${list[1] ? `,${encodeURIComponent(list[1][1] || prettySlug(list[1][0]))}` : ""}`,
+                query: `teams=${encodeURIComponent(list[0][1] || prettySlug(list[0][0]))}${list[1] ? `,${encodeURIComponent(list[1][1] || prettySlug(list[1][0]))}` : ""}${since !== "all" ? `&p=y${encodeURIComponent(since)}` : ""}`,
               }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -274,6 +282,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
                 mode: "team",
                 a: list[0][1] || prettySlug(list[0][0]),
                 ...(list[1] ? { b: list[1][1] || prettySlug(list[1][0]) } : {}),
+                ...(since !== "all" ? { period: `y${since}` } : {}),
               }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -288,13 +297,13 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
           {tl("Power rankings")} →
         </HubLink>
         <HubLink
-          to={{ kind: "tiers" }}
+          to={{ kind: "tiers", ...(since !== "all" ? { query: `key=y${encodeURIComponent(since)}` } : {}) }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
           {tl("Pro tier list")} →
         </HubLink>
         <HubLink
-          to={{ kind: "tournaments" }}
+          to={{ kind: "tournaments", ...(since !== "all" ? { query: `year=${encodeURIComponent(since)}` } : {}) }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
           {tl("Tournaments")} →
@@ -306,7 +315,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
           {tl("Titles")} →
         </HubLink>
         <HubLink
-          to={{ kind: "leaders" }}
+          to={{ kind: "leaders", ...(since !== "all" ? { query: `year=${encodeURIComponent(since)}` } : {}) }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
           {tl("Player leaderboards")} →
@@ -508,29 +517,46 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       render: (p) => {
         const u = p[1] || prettySlug(p[0]);
         const teamSlug = p[2] ? prettySlug(p[2]) : "";
+        const yr = since !== "all" ? since : undefined;
         return (
           <span className="inline-flex items-center gap-2 text-[11px] whitespace-nowrap">
-            <HubLink to={{ kind: "compare", mode: "player", a: u }} className="text-rw-accent hover:underline">
+            <HubLink to={{ kind: "compare", mode: "player", a: u, ...(yr ? { period: `y${yr}` } : {}) }} className="text-rw-accent hover:underline">
               {tl("Compare")}
             </HubLink>
             {teamSlug && (
               <>
-                <HubLink to={{ kind: "prep", a: teamSlug }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                <HubLink to={{ kind: "prep", a: teamSlug, ...(yr ? { period: `y${yr}` } : {}) }} className="text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Match prep")}
                 </HubLink>
-                <HubLink to={{ kind: "draft", query: `teams=${encodeURIComponent(teamSlug)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                <HubLink
+                  to={{ kind: "draft", query: `teams=${encodeURIComponent(teamSlug)}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}` }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
                   {tl("Draft board")}
                 </HubLink>
               </>
             )}
-            <HubLink to={{ kind: "finder", query: `player=${encodeURIComponent(u)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            <HubLink
+              to={{ kind: "finder", query: `player=${encodeURIComponent(u)}${yr ? `&year=${encodeURIComponent(yr)}` : ""}` }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
               {tl("Game finder")}
             </HubLink>
-            <HubLink to={{ kind: "items", query: `player=${encodeURIComponent(u)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            <HubLink
+              to={{ kind: "items", query: `player=${encodeURIComponent(u)}${yr ? `&year=${encodeURIComponent(yr)}` : ""}` }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
               {tl("Item history")}
             </HubLink>
             <HubLink
-              to={{ kind: "leaders", ...(ROLE_OF[p[5]] ? { query: `role=${encodeURIComponent(ROLE_OF[p[5]])}` } : {}) }}
+              to={{
+                kind: "leaders",
+                query:
+                  new URLSearchParams({
+                    ...(ROLE_OF[p[5]] ? { role: ROLE_OF[p[5]] } : {}),
+                    ...(yr ? { year: yr } : {}),
+                  }).toString() || undefined,
+              }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Leaderboards")}
@@ -562,13 +588,17 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
                 mode: "player",
                 a: list[0][1] || prettySlug(list[0][0]),
                 ...(list[1] ? { b: list[1][1] || prettySlug(list[1][0]) } : {}),
+                ...(since !== "all" ? { period: `y${since}` } : {}),
               }}
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Compare")} →
             </HubLink>
             <HubLink
-              to={{ kind: "items", query: `player=${encodeURIComponent(list[0][1] || prettySlug(list[0][0]))}` }}
+              to={{
+                kind: "items",
+                query: `player=${encodeURIComponent(list[0][1] || prettySlug(list[0][0]))}${since !== "all" ? `&year=${encodeURIComponent(since)}` : ""}`,
+              }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Item history")} →
@@ -580,6 +610,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
                     kind: "prep",
                     a: prettySlug(list[0][2] || list[1][2]),
                     ...(list[0][2] && list[1]?.[2] && prettySlug(list[0][2]) !== prettySlug(list[1][2]) ? { b: prettySlug(list[1][2]) } : {}),
+                    ...(since !== "all" ? { period: `y${since}` } : {}),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -592,7 +623,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
                       list[0][2] && list[1]?.[2] && prettySlug(list[0][2]) !== prettySlug(list[1][2])
                         ? `,${encodeURIComponent(prettySlug(list[1][2]))}`
                         : ""
-                    }`,
+                    }${since !== "all" ? `&p=y${encodeURIComponent(since)}` : ""}`,
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -603,19 +634,33 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
           </>
         )}
         <HubLink
-          to={{ kind: "leaders", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+          to={{
+            kind: "leaders",
+            query:
+              new URLSearchParams({
+                ...(role ? { role } : {}),
+                ...(since !== "all" ? { year: since } : {}),
+              }).toString() || undefined,
+          }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
           {tl("Player leaderboards")} →
         </HubLink>
         <HubLink
-          to={{ kind: "tiers", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+          to={{
+            kind: "tiers",
+            query:
+              new URLSearchParams({
+                ...(role ? { role } : {}),
+                ...(since !== "all" ? { key: `y${since}` } : {}),
+              }).toString() || undefined,
+          }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
           {tl("Pro tier list")} →
         </HubLink>
         <HubLink
-          to={{ kind: "items" }}
+          to={{ kind: "items", ...(since !== "all" ? { query: `year=${encodeURIComponent(since)}` } : {}) }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
           {tl("Item history")} →

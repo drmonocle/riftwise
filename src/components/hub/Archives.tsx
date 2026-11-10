@@ -981,7 +981,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                     <HubLink
                       to={{
                         kind: "items",
-                        query: `player=${encodeURIComponent(slug)}&champ=${encodeURIComponent(prettySlug(r[2]))}`,
+                        query: `player=${encodeURIComponent(slug)}&champ=${encodeURIComponent(prettySlug(r[2]))}${/^\d{4}/.test(r[0]) ? `&year=${encodeURIComponent(r[0].slice(0, 4))}` : ""}`,
                       }}
                       className="hidden sm:inline text-rw-sub hover:text-rw-accent hover:underline"
                       title={tl("Item history")}
@@ -1041,7 +1041,15 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                 {its.map((it) => (
                   <HubLink
                     key={it}
-                    to={{ kind: "items", query: new URLSearchParams({ player: slug, item: prettySlug(it), ...(r[2] ? { champ: prettySlug(r[2]) } : {}) }).toString() }}
+                    to={{
+                      kind: "items",
+                      query: new URLSearchParams({
+                        player: slug,
+                        item: prettySlug(it),
+                        ...(r[2] ? { champ: prettySlug(r[2]) } : {}),
+                        ...(/^\d{4}/.test(r[0]) ? { year: r[0].slice(0, 4) } : {}),
+                      }).toString(),
+                    }}
                     className="hover:opacity-80"
                     title={itemName(it)}
                   >
@@ -1139,13 +1147,16 @@ export const PlayerChampGames: React.FC<{ slug: string; playerName?: string; cha
         <HubLink
           to={{
             kind: "leaders",
-            ...(year
-              ? { query: `year=${encodeURIComponent(year)}` }
-              : period && /^y\d{4}$/.test(period)
-                ? { query: `year=${encodeURIComponent(period.slice(1))}` }
-                : period?.startsWith("e:")
-                  ? { query: `event=${encodeURIComponent(period.slice(2))}` }
-                  : {}),
+            query: new URLSearchParams({
+              champ,
+              ...(year
+                ? { year }
+                : period && /^y\d{4}$/.test(period)
+                  ? { year: period.slice(1) }
+                  : period?.startsWith("e:")
+                    ? { event: period.slice(2) }
+                    : {}),
+            }).toString(),
           }}
           className="text-rw-accent hover:underline"
         >

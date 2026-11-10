@@ -155,6 +155,7 @@ export const WeeklyPage: React.FC = () => {
 const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({ w, hidden, reveal }) => {
   const [resultFilter, setResultFilter] = useState("");
   const range = `${fmtDate(w.from, false)} – ${fmtDate(w.to)}`;
+  const wy = /^\d{4}/.test(w.to || "") ? w.to.slice(0, 4) : /^\d{4}/.test(w.from || "") ? w.from.slice(0, 4) : "";
   const pct = (p: number) => `${Math.round(p * 100)}%`;
   const rTerms = resultFilter
     .toLowerCase()
@@ -801,7 +802,10 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     {tl("Compare")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "items", query: `player=${encodeURIComponent(w.players[0].u || prettySlug(w.players[0].n))}` }}
+                    to={{
+                      kind: "items",
+                      query: `player=${encodeURIComponent(w.players[0].u || prettySlug(w.players[0].n))}${wy ? `&year=${encodeURIComponent(wy)}` : ""}`,
+                    }}
                     className="text-rw-accent hover:underline font-semibold"
                   >
                     {tl("Item history")} →
@@ -824,6 +828,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           kind: "prep",
                           a: prettySlug(w.players[0].t),
                           ...(w.players[1]?.t && prettySlug(w.players[1].t) !== prettySlug(w.players[0].t) ? { b: prettySlug(w.players[1].t) } : {}),
+                          ...(wy ? { period: `y${wy}` } : {}),
                         }}
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
@@ -832,7 +837,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                       <HubLink
                         to={{
                           kind: "draft",
-                          query: `teams=${encodeURIComponent(prettySlug(w.players[0].t))}${w.players[1]?.t && prettySlug(w.players[1].t) !== prettySlug(w.players[0].t) ? `,${encodeURIComponent(prettySlug(w.players[1].t))}` : ""}`,
+                          query: `teams=${encodeURIComponent(prettySlug(w.players[0].t))}${w.players[1]?.t && prettySlug(w.players[1].t) !== prettySlug(w.players[0].t) ? `,${encodeURIComponent(prettySlug(w.players[1].t))}` : ""}${wy ? `&p=y${encodeURIComponent(wy)}` : ""}`,
                         }}
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
@@ -841,19 +846,36 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     </>
                   )}
                   <HubLink
-                    to={{ kind: "leaders" }}
+                    to={{
+                      kind: "leaders",
+                      query:
+                        new URLSearchParams({
+                          ...(wy ? { year: wy } : {}),
+                          ...(w.players[0].r ? { role: w.players[0].r } : {}),
+                        }).toString() || undefined,
+                    }}
                     className="text-rw-accent hover:underline font-semibold"
                   >
                     {tl("Player leaderboards")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "tiers" }}
+                    to={{
+                      kind: "tiers",
+                      query:
+                        new URLSearchParams({
+                          ...(wy ? { key: `y${wy}` } : {}),
+                          ...(w.players[0].r ? { role: w.players[0].r } : {}),
+                        }).toString() || undefined,
+                    }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Pro tier list")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "finder", query: `player=${encodeURIComponent(w.players[0].u || prettySlug(w.players[0].n))}` }}
+                    to={{
+                      kind: "finder",
+                      query: `player=${encodeURIComponent(w.players[0].u || prettySlug(w.players[0].n))}${wy ? `&year=${encodeURIComponent(wy)}` : ""}`,
+                    }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Game finder")} →
@@ -975,13 +997,16 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     </HubLink>
                   )}
                   <HubLink
-                    to={{ kind: "items", query: `champ=${encodeURIComponent(prettySlug(w.champs[0][0]))}` }}
+                    to={{
+                      kind: "items",
+                      query: `champ=${encodeURIComponent(prettySlug(w.champs[0][0]))}${wy ? `&year=${encodeURIComponent(wy)}` : ""}`,
+                    }}
                     className="text-rw-accent hover:underline font-semibold"
                   >
                     {tl("Item history")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "tiers" }}
+                    to={{ kind: "tiers", ...(wy ? { query: `key=y${encodeURIComponent(wy)}` } : {}) }}
                     className="text-rw-accent hover:underline font-semibold"
                   >
                     {tl("Pro tier list")} →
@@ -993,19 +1018,25 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     {tl("Draft board")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "champions" }}
+                    to={{ kind: "champions", ...(wy ? { query: `year=${encodeURIComponent(wy)}` } : {}) }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Champions")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "finder", query: `champ=${encodeURIComponent(w.champs[0][0])}` }}
+                    to={{
+                      kind: "finder",
+                      query: `champ=${encodeURIComponent(w.champs[0][0])}${wy ? `&year=${encodeURIComponent(wy)}` : ""}`,
+                    }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Game finder")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "leaders" }}
+                    to={{
+                      kind: "leaders",
+                      query: `champ=${encodeURIComponent(w.champs[0][0])}${wy ? `&year=${encodeURIComponent(wy)}` : ""}`,
+                    }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Player leaderboards")} →
@@ -1173,7 +1204,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         <HubLink
                           to={{
                             kind: "finder",
-                            query: `team=${encodeURIComponent(shownResults[0].au)}&vs=${encodeURIComponent(shownResults[0].bu)}`,
+                            query: `team=${encodeURIComponent(shownResults[0].au)}&vs=${encodeURIComponent(shownResults[0].bu)}${/^\d{4}$/.test((shownResults[0].date || "").slice(0, 4)) ? `&year=${encodeURIComponent((shownResults[0].date || "").slice(0, 4))}` : ""}`,
                           }}
                           className="text-[11px] font-semibold text-rw-accent hover:underline"
                         >
@@ -1186,19 +1217,19 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           {tl("Power rankings")} →
                         </HubLink>
                         <HubLink
-                          to={{ kind: "best" }}
+                          to={{ kind: "best", ...(wy ? { query: `year=${encodeURIComponent(wy)}` } : {}) }}
                           className="text-[11px] font-semibold text-rw-accent hover:underline"
                         >
                           {tl("Best games")} →
                         </HubLink>
                         <HubLink
-                          to={{ kind: "tiers" }}
+                          to={{ kind: "tiers", ...(wy ? { query: `key=y${encodeURIComponent(wy)}` } : {}) }}
                           className="text-[11px] font-semibold text-rw-accent hover:underline"
                         >
                           {tl("Pro tier list")} →
                         </HubLink>
                         <HubLink
-                          to={{ kind: "leaders" }}
+                          to={{ kind: "leaders", ...(wy ? { query: `year=${encodeURIComponent(wy)}` } : {}) }}
                           className="text-[11px] font-semibold text-rw-accent hover:underline"
                         >
                           {tl("Player leaderboards")} →
