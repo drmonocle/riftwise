@@ -305,6 +305,18 @@ const PlayerView: React.FC<{
               <HubLink to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}` }} className={heroLink}>
                 {tl("Game finder")}
               </HubLink>
+              <HubLink
+                to={{ kind: "leaders", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+                className={heroLink}
+              >
+                {tl("Player leaderboards")}
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+                className={heroLink}
+              >
+                {tl("Pro tier list")}
+              </HubLink>
               {p.club && (
                 <>
                   <HubLink to={{ kind: "prep", a: p.clubU || prettySlug(p.club) }} className={heroLink}>
@@ -904,6 +916,18 @@ const PlayerView: React.FC<{
                 {tl("Tournaments")} →
               </HubLink>
               <HubLink
+                to={{ kind: "records" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Records")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "leaders", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}` }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -960,6 +984,12 @@ const PlayerView: React.FC<{
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Records")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "leaders", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
               </HubLink>
               <HubLink
                 to={{ kind: "compare", mode: "player", a: p.u }}
@@ -1146,6 +1176,12 @@ const PlayerChampionsTab: React.FC<{
             {shownChamps.length >= 1 && (
               <>
                 <HubLink
+                  to={{ kind: "compare", mode: "player", a: p.u, ...(period !== "all" ? { period } : {}) }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+                <HubLink
                   to={{
                     kind: "items",
                     query: `player=${encodeURIComponent(p.u)}${shownChamps.length === 1 ? `&champ=${encodeURIComponent(prettySlug(shownChamps[0].c))}` : ""}`,
@@ -1153,6 +1189,12 @@ const PlayerChampionsTab: React.FC<{
                   className="text-[11px] text-rw-accent hover:underline"
                 >
                   {tl("Item history")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "leaders", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Player leaderboards")} →
                 </HubLink>
                 <HubLink
                   to={{ kind: "tiers", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
@@ -1382,6 +1424,12 @@ const CareerTimeline: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
             className="text-[11px] text-rw-accent hover:underline"
           >
             {tl("Draft board")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "rankings" }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Power rankings")} →
           </HubLink>
           <HubLink
             to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}` }}

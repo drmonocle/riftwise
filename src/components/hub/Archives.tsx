@@ -324,6 +324,9 @@ export const TeamSeriesArchive: React.FC<{ slug: string; teamName: string }> = (
         <HubLink to={{ kind: "compare", mode: "team", a: slug }} className="text-rw-accent hover:underline">
           {tl("Compare")} →
         </HubLink>
+        <HubLink to={{ kind: "rankings" }} className="text-rw-accent hover:underline">
+          {tl("Power rankings")} →
+        </HubLink>
         <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(slug)}` }} className="text-rw-accent hover:underline">
           {tl("Game finder")} →
         </HubLink>
@@ -388,6 +391,12 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
               className="text-rw-muted hover:text-rw-accent hover:underline"
             >
               {tl("Draft board")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "rankings" }}
+              className="text-rw-muted hover:text-rw-accent hover:underline"
+            >
+              {tl("Power rankings")} →
             </HubLink>
             <HubLink
               to={{
@@ -964,11 +973,17 @@ export const PlayerChampGames: React.FC<{ slug: string; playerName?: string; cha
     title={tl("Every game on {champ}", { champ: champName(champ) })}
     right={
       <span className="flex flex-wrap items-center gap-2 text-[11px]">
+        <HubLink to={{ kind: "compare", mode: "player", a: slug }} className="text-rw-accent hover:underline">
+          {tl("Compare")} →
+        </HubLink>
         <HubLink to={{ kind: "counters", query: `champ=${encodeURIComponent(prettySlug(champ))}` }} className="text-rw-accent hover:underline">
           {tl("Counters")} →
         </HubLink>
         <HubLink to={{ kind: "items", query: `player=${encodeURIComponent(slug)}&champ=${encodeURIComponent(prettySlug(champ))}` }} className="text-rw-accent hover:underline">
           {tl("Item history")} →
+        </HubLink>
+        <HubLink to={{ kind: "leaders" }} className="text-rw-accent hover:underline">
+          {tl("Player leaderboards")} →
         </HubLink>
         <HubLink to={{ kind: "tiers" }} className="text-rw-accent hover:underline">
           {tl("Pro tier list")} →

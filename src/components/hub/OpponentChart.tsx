@@ -760,6 +760,12 @@ export const PlayerOpponents: React.FC<{
                 {tl("Item history")} →
               </HubLink>
               <HubLink
+                to={{ kind: "leaders" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}${periodQuerySuffix(period || scope)}` }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >

@@ -426,6 +426,13 @@ export const DraftTendencies: React.FC<{
                   {tl("Pro tier list")} →
                 </HubLink>
                 <HubLink
+                  to={{ kind: "rankings" }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Power rankings")} →
+                </HubLink>
+                <HubLink
                   to={{ kind: "finder", query: `team=${encodeURIComponent(resolvedSlug)}${periodParam}` }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"

@@ -315,6 +315,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 {tl("Pro tier list")} →
               </HubLink>
               <HubLink
+                to={{ kind: "draft" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}${buildRole ? `&role=${encodeURIComponent(buildRole)}` : ""}` }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -533,6 +539,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "draft" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
               </HubLink>
               <HubLink
                 to={{
@@ -1171,6 +1183,15 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 {tl("Pro tier list")} →
               </HubLink>
               <HubLink
+                to={{
+                  kind: "leaders",
+                  ...(c.roles[0]?.r ? { query: `role=${encodeURIComponent(c.roles[0].r)}` } : {}),
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}` }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -1456,6 +1477,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 {tl("Pro tier list")} →
               </HubLink>
               <HubLink
+                to={{ kind: "draft" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "champions" }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -1542,6 +1569,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               className="text-[11px] text-rw-accent hover:underline"
             >
               {tl("Pro tier list")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "draft" }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Draft board")} →
             </HubLink>
             <HubLink
               to={{ kind: "champions" }}

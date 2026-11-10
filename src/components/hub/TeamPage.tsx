@@ -165,6 +165,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   {tl("Player leaderboards")} →
                 </HubLink>
                 <HubLink
+                  to={{ kind: "rankings" }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Power rankings")} →
+                </HubLink>
+                <HubLink
                   to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${activeRoster.y}` }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
@@ -373,6 +379,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
               )}
               <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}` }} className={heroLink}>
                 {tl("Game finder")}
+              </HubLink>
+              <HubLink to={{ kind: "rankings" }} className={heroLink}>
+                {tl("Power rankings")}
+              </HubLink>
+              <HubLink to={{ kind: "tiers" }} className={heroLink}>
+                {tl("Pro tier list")}
               </HubLink>
               <PhotosLink q={t.name} className={heroLink} />
               {/* its own calendar and results feed, while it still plays (the schedule only has current teams) */}
@@ -756,6 +768,18 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
           right={
             <span className="flex flex-wrap items-center gap-2">
               <HubLink
+                to={{ kind: "prep", a: t.u }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: t.u }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "titles", query: `kind=All&q=${encodeURIComponent(t.name)}` }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -892,6 +916,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "rankings" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
               </HubLink>
               <HubLink
                 to={{
@@ -2254,6 +2284,9 @@ const TeamPlaystyleOverview: React.FC<{ t: HubTeam }> = ({ t }) => {
             </HubLink>
             <HubLink to={{ kind: "compare", mode: "team", a: t.u }} className="text-rw-accent hover:underline">
               {tl("Compare")} →
+            </HubLink>
+            <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Power rankings")} →
             </HubLink>
             <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Game finder")} →
