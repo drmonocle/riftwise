@@ -331,6 +331,13 @@ const PlayerItemsView: React.FC<{
             >
               {tl("Pro tier list")} →
             </HubLink>
+            <HubLink
+              to={{ kind: "draft", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Draft board")} →
+            </HubLink>
             <CopyItemsPost
               title={`${name} · ${label}`}
               sub={`${fmtNum(g.length)}G${scope ? ` · ${scope}` : ""}`}
@@ -435,6 +442,13 @@ const PlayerItemsView: React.FC<{
               data-nocapture="1"
             >
               {tl("Pro tier list")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "draft", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Draft board")} →
             </HubLink>
             <CopyItemsPost
               title={tl("Every item {player} finished pro games with", { player: name })}
@@ -674,6 +688,12 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
                 {tl("Pro tier list")} →
               </HubLink>
               <HubLink
+                to={{ kind: "draft" }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "items" }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -875,6 +895,12 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "draft", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
               </HubLink>
             </>
           )}
@@ -1084,6 +1110,12 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "draft", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
               </HubLink>
             </>
           )}

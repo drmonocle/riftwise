@@ -150,6 +150,20 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
             {slug && (
               <>
                 <HubLink
+                  to={{ kind: "records" }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Records")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "leaders", query: `event=${encodeURIComponent(slug)}` }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
+                <HubLink
                   to={{ kind: "draft", query: `p=e:${encodeURIComponent(slug)}` }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -627,6 +641,12 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
           {filteredRosters.length > 0 && (
             <>
               <HubLink
+                to={{ kind: "leaders", ...(eventSlug ? { query: `event=${encodeURIComponent(eventSlug)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "rankings" }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -771,6 +791,20 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
       title={tl("Region vs region")}
       right={
         <span className="flex flex-wrap items-center gap-2">
+          <HubLink
+            to={{ kind: "rankings" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Power rankings")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "draft", query: `p=e:${encodeURIComponent(e.u)}` }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Draft board")} →
+          </HubLink>
           <HubLink
             to={{ kind: "leagues" }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

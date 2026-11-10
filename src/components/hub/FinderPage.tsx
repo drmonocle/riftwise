@@ -857,6 +857,15 @@ const FinderBody: React.FC<{
                   >
                     {tl("Draft board")} →
                   </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "rankings",
+                      ...(q.get("league") ? { query: `league=${encodeURIComponent(q.get("league")!)}` } : {}),
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Power rankings")} →
+                  </HubLink>
                 </>
               )}
               {q.get("team") && !q.get("vs") && (
@@ -891,6 +900,15 @@ const FinderBody: React.FC<{
                   >
                     {tl("Compare")} →
                   </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "rankings",
+                      ...(q.get("league") ? { query: `league=${encodeURIComponent(q.get("league")!)}` } : {}),
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Power rankings")} →
+                  </HubLink>
                 </>
               )}
               {champs[0] && (
@@ -907,6 +925,19 @@ const FinderBody: React.FC<{
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
                     {tl("Counter-pick finder")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "tiers",
+                      query: new URLSearchParams({
+                        ...(q.get("league") ? { league: q.get("league")! } : {}),
+                        ...(year ? { key: `y${year}` } : {}),
+                        ...(q.get("role") ? { role: q.get("role")! } : {}),
+                      }).toString(),
+                    }}
+                    className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                  >
+                    {tl("Pro tier list")} →
                   </HubLink>
                   {!q.get("player") && (
                     <HubLink
@@ -1212,6 +1243,12 @@ const Cohort: React.FC<{
                 >
                   {tl("Pro tier list")} →
                 </HubLink>
+                <HubLink
+                  to={{ kind: "draft" }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
               </>
             )}
             {!wr && rows.length >= 1 && (
@@ -1221,6 +1258,12 @@ const Cohort: React.FC<{
                   className="text-rw-accent hover:underline"
                 >
                   {tl("Counters")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "tiers" }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")} →
                 </HubLink>
                 <HubLink
                   to={{ kind: "draft" }}

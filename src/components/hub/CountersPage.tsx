@@ -416,6 +416,12 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 {tl("Pro tier list")} →
               </HubLink>
               <HubLink
+                to={{ kind: "leaders", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+                className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
                 to={{
                   kind: "finder",
                   query: `champ=${encodeURIComponent(rawChamp || cName)}${vsMatch ? `&vschamp=${encodeURIComponent(vsMatch.oppCanon)}` : ""}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
@@ -445,6 +451,9 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 </HubLink>
                 <HubLink to={{ kind: "items" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Item history")} →
+                </HubLink>
+                <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Player leaderboards")} →
                 </HubLink>
                 <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Game finder")} →
@@ -500,6 +509,12 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "leaders", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Player leaderboards")} →
                     </HubLink>
                     <button
                       type="button"
@@ -681,6 +696,12 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     >
                       {tl("Draft board")} →
                     </HubLink>
+                    <HubLink
+                      to={{ kind: "leaders", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Player leaderboards")} →
+                    </HubLink>
                     <SectionCard
                       section={tl("{champ} does best against", { champ: cName })}
                       name={cName}
@@ -783,6 +804,12 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "leaders", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Player leaderboards")} →
                     </HubLink>
                     <SectionCard
                       section={tl("{champ} struggles against", { champ: cName })}
@@ -899,6 +926,12 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                   >
                     {tl("Draft board")} →
                   </HubLink>
+                  <HubLink
+                    to={{ kind: "leaders", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")} →
+                  </HubLink>
                   <SectionCard
                     section={tl("Every lane matchup: {champ}", { champ: cName })}
                     name={cName}
@@ -997,6 +1030,12 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "leaders", query: "role=Bot" }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Player leaderboards")} →
                     </HubLink>
                     <SectionCard
                       section={tl("Bot lane partners")}

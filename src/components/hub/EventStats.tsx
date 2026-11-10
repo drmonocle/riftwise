@@ -89,6 +89,18 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
             >
               {tl("Champions")} →
             </HubLink>
+            <HubLink to={{ kind: "tiers" }} className="text-rw-accent hover:underline">
+              {tl("Pro tier list")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "draft", ...(eventSlug ? { query: `p=e:${encodeURIComponent(eventSlug)}` } : {}) }}
+              className="text-rw-accent hover:underline"
+            >
+              {tl("Draft board")} →
+            </HubLink>
+            <HubLink to={{ kind: "rankings" }} className="text-rw-accent hover:underline">
+              {tl("Power rankings")} →
+            </HubLink>
             <HubLink
               to={{ kind: "finder", ...(eventSlug ? { query: `event=${encodeURIComponent(eventSlug)}` } : {}) }}
               className="text-rw-accent hover:underline"
@@ -238,6 +250,13 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   {tl("Compare")} →
                 </HubLink>
                 <HubLink
+                  to={{ kind: "rankings" }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Power rankings")} →
+                </HubLink>
+                <HubLink
                   to={{
                     kind: "finder",
                     query: new URLSearchParams({
@@ -280,6 +299,16 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   data-nocapture="1"
                 >
                   {tl("Pro tier list")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    ...(eventSlug ? { query: `p=e:${encodeURIComponent(eventSlug)}` } : {}),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Draft board")} →
                 </HubLink>
                 <HubLink
                   to={{

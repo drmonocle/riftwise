@@ -673,6 +673,22 @@ const LeagueTable: React.FC<{
             </HubLink>
             <HubLink
               to={{
+                kind: "finder",
+                query: new URLSearchParams({
+                  league,
+                  ...(year ? { year } : {}),
+                  ...(eventSlug ? { event: eventSlug } : {}),
+                  ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
+                  ...(side ? { side } : {}),
+                  ...(roleQ ? { role: roleQ } : {}),
+                }).toString(),
+              }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Game finder")} →
+            </HubLink>
+            <HubLink
+              to={{
                 kind: "leaders",
                 query: new URLSearchParams({
                   league,

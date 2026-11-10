@@ -299,6 +299,13 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
             {tl("Pro tier list")} →
           </HubLink>
           <HubLink
+            to={{ kind: "draft", query: `p=e:${encodeURIComponent(e.u)}` }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Draft board")} →
+          </HubLink>
+          <HubLink
             to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}${role !== "All" ? `&role=${encodeURIComponent(role)}` : ""}` }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
@@ -613,6 +620,33 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
               </HubLink>
             </>
           )}
+          <HubLink
+            to={{
+              kind: "champions",
+              query: new URLSearchParams({
+                ...(e.lu ? { league: e.lu } : {}),
+                ...(e.start?.slice(0, 4) ? { year: e.start.slice(0, 4) } : {}),
+                event: e.u,
+              }).toString(),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Champions")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "tiers",
+              query: new URLSearchParams({
+                ...(e.lu ? { league: e.lu } : {}),
+                ...(e.start?.slice(0, 4) ? { key: `y${e.start.slice(0, 4)}` } : {}),
+              }).toString(),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Pro tier list")} →
+          </HubLink>
           <HubLink
             to={{ kind: "rankings", ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}) }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

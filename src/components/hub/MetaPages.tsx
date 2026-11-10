@@ -690,6 +690,11 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
               {tl("Power rankings")}
             </HubLink>
             {totalGames > 0 && (
+              <HubLink to={{ kind: "draft", ...(season ? { query: `p=y${encodeURIComponent(season)}` } : {}) }} className={heroBtn()}>
+                {tl("Draft board")}
+              </HubLink>
+            )}
+            {totalGames > 0 && (
               <HubLink to={{ kind: "finder", query: `league=${l.u}${season ? `&year=${season}` : ""}` }} className={heroBtn()}>
                 {tl("Game finder")}
               </HubLink>
@@ -965,6 +970,12 @@ const LeagueEventsSection: React.FC<{
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Player leaderboards")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "rankings", query: `league=${encodeURIComponent(l.s || l.u)}` }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Power rankings")} →
             </HubLink>
             <HubLink
               to={{ kind: "finder", query: `league=${encodeURIComponent(l.u)}${season ? `&year=${encodeURIComponent(season)}` : ""}` }}
